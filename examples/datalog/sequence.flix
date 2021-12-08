@@ -6,7 +6,7 @@ def main(_args: Array[String]): Int32 & Impure =
 
     let lp = #{
 
-        ////////////// Arithmetic ////////////////
+        // Arithmetic
 
         N(0).
         N(x + 1) :- N(x), NumLetters(n), if x < n.
@@ -28,7 +28,7 @@ def main(_args: Array[String]): Int32 & Impure =
 
         Mod(x, y, r) :- Mul(y, _, z), Add(z, r, x), if 0 <= r and r < y.
 
-        ////////////// Trie ////////////////
+        // Trie
 
         TrieLetter(i, r) :- S(x, i), NumLetters(n), Mod(x, n, r).
 
@@ -47,7 +47,7 @@ def main(_args: Array[String]): Int32 & Impure =
 
         Trie(x) :- TrieLetter(x,_).
 
-        ////////////// all Strings over the alphabet ////////////////
+        // all Strings over the alphabet
 
         Str(x) :- Trie(x).
 
@@ -58,7 +58,7 @@ def main(_args: Array[String]): Int32 & Impure =
 
         StrLetterAt(id, pos, l) :- StrChain(id, p), TrieLevel(p, pos), TrieLetter(p, l).
 
-        ////////////// example sequences ////////////////////
+        // example sequences
 
         // search all Palindrome
         PalinAux(s, x, x) :- Str(s), N(x), StrLen(s, l), if x <= l.

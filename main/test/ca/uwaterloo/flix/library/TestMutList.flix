@@ -26,9 +26,9 @@ namespace TestMutList {
         Array.length(deref a)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // eq                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // eq
+    //
 
     @test
     def eq01(): Bool & Impure =
@@ -70,15 +70,15 @@ namespace TestMutList {
         let v = MutList.new();
         (u `eq` v) == false
 
-    /////////////////////////////////////////////////////////////////////////////
-    // Order.compare                                                           //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // Order.compare
+    //
 
     // TODO
 
-    /////////////////////////////////////////////////////////////////////////////
-    // length                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // length
+    //
 
     @test
     def length01(): Bool & Impure = MutList.length(MutList.new()) == 0
@@ -98,9 +98,9 @@ namespace TestMutList {
     @test
     def length05(): Bool & Impure = MutList.length(MutList.range(0, 42)) == 42
 
-    /////////////////////////////////////////////////////////////////////////////
-    // isEmpty                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // isEmpty
+    //
 
     @test
     def isEmpty01(): Bool & Impure = MutList.isEmpty(MutList.new())
@@ -117,9 +117,9 @@ namespace TestMutList {
     @test
     def isEmpty05(): Bool & Impure = MutList.isEmpty(MutList.range(3, 4)) == false
 
-    /////////////////////////////////////////////////////////////////////////////
-    // memberOf                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // memberOf
+    //
 
     @test
     def memberOf01(): Bool & Impure = MutList.memberOf(42, MutList.new()) == false
@@ -145,9 +145,9 @@ namespace TestMutList {
     @test
     def memberOf06(): Bool & Impure = MutList.memberOf(2, MutList.range(0, 3))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // count                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // count
+    //
 
     @test
     def count01(): Bool & Impure = MutList.count(x -> x > 2, MutList.range(0, 4)) == 1
@@ -161,9 +161,9 @@ namespace TestMutList {
     @test
     def count04(): Bool & Impure = MutList.count(x -> x == 11, MutList.range(0, 21)) == 1
 
-    /////////////////////////////////////////////////////////////////////////////
-    // exists                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // exists
+    //
 
     @test
     def exists01(): Bool & Impure = MutList.exists(x -> x > 9, MutList.range(0, 9)) == false
@@ -180,9 +180,9 @@ namespace TestMutList {
     @test
     def exists05(): Bool & Impure = MutList.exists(x -> x == 0, MutList.new()) == false
 
-    /////////////////////////////////////////////////////////////////////////////
-    // forall                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // forall
+    //
 
     @test
     def forall01(): Bool & Impure = MutList.forall(x -> x > 0, MutList.range(0, 9)) == false
@@ -196,9 +196,9 @@ namespace TestMutList {
     @test
     def forall05(): Bool & Impure = MutList.forall(x -> x > 0, MutList.new())
 
-    /////////////////////////////////////////////////////////////////////////////
-    // head                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // head
+    //
 
     @test
     def head01(): Bool & Impure =
@@ -216,9 +216,9 @@ namespace TestMutList {
         MutList.push!(102, v);
         MutList.head(v) == Some(101)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // last                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // last
+    //
 
     @test
     def last01(): Bool & Impure = MutList.last(MutList.new(): MutList[Unit]) == None
@@ -233,9 +233,9 @@ namespace TestMutList {
         MutList.push!('B', v);
         MutList.last(v) == Some('B')
 
-    /////////////////////////////////////////////////////////////////////////////
-    // indexOfLeft                                                             //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // indexOfLeft
+    //
 
     @test
     def indexOfLeft01(): Bool & Impure = MutList.indexOfLeft(2, MutList.range(2, 3)) == Some(0)
@@ -254,9 +254,9 @@ namespace TestMutList {
     @test
     def indexOfLeft04(): Bool & Impure = MutList.indexOfLeft(99, MutList.range(0, 100)) == Some(99)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // indexOfRight                                                            //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // indexOfRight
+    //
 
     @test
     def indexOfRight01(): Bool & Impure = MutList.indexOfRight(2, MutList.range(2, 3)) == Some(0)
@@ -279,9 +279,9 @@ namespace TestMutList {
         MutList.append!(v1, v2);
         MutList.indexOfRight(2, v1) == Some(6)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // findLeft                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // findLeft
+    //
 
     @test
     def findLeft01(): Bool & Impure = MutList.findLeft(x -> x > 3, MutList.range(3, 11)) == Some(4)
@@ -295,9 +295,9 @@ namespace TestMutList {
     @test
     def findLeft04(): Bool & Impure = MutList.findLeft(x -> x rem 2 == 1, MutList.range(3, 11)) == Some(3)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // findRight                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // findRight
+    //
 
     @test
     def findRight01(): Bool & Impure = MutList.findRight(x -> x > 0, MutList.range(2, 5)) == Some(4)
@@ -311,9 +311,9 @@ namespace TestMutList {
     @test
     def findRight04(): Bool & Impure = MutList.findRight(x -> x < 5, MutList.range(3, 11)) == Some(4)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // scanLeft                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // scanLeft
+    //
 
     @test
     def scanLeft01(): Bool & Impure =
@@ -338,9 +338,9 @@ namespace TestMutList {
         let v = MutList.scanLeft((x, y) -> x + y, 7, MutList.range(5, 13));
         MutList.last(v) == Some(75)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // scanRight                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // scanRight
+    //
 
     @test
     def scanRight01(): Bool & Impure =
@@ -365,9 +365,9 @@ namespace TestMutList {
         let v = MutList.scanRight((x, y) -> x + y, 7, MutList.range(5, 13));
         MutList.last(v) == Some(7)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map                                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map
+    //
 
     @test
     def map01(): Bool & Impure =
@@ -389,9 +389,9 @@ namespace TestMutList {
         let v = MutList.map(x -> x + 1, MutList.range(0, 100));
         MutList.sameElements(v, MutList.range(1, 101))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // transform!                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // transform!
+    //
 
     @test
     def transform!01(): Bool & Impure =
@@ -417,9 +417,9 @@ namespace TestMutList {
         MutList.transform!(x -> x + 1, v);
         MutList.sameElements(v, MutList.range(1, 101))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // mapWithIndex                                                            //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // mapWithIndex
+    //
 
     @test
     def mapWithIndex01(): Bool & Impure =
@@ -436,9 +436,9 @@ namespace TestMutList {
         let v = MutList.mapWithIndex((_, i) -> if (i == 0) 42 else 0, MutList.new());
         MutList.sameElements(v, MutList.new())
 
-    /////////////////////////////////////////////////////////////////////////////
-    // transformWithIndex!                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // transformWithIndex!
+    //
 
     @test
     def transformWithIndex!01(): Bool & Impure =
@@ -458,9 +458,9 @@ namespace TestMutList {
         MutList.transformWithIndex!((_, i) -> if (i == 0) 42 else 0, v);
         MutList.sameElements(v, MutList.new())
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foldLeft                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foldLeft
+    //
 
     @test
     def foldLeft01(): Bool & Impure = MutList.foldLeft((acc, x) -> acc + x, 0, MutList.range(1, 5)) == 10
@@ -481,9 +481,9 @@ namespace TestMutList {
     @test
     def foldLeft05(): Bool & Impure = MutList.foldRight((acc, x) -> acc + x, 42, MutList.new()) == 42
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foldRight                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foldRight
+    //
 
     @test
     def foldRight01(): Bool & Impure = MutList.foldRight((x, acc) -> acc + x, 0, MutList.range(1, 5)) == 10
@@ -500,9 +500,9 @@ namespace TestMutList {
     @test
     def foldRight05(): Bool & Impure = MutList.foldRight((x, acc) -> x + acc, 42, MutList.new()) == 42
 
-    /////////////////////////////////////////////////////////////////////////////
-    // reduceLeft                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // reduceLeft
+    //
 
     @test
     def reduceLeft01(): Bool & Impure = MutList.reduceLeft((x, y) -> x + y, MutList.new(): MutList[Int32]) == None
@@ -516,9 +516,9 @@ namespace TestMutList {
     @test
     def reduceLeft04(): Bool & Impure = MutList.reduceLeft((_, y) -> if (y > 4) 1 else 0, MutList.range(0, 6)) == Some(1)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // reduceRight                                                             //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // reduceRight
+    //
 
     @test
     def reduceRight01(): Bool & Impure = MutList.reduceRight((x, y) -> x + y, MutList.new(): MutList[Int32]) == None
@@ -532,9 +532,9 @@ namespace TestMutList {
     @test
     def reduceRight04(): Bool & Impure = MutList.reduceRight((x, _) -> if (x < 2) 1 else 0, MutList.range(0, 6)) == Some(1)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // clear!                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // clear!
+    //
 
     @test
     def clear!01(): Bool & Impure =
@@ -556,9 +556,9 @@ namespace TestMutList {
         MutList.clear!(v);
         MutList.isEmpty(v)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // copy                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // copy
+    //
 
     @test
     def copy01(): Bool & Impure =
@@ -596,9 +596,9 @@ namespace TestMutList {
             Array.length(deref l2) == 8
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // pop                                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // pop
+    //
 
     @test
     def pop01(): Bool & Impure =
@@ -621,9 +621,9 @@ namespace TestMutList {
         let none = MutList.pop!(v);
         three == Some(3) and two == Some(2) and one == Some(1) and none == None
 
-    /////////////////////////////////////////////////////////////////////////////
-    // push                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // push
+    //
 
     @test
     def push01(): Bool & Impure =
@@ -656,9 +656,9 @@ namespace TestMutList {
         MutList.push!(0, v);
         MutList.length(v) == 4 and MutList.get(0, v) == 0 and MutList.get(1, v) == 0 and MutList.get(2, v) == 0 and MutList.get(3, v) == 0
 
-    /////////////////////////////////////////////////////////////////////////////
-    // insert!                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // insert!
+    //
 
     @test
     def insert!01(): Bool & Impure =
@@ -726,9 +726,9 @@ namespace TestMutList {
         MutList.insert!(33, 1, v);
         MutList.sameElements(v, List.toMutList(55 :: 33 :: 0 :: 40 :: 1 :: 41 :: 2 :: 42 :: 3 :: Nil))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // remove!                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // remove!
+    //
 
     @test
     def remove!01(): Bool & Impure =
@@ -783,9 +783,9 @@ namespace TestMutList {
         MutList.remove!(99, v);
         MutList.sameElements(v, MutList.range(0, 3))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // append!                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // append!
+    //
 
     @test
     def append!01(): Bool & Impure =
@@ -824,9 +824,9 @@ namespace TestMutList {
         MutList.append!(v1, v3);
         MutList.sameElements(v1, MutList.range(1, 99))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // retain!                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // retain!
+    //
 
     @test
     def retain!01(): Bool & Impure =
@@ -852,9 +852,9 @@ namespace TestMutList {
         MutList.retain!(x -> x > 10, v);
         MutList.sameElements(v, MutList.new())
 
-    /////////////////////////////////////////////////////////////////////////////
-    // replace!                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // replace!
+    //
 
     @test
     def replace!01(): Bool & Impure =
@@ -891,9 +891,9 @@ namespace TestMutList {
         MutList.replace!('a', 'z', v);
         MutList.sameElements(List.toMutList(List.repeat(97, 'z')), v)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // reverse!                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // reverse!
+    //
 
     @test
     def reverse01!(): Bool & Impure =
@@ -926,9 +926,9 @@ namespace TestMutList {
         MutList.sameElements(v, MutList.range(2, 8))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // shrink!                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // shrink!
+    //
 
     @test
     def shrink!01(): Bool & Impure =
@@ -961,9 +961,9 @@ namespace TestMutList {
         MutList.shrink!(v);
         MutList.length(v) == 6
 
-    /////////////////////////////////////////////////////////////////////////////
-    // truncate!                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // truncate!
+    //
 
     @test
     def truncate!01(): Bool & Impure =
@@ -995,9 +995,9 @@ namespace TestMutList {
         MutList.truncate!(1, v);
         MutList.sameElements(v, MutList.range(99, 100))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // reserve!                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // reserve!
+    //
 
     @test
     def reserve!01(): Bool & Impure =
@@ -1040,9 +1040,9 @@ namespace TestMutList {
         MutList.reserve!(1, v);
         capacity(v) - MutList.length(v) >= 1
 
-    /////////////////////////////////////////////////////////////////////////////
-    // formatWith                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // formatWith
+    //
 
     @test
     def formatWith01(): Bool & Impure =
@@ -1064,9 +1064,9 @@ namespace TestMutList {
         let v = MutList.range(6, 9);
         MutList.formatWith(Int32.toString, "/", v) == "6/7/8"
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foreach                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foreach
+    //
 
     @test
     def foreach01(): Bool & Impure =
@@ -1100,9 +1100,9 @@ namespace TestMutList {
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == "FF"
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foreachWithIndex                                                        //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foreachWithIndex
+    //
 
     @test
     def foreachWithIndex01(): Bool & Impure =
@@ -1127,9 +1127,9 @@ namespace TestMutList {
         MutList.foreachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFTFT"
 
-    /////////////////////////////////////////////////////////////////////////////
-    // compress!                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // compress!
+    //
 
     @test
     def compress!01(): Bool & Impure =
@@ -1169,9 +1169,9 @@ namespace TestMutList {
         MutList.compress!(v);
         capacity(v) <= capacity(MutList.range(0, 5))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // minimumBy                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // minimumBy
+    //
 
     @test
     def minimumBy01(): Bool & Impure = MutList.minimumBy((x, y) -> x <=> y, MutList.new(): MutList[Int32]) == None
@@ -1194,9 +1194,9 @@ namespace TestMutList {
         let cmp = (x, y) -> if (x < y and x rem 2 == 0) LessThan else GreaterThan;
         MutList.minimumBy(cmp, v) == Some(10)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // maximumBy                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // maximumBy
+    //
 
     @test
     def maximumBy01(): Bool & Impure = MutList.maximumBy((x, y) -> x <=> y, MutList.new(): MutList[Int32]) == None
@@ -1219,9 +1219,9 @@ namespace TestMutList {
         let cmp = (x, y) -> if (x > y and x rem 2 == 0) GreaterThan else LessThan;
         MutList.maximumBy(cmp, v) == Some(18)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toArray                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toArray
+    //
 
     @test
     def toArray01(): Bool & Impure =
@@ -1241,9 +1241,9 @@ namespace TestMutList {
         MutList.pop!(v);
         Array.length(MutList.toArray(v)) == 1
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toList                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toList
+    //
 
     @test
     def toList01(): Bool & Impure =
@@ -1261,9 +1261,9 @@ namespace TestMutList {
         ml |> MutList.toList == List.range(0, 1000) and
            ml `eq` MutList.range(0, 1000)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toChain                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toChain
+    //
 
     @test
     def toChain01(): Bool & Impure =
@@ -1283,11 +1283,11 @@ namespace TestMutList {
 
 
 
-/////////////////////////////////////////////////////////////////////////////
-// The following tests for sort functions correspond to those in TestArray //
-/////////////////////////////////////////////////////////////////////////////
-// sortWith                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// The following tests for sort functions correspond to those in TestArray
+//
+// sortWith
+//
 
 def cmp(x: Int32, y: Int32): Comparison =
     if (x < y) LessThan
@@ -1359,9 +1359,9 @@ def sortWith13(): Bool & Impure =
     let a = MutList.sortWith(flip(cmp), Array.toMutList([2,3,0,4,1,2]));
     a `eq` Array.toMutList([4,3,2,2,1,0])
 
-/////////////////////////////////////////////////////////////////////////////
-// sort                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+//
+// sort
+//
 
 def testSortVsSortWith(a: MutList[Int32]) : Bool & Impure =
     MutList.sort(a) `eq` MutList.sortWith(cmp, a)
@@ -1393,9 +1393,9 @@ def sort08(): Bool & Impure = testSortVsSortWith(Array.toMutList([5,3,0,4,1,2]))
 @test
 def sort09(): Bool & Impure = testSortVsSortWith(Array.toMutList([2,3,0,4,1,2]))
 
-/////////////////////////////////////////////////////////////////////////////
-// sortWith!                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// sortWith!
+//
 
 @test
 def sortWith01!(): Bool & Impure =
@@ -1475,9 +1475,9 @@ def sortWith13!(): Bool & Impure =
     MutList.sortWith!(flip(cmp), a);
     a `eq` Array.toMutList([4,3,2,2,1,0])
 
-/////////////////////////////////////////////////////////////////////////////
-// sort!                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// sort!
+//
 
 def testSort!VsSortWith!(a: MutList[Int32]) : Bool & Impure =
     let b = MutList.copy(a);
@@ -1513,9 +1513,9 @@ def sort!08(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([5,3,0,4,1,2
 @test
 def sort!09(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([2,3,0,4,1,2]))
 
-/////////////////////////////////////////////////////////////////////////////
-// sortBy                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// sortBy
+//
 
 def testSortByVsSort(a: MutList[Int32]) : Bool & Impure =
     (MutList.sortBy(identity, a) `eq` MutList.sort(a)) and
@@ -1565,9 +1565,9 @@ def sortBy10(): Bool & Impure =
     MutList.sortBy(r -> let R(x) = r; x.i, Array.toMutList([R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})]))
     `eq` Array.toMutList([R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})])
 
-/////////////////////////////////////////////////////////////////////////////
-// sortBy!                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// sortBy!
+//
 
 def testSortBy!VsSortBy(a: MutList[Int32]) : Bool & Impure =
     let b = MutList.copy(a);
@@ -1604,9 +1604,9 @@ def sortBy!08(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([5,3,0,4,1,
 @test
 def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,2]))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // range                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // range
+    //
 
     @test
     def range01(): Bool & Impure =
@@ -1627,9 +1627,9 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,
         MutList.range(0, 1000) |> MutList.toList == List.range(0, 1000)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // sum                                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // sum
+    //
 
     @test
     def sum01(): Bool & Impure =

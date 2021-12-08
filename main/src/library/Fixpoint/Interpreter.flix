@@ -98,19 +98,19 @@ namespace Fixpoint {
                     evalOp(db, env, body)
                 }, MutMap.getWithDefault(ramSym, MutMap.empty(), db))
             case RelOp.Project(terms, ramSym) =>
-                let rel = MutMap.getOrElsePut!(ramSym, MutMap.empty(), db);
+                let relation = MutMap.getOrElsePut!(ramSym, MutMap.empty(), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
                         let tuple = Tuple(Array.map(evalTerm(env), terms));
-                        MutMap.put!(tuple, default, rel)
+                        MutMap.put!(tuple, default, relation)
                     case Denotation.Latticenal(bot, leq, lub, _) =>
                         let len = Array.length(terms);
                         let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1));
-                        let lat = evalTerm(env, terms[len - 1]);
-                        if (lat `leq` bot)
+                        let lattice = evalTerm(env, terms[len - 1]);
+                        if (lattice `leq` bot)
                             ()
                         else
-                            MutMap.putWith!(lub, key, lat, rel)
+                            MutMap.putWith!(lub, key, lattice, relation)
                 }
             case RelOp.If(test, then) =>
                 if (evalBoolExp(db, env, test)) {
@@ -137,16 +137,16 @@ namespace Fixpoint {
             case BoolExp.Empty(ramSym) =>
                 MutMap.isEmpty(MutMap.getWithDefault(ramSym, MutMap.empty(), db))
             case BoolExp.NotMemberOf(terms, ramSym) =>
-                let rel = MutMap.getWithDefault(ramSym, MutMap.empty(), db);
+                let relation = MutMap.getWithDefault(ramSym, MutMap.empty(), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
                         let tuple = Tuple(Array.map(evalTerm(env), terms));
-                        not MutMap.memberOf(tuple, rel)
+                        not MutMap.memberOf(tuple, relation)
                     case Denotation.Latticenal(bot, leq, _, _) =>
                         let len = Array.length(terms);
                         let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1));
-                        let lat = evalTerm(env, terms[len - 1]);
-                        not (lat `leq` MutMap.getWithDefault(key, bot, rel))
+                        let lattice = evalTerm(env, terms[len - 1]);
+                        not (lattice `leq` MutMap.getWithDefault(key, bot, relation))
                 }
             case BoolExp.Eq(lhs, rhs) =>
                 evalTerm(env, lhs) == evalTerm(env, rhs)

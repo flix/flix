@@ -15,9 +15,9 @@
  */
 namespace Bool {
 
-    /////////////////////////////////////////////////////////////////////////////
-    // Logical And                                                             //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // Logical And
+    //
     @test
     def mathAnd01(): Bool = (true ∧ true) == true
 
@@ -30,9 +30,9 @@ namespace Bool {
     @test
     def mathAnd04(): Bool = (false ∧ false) == false
 
-    /////////////////////////////////////////////////////////////////////////////
-    // Logical Or                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // Logical Or
+    //
     @test
     def mathOr01(): Bool = (true ∨ true) == true
 
@@ -45,9 +45,9 @@ namespace Bool {
     @test
     def mathOr04(): Bool = (false ∨ false) == false
 
-    /////////////////////////////////////////////////////////////////////////////
-    // Logical Implication                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // Logical Implication
+    //
     @test
     def mathImplication01(): Bool = (true → true) == true
 
@@ -60,9 +60,9 @@ namespace Bool {
     @test
     def mathImplication04(): Bool = (false → false) == true
 
-    /////////////////////////////////////////////////////////////////////////////
-    // Logical Bi-implication                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // Logical Bi-implication
+    //
     @test
     def mathBiconditional01(): Bool = (true ↔ true) == true
 
@@ -75,9 +75,9 @@ namespace Bool {
     @test
     def mathBiconditional04(): Bool = (false ↔ false) == true
 
-    /////////////////////////////////////////////////////////////////////////////
-    // Logical Xor                                                             //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // Logical Xor
+    //
     @test
     def mathXor01(): Bool = (true ⊕ true) == false
 
@@ -90,9 +90,9 @@ namespace Bool {
     @test
     def mathXor04(): Bool = (false ⊕ false) == false
 
-    /////////////////////////////////////////////////////////////////////////////
-    // Negation                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // Negation
+    //
 
     @test
     def notTest01(): Bool = not(true) == false
@@ -100,9 +100,9 @@ namespace Bool {
     @test
     def notTest02(): Bool = not(false) == true
 
-    /////////////////////////////////////////////////////////////////////////////
-    // Logical And (lazy)                                                      //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // Logical And (lazy)
+    //
 
     @test
     def andTest01(): Bool = and(false, lazy false) == false
@@ -116,9 +116,9 @@ namespace Bool {
     @test
     def andTest04(): Bool = and(true, lazy true) == true
 
-    /////////////////////////////////////////////////////////////////////////////
-    // Logical Or (lazy)                                                      //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // Logical Or (lazy)
+    //
 
     @test
     def orTest01(): Bool = or(false, lazy false) == false

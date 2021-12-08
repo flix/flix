@@ -16,9 +16,9 @@
 
 namespace TestIterator {
 
-    /////////////////////////////////////////////////////////////////////////////
-    // next                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // next
+    //
 
     @test
     def next01(): Bool & Impure =
@@ -41,9 +41,9 @@ namespace TestIterator {
         Iterator.next(iter);
         Iterator.next(iter) == Some(2)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // range                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // range
+    //
 
     @test
     def range01(): Bool & Impure =
@@ -66,9 +66,9 @@ namespace TestIterator {
         Iterator.range(-100, 200) |> Iterator.toList == List.range(-100, 200)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // repeat                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // repeat
+    //
 
     @test
     def repeat01(): Bool & Impure =
@@ -87,9 +87,9 @@ namespace TestIterator {
         Iterator.repeat(3, 1) |> Iterator.toList == 1 :: 1 :: 1 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toArray                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toArray
+    //
 
     @test
     def toArray01(): Bool & Impure =
@@ -108,9 +108,9 @@ namespace TestIterator {
         Iterator.range(-100, 200) |> Iterator.toArray == Array.range(-100, 200)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toMap                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toMap
+    //
 
     @test
     def toMap01(): Bool & Impure =
@@ -128,9 +128,9 @@ namespace TestIterator {
         map |> Map.toList |> List.toIterator |> Iterator.toMap == map
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toSet                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toSet
+    //
 
     @test
     def toSet01(): Bool & Impure =
@@ -149,9 +149,9 @@ namespace TestIterator {
         Set.range(0, 10000) |> Set.toList |> List.toIterator |> Iterator.toSet == Set.range(0, 10000)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toNel                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toNel
+    //
 
     @test
     def toNel01(): Bool & Impure =
@@ -166,9 +166,9 @@ namespace TestIterator {
         Iterator.range(0, 1000) |> Iterator.toNel == Some(Nel(0, List.range(1, 1000)))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filter (pure)                                                           //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filter (pure)
+    //
 
     @test
     def filterPure01(): Bool & Impure =
@@ -203,9 +203,9 @@ namespace TestIterator {
         (1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3) == 4 :: 11 :: 17 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filter (impure)                                                         //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filter (impure)
+    //
 
     @test
     def filterImpure01(): Bool & Impure =
@@ -240,9 +240,9 @@ namespace TestIterator {
         (1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> List.toIterator |> Iterator.filter(i -> i > 3 as & Impure) == 4 :: 11 :: 17 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map (pure)                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map (pure)
+    //
 
     @test
     def mapPure01(): Bool & Impure =
@@ -280,9 +280,9 @@ namespace TestIterator {
             Iterator.map(i -> i > 2) == true :: true :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map (impure)                                                            //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map (impure)
+    //
 
     @test
     def mapImpure01(): Bool & Impure =
@@ -320,9 +320,9 @@ namespace TestIterator {
             Iterator.map(i -> i > 2 as & Impure) == true :: true :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foreach                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foreach
+    //
 
     @test
     def foreach01(): Bool & Impure =
@@ -338,9 +338,9 @@ namespace TestIterator {
             Iterator.foreach(x -> r := x);
         3 == deref r
 
-    /////////////////////////////////////////////////////////////////////////////
-    // lazyFilter                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // lazyFilter
+    //
 
     @test
     def lazyFilter01(): Bool & Impure =
@@ -375,9 +375,9 @@ namespace TestIterator {
         List.toIterator(1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> Iterator.lazyFilter(i -> i > 3) |> Iterator.toList == 4 :: 11 :: 17 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // lazyMap                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // lazyMap
+    //
 
     @test
     def lazyMap01(): Bool & Impure =
@@ -408,9 +408,9 @@ namespace TestIterator {
         List.toIterator(7 :: 8 :: Nil) |> Iterator.lazyMap(i -> i > 2) |> Iterator.toList == true :: true :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // replace                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // replace
+    //
 
     @test
     def replace01(): Bool & Impure =
@@ -453,9 +453,9 @@ namespace TestIterator {
             Iterator.replace(3, 4) |> Iterator.toList == 4 :: 4 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // append                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // append
+    //
 
     @test
     def append01(): Bool & Impure =
@@ -506,9 +506,9 @@ namespace TestIterator {
         Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // zip                                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // zip
+    //
 
     @test
     def zip01(): Bool & Impure =
@@ -547,9 +547,9 @@ namespace TestIterator {
         Iterator.zip(iterA, iterB) |> Iterator.toList == List.zip(List.range(0, 500), List.repeat(500, "b"))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // lazyZipWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // lazyZipWith
+    //
 
     @test
     def lazyZipWith01(): Bool & Impure =
@@ -589,9 +589,9 @@ namespace TestIterator {
             Iterator.toList == 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // zipWith                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // zipWith
+    //
 
     @test
     def zipWith01(): Bool & Impure =
@@ -630,9 +630,9 @@ namespace TestIterator {
         Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) == 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foldLeft                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foldLeft
+    //
 
     @test
     def foldLeft01(): Bool & Impure =
@@ -655,9 +655,9 @@ namespace TestIterator {
         Iterator.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 386
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // reduceLeft                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // reduceLeft
+    //
 
     @test
     def reduceLeft01(): Bool & Impure =
@@ -685,9 +685,9 @@ namespace TestIterator {
         Iterator.reduceLeft((a, b) -> a - b, iter) == Some(-8)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // takeWhile                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // takeWhile
+    //
 
     @test
     def takeWhile01(): Bool & Impure =
@@ -730,9 +730,9 @@ namespace TestIterator {
             Iterator.takeWhile(i -> i > 3) == 4 :: 6 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // dropWhile                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // dropWhile
+    //
 
     @test
     def dropWhile01(): Bool & Impure =

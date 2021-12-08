@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-/// 
-/// A fully polymorphic implementation of the IDE framework written in Flix.
-///
-/// Written by Magnus Madsen, Ondřej Lhoták.
-///
+//
+// A fully polymorphic implementation of the IDE framework written in Flix.
+//
+// Written by Magnus Madsen, Ondřej Lhoták.
+//
 namespace IDE {
 
     ///
@@ -58,9 +58,9 @@ namespace IDE {
         let apply = ide.apply;
         let compose = ide.compose;
 
-        ///
-        /// The core IDE Framework.
-        ///
+        //
+        // The core IDE Framework.
+        //
         let p = #{
             // nodes in a given procedure
             InProc(p, start) :- StartNode(p, start).
@@ -136,15 +136,14 @@ namespace IDE {
 }
 
 
-///
-/// We have now defined the IDE framework.
-///
-/// Next, we instantiate it with the constant propagation lattice.
-///
-
-///
-/// We begin by defining the lattice and its associated operations.
-///
+//
+// We have now defined the IDE framework.
+//
+// Next, we instantiate it with the constant propagation lattice.
+//
+//
+// We begin by defining the lattice and its associated operations.
+//
 namespace ConstantProp {
 
     ///            Top

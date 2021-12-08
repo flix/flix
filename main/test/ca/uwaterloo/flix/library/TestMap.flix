@@ -19,9 +19,9 @@ namespace TestMap {
     use ToString.toString;
     use Hash.hash;
 
-/////////////////////////////////////////////////////////////////////////////
-// size                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+//
+// size
+//
 @test
 def size01(): Bool = Map.size(Map#{}) == 0
 
@@ -40,15 +40,15 @@ def size05(): Bool = Map.size(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8}) == 4
 @test
 def size06(): Bool = Map.size(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8, 5 -> 10}) == 5
 
-/////////////////////////////////////////////////////////////////////////////
-// empty                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// empty
+//
 @test
 def empty01(): Bool = Map.empty(): Map[Unit, Unit] == Map#{}
 
-/////////////////////////////////////////////////////////////////////////////
-// singleton                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// singleton
+//
 @test
 def singleton01(): Bool = Map.singleton(1, 2) == Map#{1 -> 2}
 
@@ -58,9 +58,9 @@ def singleton02(): Bool = Map.singleton(3, -1) == Map#{3 -> -1}
 @test
 def singleton03(): Bool = Map.singleton(-99, -11) == Map#{-99 -> -11}
 
-/////////////////////////////////////////////////////////////////////////////
-// isEmpty                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isEmpty
+//
 @test
 def isEmpty01(): Bool = Map.isEmpty(Map#{}: Map[Unit, Unit])
 
@@ -76,9 +76,9 @@ def isEmpty04(): Bool = not Map.isEmpty(Map#{1 -> 2, 2 -> 4, 3 -> 6})
 @test
 def isEmpty05(): Bool = not Map.isEmpty(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8})
 
-/////////////////////////////////////////////////////////////////////////////
-// get                                                                     //
-/////////////////////////////////////////////////////////////////////////////
+//
+// get
+//
 @test
 def get01(): Bool = Map.get(2, Map#{}: Map[_, Unit]) == None
 
@@ -109,9 +109,9 @@ def get09(): Bool = Map.get(-2, Map#{2 -> 1, -2 -> 17, -1 -> -2}) == Some(17)
 @test
 def get10(): Bool = Map.get(-2, Map#{2 -> 1, 3 -> 17, -2 -> -2}) == Some(-2)
 
-/////////////////////////////////////////////////////////////////////////////
-// getWithDefault                                                          //
-/////////////////////////////////////////////////////////////////////////////
+//
+// getWithDefault
+//
 @test
 def getWithDefault01(): Bool = Map.getWithDefault(2, 34, Map#{}) == 34
 
@@ -142,9 +142,9 @@ def getWithDefault09(): Bool = Map.getWithDefault(-2, 34, Map#{2 -> 1, -2 -> 17,
 @test
 def getWithDefault10(): Bool = Map.getWithDefault(-2, 34, Map#{2 -> 1, 3 -> 17, -2 -> -2}) == -2
 
-/////////////////////////////////////////////////////////////////////////////
-// memberOf                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// memberOf
+//
 @test
 def memberOf01(): Bool = not Map.memberOf(2, Map#{}: Map[_, Unit])
 
@@ -175,9 +175,9 @@ def memberOf09(): Bool = Map.memberOf(-2, Map#{2 -> 1, -2 -> 17, -1 -> -2})
 @test
 def memberOf10(): Bool = Map.memberOf(-2, Map#{2 -> 1, 3 -> 17, -2 -> -2})
 
-/////////////////////////////////////////////////////////////////////////////
-// keysOf                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// keysOf
+//
 @test
 def keysOf01(): Bool = Map.keysOf(Map#{}: Map[Unit, Unit]) == Set#{}
 
@@ -196,9 +196,9 @@ def keysOf05(): Bool = Map.keysOf(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8}) == Set#{
 @test
 def keysOf06(): Bool = Map.keysOf(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8, 5 -> 10}) == Set#{1, 2, 3, 4, 5}
 
-/////////////////////////////////////////////////////////////////////////////
-// valuesOf                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// valuesOf
+//
 @test
 def valuesOf01(): Bool = Map.valuesOf(Map#{}: Map[Unit, Unit]) == Nil
 
@@ -220,9 +220,9 @@ def valuesOf06(): Bool = Map.valuesOf(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8, 5 -> 
 @test
 def valuesOf07(): Bool = Map.valuesOf(Map#{1 -> -11, 2 -> 4, 3 -> -5, 4 -> 7, 5 -> -5}) == -11 :: 4 :: -5 :: 7 :: -5 :: Nil
 
-/////////////////////////////////////////////////////////////////////////////
-// insert                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// insert
+//
 @test
 def insert01(): Bool = Map.insert(1, 3, Map#{}) == Map#{1 -> 3}
 
@@ -241,9 +241,9 @@ def insert05(): Bool = Map.insert(5, 1, Map#{1 -> 4, 5 -> -2}) == Map#{1 -> 4, 5
 @test
 def insert06(): Bool = Map.insert(4, -2, Map#{1 -> 4, 5 -> -2}) == Map#{1 -> 4, 5 -> -2, 4 -> -2}
 
-/////////////////////////////////////////////////////////////////////////////
-// insertWith                                                              //
-/////////////////////////////////////////////////////////////////////////////
+//
+// insertWith
+//
 @test
 def insertWith01(): Bool = Map.insertWith((v1, v2) -> v1 + v2, 1, 3, Map#{}) == Map#{1 -> 3}
 
@@ -262,9 +262,9 @@ def insertWith05(): Bool = Map.insertWith((v1, v2) -> v1 + v2, 5, 1, Map#{1 -> 4
 @test
 def insertWith06(): Bool = Map.insertWith((v1, v2) -> v1 + v2, 4, -2, Map#{1 -> 4, 5 -> -2}) == Map#{1 -> 4, 5 -> -2, 4 -> -2}
 
-/////////////////////////////////////////////////////////////////////////////
-// insertWithKey                                                           //
-/////////////////////////////////////////////////////////////////////////////
+//
+// insertWithKey
+//
 @test
 def insertWithKey01(): Bool = Map.insertWithKey((k, v1, v2) -> k + v1 + v2, 1, 3, Map#{}) == Map#{1 -> 3}
 
@@ -283,9 +283,9 @@ def insertWithKey05(): Bool = Map.insertWithKey((k, v1, v2) -> k + v1 + v2, 5, 1
 @test
 def insertWithKey06(): Bool = Map.insertWithKey((k, v1, v2) -> k + v1 + v2, 4, -2, Map#{1 -> 4, 5 -> -2}) == Map#{1 -> 4, 5 -> -2, 4 -> -2}
 
-/////////////////////////////////////////////////////////////////////////////
-// adjust                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// adjust
+//
 @test
 def adjust01(): Bool = Map.adjust(v -> 2*v, 1, Map#{}) == Map#{}
 
@@ -304,9 +304,9 @@ def adjust05(): Bool = Map.adjust(v -> 2*v, 5, Map#{1 -> 4, 5 -> -2}) == Map#{1 
 @test
 def adjust06(): Bool = Map.adjust(v -> 2*v, 4, Map#{1 -> 4, 5 -> -2}) == Map#{1 -> 4, 5 -> -2}
 
-/////////////////////////////////////////////////////////////////////////////
-// adjustWithKey                                                           //
-/////////////////////////////////////////////////////////////////////////////
+//
+// adjustWithKey
+//
 @test
 def adjustWithKey01(): Bool = Map.adjustWithKey((k, v) -> k+v, 1, Map#{}) == Map#{}
 
@@ -325,9 +325,9 @@ def adjustWithKey05(): Bool = Map.adjustWithKey((k, v) -> k+v, 5, Map#{1 -> 4, 5
 @test
 def adjustWithKey06(): Bool = Map.adjustWithKey((k, v) -> k+v, 4, Map#{1 -> 4, 5 -> -2}) == Map#{1 -> 4, 5 -> -2}
 
-/////////////////////////////////////////////////////////////////////////////
-// update                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// update
+//
 @test
 def update01(): Bool = Map.update(v -> if (v rem 2 != 0) Some(2*v) else None, 1, Map#{}) == Map#{}
 
@@ -355,9 +355,9 @@ def update08(): Bool = Map.update(v -> if (v rem 2 != 0) Some(2*v) else None, 5,
 @test
 def update09(): Bool = Map.update(v -> if (v rem 2 != 0) Some(2*v) else None, 4, Map#{1 -> 4, 5 -> -2}) == Map#{1 -> 4, 5 -> -2}
 
-/////////////////////////////////////////////////////////////////////////////
-// updateWithKey                                                           //
-/////////////////////////////////////////////////////////////////////////////
+//
+// updateWithKey
+//
 @test
 def updateWithKey01(): Bool = Map.updateWithKey((k, v) -> if (v rem 2 != 0) Some(k+2*v) else None, 1, Map#{}) == Map#{}
 
@@ -385,9 +385,9 @@ def updateWithKey08(): Bool = Map.updateWithKey((k, v) -> if (v rem 2 != 0) Some
 @test
 def updateWithKey09(): Bool = Map.updateWithKey((k, v) -> if (v rem 2 != 0) Some(k+2*v) else None, 4, Map#{1 -> 4, 5 -> -2}) == Map#{1 -> 4, 5 -> -2}
 
-/////////////////////////////////////////////////////////////////////////////
-// remove                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// remove
+//
 @test
 def remove01(): Bool = Map.remove(1, Map#{}: Map[_, Unit]) == Map#{}
 
@@ -418,9 +418,9 @@ def remove09(): Bool = Map.remove(2, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 ->
 @test
 def remove10(): Bool = Map.remove(8, Map#{6 -> 1, 2 -> 4, 8 -> 89}) == Map#{6 -> 1, 2 -> 4}
 
-/////////////////////////////////////////////////////////////////////////////
-// isSubmapOf                                                              //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isSubmapOf
+//
 @test
 def isSubmapOf01(): Bool = Map.isSubmapOf(Map#{}: Map[Unit, Unit], Map#{})
 
@@ -475,9 +475,9 @@ def isSubmapOf17(): Bool = not Map.isSubmapOf(Map#{2 -> 4, 3 -> 3}, Map#{1 -> 3,
 @test
 def isSubmapOf18(): Bool = not Map.isSubmapOf(Map#{2 -> 4, 1 -> 3, 8 -> 9}, Map#{1 -> 3, 2 -> 4})
 
-/////////////////////////////////////////////////////////////////////////////
-// isProperSubmapOf                                                        //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isProperSubmapOf
+//
 @test
 def isProperSubmapOf01(): Bool = not Map.isProperSubmapOf(Map#{}: Map[Unit, Unit], Map#{})
 
@@ -532,9 +532,9 @@ def isProperSubmapOf17(): Bool = not Map.isProperSubmapOf(Map#{2 -> 4, 3 -> 3}, 
 @test
 def isProperSubmapOf18(): Bool = not Map.isProperSubmapOf(Map#{2 -> 4, 1 -> 3, 8 -> 9}, Map#{1 -> 3, 2 -> 4})
 
-/////////////////////////////////////////////////////////////////////////////
-// find                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+//
+// find
+//
 @test
 def find01(): Bool = Map.find((k, v) -> k == v, Map#{}: Map[Unit, Unit]) == None
 
@@ -556,9 +556,9 @@ def find06(): Bool = Map.find((k, v) -> k == v, Map#{1 -> 2, 2 -> 2}) == Some((2
 @test
 def find07(): Bool = Map.find((k, v) -> k == v, Map#{1 -> 1, 2 -> 2}) == Some((1, 1))
 
-/////////////////////////////////////////////////////////////////////////////
-// findLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// findLeft
+//
 @test
 def findLeft01(): Bool = Map.findLeft((k, v) -> k == v, Map#{}: Map[Unit, Unit]) == None
 
@@ -580,9 +580,9 @@ def findLeft06(): Bool = Map.findLeft((k, v) -> k == v, Map#{1 -> 2, 2 -> 2}) ==
 @test
 def findLeft07(): Bool = Map.findLeft((k, v) -> k == v, Map#{1 -> 1, 2 -> 2}) == Some((1, 1))
 
-/////////////////////////////////////////////////////////////////////////////
-// findRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// findRight
+//
 @test
 def findRight01(): Bool = Map.findRight((k, v) -> k == v, Map#{}: Map[Unit, Unit]) == None
 
@@ -604,9 +604,9 @@ def findRight06(): Bool = Map.findRight((k, v) -> k == v, Map#{1 -> 2, 2 -> 2}) 
 @test
 def findRight07(): Bool = Map.findRight((k, v) -> k == v, Map#{1 -> 1, 2 -> 2}) == Some((2, 2))
 
-/////////////////////////////////////////////////////////////////////////////
-// filter                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// filter
+//
 @test
 def filter01(): Bool = Map.filter(v -> v rem 2 == 0, Map#{}: Map[Unit, _]) == Map#{}
 
@@ -628,9 +628,9 @@ def filter06(): Bool = Map.filter(v -> v rem 2 == 0, Map#{1 -> 8, 2 -> 3}) == Ma
 @test
 def filter07(): Bool = Map.filter(v -> v rem 2 == 0, Map#{1 -> -1, 2 -> -3}) == Map#{}
 
-/////////////////////////////////////////////////////////////////////////////
-// filterWithKey                                                           //
-/////////////////////////////////////////////////////////////////////////////
+//
+// filterWithKey
+//
 @test
 def filterWithKey01(): Bool = Map.filterWithKey((k, v) -> k == v, Map#{}: Map[Unit, Unit]) == Map#{}
 
@@ -652,9 +652,9 @@ def filterWithKey06(): Bool = Map.filterWithKey((k, v) -> k == v, Map#{1 -> 1, 2
 @test
 def filterWithKey07(): Bool = Map.filterWithKey((k, v) -> k == v, Map#{1 -> -1, 2 -> -3}) == Map#{}
 
-/////////////////////////////////////////////////////////////////////////////
-// map                                                                     //
-/////////////////////////////////////////////////////////////////////////////
+//
+// map
+//
 @test
 def map01(): Bool = Map.map(v -> 3*v, Map#{}: Map[Unit, Int32]) == Map#{}
 
@@ -670,9 +670,9 @@ def map04(): Bool = Map.map(v -> 3*v, Map#{2 -> -1, 5 -> 15, 11 -> -9}) == Map#{
 @test
 def map05(): Bool = Map.map(v -> 3*v, Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8}) == Map#{2 -> -3, 5 -> 45, 11 -> -27, 8 -> 24}
 
-/////////////////////////////////////////////////////////////////////////////
-// mapWithKey                                                              //
-/////////////////////////////////////////////////////////////////////////////
+//
+// mapWithKey
+//
 @test
 def mapWithKey01(): Bool = Map.mapWithKey((_, v) -> v, Map#{}: Map[Unit, Unit]) == Map#{}
 
@@ -689,9 +689,9 @@ def mapWithKey04(): Bool = Map.mapWithKey((k, v) -> k + v, Map#{2 -> -1, 5 -> 15
 def mapWithKey05(): Bool = Map.mapWithKey((k, v) -> k + v, Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8})
                                         == Map#{2 -> 1, 5 -> 20, 11 -> 2, 8 -> 16}
 
-/////////////////////////////////////////////////////////////////////////////
-// foldWithKey                                                             //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foldWithKey
+//
 @test
 def foldWithKey01(): Bool = Map.foldWithKey((k, s, v) -> k + s + v, 0, Map#{}) == 0
 
@@ -704,9 +704,9 @@ def foldWithKey03(): Bool = Map.foldWithKey((k, s, v) -> k + s + v, 0, Map#{1 ->
 @test
 def foldWithKey04(): Bool = Map.foldWithKey((k, s, v) -> k + s + v, 0, Map#{1 -> 2, 3 -> 4, 5 -> 6}) == 21
 
-/////////////////////////////////////////////////////////////////////////////
-// foldLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foldLeft
+//
 @test
 def foldLeft01(): Bool = Map.foldLeft((s, v) -> s + v, 0, Map#{}) == 0
 
@@ -719,9 +719,9 @@ def foldLeft03(): Bool = Map.foldLeft((s, v) -> s + v, 0, Map#{1 -> 2, 3 -> 4}) 
 @test
 def foldLeft04(): Bool = Map.foldLeft((s, v) -> s + v, 0, Map#{1 -> 2, 3 -> 4, 5 -> 6}) == 12
 
-/////////////////////////////////////////////////////////////////////////////
-// foldLeftWithKey                                                         //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foldLeftWithKey
+//
 @test
 def foldLeftWithKey01(): Bool = Map.foldLeftWithKey((s, k, v) -> k + s + v, 0, Map#{}) == 0
 
@@ -734,9 +734,9 @@ def foldLeftWithKey03(): Bool = Map.foldLeftWithKey((s, k, v) -> k + s + v, 0, M
 @test
 def foldLeftWithKey04(): Bool = Map.foldLeftWithKey((s, k, v) -> k + s + v, 0, Map#{1 -> 2, 3 -> 4, 5 -> 6}) == 21
 
-/////////////////////////////////////////////////////////////////////////////
-// foldRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foldRight
+//
 @test
 def foldRight01(): Bool = Map.foldRight((v, s) -> s + v, 0, Map#{}) == 0
 
@@ -749,9 +749,9 @@ def foldRight03(): Bool = Map.foldRight((v, s) -> s + v, 0, Map#{1 -> 2, 3 -> 4}
 @test
 def foldRight04(): Bool = Map.foldRight((v, s) -> s + v, 0, Map#{1 -> 2, 3 -> 4, 5 -> 6}) == 12
 
-/////////////////////////////////////////////////////////////////////////////
-// foldRightWithKey                                                        //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foldRightWithKey
+//
 @test
 def foldRightWithKey01(): Bool = Map.foldRightWithKey((k, v, s) -> k + s + v, 0, Map#{}) == 0
 
@@ -764,9 +764,9 @@ def foldRightWithKey03(): Bool = Map.foldRightWithKey((k, v, s) -> k + s + v, 0,
 @test
 def foldRightWithKey04(): Bool = Map.foldRightWithKey((k, v, s) -> k + s + v, 0, Map#{1 -> 2, 3 -> 4, 5 -> 6}) == 21
 
-/////////////////////////////////////////////////////////////////////////////
-// reduceLeft                                                              //
-/////////////////////////////////////////////////////////////////////////////
+//
+// reduceLeft
+//
 @test
 def reduceLeft01(): Bool = Map.reduceLeft((v1, v2) -> v1 - v2, Map#{}: Map[Int32, Int32]) == None
 
@@ -779,9 +779,9 @@ def reduceLeft03(): Bool = Map.reduceLeft((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 ->
 @test
 def reduceLeft04(): Bool = Map.reduceLeft((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3, 3 -> 4}) == Some(-5)
 
-/////////////////////////////////////////////////////////////////////////////
-// reduceLeftWithKey                                                       //
-/////////////////////////////////////////////////////////////////////////////
+//
+// reduceLeftWithKey
+//
 @test
 def reduceLeftWithKey01(): Bool = Map.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{}: Map[Int32, Int32]) == None
 
@@ -794,9 +794,9 @@ def reduceLeftWithKey03(): Bool = Map.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 
 @test
 def reduceLeftWithKey04(): Bool = Map.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2, 2 -> 3, 3 -> 4}) == Some((-4, -5))
 
-/////////////////////////////////////////////////////////////////////////////
-// reduceRight                                                             //
-/////////////////////////////////////////////////////////////////////////////
+//
+// reduceRight
+//
 @test
 def reduceRight01(): Bool = Map.reduceRight((v1, v2) -> v1 - v2, Map#{}: Map[Int32, Int32]) == None
 
@@ -809,9 +809,9 @@ def reduceRight03(): Bool = Map.reduceRight((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 
 @test
 def reduceRight04(): Bool = Map.reduceRight((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3, 3 -> 4}) == Some(3)
 
-/////////////////////////////////////////////////////////////////////////////
-// reduceRightWithKey                                                      //
-/////////////////////////////////////////////////////////////////////////////
+//
+// reduceRightWithKey
+//
 @test
 def reduceRightWithKey01(): Bool = Map.reduceRightWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{}: Map[Int32, Int32]) == None
 
@@ -824,9 +824,9 @@ def reduceRightWithKey03(): Bool = Map.reduceRightWithKey((k1, v1, k2, v2) -> (k
 @test
 def reduceRightWithKey04(): Bool = Map.reduceRightWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2, 2 -> 3, 3 -> 4}) == Some((2 , 3))
 
-/////////////////////////////////////////////////////////////////////////////
-// count                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// count
+//
 @test
 def count01(): Bool = Map.count((k, v) -> k == v, Map#{}: Map[Unit, Unit]) == 0
 
@@ -848,9 +848,9 @@ def count06(): Bool = Map.count((k, v) -> k == v, Map#{1 -> 2, 2 -> 2}) == 1
 @test
 def count07(): Bool = Map.count((k, v) -> k == v, Map#{1 -> 1, 2 -> 2}) == 2
 
-/////////////////////////////////////////////////////////////////////////////
-// exists                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// exists
+//
 @test
 def exists01(): Bool = not Map.exists((k, v) -> k == v, Map#{}: Map[Unit, Unit])
 
@@ -872,9 +872,9 @@ def exists06(): Bool = Map.exists((k, v) -> k == v, Map#{1 -> 2, 2 -> 2})
 @test
 def exists07(): Bool = Map.exists((k, v) -> k == v, Map#{1 -> 1, 2 -> 2})
 
-/////////////////////////////////////////////////////////////////////////////
-// forall                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// forall
+//
 @test
 def forall01(): Bool = Map.forall((k, v) -> k == v, Map#{}: Map[Unit, Unit])
 
@@ -896,9 +896,9 @@ def forall06(): Bool = not Map.forall((k, v) -> k == v, Map#{1 -> 2, 2 -> 2})
 @test
 def forall07(): Bool = Map.forall((k, v) -> k == v, Map#{1 -> 1, 2 -> 2})
 
-/////////////////////////////////////////////////////////////////////////////
-// union                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// union
+//
 @test
 def union01(): Bool = Map.union(Map#{}: Map[Unit, Unit], Map#{}) == Map#{}
 
@@ -948,9 +948,9 @@ def union15(): Bool = Map.union(Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}) == Map#{1 ->
 def union16(): Bool = Map.union(Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33})
                                    == Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22, 1 -> 2, 44 -> 33}
 
-/////////////////////////////////////////////////////////////////////////////
-// unionWith                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// unionWith
+//
 @test
 def unionWith01(): Bool = Map.unionWith((v1, v2) -> v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
 
@@ -1000,9 +1000,9 @@ def unionWith15(): Bool = Map.unionWith((v1, v2) -> v1 - v2, Map#{2 -> 7}, Map#{
 def unionWith16(): Bool = Map.unionWith((v1, v2) -> v1 - v2, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33})
                                    == Map#{2 -> -1, 11 -> 14, 9 -> 8, 15 -> 1, 1 -> 2, 44 -> 33}
 
-/////////////////////////////////////////////////////////////////////////////
-// unionWithKey                                                            //
-/////////////////////////////////////////////////////////////////////////////
+//
+// unionWithKey
+//
 @test
 def unionWithKey01(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
 
@@ -1052,9 +1052,9 @@ def unionWithKey15(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2
 def unionWithKey16(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33})
                                    == Map#{2 -> 1, 11 -> 14, 9 -> 8, 15 -> 16, 1 -> 2, 44 -> 33}
 
-/////////////////////////////////////////////////////////////////////////////
-// intersection                                                            //
-/////////////////////////////////////////////////////////////////////////////
+//
+// intersection
+//
 @test
 def intersection01(): Bool = Map.intersection(Map#{}: Map[Unit, Unit], Map#{}) == Map#{}
 
@@ -1104,9 +1104,9 @@ def intersection15(): Bool = Map.intersection(Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}
 def intersection16(): Bool = Map.intersection(Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33, 11 -> 1})
                                    == Map#{2 -> 7, 15 -> 22, 11 -> 14}
 
-/////////////////////////////////////////////////////////////////////////////
-// intersectionWith                                                        //
-/////////////////////////////////////////////////////////////////////////////
+//
+// intersectionWith
+//
 @test
 def intersectionWith01(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
 
@@ -1156,9 +1156,9 @@ def intersectionWith15(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{
 def intersectionWith16(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33, 11 -> 11})
                                    == Map#{2 -> -1, 15 -> 1, 11 -> 3}
 
-/////////////////////////////////////////////////////////////////////////////
-// intersectionWithKey                                                     //
-/////////////////////////////////////////////////////////////////////////////
+//
+// intersectionWithKey
+//
 @test
 def intersectionWithKey01(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
 
@@ -1208,9 +1208,9 @@ def intersectionWithKey15(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v
 def intersectionWithKey16(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33, 11 -> 17})
                                   == Map#{2 -> 1, 15 -> 16, 11 -> 8}
 
-/////////////////////////////////////////////////////////////////////////////
-// difference                                                              //
-/////////////////////////////////////////////////////////////////////////////
+//
+// difference
+//
 @test
 def difference01(): Bool = Map.difference(Map#{}: Map[Unit, Unit], Map#{}: Map[Unit, Unit]) == Map#{}
 
@@ -1260,9 +1260,9 @@ def difference15(): Bool = Map.difference(Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}) ==
 def difference16(): Bool = Map.difference(Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33})
                                   == Map#{11 -> 14, 9 -> 8}
 
-/////////////////////////////////////////////////////////////////////////////
-// differenceWith                                                          //
-/////////////////////////////////////////////////////////////////////////////
+//
+// differenceWith
+//
 @test
 def differenceWith01(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
 
@@ -1327,9 +1327,9 @@ def differenceWith20(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(
 def differenceWith21(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33})
                                   == Map#{11 -> 14, 9 -> 8, 15 -> 22}
 
-/////////////////////////////////////////////////////////////////////////////
-// differenceWithKey                                                       //
-/////////////////////////////////////////////////////////////////////////////
+//
+// differenceWithKey
+//
 @test
 def differenceWithKey01(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
 
@@ -1394,9 +1394,9 @@ def differenceWithKey20(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > 
 def differenceWithKey21(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33})
                                   == Map#{11 -> 14, 9 -> 8, 15 -> 37}
 
-/////////////////////////////////////////////////////////////////////////////
-// toSet                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toSet
+//
 @test
 def toSet01(): Bool = Map.toSet(Map#{}: Map[Unit, Unit]) == Set#{}
 
@@ -1409,9 +1409,9 @@ def toSet03(): Bool = Map.toSet(Map#{1 -> 2, 3 -> 4}) == Set#{(1, 2), (3, 4)}
 @test
 def toSet04(): Bool = Map.toSet(Map#{1 -> 2, 2 -> 2, 3 -> 4}) == Set#{(1, 2), (2, 2), (3, 4)}
 
-/////////////////////////////////////////////////////////////////////////////
-// toList                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toList
+//
 @test
 def toList01(): Bool = Map.toList(Map#{}: Map[Unit, Unit]) == Nil
 
@@ -1424,9 +1424,9 @@ def toList03(): Bool = Map.toList(Map#{1 -> 2, 3 -> 4}) == (1, 2) :: (3, 4) :: N
 @test
 def toList04(): Bool = Map.toList(Map#{1 -> 2, 2 -> 2, 3 -> 4}) == (1, 2) :: (2, 2) :: (3, 4) :: Nil
 
-/////////////////////////////////////////////////////////////////////////////
-// eq                                                                      //
-/////////////////////////////////////////////////////////////////////////////
+//
+// eq
+//
 @test
 def eq01(): Bool = Map#{}: Map[Unit, Unit] == Map#{}
 
@@ -1502,9 +1502,9 @@ def eq24(): Bool = Map#{1 -> 2, 3 -> 4, 5 -> 6} == Map#{5 -> 6, 3 -> 4, 1 -> 2}
 @test
 def eq25(): Bool = Map#{1 -> 2, 3 -> 4, 5 -> 6, 7 -> 8, 9 -> 10} == Map#{7 -> 8, 1 -> 2, 3 -> 4, 9 -> 10, 5 -> 6}
 
-/////////////////////////////////////////////////////////////////////////////
-// foreach                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foreach
+//
 
 @test
 def foreach01(): Bool & Impure =
@@ -1518,9 +1518,9 @@ def foreach02(): Bool & Impure =
     Map.foreach((k, _) -> r := k, Map#{1 -> "Hello World!"});
     1 == deref r
 
-/////////////////////////////////////////////////////////////////////////////
-// unfold                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// unfold
+//
 
 @test
 def unfold01(): Bool =
@@ -1546,9 +1546,9 @@ def unfold05(): Bool =
 def unfold06(): Bool =
     Map.unfold(s -> if (s >= 10) None else Some(s, Char.fromInt32(s + 48), s + 2), 0) == Map#{0 -> '0', 2 -> '2', 4 -> '4', 6 -> '6', 8 -> '8'}
 
-/////////////////////////////////////////////////////////////////////////////
-// unfoldWithIter                                                          //
-/////////////////////////////////////////////////////////////////////////////
+//
+// unfoldWithIter
+//
 
 @test
 def unfoldWithIter01(): Bool & Impure =
@@ -1634,9 +1634,9 @@ def unfoldWithIter06(): Bool & Impure =
         };
     Map.unfoldWithIter(step) == Map#{0 -> '0', 2 -> '2', 4 -> '4', 6 -> '6', 8 -> '8'}
 
-/////////////////////////////////////////////////////////////////////////////
-// inverse                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// inverse
+//
 
 @test
 def testInvert01(): Bool = Map.invert(Map#{1 -> "a"}) == Map#{"a" -> Set#{1}}
@@ -1656,9 +1656,9 @@ def testInvert05(): Bool = Map.invert(Map#{1 -> "a", 2 -> "a", 3 -> "a"}) == Map
 @test
 def testInvert06(): Bool = Map.invert(Map#{1 -> "a", 2 -> "b", 3 -> "a", 4 -> "b"}) == Map#{"a" -> Set#{1, 3}, "b" -> Set#{2, 4}}
 
-/////////////////////////////////////////////////////////////////////////////
-// query                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// query
+//
 
 @test
 def query01(): Bool =
@@ -1770,9 +1770,9 @@ def query18(): Bool =
         };
     Map.query(f, m) == ((1, 2, 2), 0) :: ((1, 2, 3), 1) :: Nil
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toString                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toString
+    //
 
     @test
     def toString01(): Bool =
@@ -1794,9 +1794,9 @@ def query18(): Bool =
     def toString05(): Bool =
         toString(Map#{2 -> Map#{1 -> 0, 2 -> 1}, 3 -> Map#{3 -> 2, 4 -> 92}}) == "Map#{2 -> Map#{1 -> 0, 2 -> 1}, 3 -> Map#{3 -> 2, 4 -> 92}}"
 
-    /////////////////////////////////////////////////////////////////////////////
-    // hash                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // hash
+    //
 
     @test
     def hash01(): Bool = hash(Map#{}: Map[Unit, Unit]) == hash(Map#{}: Map[Unit, Unit])
@@ -1813,9 +1813,9 @@ def query18(): Bool =
     @test
     def hash05(): Bool = hash(Map#{1 -> 'a', 2 -> 'b', 3 -> 'z', 4 -> 'x'}) == hash(Map#{1 -> 'a', 2 -> 'b', 3 -> 'z', 4 -> 'x'})
 
-    /////////////////////////////////////////////////////////////////////////////
-    // minimum                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // minimum
+    //
 
     @test
     def minimum01(): Bool = Map.minimum(Map#{}: Map[Int32, Int32]) == None
@@ -1829,9 +1829,9 @@ def query18(): Bool =
     @test
     def minimum04(): Bool = Map.minimum(Map#{1 -> 2, 2 -> 3, -44 -> 4, 5 -> 5, 0 -> 2}) == Some((-44, 4))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // minimumBy                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // minimumBy
+    //
 
     @test
     def minimumBy01(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
@@ -1845,9 +1845,9 @@ def query18(): Bool =
     @test
     def minimumBy04(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{1 -> 2, 2 -> 3, -44 -> 4, 5 -> 5, 0 -> 2}) == Some((-44, 4))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // maximum                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // maximum
+    //
 
     @test
     def maximum01(): Bool = Map.maximum(Map#{}: Map[Int32, Int32]) == None
@@ -1861,9 +1861,9 @@ def query18(): Bool =
     @test
     def maximum04(): Bool = Map.maximum(Map#{1 -> 2, 2 -> 3, 107 -> -107, 5 -> 5, 0 -> 2}) == Some((107, -107))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // maximumBy                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // maximumBy
+    //
 
     @test
     def maximumBy01(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
@@ -1878,9 +1878,9 @@ def query18(): Bool =
     def maximumBy04(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{1 -> 2, 2 -> 3, 107 -> -107, 5 -> 5, 0 -> 2}) == Some((107, -107))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toLazyList                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toLazyList
+    //
 
     @test
     def toLazyList01(): Bool =
@@ -1894,9 +1894,9 @@ def query18(): Bool =
     def toLazyList03(): Bool =
         Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toLazyList |> LazyList.toMap == Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toChain                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toChain
+    //
 
     @test
     def toChain01(): Bool =
@@ -1915,9 +1915,9 @@ def query18(): Bool =
         Map.toChain(Map#{1 -> 1, 2 -> 2, 3 -> 3}) == List.toChain((1, 1) :: (2, 2) :: (3, 3) :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toIterator
+    //
 
     @test
     def toIterator01(): Bool & Impure =

@@ -16,9 +16,9 @@
 
 use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar};
 
-/// The purpose of this phase is to lower row variables in searches and queries to array indices.
-/// This implies substituting named references to row variables with indices
-/// in where clauses, range queries and project operations.
+// The purpose of this phase is to lower row variables in searches and queries to array indices.
+// This implies substituting named references to row variables with indices
+// in where clauses, range queries and project operations.
 namespace Fixpoint {
     pub def lowerStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {
         case RamStmt.Insert(op) => RamStmt.Insert(lowerOp(op, Map#{}, 0))

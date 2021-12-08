@@ -16,9 +16,9 @@
 
 namespace TestLazyList {
 
-    /////////////////////////////////////////////////////////////////////////////
-    // Eq                                                                      //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // Eq
+    //
 
     @test
     def eq01(): Bool =
@@ -141,18 +141,18 @@ namespace TestLazyList {
         ENil != LCons(0, lazy ENil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // empty                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // empty
+    //
 
     @test
     def empty01(): Bool =
         (LazyList.empty()): LazyList[Int32] |> LazyList.toList == Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // isEmpty                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // isEmpty
+    //
 
     @test
     def isEmpty01(): Bool =
@@ -163,9 +163,9 @@ namespace TestLazyList {
         not (LazyList.range(0, 1000) |> LazyList.isEmpty)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // range                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // range
+    //
 
     @test
     def range01(): Bool =
@@ -196,9 +196,9 @@ namespace TestLazyList {
         LazyList.range(-100, 100) |> LazyList.toList == List.range(-100, 100)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // head                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // head
+    //
 
     @test
     def head01(): Bool =
@@ -215,9 +215,9 @@ namespace TestLazyList {
             and LazyList.head(l) == Some(0)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // tail                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // tail
+    //
 
     @test
     def tail01(): Bool =
@@ -268,9 +268,9 @@ namespace TestLazyList {
     	LazyList.range(0, 1000) |> LazyList.tail == LazyList.range(1, 1000)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // take                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // take
+    //
 
     @test
     def take01(): Bool =
@@ -297,9 +297,9 @@ namespace TestLazyList {
             |> LazyList.toList == List.range(0, 1)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // length                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // length
+    //
 
     @test
     def length01(): Bool =
@@ -310,9 +310,9 @@ namespace TestLazyList {
         LazyList.range(0, 100000) |> LazyList.length == 100000
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // reverse                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // reverse
+    //
 
     @test
     def reverse01(): Bool =
@@ -343,9 +343,9 @@ namespace TestLazyList {
         LazyList.range(-100, 1000) |> LazyList.reverse |> LazyList.toList == List.range(-100, 1000) |> List.reverse
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map (pure)                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map (pure)
+    //
 
     @test
     def mapPure01(): Bool =
@@ -364,9 +364,9 @@ namespace TestLazyList {
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.map(x -> x + 1) |> LazyList.toList == 2 :: 3 :: 4 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map (impure)                                                            //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map (impure)
+    //
 
     @test
     def mapImpure01(): Bool & Impure =
@@ -385,9 +385,9 @@ namespace TestLazyList {
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.map(x -> x + 1 as & Impure) |> LazyList.toList == 2 :: 3 :: 4 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map map                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map map
+    //
 
     @test
     def mapMap01(): Bool =
@@ -422,9 +422,9 @@ namespace TestLazyList {
             LazyList.toList == 4 :: 6 :: 8 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map map fusion                                                          //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map map fusion
+    //
 
     @test
     def mapFusion01(): Bool & Impure =
@@ -444,9 +444,9 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filter (pure)                                                           //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filter (pure)
+    //
 
     @test
     def filterPure01(): Bool =
@@ -473,9 +473,9 @@ namespace TestLazyList {
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.filter(x -> x > 100) |> LazyList.toList == Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filter (impure)                                                         //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filter (impure)
+    //
 
     @test
     def filterImpure01(): Bool & Impure =
@@ -502,9 +502,9 @@ namespace TestLazyList {
         (1 :: 2 :: 3 :: Nil) |> List.toLazyList |> LazyList.filter(x -> x > 100 as & Impure) |> LazyList.toList == Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filter filter                                                           //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filter filter
+    //
 
     @test
     def filterFilter01(): Bool =
@@ -539,9 +539,9 @@ namespace TestLazyList {
             LazyList.toList == 2 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filter filter fusion                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filter filter fusion
+    //
 
     @test
     def filterFusion01(): Bool & Impure =
@@ -561,9 +561,9 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map filter fusion                                                       //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map filter fusion
+    //
 
     @test
     def mapFilterFusion01(): Bool & Impure =
@@ -583,9 +583,9 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filter map fusion                                                       //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filter map fusion
+    //
 
     @test
     def filterThenMapFusion01(): Bool & Impure =
@@ -604,9 +604,9 @@ namespace TestLazyList {
         LazyList.toList as & Impure;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foldLeft                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foldLeft
+    //
 
     @test
     def foldLeft01(): Bool =
@@ -633,9 +633,9 @@ namespace TestLazyList {
     	LazyList.foldLeft((acc, x) -> x :: acc, Nil, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == 3 :: 2 :: 1 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foldRight                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foldRight
+    //
 
     @test
     def foldRight01(): Bool =
@@ -662,9 +662,9 @@ namespace TestLazyList {
     	LazyList.foldRight((x, acc) -> x :: acc, Nil, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == 1 :: 2 :: 3 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toArray                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toArray
+    //
 
     @test
     def toArray01(): Bool & Impure =
@@ -687,9 +687,9 @@ namespace TestLazyList {
     	LazyList.toArray(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == [1, 2, 3]
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toList                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toList
+    //
 
     @test
     def toList01(): Bool =
@@ -716,9 +716,9 @@ namespace TestLazyList {
     	LazyList.toList(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == 1 :: 2 :: 3 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toMap                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toMap
+    //
 
     @test
     def toMap01(): Bool = LazyList.toMap(ENil: LazyList[(Unit, Unit)]) == Map#{}
@@ -736,9 +736,9 @@ namespace TestLazyList {
     def toMap05(): Bool = LazyList.toMap(ECons((1, true), ECons((1, false), ENil))) == Map#{1 -> false}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toSet                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toSet
+    //
 
     @test
     def toSet01(): Bool =
@@ -761,9 +761,9 @@ namespace TestLazyList {
     	LazyList.toSet(LList(lazy LCons(1, lazy LList(lazy ECons(2, LList(lazy ECons(3, ENil))))))) == Set#{1, 2, 3}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // append                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // append
+    //
 
     @test
     def append01(): Bool =
@@ -790,9 +790,9 @@ namespace TestLazyList {
     	LazyList.append(ECons(4, ENil), ECons(1, LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) == ECons(4, ECons(1, ECons(2, ECons(3, ENil))))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // count                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // count
+    //
 
     @test
     def count01(): Bool =
@@ -827,9 +827,9 @@ namespace TestLazyList {
         LazyList.count(x -> x > 3, ECons(8, ECons(1, ENil))) == 1
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // drop                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // drop
+    //
 
     @test
     def drop01(): Bool =
@@ -868,9 +868,9 @@ namespace TestLazyList {
     	LazyList.range(0, 1000) |> LazyList.drop(500) == LazyList.range(500, 1000)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // flatten                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // flatten
+    //
 
     @test
     def flatten01(): Bool =
@@ -909,9 +909,9 @@ namespace TestLazyList {
     	LazyList.flatten(ECons((ECons(1, ECons(2, ENil))), ECons(ENil, ECons(ENil, ECons(LList(lazy LCons(3, lazy LCons(4, lazy ENil))), ENil))))) == ECons(1, ECons(2, ECons(3, ECons(4, ENil))))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // exists                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // exists
+    //
 
     @test
     def exists01(): Bool =
@@ -950,9 +950,9 @@ namespace TestLazyList {
         (1 :: 9 :: 3 :: Nil) |> List.toLazyList |> LazyList.exists(i -> i > 3) == true
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // forall                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // forall
+    //
 
     @test
     def forall01(): Bool =
@@ -995,9 +995,9 @@ namespace TestLazyList {
         (11 :: 9 :: 31 :: Nil) |> List.toLazyList |> LazyList.forall(i -> i > 3) == true
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // repeat                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // repeat
+    //
 
     @test
     def repeat01(): Bool =
@@ -1028,9 +1028,9 @@ namespace TestLazyList {
         LazyList.repeat("a") |> LazyList.take(3) == ECons("a", ECons("a", ECons("a", ENil)))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // from                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // from
+    //
 
     @test
     def from01(): Bool =
@@ -1069,9 +1069,9 @@ namespace TestLazyList {
     	LazyList.from(0) |> LazyList.take(2000) == LazyList.range(0, 2000)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // last                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // last
+    //
 
     @test
     def last01(): Bool =
@@ -1098,9 +1098,9 @@ namespace TestLazyList {
     	LazyList.range(0, 1000) |> LazyList.last == Some(999)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toIterator
+    //
 
     @test
     def toIter01(): Bool & Impure =
@@ -1119,9 +1119,9 @@ namespace TestLazyList {
     	LazyList.range(-100, 100) |> LazyList.toIterator |> Iterator.toList == List.range(-100, 100)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // zip                                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // zip
+    //
 
     @test
     def zip01(): Bool =
@@ -1160,9 +1160,9 @@ namespace TestLazyList {
         LazyList.zip(LazyList.range(1, 10), LazyList.range(1, 10)) |> LazyList.take(3) == ECons((1, 1), ECons((2, 2), ECons((3, 3), ENil)))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // zipWith (pure)                                                          //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // zipWith (pure)
+    //
 
     @test
     def zipWithPure01(): Bool =
@@ -1193,9 +1193,9 @@ namespace TestLazyList {
     	 LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil)))) |> LazyList.zipWith((x, y) -> x + y, LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil))))) == ECons(2, ECons(4, ENil))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // zipWith (impure)                                                        //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // zipWith (impure)
+    //
 
     @test
     def zipWithImpure01(): Bool & Impure =
@@ -1226,9 +1226,9 @@ namespace TestLazyList {
     	 LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil)))) |> LazyList.zipWith((x, y) -> x + y as & Impure, LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil))))) == ECons(2, ECons(4, ENil))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // zipWith zipWith                                                         //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // zipWith zipWith
+    //
 
     @test
     def zipWithZipWith01(): Bool =
@@ -1255,9 +1255,9 @@ namespace TestLazyList {
             LazyList.zipWith((x, y) -> x + y as & Impure, ECons(1, ECons(2, ECons(3, ENil)))) == ECons(3, ECons(6, ECons(9, ENil)))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // zipWith zipWith fusion                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // zipWith zipWith fusion
+    //
 
     @test
     def zipWithFusion01(): Bool & Impure =
@@ -1277,9 +1277,9 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // reduceLeft                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // reduceLeft
+    //
 
     @test
     def reduceLeft01(): Bool =
@@ -1306,9 +1306,9 @@ namespace TestLazyList {
         LazyList.reduceLeft((a, b) -> b - a, ECons(1, ECons(2, ECons(3, ECons(4, ENil))))) == Some(2)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // reduceRight                                                             //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // reduceRight
+    //
 
     @test
     def reduceRight01(): Bool =
@@ -1339,9 +1339,9 @@ namespace TestLazyList {
     	LazyList.reduceRight((a, b) -> a - b, LList(lazy ECons(1, LCons(2, lazy ECons(3, LList(lazy LCons(4, lazy ENil))))))) == Some(-2)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // minimum                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // minimum
+    //
 
     @test
     def minimum01(): Bool =
@@ -1364,9 +1364,9 @@ namespace TestLazyList {
         LazyList.minimum(LazyList.range(0, 99)) == Some(0)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // minimumBy                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // minimumBy
+    //
 
     @test
     def minimumBy01(): Bool =
@@ -1389,9 +1389,9 @@ namespace TestLazyList {
         LazyList.minimumBy((_, _) -> LessThan, LazyList.range(0, 99)) == Some(0)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // maximum                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // maximum
+    //
 
     @test
     def maximum01(): Bool =
@@ -1414,9 +1414,9 @@ namespace TestLazyList {
         LazyList.maximum(LazyList.range(0, 99)) == Some(98)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // maximumBy                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // maximumBy
+    //
 
     @test
     def maximumBy01(): Bool =
@@ -1439,9 +1439,9 @@ namespace TestLazyList {
         LazyList.maximumBy((_, _) -> LessThan, LazyList.range(0, 99)) == Some(98)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // flatMap (pure)                                                          //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // flatMap (pure)
+    //
 
     @test
     def flatMapPure01(): Bool =
@@ -1460,9 +1460,9 @@ namespace TestLazyList {
         LazyList.flatMap(i -> LazyList.repeat(i) |> LazyList.take(i), ECons(1, LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy ENil))))))) == ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil))))))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // flatMap (impure)                                                        //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // flatMap (impure)
+    //
 
     @test
     def flatMapImpure01(): Bool & Impure =
@@ -1481,9 +1481,9 @@ namespace TestLazyList {
         LazyList.flatMap(i -> LazyList.repeat(i) |> LazyList.take(i) as & Impure, ECons(1, LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy ENil))))))) == ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil))))))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // flatMap flatMap                                                         //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // flatMap flatMap
+    //
 
     @test
     def flatMapFlatMap01(): Bool =
@@ -1522,9 +1522,9 @@ namespace TestLazyList {
                     ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil))))))))))))))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // flatMap flatMap fusion                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // flatMap flatMap fusion
+    //
 
     @test
     def flatMapFusion01(): Bool & Impure =
@@ -1544,9 +1544,9 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // memberOf                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // memberOf
+    //
 
     @test
     def memberOf01(): Bool =
@@ -1589,9 +1589,9 @@ namespace TestLazyList {
         LazyList.memberOf(0, LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LCons(3, lazy LCons(0, lazy ENil)))))))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // replace                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // replace
+    //
 
     @test
     def replace01(): Bool =
@@ -1626,9 +1626,9 @@ namespace TestLazyList {
         LazyList.replace(3, 4, LList(lazy ECons(3, LList(lazy LCons(3, lazy LList(lazy LCons(3, lazy LList(lazy ENil)))))))) == ECons(4, ECons(4, ECons(4, ENil)))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // findLeft                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // findLeft
+    //
 
     @test
     def findLeft01(): Bool =
@@ -1659,9 +1659,9 @@ namespace TestLazyList {
         LazyList.findLeft(i -> i > 2, LList(lazy ECons(1, LList(lazy LCons(1, lazy LList(lazy LCons(4, lazy LList(lazy ENil)))))))) == Some(4)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // findRight                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // findRight
+    //
 
     @test
     def findRight01(): Bool =
@@ -1692,9 +1692,9 @@ namespace TestLazyList {
         LazyList.findRight(i -> i > 2, LList(lazy ECons(4, LList(lazy LCons(1, lazy LList(lazy LCons(1, lazy LList(lazy ENil)))))))) == Some(4)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // mapWithIndex (pure)                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // mapWithIndex (pure)
+    //
 
     @test
     def mapWithIndexPure01(): Bool =
@@ -1721,9 +1721,9 @@ namespace TestLazyList {
     	LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> LazyList.mapWithIndex((x, i) -> x + i) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // mapWithIndex (impure)                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // mapWithIndex (impure)
+    //
 
     @test
     def mapWithIndexImpure01(): Bool & Impure =
@@ -1750,9 +1750,9 @@ namespace TestLazyList {
     	LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> LazyList.mapWithIndex((x, i) -> x + i as & Impure) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // mapWithIndex mapWithIndex                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // mapWithIndex mapWithIndex
+    //
 
     @test
     def mapWithIndexMapWithIndex01(): Bool =
@@ -1779,9 +1779,9 @@ namespace TestLazyList {
             LazyList.mapWithIndex((x, i) -> x * i as & Impure) == ECons(0, ECons(3, ECons(10, ENil)))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // mapWithIndex mapWithIndex fusion                                        //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // mapWithIndex mapWithIndex fusion
+    //
 
     @test
     def mapWithIndexFusion01(): Bool & Impure =
@@ -1802,9 +1802,9 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // intercalate                                                             //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // intercalate
+    //
 
     @test
     def intercalate01(): Bool =
@@ -1875,9 +1875,9 @@ namespace TestLazyList {
                 ECons(100, ECons(101, ECons(102, ENil)))))))))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // intersperse                                                             //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // intersperse
+    //
 
     @test
     def intersperse01(): Bool =
@@ -1900,9 +1900,9 @@ namespace TestLazyList {
         LazyList.intersperse(-11, LList(lazy ECons(1, LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy ENil))))))))) == ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ECons(-11, ECons(4, ENil)))))))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // takeWhile (pure)                                                        //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // takeWhile (pure)
+    //
 
     @test
     def takeWhilePure01(): Bool =
@@ -1941,9 +1941,9 @@ namespace TestLazyList {
         LazyList.takeWhile(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(4, ECons(6, ENil))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // takeWhile (impure)                                                      //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // takeWhile (impure)
+    //
 
     @test
     def takeWhileImpure01(): Bool & Impure =
@@ -1982,9 +1982,9 @@ namespace TestLazyList {
         LazyList.takeWhile(i -> i > 3 as & Impure, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(4, ECons(6, ENil))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // takeWhile takeWhile                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // takeWhile takeWhile
+    //
 
     @test
     def takeWhileTakeWhile01(): Bool =
@@ -2011,9 +2011,9 @@ namespace TestLazyList {
             LazyList.takeWhile(i -> i < 5 as & Impure) == ECons(4, ENil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // takeWhile takeWhile fusion                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // takeWhile takeWhile fusion
+    //
 
     @test
     def takeWhileFusion01(): Bool & Impure =
@@ -2051,9 +2051,9 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // dropWhile (pure)                                                        //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // dropWhile (pure)
+    //
 
     @test
     def dropWhilePure01(): Bool =
@@ -2092,9 +2092,9 @@ namespace TestLazyList {
         LazyList.dropWhile(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // dropWhile (impure)                                                      //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // dropWhile (impure)
+    //
 
     @test
     def dropWhileImpure01(): Bool & Impure =
@@ -2133,9 +2133,9 @@ namespace TestLazyList {
         LazyList.dropWhile(i -> i > 3 as & Impure, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // dropWhile dropWhile                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // dropWhile dropWhile
+    //
 
     @test
     def dropWhileDropWhile01(): Bool =
@@ -2162,9 +2162,9 @@ namespace TestLazyList {
             LazyList.dropWhile(i -> i > 1 as & Impure) == ECons(1, ENil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // dropWhile dropWhile fusion                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // dropWhile dropWhile fusion
+    //
 
     @test
     def dropWhileFusion01(): Bool & Impure =
@@ -2202,9 +2202,9 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "a" :: "b" :: "b" :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // findMap                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // findMap
+    //
 
     @test
     def findMap01(): Bool =
@@ -2247,9 +2247,9 @@ namespace TestLazyList {
 		    LList(lazy LCons(10, lazy LList(lazy ENil)))))))))))))))) == Some(5)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filterMap (pure)                                                        //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filterMap (pure)
+    //
 
     @test
     def filterMapPure01(): Bool =
@@ -2293,9 +2293,9 @@ namespace TestLazyList {
 		    LList(lazy LCons(10, lazy LList(lazy ENil)))))))))))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filterMap (impure)                                                      //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filterMap (impure)
+    //
 
     @test
     def filterMapImpure01(): Bool & Impure =
@@ -2339,9 +2339,9 @@ namespace TestLazyList {
 		    LList(lazy LCons(10, lazy LList(lazy ENil)))))))))))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filterMap filterMap                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filterMap filterMap
+    //
 
     @test
     def filterMapFilterMap01(): Bool =
@@ -2368,9 +2368,9 @@ namespace TestLazyList {
             LazyList.filterMap(i -> if (i > 1)      Some(i * 3) else None as & Impure) == ECons(6, ECons(9, ENil))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filterMap filterMap fusion                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filterMap filterMap fusion
+    //
 
     @test
     def filterMapFusion01(): Bool & Impure =
@@ -2390,9 +2390,9 @@ namespace TestLazyList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toString                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toString
+    //
 
     @test
     def toString01(): Bool =
@@ -2403,9 +2403,9 @@ namespace TestLazyList {
         LazyList.toString(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == "1 :: 2 :: 3 :: ENil"
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // partition                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // partition
+    //
 
     @test
     def partition01(): Bool =
@@ -2454,9 +2454,9 @@ namespace TestLazyList {
                     ECons(-3, ECons(-5, ECons(1, ECons(2, ECons(1, ENil))))))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // span                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // span
+    //
 
     @test
     def span01(): Bool =
@@ -2505,9 +2505,9 @@ namespace TestLazyList {
                     ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // sum                                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // sum
+    //
 
     @test
     def sum01(): Bool =
@@ -2538,9 +2538,9 @@ namespace TestLazyList {
         List.range(1, 101) |> List.toLazyList |> LazyList.sum == 5050
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // order                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // order
+    //
 
     @test
     def order01(): Bool =

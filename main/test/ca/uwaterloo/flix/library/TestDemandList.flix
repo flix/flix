@@ -22,9 +22,9 @@ namespace TestDemandList {
         head(l2)
 */
 
-    /////////////////////////////////////////////////////////////////////////////
-    // isEmpty                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // isEmpty
+    //
 
     @test
     def isEmpty01(): Bool =
@@ -35,9 +35,9 @@ namespace TestDemandList {
         not (List.toDemandList(1 :: Nil) |> DemandList.isEmpty)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toDemandList & toList                                                       //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toDemandList & toList
+    //
 
     @test
     def toDemandList01(): Bool =
@@ -58,9 +58,9 @@ namespace TestDemandList {
             DemandList.toList == List.range(-1000, 1000)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // range                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // range
+    //
 
     @test
     def range01(): Bool =
@@ -91,9 +91,9 @@ namespace TestDemandList {
         DemandList.range(-100, 100) |> DemandList.toList == List.range(-100, 100)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map (pure)                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map (pure)
+    //
 
     @test
     def mapPure01(): Bool =
@@ -112,9 +112,9 @@ namespace TestDemandList {
         (1 :: 2 :: 3 :: Nil) |> List.toDemandList |> DemandList.map(x -> x + 1) |> DemandList.toList == 2 :: 3 :: 4 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map (impure)                                                            //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map (impure)
+    //
 
     @test
     def mapImpure01(): Bool & Impure =
@@ -133,9 +133,9 @@ namespace TestDemandList {
         (1 :: 2 :: 3 :: Nil) |> List.toDemandList |> DemandList.map(x -> x + 1 as & Impure) |> DemandList.toList == 2 :: 3 :: 4 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map map                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map map
+    //
 
     @test
     def mapMap01(): Bool =
@@ -154,9 +154,9 @@ namespace TestDemandList {
         (1 :: 2 :: 3 :: Nil) |> List.toDemandList |> DemandList.map(x -> x + 1 as & Impure) |> DemandList.map(x -> x * 2 as & Impure) |> DemandList.toList == 4 :: 6 :: 8 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map map fusion                                                          //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map map fusion
+    //
 
     @test
     def mapFusion01(): Bool & Impure =
@@ -176,9 +176,9 @@ namespace TestDemandList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filter (pure)                                                           //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filter (pure)
+    //
 
     @test
     def filterPure01(): Bool =
@@ -205,9 +205,9 @@ namespace TestDemandList {
         (1 :: 2 :: 3 :: Nil) |> List.toDemandList |> DemandList.filter(x -> x > 100) |> DemandList.toList == Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filter (impure)                                                         //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filter (impure)
+    //
 
     @test
     def filterImpure01(): Bool & Impure =
@@ -234,9 +234,9 @@ namespace TestDemandList {
         (1 :: 2 :: 3 :: Nil) |> List.toDemandList |> DemandList.filter(x -> x > 100 as & Impure) |> DemandList.toList == Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filter filter                                                           //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filter filter
+    //
 
     @test
     def filterFilter01(): Bool =
@@ -255,9 +255,9 @@ namespace TestDemandList {
         (1 :: 2 :: 3 :: Nil) |> List.toDemandList |> DemandList.filter(x -> x > 1 as & Impure) |> DemandList.filter(x -> x < 3 as & Impure) |> DemandList.toList == 2 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filter filter fusion                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filter filter fusion
+    //
 
     @test
     def filterFusion01(): Bool & Impure =
@@ -277,9 +277,9 @@ namespace TestDemandList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map filter fusion                                                       //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map filter fusion
+    //
 
     @test
     def mapFilterFusion01(): Bool & Impure =
@@ -299,9 +299,9 @@ namespace TestDemandList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filter map fusion                                                       //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filter map fusion
+    //
 
     @test
     def filterMapFusion01(): Bool & Impure =
@@ -321,9 +321,9 @@ namespace TestDemandList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foldLeft                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foldLeft
+    //
 
     @test
     def foldLeft01(): Bool =
@@ -346,9 +346,9 @@ namespace TestDemandList {
     	(1 :: 2 :: 3 :: Nil) |> List.toDemandList |> DemandList.foldLeft((acc, x) -> x :: acc, Nil) == 3 :: 2 :: 1 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foldRight                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foldRight
+    //
 
     @test
     def foldRight01(): Bool =
@@ -371,9 +371,9 @@ namespace TestDemandList {
     	(1 :: 2 :: 3 :: Nil) |> List.toDemandList |> DemandList.foldRight((x, acc) -> x :: acc, Nil) == 1 :: 2 :: 3 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // take                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // take
+    //
 
     @test
     def take01(): Bool =
@@ -400,9 +400,9 @@ namespace TestDemandList {
             |> DemandList.toList == List.range(0, 1)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // drop                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // drop
+    //
 
     @test
     def drop01(): Bool =
@@ -453,9 +453,9 @@ namespace TestDemandList {
         (1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> List.toDemandList |> DemandList.drop(4) |>  DemandList.toList == 5 :: 6 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // append                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // append
+    //
 
     @test
     def append01(): Bool =
@@ -490,9 +490,9 @@ namespace TestDemandList {
         DemandList.append(List.toDemandList(1 :: Nil), List.toDemandList(2 :: 3 :: Nil)) |> DemandList.toList == 1 :: 2 :: 3 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // repeat                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // repeat
+    //
 
     @test
     def repeat01(): Bool =
@@ -523,9 +523,9 @@ namespace TestDemandList {
         DemandList.repeat("a") |> DemandList.take(3) |> DemandList.toList == "a" :: "a" :: "a" :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // flatMap (pure)                                                          //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // flatMap (pure)
+    //
 
     @test
     def flatMapPure01(): Bool =
@@ -552,9 +552,9 @@ namespace TestDemandList {
         List.toDemandList(2 :: 3 :: Nil) |> DemandList.flatMap(i -> DemandList.range(i, i + 2)) |> DemandList.toList == 2 :: 3 :: 3 :: 4 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // flatMap (impure)                                                        //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // flatMap (impure)
+    //
 
     @test
     def flatMapImpure01(): Bool & Impure =
@@ -581,9 +581,9 @@ namespace TestDemandList {
         List.toDemandList(2 :: 3 :: Nil) |> DemandList.flatMap(i -> DemandList.range(i, i + 2) as & Impure) |> DemandList.toList == 2 :: 3 :: 3 :: 4 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // flatMap flatMap                                                         //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // flatMap flatMap
+    //
 
     @test
     def flatMapFlatMap01(): Bool =
@@ -614,9 +614,9 @@ namespace TestDemandList {
         DemandList.toList == 1 :: 2 :: 2 :: 2 :: 2 :: 3 :: 3 :: 3 :: 3 :: 3 :: 3 :: 3 :: 3 :: 3 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // flatMap flatMap fusion                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // flatMap flatMap fusion
+    //
 
     @test
     def flatMapFusion01(): Bool & Impure =
@@ -638,9 +638,9 @@ namespace TestDemandList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // exists                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // exists
+    //
 
     @test
     def exists01(): Bool =
@@ -679,9 +679,9 @@ namespace TestDemandList {
         (1 :: 9 :: 3 :: Nil) |> List.toDemandList |> DemandList.exists(i -> i > 3)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // forall                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // forall
+    //
 
     @test
     def forall01(): Bool =
@@ -724,9 +724,9 @@ namespace TestDemandList {
         (11 :: 9 :: 31 :: Nil) |> List.toDemandList |> DemandList.forall(i -> i > 3)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // takeWhile (pure)                                                        //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // takeWhile (pure)
+    //
 
     @test
     def takeWhilePure01(): Bool =
@@ -761,9 +761,9 @@ namespace TestDemandList {
         DemandList.takeWhile(i -> i > 3, List.toDemandList(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) |> DemandList.toList == 4 :: 6 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // takeWhile (impure)                                                      //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // takeWhile (impure)
+    //
 
     @test
     def takeWhileImpure01(): Bool & Impure =
@@ -798,9 +798,9 @@ namespace TestDemandList {
         DemandList.takeWhile(i -> i > 3 as & Impure, List.toDemandList(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) |> DemandList.toList == 4 :: 6 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // takeWhile takeWhile                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // takeWhile takeWhile
+    //
 
     @test
     def takeWhileTakeWhile01(): Bool =
@@ -819,9 +819,9 @@ namespace TestDemandList {
         List.toDemandList(4 :: 5 :: 1 :: Nil) |> DemandList.takeWhile(i -> i > 3 as & Impure) |> DemandList.takeWhile(i -> i < 5 as & Impure) |> DemandList.toList == 4 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // takeWhile takeWhile fusion                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // takeWhile takeWhile fusion
+    //
 
     @test
     def takeWhileTakeWhileFusion01(): Bool & Impure =
@@ -859,9 +859,9 @@ namespace TestDemandList {
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // dropWhile (pure)                                                        //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // dropWhile (pure)
+    //
 
     @test
     def dropWhilePure01(): Bool =
@@ -896,9 +896,9 @@ namespace TestDemandList {
         DemandList.dropWhile(i -> i > 3, List.toDemandList(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) |> DemandList.toList == -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // dropWhile (impure)                                                      //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // dropWhile (impure)
+    //
 
     @test
     def dropWhileImpure01(): Bool & Impure =
@@ -933,9 +933,9 @@ namespace TestDemandList {
         DemandList.dropWhile(i -> i > 3 as & Impure, List.toDemandList(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) |> DemandList.toList == -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // dropWhile dropWhile                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // dropWhile dropWhile
+    //
 
     @test
     def dropWhileDropWhile01(): Bool =
@@ -954,9 +954,9 @@ namespace TestDemandList {
          List.toDemandList(4 :: 5 :: 1 :: Nil) |> DemandList.dropWhile(i -> i < 5 as & Impure) |> DemandList.dropWhile(i -> i > 1 as & Impure) |> DemandList.toList == 1 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // dropWhile dropWhile fusion                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // dropWhile dropWhile fusion
+    //
 
     @test
     def dropWhileDropWhileFusion01(): Bool & Impure =
@@ -994,9 +994,9 @@ namespace TestDemandList {
         List.reverse(deref l) == ("a" :: "a" :: "b" :: "b" :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // sum                                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // sum
+    //
 
     @test
     def sum01(): Bool =

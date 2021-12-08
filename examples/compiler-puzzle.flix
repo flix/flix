@@ -3,7 +3,7 @@
 /// languages can be compiled to what target languages?
 def main(_args: Array[String]): Int32 & Impure =
     let facts = #{
-        /// We have the following interpreters and compilers:
+        // We have the following interpreters and compilers:
         Interpreter("x86").
         Compiler("Scala", "x86", "MiniScala").
         Compiler("MiniScala", "C++", "C++").

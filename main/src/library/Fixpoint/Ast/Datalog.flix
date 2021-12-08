@@ -36,13 +36,13 @@ namespace Fixpoint/Ast {
                 use Fixpoint/Ram.toDenotation;
                 use Fixpoint.commaSeparate;
                 let sb = StringBuilder.new();
-                Map.foreach(ramSym -> rel -> match toDenotation(ramSym) {
+                Map.foreach(ramSym -> relation -> match toDenotation(ramSym) {
                     case Relational => Map.foreach(match Tuple(tuple) -> _ -> {
                         StringBuilder.appendLine!(sb, "${ramSym}(${commaSeparate(tuple)}).")
-                    }, rel)
-                    case Latticenal(_) => Map.foreach(match Tuple(tuple) -> lat -> {
-                        StringBuilder.appendLine!(sb, "${ramSym}(${commaSeparate(tuple)}; ${lat}).")
-                    }, rel)
+                    }, relation)
+                    case Latticenal(_) => Map.foreach(match Tuple(tuple) -> lattice -> {
+                        StringBuilder.appendLine!(sb, "${ramSym}(${commaSeparate(tuple)}; ${lattice}).")
+                    }, relation)
                 }, db);
                 StringBuilder.toString(sb)
             case Join(d1, d2) =>

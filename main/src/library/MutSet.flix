@@ -281,7 +281,7 @@ namespace MutSet {
 
     ///
     /// Returns a pair of mutable sets `(s1, s2)` such that:
-    //
+    ///
     /// `s1` contains all elements of the mutable set `s` that satisfy the predicate function `f`.
     /// `s2` contains all elements of teh mutable set `s` that do not satisfy the predicate function `f`.
     ///

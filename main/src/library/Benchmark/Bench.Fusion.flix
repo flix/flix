@@ -8,9 +8,9 @@ use Benchmark.defBenchmark;
 /// https://github.com/biboudis/streamalg/blob/master/src/main/java/benchmarks/
 ///
 
-///////////////////////////////////////////////////////////////////////////////
-/// length                                                                  ///
-///////////////////////////////////////////////////////////////////////////////
+//
+/// length
+//
 pub def listLength(l: Array[Int32]): Benchmark =
     defBenchmark("List.length", () -> {
         l |>
@@ -32,9 +32,9 @@ pub def streamLength(l: Array[Int32]): Benchmark =
         Stream.length
     })
 
-///////////////////////////////////////////////////////////////////////////////
-/// filter length                                                           ///
-///////////////////////////////////////////////////////////////////////////////
+//
+/// filter length
+//
 pub def listFilterLength(l: Array[Int32]): Benchmark =
     defBenchmark("List.filterLength", () -> {
         l |>
@@ -59,9 +59,9 @@ pub def streamFilterLength(l: Array[Int32]): Benchmark =
         Stream.length
     } as & Pure)
 
-///////////////////////////////////////////////////////////////////////////////
-/// filter map length                                                       ///
-///////////////////////////////////////////////////////////////////////////////
+//
+/// filter map length
+//
 pub def listFilterMapLength(l: Array[Int32]): Benchmark =
     defBenchmark("List.filterMapLength", () -> {
         l |>
@@ -89,9 +89,9 @@ pub def streamFilterMapLength(l: Array[Int32]): Benchmark =
         Stream.length
     } as & Pure)
 
-///////////////////////////////////////////////////////////////////////////////
-/// sum                                                                     ///
-///////////////////////////////////////////////////////////////////////////////
+//
+/// sum
+//
 pub def listSum(l: Array[Int32]): Benchmark =
     defBenchmark("List.sum", () -> {
         l |>
@@ -113,9 +113,9 @@ pub def streamSum(l: Array[Int32]): Benchmark =
         Stream.sum
     } as & Pure)
 
-///////////////////////////////////////////////////////////////////////////////
-/// filter sum                                                              ///
-///////////////////////////////////////////////////////////////////////////////
+//
+/// filter sum
+//
 pub def listFilterSum(l: Array[Int32]): Benchmark =
     defBenchmark("List.filterSum", () -> {
         l |>
@@ -140,9 +140,9 @@ pub def streamFilterSum(l: Array[Int32]): Benchmark =
         Stream.sum
     } as & Pure)
 
-///////////////////////////////////////////////////////////////////////////////
-/// filter map sum                                                          ///
-///////////////////////////////////////////////////////////////////////////////
+//
+/// filter map sum
+//
 pub def listFilterMapSum(l: Array[Int32]): Benchmark =
     defBenchmark("List.filterMapSum", () -> {
         l |>
@@ -170,9 +170,9 @@ pub def streamFilterMapSum(l: Array[Int32]): Benchmark =
         Stream.sum
     } as & Pure)
 
-///////////////////////////////////////////////////////////////////////////////
-/// filter8                                                                 ///
-///////////////////////////////////////////////////////////////////////////////
+//
+/// filter8
+//
 pub def listFilter8(l: Array[Int32]): Benchmark =
     defBenchmark("List.filter8", () -> {
         l |>
@@ -218,9 +218,9 @@ pub def streamFilter8(l: Array[Int32]): Benchmark =
         Stream.length
     } as & Pure)
 
-///////////////////////////////////////////////////////////////////////////////
-/// map8                                                                    ///
-///////////////////////////////////////////////////////////////////////////////
+//
+/// map8
+//
 pub def listMap8(l: Array[Int32]): Benchmark =
     defBenchmark("List.map8", () -> {
         l |>
@@ -266,9 +266,9 @@ pub def streamMap8(l: Array[Int32]): Benchmark =
         Stream.length
     } as & Pure)
 
-///////////////////////////////////////////////////////////////////////////////
-/// flatMap take sum                                                        ///
-///////////////////////////////////////////////////////////////////////////////
+//
+/// flatMap take sum
+//
 pub def listFlatMapTakeSum(l: Array[Int32]): Benchmark =
     let l2 = List.range(1, 10);
     defBenchmark("List.flatMapTakeSum", () -> {
@@ -299,9 +299,9 @@ pub def streamFlatMapTakeSum(l: Array[Int32]): Benchmark =
         Stream.sum
     } as & Pure)
 
-///////////////////////////////////////////////////////////////////////////////
-/// cartesian                                                               ///
-///////////////////////////////////////////////////////////////////////////////
+//
+/// cartesian
+//
 pub def listCartesian(l: Array[Int32]): Benchmark =
     let l2 = List.range(1, 10);
     defBenchmark("List.cartesian", () -> {
@@ -329,9 +329,9 @@ pub def streamCartesian(l: Array[Int32]): Benchmark =
         Stream.sum
     } as & Pure)
 
-///////////////////////////////////////////////////////////////////////////////
-/// Initial Input                                                           ///
-///////////////////////////////////////////////////////////////////////////////
+//
+/// Initial Input
+//
 
 ///
 /// Returns a list of `n` concatenated lists with elements from `1` to `1_000`.
@@ -340,9 +340,9 @@ pub def input(n: Int32): Array[Int32] & Impure =
     Array.range(1, n) |>
     Array.flatMap(_ -> Array.range(1, 1_000))
 
-///////////////////////////////////////////////////////////////////////////////
-/// Biboudis Suite                                                          ///
-///////////////////////////////////////////////////////////////////////////////
+//
+/// Biboudis Suite
+//
 pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
     let l = input(n);
     [

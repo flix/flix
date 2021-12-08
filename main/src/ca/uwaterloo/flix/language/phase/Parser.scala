@@ -637,7 +637,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRegion | LetMatch | LetMatchStar | LetRecDef |LetUse | LetImport | IfThenElse | Reify | ReifyBool |
+      LetRegion | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
         ReifyType | ReifyEff | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
@@ -988,7 +988,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def QName: Rule1[ParsedAst.Expression.QName] = rule {
-      SP ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Expression.QName
+      SP ~ Names.NotReservedVar ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Expression.QName
     }
 
     def Hole: Rule1[ParsedAst.Expression.Hole] = {
@@ -1618,8 +1618,17 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def QualifiedType: Rule1[Name.QName] = UpperCaseQName
 
+    def ReservedDefinitions: Rule0 = rule {
+      "inline" | "lawless" | "override" | "pub" | "sealed" | "scoped" | "unlawful" |
+        "namespace" | "def" | "law" | "enum" | "opaque" | "type" | "rel" | "lat" | "class" | "instance"
+    }
+
+    def NotReservedVar: Rule0 = rule {
+      !(ReservedDefinitions ~ WS | Parser.this.Annotation)
+    }
+
     def Variable: Rule1[Name.Ident] = rule {
-      LowerCaseName | Wildcard | GreekName | MathName
+      NotReservedVar ~ (LowerCaseName | Wildcard | GreekName | MathName)
     }
 
     def JavaIdentifier: Rule1[String] = rule {
@@ -1668,8 +1677,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     quiet(oneOrMore(" " | "\t" | NewLine | Comment))
   }
 
+  def WSNoComment: Rule0 = rule {
+    quiet(oneOrMore(" " | "\t" | NewLine))
+  }
+
   def optWS: Rule0 = rule {
     quiet(optional(WS))
+  }
+
+  def optWSNoComment: Rule0 = rule {
+    quiet(optional(WSNoComment))
   }
 
   def NewLine: Rule0 = rule {
@@ -1684,19 +1701,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     * Optionally a parses a documentation comment.
     */
   def Documentation: Rule1[ParsedAst.Doc] = {
-    // Matches real whitespace.
-    def PureWS: Rule0 = rule {
-      quiet(zeroOrMore(" " | "\t" | NewLine))
-    }
-
     // Matches triple dashed comments.
-    def TripleSlash: Rule1[Seq[String]] = rule {
-      oneOrMore(PureWS ~ atomic("///") ~ (capture(zeroOrMore(!NewLine ~ ANY)) ~ (NewLine | EOI)))
+    def TripleSlashComment: Rule1[Seq[String]] = rule {
+      oneOrMore(optWSNoComment ~ atomic("///") ~ (capture(zeroOrMore(!NewLine ~ ANY)) ~ (NewLine | EOI)))
     }
 
     // Optionally matches a triple dashed comment and then any whitespace.
     rule {
-      SP ~ optional(TripleSlash) ~ SP ~ optWS ~> (
+      optWS ~ SP ~ optional(TripleSlashComment) ~ SP ~ optWS ~> (
         (sp1: SourcePosition, o: Option[Seq[String]], sp2: SourcePosition) => o match {
           case None => ParsedAst.Doc(sp1, Seq.empty, sp2)
           case Some(lines) => ParsedAst.Doc(sp1, lines, sp2)
@@ -1716,16 +1728,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       * Parses a single line comment.
       */
     def SingleLineComment: Rule0 = rule {
-      "//" ~ zeroOrMore(!NewLine ~ ANY) ~ (NewLine | EOI)
+      !atomic("///") ~ atomic("//") ~ zeroOrMore(!NewLine ~ ANY) ~ (NewLine | EOI)
     }
 
     /**
       * Parses a multi line start comment.
       */
     def MultiLineComment: Rule0 = {
-      def SlashStar: Rule0 = rule("/*")
+      def SlashStar: Rule0 = rule(atomic("/*"))
 
-      def StarSlash: Rule0 = rule("*/")
+      def StarSlash: Rule0 = rule(atomic("*/"))
 
       rule {
         SlashStar ~ zeroOrMore(!StarSlash ~ ANY) ~ StarSlash

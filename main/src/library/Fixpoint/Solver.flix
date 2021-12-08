@@ -425,8 +425,8 @@ namespace Fixpoint {
             let vs = f(t);
             let arity = Array.length(vs);
             let ramSym = RamSym.Full(relName, arity, Denotation.Relational);
-            let rel = MutMap.getOrElsePut!(ramSym, MutMap.empty(), db);
-            MutMap.put!(Tuple(vs), default, rel)
+            let relation = MutMap.getOrElsePut!(ramSym, MutMap.empty(), db);
+            MutMap.put!(Tuple(vs), default, relation)
         }, (), ts);
         toModel(db)
 
@@ -568,19 +568,19 @@ namespace Fixpoint {
                 }
                 case _ => LessThan
             };
-            Map.queryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
+            Map.queryWith(query, ramSym -> relation -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
-                    Map.foreach(match Tuple(tuple) -> _ -> MutList.push!(f(tuple), pFacts), rel)
+                    Map.foreach(match Tuple(tuple) -> _ -> MutList.push!(f(tuple), pFacts), relation)
                 case Denotation.Latticenal(_) =>
-                    Map.foreach(match Tuple(tuple) -> lat -> {
+                    Map.foreach(match Tuple(tuple) -> lattice -> {
                         let vs = Array.init(i -> {
                             if (i < Array.length(tuple))
                                 tuple[i]
                             else
-                                lat
+                                lattice
                         }, Array.length(tuple) + 1);
                         MutList.push!(f(vs), pFacts)
-                    }, rel)
+                    }, relation)
             }, db);
             MutList.toArray(pFacts)
         case Join(d1, d2) => Array.append(factsOf(f, p, d1), factsOf(f, p, d2))

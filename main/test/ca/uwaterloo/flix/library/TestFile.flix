@@ -20,9 +20,9 @@ namespace TestFile {
         isWritable, isExecutable, readLines, readLinesWith, read, readWith,
         readLinesIter, readLinesIterWith};
 
-    /////////////////////////////////////////////////////////////////////////////
-    // exists                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // exists
+    //
 
     @test
     def testExists01(): Bool & Impure =
@@ -32,9 +32,9 @@ namespace TestFile {
     def testExists02(): Bool & Impure =
         exists("./fakeREADME.md") == Ok(false)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // isDirectory                                                             //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // isDirectory
+    //
 
     @test
     def testIsDirectory01(): Bool & Impure =
@@ -44,9 +44,9 @@ namespace TestFile {
     def testIsDirectory02(): Bool & Impure =
         isDirectory("./README.md") == Ok(false)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // isRegularFile                                                           //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // isRegularFile
+    //
 
     @test
     def testIsRegularFile01(): Bool & Impure =
@@ -56,9 +56,9 @@ namespace TestFile {
     def testIsRegularFile02(): Bool & Impure =
         isRegularFile("./README.md") == Ok(true)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // isReadable                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // isReadable
+    //
 
     @test
     def testIsReadable01(): Bool & Impure =
@@ -68,17 +68,17 @@ namespace TestFile {
     def testIsReadable02(): Bool & Impure =
         isReadable("./fakeREADME.md") == Ok(false)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // isSymbolicLink                                                          //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // isSymbolicLink
+    //
 
     @test
     def testIsSymbolicLink(): Bool & Impure =
         isSymbolicLink("./README.md") == Ok(false)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // isWritable                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // isWritable
+    //
 
     @test
     def testIsWritable01(): Bool & Impure =
@@ -88,41 +88,41 @@ namespace TestFile {
     def testIsWritable02(): Bool & Impure =
         isWritable("./fakeREADME.md") == Ok(false)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // isExecutable                                                            //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // isExecutable
+    //
 
     @test
     def testIsExecutable(): Bool & Impure =
         isExecutable("./fakeREADME.md") == Ok(false)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // readLines                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // readLines
+    //
 
     @test
     def testReadLines01(): Bool & Impure =
         Result.isOk(readLines("./LICENSE.md"))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // readLinesWith                                                           //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // readLinesWith
+    //
 
     @test
     def testReadLinesWith01(): Bool & Impure =
         Result.isOk(readLinesWith({charSet = "UTF8"}, "./LICENSE.md"))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // read                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // read
+    //
 
     @test
     def testRead01(): Bool & Impure =
         Result.isOk(read("./LICENSE.md"))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // readWith                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // readWith
+    //
 
     @test
     def testReadWith01(): Bool & Impure =
@@ -132,9 +132,9 @@ namespace TestFile {
     def testReadWith02(): Bool & Impure =
         readWith({offset = 2i64, count = 2, charSet = "US-ASCII"}, "./LICENSE.md") == Ok("ac")
 
-    /////////////////////////////////////////////////////////////////////////////
-    // readLinesIter                                                           //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // readLinesIter
+    //
 
     @test
     def testReadLinesIter01(): Bool & Impure =
@@ -148,9 +148,9 @@ namespace TestFile {
             case Iterator(done, _) => done() == false
         }
 
-    /////////////////////////////////////////////////////////////////////////////
-    // readLinesIterWith                                                       //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // readLinesIterWith
+    //
 
     @test
     def testReadLinesIterWithWith01(): Bool & Impure =

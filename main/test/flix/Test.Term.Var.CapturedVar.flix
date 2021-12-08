@@ -1,8 +1,8 @@
 namespace Test/Term/Lit/Var/CapturedVar {
 
-    ///////////////////////////////////////////////////////////////////////////////
-    /// Unit                                                                    ///
-    ///////////////////////////////////////////////////////////////////////////////
+    //
+    /// Unit
+    //
     @test
     def testUnitCapturedVar01(): Bool =
         let c = ();
@@ -11,9 +11,9 @@ namespace Test/Term/Lit/Var/CapturedVar {
         let r = query x, y select 42 from R(c);
         not Array.isEmpty(r)
 
-    ///////////////////////////////////////////////////////////////////////////////
-    /// Bool                                                                    ///
-    ///////////////////////////////////////////////////////////////////////////////
+    //
+    /// Bool
+    //
     @test
     def testBoolCapturedVar01(): Bool =
         let c = true;
@@ -30,9 +30,9 @@ namespace Test/Term/Lit/Var/CapturedVar {
         let r = query x, y select 42 from R(c);
         not Array.isEmpty(r)
 
-    ///////////////////////////////////////////////////////////////////////////////
-    /// Char                                                                    ///
-    ///////////////////////////////////////////////////////////////////////////////
+    //
+    /// Char
+    //
     @test
     def testCharCapturedVar01(): Bool =
         let c = ' ';
@@ -57,9 +57,9 @@ namespace Test/Term/Lit/Var/CapturedVar {
         let r = query x, y select 42 from R(c);
         not Array.isEmpty(r)
 
-    ///////////////////////////////////////////////////////////////////////////////
-    /// Float32                                                                 ///
-    ///////////////////////////////////////////////////////////////////////////////
+    //
+    /// Float32
+    //
     @test
     def testFloat32CapturedVar01(): Bool =
         let c = 0.0f32;
@@ -84,9 +84,9 @@ namespace Test/Term/Lit/Var/CapturedVar {
         let r = query x, y select 42 from R(c);
         not Array.isEmpty(r)
 
-    ///////////////////////////////////////////////////////////////////////////////
-    /// Float64                                                                 ///
-    ///////////////////////////////////////////////////////////////////////////////
+    //
+    /// Float64
+    //
     @test
     def testFloat64CapturedVar01(): Bool =
         let c = 0.0f64;
@@ -111,9 +111,9 @@ namespace Test/Term/Lit/Var/CapturedVar {
         let r = query x, y select 42 from R(c);
         not Array.isEmpty(r)
 
-    ///////////////////////////////////////////////////////////////////////////////
-    /// Int8                                                                    ///
-    ///////////////////////////////////////////////////////////////////////////////
+    //
+    /// Int8
+    //
     @test
     def testInt8CapturedVar01(): Bool =
         let c = 0i8;
@@ -138,9 +138,9 @@ namespace Test/Term/Lit/Var/CapturedVar {
         let r = query x, y select 42 from R(c);
         not Array.isEmpty(r)
 
-    ///////////////////////////////////////////////////////////////////////////////
-    /// Int16                                                                   ///
-    ///////////////////////////////////////////////////////////////////////////////
+    //
+    /// Int16
+    //
     @test
     def testInt16CapturedVar01(): Bool =
         let c = 0i16;
@@ -165,9 +165,9 @@ namespace Test/Term/Lit/Var/CapturedVar {
         let r = query x, y select 42 from R(c);
         not Array.isEmpty(r)
 
-    ///////////////////////////////////////////////////////////////////////////////
-    /// Int32                                                                   ///
-    ///////////////////////////////////////////////////////////////////////////////
+    //
+    /// Int32
+    //
     @test
     def testInt32CapturedVar01(): Bool =
         let c = 0i32;
@@ -192,9 +192,9 @@ namespace Test/Term/Lit/Var/CapturedVar {
         let r = query x, y select 42 from R(c);
         not Array.isEmpty(r)
 
-    ///////////////////////////////////////////////////////////////////////////////
-    /// Int64                                                                   ///
-    ///////////////////////////////////////////////////////////////////////////////
+    //
+    /// Int64
+    //
     @test
     def testInt64CapturedVar01(): Bool =
         let c = 0i64;
@@ -219,9 +219,9 @@ namespace Test/Term/Lit/Var/CapturedVar {
         let r = query x, y select 42 from R(c);
         not Array.isEmpty(r)
 
-    ///////////////////////////////////////////////////////////////////////////////
-    /// BigInt                                                                  ///
-    ///////////////////////////////////////////////////////////////////////////////
+    //
+    /// BigInt
+    //
     @test
     def testBigIntCapturedVar01(): Bool =
         let c = 0ii;
@@ -246,9 +246,9 @@ namespace Test/Term/Lit/Var/CapturedVar {
         let r = query x, y select 42 from R(c);
         not Array.isEmpty(r)
 
-    ///////////////////////////////////////////////////////////////////////////////
-    /// Str                                                                     ///
-    ///////////////////////////////////////////////////////////////////////////////
+    //
+    /// Str
+    //
     @test
     def testStrCapturedVar01(): Bool =
         let c = "";
@@ -273,9 +273,9 @@ namespace Test/Term/Lit/Var/CapturedVar {
         let r = query x, y select 42 from R(c);
         not Array.isEmpty(r)
 
-    ///////////////////////////////////////////////////////////////////////////////
-    /// Option                                                                  ///
-    ///////////////////////////////////////////////////////////////////////////////
+    //
+    /// Option
+    //
     @test
     def testOptionCapturedVar01(): Bool =
         let c: Option[Int] = None;
@@ -292,9 +292,9 @@ namespace Test/Term/Lit/Var/CapturedVar {
         let r = query x, y select 42 from R(c);
         not Array.isEmpty(r)
 
-    ///////////////////////////////////////////////////////////////////////////////
-    /// Result                                                                  ///
-    ///////////////////////////////////////////////////////////////////////////////
+    //
+    /// Result
+    //
     @test
     def testResultCapturedVar01(): Bool =
         let c: Result[Int, String] = Ok(123);
@@ -311,9 +311,9 @@ namespace Test/Term/Lit/Var/CapturedVar {
         let r = query x, y select 42 from R(c);
         not Array.isEmpty(r)
 
-    ///////////////////////////////////////////////////////////////////////////////
-    /// Tuple                                                                   ///
-    ///////////////////////////////////////////////////////////////////////////////
+    //
+    /// Tuple
+    //
     @test
     def testTupleCapturedVar01(): Bool =
         let c = (true, 'a', 42);

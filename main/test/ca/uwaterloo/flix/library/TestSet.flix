@@ -19,9 +19,9 @@ namespace TestSet {
     use ToString.toString;
     use Hash.hash;
 
-/////////////////////////////////////////////////////////////////////////////
-// size                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+//
+// size
+//
 @test
 def size01(): Bool = Set.size(Set#{}) == 0
 
@@ -37,15 +37,15 @@ def size04(): Bool = Set.size(Set#{1, 2, 3}) == 3
 @test
 def size05(): Bool = Set.size(Set#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14}) == 13
 
-/////////////////////////////////////////////////////////////////////////////
-// empty                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// empty
+//
 @test
 def empty01(): Bool = Set.empty(): Set[Unit] == Set#{}
 
-/////////////////////////////////////////////////////////////////////////////
-// singleton                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// singleton
+//
 @test
 def singleton01(): Bool = Set.singleton(1) == Set#{1}
 
@@ -58,9 +58,9 @@ def singleton03(): Bool = Set.singleton(true) == Set#{true}
 @test
 def singleton04(): Bool = Set.singleton(false) == Set#{false}
 
-/////////////////////////////////////////////////////////////////////////////
-// insert                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// insert
+//
 @test
 def insert01(): Bool = Set.insert(1, Set#{}) == Set#{1}
 
@@ -85,9 +85,9 @@ def insert07(): Bool = Set.insert(1, Set#{2, 1, 3, 7, 8, 9, 10}) == Set#{2, 1, 3
 @test
 def insert08(): Bool = Set.insert(11, Set#{2, 1, 3, 7, 8, 9, 10, 35}) == Set#{11, 2, 1, 3, 7, 8, 9, 10, 35}
 
-/////////////////////////////////////////////////////////////////////////////
-// remove                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// remove
+//
 @test
 def remove01(): Bool = Set.remove(1, Set#{}) == Set#{}
 
@@ -124,9 +124,9 @@ def remove11(): Bool = Set.remove(7, Set#{1, 2, 3, 4, 5, 6, 7}) == Set#{1, 2, 3,
 @test
 def remove12(): Bool = Set.remove(8, Set#{1, 2, 3, 4, 5, 6, 7}) == Set#{1, 2, 3, 4, 5, 6, 7}
 
-/////////////////////////////////////////////////////////////////////////////
-// isEmpty                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isEmpty
+//
 @test
 def isEmpty01(): Bool = Set.isEmpty(Set#{}: Set[Unit]) == true
 
@@ -142,9 +142,9 @@ def isEmpty04(): Bool = Set.isEmpty(Set#{1, 2, 3}) == false
 @test
 def isEmpty05(): Bool = Set.isEmpty(Set#{1, 2, 3, 4, 5, 6, 7, 8}) == false
 
-/////////////////////////////////////////////////////////////////////////////
-// memberOf                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// memberOf
+//
 @test
 def memberOf01(): Bool = Set.memberOf(1, Set#{}) == false
 
@@ -181,9 +181,9 @@ def memberOf11(): Bool = Set.memberOf(10, Set#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}) =
 @test
 def memberOf12(): Bool = Set.memberOf(12, Set#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}) == false
 
-/////////////////////////////////////////////////////////////////////////////
-// find                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+//
+// find
+//
 @test
 def find01(): Bool = Set.find(i -> i > 2, Set#{}) == None
 
@@ -205,9 +205,9 @@ def find06(): Bool = Set.find(i -> i > 2, Set#{6, -6}) == Some(6)
 @test
 def find07(): Bool = Set.find(i -> i > 2, Set#{7, 6}) == Some(6)
 
-/////////////////////////////////////////////////////////////////////////////
-// findLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// findLeft
+//
 @test
 def findLeft01(): Bool = Set.findLeft(i -> i > 2, Set#{}) == None
 
@@ -229,9 +229,9 @@ def findLeft06(): Bool = Set.findLeft(i -> i > 2, Set#{6, -6}) == Some(6)
 @test
 def findLeft07(): Bool = Set.findLeft(i -> i > 2, Set#{7, 6}) == Some(6)
 
-/////////////////////////////////////////////////////////////////////////////
-// findRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// findRight
+//
 @test
 def findRight01(): Bool = Set.findRight(i -> i > 2, Set#{}) == None
 
@@ -253,9 +253,9 @@ def findRight06(): Bool = Set.findRight(i -> i > 2, Set#{6, -6}) == Some(6)
 @test
 def findRight07(): Bool = Set.findRight(i -> i > 2, Set#{7, 6}) == Some(7)
 
-/////////////////////////////////////////////////////////////////////////////
-// isSubsetOf                                                              //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isSubsetOf
+//
 @test
 def isSubsetOf01(): Bool = Set.isSubsetOf(Set#{}: Set[Unit], Set#{}) == true
 
@@ -304,9 +304,9 @@ def isSubsetOf15(): Bool = Set.isSubsetOf(Set#{6, 5, 8}, Set#{1, 2, 3, 4, 5, 6, 
 @test
 def isSubsetOf16(): Bool = Set.isSubsetOf(Set#{10, 2, 3, 6, -1, 4}, Set#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}) == false
 
-/////////////////////////////////////////////////////////////////////////////
-// isProperSubsetOf                                                        //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isProperSubsetOf
+//
 @test
 def isProperSubsetOf01(): Bool = Set.isProperSubsetOf(Set#{}: Set[Unit], Set#{}) == false
 
@@ -358,9 +358,9 @@ def isProperSubsetOf16(): Bool = Set.isProperSubsetOf(Set#{10, 2, 3, 6, -1, 4}, 
 @test
 def isProperSubsetOf17(): Bool = Set.isProperSubsetOf(Set#{10, 2, 3, 6, 1, 4, 5, 9, 8, 7}, Set#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}) == false
 
-    /////////////////////////////////////////////////////////////////////////////
-    // fold                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // fold
+    //
 
     @test
     def fold01(): Bool = Set.fold(Set#{}: Set[String]) == ""
@@ -374,9 +374,9 @@ def isProperSubsetOf17(): Bool = Set.isProperSubsetOf(Set#{10, 2, 3, 6, 1, 4, 5,
     @test
     def fold04(): Bool = Set.fold(Set#{("a", "b"), ("c", "d")}) == ("ac", "bd")
 
-/////////////////////////////////////////////////////////////////////////////
-// foldLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foldLeft
+//
 @test
 def foldLeft01(): Bool = Set.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, Set#{}) == 100
 
@@ -389,9 +389,9 @@ def foldLeft03(): Bool = Set.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, Set#
 @test
 def foldLeft04(): Bool = Set.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, Set#{3, 2, 1}) == 386
 
-/////////////////////////////////////////////////////////////////////////////
-// foldRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foldRight
+//
 @test
 def foldRight01(): Bool = Set.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Set#{}) == 100
 
@@ -404,9 +404,9 @@ def foldRight03(): Bool = Set.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Se
 @test
 def foldRight04(): Bool = Set.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Set#{3, 2, 1}) == 382
 
-/////////////////////////////////////////////////////////////////////////////
-// reduceLeft                                                              //
-/////////////////////////////////////////////////////////////////////////////
+//
+// reduceLeft
+//
 @test
 def reduceLeft01(): Bool = Set.reduceLeft((a, b) -> a-b, Set#{}: Set[Int]) == None
 
@@ -422,9 +422,9 @@ def reduceLeft04(): Bool = Set.reduceLeft((a, b) -> a-b, Set#{3, 2, 1}) == Some(
 @test
 def reduceLeft05(): Bool = Set.reduceLeft((a, b) -> a-b, Set#{4, 3, 2, 1}) == Some(-8)
 
-/////////////////////////////////////////////////////////////////////////////
-// reduceRight                                                             //
-/////////////////////////////////////////////////////////////////////////////
+//
+// reduceRight
+//
 @test
 def reduceRight01(): Bool = Set.reduceRight((a, b) -> a-b, Set#{}: Set[Int]) == None
 
@@ -440,9 +440,9 @@ def reduceRight04(): Bool = Set.reduceRight((a, b) -> a-b, Set#{3, 2, 1}) == Som
 @test
 def reduceRight05(): Bool = Set.reduceRight((a, b) -> a-b, Set#{4, 3, 2, 1}) == Some(-2)
 
-/////////////////////////////////////////////////////////////////////////////
-// count                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// count
+//
 @test
 def count01(): Bool = Set.count(i -> i > 3, Set#{}) == 0
 
@@ -464,9 +464,9 @@ def count06(): Bool = Set.count(i -> i > 3, Set#{1, 8}) == 1
 @test
 def count07(): Bool = Set.count(i -> i > 3, Set#{7, 6}) == 2
 
-/////////////////////////////////////////////////////////////////////////////
-// flatten                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// flatten
+//
 @test
 def flatten01(): Bool = Set.flatten(Set#{}): Set[Unit] == Set#{}
 
@@ -509,9 +509,9 @@ def flatten13(): Bool = Set.flatten(Set#{Set#{1}, Set#{2, 3}, Set#{4}}) == Set#{
 @test
 def flatten14(): Bool = Set.flatten(Set#{Set#{1}, Set#{2, 3}, Set#{1}}) == Set#{1, 2, 3}
 
-/////////////////////////////////////////////////////////////////////////////
-// exists                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// exists
+//
 @test
 def exists01(): Bool = Set.exists(x -> x rem 8 == 7, Set#{}) == false
 
@@ -545,9 +545,9 @@ def exists10(): Bool = Set.exists(x -> x rem 8 == 7, Set#{11, -1, 31, -14, -2, 8
 @test
 def exists11(): Bool = Set.exists(x -> x rem 8 == 7, Set#{11, -1, -14, -2, 84, 111, 38}) == true
 
-/////////////////////////////////////////////////////////////////////////////
-// forall                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// forall
+//
 @test
 def forall01(): Bool = Set.forall(x -> x rem 8 == 7, Set#{}) == true
 
@@ -581,9 +581,9 @@ def forall10(): Bool = Set.forall(x -> x rem 8 == 7, Set#{7, 15, 23, 111, 3}) ==
 @test
 def forall11(): Bool = Set.forall(x -> x rem 8 == 7, Set#{7, 15, 23, 119, 111}) == true
 
-/////////////////////////////////////////////////////////////////////////////
-// union                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// union
+//
 @test
 def union01(): Bool = Set.union(Set#{}: Set[Unit], Set#{}) == Set#{}
 
@@ -626,9 +626,9 @@ def union13(): Bool = Set.union(Set#{6, -99, -1, 5, 22}, Set#{6, 5, -1, 9, 43, 7
 @test
 def union14(): Bool = Set.union(Set#{-2, -3, -4}, Set#{6, 5, -1, 9, 43, 7, 8, -99}) == Set#{-2, -3, -4, 6, 5, -1, 9, 43, 7, 8, -99}
 
-/////////////////////////////////////////////////////////////////////////////
-// intersection                                                            //
-/////////////////////////////////////////////////////////////////////////////
+//
+// intersection
+//
 @test
 def intersection01(): Bool = Set.intersection(Set#{}: Set[Unit], Set#{}) == Set#{}
 
@@ -674,9 +674,9 @@ def intersection14(): Bool = Set.intersection(Set#{3, 55, 11, 87, 22, 34, -87, 2
 @test
 def intersection15(): Bool = Set.intersection(Set#{3, 55, 11, 87, 22, 34, -87, 23}, Set#{23, 1, 2, 84, 87, 3}) == Set#{3, 87, 23}
 
-/////////////////////////////////////////////////////////////////////////////
-// difference                                                              //
-/////////////////////////////////////////////////////////////////////////////
+//
+// difference
+//
 @test
 def difference01(): Bool = Set.difference(Set#{}: Set[Unit], Set#{}) == Set#{}
 
@@ -716,9 +716,9 @@ def difference12(): Bool = Set.difference(Set#{1, 2, 87, 4, 5, 6, 86, 92, 111, -
 @test
 def difference13(): Bool = Set.difference(Set#{1, 2, 87, 4, 5, 6, 86, 92, 111, -1}, Set#{-1, 92, 4, 5, 1, 2, 86, 99, 6}) == Set#{87, 111}
 
-/////////////////////////////////////////////////////////////////////////////
-// subsets                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// subsets
+//
 @test
 def subsets01(): Bool = Set.subsets(Set#{}: Set[Unit]) == Set#{Set#{}}
 
@@ -731,9 +731,9 @@ def subsets03(): Bool = Set.subsets(Set#{1, 2}) == Set#{Set#{1, 2}, Set#{1}, Set
 @test
 def subsets04(): Bool = Set.subsets(Set#{1, 2, 3}) == Set#{Set#{1, 2, 3}, Set#{1, 2}, Set#{1, 3}, Set#{1}, Set#{2, 3}, Set#{2}, Set#{3}, Set#{}}
 
-/////////////////////////////////////////////////////////////////////////////
-// filter                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// filter
+//
 @test
 def filter01(): Bool = Set.filter(x -> x rem 2 == 0, Set#{}) == Set#{}
 
@@ -761,9 +761,9 @@ def filter08(): Bool = Set.filter(x -> x rem 2 == 0, Set#{-33, -1, 12, 1, 34, 88
 @test
 def filter09(): Bool = Set.filter(x -> x rem 2 == 0, Set#{-33, -1, 12, 1, 34, 88, 7, 77, 31, 7, -92, 841}) == Set#{12, 34, 88, -92}
 
-/////////////////////////////////////////////////////////////////////////////
-// map                                                                     //
-/////////////////////////////////////////////////////////////////////////////
+//
+// map
+//
 @test
 def map01(): Bool = Set.map(x -> x rem 2 == 0, Set#{}) == Set#{}
 
@@ -809,9 +809,9 @@ def map14(): Bool = Set.map(x -> x rem 9, Set#{0, 5, 1, -9, -8}) == Set#{5, 1, 0
 @test
 def map15(): Bool = Set.map(x -> x rem 9, Set#{0, 5, 1, 10, 7, 19, 28, 2}) == Set#{0, 5, 7, 1, 2}
 
-/////////////////////////////////////////////////////////////////////////////
-// flatMap                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// flatMap
+//
 @test
 def flatMap01(): Bool = Set.flatMap(x -> if (x rem 2 == 0) Set#{} else Set#{x}, Set#{}) == Set#{}
 
@@ -842,9 +842,9 @@ def flatMap09(): Bool = Set.flatMap(x -> Set#{x, 3*x}, Set#{1, 8, 3, 2, 9, -5, -
 @test
 def flatMap10(): Bool = Set.flatMap(x -> Set#{x, 2*x, 3*x}, Set#{1, 4, 3, 2}) == Set#{1, 8, 12, 3, 9, 2, 4, 6}
 
-/////////////////////////////////////////////////////////////////////////////
-// replace                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// replace
+//
 @test
 def replace01(): Bool = Set.replace(3, 4, Set#{}) == Set#{}
 
@@ -869,9 +869,9 @@ def replace07(): Bool = Set.replace(3, 4, Set#{3, 2}) == Set#{4, 2}
 @test
 def replace08(): Bool = Set.replace(3, 4, Set#{3, 4}) == Set#{4}
 
-/////////////////////////////////////////////////////////////////////////////
-// partition                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// partition
+//
 @test
 def partition01(): Bool = Set.partition(x -> x rem 2 == 0, Set#{}) == (Set#{}, Set#{})
 
@@ -902,9 +902,9 @@ def partition09(): Bool = Set.partition(x -> x rem 2 == 0, Set#{84, -6, 11, -4, 
 @test
 def partition10(): Bool = Set.partition(x -> x rem 2 == 0, Set#{1, 2, 3, 4, 5, 6, 7, 8}) == (Set#{2, 4, 6, 8}, Set#{1, 3, 5, 7})
 
-/////////////////////////////////////////////////////////////////////////////
-// toList                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toList
+//
 @test
 def toList01(): Bool = Set.toList(Set#{}: Set[Unit]) == Nil
 
@@ -917,9 +917,9 @@ def toList03(): Bool = Set.toList(Set#{1, 2}) == 2 :: 1 :: Nil
 @test
 def toList04(): Bool = Set.toList(Set#{1, 2, 3}) == 3 :: 2 :: 1 :: Nil
 
-/////////////////////////////////////////////////////////////////////////////
-// toChain                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toChain
+//
 
 @test
 def toChain01(): Bool =
@@ -937,9 +937,9 @@ def toChain03(): Bool =
 def toChain04(): Bool =
     Set.toChain(Set#{1, 2, 3}) == List.toChain(1 :: 2 :: 3 :: Nil)
 
-/////////////////////////////////////////////////////////////////////////////
-// toMap                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toMap
+//
 @test
 def toMap01(): Bool = Set.toMap(Set#{}: Set[(Unit, Unit)]) == Map#{}
 
@@ -955,9 +955,9 @@ def toMap04(): Bool = Set.toMap(Set#{(1, true), (1, false)}) == Map#{1 -> false}
 @test
 def toMap05(): Bool = Set.toMap(Set#{(1, true), (2, false), (3, true)}) == Map#{1 -> true, 2 -> false, 3 -> true}
 
-/////////////////////////////////////////////////////////////////////////////
-// eq                                                                      //
-/////////////////////////////////////////////////////////////////////////////
+//
+// eq
+//
 @test
 def eq01(): Bool = Set#{}: Set[Unit] == Set#{}
 
@@ -1015,9 +1015,9 @@ def eq18(): Bool = Set#{1, 2, 3} == Set#{3, 1, 2}
 @test
 def eq19(): Bool = Set#{1, 2, 3} == Set#{2, 1, 3}
 
-/////////////////////////////////////////////////////////////////////////////
-// foreach                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foreach
+//
 
 @test
 def foreach01(): Bool & Impure =
@@ -1031,9 +1031,9 @@ def foreach02(): Bool & Impure =
     Set.foreach(x -> r := x, Set#{42});
     42 == deref r
 
-/////////////////////////////////////////////////////////////////////////////
-// unfold                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// unfold
+//
 
 @test
 def unfold01(): Bool =
@@ -1059,9 +1059,9 @@ def unfold05(): Bool =
 def unfold06(): Bool =
     Set.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 2), 0) == Set#{'0', '2', '4', '6', '8'}
 
-/////////////////////////////////////////////////////////////////////////////
-// unfoldWithIter                                                          //
-/////////////////////////////////////////////////////////////////////////////
+//
+// unfoldWithIter
+//
 
 @test
 def unfoldWithIter01(): Bool & Impure =
@@ -1141,9 +1141,9 @@ def unfoldWithIter06(): Bool & Impure =
         };
     Set.unfoldWithIter(step) == Set#{'0', '2', '4', '6', '8'}
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toString                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toString
+    //
 
     @test
     def toString01(): Bool =
@@ -1165,9 +1165,9 @@ def unfoldWithIter06(): Bool & Impure =
     def toString05(): Bool =
         toString(Set#{Set#{1, 2}, Set#{4, 6}}) == "Set#{Set#{1, 2}, Set#{4, 6}}"
 
-    /////////////////////////////////////////////////////////////////////////////
-    // hash                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // hash
+    //
 
     @test
     def hash01(): Bool = hash(Set#{}: Set[Unit]) == hash(Set#{}: Set[Unit])
@@ -1184,9 +1184,9 @@ def unfoldWithIter06(): Bool & Impure =
     @test
     def hash05(): Bool = hash(Set#{false}) != hash(Set#{true})
 
-    /////////////////////////////////////////////////////////////////////////////
-    // minimum                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // minimum
+    //
 
     @test
     def minimum01(): Bool = Set.minimum(Set#{}: Set[Int32]) == None
@@ -1200,9 +1200,9 @@ def unfoldWithIter06(): Bool & Impure =
     @test
     def minimum04(): Bool = Set.minimum(Set.range(5, 55)) == Some(5)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // minimumBy                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // minimumBy
+    //
 
     @test
     def minimumBy01(): Bool = Set.minimumBy((x, y) -> x <=> y, Set#{}: Set[Int32]) == None
@@ -1216,9 +1216,9 @@ def unfoldWithIter06(): Bool & Impure =
     @test
     def minimumBy04(): Bool = Set.minimumBy((x, y) -> x <=> y, Set.range(5, 55)) == Some(5)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // maximum                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // maximum
+    //
 
     @test
     def maximum01(): Bool = Set.maximum(Set#{}: Set[Int32]) == None
@@ -1232,9 +1232,9 @@ def unfoldWithIter06(): Bool & Impure =
     @test
     def maximum04(): Bool = Set.maximum(Set.range(5, 55)) == Some(54)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // maximumBy                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // maximumBy
+    //
 
     @test
     def maximumBy01(): Bool = Set.maximumBy((x, y) -> x <=> y, Set#{}: Set[Int32]) == None
@@ -1249,9 +1249,9 @@ def unfoldWithIter06(): Bool & Impure =
     def maximumBy04(): Bool = Set.maximumBy((x, y) -> x <=> y, Set.range(5, 55)) == Some(54)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toLazyList                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toLazyList
+    //
 
     @test
     def toLazyList01(): Bool =
@@ -1266,9 +1266,9 @@ def unfoldWithIter06(): Bool & Impure =
         Set.range(-1000, 1000) |> Set.toLazyList |> LazyList.toSet == Set.range(-1000, 1000)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toIterator
+    //
 
     @test
     def toIterator01(): Bool & Impure =

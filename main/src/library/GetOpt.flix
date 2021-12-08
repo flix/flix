@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-///
-/// Parse the array of command line options supplied to `main`.
-///
-/// Acknowledgement: this is a port of Sven Panne's `System.Console.GetOpt` in the Haskell Base libraries.
-///
-
-
+//
+// Parse the array of command line options supplied to `main`.
+//
+// Acknowledgement: this is a port of Sven Panne's `System.Console.GetOpt` in the Haskell Base libraries.
+//
 namespace GetOpt {
 
     ///
@@ -184,7 +182,7 @@ namespace GetOpt {
             let (os, xs, us, es)    = getOpt1Helper(ordering, optDescrs, rest);
             match (opt, ordering) {
                 case (Opt(o),       _)                  => (o :: os, xs, us, es)
-                case (UnreqOpt(u),  _)                  => (os, xs, u :: us, es)        /// u is added to
+                case (UnreqOpt(u),  _)                  => (os, xs, u :: us, es)        // u is added to
                 case (NonOpt(x),    RequireOrder)       => (Nil, x :: rest, Nil, Nil)
                 case (NonOpt(x),    Permute)            => (os, x :: xs, us, es)
                 case (NonOpt(x),    ReturnInOrder(f))   => (f(x) :: os, xs, us, es)
@@ -297,9 +295,9 @@ namespace GetOpt {
     ///
     def findOptionByName(optname: String, optDescrs: List[OptionDescr[a]]): Result[OptionDescr[a], GetOptionFailure[a]] =
         let getWith     = p -> List.filterMap(o -> { let xs = o.optionNames; if (List.exists(p(optname), xs)) Some(o) else None}, optDescrs);
-        /// Exact match of `optname` ...
+        // Exact match of `optname` ...
         let exact       = getWith((x,y) -> x == y): List[OptionDescr[a]];
-        /// Otherwise use `optname` as a prefix...
+        // Otherwise use `optname` as a prefix...
         let options     = if (List.isEmpty(exact)) getWith((sub, s1) -> String.startsWith({prefix = sub}, s1)) else exact;
         match options {
             case optd :: Nil    => Ok(optd)
@@ -315,7 +313,7 @@ namespace GetOpt {
     /// It returns `Err(Ambiguous(xs))` if `xc` identifies more than one option descriptor.
     ///
     def findOptionById(xc: Char, optDescrs: List[OptionDescr[a]]): Result[OptionDescr[a], GetOptionFailure[a]] =
-        /// This finds 0, 1, or more results. "more" is a failure (ambiguous), 0 is ignored, 1 is success.
+        // This finds 0, 1, or more results. "more" is a failure (ambiguous), 0 is ignored, 1 is success.
         let options = List.filterMap(o -> { let ss = o.optionIds; if (List.exists(s -> s == xc, ss)) Some(o) else None}, optDescrs);
         match options {
             case optd :: Nil    => Ok(optd)

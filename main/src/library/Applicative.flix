@@ -84,9 +84,9 @@ class Applicative[m : Type -> Type] with Functor[m] {
     ///
     law composition: forall(f: m[b -> c], g: m[a -> b], v: m[a]) with Eq[m[c]] . Applicative.ap(Applicative.ap(Applicative.ap(Applicative.point((f, g) -> g >> f), f), g), v) == Applicative.ap(f, Applicative.ap(g, v))
 
-    ///
-    /// `point` is a homomorphism from normal to applicative values regarding application (normal vs. applicative).
-    ///
+    // ///
+    // /// `point` is a homomorphism from normal to applicative values regarding application (normal vs. applicative).
+    // ///
     // TODO error in type checker does not allow to compile this, see #2099
     // law homomorphism: forall(f: a -> b, x: a) with Eq[m[b]] . Applicative.ap(Applicative.point(f), Applicative.point(x)) == Applicative.point(f(x))
 

@@ -2,22 +2,22 @@
 /// We define the syntax of arithmetic expression.
 ///
 enum AExp {
-    /// a literal integer constant.
+    // a literal integer constant.
     case Cst(Int),
 
-    /// a binary addition expression: e1 + e2.
+    // a binary addition expression: e1 + e2.
     case Plus(AExp, AExp),
 
-    /// a binary subtraction expression: e1 - e2.
+    // a binary subtraction expression: e1 - e2.
     case Minus(AExp, AExp),
 
-    /// a binary multiplication expression: e1 * e2.
+    // a binary multiplication expression: e1 * e2.
     case Times(AExp, AExp),
 
-    /// a binary division expression: e1 / e2.
+    // a binary division expression: e1 / e2.
     case Divide(AExp, AExp),
 
-    //n a if-then-else expression: if (e1) e2 else e3.
+    // a if-then-else expression: if (e1) e2 else e3.
     case IfThenElse(BExp, AExp, AExp)
 }
 
@@ -25,25 +25,25 @@ enum AExp {
 /// We then define the syntax of Boolean expressions.
 ///
 enum BExp {
-    /// the true boolean literal.
+    // the true boolean literal.
     case True,
 
-    /// the false boolean literal.
+    // the false boolean literal.
     case False,
 
-    /// a logical negation expression: !e.
+    // a logical negation expression: !e.
     case Not(BExp),
 
-    /// a logical conjunction expression: e1 and e2.
+    // a logical conjunction expression: e1 and e2.
     case Conj(BExp, BExp),
 
-    /// a logical disjunction expression: e1 or e2.
+    // a logical disjunction expression: e1 or e2.
     case Disj(BExp, BExp),
 
-    /// an equality of expression: e1 == e2.
+    // an equality of expression: e1 == e2.
     case Eq(AExp, AExp),
 
-    /// an inequality of expression: e1 != e2.
+    // an inequality of expression: e1 != e2.
     case Neq(AExp, AExp)
 }
 

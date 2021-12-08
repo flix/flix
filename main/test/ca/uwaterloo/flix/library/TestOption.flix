@@ -18,9 +18,9 @@ namespace TestOption {
 
     use Hash.hash;
 
-/////////////////////////////////////////////////////////////////////////////
-// isEmpty                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isEmpty
+//
 @test
 def isEmpty01(): Bool = Option.isEmpty(None) == true
 
@@ -30,9 +30,9 @@ def isEmpty02(): Bool = Option.isEmpty(Some(0)) == false
 @test
 def isEmpty03(): Bool = Option.isEmpty(Some(22ii)) == false
 
-/////////////////////////////////////////////////////////////////////////////
-// getWithDefault                                                          //
-/////////////////////////////////////////////////////////////////////////////
+//
+// getWithDefault
+//
 @test
 def getWithDefault01(): Bool = Option.getWithDefault(None, 32) == 32
 
@@ -45,9 +45,9 @@ def getWithDefault03(): Bool = Option.getWithDefault(None, 32ii) == 32ii
 @test
 def getWithDefault04(): Bool = Option.getWithDefault(Some(30ii), 32ii) == 30ii
 
-/////////////////////////////////////////////////////////////////////////////
-// exists                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// exists
+//
 @test
 def exists01(): Bool = Option.exists(i -> i == 2, None) == false
 
@@ -57,9 +57,9 @@ def exists02(): Bool = Option.exists(i -> i == 2, Some(1)) == false
 @test
 def exists03(): Bool = Option.exists(i -> i == 2, Some(2)) == true
 
-/////////////////////////////////////////////////////////////////////////////
-// forall                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// forall
+//
 @test
 def forall01(): Bool = Option.forall(i -> i == 2, None) == true
 
@@ -69,9 +69,9 @@ def forall02(): Bool = Option.forall(i -> i == 2, Some(1)) == false
 @test
 def forall03(): Bool = Option.forall(i -> i == 2, Some(2)) == true
 
-/////////////////////////////////////////////////////////////////////////////
-// filter                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// filter
+//
 @test
 def filter01(): Bool = Option.filter(i -> i == 2, None) == None
 
@@ -81,9 +81,9 @@ def filter02(): Bool = Option.filter(i -> i == 2, Some(1)) == None
 @test
 def filter03(): Bool = Option.filter(i -> i == 2, Some(2)) == Some(2)
 
-/////////////////////////////////////////////////////////////////////////////
-// map                                                                     //
-/////////////////////////////////////////////////////////////////////////////
+//
+// map
+//
 @test
 def map01(): Bool = Option.map(i -> 2*i, None) == None
 
@@ -93,9 +93,9 @@ def map02(): Bool = Option.map(i -> 2*i, Some(1)) == Some(2)
 @test
 def map03(): Bool = Option.map(i -> 2*i, Some(2)) == Some(4)
 
-/////////////////////////////////////////////////////////////////////////////
-// map2                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+//
+// map2
+//
 @test
 def map201(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, None, None) == None
 
@@ -111,9 +111,9 @@ def map204(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), Some(tr
 @test
 def map205(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), Some(false)) == Some(3)
 
-/////////////////////////////////////////////////////////////////////////////
-// flatMap2                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// flatMap2
+//
 @test
 def flatMap201(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, None, None) == None
 
@@ -129,72 +129,72 @@ def flatMap204(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, S
 @test
 def flatMap205(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, Some(1), Some(true)) == Some(2)
 
-/////////////////////////////////////////////////////////////////////////////
-// toList                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toList
+//
 @test
 def toList01(): Bool = Option.toList(None: Option[Unit]) == Nil
 
 @test
 def toList02(): Bool = Option.toList(Some(1)) == 1 :: Nil
 
-/////////////////////////////////////////////////////////////////////////////
-// toSet                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toSet
+//
 @test
 def toSet01(): Bool = Option.toSet(None: Option[Unit]) == Set#{}
 
 @test
 def toSet02(): Bool = Option.toSet(Some(1)) == Set#{1}
 
-/////////////////////////////////////////////////////////////////////////////
-// toMap                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toMap
+//
 @test
 def toMap01(): Bool = Option.toMap(None: Option[(Unit, Unit)]) == Map#{}
 
 @test
 def toMap02(): Bool = Option.toMap(Some((1, true))) == Map#{1 -> true}
 
-/////////////////////////////////////////////////////////////////////////////
-// toOk                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toOk
+//
 @test
 def toOk01(): Bool = Option.toOk(None: Option[Unit], "err") == Err("err")
 
 @test
 def toOk02(): Bool = Option.toOk(Some(1), "err") == Ok(1)
 
-/////////////////////////////////////////////////////////////////////////////
-// toErr                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toErr
+//
 @test
 def toErr01(): Bool = Option.toErr(None: Option[Unit], "default") == Ok("default")
 
 @test
 def toErr02(): Bool = Option.toErr(Some("err"), "default") == Err("err")
 
-/////////////////////////////////////////////////////////////////////////////
-// toSuccess                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toSuccess
+//
 @test
 def toSuccess01(): Bool = Option.toSuccess(None: Option[Unit], "err") == Failure(Nel("err", Nil))
 
 @test
 def toSuccess02(): Bool = Option.toSuccess(Some(1), "err") == Success(1)
 
-/////////////////////////////////////////////////////////////////////////////
-// toFailure                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toFailure
+//
 @test
 def toFailure01(): Bool = Option.toFailure(None: Option[Unit], "default") == Success("default")
 
 @test
 def toFailure02(): Bool = Option.toFailure(Some("err"), "default") == Failure(Nel("err", Nil))
 
-/////////////////////////////////////////////////////////////////////////////
-// withDefault                                                             //
-/////////////////////////////////////////////////////////////////////////////
+//
+// withDefault
+//
 @test
 def withDefault01(): Bool = Option.withDefault(None: Option[Unit], None: Option[Unit]) == None
 
@@ -207,9 +207,9 @@ def withDefault03(): Bool = Option.withDefault(Some(1), None) == Some(1)
 @test
 def withDefault04(): Bool = Option.withDefault(Some(1), Some(2)) == Some(1)
 
-/////////////////////////////////////////////////////////////////////////////
-// replace                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// replace
+//
 @test
 def replace01(): Bool = Option.replace(3, 4, None) == None
 
@@ -222,9 +222,9 @@ def replace03(): Bool = Option.replace(3, 4, Some(3)) == Some(4)
 @test
 def replace04(): Bool = Option.replace(3, 4, Some(4)) == Some(4)
 
-/////////////////////////////////////////////////////////////////////////////
-// count                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// count
+//
 @test
 def count01(): Bool = Option.count(i -> i == 2, None) == 0
 
@@ -234,9 +234,9 @@ def count02(): Bool = Option.count(i -> i == 2, Some(1)) == 0
 @test
 def count03(): Bool = Option.count(i -> i == 2, Some(2)) == 1
 
-/////////////////////////////////////////////////////////////////////////////
-// find                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+//
+// find
+//
 @test
 def find01(): Bool = Option.find(i -> i == 2, None) == None
 
@@ -246,9 +246,9 @@ def find02(): Bool = Option.find(i -> i == 2, Some(1)) == None
 @test
 def find03(): Bool = Option.find(i -> i == 2, Some(2)) == Some(2)
 
-/////////////////////////////////////////////////////////////////////////////
-// flatten                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// flatten
+//
 @test
 def flatten01(): Bool = Option.flatten(None): Option[Unit] == None
 
@@ -258,9 +258,9 @@ def flatten02(): Bool = Option.flatten(Some(None: Option[Unit])) == None
 @test
 def flatten03(): Bool = Option.flatten(Some(Some(2))) == Some(2)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // fold                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // fold
+    //
 
     @test
     def fold01(): Bool = Option.fold(None: Option[Unit]) == ()
@@ -274,9 +274,9 @@ def flatten03(): Bool = Option.flatten(Some(Some(2))) == Some(2)
     @test
     def fold04(): Bool = Option.fold(Some(("a", "b", "c"))) == ("a", "b", "c")
 
-/////////////////////////////////////////////////////////////////////////////
-// foldLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foldLeft
+//
 @test
 def foldLeft01(): Bool = Option.foldLeft((b, i) -> if (i == 2 and b) true else false, false, None) == false
 
@@ -292,9 +292,9 @@ def foldLeft04(): Bool = Option.foldLeft((b, i) -> if (i == 2 and b) true else f
 @test
 def foldLeft05(): Bool = Option.foldLeft((b, i) -> if (i == 2 and b) true else false, true, Some(2)) == true
 
-/////////////////////////////////////////////////////////////////////////////
-// foldRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foldRight
+//
 @test
 def foldRight01(): Bool = Option.foldRight((i, b) -> if (i == 2 and b) true else false, None, false) == false
 
@@ -310,9 +310,9 @@ def foldRight04(): Bool = Option.foldRight((i, b) -> if (i == 2 and b) true else
 @test
 def foldRight05(): Bool = Option.foldRight((i, b) -> if (i == 2 and b) true else false, Some(2), true) == true
 
-/////////////////////////////////////////////////////////////////////////////
-// sequence                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// sequence
+//
 @test
 def sequence01(): Bool = Option.sequence(Nil): Option[List[Unit]] == Some(Nil)
 
@@ -334,9 +334,9 @@ def sequence06(): Bool = Option.sequence(Some(1) :: Some(2) :: None :: Nil) == N
 @test
 def sequence07(): Bool = Option.sequence(Some(1) :: None :: Some(3) :: Nil) == None
 
-/////////////////////////////////////////////////////////////////////////////
-// traverse                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// traverse
+//
 @test
 def traverse01(): Bool = Option.traverse(x -> Some(x + 1), Nil) == Some(Nil)
 
@@ -361,9 +361,9 @@ def traverse07(): Bool = Option.traverse(x -> if (x == 2) None else Some(x), 1 :
 @test
 def traverse08(): Bool = Option.traverse(_ -> Some(42), 1 :: 2 :: 3 :: Nil) == Some(42 :: 42 :: 42 :: Nil)
 
-/////////////////////////////////////////////////////////////////////////////
-// traverseX                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// traverseX
+//
 @test
 def traverseX01(): Bool = Option.traverseX(x -> Some(x + 1), Nil) == Some()
 
@@ -388,9 +388,9 @@ def traverseX07(): Bool = Option.traverseX(x -> if (x == 2) None else Some(x), 1
 @test
 def traverseX08(): Bool = Option.traverseX(_ -> Some(42), 1 :: 2 :: 3 :: Nil) == Some()
 
-/////////////////////////////////////////////////////////////////////////////
-// foldLeftM                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foldLeftM
+//
 @test
 def foldLeftM01(): Bool = Option.foldLeftM((ac, i) -> if (i < 0) None else Some(Int32.max(i, ac)), 0, Nil) == Some(0)
 
@@ -412,9 +412,9 @@ def foldLeftM06(): Bool = Option.foldLeftM((ac, i) -> if (i < 0) None else Some(
 @test
 def foldLeftM07(): Bool = Option.foldLeftM((ac, i) -> if (i < 0) None else Some(Int32.max(i, ac)), 0, 1 :: 2 :: -3 :: Nil) == None
 
-/////////////////////////////////////////////////////////////////////////////
-// foldRightM                                                              //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foldRightM
+//
 @test
 def foldRightM01(): Bool = Option.foldRightM((i, ac) -> if (i < 0) None else Some(Int32.max(i, ac)), 0, Nil) == Some(0)
 
@@ -436,9 +436,9 @@ def foldRightM06(): Bool = Option.foldRightM((i, ac) -> if (i < 0) None else Som
 @test
 def foldRightM07(): Bool = Option.foldRightM((i, ac) -> if (i < 0) None else Some(Int32.max(i, ac)), 0, 1 :: 2 :: -3 :: Nil) == None
 
-/////////////////////////////////////////////////////////////////////////////
-// zip                                                                     //
-/////////////////////////////////////////////////////////////////////////////
+//
+// zip
+//
 @test
 def zip01(): Bool = Option.zip(None: Option[Unit], None: Option[Unit]) == None
 
@@ -451,18 +451,18 @@ def zip03(): Bool = Option.zip(None: Option[Unit], Some(true)) == None
 @test
 def zip04(): Bool = Option.zip(Some(1), Some(true)) == Some((1, true))
 
-/////////////////////////////////////////////////////////////////////////////
-// unzip                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// unzip
+//
 @test
 def unzip01(): Bool = Option.unzip(None: Option[(Unit, Unit)]) == (None, None)
 
 @test
 def unzip02(): Bool = Option.unzip(Some((1, true))) == (Some(1), Some(true))
 
-/////////////////////////////////////////////////////////////////////////////
-// foreach                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foreach
+//
 
 @test
 def foreach01(): Bool & Impure =
@@ -476,16 +476,16 @@ def foreach02(): Bool & Impure =
     Option.foreach(x -> r := x, Some(42));
     42 == deref r
 
-/////////////////////////////////////////////////////////////////////////////
-// point                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// point
+//
 
 @test
 def point01(): Bool = Option.point(5) == Some(5)
 
-/////////////////////////////////////////////////////////////////////////////
-// ap                                                                      //
-/////////////////////////////////////////////////////////////////////////////
+//
+// ap
+//
 
 @test
 def ap01(): Bool = Option.ap(Some(x -> x + 1), Some(123)) == Some(124)
@@ -499,9 +499,9 @@ def ap03(): Bool = Option.ap(None, Some(123)): Option[Int32] == None
 @test
 def ap04(): Bool = Option.ap(None, None): Option[Unit] == None
 
-/////////////////////////////////////////////////////////////////////////////
-// flatMap                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// flatMap
+//
 
 @test
 def flatMap01(): Bool = Option.flatMap(x -> Some(x + 1), Some(123)) == Some(124)
@@ -524,9 +524,9 @@ def flatMap06(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), Som
 @test
 def flatMap07(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), Some(2)) == Some(4)
 
-/////////////////////////////////////////////////////////////////////////////
-// lift2                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift2
+//
 
 @test
 def lift201(): Bool = Option.lift2((x1,x2) -> x1 + x2, Some(123), Some(1)) == Some(124)
@@ -540,9 +540,9 @@ def lift203(): Bool = Option.lift2((x1,x2) -> x1 + x2, None, Some(1)) == None
 @test
 def lift204(): Bool = Option.lift2((x1,x2) -> x1 + x2, None, None: Option[Int32]) == None
 
-/////////////////////////////////////////////////////////////////////////////
-// lift3                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift3
+//
 
 @test
 def lift301(): Bool = Option.lift3((x1,x2,x3) -> x1 + x2 + x3, Some(123), Some(1), Some(2)) == Some(126)
@@ -565,9 +565,9 @@ def lift306(): Bool = Option.lift3((x1,x2,x3) -> x1 + x2 + x3, None, Some(1), No
 @test
 def lift307(): Bool = Option.lift3((x1,x2,x3) -> x1 + x2 + x3, None, None, None: Option[Int32]) == None
 
-/////////////////////////////////////////////////////////////////////////////
-// lift4                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift4
+//
 
 @test
 def lift401(): Bool = Option.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Some(123), Some(1), Some(2), Some(3)) == Some(129)
@@ -587,9 +587,9 @@ def lift405(): Bool = Option.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, None, Som
 @test
 def lift406(): Bool = Option.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, None, None, None, None: Option[Int32]) == None
 
-/////////////////////////////////////////////////////////////////////////////
-// lift5                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift5
+//
 
 @test
 def lift501(): Bool = Option.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Some(123), Some(1), Some(2), Some(3), Some(4)) == Some(133)
@@ -612,9 +612,9 @@ def lift506(): Bool = Option.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, N
 @test
 def lift507(): Bool = Option.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, None, None, None, None, None: Option[Int32]) == None
 
-/////////////////////////////////////////////////////////////////////////////
-// lift6                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift6
+//
 
 @test
 def lift601(): Bool = Option.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5)) == Some(138)
@@ -640,9 +640,9 @@ def lift607(): Bool = Option.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5
 @test
 def lift608(): Bool = Option.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, None, None, None, None, None, None: Option[Int32]) == None
 
-/////////////////////////////////////////////////////////////////////////////
-// lift7                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift7
+//
 
 @test
 def lift701(): Bool = Option.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), Some(6)) == Some(144)
@@ -671,9 +671,9 @@ def lift708(): Bool = Option.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 +
 @test
 def lift709(): Bool = Option.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, None, None, None, None, None, None, None: Option[Int32]) == None
 
-/////////////////////////////////////////////////////////////////////////////
-// lift8                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift8
+//
 
 @test
 def lift801(): Bool = Option.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), Some(6), Some(7)) == Some(151)
@@ -705,9 +705,9 @@ def lift809(): Bool = Option.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x
 @test
 def lift810(): Bool = Option.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, None, None, None, None, None, None, None, None: Option[Int32]) == None
 
-/////////////////////////////////////////////////////////////////////////////
-// lift9                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift9
+//
 
 @test
 def lift901(): Bool = Option.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), Some(6), Some(7), Some(8)) == Some(159)
@@ -742,9 +742,9 @@ def lift910(): Bool = Option.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 
 @test
 def lift911(): Bool = Option.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, None, None, None, None, None, None, None, None, None: Option[Int32]) == None
 
-/////////////////////////////////////////////////////////////////////////////
-// lift10                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift10
+//
 
 @test
 def lift1001(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), Some(6), Some(7), Some(8), Some(9)) == Some(168)
@@ -782,9 +782,9 @@ def lift1011(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2
 @test
 def lift1012(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, None, None, None, None, None, None, None, None, None, None: Option[Int32]) == None
 
-    /////////////////////////////////////////////////////////////////////////////
-    // hash                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // hash
+    //
 
     @test
     def hash01(): Bool = hash(None: Option[Unit]) == hash(None: Option[Unit])
@@ -802,9 +802,9 @@ def lift1012(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2
     def hash05(): Bool = hash(None: Option[Unit]) != hash(Some((())))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toIterator
+    //
 
     @test
     def toIterator01(): Bool & Impure =

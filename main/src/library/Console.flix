@@ -31,9 +31,9 @@ namespace Console {
     ///
     pub def printLine(s: String): Unit & Impure = Console/StdOut.printLine(s)
 
-    ///
-    /// Operations on the Standard Input Stream.
-    ///
+    //
+    // Operations on the Standard Input Stream.
+    //
     namespace StdIn {
 
         ///
@@ -52,9 +52,9 @@ namespace Console {
                 None
     }
 
-    ///
-    /// Operations on the Standard Output Stream.
-    ///
+    //
+    // Operations on the Standard Output Stream.
+    //
     namespace StdOut {
 
         ///
@@ -94,9 +94,9 @@ namespace Console {
 
     }
 
-    ///
-    /// Operations on the Standard Error Stream.
-    ///
+    //
+    // Operations on the Standard Error Stream.
+    //
     namespace StdErr {
 
         ///
@@ -140,19 +140,19 @@ namespace Console {
     /// An enum that represents the colors supported by a terminal.
     ///
     pub enum ColorSupport {
-        ///
-        /// The terminal does not support any colors.
-        ///
+        //
+        // The terminal does not support any colors.
+        //
         case None,
 
-        ///
-        /// The terminal supports ANSI colors.
-        ///
+        //
+        // The terminal supports ANSI colors.
+        //
         case Ansi,
 
-        ///
-        /// The terminal supports 24-bit colors.
-        ///
+        //
+        // The terminal supports 24-bit colors.
+        //
         case TrueColor
     }
 
@@ -234,9 +234,9 @@ namespace Console {
             case White
         }
 
-        ///
-        /// Namespace for Default Colors.
-        ///
+        //
+        // Namespace for Default Colors.
+        //
         namespace Default {
 
             ///
@@ -278,9 +278,9 @@ namespace Console {
             case BrightWhite
         }
 
-        ///
-        /// Namespace for Ansi Colors.
-        ///
+        //
+        // Namespace for Ansi Colors.
+        //
         namespace Ansi {
 
             ///
@@ -524,9 +524,9 @@ namespace Console {
             case YellowGreen
         }
 
-        ///
-        /// Namespace for Web Colors.
-        ///
+        //
+        // Namespace for Web Colors.
+        //
         namespace Web {
 
             ///

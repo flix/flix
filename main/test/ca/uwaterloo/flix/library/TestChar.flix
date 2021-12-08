@@ -16,9 +16,9 @@
 
 namespace TestChar {
 
-/////////////////////////////////////////////////////////////////////////////
-// isAscii                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isAscii
+//
 
 @test
 def isAscii01(): Bool = Char.isAscii('a') == true
@@ -53,9 +53,9 @@ def isAscii10(): Bool = Char.isAscii('â') == false
 @test
 def isAscii11(): Bool = Char.isAscii('Â') == false
 
-/////////////////////////////////////////////////////////////////////////////
-// isLetter                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isLetter
+//
 
 @test
 def isLetter01(): Bool = Char.isLetter('a') == true
@@ -90,9 +90,9 @@ def isLetter10(): Bool = Char.isLetter('â') == true
 @test
 def isLetter11(): Bool = Char.isLetter('Â') == true
 
-/////////////////////////////////////////////////////////////////////////////
-// isDigit                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isDigit
+//
 
 @test
 def isDigit01(): Bool = Char.isDigit('a') == false
@@ -139,9 +139,9 @@ def isDigit14(): Bool = Char.isDigit('\u0966') == true          // Devanagari di
 @test
 def isDigit15(): Bool = Char.isDigit('\u096F') == true          // Devanagari digit nine
 
-/////////////////////////////////////////////////////////////////////////////
-// isAsciiDigit                                                            //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isAsciiDigit
+//
 
 @test
 def isAsciiDigit01(): Bool = Char.isAsciiDigit('a') == false
@@ -188,9 +188,9 @@ def isAsciiDigit14(): Bool = Char.isAsciiDigit('\u0966') == false       // Devan
 @test
 def isAsciiDigit15(): Bool = Char.isAsciiDigit('\u096F') == false       // Devanagari digit nine
 
-/////////////////////////////////////////////////////////////////////////////
-// isOctDigit                                                              //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isOctDigit
+//
 
 @test
 def isOctDigit01(): Bool = Char.isOctDigit('a') == false
@@ -231,9 +231,9 @@ def isOctDigit12(): Bool = Char.isOctDigit('7') == true
 @test
 def isOctDigit13(): Bool = Char.isOctDigit('8') == false
 
-/////////////////////////////////////////////////////////////////////////////
-// isHexDigit                                                              //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isHexDigit
+//
 
 @test
 def isHexDigit01(): Bool = Char.isHexDigit('a') == true
@@ -286,9 +286,9 @@ def isHexDigit16(): Bool = Char.isHexDigit('G') == false
 @test
 def isHexDigit17(): Bool = Char.isHexDigit('g') == false
 
-/////////////////////////////////////////////////////////////////////////////
-// isLowerCase                                                             //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isLowerCase
+//
 
 @test
 def isLowerCase01(): Bool = Char.isLowerCase('a') == true
@@ -323,9 +323,9 @@ def isLowerCase10(): Bool = Char.isLowerCase('â') == true
 @test
 def isLowerCase11(): Bool = Char.isLowerCase('Â') == false
 
-/////////////////////////////////////////////////////////////////////////////
-// isUpperCase                                                             //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isUpperCase
+//
 
 @test
 def isUpperCase01(): Bool = Char.isUpperCase('a') == false
@@ -360,9 +360,9 @@ def isUpperCase10(): Bool = Char.isUpperCase('â') == false
 @test
 def isUpperCase11(): Bool = Char.isUpperCase('Â') == true
 
-/////////////////////////////////////////////////////////////////////////////
-// isWhiteSpace                                                            //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isWhiteSpace
+//
 
 @test
 def isWhiteSpace01(): Bool = Char.isWhiteSpace('a') == false
@@ -415,9 +415,9 @@ def isWhiteSpace16(): Bool = Char.isWhiteSpace('\u000D') == true    // carriage-
 @test
 def isWhiteSpace17(): Bool = Char.isWhiteSpace('\r') == true        // carriage-return
 
-/////////////////////////////////////////////////////////////////////////////
-// toLowerCase                                                             //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toLowerCase
+//
 
 @test
 def toLowerCase01(): Bool = Char.toLowerCase('a') == 'a'
@@ -452,9 +452,9 @@ def toLowerCase10(): Bool = Char.toLowerCase('â') == 'â'
 @test
 def toLowerCase11(): Bool = Char.toLowerCase('Â') == 'â'
 
-/////////////////////////////////////////////////////////////////////////////
-// toUpperCase                                                             //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toUpperCase
+//
 
 @test
 def toUpperCase01(): Bool = Char.toUpperCase('a') == 'A'
@@ -489,9 +489,9 @@ def toUpperCase10(): Bool = Char.toUpperCase('â') == 'Â'
 @test
 def toUpperCase11(): Bool = Char.toUpperCase('Â') == 'Â'
 
-/////////////////////////////////////////////////////////////////////////////
-// toString                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toString
+//
 
 @test
 def toString01(): Bool = Char.toString('a') == "a"
@@ -526,9 +526,9 @@ def toString10(): Bool = Char.toString('â') == "â"
 @test
 def toString11(): Bool = Char.toString('Â') == "Â"
 
-/////////////////////////////////////////////////////////////////////////////
-// toInt32                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toInt32
+//
 
 @test
 def toInt3201(): Bool = Char.toInt32('a') == 0x0061
@@ -563,9 +563,9 @@ def toInt3210(): Bool = Char.toInt32('â') == 0x00E2         // a-circumflex (lo
 @test
 def toInt3211(): Bool = Char.toInt32('Â') == 0x00C2         // A-circumflex (upper-case)
 
-/////////////////////////////////////////////////////////////////////////////
-// fromInt32                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// fromInt32
+//
 
 @test
 def fromInt3201(): Bool = Char.fromInt32(0x0061) == 'a'

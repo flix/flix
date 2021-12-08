@@ -1,12 +1,12 @@
-///
-/// An implementation of the IntervalAlt domain.
-///
-/// This implementation uses an explicit bottom and top element.
-///
-/// See Cousot & Cousot '77 for details.
-///
 use Bool.{∧, ∨, →, ↔, ⊕};
 
+//
+// An implementation of the IntervalAlt domain.
+//
+// This implementation uses an explicit bottom and top element.
+//
+// See Cousot & Cousot '77 for details.
+//
 namespace Domain/IntervalAlt {
 
     ///
@@ -148,9 +148,9 @@ namespace Domain/IntervalAlt {
         case _                              => Top
     }
 
-    /**
-      * Over-approximates `equal`.
-      */
+    ///
+    /// Over-approximates `equal`.
+    ///
 //    #safeBelnap2((x, y) -> x == y)
 //    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 #commutativeBelnap
     pub def eq(x: IntervalAlt, y: IntervalAlt): Belnap.Belnap = match (x, y) {
@@ -164,16 +164,16 @@ namespace Domain/IntervalAlt {
         case _                                                  => Belnap/Belnap.Top
     }
 
-    /**
-      * Over-approximates `not equal`.
-      */
+    ///
+    /// Over-approximates `not equal`.
+    ///
 //    #safeBelnap2((x, y) -> x != y)
     // NB: Strictness and monotonicity follows from the properties of `not` and `eq`.
     pub def neq(x: IntervalAlt, y: IntervalAlt): Belnap.Belnap = Belnap.not(eq(x, y))
 
-    /**
-      * Over-approximates `less than`.
-      */
+    ///
+    /// Over-approximates `less than`.
+    ///
 //    #safeBelnap2((x, y) -> x < y)
 //    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2
     pub def less(x: IntervalAlt, y: IntervalAlt): Belnap.Belnap = match (x, y) {
@@ -191,9 +191,9 @@ namespace Domain/IntervalAlt {
         case _                                                  => Belnap/Belnap.Top
     }
 
-    /**
-      * Over-approximates `less than or equal`.
-      */
+    ///
+    /// Over-approximates `less than or equal`.
+    ///
 //    #safeBelnap2((x, y) -> x <= y)
     // NB: Strictness and monotonicity follows from the properties of `or` and `less`.
     pub def lessEqual(x: IntervalAlt, y: IntervalAlt): Belnap.Belnap = Belnap.or(x `less` y, x `eq` y)

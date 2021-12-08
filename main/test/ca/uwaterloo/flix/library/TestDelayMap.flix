@@ -17,9 +17,9 @@
 
 namespace TestDelayMap {
 
-    /////////////////////////////////////////////////////////////////////////////
-    // insertWith                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // insertWith
+    //
 
     @test
     def insertWith01(): Bool =
@@ -49,9 +49,9 @@ namespace TestDelayMap {
         DelayMap.toList |> List.sortBy(t -> fst(t)) == (1, 4) :: (4, -2) :: (5, -2):: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // insertWithKey insertWithKey                                             //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // insertWithKey insertWithKey
+    //
 
     @test
     def insertWithInsertWith01(): Bool =
@@ -85,9 +85,9 @@ namespace TestDelayMap {
             DelayMap.toList == ("a", 1) :: ("b", 4) :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // insertWith insertWith fusion                                            //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // insertWith insertWith fusion
+    //
 
     @test
     def insertWithFusion01(): Bool & Impure =
@@ -115,9 +115,9 @@ namespace TestDelayMap {
         List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map (pure)                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map (pure)
+    //
 
     @test
     def mapPure01(): Bool =
@@ -143,9 +143,9 @@ namespace TestDelayMap {
             DelayMap.map(v -> 3 * v) |> DelayMap.toMap == Map#{2 -> -3, 5 -> 45, 11 -> -27, 8 -> 24}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map (impure)                                                            //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map (impure)
+    //
 
     @test
     def mapImpure01(): Bool & Impure =
@@ -173,9 +173,9 @@ namespace TestDelayMap {
             DelayMap.map(v -> 3 * v as & Impure) |> DelayMap.toMap == Map#{2 -> -3, 5 -> 45, 11 -> -27, 8 -> 24}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map map                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map map
+    //
 
     @test
     def mapMap01(): Bool =
@@ -210,9 +210,9 @@ namespace TestDelayMap {
             DelayMap.toMap == Map#{2 -> -9, 5 -> 135, 11 -> -81}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map (fusion)                                                            //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map (fusion)
+    //
 
     @test
     def mapFusion01(): Bool & Impure =
@@ -232,9 +232,9 @@ namespace TestDelayMap {
         List.reverse(deref l) == "a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // mapWithKey                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // mapWithKey
+    //
 
     @test
     def mapWithKey01(): Bool =
@@ -262,9 +262,9 @@ namespace TestDelayMap {
             DelayMap.mapWithKey((k, v) -> k + v) |> DelayMap.toMap == Map#{2 -> 1, 5 -> 20, 11 -> 2, 8 -> 16}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // union                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // union
+    //
 
     @test
     def union01(): Bool =
@@ -363,9 +363,9 @@ namespace TestDelayMap {
         DelayMap.union(m1, m2) |> DelayMap.toMap == Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22, 1 -> 2, 44 -> 33}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // unionWith                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // unionWith
+    //
 
     @test
     def unionWith01(): Bool =
@@ -464,9 +464,9 @@ namespace TestDelayMap {
         DelayMap.unionWith((v1, v2) -> v1 - v2, m1, m2) |> DelayMap.toMap == Map#{2 -> -1, 11 -> 14, 9 -> 8, 15 -> 1, 1 -> 2, 44 -> 33}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // unionWithKey (pure)                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // unionWithKey (pure)
+    //
 
     @test
     def unionWithKeyPure01(): Bool =
@@ -565,9 +565,9 @@ namespace TestDelayMap {
         DelayMap.unionWithKey((k, v1, v2) -> k + v1 - v2, m1, m2) |> DelayMap.toMap == Map#{2 -> 1, 11 -> 14, 9 -> 8, 15 -> 16, 1 -> 2, 44 -> 33}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // unionWithKey (impure)                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // unionWithKey (impure)
+    //
 
     @test
     def unionWithKeyImpure01(): Bool & Impure =
@@ -666,9 +666,9 @@ namespace TestDelayMap {
         DelayMap.unionWithKey((k, v1, v2) -> k + v1 - v2 as & Impure, m1, m2) |> DelayMap.toMap == Map#{2 -> 1, 11 -> 14, 9 -> 8, 15 -> 16, 1 -> 2, 44 -> 33}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // unionWithKey unionWithKey                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // unionWithKey unionWithKey
+    //
 
     @test
     def unionWithKeyUnionWithKey01(): Bool =
@@ -699,9 +699,9 @@ namespace TestDelayMap {
             DelayMap.toMap == Map#{1 -> 6}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // unionWithKey (fusion)                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // unionWithKey (fusion)
+    //
 
     @test
     def unionWithKeyFusion01(): Bool & Impure =
@@ -721,9 +721,9 @@ namespace TestDelayMap {
         List.reverse(deref l) == "a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // adjust                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // adjust
+    //
 
     @test
     def adjust01(): Bool =
@@ -756,9 +756,9 @@ namespace TestDelayMap {
         DelayMap.adjust(v -> 2 * v, 4, m) |> DelayMap.toMap == Map#{1 -> 4, 5 -> -2}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // adjustWithKey                                                           //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // adjustWithKey
+    //
 
     @test
     def adjustWithKey01(): Bool =
@@ -791,9 +791,9 @@ namespace TestDelayMap {
         DelayMap.adjustWithKey((k, v) -> k + v, 4, m) |> DelayMap.toMap == Map#{1 -> 4, 5 -> -2}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // update                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // update
+    //
 
     @test
     def update01(): Bool =
@@ -841,9 +841,9 @@ namespace TestDelayMap {
         DelayMap.update(v -> if (v rem 2 != 0) Some(2 * v) else None, 4, m) |> DelayMap.toMap == Map#{1 -> 4, 5 -> -2}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // updateWithKey (pure)                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // updateWithKey (pure)
+    //
 
     @test
     def updateWithKeyPure01(): Bool =
@@ -900,9 +900,9 @@ namespace TestDelayMap {
             DelayMap.toMap == Map#{1 -> 4, 5 -> -2}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // updateWithKey (pure)                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // updateWithKey (pure)
+    //
 
     @test
     def updateWithKeyImpure01(): Bool & Impure =
@@ -959,9 +959,9 @@ namespace TestDelayMap {
             DelayMap.toMap == Map#{1 -> 4, 5 -> -2}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // updateWithKey updateWithKey                                             //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // updateWithKey updateWithKey
+    //
 
     @test
     def updateWithKeyUpdateWithKey01(): Bool =
@@ -992,9 +992,9 @@ namespace TestDelayMap {
             DelayMap.toMap == Map#{1 -> 9, 5 -> 1}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // updateWithKey (fusion)                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // updateWithKey (fusion)
+    //
 
     @test
     def updateWithKeyFusion01(): Bool & Impure =
@@ -1022,9 +1022,9 @@ namespace TestDelayMap {
         List.reverse(deref l) == "a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // size                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // size
+    //
 
     @test
     def size01(): Bool =
@@ -1051,9 +1051,9 @@ namespace TestDelayMap {
         Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8, 5 -> 10} |> Map.toDelayMap |> DelayMap.size == 5
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // singleton                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // singleton
+    //
 
     @test
     def singleton01(): Bool =
@@ -1068,9 +1068,9 @@ namespace TestDelayMap {
         DelayMap.singleton(-99, -11) |> DelayMap.toMap == Map#{-99 -> -11}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // isEmpty                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // isEmpty
+    //
 
     @test
     def isEmpty01(): Bool =
@@ -1093,9 +1093,9 @@ namespace TestDelayMap {
         not (Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8} |> Map.toDelayMap |> DelayMap.isEmpty)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foldLeft                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foldLeft
+    //
 
     @test
     def foldLeft01(): Bool =
@@ -1118,9 +1118,9 @@ namespace TestDelayMap {
             DelayMap.foldLeft((s, v) -> s + v, 0) == 12
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foldLeftWithKey                                                         //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foldLeftWithKey
+    //
 
     @test
     def foldLeftWithKey01(): Bool =
@@ -1143,9 +1143,9 @@ namespace TestDelayMap {
             DelayMap.foldLeftWithKey((s, k, v) -> k + s + v, 0) == 21
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foldRight                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foldRight
+    //
 
     @test
     def foldRight01(): Bool =
@@ -1167,9 +1167,9 @@ namespace TestDelayMap {
         Map#{1 -> 2, 3 -> 4, 5 -> 6} |> Map.toDelayMap |>
             DelayMap.foldRight((v, s) -> s + v, 0) == 12
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithKey                                                        //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foldRightWithKey
+    //
 
     @test
     def foldRightWithKey01(): Bool =
@@ -1192,9 +1192,9 @@ namespace TestDelayMap {
             DelayMap.foldRightWithKey((k, v, s) -> k + s + v, 0) == 21
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // reduceLeft                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // reduceLeft
+    //
 
     @test
     def reduceLeft01(): Bool =
@@ -1217,9 +1217,9 @@ namespace TestDelayMap {
             DelayMap.reduceLeft((v1, v2) -> v1 - v2) == Some(-5)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // reduceLeftWithKey                                                       //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // reduceLeftWithKey
+    //
 
     @test
     def reduceLeftWithKey01(): Bool =
@@ -1242,9 +1242,9 @@ namespace TestDelayMap {
             DelayMap.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2)) == Some((-4, -5))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // reduceRight                                                             //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // reduceRight
+    //
 
     @test
     def reduceRight01(): Bool =
@@ -1267,9 +1267,9 @@ namespace TestDelayMap {
             DelayMap.reduceRight((v1, v2) -> v1 - v2) == Some(3)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // reduceRightWithKey                                                      //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // reduceRightWithKey
+    //
 
     @test
     def reduceRightWithKey01(): Bool =
@@ -1292,9 +1292,9 @@ namespace TestDelayMap {
             DelayMap.reduceRightWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2)) == Some((2 , 3))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foreach                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foreach
+    //
 
     @test
     def foreach01(): Bool & Impure =
@@ -1311,9 +1311,9 @@ namespace TestDelayMap {
         1 == deref r
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // memberOf                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // memberOf
+    //
 
     @test
     def memberOf01(): Bool =
@@ -1366,9 +1366,9 @@ namespace TestDelayMap {
             DelayMap.memberOf(-2)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // keysOf                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // keysOf
+    //
 
     @test
     def keysOf01(): Bool =
@@ -1401,9 +1401,9 @@ namespace TestDelayMap {
             DelayMap.keysOf == Set#{1, 2, 3, 4, 5}
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // valuesOf                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // valuesOf
+    //
 
     @test
     def valuesOf01(): Bool =
@@ -1441,9 +1441,9 @@ namespace TestDelayMap {
             DelayMap.valuesOf == -11 :: 4 :: -5 :: 7 :: -5 :: Nil
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // minimum                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // minimum
+    //
 
     @test
     def minimum01(): Bool =
@@ -1466,9 +1466,9 @@ namespace TestDelayMap {
             DelayMap.minimum == Some((-44, 4))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // minimumBy                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // minimumBy
+    //
 
     @test
     def minimumBy01(): Bool =
@@ -1491,9 +1491,9 @@ namespace TestDelayMap {
             DelayMap.minimumBy((x, _, y, _) -> x <=> y) == Some((-44, 4))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // maximum                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // maximum
+    //
 
     @test
     def maximum01(): Bool =
@@ -1516,9 +1516,9 @@ namespace TestDelayMap {
             DelayMap.maximum == Some((107, -107))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // maximumBy                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // maximumBy
+    //
 
     @test
     def maximumBy01(): Bool =
@@ -1541,9 +1541,9 @@ namespace TestDelayMap {
             DelayMap.maximumBy((x, _, y, _) -> x <=> y) == Some((107, -107))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toIterator
+    //
 
     @test
     def toIterator01(): Bool & Impure =
@@ -1562,9 +1562,9 @@ namespace TestDelayMap {
             DelayMap.toIterator |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // sum                                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // sum
+    //
 
     @test
     def sum01(): Bool =

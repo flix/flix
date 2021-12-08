@@ -18,36 +18,36 @@ namespace TestResult {
 
     use Hash.hash;
 
-/////////////////////////////////////////////////////////////////////////////
-// isOk                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isOk
+//
 @test
 def isOk01(): Bool = Result.isOk(Ok(1)) == true
 
 @test
 def isOk02(): Bool = Result.isOk(Err(1)) == false
 
-/////////////////////////////////////////////////////////////////////////////
-// isErr                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// isErr
+//
 @test
 def isErr01(): Bool = Result.isErr(Ok(1)) == false
 
 @test
 def isErr02(): Bool = Result.isErr(Err(1)) == true
 
-/////////////////////////////////////////////////////////////////////////////
-// getWithDefault                                                          //
-/////////////////////////////////////////////////////////////////////////////
+//
+// getWithDefault
+//
 @test
 def getWithDefault01(): Bool = Result.getWithDefault(Ok(1), 2) == 1
 
 @test
 def getWithDefault02(): Bool = Result.getWithDefault(Err(false), 2) == 2
 
-/////////////////////////////////////////////////////////////////////////////
-// withDefault                                                             //
-/////////////////////////////////////////////////////////////////////////////
+//
+// withDefault
+//
 @test
 def withDefault01(): Bool = Result.withDefault(Ok(1), Ok(2)): Result[_, Unit] == Ok(1)
 
@@ -60,9 +60,9 @@ def withDefault03(): Bool = Result.withDefault(Err(false), Ok(2)): Result[_, Uni
 @test
 def withDefault04(): Bool = Result.withDefault(Err(false), Err(true)): Result[Unit, _] == Err(true)
 
-/////////////////////////////////////////////////////////////////////////////
-// replace                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// replace
+//
 @test
 def replace01(): Bool = Result.replace(3, 4, Err(false)) == Err(false)
 
@@ -75,9 +75,9 @@ def replace03(): Bool = Result.replace(3, 4, Ok(3)): Result[_, Unit] == Ok(4)
 @test
 def replace04(): Bool = Result.replace(3, 4, Ok(4)): Result[_, Unit] == Ok(4)
 
-/////////////////////////////////////////////////////////////////////////////
-// exists                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// exists
+//
 @test
 def exists01(): Bool = Result.exists(i -> i == 2, Err(false)) == false
 
@@ -87,9 +87,9 @@ def exists02(): Bool = Result.exists(i -> i == 2, Ok(1)) == false
 @test
 def exists03(): Bool = Result.exists(i -> i == 2, Ok(2)) == true
 
-/////////////////////////////////////////////////////////////////////////////
-// forall                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// forall
+//
 @test
 def forall01(): Bool = Result.forall(i -> i == 2, Err(false)) == true
 
@@ -99,9 +99,9 @@ def forall02(): Bool = Result.forall(i -> i == 2, Ok(1)) == false
 @test
 def forall03(): Bool = Result.forall(i -> i == 2, Ok(2)) == true
 
-/////////////////////////////////////////////////////////////////////////////
-// map                                                                     //
-/////////////////////////////////////////////////////////////////////////////
+//
+// map
+//
 @test
 def map01(): Bool = Result.map(i -> i == 2, Err(-1ii)) == Err(-1ii)
 
@@ -111,9 +111,9 @@ def map02(): Bool = Result.map(i -> i == 2, Ok(1)): Result[_, Unit] == Ok(false)
 @test
 def map03(): Bool = Result.map(i -> i == 2, Ok(2)): Result[_, Unit] == Ok(true)
 
-/////////////////////////////////////////////////////////////////////////////
-// mapErr                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// mapErr
+//
 @test
 def mapErr01(): Bool = Result.mapErr(i -> i == 2, Ok(1)) == Ok(1)
 
@@ -123,9 +123,9 @@ def mapErr02(): Bool = Result.mapErr(i -> i == 2, Err(1)): Result[Unit, _] == Er
 @test
 def mapErr03(): Bool = Result.mapErr(i -> i == 2, Err(2)): Result[Unit, _] == Err(true)
 
-/////////////////////////////////////////////////////////////////////////////
-// flatMap                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// flatMap
+//
 @test
 def flatMap01(): Bool = Result.flatMap(i -> if (i == 2) Ok(i) else Err(false), Err(true)) == Err(true)
 
@@ -135,9 +135,9 @@ def flatMap02(): Bool = Result.flatMap(i -> if (i == 2) Ok(i) else Err(false), O
 @test
 def flatMap03(): Bool = Result.flatMap(i -> if (i == 2) Ok(2*i) else Err(false), Ok(2)) == Ok(4)
 
-/////////////////////////////////////////////////////////////////////////////
-// count                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// count
+//
 @test
 def count01(): Bool = Result.count(i -> i == 2, Err(false)) == 0
 
@@ -147,9 +147,9 @@ def count02(): Bool = Result.count(i -> i == 2, Ok(1)) == 0
 @test
 def count03(): Bool = Result.count(i -> i == 2, Ok(2)) == 1
 
-/////////////////////////////////////////////////////////////////////////////
-// find                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+//
+// find
+//
 @test
 def find01(): Bool = Result.find(i -> i == 2, Err(false)) == None
 
@@ -159,9 +159,9 @@ def find02(): Bool = Result.find(i -> i == 2, Ok(1)) == None
 @test
 def find03(): Bool = Result.find(i -> i == 2, Ok(2)) == Some(2)
 
-/////////////////////////////////////////////////////////////////////////////
-// foldLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foldLeft
+//
 @test
 def foldLeft01(): Bool = Result.foldLeft((b, i) -> if (i == 2 and b) true else false, false, Err(-1ii)) == false
 
@@ -177,9 +177,9 @@ def foldLeft04(): Bool = Result.foldLeft((b, i) -> if (i == 2 and b) true else f
 @test
 def foldLeft05(): Bool = Result.foldLeft((b, i) -> if (i == 2 and b) true else false, true, Ok(2)) == true
 
-/////////////////////////////////////////////////////////////////////////////
-// foldRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foldRight
+//
 @test
 def foldRight01(): Bool = Result.foldRight((i, b) -> if (i == 2 and b) true else false, Err(-1ii), false) == false
 
@@ -195,9 +195,9 @@ def foldRight04(): Bool = Result.foldRight((i, b) -> if (i == 2 and b) true else
 @test
 def foldRight05(): Bool = Result.foldRight((i, b) -> if (i == 2 and b) true else false, Ok(2), true) == true
 
-/////////////////////////////////////////////////////////////////////////////
-// sequence                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// sequence
+//
 @test
 def sequence01(): Bool = Result.sequence(Nil): Result[List[Unit], Unit] == Ok(Nil)
 
@@ -219,9 +219,9 @@ def sequence06(): Bool = Result.sequence(Ok(1) :: Ok(2) :: Err("three") :: Nil) 
 @test
 def sequence07(): Bool = Result.sequence(Ok(1) :: Err("two") :: Ok(3) :: Nil) == Err("two")
 
-/////////////////////////////////////////////////////////////////////////////
-// traverse                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// traverse
+//
 @test
 def traverse01(): Bool = Result.traverse(x -> Ok(x + 1), Nil): Result[_, Unit] == Ok(Nil)
 
@@ -246,9 +246,9 @@ def traverse07(): Bool = Result.traverse(x -> if (x == 2) Err("two") else Ok(x),
 @test
 def traverse08(): Bool = Result.traverse(_ -> Ok(42), 1 :: 2 :: 3 :: Nil): Result[_, Unit] == Ok(42 :: 42 :: 42 :: Nil)
 
-/////////////////////////////////////////////////////////////////////////////
-// traverseX                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// traverseX
+//
 @test
 def traverseX01(): Bool = Result.traverseX(x -> Ok(x + 1), Nil): Result[_, Unit] == Ok()
 
@@ -273,9 +273,9 @@ def traverseX07(): Bool = Result.traverseX(x -> if (x == 2) Err("two") else Ok(x
 @test
 def traverseX08(): Bool = Result.traverseX(_ -> Ok(42), 1 :: 2 :: 3 :: Nil): Result[_, Unit] == Ok()
 
-/////////////////////////////////////////////////////////////////////////////
-// foldLeftM                                                               //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foldLeftM
+//
 @test
 def foldLeftM01(): Bool = Result.foldLeftM((ac, i) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, Nil) == Ok(0)
 
@@ -297,9 +297,9 @@ def foldLeftM06(): Bool = Result.foldLeftM((ac, i) -> if (i < 0) Err(-1) else Ok
 @test
 def foldLeftM07(): Bool = Result.foldLeftM((ac, i) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: 2 :: -3 :: Nil) == Err(-1)
 
-/////////////////////////////////////////////////////////////////////////////
-// foldRightM                                                              //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foldRightM
+//
 @test
 def foldRightM01(): Bool = Result.foldRightM((i, ac) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, Nil) == Ok(0)
 
@@ -321,45 +321,45 @@ def foldRightM06(): Bool = Result.foldRightM((i, ac) -> if (i < 0) Err(-1) else 
 @test
 def foldRightM07(): Bool = Result.foldRightM((i, ac) -> if (i < 0) Err(-1) else Ok(Int32.max(i, ac)), 0, 1 :: 2 :: -3 :: Nil) == Err(-1)
 
-/////////////////////////////////////////////////////////////////////////////
-// toList                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toList
+//
 @test
 def toList01(): Bool = Result.toList(Err(-1ii): Result[Unit, _]) == Nil
 
 @test
 def toList02(): Bool = Result.toList(Ok(1)) == 1 :: Nil
 
-/////////////////////////////////////////////////////////////////////////////
-// toSet                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toSet
+//
 @test
 def toSet01(): Bool = Result.toSet(Err(-1ii): Result[Unit, _]) == Set#{}
 
 @test
 def toSet02(): Bool = Result.toSet(Ok(1)) == Set#{1}
 
-/////////////////////////////////////////////////////////////////////////////
-// toMap                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toMap
+//
 @test
 def toMap01(): Bool = Result.toMap(Err(-1ii): Result[(Unit, Unit), _]) == Map#{}
 
 @test
 def toMap02(): Bool = Result.toMap(Ok((1, true))) == Map#{1 -> true}
 
-/////////////////////////////////////////////////////////////////////////////
-// toOption                                                                //
-/////////////////////////////////////////////////////////////////////////////
+//
+// toOption
+//
 @test
 def toOption01(): Bool = Result.toOption(Err(-1ii): Result[Unit, _]) == None
 
 @test
 def toOption02(): Bool = Result.toOption(Ok(1)) == Some(1)
 
-/////////////////////////////////////////////////////////////////////////////
-// foreach                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+//
+// foreach
+//
 
 @test
 def foreach01(): Bool & Impure =
@@ -373,9 +373,9 @@ def foreach02(): Bool & Impure =
     Result.foreach(x -> r := x, Err(42): Result[Int, Int]);
     21 == deref r
 
-/////////////////////////////////////////////////////////////////////////////
-// ap                                                                      //
-/////////////////////////////////////////////////////////////////////////////
+//
+// ap
+//
 @test
 def ap01(): Bool = Result.ap(Ok(x -> x + 1), Ok(123)): Result[_, Unit] == Ok(124)
 
@@ -388,9 +388,9 @@ def ap03(): Bool = Result.ap(Err("a"), Ok(123)): Result[Int32, _] == Err("a")
 @test
 def ap04(): Bool = Result.ap(Err("a"), Err("b")): Result[Unit, _] == Err("a")
 
-/////////////////////////////////////////////////////////////////////////////
-// lift2                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift2
+//
 
 @test
 def lift201(): Bool = Result.lift2((x1,x2) -> x1 + x2, Ok(123), Ok(1)): Result[_, Unit] == Ok(124)
@@ -404,9 +404,9 @@ def lift203(): Bool = Result.lift2((x1,x2) -> x1 + x2, Err("e1"), Ok(1)) == Err(
 @test
 def lift204(): Bool = Result.lift2((x1,x2) -> x1 + x2, Err("e1"), Err("e2"): Result[Int32, String]) == Err("e1")
 
-/////////////////////////////////////////////////////////////////////////////
-// lift3                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift3
+//
 
 @test
 def lift301(): Bool = Result.lift3((x1,x2,x3) -> x1 + x2 + x3, Ok(123), Ok(1), Ok(2)): Result[_, Unit] == Ok(126)
@@ -429,9 +429,9 @@ def lift306(): Bool = Result.lift3((x1,x2,x3) -> x1 + x2 + x3, Err("e1"), Ok(1),
 @test
 def lift307(): Bool = Result.lift3((x1,x2,x3) -> x1 + x2 + x3, Err("e1"), Err("e2"), Err("e3"): Result[Int32, String]) == Err("e1")
 
-/////////////////////////////////////////////////////////////////////////////
-// lift4                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift4
+//
 
 @test
 def lift401(): Bool = Result.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Ok(123), Ok(1), Ok(2), Ok(3)): Result[_, Unit] == Ok(129)
@@ -451,9 +451,9 @@ def lift405(): Bool = Result.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Err("e1")
 @test
 def lift406(): Bool = Result.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Err("e1"), Err("e2"), Err("e3"), Err("e4"): Result[Int32, String]) == Err("e1")
 
-/////////////////////////////////////////////////////////////////////////////
-// lift5                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift5
+//
 
 @test
 def lift501(): Bool = Result.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4)): Result[_, Unit] == Ok(133)
@@ -476,9 +476,9 @@ def lift506(): Bool = Result.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, E
 @test
 def lift507(): Bool = Result.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"): Result[Int32, String]) == Err("e1")
 
-/////////////////////////////////////////////////////////////////////////////
-// lift6                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift6
+//
 
 @test
 def lift601(): Bool = Result.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5)): Result[_, Unit] == Ok(138)
@@ -504,9 +504,9 @@ def lift607(): Bool = Result.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5
 @test
 def lift608(): Bool = Result.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"), Err("e6"): Result[Int32, String]) == Err("e1")
 
-/////////////////////////////////////////////////////////////////////////////
-// lift7                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift7
+//
 
 @test
 def lift701(): Bool = Result.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6)): Result[_, Unit] == Ok(144)
@@ -535,9 +535,9 @@ def lift708(): Bool = Result.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 +
 @test
 def lift709(): Bool = Result.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"), Err("e6"), Err("e7"): Result[Int32, String]) == Err("e1")
 
-/////////////////////////////////////////////////////////////////////////////
-// lift8                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift8
+//
 
 @test
 def lift801(): Bool = Result.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7)): Result[_, Unit] == Ok(151)
@@ -569,9 +569,9 @@ def lift809(): Bool = Result.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x
 @test
 def lift810(): Bool = Result.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"), Err("e6"), Err("e7"), Err("e8"): Result[Int32, String]) == Err("e1")
 
-/////////////////////////////////////////////////////////////////////////////
-// lift9                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift9
+//
 
 @test
 def lift901(): Bool = Result.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8)): Result[_, Unit] == Ok(159)
@@ -606,9 +606,9 @@ def lift910(): Bool = Result.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 
 @test
 def lift911(): Bool = Result.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"), Err("e6"), Err("e7"), Err("e8"), Err("e9"): Result[Int32, String]) == Err("e1")
 
-/////////////////////////////////////////////////////////////////////////////
-// lift10                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+//
+// lift10
+//
 
 @test
 def lift1001(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Ok(123), Ok(1), Ok(2), Ok(3), Ok(4), Ok(5), Ok(6), Ok(7), Ok(8), Ok(9)): Result[_, Unit] == Ok(168)
@@ -646,9 +646,9 @@ def lift1011(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2
 @test
 def lift1012(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Err("e1"), Err("e2"), Err("e3"), Err("e4"), Err("e5"), Err("e6"), Err("e7"), Err("e8"), Err("e9"), Err("e10"): Result[Int32, String]) == Err("e1")
 
-    /////////////////////////////////////////////////////////////////////////////
-    // hash                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // hash
+    //
 
     @test
     def hash01(): Bool = hash(Err(()): Result[Unit, _]) == hash(Err(()): Result[Unit, _])
@@ -666,9 +666,9 @@ def lift1012(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2
     def hash05(): Bool = hash(Err(13i8): Result[Unit, _]) != hash(Err(255i16): Result[Unit, _])
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toIterator                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toIterator
+    //
 
     @test
     def toIterator01(): Bool & Impure =

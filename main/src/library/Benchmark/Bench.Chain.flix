@@ -38,9 +38,9 @@ def chainAppendMany(xs: Chain[a], ys: List[Chain[a]]): Chain[a] = match ys {
     case ys1 :: rs => chainAppendMany(Chain.append(xs, ys1), rs)
 }
 
-///////////////////////////////////////////////////////////////////////////////
-/// ofArray                                                               ///
-///////////////////////////////////////////////////////////////////////////////
+//
+/// ofArray
+//
 pub def listOfArray(l: Array[Int32]): Benchmark =
     defBenchmark("List.ofArray", () -> {
         l |>
@@ -54,9 +54,9 @@ pub def chainOfArray(l: Array[Int32]): Benchmark =
     } as & Pure)
 
 
-///////////////////////////////////////////////////////////////////////////////
-/// cons                                                                    ///
-///////////////////////////////////////////////////////////////////////////////
+//
+/// cons
+//
 pub def listCons(l: Array[Int32]): Benchmark =
     defBenchmark("List.cons", () -> {
         l |>
@@ -71,9 +71,9 @@ pub def chainCons(l: Array[Int32]): Benchmark =
         chainConsMany(Chain.empty())
     } as & Pure)
 
-///////////////////////////////////////////////////////////////////////////////
-/// snoc                                                                    ///
-///////////////////////////////////////////////////////////////////////////////
+//
+/// snoc
+//
 pub def listSnoc(l: Array[Int32]): Benchmark =
     defBenchmark("List.snoc", () -> {
         l |>
@@ -88,9 +88,9 @@ pub def chainSnoc(l: Array[Int32]): Benchmark =
         chainSnocMany(Chain.empty())
     } as & Pure)
 
-///////////////////////////////////////////////////////////////////////////////
-/// append                                                                    ///
-///////////////////////////////////////////////////////////////////////////////
+//
+/// append
+//
 pub def listAppend(l: Array[Int32]): Benchmark =
     defBenchmark("List.append", () -> {
         let l1 = Array.toList(l);
@@ -105,9 +105,9 @@ pub def chainAppend(l: Array[Int32]): Benchmark =
     } as & Pure)
 
 
-///////////////////////////////////////////////////////////////////////////////
-/// Chain Suite                                                             ///
-///////////////////////////////////////////////////////////////////////////////
+//
+/// Chain Suite
+//
 pub def chainSuite(n: Int32): Array[Benchmark] & Impure =
     let l = Array.range(1, n);
     [

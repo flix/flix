@@ -17,18 +17,18 @@
 namespace TestChain {
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // empty                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // empty
+    //
 
     @test
     def empty01(): Bool =
         let c: Chain[Int32] = Chain.empty();
         Chain.toList(c) == Nil
 
-    /////////////////////////////////////////////////////////////////////////////
-    // singleton                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // singleton
+    //
 
     @test
     def singleton01(): Bool =
@@ -40,9 +40,9 @@ namespace TestChain {
         let c: Chain[Option[Int32]] = Chain.singleton(None);
         Chain.toList(c) == None :: Nil
 
-    /////////////////////////////////////////////////////////////////////////////
-    // ap                                                                      //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // ap
+    //
 
     @test
     def ap01(): Bool = Chain.ap(Chain.empty(), Chain.empty()) == Chain.empty() : Chain[Int32]
@@ -62,9 +62,9 @@ namespace TestChain {
     @test
     def ap06(): Bool = Chain.ap(List.toChain((x -> x+1) :: (x -> x*2) :: Nil), List.toChain(0 :: 4 :: Nil)) == List.toChain(1 :: 5 :: 0 :: 8 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // isEmpty                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // isEmpty
+    //
 
     @test
     def isEmpty01(): Bool = Chain.isEmpty(Chain.empty()) == true
@@ -75,9 +75,9 @@ namespace TestChain {
     @test
     def isEmpty03(): Bool = Chain.isEmpty(List.toChain(1 :: 2 :: Nil)) == false
 
-    /////////////////////////////////////////////////////////////////////////////
-    // cons                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // cons
+    //
 
     @test
     def cons01(): Bool = Chain.cons(1, Chain.empty()) == Chain.singleton(1)
@@ -85,9 +85,9 @@ namespace TestChain {
     @test
     def cons02(): Bool = Chain.cons(1, Chain.singleton(2)) == List.toChain(1 :: 2 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // snoc                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // snoc
+    //
 
     @test
     def snoc01(): Bool = Chain.snoc(Chain.empty(), 1) == Chain.singleton(1)
@@ -95,9 +95,9 @@ namespace TestChain {
     @test
     def snoc02(): Bool = Chain.snoc(Chain.singleton(1), 2) == List.toChain(1 :: 2 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // head                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // head
+    //
 
     @test
     def head01(): Bool = Chain.head(Chain.empty(): Chain[Unit]) == None
@@ -111,9 +111,9 @@ namespace TestChain {
     @test
     def head04(): Bool = Chain.head(List.toChain(3 :: 2 :: 1 :: Nil)) == Some(3)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // last                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // last
+    //
 
     @test
     def last01(): Bool = Chain.last(Chain.empty(): Chain[Unit]) == None
@@ -127,9 +127,9 @@ namespace TestChain {
     @test
     def last04(): Bool = Chain.last(List.toChain(1 :: 2 :: 3 :: Nil)) == Some(3)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // init                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // init
+    //
 
     @test
     def init01(): Bool = Chain.init(Chain.empty(): Chain[Unit]) == None
@@ -152,9 +152,9 @@ namespace TestChain {
     @test
     def init07(): Bool = Chain.init(List.toChain(2 :: 1 :: 0 :: -1 :: Nil)) == Some(List.toChain(2 :: 1 :: 0 :: Nil))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // length                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // length
+    //
 
     @test
     def length01(): Bool = Chain.length(Chain.empty()) == 0
@@ -168,9 +168,9 @@ namespace TestChain {
     @test
     def length04(): Bool = Chain.length(List.toChain(1 :: 2 :: 3 :: Nil)) == 3
 
-    /////////////////////////////////////////////////////////////////////////////
-    // append                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // append
+    //
 
     @test
     def append01(): Bool = Chain.append(Chain.empty(): Chain[Unit], Chain.empty(): Chain[Unit]) == Chain.empty()
@@ -196,9 +196,9 @@ namespace TestChain {
     @test
     def append08(): Bool = Chain.append(Chain.singleton(1), List.toChain(2 :: 3 :: Nil)) == List.toChain(1 :: 2 :: 3 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // viewLeft                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // viewLeft
+    //
 
     @test
     def viewLeft01(): Bool = Chain.viewLeft(Chain.empty()) == Chain/ViewLeft.NoneLeft
@@ -212,9 +212,9 @@ namespace TestChain {
     @test
     def viewLeft04(): Bool = Chain.viewLeft(List.toChain(1 :: 2 :: 3 :: Nil)) == Chain/ViewLeft.SomeLeft(1, List.toChain(2 :: 3 :: Nil))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // viewRight                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // viewRight
+    //
 
     @test
     def viewRight01(): Bool = Chain.viewRight(Chain.empty()) == Chain/ViewRight.NoneRight
@@ -228,9 +228,9 @@ namespace TestChain {
     @test
     def viewRight04(): Bool = Chain.viewRight(List.toChain(1 :: 2 :: 3 :: Nil)) == Chain/ViewRight.SomeRight(List.toChain(1 :: 2 :: Nil), 3)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // memberOf                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // memberOf
+    //
 
     @test
     def memberOf01(): Bool = Chain.memberOf(0, Chain.empty()) == false
@@ -253,9 +253,9 @@ namespace TestChain {
     @test
     def memberOf07(): Bool = Chain.memberOf(3, List.toChain(1 :: 2 :: Nil)) == false
 
-    /////////////////////////////////////////////////////////////////////////////
-    // indexOf                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // indexOf
+    //
 
     @test
     def indexOf01(): Bool = Chain.indexOf(0, Chain.empty()) == -1
@@ -275,9 +275,9 @@ namespace TestChain {
     @test
     def indexOf06(): Bool = Chain.indexOf(2, List.toChain(1 :: 2 :: Nil)) == 1
 
-    /////////////////////////////////////////////////////////////////////////////
-    // find                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // find
+    //
 
     @test
     def find01(): Bool = Chain.find(i -> i > 2, Chain.empty()) == None
@@ -300,9 +300,9 @@ namespace TestChain {
     @test
     def find07(): Bool = Chain.find(i -> i > 2, List.toChain(6 :: 7 :: Nil)) == Some(6)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // findLeft                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // findLeft
+    //
 
     @test
     def findLeft01(): Bool = Chain.findLeft(i -> i > 2, Chain.empty()) == None
@@ -325,9 +325,9 @@ namespace TestChain {
     @test
     def findLeft07(): Bool = Chain.findLeft(i -> i > 2, List.toChain(6 :: 7 :: Nil)) == Some(6)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // findRight                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // findRight
+    //
 
     @test
     def findRight01(): Bool = Chain.findRight(i -> i > 2, Chain.empty()) == None
@@ -350,9 +350,9 @@ namespace TestChain {
     @test
     def findRight07(): Bool = Chain.findRight(i -> i > 2, List.toChain(6 :: 7 :: Nil)) == Some(7)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // range                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // range
+    //
 
     @test
     def range01(): Bool = Chain.range(1, 0) == Chain.empty()
@@ -369,9 +369,9 @@ namespace TestChain {
     @test
     def range05(): Bool = Chain.range(1, 4) == List.toChain(1 :: 2 :: 3 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // repeat                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // repeat
+    //
 
     @test
     def repeat01(): Bool = Chain.repeat(-1, 1) == Chain.empty()
@@ -388,9 +388,9 @@ namespace TestChain {
     @test
     def repeat05(): Bool = Chain.repeat(3, 1) == List.toChain(1 :: 1 :: 1 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // scan                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // scan
+    //
     @test
     def scan01(): Bool = Chain.scan((i, b) -> if (b) i+1 else i+2, 1, Chain.empty()) == Chain.singleton(1)
 
@@ -412,9 +412,9 @@ namespace TestChain {
     @test
     def scan07(): Bool = Chain.scan((i, b) -> if (b) i+1 else i+2, 1, List.toChain(true :: true :: Nil)) == List.toChain(1 :: 2 :: 3 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // scanLeft                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // scanLeft
+    //
 
     @test
     def scanLeft01(): Bool = Chain.scanLeft((i, b) -> if (b) i+1 else i+2, 1, Chain.empty()) == Chain.singleton(1)
@@ -437,9 +437,9 @@ namespace TestChain {
     @test
     def scanLeft07(): Bool = Chain.scanLeft((i, b) -> if (b) i+1 else i+2, 1, List.toChain(true :: true :: Nil)) == List.toChain(1 :: 2 :: 3 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // scanRight                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // scanRight
+    //
 
     @test
     def scanRight01(): Bool = Chain.scanRight((b, i) -> if (b) i+1 else i+2, 1, Chain.empty()) == Chain.singleton(1)
@@ -462,9 +462,9 @@ namespace TestChain {
     @test
     def scanRight07(): Bool = Chain.scanRight((b, i) -> if (b) i+1 else i+2, 1, List.toChain(true :: true :: Nil)) == List.toChain(3 :: 2 :: 1 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // map                                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // map
+    //
 
     @test
     def map01(): Bool = Chain.map(i -> i > 2, Chain.empty()) == Chain.empty()
@@ -487,9 +487,9 @@ namespace TestChain {
     @test
     def map07(): Bool = Chain.map(i -> i > 2, List.toChain(7 :: 8 :: Nil)) == List.toChain(true :: true :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // mapWithIndex                                                            //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // mapWithIndex
+    //
 
     @test
     def mapWithIndex01(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, Chain.empty()) == Chain.empty()
@@ -512,9 +512,9 @@ namespace TestChain {
     @test
     def mapWithIndex07(): Bool = Chain.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, List.toChain(7 :: 8 :: Nil)) == List.toChain(true :: false :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // flatMap                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // flatMap
+    //
 
     @test
     def flatMap01(): Bool = Chain.flatMap(i -> Chain.repeat(i, i), Chain.empty()) == Chain.empty()
@@ -534,9 +534,9 @@ namespace TestChain {
     @test
     def flatMap06(): Bool = Chain.flatMap(i -> Chain.repeat(i, i), List.toChain(2 :: 3 :: Nil)) == List.toChain(2 :: 2 :: 3 :: 3 :: 3 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // reverse                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // reverse
+    //
 
     @test
     def reverse01(): Bool = Chain.reverse(Chain.empty(): Chain[Unit]) == Chain.empty()
@@ -556,9 +556,9 @@ namespace TestChain {
     @test
     def reverse06(): Bool = Chain.reverse(List.toChain(1 :: 2 :: 3 :: 4 :: Nil)) == List.toChain(4 :: 3 :: 2 :: 1 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // intersperse                                                             //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // intersperse
+    //
 
     @test
     def intersperse01(): Bool = Chain.intersperse(11, Chain.empty()) == Chain.empty()
@@ -575,9 +575,9 @@ namespace TestChain {
     @test
     def intersperse05(): Bool = Chain.intersperse(11, List.toChain(1 :: 2 :: 3 :: 4 :: Nil)) == List.toChain(1 :: 11 :: 2 :: 11 :: 3 :: 11 :: 4 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // count                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // count
+    //
 
     @test
     def count01(): Bool = Chain.count(i -> i > 3, Chain.empty()) == 0
@@ -601,9 +601,9 @@ namespace TestChain {
     def count07(): Bool = Chain.count(i -> i > 3, List.toChain(6 :: 7 :: Nil)) == 2
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // flatten                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // flatten
+    //
 
     @test
     def flatten01(): Bool = Chain.flatten(Chain.empty(): Chain[Chain[Unit]]) == Chain.empty()
@@ -635,9 +635,9 @@ namespace TestChain {
     @test
     def flatten10(): Bool = Chain.flatten(List.toChain(Chain.singleton(1) :: List.toChain(2 :: 3 :: Nil) :: Chain.singleton(4) :: Nil)) == List.toChain(1 :: 2 :: 3 :: 4 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // exists                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // exists
+    //
 
     @test
     def exists01(): Bool = Chain.exists(i -> i > 3, Chain.empty()) == false
@@ -666,9 +666,9 @@ namespace TestChain {
     @test
     def exists09(): Bool = Chain.exists(i -> i > 3, List.toChain(1 :: 9 :: 3 :: Nil)) == true
 
-    /////////////////////////////////////////////////////////////////////////////
-    // forall                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // forall
+    //
 
     @test
     def forall01(): Bool = Chain.forall(i -> i > 3, Chain.empty()) == true
@@ -700,9 +700,9 @@ namespace TestChain {
     @test
     def forall10(): Bool = Chain.forall(i -> i > 3, List.toChain(11 :: 9 :: 31 :: Nil)) == true
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filter                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filter
+    //
 
     @test
     def filter01(): Bool = Chain.filter(i -> i > 3, Chain.empty()) == Chain.empty()
@@ -728,9 +728,9 @@ namespace TestChain {
     @test
     def filter08(): Bool = Chain.filter(i -> i > 3, List.toChain(1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil)) == List.toChain(4 :: 11 :: 17 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foldLeft                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foldLeft
+    //
 
     @test
     def foldLeft01(): Bool = Chain.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, Chain.empty()) == 100
@@ -744,9 +744,9 @@ namespace TestChain {
     @test
     def foldLeft04(): Bool = Chain.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 386
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foldRight                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foldRight
+    //
 
     @test
     def foldRight01(): Bool = Chain.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Chain.empty()) == 100
@@ -760,9 +760,9 @@ namespace TestChain {
     @test
     def foldRight04(): Bool = Chain.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 382
 
-    /////////////////////////////////////////////////////////////////////////////
-    // dropLeft                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // dropLeft
+    //
 
     @test
     def dropLeft01(): Bool = Chain.dropLeft(-1, Chain.empty(): Chain[Unit]) == Chain.empty()
@@ -800,9 +800,9 @@ namespace TestChain {
     @test
     def dropLeft12(): Bool = Chain.dropLeft(4, List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == List.toChain(5 :: 6 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // dropRight                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // dropRight
+    //
 
     @test
     def dropRight01(): Bool = Chain.dropRight(-1, Chain.empty(): Chain[Unit]) == Chain.empty()
@@ -840,9 +840,9 @@ namespace TestChain {
     @test
     def dropRight12(): Bool = Chain.dropRight(4, List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == List.toChain(1 :: 2 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // dropWhileLeft                                                           //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // dropWhileLeft
+    //
 
     @test
     def dropWhileLeft01(): Bool = Chain.dropWhileLeft(i -> i > 3, Chain.empty()) == Chain.empty()
@@ -869,9 +869,9 @@ namespace TestChain {
     def dropWhileLeft08(): Bool = Chain.dropWhileLeft(i -> i > 3, List.toChain(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) ==
                             List.toChain(-3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // dropWhileRight                                                          //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // dropWhileRight
+    //
 
     @test
     def dropWhileRight01(): Bool = Chain.dropWhileRight(i -> i > 3, Chain.empty()) == Chain.empty()
@@ -898,9 +898,9 @@ namespace TestChain {
     def dropWhileRight08(): Bool = Chain.dropWhileRight(i -> i > 3, List.toChain(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) ==
                             List.toChain(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // takeLeft                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // takeLeft
+    //
 
     @test
     def takeLeft01(): Bool = Chain.takeLeft(-1, Chain.empty(): Chain[Unit]) == Chain.empty()
@@ -939,9 +939,9 @@ namespace TestChain {
     def takeLeft12(): Bool = Chain.takeLeft(4, List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == List.toChain(1 :: 2 :: 3 :: 4 :: Nil)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // takeRight                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // takeRight
+    //
 
     @test
     def takeRight01(): Bool = Chain.takeRight(-1, Chain.empty(): Chain[Unit]) == Chain.empty()
@@ -979,9 +979,9 @@ namespace TestChain {
     @test
     def takeRight12(): Bool = Chain.takeRight(4, List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil)) == List.toChain(3 :: 4 :: 5 :: 6 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // takeWhileLeft                                                           //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // takeWhileLeft
+    //
 
     @test
     def takeWhileLeft01(): Bool = Chain.takeWhileLeft(i -> i > 3, Chain.empty(): Chain[Int32]) == Chain.empty()
@@ -1008,9 +1008,9 @@ namespace TestChain {
     def takeWhileLeft08(): Bool = Chain.takeWhileLeft(i -> i > 3, List.toChain(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) ==
                             List.toChain(4 :: 6 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // takeWhileRight                                                          //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // takeWhileRight
+    //
 
     @test
     def takeWhileRight01(): Bool = Chain.takeWhileRight(i -> i > 3, Chain.empty(): Chain[Int32]) == Chain.empty()
@@ -1037,9 +1037,9 @@ namespace TestChain {
     def takeWhileRight08(): Bool = Chain.takeWhileRight(i -> i > 3, List.toChain(4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)) ==
                             Chain.singleton(7)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // filterMap                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // filterMap
+    //
 
     @test
     def filterMap01(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.empty()) == Chain.empty()
@@ -1066,9 +1066,9 @@ namespace TestChain {
     def filterMap08(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil)) ==
                             List.toChain(0 :: 1 :: 2 :: 5 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // findMap                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // findMap
+    //
 
     @test
     def findMap01(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.empty()) == None
@@ -1094,9 +1094,9 @@ namespace TestChain {
     @test
     def findMap08(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil)) == Some(0)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // zip                                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // zip
+    //
 
     @test
     def zip01(): Bool = Chain.zip(Chain.empty(): Chain[Unit], Chain.empty(): Chain[Unit]) == Chain.empty()
@@ -1119,9 +1119,9 @@ namespace TestChain {
     @test
     def zip07(): Bool = Chain.zip(List.toChain(1 :: 3 :: 5 :: 7 :: Nil), List.toChain(2 :: 4 :: 6 :: 8 :: Nil)) == List.toChain((1, 2) :: (3, 4) :: (5, 6) :: (7, 8) :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // zipWith                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // zipWith
+    //
 
     @test
     def zipWith01(): Bool = Chain.zipWith((a, b) -> if (b) a+1 else a, Chain.empty(), Chain.empty()) == Chain.empty()
@@ -1143,9 +1143,9 @@ namespace TestChain {
                           List.toChain(false :: true :: true :: false :: false :: true :: true :: true :: Nil)) ==
                           List.toChain(1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // unzip                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // unzip
+    //
 
     @test
     def unzip01(): Bool = Chain.unzip(Chain.empty(): Chain[(Unit, Unit)]) == (Chain.empty(), Chain.empty())
@@ -1160,9 +1160,9 @@ namespace TestChain {
     def unzip04(): Bool = Chain.unzip(List.toChain((1, true) :: (2, true) :: (3, false) :: Nil)) ==
                         (List.toChain(1 :: 2 :: 3 :: Nil), List.toChain(true :: true :: false :: Nil))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // mapAccumLeft                                                            //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // mapAccumLeft
+    //
 
     @test
     def mapAccumLeft01(): Bool = Chain.mapAccumLeft((s, x) -> (s+1, x+s), 0, Chain.empty()) == (0, Chain.empty())
@@ -1176,9 +1176,9 @@ namespace TestChain {
     @test
     def mapAccumLeft04(): Bool = Chain.mapAccumLeft((s, x) -> (s+1, x+s), 0, List.toChain(1 :: 1 :: 1 :: Nil)) == (3, List.toChain(1 :: 2 :: 3 :: Nil))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // mapAccumRight                                                           //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // mapAccumRight
+    //
 
     @test
     def mapAccumRight01(): Bool = Chain.mapAccumRight((s, x) -> (s+1, x+s), 0, Chain.empty()) == (0, Chain.empty())
@@ -1192,9 +1192,9 @@ namespace TestChain {
     @test
     def mapAccumRight04(): Bool = Chain.mapAccumRight((s, x) -> (s+1, x+s), 0, List.toChain(1 :: 1 :: 1 :: Nil)) == (3, List.toChain(3 :: 2 :: 1 :: Nil))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foreach                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // foreach
+    //
 
     @test
     def foreach01(): Bool & Impure =
@@ -1208,9 +1208,9 @@ namespace TestChain {
         Chain.foreach(x -> r := x, List.toChain(1 :: 2 :: 3 :: Nil));
         3 == deref r
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toList                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toList
+    //
 
     @test
     def toList01(): Bool =
@@ -1228,9 +1228,9 @@ namespace TestChain {
     def toList04(): Bool =
         Chain.toList(List.toChain(1 :: 2 :: 3 :: Nil)) == 1 :: 2 :: 3 :: Nil
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toMutList                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toMutList
+    //
 
     @test
     def toMutList01(): Bool & Impure =
@@ -1248,9 +1248,9 @@ namespace TestChain {
     def toMutList04(): Bool & Impure =
         Chain.toMutList(List.toChain(1 :: 2 :: 3 :: Nil)) `MutList.eq` List.toMutList(1 :: 2 :: 3 :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toSet                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toSet
+    //
 
     @test
     def toSet01(): Bool =
@@ -1268,9 +1268,9 @@ namespace TestChain {
     def toSet04(): Bool =
         Chain.toSet(List.toChain(1 :: 2 :: 3 :: Nil)) == Set#{1, 2, 3}
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toMap                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toMap
+    //
 
     @test
     def toMap01(): Bool =
@@ -1288,9 +1288,9 @@ namespace TestChain {
     def toMap04(): Bool =
         Chain.toMap(List.toChain((1, 1) :: (2, 2) :: (3, 3) :: Nil)) == Map#{1 -> 1, 2 -> 2, 3 -> 3}
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toArray                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // toArray
+    //
 
     @test
     def toArray01(): Bool & Impure =
@@ -1313,9 +1313,9 @@ namespace TestChain {
         let a = Chain.toArray(List.toChain(1 :: 2 :: 3 :: Nil));
         Array.sameElements(a, [1,2,3])
 
-    /////////////////////////////////////////////////////////////////////////////
-    // sort                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // sort
+    //
 
     def testSortVsSortWith(c: Chain[Int32]) : Bool =
         Chain.sort(c) == Chain.sortWith(cmp, c)
@@ -1347,9 +1347,9 @@ namespace TestChain {
     @test
     def sort09(): Bool = testSortVsSortWith(List.toChain(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // sortBy                                                                  //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // sortBy
+    //
 
     def testSortByVsSort(a: Chain[Int32]) : Bool =
         (Chain.sortBy(identity, a) == Chain.sort(a)) and
@@ -1383,9 +1383,9 @@ namespace TestChain {
     @test
     def sortBy09(): Bool = testSortByVsSort(List.toChain(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // sortWith                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // sortWith
+    //
 
     def cmp(x: Int32, y: Int32): Comparison =
         if (x < y) LessThan
