@@ -25,7 +25,7 @@ namespace Instant {
     /// Returns the current time from the system clock.
     ///
     pub def now(): Instant & Impure =
-        import java.time.Instant:now();
+        import static java.time.Instant.now();
         Instant(now())
 
     ///
