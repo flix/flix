@@ -158,17 +158,17 @@ namespace TestFile {
             case Iterator(_, next) => Result.isOk(next())
         }
 
-    /////////////////////////////////////////////////////////////////////////////
-    // readBytes                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // readBytes
+    //
 
     @test
     def testReadBytes01(): Bool & Impure =
         Result.isOk(readBytes("./LICENSE.md"))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // readBytesWith                                                           //
-    /////////////////////////////////////////////////////////////////////////////
+    //
+    // readBytesWith
+    //
 
     @test
     def testReadBytesWith01(): Bool & Impure =
