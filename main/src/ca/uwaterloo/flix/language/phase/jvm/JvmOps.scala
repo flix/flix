@@ -191,13 +191,13 @@ object JvmOps {
     * List.length       =>    List/Clo$length
     * List.map          =>    List/Clo$map
     */
-  def getClosureClassType(closure: ClosureInfo)(implicit root: Root, flix: Flix): JvmType.Reference = closure.tpe match {
+  def getClosureClassType(sym: Symbol.DefnSym, tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
     case MonoType.Arrow(_, _) =>
       // The JVM name is of the form Clo$sym.name
-      val name = "Clo" + Flix.Delimiter + mangle(closure.sym.name)
+      val name = s"Clo${Flix.Delimiter}${mangle(sym.name)}"
 
       // The JVM package is the namespace of the symbol.
-      val pkg = closure.sym.namespace
+      val pkg = sym.namespace
 
       // The result type.
       JvmType.Reference(JvmName(pkg, name))
@@ -566,7 +566,7 @@ object JvmOps {
 
       case Expression.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.LetRec(_, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Is(_, _, exp, _) => visitExp(exp)
 
@@ -825,34 +825,29 @@ object JvmOps {
     */
   def getRefsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.Ref] =
     types.foldLeft(Set.empty[BackendObjType.Ref]) {
-      case (acc, tpe) => acc ++ getRefsOf(tpe)
+      case (acc, MonoType.Ref(tpe)) => acc + BackendObjType.Ref(BackendType.toErasedBackendType(tpe))
+      case (acc, _) => acc
     }
-
-  /**
-    * Returns a singleton set of the appropriate ref type if `tpe` is of ref type.
-    */
-  def getRefsOf(tpe: MonoType)(implicit flix: Flix, root: Root): Set[BackendObjType.Ref] = tpe match {
-    case MonoType.Ref(tpe) => Set(BackendObjType.Ref(BackendType.toErasedBackendType(tpe)))
-    case _ => Set.empty
-  }
 
   /**
     * Returns the set of record extend types in `types` without searching recursively.
     */
   def getRecordExtendsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.RecordExtend] =
     types.foldLeft(Set.empty[BackendObjType.RecordExtend]) {
-      case (acc, tpe) => acc ++ getRecordExtendsOf(tpe)
+      case (acc, MonoType.RecordExtend(field, value, _)) =>
+        // TODO: should use mono -> backend transformation on `rest`
+        acc + BackendObjType.RecordExtend(field, BackendType.toErasedBackendType(value), BackendObjType.RecordEmpty.toTpe)
+      case (acc, _) => acc
     }
 
   /**
-    * Returns a singleton set of the appropriate record extend type if `tpe` is of record extend type.
+    * Returns the set of arrow types in `types` without searching recursively.
     */
-  def getRecordExtendsOf(tpe: MonoType)(implicit flix: Flix, root: Root): Set[BackendObjType.RecordExtend] = tpe match {
-    case MonoType.RecordExtend(field, value, _) =>
-      // TODO: should use mono -> backend transformation on `rest`
-      Set(BackendObjType.RecordExtend(field, BackendType.toErasedBackendType(value), BackendObjType.RecordEmpty.toTpe))
-    case _ => Set.empty
-  }
+  def getArrowsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.Arrow] =
+    types.foldLeft(Set.empty[BackendObjType.Arrow]) {
+      case (acc, MonoType.Arrow(args, result)) => acc + BackendObjType.Arrow(args.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(result))
+      case (acc, _) => acc
+    }
 
   /**
     * Returns the set of all instantiated types in the given AST `root`.
@@ -948,7 +943,7 @@ object JvmOps {
 
       case Expression.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.LetRec(_, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Is(_, _, exp, _) => visitExp(exp)
 

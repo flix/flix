@@ -43,37 +43,37 @@ instance ToString[Char] {
 
 instance ToString[Float32] {
     pub def toString(x: Float32): String =
-        import java.lang.Float:toString(Float32);
+        import static java.lang.Float.toString(Float32);
         toString(x) as & Pure
 }
 
 instance ToString[Float64] {
     pub def toString(x: Float64): String =
-        import java.lang.Double:toString(Float64);
+        import static java.lang.Double.toString(Float64);
         toString(x) as & Pure
 }
 
 instance ToString[Int8] {
     pub def toString(x: Int8): String =
-        import java.lang.Byte:toString(Int8);
+        import static java.lang.Byte.toString(Int8);
         toString(x) as & Pure
 }
 
 instance ToString[Int16] {
     pub def toString(x: Int16): String =
-        import java.lang.Short:toString(Int16);
+        import static java.lang.Short.toString(Int16);
         toString(x) as & Pure
 }
 
 instance ToString[Int32] {
     pub def toString(x: Int32): String =
-        import java.lang.Integer:toString(Int32);
+        import static java.lang.Integer.toString(Int32);
         toString(x) as & Pure
 }
 
 instance ToString[Int64] {
     pub def toString(x: Int64): String =
-        import java.lang.Long:toString(Int64);
+        import static java.lang.Long.toString(Int64);
         toString(x) as & Pure
 }
 

@@ -279,7 +279,7 @@ namespace Int64 {
     @Time(1) @Space(1)
     pub def fromString(s: String): Result[Int64, String] = try {
         import java.lang.String.strip();
-        import java.lang.Long:parseLong(String);
+        import static java.lang.Long.parseLong(String);
         Ok(s |> strip |> parseLong) as & Pure
     } catch {
         case _: ##java.lang.NumberFormatException => Err("Int64.fromString")
@@ -295,7 +295,7 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt8(x: Int64): Option[Int8] =
-        import java.lang.Long:valueOf(Int64);
+        import static java.lang.Long.valueOf(Int64);
         import java.lang.Long.byteValue();
         if (x < Int8.toInt64(Int8.minValue()) or x > Int8.toInt64(Int8.maxValue()))
             None
@@ -312,7 +312,7 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt16(x: Int64): Option[Int16] =
-        import java.lang.Long:valueOf(Int64);
+        import static java.lang.Long.valueOf(Int64);
         import java.lang.Long.shortValue();
         if (x < Int16.toInt64(Int16.minValue()) or x > Int16.toInt64(Int16.maxValue()))
             None
@@ -329,7 +329,7 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt32(x: Int64): Option[Int32] =
-        import java.lang.Long:valueOf(Int64);
+        import static java.lang.Long.valueOf(Int64);
         import java.lang.Long.intValue();
         if (x < Int32.toInt64(Int32.minValue()) or x > Int32.toInt64(Int32.maxValue()))
             None
@@ -342,9 +342,9 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def toBigInt(x: Int64): BigInt =
-        import java.lang.Long:valueOf(Int64) as i64ValueOf;
+        import static java.lang.Long.valueOf(Int64) as i64ValueOf;
         import java.lang.Long.longValue();
-        import java.math.BigInteger:valueOf(Int64) as asBigInt;
+        import static java.math.BigInteger.valueOf(Int64) as asBigInt;
         (i64ValueOf(x) |> longValue |> asBigInt) as & Pure
 
     ///
@@ -354,7 +354,7 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def toFloat32(x: Int64): Float32 =
-        import java.lang.Long:valueOf(Int64);
+        import static java.lang.Long.valueOf(Int64);
         import java.lang.Long.floatValue();
         (valueOf(x) |> floatValue) as & Pure
 
@@ -365,7 +365,7 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def toFloat64(x: Int64): Float64 =
-        import java.lang.Long:valueOf(Int64);
+        import static java.lang.Long.valueOf(Int64);
         import java.lang.Long.doubleValue();
         (valueOf(x) |> doubleValue) as & Pure
 
@@ -388,7 +388,7 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt8(x: Int64, minimum: Int8, maximum: Int8): Int8 =
-        import java.lang.Long:valueOf(Int64);
+        import static java.lang.Long.valueOf(Int64);
         import java.lang.Long.byteValue();
         let mini64 = Int8.toInt64(minimum);
         let maxi64 = Int8.toInt64(maximum);
@@ -401,7 +401,7 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt16(x: Int64, minimum: Int16, maximum: Int16): Int16 =
-        import java.lang.Long:valueOf(Int64);
+        import static java.lang.Long.valueOf(Int64);
         import java.lang.Long.shortValue();
         let mini64 = Int16.toInt64(minimum);
         let maxi64 = Int16.toInt64(maximum);
@@ -415,7 +415,7 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt32(x: Int64, minimum: Int32, maximum: Int32): Int32 =
-        import java.lang.Long:valueOf(Int64);
+        import static java.lang.Long.valueOf(Int64);
         import java.lang.Long.intValue();
         let mini64 = Int32.toInt64(minimum);
         let maxi64 = Int32.toInt64(maximum);
