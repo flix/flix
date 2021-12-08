@@ -77,8 +77,44 @@ namespace Console {
 
         ///
         /// Returns the next line read from the standard input stream.
+        /// `\r\n`, `\n`, and end-of-stream are recognised as line endings.
         ///
-        pub def readLine(): Option[String] & Impure = ??? as & Impure
+        pub def readLine(): Option[String] & Impure =
+            import static get java.lang.System.in as systemIn;
+            import new java.io.InputStreamReader(##java.io.InputStream) as newReader;
+            import java.io.InputStreamReader.read(); // -1 for failure
+            let r = newReader(systemIn());
+            let sb = StringBuilder.new();
+
+            // returns true if a eof was hit
+            def loop() = {
+                let si = read(r);
+                if (si == -1) true
+                else {
+                    let s = Char.fromInt32(si);
+                    if (s == '\r') {
+                        let si2 = read(r);
+                        if (si2 == -1) {
+                            StringBuilder.appendChar!(sb, s);
+                            true
+                        } else {
+                            let s2 = Char.fromInt32(si2);
+                            if (s2 == '\n') false
+                            else {
+                                StringBuilder.appendChar!(sb, s);
+                                loop()
+                            }
+                        }
+                    } else if (s == '\n') false
+                    else {
+                        StringBuilder.appendChar!(sb, s);
+                        loop()
+                    }
+                }
+            };
+            let eof = loop();
+            if (eof and StringBuilder.length(sb) == 0) None
+            else Some(StringBuilder.toString(sb))
 
     }
 
