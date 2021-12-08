@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Magnus Madsen
+ * Copyright 2021 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.TypeConstraint
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatType, PrettyExpression}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import org.json4s.JsonAST._
@@ -31,183 +30,175 @@ import org.json4s.native.JsonMethods
 
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
-import scala.collection.immutable.List
 
+/**
+  * A phase that emits a JSON file for library documentation.
+  */
 object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
   /**
-    * The title of the generated API.
+    * The "Pseudo-name" of the root namespace.
     */
-  val ApiTitle = "Flix Standard Library"
+  val RootNS: String = "Prelude"
 
   /**
     * The directory where to write the ouput.
     */
   val OutputDirectory: Path = Paths.get("./target/api")
 
+  /**
+    * The audience to use for formatting types and effects.
+    */
   private implicit val audience: Audience = Audience.External
 
-  /**
-    * Emits a JSON file with information about the definitions of the program.
-    */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Documentor") {
-    // Check whether to generate documentation.
-    if (flix.options.documentor) {
-
-      // Get all the namespaces.
-      val namespaces = root.defs.keys.map(k => k.namespace).foldLeft(Nil: List[String])((value: List[String], acc: List[String]) => value ++ acc)
-
-      // Get all the classes.
-      val classesByNS = root.classes.values.groupBy(
-        x => x.sym.name
-      ).map {
-        case (str, value) => JObject(JField(str, value.map(v => visitClass(v))))
-      }
-
-      // Convert all definitions to JSON objects.
-      val defsByNS = root.defs.values.groupBy(
-        x => x.sym.name
-      ).map {
-        case (str, value) => JObject(JField(str, value.map(v => visitDef(v))))
-      }
-
-      // Convert all enums to JSON objects.
-      val enumsByNS = root.enums.values.groupBy(
-        x => x.sym.name
-      ).map {
-        case (str, value) => JObject(JField(str, value.map(v => visitEnum(v))))
-      }
-
-      // Convert all aliases to JSON objects.
-      val aliasesByNS = root.typealiases.values.groupBy(
-        x => x.sym.name
-      ).map {
-        case (str, value) => JObject(JField(str, value.map(v => visitTypeAlias(v))))
-      }
-
-      // Construct the JSON object.
-      val json = JObject(
-        ("namespaces", namespaces),
-        ("classes", classesByNS),
-        ("defs", defsByNS),
-        ("enums", enumsByNS),
-        ("typeAliases", aliasesByNS)
-      )
-
-
-      // Serialize the JSON object to a string.
-      val s = JsonMethods.pretty(JsonMethods.render(json))
-
-      // The path to the file to write.
-      val p = OutputDirectory.resolve("api.json")
-
-      // Write the string to the path.
-      writeString(s, p)
+    //
+    // Determine whether to generate documentation.
+    //
+    if (!flix.options.documentor) {
+      return root.toSuccess
     }
+
+    //
+    // Classes.
+    //
+    val classesByNS = root.classes.values.groupBy(getNameSpace).map {
+      case (ns, decls) =>
+        val filtered = decls.filter(_.mod.isPublic).toList
+        val sorted = filtered.sortBy(_.sym.name)
+        ns -> JArray(sorted.map(visitClass(_)(root)))
+    }
+
+    //
+    // Enums.
+    //
+    val enumsByNS = root.enums.values.groupBy(getNameSpace).map {
+      case (ns, decls) =>
+        val filtered = decls.filter(_.mod.isPublic).toList
+        val sorted = filtered.sortBy(_.sym.name)
+        ns -> JArray(sorted.map(visitEnum))
+    }
+
+    //
+    // Type Aliases.
+    //
+    val typeAliasesByNS = root.typealiases.values.groupBy(getNameSpace).map {
+      case (ns, decls) =>
+        val filtered = decls.filter(_.mod.isPublic).toList
+        val sorted = filtered.sortBy(_.sym.name)
+        ns -> JArray(sorted.map(visitTypeAlias))
+    }
+
+    //
+    // Defs.
+    //
+    val defsByNS = root.defs.values.groupBy(getNameSpace).map {
+      case (ns, decls) =>
+        val filtered = decls.filter(_.spec.mod.isPublic).toList
+        val sorted = filtered.sortBy(_.sym.name)
+        ns -> JArray(sorted.map(visitDef))
+    }
+
+    //
+    // Compute all namespaces.
+    //
+    val namespaces = classesByNS.keySet ++ enumsByNS.keySet ++ typeAliasesByNS.keySet ++ defsByNS.keySet
+    val namespacesSorted = RootNS :: (namespaces - RootNS).toList.sorted
+
+    // Construct the JSON object.
+    val json = JObject(
+      ("namespaces", namespacesSorted),
+      ("classes", classesByNS),
+      ("enums", enumsByNS),
+      ("typeAliases", typeAliasesByNS),
+      ("defs", defsByNS)
+    )
+
+    // Serialize the JSON object to a string.
+    val s = JsonMethods.pretty(JsonMethods.render(json))
+
+    // The path to the file to write.
+    val p = OutputDirectory.resolve("api.json")
+
+    // Write the string to the path.
+    writeString(s, p)
 
     root.toSuccess
   }
 
   /**
+    * Returns the namespace of the given class `decl`.
+    */
+  private def getNameSpace(decl: TypedAst.Class): String = {
+    val namespace = decl.sym.namespace
+    if (namespace == Nil) RootNS else namespace.mkString(".")
+  }
+
+  /**
+    * Returns the namespace of the given enum `decl`.
+    */
+  private def getNameSpace(decl: TypedAst.Enum): String =
+    if (decl.sym.namespace == Nil)
+      RootNS
+    else
+      decl.sym.namespace.mkString(".")
+
+  /**
+    * Returns the namespace of the given definition `decl`.
+    */
+  private def getNameSpace(decl: TypedAst.Def): String =
+    if (decl.sym.namespace == Nil)
+      RootNS
+    else
+      decl.sym.namespace.mkString(".")
+
+  /**
+    * Returns the namespace of the given type alias `decl`.
+    */
+  private def getNameSpace(decl: TypedAst.TypeAlias): String =
+    if (decl.sym.namespace == Nil)
+      RootNS
+    else
+      decl.sym.namespace.mkString(".")
+
+  /**
     * Returns the given definition `defn0` as a JSON object.
     */
   private def visitDef(defn0: Def): JObject = {
-    // Compute the type parameters.
-    val tparams = defn0.spec.tparams.map {
-      case TypeParam(ident, tpe, loc) => JObject(List(
-        JField("name", JString(ident.name))
-      ))
-    }
-
-    // Compute the formal parameters.
-    val fparams = defn0.spec.fparams.collect {
-      case FormalParam(psym, mod, tpe, loc) if tpe != Type.Unit => JObject(
-        JField("name", JString(psym.text)),
-        JField("type", JString(FormatType.formatType(tpe)))
-      )
-    }
-
-    // Compute return type and effect.
-    val result = defn0.spec.retTpe
-    val effect = defn0.spec.eff
-
-    // Construct the JSON object.
-    ("name" -> defn0.sym.name) ~
-      ("tparams" -> tparams) ~
-      ("fparams" -> fparams) ~
-      ("result" -> FormatType.formatType(result)) ~
-      ("effect" -> FormatType.formatType(effect)) ~
-      ("time" -> getTime(defn0)) ~
-      ("space" -> getSpace(defn0)) ~
-      ("comment" -> defn0.spec.doc.text.trim)
-  }
-
-  /**
-    * Optionally returns the time complexity of the given definition `defn0`.
-    */
-  private def getTime(defn0: Def): Option[String] = defn0.spec.ann.collectFirst {
-    case Annotation(Ast.Annotation.Time(_), exp :: _, _) =>
-      PrettyExpression.pretty(exp)
-  }
-
-  /**
-    * Optionally returns the space complexity of the given definition `defn0`.
-    */
-  private def getSpace(defn0: Def): Option[String] = defn0.spec.ann.collectFirst {
-    case Annotation(Ast.Annotation.Space(_), exp :: _, _) =>
-      PrettyExpression.pretty(exp)
+    // TODO: Check with Def.d.ts
+    // TODO: Deal with  UNit
+    ("sym" -> visitDefnSym(defn0.sym)) ~
+      ("doc" -> visitDoc(defn0.spec.doc)) ~
+      ("name" -> defn0.sym.name) ~
+      ("tparams" -> defn0.spec.tparams.map(visitTypeParam)) ~
+      ("fparams" -> defn0.spec.fparams.map(visitFormalParam)) ~
+      ("result" -> FormatType.formatType(defn0.spec.retTpe)) ~
+      ("effect" -> FormatType.formatType(defn0.spec.eff)) ~
+      ("loc" -> visitSourceLocation(defn0.spec.loc))
   }
 
   /**
     * Returns the given instance `inst` as a JSON value.
     */
-  private def visitInstance(inst: Instance): JObject = inst match {
-    case Instance(_, _, sym, tpe, tconstrs, _, _, _) =>
-      ("sym" -> visitInstanceSym(sym)) ~
-      //("sym" -> visitClassSym(sym.clazz)) ~
+  private def visitInstance(sym: Symbol.ClassSym, inst: Instance): JObject = inst match {
+    case Instance(_, _, _, tpe, tcs, _, _, loc) =>
+      ("sym" -> visitClassSym(sym)) ~
         ("tpe" -> visitType(tpe)) ~
-        ("tconstrs" -> tconstrs.map(visitTypeConstraint)) ~
-        ("loc" -> visitSourceLocation(sym.loc))
+        ("tcs" -> tcs.map(visitTypeConstraint)) ~
+        ("loc" -> visitSourceLocation(loc))
   }
-
-  private def visitInstanceSym(sym: Symbol.InstanceSym): JObject = ("placeholder" -> "placeholder") // TODO
 
   /**
     * Returns the given type `tpe` as a JSON value.
     */
-  private def visitType(tpe: Type): JObject = tpe match {
-    case value: Type.Var =>
-      val name = value.text match {
-        case Some(value) => value
-        case None => "placeholder"
-      }
-      ("tag" -> "Var") ~
-        ("name" -> name) ~
-        ("kind" -> visitKind(tpe.kind))
-    case Type.Cst(tc, loc) =>
-      val typeConst = tc match {
-        case TypeConstructor.Bool => ("tag" -> "Bool")
-        case TypeConstructor.Int32 => ("tag" -> "Int32")
-        case _ => ("placeholder" -> "placeholder")
-      }
-      ("tag" -> "Cst") ~
-        ("tc" -> typeConst) ~
-        ("kind" -> visitKind(tpe.kind))
-    case Type.Apply(tpe1, tpe2, loc) =>
-      ("tag" -> "Apply") ~
-        ("tpe1" -> visitType(tpe1)) ~
-        ("tpe2" -> visitType(tpe2)) ~
-        ("kind" -> visitKind(tpe.kind))
-    case _ => ("placeholder" -> "placeholder")
-  }
+  private def visitType(tpe: Type): JString = JString(FormatType.formatType(tpe))
 
   /**
     * Returns the given type constraint `tc` as a JSON value.
     */
   private def visitTypeConstraint(tc: TypeConstraint): JObject = tc match {
-    case TypeConstraint(sym, arg, _) =>
-      ("sym" -> visitClassSym(sym)) ~
-        ("arg" -> visitType(arg))
+    case TypeConstraint(sym, tpe, _) =>
+      ("sym" -> visitClassSym(sym)) ~ ("tpe" -> visitType(tpe))
   }
 
   /**
@@ -250,46 +241,25 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       ("name" -> sym.name) ~
       ("loc" -> visitSourceLocation(sym.loc))
 
-  // TODO: Visit the other symbols.
-
-  /**
-    * Returns the given source location `loc` as a JSON value.
-    */
-  private def visitSourceLocation(loc: SourceLocation): JObject = loc match {
-    case SourceLocation(_, source, _, beginLine, beginCol, endLine, endCol) =>
-      ("name" -> source.name) ~
-        ("beginLine" -> beginLine) ~
-        ("beginCol" -> beginCol) ~
-        ("endLine" -> endLine) ~
-        ("endCol" -> endCol)
-  }
 
   /**
     * Returns the given Kind `kind` as a JSON value.
     */
   def visitKind(kind: Kind): String = kind match {
-    case Kind.Wild => "placeholder"
-    case Kind.Star => "Star"
+    case Kind.Wild => ""
+    case Kind.Star => "Type"
     case Kind.Bool => "Bool"
     case Kind.RecordRow => "Record"
     case Kind.SchemaRow => "Schema"
-    case Kind.Predicate => "placeholder"
-    case Kind.Arrow(k1, k2) => "placeholder"
-  }
-
-  /**
-    * Returns the given Type Parameter `tparam` as a JSON value.
-    */
-  private def visitTypeParam(tparam: TypeParam): JObject = tparam match {
-    case TypeParam(ident, tpe, loc) =>
-      ("name" -> ident.name) ~
-        ("kind" -> visitKind(tpe.kind))
+    case Kind.Predicate => ""
+    case Kind.Arrow(k1, k2) => visitKind(k1) + " -> " + visitKind(k2)
   }
 
   /**
     * Returns the given Doc `doc` as a JSON value.
     */
-  private def visitDoc(doc: Ast.Doc): JObject = ("placeholder" -> "placeholder") // TODO : missing d.ts
+  private def visitDoc(doc: Ast.Doc): JArray =
+    JArray(doc.lines.map(JString))
 
   /**
     * Returns the given Modifier `mod` as a JSON value.
@@ -300,104 +270,89 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given Type Alias `talias` as a JSON value.
     */
   private def visitTypeAlias(talias: TypeAlias): JObject = talias match {
-    case TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
-      // Compute the type parameters.
-      val computedtparams = tparams.map {
-        t => visitTypeParam(t)
-      }
-
+    case TypeAlias(doc, _, sym, tparams, tpe, loc) =>
       ("doc" -> visitDoc(doc)) ~
-        ("mod" -> visitModifier(mod)) ~
         ("sym" -> visitTypeAliasSym(sym)) ~
-        ("tparams" -> computedtparams) ~
-        ("tpe" -> visitType(tpe)) ~
+        ("tparams" -> tparams.map(visitTypeParam)) ~
+        ("tpe" -> FormatType.formatType(tpe)) ~
         ("loc" -> visitSourceLocation(loc))
   }
 
   /**
-    *
+    * Returns the given Type Parameter `tparam` as a JSON value.
     */
-  private def visitFormalParam(f: FormalParam): JObject = f match {
-    case FormalParam(sym, mod, tpe, loc) =>
-      ("name" -> sym.text) ~
-        ("tpe" -> visitType(tpe))
+  private def visitTypeParam(tparam: TypeParam): JObject = tparam match {
+    case TypeParam(ident, tpe, _) =>
+      ("name" -> ident.name) ~ ("kind" -> visitKind(tpe.kind))
+  }
+
+  /**
+    * Returns the given formal parameter `fparam` as a JSON value.
+    */
+  private def visitFormalParam(fparam: FormalParam): JObject = fparam match {
+    case FormalParam(sym, _, tpe, _) =>
+      ("name" -> sym.text) ~ ("tpe" -> visitType(tpe))
   }
 
   /**
     * Returns the given Sig `sig` as a JSON value.
     */
   private def visitSig(sig: Sig): JObject = sig match {
-    case Sig(sym, spec, impl) =>
-      // Compute the type parameters.
-      val computedtparams = spec.tparams.map {
-        t => visitTypeParam(t)
-      }
-
-      // Compute the formal parameters.
-      val computedfparams = spec.fparams.map {
-        f => visitFormalParam(f)
-      }
-
+    case Sig(sym, spec, _) =>
       ("sym" -> visitSigSym(sym)) ~
         ("doc" -> visitDoc(spec.doc)) ~
         ("mod" -> visitModifier(spec.mod)) ~
-        ("tparams" -> computedtparams) ~
-        ("fparams" -> computedfparams) ~
+        ("tparams" -> spec.tparams.map(visitTypeParam)) ~
+        ("fparams" -> spec.fparams.map(visitFormalParam)) ~
         ("retTpe" -> visitType(spec.retTpe)) ~
         ("eff" -> visitType(spec.eff)) ~
         ("loc" -> visitSourceLocation(spec.loc))
-
-    // TODO: missing implemented as last type
   }
 
   /**
     * Returns the given Enum `enum` as a JSON value.
     */
   private def visitEnum(enum: Enum): JObject = enum match {
-    case Enum(doc, mod, sym, tparams, cases, tpeDeprecated, sc, loc) =>
-      // Compute the type parameters.
-      val computedtparams = tparams.map {
-        t => visitTypeParam(t)
-      }
-
-      // Compute the cases.
-      val computedCases = "placeholder" // TODO: convert cases (Map) to [Case]
-
+    case Enum(doc, _, sym, tparams, cases, _, _, loc) =>
       ("doc" -> visitDoc(doc)) ~
-        ("mod" -> visitModifier(mod)) ~
         ("sym" -> visitEnumSym(sym)) ~
-        ("tparams" -> computedtparams) ~
-        ("cases" -> computedCases) ~
+        ("tparams" -> tparams.map(visitTypeParam)) ~
+        ("cases" -> cases.values.map(visitCase)) ~
         ("loc" -> visitSourceLocation(loc))
   }
 
   /**
-    * Return the given Class `cla` as a JSON value.
+    * Returns the given case `caze` as a JSON value.
     */
-  private def visitClass(cla: Class): JObject = cla match {
-    case Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) =>
-      // Compute the type constraints.
-      val computedTypeConstraints = superClasses.map {
-        tc => visitTypeConstraint(tc)
-      }
+  private def visitCase(caze: Case): JObject = caze match {
+    case Case(_, tag, _, sc, _) =>
+      ("tag" -> tag.name) ~ ("tpe" -> "TYPE_PLACEHOLDER")
+  }
 
-      // Compute the signatures.
-      val computedSig = signatures.map {
-        sig => visitSig(sig)
-      }
+  /**
+    * Return the given class `clazz` as a JSON value.
+    */
+  private def visitClass(cla: Class)(implicit root: Root): JObject = cla match {
+    case Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) =>
+      val instances = root.instances(sym).sortBy(_.loc).map(inst => visitInstance(sym, inst))
 
       ("sym" -> visitClassSym(sym)) ~
         ("doc" -> visitDoc(doc)) ~
         ("mod" -> visitModifier(mod)) ~
-        ("tparams" -> visitTypeParam(tparam)) ~
-        ("superClasses" -> computedTypeConstraints) ~
-        ("signatures" -> computedSig) ~
+        ("tparam" -> visitTypeParam(tparam)) ~
+        ("superClasses" -> superClasses.map(visitTypeConstraint)) ~
+        ("signatures" -> signatures.map(visitSig)) ~
+        ("instances" -> instances) ~
         ("loc" -> visitSourceLocation(loc))
-
-      // TODO: missing instances (second last)
   }
 
-  // TODO: visitAPI
+  /**
+    * Returns the given source location `loc` as a JSON value.
+    */
+  private def visitSourceLocation(loc: SourceLocation): JObject = loc match {
+    case SourceLocation(_, source, _, beginLine, _, endLine, _) =>
+      ("name" -> source.name) ~ ("beginLine" -> beginLine) ~ ("endLine" -> endLine)
+  }
 
   /**
     * Writes the given string `s` to the given path `p`.

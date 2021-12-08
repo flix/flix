@@ -117,7 +117,7 @@ namespace Console {
         /// Returns the standard output stream.
         ///
         def getOutputStream(): ##java.io.PrintStream & Impure =
-            import get java.lang.System:out as getOut;
+            import static get java.lang.System.out as getOut;
             getOut()
 
     }
@@ -159,7 +159,7 @@ namespace Console {
         /// Returns the standard error stream.
         ///
         def getErrorStream(): ##java.io.PrintStream & Impure =
-            import get java.lang.System:err as getErr;
+            import static get java.lang.System.err as getErr;
             getErr()
 
     }
