@@ -580,20 +580,20 @@ namespace TestMutList {
         MutList.clear!(v1);
         MutList.length(v1) == 0 and MutList.length(v2) == 6
 
-/*    @test
+    @test
     def copy04(): Bool & Impure =
         let v1 = MutList.range(0, 1000);
         let MutList(l1, n1) = v1;
         let MutList(l2, n2) = MutList.copy(v1);
-        deref n1 == deref n2 and deref l1 == deref l2*/
+        (deref n1 == deref n2) and (deref l1 `Array.eq` deref l2)
 
-/*    @test
+    @test
     def copy05(): Bool & Impure =
         let v1 = MutList.range(0, 3);
         let MutList(l1, n1) = v1;
         let MutList(l2, n2) = MutList.copy(v1);
-        deref n1 == deref n2 and deref l1 == deref l2 and
-            Array.length(deref l2) == 8*/
+        (deref n1 == deref n2) and (deref l1 `Array.eq` deref l2) and
+            (Array.length(deref l2) == 8)
 
 
     /////////////////////////////////////////////////////////////////////////////
