@@ -637,7 +637,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRegion | LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
+      LetRegion | LetMatch | LetMatchStar | LetRecDef |LetUse | LetImport | IfThenElse | Reify | ReifyBool |
         ReifyType | ReifyEff | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
@@ -706,6 +706,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("let*") ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetMatchStar
     }
 
+    def LetRecDef: Rule1[ParsedAst.Expression.LetRecDef] = rule {
+      SP ~ keyword("def") ~ WS ~ Names.Variable ~ optWS ~ FormalParamList ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetRecDef
+    }
+
     def LetUse: Rule1[ParsedAst.Expression.Use] = rule {
       SP ~ Use ~ optWS ~ ";" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Expression.Use
     }
@@ -715,11 +719,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def LetImport: Rule1[ParsedAst.Expression] = {
-
-      // TODO: Remove me
-      def JvmStaticName: Rule1[Seq[String]] = rule {
-        Names.JavaName ~ ":" ~ Names.JavaIdentifier ~> ((xs: Seq[String], x: String) => xs :+ x)
-      }
 
       def Constructor: Rule1[ParsedAst.JvmOp] = rule {
         keyword("new") ~ WS ~ Names.JavaName ~ optWS ~ Signature ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.Constructor
@@ -731,11 +730,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       def StaticMethod: Rule1[ParsedAst.JvmOp] = rule {
         keyword("static") ~ WS ~ Names.JavaName ~ optWS ~ Signature ~ optional(WS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.StaticMethod
-      }
-
-      // TODO: Remove me
-      def StaticMethodOLD: Rule1[ParsedAst.JvmOp] = rule {
-        JvmStaticName ~ optWS ~ Signature ~ optional(WS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.StaticMethod
       }
 
       def GetField: Rule1[ParsedAst.JvmOp] = rule {
@@ -750,18 +744,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         keyword("static") ~ WS ~ keyword("get") ~ WS ~ Names.JavaName ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetStaticField
       }
 
-      // TODO: Remove me
-      def GetStaticFieldOLD: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("get") ~ WS ~ JvmStaticName ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetStaticField
-      }
-
       def PutStaticField: Rule1[ParsedAst.JvmOp] = rule {
         keyword("static") ~ WS ~ keyword("set") ~ WS ~ Names.JavaName ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutStaticField
-      }
-
-      // TODO: Remove me
-      def PutStaticFieldOLD: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("set") ~ WS ~ JvmStaticName ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutStaticField
       }
 
       def Signature: Rule1[Seq[ParsedAst.Type]] = rule {
@@ -769,7 +753,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Import: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("import") ~ WS ~ (Constructor | Method | StaticMethod | StaticMethodOLD | GetField | PutField | GetStaticField | GetStaticFieldOLD | PutStaticField | PutStaticFieldOLD)
+        keyword("import") ~ WS ~ (Constructor | Method | StaticMethod | GetField | PutField | GetStaticField | PutStaticField)
       }
 
       rule {

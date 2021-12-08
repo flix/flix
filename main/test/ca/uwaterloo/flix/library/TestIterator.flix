@@ -776,6 +776,53 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // flatMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def flatMap01(): Bool & Impure =
+        List.toIterator(Nil) |>
+            Iterator.flatMap(i -> Iterator.repeat(i, i)) |>
+            Iterator.toList == Nil
+
+    @test
+    def flatMap02(): Bool & Impure =
+        List.toIterator(0 :: Nil) |>
+            Iterator.flatMap(i -> Iterator.repeat(i, i)) |>
+            Iterator.toList == Nil
+
+    @test
+    def flatMap03(): Bool & Impure =
+        List.toIterator(1 :: Nil) |>
+            Iterator.flatMap(i -> Iterator.repeat(i, i)) |>
+            Iterator.toList == 1 :: Nil
+
+    @test
+    def flatMap04(): Bool & Impure =
+        List.toIterator(2 :: Nil) |>
+            Iterator.flatMap(i -> Iterator.repeat(i, i)) |>
+            Iterator.toList == 2 :: 2 :: Nil
+
+    @test
+    def flatMap05(): Bool & Impure =
+        List.toIterator(1 :: 2 :: Nil) |>
+            Iterator.flatMap(i -> Iterator.repeat(i, i)) |>
+            Iterator.toList == 1 :: 2 :: 2 :: Nil
+
+    @test
+    def flatMap06(): Bool & Impure =
+        List.toIterator(2 :: 3 :: Nil) |>
+            Iterator.flatMap(i -> Iterator.repeat(i, i)) |>
+            Iterator.toList == 2 :: 2 :: 3 :: 3 :: 3 :: Nil
+
+    @test
+    def flatMap07(): Bool & Impure =
+        List.toIterator(1 :: 2 :: 3 :: 4 :: Nil) |>
+            Iterator.flatMap(i -> if (i mod 2 == 0) Iterator.repeat(i, i) else Iterator.empty()) |>
+            Iterator.toList == 2 :: 2 :: 4 :: 4 :: 4 :: 4 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // intersperse                                                             //
     /////////////////////////////////////////////////////////////////////////////
 

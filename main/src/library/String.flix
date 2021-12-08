@@ -106,7 +106,7 @@ namespace String {
     ///
     @Time(1) @Space(1)
     pub def lineSeparator(): String =
-        import java.lang.System:lineSeparator();
+        import static java.lang.System.lineSeparator();
         lineSeparator() as & Pure
 
     ///
@@ -303,7 +303,7 @@ namespace String {
     ///
     def isSubmatchHelper(pattern: String, s: String): Bool & Impure =
         try {
-            import java.util.regex.Pattern:compile(String);
+            import static java.util.regex.Pattern.compile(String);
             import java.util.regex.Pattern.matcher(##java.lang.CharSequence);
             import java.util.regex.Matcher.find(Int32);
             let cs1 = s as ##java.lang.CharSequence;
