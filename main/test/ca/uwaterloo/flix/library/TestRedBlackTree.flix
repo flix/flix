@@ -38,17 +38,19 @@ namespace TestRedBlackTree {
 
     @test
     def testEmptyAfterRemove01(): Bool =
-        RedBlackTree.empty() == RedBlackTree.remove(42, RedBlackTree.insert(42, (), RedBlackTree.empty()))
+        Map(RedBlackTree.empty()) == Map(RedBlackTree.remove(42, RedBlackTree.insert(42, (), RedBlackTree.empty())))
 
     @test
     def testEmptyAfterRemove02(): Bool =
-        RedBlackTree.empty() == RedBlackTree.remove(2, RedBlackTree.remove(1, RedBlackTree.remove(0, toTree(List.range(0, 3)))))
+        Map(RedBlackTree.empty()) == Map(RedBlackTree.remove(2, RedBlackTree.remove(1, RedBlackTree.remove(0, toTree(List.range(0, 3))))))
 
     @test
     def testEmptyAfterRemove03(): Bool =
         let tree =
         List.foldLeft((acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)), List.range(0, 20));
-        tree == RedBlackTree.empty()
+        Map(tree) == Map(RedBlackTree.empty())
+
+    /*
 
     @test
     def testBinarySearchTreeInvariant01(): Bool =
@@ -170,11 +172,15 @@ namespace TestRedBlackTree {
     ///
     def checkRedParentInvariant(tree: RedBlackTree[k, v]): Bool = checkRedParentInvariantHelper(tree, Black)
 
+    */
+
     ///
     /// Returns a tree with mappings `x -> ()` for all `x` in `xs`.
     ///
     def toTree(xs: List[Int32]): RedBlackTree[Int32, Unit]
         = List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), xs)
+
+    /*
 
     ///
     /// Returns a tree with `n` nodes `x -> ()` where `x` is a random integer.
@@ -185,6 +191,7 @@ namespace TestRedBlackTree {
         List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), List.map(_ -> Random.nextInt32(r), List.range(0, n)))
     }
 
+    */
 
     /////////////////////////////////////////////////////////////////////////////
     // mapWithKey                                                              //
@@ -192,7 +199,7 @@ namespace TestRedBlackTree {
 
     @test
     def mapWithKey01(): Bool =
-        let Map(t) = Map#{}: Map[Unit, Int32];
+        let Map(t) = Map#{}: Map[Int32, Int32];
         Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == Map#{}
 
     @test
