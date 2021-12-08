@@ -178,8 +178,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       ("loc" -> visitSourceLocation(defn0.spec.loc))
   }
 
-  // TODO: Refactored until here.
-
   /**
     * Returns the given instance `inst` as a JSON value.
     */
@@ -244,15 +242,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       ("name" -> sym.name) ~
       ("loc" -> visitSourceLocation(sym.loc))
 
-  // TODO: Visit the other symbols.
-
-  /**
-    * Returns the given source location `loc` as a JSON value.
-    */
-  private def visitSourceLocation(loc: SourceLocation): JObject = loc match {
-    case SourceLocation(_, source, _, beginLine, _, endLine, _) =>
-      ("name" -> source.name) ~ ("beginLine" -> beginLine) ~ ("endLine" -> endLine)
-  }
 
   /**
     * Returns the given Kind `kind` as a JSON value.
@@ -338,8 +327,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitCase(caze: Case): JObject = caze match {
     case Case(_, tag, _, sc, _) =>
-      ("tag" -> tag.name) ~
-        ("tpe" -> "TYPE_PLACEHOLDER")
+      ("tag" -> tag.name) ~ ("tpe" -> "TYPE_PLACEHOLDER")
   }
 
   /**
@@ -347,27 +335,24 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitClass(cla: Class)(implicit root: Root): JObject = cla match {
     case Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) =>
-      // Compute the type constraints.
-      val computedTypeConstraints = superClasses.map {
-        tc => visitTypeConstraint(tc)
-      }
-
-      // Compute the signatures.
-      val computedSig = signatures.map {
-        sig => visitSig(sig)
-      }
-
-      // TODO: Sort instances.
       val instances = root.instances(sym).sortBy(_.loc).map(inst => visitInstance(sym, inst))
 
       ("sym" -> visitClassSym(sym)) ~
         ("doc" -> visitDoc(doc)) ~
         ("mod" -> visitModifier(mod)) ~
         ("tparam" -> visitTypeParam(tparam)) ~
-        ("superClasses" -> computedTypeConstraints) ~
-        ("signatures" -> computedSig) ~
+        ("superClasses" -> superClasses.map(visitTypeConstraint)) ~
+        ("signatures" -> signatures.map(visitSig)) ~
         ("instances" -> instances) ~
         ("loc" -> visitSourceLocation(loc))
+  }
+
+  /**
+    * Returns the given source location `loc` as a JSON value.
+    */
+  private def visitSourceLocation(loc: SourceLocation): JObject = loc match {
+    case SourceLocation(_, source, _, beginLine, _, endLine, _) =>
+      ("name" -> source.name) ~ ("beginLine" -> beginLine) ~ ("endLine" -> endLine)
   }
 
   /**
