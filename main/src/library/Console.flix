@@ -720,7 +720,7 @@ namespace Console {
     ///
     pub def rgb(c: (Int32, Int32 , Int32), s: String): String =
         match colorSupport() {
-            case ColorSupport.None   => s
+            case ColorSupport.None      => s
             case ColorSupport.Ansi      =>
                 use Console/Color/Ansi.downsample;
                 let fg = downsample(c);
