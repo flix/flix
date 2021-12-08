@@ -4508,12 +4508,12 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
         let a = Array.copyOfRange(1, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]);
         let b = [['d', 'e', 'f', 'g'], ['h']];
         Array.flatten(a) `eq` Array.flatten(b)
-/*
+
     @test
     def copyOfRange27(): Bool & Impure =
         let a = Array.copyOfRange(2, 5, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]);
-        Array.length(a) == 3 and Array.memberOf(['h'], a)
-*/
+        Array.length(a) == 3 and Array.memberOf('h', Array.flatten(a))
+
     @test
     def copyOfRange28(): Bool & Impure =
         Array.copyOfRange(0, 3, [Some(1), Some(2), None]) `eq` [Some(1), Some(2), None]
@@ -4540,12 +4540,12 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
         let a = Array.copyOfRange(1, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
         let b = [[Some('d'), Some('e'), Some('f'), Some('g')], [None]];
         Array.flatten(a) `eq` Array.flatten(b)
-/*
+
     @test
     def copyOfRange33(): Bool & Impure =
         let a = Array.copyOfRange(2, 5, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
-        Array.length(a) == 3 and Array.memberOf([None], a)
-*/
+        Array.length(a) == 3 and Array.memberOf(None, flatten(a))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // toIterator                                                              //
