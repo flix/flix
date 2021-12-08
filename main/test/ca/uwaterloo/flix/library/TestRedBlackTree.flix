@@ -47,7 +47,7 @@ namespace TestRedBlackTree {
     @test
     def testEmptyAfterRemove03(): Bool =
         let tree =
-        List.foldLeft(acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)), List.range(0, 20));
+        List.foldLeft((acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)), List.range(0, 20));
         tree == RedBlackTree.empty()
 
     @test
@@ -85,7 +85,7 @@ namespace TestRedBlackTree {
     @test
     def testBinarySearchTreeInvariant09(): Bool =
         let tree =
-        List.foldLeft(acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)), 12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
+        List.foldLeft((acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)), 12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
         checkBinarySearchTreeInvariant(tree)
 
     @test
@@ -132,7 +132,7 @@ namespace TestRedBlackTree {
     @test
     def testRedParentInvariant09(): Bool =
         let tree =
-        List.foldLeft(acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)), 12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
+        List.foldLeft((acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)), 12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
         checkRedParentInvariant(tree)
 
     @test
@@ -174,18 +174,15 @@ namespace TestRedBlackTree {
     /// Returns a tree with mappings `x -> ()` for all `x` in `xs`.
     ///
     def toTree(xs: List[Int32]): RedBlackTree[Int32, Unit]
-        = List.foldLeft(acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), xs)
+        = List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), xs)
 
     ///
     /// Returns a tree with `n` nodes `x -> ()` where `x` is a random integer.
     ///
     def random(n: Int32): RedBlackTree[Int32, Unit] & Impure = {
-        let seed = match Int64.fromString("42") {
-            case Ok(s) => s
-            case _ => panic "no seed given"
-        };
+        let seed = 42i64;
         let r = Random.newWithSeed(seed);
-        List.foldLeft(acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), List.map(_ -> Random.nextInt32(r), List.range(0, n)))
+        List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), List.map(_ -> Random.nextInt32(r), List.range(0, n)))
     }
 
 
@@ -255,37 +252,37 @@ namespace TestRedBlackTree {
     @test
     def count01(): Bool =
         let Map(t) = Map#{}: Map[Int32, Int32];
-        RedBlackTree1.count((k, v) -> k == v, t) == 0
+        RedBlackTree.count((k, v) -> k == v, t) == 0
 
     @test
     def count02(): Bool =
         let Map(t) = Map#{1 -> 2};
-        RedBlackTree1.count((k, v) -> k == v, t) == 0
+        RedBlackTree.count((k, v) -> k == v, t) == 0
 
     @test
     def count03(): Bool =
         let Map(t) = Map#{1 -> 1};
-        RedBlackTree1.count((k, v) -> k == v, t) == 1
+        RedBlackTree.count((k, v) -> k == v, t) == 1
 
     @test
     def count04(): Bool =
         let Map(t) = Map#{1 -> 2, 2 -> 3};
-        RedBlackTree1.count((k, v) -> k == v, t) == 0
+        RedBlackTree.count((k, v) -> k == v, t) == 0
 
     @test
     def count05(): Bool =
         let Map(t) = Map#{1 -> 1, 2 -> 3};
-        RedBlackTree1.count((k, v) -> k == v, t) == 1
+        RedBlackTree.count((k, v) -> k == v, t) == 1
 
     @test
     def count06(): Bool =
         let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
-        RedBlackTree1.count((k, v) -> k == v, t) == 2000
+        RedBlackTree.count((k, v) -> k == v, t) == 2000
 
     @test
     def count07(): Bool =
         let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
-        RedBlackTree1.count((k, v) -> k == v, t) == 1000
+        RedBlackTree.count((k, v) -> k == v, t) == 1000
 
     @test
     def count08(): Bool & Impure =
@@ -293,7 +290,7 @@ namespace TestRedBlackTree {
         let Map(t) = List.zip(range, range) |> List.toMap;
         let a = [default; 2000];
         let i = ref 0;
-        RedBlackTree1.count((_, v) -> { a[deref i] = v; i := 1 + deref i; true }, t);
+        RedBlackTree.count((_, v) -> { a[deref i] = v; i := 1 + deref i; true }, t);
         Array.sameElements(a, List.toArray(range))
 
     @test
@@ -301,7 +298,7 @@ namespace TestRedBlackTree {
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, range) |> List.toMap;
         let a = MutList.new();
-        RedBlackTree1.count((_, v) -> { let b = MutList.new(); MutList.push!(v, b); MutList.append!(a, b); true }, t);
+        RedBlackTree.count((_, v) -> { let b = MutList.new(); MutList.push!(v, b); MutList.append!(a, b); true }, t);
         MutList.eq(a, List.toMutList(range))
 
 }
