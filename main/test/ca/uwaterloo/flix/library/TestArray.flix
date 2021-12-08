@@ -4494,18 +4494,21 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def copyOfRange24(): Bool & Impure =
         let a = Array.copyOfRange(2, 5, [1i64, 2i64, 3i64]);
         Array.length(a) == 3 and Array.memberOf(3i64, a)
-/*
+
     @test
     def copyOfRange25(): Bool & Impure =
         //Array.copyOfRange(0, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]) `eq` [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]
         let a = Array.copyOfRange(0, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]);
         let b = [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']];
-        Array.sameElements(a, b)
+        Array.flatten(a) `eq` Array.flatten(b)
 
     @test
     def copyOfRange26(): Bool & Impure =
-        Array.copyOfRange(1, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]) `eq` [['d', 'e', 'f', 'g'], ['h']]
-
+        //Array.copyOfRange(1, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]) `eq` [['d', 'e', 'f', 'g'], ['h']]
+        let a = Array.copyOfRange(1, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]);
+        let b = [['d', 'e', 'f', 'g'], ['h']];
+        Array.flatten(a) `eq` Array.flatten(b)
+/*
     @test
     def copyOfRange27(): Bool & Impure =
         let a = Array.copyOfRange(2, 5, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]);
@@ -4523,15 +4526,21 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def copyOfRange30(): Bool & Impure =
         let a = Array.copyOfRange(2, 5, [Some(1), Some(2), None]);
         Array.length(a) == 3 and Array.memberOf(None, a)
-/*
+
     @test
     def copyOfRange31(): Bool & Impure =
-        Array.copyOfRange(0, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]) `eq` [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]
+        //Array.copyOfRange(0, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]) `eq` [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]
+        let a = Array.copyOfRange(0, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
+        let b = [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]];
+        Array.flatten(a) `eq` Array.flatten(b)
 
     @test
     def copyOfRange32(): Bool & Impure =
-        Array.copyOfRange(1, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]) `eq` [[Some('d'), Some('e'), Some('f'), Some('g')], [None]]
-
+        //Array.copyOfRange(1, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]) `eq` [[Some('d'), Some('e'), Some('f'), Some('g')], [None]]
+        let a = Array.copyOfRange(1, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
+        let b = [[Some('d'), Some('e'), Some('f'), Some('g')], [None]];
+        Array.flatten(a) `eq` Array.flatten(b)
+/*
     @test
     def copyOfRange33(): Bool & Impure =
         let a = Array.copyOfRange(2, 5, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
