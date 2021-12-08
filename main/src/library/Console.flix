@@ -15,60 +15,21 @@
  */
 
 namespace Console {
-    use Option.flatMap;
-    use Object.toOption;
 
     ///
-    /// Wrapper for `java.lang.System.console().readline`.
+    /// Alias for `Console.StdIn.readLine`.
     ///
-    pub def readLine(): Option[String] & Impure =
-        import static java.lang.System.console();
-        import java.io.Console.readLine();
-        let* c = toOption(console());
-        let line = readLine(c);
-        toOption(line)
+    pub def readLine(): Option[String] & Impure = Console/StdIn.readLine(())
 
     ///
-    /// Returns true if a console is available.
+    /// Alias for `Console.StdOut.print`.
     ///
-    pub def hasConsole(): Bool & Impure =
-        import static java.lang.System.console();
-        not Option.isEmpty(toOption(console()))
+    pub def print(s: String): Unit & Impure = Console/StdOut.print(s)
 
     ///
-    /// Wrapper for `java.lang.System.console().writer().print`.
+    /// Alias for `Console.StdOut.printLine`.
     ///
-    pub def print(s: String): Unit & Impure =
-        import static java.lang.System.console();
-        import java.io.Console.writer();
-        import java.io.PrintWriter.print(String);
-        match toOption(console()) {
-            case None => ()
-            case Some(c) => print(writer(c), s)
-        }
-
-    ///
-    /// Wrapper for `java.lang.System.console().writer().println(s)`.
-    ///
-    pub def printLine(s: String): Unit & Impure =
-        import static java.lang.System.console();
-        import java.io.Console.writer();
-        import java.io.PrintWriter.println(String);
-        match toOption(console()) {
-            case None => ()
-            case Some(c) => println(writer(c), s)
-        }
-
-    ///
-    /// Wrapper for `java.lang.System.console().flush()`
-    ///
-    pub def flush(): Unit & Impure =
-        import static java.lang.System.console();
-        import java.io.Console.flush();
-        match toOption(console()) {
-            case None => ()
-            case Some(c) => flush(c)
-        }
+    pub def printLine(s: String): Unit & Impure = Console/StdOut.printLine(s)
 
     ///
     /// Operations on the Standard Input Stream.
@@ -209,7 +170,7 @@ namespace Console {
         ///
         /// The terminal does not support any colors.
         ///
-        case NoColor,
+        case None,
 
         ///
         /// The terminal supports ANSI colors.
@@ -759,7 +720,7 @@ namespace Console {
     ///
     pub def rgb(c: (Int32, Int32 , Int32), s: String): String =
         match colorSupport() {
-            case ColorSupport.NoColor   => s
+            case ColorSupport.None   => s
             case ColorSupport.Ansi      =>
                 use Console/Color/Ansi.downsample;
                 let fg = downsample(c);
@@ -799,7 +760,7 @@ namespace Console {
         else if (isAnsiTerminal())
             ColorSupport.Ansi
         else
-            ColorSupport.NoColor
+            ColorSupport.None
 
     ///
     /// Returns `true` if the terminal supports ANSI colors.
