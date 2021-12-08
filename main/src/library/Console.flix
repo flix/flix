@@ -16,65 +16,59 @@
 
 namespace Console {
     use Option.flatMap;
-    use Object.isNull;
+    use Object.toOption;
 
     ///
-    /// Alias for `Console.StdIn.readLine`.
+    /// Wrapper for `java.lang.System.console().readline`.
     ///
     pub def readLine(): Option[String] & Impure =
-        Console/StdIn.readLine()
+        import static java.lang.System.console();
+        import java.io.Console.readLine();
+        let* c = toOption(console());
+        let line = readLine(c);
+        toOption(line)
 
     ///
     /// Returns true if a console is available.
     ///
     pub def hasConsole(): Bool & Impure =
-        not Option.isEmpty(getConsole())
+        import static java.lang.System.console();
+        not Option.isEmpty(toOption(console()))
 
     ///
-    /// Wrapper for `java.lang.System.console().writer().print(s)`.
-    /// Returns `Err()` if no console is available.
+    /// Wrapper for `java.lang.System.console().writer().print`.
     ///
     pub def print(s: String): Unit & Impure =
+        import static java.lang.System.console();
         import java.io.Console.writer();
         import java.io.PrintWriter.print(String);
-        match getConsole() {
+        match toOption(console()) {
             case None => ()
-            case Some(c) =>
-                print(writer(c), s)
+            case Some(c) => print(writer(c), s)
         }
 
     ///
     /// Wrapper for `java.lang.System.console().writer().println(s)`.
-    /// Returns `Err()` if no console is available.
     ///
     pub def printLine(s: String): Unit & Impure =
+        import static java.lang.System.console();
         import java.io.Console.writer();
         import java.io.PrintWriter.println(String);
-        match getConsole() {
+        match toOption(console()) {
             case None => ()
-            case Some(c) =>
-                println(writer(c), s)
+            case Some(c) => println(writer(c), s)
         }
 
     ///
     /// Wrapper for `java.lang.System.console().flush()`
     ///
     pub def flush(): Unit & Impure =
-        import java.io.Console.flush();
-        match getConsole() {
-            case None => ()
-            case Some(c) =>
-                flush(c)
-        }
-
-    ///
-    ///  Wrapper for `java.lang.System.console()` with `None` instead of null.
-    ///
-    def getConsole(): Option[##java.io.Console] & Impure =
         import static java.lang.System.console();
-        let nullableConsole = console();
-        if (isNull(nullableConsole)) None
-        else Some(nullableConsole)
+        import java.io.Console.flush();
+        match toOption(console()) {
+            case None => ()
+            case Some(c) => flush(c)
+        }
 
     ///
     /// Operations on the Standard Input Stream.
@@ -82,14 +76,9 @@ namespace Console {
     namespace StdIn {
 
         ///
-        /// Wrapper for `java.lang.System.Console().readLine()`.
-        /// Returns `None` if a there is no line to read or no console is available.
+        /// Returns the next line read from the standard input stream.
         ///
-        pub def readLine(): Option[String] & Impure =
-            import java.io.Console.readLine();
-            let* c = getConsole();
-            let line = readLine(c);
-            if (isNull(line)) None else Some(line)
+        pub def readLine(): Option[String] & Impure = ??? as & Impure
 
     }
 
