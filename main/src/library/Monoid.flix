@@ -30,6 +30,8 @@ pub lawless class Monoid[a] with SemiGroup[a] {
     pub def combine(x: a, y: a): a =
         SemiGroup.combine(x, y)
 
+    law associative: forall(x: a, y: a, z: a) with Eq[a] . Monoid.combine(Monoid.combine(x, y), z) == Monoid.combine(x, Monoid.combine(y, z))
+
 }
 
 namespace Monoid {
