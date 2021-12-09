@@ -42,7 +42,8 @@ namespace TestRedBlackTree {
 
     @test
     def testEmptyAfterRemove02(): Bool =
-        Map(RedBlackTree.empty()) == Map(RedBlackTree.remove(2, RedBlackTree.remove(1, RedBlackTree.remove(0, toTree(List.range(0, 3))))))
+        Map(RedBlackTree.empty()) == Map(RedBlackTree.remove(2, RedBlackTree.remove(1,
+            RedBlackTree.remove(0, toTree(List.range(0, 3))))))
 
     @test
     def testEmptyAfterRemove03(): Bool =
@@ -85,7 +86,8 @@ namespace TestRedBlackTree {
     @test
     def testBinarySearchTreeInvariant09(): Bool =
         let tree =
-        List.foldLeft((acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)), 12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
+        List.foldLeft((acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)),
+            12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
         checkBinarySearchTreeInvariant(tree)
 
     @test
@@ -132,7 +134,8 @@ namespace TestRedBlackTree {
     @test
     def testRedParentInvariant09(): Bool =
         let tree =
-        List.foldLeft((acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)), 12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
+        List.foldLeft((acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)),
+            12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
         checkRedParentInvariant(tree)
 
     @test
@@ -157,20 +160,6 @@ namespace TestRedBlackTree {
     }
 
     ///
-    /// Helper function for `testRedParentInvariant`.
-    ///
-    def checkRedParentInvariantHelper(tree: RedBlackTree[k, v], parentColor: RedBlackTree.Color): Bool = match tree {
-        case Node(Red, a, _, _, b) =>
-            if (isRed(parentColor))
-                false
-            else
-                checkRedParentInvariantHelper(a, Red) and checkRedParentInvariantHelper(b, Red)
-        case Node(Black, a, _, _, b) =>
-            checkRedParentInvariantHelper(a, Black) and checkRedParentInvariantHelper(b, Black)
-        case _ => true
-    }
-
-    ///
     /// Returns true if `c` is equal to `Red`.
     ///
     def isRed(c: RedBlackTree.Color): Bool = match c {
@@ -181,7 +170,18 @@ namespace TestRedBlackTree {
     ///
     /// Returns `true` if and only if no red node in `tree` has a red parent.
     ///
-    def checkRedParentInvariant(tree: RedBlackTree[k, v]): Bool = checkRedParentInvariantHelper(tree, Black)
+    def checkRedParentInvariant(tree: RedBlackTree[k, v]): Bool =
+       def loop(t, c) = match t {
+           case Node(Red, a, _, _, b)   =>
+                if (isRed(c))
+                    false
+                else
+                    loop(a, Red) and loop(b, Red)
+           case Node(Black, a, _, _, b) =>
+                loop(a, Black) and loop(b, Black)
+           case _                       => true
+       };
+       loop(tree, Black)
 
     ///
     /// Returns a tree with mappings `x -> ()` for all `x` in `xs`.
@@ -195,7 +195,8 @@ namespace TestRedBlackTree {
     def random(n: Int32): RedBlackTree[Int32, Unit] & Impure = {
         let seed = 42i64;
         let r = Random.newWithSeed(seed);
-        List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), List.map(_ -> Random.nextInt32(r), List.range(0, n)))
+        List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(),
+            List.map(_ -> Random.nextInt32(r), List.range(0, n)))
     }
 
 
