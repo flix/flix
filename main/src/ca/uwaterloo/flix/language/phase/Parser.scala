@@ -361,7 +361,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     // Note that outside of patterns, Strings are parsed as [[Interpolation]]s
     def Str: Rule1[ParsedAst.Literal.Str] = rule {
-      SP ~ "\"" ~ zeroOrMore(!"\"" ~ Chars.CharCode) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
+      SP ~ "\"" ~ zeroOrMore(!("\"" | atomic("${")) ~ Chars.CharCode) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
     }
 
     def Float: Rule1[ParsedAst.Literal] = rule {
