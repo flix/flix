@@ -4509,38 +4509,28 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def copyOfRange27(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]);
-        Array.length(a) == (3 + 4 + 1) and Array.memberOf('h', Array.flatten(a))
-
-    @test
-    def copyOfRange28(): Bool & Impure =
         Array.copyOfRange(0, 3, [Some(1), Some(2), None]) `eq` [Some(1), Some(2), None]
 
     @test
-    def copyOfRange29(): Bool & Impure =
+    def copyOfRange28(): Bool & Impure =
         Array.copyOfRange(1, 3, [Some(1), Some(2), None]) `eq` [Some(2), None]
 
     @test
-    def copyOfRange30(): Bool & Impure =
+    def copyOfRange29(): Bool & Impure =
         let a = Array.copyOfRange(2, 5, [Some(1), Some(2), None]);
         Array.length(a) == 3 and Array.memberOf(None, a)
 
     @test
-    def copyOfRange31(): Bool & Impure =
+    def copyOfRange30(): Bool & Impure =
         let a = Array.copyOfRange(0, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
         let b = [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]];
         Array.flatten(a) `eq` Array.flatten(b)
 
     @test
-    def copyOfRange32(): Bool & Impure =
+    def copyOfRange31(): Bool & Impure =
         let a = Array.copyOfRange(1, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
         let b = [[Some('d'), Some('e'), Some('f'), Some('g')], [None]];
         Array.flatten(a) `eq` Array.flatten(b)
-
-    @test
-    def copyOfRange33(): Bool & Impure =
-        let a = Array.copyOfRange(2, 5, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
-        Array.length(a) == (3 + 4 + 1) and Array.memberOf(None, Array.flatten(a))
 
 
     /////////////////////////////////////////////////////////////////////////////
