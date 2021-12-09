@@ -19,9 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, SimplifiedAst, Symbol}
-import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -61,7 +60,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
   private def liftDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): LiftedAst.Def = def0 match {
     case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, loc) =>
       val fs = fparams.map(visitFormalParam)
-      val e = liftExp(def0.sym.namespace, def0.exp, def0.sym.name, m)
+      val e = liftExp(def0.exp, sym, m)
 
       LiftedAst.Def(ann, mod, sym, fs, e, tpe, loc)
   }
@@ -78,9 +77,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
   }
 
   /**
-    * Performs lambda lifting on the given expression `exp0` using the given `name` as part of the lifted name.
+    * Performs lambda lifting on the given expression `exp0` occurring with the given symbol `sym0`.
     */
-  private def liftExp(ns: List[String], exp0: SimplifiedAst.Expression, name: String, m: TopLevel)(implicit flix: Flix): LiftedAst.Expression = {
+  private def liftExp(exp0: SimplifiedAst.Expression, sym0: Symbol.DefnSym, m: TopLevel)(implicit flix: Flix): LiftedAst.Expression = {
     /**
       * Performs closure conversion and lambda lifting on the given expression `exp0`.
       */
@@ -118,7 +117,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
         val liftedExp = visitExp(exp)
 
         // Generate a fresh symbol for the new lifted definition.
-        val freshSymbol = Symbol.freshDefnSym(ns, name, loc)
+        val freshSymbol = Symbol.freshDefnSym(sym0)
 
         // Construct annotations and modifiers for the fresh definition.
         val ann = Ast.Annotations.Empty
@@ -181,6 +180,21 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         LiftedAst.Expression.Let(sym, e1, e2, tpe, loc)
+
+      case SimplifiedAst.Expression.LetRec(varSym, exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        e1 match {
+          case LiftedAst.Expression.Closure(defSym, freeVars, _, _) =>
+            val index = freeVars.indexWhere(freeVar => varSym == freeVar.sym)
+            if (index == -1) {
+              // function never calls itself
+              LiftedAst.Expression.Let(varSym, e1, e2, tpe, loc)
+            } else
+              LiftedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
+
+          case _ => throw InternalCompilerException(s"Unexpected expression: '$e1'.")
+        }
 
       case SimplifiedAst.Expression.Is(sym, tag, exp, loc) =>
         val e = visitExp(exp)
@@ -260,16 +274,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         LiftedAst.Expression.Assign(e1, e2, tpe, loc)
-
-      case SimplifiedAst.Expression.Existential(fparam, exp, loc) =>
-        val p = visitFormalParam(fparam)
-        val e = visitExp(exp)
-        LiftedAst.Expression.Existential(p, e, loc)
-
-      case SimplifiedAst.Expression.Universal(fparam, exp, loc) =>
-        val p = visitFormalParam(fparam)
-        val e = visitExp(exp)
-        LiftedAst.Expression.Universal(p, e, loc)
 
       case SimplifiedAst.Expression.Cast(exp, tpe, loc) =>
         val e = visitExp(exp)

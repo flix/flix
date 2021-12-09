@@ -17,5 +17,5 @@ import {Type} from "./Type";
 
 export interface FormalParam {
     name: string,
-    tpe: Type
+    tpe: string | Type
 }

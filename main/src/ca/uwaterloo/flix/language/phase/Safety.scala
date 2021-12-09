@@ -100,6 +100,9 @@ object Safety extends Phase[Root, Root] {
     case Expression.Let(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
+    case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ::: visitExp(exp2)
+
     case Expression.LetRegion(_, exp, _, _, _) =>
       visitExp(exp)
 
@@ -161,16 +164,10 @@ object Safety extends Phase[Root, Root] {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.Existential(_, exp, _) =>
-      visitExp(exp)
-
-    case Expression.Universal(_, exp, _) =>
-      visitExp(exp)
-
     case Expression.Ascribe(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Cast(exp, _, _, _) =>
+    case Expression.Cast(exp, _, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>

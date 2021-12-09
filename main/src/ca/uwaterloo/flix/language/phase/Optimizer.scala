@@ -21,9 +21,8 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
-import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.vt._
+import ca.uwaterloo.flix.util.{Formatter, Validation}
 
 /**
   * The Optimization phase performs intra-procedural optimizations.
@@ -150,6 +149,11 @@ object Optimizer extends Phase[Root, Root] {
             Expression.Let(sym, e1, e2, tpe, loc)
         }
 
+      case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1, env0)
+        val e2 = visitExp(exp2, env0)
+        Expression.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
+
       case Expression.Is(sym, tag, exp, loc) =>
         val e = visitExp(exp, env0)
         Expression.Is(sym, tag, e, loc)
@@ -228,14 +232,6 @@ object Optimizer extends Phase[Root, Root] {
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         Expression.Assign(e1, e2, tpe, loc)
-
-      case Expression.Existential(fparam, exp, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Existential(fparam, e, loc)
-
-      case Expression.Universal(fparam, exp, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Universal(fparam, e, loc)
 
       case Expression.Cast(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
@@ -331,7 +327,7 @@ object Optimizer extends Phase[Root, Root] {
 
     // Print the ast if debugging is enabled.
     if (flix.options.debug) {
-      println(PrettyPrinter.Lifted.fmtRoot(result).fmt(TerminalContext.AnsiTerminal))
+      println(PrettyPrinter.Lifted.fmtRoot(result, Formatter.AnsiTerminalFormatter))
     }
 
     result.toSuccess

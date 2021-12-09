@@ -21,7 +21,6 @@ import {TypeParam} from "./TypeParam";
 
 export interface Enum {
     doc: [string]
-    mod: [Modifier]
     sym: EnumSym
     tparams: [TypeParam]
     cases: [Case]
@@ -30,5 +29,5 @@ export interface Enum {
 
 export interface Case {
     tag: string
-    tpe: Type
+    tpe: string | Type
 }

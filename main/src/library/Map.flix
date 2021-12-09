@@ -319,15 +319,23 @@ namespace Map {
     ///
     /// Returns a map with mappings `k -> f(v)` for every `k -> v` in `m`.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
+    @ParallelWhenPure
     pub def map(f: v1 -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef with Order[k] = mapWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a map with mappings `k -> f(k, v)` for every `k -> v` in `m`.
     ///
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
+    @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef with Order[k] =
-        foldLeftWithKey((acc, k, v) -> insert(k, f(k, v), acc), empty(), m)
+        let Map(t) = m;
+        Map(RedBlackTree.mapWithKey(f, t))
 
     ///
     /// Alias for `foldLeftWithKey`.
@@ -638,17 +646,14 @@ namespace Map {
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison & ef, m: Map[k, v]): List[(k, v)] & ef =
+    pub def query(p: k -> Comparison, m: Map[k, v]): List[(k, v)] =
         let Map(xs) = m;
         RedBlackTree.query(p, (k, v) -> (k, v), xs)
 
     ///
     /// Applies `f` to all key-value pairs `(k, v)` from the map `m` where `p(k)` returns `EqualTo`.
     ///
-    /// The function `f` must be impure.
-    ///
-    // TODO: Make `f` effect polymorphic
-    pub def queryWith(p: k -> Comparison & ef, f: (k, v) -> Unit & Impure, m: Map[k, v]): Unit & Impure =
+    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, m: Map[k, v]): Unit & ef =
         let Map(xs) = m;
         RedBlackTree.queryWith(p, f, xs)
 

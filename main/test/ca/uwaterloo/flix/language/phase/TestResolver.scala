@@ -526,7 +526,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import foo.bar.Baz:f();
+         |    import static foo.bar.Baz.f();
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -559,7 +559,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import get foo.bar.Baz:f as getF;
+         |    import static get foo.bar.Baz.f as getF;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -570,7 +570,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import set foo.bar.Baz:f as setF;
+         |    import static set foo.bar.Baz.f as setF;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -625,7 +625,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import java.lang.String:isEmpty();
+         |    import static java.lang.String.isEmpty();
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -670,7 +670,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import get java.lang.Character:foo as getFoo;
+         |    import static get java.lang.Character.foo as getFoo;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -681,7 +681,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import set java.lang.Character:foo as setFoo;
+         |    import static set java.lang.Character.foo as setFoo;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)

@@ -50,7 +50,7 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption]);
+            import static java.nio.file.Files.isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption]);
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let isRegular = isRegularFile(javaPath, []);
@@ -80,7 +80,7 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:isSymbolicLink(##java.nio.file.Path);
+            import static java.nio.file.Files.isSymbolicLink(##java.nio.file.Path);
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let isSymbolic = isSymbolicLink(javaPath);
@@ -120,18 +120,69 @@ namespace File {
         }
 
     ///
+    /// Returns a string containing the given file `f`.
+    ///
+    pub def read(f: String): Result[String, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import static java.nio.file.Files.readString(##java.nio.file.Path);
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let result = readString(javaPath);
+            Ok(result)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns a string containing the given file `f` with the options `opts`.
+    /// The options `opts` to apply consists of
+    /// `offset` - the start offset in the given file `f`.
+    /// `count` - the number of bytes read.
+    /// `charSet` - the specific charset to be used to decode the bytes.
+    ///
+    pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, f : String): Result[String, String] & Impure = {
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileInputStream(##java.io.File) as newInputStream;
+            import java.io.FileInputStream.skip(Int64);
+            import java.io.FileInputStream.read(Array[Int8], Int32, Int32);
+            import static java.nio.charset.Charset.forName(String);
+            import new java.lang.String(Array[Int8], ##java.nio.charset.Charset) as newString;
+
+            let javaFile = newFile(f);
+            let stream = newInputStream(javaFile);
+            skip(stream, opts.offset);
+            let bytes = [0i8; opts.count];
+            read(stream, bytes, 0, opts.count);
+            let charSet = forName(opts.charSet);
+            let returnString = newString(bytes, charSet);
+            Ok(returnString)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+    }
+
+    ///
     /// Returns a list of all the lines in the given file `f`.
     ///
     pub def readLines(f: String): Result[List[String], String] & Impure = try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path);
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
             Ok(readAll(reader))
         } catch {
-            case _: ##java.io.IOException => Err("I/O Error")
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
         }
 
     ///

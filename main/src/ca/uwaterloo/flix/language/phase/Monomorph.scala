@@ -247,6 +247,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def visitExp(e0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym]): Expression = e0 match {
       case Expression.Wild(tpe, loc) => Expression.Wild(subst0(tpe), loc)
+
       case Expression.Var(sym, tpe, loc) => Expression.Var(env0(sym), subst0(tpe), loc)
 
       case Expression.Def(sym, tpe, loc) =>
@@ -338,7 +339,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         // Generate a fresh symbol for the let-bound variable.
         val freshSym = Symbol.freshVarSym(sym)
         val env1 = env0 + (sym -> freshSym)
-        Expression.Let(freshSym, mod, visitExp(exp1, env1), visitExp(exp2, env1), subst0(tpe), eff, loc)
+        Expression.Let(freshSym, mod, visitExp(exp1, env0), visitExp(exp2, env1), subst0(tpe), eff, loc)
+
+      case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+        // Generate a fresh symbol for the let-bound variable.
+        val freshSym = Symbol.freshVarSym(sym)
+        val env1 = env0 + (sym -> freshSym)
+        Expression.LetRec(freshSym, mod, visitExp(exp1, env1), visitExp(exp2, env1), subst0(tpe), eff, loc)
 
       case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
         val e = visitExp(exp, env0)
@@ -453,21 +460,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = visitExp(exp2, env0)
         Expression.Assign(e1, e2, subst0(tpe), eff, loc)
 
-      case Expression.Existential(fparam, exp, loc) =>
-        val (param, env1) = specializeFormalParam(fparam, subst0)
-        Expression.Existential(param, visitExp(exp, env0 ++ env1), loc)
-
-      case Expression.Universal(fparam, exp, loc) =>
-        val (param, env1) = specializeFormalParam(fparam, subst0)
-        Expression.Universal(param, visitExp(exp, env0 ++ env1), loc)
-
       case Expression.Ascribe(exp, tpe, eff, loc) =>
         val e = visitExp(exp, env0)
         Expression.Ascribe(e, subst0(tpe), eff, loc)
 
-      case Expression.Cast(exp, tpe, eff, loc) =>
+      case Expression.Cast(exp, _, _, tpe, eff, loc) =>
+        // We drop the declaredType and declaredEff here.
         val e = visitExp(exp, env0)
-        Expression.Cast(e, subst0(tpe), eff, loc)
+        Expression.Cast(e, None, None, subst0(tpe), eff, loc)
 
       case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
         val e = visitExp(exp, env0)

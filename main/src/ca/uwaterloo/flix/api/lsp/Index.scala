@@ -181,8 +181,8 @@ case class Index(m: Map[(String, Int), List[Entity]],
   }
 
   /**
-   * Returns all entities in the document at the given `uri`.
-   */
+    * Returns all entities in the document at the given `uri`.
+    */
   def query(uri: String): Iterable[Entity] = {
     val res = new ArrayBuffer[Entity]()
     for (((entitiesUri, _), entities) <- m) {

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {Modifier} from "./Modifier";
 import {SourceLocation} from "./SourceLocation";
 import {Type} from "./Type";
 import {TypeParam} from "./TypeParam";
@@ -21,9 +20,8 @@ import {TypeAliasSym} from "./TypeAliasSym";
 
 export interface TypeAlias {
     doc: [string]
-    mod: [Modifier]
     sym: TypeAliasSym
     tparams: [TypeParam]
-    tpe: Type
+    tpe: string | Type
     loc: SourceLocation
 }
