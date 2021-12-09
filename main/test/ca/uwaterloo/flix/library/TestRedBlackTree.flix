@@ -226,13 +226,13 @@ namespace TestRedBlackTree {
     def mapWithKey06(): Bool =
         let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
         let expected = List.zip(List.range(0, 2000), List.range(1, 2001)) |> List.toMap;
-        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == expected
+        Map(RedBlackTree.mapWithKey((_, v) -> v + 1, t)) == expected
 
     @test
     def mapWithKey07(): Bool =
         let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         let expected = List.zip(List.range(0, 2000), List.range(-999, 1001)) |> List.toMap;
-        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == expected
+        Map(RedBlackTree.mapWithKey((_, v) -> v + 1, t)) == expected
 
     @test
     def mapWithKey08(): Bool & Impure =
