@@ -4540,7 +4540,7 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     @test
     def copyOfRange33(): Bool & Impure =
         let a = Array.copyOfRange(2, 5, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
-        Array.length(a) == 3 and Array.memberOf(None, flatten(a))
+        Array.length(a) == 3 and Array.memberOf(None, Array.flatten(a))
 
 
     /////////////////////////////////////////////////////////////////////////////
