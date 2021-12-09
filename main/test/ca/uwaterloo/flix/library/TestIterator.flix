@@ -93,19 +93,19 @@ namespace TestIterator {
 
     @test
     def toArray01(): Bool & Impure =
-        Array.eq((Nil: List[Int32] |> List.toIterator |> Iterator.toArray), [])
+        Nil: List[Int32] |> List.toIterator |> Iterator.toArray `Array.eq` []
 
     @test
     def toArray02(): Bool & Impure =
-        Array.eq(Iterator.range(-10, -5) |> Iterator.toArray, [-10, -9, -8, -7, -6])
+        Iterator.range(-10, -5) |> Iterator.toArray `Array.eq` [-10, -9, -8, -7, -6]
 
     @test
     def toArray03(): Bool & Impure =
-        Array.eq(Iterator.repeat(3, 1) |> Iterator.toArray, [1, 1, 1])
+        Iterator.repeat(3, 1) |> Iterator.toArray `Array.eq` [1, 1, 1]
 
     @test
     def toArray04(): Bool & Impure =
-        Array.eq(Iterator.range(-100, 200) |> Iterator.toArray, Array.range(-100, 200))
+        Iterator.range(-100, 200) |> Iterator.toArray `Array.eq` Array.range(-100, 200)
 
 
     /////////////////////////////////////////////////////////////////////////////
