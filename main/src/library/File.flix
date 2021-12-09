@@ -151,7 +151,7 @@ namespace File {
         else
             readAllHelper(r, line :: acc)
 
-///
+    ///
     /// Returns a list of all the lines in the given file `f` with the options `opts`.
     /// The options `opts` to apply consists of
     /// `charSet` - the specific charset to be used to decode the bytes.
