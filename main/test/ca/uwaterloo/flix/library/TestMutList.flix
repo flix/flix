@@ -1614,13 +1614,13 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,
         let v2 = MutList.range(0, 5) |> MutList.toArray;
         let arr1 = [1, 2, 3];
         let arr2 = [0, 1, 2, 3, 4];
-        Array.eq(v1, arr1) and Array.eq(v2, arr2)
+        (v1 `Array.eq` arr1) and (v2 `Array.eq` arr2)
 
     @test
     def range02(): Bool & Impure =
         let v = MutList.range(-1, 3) |> MutList.toArray;
         let arr = [-1, 0, 1, 2];
-        Array.eq(v, arr)
+        (v `Array.eq` arr)
 
     @test
     def range03(): Bool & Impure =
