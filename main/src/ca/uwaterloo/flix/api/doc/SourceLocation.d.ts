@@ -16,7 +16,5 @@
 export interface SourceLocation {
     name: string
     beginLine: number
-    beginCol: number
     endLine: number
-    endCol: number
 }
