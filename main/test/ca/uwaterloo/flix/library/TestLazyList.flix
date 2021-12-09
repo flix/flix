@@ -668,23 +668,23 @@ namespace TestLazyList {
 
     @test
     def toArray01(): Bool & Impure =
-    	Array.eq(LazyList.toArray(ENil: LazyList[Unit]), [])
+    	LazyList.toArray(ENil: LazyList[Unit]) `Array.eq` []
 
     @test
     def toArray02(): Bool & Impure =
-    	Array.eq(LazyList.toArray(LList(lazy ENil): LazyList[Unit]), [])
+    	LazyList.toArray(LList(lazy ENil): LazyList[Unit]) `Array.eq` []
 
     @test
     def toArray03(): Bool & Impure =
-    	Array.eq(LazyList.range(-100, 1000) |> LazyList.toArray, Array.range(-100, 1000))
+    	LazyList.range(-100, 1000) |> LazyList.toArray `Array.eq` Array.range(-100, 1000)
 
     @test
     def toArray04(): Bool & Impure =
-    	Array.eq(LazyList.toArray(LCons(1, lazy ENil)), [1])
+    	LazyList.toArray(LCons(1, lazy ENil)) `Array.eq` [1]
 
     @test
     def toArray05(): Bool & Impure =
-    	Array.eq(LazyList.toArray(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))), [1, 2, 3])
+    	LazyList.toArray(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) `Array.eq` [1, 2, 3]
 
 
     /////////////////////////////////////////////////////////////////////////////
