@@ -191,9 +191,9 @@ sealed trait Type {
 
 object Type {
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Constants                                                               //
-  /////////////////////////////////////////////////////////////////////////////
+  //
+  // Constants
+  //
 
   // TODO: Reduce usage of these in favor of the ones with source locations.
 
@@ -339,9 +339,9 @@ object Type {
     */
   val Or: Type = Type.Cst(TypeConstructor.Or, SourceLocation.Unknown)
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Constructors                                                            //
-  /////////////////////////////////////////////////////////////////////////////
+  //
+  // Constructors
+  //
 
   /**
     * The union of type variables.
@@ -501,9 +501,9 @@ object Type {
     */
   case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Utility Functions                                                       //
-  /////////////////////////////////////////////////////////////////////////////
+  //
+  // Utility Functions
+  //
 
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
