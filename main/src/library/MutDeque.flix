@@ -62,7 +62,7 @@ namespace MutDeque {
     /// Returns an empty MutDeque.
     ///
     pub def new(): MutDeque[a] & Impure =
-        MutDeque(ref [default; minCapacity()], ref 0, ref 0)
+        MutDeque(ref [$DEFAULT$; minCapacity()], ref 0, ref 0)
 
     ///
     /// Returns the number of elements in `d`.
@@ -161,7 +161,7 @@ namespace MutDeque {
     def grow!(d: MutDeque[a]): Unit & Impure = {
         let MutDeque(a, f, b) = d;
         let c = capacity(d);
-        let arr = [default; 2 * c];                    // Allocate new array `arr` with double the capacity of `a`.
+        let arr = [$DEFAULT$; 2 * c];                  // Allocate new array `arr` with double the capacity of `a`.
         copyElements!(deref f, deref b, deref a, arr); // Copy elements from old array `a` to new array `arr`.
         a := arr;                                      // Update references.
         b := computeSize(c, deref f, deref b);
@@ -188,7 +188,7 @@ namespace MutDeque {
         let mc = minCapacity();
         let c = capacity(d);
         if (c > mc) {                                      // Prevent the backing array from shrinking below `minCapacity`.
-            let arr = [default; c / 2];                    // Allocate new array `arr` with half the capacity of `a`.
+            let arr = [$DEFAULT$; c / 2];                  // Allocate new array `arr` with half the capacity of `a`.
             copyElements!(deref f, deref b, deref a, arr); // Copy elements from old array `a` to new array `arr`.
             a := arr;                                      // Update references.
             b := computeSize(c, deref f, deref b);
