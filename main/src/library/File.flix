@@ -354,9 +354,6 @@ namespace File {
     def readBytesWithHelper(bytes: Array[Int8], numberRead: Int32, count: Int32): Array[Int8] & Impure =
         let nothingRead = numberRead == -1;
         let countBiggest = numberRead < count;
-        println(numberRead);
-        println(count);
-        println(countBiggest);
         if (nothingRead) {
             []
         } else {
