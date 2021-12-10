@@ -19,7 +19,7 @@ namespace Object {
     /// Returns `true` if the given value `x` is `null`.
     ///
     pub def isNull(x: a): Bool =
-        import java.util.Objects:isNull(##java.lang.Object);
+        import static java.util.Objects.isNull(##java.lang.Object);
         isNull(x as ##java.lang.Object) as & Pure
 
     ///
@@ -32,7 +32,7 @@ namespace Object {
     /// Unsafely converts `x` to a string using Java's built-in toString.
     ///
     pub def toString(x: a): String =
-        import java.util.Objects:toString(##java.lang.Object);
+        import static java.util.Objects.toString(##java.lang.Object);
         toString(x as ##java.lang.Object) as & Pure
 
 }

@@ -43,7 +43,7 @@ namespace Console {
             import new java.util.Scanner(##java.io.InputStream) as newScanner;
             import java.util.Scanner.hasNextLine() as hasNextLine;
             import java.util.Scanner.nextLine() as nextLine;
-            import get java.lang.System:in as in;
+            import static get java.lang.System.in as in;
             let i = in() as ##java.io.InputStream; // safe up cast
             let s = newScanner(i);
             if (hasNextLine(s))
@@ -89,7 +89,7 @@ namespace Console {
         /// Returns the standard output stream.
         ///
         def getOutputStream(): ##java.io.PrintStream & Impure =
-            import get java.lang.System:out as getOut;
+            import static get java.lang.System.out as getOut;
             getOut()
 
     }
@@ -131,7 +131,7 @@ namespace Console {
         /// Returns the standard error stream.
         ///
         def getErrorStream(): ##java.io.PrintStream & Impure =
-            import get java.lang.System:err as getErr;
+            import static get java.lang.System.err as getErr;
             getErr()
 
     }

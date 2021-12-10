@@ -196,16 +196,12 @@ namespace List {
     ///
     /// Returns `-1` if `a` does not exist in `xs`.
     ///
-    @Time(length(xs)) @Space(1)
-    pub def indexOf(a: a, xs: List[a]): Int32 with Eq[a] = indexOfHelper(a, xs, 0)
-
-    ///
-    /// Helper function for `indexOf`.
-    ///
-    def indexOfHelper(a: a, xs: List[a], acc: Int32): Int32 with Eq[a] = match xs {
-        case Nil => -1
-        case x :: rs => if (x == a) acc else indexOfHelper(a, rs, acc+1)
-    }
+    pub def indexOf(a: a, l: List[a]): Int32 with Eq[a] =
+        def loop(xs, acc) = match xs {
+            case Nil     => -1
+            case y :: ys => if (y == a) acc else loop(ys, acc + 1)
+        };
+        loop(l, 0)
 
     ///
     /// Alias for `findLeft`.
@@ -314,20 +310,16 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
-    @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def map(f: a -> b & ef, xs: List[a]): List[b] & ef =
-        mapHelper(f, xs, ys -> ys)
+    pub def map(f: a -> b & ef, l: List[a]): List[b] & ef =
+        def loop(xs, k) = match xs {
+            case Nil     => k(Nil)
+            case y :: ys => {
+                let a = f(y);
+                loop(ys, zs -> k(a :: zs))
+            }
+        };
+        loop(l, identity)
 
-    ///
-    /// Helper function for `map`.
-    ///
-    def mapHelper(f: a -> b & ef, xs: List[a], k: List[b] -> List[b]): List[b] & ef = match xs {
-        case Nil => k(Nil)
-        case x :: rs => {
-            let a = f(x);
-            mapHelper(f, rs, ys -> k(a :: ys))
-        }
-    }
 
     ///
     /// Return the singleton list with element `x`.

@@ -50,7 +50,7 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption]);
+            import static java.nio.file.Files.isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption]);
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let isRegular = isRegularFile(javaPath, []);
@@ -80,7 +80,7 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:isSymbolicLink(##java.nio.file.Path);
+            import static java.nio.file.Files.isSymbolicLink(##java.nio.file.Path);
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let isSymbolic = isSymbolicLink(javaPath);
@@ -126,7 +126,7 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:readString(##java.nio.file.Path);
+            import static java.nio.file.Files.readString(##java.nio.file.Path);
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let result = readString(javaPath);
@@ -150,7 +150,7 @@ namespace File {
             import new java.io.FileInputStream(##java.io.File) as newInputStream;
             import java.io.FileInputStream.skip(Int64);
             import java.io.FileInputStream.read(Array[Int8], Int32, Int32);
-            import java.nio.charset.Charset:forName(String);
+            import static java.nio.charset.Charset.forName(String);
             import new java.lang.String(Array[Int8], ##java.nio.charset.Charset) as newString;
 
             let javaFile = newFile(f);
@@ -174,7 +174,7 @@ namespace File {
     pub def readLines(f: String): Result[List[String], String] & Impure = try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path);
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
@@ -211,8 +211,8 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
-            import java.nio.charset.Charset:forName(String);
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
+            import static java.nio.charset.Charset.forName(String);
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -231,7 +231,7 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path);
             import java.io.BufferedReader.readLine();
 
             let javaFile = newFile(f);
@@ -269,8 +269,8 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
-            import java.nio.charset.Charset:forName(String);
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
+            import static java.nio.charset.Charset.forName(String);
             import java.io.BufferedReader.readLine();
 
             let javaFile = newFile(f);
@@ -297,6 +297,71 @@ namespace File {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
                 Iterator.singleton(Err(getMessage(ex)))
+        }
+
+    ///
+    /// Returns an array of all the bytes in the given file `f`.
+    ///
+    pub def readBytes(f: String): Result[Array[Int8], String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import static java.nio.file.Files.readAllBytes(##java.nio.file.Path);
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let bytes = readAllBytes(javaPath);
+
+            Ok(bytes)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns an array of all the bytes in the given file `f` and applying the options `opts`.
+    /// The options `opts` to apply consists of
+    /// `offset` - the start offset in the given file `f`.
+    /// `count` - the number of bytes read.
+    ///
+    pub def readBytesWith(opts: {offset :: Int64, count :: Int32}, f: String): Result[Array[Int8], String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileInputStream(##java.io.File) as newInputStream;
+            import java.io.FileInputStream.skip(Int64);
+            import java.io.FileInputStream.read(Array[Int8], Int32, Int32);
+
+            let javaFile = newFile(f);
+            let stream = newInputStream(javaFile);
+            skip(stream, opts.offset);
+            let bytes = [0i8; opts.count];
+            let numberRead = read(stream, bytes, 0, opts.count);
+
+            let res = readBytesWithHelper(bytes, numberRead, opts.count);
+
+            Ok(res)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Helper function for `readBytesWith`.
+    /// Returns an array that corresponds to the bytes actually read from the stream.
+    ///
+    def readBytesWithHelper(bytes: Array[Int8], numberRead: Int32, count: Int32): Array[Int8] & Impure =
+        let nothingRead = numberRead == -1;
+        let countBiggest = numberRead < count;
+        if (nothingRead) {
+            []
+        } else {
+            if (countBiggest) {
+                Array.slice(0, numberRead, bytes)
+            } else {
+                bytes
+            }
         }
 
 }

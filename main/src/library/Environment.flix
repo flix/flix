@@ -19,7 +19,7 @@ namespace Environment {
     /// Returns an map of the current system environment.
     ///
     pub def getEnv(): Map[String, String] =
-        import java.lang.System:getenv();
+        import static java.lang.System.getenv();
         import java.util.Map.entrySet();
         import java.util.Set.iterator();
         try {
@@ -33,7 +33,7 @@ namespace Environment {
     /// Gets the value of the specified environment variable.
     ///
     pub def getVar(name: String): Option[String] =
-        import java.lang.System:getenv(String);
+        import static java.lang.System.getenv(String);
         try {
             let result = getenv(name) as & Pure;
             Object.toOption(result)
@@ -45,7 +45,7 @@ namespace Environment {
     /// Gets the system property by name.
     ///
     pub def getProp(name: String): Option[String] =
-        import java.lang.System:getProperty(String);
+        import static java.lang.System.getProperty(String);
         try {
             let result = getProperty(name) as & Pure;
             Object.toOption(result)
@@ -72,21 +72,21 @@ namespace Environment {
     /// File separator
     ///
     pub def getFileSeparator(): String =
-        import get java.io.File:separator as sep;
+        import static get java.io.File.separator as sep;
         sep() as String & Pure
 
     ///
     /// Path separator
     ///
     pub def getPathSeparator(): String =
-        import get java.io.File:pathSeparator as pathSep;
+        import static get java.io.File.pathSeparator as pathSep;
         pathSep() as String & Pure
 
     ///
     /// Line separator
     ///
     pub def getLineSeparator(): String =
-        import java.lang.System:lineSeparator();
+        import static java.lang.System.lineSeparator();
         lineSeparator() as String & Pure
 
     ///
@@ -115,7 +115,7 @@ namespace Environment {
     /// The returned value is never less than one.
     ///
     pub def getVirtualProcessors(): Int32 =
-        import java.lang.Runtime:getRuntime();
+        import static java.lang.Runtime.getRuntime();
         import java.lang.Runtime.availableProcessors();
         (getRuntime() |> availableProcessors) as & Pure
 

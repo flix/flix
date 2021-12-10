@@ -115,7 +115,7 @@ object LiftedAst {
 
     case class Let(sym: Symbol.VarSym, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class LetRec(varSym: Symbol.VarSym, defSym: Symbol.DefnSym, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
     case class Is(sym: Symbol.EnumSym, tag: Name.Tag, exp: LiftedAst.Expression, loc: SourceLocation) extends LiftedAst.Expression {
       def tpe: Type = Type.Bool
