@@ -364,4 +364,33 @@ namespace File {
             }
         }
 
+    ///
+    /// Writes `data` to the given file `f`.
+    ///
+    /// Creates file `f` if it does not exist. Overwrites it if it exists.
+    ///
+    /// Returns `true` if the file was created.
+    ///
+    pub def write(f: String, data: t): Result[Bool, String] & Impure with ToString[t] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
+            import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let javaFile = newFile(f);
+            let w = newPrintWriter(javaFile);
+
+            println(w, "${data}");
+            close(w);
+
+            Ok(checkError(w))
+
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
 }
