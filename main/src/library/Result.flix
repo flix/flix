@@ -57,7 +57,7 @@ namespace Result {
     /// Returns `v` if `r` is `Ok(v)`. Otherwise returns `d`.
     ///
     @Time(1) @Space(1)
-    pub def getWithDefault(r: Result[t, e], d: t): t = match r {
+    pub def getWithDefault(d: t, r: Result[t, e]): t = match r {
         case Ok(v) => v
         case Err(_) => d
     }
@@ -66,9 +66,9 @@ namespace Result {
     /// Returns `Ok(v)` if `r1` is `Ok(v)`. Otherwise returns `r2`.
     ///
     @Time(1) @Space(1)
-    pub def withDefault(r1: Result[t, e1], r2: Result[t, e2]): Result[t, e2] = match r1 {
+    pub def withDefault(r2: {r2 :: Result[t, e2]}, r1: Result[t, e1]): Result[t, e2] = match r1 {
         case Ok(v) => Ok(v)
-        case Err(_) => r2
+        case Err(_) => r2.r2
     }
 
     ///
