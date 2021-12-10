@@ -385,8 +385,35 @@ namespace File {
             println(w, "${data}");
             close(w);
 
-            Ok(checkError(w))
+            Ok(Bool.not(checkError(w)))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
 
+    ///
+    /// Writes `data` to the given `f`.
+    ///
+    /// Creates `f` if it does not exist. Overwrites it if it exists.
+    ///
+    /// Returns `true` if the file was created.
+    ///
+    pub def writeLines(f: String, data: f[String]): Result[Bool, String] & Impure with Foldable[f] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
+            import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let javaFile = newFile(f);
+            let w = newPrintWriter(javaFile);
+
+            Foldable.foldLeft((_, line) -> println(w, line), (), data);
+            close(w);
+
+            Ok(Bool.not(checkError(w)))
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
