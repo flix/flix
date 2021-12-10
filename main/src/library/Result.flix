@@ -66,9 +66,9 @@ namespace Result {
     /// Returns `Ok(v)` if `r1` is `Ok(v)`. Otherwise returns `r2`.
     ///
     @Time(1) @Space(1)
-    pub def withDefault(r2: {r2 :: Result[t, e2]}, r1: Result[t, e1]): Result[t, e2] = match r1 {
+    pub def withDefault(alt: {alt :: Result[t, e2]}, r: Result[t, e1]): Result[t, e2] = match r {
         case Ok(v) => Ok(v)
-        case Err(_) => r2.r2
+        case Err(_) => alt.alt
     }
 
     ///
