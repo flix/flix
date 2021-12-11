@@ -528,6 +528,8 @@ namespace Iterator {
     ///
     /// That is, returns `b1 :: a1 ... an :: b2 :: ... bn-1 :: a1 :: ... :: an :: bn :: Nil`.
     ///
+    /// Does *not* consume any elements from either iterator.
+    ///
     pub def intercalate(iterA: Iterator[a], iterB: Iterator[Iterator[a]]): Iterator[a] & Impure =
         let Iterator(doneA, nextA) = iterA;
         let Iterator(doneB, nextB) = iterB;
