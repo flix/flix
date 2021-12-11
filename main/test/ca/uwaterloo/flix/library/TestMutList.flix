@@ -585,15 +585,15 @@ namespace TestMutList {
         let v1 = MutList.range(0, 1000);
         let MutList(l1, n1) = v1;
         let MutList(l2, n2) = MutList.copy(v1);
-        deref n1 == deref n2 and deref l1 == deref l2
+        (deref n1 == deref n2) and (deref l1 `Array.eq` deref l2)
 
     @test
     def copy05(): Bool & Impure =
         let v1 = MutList.range(0, 3);
         let MutList(l1, n1) = v1;
         let MutList(l2, n2) = MutList.copy(v1);
-        deref n1 == deref n2 and deref l1 == deref l2 and
-            Array.length(deref l2) == 8
+        (deref n1 == deref n2) and (deref l1 `Array.eq` deref l2) and
+            (Array.length(deref l2) == 8)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1614,13 +1614,13 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,
         let v2 = MutList.range(0, 5) |> MutList.toArray;
         let arr1 = [1, 2, 3];
         let arr2 = [0, 1, 2, 3, 4];
-        v1 == arr1 and v2 == arr2
+        (v1 `Array.eq` arr1) and (v2 `Array.eq` arr2)
 
     @test
     def range02(): Bool & Impure =
         let v = MutList.range(-1, 3) |> MutList.toArray;
         let arr = [-1, 0, 1, 2];
-        v == arr
+        (v `Array.eq` arr)
 
     @test
     def range03(): Bool & Impure =
