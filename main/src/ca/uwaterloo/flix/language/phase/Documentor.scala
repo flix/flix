@@ -324,7 +324,15 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitCase(caze: Case): JObject = caze match {
     case Case(_, tag, _, sc, _) =>
-      ("tag" -> tag.name) ~ ("tpe" -> "TYPE_PLACEHOLDER")
+      // TODO: FormatType.formatType is broken.
+      val tpe = try {
+        // We try our best.
+        FormatType.formatType(sc.base)
+      } catch {
+        // And if it crashes we use a placeholder:
+        case ex: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
+      }
+      ("tag" -> tag.name) ~ ("tpe" -> tpe)
   }
 
   /**
