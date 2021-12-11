@@ -420,4 +420,60 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+    ///
+    /// Appends `data` to the given file `f`.
+    ///
+    /// Returns `true` if the file was created.
+    ///
+    pub def append(f: String, data: t): Result[Bool, String] & Impure with ToString[t] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileWriter(##java.io.File, Bool) as newFileWriter;
+            import new java.io.PrintWriter(##java.io.Writer) as newPrintWriter;
+            import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let javaFile = newFile(f);
+            let fileWriter = newFileWriter(javaFile, true);
+            let printWriter = newPrintWriter(fileWriter as ##java.io.Writer);
+
+            println(printWriter, "${data}");
+            close(printWriter);
+
+            Ok(Bool.not(checkError(printWriter)))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Appends `data` to the given file `f`.
+    ///
+    /// Returns `true` if the file was created.
+    ///
+    pub def appendLines(f: String, data: f[String]): Result[Bool, String] & Impure with Foldable[f] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileWriter(##java.io.File, Bool) as newFileWriter;
+            import new java.io.PrintWriter(##java.io.Writer) as newPrintWriter;
+            import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let javaFile = newFile(f);
+            let fileWriter = newFileWriter(javaFile, true);
+            let printWriter = newPrintWriter(fileWriter as ##java.io.Writer);
+
+            Foldable.foldLeft((_, line) -> println(printWriter, line), (), data);
+            close(printWriter);
+
+            Ok(Bool.not(checkError(printWriter)))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
 }
