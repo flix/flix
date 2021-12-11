@@ -16,12 +16,6 @@
 
 
 // TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
-instance Eq[Array[v]] with Eq[v] {
-    // TODO More efficient implementation
-    pub def eq(a: Array[v], b: Array[v]): Bool = Array.eq(a, b) as & Pure
-}
-
-// TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
 instance Foldable[Array] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldLeft(f, s, a) as & ef
     pub def foldRight(f: (a, b) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldRight(f, s, a) as & ef

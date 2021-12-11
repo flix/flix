@@ -66,9 +66,23 @@ object BytecodeInstructions {
   sealed trait Condition
 
   object Condition {
-    case object NonNull extends Condition
+    case object ACMPEQ extends Condition
 
-    case object Null extends Condition
+    case object ACMPNE extends Condition
+
+    case object Bool extends Condition
+
+    case object EQ extends Condition
+
+    case object ICMPEQ extends Condition
+
+    case object ICMPNE extends Condition
+
+    case object NE extends Condition
+
+    case object NONNULL extends Condition
+
+    case object NULL extends Condition
   }
 
   sealed trait Branch
@@ -79,10 +93,11 @@ object BytecodeInstructions {
     case object FalseBranch extends Branch
   }
 
-  class Variable(load: InstructionSet, store: InstructionSet) {
-    def load(): InstructionSet = load
+  // TODO: do this for methods
+  class Variable(tpe: BackendType, index: Int) {
+    def load(): InstructionSet = xLoad(tpe, index)
 
-    def store(): InstructionSet = store
+    def store(): InstructionSet = xStore(tpe, index)
   }
 
   //
@@ -185,20 +200,25 @@ object BytecodeInstructions {
     f
   }
 
-  def IF_ACMPNE(cases: Branch => InstructionSet): InstructionSet =
-    branch(Opcodes.IF_ACMPNE)(cases)
+  def ICONST_2(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.ICONST_2)
+    f
+  }
 
-  def IFEQ(cases: Branch => InstructionSet): InstructionSet =
-    branch(Opcodes.IFEQ)(cases)
+  def ICONST_3(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.ICONST_3)
+    f
+  }
 
-  def IFNE(cases: Branch => InstructionSet): InstructionSet =
-    branch(Opcodes.IFNE)(cases)
+  def ICONST_4(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.ICONST_4)
+    f
+  }
 
-  def IFNONNULL(cases: Branch => InstructionSet): InstructionSet =
-    branch(Opcodes.IFNONNULL)(cases)
-
-  def IFNULL(cases: Branch => InstructionSet): InstructionSet =
-    branch(Opcodes.IFNULL)(cases)
+  def ICONST_5(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.ICONST_5)
+    f
+  }
 
   def ILOAD(index: Int): InstructionSet = f => {
     f.visitVarInstruction(Opcodes.ILOAD, index)
@@ -284,28 +304,49 @@ object BytecodeInstructions {
   // ~~~~~~~~~~~~~~~~~~~~~~~~~ Meta JVM Instructions ~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
+  def branch(c: Condition)(cases: Branch => InstructionSet): InstructionSet = f0 => {
+    var f = f0
+    val jumpLabel = new Label()
+    val skipLabel = new Label()
+    f.visitJumpInstruction(opcodeOf(c), jumpLabel)
+
+    f = cases(FalseBranch)(f)
+    f.visitJumpInstruction(Opcodes.GOTO, skipLabel)
+
+    f.visitLabel(jumpLabel)
+    f = cases(TrueBranch)(f)
+    f.visitLabel(skipLabel)
+    f
+  }
+
   def cheat(command: MethodVisitor => Unit): InstructionSet = f => {
     f.cheat(command)
     f
   }
 
-  def doWhile(c: Condition)(i: InstructionSet): InstructionSet = f => {
+  def doWhile(c: Condition)(i: InstructionSet): InstructionSet = f0 => {
+    var f = f0
     val start = new Label()
     f.visitLabel(start)
-    i(f)
+    f = i(f)
     f.visitJumpInstruction(opcodeOf(c), start)
+    f
+  }
+
+  def ifTrue(c: Condition)(i: InstructionSet): InstructionSet = f0 => {
+    var f = f0
+    val jumpLabel = new Label()
+    f.visitJumpInstruction(opcodeOf(negated(c)), jumpLabel)
+    f = i(f)
+    f.visitLabel(jumpLabel)
     f
   }
 
   def invokeConstructor(className: JvmName, descriptor: MethodDescriptor = MethodDescriptor.NothingToVoid): InstructionSet =
     INVOKESPECIAL(className, JvmName.ConstructorMethod, descriptor)
 
-  // TODO: this should be "wrong" if used on F in a static context
-  def loadThis(): InstructionSet =
-    ALOAD(0)
-
-  def matchBool(cases: Branch => InstructionSet): InstructionSet =
-    IFNE(cases)
+  def nop(): InstructionSet =
+    f => f
 
   def pushBool(b: Boolean): InstructionSet =
     if (b) ICONST_1() else ICONST_0()
@@ -319,7 +360,14 @@ object BytecodeInstructions {
   }
 
   def storeWithName(index: Int, tpe: BackendType)(body: Variable => InstructionSet): InstructionSet =
-    xStore(tpe, index) ~ body(new Variable(xLoad(tpe, index), xStore(tpe, index)))
+    xStore(tpe, index) ~ body(new Variable(tpe, index))
+
+  // TODO: this should be "wrong" if used on F in a static context
+  def thisLoad(): InstructionSet =
+    ALOAD(0)
+
+  def withName(index: Int, tpe: BackendType)(body: Variable => InstructionSet): InstructionSet =
+    body(new Variable(tpe, index))
 
   def xLoad(tpe: BackendType, index: Int): InstructionSet = tpe match {
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => ILOAD(index)
@@ -358,23 +406,27 @@ object BytecodeInstructions {
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
-  private def branch(opcode: Int)(cases: Branch => InstructionSet): InstructionSet = f0 => {
-    var f = f0
-    val jumpLabel = new Label()
-    val skipLabel = new Label()
-    f.visitJumpInstruction(opcode, jumpLabel)
-
-    f = cases(FalseBranch)(f)
-    f.visitJumpInstruction(Opcodes.GOTO, skipLabel)
-
-    f.visitLabel(jumpLabel)
-    f = cases(TrueBranch)(f)
-    f.visitLabel(skipLabel)
-    f
+  private def opcodeOf(c: Condition): Int = c match {
+    case Condition.ACMPEQ => Opcodes.IF_ACMPEQ
+    case Condition.ACMPNE => Opcodes.IF_ACMPNE
+    case Condition.Bool => opcodeOf(Condition.NE)
+    case Condition.EQ => Opcodes.IFEQ
+    case Condition.ICMPEQ => Opcodes.IF_ICMPEQ
+    case Condition.ICMPNE => Opcodes.IF_ICMPNE
+    case Condition.NE => Opcodes.IFNE
+    case Condition.NONNULL => Opcodes.IFNONNULL
+    case Condition.NULL => Opcodes.IFNULL
   }
 
-  private def opcodeOf(c: Condition): Int = c match {
-    case Condition.NonNull => Opcodes.IFNONNULL
-    case Condition.Null => Opcodes.IFNULL
+  private def negated(c: Condition): Condition = c match {
+    case Condition.ACMPEQ => Condition.ACMPNE
+    case Condition.ACMPNE => Condition.ACMPEQ
+    case Condition.Bool => negated(Condition.NE)
+    case Condition.EQ => Condition.NE
+    case Condition.ICMPEQ => Condition.ICMPNE
+    case Condition.ICMPNE => Condition.ICMPEQ
+    case Condition.NE => Condition.EQ
+    case Condition.NONNULL => Condition.NULL
+    case Condition.NULL => Condition.NONNULL
   }
 }

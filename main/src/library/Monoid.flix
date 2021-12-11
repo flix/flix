@@ -15,22 +15,23 @@
  */
 
 ///
-/// A type class for monoids, objects that support an associative binary
+/// A type class for Monoids, objects that support an associative binary
 /// operation `combine` and neutral element `empty`.
 ///
-pub lawless class Monoid[a] {
+pub lawless class Monoid[a] with SemiGroup[a] {
     ///
     /// Returns a neutral element.
     ///
     pub def empty(): a
 
     ///
-    /// Returns the result of __combining__ `x` and `y`.
+    /// Returns the result of __combining__ `x` and `y` using SemiGroup's combine.
     ///
-    /// [When Flix has Superclasses this function should be moved into the
-    /// class Semigroup.]
-    ///
-    pub def combine(x: a, y: a): a
+    pub def combine(x: a, y: a): a =
+        SemiGroup.combine(x, y)
+
+    law associative: forall(x: a, y: a, z: a) with Eq[a] . Monoid.combine(Monoid.combine(x, y), z) == Monoid.combine(x, Monoid.combine(y, z))
+
 }
 
 namespace Monoid {
@@ -38,6 +39,7 @@ namespace Monoid {
     ///
     /// Returns the result of applying `combine` to all the elements of list `xs`,
     /// using `empty` as the initial value.
+    /// TODO: should this be deleted? Not the same as CombineN in SemiGroup
     ///
     pub def combineAll(xs: List[a]): a with Monoid[a] =
         List.foldLeft((ac, x) -> combine(ac, x), Monoid.empty(), xs)
@@ -46,99 +48,58 @@ namespace Monoid {
 
 instance Monoid[Unit] {
     pub def empty(): Unit = ()
-    pub def combine(_: Unit, _: Unit): Unit = ()
 }
 
 instance Monoid[String] {
     pub def empty(): String = ""
-    pub def combine(x: String, y: String): String = x + y
 }
 
 instance Monoid[Option[a]] with Monoid[a] {
     pub def empty(): Option[a] = None
-    pub def combine(x: Option[a], y: Option[a]): Option[a] = match (x, y) {
-        case (Some(x1), Some(y1)) => Some(Monoid.combine(x1, y1))
-        case (a, None) => a
-        case (None, b) => b
-    }
 }
 
 instance Monoid[(a1, a2)] with Monoid[a1], Monoid[a2] {
     pub def empty(): (a1, a2) = (Monoid.empty(), Monoid.empty())
-    pub def combine(x: (a1, a2), y: (a1, a2)): (a1, a2) = match (x, y) {
-        case ((x1, x2), (y1, y2)) => (Monoid.combine(x1, y1), Monoid.combine(x2, y2))
-    }
 }
 
 instance Monoid[(a1, a2, a3)] with Monoid[a1], Monoid[a2], Monoid[a3] {
     pub def empty(): (a1, a2, a3) = (Monoid.empty(), Monoid.empty(), Monoid.empty())
-    pub def combine(x: (a1, a2, a3), y: (a1, a2, a3)): (a1, a2, a3) = match (x, y) {
-        case ((x1, x2, x3), (y1, y2, y3)) => (Monoid.combine(x1, y1), Monoid.combine(x2, y2), Monoid.combine(x3, y3))
-    }
 }
 
 instance Monoid[(a1, a2, a3, a4)] with Monoid[a1], Monoid[a2], Monoid[a3], Monoid[a4] {
     pub def empty(): (a1, a2, a3, a4) = (Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty())
-    pub def combine(x: (a1, a2, a3, a4), y: (a1, a2, a3, a4)): (a1, a2, a3, a4) = match (x, y) {
-        case ((x1, x2, x3, x4), (y1, y2, y3, y4)) => (Monoid.combine(x1, y1), Monoid.combine(x2, y2), Monoid.combine(x3, y3), Monoid.combine(x4, y4))
-    }
 }
 
 instance Monoid[(a1, a2, a3, a4, a5)] with Monoid[a1], Monoid[a2], Monoid[a3], Monoid[a4], Monoid[a5] {
     pub def empty(): (a1, a2, a3, a4, a5) = (Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty())
-    pub def combine(x: (a1, a2, a3, a4, a5), y: (a1, a2, a3, a4, a5)): (a1, a2, a3, a4, a5) = match (x, y) {
-        case ((x1, x2, x3, x4, x5), (y1, y2, y3, y4, y5)) => (Monoid.combine(x1, y1), Monoid.combine(x2, y2), Monoid.combine(x3, y3), Monoid.combine(x4, y4), Monoid.combine(x5, y5))
-    }
 }
 
 instance Monoid[(a1, a2, a3, a4, a5, a6)] with Monoid[a1], Monoid[a2], Monoid[a3], Monoid[a4], Monoid[a5], Monoid[a6] {
     pub def empty(): (a1, a2, a3, a4, a5, a6) = (Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty())
-    pub def combine(x: (a1, a2, a3, a4, a5, a6), y: (a1, a2, a3, a4, a5, a6)): (a1, a2, a3, a4, a5, a6) = match (x, y) {
-        case ((x1, x2, x3, x4, x5, x6), (y1, y2, y3, y4, y5, y6)) => (Monoid.combine(x1, y1), Monoid.combine(x2, y2), Monoid.combine(x3, y3), Monoid.combine(x4, y4), Monoid.combine(x5, y5), Monoid.combine(x6, y6))
-    }
 }
 
 instance Monoid[(a1, a2, a3, a4, a5, a6, a7)] with Monoid[a1], Monoid[a2], Monoid[a3], Monoid[a4], Monoid[a5], Monoid[a6], Monoid[a7] {
     pub def empty(): (a1, a2, a3, a4, a5, a6, a7) = (Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty())
-    pub def combine(x: (a1, a2, a3, a4, a5, a6, a7), y: (a1, a2, a3, a4, a5, a6, a7)): (a1, a2, a3, a4, a5, a6, a7) = match (x, y) {
-        case ((x1, x2, x3, x4, x5, x6, x7), (y1, y2, y3, y4, y5, y6, y7)) => (Monoid.combine(x1, y1), Monoid.combine(x2, y2), Monoid.combine(x3, y3), Monoid.combine(x4, y4), Monoid.combine(x5, y5), Monoid.combine(x6, y6), Monoid.combine(x7, y7))
-    }
 }
 
 instance Monoid[(a1, a2, a3, a4, a5, a6, a7, a8)] with Monoid[a1], Monoid[a2], Monoid[a3], Monoid[a4], Monoid[a5], Monoid[a6], Monoid[a7], Monoid[a8] {
     pub def empty(): (a1, a2, a3, a4, a5, a6, a7, a8) = (Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty())
-    pub def combine(x: (a1, a2, a3, a4, a5, a6, a7, a8), y: (a1, a2, a3, a4, a5, a6, a7, a8)): (a1, a2, a3, a4, a5, a6, a7, a8) = match (x, y) {
-        case ((x1, x2, x3, x4, x5, x6, x7, x8), (y1, y2, y3, y4, y5, y6, y7, y8)) => (Monoid.combine(x1, y1), Monoid.combine(x2, y2), Monoid.combine(x3, y3), Monoid.combine(x4, y4), Monoid.combine(x5, y5), Monoid.combine(x6, y6), Monoid.combine(x7, y7), Monoid.combine(x8, y8))
-    }
 }
 
 instance Monoid[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with Monoid[a1], Monoid[a2], Monoid[a3], Monoid[a4], Monoid[a5], Monoid[a6], Monoid[a7], Monoid[a8], Monoid[a9] {
     pub def empty(): (a1, a2, a3, a4, a5, a6, a7, a8, a9) = (Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty())
-    pub def combine(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): (a1, a2, a3, a4, a5, a6, a7, a8, a9) = match (x, y) {
-        case ((x1, x2, x3, x4, x5, x6, x7, x8, x9), (y1, y2, y3, y4, y5, y6, y7, y8, y9)) => (Monoid.combine(x1, y1), Monoid.combine(x2, y2), Monoid.combine(x3, y3), Monoid.combine(x4, y4), Monoid.combine(x5, y5), Monoid.combine(x6, y6), Monoid.combine(x7, y7), Monoid.combine(x8, y8), Monoid.combine(x9, y9))
-    }
 }
 
 instance Monoid[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with Monoid[a1], Monoid[a2], Monoid[a3], Monoid[a4], Monoid[a5], Monoid[a6], Monoid[a7], Monoid[a8], Monoid[a9], Monoid[a10] {
     pub def empty(): (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) = (Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty())
-    pub def combine(x: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), y: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) = match (x, y) {
-        case ((x1, x2, x3, x4, x5, x6, x7, x8, x9, x10), (y1, y2, y3, y4, y5, y6, y7, y8, y9, y10)) => (Monoid.combine(x1, y1), Monoid.combine(x2, y2), Monoid.combine(x3, y3), Monoid.combine(x4, y4), Monoid.combine(x5, y5), Monoid.combine(x6, y6), Monoid.combine(x7, y7), Monoid.combine(x8, y8), Monoid.combine(x9, y9), Monoid.combine(x10, y10))
-    }
 }
 
 instance Monoid[Validation[t, e]] with Monoid[t] {
     pub def empty(): Validation[t, e] = Success(Monoid.empty())
-    pub def combine(x: Validation[t, e], y: Validation[t, e]): Validation[t, e] = match (x, y) {
-        case (Success(x1), Success(y1)) => Success(Monoid.combine(x1, y1))
-        case (Failure(es1), Failure(es2)) => Failure(Nel.append(es1, es2))
-        case (Failure(_), _) => x
-        case (_, Failure(_)) => y
-    }
 }
 
 instance Monoid[List[a]] {
     pub def empty(): List[a] = Nil
-    pub def combine(x: List[a], y: List[a]): List[a] = List.append(x, y)
 }
 
 ///
@@ -146,13 +107,8 @@ instance Monoid[List[a]] {
 ///
 instance Monoid[Set[a]] with Order[a] {
     pub def empty(): Set[a] = Set.empty()
-    pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x, y)
 }
 
 instance Monoid[Map[k, v]] with Order[k], Monoid[v] {
     pub def empty(): Map[k, v] = Map.empty()
-    pub def combine(x: Map[k, v], y: Map[k, v]): Map[k, v] =
-        let ins = (ac, k, v) -> Map.insertWith(Monoid.combine, k, v, ac);
-        Map.foldWithKey(ins, y, x)
-
 }
