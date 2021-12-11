@@ -238,7 +238,7 @@ namespace TestRedBlackTree {
     def mapWithKey08(): Bool & Impure =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, range) |> List.toMap;
-        let a = [default; 2000];
+        let a = Array.new(-1, 2000);
         let i = ref 0;
         RedBlackTree.mapWithKey((_, v) -> { a[deref i] = v; i := 1 + deref i; v }, t);
         Array.sameElements(a, List.toArray(range))
@@ -295,7 +295,7 @@ namespace TestRedBlackTree {
     def count08(): Bool & Impure =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, range) |> List.toMap;
-        let a = [default; 2000];
+        let a = Array.new(-1, 2000);
         let i = ref 0;
         RedBlackTree.count((_, v) -> { a[deref i] = v; i := 1 + deref i; true }, t);
         Array.sameElements(a, List.toArray(range))
