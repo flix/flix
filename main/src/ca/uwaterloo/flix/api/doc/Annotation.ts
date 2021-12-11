@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-export type Annotation = "@Deprecated|@LazyWhenPure|@ParallelWhenPure"
+export type Annotation = "@Deprecated|@ParallelWhenPure|@LazyWhenPure"
