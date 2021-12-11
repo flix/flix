@@ -43,3 +43,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Jacob Harris Cryer Kragh](https://github.com/jhckragh)
 - [Nicola Dardanis](https://github.com/nicdard)
 - [Nina Andrup Pedersen](https://github.com/ninaandrup)
+- [Dylan Do Amaral](https://github.com/dylandoamaral)

@@ -1052,7 +1052,7 @@ namespace LazyList {
     /// Forces the entire list `l`.
     ///
     pub def toArray(l: LazyList[a]): Array[a] & Impure =
-        let a = Array.new(default, length(l));
+        let a = Array.new($DEFAULT$, length(l));
         let f = (i, y) -> { a[i] = y; i + 1 };
         foldLeft(f, 0, l);
         a
