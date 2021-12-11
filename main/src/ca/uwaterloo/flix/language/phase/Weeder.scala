@@ -1578,9 +1578,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case "\'" => visit(rest, '\'' :: acc)
           case "t" => visit(rest, '\t' :: acc)
 
-          // Case 3.2: Unicode escape
+          // Case 3.2: Interpolation escape
+          case "$" => rest match {
+            case ParsedAst.CharCode.Literal(_, "{", _) :: rest2 => visit(rest2, '{' :: '$' :: acc)
+            case _ => WeederError.InvalidEscapeSequence('$', mkSL(sp1, sp2)).toFailure
+          }
+
+          // Case 3.3: Unicode escape
           case "u" => rest match {
-            // Case 3.2.1: `\\u` followed by 4 or more literals
+            // Case 3.3.1: `\\u` followed by 4 or more literals
             case ParsedAst.CharCode.Literal(sp1, d0, _) ::
               ParsedAst.CharCode.Literal(_, d1, _) ::
               ParsedAst.CharCode.Literal(_, d2, _) ::
@@ -1592,14 +1598,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                 case Validation.Success(char) => visit(rest2, char :: acc)
                 case Validation.Failure(errors) => Validation.Failure(errors)
               }
-            // Case 3.2.2: `\\u` followed by less than 4 literals
+            // Case 3.3.2: `\\u` followed by less than 4 literals
             case rest2 =>
               val code = rest2.takeWhile(_.isInstanceOf[ParsedAst.CharCode.Literal])
               val sp2 = code.lastOption.getOrElse(esc).sp2
               WeederError.MalformedUnicodeEscapeSequence(code.mkString, mkSL(esc.sp1, sp2)).toFailure
           }
 
-          // Case 3.3: Invalid escape character
+          // Case 3.4: Invalid escape character
           case _ => WeederError.InvalidEscapeSequence(char.head, mkSL(sp1, sp2)).toFailure
         }
       }
