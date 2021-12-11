@@ -26,7 +26,7 @@ export interface Def {
     mod: [Modifier]
     tparams: [TypeParam]
     fparams: [FormalParam]
-    retTpe: Type
+    tpe: Type
     eff: Type
     loc: SourceLocation
 }
