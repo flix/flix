@@ -327,7 +327,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       // TODO: FormatType.formatType is broken.
       val tpe = try {
         // We try our best.
-        FormatType.formatType(sc.base)
+        FormatType.formatType(caze.tpeDeprecated)
       } catch {
         // And if it crashes we use a placeholder:
         case ex: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
