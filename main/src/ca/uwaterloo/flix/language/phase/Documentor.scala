@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.TypeConstraint
+import ca.uwaterloo.flix.language.ast.Ast.{Modifier, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
@@ -262,7 +262,16 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given Modifier `mod` as a JSON value.
     */
-  private def visitModifier(mod: Ast.Modifiers): String = "public"
+  private def visitModifier(mod: Ast.Modifiers): JArray = JArray(mod.mod.map {
+    case Modifier.Inline => "inline"
+    case Modifier.Lawless => "lawless"
+    case Modifier.Override => "override"
+    case Modifier.Public => "public"
+    case Modifier.Scoped => "scoped"
+    case Modifier.Sealed => "sealed"
+    case Modifier.Synthetic => "synthetic"
+    case Modifier.Unlawful => "unlawful"
+  })
 
   /**
     * Returns the given Type Alias `talias` as a JSON value.
