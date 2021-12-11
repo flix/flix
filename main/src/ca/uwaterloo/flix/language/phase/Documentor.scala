@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.TypeConstraint
 import ca.uwaterloo.flix.language.ast.TypedAst._
@@ -106,13 +106,13 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     val namespacesSorted = RootNS :: (namespaces - RootNS).toList.sorted
 
     // Construct the JSON object.
-    val json = JObject(
-      ("namespaces", namespacesSorted),
-      ("classes", classesByNS),
-      ("enums", enumsByNS),
-      ("typeAliases", typeAliasesByNS),
-      ("defs", defsByNS)
-    )
+    val json =
+      ("version" -> Version.CurrentVersion.toString) ~
+        ("namespaces" -> namespacesSorted) ~
+        ("classes" -> classesByNS) ~
+        ("enums" -> enumsByNS) ~
+        ("typeAliases" -> typeAliasesByNS) ~
+        ("defs" -> defsByNS)
 
     // Serialize the JSON object to a string.
     val s = JsonMethods.pretty(JsonMethods.render(json))
