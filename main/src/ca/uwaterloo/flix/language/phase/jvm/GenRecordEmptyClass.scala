@@ -63,7 +63,7 @@ object GenRecordEmptyClass {
     cm.mkStaticConstructor(genStaticConstructor())
     cm.mkObjectConstructor(IsPrivate)
     cm.mkStaticField(InstanceFieldName, BackendObjType.RecordEmpty.toTpe, IsPublic, IsFinal)
-    val stringToIRecord = mkDescriptor(BackendObjType.String.toTpe)(recordInterface.toObjTpe.toTpe)
+    val stringToIRecord = mkDescriptor(BackendObjType.String.toTpe)(recordInterface.toTpe)
     cm.mkMethod(genLookupFieldMethod(), LookupFieldFunctionName, stringToIRecord, IsPublic, IsFinal)
     cm.mkMethod(genRestrictFieldMethod(), RestrictFieldFunctionName, stringToIRecord, IsPublic, IsFinal)
 
