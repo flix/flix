@@ -166,10 +166,11 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitDef(defn0: Def): JObject = {
     ("sym" -> visitDefnSym(defn0.sym)) ~
+      ("ann" -> visitAnnotations(defn0.spec.ann)) ~
       ("doc" -> visitDoc(defn0.spec.doc)) ~
       ("name" -> defn0.sym.name) ~
       ("tparams" -> defn0.spec.tparams.map(visitTypeParam)) ~
-      ("fparams" -> defn0.spec.fparams.map(visitFormalParam)) ~ // TODO: visitFormalParams
+      ("fparams" -> defn0.spec.fparams.map(visitFormalParam)) ~
       ("tpe" -> FormatType.formatType(defn0.spec.retTpe)) ~
       ("eff" -> FormatType.formatType(defn0.spec.eff)) ~
       ("loc" -> visitSourceLocation(defn0.spec.loc))
@@ -252,6 +253,14 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     case Kind.Predicate => ""
     case Kind.Arrow(k1, k2) => visitKind(k1) + " -> " + visitKind(k2)
   }
+
+  /**
+    * Returns the given annotations `ann` as a JSON value.
+    */
+  private def visitAnnotations(ann: List[Annotation]): JArray =
+    JArray(ann.map {
+      case Annotation(name, _, _) => name.toString
+    })
 
   /**
     * Returns the given Doc `doc` as a JSON value.
