@@ -3334,5 +3334,22 @@ def stripSuffix06(): Bool = String.stripSuffix({substr = "def"}, "abcdef") == So
 @test
 def stripSuffix07(): Bool = String.stripPrefix({substr = "abc"}, "ABCDEF") == None
 
+/////////////////////////////////////////////////////////////////////////////
+// escapeInterpolation                                                     //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def escapeInterpolation01(): Bool = "\${" == ("$" + "{")
+
+@test
+def escapeInterpolation02(): Bool = "\${1 + {2}" == ("$" + "{1 + {2}")
+
+@test
+def escapeInterpolation03(): Bool = "\${}" == ("$" + "{}")
+
+@test
+def escapeInterpolation04(): String = "$"
+
+
 }
 

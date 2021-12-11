@@ -341,4 +341,22 @@ class TestParser extends FunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("ParseError.Interpolation.01") {
+    val input = s"""pub def foo(): String = "$${""""
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("ParseError.Interpolation.02") {
+    val input = s"""pub def foo(): String = "$${1 + }""""
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("ParseError.Interpolation.03") {
+    val input = s"""pub def foo(): String = "$${1 + {2}""""
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
 }
