@@ -156,4 +156,9 @@ case class JvmName(pkg: List[String], name: String) {
     * Wraps this name in `backendObjType.Native`.
     */
   def toObjTpe: BackendObjType.Native = BackendObjType.Native(this)
+
+  /**
+    * Wraps this name in `BackendType.Reference(BackendObjType.Native(...))`.
+    */
+  def toTpe: BackendType.Reference = BackendType.Reference(this.toObjTpe)
 }
