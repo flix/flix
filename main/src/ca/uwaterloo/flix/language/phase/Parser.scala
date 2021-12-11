@@ -409,7 +409,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Default: Rule1[ParsedAst.Literal.Default] = rule {
-      SP ~ keyword("default") ~ SP ~> ParsedAst.Literal.Default
+      SP ~ keyword("$DEFAULT$") ~ SP ~> ParsedAst.Literal.Default
     }
 
     def Sign: Rule1[Boolean] = rule {
