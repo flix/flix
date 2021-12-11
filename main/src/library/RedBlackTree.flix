@@ -643,4 +643,52 @@ namespace RedBlackTree {
             let b1 = seqCount(f, b);
             a1 + v1 + b1
     }
+
+    ///
+    /// Optionally finds `k -> v` where `k` is the smallest key according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def minimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
+        let f = r -> cmp(r.k1, r.v1, r.k2, r.v2);
+        reifyEff(f) {
+            case Pure(g) =>
+                let g1 = (k1, v1, k2, v2) -> g({k1 = k1, v1 = v1, k2 = k2, v2 = v2});
+                if (useParallelEvaluation(t))
+                    parMinimumBy(threads() - 1, g1, t) // as & Pure
+                else
+                    seqMinimumBy(g1, t)
+            case _       => seqMinimumBy(cmp, t)
+        }
+
+    @Parallel
+    pub def parMinimumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] = ???
+
+    pub def parMinimumBySeq(cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] = ???
+
+    pub def seqMinimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef = match t {
+        case Leaf                   => None
+        case DoubleBlackLeaf        => None
+        case Node(_, a, k, v, b)    =>
+            let cmpL = seqMinimumBy(cmp, a);
+            let cmpR = seqMinimumBy(cmp, b);
+            match (cmpL, cmpR) {
+                case (None, None)                 => Some(k, v)
+                case (Some(kl, vl), None)         => if (cmp(kl, vl, k, v) == LessThan) Some(kl, vl) else Some(k, v)
+                case (None, Some(kr, vr))         => if (cmp(k, v, kr, vr) == LessThan) Some(k, v) else Some(kr, vr)
+                case (Some(kl, vl), Some(kr, vr)) =>
+                    if (cmp(kl, vl, kr, vr) == LessThan)
+                        if (cmp(kl, vl, k, v) == LessThan)
+                            Some(kl, vl)
+                        else
+                            Some(k, v)
+                    else
+                        if (cmp(k, v, kr, vr) == LessThan)
+                            Some(k, v)
+                        else
+                            Some(kr, vr)
+            }
 }
