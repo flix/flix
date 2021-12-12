@@ -16,9 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.TypeConstraint
+import ca.uwaterloo.flix.language.ast.Ast.{Modifier, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
@@ -106,13 +106,13 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     val namespacesSorted = RootNS :: (namespaces - RootNS).toList.sorted
 
     // Construct the JSON object.
-    val json = JObject(
-      ("namespaces", namespacesSorted),
-      ("classes", classesByNS),
-      ("enums", enumsByNS),
-      ("typeAliases", typeAliasesByNS),
-      ("defs", defsByNS)
-    )
+    val json =
+      ("version" -> Version.CurrentVersion.toString) ~
+        ("namespaces" -> namespacesSorted) ~
+        ("classes" -> classesByNS) ~
+        ("enums" -> enumsByNS) ~
+        ("typeAliases" -> typeAliasesByNS) ~
+        ("defs" -> defsByNS)
 
     // Serialize the JSON object to a string.
     val s = JsonMethods.pretty(JsonMethods.render(json))
@@ -165,15 +165,15 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given definition `defn0` as a JSON object.
     */
   private def visitDef(defn0: Def): JObject = {
-    // TODO: Check with Def.d.ts
-    // TODO: Deal with  UNit
     ("sym" -> visitDefnSym(defn0.sym)) ~
+      ("ann" -> visitAnnotations(defn0.spec.ann)) ~
       ("doc" -> visitDoc(defn0.spec.doc)) ~
       ("name" -> defn0.sym.name) ~
       ("tparams" -> defn0.spec.tparams.map(visitTypeParam)) ~
       ("fparams" -> defn0.spec.fparams.map(visitFormalParam)) ~
-      ("result" -> FormatType.formatType(defn0.spec.retTpe)) ~
-      ("effect" -> FormatType.formatType(defn0.spec.eff)) ~
+      ("tpe" -> FormatType.formatType(defn0.spec.retTpe)) ~
+      ("eff" -> FormatType.formatType(defn0.spec.eff)) ~
+      ("tcs" -> defn0.spec.declaredScheme.constraints.map(visitTypeConstraint)) ~
       ("loc" -> visitSourceLocation(defn0.spec.loc))
   }
 
@@ -256,6 +256,16 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
+    * Returns the given annotations `ann` as a JSON value.
+    */
+  private def visitAnnotations(ann: List[Annotation]): JArray =
+    JArray(ann.collect {
+      case Annotation(a@Ast.Annotation.Deprecated(_), _, _) => a.toString
+      case Annotation(a@Ast.Annotation.ParallelWhenPure(_), _, _) => a.toString
+      case Annotation(a@Ast.Annotation.LazyWhenPure(_), _, _) => a.toString
+    })
+
+  /**
     * Returns the given Doc `doc` as a JSON value.
     */
   private def visitDoc(doc: Ast.Doc): JArray =
@@ -264,7 +274,16 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given Modifier `mod` as a JSON value.
     */
-  private def visitModifier(mod: Ast.Modifiers): String = "public"
+  private def visitModifier(mod: Ast.Modifiers): JArray = JArray(mod.mod.map {
+    case Modifier.Inline => "inline"
+    case Modifier.Lawless => "lawless"
+    case Modifier.Override => "override"
+    case Modifier.Public => "public"
+    case Modifier.Scoped => "scoped"
+    case Modifier.Sealed => "sealed"
+    case Modifier.Synthetic => "synthetic"
+    case Modifier.Unlawful => "unlawful"
+  })
 
   /**
     * Returns the given Type Alias `talias` as a JSON value.
@@ -304,8 +323,9 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         ("mod" -> visitModifier(spec.mod)) ~
         ("tparams" -> spec.tparams.map(visitTypeParam)) ~
         ("fparams" -> spec.fparams.map(visitFormalParam)) ~
-        ("retTpe" -> visitType(spec.retTpe)) ~
+        ("tpe" -> visitType(spec.retTpe)) ~
         ("eff" -> visitType(spec.eff)) ~
+        ("tcs" -> spec.declaredScheme.constraints.map(visitTypeConstraint)) ~
         ("loc" -> visitSourceLocation(spec.loc))
   }
 
@@ -326,7 +346,15 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitCase(caze: Case): JObject = caze match {
     case Case(_, tag, _, sc, _) =>
-      ("tag" -> tag.name) ~ ("tpe" -> "TYPE_PLACEHOLDER")
+      // TODO: FormatType.formatType is broken.
+      val tpe = try {
+        // We try our best.
+        FormatType.formatType(caze.tpeDeprecated)
+      } catch {
+        // And if it crashes we use a placeholder:
+        case ex: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
+      }
+      ("tag" -> tag.name) ~ ("tpe" -> tpe)
   }
 
   /**
@@ -334,6 +362,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitClass(cla: Class)(implicit root: Root): JObject = cla match {
     case Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) =>
+      val sigs = signatures.sortBy(_.sym.name).map(visitSig)
       val instances = root.instances(sym).sortBy(_.loc).map(inst => visitInstance(sym, inst))
 
       ("sym" -> visitClassSym(sym)) ~
@@ -341,7 +370,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         ("mod" -> visitModifier(mod)) ~
         ("tparam" -> visitTypeParam(tparam)) ~
         ("superClasses" -> superClasses.map(visitTypeConstraint)) ~
-        ("signatures" -> signatures.map(visitSig)) ~
+        ("signatures" -> sigs) ~
         ("instances" -> instances) ~
         ("loc" -> visitSourceLocation(loc))
   }
