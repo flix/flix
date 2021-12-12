@@ -55,7 +55,7 @@ namespace Validation {
     /// Returns `v` if it is `Success(v)`. Otherwise returns `default`.
     ///
     @Time(1) @Space(1)
-    pub def withDefault(default: {default :: Validation[t, e]}, v: Validation[t, e]): Validation[t, e] = match v1 {
+    pub def withDefault(default: {default :: Validation[t, e]}, v: Validation[t, e]): Validation[t, e] = match v {
         case Success(_) => v
         case Failure(_) => default.default
     }

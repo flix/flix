@@ -82,7 +82,7 @@ namespace Option {
     /// Returns `o` if it is `Some(v)`. Otherwise returns `default`.
     ///
     @Time(1) @Space(1)
-    pub def withDefault(default: {default :: Option[a]}, o1: Option[a]): Option[a] = match o1 {
+    pub def withDefault(default: {default :: Option[a]}, o: Option[a]): Option[a] = match o {
         case None => default.default
         case Some(_) => o
     }
