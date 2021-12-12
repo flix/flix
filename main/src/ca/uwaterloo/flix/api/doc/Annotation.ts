@@ -13,23 +13,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {SigSym} from "./SigSym";
-import {TypeParam} from "./TypeParam";
-import {FormalParam} from "./FormalParam";
-import {Modifier} from "./Modifier";
-import {Type} from "./Type";
-import {SourceLocation} from "./SourceLocation";
-import {TypeConstraint} from "./TypeConstraint";
 
-export interface Sig {
-    sym: SigSym
-    doc: [string]
-    mod: [Modifier]
-    tparams: [TypeParam]
-    fparams: [FormalParam]
-    tpe: Type
-    eff: Type
-    tcs: [TypeConstraint]
-    loc: SourceLocation
-    implemented: boolean
-}
+export type Annotation = "@Deprecated|@ParallelWhenPure|@LazyWhenPure"
