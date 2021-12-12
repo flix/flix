@@ -456,7 +456,7 @@ object TypeError {
       s"""${line(kind, source.format)}
          |>> No instance of the '${cyan(clazz.toString)}' class for the ${magenta("function")} type '${red(FormatType.formatType(tpe))}'.
          |
-         |>> Did you forget to apply the function to all its arguments?
+         |>> Did you forget to apply the function to all of its arguments?
          |
          |${code(loc, s"missing instance")}
          |
