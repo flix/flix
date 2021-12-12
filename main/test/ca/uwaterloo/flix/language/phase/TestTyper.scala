@@ -227,7 +227,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(x: a): String = C.foo(x)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.NoMatchingInstance](result)
+    expectError[TypeError.MissingInstance](result)
   }
 
   test("TestLeq.Class.02") {
@@ -239,7 +239,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(x: Int): String = C.foo(x)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.NoMatchingInstance](result)
+    expectError[TypeError.MissingInstance](result)
   }
 
   test("TestLeq.Class.03") {
@@ -266,7 +266,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def doF(x: Box[Float64]): String = C.foo(x)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.NoMatchingInstance](result)
+    expectError[TypeError.MissingInstance](result)
   }
 
   test("TestLeq.Class.04") {
@@ -293,7 +293,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def doF(x: Box[Int]): String = C.foo(C.foo(x))
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.NoMatchingInstance](result)
+    expectError[TypeError.MissingInstance](result)
   }
 
   test("TestLeq.Class.05") {
@@ -310,7 +310,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def bar(x: a, y: Int): (Int, Int) = (C.foo(x), C.foo(y))
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.NoMatchingInstance](result)
+    expectError[TypeError.MissingInstance](result)
   }
 
   test("TestLeq.Class.06") {
@@ -323,7 +323,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def bar(x: a, y: b): (Int, Int) with C[a] = (C.foo(x), C.foo(y))
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.NoMatchingInstance](result)
+    expectError[TypeError.MissingInstance](result)
   }
 
   test("NoMatchingInstance.Relation.01") {
@@ -343,7 +343,7 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.NoMatchingInstance](result)
+    expectError[TypeError.MissingInstance](result)
   }
 
   test("MissingEq.01") {

@@ -442,19 +442,44 @@ object TypeError {
   }
 
   /**
-    * No matching instance error.
+    * Missing type class instance for a function type.
     *
     * @param clazz the class of the instance.
     * @param tpe   the type of the instance.
     * @param loc   the location where the error occurred.
     */
-  case class NoMatchingInstance(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"No instance of class '$clazz' for type '${FormatType.formatType(tpe)}'."
+  case class MissingArrowInstance(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"No instance of the '$clazz' class for the function type '${FormatType.formatType(tpe)}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
-         |>> No instance of class '${red(clazz.toString)}' for type ${red(FormatType.formatType(tpe))}.
+         |>> No instance of the '${cyan(clazz.toString)}' class for the ${magenta("function")} type '${red(FormatType.formatType(tpe))}'.
+         |
+         |>> Did you forget to apply the function to all its arguments?
+         |
+         |${code(loc, s"missing instance")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * Missing type class instance.
+    *
+    * @param clazz the class of the instance.
+    * @param tpe   the type of the instance.
+    * @param loc   the location where the error occurred.
+    */
+  case class MissingInstance(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"No instance of the '$clazz' class for the type '${FormatType.formatType(tpe)}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> No instance of the '${blue(clazz.toString)}' class for the type '${red(FormatType.formatType(tpe))}'.
          |
          |${code(loc, s"missing instance")}
          |
