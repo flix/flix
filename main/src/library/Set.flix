@@ -259,11 +259,10 @@ namespace Set {
     ///
     /// Returns the number of elements in `xs` that satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    @ParallelWhenPure // TODO
-    pub def count(f: a -> Bool, xs: Set[a]): Int32 =
-        foldLeft((acc, x) -> if (f(x)) 1 + acc else acc, 0, xs)
+    @ParallelWhenPure
+    pub def count(f: a -> Bool & ef, xs: Set[a]): Int32 & ef =
+        let Set(t) = xs;
+        RedBlackTree.count((k, _) -> f(k), t)
 
     ///
     /// Returns the union of the elements in `xs`.

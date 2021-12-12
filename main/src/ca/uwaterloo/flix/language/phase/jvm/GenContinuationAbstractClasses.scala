@@ -63,7 +63,7 @@ object GenContinuationAbstractClasses {
     cm.mkObjectConstructor(IsPublic)
     // essentially an abstract field
     cm.mkField(ResultFieldName, arrowType.result, IsPublic, NotFinal)
-    cm.mkAbstractMethod(InvokeMethodName, mkDescriptor()(arrowType.continuation.toObjTpe.toTpe))
+    cm.mkAbstractMethod(InvokeMethodName, mkDescriptor()(arrowType.continuation.toTpe))
     cm.mkMethod(genUnwindMethod(arrowType), UnwindMethodName, mkDescriptor()(arrowType.result), IsPublic, IsFinal)
     cm.mkMethod(genRunMethod(arrowType), "run", NothingToVoid, IsPublic, IsFinal)
 
@@ -71,13 +71,13 @@ object GenContinuationAbstractClasses {
   }
 
   private def genUnwindMethod(arrowType: BackendObjType.Arrow): InstructionSet =
-    loadThis() ~ storeWithName(1, arrowType.continuation.toObjTpe.toTpe) { currentCont =>
-      pushNull() ~ storeWithName(2, arrowType.continuation.toObjTpe.toTpe) { previousCont =>
-        doWhile(Condition.NonNull) {
+    thisLoad() ~ storeWithName(1, arrowType.continuation.toTpe) { currentCont =>
+      pushNull() ~ storeWithName(2, arrowType.continuation.toTpe) { previousCont =>
+        doWhile(Condition.NONNULL) {
           currentCont.load() ~
             previousCont.store() ~
             currentCont.load() ~
-            INVOKEVIRTUAL(arrowType.continuation, InvokeMethodName, mkDescriptor()(arrowType.continuation.toObjTpe.toTpe)) ~
+            INVOKEVIRTUAL(arrowType.continuation, InvokeMethodName, mkDescriptor()(arrowType.continuation.toTpe)) ~
             DUP() ~
             currentCont.store()
         } ~
@@ -88,7 +88,7 @@ object GenContinuationAbstractClasses {
     }
 
   private def genRunMethod(arrowType: BackendObjType.Arrow): InstructionSet =
-    loadThis() ~
+    thisLoad() ~
       INVOKEVIRTUAL(arrowType.continuation, UnwindMethodName, mkDescriptor()(arrowType.result)) ~
       xPop(arrowType.result) ~
       RETURN()

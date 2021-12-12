@@ -40,25 +40,25 @@ def isErr02(): Bool = Result.isErr(Err(1)) == true
 // getWithDefault                                                          //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def getWithDefault01(): Bool = Result.getWithDefault(Ok(1), 2) == 1
+def getWithDefault01(): Bool = Result.getWithDefault(2, Ok(1)) == 1
 
 @test
-def getWithDefault02(): Bool = Result.getWithDefault(Err(false), 2) == 2
+def getWithDefault02(): Bool = Result.getWithDefault(2, Err(false)) == 2
 
 /////////////////////////////////////////////////////////////////////////////
 // withDefault                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def withDefault01(): Bool = Result.withDefault(Ok(1), Ok(2)): Result[_, Unit] == Ok(1)
+def withDefault01(): Bool = Result.withDefault({default = Ok(2)}, Ok(1)): Result[_, Unit] == Ok(1)
 
 @test
-def withDefault02(): Bool = Result.withDefault(Ok(1), Err(false)) == Ok(1)
+def withDefault02(): Bool = Result.withDefault({default = Err(false)}, Ok(1)) == Ok(1)
 
 @test
-def withDefault03(): Bool = Result.withDefault(Err(false), Ok(2)): Result[_, Unit] == Ok(2)
+def withDefault03(): Bool = Result.withDefault({default = Ok(2)}, Err(false)): Result[_, Unit] == Ok(2)
 
 @test
-def withDefault04(): Bool = Result.withDefault(Err(false), Err(true)): Result[Unit, _] == Err(true)
+def withDefault04(): Bool = Result.withDefault({default = Err(true)}, Err(false)): Result[Unit, _] == Err(true)
 
 /////////////////////////////////////////////////////////////////////////////
 // replace                                                                 //
