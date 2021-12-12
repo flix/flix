@@ -362,6 +362,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitClass(cla: Class)(implicit root: Root): JObject = cla match {
     case Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) =>
+      val sigs = signatures.sortBy(_.sym.name).map(visitSig)
       val instances = root.instances(sym).sortBy(_.loc).map(inst => visitInstance(sym, inst))
 
       ("sym" -> visitClassSym(sym)) ~
@@ -369,7 +370,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         ("mod" -> visitModifier(mod)) ~
         ("tparam" -> visitTypeParam(tparam)) ~
         ("superClasses" -> superClasses.map(visitTypeConstraint)) ~
-        ("signatures" -> signatures.map(visitSig)) ~
+        ("signatures" -> sigs) ~
         ("instances" -> instances) ~
         ("loc" -> visitSourceLocation(loc))
   }
