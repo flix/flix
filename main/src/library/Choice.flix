@@ -69,19 +69,19 @@ namespace Choice {
     ///
     /// Returns `v` if `o` is `Present(v).` Otherwise returns `d`.
     ///
-    pub def getWithDefault(c: Choice[s, _, _], d: s): s =
+    pub def getWithDefault(d: s, c: Choice[s, _, _]): s =
         choose c {
             case Absent     => d
             case Present(v) => v
         }
 
     ///
-    /// Returns `c1` if it is `Present(v)`. Otherwise returns `c2`.
+    /// Returns `c` if it is `Present(v)`. Otherwise returns `default`.
     ///
     pub def withDefault[s : Type, a1 : Bool, p1 : Bool, a2 : Bool, p2 : Bool]
-                       (c1: Choice[s, a1, p1], c2: Choice[s, a2, p2]): Choice[s, a1 and a2, p1 or (a1 and p2)] =
-        choose* c1 {
-            case Absent     => c2
+                       (default: {default :: Choice[s, a2, p2]}, c: Choice[s, a1, p1]): Choice[s, a1 and a2, p1 or (a1 and p2)] =
+        choose* c {
+            case Absent     => default.default
             case Present(v) => Present(v)
         }
 

@@ -63,7 +63,7 @@ namespace Result {
     }
 
     ///
-    /// Returns `Ok(v)` if `r1` is `Ok(v)`. Otherwise returns `r2`.
+    /// Returns `Ok(v)` if `r` is `Ok(v)`. Otherwise returns `default`.
     ///
     @Time(1) @Space(1)
     pub def withDefault(r1: Result[t, e1], r2: Result[t, e2]): Result[t, e2] = match r1 {

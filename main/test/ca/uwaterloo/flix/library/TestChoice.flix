@@ -43,19 +43,19 @@ namespace TestChoice {
     def unbox02(): Bool = unbox(Present("Hello World")) == "Hello World"
 
     @test
-    def getWithDefault01(): Bool = getWithDefault(Absent, 42) == 42
+    def getWithDefault01(): Bool = getWithDefault(42, Absent) == 42
 
     @test
-    def getWithDefault02(): Bool = getWithDefault(Present(21), 42) == 21
+    def getWithDefault02(): Bool = getWithDefault(42, Present(21)) == 21
 
     @test
-    def withDefault01(): Bool = unbox(withDefault(Present(123), Present(456))) == 123
+    def withDefault01(): Bool = unbox(withDefault(default = Present(456), Present(123))) == 123
 
     @test
-    def withDefault02(): Bool = unbox(withDefault(Absent, Present(456))) == 456
+    def withDefault02(): Bool = unbox(withDefault(default = Present(456), Absent)) == 456
 
     @test
-    def withDefault03(): Bool = unbox(withDefault(Present(123), Present(456))) == 123
+    def withDefault03(): Bool = unbox(withDefault(default = Present(456), Present(123))) == 123
 
     @test
     def filter01(): Bool = assertAbsent(filter(_x -> true, Absent))

@@ -73,18 +73,18 @@ namespace Option {
     /// Returns `v` if `o` is `Some(v).` Otherwise returns `d`.
     ///
     @Time(1) @Space(1)
-    pub def getWithDefault(o: Option[a], d: a): a = match o {
+    pub def getWithDefault(d: a, o: Option[a]): a = match o {
         case None => d
         case Some(v) => v
     }
 
     ///
-    /// Returns `o1` if it is `Some(v)`. Otherwise returns `o2`.
+    /// Returns `o` if it is `Some(v)`. Otherwise returns `default`.
     ///
     @Time(1) @Space(1)
-    pub def withDefault(o1: Option[a], o2: Option[a]): Option[a] = match o1 {
-        case None => o2
-        case Some(_) => o1
+    pub def withDefault(default: {default :: Option[a]}, o1: Option[a]): Option[a] = match o1 {
+        case None => default.default
+        case Some(_) => o
     }
 
     ///
