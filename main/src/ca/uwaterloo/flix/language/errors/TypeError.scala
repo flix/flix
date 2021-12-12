@@ -479,7 +479,7 @@ object TypeError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
-         |>> No instance of the '${blue(clazz.toString)}' class for the type '${red(FormatType.formatType(tpe))}'.
+         |>> No instance of the '${cyan(clazz.toString)}' class for the type '${red(FormatType.formatType(tpe))}'.
          |
          |${code(loc, s"missing instance")}
          |

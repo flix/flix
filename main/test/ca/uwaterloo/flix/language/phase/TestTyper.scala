@@ -385,6 +385,17 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MissingToString](result)
   }
 
+  test("MissingArrowInstance.01") {
+    val input =
+      s"""
+         |def main(_args: Array[String]): Int32 & Impure =
+         |    println(x -> x + 41i32);
+         |    0
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.MissingArrowInstance](result)
+  }
+
   test("TestChoose.Arity1.01") {
     val input =
       """
