@@ -19,6 +19,7 @@ import {Modifier} from "./Modifier";
 import {TypeParam} from "./TypeParam";
 import {Type} from "./Type";
 import {SourceLocation} from "./SourceLocation";
+import {TypeConstraint} from "./TypeConstraint";
 
 export interface Def {
     sym: DefnSym
@@ -28,5 +29,6 @@ export interface Def {
     fparams: [FormalParam]
     tpe: Type
     eff: Type
+    tcs: [TypeConstraint]
     loc: SourceLocation
 }

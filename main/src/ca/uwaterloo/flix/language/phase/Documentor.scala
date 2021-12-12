@@ -173,6 +173,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       ("fparams" -> defn0.spec.fparams.map(visitFormalParam)) ~
       ("tpe" -> FormatType.formatType(defn0.spec.retTpe)) ~
       ("eff" -> FormatType.formatType(defn0.spec.eff)) ~
+      ("tcs" -> defn0.spec.declaredScheme.constraints.map(visitTypeConstraint)) ~
       ("loc" -> visitSourceLocation(defn0.spec.loc))
   }
 
@@ -322,8 +323,9 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         ("mod" -> visitModifier(spec.mod)) ~
         ("tparams" -> spec.tparams.map(visitTypeParam)) ~
         ("fparams" -> spec.fparams.map(visitFormalParam)) ~
-        ("retTpe" -> visitType(spec.retTpe)) ~
+        ("tpe" -> visitType(spec.retTpe)) ~
         ("eff" -> visitType(spec.eff)) ~
+        ("tcs" -> spec.declaredScheme.constraints.map(visitTypeConstraint)) ~
         ("loc" -> visitSourceLocation(spec.loc))
   }
 
