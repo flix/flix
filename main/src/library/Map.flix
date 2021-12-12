@@ -426,11 +426,10 @@ namespace Map {
     ///
     /// Returns the number of mappings in `m` that satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
-    pub def count(f: (k, v) -> Bool, m: Map[k, v]): Int32 =
-        foldLeftWithKey((acc, k, v) -> if (f(k, v)) 1 + acc else acc, 0, m)
+    @ParallelWhenPure
+    pub def count(f: (k, v) -> Bool & ef, m: Map[k, v]): Int32 & ef =
+        let Map(t) = m;
+        RedBlackTree.count(f, t)
 
     ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.
