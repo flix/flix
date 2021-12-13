@@ -1770,7 +1770,7 @@ def testEq08(): Bool & Impure = [1,2,3,4] == [1,2,3,4]
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testCompare01(): Bool & Impure = ([] : Array[Int32]) `Array.compare` ([] : Array[Int]) == EqualTo
+def testCompare01(): Bool & Impure = ([] : Array[Int]) `Array.compare` ([] : Array[Int]) == EqualTo
 
 @test
 def testCompare02(): Bool & Impure = [1] <=> [] == GreaterThan
