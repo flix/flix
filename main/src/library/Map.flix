@@ -111,7 +111,7 @@ namespace Map {
     /// Otherwise, returns `d`.
     ///
     @Time(Int32.log2(size(m))) @Space(1)
-    pub def getWithDefault(k: k, d: v, m: Map[k, v]): v with Order[k] = Option.getWithDefault(get(k, m), d)
+    pub def getWithDefault(k: k, d: v, m: Map[k, v]): v with Order[k] = Option.getWithDefault(d, get(k, m))
 
     ///
     /// Returns `true` if and only if `m` contains the key `k`.
@@ -426,11 +426,10 @@ namespace Map {
     ///
     /// Returns the number of mappings in `m` that satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
-    pub def count(f: (k, v) -> Bool, m: Map[k, v]): Int32 =
-        foldLeftWithKey((acc, k, v) -> if (f(k, v)) 1 + acc else acc, 0, m)
+    @ParallelWhenPure
+    pub def count(f: (k, v) -> Bool & ef, m: Map[k, v]): Int32 & ef =
+        let Map(t) = m;
+        RedBlackTree.count(f, t)
 
     ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.

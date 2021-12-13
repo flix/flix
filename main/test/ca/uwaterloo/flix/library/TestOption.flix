@@ -34,16 +34,16 @@ def isEmpty03(): Bool = Option.isEmpty(Some(22ii)) == false
 // getWithDefault                                                          //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def getWithDefault01(): Bool = Option.getWithDefault(None, 32) == 32
+def getWithDefault01(): Bool = Option.getWithDefault(32, None) == 32
 
 @test
-def getWithDefault02(): Bool = Option.getWithDefault(Some(30), 32) == 30
+def getWithDefault02(): Bool = Option.getWithDefault(32, Some(30)) == 30
 
 @test
-def getWithDefault03(): Bool = Option.getWithDefault(None, 32ii) == 32ii
+def getWithDefault03(): Bool = Option.getWithDefault(32ii, None) == 32ii
 
 @test
-def getWithDefault04(): Bool = Option.getWithDefault(Some(30ii), 32ii) == 30ii
+def getWithDefault04(): Bool = Option.getWithDefault(32ii, Some(30ii)) == 30ii
 
 /////////////////////////////////////////////////////////////////////////////
 // exists                                                                  //
@@ -196,16 +196,16 @@ def toFailure02(): Bool = Option.toFailure(Some("err"), "default") == Failure(Ne
 // withDefault                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def withDefault01(): Bool = Option.withDefault(None: Option[Unit], None: Option[Unit]) == None
+def withDefault01(): Bool = Option.withDefault(default = None, None) == None
 
 @test
-def withDefault02(): Bool = Option.withDefault(None, Some(1)) == Some(1)
+def withDefault02(): Bool = Option.withDefault(default = Some(1), None) == Some(1)
 
 @test
-def withDefault03(): Bool = Option.withDefault(Some(1), None) == Some(1)
+def withDefault03(): Bool = Option.withDefault(default = None, Some(1)) == Some(1)
 
 @test
-def withDefault04(): Bool = Option.withDefault(Some(1), Some(2)) == Some(1)
+def withDefault04(): Bool = Option.withDefault(default = Some(2), Some(1)) == Some(1)
 
 /////////////////////////////////////////////////////////////////////////////
 // replace                                                                 //

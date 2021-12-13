@@ -73,7 +73,7 @@ namespace DelayMap {
     /// Otherwise, returns `d`.
     ///
     pub def getWithDefault(k: k, d: v, m: DelayMap[k, v]): v with Order[k] =
-        Option.getWithDefault(get(k, m), d)
+        Option.getWithDefault(d, get(k, m))
 
     ///
     /// Returns `true` if and only if `m` contains the key `k`.
