@@ -27,7 +27,7 @@ enum Option[t] with Eq, Order, ToString {
 }
 
 instance Hash[Option[a]] with Hash[a] {
-    pub def hash(o: Option[a]): Int = match o {
+    pub def hash(o: Option[a]): Int32 = match o {
         case Some(y) => 919 * Hash.hash(y)
         case None => 1046527
     }

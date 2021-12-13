@@ -34,7 +34,7 @@ instance ToString[Set[a]] with ToString[a] {
 }
 
 instance Hash[Set[a]] with Hash[a] {
-    pub def hash(xs: Set[a]): Int =
+    pub def hash(xs: Set[a]): Int32 =
         Set.foldLeft((acc, x) -> acc * 37 + Hash.hash(x), 7793, xs)
 }
 

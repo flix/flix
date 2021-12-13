@@ -356,7 +356,7 @@ namespace String {
     /// Returns `None` if no character in `s` satisfies `f`.
     ///
     @Time(time(f) * length(s)) @Space(space(f))
-    pub def findIndexOfLeft(f: Char -> Bool, s: String): Option[Int] =
+    pub def findIndexOfLeft(f: Char -> Bool, s: String): Option[Int32] =
         let i = findIndexOfLeftHelper(f, s, length(s), 0);
         if (i < 0) None else Some(i)
 

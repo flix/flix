@@ -1863,7 +1863,7 @@ def foldRight04(): Bool & Impure = Array.foldRight((e, i) -> (i - e)*(e rem 2 + 
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def reduceLeft01(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, []: Array[Int]) == None
+def reduceLeft01(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, []: Array[Int32]) == None
 
 @test
 def reduceLeft02(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, [1]) == Some(1)
@@ -1882,7 +1882,7 @@ def reduceLeft05(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, [1,2,3,4]) =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def reduceRight01(): Bool & Impure = Array.reduceRight((a, b) -> a-b, []: Array[Int]) == None
+def reduceRight01(): Bool & Impure = Array.reduceRight((a, b) -> a-b, []: Array[Int32]) == None
 
 @test
 def reduceRight02(): Bool & Impure = Array.reduceRight((a, b) -> a-b, [1]) == Some(1)
