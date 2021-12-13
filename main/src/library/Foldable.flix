@@ -59,7 +59,7 @@ pub lawless class Foldable[t : Type -> Type] {
     /// Returns `None` if `t` is empty.
     ///
     pub def findLeft(f: a -> Bool, t: t[a]): Option[a] =
-        Foldable.foldLeft((acc, x) -> Option.withDefault(acc, if (f(x)) Some(x) else None), None, t)
+        Foldable.foldLeft((acc, x) -> Option.withDefault(default = if (f(x)) Some(x) else None, acc), None, t)
 
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from right to left.
@@ -67,7 +67,7 @@ pub lawless class Foldable[t : Type -> Type] {
     /// Returns `None` if `t` is empty.
     ///
     pub def findRight(f: a -> Bool, t: t[a]): Option[a] =
-        Foldable.foldRight((x, acc) -> Option.withDefault(acc, if (f(x)) Some(x) else None), None, t)
+        Foldable.foldRight((x, acc) -> Option.withDefault(default = if (f(x)) Some(x) else None, acc), None, t)
 
     ///
     /// Returns the result of mapping each element and combining the results.

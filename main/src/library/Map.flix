@@ -111,7 +111,7 @@ namespace Map {
     /// Otherwise, returns `d`.
     ///
     @Time(Int32.log2(size(m))) @Space(1)
-    pub def getWithDefault(k: k, d: v, m: Map[k, v]): v with Order[k] = Option.getWithDefault(get(k, m), d)
+    pub def getWithDefault(k: k, d: v, m: Map[k, v]): v with Order[k] = Option.getWithDefault(d, get(k, m))
 
     ///
     /// Returns `true` if and only if `m` contains the key `k`.

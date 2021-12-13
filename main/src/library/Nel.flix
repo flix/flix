@@ -96,7 +96,7 @@ namespace Nel {
     ///
     @Time(length(xs)) @Space(1)
     pub def last(xs: Nel[a]): a = match xs {
-        case Nel(h, l) => Option.getWithDefault(List.last(l), h)
+        case Nel(h, l) => Option.getWithDefault(h, List.last(l))
     }
 
     ///
