@@ -1157,7 +1157,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
-    Predicates.Body.Positive | Predicates.Body.Negative | Predicates.Body.Guard | Predicates.Body.Filter
+    Predicates.Body.Positive | Predicates.Body.Negative | Predicates.Body.Guard | Predicates.Body.Loop | Predicates.Body.Filter
   }
 
   object Predicates {
@@ -1192,6 +1192,21 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       def Filter: Rule1[ParsedAst.Predicate.Body.Filter] = rule {
         SP ~ Names.QualifiedDefinition ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Body.Filter
+      }
+
+      // TODO: Allow single variable
+      def Loop: Rule1[ParsedAst.Predicate.Body.Loop] = {
+        def Single: Rule1[Seq[Name.Ident]] = rule {
+          Names.Variable ~> ((ident: Name.Ident) => Seq(ident))
+        }
+
+        def Multi: Rule1[Seq[Name.Ident]] = rule {
+          "(" ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ ")"
+        }
+
+        rule {
+          SP ~ keyword("let") ~ WS ~ (Multi | Single) ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Loop
+        }
       }
     }
 

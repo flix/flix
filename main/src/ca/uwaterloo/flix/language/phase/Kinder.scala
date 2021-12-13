@@ -700,10 +700,16 @@ object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
       for {
         terms <- Validation.traverse(terms0)(visitPattern(_, kenv, root))
       } yield KindedAst.Predicate.Body.Atom(pred, den, polarity, terms, Type.freshVar(Kind.Predicate, loc), loc)
+
     case ResolvedAst.Predicate.Body.Guard(exp0, loc) =>
       for {
         exp <- visitExp(exp0, kenv, taenv, root)
       } yield KindedAst.Predicate.Body.Guard(exp, loc)
+
+    case ResolvedAst.Predicate.Body.Loop(varSyms, exp0, loc) =>
+      for {
+        exp <- visitExp(exp0, kenv, taenv, root)
+      } yield KindedAst.Predicate.Body.Loop(varSyms, exp, loc)
   }
 
   /**

@@ -694,6 +694,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Body.Guard(exp, _) =>
       visitExp(exp, env0)
+
+    case Body.Loop(varSyms, exp, _) =>
+      varSyms.foldLeft(visitExp(exp, env0)) {
+        case (acc, varSym) => acc ++ Used.of(varSym)
+      }
   }
 
   /**

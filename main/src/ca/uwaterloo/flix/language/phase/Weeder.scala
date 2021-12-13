@@ -1909,6 +1909,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val e = WeededAst.Expression.Apply(b, as, loc)
           WeededAst.Predicate.Body.Guard(e, loc)
       }
+
+    case ParsedAst.Predicate.Body.Loop(sp1, idents, exp, sp2) =>
+      mapN(visitExp(exp)) {
+        case e => WeededAst.Predicate.Body.Loop(idents.toList, e, mkSL(sp1, sp2))
+      }
+
   }
 
   /**
