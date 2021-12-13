@@ -523,4 +523,85 @@ namespace Iterator {
         };
         Iterator(done, next1)
 
+    ///
+    /// Returns the concatenation of the elements in `iterB` with the elements of `iterA` inserted between every two adjacent elements.
+    ///
+    /// That is, returns `b1 :: a1 ... an :: b2 :: ... bn-1 :: a1 :: ... :: an :: bn :: Nil`.
+    ///
+    /// Does *not* consume any elements from either iterator.
+    ///
+    pub def intercalate(iterA: Iterator[a], iterB: Iterator[Iterator[a]]): Iterator[a] & Impure =
+        let Iterator(doneA, nextA) = iterA;
+        let Iterator(doneB, nextB) = iterB;
+        let xs = ref Nil;
+        let isReversed = ref false;
+        let nextAA = () -> {
+            let x = nextA();
+            xs := x :: deref xs;
+            x
+        };
+        let doneAA = () -> {
+            if (doneA()) {
+                if (deref isReversed)
+                    ()
+                else {
+                    xs := List.reverse(deref xs);
+                    isReversed := true
+                };
+                true
+            }
+            else
+                false
+        };
+        let cursor = ref None;
+        let mkCursor = i -> {
+            if (deref isReversed)
+                // `iterA` has been consumed, so construct a new one from `xs`
+                cursor := Some(append(i, List.toIterator(deref xs)))
+            else
+                cursor := Some(append(i, Iterator(doneAA, nextAA)))
+        };
+        let done1 = () -> match deref cursor {
+            case None    => match intercalateForward(doneB, nextB) {
+                case None    => true
+                case Some(i) =>
+                    if (doneB())
+                        cursor := Some(i)
+                    else
+                        mkCursor(i);
+                    false
+            }
+            case Some(i) =>
+                let Iterator(d, _) = i;
+                if (d()) match intercalateForward(doneB, nextB) {
+                    case None    => true
+                    case Some(i) =>
+                        if (doneB())
+                            cursor := Some(i)
+                        else
+                            mkCursor(i);
+                        false
+                }
+                else
+                    false
+        };
+        let next1 = () -> match deref cursor {
+            case None    => bug!("Empty Iterator!")
+            case Some(i) =>
+                let Iterator(_, n) = i;
+                n()
+        };
+        Iterator(done1, next1)
+
+    // TODO: Refactor `flatMapForward` and `intercalateForward` to use `forward`.
+
+    ///
+    /// Forwards the iterator the first non-empty iterator produced by `next`.
+    ///
+    def intercalateForward(done: Done, next: Next[Iterator[a]]): Option[Iterator[a]] & Impure =
+        if (done())
+            None
+        else
+            let Iterator(d, n) = next();
+            if (d()) intercalateForward(done, next) else Some(Iterator(d, n))
 }

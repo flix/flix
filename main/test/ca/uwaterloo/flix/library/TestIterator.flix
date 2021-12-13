@@ -856,4 +856,68 @@ namespace TestIterator {
             Iterator.intersperse(11) |>
             Iterator.toList == 1 :: 11 :: 2 :: 11 :: 3 :: 11 :: 4 :: Nil
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // intercalate                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def intercalate01(): Bool & Impure =
+        let iterA = Nil |> List.toIterator;
+        let iterB = Nil |> List.toIterator;
+        Iterator.intercalate(iterA, iterB) |> Iterator.toList == Nil
+
+    @test
+    def intercalate02(): Bool & Impure =
+        let iterA  = Nil |> List.toIterator;
+        let iterB0 = (1 :: Nil) |> List.toIterator;
+        let iterB  = (iterB0 :: Nil) |> List.toIterator;
+        Iterator.intercalate(iterA, iterB) |>
+            Iterator.toList == 1 :: Nil
+
+    @test
+    def intercalate03(): Bool & Impure =
+        let iterA  = (11 :: 12 :: 13 :: Nil) |> List.toIterator;
+        let iterB  = Nil |> List.toIterator;
+        Iterator.intercalate(iterA, iterB) |>
+            Iterator.toList ==  Nil
+
+    @test
+    def intercalate04(): Bool & Impure =
+        let iterA  = Nil |> List.toIterator;
+        let iterB0 = (1 :: Nil) |> List.toIterator;
+        let iterB1 = (2 :: 3 :: Nil) |> List.toIterator;
+        let iterB  = (iterB0 :: iterB1 :: Nil) |> List.toIterator;
+        Iterator.intercalate(iterA, iterB) |>
+            Iterator.toList == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def intercalate05(): Bool & Impure =
+        let iterA  = (11 :: 12 :: 13 :: Nil) |> List.toIterator;
+        let iterB0 = (1 :: Nil) |> List.toIterator;
+        let iterB1 = (2 :: 3 :: Nil) |> List.toIterator;
+        let iterB  = (iterB0 :: iterB1 :: Nil) |> List.toIterator;
+        Iterator.intercalate(iterA, iterB) |>
+            Iterator.toList == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: Nil
+
+    @test
+    def intercalate06(): Bool & Impure =
+        let iterA  = Nil |> List.toIterator;
+        let iterB0 = (1 :: Nil) |> List.toIterator;
+        let iterB1 = (2 :: 3 :: Nil) |> List.toIterator;
+        let iterB2 = (4 :: Nil) |> List.toIterator;
+        let iterB  = (iterB0 :: iterB1 :: iterB2 :: Nil) |> List.toIterator;
+        Iterator.intercalate(iterA, iterB) |>
+            Iterator.toList == 1 :: 2 :: 3 :: 4 :: Nil
+
+    @test
+    def intercalate07(): Bool & Impure =
+        let iterA  = (11 :: 12 :: 13 :: Nil) |> List.toIterator;
+        let iterB0 = (1 :: Nil) |> List.toIterator;
+        let iterB1 = (2 :: 3 :: Nil) |> List.toIterator;
+        let iterB2 = (4 :: Nil) |> List.toIterator;
+        let iterB  = (iterB0 :: iterB1 :: iterB2 :: Nil) |> List.toIterator;
+        Iterator.intercalate(iterA, iterB) |>
+            Iterator.toList == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: 11 :: 12 :: 13 :: 4 :: Nil
+
 }
