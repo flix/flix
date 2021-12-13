@@ -38,43 +38,43 @@ instance Hash[Bool] {
 }
 
 instance Hash[Char] {
-    pub def hash(x: Char): Int32 =
+    pub def hash(x: Char): Int =
         import static java.lang.Character.hashCode(Char);
         hashCode(x) as & Pure
 }
 
 instance Hash[Float32] {
-    pub def hash(x: Float32): Int32 =
+    pub def hash(x: Float32): Int =
         import static java.lang.Float.hashCode(Float32);
         hashCode(x) as & Pure
 }
 
 instance Hash[Float64] {
-    pub def hash(x: Float64): Int32 =
+    pub def hash(x: Float64): Int =
         import static java.lang.Double.hashCode(Float64);
         hashCode(x) as & Pure
 }
 
 instance Hash[Int8] {
-    pub def hash(x: Int8): Int32 =
+    pub def hash(x: Int8): Int =
         import static java.lang.Byte.hashCode(Int8);
         hashCode(x) as & Pure
 }
 
 instance Hash[Int16] {
-    pub def hash(x: Int16): Int32 =
+    pub def hash(x: Int16): Int =
         import static java.lang.Short.hashCode(Int16);
         hashCode(x) as & Pure
 }
 
 instance Hash[Int32] {
-    pub def hash(x: Int32): Int32 =
+    pub def hash(x: Int32): Int =
         import static java.lang.Integer.hashCode(Int32);
         hashCode(x) as & Pure
 }
 
 instance Hash[Int64] {
-    pub def hash(x: Int64): Int32 =
+    pub def hash(x: Int64): Int =
         import static java.lang.Long.hashCode(Int64);
         hashCode(x) as & Pure
 }
