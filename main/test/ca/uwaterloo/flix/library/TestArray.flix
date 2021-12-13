@@ -1742,7 +1742,7 @@ def isSuffixOf13(): Bool & Impure = Array.isSuffixOf([1,2,3], [89,11,1,2,3])
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testEq01(): Bool & Impure = ([] : Array[Int32]) `eq` ([] : Array[Int32])
+def testEq01(): Bool & Impure = ([] : Array[Int]) `eq` ([] : Array[Int])
 
 @test
 def testEq02(): Bool & Impure = [1] != []
