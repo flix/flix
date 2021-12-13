@@ -1,7 +1,7 @@
 ///
 /// Ref[t] is a type alias for a scoped ref with a global lifetime.
 ///
-type alias Ref[t] = ScopedRef[t, false]
+pub type alias Ref[t] = ScopedRef[t, false]
 
 ///
 /// The Reified Flix Bools.
@@ -112,7 +112,7 @@ pub def ||>(x: (a, b), f: ((a, b)) -> c & ef): c & ef = f(x)
 /// Converts `x` to a string and prints it to standard out.
 ///
 pub def print(x: a): Unit & Impure with ToString[a] =
-    import get java.lang.System:out as getOut;
+    import static get java.lang.System.out as getOut;
     import java.io.PrintStream.print(String);
     x |> ToString.toString |> print(getOut())
 
@@ -120,7 +120,7 @@ pub def print(x: a): Unit & Impure with ToString[a] =
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
 pub def println(x: a): Unit & Impure with ToString[a] =
-    import get java.lang.System:out as getOut;
+    import static get java.lang.System.out as getOut;
     import java.io.PrintStream.println(String);
     x |> ToString.toString |> println(getOut())
 
@@ -139,7 +139,7 @@ pub def <==>(x: Bool, y: Bool): Bool = x == y
 ///
 pub def bug!(m: String): a =
     let f = () -> {
-        import get java.lang.System:err as getErr;
+        import static get java.lang.System.err as getErr;
         import java.io.PrintStream.println(String);
         import java.lang.String.repeat(Int32);
         let prt = println(getErr());

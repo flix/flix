@@ -1,8 +1,25 @@
+/*
+ * Copyright 2021 Jonathan Lindegaard Starup
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
@@ -368,7 +385,7 @@ object AsmOps {
     mv.visitInsn(SWAP)
     mv.visitLdcInsn(hole)
     mv.visitInsn(SWAP)
-    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${JvmName.String.toDescriptor}${JvmName.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
+    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.String.toDescriptor}${JvmName.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
     mv.visitInsn(ATHROW)
   }
 
@@ -383,7 +400,7 @@ object AsmOps {
     mv.visitLdcInsn(loc.beginCol)
     mv.visitLdcInsn(loc.endLine)
     mv.visitLdcInsn(loc.endCol)
-    mv.visitMethodInsn(INVOKESPECIAL, JvmName.ReifiedSourceLocation.toInternalName, "<init>", GenReifiedSourceLocationClass.ConstructorDescriptor, false)
+    mv.visitMethodInsn(INVOKESPECIAL, JvmName.ReifiedSourceLocation.toInternalName, JvmName.ConstructorMethod, GenReifiedSourceLocationClass.ConstructorDescriptor.toDescriptor, false)
   }
 
   /**
@@ -417,32 +434,12 @@ object AsmOps {
     * Emits code that puts the function object of the def symbol `def` on top of the stack.
     */
   def compileDefSymbol(sym: Symbol.DefnSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
-    // Retrieve the namespace of the def symbol.
-    val ns = JvmOps.getNamespace(sym)
-
-    // Retrieve the JVM type of the namespace.
-    val nsJvmType = JvmOps.getNamespaceClassType(ns)
-
-    // Retrieve the name of the namespace field on the context object.
-    val nsFieldName = JvmOps.getNamespaceFieldNameInContextClass(ns)
-
-    // Retrieve the name of the def on the namespace object.
-    val defFieldName = JvmOps.getDefFieldNameInNamespaceClass(sym)
-
-    // Retrieve the type of the function def class.
+    // JvmType of Def
     val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
 
-    // The java.util.function.Function interface type.
-    val interfaceType = JvmType.Function
-
-    // Load the current context.
-    mv.visitVarInsn(ALOAD, 1)
-
-    // Load the namespace object.
-    mv.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, nsFieldName, nsJvmType.toDescriptor)
-
-    // Load the def object.
-    mv.visitFieldInsn(GETFIELD, nsJvmType.name.toInternalName, defFieldName, defJvmType.toDescriptor)
+    mv.visitTypeInsn(NEW, defJvmType.name.toInternalName)
+    mv.visitInsn(DUP)
+    mv.visitMethodInsn(INVOKESPECIAL, defJvmType.name.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
   }
 
   /**
@@ -541,7 +538,7 @@ object AsmOps {
     mv.visitInsn(ACONST_NULL)
 
     // Construct the proxy object.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.ProxyObject.toInternalName, "of", "(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)Lflix/runtime/ProxyObject;", false)
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.ProxyObject.toInternalName, "of", s"(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)L${JvmName.ProxyObject.toInternalName};", false)
   }
 
   /**
@@ -574,7 +571,7 @@ object AsmOps {
     mv.visitInsn(ARRAYLENGTH)
 
     // Allocate a new array of proxy objects of the same length as the original array and store it in a local variable.
-    mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.ProxyObject.toInternalName)
+    mv.visitTypeInsn(ANEWARRAY, JvmName.ProxyObject.toInternalName)
     mv.visitVarInsn(ASTORE, resultArrayIndex)
 
     // Initialize the loop counter to zero.
@@ -635,50 +632,5 @@ object AsmOps {
     // Loop the result array.
     mv.visitVarInsn(ALOAD, resultArrayIndex)
 
-  }
-
-  /**
-    * Emits code to call a closure (not in tail position). fType is the type of the called closure. argsType is the type of its arguments, and resultType is the type of its result.
-    */
-  def compileClosureApplication(visitor: MethodVisitor, fType: MonoType, argsTypes: List[MonoType], resultType: MonoType, castFinalValue: Boolean = true)(implicit root: Root, flix: Flix): Unit = {
-    // Type of the continuation interface
-    val cont = JvmOps.getContinuationInterfaceType(fType)
-    // Type of the function interface
-    val functionInterface = JvmOps.getFunctionInterfaceType(fType)
-    // Label for the loop
-    val loop = new Label
-    // Saving args on the continuation interface in reverse
-    for ((argType, ind) <- argsTypes.zipWithIndex.reverse) {
-      val argErasedType = JvmOps.getErasedJvmType(argType)
-      visitor.visitMethodInsn(INVOKEINTERFACE, functionInterface.name.toInternalName, s"setArg$ind",
-        AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), true)
-    }
-    visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-    // Begin of the loop
-    visitor.visitLabel(loop)
-    // Getting `continuation` field on `Context`
-    visitor.visitVarInsn(ALOAD, 1)
-    visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-    // Setting `continuation` field of global to `null`
-    visitor.visitVarInsn(ALOAD, 1)
-    visitor.visitInsn(ACONST_NULL)
-    visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-    // Cast to the continuation
-    visitor.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
-    // Duplicate
-    visitor.visitInsn(DUP)
-    // Save it on the IFO local variable
-    visitor.visitVarInsn(ASTORE, 2)
-    // Call invoke
-    visitor.visitVarInsn(ALOAD, 1)
-    visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
-    // Getting `continuation` field on `Context`
-    visitor.visitVarInsn(ALOAD, 1)
-    visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-    visitor.visitJumpInsn(IFNONNULL, loop)
-    // Load IFO from local variable and invoke `getResult` on it
-    visitor.visitVarInsn(ALOAD, 2)
-    visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(resultType)), true)
-    if (castFinalValue) AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(resultType))
   }
 }

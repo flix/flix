@@ -14,32 +14,29 @@
  * limitations under the License.
  */
 
-instance Eq[Array[v]] with Eq[v] {
-    // TODO More efficient implementation
-    pub def eq(a: Array[v], b: Array[v]): Bool =
-        (Array.length(a) == Array.length(b)) and
-        (Foldable.foldLeft((acc, p) -> let (x,y) = p; (acc and (x == y)), true, Array.zip(a,b))) as & Pure
-}
 
-instance Order[Array[v]] with Order[v] {
-    ///
-    /// Compares `a` and `b` lexicographically.
-    ///
-    pub def compare(a: Array[v], b: Array[v]): Comparison =
-        ArrayOps.compareHelper(a, b, Int32.min(Array.length(a), Array.length(b)), 0) as & Pure
-}
-
-instance Functor[Array] {
-    pub def map(f: a -> b & ef, a: Array[a]): Array[b] & ef = Array.map(f, a) as & ef
-}
-
+// TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
 instance Foldable[Array] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldLeft(f, s, a) as & ef
     pub def foldRight(f: (a, b) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldRight(f, s, a) as & ef
 }
 
-namespace ArrayOps {
-    pub def compareHelper(a: Array[v], b: Array[v], len: Int32, i: Int32): Comparison & Impure with Order[v] =
+namespace Array {
+
+    ///
+    /// Returns `true` if the elements of `a` are equal to the elements of `b`.
+    ///
+    pub def eq(a: Array[v], b: Array[v]): Bool & Impure with Eq[v] =
+        (Array.length(a) == Array.length(b)) and
+        (Array.foldLeft((acc, p) -> let (x,y) = p; (acc and (x == y)), true, Array.zip(a, b)))
+
+    ///
+    /// Compares `a` and `b` lexicographically.
+    ///
+    pub def compare(a: Array[v], b: Array[v]): Comparison & Impure with Order[v] =
+        compareHelper(a, b, Int32.min(Array.length(a), Array.length(b)), 0)
+
+    def compareHelper(a: Array[v], b: Array[v], len: Int32, i: Int32): Comparison & Impure with Order[v] =
         if (i < len) {
             let cmp = a[i] <=> b[i];
             if (cmp == EqualTo)
@@ -53,9 +50,6 @@ namespace ArrayOps {
         } else {
             EqualTo
         }
-}
-
-namespace Array {
 
     ///
     /// Returns a fresh array of length `l` filled with the element `x`.
@@ -136,19 +130,21 @@ namespace Array {
         }
 
     ///
-    /// Returns the array `a` as a stream.
+    /// Returns the array `arr` as a chain.
     ///
-    // TODO: Add tests
-    pub def toStream(a: Array[a]): Stream[a, Int32] =
-        let next = i -> {
-            if (i == a.length)
-                Done
-            else {
-                let x = a[i] as & Pure; // TODO: Unsound cast.
-                Yield(x, i + 1)
-            }
-        };
-        Stream(next, 0)
+    pub def toChain(arr: Array[a]): Chain[a] & Impure =
+        toChainHelper(arr, arr.length, Chain.empty())
+
+    ///
+    /// Helper function for `toChain`.
+    ///
+    def toChainHelper(a: Array[a], i: Int32, ac: Chain[a]): Chain[a] & Impure =
+        if (i == 0) {
+            ac
+        } else {
+            let x = a[i - 1];
+            toChainHelper(a, i - 1, Chain.cons(x, ac))
+        }
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `a`.
@@ -720,7 +716,7 @@ namespace Array {
                 isPrefixOfHelper(a1, a2, len, i+1)
 
     ///
-    /// Returns `true` if and only if `a1` is a prefix of `a2`.
+    /// Returns `true` if and only if `a1` is a infix of `a2`.
     ///
     @Time(length(a1)) @Space(1)
     pub def isInfixOf(a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
@@ -766,7 +762,7 @@ namespace Array {
                     isInfixOfSearch(a1, a2, len1, len2, j+1)
 
     ///
-    /// Returns `true` if and only if `a1` is a prefix of `a2`.
+    /// Returns `true` if and only if `a1` is a suffix of `a2`.
     ///
     @Time(length(a1)) @Space(1)
     pub def isSuffixOf(a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
@@ -794,7 +790,7 @@ namespace Array {
     ///
     /// Returns the result of applying `combine` to all the elements in `a`, using `empty` as the initial value.
     ///
-    pub def fold(a: Array[a]): a with Monoid[a] = Foldable.fold(a)
+    pub def fold(a: Array[a]): a & Impure with Monoid[a] = foldLeft(Monoid.combine, Monoid.empty(), a)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
@@ -1518,7 +1514,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreach(f: a ~> Unit, a: Array[a]): Unit & Impure =
+    pub def foreach(f: a -> Unit & ef, a: Array[a]): Unit & Impure =
         let len = length(a);
         if (len < 1)
             ()
@@ -1528,7 +1524,7 @@ namespace Array {
     ///
     /// Helper function for `foreach`.
     ///
-    def foreachHelper(f: a ~> Unit, a: Array[a], len: Int32, i: Int32): Unit & Impure =
+    def foreachHelper(f: a -> Unit & ef, a: Array[a], len: Int32, i: Int32): Unit & Impure =
         if (i >= len)
             ()
         else {
@@ -1540,7 +1536,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreachWithIndex(f: (a, Int32) ~> Unit, a: Array[a]): Unit & Impure =
+    pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, a: Array[a]): Unit & Impure =
         let len = length(a);
         if (len < 1)
             ()
@@ -1550,7 +1546,7 @@ namespace Array {
     ///
     /// Helper function for `foreachWithIndex`.
     ///
-    def foreachWithIndexHelper(f: (a, Int32) ~> Unit, a: Array[a], len: Int32, i: Int32): Unit & Impure =
+    def foreachWithIndexHelper(f: (a, Int32) -> Unit & ef, a: Array[a], len: Int32, i: Int32): Unit & Impure =
         if (i >= len)
             ()
         else {
@@ -1563,13 +1559,13 @@ namespace Array {
     /// The function returns the final value of the accumulator `s`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreachAccum(f: (a, st) ~> st, s: st, a: Array[a]): st & Impure =
+    pub def foreachAccum(f: (a, st) -> st & ef, s: st, a: Array[a]): st & Impure =
         foreachAccumHelper(f, a, length(a), s, 0)
 
     ///
     /// Helper function for `foreachAccum`.
     ///
-    def foreachAccumHelper(f: (a, st) ~> st, a: Array[a], len: Int32, s: st, i: Int32): st & Impure =
+    def foreachAccumHelper(f: (a, st) -> st & ef, a: Array[a], len: Int32, s: st, i: Int32): st & Impure =
         if (i >= len)
             s
         else {
@@ -1768,43 +1764,43 @@ namespace Array {
         match (reifyType a) {
             case ErasedType =>
                 let arr = a as Array[##java.lang.Object];
-                import java.util.Arrays:copyOfRange(Array[##java.lang.Object], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32) as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedBool =>
                 let arr = a as Array[Bool];
-                import java.util.Arrays:copyOfRange(Array[Bool], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Bool], Int32, Int32) as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedChar =>
                 let arr = a as Array[Char];
-                import java.util.Arrays:copyOfRange(Array[Char], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Char], Int32, Int32) as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedFloat32 =>
                 let arr = a as Array[Float32];
-                import java.util.Arrays:copyOfRange(Array[Float32], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Float32], Int32, Int32) as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedFloat64 =>
                 let arr = a as Array[Float64];
-                import java.util.Arrays:copyOfRange(Array[Float64], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Float64], Int32, Int32) as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedInt8 =>
                 let arr = a as Array[Int8];
-                import java.util.Arrays:copyOfRange(Array[Int8], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Int8], Int32, Int32) as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedInt16 =>
                 let arr = a as Array[Int16];
-                import java.util.Arrays:copyOfRange(Array[Int16], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Int16], Int32, Int32) as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedInt32 =>
                 let arr = a as Array[Int32];
-                import java.util.Arrays:copyOfRange(Array[Int32], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Int32], Int32, Int32) as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedInt64 =>
                 let arr = a as Array[Int64];
-                import java.util.Arrays:copyOfRange(Array[Int64], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Int64], Int32, Int32) as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedArray(_) =>
                 let arr = a as Array[##java.lang.Object];
-                import java.util.Arrays:copyOfRange(Array[##java.lang.Object], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32) as copy;
                 copy(arr, b, e) as Array[a]
         }
 

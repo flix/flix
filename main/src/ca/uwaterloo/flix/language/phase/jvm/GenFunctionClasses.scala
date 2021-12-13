@@ -1,5 +1,6 @@
 /*
  * Copyright 2017 Magnus Madsen
+ * Copyright 2021 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +20,10 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes._
-import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
+import org.objectweb.asm.{ClassWriter, Label}
 
 /**
   * Generates bytecode for the function classes.
@@ -59,67 +61,44 @@ object GenFunctionClasses {
   private def genByteCode(classType: JvmType.Reference,
                           functionInterface: JvmType.Reference,
                           defn: Def)(implicit root: Root, flix: Flix): Array[Byte] = {
+    // example for def checkLength(Int, String): Bool = ...
+    // public final class Def$checkLength extends Fn2$Int$Obj$Bool {
+    //   public Def$checkLength() { ... }
+    //   public final Cont$Bool invoke() { ... }
+    // }
+
     // Class visitor
     val visitor = AsmOps.mkClassWriter()
 
     // Args of the function
-    val MonoType.Arrow(targs, tresult) = defn.tpe
-
-    // The super interface.
-    val superInterface = Array(functionInterface.name.toInternalName)
+    val MonoType.Arrow(_, tresult) = defn.tpe
 
     // Class visitor
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,
-      JvmName.Object.toInternalName, superInterface)
-
-    // Adding a setter and a field for each argument of the function
-    for ((arg, index) <- targs.zipWithIndex) {
-      // `JvmType` of `arg`
-      val argType = JvmOps.getErasedJvmType(arg)
-
-      // `arg$index` field
-      AsmOps.compileField(visitor, s"arg$index", argType, isStatic = false, isPrivate = true)
-
-      // `setArg$index()` method
-      AsmOps.compileSetFieldMethod(visitor, classType.name, s"arg$index", s"setArg$index", argType)
-    }
-
-    // Jvm type of the result of the function
-    val jvmResultType = JvmOps.getErasedJvmType(tresult)
-
-    // Field for the result
-    AsmOps.compileField(visitor, "result", jvmResultType, isStatic = false, isPrivate = true)
-
-    // Getter for the result field
-    AsmOps.compileGetFieldMethod(visitor, classType.name, "result", "getResult", jvmResultType)
+      functionInterface.name.toInternalName, null)
 
     // Constructor of the class
-    compileConstructor(visitor)
+    compileConstructor(functionInterface, visitor)
 
     // Invoke method of the class
-    compileInvokeMethod(visitor, classType, defn, jvmResultType)
+    compileInvokeMethod(visitor, classType, defn, tresult)
 
-    // Apply method of the class
-    compileApplyMethod(visitor, classType, defn, tresult)
-
-    // Eval method of the class
-    compileEvalMethod(visitor, defn, tresult)
-
+    visitor.visitEnd()
     visitor.toByteArray
   }
 
   /**
     * Constructor of the class
     */
-  private def compileConstructor(visitor: ClassWriter): Unit = {
-    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
+  private def compileConstructor(superClass: JvmType.Reference, visitor: ClassWriter): Unit = {
+    val constructor = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
 
     constructor.visitVarInsn(ALOAD, 0)
-    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>",
-      AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-
+    constructor.visitMethodInsn(INVOKESPECIAL, superClass.name.toInternalName, JvmName.ConstructorMethod,
+      MethodDescriptor.NothingToVoid.toDescriptor, false)
     constructor.visitInsn(RETURN)
-    constructor.visitMaxs(1, 1)
+
+    constructor.visitMaxs(999, 999)
     constructor.visitEnd()
   }
 
@@ -129,17 +108,20 @@ object GenFunctionClasses {
   private def compileInvokeMethod(visitor: ClassWriter,
                                   classType: JvmType.Reference,
                                   defn: Def,
-                                  resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+                                  resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
+    // Continuation class
+    val continuationType = JvmOps.getContinuationInterfaceType(defn.tpe)
+
     // Method header
-    val invokeMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "invoke",
-      AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
+    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, GenContinuationAbstractClasses.InvokeMethodName,
+      AsmOps.getMethodDescriptor(Nil, continuationType), null, null)
 
     // Enter label
     val enterLabel = new Label()
-    invokeMethod.visitCode()
+    m.visitCode()
 
     // visiting the label
-    invokeMethod.visitLabel(enterLabel)
+    m.visitLabel(enterLabel)
 
     // Saving parameters on variable stack
     for ((FormalParam(sym, tpe), ind) <- defn.formals.zipWithIndex) {
@@ -147,193 +129,36 @@ object GenFunctionClasses {
       val erasedType = JvmOps.getErasedJvmType(tpe)
 
       // Getting the parameter from the field
-      invokeMethod.visitVarInsn(ALOAD, 0)
-      invokeMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"arg$ind", erasedType.toDescriptor)
+      m.visitVarInsn(ALOAD, 0)
+      m.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"arg$ind", erasedType.toDescriptor)
 
       // Storing the parameter on variable stack
       val iSTORE = AsmOps.getStoreInstruction(erasedType)
-      invokeMethod.visitVarInsn(iSTORE, sym.getStackOffset + 3)
+      m.visitVarInsn(iSTORE, sym.getStackOffset + 1)
     }
 
     // Generating the expression
-    GenExpression.compileExpression(defn.exp, invokeMethod, classType, Map(), enterLabel)
+    GenExpression.compileExpression(defn.exp, m, classType, Map(), enterLabel)
 
     // Loading `this`
-    invokeMethod.visitVarInsn(ALOAD, 0)
+    m.visitVarInsn(ALOAD, 0)
 
     // Swapping `this` and result of the expression
-    if (AsmOps.getStackSize(resultType) == 1) {
-      invokeMethod.visitInsn(SWAP)
+    val resultJvmType = JvmOps.getErasedJvmType(resultType)
+    if (AsmOps.getStackSize(resultJvmType) == 1) {
+      m.visitInsn(SWAP)
     } else {
-      invokeMethod.visitInsn(DUP_X2)
-      invokeMethod.visitInsn(POP)
+      m.visitInsn(DUP_X2)
+      m.visitInsn(POP)
     }
 
-    // Saving the result on the `result` field of IFO
-    invokeMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "result", resultType.toDescriptor)
+    m.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenContinuationAbstractClasses.ResultFieldName, resultJvmType.toDescriptor)
 
     // Return
-    invokeMethod.visitInsn(RETURN)
-    invokeMethod.visitMaxs(65535, 65535)
-    invokeMethod.visitEnd()
-  }
-
-  /**
-    * Apply method for the given `defn` and `classType`.
-    */
-  private def compileApplyMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
-    // The JVM result type
-    val jvmResultType = JvmOps.getErasedJvmType(resultType)
-
-    // Method header
-    val mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Object), null, null)
-
-    // Emit code to invoke setArgX for every argument in the array.
-    compileArguments(defn, classType, mv)
-
-    // TODO: Temporary instantiate a new context object and call the invoke method.
-    // TODO: Need to load it from thread local.
-
-    //
-    // Call this.apply(new Context)
-    //
-
-    // Put `this` on the stack.
-    mv.visitVarInsn(ALOAD, 0)
-
-    // Allocate a fresh context object.
-    mv.visitTypeInsn(NEW, JvmName.Context.toInternalName)
-    mv.visitInsn(DUP)
-    mv.visitMethodInsn(INVOKESPECIAL, JvmName.Context.toInternalName, "<init>", "()V", false)
-
-    // Store the context object in local variable 1.
-    mv.visitInsn(DUP)
-    mv.visitVarInsn(ASTORE, 1)
-
-    // Call the invoke method.
-    mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "eval", "(LContext;)Ljava/lang/Object;", false)
-
-    // Construct a proxy object.
-    resultType match {
-      case arrayType: MonoType.Array => AsmOps.newProxyArray(arrayType, mv)
-      case _ => AsmOps.newProxyObject(mv)
-    }
-
-    // Return the proxy object.
-    mv.visitInsn(ARETURN)
-
-    mv.visitMaxs(65535, 65535)
-    mv.visitEnd()
-  }
-
-  /**
-    * Emits code for a functional that fully evaluates the current function, including tail calls.
-    */
-  private def compileEvalMethod(cw: ClassWriter, defn: Def, resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
-    // Method header
-    val mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "eval", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Object), null, null)
-
-    // The jvm result type.
-    val jvmResultType = JvmOps.getErasedJvmType(resultType)
-
-    // Label for the loop
-    val loop = new Label
-
-    // Type of the function
-    val fnType = root.defs(defn.sym).tpe
-
-    // Type of the continuation interface
-    val cont = JvmOps.getContinuationInterfaceType(fnType)
-
-    // Store this ifo to the continuation field.
-    mv.visitVarInsn(ALOAD, 1)
-    mv.visitVarInsn(ALOAD, 0)
-    mv.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-
-    // Begin of the loop
-    mv.visitLabel(loop)
-
-    // Getting `continuation` field on `Context`
-    mv.visitVarInsn(ALOAD, 1)
-    mv.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-
-    // Setting `continuation` field of global to `null`
-    mv.visitVarInsn(ALOAD, 1)
-    mv.visitInsn(ACONST_NULL)
-    mv.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-
-    // Cast to the continuation
-    mv.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
-
-    // Duplicate
-    mv.visitInsn(DUP)
-
-    // Save it on the IFO local variable
-    mv.visitVarInsn(ASTORE, 2)
-
-    // Call invoke
-    mv.visitVarInsn(ALOAD, 1)
-    mv.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
-
-    // Getting `continuation` field on `Context`
-    mv.visitVarInsn(ALOAD, 1)
-    mv.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-    mv.visitJumpInsn(IFNONNULL, loop)
-
-    // Load IFO from local variable and invoke `getResult` on it
-    mv.visitVarInsn(ALOAD, 2)
-    mv.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, jvmResultType), true)
-    AsmOps.boxIfPrim(jvmResultType, mv)
-
-    // Return the result.
-    mv.visitInsn(ARETURN)
-
-    mv.visitMaxs(65535, 65535)
-    mv.visitEnd()
-  }
-
-  /**
-    * Emits code to invoke setArgX for every value in the passed arguments array.
-    */
-  private def compileArguments(defn: Def, classType: JvmType.Reference, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
-    // The local variable where the object argument is stored.
-    val ArgumentLocalVar = 1
-
-    // The local variable for the array of objects.
-    val ArrayLocalVar = 2
-
-    // Load the arguments array.
-    mv.visitVarInsn(ALOAD, ArgumentLocalVar)
-
-    // Cast the object to an array of objects.
-    mv.visitTypeInsn(CHECKCAST, "[Ljava/lang/Object;")
-
-    // Store the array in a local variable.
-    mv.visitVarInsn(ASTORE, ArrayLocalVar)
-
-    // Iterate through each formal argument and invoke `setArg`.
-    for ((FormalParam(_, tpe), index) <- defn.formals.zipWithIndex) {
-      // Load the `this` value (to be used for the call below).
-      mv.visitVarInsn(ALOAD, 0)
-
-      // Load the array.
-      mv.visitVarInsn(ALOAD, ArrayLocalVar)
-
-      // Push the array index.
-      mv.visitIntInsn(BIPUSH, index)
-
-      // Load the element at the index.
-      mv.visitInsn(AALOAD)
-
-      // Invoke the setArgX method on `this`.
-      val argErasedType = JvmOps.getErasedJvmType(tpe)
-
-      // Cast and unbox.
-      AsmOps.castIfNotPrimAndUnbox(argErasedType, mv)
-
-      // Invoke setArgX.
-      mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, s"setArg$index", AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), false)
-    }
+    m.visitInsn(ACONST_NULL)
+    m.visitInsn(ARETURN)
+    m.visitMaxs(999, 999)
+    m.visitEnd()
   }
 
 }

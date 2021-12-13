@@ -196,16 +196,12 @@ namespace List {
     ///
     /// Returns `-1` if `a` does not exist in `xs`.
     ///
-    @Time(length(xs)) @Space(1)
-    pub def indexOf(a: a, xs: List[a]): Int32 with Eq[a] = indexOfHelper(a, xs, 0)
-
-    ///
-    /// Helper function for `indexOf`.
-    ///
-    def indexOfHelper(a: a, xs: List[a], acc: Int32): Int32 with Eq[a] = match xs {
-        case Nil => -1
-        case x :: rs => if (x == a) acc else indexOfHelper(a, rs, acc+1)
-    }
+    pub def indexOf(a: a, l: List[a]): Int32 with Eq[a] =
+        def loop(xs, acc) = match xs {
+            case Nil     => -1
+            case y :: ys => if (y == a) acc else loop(ys, acc + 1)
+        };
+        loop(l, 0)
 
     ///
     /// Alias for `findLeft`.
@@ -234,7 +230,7 @@ namespace List {
     @Time(time(f) * length(xs)) @Space(space(f))
     pub def findRight(f: a -> Bool, xs: List[a]): Option[a] = match xs {
         case Nil => None
-        case x :: rs => Option.withDefault(findRight(f, rs), if (f(x)) Some(x) else None)
+        case x :: rs => Option.withDefault(default = if (f(x)) Some(x) else None, findRight(f, rs))
     }
 
 
@@ -314,20 +310,16 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
-    @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def map(f: a -> b & ef, xs: List[a]): List[b] & ef =
-        mapHelper(f, xs, ys -> ys)
+    pub def map(f: a -> b & ef, l: List[a]): List[b] & ef =
+        def loop(xs, k) = match xs {
+            case Nil     => k(Nil)
+            case y :: ys => {
+                let a = f(y);
+                loop(ys, zs -> k(a :: zs))
+            }
+        };
+        loop(l, identity)
 
-    ///
-    /// Helper function for `map`.
-    ///
-    def mapHelper(f: a -> b & ef, xs: List[a], k: List[b] -> List[b]): List[b] & ef = match xs {
-        case Nil => k(Nil)
-        case x :: rs => {
-            let a = f(x);
-            mapHelper(f, rs, ys -> k(a :: ys))
-        }
-    }
 
     ///
     /// Return the singleton list with element `x`.
@@ -676,7 +668,9 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, xs: List[a]): b & ef = foldRightHelper(f, s, xs, s1 -> s1 as & ef)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, xs: List[a]): b & ef =
+        foldRightHelper(f, s, xs, s1 -> s1 as & ef) // NB: Cast required because the identity continuation is pure,
+                                                    // but the intermediate continuations are effect polymorphic
 
     ///
     /// Helper function for `foldRight`.
@@ -1188,6 +1182,12 @@ namespace List {
     }
 
     ///
+    /// Returns the list `xs` as a chain.
+    ///
+    pub def toChain(xs: List[a]): Chain[a] =
+        List.foldLeft(Chain.snoc, Chain.empty(), xs)
+
+    ///
     /// Returns `xs` as a mutable list.
     ///
     pub def toMutList(xs: List[a]): MutList[a] & Impure = {
@@ -1217,7 +1217,7 @@ namespace List {
     /// The function `f` must be impure.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foreach(f: a ~> Unit, xs: List[a]): Unit & Impure = match xs {
+    pub def foreach(f: a -> Unit & ef, xs: List[a]): Unit & ef = match xs {
         case Nil => ()
         case x :: rs => f(x); foreach(f, rs)
     }
@@ -1290,12 +1290,12 @@ namespace List {
     ///
     /// `next` should return `None` to signal the end of building the list.
     ///
-    pub def unfoldWithIter(next: Unit ~> Option[a]): List[a] & Impure = unfoldWithIterHelper(next, xs -> xs)
+    pub def unfoldWithIter(next: Unit -> Option[a] & ef): List[a] & ef = unfoldWithIterHelper(next, xs -> xs)
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: Unit ~> Option[a], k: List[a] -> List[a]): List[a] & Impure = match next() {
+    def unfoldWithIterHelper(next: Unit -> Option[a] & ef, k: List[a] -> List[a]): List[a] & ef = match next() {
         case None => k(Nil)
         case Some(a) => unfoldWithIterHelper(next, xs -> k(a :: xs))
     }
@@ -1311,12 +1311,12 @@ namespace List {
     ///
     /// `next` should return `Err(e)` to signal that an error occurred. The function returns `Err(e)`.
     ///
-    pub def unfoldWithOkIter(next: Unit ~> Result[Option[a], e]): Result[List[a], e] & Impure = unfoldWithOkIterHelper(next, xs -> xs)
+    pub def unfoldWithOkIter(next: Unit -> Result[Option[a], e] & ef): Result[List[a], e] & ef = unfoldWithOkIterHelper(next, xs -> xs)
 
     ///
     /// Helper function for `unfoldWithOkIter`.
     ///
-    def unfoldWithOkIterHelper(next: Unit ~> Result[Option[a], e], k: Result[List[a], e] -> Result[List[a], e]): Result[List[a], e] & Impure = match next() {
+    def unfoldWithOkIterHelper(next: Unit -> Result[Option[a], e] & ef, k: Result[List[a], e] -> Result[List[a], e]): Result[List[a], e] & ef = match next() {
         case Ok(None) => k(Ok(Nil))
         case Err(e) => k(Err(e))
         case Ok(Some(a)) => unfoldWithOkIterHelper(next, Result.flatMap(xs -> k(Ok(a :: xs))))
@@ -1378,16 +1378,6 @@ namespace List {
             else
                 memberOfWith(f, x, rs)
     }
-
-    ///
-    /// Converts the list `l` to a `Stream`.
-    ///
-    pub def toStream(l: List[a]): Stream[a, List[a]] =
-        let next = s -> match s {
-            case Nil     => Done
-            case x :: xs => Yield(x, xs)
-        };
-        Stream(next, l)
 
     ///
     /// Returns the sum of all elements in the list `l`.

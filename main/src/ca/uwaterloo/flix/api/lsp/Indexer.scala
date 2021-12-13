@@ -55,7 +55,7 @@ object Indexer {
     val idx2 = def0.spec.fparams.foldLeft(Index.empty) {
       case (acc, fparam) => acc ++ visitFormalParam(fparam)
     }
-    val idx3 = visitScheme(def0.spec.declaredScheme, def0.spec.loc)
+    val idx3 = visitScheme(def0.spec.declaredScheme, def0.sym.loc)
     idx0 ++ idx1 ++ idx2 ++ idx3
   }
 
@@ -85,17 +85,14 @@ object Indexer {
   /**
     * Returns a reverse index for the given class `class0`.
     */
-  private def visitClass(class0: TypedAst.Class): Index = class0 match {
-    case TypedAst.Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc) =>
-      Index.occurrenceOf(class0)
-  }
+  private def visitClass(class0: TypedAst.Class): Index = Index.occurrenceOf(class0)
 
   /**
     * Returns a reverse index for the given instance `instance0`.
     */
   private def visitInstance(instance0: Instance): Index = instance0 match {
-    case Instance(_, _, sym, tpe, _, defs, _, loc) =>
-      val idx1 = Index.useOf(sym.clazz, loc)
+    case Instance(_, _, sym, tpe, _, defs, _, _) =>
+      val idx1 = Index.useOf(sym.clazz, sym.loc)
       val idx2 = visitType(tpe)
       val idx3 = defs.foldLeft(Index.empty) {
         case (acc, defn) => visitDef(defn)
@@ -179,6 +176,9 @@ object Indexer {
     case Expression.Let(sym, _, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
+    case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
+      Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+
     case Expression.LetRegion(sym, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
@@ -244,17 +244,13 @@ object Indexer {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expression.Existential(fparam, exp, _) =>
-      visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
-
-    case Expression.Universal(fparam, exp, _) =>
-      visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
-
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
 
-    case Expression.Cast(exp, tpe, eff, loc) =>
-      visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
+    case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      val dt = declaredType.map(visitType).getOrElse(Index.empty)
+      val de = declaredEff.map(visitType).getOrElse(Index.empty)
+      visitExp(exp) ++ dt ++ de ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -423,6 +419,9 @@ object Indexer {
   private def visitType(tpe0: Type): Index = tpe0 match {
     case _: Type.KindedVar => Index.empty
     case Type.Cst(tc, loc) => tc match {
+      case TypeConstructor.Arrow(_) =>
+        // We do not index arrow constructors.
+        Index.empty
       case TypeConstructor.RecordRowExtend(field) => Index.occurrenceOf(tc, loc) ++ Index.useOf(field)
       case TypeConstructor.SchemaRowExtend(pred) => Index.occurrenceOf(tc, loc) ++ Index.useOf(pred)
       case _ => Index.occurrenceOf(tc, loc)

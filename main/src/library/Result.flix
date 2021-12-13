@@ -57,18 +57,18 @@ namespace Result {
     /// Returns `v` if `r` is `Ok(v)`. Otherwise returns `d`.
     ///
     @Time(1) @Space(1)
-    pub def getWithDefault(r: Result[t, e], d: t): t = match r {
+    pub def getWithDefault(d: t, r: Result[t, e]): t = match r {
         case Ok(v) => v
         case Err(_) => d
     }
 
     ///
-    /// Returns `Ok(v)` if `r1` is `Ok(v)`. Otherwise returns `r2`.
+    /// Returns `Ok(v)` if `r` is `Ok(v)`. Otherwise returns `default`.
     ///
     @Time(1) @Space(1)
-    pub def withDefault(r1: Result[t, e1], r2: Result[t, e2]): Result[t, e2] = match r1 {
+    pub def withDefault(default: {default :: Result[t, e2]}, r: Result[t, e1]): Result[t, e2] = match r {
         case Ok(v) => Ok(v)
-        case Err(_) => r2
+        case Err(_) => default.default
     }
 
     ///
@@ -304,7 +304,7 @@ namespace Result {
     /// The function `f` must be impure.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foreach(f: t ~> Unit, r: Result[t, e]): Unit & Impure = match r {
+    pub def foreach(f: t -> Unit & ef, r: Result[t, e]): Unit & ef = match r {
         case Ok(v)  => f(v)
         case Err(_) => ()
     }

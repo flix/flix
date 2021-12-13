@@ -19,8 +19,7 @@ package ca.uwaterloo.flix.language
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.errors.Severity
-import ca.uwaterloo.flix.util.vt.VirtualString.NewLine
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for compilation messages.
@@ -31,11 +30,6 @@ trait CompilationMessage {
     * Returns the kind of error message, e.g. "Syntax Error" or "Type Error".
     */
   def kind: String
-
-  /**
-    * Returns the severity of the error.
-    */
-  def severity: Severity = Severity.Error
 
   /**
     * Returns the input source of the error message.
@@ -55,14 +49,11 @@ trait CompilationMessage {
   /**
     * Returns the formatted error message.
     */
-  def message: VirtualTerminal
+  def message(formatter: Formatter): String
 
   /**
-   * Returns a formatted string with helpful suggestions.
-   */
-  def explain: VirtualTerminal = {
-    val vt = new VirtualTerminal()
-    vt << "" << NewLine
-  }
+    * Returns a formatted string with helpful suggestions.
+    */
+  def explain(formatter: Formatter): Option[String]
 
 }

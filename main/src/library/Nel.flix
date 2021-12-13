@@ -96,7 +96,7 @@ namespace Nel {
     ///
     @Time(length(xs)) @Space(1)
     pub def last(xs: Nel[a]): a = match xs {
-        case Nel(h, l) => Option.getWithDefault(List.last(l), h)
+        case Nel(h, l) => Option.getWithDefault(h, List.last(l))
     }
 
     ///
@@ -426,10 +426,8 @@ namespace Nel {
     ///
     /// Applies `f` to every element of `xs`.
     ///
-    /// The function `f` must be impure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def foreach(f: a ~> Unit, xs: Nel[a]): Unit & Impure = match xs {
+    pub def foreach(f: a -> Unit & ef, xs: Nel[a]): Unit & ef = match xs {
         case Nel(h, l) => f(h); List.foreach(f, l)
     }
 

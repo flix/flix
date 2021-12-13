@@ -13,7 +13,32 @@ object BenchmarkCompiler {
   /**
     * The number of compilations to perform when collecting statistics.
     */
-  val N = 15
+  val N = 14
+
+  /**
+    * Outputs statistics about the size of the generated JVM code.
+    */
+  def benchmarkCodeSize(o: Options): Unit = {
+    val flix = newFlix(o)
+    val result = flix.compile().get
+    val codeSize = result.codeSize
+
+    // Find the number of lines of source code.
+    val lines = result.getTotalLines.toLong
+
+    // Print JSON or plain text?
+    if (o.json) {
+      val json =
+        ("codeSize" -> codeSize) ~
+          ("lines" -> lines)
+      val s = JsonMethods.pretty(JsonMethods.render(json))
+      println(s)
+    } else {
+      println("====================== Flix Generated Code Size ======================")
+      println()
+      println(s"Generated ${java.text.NumberFormat.getIntegerInstance.format(codeSize)} Bytes of code from $lines lines of source code.")
+    }
+  }
 
   /**
     * Outputs statistics about time spent in each compiler phase.
@@ -163,9 +188,13 @@ object BenchmarkCompiler {
 
     flix.setOptions(opts = o.copy(loadClassFiles = false, writeClassFiles = false))
 
+    // NB: We only use unit tests from the standard library because we want to test real code.
+
     flix.addInput("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
     flix.addInput("TestBigInt.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestBigInt.flix"))
+    flix.addInput("TestChain.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
     flix.addInput("TestChar.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChar.flix"))
+    flix.addInput("TestDelayMap.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestDelayMap.flix"))
     flix.addInput("TestFloat32.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestFloat32.flix"))
     flix.addInput("TestFloat64.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestFloat64.flix"))
     flix.addInput("TestFromString.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestFromString.flix"))
@@ -175,8 +204,13 @@ object BenchmarkCompiler {
     flix.addInput("TestInt16.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestInt16.flix"))
     flix.addInput("TestInt32.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestInt32.flix"))
     flix.addInput("TestInt64.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestInt64.flix"))
+    flix.addInput("TestIterator.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"))
+    flix.addInput("TestLazyList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestLazyList.flix"))
     flix.addInput("TestList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestList.flix"))
     flix.addInput("TestMap.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMap.flix"))
+    flix.addInput("TestMutList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutList.flix"))
+    flix.addInput("TestMutDeque.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutDeque.flix"))
+    flix.addInput("TestNel.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestNel.flix"))
     flix.addInput("TestOption.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestOption.flix"))
     flix.addInput("TestPrelude.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestPrelude.flix"))
     flix.addInput("TestResult.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestResult.flix"))

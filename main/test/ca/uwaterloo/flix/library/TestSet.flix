@@ -918,6 +918,26 @@ def toList03(): Bool = Set.toList(Set#{1, 2}) == 2 :: 1 :: Nil
 def toList04(): Bool = Set.toList(Set#{1, 2, 3}) == 3 :: 2 :: 1 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
+// toChain                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toChain01(): Bool =
+    Set.toChain(Set#{}: Set[Int]) == Chain.empty(): Chain[Int]
+
+@test
+def toChain02(): Bool =
+    Set.toChain(Set#{1}) == Chain.singleton(1)
+
+@test
+def toChain03(): Bool =
+    Set.toChain(Set#{1, 2}) == List.toChain(1 :: 2 :: Nil)
+
+@test
+def toChain04(): Bool =
+    Set.toChain(Set#{1, 2, 3}) == List.toChain(1 :: 2 :: 3 :: Nil)
+
+/////////////////////////////////////////////////////////////////////////////
 // toMap                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -1120,38 +1140,6 @@ def unfoldWithIter06(): Bool & Impure =
             Some(c)
         };
     Set.unfoldWithIter(step) == Set#{'0', '2', '4', '6', '8'}
-
-/////////////////////////////////////////////////////////////////////////////
-// query                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def query01(): Bool =
-    Set.query(x -> if (x < 3) LessThan else if (x > 7) GreaterThan else EqualTo, Set#{1, 2, 3, 4, 5, 6, 7, 8}) == 3 :: 4 :: 5 :: 6 :: 7 :: Nil
-
-@test
-def query02(): Bool =
-    Set.query(x -> if (x < 3) LessThan else if (x > 7) GreaterThan else EqualTo, Set#{}) == Nil
-
-@test
-def query03(): Bool =
-    Set.query(_ -> EqualTo, Set#{}: Set[Unit]) == Nil
-
-@test
-def query04(): Bool =
-    Set.query(_ -> EqualTo, Set#{1, 2, 3, 4, 5, 6, 7, 8}) == 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil
-
-@test
-def query05(): Bool =
-    Set.query(x -> if (x < 2) LessThan else if (x > 2) GreaterThan else EqualTo, Set#{0, 1, 3, 4}) == Nil
-
-@test
-def query06(): Bool =
-    Set.query(_ -> EqualTo, Set#{42}) == 42 :: Nil
-
-@test
-def query07(): Bool =
-    Set.query(x -> if (x < 42) LessThan else if (x > 42) GreaterThan else EqualTo, Set#{42}) == 42 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //

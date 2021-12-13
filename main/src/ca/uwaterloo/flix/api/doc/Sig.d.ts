@@ -19,6 +19,7 @@ import {FormalParam} from "./FormalParam";
 import {Modifier} from "./Modifier";
 import {Type} from "./Type";
 import {SourceLocation} from "./SourceLocation";
+import {TypeConstraint} from "./TypeConstraint";
 
 export interface Sig {
     sym: SigSym
@@ -26,8 +27,9 @@ export interface Sig {
     mod: [Modifier]
     tparams: [TypeParam]
     fparams: [FormalParam]
-    retTpe: Type
+    tpe: Type
     eff: Type
+    tcs: [TypeConstraint]
     loc: SourceLocation
     implemented: boolean
 }

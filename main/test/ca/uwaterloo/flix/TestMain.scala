@@ -111,6 +111,12 @@ class TestMain extends FunSuite {
     assert(opts.threads.contains(42))
   }
 
+  test("--Xbenchmark-code-size") {
+    val args = Array("--Xbenchmark-code-size", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xbenchmarkCodeSize)
+  }
+
   test("--Xbenchmark-phases") {
     val args = Array("--Xbenchmark-phases", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -127,18 +133,6 @@ class TestMain extends FunSuite {
     val args = Array("--Xdebug", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xdebug)
-  }
-
-  test("--Xlinter") {
-    val args = Array("--Xlinter", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xlinter)
-  }
-
-  test("--Xno-bool-unification") {
-    val args = Array("--Xno-bool-unification", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnoboolunification)
   }
 
   test("--Xno-stratifier") {

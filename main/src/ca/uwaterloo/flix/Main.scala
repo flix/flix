@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
+import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.vt._
 
 import java.io.{File, PrintWriter}
 import java.net.BindException
@@ -74,9 +74,6 @@ object Main {
       System.exit(0)
     }
 
-    // the default color context.
-    implicit val terminal: TerminalContext = TerminalContext.AnsiTerminal
-
     // construct flix options.
     var options = Options.Default.copy(
       lib = cmdOpts.xlib,
@@ -87,15 +84,13 @@ object Main {
       progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       writeClassFiles = !cmdOpts.interactive,
-      xlinter = cmdOpts.xlinter,
-      xnoboolunification = cmdOpts.xnoboolunification,
       xnostratifier = cmdOpts.xnostratifier,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono
     )
 
     // Don't use progress bar if benchmarking.
-    if (cmdOpts.benchmark || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
+    if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
       options = options.copy(progress = false)
     }
 
@@ -155,13 +150,19 @@ object Main {
         System.exit(1)
     }
 
-    // check if the -Xbenchmark-phases flag was passed.
+    // check if the --Xbenchmark-code-size flag was passed.
+    if (cmdOpts.xbenchmarkCodeSize) {
+      BenchmarkCompiler.benchmarkCodeSize(options)
+      System.exit(0)
+    }
+
+    // check if the --Xbenchmark-phases flag was passed.
     if (cmdOpts.xbenchmarkPhases) {
       BenchmarkCompiler.benchmarkPhases(options)
       System.exit(0)
     }
 
-    // check if the -Xbenchmark-throughput flag was passed.
+    // check if the --Xbenchmark-throughput flag was passed.
     if (cmdOpts.xbenchmarkThroughput) {
       BenchmarkCompiler.benchmarkThroughput(options)
       System.exit(0)
@@ -189,6 +190,8 @@ object Main {
           System.exit(1)
       }
     }
+    if (Formatter.hasColorSupport)
+      flix.setFormatter(AnsiTerminalFormatter)
 
     // evaluate main.
     val timer = new Timer(flix.compile())
@@ -216,15 +219,15 @@ object Main {
 
         if (cmdOpts.test) {
           val results = Tester.test(compilationResult)
-          Console.println(results.output.fmt)
+          Console.println(results.output(flix.getFormatter))
         }
       case Validation.Failure(errors) =>
-        errors.sortBy(_.source.name).foreach(e => println(e.message.fmt))
+        flix.mkMessages(errors.sortBy(_.source.name))
+          .foreach(println)
         println()
         println(s"Compilation failed with ${errors.length} error(s).")
         System.exit(1)
     }
-
   }
 
   /**
@@ -241,12 +244,11 @@ object Main {
                      lsp: Option[Int] = None,
                      test: Boolean = false,
                      threads: Option[Int] = None,
+                     xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
-                     xnoboolunification: Boolean = false,
-                     xlinter: Boolean = false,
                      xnostratifier: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
@@ -344,11 +346,11 @@ object Main {
       help("help").text("prints this usage information.")
 
       // Interactive.
-      opt[Unit]("interactive").action((f, c) => c.copy(interactive = true)).
+      opt[Unit]("interactive").action((_, c) => c.copy(interactive = true)).
         text("enables interactive mode.")
 
       // Json.
-      opt[Unit]("json").action((f, c) => c.copy(json = true)).
+      opt[Unit]("json").action((_, c) => c.copy(json = true)).
         text("enables json output.")
 
       // Listen.
@@ -375,6 +377,10 @@ object Main {
       note("")
       note("The following options are experimental:")
 
+      // xbenchmark-code-size
+      opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).
+        text("[experimental] benchmarks the size of the generated JVM files.")
+
       // Xbenchmark-phases
       opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
         text("[experimental] benchmarks the performance of each compiler phase.")
@@ -391,21 +397,15 @@ object Main {
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
 
-      // Xlinter.
-      opt[Unit]("Xlinter").action((_, c) => c.copy(xlinter = true)).
-        text("[experimental] enables the semantic linter.")
-
-      // Xno-bool-unification
-      opt[Unit]("Xno-bool-unification").action((_, c) => c.copy(xnoboolunification = true)).
-        text("[experimental] disables bool unification.")
-
       // Xno-stratifier
       opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
         text("[experimental] disables computation of stratification.")
 
+      // Xstatistics
       opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
         text("[experimental] prints compilation statistics.")
 
+      // Xstrictmono
       opt[Unit]("Xstrictmono").action((_, c) => c.copy(xstrictmono = true)).
         text("[experimental] enable strict monomorphization.")
 

@@ -102,7 +102,7 @@ namespace Test/Dec/Class {
         }
 
         instance Eff[Impure] {
-            pub def isPure(_f: a ~> b): Bool = false
+            pub def isPure(_f: a -> b & Impure): Bool = false
         }
     }
 

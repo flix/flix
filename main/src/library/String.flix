@@ -106,7 +106,7 @@ namespace String {
     ///
     @Time(1) @Space(1)
     pub def lineSeparator(): String =
-        import java.lang.System:lineSeparator();
+        import static java.lang.System.lineSeparator();
         lineSeparator() as & Pure
 
     ///
@@ -141,7 +141,7 @@ namespace String {
         if (i >= len)
             ()
         else {
-            let c = f(i) as & ef;
+            let c = f(i);
             StringBuilder.appendChar!(sb, c);
             initWorker(sb, f, len, i+1)
         }
@@ -303,7 +303,7 @@ namespace String {
     ///
     def isSubmatchHelper(pattern: String, s: String): Bool & Impure =
         try {
-            import java.util.regex.Pattern:compile(String);
+            import static java.util.regex.Pattern.compile(String);
             import java.util.regex.Pattern.matcher(##java.lang.CharSequence);
             import java.util.regex.Matcher.find(Int32);
             let cs1 = s as ##java.lang.CharSequence;
@@ -686,14 +686,14 @@ namespace String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldWithIter(f: Unit ~> Option[Char]): String =
+    pub def unfoldWithIter(f: Unit -> Option[Char] & ef): String =
         let sb = StringBuilder.new() as & Pure;
         unfoldWithIterHelper(f, sb) as & Pure
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: Unit ~> Option[Char], sb: StringBuilder): String & Impure = match next() {
+    def unfoldWithIterHelper(next: Unit -> Option[Char] & ef, sb: StringBuilder): String & Impure = match next() {
         case None => StringBuilder.toString(sb)
         case Some(c) => {
             StringBuilder.appendChar!(sb, c);
@@ -731,14 +731,14 @@ namespace String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldStringWithIter(f: Unit ~> Option[String]): String =
+    pub def unfoldStringWithIter(f: Unit -> Option[String] & ef): String & ef =
         let sb = StringBuilder.new() as & Pure;
-        unfoldStringWithIterHelper(f, sb) as & Pure
+        unfoldStringWithIterHelper(f, sb) as & ef
 
     ///
     /// Helper function for `unfoldStringWithIter`.
     ///
-    def unfoldStringWithIterHelper(next: Unit ~> Option[String], sb: StringBuilder): String & Impure = match next() {
+    def unfoldStringWithIterHelper(next: Unit -> Option[String] & ef, sb: StringBuilder): String & Impure = match next() {
         case None => StringBuilder.toString(sb)
         case Some(s) => {
             StringBuilder.appendString!(sb, s);
@@ -1180,17 +1180,17 @@ namespace String {
     def levenshteinDistanceHelper(s: String, t: String) : Int32 & Impure =
         let m = length(s);
         let n = length(t);
-        let v0 = Array.new(0, n+1);
-        let v1 = Array.new(0, n+1);
-        forIndex(0, n, i -> v0[i] = i );
-        forIndex(0, m-1, i -> {
+        let v0 = Array.new(0, n + 1);
+        let v1 = Array.new(0, n + 1);
+        forIndex(0, n, i -> v0[i] = i);
+        forIndex(0, m - 1, i -> {
             v1[0] = i + 1;
-            forIndex(0, n-1, j -> {
+            forIndex(0, n - 1, j -> {
                 let substitutionCost = if (charAt(i, s) == charAt(j, t)) 0 else 1;
                 let a = v1[j] + 1;
                 let b = v0[j + 1] + 1;
                 let c = v0[j] + substitutionCost;
-                v1[j+1] = Int32.min(a, Int32.min(b, c))
+                v1[j + 1] = Int32.min(a, Int32.min(b, c))
             });
             arraySwap(v0,v1)
         });
@@ -1201,8 +1201,8 @@ namespace String {
     ///
     /// This implements a forloop, the end point `e` is inclusive.
     ///
-    def forIndex(b: Int32, e: Int32, f: Int32 ~> Unit): Unit & Impure =
-        if (b <= e) { f(b); forIndex(b+1, e, f) } else ()
+    def forIndex(b: Int32, e: Int32, f: Int32 -> Unit & ef): Unit & ef =
+        if (b <= e) { f(b); forIndex(b + 1, e, f) } else ()
 
     ///
     /// Helper function for `levenshteinDistance`.
@@ -1333,7 +1333,7 @@ namespace String {
         }
 
     ///
-    /// Count the occurences of `substr` in string `s`.
+    /// Count the occurrences of `substr` in string `s`.
     ///
     pub def countSubstring(substr: {substr :: String}, s: String): Int32 =
         let sublen = length(substr.substr);

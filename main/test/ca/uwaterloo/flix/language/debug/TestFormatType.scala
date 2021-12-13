@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Rigidity, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualString}
 import org.scalatest.FunSuite
 
 class TestFormatType extends FunSuite with TestUtils {
@@ -314,40 +313,6 @@ class TestFormatType extends FunSuite with TestUtils {
 
     val expected = "String -> ??? ~> ???"
     val actual = FormatType.formatType(tpe)(Audience.External)
-
-    assert(actual == expected)
-  }
-
-  test("FormatTypeDiff.Tuple.01") {
-    val tpe1 = Type.mkTuple(List(Type.Int32, Type.Int32, Type.Int32), loc)
-    val tpe2 = Type.mkTuple(List(Type.Int32, Type.Bool, Type.Int32), loc)
-
-    val diff = TypeDiff.diff(tpe1, tpe2)
-    val expected = "(..., Int32, ...)"
-    val actual = FormatType.formatTypeDiff(diff, VirtualString.Text)(Audience.External).fmt(TerminalContext.NoTerminal)
-
-    assert(actual == expected)
-  }
-
-  test("FormatTypeDiff.Arrow.01") {
-    val tpe1 = Type.mkArrowWithEffect(Type.Int32, Type.Pure, Type.Int32, loc)
-    val tpe2 = Type.mkArrowWithEffect(Type.Int32, Type.Pure, Type.Bool, loc)
-
-    val diff = TypeDiff.diff(tpe1, tpe2)
-    val expected = "... -> Int32"
-    val actual = FormatType.formatTypeDiff(diff, VirtualString.Text)(Audience.External).fmt(TerminalContext.NoTerminal)
-
-    assert(actual == expected)
-  }
-
-  test("FormatTypeDiff.Enum.01") {
-    val map = Type.mkEnum(Symbol.mkEnumSym("Map"), Kind.Star ->: Kind.Star ->: Kind.Star, loc)
-    val tpe1 = Type.mkApply(map, List(Type.Int32, Type.Bool), loc)
-    val tpe2 = Type.mkApply(map, List(Type.Int32, Type.Str), loc)
-
-    val diff = TypeDiff.diff(tpe1, tpe2)
-    val expected = "...[..., Bool]"
-    val actual = FormatType.formatTypeDiff(diff, VirtualString.Text)(Audience.External).fmt(TerminalContext.NoTerminal)
 
     assert(actual == expected)
   }

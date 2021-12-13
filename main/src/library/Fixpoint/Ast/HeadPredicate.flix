@@ -24,10 +24,10 @@ namespace Fixpoint/Ast {
             match head {
                 case HeadAtom(predSym, Relational, terms) => "${predSym}(${commaSeparate(terms)})"
                 case HeadAtom(predSym, Latticenal(_), terms) =>
-                    let len = Array.length(terms) as & Pure;
-                    let k = terms[0..len-1] as & Pure;
-                    let l = terms[len-1] as & Pure;
+                    let len = Array.length(terms);
+                    let k = terms[0..len-1];
+                    let l = terms[len-1];
                     "${predSym}(${commaSeparate(k)}; ${l})"
-            }
+            } as & Pure
     }
 }

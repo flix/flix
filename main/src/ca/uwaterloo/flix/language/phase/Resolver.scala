@@ -75,7 +75,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         val definitionsVal = root.defsAndSigs.flatMap {
           case (ns0, defsAndSigs) => defsAndSigs.collect {
-            case (_, defn: NamedAst.Def) => resolveDef(defn, taenv, ns0, root) map {
+            case (_, NamedAst.DefOrSig.Def(defn)) => resolveDef(defn, taenv, ns0, root) map {
               case d => d.sym -> d
             }
             // Skip Sigs as they are handled under classes.
@@ -403,7 +403,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
         */
       def mkFreshFparams(arity: Int, loc: SourceLocation): List[ResolvedAst.FormalParam] = {
         // Introduce a fresh variable symbol for each argument of the function definition.
-        val varSyms = (0 until arity).map(i => Symbol.freshVarSym("$" + i, BoundBy.FormalParam, loc)).toList
+        val varSyms = (0 until arity).map(i => Symbol.freshVarSym(Flix.Delimiter + i, BoundBy.FormalParam, loc)).toList
 
         // Introduce a formal parameter for each variable symbol.
         varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar, loc))
@@ -527,8 +527,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.DefOrSig(qname, loc) =>
           mapN(lookupDefOrSig(qname, ns0, root)) {
-            case defn: NamedAst.Def => visitDef(defn, loc)
-            case sig: NamedAst.Sig => visitSig(sig, loc)
+            case NamedAst.DefOrSig.Def(defn) => visitDef(defn, loc)
+            case NamedAst.DefOrSig.Sig(sig) => visitSig(sig, loc)
           }
 
         case NamedAst.Expression.Hole(nameOpt, loc) =>
@@ -581,8 +581,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qname, innerLoc), exps, outerLoc) =>
           flatMapN(lookupDefOrSig(qname, ns0, root)) {
-            case defn: NamedAst.Def => visitApplyDef(app, defn, exps, innerLoc, outerLoc)
-            case sig: NamedAst.Sig => visitApplySig(app, sig, exps, innerLoc, outerLoc)
+            case NamedAst.DefOrSig.Def(defn) => visitApplyDef(app, defn, exps, innerLoc, outerLoc)
+            case NamedAst.DefOrSig.Sig(sig) => visitApplySig(app, sig, exps, innerLoc, outerLoc)
           }
 
         case app@NamedAst.Expression.Apply(_, _, _) => visitApply(app)
@@ -623,6 +623,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Let(sym, mod, e1, e2, loc)
+
+        case NamedAst.Expression.LetRec(sym, mod, exp1, exp2, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.LetRec(sym, mod, e1, e2, loc)
 
         case NamedAst.Expression.LetRegion(sym, exp, loc) =>
           for {
@@ -682,7 +688,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
                   // If the tag is `Some` we construct the lambda: x -> Some(x).
 
                   // Construct a fresh symbol for the formal parameter.
-                  val freshVar = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
+                  val freshVar = Symbol.freshVarSym("x" + Flix.Delimiter, BoundBy.FormalParam, loc)
 
                   // Construct the formal parameter for the fresh symbol.
                   val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshUnkindedVar(loc), loc)
@@ -787,18 +793,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Assign(e1, e2, loc)
 
-        case NamedAst.Expression.Existential(fparam, exp, loc) =>
-          for {
-            fp <- Params.resolve(fparam, taenv, ns0, root)
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Existential(fp, e, loc)
-
-        case NamedAst.Expression.Universal(fparam, exp, loc) =>
-          for {
-            fp <- Params.resolve(fparam, taenv, ns0, root)
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Universal(fp, e, loc)
-
         case NamedAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
           val expectedTypVal = expectedType match {
             case None => (None: Option[Type]).toSuccess
@@ -834,11 +828,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
-            case NamedAst.CatchRule(sym, clazz, body) =>
-              val exceptionType = Type.mkNative(clazz, loc)
-              visit(body, tenv0 + (sym -> exceptionType)) map {
-                case b => ResolvedAst.CatchRule(sym, clazz, b)
-              }
+            case NamedAst.CatchRule(sym, className, body) =>
+              for {
+                clazz <- lookupJvmClass(className, sym.loc)
+                exceptionType = Type.mkNative(clazz, loc)
+                b <- visit(body, tenv0 + (sym -> exceptionType))
+              } yield ResolvedAst.CatchRule(sym, clazz, b)
           }
 
           for {
@@ -1323,15 +1318,15 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
 
     defOrSigOpt match {
       case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
-      case Some(defn: NamedAst.Def) =>
+      case Some(d@NamedAst.DefOrSig.Def(defn)) =>
         if (isDefAccessible(defn, ns0)) {
-          defn.toSuccess
+          d.toSuccess
         } else {
           ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure
         }
-      case Some(sig: NamedAst.Sig) =>
+      case Some(s@NamedAst.DefOrSig.Sig(sig)) =>
         if (isSigAccessible(sig, ns0)) {
-          sig.toSuccess
+          s.toSuccess
         } else {
           ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc).toFailure
         }

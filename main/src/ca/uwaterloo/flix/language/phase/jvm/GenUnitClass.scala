@@ -19,44 +19,34 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 
 object GenUnitClass {
 
   val InstanceFieldName = "INSTANCE"
 
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    val unitType = JvmType.Unit
-    val unitName = unitType.name
-    val bytecode = genByteCode()
-    Map(unitName -> JvmClass(unitName, bytecode))
+    Map(BackendObjType.Unit.jvmName -> JvmClass(BackendObjType.Unit.jvmName, genByteCode()))
   }
 
   private def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkClass(JvmType.Unit.name, Public, Final)
+    val cm = mkClass(BackendObjType.Unit.jvmName, IsFinal)
 
     // Singleton instance
-    cm.mkField(InstanceFieldName, JvmType.Unit, Public, Final, Static)
+    cm.mkStaticField(InstanceFieldName, BackendObjType.Unit.toTpe, IsPublic, IsFinal)
 
     cm.mkStaticConstructor(genStaticConstructor())
-    cm.mkConstructor(genConstructor(), MethodDescriptor.NothingToVoid, Private)
+    cm.mkObjectConstructor(IsPrivate)
 
     cm.closeClassMaker
   }
 
-  private def genStaticConstructor(): Instruction = {
-    NEW(JvmType.Unit.name) ~
-      DUP ~
-      InvokeSimpleConstructor(JvmType.Unit.name) ~
-      PUTSTATIC(JvmType.Unit.name, InstanceFieldName, JvmType.Unit) ~
-      RETURN
-  }
-
-  private def genConstructor(): Instruction = {
-    ALOAD(0) ~
-      InvokeSimpleConstructor(JvmName.Object) ~
-      RETURN
-  }
-
+  private def genStaticConstructor(): InstructionSet =
+    NEW(BackendObjType.Unit.jvmName) ~
+      DUP() ~
+      invokeConstructor(BackendObjType.Unit.jvmName) ~
+      PUTSTATIC(BackendObjType.Unit.jvmName, InstanceFieldName, BackendObjType.Unit.toTpe) ~
+      RETURN()
 }
