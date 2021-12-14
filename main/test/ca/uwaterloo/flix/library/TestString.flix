@@ -391,39 +391,6 @@ def mapWithIndex07(): Bool =
     let test = (c,i) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
     String.mapWithIndex(test, "Ab") == "tF"
 
-/////////////////////////////////////////////////////////////////////////////
-// map2                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def map201(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "", "");
-    s == ""
-
-@test
-def map202(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "a", "");
-    s == ""
-
-@test
-def map203(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "", "1");
-    s == ""
-
-@test
-def map204(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "A", "1");
-    s == "1"
-
-@test
-def map205(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "a", "1");
-    s == "a"
-
-@test
-def map206(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "_bc__fgh", "12345678");
-    s == "1bc45fgh"
 
 /////////////////////////////////////////////////////////////////////////////
 // reverse                                                                 //
