@@ -103,7 +103,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   def Root: Rule1[ParsedAst.Root] = {
     def Uses: Rule1[Seq[ParsedAst.Use]] = rule {
-      zeroOrMore(Use ~ optWS ~ ";").separatedBy(optWS)
+      // It is important for documentation comments that whitespace is not consumed if no uses are present
+      optWS ~ oneOrMore(Use ~ optWS ~ ";").separatedBy(optWS) | push(Seq.empty)
     }
 
     def Decls: Rule1[Seq[ParsedAst.Declaration]] = rule {
@@ -111,7 +112,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     rule {
-      optWS ~ SP ~ Uses ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.Root
+      SP ~ Uses ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.Root
     }
   }
 
@@ -135,7 +136,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Namespace: Rule1[ParsedAst.Declaration.Namespace] = {
       def Uses: Rule1[Seq[ParsedAst.Use]] = rule {
-        zeroOrMore(Use ~ optWS ~ ";").separatedBy(optWS)
+        // It is important for documentation comments that whitespace is not consumed if no uses are present
+        optWS ~ oneOrMore(Use ~ optWS ~ ";").separatedBy(optWS) | push(Seq.empty)
       }
 
       def Decls: Rule1[Seq[ParsedAst.Declaration]] = rule {
@@ -143,7 +145,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        optWS ~ SP ~ keyword("namespace") ~ WS ~ Names.Namespace ~ optWS ~ '{' ~ optWS ~ Uses ~ Decls ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
+        optWS ~ SP ~ keyword("namespace") ~ WS ~ Names.Namespace ~ optWS ~ '{' ~ Uses ~ Decls ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
       }
     }
 
@@ -637,7 +639,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRegion | LetMatch | LetMatchStar | LetRecDef |LetUse | LetImport | IfThenElse | Reify | ReifyBool |
+      LetRegion | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
         ReifyType | ReifyEff | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
@@ -1648,8 +1650,22 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     quiet(oneOrMore(" " | "\t" | NewLine | Comment))
   }
 
+  def PossibleDocComment: Rule1[Option[ParsedAst.Doc]] = rule {
+    Comments.DocCommentBlock ~> { Some(_) } | Comment ~ push(None)
+  }
+
   def optWS: Rule0 = rule {
     quiet(optional(WS))
+  }
+
+  def PureWS: Rule0 = rule {
+    zeroOrMore(" " | "\t" | NewLine)
+  }
+
+  def ToplevelOptWS: Rule1[Seq[ParsedAst.Doc]] = rule {
+    PureWS ~ zeroOrMore(PossibleDocComment).separatedBy(PureWS) ~ PureWS ~> {
+      (s: Seq[Option[ParsedAst.Doc]]) => s.flatten
+    }
   }
 
   def NewLine: Rule0 = rule {
@@ -1663,24 +1679,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /**
     * Optionally a parses a documentation comment.
     */
-  def Documentation: Rule1[ParsedAst.Doc] = {
-    // Matches real whitespace.
-    def PureWS: Rule0 = rule {
-      quiet(zeroOrMore(" " | "\t" | NewLine))
-    }
-
-    // Matches triple dashed comments.
-    def TripleSlash: Rule1[Seq[String]] = rule {
-      oneOrMore(PureWS ~ atomic("///") ~ (capture(zeroOrMore(!NewLine ~ ANY)) ~ (NewLine | EOI)))
-    }
-
-    // Optionally matches a triple dashed comment and then any whitespace.
-    rule {
-      SP ~ optional(TripleSlash) ~ SP ~ optWS ~> (
-        (sp1: SourcePosition, o: Option[Seq[String]], sp2: SourcePosition) => o match {
-          case None => ParsedAst.Doc(sp1, Seq.empty, sp2)
-          case Some(lines) => ParsedAst.Doc(sp1, lines, sp2)
-        })
+  def Documentation: Rule1[ParsedAst.Doc] = rule {
+    SP ~ ToplevelOptWS ~ SP ~> {
+      (sp1: SourcePosition, seq: Seq[ParsedAst.Doc], sp2: SourcePosition) =>
+        seq.lastOption.getOrElse(ParsedAst.Doc(sp1, Seq.empty, sp2))
     }
   }
 
@@ -1710,6 +1712,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SlashStar ~ zeroOrMore(!StarSlash ~ ANY) ~ StarSlash
       }
+    }
+
+    def DocCommentLine: Rule1[String] = rule {
+      atomic("///") ~ capture(zeroOrMore(!NewLine ~ ANY)) ~ (NewLine | EOI)
+    }
+
+    def DocCommentBlock: Rule1[ParsedAst.Doc] = rule {
+      SP ~ oneOrMore(DocCommentLine).separatedBy(zeroOrMore(" " | "\t")) ~ SP ~> ParsedAst.Doc
     }
   }
 
