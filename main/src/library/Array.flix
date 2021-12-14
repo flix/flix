@@ -1230,17 +1230,6 @@ namespace Array {
         init2(i -> a[i], length(a))
 
     ///
-    /// Returns an array where the element at index `i` is `f(a[i], b[i])`.
-    ///
-    /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
-    ///
-    @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
-    @Deprecated
-    pub def map2(f: (a, b) -> c & ef, a: Array[a], b: Array[b]): Array[c] & Impure =
-        let len = Int32.min(length(a), length(b));
-        init(i -> f(a[i], b[i]), len)
-
-    ///
     /// Concatenates the results of applying `f` pairwise to the elements of `a` and `b`,
     /// ignoring additional elements of the longer array.
     ///

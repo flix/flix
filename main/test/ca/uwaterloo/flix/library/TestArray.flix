@@ -2966,40 +2966,6 @@ def unzip04(): Bool & Impure =
     Array.sameElements(a, [1,2,3]) and Array.sameElements(b, [true,true,false])
 
 /////////////////////////////////////////////////////////////////////////////
-// map2                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def map201(): Bool & Impure =
-    let arr = Array.map2((a, b) -> if (b) a+1 else a, [], []);
-    Array.sameElements(arr, []: Array[Int32])
-
-@test
-def map202(): Bool & Impure =
-    let arr = Array.map2((a, b) -> if (b) a+1 else a, [1], []);
-    Array.sameElements(arr, []: Array[Int32])
-
-@test
-def map203(): Bool & Impure =
-    let arr = Array.map2((a, b) -> if (b) a+1 else a, [], [true]);
-    Array.sameElements(arr, []: Array[Int32])
-
-@test
-def map204(): Bool & Impure =
-    let arr = Array.map2((a, b) -> if (b) a+1 else a, [1], [true]);
-    Array.sameElements(arr, [2])
-
-@test
-def map205(): Bool & Impure =
-    let arr = Array.map2((a, b) -> if (b) a+1 else a, [1], [false]);
-    Array.sameElements(arr, [1])
-
-@test
-def map206(): Bool & Impure =
-    let arr = Array.map2((a, b) -> if (b) a+1 else a, [1,2,3,4,5,6,7,8], [false,true,true,false,false,true,true,true]);
-    Array.sameElements(arr, [1,3,4,4,5,7,8,9])
-
-/////////////////////////////////////////////////////////////////////////////
 // flatMap2                                                                //
 /////////////////////////////////////////////////////////////////////////////
 
