@@ -94,42 +94,6 @@ def map02(): Bool = Option.map(i -> 2*i, Some(1)) == Some(2)
 def map03(): Bool = Option.map(i -> 2*i, Some(2)) == Some(4)
 
 /////////////////////////////////////////////////////////////////////////////
-// map2                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def map201(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, None, None) == None
-
-@test
-def map202(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), None) == None
-
-@test
-def map203(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, None, Some(true)) == None
-
-@test
-def map204(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), Some(true)) == Some(2)
-
-@test
-def map205(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), Some(false)) == Some(3)
-
-/////////////////////////////////////////////////////////////////////////////
-// flatMap2                                                                //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def flatMap201(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, None, None) == None
-
-@test
-def flatMap202(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, Some(5), None) == None
-
-@test
-def flatMap203(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, None, Some(true)) == None
-
-@test
-def flatMap204(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, Some(1), Some(false)) == None
-
-@test
-def flatMap205(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, Some(1), Some(true)) == Some(2)
-
-/////////////////////////////////////////////////////////////////////////////
 // toList                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
