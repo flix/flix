@@ -1230,16 +1230,6 @@ namespace Array {
         init2(i -> a[i], length(a))
 
     ///
-    /// Concatenates the results of applying `f` pairwise to the elements of `a` and `b`,
-    /// ignoring additional elements of the longer array.
-    ///
-    @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
-    @Deprecated
-    pub def flatMap2(f: (a, b) -> Array[c] & ef, a: Array[a], b: Array[b]): Array[c] & Impure =
-        let len = Int32.min(length(a), length(b));
-        init(i -> f(a[i], b[i]), len) |> flatten
-
-    ///
     /// Alias for `foldLeft2`.
     ///
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f))
