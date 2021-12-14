@@ -391,7 +391,6 @@ def mapWithIndex07(): Bool =
     let test = (c,i) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
     String.mapWithIndex(test, "Ab") == "tF"
 
-
 /////////////////////////////////////////////////////////////////////////////
 // reverse                                                                 //
 /////////////////////////////////////////////////////////////////////////////
