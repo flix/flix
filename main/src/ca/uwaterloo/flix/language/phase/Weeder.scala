@@ -1241,7 +1241,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e, rs) => WeededAst.Expression.TryCatch(e, rs, mkSL(sp1, sp2))
       }
 
-    // TODO SJ: Rewrite to Ascribe(newch, Channel[Int]), to remove the tpe (and get tvar like everything else)
+    // TODO SJ: Rewrite to Ascribe(newch, Channel[Int32]), to remove the tpe (and get tvar like everything else)
     // TODO SJ: Also do not allow function types (Arrow) when rewriting
     case ParsedAst.Expression.NewChannel(sp1, tpe, exp, sp2) =>
       visitExp(exp) map {
@@ -1909,6 +1909,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val e = WeededAst.Expression.Apply(b, as, loc)
           WeededAst.Predicate.Body.Guard(e, loc)
       }
+
+    case ParsedAst.Predicate.Body.Loop(sp1, idents, exp, sp2) =>
+      mapN(visitExp(exp)) {
+        case e => WeededAst.Predicate.Body.Loop(idents.toList, e, mkSL(sp1, sp2))
+      }
+
   }
 
   /**
@@ -1950,14 +1956,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case args =>
         past.ident.name match {
           case "benchmark" => WeededAst.Annotation(Ast.Annotation.Benchmark(loc), args, loc).toSuccess
-          case "law" => WeededAst.Annotation(Ast.Annotation.Law(loc), args, loc).toSuccess
-          case "lint" => WeededAst.Annotation(Ast.Annotation.Lint(loc), args, loc).toSuccess
           case "test" => WeededAst.Annotation(Ast.Annotation.Test(loc), args, loc).toSuccess
           case "Deprecated" => WeededAst.Annotation(Ast.Annotation.Deprecated(loc), args, loc).toSuccess
-          case "LazyWhenPure" => WeededAst.Annotation(Ast.Annotation.LazyWhenPure(loc), args, loc).toSuccess
+          case "Experimental" => WeededAst.Annotation(Ast.Annotation.Experimental(loc), args, loc).toSuccess
+          case "Parallel" => WeededAst.Annotation(Ast.Annotation.Parallel(loc), args, loc).toSuccess
           case "ParallelWhenPure" => WeededAst.Annotation(Ast.Annotation.ParallelWhenPure(loc), args, loc).toSuccess
-          case "Time" => WeededAst.Annotation(Ast.Annotation.Time(loc), args, loc).toSuccess
+          case "Lazy" => WeededAst.Annotation(Ast.Annotation.Lazy(loc), args, loc).toSuccess
+          case "LazyWhenPure" => WeededAst.Annotation(Ast.Annotation.LazyWhenPure(loc), args, loc).toSuccess
           case "Space" => WeededAst.Annotation(Ast.Annotation.Space(loc), args, loc).toSuccess
+          case "Time" => WeededAst.Annotation(Ast.Annotation.Time(loc), args, loc).toSuccess
+          case "Unsafe" => WeededAst.Annotation(Ast.Annotation.Unsafe(loc), args, loc).toSuccess
           case name => WeederError.UndefinedAnnotation(name, loc).toFailure
         }
     }

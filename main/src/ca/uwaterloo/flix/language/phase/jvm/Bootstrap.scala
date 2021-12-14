@@ -39,7 +39,7 @@ object Bootstrap {
       //
       // Decorate each defn in the ast with its method object.
       //
-      for ((sym, defn) <- root.defs; if JvmOps.nonLaw(defn)) {
+      for ((sym, defn) <- root.defs) {
         // Retrieve the namespace info of sym.
         val nsInfo = JvmOps.getNamespace(sym)
 

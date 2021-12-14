@@ -1027,22 +1027,31 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       for {
         e <- visitExp(exp, outerEnv ++ headEnv0 ++ ruleEnv0, uenv0, tenv0)
       } yield NamedAst.Predicate.Body.Guard(e, loc)
+
+    case WeededAst.Predicate.Body.Loop(idents, exp, loc) =>
+      val varSyms = idents.map(ident => headEnv0(ident.name))
+      for {
+        e <- visitExp(exp, outerEnv ++ headEnv0 ++ ruleEnv0, uenv0, tenv0)
+      } yield NamedAst.Predicate.Body.Loop(varSyms, e, loc)
+
   }
 
   /**
     * Returns the identifiers that are visible in the head scope by the given body predicate `p0`.
     */
   private def visibleInHeadScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-    case WeededAst.Predicate.Body.Atom(_, den, polarity, terms, loc) => terms.flatMap(freeVars)
-    case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
+    case WeededAst.Predicate.Body.Atom(_, _, _, terms, _) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Guard(exp, _) => Nil
+    case WeededAst.Predicate.Body.Loop(idents, _, _) => idents
   }
 
   /**
     * Returns the identifiers that are visible in the rule scope by the given body predicate `p0`.
     */
   private def visibleInRuleScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-    case WeededAst.Predicate.Body.Atom(_, den, polarity, terms, loc) => terms.flatMap(freeVars)
-    case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
+    case WeededAst.Predicate.Body.Atom(_, _, _, terms, _) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Guard(_, _) => Nil
+    case WeededAst.Predicate.Body.Loop(_, _, _) =>  Nil
   }
 
   /**
@@ -1422,8 +1431,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the free variables in the given body predicate `b0`.
     */
   private def freeVarsBodyPred(b0: WeededAst.Predicate.Body): List[Name.Ident] = b0 match {
-    case WeededAst.Predicate.Body.Atom(_, den, polarity, terms, loc) => terms.flatMap(freeVars)
-    case WeededAst.Predicate.Body.Guard(exp, loc) => freeVars(exp)
+    case WeededAst.Predicate.Body.Atom(_, _, _, terms, _) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Guard(exp, _) => freeVars(exp)
+    case WeededAst.Predicate.Body.Loop(_, exp, _) => freeVars(exp)
   }
 
   /**

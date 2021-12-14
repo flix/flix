@@ -402,6 +402,11 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         for {
           e <- checkPats(exp, root)
         } yield b0
+
+      case TypedAst.Predicate.Body.Loop(_, exp, loc) =>
+        for {
+          e <- checkPats(exp, root)
+        } yield b0
     }
 
     /**

@@ -2146,17 +2146,21 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
       } yield (tconstrs, Type.mkSchemaRowExtend(pred, predicateType, restRow, loc))
 
-    //
-    //  exp : Bool
-    //  ----------
-    //  if exp : a
-    //
     case KindedAst.Predicate.Body.Guard(exp, loc) =>
-      // Infer the types of the terms.
       for {
         (constrs, tpe, eff) <- inferExp(exp, root)
         expEff <- unifyBoolM(Type.Pure, eff, loc)
         expTyp <- unifyTypeM(Type.Bool, tpe, loc)
+      } yield (constrs, mkAnySchemaRowType(loc))
+
+    case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
+      // TODO: Use type classes instead of array?
+      val tupleType = Type.mkTuple(varSyms.map(_.tvar.ascribedWith(Kind.Star)), loc)
+      val expectedType = Type.mkArray(tupleType, loc)
+      for {
+        (constrs, tpe, eff) <- inferExp(exp, root)
+        expEff <- unifyBoolM(Type.Pure, eff, loc)
+        expTyp <- unifyTypeM(expectedType, tpe, loc)
       } yield (constrs, mkAnySchemaRowType(loc))
   }
 
@@ -2171,6 +2175,11 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     case KindedAst.Predicate.Body.Guard(exp, loc) =>
       val e = reassembleExp(exp, root, subst0)
       TypedAst.Predicate.Body.Guard(e, loc)
+
+    case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
+      val e = reassembleExp(exp, root, subst0)
+      TypedAst.Predicate.Body.Loop(varSyms, e, loc)
+
   }
 
   /**

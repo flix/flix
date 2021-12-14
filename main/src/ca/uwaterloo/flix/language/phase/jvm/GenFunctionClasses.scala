@@ -38,7 +38,7 @@ object GenFunctionClasses {
     // Generate a function class for each def and collect the results in a map.
     //
     ParOps.parAgg(defs, Map.empty[JvmName, JvmClass])({
-      case (macc, (sym, defn)) if JvmOps.nonLaw(defn) =>
+      case (macc, (sym, defn)) =>
         flix.subtask(sym.toString, sample = true)
 
         // `JvmType` of the interface for `def.tpe`
@@ -50,8 +50,6 @@ object GenFunctionClasses {
         // Name of the class
         val className = classType.name
         macc + (className -> JvmClass(className, genByteCode(classType, functionInterface, defn)))
-
-      case (macc, (_, _)) => macc
     }, _ ++ _)
   }
 

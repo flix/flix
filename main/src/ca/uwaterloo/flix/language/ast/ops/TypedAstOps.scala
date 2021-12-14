@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.ast.ops
 
-import ca.uwaterloo.flix.language.ast.Ast.Annotation.{Benchmark, Law, Lint, Test}
+import ca.uwaterloo.flix.language.ast.Ast.Annotation.{Benchmark, Test}
 import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
@@ -264,8 +264,9 @@ object TypedAstOps {
       * Finds the holes and hole contexts in the given body predicate `b0`.
       */
     def visitBody(b0: Predicate.Body, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = b0 match {
-      case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) => Map.empty
-      case Predicate.Body.Guard(exp, loc) => visitExp(exp, env0)
+      case Predicate.Body.Atom(_, _, _, _, _, _) => Map.empty
+      case Predicate.Body.Guard(exp, _) => visitExp(exp, env0)
+      case Predicate.Body.Loop(_, exp, _) => visitExp(exp, env0)
     }
 
     /**
@@ -418,20 +419,6 @@ object TypedAstOps {
     */
   def isBenchmark(xs: List[Annotation]): Boolean = xs.exists {
     case Annotation(name, _, _) => name.isInstanceOf[Benchmark]
-  }
-
-  /**
-    * Returns `true` if the given annotations contains the [[Law]] annotation.
-    */
-  def isLaw(xs: List[Annotation]): Boolean = xs.exists {
-    case Annotation(name, _, _) => name.isInstanceOf[Law]
-  }
-
-  /**
-    * Returns `true` if the given annotations contains the [[Lint]] annotation.
-    */
-  def isLint(xs: List[Annotation]): Boolean = xs.exists {
-    case Annotation(name, _, _) => name.isInstanceOf[Lint]
   }
 
   /**
@@ -737,6 +724,7 @@ object TypedAstOps {
         case (acc, term) => acc ++ freeVars(term)
       }
     case Body.Guard(exp, _) => freeVars(exp)
+    case Body.Loop(_, exp, _) => freeVars(exp)
   }
 
 

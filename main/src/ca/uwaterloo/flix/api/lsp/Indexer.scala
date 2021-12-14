@@ -398,6 +398,7 @@ object Indexer {
   private def visitBody(b0: Predicate.Body): Index = b0 match {
     case Body.Atom(pred, _, _, terms, _, _) => Index.occurrenceOf(pred) ++ Index.useOf(pred) ++ visitPats(terms)
     case Body.Guard(exp, _) => visitExp(exp)
+    case Body.Loop(_, exp, _) => visitExp(exp)
   }
 
   /**

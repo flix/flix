@@ -31,7 +31,7 @@ instance ToString[Nel[a]] with ToString[a] {
 }
 
 instance Hash[Nel[a]] with Hash[a] {
-    pub def hash(l: Nel[a]): Int = match l {
+    pub def hash(l: Nel[a]): Int32 = match l {
         case Nel(x, xs) => 39119 + Hash.hash(xs) + Hash.hash(x)
     }
 }
@@ -123,7 +123,7 @@ namespace Nel {
     /// Returns the length of `xs`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def length(xs: Nel[a]): Int = match xs {
+    pub def length(xs: Nel[a]): Int32 = match xs {
         case Nel(_, l) => 1 + List.length(l)
     }
 
