@@ -107,6 +107,15 @@ object Ast {
     }
 
     /**
+      * An annotation that marks a construct as experimental.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Experimental(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Experimental"
+    }
+
+    /**
       * An annotation that marks a function definition as using parallel evaluation.
       *
       * @param loc the source location of the annotation.

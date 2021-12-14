@@ -1065,6 +1065,7 @@ namespace List {
     /// Functionally equivalent to zipWith.
     ///
     @Time(time(f) * Int32.min(length(xs), length(ys))) @Space(space(f) * Int32.min(length(xs), length(ys)))
+    @Deprecated
     pub def map2(f: (a, b) -> c & ef, xs: List[a], ys: List[b]): List[c] & ef = zipWith(f, xs, ys)
 
     ///
@@ -1073,6 +1074,7 @@ namespace List {
     ///
     ///
     @Time(time(f) * Int32.min(length(xs), length(ys))) @Space(space(f) * Int32.min(length(xs), length(ys)))
+    @Deprecated
     pub def flatMap2(f: (a, b) -> List[c] & ef, xs: List[a], ys: List[b]): List[c] & ef = flatMap2Helper(f, xs, ys, ks -> ks)
 
     ///

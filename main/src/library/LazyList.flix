@@ -82,6 +82,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def toString(l: LazyList[a]): String with ToString[a] =
         toStringHelper(l) as & Pure
 
@@ -97,6 +98,7 @@ namespace LazyList {
     ///
     /// Returns an empty LazyList.
     ///
+    @Experimental
     pub def empty(): LazyList[a] = ENil
 
     ///
@@ -104,6 +106,7 @@ namespace LazyList {
     ///
     /// Does not force the tail of `l`.
     ///
+    @Experimental
     pub def isEmpty(l: LazyList[a]): Bool = match l {
         case ENil      => true
         case LList(xs) => isEmpty(force xs)
@@ -117,6 +120,7 @@ namespace LazyList {
     ///
     /// Does not force the tail of `l`.
     ///
+    @Experimental
     pub def head(l: LazyList[a]): Option[a] = match l {
         case ENil        => None
         case ECons(x, _) => Some(x)
@@ -131,6 +135,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def last(l: LazyList[a]): Option[a] = match l {
         case ENil         => None
         case ECons(x, xs) => if (isEmpty(      xs)) Some(x) else last(      xs)
@@ -141,6 +146,7 @@ namespace LazyList {
     ///
     /// Returns `l` without the first element.
     ///
+    @Experimental
     pub def tail(l: LazyList[a]): LazyList[a] = match l {
         case ENil         => ENil
         case ECons(_, xs) => xs
@@ -153,6 +159,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def length(l: LazyList[a]): Int32 =
         lengthAcc(l, 0)
 
@@ -171,7 +178,7 @@ namespace LazyList {
     ///
     /// Does not force the tail of `l`.
     ///
-    @Lazy
+    @Lazy @Experimental
     pub def append(l1: LazyList[a], l2: LazyList[a]): LazyList[a] = match l1 {
         case ENil         => l2
         case ECons(x, xs) => LCons(x, lazy append(      xs, l2))
@@ -184,6 +191,7 @@ namespace LazyList {
     ///
     /// Forces elements until `a` is found.
     ///
+    @Experimental
     pub def memberOf(a: a, l: LazyList[a]): Bool with Eq[a] = match l {
         case ENil         => false
         case ECons(x, xs) => x == a or memberOf(a,       xs)
@@ -198,6 +206,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def minimum(l: LazyList[a]): Option[a] with Order[a] =
         reduceLeft(Order.min, l)
 
@@ -208,6 +217,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def minimumBy(cmp: (a, a) -> Comparison, l: LazyList[a]): Option[a] =
         reduceLeft(Order.minBy(cmp), l)
 
@@ -218,6 +228,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def maximum(l: LazyList[a]): Option[a] with Order[a] =
         reduceLeft(Order.max, l)
 
@@ -228,6 +239,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def maximumBy(cmp: (a, a) -> Comparison, l: LazyList[a]): Option[a] =
         reduceLeft(Order.maxBy(cmp), l)
 
@@ -236,6 +248,7 @@ namespace LazyList {
     ///
     /// Forces elements of `l` until the predicate `f` is satisfied.
     ///
+    @Experimental
     pub def findLeft(f: a -> Bool & ef, l: LazyList[a]): Option[a] & ef = match l {
         case ENil         => None
         case ECons(x, xs) => if (f(x)) Some(x) else findLeft(f,       xs)
@@ -246,6 +259,7 @@ namespace LazyList {
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
+    @Experimental
     pub def findRight(f: a -> Bool & ef, l: LazyList[a]): Option[a] & ef =
         findRightAcc(x -> if (f(x)) Some(x) else None, l, (o, _) -> o as & ef) // NB: Cast required because the identity continuation is pure,
                                                                                // but the intermediate continuations are effect polymorphic
@@ -265,7 +279,7 @@ namespace LazyList {
     ///
     /// Returns an empty lazy list if `b >= e`.
     ///
-    @Lazy
+    @Experimental @Lazy
     pub def range(b: Int32, e: Int32): LazyList[Int32] =
         LList(lazy rangeHelper(b, e))
 
@@ -281,6 +295,7 @@ namespace LazyList {
     ///
     /// Returns an infinite LazyList of repeating `x`s.
     ///
+    @Experimental
     pub def repeat(x: a): LazyList[a] =
         LList(lazy repeatHelper(x))
 
@@ -293,6 +308,7 @@ namespace LazyList {
     ///
     /// Returns an infinite sequence of integers starting from and including `n`.
     ///
+    @Experimental
     pub def from(n: Int32): LazyList[Int32] =
         LList(lazy fromHelper(n))
 
@@ -310,7 +326,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @LazyWhenPure
+    @Experimental @LazyWhenPure
     pub def map(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef =
         reifyEff(f) {
             case Pure(g) => mapL(g, l)
@@ -374,7 +390,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @LazyWhenPure
+    @Experimental @LazyWhenPure
     pub def mapWithIndex(f: (a, Int32) -> b & ef, l: LazyList[a]): LazyList[b] & ef =
         let f1 = (args) -> f(fst(args), snd(args));
         reifyEff(f1) {
@@ -430,7 +446,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @LazyWhenPure
+    @Experimental @LazyWhenPure
     pub def flatMap(f: a -> LazyList[b] & ef, l: LazyList[a]): LazyList[b] & ef =
         reifyEff(f) {
             case Pure(g) => flatMapL(g, l)
@@ -484,6 +500,7 @@ namespace LazyList {
     ///
     /// Reverses the list `l`.
     ///
+    @Experimental
     pub def reverse(l: LazyList[a]): LazyList[a] =
         LList(lazy reverseAcc(l, ENil))
 
@@ -502,6 +519,7 @@ namespace LazyList {
     ///
     /// Does not force the tail of `l`.
     ///
+    @Experimental
     pub def replace(x: a, y: a, l: LazyList[a]): LazyList[a] with Eq[a] =
         map(e -> if (x == e) y else e, l)
 
@@ -510,6 +528,7 @@ namespace LazyList {
     ///
     /// Forces the first element of the tail of `l2` unless that tail is an `LList`.
     ///
+    @Experimental
     pub def intersperse(x: a, l: LazyList[a]): LazyList[a] = match l {
         case ENil           => ENil
         case ECons(x1, xs)  => if (isEmpty(      xs)) l else LCons(x1, lazy LCons(x, lazy intersperse(x,       xs)))
@@ -524,6 +543,7 @@ namespace LazyList {
     ///
     /// Forces the first element of the tail of `l2` unless that tail is an `LList`.
     ///
+    @Experimental
     pub def intercalate(l1: LazyList[a], l2: LazyList[LazyList[a]]): LazyList[a] = match l2 {
         case ENil           => ENil
         case ECons(x, xs)   => if (isEmpty(      xs)) x else LList(lazy append(append(x, l1), intercalateHelper(l1,       xs)))
@@ -548,6 +568,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: LazyList[a]): b & ef = match l {
         case ENil         => s
         case ECons(x, xs) => foldLeft(f, f(s, x),       xs)
@@ -562,6 +583,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef =
         foldRightAcc(f, s, l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
                                                 // but the intermediate continuations are effect polymorphic
@@ -585,6 +607,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def reduceLeft(f: (a, a) -> a & ef, l: LazyList[a]): Option[a] & ef = match l {
         case ENil         => None
         case ECons(x, xs) => Some(foldLeft(f, x,       xs))
@@ -601,6 +624,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def reduceRight(f: (a, a) -> a & ef, l: LazyList[a]): Option[a] & ef = match l {
         case ENil      => None
         case LList(xs) => reduceRight(f, force xs)
@@ -613,6 +637,7 @@ namespace LazyList {
     ///
     /// `l` must be non-empty.
     ///
+    @Experimental
     def reduceRightAcc(f: (a, a) -> a & ef, l: LazyList[a], k: a -> a & ef): a & ef = match l {
         case ECons(x, xs) => if (isEmpty(      xs)) k(x) else reduceRightAcc(f,       xs, ks -> k(f(x, ks)))
         case LCons(x, xs) => if (isEmpty(force xs)) k(x) else reduceRightAcc(f, force xs, ks -> k(f(x, ks)))
@@ -625,6 +650,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def count(f: a -> Bool & ef, l: LazyList[a]): Int32 & ef =
         foldLeft((i, x) -> if (f(x)) i + 1 else i, 0, l)
 
@@ -633,6 +659,7 @@ namespace LazyList {
     ///
     /// Does not force the tail of `l`.
     ///
+    @Experimental
     pub def flatten(l: LazyList[LazyList[a]]): LazyList[a] = match l {
         case ENil         => ENil
         case ECons(x, xs) => LList(lazy append(x, flattenHelper(      xs)))
@@ -657,6 +684,7 @@ namespace LazyList {
     ///
     /// Forces elements of `l` until the predicate `f` is satisfied.
     ///
+    @Experimental
     pub def exists(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
         case ENil         => false
         case ECons(x, xs) => if (f(x)) true else exists(f,       xs)
@@ -671,6 +699,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def forall(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
         case ENil         => true
         case ECons(x, xs) => if (f(x)) forall(f,       xs) else false
@@ -686,7 +715,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
-    @LazyWhenPure
+    @Experimental @LazyWhenPure
     pub def filter(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
         reifyEff(f) {
             case Pure(g) => filterL(g, l)
@@ -731,6 +760,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def partition(f: a -> Bool & ef, l: LazyList[a]): (LazyList[a], LazyList[a]) & ef =
         partitionAcc(f, l, (ks, ls) -> (ks, ls))
 
@@ -750,6 +780,7 @@ namespace LazyList {
     ///
     /// Forces elements in the list until the first element (inclusive) that does not satisfy the predicate `f`.
     ///
+    @Experimental
     pub def span(f: a -> Bool & ef, l: LazyList[a]): (LazyList[a], LazyList[a]) & ef =
         spanAcc(f, l, (ks, ls) -> (ks, ls))
 
@@ -779,6 +810,7 @@ namespace LazyList {
     ///
     /// Does not force the tail of `l`.
     ///
+    @Experimental
     pub def drop(n: Int32, l: LazyList[a]): LazyList[a] =
         LList(lazy dropHelper(n, l))
 
@@ -804,7 +836,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
-    @LazyWhenPure
+    @Experimental @LazyWhenPure
     pub def dropWhile(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
         reifyEff(f) {
             case Pure(g) => dropWhileL(g, l)
@@ -846,6 +878,7 @@ namespace LazyList {
     ///
     /// Does not force the tail of `l`.
     ///
+    @Experimental
     pub def take(n: Int32, l: LazyList[a]): LazyList[a] =
         LList(lazy takeHelper(n, l))
 
@@ -871,7 +904,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
-    @LazyWhenPure
+    @Experimental @LazyWhenPure
     pub def takeWhile(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
         reifyEff(f) {
             case Pure(g) => takeWhileL(g, l)
@@ -922,6 +955,7 @@ namespace LazyList {
     ///
     /// Does not force the tail of either `l1` or `l2`.
     ///
+    @Experimental
     pub def zip(l1: LazyList[a], l2: LazyList[b]): LazyList[(a, b)] = match (l1, l2) {
         case (ENil, _)                    => ENil
         case (_, ENil)                    => ENil
@@ -960,6 +994,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tails are not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. both lists `l1` and `l2` are forced).
     ///
+    @Experimental
     pub def zipWith(f: (a, b) -> c & ef, l1: LazyList[a], l2: LazyList[b]): LazyList[c] & ef =
         map((x) -> f(fst(x), snd(x)), zip(l1, l2))
 
@@ -1035,6 +1070,7 @@ namespace LazyList {
     ///
     /// Forces elements of `l` until `f(x)` returns `Some(v)`.
     ///
+    @Experimental
     pub def findMap(f: a -> Option[b] & ef, l: LazyList[a]): Option[b] & ef = match l {
         case ENil         => None
         case ECons(x, xs) => match f(x) {
@@ -1053,6 +1089,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def toArray(l: LazyList[a]): Array[a] & Impure =
         let a = Array.new($DEFAULT$, length(l));
         let f = (i, y) -> { a[i] = y; i + 1 };
@@ -1064,6 +1101,7 @@ namespace LazyList {
     ///
     /// Does not force any elements of the list.
     ///
+    @Experimental
     pub def toIterator(l: LazyList[a]): Iterator[a] & Impure =
         let cursor = ref l;
         let done = () -> match head(deref cursor) {
@@ -1083,6 +1121,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def toList(l: LazyList[a]): List[a] =
         toListAcc(l, ks -> ks)
 
@@ -1104,6 +1143,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def toMap(l: LazyList[(a, b)]): Map[a, b] with Order[a] =
         toMapAcc(l, Map.empty())
 
@@ -1122,6 +1162,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def toSet(l: LazyList[a]): Set[a] with Order[a] =
         toSetAcc(l, Set.empty())
 
@@ -1140,6 +1181,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def sum(l: LazyList[Int32]): Int32 =
         sumAcc(l, 0)
 

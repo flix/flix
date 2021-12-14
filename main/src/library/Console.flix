@@ -102,6 +102,7 @@ namespace Console {
         ///
         /// Prints the given string `s` to the standard error stream.
         ///
+        @Deprecated
         pub def print(s: String): Unit & Impure =
             import java.io.PrintStream.print(String);
             s |> print(getErrorStream())
@@ -109,6 +110,7 @@ namespace Console {
         ///
         /// Prints the given string `s` and a newline to the standard error stream.
         ///
+        @Deprecated
         pub def printLine(s: String): Unit & Impure =
             import java.io.PrintStream.println(String);
             s |> println(getErrorStream())
@@ -116,6 +118,7 @@ namespace Console {
         ///
         /// Prints a newline to the standard error stream.
         ///
+        @Deprecated
         pub def newLine(): Unit & Impure =
             import java.io.PrintStream.println();
             getErrorStream() |> println
@@ -123,6 +126,7 @@ namespace Console {
         ///
         /// Flushes the standard error stream.
         ///
+        @Deprecated
         pub def flush(): Unit & Impure =
             import java.io.PrintStream.flush();
             getErrorStream() |> flush
