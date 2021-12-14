@@ -412,21 +412,30 @@ namespace File {
             import new java.io.File(String) as newFile;
             import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
             import java.io.PrintWriter.println(String);
-            import java.io.PrintWriter.close();
             import java.io.PrintWriter.checkError();
+
+            let alreadyExists = File.exists(f);
 
             let javaFile = newFile(f);
             let w = newPrintWriter(javaFile);
 
             Foldable.foldLeft((_, line) -> println(w, line), (), data);
-            close(w);
 
-            Ok(Bool.not(checkError(w)))
+            if (checkError(w)) {
+                Err("An error happened when writing lines to the file: "+f)
+            }
+            else {
+                match alreadyExists {
+                    case Ok(exists) => Ok(not exists)
+                    case Err(mes)   => Err(mes)
+                }
+            }
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(ex))
         }
+
 
     ///
     /// Appends `data` to the given file `f`.
