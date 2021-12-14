@@ -169,6 +169,15 @@ object Ast {
       override def toString: String = "@Time"
     }
 
+    /**
+      * An annotation that marks a function definition as being inherently unsafe.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Unsafe(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Unsafe"
+    }
+
   }
 
   /**

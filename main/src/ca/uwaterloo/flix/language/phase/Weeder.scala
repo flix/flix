@@ -1965,6 +1965,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case "LazyWhenPure" => WeededAst.Annotation(Ast.Annotation.LazyWhenPure(loc), args, loc).toSuccess
           case "Space" => WeededAst.Annotation(Ast.Annotation.Space(loc), args, loc).toSuccess
           case "Time" => WeededAst.Annotation(Ast.Annotation.Time(loc), args, loc).toSuccess
+          case "Unsafe" => WeededAst.Annotation(Ast.Annotation.Unsafe(loc), args, loc).toSuccess
           case name => WeederError.UndefinedAnnotation(name, loc).toFailure
         }
     }
