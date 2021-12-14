@@ -1058,26 +1058,6 @@ namespace List {
     }
 
     ///
-    /// Returns a list where the element at index `i` is `f(a, b)` where
-    /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
-    ///
-    /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
-    /// Functionally equivalent to zipWith.
-    ///
-    @Time(time(f) * Int32.min(length(xs), length(ys))) @Space(space(f) * Int32.min(length(xs), length(ys)))
-    @Deprecated
-    pub def map2(f: (a, b) -> c & ef, xs: List[a], ys: List[b]): List[c] & ef = zipWith(f, xs, ys)
-
-    ///
-    /// Concatenates the results of applying `f` pairwise to the elements of `xs` and `ys`,
-    /// ignoring additional elements of the longer list.
-    ///
-    ///
-    @Time(time(f) * Int32.min(length(xs), length(ys))) @Space(space(f) * Int32.min(length(xs), length(ys)))
-    @Deprecated
-    pub def flatMap2(f: (a, b) -> List[c] & ef, xs: List[a], ys: List[b]): List[c] & ef = flatMap2Helper(f, xs, ys, ks -> ks)
-
-    ///
     /// Helper function for `flatMap2`.
     ///
     def flatMap2Helper(f: (a, b) -> List[c] & ef, xs: List[a], ys: List[b], k: List[c] -> List[c]): List[c] & ef = match (xs, ys) {
