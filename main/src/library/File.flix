@@ -448,17 +448,26 @@ namespace File {
             import new java.io.FileWriter(##java.io.File, Bool) as newFileWriter;
             import new java.io.PrintWriter(##java.io.Writer) as newPrintWriter;
             import java.io.PrintWriter.println(String);
-            import java.io.PrintWriter.close();
             import java.io.PrintWriter.checkError();
 
+            let alreadyExists = File.exists(f);
+
             let javaFile = newFile(f);
+            // 2nd parameter `true` is for append.
             let fileWriter = newFileWriter(javaFile, true);
             let printWriter = newPrintWriter(fileWriter as ##java.io.Writer);
 
             println(printWriter, "${data}");
-            close(printWriter);
 
-            Ok(Bool.not(checkError(printWriter)))
+            if (checkError(printWriter)) {
+                Err("An error happened when appending to the file: "+f)
+            }
+            else {
+                match alreadyExists {
+                    case Ok(exists) => Ok(not exists)
+                    case Err(mes)   => Err(mes)
+                }
+            }
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
@@ -476,21 +485,31 @@ namespace File {
             import new java.io.FileWriter(##java.io.File, Bool) as newFileWriter;
             import new java.io.PrintWriter(##java.io.Writer) as newPrintWriter;
             import java.io.PrintWriter.println(String);
-            import java.io.PrintWriter.close();
             import java.io.PrintWriter.checkError();
 
+            let alreadyExists = File.exists(f);
+
             let javaFile = newFile(f);
+            // 2nd parameter `true` is for append.
             let fileWriter = newFileWriter(javaFile, true);
             let printWriter = newPrintWriter(fileWriter as ##java.io.Writer);
 
             Foldable.foldLeft((_, line) -> println(printWriter, line), (), data);
-            close(printWriter);
 
-            Ok(Bool.not(checkError(printWriter)))
+            if (checkError(printWriter)) {
+                Err("An error happened when appending to the file: "+f)
+            }
+            else {
+                match alreadyExists {
+                    case Ok(exists) => Ok(not exists)
+                    case Err(mes)   => Err(mes)
+                }
+            }
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(ex))
         }
+
 
 }
