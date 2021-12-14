@@ -28,6 +28,6 @@ namespace Fixpoint/Ast {
                         "${head}."
                     else
                         "${head} :- ${commaSeparate(body)}."
-            }
+            } as & Pure
     }
 }

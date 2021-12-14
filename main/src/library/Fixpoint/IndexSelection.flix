@@ -58,7 +58,7 @@ namespace Fixpoint {
     ///
     /// Step 1 and Step 2 are implemented as one pass.
     ///
-    pub def queryStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {
+    pub def queryStmt(stmt: RamStmt[v]): RamStmt[v] & Impure = match stmt {
         case RamStmt.Insert(op) =>
             let (innerOp, ground) = queryOp(op, Set#{});
             if (List.isEmpty(ground))
@@ -68,7 +68,7 @@ namespace Fixpoint {
         case RamStmt.Merge(_, _) => stmt
         case RamStmt.Assign(_, _) => stmt
         case RamStmt.Purge(_) => stmt
-        case RamStmt.Seq(xs) => RamStmt.Seq(Array.map(queryStmt, xs)) as & Pure
+        case RamStmt.Seq(xs) => RamStmt.Seq(Array.map(queryStmt, xs))
         case RamStmt.Until(test, body) => RamStmt.Until(test, queryStmt(body))
         case RamStmt.Comment(_) => stmt
     }
@@ -78,7 +78,7 @@ namespace Fixpoint {
     /// `freeVars` is the set of variables bound by an outer loop.
     /// Returns the optimized op and the conditions that occur in `op` that have to be hoisted.
     ///
-    def queryOp(op: RelOp[v], freeVars: Set[RowVar]): (RelOp[v], List[BoolExp[v]]) = match op {
+    def queryOp(op: RelOp[v], freeVars: Set[RowVar]): (RelOp[v], List[BoolExp[v]]) & Impure = match op {
         case RelOp.Search(var, ramSym, body) =>
             use Fixpoint/Ram.BoolExp.Eq;
             use Fixpoint/Ram.RamTerm.{RowLoad, Lit};
@@ -116,7 +116,7 @@ namespace Fixpoint {
                         case Eq(RamTerm.RowLoad(_, j), rhs) => (j, rhs)
                         case _ => ???
                     }, prefixQuery) |>
-                    List.toArray) as & Pure;
+                    List.toArray);
                 if (List.isEmpty(test))
                     let search = RelOp.Query(var, ramSym, query, innerOp);
                     (search, ground)
@@ -156,9 +156,9 @@ namespace Fixpoint {
     ///
     /// An expression is ground if all its terms are ground.
     ///
-    def isExpGround(freeVars: Set[RowVar], exp: BoolExp[v]): Bool = match exp {
+    def isExpGround(freeVars: Set[RowVar], exp: BoolExp[v]): Bool & Impure = match exp {
         case BoolExp.Empty(_) => true
-        case BoolExp.NotMemberOf(terms, _) => Array.forall(isTermGround(freeVars), terms) as & Pure
+        case BoolExp.NotMemberOf(terms, _) => Array.forall(isTermGround(freeVars), terms)
         case BoolExp.Eq(lhs, rhs) => isTermGround(freeVars, lhs) and isTermGround(freeVars, rhs)
         case BoolExp.Leq(_, lhs, rhs) => isTermGround(freeVars, lhs) and isTermGround(freeVars, rhs)
         case BoolExp.Guard0(_) => true

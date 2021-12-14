@@ -751,7 +751,7 @@ namespace List {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(xs)) @Space(space(f))
-    pub def forall(f: a -> Bool, xs: List[a]): Bool = match xs {
+    pub def forall(f: a -> Bool & ef, xs: List[a]): Bool & ef = match xs {
         case Nil => true
         case x :: rs => if (not f(x)) false else forall(f, rs)
     }
@@ -824,12 +824,12 @@ namespace List {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def partition(f: a -> Bool, xs: List[a]): (List[a], List[a]) = partitionHelper(f, xs, (ks, ls) -> (ks, ls))
+    pub def partition(f: a -> Bool & ef, xs: List[a]): (List[a], List[a]) & ef = partitionHelper(f, xs, (ks, ls) -> (ks, ls))
 
     ///
     /// Helper function for `partition`.
     ///
-    def partitionHelper(f: a -> Bool, xs: List[a], k: (List[a], List[a]) -> (List[a], List[a])): (List[a], List[a]) = match xs {
+    def partitionHelper(f: a -> Bool & ef, xs: List[a], k: (List[a], List[a]) -> (List[a], List[a])): (List[a], List[a]) & ef = match xs {
         case Nil => k(Nil, Nil)
         case x :: rs =>
                 if (f(x))

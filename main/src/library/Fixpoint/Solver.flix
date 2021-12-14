@@ -32,15 +32,15 @@ namespace Fixpoint {
     /// The stratification is computed automatically by the solver.
     ///
     pub def solve(d: Datalog[v]): Datalog[v] with Order[v], ToString[v] =
-        stratify(d) |>
-        solveWithStratification(d)
+        (stratify(d) |>
+        solveWithStratification(d)) as & Pure
 
     ///
     /// Returns the minimal model of the given Datalog program `d`.
     /// The minimal model is given by the model semantics for Datalog programs with stratified negation.
     /// A stratification of `d` is given by `stf`.
     ///
-    pub def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v], ToString[v] =
+   def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] & Impure with Order[v], ToString[v] =
         let _ = notifyPreSolve(d, stf);
         let compiler = cs ->
             compile(cs, stf) |>
@@ -54,7 +54,7 @@ namespace Fixpoint {
                 let db = Map.map(Map.toMutMap, m) |> Map.toMutMap;
                 compiler(cs) |> interpretWithDatabase(db) |> toModel
             case _ => bug!("Datalog normalization bug")
-        } as & Pure;
+        };
         let _ = notifyPostSolve(model);
         model
 
@@ -111,7 +111,7 @@ namespace Fixpoint {
     ///
     pub def projectInto1[f: Type -> Type, t1: Type](p: PredSym, ts: f[(t1)]):
         Datalog[Boxed] with Boxable[t1], Foldable[f] =
-        projectIntoX(match (v1) -> [box(v1)] as & Pure, p, ts) as & Pure
+        projectIntoX(match (v1) -> [box(v1)], p, ts) as & Pure
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -123,7 +123,7 @@ namespace Fixpoint {
         Datalog[Boxed] with Boxable[t1], Boxable[t2], Foldable[f] =
         projectIntoX(match (v1, v2) ->
             [box(v1),
-             box(v2)] as & Pure
+             box(v2)]
         , p, ts) as & Pure
 
     ///
@@ -137,7 +137,7 @@ namespace Fixpoint {
         projectIntoX(match (v1, v2, v3) ->
             [box(v1),
              box(v2),
-             box(v3)] as & Pure
+             box(v3)]
         , p, ts) as & Pure
 
     ///
@@ -153,7 +153,7 @@ namespace Fixpoint {
             [box(v1),
              box(v2),
              box(v3),
-             box(v4)] as & Pure
+             box(v4)]
         , p, ts) as & Pure
 
     ///
@@ -170,7 +170,7 @@ namespace Fixpoint {
              box(v2),
              box(v3),
              box(v4),
-             box(v5)] as & Pure
+             box(v5)]
         , p, ts) as & Pure
 
     ///
@@ -188,7 +188,7 @@ namespace Fixpoint {
              box(v3),
              box(v4),
              box(v5),
-             box(v6)] as & Pure
+             box(v6)]
         , p, ts) as & Pure
 
     ///
@@ -207,7 +207,7 @@ namespace Fixpoint {
              box(v4),
              box(v5),
              box(v6),
-             box(v7)] as & Pure
+             box(v7)]
         , p, ts) as & Pure
 
     ///
@@ -228,7 +228,7 @@ namespace Fixpoint {
              box(v5),
              box(v6),
              box(v7),
-             box(v8)] as & Pure
+             box(v8)]
         , p, ts) as & Pure
 
     ///
@@ -250,7 +250,7 @@ namespace Fixpoint {
              box(v6),
              box(v7),
              box(v8),
-             box(v9)] as & Pure
+             box(v9)]
         , p, ts) as & Pure
 
     ///
@@ -275,7 +275,7 @@ namespace Fixpoint {
              box(v7),
              box(v8),
              box(v9),
-             box(v10)] as & Pure
+             box(v10)]
         , p, ts) as & Pure
 
     ///
@@ -301,7 +301,7 @@ namespace Fixpoint {
              box(v8),
              box(v9),
              box(v10),
-             box(v11)] as & Pure
+             box(v11)]
         , p, ts) as & Pure
 
     ///
@@ -328,7 +328,7 @@ namespace Fixpoint {
              box(v9),
              box(v10),
              box(v11),
-             box(v12)] as & Pure
+             box(v12)]
         , p, ts) as & Pure
 
     ///
@@ -356,7 +356,7 @@ namespace Fixpoint {
              box(v10),
              box(v11),
              box(v12),
-             box(v13)] as & Pure
+             box(v13)]
         , p, ts) as & Pure
 
     ///
@@ -385,7 +385,7 @@ namespace Fixpoint {
              box(v11),
              box(v12),
              box(v13),
-             box(v14)] as & Pure
+             box(v14)]
         , p, ts) as & Pure
 
     ///
@@ -415,10 +415,10 @@ namespace Fixpoint {
              box(v12),
              box(v13),
              box(v14),
-             box(v15)] as & Pure
+             box(v15)]
         , p, ts) as & Pure
 
-    def projectIntoX[f: Type -> Type, t: Type](f: t -> Array[Boxed], p: PredSym, ts: f[t]): Datalog[Boxed] & Impure with Foldable[f] =
+    def projectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> Array[Boxed] & ef, p: PredSym, ts: f[t]): Datalog[Boxed] & Impure with Foldable[f] =
         let PredSym(relName) = p;
         let db = MutMap.empty();
         Foldable.foldLeft(() -> t -> {
