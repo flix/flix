@@ -43,6 +43,7 @@ namespace Benchmark {
     ///
     /// A smart constructor for a benchmark.
     ///
+    @Experimental
     pub def defBenchmark(name: String, f: Unit -> a): Benchmark =
         let fn = () -> {
             let _ = f();
@@ -57,6 +58,7 @@ namespace Benchmark {
     ///
     /// Runs all benchmarks in `bs`. Attempts to spend no more than `budget` time.
     ///
+    @Experimental
     pub def runWithBudget(bs: Array[Benchmark], budget: Int64): Int32 & Impure =
         if (bs.length == 0) {
             println("No benchmarks");

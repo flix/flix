@@ -1235,6 +1235,7 @@ namespace Array {
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
+    @Deprecated
     pub def map2(f: (a, b) -> c & ef, a: Array[a], b: Array[b]): Array[c] & Impure =
         let len = Int32.min(length(a), length(b));
         init(i -> f(a[i], b[i]), len)
@@ -1244,6 +1245,7 @@ namespace Array {
     /// ignoring additional elements of the longer array.
     ///
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
+    @Deprecated
     pub def flatMap2(f: (a, b) -> Array[c] & ef, a: Array[a], b: Array[b]): Array[c] & Impure =
         let len = Int32.min(length(a), length(b));
         init(i -> f(a[i], b[i]), len) |> flatten

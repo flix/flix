@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.ast.ops
 
-import ca.uwaterloo.flix.language.ast.Ast.Annotation.{Benchmark, Law, Lint, Test}
+import ca.uwaterloo.flix.language.ast.Ast.Annotation.{Benchmark, Test}
 import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
@@ -419,20 +419,6 @@ object TypedAstOps {
     */
   def isBenchmark(xs: List[Annotation]): Boolean = xs.exists {
     case Annotation(name, _, _) => name.isInstanceOf[Benchmark]
-  }
-
-  /**
-    * Returns `true` if the given annotations contains the [[Law]] annotation.
-    */
-  def isLaw(xs: List[Annotation]): Boolean = xs.exists {
-    case Annotation(name, _, _) => name.isInstanceOf[Law]
-  }
-
-  /**
-    * Returns `true` if the given annotations contains the [[Lint]] annotation.
-    */
-  def isLint(xs: List[Annotation]): Boolean = xs.exists {
-    case Annotation(name, _, _) => name.isInstanceOf[Lint]
   }
 
   /**

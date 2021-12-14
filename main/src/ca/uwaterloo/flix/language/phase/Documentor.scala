@@ -259,10 +259,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given annotations `ann` as a JSON value.
     */
   private def visitAnnotations(ann: List[Annotation]): JArray =
-    JArray(ann.collect {
-      case Annotation(a@Ast.Annotation.Deprecated(_), _, _) => a.toString
-      case Annotation(a@Ast.Annotation.ParallelWhenPure(_), _, _) => a.toString
-      case Annotation(a@Ast.Annotation.LazyWhenPure(_), _, _) => a.toString
+    JArray(ann.map {
+      case Annotation(a, _, _) => a.toString
     })
 
   /**

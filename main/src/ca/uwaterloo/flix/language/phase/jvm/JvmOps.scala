@@ -718,11 +718,7 @@ object JvmOps {
     // Group every symbol by namespace.
     root.defs.groupBy(_._1.namespace).map {
       case (ns, defs) =>
-        // Collect all non-law definitions.
-        val nonLaws = defs filter {
-          case (_, defn) => nonLaw(defn)
-        }
-        NamespaceInfo(ns, nonLaws)
+        NamespaceInfo(ns, defs)
     }.toSet
   }
 
@@ -1187,10 +1183,5 @@ object JvmOps {
     }
     false
   }
-
-  /**
-    * Returns `true` if the given definition `defn` is a law.
-    */
-  def nonLaw(defn: Def): Boolean = !defn.ann.isLaw
 
 }

@@ -34,6 +34,7 @@ namespace DemandList {
     ///
     /// Returns an empty `DemandList`.
     ///
+    @Experimental
     pub def empty(): DemandList[a, d] = ENil
 
     ///
@@ -43,6 +44,7 @@ namespace DemandList {
     ///
     /// Does not force the tail of `l`.
     ///
+    @Experimental
     pub def head(l: DemandList[a, _]): Option[a] = match l {
         case ENil        => None
         case ECons(x, _) => Some(x)
@@ -55,6 +57,7 @@ namespace DemandList {
     ///
     /// Returns an empty lazy list if `b >= e`.
     ///
+    @Experimental
     pub def range(b: Int32, e: Int32): DemandList[Int32, _] =
         LList(lazy rangeHelper(b, e))
 
@@ -72,6 +75,7 @@ namespace DemandList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def length(l: DemandList[a, Forced]): Int32 =
         lengthAcc(l, 0)
 
@@ -88,6 +92,7 @@ namespace DemandList {
     ///
     /// Returns the sum of all elements in the list `l`.
     ///
+    @Experimental
     pub def sum(l: DemandList[Int32, Forced]): Int32 =
         sumAcc(l, 0)
 
@@ -104,6 +109,7 @@ namespace DemandList {
     ///
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
     ///
+    @Experimental
     pub def filter(f: a -> Bool & ef, l: DemandList[a, not ef or d]): DemandList[a, not ef or d] & ef =
         reifyEff(f) {
             case Pure(g) => filterL(g, l as DemandList[a, false])  as DemandList[a, not ef or d]
@@ -145,6 +151,7 @@ namespace DemandList {
     ///
     /// Reverses the list `l`.
     ///
+    @Experimental
     pub def reverse(l: DemandList[a, Forced]): DemandList[a, Forced] =
         LList(lazy reverseAcc(l, ENil))
 
@@ -163,6 +170,7 @@ namespace DemandList {
     ///
     /// Does not force the tail of `l`.
     ///
+    @Experimental
     pub def isEmpty(l: DemandList[a, d]): Bool = match l {
         case ENil      => true
         case LList(xs) => isEmpty(force xs)
@@ -172,6 +180,7 @@ namespace DemandList {
     ///
     /// Returns the result of applying `f` to every element in `l`.
     ///
+    @Experimental
     pub def map(f: a -> b & ef, l: DemandList[a, not ef or d]): DemandList[b, not ef or d] & ef =
         reifyEff(f) {
             case Pure(g) => mapL(g, l as DemandList[a, false])  as DemandList[b, not ef or d]
@@ -227,6 +236,7 @@ namespace DemandList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def toList(l: DemandList[a, d]): List[a] =
         toListAcc(l, ks -> ks)
 
@@ -245,6 +255,7 @@ namespace DemandList {
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
+    @Experimental
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DemandList[a, Forced]): b & ef = match l {
         case ENil         => s
         case ECons(x, xs) => foldLeft(f, f(s, x),       xs)
@@ -257,6 +268,7 @@ namespace DemandList {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
+    @Experimental
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: DemandList[a, Forced]): b & ef =
         foldRightAcc(f, s, l, ks -> ks as & ef)
 
@@ -275,6 +287,7 @@ namespace DemandList {
     ///
     /// Does not force the tail of `l`.
     ///
+    @Experimental
     pub def take(n: Int32, l: DemandList[a, d]): DemandList[a, d] =
         LList(lazy takeHelper(n, l))
 
@@ -298,6 +311,7 @@ namespace DemandList {
     /// Returns `ENil` if `n > length(l)`.
     /// Returns `l` if `n < 1`.
     ///
+    @Experimental
     pub def drop(n: Int32, l: DemandList[a, d]): DemandList[a, d] =
         LList(lazy dropHelper(n, l))
 
@@ -318,6 +332,7 @@ namespace DemandList {
     ///
     /// Returns `l2` appended to `l1`.
     ///
+    @Experimental
     pub def append(l1: DemandList[a, d], l2: DemandList[a, d]): DemandList[a, d] = match l1 {
         case ENil         => l2
         case ECons(x, xs) => LCons(x, lazy append(      xs, l2))
@@ -328,6 +343,7 @@ namespace DemandList {
     ///
     /// Returns an infinite `DemandList` of repeating `x`s.
     ///
+    @Experimental
     pub def repeat(x: a): DemandList[a, d] =
         LList(lazy repeatHelper(x))
 
@@ -340,6 +356,7 @@ namespace DemandList {
     ///
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
     ///
+    @Experimental
     pub def flatMap(f: a -> DemandList[b, false] & ef, l: DemandList[a, not ef or d]): DemandList[b, not ef or d] & ef =
         reifyEff(f) {
             case Pure(g) => flatMapL(g, l as DemandList[a, false]) as DemandList[b, not ef or d]
@@ -385,6 +402,7 @@ namespace DemandList {
     ///
     /// Returns `false` if `l` is empty.
     ///
+    @Experimental
     pub def exists(f: a -> Bool & ef, l: DemandList[a, Forced]): Bool & ef = match l {
         case ENil         => false
         case ECons(x, xs) => if (f(x)) true else exists(f,       xs)
@@ -397,6 +415,7 @@ namespace DemandList {
     ///
     /// Returns `true` if `l` is empty.
     ///
+    @Experimental
     pub def forall(f: a -> Bool & ef, l: DemandList[a, Forced]): Bool & ef = match l {
         case ENil         => true
         case ECons(x, xs) => if (f(x)) forall(f,       xs) else false
@@ -409,6 +428,7 @@ namespace DemandList {
     ///
     /// Whether `f` is applied eagerly or lazily depends on its purity:
     ///
+    @Experimental
     pub def takeWhile(f: a -> Bool & ef, l: DemandList[a, not ef or d]): DemandList[a, not ef or d] & ef =
         reifyEff(f) {
             case Pure(g) => takeWhileL(g, l as DemandList[a, false])  as DemandList[a, not ef or d]
@@ -456,6 +476,7 @@ namespace DemandList {
     ///
     /// Whether `f` is applied eagerly or lazily depends on its purity:
     ///
+    @Experimental
     pub def dropWhile(f: a -> Bool & ef, l: DemandList[a, not ef or d]): DemandList[a, not ef or d] & ef =
         reifyEff(f) {
             case Pure(g) => dropWhileL(g, l as DemandList[a, false])  as DemandList[a, not ef or d]

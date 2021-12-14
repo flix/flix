@@ -222,6 +222,7 @@ namespace String {
     /// Functionally equivalent to zipWith.
     ///
     @Time(time(f) * Int32.min(length(s), length(t))) @Space(space(f) * Int32.min(length(s), length(t)))
+    @Deprecated
     pub def map2(f: (Char, Char) -> Char & ef, s: String, t: String): String & ef =
         let len = Int32.min(length(s), length(t));
         init(i -> f(charAt(i, s), charAt(i, t)), len)

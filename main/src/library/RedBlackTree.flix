@@ -516,6 +516,7 @@ namespace RedBlackTree {
     /// from left to right on some subtree that is disjoint from the rest of
     /// the threads.
     ///
+    @Parallel
     pub def parMapWithKey(n: Int32, f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & Impure = {
         if (n <= 1)
             parMapWithKeySeq(f, t)
@@ -592,6 +593,7 @@ namespace RedBlackTree {
     /// from left to right on some subtree that is disjoint from the rest of
     /// the threads.
     ///
+    @Parallel
     pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 & Impure = {
         if (n <= 1)
             parCountSeq(f, t)

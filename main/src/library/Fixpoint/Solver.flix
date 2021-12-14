@@ -599,6 +599,7 @@ namespace Fixpoint {
     ///
     /// Unsafely casts and prints the given Datalog program `d`.
     ///
+    @Unsafe
     pub def unsafePrint(d: a): a =
         let _ = Unsafe.println(unsafeCast(d));
         d
@@ -606,6 +607,7 @@ namespace Fixpoint {
     ///
     /// Unsafely casts the given value `d` to a Datalog program.
     ///
+    @Unsafe
     pub def unsafeCast(v: a): Datalog[Boxed] = v as Datalog[Boxed]
 
     def toModel(db: Database[v]): Datalog[v] & Impure =
