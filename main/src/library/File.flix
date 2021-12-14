@@ -497,7 +497,7 @@ namespace File {
             Foldable.foldLeft((_, line) -> println(printWriter, line), (), data);
 
             if (checkError(printWriter)) {
-                Err("An error happened when appending to the file: "+f)
+                Err("An error happened when appending lines to the file: "+f)
             }
             else {
                 match alreadyExists {
