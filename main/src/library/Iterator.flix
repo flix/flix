@@ -77,6 +77,7 @@ namespace Iterator {
     ///
     /// Returns an empty iterator if `b >= e`.
     ///
+    @Lazy
     pub def range(b: Int32, e: Int32): Iterator[Int32] & Impure =
         let i = ref b;
         let done = () -> deref i >= e;
@@ -97,6 +98,7 @@ namespace Iterator {
     ///
     /// Returns an empty iterator if `n < 0`.
     ///
+    @Lazy
     pub def repeat(n: Int32, x: a): Iterator[a] & Impure =
         let i = ref 0;
         let done = () -> deref i >= n;

@@ -171,6 +171,7 @@ namespace LazyList {
     ///
     /// Does not force the tail of `l`.
     ///
+    @Lazy
     pub def append(l1: LazyList[a], l2: LazyList[a]): LazyList[a] = match l1 {
         case ENil         => l2
         case ECons(x, xs) => LCons(x, lazy append(      xs, l2))
@@ -264,6 +265,7 @@ namespace LazyList {
     ///
     /// Returns an empty lazy list if `b >= e`.
     ///
+    @Lazy
     pub def range(b: Int32, e: Int32): LazyList[Int32] =
         LList(lazy rangeHelper(b, e))
 
