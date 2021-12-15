@@ -23,12 +23,14 @@ namespace Fixpoint/Ram {
         case New(String, Int32, Denotation[v])
     }
 
+    @Internal
     pub def arityOf(ramSym: RamSym[v]): Int32 = match ramSym {
         case Full(_, arity, _) => arity
         case Delta(_, arity, _) => arity
         case New(_, arity, _) => arity
     }
 
+    @Internal
     pub def toDenotation(ramSym: RamSym[v]): Denotation[v] = match ramSym {
         case Full(_, _, den) => den
         case Delta(_, _, den) => den

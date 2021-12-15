@@ -94,7 +94,16 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     //
     val defsByNS = root.defs.values.groupBy(getNameSpace).map {
       case (ns, decls) =>
-        val filtered = decls.filter(_.spec.mod.isPublic).toList
+        def isPublic(decl: TypedAst.Def): Boolean =
+          decl.spec.mod.isPublic
+
+        def isInternal(decl: TypedAst.Def): Boolean =
+          decl.spec.ann.exists(a => a.name match {
+            case Ast.Annotation.Internal(_) => true
+            case _ => false
+          })
+
+        val filtered = decls.filter(decl => isPublic(decl) && !isInternal(decl)).toList
         val sorted = filtered.sortBy(_.sym.name)
         ns -> JArray(sorted.map(visitDef))
     }
@@ -273,14 +282,12 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given Modifier `mod` as a JSON value.
     */
   private def visitModifier(mod: Ast.Modifiers): JArray = JArray(mod.mod.map {
-    case Modifier.Inline => "inline"
     case Modifier.Lawless => "lawless"
     case Modifier.Override => "override"
     case Modifier.Public => "public"
     case Modifier.Scoped => "scoped"
     case Modifier.Sealed => "sealed"
     case Modifier.Synthetic => "synthetic"
-    case Modifier.Unlawful => "unlawful"
   })
 
   /**

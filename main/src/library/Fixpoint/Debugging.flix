@@ -22,6 +22,7 @@ namespace Fixpoint {
     ///
     /// Invoked before the fixpoint computation.
     ///
+    @Internal
     pub def notifyPreSolve(d: Datalog[v], _stf: Map[PredSym, Int32]): Unit with Order[v], ToString[v] = {
         if (enableDebugging()) {
             println(String.repeat(80, "*"));
@@ -36,6 +37,7 @@ namespace Fixpoint {
     ///
     /// Invoked with the minimal model of the fixpoint computation.
     ///
+    @Internal
     pub def notifyPostSolve(d: Datalog[v]): Unit with Order[v], ToString[v] = {
         if (enableDebugging()) {
             println(String.repeat(80, "*"));
@@ -50,6 +52,7 @@ namespace Fixpoint {
     ///
     /// Invoked before the fixpoint computation.
     ///
+    @Internal
     pub def notifyPreInterpret(s: RamStmt[v]): Unit with Order[v], ToString[v] = {
         if (enableDebugging()) {
             println(String.repeat(80, "*"));
