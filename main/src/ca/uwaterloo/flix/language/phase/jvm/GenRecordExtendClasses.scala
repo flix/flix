@@ -25,11 +25,6 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 
 object GenRecordExtendClasses {
-
-  val LabelFieldName: String = "label"
-  val ValueFieldName: String = "value"
-  val RestFieldName: String = "rest"
-
   /**
     * Returns a Map with an extended record class entry for each element in `ts`.
     */
@@ -69,9 +64,9 @@ object GenRecordExtendClasses {
   private def genByteCode(extendType: BackendObjType.RecordExtend)(implicit root: Root, flix: Flix): Array[Byte] = {
     val cm = ClassMaker.mkClass(extendType.jvmName, IsFinal, interfaces = List(extendType.interface.jvmName))
 
-    cm.mkField(LabelFieldName, BackendObjType.String.toTpe, IsPublic, NotFinal)
-    cm.mkField(ValueFieldName, extendType.value, IsPublic, NotFinal)
-    cm.mkField(RestFieldName, extendType.interface.toTpe, IsPublic, NotFinal)
+    extendType.LabelField.mkField(cm, IsPublic, NotFinal)
+    extendType.LabelField.mkField(cm, IsPublic, NotFinal)
+    extendType.LabelField.mkField(cm, IsPublic, NotFinal)
 
     cm.mkObjectConstructor(IsPublic)
 
@@ -87,7 +82,7 @@ object GenRecordExtendClasses {
     */
   private def caseOnLabelEquality(extendType: BackendObjType.RecordExtend)(cases: Branch => InstructionSet): InstructionSet =
     thisLoad() ~
-      GETFIELD(extendType.jvmName, LabelFieldName, BackendObjType.String.toTpe) ~
+      extendType.LabelField.getField() ~
       ALOAD(1) ~
       INVOKEVIRTUAL(BackendObjType.String.jvmName, "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool)) ~
       branch(Condition.Bool)(cases)
@@ -98,7 +93,7 @@ object GenRecordExtendClasses {
         thisLoad() ~ ARETURN()
       case FalseBranch =>
         thisLoad() ~
-          GETFIELD(extendType.jvmName, RestFieldName, extendType.interface.toTpe) ~
+          extendType.RestField.getField() ~
           ALOAD(1) ~
           INVOKEINTERFACE(extendType.interface.jvmName, BackendObjType.Record.LookupFieldFunctionName, mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toTpe)) ~
           ARETURN()
@@ -108,15 +103,15 @@ object GenRecordExtendClasses {
     caseOnLabelEquality(extendType) {
       case TrueBranch =>
         thisLoad() ~
-          GETFIELD(extendType.jvmName, RestFieldName, extendType.interface.toTpe) ~
+          extendType.RestField.getField() ~
           ARETURN()
       case FalseBranch =>
         thisLoad() ~
           DUP() ~
-          GETFIELD(extendType.jvmName, RestFieldName, extendType.interface.toTpe) ~
+          extendType.RestField.getField() ~
           ALOAD(1) ~
           INVOKEINTERFACE(extendType.interface.jvmName, BackendObjType.Record.RestrictFieldFunctionName, mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toTpe)) ~
-          PUTFIELD(extendType.jvmName, RestFieldName, extendType.interface.toTpe) ~
+          extendType.RestField.putField() ~
           thisLoad() ~
           ARETURN()
     }

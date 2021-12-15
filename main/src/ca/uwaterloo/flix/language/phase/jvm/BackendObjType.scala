@@ -101,12 +101,17 @@ object BackendObjType {
   }
 
   case object RecordEmpty extends BackendObjType {
-    val InstanceField: StaticField = StaticField(this.jvmName, "INSTANCE", this.toTpe)
     val interface: BackendObjType.Record.type = Record
+
+    val InstanceField: StaticField = StaticField(this.jvmName, "INSTANCE", this.toTpe)
   }
 
   case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType {
     val interface: BackendObjType.Record.type = Record
+
+    val LabelField: InstanceField = InstanceField(this.jvmName, "label", BackendObjType.String.toTpe)
+    val ValueField: InstanceField = InstanceField(this.jvmName, "value", value)
+    val RestField: InstanceField = InstanceField(this.jvmName, "rest", interface.toTpe)
   }
 
   case object Record extends BackendObjType {

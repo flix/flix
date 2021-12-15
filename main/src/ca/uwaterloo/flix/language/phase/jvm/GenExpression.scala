@@ -466,6 +466,8 @@ object GenExpression {
       // We get the JvmType of the record interface
       val interfaceType = JvmOps.getRecordInterfaceType()
 
+      val backendRecordExtendType = BackendObjType.RecordExtend(field.name, BackendType.toErasedBackendType(tpe), BackendObjType.RecordEmpty.toTpe)
+
       //Compile the expression exp (which should be a record), as we need to have on the stack a record in order to call
       //lookupField
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -481,7 +483,7 @@ object GenExpression {
       visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
 
       //Retrieve the value field  (To get the proper value)
-      visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, GenRecordExtendClasses.ValueFieldName, JvmOps.getErasedJvmType(tpe).toDescriptor)
+      visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRecordExtendType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
 
       // Cast the field value to the expected type.
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
@@ -495,6 +497,10 @@ object GenExpression {
       // We get the JvmType of the record interface
       val interfaceType = JvmOps.getRecordInterfaceType()
 
+      // previous functions are already partial matches
+      val MonoType.RecordExtend(_, recordValueType, _) = tpe
+      val backendRecordExtendType = BackendObjType.RecordExtend(field.name, BackendType.toErasedBackendType(recordValueType), BackendObjType.RecordEmpty.toTpe)
+
       // Instantiating a new object of tuple
       visitor.visitTypeInsn(NEW, classType.name.toInternalName)
       visitor.visitInsn(DUP)
@@ -504,17 +510,17 @@ object GenExpression {
       //Put the label of field (which is going to be the extension).
       visitor.visitInsn(DUP)
       visitor.visitLdcInsn(field.name)
-      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenRecordExtendClasses.LabelFieldName, BackendObjType.String.toDescriptor)
+      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRecordExtendType.LabelField.name, BackendObjType.String.toDescriptor)
 
       //Put the value of the field onto the stack, since it is an expression we first need to compile it.
       visitor.visitInsn(DUP)
       compileExpression(value, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenRecordExtendClasses.ValueFieldName, JvmOps.getErasedJvmType(value.tpe).toDescriptor)
+      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRecordExtendType.ValueField.name, JvmOps.getErasedJvmType(value.tpe).toDescriptor)
 
       //Put the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
       visitor.visitInsn(DUP)
       compileExpression(rest, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenRecordExtendClasses.RestFieldName, interfaceType.toDescriptor)
+      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRecordExtendType.RestField.name, interfaceType.toDescriptor)
 
     case Expression.RecordRestrict(field, rest, _, loc) =>
       // Adding source line number for debugging
@@ -528,7 +534,7 @@ object GenExpression {
       visitor.visitLdcInsn(field.name)
 
       // Invoking the restrictField method
-      visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "restrictField",
+      visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, BackendObjType.Record.RestrictFieldFunctionName,
         AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
 
 
