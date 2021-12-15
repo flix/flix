@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkName
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.InstanceField
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, RootPackage}
 
 /**
@@ -36,6 +37,7 @@ sealed trait BackendObjType {
     case BackendObjType.Ref(tpe) => JvmName(RootPackage, mkName("Ref", tpe))
     case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkName("Tuple", elms))
     case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkName(s"Fn${args.length}", args :+ result))
+    case BackendObjType.Continuation(result) => JvmName(RootPackage, mkName("Cont", result))
     case BackendObjType.RecordEmpty => JvmName(RootPackage, mkName(s"RecordEmpty"))
     case BackendObjType.RecordExtend(_, value, _) => JvmName(RootPackage, mkName("RecordExtend", value))
     case BackendObjType.Native(className) => className
@@ -88,7 +90,13 @@ object BackendObjType {
   //case class Enum(sym: Symbol.EnumSym, args: List[BackendType]) extends BackendObjType
 
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType {
-    val continuation: JvmName = JvmName(RootPackage, mkName("Cont", result))
+    val continuation: BackendObjType.Continuation = Continuation(result.toErased)
+  }
+
+  case class Continuation(result: BackendType) extends BackendObjType {
+    val ResultField: InstanceField = InstanceField(this.jvmName, "result", result)
+    val InvokeMethodName: String = "invoke"
+    val UnwindMethodName: String = "unwind"
   }
 
   case object RecordEmpty extends BackendObjType {

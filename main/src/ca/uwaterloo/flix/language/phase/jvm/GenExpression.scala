@@ -127,6 +127,10 @@ object GenExpression {
       // Type of the function abstract class
       val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
       val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
+      // previous JvmOps functions are already partial pattern matches
+      val MonoType.Arrow(_, closureResultType) = exp.tpe
+      val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(closureResultType))
+
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       // Casting to JvmType of closure abstract class
       visitor.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
@@ -143,12 +147,15 @@ object GenExpression {
       }
       // Calling unwind and unboxing
       visitor.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName,
-        GenContinuationAbstractClasses.UnwindMethodName, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+        backendContinuationType.UnwindMethodName, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
     case Expression.ApplyDef(name, args, tpe, _) =>
       // JvmType of Def
       val defJvmType = JvmOps.getFunctionDefinitionClassType(name)
+      // previous JvmOps function are already partial pattern matches
+      val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(tpe))
+
 
       // Put the def on the stack
       AsmOps.compileDefSymbol(name, visitor)
@@ -163,7 +170,7 @@ object GenExpression {
           s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
       // Calling unwind and unboxing
-      visitor.visitMethodInsn(INVOKEVIRTUAL, defJvmType.name.toInternalName, GenContinuationAbstractClasses.UnwindMethodName,
+      visitor.visitMethodInsn(INVOKEVIRTUAL, defJvmType.name.toInternalName, backendContinuationType.UnwindMethodName,
         AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 

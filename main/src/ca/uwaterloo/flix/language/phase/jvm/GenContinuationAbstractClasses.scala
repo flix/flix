@@ -29,24 +29,20 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.{NothingToV
   */
 object GenContinuationAbstractClasses {
 
-  val ResultFieldName: String = "result"
-  val InvokeMethodName: String = "invoke"
-  val UnwindMethodName: String = "unwind"
-
   /**
     * Returns the set of continuation classes for the given set of types `ts`.
     */
-  def gen(ts: Iterable[BackendObjType.Arrow])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(ts: Iterable[BackendObjType.Continuation])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, arrowType) =>
-        macc + (arrowType.continuation -> JvmClass(arrowType.continuation, genByteCode(arrowType)))
+      case (macc, contType) =>
+        macc + (contType.jvmName -> JvmClass(contType.jvmName, genByteCode(contType)))
     }
   }
 
   /**
     * Returns the bytecode for the given continuation class.
     */
-  private def genByteCode(arrowType: BackendObjType.Arrow)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(contType: BackendObjType.Continuation)(implicit root: Root, flix: Flix): Array[Byte] = {
 
     // Pseudo code to generate:
     //
@@ -59,37 +55,37 @@ object GenContinuationAbstractClasses {
     // }
     //
 
-    val cm = ClassMaker.mkAbstractClass(arrowType.continuation, interfaces = List(JvmName.Runnable))
+    val cm = ClassMaker.mkAbstractClass(contType.jvmName, interfaces = List(JvmName.Runnable))
     cm.mkObjectConstructor(IsPublic)
     // essentially an abstract field
-    cm.mkField(ResultFieldName, arrowType.result, IsPublic, NotFinal)
-    cm.mkAbstractMethod(InvokeMethodName, mkDescriptor()(arrowType.continuation.toTpe))
-    cm.mkMethod(genUnwindMethod(arrowType), UnwindMethodName, mkDescriptor()(arrowType.result), IsPublic, IsFinal)
-    cm.mkMethod(genRunMethod(arrowType), "run", NothingToVoid, IsPublic, IsFinal)
+    contType.ResultField.mkField(cm, IsPublic, NotFinal)
+    cm.mkAbstractMethod(contType.InvokeMethodName, mkDescriptor()(contType.toTpe))
+    cm.mkMethod(genUnwindMethod(contType), contType.UnwindMethodName, mkDescriptor()(contType.result), IsPublic, IsFinal)
+    cm.mkMethod(genRunMethod(contType), "run", NothingToVoid, IsPublic, IsFinal)
 
     cm.closeClassMaker
   }
 
-  private def genUnwindMethod(arrowType: BackendObjType.Arrow): InstructionSet =
-    thisLoad() ~ storeWithName(1, arrowType.continuation.toTpe) { currentCont =>
-      pushNull() ~ storeWithName(2, arrowType.continuation.toTpe) { previousCont =>
+  private def genUnwindMethod(contType: BackendObjType.Continuation): InstructionSet =
+    thisLoad() ~ storeWithName(1, contType.toTpe) { currentCont =>
+      pushNull() ~ storeWithName(2, contType.toTpe) { previousCont =>
         doWhile(Condition.NONNULL) {
           currentCont.load() ~
             previousCont.store() ~
             currentCont.load() ~
-            INVOKEVIRTUAL(arrowType.continuation, InvokeMethodName, mkDescriptor()(arrowType.continuation.toTpe)) ~
+            INVOKEVIRTUAL(contType.jvmName, contType.InvokeMethodName, mkDescriptor()(contType.toTpe)) ~
             DUP() ~
             currentCont.store()
         } ~
           previousCont.load() ~
-          GETFIELD(arrowType.continuation, ResultFieldName, arrowType.result) ~
-          xReturn(arrowType.result)
+          contType.ResultField.getField() ~
+          xReturn(contType.result)
       }
     }
 
-  private def genRunMethod(arrowType: BackendObjType.Arrow): InstructionSet =
+  private def genRunMethod(contType: BackendObjType.Continuation): InstructionSet =
     thisLoad() ~
-      INVOKEVIRTUAL(arrowType.continuation, UnwindMethodName, mkDescriptor()(arrowType.result)) ~
-      xPop(arrowType.result) ~
+      INVOKEVIRTUAL(contType.jvmName, contType.UnwindMethodName, mkDescriptor()(contType.result)) ~
+      xPop(contType.result) ~
       RETURN()
 }
