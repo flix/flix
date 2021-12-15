@@ -30,7 +30,7 @@ namespace System {
         ///
         /// See also `Console.readLine` for reading from the console.
         ///
-        /// pub def readLines(): Iterator[String] & Impure = ???
+        /// pub def readLines(): Iterator[String] & Impure = ???  // TODO
 
     }
 
