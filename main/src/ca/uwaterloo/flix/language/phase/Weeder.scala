@@ -2238,7 +2238,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Weeds the given documentation.
     */
-  private def visitDoc(doc0: ParsedAst.Doc): Ast.Doc = Ast.Doc(doc0.lines.toList, mkSL(doc0.sp1, doc0.sp2))
+  private def visitDoc(doc0: ParsedAst.Doc): Ast.Doc = {
+    val trimmedLines = doc0.lines.map(_.trim)
+    val trimmedBeginning = trimmedLines.dropWhile(_ == "")
+    val trimmedEnd = trimmedBeginning.reverse.dropWhile(_ == "").reverse
+    Ast.Doc(trimmedEnd.toList, mkSL(doc0.sp1, doc0.sp2))
+  }
 
   /**
     * Weeds the given type parameters `tparams0`.
