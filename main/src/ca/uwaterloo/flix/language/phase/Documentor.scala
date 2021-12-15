@@ -94,7 +94,16 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     //
     val defsByNS = root.defs.values.groupBy(getNameSpace).map {
       case (ns, decls) =>
-        val filtered = decls.filter(_.spec.mod.isPublic).toList
+        def isPublic(decl: TypedAst.Def): Boolean =
+          decl.spec.mod.isPublic
+
+        def isInternal(decl: TypedAst.Def): Boolean =
+          decl.spec.ann.exists(a => a.name match {
+            case Ast.Annotation.Internal(_) => true
+            case _ => false
+          })
+
+        val filtered = decls.filter(decl => isPublic(decl) && !isInternal(decl)).toList
         val sorted = filtered.sortBy(_.sym.name)
         ns -> JArray(sorted.map(visitDef))
     }

@@ -1959,6 +1959,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case "test" => WeededAst.Annotation(Ast.Annotation.Test(loc), args, loc).toSuccess
           case "Deprecated" => WeededAst.Annotation(Ast.Annotation.Deprecated(loc), args, loc).toSuccess
           case "Experimental" => WeededAst.Annotation(Ast.Annotation.Experimental(loc), args, loc).toSuccess
+          case "Internal" => WeededAst.Annotation(Ast.Annotation.Internal(loc), args, loc).toSuccess
           case "Parallel" => WeededAst.Annotation(Ast.Annotation.Parallel(loc), args, loc).toSuccess
           case "ParallelWhenPure" => WeededAst.Annotation(Ast.Annotation.ParallelWhenPure(loc), args, loc).toSuccess
           case "Lazy" => WeededAst.Annotation(Ast.Annotation.Lazy(loc), args, loc).toSuccess

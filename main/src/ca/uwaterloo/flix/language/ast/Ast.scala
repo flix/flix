@@ -116,6 +116,15 @@ object Ast {
     }
 
     /**
+      * An annotation that marks a construct as internal.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Internal(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Internal"
+    }
+
+    /**
       * An annotation that marks a function definition as using parallel evaluation.
       *
       * @param loc the source location of the annotation.
