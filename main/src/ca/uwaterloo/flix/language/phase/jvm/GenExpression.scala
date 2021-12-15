@@ -689,6 +689,11 @@ object GenExpression {
       addSourceLine(visitor, loc)
       // JvmType of the reference class
       val classType = JvmOps.getRefClassType(tpe)
+
+      // the previous function is already partial
+      val MonoType.Ref(refValueType) = tpe
+      val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
+
       // Create a new reference object
       visitor.visitTypeInsn(NEW, classType.name.toInternalName)
       // Duplicate it since one instance will get consumed by constructor
@@ -702,7 +707,7 @@ object GenExpression {
       // Erased type of the value of the reference
       val valueErasedType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Ref].tpe)
       // set the field with the ref value
-      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenRefClasses.ValueFieldName, valueErasedType.toDescriptor)
+      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, valueErasedType.toDescriptor)
 
     case Expression.Deref(exp, tpe, loc) =>
       // Adding source line number for debugging
@@ -711,8 +716,13 @@ object GenExpression {
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       // JvmType of the reference class
       val classType = JvmOps.getRefClassType(exp.tpe)
+
+      // the previous function is already partial
+      val MonoType.Ref(refValueType) = exp.tpe
+      val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
+
       // Dereference the expression
-      visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, GenRefClasses.ValueFieldName, JvmOps.getErasedJvmType(tpe).toDescriptor)
+      visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
       // Cast underlying value to the correct type if the underlying type is Object
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
@@ -725,8 +735,13 @@ object GenExpression {
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
       // JvmType of the reference class
       val classType = JvmOps.getRefClassType(exp1.tpe)
+
+      // the previous function is already partial
+      val MonoType.Ref(refValueType) = exp1.tpe
+      val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
+
       // Invoke `setValue` method to set the value to the given number
-      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenRefClasses.ValueFieldName, JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
+      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
       // Since the return type is unit, we put an instance of unit on top of the stack
       visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, GenUnitClass.InstanceFieldName, BackendObjType.Unit.jvmName.toDescriptor)
 

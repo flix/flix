@@ -84,7 +84,9 @@ object BackendObjType {
 
   case class Lazy(tpe: BackendType) extends BackendObjType
 
-  case class Ref(tpe: BackendType) extends BackendObjType
+  case class Ref(tpe: BackendType) extends BackendObjType {
+    val ValueField: InstanceField = InstanceField(this.jvmName, "value", tpe)
+  }
 
   case class Tuple(elms: List[BackendType]) extends BackendObjType
 

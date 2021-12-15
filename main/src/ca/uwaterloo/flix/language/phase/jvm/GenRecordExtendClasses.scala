@@ -81,8 +81,7 @@ object GenRecordExtendClasses {
     * Compares the label of `this`and `ALOAD(1)` and executes the designated branch.
     */
   private def caseOnLabelEquality(extendType: BackendObjType.RecordExtend)(cases: Branch => InstructionSet): InstructionSet =
-    thisLoad() ~
-      extendType.LabelField.getField() ~
+    thisLoad() ~ extendType.LabelField.getField() ~
       ALOAD(1) ~
       INVOKEVIRTUAL(BackendObjType.String.jvmName, "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool)) ~
       branch(Condition.Bool)(cases)
@@ -92,8 +91,7 @@ object GenRecordExtendClasses {
       case TrueBranch =>
         thisLoad() ~ ARETURN()
       case FalseBranch =>
-        thisLoad() ~
-          extendType.RestField.getField() ~
+        thisLoad() ~ extendType.RestField.getField() ~
           ALOAD(1) ~
           INVOKEINTERFACE(extendType.interface.jvmName, BackendObjType.Record.LookupFieldFunctionName, mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toTpe)) ~
           ARETURN()
@@ -102,17 +100,13 @@ object GenRecordExtendClasses {
   private def genRestrictFieldMethod(extendType: BackendObjType.RecordExtend)(implicit root: Root, flix: Flix): InstructionSet =
     caseOnLabelEquality(extendType) {
       case TrueBranch =>
-        thisLoad() ~
-          extendType.RestField.getField() ~
+        thisLoad() ~ extendType.RestField.getField() ~
           ARETURN()
       case FalseBranch =>
-        thisLoad() ~
-          DUP() ~
-          extendType.RestField.getField() ~
+        thisLoad() ~ extendType.RestField.getField() ~
           ALOAD(1) ~
           INVOKEINTERFACE(extendType.interface.jvmName, BackendObjType.Record.RestrictFieldFunctionName, mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toTpe)) ~
-          extendType.RestField.putField() ~
-          thisLoad() ~
-          ARETURN()
+          thisLoad() ~ extendType.RestField.putField() ~
+          thisLoad() ~ ARETURN()
     }
 }
