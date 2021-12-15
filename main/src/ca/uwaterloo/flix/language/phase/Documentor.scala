@@ -350,14 +350,14 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given case `caze` as a JSON value.
     */
   private def visitCase(caze: Case): JObject = caze match {
-    case Case(_, tag, _, sc, _) =>
+    case Case(_, tag, _, _, _) =>
       // TODO: FormatType.formatType is broken.
       val tpe = try {
         // We try our best.
         FormatType.formatType(caze.tpeDeprecated)
       } catch {
         // And if it crashes we use a placeholder:
-        case ex: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
+        case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
       }
       ("tag" -> tag.name) ~ ("tpe" -> tpe)
   }
@@ -366,7 +366,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Return the given class `clazz` as a JSON value.
     */
   private def visitClass(cla: Class)(implicit root: Root): JObject = cla match {
-    case Class(doc, mod, sym, tparam, superClasses, signatures0, laws, loc) =>
+    case Class(doc, mod, sym, tparam, superClasses, signatures0, _, loc) =>
       val (sigs0, defs0) = signatures0.partition(_.impl.isEmpty)
 
       val sigs = sigs0.sortBy(_.sym.name).map(visitSig)
@@ -396,6 +396,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Writes the given string `s` to the given path `p`.
     */
   private def writeString(s: String, p: Path): Unit = try {
+    Files.createDirectories(OutputDirectory)
     val writer = Files.newBufferedWriter(p)
     writer.write(s)
     writer.close()
