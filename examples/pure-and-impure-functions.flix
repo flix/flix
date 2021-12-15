@@ -6,7 +6,7 @@ def inc2(x: Int32): Int32 = x + 1
 
 /// We can also declare an impure function.
 def printAndInc(x: Int32): Int32 & Impure =
-    Console.printLine("Hello");
+    println("Hello");
     x + 1
 
 /// We can declare a function that expects a pure function:
