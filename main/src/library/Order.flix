@@ -74,6 +74,8 @@ pub class Order[a] with Eq[a] {
         case _ => x
     }
 
+    /// TODO: re-export from eq
+
     ///
     /// Reflexivity: An element `x` is lower or equal to itself.
     ///
@@ -569,7 +571,7 @@ instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)] with Or
         lazy (x10 <=> y10) `thenCompare`
         lazy (x11 <=> y11) `thenCompare`
         lazy (x12 <=> y12) `thenCompare`
-        lazy (x13 <=> y13) 
+        lazy (x13 <=> y13)
 }
 
 instance Order[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)] with Order[a1], Order[a2], Order[a3], Order[a4], Order[a5], Order[a6], Order[a7], Order[a8], Order[a9], Order[a10], Order[a11], Order[a12], Order[a13], Order[a14] {
