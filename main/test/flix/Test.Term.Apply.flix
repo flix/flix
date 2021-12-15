@@ -163,18 +163,18 @@ namespace Test/Term/Apply {
         let m = query ho3(_ -> "hello") select x from P(x);
         Array.memberOf("hello", m)
 
-    pub def zer(): Int = 0
-    pub def one(): Int = 1
-    pub def two(): Int = 2
-    pub def inc(x: Int): Int = x + 1
-    pub def dec(x: Int): Int = x - 1
-    pub def add(x: Int, y: Int): Int = x + y
+    pub def zer(): Int32 = 0
+    pub def one(): Int32 = 1
+    pub def two(): Int32 = 2
+    pub def inc(x: Int): Int32 = x + 1
+    pub def dec(x: Int): Int32 = x - 1
+    pub def add(x: Int, y: Int): Int32 = x + y
 
     pub def identity(x: a): a = x
     pub def fst(p: (a, b)): a = let (x, _) = p; x
     pub def snd(p: (a, b)): b = let (_, y) = p; y
 
-    pub def ho1(f: Int -> Int): #{A(Int), R(Int) | r} = #{
+    pub def ho1(f: Int32 -> Int): #{A(Int), R(Int) | r} = #{
         A(1). A(2). A(3).
         R(f(x)) :- A(x), A(_y).
     }
@@ -184,7 +184,7 @@ namespace Test/Term/Apply {
         R(f(x, y)) :- A(x), A(y).
     }
 
-    pub def ho3(f: Int -> a): #{A(Int), P(a) | r} with Boxable[a] = #{
+    pub def ho3(f: Int32 -> a): #{A(Int), P(a) | r} with Boxable[a] = #{
         A(1). A(2). A(3).
         P(f(x)) :- A(x).
     }
