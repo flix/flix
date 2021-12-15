@@ -13,14 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
-// TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
-instance Foldable[Array] {
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldLeft(f, s, a) as & ef
-    pub def foldRight(f: (a, b) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldRight(f, s, a) as & ef
-}
-
 namespace Array {
 
     ///
