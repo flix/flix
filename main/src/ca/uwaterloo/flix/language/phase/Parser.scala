@@ -69,23 +69,6 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
         ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
     }
   }
-
-  /**
-    * Attempts to parse the given `source` as an expression.
-    */
-  def parseExp(source: Source): Validation[ParsedAst.Expression, CompilationMessage] = {
-    val parser = new Parser(source)
-    parser.Expression.run() match {
-      case scala.util.Success(ast) =>
-        ast.toSuccess
-      case scala.util.Failure(e: org.parboiled2.ParseError) =>
-        val loc = SourceLocation(None, source, SourceKind.Real, e.position.line, e.position.column, e.position.line, e.position.column)
-        ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
-      case scala.util.Failure(e) =>
-        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
-    }
-  }
-
 }
 
 /**
