@@ -74,7 +74,9 @@ object BackendObjType {
     mkName(prefix, Nil)
 
 
-  case object Unit extends BackendObjType
+  case object Unit extends BackendObjType {
+    val InstanceField: StaticField = StaticField(this.jvmName, "INSTANCE", this.toTpe)
+  }
 
   case object BigInt extends BackendObjType
 
