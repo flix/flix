@@ -125,7 +125,7 @@ class Flix {
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
     "Condition.flix" -> LocalResource.get("/src/library/Condition.flix"),
-    //"Console.flix" -> LocalResource.get("/src/library/Console.flix"),
+    "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
     "DelayMap.flix" -> LocalResource.get("/src/library/DelayMap.flix"),
     "DemandList.flix" -> LocalResource.get("/src/library/DemandList.flix"),
     "Float32.flix" -> LocalResource.get("/src/library/Float32.flix"),
