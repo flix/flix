@@ -282,7 +282,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given Modifier `mod` as a JSON value.
     */
   private def visitModifier(mod: Ast.Modifiers): JArray = JArray(mod.mod.map {
-    case Modifier.Inline => "inline"
     case Modifier.Lawless => "lawless"
     case Modifier.Override => "override"
     case Modifier.Public => "public"

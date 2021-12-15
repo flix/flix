@@ -244,11 +244,6 @@ object Ast {
     */
   case class Modifiers(mod: List[Modifier]) {
     /**
-      * Returns `true` if these modifiers contain the inline modifier.
-      */
-    def isInline: Boolean = mod contains Modifier.Inline
-
-    /**
       * Returns `true` if these modifiers contain the lawless modifier.
       */
     def isLawless: Boolean = mod contains Modifier.Lawless
@@ -291,11 +286,6 @@ object Ast {
   sealed trait Modifier
 
   object Modifier {
-
-    /**
-      * The inline modifier.
-      */
-    case object Inline extends Modifier
 
     /**
       * The lawless modifier.
