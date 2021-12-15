@@ -101,19 +101,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Root                                                                    //
   /////////////////////////////////////////////////////////////////////////////
-  def Root: Rule1[ParsedAst.Root] = {
-    def Uses: Rule1[Seq[ParsedAst.Use]] = rule {
-      // It is important for documentation comments that whitespace is not consumed if no uses are present
-      optWS ~ oneOrMore(Use ~ optWS ~ ";").separatedBy(optWS) | push(Seq.empty)
-    }
-
-    def Decls: Rule1[Seq[ParsedAst.Declaration]] = rule {
-      zeroOrMore(Declaration)
-    }
-
-    rule {
-      SP ~ Uses ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.Root
-    }
+  def Root: Rule1[ParsedAst.Root] = rule {
+    SP ~ UseDeclarations ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.Root
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -132,21 +121,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Instance
   }
 
+  def UseDeclarations: Rule1[Seq[ParsedAst.Use]] = rule {
+    // It is important for documentation comments that whitespace is not consumed if no uses are present
+    (optWS ~ oneOrMore(Use ~ optWS ~ ";").separatedBy(optWS)) | push(Seq.empty)
+  }
+
+  def Decls: Rule1[Seq[ParsedAst.Declaration]] = rule {
+    zeroOrMore(Declaration)
+  }
+
   object Declarations {
 
-    def Namespace: Rule1[ParsedAst.Declaration.Namespace] = {
-      def Uses: Rule1[Seq[ParsedAst.Use]] = rule {
-        // It is important for documentation comments that whitespace is not consumed if no uses are present
-        optWS ~ oneOrMore(Use ~ optWS ~ ";").separatedBy(optWS) | push(Seq.empty)
-      }
-
-      def Decls: Rule1[Seq[ParsedAst.Declaration]] = rule {
-        zeroOrMore(Declaration)
-      }
-
-      rule {
-        optWS ~ SP ~ keyword("namespace") ~ WS ~ Names.Namespace ~ optWS ~ '{' ~ Uses ~ Decls ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
-      }
+    def Namespace: Rule1[ParsedAst.Declaration.Namespace] = rule {
+      optWS ~ SP ~ keyword("namespace") ~ WS ~ Names.Namespace ~ optWS ~ '{' ~ UseDeclarations ~ Decls ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
