@@ -171,7 +171,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
       //
       // Generate the GlobalCounter class.
-      // TODO
+      //
       val globalCounterClass = GenGlobalCounterClass.gen()
 
       //
