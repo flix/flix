@@ -116,6 +116,15 @@ object Ast {
     }
 
     /**
+      * An annotation that marks a construct as internal.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Internal(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Internal"
+    }
+
+    /**
       * An annotation that marks a function definition as using parallel evaluation.
       *
       * @param loc the source location of the annotation.
@@ -235,11 +244,6 @@ object Ast {
     */
   case class Modifiers(mod: List[Modifier]) {
     /**
-      * Returns `true` if these modifiers contain the inline modifier.
-      */
-    def isInline: Boolean = mod contains Modifier.Inline
-
-    /**
       * Returns `true` if these modifiers contain the lawless modifier.
       */
     def isLawless: Boolean = mod contains Modifier.Lawless
@@ -269,11 +273,6 @@ object Ast {
       */
     def isSynthetic: Boolean = mod contains Modifier.Synthetic
 
-    /**
-      * Returns `true` if these modifiers contain the unlawful modifier.
-      */
-    def isUnlawful: Boolean = mod contains Modifier.Unlawful
-
   }
 
   /**
@@ -282,11 +281,6 @@ object Ast {
   sealed trait Modifier
 
   object Modifier {
-
-    /**
-      * The inline modifier.
-      */
-    case object Inline extends Modifier
 
     /**
       * The lawless modifier.
@@ -317,11 +311,6 @@ object Ast {
       * The synthetic modifier.
       */
     case object Synthetic extends Modifier
-
-    /**
-      * The unlawful modifier.
-      */
-    case object Unlawful extends Modifier
 
   }
 
