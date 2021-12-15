@@ -146,7 +146,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
       //
       // Generate the Unit class.
-      //
+      // TODO
       val unitClass = GenUnitClass.gen()
 
       //
@@ -166,12 +166,12 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
       //
       // Generate the MatchError class.
-      //
+      // TODO
       val matchErrorClass = GenMatchErrorClass.gen()
 
       //
       // Generate the GlobalCounter class.
-      //
+      // TODO
       val globalCounterClass = GenGlobalCounterClass.gen()
 
       //
