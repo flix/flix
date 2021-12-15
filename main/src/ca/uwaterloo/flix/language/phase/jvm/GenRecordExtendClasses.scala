@@ -103,10 +103,11 @@ object GenRecordExtendClasses {
         thisLoad() ~ extendType.RestField.getField() ~
           ARETURN()
       case FalseBranch =>
-        thisLoad() ~ extendType.RestField.getField() ~
+        thisLoad() ~
+          DUP() ~ extendType.RestField.getField() ~
           ALOAD(1) ~
           INVOKEINTERFACE(extendType.interface.jvmName, BackendObjType.Record.RestrictFieldFunctionName, mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toTpe)) ~
-          thisLoad() ~ extendType.RestField.putField() ~
+          extendType.RestField.putField() ~
           thisLoad() ~ ARETURN()
     }
 }
