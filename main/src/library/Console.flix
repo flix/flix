@@ -22,7 +22,10 @@ namespace Console {
     ///
     /// See also `System/StdIn.readLines`.
     ///
-    ///pub def readLine(): Option[String] & Impure = ??? as & Impure // TODO
+    pub def readLine(): Option[String] & Impure =
+        import static java.lang.System.console();
+        import java.io.Console.readLine() as consoleReadLine;
+        Object.toOption(console()) |> Option.map(consoleReadLine)
 
     ///
     /// Prints `s` to the console.
@@ -35,7 +38,12 @@ namespace Console {
     ///
     /// See also `System/StdOut.print`.
     ///
-    ///pub def print(s: String): Unit & Impure = ??? as & Impure // TODO
+    pub def print(s: String): Unit & Impure =
+        import static java.lang.System.console();
+        import java.io.Console.writer();
+        import java.io.PrintWriter.print(String) as printWriterPrint;
+        Object.toOption(console()) |> Option.map(c -> printWriterPrint(writer(c), s));
+        ()
 
     ///
     /// Prints `s` to the console followed by a new line.
@@ -48,7 +56,27 @@ namespace Console {
     ///
     /// See also `System/StdOut.println`.
     ///
-    ///pub def printLine(s: String): Unit & Impure = ??? as & Impure // TODO
+    pub def printLine(s: String): Unit & Impure =
+        import static java.lang.System.console();
+        import java.io.Console.writer();
+        import java.io.PrintWriter.println(String) as printWriterPrintln;
+        Object.toOption(console()) |> Option.map(c -> printWriterPrintln(writer(c), s));
+        ()
+
+    ///
+    /// Flushes the console output.
+    ///
+    /// Note: This function does not flush standard out.
+    ///
+    /// Warning: If no console is attached nothing happens.
+    ///
+    /// See also `System/StdOut.flush`.
+    ///
+    pub def flush(): Unit & Impure =
+        import static java.lang.System.console();
+        import java.io.Console.flush() as consoleFlush;
+        Object.toOption(console()) |> Option.map(consoleFlush);
+        ()
 
     ///
     /// Returns the string `s` formatted with the given RGB color `c`.
