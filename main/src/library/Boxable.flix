@@ -46,6 +46,7 @@ namespace Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
+    @Internal
     pub def lift1(f: t1 -> t): Boxed -> Boxed with Boxable[t1], Boxable[t] =
         (b1: Boxed) -> box(f(unbox(b1)))
 
@@ -54,6 +55,7 @@ namespace Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
+    @Internal
     pub def lift2(f: t1 -> t2 -> t): Boxed -> Boxed -> Boxed with Boxable[t1], Boxable[t2], Boxable[t] =
         (b1: Boxed) -> (b2: Boxed) -> box(f(unbox(b1), unbox(b2)))
 
@@ -62,6 +64,7 @@ namespace Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
+    @Internal
     pub def lift3(f: t1 -> t2 -> t3 -> t): Boxed -> Boxed -> Boxed -> Boxed with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t] =
         (b1: Boxed) -> (b2: Boxed) -> (b3: Boxed) -> box(f(unbox(b1), unbox(b2), unbox(b3)))
 
@@ -70,6 +73,7 @@ namespace Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
+    @Internal
     pub def lift4(f: t1 -> t2 -> t3 -> t4 -> t): Boxed -> Boxed -> Boxed -> Boxed -> Boxed with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t] =
         (b1: Boxed) -> (b2: Boxed) -> (b3: Boxed) -> (b4: Boxed) -> box(f(unbox(b1), unbox(b2), unbox(b3), unbox(b4)))
 
@@ -78,12 +82,14 @@ namespace Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
+    @Internal
     pub def lift5(f: t1 -> t2 -> t3 -> t4 -> t5 -> t): Boxed -> Boxed -> Boxed -> Boxed -> Boxed -> Boxed with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t] =
         (b1: Boxed) -> (b2: Boxed) -> (b3: Boxed) -> (b4: Boxed) -> (b5: Boxed) -> box(f(unbox(b1), unbox(b2), unbox(b3), unbox(b4), unbox(b5)))
 
     ///
     /// Lifts the given Boolean-valued function `f` to operate on boxed values.
     ///
+    @Internal
     pub def lift1b(f: t1 -> Bool): Boxed -> Bool with Boxable[t1] =
         (b1: Boxed) -> f(unbox(b1))
 
@@ -92,6 +98,7 @@ namespace Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
+    @Internal
     pub def lift2b(f: t1 -> t2 -> Bool): Boxed -> Boxed -> Bool with Boxable[t1], Boxable[t2] =
         (b1: Boxed) -> (b2: Boxed) -> f(unbox(b1), unbox(b2))
 
@@ -100,6 +107,7 @@ namespace Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
+    @Internal
     pub def lift3b(f: t1 -> t2 -> t3 -> Bool): Boxed -> Boxed -> Boxed -> Bool with Boxable[t1], Boxable[t2], Boxable[t3] =
         (b1: Boxed) -> (b2: Boxed) -> (b3: Boxed) -> f(unbox(b1), unbox(b2), unbox(b3))
 
@@ -108,6 +116,7 @@ namespace Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
+    @Internal
     pub def lift4b(f: t1 -> t2 -> t3 -> t4 -> Bool): Boxed -> Boxed -> Boxed -> Boxed -> Bool with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4] =
         (b1: Boxed) -> (b2: Boxed) -> (b3: Boxed) -> (b4: Boxed) -> f(unbox(b1), unbox(b2), unbox(b3), unbox(b4))
 
@@ -116,6 +125,7 @@ namespace Boxable {
     ///
     /// Note: Accepts a curried function, but returns a non-curried function.
     ///
+    @Internal
     pub def lift5b(f: t1 -> t2 -> t3 -> t4 -> t5 -> Bool): Boxed -> Boxed -> Boxed -> Boxed -> Boxed -> Bool with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5] =
         (b1: Boxed) -> (b2: Boxed) -> (b3: Boxed) -> (b4: Boxed) -> (b5: Boxed) -> f(unbox(b1), unbox(b2), unbox(b3), unbox(b4), unbox(b5))
 
