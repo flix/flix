@@ -167,28 +167,6 @@ namespace Option {
     }
 
     ///
-    /// Returns `Some(f(v1, v2))` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
-    ///
-    @Time(time(f)) @Space(space(f))
-    @Deprecated
-    pub def map2(f: (a, b) -> c & ef, o1: Option[a], o2: Option[b]): Option[c] & ef = match (o1, o2) {
-        case (None, _) => None
-        case (_, None) => None
-        case (Some(v1), Some(v2)) => Some(f(v1, v2))
-    }
-
-    ///
-    /// Returns `f(v1, v2)` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
-    ///
-    @Time(time(f)) @Space(space(f))
-    @Deprecated
-    pub def flatMap2(f: (a, b) -> Option[c] & ef, o1: Option[a], o2: Option[b]): Option[c] & ef = match (o1, o2) {
-        case (None, _) => None
-        case (_, None) => None
-        case (Some(v1), Some(v2)) => f(v1, v2)
-    }
-
-    ///
     /// Returns `1` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
     ///
     /// The function `f` must be pure.

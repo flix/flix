@@ -215,19 +215,6 @@ namespace String {
         init(i -> f(charAt(i, s), i), len)
 
     ///
-    /// Returns a string where the element at index `i` is `f(a, b)` where
-    /// `a` is the element at index `i` in `s` and `b` is the element at index `i` in `t`.
-    ///
-    /// If either `s` or `t` becomes depleted, then no further elements are added to the resulting string.
-    /// Functionally equivalent to zipWith.
-    ///
-    @Time(time(f) * Int32.min(length(s), length(t))) @Space(space(f) * Int32.min(length(s), length(t)))
-    @Deprecated
-    pub def map2(f: (Char, Char) -> Char & ef, s: String, t: String): String & ef =
-        let len = Int32.min(length(s), length(t));
-        init(i -> f(charAt(i, s), charAt(i, t)), len)
-
-    ///
     /// Returns the reverse of `s`.
     ///
     @Time(length(s)) @Space(length(s))
