@@ -65,8 +65,8 @@ object GenRecordExtendClasses {
     val cm = ClassMaker.mkClass(extendType.jvmName, IsFinal, interfaces = List(extendType.interface.jvmName))
 
     extendType.LabelField.mkField(cm, IsPublic, NotFinal)
-    extendType.LabelField.mkField(cm, IsPublic, NotFinal)
-    extendType.LabelField.mkField(cm, IsPublic, NotFinal)
+    extendType.ValueField.mkField(cm, IsPublic, NotFinal)
+    extendType.RestField.mkField(cm, IsPublic, NotFinal)
 
     cm.mkObjectConstructor(IsPublic)
 
