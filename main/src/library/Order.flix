@@ -74,7 +74,19 @@ pub class Order[a] with Eq[a] {
         case _ => x
     }
 
-    /// TODO: re-export from eq
+    ///
+    /// Returns `true` if and only if `x` is equal to `y`.
+    ///
+    /// Re-exported from the `Eq` type class.
+    ///
+    pub def eq(x: a, y: a): Bool = Eq.eq(x, y)
+
+    ///
+    /// Returns `true` if and only if `x` is not equal to `y`.
+    ///
+    /// Re-exported from the `Eq` type class.
+    ///
+    pub def neq(x: a, y: a): Bool = Eq.neq(x, y)
 
     ///
     /// Reflexivity: An element `x` is lower or equal to itself.
