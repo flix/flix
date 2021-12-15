@@ -143,7 +143,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val doc = visitDoc(doc0)
       val tpe = visitType(tpe0)
       for {
-        mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Unlawful))
+        mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public))
         defs <- traverse(defs0)(visitInstanceDef)
         constrs <- traverse(constrs0)(visitTypeConstraint)
       } yield List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, constrs, defs.flatten, mkSL(sp1, sp2)))
@@ -2008,7 +2008,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case "pub" => Ast.Modifier.Public
       case "sealed" => Ast.Modifier.Sealed
       case "scoped" => Ast.Modifier.Scoped
-      case "unlawful" => Ast.Modifier.Unlawful
       case s => throw InternalCompilerException(s"Unknown modifier '$s' near ${mkSL(m.sp1, m.sp2).format}.")
     }
 

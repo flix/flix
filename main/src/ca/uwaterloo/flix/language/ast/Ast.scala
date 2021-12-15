@@ -273,11 +273,6 @@ object Ast {
       */
     def isSynthetic: Boolean = mod contains Modifier.Synthetic
 
-    /**
-      * Returns `true` if these modifiers contain the unlawful modifier.
-      */
-    def isUnlawful: Boolean = mod contains Modifier.Unlawful
-
   }
 
   /**
@@ -316,11 +311,6 @@ object Ast {
       * The synthetic modifier.
       */
     case object Synthetic extends Modifier
-
-    /**
-      * The unlawful modifier.
-      */
-    case object Unlawful extends Modifier
 
   }
 
