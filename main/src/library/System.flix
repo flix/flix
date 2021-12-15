@@ -30,8 +30,22 @@ namespace System {
         ///
         /// See also `Console.readLine` for reading from the console.
         ///
-        /// pub def readLines(): Iterator[String] & Impure = ???  // TODO
+        pub def readLines(): Iterator[String] & Impure =
+            import static get java.lang.System.in as getSystemIn;
+            import new java.io.InputStreamReader(##java.io.InputStream) as newInputStream;
+            import new java.io.BufferedReader(##java.io.Reader) as newBufferedReader;
+            import java.io.BufferedReader.readLine() as bfReadLine;
 
+            let br = newBufferedReader(newInputStream(getSystemIn()) as ##java.io.Reader); // up-cast to superclass
+            let nextLine = ref bfReadLine(br);
+            let done = () -> Object.isNull(deref nextLine);
+            let next = () -> {
+                let l = deref nextLine;
+                nextLine := bfReadLine(br);
+                if (Object.isNull(l)) bug!("No more lines on StdIn")
+                else l
+            };
+            Iterator(done, next)
     }
 
     ///
