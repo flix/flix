@@ -440,7 +440,7 @@ namespace File {
     ///
     /// Appends `data` to the given file `f`.
     ///
-    /// Returns `true` if the file `f` was created, and `false` if `f` was overwritten.
+    /// Returns `true` if the file `f` was created, and `false` if `data` was appended to an existing `f`.
     ///
     pub def append(f: String, data: t): Result[Bool, String] & Impure with ToString[t] =
         try {
@@ -477,7 +477,7 @@ namespace File {
     ///
     /// Appends `data` to the given file `f`.
     ///
-    /// Returns `true` if the file `f` was created, and `false` if `f` was overwritten.
+    /// Returns `true` if the file `f` was created, and `false` if `data` was appended to an existing `f`.
     ///
     pub def appendLines(f: String, data: f[String]): Result[Bool, String] & Impure with Foldable[f] =
         try {
