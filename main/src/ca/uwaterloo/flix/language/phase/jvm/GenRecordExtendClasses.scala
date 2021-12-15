@@ -22,8 +22,6 @@ import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBr
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{Final, Static, Visibility}
-import ca.uwaterloo.flix.language.phase.jvm.GenRecordInterface.{LookupFieldFunctionName, RestrictFieldFunctionName}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 
 object GenRecordExtendClasses {
@@ -69,7 +67,7 @@ object GenRecordExtendClasses {
     * then this field should no longer be in the record. We then return 'this'.
     */
   private def genByteCode(extendType: BackendObjType.RecordExtend)(implicit root: Root, flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(extendType.jvmName, IsFinal, interfaces = List(extendType.interface))
+    val cm = ClassMaker.mkClass(extendType.jvmName, IsFinal, interfaces = List(extendType.interface.jvmName))
 
     cm.mkField(LabelFieldName, BackendObjType.String.toTpe, IsPublic, NotFinal)
     cm.mkField(ValueFieldName, extendType.value, IsPublic, NotFinal)
@@ -78,8 +76,8 @@ object GenRecordExtendClasses {
     cm.mkObjectConstructor(IsPublic)
 
     val stringToRecordInterface = mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toTpe)
-    cm.mkMethod(genLookupFieldMethod(extendType), LookupFieldFunctionName, stringToRecordInterface, IsPublic, IsFinal)
-    cm.mkMethod(genRestrictFieldMethod(extendType), RestrictFieldFunctionName, stringToRecordInterface, IsPublic, IsFinal)
+    cm.mkMethod(genLookupFieldMethod(extendType), BackendObjType.Record.LookupFieldFunctionName, stringToRecordInterface, IsPublic, IsFinal)
+    cm.mkMethod(genRestrictFieldMethod(extendType), BackendObjType.Record.RestrictFieldFunctionName, stringToRecordInterface, IsPublic, IsFinal)
 
     cm.closeClassMaker
   }
@@ -102,7 +100,7 @@ object GenRecordExtendClasses {
         thisLoad() ~
           GETFIELD(extendType.jvmName, RestFieldName, extendType.interface.toTpe) ~
           ALOAD(1) ~
-          INVOKEINTERFACE(extendType.interface, LookupFieldFunctionName, mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toTpe)) ~
+          INVOKEINTERFACE(extendType.interface.jvmName, BackendObjType.Record.LookupFieldFunctionName, mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toTpe)) ~
           ARETURN()
     }
 
@@ -117,7 +115,7 @@ object GenRecordExtendClasses {
           DUP() ~
           GETFIELD(extendType.jvmName, RestFieldName, extendType.interface.toTpe) ~
           ALOAD(1) ~
-          INVOKEINTERFACE(extendType.interface, RestrictFieldFunctionName, mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toTpe)) ~
+          INVOKEINTERFACE(extendType.interface.jvmName, BackendObjType.Record.RestrictFieldFunctionName, mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toTpe)) ~
           PUTFIELD(extendType.jvmName, RestFieldName, extendType.interface.toTpe) ~
           thisLoad() ~
           ARETURN()

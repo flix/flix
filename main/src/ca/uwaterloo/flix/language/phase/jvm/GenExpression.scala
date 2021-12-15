@@ -453,7 +453,7 @@ object GenExpression {
       // We get the JvmType of the class for the RecordEmpty
       val classType = JvmOps.getRecordEmptyClassType()
       // Instantiating a new object of tuple
-      visitor.visitFieldInsn(GETSTATIC, classType.name.toInternalName, GenRecordEmptyClass.InstanceFieldName, classType.toDescriptor)
+      visitor.visitFieldInsn(GETSTATIC, classType.name.toInternalName, BackendObjType.RecordEmpty.InstanceField.name, classType.toDescriptor)
 
     case Expression.RecordSelect(exp, field, tpe, loc) =>
       // Adding source line number for debugging

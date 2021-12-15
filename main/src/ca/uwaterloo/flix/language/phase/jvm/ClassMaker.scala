@@ -242,4 +242,18 @@ object ClassMaker {
     def getField(): InstructionSet =
       GETFIELD(clazz, name, tpe)
   }
+
+  sealed case class StaticField(clazz: JvmName, name: String, tpe: BackendType) {
+    def mkField(cm: InstanceClassMaker, v: Visibility, f: Final): Unit =
+      cm.mkStaticField(name, tpe, v, f)
+
+    def mkField(cm: AbstractClassMaker, v: Visibility, f: Final): Unit =
+      cm.mkStaticField(name, tpe, v, f)
+
+    def putField(): InstructionSet =
+      PUTSTATIC(clazz, name, tpe)
+
+    def getField(): InstructionSet =
+      GETSTATIC(clazz, name, tpe)
+  }
 }

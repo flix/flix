@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkName
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.InstanceField
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{InstanceField, StaticField}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, RootPackage}
 
 /**
@@ -40,6 +40,7 @@ sealed trait BackendObjType {
     case BackendObjType.Continuation(result) => JvmName(RootPackage, mkName("Cont", result))
     case BackendObjType.RecordEmpty => JvmName(RootPackage, mkName(s"RecordEmpty"))
     case BackendObjType.RecordExtend(_, value, _) => JvmName(RootPackage, mkName("RecordExtend", value))
+    case BackendObjType.Record => JvmName(RootPackage, s"IRecord${Flix.Delimiter}")
     case BackendObjType.Native(className) => className
   }
 
@@ -100,11 +101,17 @@ object BackendObjType {
   }
 
   case object RecordEmpty extends BackendObjType {
-    val interface: JvmName = JvmName(RootPackage, s"IRecord${Flix.Delimiter}")
+    val InstanceField: StaticField = StaticField(this.jvmName, "INSTANCE", this.toTpe)
+    val interface: BackendObjType.Record.type = Record
   }
 
   case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType {
-    val interface: JvmName = RecordEmpty.interface
+    val interface: BackendObjType.Record.type = Record
+  }
+
+  case object Record extends BackendObjType {
+    val LookupFieldFunctionName: String = "lookupField"
+    val RestrictFieldFunctionName: String = "restrictField"
   }
 
   // case object SchemaEmpty extends BackendObjType
