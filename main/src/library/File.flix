@@ -369,13 +369,14 @@ namespace File {
     ///
     /// Creates file `f` if it does not exist. Overwrites it if it exists.
     ///
-    /// Returns `true` if the file `f` was created, and `false` if `f` was overwritten.
+    /// Returns `true` if the file was created.
     ///
     pub def write(f: String, data: t): Result[Bool, String] & Impure with ToString[t] =
         try {
             import new java.io.File(String) as newFile;
             import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
             import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
             import java.io.PrintWriter.checkError();
 
             let alreadyExists = File.exists(f);
@@ -384,6 +385,7 @@ namespace File {
             let w = newPrintWriter(javaFile);
 
             println(w, "${data}");
+            close(w);
 
             if (checkError(w)) {
                 Err("An error occurred when writing to the file: "+f)
@@ -412,6 +414,7 @@ namespace File {
             import new java.io.File(String) as newFile;
             import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
             import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
             import java.io.PrintWriter.checkError();
 
             let alreadyExists = File.exists(f);
@@ -420,6 +423,7 @@ namespace File {
             let w = newPrintWriter(javaFile);
 
             Foldable.foldLeft((_, line) -> println(w, line), (), data);
+            close(w);
 
             if (checkError(w)) {
                 Err("An error occurred when writing lines to the file: "+f)
@@ -436,7 +440,6 @@ namespace File {
                 Err(getMessage(ex))
         }
 
-
     ///
     /// Appends `data` to the given file `f`.
     ///
@@ -448,6 +451,7 @@ namespace File {
             import new java.io.FileWriter(##java.io.File, Bool) as newFileWriter;
             import new java.io.PrintWriter(##java.io.Writer) as newPrintWriter;
             import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
             import java.io.PrintWriter.checkError();
 
             let alreadyExists = File.exists(f);
@@ -458,6 +462,7 @@ namespace File {
             let printWriter = newPrintWriter(fileWriter as ##java.io.Writer);
 
             println(printWriter, "${data}");
+            close(printWriter);
 
             if (checkError(printWriter)) {
                 Err("An error occurred when appending to the file: "+f)
@@ -485,6 +490,7 @@ namespace File {
             import new java.io.FileWriter(##java.io.File, Bool) as newFileWriter;
             import new java.io.PrintWriter(##java.io.Writer) as newPrintWriter;
             import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
             import java.io.PrintWriter.checkError();
 
             let alreadyExists = File.exists(f);
@@ -495,6 +501,7 @@ namespace File {
             let printWriter = newPrintWriter(fileWriter as ##java.io.Writer);
 
             Foldable.foldLeft((_, line) -> println(printWriter, line), (), data);
+            close(printWriter);
 
             if (checkError(printWriter)) {
                 Err("An error occurred when appending lines to the file: "+f)
@@ -510,6 +517,5 @@ namespace File {
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(ex))
         }
-
 
 }
