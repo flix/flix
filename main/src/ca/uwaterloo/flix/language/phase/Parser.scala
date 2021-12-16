@@ -693,35 +693,39 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def LetImport: Rule1[ParsedAst.Expression] = {
 
       def Constructor: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("new") ~ WS ~ Names.JavaName ~ optWS ~ Signature ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.Constructor
+        keyword("new") ~ WS ~ Names.JavaName ~ optWS ~ Signature ~ optWS ~ OptAscription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.Constructor
       }
 
       def Method: Rule1[ParsedAst.JvmOp] = rule {
-        Names.JavaName ~ optWS ~ Signature ~ optional(WS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.Method
+        Names.JavaName ~ optWS ~ Signature ~ optWS ~ OptAscription ~ optional(WS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.Method
       }
 
       def StaticMethod: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("static") ~ WS ~ Names.JavaName ~ optWS ~ Signature ~ optional(WS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.StaticMethod
+        keyword("static") ~ WS ~ Names.JavaName ~ optWS ~ Signature ~ optWS ~ OptAscription ~ optional(WS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.StaticMethod
       }
 
       def GetField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("get") ~ WS ~ Names.JavaName ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetField
+        keyword("get") ~ WS ~ Names.JavaName ~ optWS ~ OptAscription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetField
       }
 
       def PutField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("set") ~ WS ~ Names.JavaName ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutField
+        keyword("set") ~ WS ~ Names.JavaName ~ optWS ~ OptAscription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutField
       }
 
       def GetStaticField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("static") ~ WS ~ keyword("get") ~ WS ~ Names.JavaName ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetStaticField
+        keyword("static") ~ WS ~ keyword("get") ~ WS ~ Names.JavaName ~ optWS ~ OptAscription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetStaticField
       }
 
       def PutStaticField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("static") ~ WS ~ keyword("set") ~ WS ~ Names.JavaName ~ WS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutStaticField
+        keyword("static") ~ WS ~ keyword("set") ~ WS ~ Names.JavaName ~ optWS ~ OptAscription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutStaticField
       }
 
       def Signature: Rule1[Seq[ParsedAst.Type]] = rule {
         "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+      }
+
+      def OptAscription: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = rule {
+        (":" ~ optWS ~ TypAndEffFragment) | (push(None: Option[ParsedAst.Type]) ~ push(None: Option[ParsedAst.Type]))
       }
 
       def Import: Rule1[ParsedAst.JvmOp] = rule {
