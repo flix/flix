@@ -110,8 +110,12 @@ object GenFunctionClasses {
     // Continuation class
     val continuationType = JvmOps.getContinuationInterfaceType(defn.tpe)
 
+    // previous JvmOps function are already partial pattern matches
+    val MonoType.Arrow(_, closureResultType) = defn.tpe
+    val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(closureResultType))
+
     // Method header
-    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, GenContinuationAbstractClasses.InvokeMethodName,
+    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, backendContinuationType.InvokeMethodName,
       AsmOps.getMethodDescriptor(Nil, continuationType), null, null)
 
     // Enter label
@@ -150,7 +154,7 @@ object GenFunctionClasses {
       m.visitInsn(POP)
     }
 
-    m.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenContinuationAbstractClasses.ResultFieldName, resultJvmType.toDescriptor)
+    m.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendContinuationType.ResultField.name, resultJvmType.toDescriptor)
 
     // Return
     m.visitInsn(ACONST_NULL)
