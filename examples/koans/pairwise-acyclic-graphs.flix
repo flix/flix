@@ -10,5 +10,4 @@ def isCyclic(edges: List[(Int, Int)]): Bool =
     cycleNodes.length > 0
 
 pub def pairwiseAcyclic(graphs: List[List[(Int, Int)]]): List[List[List[(Int, Int)]]] =
-    let combineGraphs = (g1, g2) -> query (project g1 into Edge) <+> (project g2 into Edge) select (x, y) from Edge(x, y);
-    graphs |> List.groupBy((g1, g2) -> not isCyclic(combineGraphs(g1, g2)))
+    graphs |> List.groupBy((g1, g2) -> not isCyclic(g1 ::: g2))
