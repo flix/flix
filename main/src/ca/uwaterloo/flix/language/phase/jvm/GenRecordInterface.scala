@@ -24,15 +24,11 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescripto
   * Generates bytecode for the record interface.
   */
 object GenRecordInterface {
-  val LookupFieldFunctionName: String = "lookupField"
-  val RestrictFieldFunctionName: String = "restrictField"
-  private val recordInterface: JvmName = BackendObjType.RecordEmpty.interface
-
   /**
     * Returns a Map with a single entry, for the record interface
     */
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    Map(recordInterface -> JvmClass(recordInterface, genByteCode()))
+    Map(BackendObjType.Record.jvmName -> JvmClass(BackendObjType.Record.jvmName, genByteCode()))
   }
 
   /**
@@ -44,11 +40,11 @@ object GenRecordInterface {
     * with that object.
     */
   private def genByteCode()(implicit root: Root, flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkInterface(recordInterface)
+    val cm = ClassMaker.mkInterface(BackendObjType.Record.jvmName)
 
-    val stringToInterface = mkDescriptor(BackendObjType.String.toTpe)(recordInterface.toTpe)
-    cm.mkAbstractMethod(LookupFieldFunctionName, stringToInterface)
-    cm.mkAbstractMethod(RestrictFieldFunctionName, stringToInterface)
+    val stringToInterface = mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.Record.toTpe)
+    cm.mkAbstractMethod(BackendObjType.Record.LookupFieldFunctionName, stringToInterface)
+    cm.mkAbstractMethod(BackendObjType.Record.RestrictFieldFunctionName, stringToInterface)
 
     cm.closeClassMaker
   }

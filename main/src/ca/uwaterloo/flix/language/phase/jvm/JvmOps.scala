@@ -837,11 +837,11 @@ object JvmOps {
     }
 
   /**
-    * Returns the set of arrow types in `types` without searching recursively.
+    * Returns the set of continuation types in `types` without searching recursively.
     */
-  def getArrowsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.Arrow] =
-    types.foldLeft(Set.empty[BackendObjType.Arrow]) {
-      case (acc, MonoType.Arrow(args, result)) => acc + BackendObjType.Arrow(args.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(result))
+  def getContinuationsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[BackendObjType.Continuation] =
+    types.foldLeft(Set.empty[BackendObjType.Continuation]) {
+      case (acc, MonoType.Arrow(_, result)) => acc + BackendObjType.Continuation(BackendType.toErasedBackendType(result))
       case (acc, _) => acc
     }
 
