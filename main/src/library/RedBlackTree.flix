@@ -61,8 +61,11 @@ namespace RedBlackTree {
     }
 
     instance Traversable[RedBlackTree[k]] {
-        pub def traverse(f: a -> m[b] & ef, t: RedBlackTree[k, a]): m[RedBlackTree[k, b]] & ef with Applicative[m] = traverse(f, t)
-        pub override def sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] = sequence(t)
+        pub def traverse(f: a -> m[b] & ef, t: RedBlackTree[k, a]): m[RedBlackTree[k, b]] & ef with Applicative[m] =
+            mapAWithKey((_, v) -> f(v), t)
+
+        pub override def sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] =
+            mapAWithKey((_, v) -> v, t)
     }
 
     ///
@@ -697,11 +700,5 @@ namespace RedBlackTree {
                         k(nodeA(color, kl, key, mv, kr))))
             case _                              => k(Applicative.point(Leaf))
         }
-
-    pub def traverse(f: v1 -> m[v2] & ef, t: RedBlackTree[k, v1]): m[RedBlackTree[k, v2]] & ef  with Applicative[m] =
-        mapAWithKey((_, v) -> f(v), t)
-
-    pub def sequence(t: RedBlackTree[k, m[v]]): m[RedBlackTree[k, v]] with Applicative[m] =
-        mapAWithKey((_, v) -> v, t)
 
 }

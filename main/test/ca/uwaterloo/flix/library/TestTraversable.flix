@@ -617,6 +617,4 @@ namespace TestTraversable {
         let m: RedBlackTree.RedBlackTree[Int, Int] = toRedBlackTree((1, 1) :: (2, 2) :: (3, 3) :: Nil);
         Traversable.mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (13, toRedBlackTree((1, 13) :: (2, 13) :: (3, 13) :: Nil))
 
-
-
 }

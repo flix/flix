@@ -308,4 +308,26 @@ namespace TestRedBlackTree {
         RedBlackTree.count((_, v) -> { let b = MutList.new(); MutList.push!(v, b); MutList.append!(a, b); true }, t);
         MutList.eq(a, List.toMutList(range))
 
+    /////////////////////////////////////////////////////////////////////////////
+    // eq                                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    def toRedBlackTree(xs: List[(k, v)]): RedBlackTree.RedBlackTree[k, v] with Order[k] =
+        List.foldLeft((acc, kv) -> {let (k,v) = kv; RedBlackTree.insert(k, v, acc)}, RedBlackTree.empty(), xs)
+
+    @test
+    def eq01(): Bool =
+        RedBlackTree.empty() == RedBlackTree.empty()
+
+    @test
+    def eq02(): Bool =
+        toRedBlackTree(Nil) == toRedBlackTree(Nil)
+
+    @test
+    def eq03(): Bool =
+        toRedBlackTree((1, 1) :: Nil) == toRedBlackTree((1, 1) :: Nil)
+
+    @test
+    def neq01(): Bool =
+        toRedBlackTree((1, 1) :: Nil) != RedBlackTree.empty()
 }

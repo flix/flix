@@ -683,7 +683,7 @@ namespace Map {
 
     pub def traverse(f: v1 -> m[v2] & ef, m: Map[k, v1]): m[Map[k, v2]] & ef with Applicative[m] =
         let Map(tree) = m;
-        Functor.map(Map, RedBlackTree.traverse(f, tree))
+        Functor.map(Map, Traversable.traverse(f, tree))
 
     pub def traverseWithKey(f: (k, v1) -> m[v2] & ef, m: Map[k, v1]): m[Map[k, v2]] & ef with Applicative[m] =
         let Map(tree) = m;
@@ -691,6 +691,6 @@ namespace Map {
 
     pub def sequence(m: Map[k, m[v]]): m[Map[k, v]] with Applicative[m] =
         let Map(tree) = m;
-        Functor.map(Map, RedBlackTree.sequence(tree))
+        Functor.map(Map, Traversable.sequence(tree))
 
 }
