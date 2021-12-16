@@ -58,6 +58,25 @@ instance Foldable[Option] {
     pub def foldRight(f: (a, b) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)
 }
 
+instance Traversable[Option] {
+    pub def traverse(f: a -> m[b] & ef, t: Option[a]): m[Option[b]] & ef with Applicative[m] =
+        use Applicative.{point};
+        use Functor.{map};
+        match t {
+            case None => point(None)
+            case Some(a) => f(a) |> map(Some)
+        }
+
+    pub override def sequence(t: Option[m[a]]): m[Option[a]] with Applicative[m] =
+        use Applicative.{point};
+        use Functor.{map};
+        match t {
+            case Some(ma) => map(Some, ma)
+            case None => point(None)
+        }
+
+}
+
 namespace Option {
 
     ///

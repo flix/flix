@@ -59,6 +59,12 @@ instance Foldable[Chain] {
     pub def foldRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRight(f, s, c)
 }
 
+instance Traversable[Chain] {
+    pub def traverse(f: a -> m[b] & ef, t: Chain[a]): m[Chain[b]] & ef with Applicative[m] = Chain.traverse(f, t)
+    pub override def sequence(t: Chain[m[a]]): m[Chain[a]] with Applicative[m] = Chain.sequence(t)
+}
+
+
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String =
         let fn = () -> {
@@ -857,4 +863,21 @@ namespace Chain {
     pub def sortWith(cmp: (a,a) -> Comparison, c: Chain[a]): Chain[a] =
         (c |> toArray |> Array.sortWith(cmp) |> Array.toChain) as & Pure
 
+
+    def snocA(mxs: f[Chain[a]], mx: f[a]): f[Chain[a]] with Applicative[f] =
+        (((xs, x) -> snoc(xs, x)) `Functor.map` mxs) `Applicative.ap` mx
+
+    pub def traverse(f: a -> m[b] & ef, c: Chain[a]): m[Chain[b]] & ef with Applicative[m] =
+        def loop(v, acc) = match v {
+            case NoneLeft        => acc as & ef
+            case SomeLeft(x, rs) => loop(viewLeft(rs), snocA(acc, f(x)))
+        };
+        loop(viewLeft(c), Applicative.point(empty()))
+
+    pub def sequence(c: Chain[m[a]]): m[Chain[a]] with Applicative[m] =
+        def loop(v, acc) = match v {
+            case NoneLeft        => acc
+            case SomeLeft(x, rs) => loop(viewLeft(rs), snocA(acc, x))
+        };
+        loop(viewLeft(c), Applicative.point(empty()))
 }

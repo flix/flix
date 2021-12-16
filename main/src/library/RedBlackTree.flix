@@ -51,10 +51,24 @@ namespace RedBlackTree {
 
     }
 
+    instance Eq[RedBlackTree[k, v]] with Eq[k], Eq[v] {
+        pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool with Eq[v] =
+            eqHelper(t1, t2, b -> b)
+    }
+
+    instance Functor[RedBlackTree[k]] {
+        pub def map(f: a -> b & ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] & ef = mapWithKey((_, v) -> f(v), t)
+    }
+
+    instance Traversable[RedBlackTree[k]] {
+        pub def traverse(f: a -> m[b] & ef, t: RedBlackTree[k, a]): m[RedBlackTree[k, b]] & ef with Applicative[m] = traverse(f, t)
+        pub override def sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] = sequence(t)
+    }
+
     ///
     /// The color of a red-black tree node.
     ///
-    pub enum Color {
+    pub enum Color with Eq, Order {
 
         case Red
         case Black
@@ -643,4 +657,51 @@ namespace RedBlackTree {
             let b1 = seqCount(f, b);
             a1 + v1 + b1
     }
+
+
+    def eqHelper(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v], cont: Bool -> Bool): Bool with Eq[k], Eq[v] = match (t1, t2) {
+        case (Leaf, Leaf)                                         => cont(true)
+        case (DoubleBlackLeaf, DoubleBlackLeaf)                   => cont(true)
+        case (Node(c1, a1, k1, v1, b1), Node(c2, a2, k2, v2, b2)) =>
+            if (c1 == c2 and k1 == k2 and v1 == v2)
+                eqHelper(a1, a2, ans1 -> match ans1 {
+                    // Optimization: only pursue right branch if left branch equal...
+                    case true => eqHelper(b1, b2, ans2 -> cont(ans1 and ans2))
+                    case _    => cont(false)
+                 })
+            else
+                cont(false)
+        case _                                                    => cont(false)
+    }
+
+    def nodeA(color: Color, left: m[RedBlackTree[k, v]], k: k, value: m[v], right: m[RedBlackTree[k, v]]): m[RedBlackTree[k, v]] with Applicative[m] =
+        ((((l, v, r) -> Node(color, l, k, v, r)) `Functor.map` left) `Applicative.ap` value) `Applicative.ap` right
+
+    ///
+    /// Returns a RedBlackTree with mappings `k -> f(v)` for every `k -> v` in `tree`.
+    ///
+    pub def mapAWithKey(f: (k, v1) -> m[v2] & ef, tree: RedBlackTree[k, v1]): m[RedBlackTree[k, v2]] & ef with Applicative[m] =
+        mapAWithKeyHelper(f, tree, t -> t as & ef)
+
+    ///
+    /// Helper function for `mapAWithKey`.
+    ///
+    def mapAWithKeyHelper(f: (k, v1) -> m[v2] & ef,
+                        tree: RedBlackTree[k, v1],
+                        k: m[RedBlackTree[k, v2]] -> m[RedBlackTree[k, v2]] & ef): m[RedBlackTree[k, v2]] & ef with Applicative[m] =
+        match tree {
+            case Node(color, left, key, v, right) =>
+                mapAWithKeyHelper(f, left, kl ->
+                    mapAWithKeyHelper(f, right, kr ->
+                        let mv = f(key, v);
+                        k(nodeA(color, kl, key, mv, kr))))
+            case _                              => k(Applicative.point(Leaf))
+        }
+
+    pub def traverse(f: v1 -> m[v2] & ef, t: RedBlackTree[k, v1]): m[RedBlackTree[k, v2]] & ef  with Applicative[m] =
+        mapAWithKey((_, v) -> f(v), t)
+
+    pub def sequence(t: RedBlackTree[k, m[v]]): m[RedBlackTree[k, v]] with Applicative[m] =
+        mapAWithKey((_, v) -> v, t)
+
 }

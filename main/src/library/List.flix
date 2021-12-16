@@ -78,6 +78,11 @@ instance Foldable[List] {
     pub def foldRight(f: (a, b) -> b & ef, s: b, xs: List[a]): b & ef = List.foldRight(f, s, xs)
 }
 
+instance Traversable[List] {
+    pub def traverse(f: a -> m[b] & ef, t: List[a]): m[List[b]] & ef with Applicative[m] = List.traverse(f, t)
+    pub override def sequence(t: List[m[a]]): m[List[a]] with Applicative[m] = List.sequence(t)
+}
+
 namespace List {
 
     ///
@@ -1411,5 +1416,23 @@ namespace List {
     ///
     pub def toDelayMap(l: List[(a, b)]): DelayMap[a, b] with Order[a] =
         List.foldRight((x, m) -> DelayMap.insert(fst(x), snd(x), m), DelayMap.empty(), l)
+
+    def consA(mx: f[a], mxs: f[List[a]]): f[List[a]] with Applicative[f] =
+        (((x, xs) -> x :: xs) `Functor.map` mx) `Applicative.ap` mxs
+
+    pub def traverse(f: a -> m[b] & ef, l: List[a]): m[List[b]] & ef with Applicative[m] =
+        def loop(xs, k) = match xs {
+            case Nil => k(Applicative.point(Nil))
+            case x :: rs => loop(rs, ks -> k(consA(f(x), ks)))
+        };
+        loop(l, ks -> ks as & ef)
+
+
+    pub def sequence(l: List[m[a]]): m[List[a]] with Applicative[m] =
+        def loop(xs, k) = match xs {
+            case Nil => k(Applicative.point(Nil))
+            case mx :: rs => loop(rs, ks -> k(consA(mx, ks)))
+        };
+        loop(l, ks -> ks)
 
 }

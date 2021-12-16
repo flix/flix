@@ -51,6 +51,17 @@ instance Order[Map[k, v]] with Order[k], Order[v] {
 
 }
 
+instance Functor[Map[k]] {
+    pub def map(f: v1 -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef =
+        let Map(tree) = m;
+        Map(RedBlackTree.mapWithKey((_, v) -> f(v), tree))
+}
+
+instance Traversable[Map[k]] {
+    pub def traverse(f: a -> m[b] & ef, t: Map[k, a]): m[Map[k, b]] & ef with Applicative[m] = Map.traverse(f, t)
+    pub override def sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
+}
+
 namespace Map {
 
     ///
@@ -669,4 +680,17 @@ namespace Map {
         let Map(t) = m;
         DMap(RedBlackTree.mapWithKey((_, v) -> lazy v, t))
     }
+
+    pub def traverse(f: v1 -> m[v2] & ef, m: Map[k, v1]): m[Map[k, v2]] & ef with Applicative[m] =
+        let Map(tree) = m;
+        Functor.map(Map, RedBlackTree.traverse(f, tree))
+
+    pub def traverseWithKey(f: (k, v1) -> m[v2] & ef, m: Map[k, v1]): m[Map[k, v2]] & ef with Applicative[m] =
+        let Map(tree) = m;
+        Functor.map(Map, RedBlackTree.mapAWithKey(f, tree))
+
+    pub def sequence(m: Map[k, m[v]]): m[Map[k, v]] with Applicative[m] =
+        let Map(tree) = m;
+        Functor.map(Map, RedBlackTree.sequence(tree))
+
 }
