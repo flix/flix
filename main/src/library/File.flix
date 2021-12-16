@@ -386,7 +386,7 @@ namespace File {
             println(w, "${data}");
 
             if (checkError(w)) {
-                Err("An error happened when writing to the file: "+f)
+                Err("An error occurred when writing to the file: "+f)
             }
             else {
                 match alreadyExists {
@@ -422,7 +422,7 @@ namespace File {
             Foldable.foldLeft((_, line) -> println(w, line), (), data);
 
             if (checkError(w)) {
-                Err("An error happened when writing lines to the file: "+f)
+                Err("An error occurred when writing lines to the file: "+f)
             }
             else {
                 match alreadyExists {
@@ -460,7 +460,7 @@ namespace File {
             println(printWriter, "${data}");
 
             if (checkError(printWriter)) {
-                Err("An error happened when appending to the file: "+f)
+                Err("An error occurred when appending to the file: "+f)
             }
             else {
                 match alreadyExists {
@@ -497,7 +497,7 @@ namespace File {
             Foldable.foldLeft((_, line) -> println(printWriter, line), (), data);
 
             if (checkError(printWriter)) {
-                Err("An error happened when appending lines to the file: "+f)
+                Err("An error occurred when appending lines to the file: "+f)
             }
             else {
                 match alreadyExists {
