@@ -134,16 +134,16 @@ namespace Console {
         rgb(White |> toRGB, s)
 
     ///
-    /// Returns the string `s` formatted with the default bright white color.
-    ///
-    pub def whiteBright(s: String): String =
-        rgb(BrightWhite |> toRGB, s)
-
-    ///
     /// Returns the string `s` formatted with the default black color.
     ///
     pub def black(s: String): String =
         rgb(Black |> toRGB, s)
+
+    ///
+    /// Returns the string `s` formatted with the default bright white color.
+    ///
+    pub def whiteBright(s: String): String =
+        rgb(BrightWhite |> toRGB, s)
 
     ///
     /// Returns the string `s` formatted with the default bright black color.
@@ -186,12 +186,6 @@ namespace Console {
     ///
     pub def cyanBright(s: String): String =
         rgb(BrightCyan |> toRGB, s)
-
-    ///
-    /// Returns the string `s` formatted with the default bright white color.
-    ///
-    pub def whiteBright(s: String): String =
-        rgb(BrightWhite |> toRGB, s)
 
 
     // TODO: Add functions for missing colors.
