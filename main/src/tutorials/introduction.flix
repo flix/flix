@@ -14,7 +14,7 @@
 // We will represent the program-under-analysis using three input
 // relations. One for each type of statement:
 //
-rel LitStm(r: String, c: Int)         // r = c
+rel LitStm(r: String, c: Int32)         // r = c
 rel AddStm(r: String, x: String, y: String) // r = x + y
 rel DivStm(r: String, x: String, y: String) // r = x / y
 
