@@ -139,6 +139,61 @@ namespace Console {
     pub def whiteBright(s: String): String =
         rgb(BrightWhite |> toRGB, s)
 
+    ///
+    /// Returns the string `s` formatted with the default black color.
+    ///
+    pub def black(s: String): String =
+        rgb(Black |> toRGB, s)
+
+    ///
+    /// Returns the string `s` formatted with the default bright black color.
+    ///
+    pub def blackBright(s: String): String =
+        rgb(BrightBlack |> toRGB, s)
+
+    ///
+    /// Returns the string `s` formatted with the default bright red color.
+    ///
+    pub def redBright(s: String): String =
+        rgb(BrightRed |> toRGB, s)
+
+    ///
+    /// Returns the string `s` formatted with the default bright green color.
+    ///
+    pub def greenBright(s: String): String =
+        rgb(BrightGreen |> toRGB, s)
+
+    ///
+    /// Returns the string `s` formatted with the default bright yellow color.
+    ///
+    pub def yellowBright(s: String): String =
+        rgb(BrightYellow |> toRGB, s)
+
+    ///
+    /// Returns the string `s` formatted with the default bright blue color.
+    ///
+    pub def blueBright(s: String): String =
+        rgb(BrightBlue |> toRGB, s)
+
+    ///
+    /// Returns the string `s` formatted with the default bright magenta color.
+    ///
+    pub def magentaBright(s: String): String =
+        rgb(BrightMagenta |> toRGB, s)
+
+    ///
+    /// Returns the string `s` formatted with the default bright cyan color.
+    ///
+    pub def cyanBright(s: String): String =
+        rgb(BrightCyan |> toRGB, s)
+
+    ///
+    /// Returns the string `s` formatted with the default bright white color.
+    ///
+    pub def whiteBright(s: String): String =
+        rgb(BrightWhite |> toRGB, s)
+
+
     // TODO: Add functions for missing colors.
 
     // TODO: Add functions for backgrounds.
