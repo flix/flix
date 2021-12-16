@@ -364,4 +364,146 @@ namespace File {
             }
         }
 
+    ///
+    /// Writes `data` to the given file `f`.
+    ///
+    /// Creates file `f` if it does not exist. Overwrites it if it exists.
+    ///
+    /// Returns `true` if the file was created.
+    ///
+    pub def write(f: String, data: t): Result[Bool, String] & Impure with ToString[t] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
+            import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let alreadyExists = File.exists(f);
+
+            let javaFile = newFile(f);
+            let w = newPrintWriter(javaFile);
+
+            println(w, "${data}");
+            close(w);
+
+            if (checkError(w)) {
+                Err("An error occurred when writing to the file: "+f)
+            }
+            else {
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Writes `data` to the given `f`.
+    ///
+    /// Creates `f` if it does not exist. Overwrites it if it exists.
+    ///
+    /// Returns `true` if the file `f` was created, and `false` if `f` was overwritten.
+    ///
+    pub def writeLines(f: String, data: f[String]): Result[Bool, String] & Impure with Foldable[f] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
+            import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let alreadyExists = File.exists(f);
+
+            let javaFile = newFile(f);
+            let w = newPrintWriter(javaFile);
+
+            Foldable.foldLeft((_, line) -> println(w, line), (), data);
+            close(w);
+
+            if (checkError(w)) {
+                Err("An error occurred when writing lines to the file: "+f)
+            }
+            else {
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Appends `data` to the given file `f`.
+    ///
+    /// Returns `true` if the file `f` was created, and `false` if `data` was appended to an existing `f`.
+    ///
+    pub def append(f: String, data: t): Result[Bool, String] & Impure with ToString[t] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileWriter(##java.io.File, Bool) as newFileWriter;
+            import new java.io.PrintWriter(##java.io.Writer) as newPrintWriter;
+            import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let alreadyExists = File.exists(f);
+
+            let javaFile = newFile(f);
+            // 2nd parameter `true` is for append.
+            let fileWriter = newFileWriter(javaFile, true);
+            let printWriter = newPrintWriter(fileWriter as ##java.io.Writer);
+
+            println(printWriter, "${data}");
+            close(printWriter);
+
+            if (checkError(printWriter)) {
+                Err("An error occurred when appending to the file: "+f)
+            }
+            else {
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Appends `data` to the given file `f`.
+    ///
+    /// Returns `true` if the file `f` was created, and `false` if `data` was appended to an existing `f`.
+    ///
+    pub def appendLines(f: String, data: f[String]): Result[Bool, String] & Impure with Foldable[f] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileWriter(##java.io.File, Bool) as newFileWriter;
+            import new java.io.PrintWriter(##java.io.Writer) as newPrintWriter;
+            import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let alreadyExists = File.exists(f);
+
+            let javaFile = newFile(f);
+            // 2nd parameter `true` is for append.
+            let fileWriter = newFileWriter(javaFile, true);
+            let printWriter = newPrintWriter(fileWriter as ##java.io.Writer);
+
+            Foldable.foldLeft((_, line) -> println(printWriter, line), (), data);
+            close(printWriter);
+
+            if (checkError(printWriter)) {
+                Err("An error occurred when appending lines to the file: "+f)
+            }
+            else {
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
 }
