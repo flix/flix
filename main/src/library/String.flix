@@ -20,7 +20,7 @@ namespace String {
     /// Returns the character at position `i` in the string `s`.
     ///
     @Time(1) @Space(1)
-    pub def charAt(i: Int, s: String): Char =
+    pub def charAt(i: Int32, s: String): Char =
         import java.lang.String.charAt(Int32);
         charAt(s, i) as & Pure
 
@@ -44,7 +44,7 @@ namespace String {
     /// Returns the length of the string `s`.
     ///
     @Time(1) @Space(1)
-    pub def length(s: String): Int =
+    pub def length(s: String): Int32 =
         import java.lang.String.length();
         length(s) as & Pure
 
@@ -366,7 +366,7 @@ namespace String {
     /// If nothing satisfies `f` return None.
     ///
     @Time(time(f) * length(s)) @Space(space(f))
-    pub def findIndexOfRight(f: Char -> Bool, s: String): Option[Int] =
+    pub def findIndexOfRight(f: Char -> Bool, s: String): Option[Int32] =
         let end = length(s) - 1;
         let i = findIndexOfRightHelper(f, s, end);
         if (i < 0) None else Some(i)

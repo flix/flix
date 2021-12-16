@@ -636,7 +636,7 @@ namespace Fixpoint {
     ///
     @Internal @Unsafe
     pub def unsafePrint(d: a): a =
-        let _ = Unsafe.println(unsafeCast(d));
+        let _ = println(unsafeCast(d)) as & Pure;
         d
 
     ///

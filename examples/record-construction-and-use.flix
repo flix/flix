@@ -1,6 +1,6 @@
 /// Returns the area of the rectangle `r`.
 /// The record `r` must have `x` and `y` labels, and no other labels.
-def area(r: {x :: Int32, y :: Int32}): Int = r.x * r.y
+def area(r: {x :: Int32, y :: Int32}): Int32 = r.x * r.y
 
 /// Computes the area of various rectangle records.
 /// Note that the order of labels is immaterial.

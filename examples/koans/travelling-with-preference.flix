@@ -1,4 +1,4 @@
-pub def travelWithLimitedBusses(trainConnections: Array[(city, city)], busConnections: Array[(city, city)], source: city, destination: city, maxBusTrips: Int): Bool with Boxable[city] =
+pub def travelWithLimitedBusses(trainConnections: List[(city, city)], busConnections: List[(city, city)], source: city, destination: city, maxBusTrips: Int): Bool with Boxable[city] =
     let tc = project trainConnections into Train;
     let bc = project busConnections into Bus;
     let lp = #{
