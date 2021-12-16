@@ -30,8 +30,34 @@ namespace System {
         ///
         /// See also `Console.readLine` for reading from the console.
         ///
-        /// pub def readLines(): Iterator[String] & Impure = ???  // TODO
+        pub def readLines(): Iterator[String] & Impure =
+            import static get java.lang.System.in as getSystemIn;
+            import new java.io.InputStreamReader(##java.io.InputStream) as newInputStream;
+            import new java.io.BufferedReader(##java.io.Reader) as newBufferedReader;
+            // note: BufferedReader.readLine can block
+            import java.io.BufferedReader.readLine() as brReadLine;
 
+            let br = newBufferedReader(newInputStream(getSystemIn()) as ##java.io.Reader); // up-cast to superclass
+            let nextLine = ref None;
+            let done = () -> match deref nextLine {
+                case Some(line) =>
+                    Object.isNull(line)
+                case None =>
+                    let n = br |> brReadLine;
+                    nextLine := Some(n);
+                    Object.isNull(n)
+            };
+            let next = () -> {
+                let l = match deref nextLine {
+                    case Some(line) => line
+                    case None =>
+                        br |> brReadLine
+                };
+                nextLine := None;
+                if (Object.isNull(l)) bug!("No more lines on StdIn")
+                else l
+            };
+            Iterator(done, next)
     }
 
     ///
