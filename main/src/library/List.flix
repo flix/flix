@@ -32,7 +32,7 @@ instance ToString[List[a]] with ToString[a] {
 }
 
 instance Hash[List[a]] with Hash[a] {
-    pub def hash(xs: List[a]): Int =
+    pub def hash(xs: List[a]): Int32 =
         List.foldLeft((acc, x) -> acc * 31 + Hash.hash(x), 37199, xs)
 }
 
@@ -230,7 +230,7 @@ namespace List {
     @Time(time(f) * length(xs)) @Space(space(f))
     pub def findRight(f: a -> Bool, xs: List[a]): Option[a] = match xs {
         case Nil => None
-        case x :: rs => Option.withDefault(findRight(f, rs), if (f(x)) Some(x) else None)
+        case x :: rs => Option.withDefault(default = if (f(x)) Some(x) else None, findRight(f, rs))
     }
 
 
@@ -824,12 +824,12 @@ namespace List {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def partition(f: a -> Bool, xs: List[a]): (List[a], List[a]) = partitionHelper(f, xs, (ks, ls) -> (ks, ls))
+    pub def partition(f: a -> Bool & ef, xs: List[a]): (List[a], List[a]) & ef = partitionHelper(f, xs, (ks, ls) -> (ks, ls))
 
     ///
     /// Helper function for `partition`.
     ///
-    def partitionHelper(f: a -> Bool, xs: List[a], k: (List[a], List[a]) -> (List[a], List[a])): (List[a], List[a]) = match xs {
+    def partitionHelper(f: a -> Bool & ef, xs: List[a], k: (List[a], List[a]) -> (List[a], List[a])): (List[a], List[a]) & ef = match xs {
         case Nil => k(Nil, Nil)
         case x :: rs =>
                 if (f(x))
@@ -1056,24 +1056,6 @@ namespace List {
         case Nil => k(Nil, Nil, Nil)
         case (x1, x2, x3) :: rs => unzip3Helper(rs, (ks1, ks2, ks3) -> k(x1 :: ks1, x2 :: ks2, x3 :: ks3))
     }
-
-    ///
-    /// Returns a list where the element at index `i` is `f(a, b)` where
-    /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
-    ///
-    /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
-    /// Functionally equivalent to zipWith.
-    ///
-    @Time(time(f) * Int32.min(length(xs), length(ys))) @Space(space(f) * Int32.min(length(xs), length(ys)))
-    pub def map2(f: (a, b) -> c & ef, xs: List[a], ys: List[b]): List[c] & ef = zipWith(f, xs, ys)
-
-    ///
-    /// Concatenates the results of applying `f` pairwise to the elements of `xs` and `ys`,
-    /// ignoring additional elements of the longer list.
-    ///
-    ///
-    @Time(time(f) * Int32.min(length(xs), length(ys))) @Space(space(f) * Int32.min(length(xs), length(ys)))
-    pub def flatMap2(f: (a, b) -> List[c] & ef, xs: List[a], ys: List[b]): List[c] & ef = flatMap2Helper(f, xs, ys, ks -> ks)
 
     ///
     /// Helper function for `flatMap2`.

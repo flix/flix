@@ -23,6 +23,7 @@ namespace Fixpoint/Ast {
         case Guard3(v -> v -> v -> Bool, VarSym, VarSym, VarSym)
         case Guard4(v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym)
         case Guard5(v -> v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym, VarSym)
+        case Loop1(v -> Array[v])
     }
 
     instance ToString[BodyPredicate[v]] with ToString[v] {
@@ -45,6 +46,7 @@ namespace Fixpoint/Ast {
                 case Guard3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
                 case Guard4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
                 case Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+                case Loop1(_) => "<loop>"
             } as & Pure
     }
 }

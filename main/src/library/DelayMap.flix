@@ -25,18 +25,21 @@ namespace DelayMap {
     ///
     /// Returns the empty map.
     ///
+    @Experimental
     pub def empty(): DelayMap[k, v] =
         DMap(RedBlackTree.empty())
 
     ///
     /// Returns the singleton map where key `k` is mapped to value `v`.
     ///
+    @Experimental
     pub def singleton(k: k, v: v): DelayMap[k, v] with Order[k] =
         insert(k, v, empty())
 
     ///
     /// Returns the size of `m`.
     ///
+    @Experimental
     pub def size(m: DelayMap[k, v]): Int32 =
         let DMap(t) = m;
         RedBlackTree.size(t)
@@ -44,6 +47,7 @@ namespace DelayMap {
     ///
     /// Returns `true` if and only if `m` is the empty map, i.e. `Map(Nil)`.
     ///
+    @Experimental
     pub def isEmpty(m: DelayMap[k, v]): Bool =
         let DMap(t) = m;
         RedBlackTree.isEmpty(t)
@@ -51,6 +55,7 @@ namespace DelayMap {
     ///
     /// Returns an updated map with `k -> v`.
     ///
+    @Experimental
     pub def insert(k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
         let DMap(t) = m;
         DMap(RedBlackTree.insert(k, lazy v, t))
@@ -60,6 +65,7 @@ namespace DelayMap {
     ///
     /// Otherwise returns `None`.
     ///
+    @Experimental
     pub def get(k: k, m: DelayMap[k, v]): Option[v] with Order[k] =
         let DMap(t) = m;
         match RedBlackTree.get(k, t) {
@@ -72,12 +78,14 @@ namespace DelayMap {
     ///
     /// Otherwise, returns `d`.
     ///
+    @Experimental
     pub def getWithDefault(k: k, d: v, m: DelayMap[k, v]): v with Order[k] =
-        Option.getWithDefault(get(k, m), d)
+        Option.getWithDefault(d, get(k, m))
 
     ///
     /// Returns `true` if and only if `m` contains the key `k`.
     ///
+    @Experimental
     pub def memberOf(k: k, m: DelayMap[k, v]): Bool with Order[k] =
         let DMap(t) = m;
         RedBlackTree.memberOf(k, t)
@@ -87,6 +95,7 @@ namespace DelayMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
+    @Experimental
     pub def minimum(m: DelayMap[k, v]): Option[(k, v)] =
         let DMap(t) = m;
         match RedBlackTree.minimum(t) {
@@ -99,6 +108,7 @@ namespace DelayMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
+    @Experimental
     pub def minimumBy(cmp: (k, v, k, v) -> Comparison, m: DelayMap[k, v]): Option[(k, v)] =
         reduceLeftWithKey((k1, v1, k2, v2) -> if (cmp(k1, v1, k2, v2) == LessThan) (k1, v1) else (k2, v2), m)
 
@@ -107,6 +117,7 @@ namespace DelayMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
+    @Experimental
     pub def maximum(m: DelayMap[k, v]): Option[(k, v)] =
         let DMap(t) = m;
         match RedBlackTree.maximum(t) {
@@ -119,24 +130,28 @@ namespace DelayMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
+    @Experimental
     pub def maximumBy(cmp: (k, v, k, v) -> Comparison, m: DelayMap[k, v]): Option[(k, v)] =
         reduceLeftWithKey((k1, v1, k2, v2) -> if (cmp(k1, v1, k2, v2) == GreaterThan) (k1, v1) else (k2, v2), m)
 
     ///
     /// Returns the keys of `m`.
     ///
+    @Experimental
     pub def keysOf(m: DelayMap[k, v]): Set[k] with Order[k] =
         foldLeftWithKey((acc, k, _) -> Set.insert(k, acc), Set.empty(), m)
 
     ///
     /// Returns the values of `m`.
     ///
+    @Experimental
     pub def valuesOf(m: DelayMap[k, v]): List[v] =
         foldRight((v, acc) -> v :: acc, Nil, m)
 
     ///
     /// Removes the mapping `k` from the map `m`.
     ///
+    @Experimental
     pub def remove(k: k, m: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
         let DMap(t) = m;
         DMap(RedBlackTree.remove(k, t))
@@ -146,7 +161,7 @@ namespace DelayMap {
     ///
     /// Otherwise, updates `m` with `k -> v`.
     ///
-    @LazyWhenPure
+    @Experimental @LazyWhenPure
     pub def insertWith(f: (v, v) -> v & ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         insertWithKey((_, v1, v2) -> f(v1, v2), k, v, m)
 
@@ -155,7 +170,7 @@ namespace DelayMap {
     ///
     /// Otherwise, updates `m` with `k -> v`.
     ///
-    @LazyWhenPure
+    @Experimental @LazyWhenPure
     pub def insertWithKey(f: (k, v, v) -> v & ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         let f1 = (args) -> f(args.k, args.v1, args.v2);
         reifyEff(f1) {
@@ -185,14 +200,14 @@ namespace DelayMap {
     ///
     /// Returns a map with mappings `k -> f(v)` for every `k -> v` in `m`.
     ///
-    @LazyWhenPure
+    @Experimental @LazyWhenPure
     pub def map(f: v1 -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef with Order[k] =
         mapWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a map with mappings `k -> f(k, v)` for every `k -> v` in `m`.
     ///
-    @LazyWhenPure
+    @Experimental @LazyWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef =
         let f1 = (args) -> f(fst(args), snd(args));
         reifyEff(f1) {
@@ -222,12 +237,14 @@ namespace DelayMap {
     ///
     /// Returns a map of all mappings `k -> v` in `m` where `v` satisfies the predicate `f`.
     ///
+    @Experimental
     pub def filter(f: v -> Bool & ef, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         filterWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a map of all mappings `k -> v` in `m` where `(k, v)` satisfies the predicate `f`.
     ///
+    @Experimental
     pub def filterWithKey(f: (k, v) -> Bool & ef, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         foldLeftWithKey((acc, k, v) -> if (f(k, v)) insert(k, v, acc) else acc, empty(), m)
 
@@ -236,20 +253,21 @@ namespace DelayMap {
     ///
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
-    @LazyWhenPure
+    @Experimental @LazyWhenPure
     pub def union(m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
         unionWithKey((_, v1, _) -> v1, m1, m2)
 
     ///
     /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`.
     ///
-    @LazyWhenPure
+    @Experimental @LazyWhenPure
     pub def unionWith(f: (v, v) -> v & ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         unionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
+    @Experimental
     pub def unionWithKey(f: (k, v, v) -> v & ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         let f1 = (args) -> f(args.k, args.v1, args.v2);
         reifyEff(f1) {
@@ -297,6 +315,7 @@ namespace DelayMap {
     ///
     /// That is, the result is of the form: `f(...f(f(s, v1), v2)..., vn)`.
     ///
+    @Experimental
     pub def foldLeft(f: (b, v) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
         foldLeftWithKey((acc, _, v) -> f(acc, v), s, m)
 
@@ -305,6 +324,7 @@ namespace DelayMap {
     ///
     /// That is, the result is of the form: `f(...f(f(s, k1, v1), k2, v2)..., vn)`.
     ///
+    @Experimental
     pub def foldLeftWithKey(f: (b, k, v) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
         let DMap(t) = m;
         let f1 = (b, k, v) -> f(b, k, force v);
@@ -315,6 +335,7 @@ namespace DelayMap {
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
+    @Experimental
     pub def foldRight(f: (v, b) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
         foldRightWithKey((_, v, acc) -> f(v, acc), s, m)
 
@@ -323,6 +344,7 @@ namespace DelayMap {
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
+    @Experimental
     pub def foldRightWithKey(f: (k, v, b) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
         let DMap(t) = m;
         let f1 = (k1, v1, b1) -> f(k1, force v1, b1);
@@ -335,6 +357,7 @@ namespace DelayMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
+    @Experimental
     pub def reduceLeft(f: (v, v) -> v & ef, m: DelayMap[k, v]): Option[v] & ef =
         reduceLeftWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
@@ -345,6 +368,7 @@ namespace DelayMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
+    @Experimental
     pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
         let DMap(t) = m;
         let f1 = (k1, v1, k2, v2) -> {
@@ -363,6 +387,7 @@ namespace DelayMap {
     ///
     /// Returns `None` if `m` is the empty DelayMap.
     ///
+    @Experimental
     pub def reduceRight(f: (v, v) -> v & ef, m: DelayMap[k, v]): Option[v] & ef =
         reduceRightWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
@@ -373,6 +398,7 @@ namespace DelayMap {
     ///
     /// Returns `None` if `m` is the empty DelayMap.
     ///
+    @Experimental
     pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
         let DMap(t) = m;
         let f1 = (k1, v1, k2, v2) -> {
@@ -387,6 +413,7 @@ namespace DelayMap {
     ///
     /// Returns `m` as a Map, i.e. every value is forced.
     ///
+    @Experimental
     pub def toMap(m: DelayMap[k, v]): Map[k, v] =
         let DMap(t) = m;
         Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
@@ -396,26 +423,28 @@ namespace DelayMap {
     ///
     /// Otherwise, returns `m`.
     ///
+    @Experimental
     pub def adjust(f: v -> v & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         adjustWithKey((_, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k -> f(k, v)` if `k -> v` is in `m`. Otherwise, returns `m`.
     ///
+    @Experimental
     pub def adjustWithKey(f: (k, v) -> v & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         updateWithKey((k1, v) -> Some(f(k1, v)), k, m)
 
     ///
     /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
     ///
-    @LazyWhenPure
+    @Experimental @LazyWhenPure
     pub def update(f: v -> Option[v] & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         updateWithKey((_, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1)`. Otherwise, returns `m`.
     ///
-    @LazyWhenPure
+    @Experimental @LazyWhenPure
     pub def updateWithKey(f: (k, v) -> Option[v] & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         let f1 = (t) -> f(fst(t), snd(t));
         reifyEff(f1) {
@@ -454,6 +483,7 @@ namespace DelayMap {
     ///
     /// Returns `m` as a mutable set.
     ///
+    @Experimental
     pub def toMutMap(m: DelayMap[k, v]): MutMap[k, v] & Impure =
         let DMap(t) = m;
         let t1 = t |> RedBlackTree.mapWithKey((_, v) -> force v);
@@ -462,18 +492,21 @@ namespace DelayMap {
     ///
     /// Returns the map `m` as a set of key-value pairs.
     ///
+    @Experimental
     pub def toSet(m: DelayMap[k, v]): Set[(k, v)] with Order[k], Order[v] =
         foldLeftWithKey((acc, k, v) -> Set.insert((k, v), acc), Set.empty(), m)
 
     ///
     /// Returns the map `m` as a `LazyList` of key-value pairs.
     ///
+    @Experimental
     pub def toLazyList(m: DelayMap[k, v]): LazyList[(k, v)] =
         foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
 
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
+    @Experimental
     pub def toIterator(m: DelayMap[a, b]): Iterator[(a, b)] & Impure with Order[a] =
         let keys = keysOf(m) |> Set.toList;
         let cursor = ref keys;
@@ -495,6 +528,7 @@ namespace DelayMap {
     ///
     /// Applies `f` to every element of `xs`.
     ///
+    @Experimental
     pub def foreach(f: (k, v) -> Unit & ef, m: DelayMap[k, v]): Unit & ef =
         let DMap(t) = m;
         let f1 = (k, v) -> f(k, force v);
@@ -503,6 +537,7 @@ namespace DelayMap {
     ///
     /// Returns the sum of all values in `m`.
     ///
+    @Experimental
     pub def sum(m: DelayMap[k, Int32]): Int32 =
         let DMap(t) = m;
         RedBlackTree.foldLeft((acc, _, v) -> acc + force v, 0, t)

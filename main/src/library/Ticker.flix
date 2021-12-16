@@ -75,7 +75,7 @@ namespace Ticker {
     ///
     /// Sleeps for `s` nanoseconds, sends the Unit value to the given channel `c`, and then repeats.
     ///
-    def sleepSendAndRepeat(ns: Int64, ticker: Ticker, count: Int): Unit & Impure =
+    def sleepSendAndRepeat(ns: Int64, ticker: Ticker, count: Int32): Unit & Impure =
         import static java.lang.Thread.sleep(Int64);
 
         let (tickChannel, stopChannel) = match ticker {
@@ -93,10 +93,10 @@ namespace Ticker {
         }
 
     pub enum Ticker {
-      case Ticker(Channel[Int], Channel[Unit])
+      case Ticker(Channel[Int32], Channel[Unit])
     }
 
-    def newTicker(): Ticker & Impure = Ticker(chan Int 100, chan Unit 100)
+    def newTicker(): Ticker & Impure = Ticker(chan Int32 100, chan Unit 100)
 
     pub def stop(ticker: Ticker): Unit & Impure = {
       match ticker {
@@ -104,7 +104,7 @@ namespace Ticker {
       }
     }
 
-    pub def tick(ticker: Ticker): Channel[Int] = {
+    pub def tick(ticker: Ticker): Channel[Int32] = {
       match ticker {
         case Ticker(tickChannel, _stopChannel) => tickChannel
       }

@@ -13,14 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
-// TODO: Unsafe instance. Will be removed. (Blocked by Datalog engine usage.)
-instance Foldable[Array] {
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldLeft(f, s, a) as & ef
-    pub def foldRight(f: (a, b) -> b & ef, s: b, a: Array[a]): b & ef = Array.foldRight(f, s, a) as & ef
-}
-
 namespace Array {
 
     ///
@@ -1228,25 +1220,6 @@ namespace Array {
     @Time(length(a)) @Space(length(a))
     pub def unzip(a: Array[(a,b)]): (Array[a], Array[b]) & Impure =
         init2(i -> a[i], length(a))
-
-    ///
-    /// Returns an array where the element at index `i` is `f(a[i], b[i])`.
-    ///
-    /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
-    ///
-    @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
-    pub def map2(f: (a, b) -> c & ef, a: Array[a], b: Array[b]): Array[c] & Impure =
-        let len = Int32.min(length(a), length(b));
-        init(i -> f(a[i], b[i]), len)
-
-    ///
-    /// Concatenates the results of applying `f` pairwise to the elements of `a` and `b`,
-    /// ignoring additional elements of the longer array.
-    ///
-    @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
-    pub def flatMap2(f: (a, b) -> Array[c] & ef, a: Array[a], b: Array[b]): Array[c] & Impure =
-        let len = Int32.min(length(a), length(b));
-        init(i -> f(a[i], b[i]), len) |> flatten
 
     ///
     /// Alias for `foldLeft2`.

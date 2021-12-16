@@ -823,6 +823,9 @@ object Lowering extends Phase[Root, Root] {
       // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
       val quantifiedFreeVars = quantifiedVars(cparams0, exp0)
       mkGuard(quantifiedFreeVars, exp0, loc)
+
+    case Body.Loop(varSyms, exp, loc) =>
+      ??? // TODO
   }
 
   /**

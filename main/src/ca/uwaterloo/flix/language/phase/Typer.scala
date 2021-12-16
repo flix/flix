@@ -256,14 +256,19 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
                 case Validation.Failure(errs) =>
                   val instanceErrs = errs.collect {
                     case UnificationError.NoMatchingInstance(tconstr) =>
-                      if (tconstr.sym.name == "Eq")
-                        TypeError.MissingEq(tconstr.arg, tconstr.loc)
-                      else if (tconstr.sym.name == "Order")
-                        TypeError.MissingOrder(tconstr.arg, tconstr.loc)
-                      else if (tconstr.sym.name == "ToString")
-                        TypeError.MissingToString(tconstr.arg, tconstr.loc)
-                      else
-                        TypeError.NoMatchingInstance(tconstr.sym, tconstr.arg, tconstr.loc)
+                      tconstr.arg.typeConstructor match {
+                        case Some(tc: TypeConstructor.Arrow) =>
+                          TypeError.MissingArrowInstance(tconstr.sym, tconstr.arg, tconstr.loc)
+                        case _ =>
+                          if (tconstr.sym.name == "Eq")
+                            TypeError.MissingEq(tconstr.arg, tconstr.loc)
+                          else if (tconstr.sym.name == "Order")
+                            TypeError.MissingOrder(tconstr.arg, tconstr.loc)
+                          else if (tconstr.sym.name == "ToString")
+                            TypeError.MissingToString(tconstr.arg, tconstr.loc)
+                          else
+                            TypeError.MissingInstance(tconstr.sym, tconstr.arg, tconstr.loc)
+                      }
                   }
                   // Case 2: non instance error
                   if (instanceErrs.isEmpty) {
@@ -2141,17 +2146,21 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
       } yield (tconstrs, Type.mkSchemaRowExtend(pred, predicateType, restRow, loc))
 
-    //
-    //  exp : Bool
-    //  ----------
-    //  if exp : a
-    //
     case KindedAst.Predicate.Body.Guard(exp, loc) =>
-      // Infer the types of the terms.
       for {
         (constrs, tpe, eff) <- inferExp(exp, root)
         expEff <- unifyBoolM(Type.Pure, eff, loc)
         expTyp <- unifyTypeM(Type.Bool, tpe, loc)
+      } yield (constrs, mkAnySchemaRowType(loc))
+
+    case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
+      // TODO: Use type classes instead of array?
+      val tupleType = Type.mkTuple(varSyms.map(_.tvar.ascribedWith(Kind.Star)), loc)
+      val expectedType = Type.mkArray(tupleType, loc)
+      for {
+        (constrs, tpe, eff) <- inferExp(exp, root)
+        expEff <- unifyBoolM(Type.Pure, eff, loc)
+        expTyp <- unifyTypeM(expectedType, tpe, loc)
       } yield (constrs, mkAnySchemaRowType(loc))
   }
 
@@ -2166,6 +2175,11 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     case KindedAst.Predicate.Body.Guard(exp, loc) =>
       val e = reassembleExp(exp, root, subst0)
       TypedAst.Predicate.Body.Guard(e, loc)
+
+    case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
+      val e = reassembleExp(exp, root, subst0)
+      TypedAst.Predicate.Body.Loop(varSyms, e, loc)
+
   }
 
   /**

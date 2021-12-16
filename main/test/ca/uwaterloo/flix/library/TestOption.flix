@@ -34,16 +34,16 @@ def isEmpty03(): Bool = Option.isEmpty(Some(22ii)) == false
 // getWithDefault                                                          //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def getWithDefault01(): Bool = Option.getWithDefault(None, 32) == 32
+def getWithDefault01(): Bool = Option.getWithDefault(32, None) == 32
 
 @test
-def getWithDefault02(): Bool = Option.getWithDefault(Some(30), 32) == 30
+def getWithDefault02(): Bool = Option.getWithDefault(32, Some(30)) == 30
 
 @test
-def getWithDefault03(): Bool = Option.getWithDefault(None, 32ii) == 32ii
+def getWithDefault03(): Bool = Option.getWithDefault(32ii, None) == 32ii
 
 @test
-def getWithDefault04(): Bool = Option.getWithDefault(Some(30ii), 32ii) == 30ii
+def getWithDefault04(): Bool = Option.getWithDefault(32ii, Some(30ii)) == 30ii
 
 /////////////////////////////////////////////////////////////////////////////
 // exists                                                                  //
@@ -92,42 +92,6 @@ def map02(): Bool = Option.map(i -> 2*i, Some(1)) == Some(2)
 
 @test
 def map03(): Bool = Option.map(i -> 2*i, Some(2)) == Some(4)
-
-/////////////////////////////////////////////////////////////////////////////
-// map2                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def map201(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, None, None) == None
-
-@test
-def map202(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), None) == None
-
-@test
-def map203(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, None, Some(true)) == None
-
-@test
-def map204(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), Some(true)) == Some(2)
-
-@test
-def map205(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), Some(false)) == Some(3)
-
-/////////////////////////////////////////////////////////////////////////////
-// flatMap2                                                                //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def flatMap201(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, None, None) == None
-
-@test
-def flatMap202(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, Some(5), None) == None
-
-@test
-def flatMap203(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, None, Some(true)) == None
-
-@test
-def flatMap204(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, Some(1), Some(false)) == None
-
-@test
-def flatMap205(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, Some(1), Some(true)) == Some(2)
 
 /////////////////////////////////////////////////////////////////////////////
 // toList                                                                  //
@@ -196,16 +160,16 @@ def toFailure02(): Bool = Option.toFailure(Some("err"), "default") == Failure(Ne
 // withDefault                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def withDefault01(): Bool = Option.withDefault(None: Option[Unit], None: Option[Unit]) == None
+def withDefault01(): Bool = Option.withDefault(default = None, None) == None
 
 @test
-def withDefault02(): Bool = Option.withDefault(None, Some(1)) == Some(1)
+def withDefault02(): Bool = Option.withDefault(default = Some(1), None) == Some(1)
 
 @test
-def withDefault03(): Bool = Option.withDefault(Some(1), None) == Some(1)
+def withDefault03(): Bool = Option.withDefault(default = None, Some(1)) == Some(1)
 
 @test
-def withDefault04(): Bool = Option.withDefault(Some(1), Some(2)) == Some(1)
+def withDefault04(): Bool = Option.withDefault(default = Some(2), Some(1)) == Some(1)
 
 /////////////////////////////////////////////////////////////////////////////
 // replace                                                                 //

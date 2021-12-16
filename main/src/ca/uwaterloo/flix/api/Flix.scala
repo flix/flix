@@ -146,6 +146,7 @@ class Flix {
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
+    "System.flix" -> LocalResource.get("/src/library/System.flix"),
 
     "MutDeque.flix" -> LocalResource.get("/src/library/MutDeque.flix"),
     "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),
@@ -206,9 +207,6 @@ class Flix {
     "Fixpoint/Ram/RamTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RamTerm.flix"),
     "Fixpoint/Ram/RelOp.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RelOp.flix"),
     "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
-
-    "Unsafe.flix" -> LocalResource.get("/src/library/Unsafe.flix"),
-
   )
 
   /**

@@ -80,37 +80,9 @@ object Ast {
       *
       * @param loc the source location of the annotation.
       */
+    // NB: Deprecated
     case class Benchmark(loc: SourceLocation) extends Annotation {
       override def toString: String = "@benchmark"
-    }
-
-    /**
-      * An AST node that represents a `@deprecated` annotation.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Deprecated(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@deprecated"
-    }
-
-    /**
-      * An AST node that represents a `@law` annotation.
-      *
-      * A `law` function is a property (theorem) about the behaviour of one or more functions.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Law(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@law"
-    }
-
-    /**
-      * An AST node that represents a `@lint` annotation.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Lint(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@lint"
     }
 
     /**
@@ -120,21 +92,49 @@ object Ast {
       *
       * @param loc the source location of the annotation.
       */
+    // NB: Deprecated
     case class Test(loc: SourceLocation) extends Annotation {
       override def toString: String = "@test"
     }
 
     /**
-      * An AST node that represents a `@LazyWhenPure` annotation.
+      * An annotation that marks a construct as deprecated.
       *
       * @param loc the source location of the annotation.
       */
-    case class LazyWhenPure(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@LazyWhenPure"
+    case class Deprecated(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Deprecated"
     }
 
     /**
-      * An AST node that represents a `@ParallelWhenPure` annotation.
+      * An annotation that marks a construct as experimental.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Experimental(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Experimental"
+    }
+
+    /**
+      * An annotation that marks a construct as internal.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Internal(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Internal"
+    }
+
+    /**
+      * An annotation that marks a function definition as using parallel evaluation.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Parallel(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Parallel"
+    }
+
+    /**
+      * An annotation that marks a function definition as using parallel evaluation when given a pure function argument.
       *
       * @param loc the source location of the annotation.
       */
@@ -143,7 +143,34 @@ object Ast {
     }
 
     /**
-      * An AST node that represents a `@Time` annotation.
+      * An annotation that marks a function definition as using lazy evaluation.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Lazy(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Lazy"
+    }
+
+    /**
+      * An annotation that marks a function definition as using lazy evaluation when given a pure function argument.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class LazyWhenPure(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@LazyWhenPure"
+    }
+
+    /**
+      * An annotation that indicates the space complexity of a function definition.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Space(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Space"
+    }
+
+    /**
+      * An annotation that indicates the time complexity of a function definition.
       *
       * @param loc the source location of the annotation.
       */
@@ -152,12 +179,12 @@ object Ast {
     }
 
     /**
-      * An AST node that represents a `@Space` annotation.
+      * An annotation that marks a function definition as being inherently unsafe.
       *
       * @param loc the source location of the annotation.
       */
-    case class Space(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Space"
+    case class Unsafe(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Unsafe"
     }
 
   }
@@ -181,16 +208,6 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@benchmark` annotation.
       */
     def isBenchmark: Boolean = annotations exists (_.isInstanceOf[Annotation.Benchmark])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@law` annotation.
-      */
-    def isLaw: Boolean = annotations exists (_.isInstanceOf[Annotation.Law])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@lint` annotation.
-      */
-    def isLint: Boolean = annotations exists (_.isInstanceOf[Annotation.Lint])
 
     /**
       * Returns `true` if `this` sequence contains the `@test` annotation.
@@ -227,11 +244,6 @@ object Ast {
     */
   case class Modifiers(mod: List[Modifier]) {
     /**
-      * Returns `true` if these modifiers contain the inline modifier.
-      */
-    def isInline: Boolean = mod contains Modifier.Inline
-
-    /**
       * Returns `true` if these modifiers contain the lawless modifier.
       */
     def isLawless: Boolean = mod contains Modifier.Lawless
@@ -261,11 +273,6 @@ object Ast {
       */
     def isSynthetic: Boolean = mod contains Modifier.Synthetic
 
-    /**
-      * Returns `true` if these modifiers contain the unlawful modifier.
-      */
-    def isUnlawful: Boolean = mod contains Modifier.Unlawful
-
   }
 
   /**
@@ -274,11 +281,6 @@ object Ast {
   sealed trait Modifier
 
   object Modifier {
-
-    /**
-      * The inline modifier.
-      */
-    case object Inline extends Modifier
 
     /**
       * The lawless modifier.
@@ -309,11 +311,6 @@ object Ast {
       * The synthetic modifier.
       */
     case object Synthetic extends Modifier
-
-    /**
-      * The unlawful modifier.
-      */
-    case object Unlawful extends Modifier
 
   }
 

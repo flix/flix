@@ -50,7 +50,7 @@ enum BExp {
 ///
 /// We now define a small interpreter for arithmetic expressions.
 ///
-def evalAExp(e: AExp): Int = match e {
+def evalAExp(e: AExp): Int32 = match e {
     case Cst(i)                 => i
     case Plus(e1, e2)           => evalAExp(e1) + evalAExp(e2)
     case Minus(e1, e2)          => evalAExp(e1) - evalAExp(e2)

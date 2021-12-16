@@ -27,7 +27,7 @@ enum Result[t, e] with Eq, Order, ToString {
 }
 
 instance Hash[Result[t, e]] with Hash[t], Hash[e] {
-    pub def hash(r: Result[t, e]): Int = match r {
+    pub def hash(r: Result[t, e]): Int32 = match r {
         case Ok(v)  => 5381 + 113 * Hash.hash(v)
         case Err(v) => 5351 + 97 * Hash.hash(v)
     }
@@ -63,7 +63,7 @@ namespace Result {
     }
 
     ///
-    /// Returns `Ok(v)` if `r1` is `Ok(v)`. Otherwise returns `r2`.
+    /// Returns `Ok(v)` if `r` is `Ok(v)`. Otherwise returns `default`.
     ///
     @Time(1) @Space(1)
     pub def withDefault(default: {default :: Result[t, e2]}, r: Result[t, e1]): Result[t, e2] = match r {

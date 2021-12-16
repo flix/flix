@@ -21,97 +21,97 @@ pub lawless class Hash[a] {
     ///
     /// Returns a hash value for the given x.
     ///
-    pub def hash(x: a): Int
+    pub def hash(x: a): Int32
 
     // TODO: Add a law that hash is consistent with equals.
 }
 
 instance Hash[Unit] {
-    pub def hash(_x: Unit): Int = 0
+    pub def hash(_x: Unit): Int32 = 0
 }
 
 instance Hash[Bool] {
-    pub def hash(x: Bool): Int = match x {
+    pub def hash(x: Bool): Int32 = match x {
         case true => 1231
         case false => 1237
     }
 }
 
 instance Hash[Char] {
-    pub def hash(x: Char): Int =
+    pub def hash(x: Char): Int32 =
         import static java.lang.Character.hashCode(Char);
         hashCode(x) as & Pure
 }
 
 instance Hash[Float32] {
-    pub def hash(x: Float32): Int =
+    pub def hash(x: Float32): Int32 =
         import static java.lang.Float.hashCode(Float32);
         hashCode(x) as & Pure
 }
 
 instance Hash[Float64] {
-    pub def hash(x: Float64): Int =
+    pub def hash(x: Float64): Int32 =
         import static java.lang.Double.hashCode(Float64);
         hashCode(x) as & Pure
 }
 
 instance Hash[Int8] {
-    pub def hash(x: Int8): Int =
+    pub def hash(x: Int8): Int32 =
         import static java.lang.Byte.hashCode(Int8);
         hashCode(x) as & Pure
 }
 
 instance Hash[Int16] {
-    pub def hash(x: Int16): Int =
+    pub def hash(x: Int16): Int32 =
         import static java.lang.Short.hashCode(Int16);
         hashCode(x) as & Pure
 }
 
 instance Hash[Int32] {
-    pub def hash(x: Int32): Int =
+    pub def hash(x: Int32): Int32 =
         import static java.lang.Integer.hashCode(Int32);
         hashCode(x) as & Pure
 }
 
 instance Hash[Int64] {
-    pub def hash(x: Int64): Int =
+    pub def hash(x: Int64): Int32 =
         import static java.lang.Long.hashCode(Int64);
         hashCode(x) as & Pure
 }
 
 instance Hash[String] {
-    pub def hash(x: String): Int =
+    pub def hash(x: String): Int32 =
         import java.lang.String.hashCode();
         hashCode(x) as & Pure
 }
 
 instance Hash[BigInt] {
-    pub def hash(x: BigInt): Int =
+    pub def hash(x: BigInt): Int32 =
         import java.math.BigInteger.hashCode();
         hashCode(x) as & Pure
 }
 
 instance Hash[(a1, a2)] with Hash[a1], Hash[a2] {
-    pub def hash(t: (a1, a2)): Int = match t {
+    pub def hash(t: (a1, a2)): Int32 = match t {
         case (x1, x2) => 2 * 3 * Hash.hash(x1) + 5 * Hash.hash(x2)
     }
 }
 
 instance Hash[(a1, a2, a3)] with Hash[a1], Hash[a2], Hash[a3] {
-    pub def hash(t: (a1, a2, a3)): Int = match t {
+    pub def hash(t: (a1, a2, a3)): Int32 = match t {
         case (x1, x2, x3) => 3 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3)
     }
 }
 
 instance Hash[(a1, a2, a3, a4)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4] {
-    pub def hash(t: (a1, a2, a3, a4)): Int = match t {
+    pub def hash(t: (a1, a2, a3, a4)): Int32 = match t {
         case (x1, x2, x3, x4) =>
             4 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
     }
 }
 
 instance Hash[(a1, a2, a3, a4, a5)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5] {
-    pub def hash(t: (a1, a2, a3, a4, a5)): Int = match t {
+    pub def hash(t: (a1, a2, a3, a4, a5)): Int32 = match t {
         case (x1, x2, x3, x4, x5) =>
             5 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
             + 17 * Hash.hash(x5)
@@ -119,7 +119,7 @@ instance Hash[(a1, a2, a3, a4, a5)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4],
 }
 
 instance Hash[(a1, a2, a3, a4, a5, a6)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5], Hash[a6] {
-    pub def hash(t: (a1, a2, a3, a4, a5, a6)): Int = match t {
+    pub def hash(t: (a1, a2, a3, a4, a5, a6)): Int32 = match t {
         case (x1, x2, x3, x4, x5, x6) =>
             6 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
             + 17 * Hash.hash(x5) + 19 * Hash.hash(x6)
@@ -127,7 +127,7 @@ instance Hash[(a1, a2, a3, a4, a5, a6)] with Hash[a1], Hash[a2], Hash[a3], Hash[
 }
 
 instance Hash[(a1, a2, a3, a4, a5, a6, a7)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5], Hash[a6], Hash[a7] {
-    pub def hash(t: (a1, a2, a3, a4, a5, a6, a7)): Int = match t {
+    pub def hash(t: (a1, a2, a3, a4, a5, a6, a7)): Int32 = match t {
         case (x1, x2, x3, x4, x5, x6, x7) =>
             7 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
             + 17 * Hash.hash(x5) + 19 * Hash.hash(x6) + 23 * Hash.hash(x7)
@@ -135,7 +135,7 @@ instance Hash[(a1, a2, a3, a4, a5, a6, a7)] with Hash[a1], Hash[a2], Hash[a3], H
 }
 
 instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5], Hash[a6], Hash[a7], Hash[a8] {
-    pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8)): Int = match t {
+    pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8)): Int32 = match t {
         case (x1, x2, x3, x4, x5, x6, x7, x8) =>
             8 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
             + 17 * Hash.hash(x5) + 19 * Hash.hash(x6) + 23 * Hash.hash(x7) + 29 * Hash.hash(x8)
@@ -143,7 +143,7 @@ instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8)] with Hash[a1], Hash[a2], Hash[a3
 }
 
 instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5], Hash[a6], Hash[a7], Hash[a8], Hash[a9] {
-    pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Int = match t {
+    pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): Int32 = match t {
         case (x1, x2, x3, x4, x5, x6, x7, x8, x9) =>
             9 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
             + 17 * Hash.hash(x5) + 19 * Hash.hash(x6) + 23 * Hash.hash(x7) + 29 * Hash.hash(x8)
@@ -152,7 +152,7 @@ instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with Hash[a1], Hash[a2], Has
 }
 
 instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with Hash[a1], Hash[a2], Hash[a3], Hash[a4], Hash[a5], Hash[a6], Hash[a7], Hash[a8], Hash[a9], Hash[a10] {
-    pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Int = match t {
+    pub def hash(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): Int32 = match t {
         case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =>
             10 * 5 * Hash.hash(x1) + 7 * Hash.hash(x2) + 11 * Hash.hash(x3) + 13 * Hash.hash(x4)
             + 17 * Hash.hash(x5) + 19 * Hash.hash(x6) + 23 * Hash.hash(x7) + 29 * Hash.hash(x8)

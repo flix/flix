@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Benjamin Dahse
+ * Copyright 2021 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,4 @@
  * limitations under the License.
  */
 
-namespace Fixpoint {
-    ///
-    /// Helper function to implement `ToString`.
-    ///
-    @Internal
-    pub def commaSeparate(a: Array[v]): String with ToString[v] =
-        Array.formatWith(ToString.toString, ", ", a) as & Pure
-}
+export type Annotation = "@Deprecated|@Experimental|@Parallel|@ParallelWhenPure|@Lazy|@LazyWhenPure"

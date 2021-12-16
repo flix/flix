@@ -34,7 +34,7 @@ object GenFlixErrorClass {
     val visitor = AsmOps.mkClassWriter()
 
     // internal name of super
-    val superClass = JvmName.RuntimeException.toInternalName
+    val superClass = JvmName.Error.toInternalName
 
     // Initialize the visitor to create a class.
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT, name.toInternalName, null, superClass, null)
@@ -55,7 +55,7 @@ object GenFlixErrorClass {
     method.visitCode()
     method.visitVarInsn(ALOAD, 0)
     method.visitVarInsn(ALOAD, 1)
-    method.visitMethodInsn(INVOKESPECIAL, JvmName.RuntimeException.toInternalName, "<init>", constructorDescriptor, false)
+    method.visitMethodInsn(INVOKESPECIAL, JvmName.Error.toInternalName, "<init>", constructorDescriptor, false)
     method.visitInsn(RETURN)
     method.visitMaxs(999, 999)
     method.visitEnd()
