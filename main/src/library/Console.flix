@@ -141,6 +141,7 @@ namespace Console {
 
     // TODO: Add functions for missing colors.
 
+
     // TODO: Add functions for backgrounds.
 
     ///
