@@ -1,5 +1,5 @@
 /// Returns the sum of `x` and `y`.
-def add(x: Int32, y: Int32): Int = x + y
+def add(x: Int32, y: Int32): Int32 = x + y
 
 /// Returns `x` plus one.
 def inc(x: Int32): Int32 = add(x, 1)

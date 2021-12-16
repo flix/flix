@@ -240,7 +240,7 @@ def testCompileBExp5(): List[Inst] = compileBExp(Neq(Cst(1), Cst(2)))
 //
 // Finally, we write an interpreter for the stack-based language:
 //
-def evalInst(instructions: List[Inst], stack: List[Int]): Int32 = match (instructions, stack) {
+def evalInst(instructions: List[Inst], stack: List[Int32]): Int32 = match (instructions, stack) {
     case (Nil, x :: _) => x
     case ((Push(i)) :: rs, st) => evalInst(rs, i :: st)
     case (Add :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 + i2) :: st)
