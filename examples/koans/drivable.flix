@@ -1,4 +1,4 @@
-pub def drivable(roads: Array[(city, city)], source: city, destination: city): Bool with Boxable[city] =
+pub def drivable(roads: List[(city, city)], source: city, destination: city): Bool with Boxable[city] =
     let r = project roads into Road;
     let lp = #{
         Path(x, y) :- Road(x, y).

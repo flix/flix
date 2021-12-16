@@ -1,4 +1,4 @@
-pub def heirsAndUsurpers(parents: Array[(person, person)], emperors: Array[person]): {heirs :: Array[person], usurpers :: Array[person]} with Boxable[person] =
+pub def heirsAndUsurpers(parents: List[(person, person)], emperors: List[person]): {heirs :: Array[person], usurpers :: Array[person]} with Boxable[person] =
     let p = project parents into Parent;
     let e = project emperors into Emperor;
     let lp = #{
