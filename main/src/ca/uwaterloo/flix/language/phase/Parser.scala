@@ -197,7 +197,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def NonEmptyBody = namedRule("ClassBody") {
-        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Law | Declarations.Sig).separatedBy(WS) ~ optWS ~ "}" ~ SP
+        optWS ~ "{" ~ zeroOrMore(Declarations.Law | Declarations.Sig) ~ optWS ~ "}" ~ SP
       }
 
       rule {
@@ -223,7 +223,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def NonEmptyBody = namedRule("InstanceBody") {
-        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Def).separatedBy(WS) ~ optWS ~ "}" ~ SP
+        optWS ~ "{" ~ zeroOrMore(Declarations.Def) ~ optWS ~ "}" ~ SP
       }
 
       rule {
