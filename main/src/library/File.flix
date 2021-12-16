@@ -391,10 +391,7 @@ namespace File {
                 Err("An error occurred when writing to the file: "+f)
             }
             else {
-                match alreadyExists {
-                    case Ok(exists) => Ok(not exists)
-                    case Err(mes)   => Err(mes)
-                }
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>
@@ -429,10 +426,7 @@ namespace File {
                 Err("An error occurred when writing lines to the file: "+f)
             }
             else {
-                match alreadyExists {
-                    case Ok(exists) => Ok(not exists)
-                    case Err(mes)   => Err(mes)
-                }
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>
@@ -468,10 +462,7 @@ namespace File {
                 Err("An error occurred when appending to the file: "+f)
             }
             else {
-                match alreadyExists {
-                    case Ok(exists) => Ok(not exists)
-                    case Err(mes)   => Err(mes)
-                }
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>
@@ -507,10 +498,7 @@ namespace File {
                 Err("An error occurred when appending lines to the file: "+f)
             }
             else {
-                match alreadyExists {
-                    case Ok(exists) => Ok(not exists)
-                    case Err(mes)   => Err(mes)
-                }
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>
