@@ -726,7 +726,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               }
 
               // Assemble the lambda expression.
-              val lambdaBody = WeededAst.Expression.InvokeConstructor(className, as, ts, loc)
+              val call = WeededAst.Expression.InvokeConstructor(className, as, ts, loc)
+              val lambdaBody = WeededAst.Expression.Cast(call, tpe, eff, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
@@ -816,7 +817,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               }
 
               // Assemble the lambda expression.
-              val lambdaBody = WeededAst.Expression.InvokeStaticMethod(className, methodName, as, ts, loc)
+              val call = WeededAst.Expression.InvokeStaticMethod(className, methodName, as, ts, loc)
+              val lambdaBody = WeededAst.Expression.Cast(call, tpe, eff, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }

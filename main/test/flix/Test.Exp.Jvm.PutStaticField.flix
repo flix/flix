@@ -126,4 +126,11 @@ namespace Test/Exp/Jvm/PutStaticField {
         setField("Goodbye World!");
         getField() == "Goodbye World!"
 
+    @test
+    def testPutStaticPureField02(): Bool & Impure =
+        import static get flix.test.TestClass.STRING_FIELD: _ & Pure as getField;
+        import static set flix.test.TestClass.STRING_FIELD: _ & Pure as setField;
+        setField("Goodbye World!");
+        getField() == "Goodbye World!"
+
 }

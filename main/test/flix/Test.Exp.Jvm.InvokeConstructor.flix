@@ -45,4 +45,8 @@ namespace Test/Exp/Jvm/InvokeConstructor {
         import new java.lang.String(String) as newString;
         newString("Hello World")
 
+    @test
+    def testInvokePureConstructor09(): ##java.lang.String =
+        import new java.lang.String(String): _ & Pure as newString;
+        newString("Hello World")
 }

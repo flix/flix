@@ -25,4 +25,8 @@ namespace Test/Exp/Jvm/InvokeMethod {
         import java.lang.String.replaceAll(String, String);
         replaceAll("hello world", "hello", "goodbye") == "goodbye world"
 
+    @test
+    def testInvokePureMethod01(): Bool =
+        import java.lang.String.toLowerCase(): _ & Pure;
+        toLowerCase("HELLO WORLD") == "hello world"
 }
