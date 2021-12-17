@@ -187,9 +187,6 @@ namespace Console {
     pub def cyanBright(s: String): String =
         rgb(BrightCyan |> toRGB, s)
 
-
-    // TODO: Add functions for missing colors.
-
     // TODO: Add functions for backgrounds.
 
     ///
