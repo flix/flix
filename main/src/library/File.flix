@@ -365,6 +365,44 @@ namespace File {
         }
 
     ///
+    /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
+    ///
+    pub def readChunks(f: String, chunkSize: Int32): Iterator[Result[Array[Int8], String]] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileInputStream(##java.io.File) as newInputStream;
+            import java.io.FileInputStream.read(Array[Int8]);
+
+            let javaFile = newFile(f);
+            let stream = newInputStream(javaFile);
+            let bytes = ref [0i8; chunkSize];
+            let numberRead = ref read(stream, deref bytes);
+
+            let done = () -> deref numberRead == -1;
+            let next = () -> {
+                try {
+                    let chunk = deref bytes;
+                    bytes := [0i8; chunkSize];
+                    let accRead = deref numberRead;
+                    numberRead := read(stream, deref bytes);
+                    Ok(readBytesWithHelper(chunk, accRead, chunkSize))
+                } catch {
+                    case ex: ##java.io.IOException => {
+                        bytes := null as Array[Int8];
+                        numberRead := null as Int32;
+                        import java.lang.Throwable.getMessage();
+                        Err(getMessage(ex))
+                    }
+                }
+            };
+            Iterator(done, next)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Iterator.singleton(Err(getMessage(ex)))
+        }
+
+    ///
     /// Writes `data` to the given file `f`.
     ///
     /// Creates file `f` if it does not exist. Overwrites it if it exists.
