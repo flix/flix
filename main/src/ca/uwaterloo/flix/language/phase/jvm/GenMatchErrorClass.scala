@@ -17,15 +17,16 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.InstanceField
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 
 object GenMatchErrorClass {
 
-  val LocationFieldName: String = "location"
+  private val locationField: InstanceField =
+    InstanceField(JvmName.MatchError, "location", JvmName.ReifiedSourceLocation.toTpe)
 
   /**
     * Creates a subclass of `dev.flix.runtime.FlixError` with a
@@ -42,9 +43,9 @@ object GenMatchErrorClass {
     cm.mkConstructor(genConstructor(), mkDescriptor(JvmName.ReifiedSourceLocation.toTpe)(VoidableType.Void), IsPublic)
 
     // TODO: Are these ever used?
-    cm.mkMethod(genEquals(), "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool), IsPublic, NotFinal)
-    cm.mkMethod(genHashCode(), "hashCode", mkDescriptor()(BackendType.Int32), IsPublic, NotFinal)
-    cm.mkField(LocationFieldName, JvmName.ReifiedSourceLocation.toTpe, IsPublic, IsFinal)
+    cm.mkMethod(genEqualsMethod(), "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool), IsPublic, NotFinal)
+    cm.mkMethod(genHashCodeMethod(), "hashCode", mkDescriptor()(BackendType.Int32), IsPublic, NotFinal)
+    locationField.mkField(cm, IsPublic, IsFinal)
 
     cm.closeClassMaker
   }
@@ -64,50 +65,39 @@ object GenMatchErrorClass {
       invokeConstructor(JvmName.FlixError, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
       thisLoad() ~
       ALOAD(1) ~
-      PUTFIELD(JvmName.MatchError, LocationFieldName, JvmName.ReifiedSourceLocation.toTpe) ~
+      locationField.putField() ~
       RETURN()
   }
 
-  private def genEquals(): InstructionSet =
+  private def genEqualsMethod(): InstructionSet = withName(1, JvmName.Object.toTpe) { otherObj =>
+    // check exact equality
     thisLoad() ~
-      ALOAD(1) ~
-      branch(Condition.ACMPNE) {
-        case TrueBranch =>
-          ALOAD(1) ~
-            branch(Condition.NULL) {
-              case TrueBranch =>
-                pushBool(false) ~ IRETURN()
-              case FalseBranch =>
-                thisLoad() ~
-                  INVOKEVIRTUAL(JvmName.Object, "getClass", mkDescriptor()(JvmName.Class.toTpe)) ~
-                  ALOAD(1) ~
-                  INVOKEVIRTUAL(JvmName.Object, "getClass", mkDescriptor()(JvmName.Class.toTpe)) ~
-                  branch(Condition.ACMPNE) {
-                    case TrueBranch =>
-                      ALOAD(1) ~
-                        CHECKCAST(JvmName.MatchError) ~
-                        ASTORE(2) ~
-                        thisLoad() ~
-                        GETFIELD(JvmName.MatchError, LocationFieldName, JvmName.ReifiedSourceLocation.toTpe) ~
-                        ALOAD(2) ~
-                        GETFIELD(JvmName.MatchError, LocationFieldName, JvmName.ReifiedSourceLocation.toTpe) ~
-                        INVOKESTATIC(JvmName.Objects, "equals", mkDescriptor(JvmName.Object.toTpe, JvmName.Object.toTpe)(BackendType.Bool)) ~
-                        IRETURN()
-                    case FalseBranch =>
-                      pushBool(false) ~ IRETURN()
-                  }
-            }
-        case FalseBranch =>
-          pushBool(true) ~ IRETURN()
+      otherObj.load() ~
+      ifTrue(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
+      // check `other == null`
+      otherObj.load() ~
+      ifTrue(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
+      // the class equality
+      thisLoad() ~
+      INVOKEVIRTUAL(JvmName.Object, "getClass", mkDescriptor()(JvmName.Class.toTpe)) ~
+      otherObj.load() ~
+      INVOKEVIRTUAL(JvmName.Object, "getClass", mkDescriptor()(JvmName.Class.toTpe)) ~
+      ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
+      // check individual fields
+      ALOAD(1) ~ CHECKCAST(JvmName.MatchError) ~
+      storeWithName(2, JvmName.MatchError.toTpe) { otherErr =>
+        thisLoad() ~ locationField.getField() ~
+          otherErr.load() ~ locationField.getField() ~
+          INVOKESTATIC(JvmName.Objects, "equals", mkDescriptor(JvmName.Object.toTpe, JvmName.Object.toTpe)(BackendType.Bool)) ~
+          IRETURN()
       }
+  }
 
-  private def genHashCode(): InstructionSet =
-    ICONST_1() ~
-      ANEWARRAY(JvmName.Object) ~
+  private def genHashCodeMethod(): InstructionSet =
+    ICONST_1() ~ ANEWARRAY(JvmName.Object) ~
       DUP() ~
       ICONST_0() ~
-      thisLoad() ~
-      GETFIELD(JvmName.MatchError, LocationFieldName, JvmName.ReifiedSourceLocation.toTpe) ~
+      thisLoad() ~ locationField.getField() ~
       AASTORE() ~
       INVOKESTATIC(JvmName.Object, "hash", mkDescriptor(BackendType.Array(JvmName.Object.toTpe))(BackendType.Int32)) ~
       IRETURN()

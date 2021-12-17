@@ -23,8 +23,6 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 
 object GenRefClasses {
 
-  val ValueFieldName: String = "value"
-
   def gen(ts: Iterable[BackendObjType.Ref])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, refType) =>
@@ -35,7 +33,7 @@ object GenRefClasses {
   private def genRefClass(refType: BackendObjType.Ref)(implicit root: Root, flix: Flix): Array[Byte] = {
     val cm = ClassMaker.mkClass(refType.jvmName, IsFinal)
 
-    cm.mkField(ValueFieldName, refType.tpe, IsPublic, NotFinal)
+    refType.ValueField.mkField(cm, IsPublic, NotFinal)
     cm.mkObjectConstructor(IsPublic)
 
     cm.closeClassMaker
