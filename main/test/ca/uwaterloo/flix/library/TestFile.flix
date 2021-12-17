@@ -181,20 +181,4 @@ namespace TestFile {
             case _ => false
         }
 
-    /////////////////////////////////////////////////////////////////////////////
-    // readChunks                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def testReadChunks01(): Bool & Impure =
-        match readChunks("./LICENSE.md", 5) {
-            case Iterator(_, next) => Result.isOk(next())
-        }
-
-    @test
-    def testReadChunks02(): Bool & Impure =
-        match readChunks("./LICENSE.md", 5) {
-            case Iterator(done, _) => done() == false
-        }
-
 }
