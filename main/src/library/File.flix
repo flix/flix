@@ -506,5 +506,84 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+    ///
+    /// Writes `data` to the given `f`.
+    ///
+    /// Creates `f` if it does not exist. Overwrites it if it exists.
+    ///
+    /// Returns `true` if the file was created.
+    ///
+    pub def writeBytes(f: String, data: f[Int8]): Result[Bool, String] & Impure with Foldable[f] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileOutputStream(##java.io.File) as newFileStream;
+            import new java.io.PrintWriter(##java.io.Writer) as newPrintWriter;
+            import java.io.FileOutputStream.write(Int32);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let javaFile = newFile(f);
+            let fileStream = newFileStream(javaFile);
+            let printWriter = newPrintWriter(fileStream as ##java.io.Writer);
+
+            Foldable.foldLeft((_, b) -> write(fileStream, Int8.toInt32(b)), (), data);
+            close(printWriter);
+
+            Ok(Bool.not(checkError(printWriter)))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Appends `data` to the given `f`.
+    ///
+    /// Returns `true` if the file was created.
+    ///
+    pub def appendBytes(f: String, data: f[Int8]): Result[Bool, String] & Impure with Foldable[f] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileOutputStream(##java.io.File, Bool) as newFileStream;
+            import new java.io.PrintWriter(##java.io.Writer) as newPrintWriter;
+            import java.io.FileOutputStream.write(Int32);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let javaFile = newFile(f);
+            let fileStream = newFileStream(javaFile, true);
+            let printWriter = newPrintWriter(fileStream as ##java.io.Writer);
+
+            Foldable.foldLeft((_, b) -> write(fileStream, Int8.toInt32(b)), (), data);
+            close(printWriter);
+
+            Ok(Bool.not(checkError(printWriter)))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns `true` if the file `f` was created.
+    ///
+    pub def truncate(f: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let javaFile = newFile(f);
+            let printWriter = newPrintWriter(javaFile);
+
+            close(printWriter);
+
+            Ok(Bool.not(checkError(printWriter)))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
 
 }
