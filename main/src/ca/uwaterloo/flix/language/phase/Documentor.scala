@@ -267,10 +267,21 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given annotations `ann` as a JSON value.
     */
-  private def visitAnnotations(ann: List[Annotation]): JArray =
-    JArray(ann.map {
-      case Annotation(a, _, _) => a.toString
-    })
+  private def visitAnnotations(ann: List[Annotation]): JArray = {
+    def isSpace(a: Ast.Annotation): Boolean = a match {
+      case Ast.Annotation.Space(_) => true
+      case _ => false
+    }
+
+    def isTime(a: Ast.Annotation): Boolean = a match {
+      case Ast.Annotation.Time(_) => true
+      case _ => false
+    }
+
+    val filtered = ann.map(_.name).filter(a => !isSpace(a) && !isTime(a))
+
+    JArray(filtered.map(_.toString))
+  }
 
   /**
     * Returns the given Doc `doc` as a JSON value.
