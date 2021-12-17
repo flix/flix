@@ -29,4 +29,9 @@ namespace Test/Exp/Jvm/InvokeMethod {
     def testInvokePureMethod01(): Bool =
         import java.lang.String.toLowerCase(): _ & Pure;
         toLowerCase("HELLO WORLD") == "hello world"
+
+    @test
+    def testInvokeObjectMethod01(): ##java.lang.Object & Impure =
+        import java.lang.String.toLowerCase(): ##java.lang.Object;
+        toLowerCase("HELLO WORLD")
 }

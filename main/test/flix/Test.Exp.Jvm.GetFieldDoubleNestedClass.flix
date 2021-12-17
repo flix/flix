@@ -69,4 +69,11 @@ namespace Test/Exp/Jvm/GetFieldDoubleNestedClass {
         import get flix.test.TestClass$_StaticNestedClass$DoubleNestedClass.stringField: & Pure as getField;
         let o: ##flix.test.TestClass$_StaticNestedClass$DoubleNestedClass = newObject();
         getField(o) == "Hello World"
+
+    @test
+    def testGetObjectField01(): ##java.lang.Object & Impure =
+        import new flix.test.TestClass$_StaticNestedClass$DoubleNestedClass() as newObject;
+        import get flix.test.TestClass$_StaticNestedClass$DoubleNestedClass.stringField: ##java.lang.Object as getField;
+        let o: ##flix.test.TestClass$_StaticNestedClass$DoubleNestedClass = newObject();
+        getField(o)
 }
