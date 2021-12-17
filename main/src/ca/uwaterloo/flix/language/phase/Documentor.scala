@@ -349,10 +349,11 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given Enum `enum` as a JSON value.
     */
   private def visitEnum(enum: Enum): JObject = enum match {
-    case Enum(doc, _, sym, tparams, cases, _, _, loc) =>
+    case Enum(doc, _, sym, tparams, derives, cases, _, _, loc) =>
       ("doc" -> visitDoc(doc)) ~
         ("sym" -> visitEnumSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
+        ("derives" -> derives.map{ d => visitClassSym(d.clazz) }) ~
         ("cases" -> cases.values.map(visitCase)) ~
         ("loc" -> visitSourceLocation(loc))
   }
