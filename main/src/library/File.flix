@@ -511,7 +511,7 @@ namespace File {
     ///
     /// Creates `f` if it does not exist. Overwrites it if it exists.
     ///
-    /// Returns `true` if the file was created.
+    /// Returns `true` if the file `f` was created, and `false` if `f` was overwritten.
     ///
     pub def writeBytes(f: String, data: f[Int8]): Result[Bool, String] & Impure with Foldable[f] =
         try {
@@ -522,6 +522,8 @@ namespace File {
             import java.io.PrintWriter.close();
             import java.io.PrintWriter.checkError();
 
+            let alreadyExists = File.exists(f);
+
             let javaFile = newFile(f);
             let fileStream = newFileStream(javaFile);
             let printWriter = newPrintWriter(fileStream as ##java.io.Writer);
@@ -529,7 +531,12 @@ namespace File {
             Foldable.foldLeft((_, b) -> write(fileStream, Int8.toInt32(b)), (), data);
             close(printWriter);
 
-            Ok(Bool.not(checkError(printWriter)))
+            if (checkError(printWriter)) {
+                Err("An error occurred when writing to the file: " + f)
+            }
+            else {
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+            }
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
@@ -539,7 +546,7 @@ namespace File {
     ///
     /// Appends `data` to the given `f`.
     ///
-    /// Returns `true` if the file was created.
+    /// Returns `true` if the file `f` was created, and `false` if `data` was appended to an existing `f`.
     ///
     pub def appendBytes(f: String, data: f[Int8]): Result[Bool, String] & Impure with Foldable[f] =
         try {
@@ -550,14 +557,22 @@ namespace File {
             import java.io.PrintWriter.close();
             import java.io.PrintWriter.checkError();
 
+            let alreadyExists = File.exists(f);
+
             let javaFile = newFile(f);
+            // 2nd parameter `true` is for append.
             let fileStream = newFileStream(javaFile, true);
             let printWriter = newPrintWriter(fileStream as ##java.io.Writer);
 
             Foldable.foldLeft((_, b) -> write(fileStream, Int8.toInt32(b)), (), data);
             close(printWriter);
 
-            Ok(Bool.not(checkError(printWriter)))
+            if (checkError(printWriter)) {
+                Err("An error occurred when writing to the file: " + f)
+            }
+            else {
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+            }
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
@@ -565,7 +580,7 @@ namespace File {
         }
 
     ///
-    /// Returns `true` if the file `f` was created.
+    /// Returns `true` if the file `f` was created, and `false` if `f` was overwritten.
     ///
     pub def truncate(f: String): Result[Bool, String] & Impure =
         try {
@@ -574,12 +589,19 @@ namespace File {
             import java.io.PrintWriter.close();
             import java.io.PrintWriter.checkError();
 
+            let alreadyExists = File.exists(f);
+
             let javaFile = newFile(f);
             let printWriter = newPrintWriter(javaFile);
 
             close(printWriter);
 
-            Ok(Bool.not(checkError(printWriter)))
+            if (checkError(printWriter)) {
+                Err("An error occurred when writing to the file: " + f)
+            }
+            else {
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+            }
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
