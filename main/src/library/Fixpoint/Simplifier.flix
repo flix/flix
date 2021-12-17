@@ -32,10 +32,10 @@ namespace Fixpoint {
     ///         end
     ///     end
     ///
-    def simplifyStmt(stmt: RamStmt[v]): RamStmt[v] =
-        Option.getWithDefault(RamStmt.Seq([]), simplifyHelper(Set#{}, stmt)) as & Pure
+    def simplifyStmt(stmt: RamStmt[v]): RamStmt[v] & Impure =
+        Option.getWithDefault(RamStmt.Seq([]), simplifyHelper(Set#{}, stmt))
 
-    def simplifyHelper(stratum: Set[RamSym[v]], stmt: RamStmt[v]): Option[RamStmt[v]] = match stmt {
+    def simplifyHelper(stratum: Set[RamSym[v]], stmt: RamStmt[v]): Option[RamStmt[v]] & Impure = match stmt {
         case RamStmt.Insert(op) =>
             use Option.flatMap;
             let* newOp = simplifyOp(stratum, op);
@@ -60,12 +60,12 @@ namespace Fixpoint {
                     else
                         Some(RamStmt.Insert(newOp))
                 case _ => Some(RamStmt.Insert(newOp))
-            } as & Pure
+            }
         case RamStmt.Merge(_, _) => Some(stmt)
         case RamStmt.Assign(_, _) => Some(stmt)
         case RamStmt.Purge(_) => Some(stmt)
         case RamStmt.Seq(xs) =>
-            Some(RamStmt.Seq(Array.filterMap(simplifyHelper(stratum), xs))) as & Pure
+            Some(RamStmt.Seq(Array.filterMap(simplifyHelper(stratum), xs)))
         case RamStmt.Until(test, body) =>
             let newStratum = List.foldLeft(acc -> e -> match e {
                 case BoolExp.Empty(ramSym) => Set.insert(ramSym, acc)

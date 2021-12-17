@@ -751,7 +751,7 @@ namespace List {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(xs)) @Space(space(f))
-    pub def forall(f: a -> Bool, xs: List[a]): Bool = match xs {
+    pub def forall(f: a -> Bool & ef, xs: List[a]): Bool & ef = match xs {
         case Nil => true
         case x :: rs => if (not f(x)) false else forall(f, rs)
     }
