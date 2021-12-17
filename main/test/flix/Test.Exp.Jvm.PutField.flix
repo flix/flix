@@ -80,13 +80,4 @@ namespace Test/Exp/Jvm/PutField {
         let o = newObject();
         setField(o, "Goodbye World");
         getField(o) == "Goodbye World"
-
-    @test
-    def testPutPureField01(): Bool =
-        import new flix.test.TestClass(): _ & Pure as newObject;
-        import get flix.test.TestClass.stringField: _ & Pure as getField;
-        import set flix.test.TestClass.stringField: _ & Pure as setField;
-        let o = newObject();
-        setField(o, "Goodbye World");
-        getField(o) == "Goodbye World"
 }
