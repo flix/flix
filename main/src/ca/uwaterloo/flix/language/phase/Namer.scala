@@ -1363,6 +1363,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def freeVars(tpe0: WeededAst.Type): List[Name.Ident] = tpe0 match {
     case WeededAst.Type.Var(ident, loc) => ident :: Nil
+    case WeededAst.Type.RigidVar(ident, loc) => throw InternalCompilerException(s"Unexpected free rigid type variable: '${ident.name}'.") // TODO
     case WeededAst.Type.Ambiguous(qname, loc) => Nil
     case WeededAst.Type.Unit(loc) => Nil
     case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
@@ -1393,6 +1394,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     def visit(tpe0: WeededAst.Type): List[Name.Ident] = tpe0 match {
       case WeededAst.Type.Var(ident, loc) if tenv.contains(ident.name) => Nil
       case WeededAst.Type.Var(ident, loc) => ident :: Nil
+      case WeededAst.Type.RigidVar(ident, loc) => throw InternalCompilerException(s"Unexpected free rigid type variable: '${ident.name}'.") // TODO
       case WeededAst.Type.Ambiguous(qname, loc) => Nil
       case WeededAst.Type.Unit(loc) => Nil
       case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(visit)
