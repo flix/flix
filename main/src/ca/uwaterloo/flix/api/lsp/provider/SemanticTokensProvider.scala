@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -152,17 +152,20 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given enum `enum0`.
     *
-    * Returns tokens for the symbol, the type parameters, and the cases.
+    * Returns tokens for the symbol, the type parameters, the derivations, and the cases.
     */
   private def visitEnum(enum0: TypedAst.Enum): Iterator[SemanticToken] = enum0 match {
-    case TypedAst.Enum(_, _, sym, tparams, cases, _, _, _) =>
+    case TypedAst.Enum(_, _, sym, tparams, derives, cases, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Enum, Nil, sym.loc)
       val st1 = Iterator(t)
       val st2 = tparams.flatMap(visitTypeParam).iterator
-      val st3 = enum0.cases.foldLeft(Iterator.empty[SemanticToken]) {
+      val st3 = Iterator(derives: _*).map {
+        case Ast.Derivation(_, loc) => SemanticToken(SemanticTokenType.Class, Nil, loc)
+      }
+      val st4 = cases.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, (_, caze)) => acc ++ visitCase(caze)
       }
-      st1 ++ st2 ++ st3
+      st1 ++ st2 ++ st3 ++ st4
   }
 
   /**
