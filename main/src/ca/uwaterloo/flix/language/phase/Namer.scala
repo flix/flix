@@ -1076,6 +1076,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         }
       }
 
+    case WeededAst.Type.RigidVar(ident, loc) =>
+      // TODO: SuspiciousTypeVarName
+      // TODO: Check wild var and check not in tenv!
+      val tvar = Type.freshUnkindedVar(loc, Rigidity.Rigid, Some(ident.name))
+      NamedAst.Type.Var(tvar, loc).toSuccess
+
     case WeededAst.Type.Ambiguous(qname, loc) =>
       if (qname.isUnqualified) {
         val name = qname.ident.name
