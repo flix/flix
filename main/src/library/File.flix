@@ -634,7 +634,7 @@ namespace File {
             close(printWriter);
 
             if (checkError(printWriter)) {
-                Err("An error occurred when writing to the file: " + f)
+                Err("An error occurred when truncating the file: " + f)
             }
             else {
                 Result.flatMap((exists) -> Ok(not exists), alreadyExists)
