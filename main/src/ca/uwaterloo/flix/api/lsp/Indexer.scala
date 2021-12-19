@@ -76,10 +76,13 @@ object Indexer {
     */
   private def visitEnum(enum0: Enum): Index = {
     val idx0 = Index.occurrenceOf(enum0)
-    val idx1 = enum0.cases.foldLeft(Index.empty) {
+    val idx1 = enum0.derives.foldLeft(Index.empty) {
+      case (idx, Ast.Derivation(clazz, loc)) => Index.useOf(clazz, loc)
+    }
+    val idx2 = enum0.cases.foldLeft(Index.empty) {
       case (idx, (tag, caze)) => idx ++ Index.occurrenceOf(caze)
     }
-    idx0 ++ idx1
+    idx0 ++ idx1 ++ idx2
   }
 
   /**
