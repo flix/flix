@@ -1552,8 +1552,8 @@ namespace TestDelayMap {
 
     @test
     def toIterator02(): Bool & Impure =
-        Map#{"A" -> 1, "B" -> 2, "C" -> 3, "D" -> 4} |> Map.toDelayMap |>
-            DelayMap.toIterator |> Iterator.toMap == Map#{"A" -> 1, "B" -> 2, "C" -> 3, "D" -> 4}
+        Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4} |> Map.toDelayMap |>
+            DelayMap.toIterator |> Iterator.toMap == Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4}
 
     @test
     def toIterator03(): Bool & Impure =
