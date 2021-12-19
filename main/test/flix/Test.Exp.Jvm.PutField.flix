@@ -80,5 +80,4 @@ namespace Test/Exp/Jvm/PutField {
         let o = newObject();
         setField(o, "Goodbye World");
         getField(o) == "Goodbye World"
-
 }
