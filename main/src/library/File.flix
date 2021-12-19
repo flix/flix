@@ -590,8 +590,8 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import new java.io.FileOutputStream(##java.io.File, Bool) as newFileStream;
-            import new java.io.PrintWriter(##java.io.Writer) as newPrintWriter;
-            import java.io.FileOutputStream.write(Int32);
+            import new java.io.PrintWriter(##java.io.OutputStream) as newPrintWriter;
+            import java.io.FileOutputStream.write(Array[Int8]);
             import java.io.PrintWriter.close();
             import java.io.PrintWriter.checkError();
 
@@ -600,9 +600,11 @@ namespace File {
             let javaFile = newFile(f);
             // 2nd parameter `true` is for append.
             let fileStream = newFileStream(javaFile, true);
-            let printWriter = newPrintWriter(fileStream as ##java.io.Writer);
+            let printWriter = newPrintWriter(fileStream as ##java.io.OutputStream);
 
-            Foldable.foldLeft((_, b) -> write(fileStream, Int8.toInt32(b)), (), data);
+            let dataAsArray = Foldable.toArray(data);
+            write(fileStream, dataAsArray);
+
             close(printWriter);
 
             if (checkError(printWriter)) {
