@@ -352,11 +352,11 @@ namespace File {
     /// Returns an array that corresponds to the bytes actually read from the stream.
     ///
     def readBytesWithHelper(bytes: Array[Int8], numberRead: Int32, count: Int32): Array[Int8] & Impure =
-        let nothingRead = numberRead == -1;
-        let countBiggest = numberRead < count;
+        let nothingRead = (numberRead == -1);
         if (nothingRead) {
             []
         } else {
+            let countBiggest = numberRead < count;
             if (countBiggest) {
                 Array.slice(0, numberRead, bytes)
             } else {
@@ -388,7 +388,7 @@ namespace File {
                     Ok(readBytesWithHelper(chunk, accRead, chunkSize))
                 } catch {
                     case ex: ##java.io.IOException => {
-                        bytes := null as Array[Int8];
+                        numberRead := -1;
                         import java.lang.Throwable.getMessage();
                         Err(getMessage(ex))
                     }
