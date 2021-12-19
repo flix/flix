@@ -124,7 +124,7 @@ namespace TestIterator {
 
     @test
     def toMap03(): Bool & Impure =
-        let map = Map#{"1" -> 2, "2" -> 3, "3" -> 4};
+        let map = Map#{"1" => 2, "2" => 3, "3" => 4};
         map |> Map.toList |> List.toIterator |> Iterator.toMap == map
 
 
