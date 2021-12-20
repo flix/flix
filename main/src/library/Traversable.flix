@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
+///
+/// A type class for data structures that can be traversed with an applicative functor.
+///
 pub class Traversable[t : Type -> Type] with Functor[t] {
 
+    ///
+    /// Returns the result of apply the applicative functor `f` to all the elements of the
+    /// data structure `t`.
+    ///
     pub def traverse(f: a -> m[b] & ef, t: t[a]): m[t[b]] & ef with Applicative[m]
 
+    ///
+    /// Returns the result of running all the actions the data structure `t`.
+    ///
     pub def sequence(t: t[m[a]]): m[t[a]] with Applicative[m] =
         Traversable.traverse(identity, t)
 

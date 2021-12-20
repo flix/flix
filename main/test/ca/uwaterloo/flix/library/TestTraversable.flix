@@ -399,23 +399,23 @@ namespace TestTraversable {
 
     @test
     def sequenceMap02(): Bool =
-        let m: Map[Int, Option[Int]] = Map#{1 -> None};
+        let m: Map[Int, Option[Int]] = Map#{1 => None};
         sequence(m) == None
 
     @test
     def sequenceMap03(): Bool =
-        let m = Map#{1 -> Some(1)};
-        sequence(m) == Some(Map#{1 -> 1})
+        let m = Map#{1 => Some(1)};
+        sequence(m) == Some(Map#{1 => 1})
 
     @test
     def sequenceMap04(): Bool =
-        let m = Map#{1 -> Some(1), 2 -> None};
+        let m = Map#{1 => Some(1), 2 => None};
         sequence(m) == None
 
     @test
     def sequenceMap05(): Bool =
-        let m = Map#{1 -> Some(1), 2 -> Some(2)};
-        sequence(m) == Some(Map#{1 -> 1, 2 -> 2})
+        let m = Map#{1 => Some(1), 2 => Some(2)};
+        sequence(m) == Some(Map#{1 => 1, 2 => 2})
 
     /////////////////////////////////////////////////////////////////////////////
     // traverseMap                                                             //
@@ -428,13 +428,13 @@ namespace TestTraversable {
 
     @test
     def traverseMap02(): Bool =
-        let m: Map[Int, Int] = Map#{1 -> 1};
-        traverse(x -> Some(x+1), m) == Some(Map#{1 -> 2})
+        let m: Map[Int, Int] = Map#{1 => 1};
+        traverse(x -> Some(x+1), m) == Some(Map#{1 => 2})
 
     @test
     def traverseMap03(): Bool =
-        let m: Map[Int, Int] = Map#{1 -> 1, 2 -> 2};
-        traverse(x -> Some(x+1), m) == Some(Map#{1 -> 2, 2 -> 3})
+        let m: Map[Int, Int] = Map#{1 => 1, 2 => 2};
+        traverse(x -> Some(x+1), m) == Some(Map#{1 => 2, 2 => 3})
 
     @test
     def traverseMap04(): Bool =
@@ -443,12 +443,12 @@ namespace TestTraversable {
 
     @test
     def traverseMap05(): Bool =
-        let m: Map[Int, Int] = Map#{1 -> 1};
+        let m: Map[Int, Int] = Map#{1 => 1};
         traverse(_ -> None, m) == None
 
     @test
     def traverseMap06(): Bool =
-        let m: Map[Int, Int] = Map#{1 -> 1, 2 -> 2};
+        let m: Map[Int, Int] = Map#{1 => 1, 2 => 2};
         traverse(_ -> None, m) == None
 
     /////////////////////////////////////////////////////////////////////////////
@@ -462,18 +462,18 @@ namespace TestTraversable {
 
     @test
     def mapAccumLeftMap02(): Bool =
-        let m: Map[Int, Int] = Map#{1 -> 1};
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (11, Map#{1 -> 11})
+        let m: Map[Int, Int] = Map#{1 => 1};
+        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (11, Map#{1 => 11})
 
     @test
     def mapAccumLeftMap03(): Bool =
-        let m: Map[Int, Int]  = Map#{1 -> 1, 2 -> 2};
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (12, Map#{1 -> 11, 2 -> 13})
+        let m: Map[Int, Int]  = Map#{1 => 1, 2 => 2};
+        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (12, Map#{1 => 11, 2 => 13})
 
     @test
     def mapAccumLeftMap04(): Bool =
-        let m: Map[Int, Int]  = Map#{1 -> 1, 2 -> 2, 3 -> 3};
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (13, Map#{1 -> 11, 2 -> 13, 3 -> 15})
+        let m: Map[Int, Int]  = Map#{1 => 1, 2 => 2, 3 => 3};
+        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (13, Map#{1 => 11, 2 => 13, 3 => 15})
 
     /////////////////////////////////////////////////////////////////////////////
     // mapAccumRightMap                                                        //
@@ -486,18 +486,18 @@ namespace TestTraversable {
 
     @test
     def mapAccumRightMap02(): Bool =
-        let m: Map[Int, Int] = Map#{1 -> 1};
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (11, Map#{1 -> 11})
+        let m: Map[Int, Int] = Map#{1 => 1};
+        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (11, Map#{1 => 11})
 
     @test
     def mapAccumRightMap03(): Bool =
-        let m: Map[Int, Int]  = Map#{1 -> 1, 2 -> 2};
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (12, Map#{1 -> 12, 2 -> 12})
+        let m: Map[Int, Int]  = Map#{1 => 1, 2 => 2};
+        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (12, Map#{1 => 12, 2 => 12})
 
     @test
     def mapAccumRightMap04(): Bool =
-        let m: Map[Int, Int]  = Map#{1 -> 1, 2 -> 2, 3 -> 3};
-        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (13, Map#{1 -> 13, 2 -> 13, 3 -> 13})
+        let m: Map[Int, Int]  = Map#{1 => 1, 2 => 2, 3 => 3};
+        mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (13, Map#{1 => 13, 2 => 13, 3 => 13})
 
     /////////////////////////////////////////////////////////////////////////////
     /// Helper for RedBlackTree                                                //
