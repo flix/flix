@@ -267,10 +267,21 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given annotations `ann` as a JSON value.
     */
-  private def visitAnnotations(ann: List[Annotation]): JArray =
-    JArray(ann.map {
-      case Annotation(a, _, _) => a.toString
-    })
+  private def visitAnnotations(ann: List[Annotation]): JArray = {
+    def isSpace(a: Ast.Annotation): Boolean = a match {
+      case Ast.Annotation.Space(_) => true
+      case _ => false
+    }
+
+    def isTime(a: Ast.Annotation): Boolean = a match {
+      case Ast.Annotation.Time(_) => true
+      case _ => false
+    }
+
+    val filtered = ann.map(_.name).filter(a => !isSpace(a) && !isTime(a))
+
+    JArray(filtered.map(_.toString))
+  }
 
   /**
     * Returns the given Doc `doc` as a JSON value.
@@ -338,10 +349,11 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given Enum `enum` as a JSON value.
     */
   private def visitEnum(enum: Enum): JObject = enum match {
-    case Enum(doc, _, sym, tparams, cases, _, _, loc) =>
+    case Enum(doc, _, sym, tparams, derives, cases, _, _, loc) =>
       ("doc" -> visitDoc(doc)) ~
         ("sym" -> visitEnumSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
+        ("derives" -> derives.map{ d => visitClassSym(d.clazz) }) ~
         ("cases" -> cases.values.map(visitCase)) ~
         ("loc" -> visitSourceLocation(loc))
   }
@@ -350,14 +362,14 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given case `caze` as a JSON value.
     */
   private def visitCase(caze: Case): JObject = caze match {
-    case Case(_, tag, _, sc, _) =>
+    case Case(_, tag, _, _, _) =>
       // TODO: FormatType.formatType is broken.
       val tpe = try {
         // We try our best.
         FormatType.formatType(caze.tpeDeprecated)
       } catch {
         // And if it crashes we use a placeholder:
-        case ex: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
+        case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
       }
       ("tag" -> tag.name) ~ ("tpe" -> tpe)
   }
@@ -366,7 +378,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Return the given class `clazz` as a JSON value.
     */
   private def visitClass(cla: Class)(implicit root: Root): JObject = cla match {
-    case Class(doc, mod, sym, tparam, superClasses, signatures0, laws, loc) =>
+    case Class(doc, mod, sym, tparam, superClasses, signatures0, _, loc) =>
       val (sigs0, defs0) = signatures0.partition(_.impl.isEmpty)
 
       val sigs = sigs0.sortBy(_.sym.name).map(visitSig)
@@ -396,6 +408,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Writes the given string `s` to the given path `p`.
     */
   private def writeString(s: String, p: Path): Unit = try {
+    Files.createDirectories(OutputDirectory)
     val writer = Files.newBufferedWriter(p)
     writer.write(s)
     writer.close()
