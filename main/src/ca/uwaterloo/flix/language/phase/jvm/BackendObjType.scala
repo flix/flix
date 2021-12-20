@@ -16,7 +16,10 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.{Delimiter, DevFlixRuntime, JavaLang, RootPackage}
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkName
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{InstanceField, StaticField}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, RootPackage}
 
 /**
   * Represents all Flix types that are objects on the JVM (array is an exception).
@@ -34,8 +37,10 @@ sealed trait BackendObjType {
     case BackendObjType.Ref(tpe) => JvmName(RootPackage, mkName("Ref", tpe))
     case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkName("Tuple", elms))
     case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkName(s"Fn${args.length}", args :+ result))
+    case BackendObjType.Continuation(result) => JvmName(RootPackage, mkName("Cont", result))
     case BackendObjType.RecordEmpty => JvmName(RootPackage, mkName(s"RecordEmpty"))
     case BackendObjType.RecordExtend(_, value, _) => JvmName(RootPackage, mkName("RecordExtend", value))
+    case BackendObjType.Record => JvmName(RootPackage, s"IRecord${Flix.Delimiter}")
     case BackendObjType.Native(className) => className
   }
 
@@ -48,7 +53,9 @@ sealed trait BackendObjType {
     * Returns `this` wrapped in `BackendType.Reference`.
     */
   def toTpe: BackendType.Reference = BackendType.Reference(this)
+}
 
+object BackendObjType {
   /**
     * Constructs a concatenated string using `JvmName.Delimiter`. The call
     * `mkName("Tuple2", List(Object, Int, String))` would
@@ -57,7 +64,7 @@ sealed trait BackendObjType {
   private def mkName(prefix: String, args: List[BackendType]): String = {
     // TODO: Should delimiter always be included?
     if (args.isEmpty) prefix
-    else s"$prefix$Delimiter${args.map(e => e.toErased.toErasedString).mkString(Delimiter)}"
+    else s"$prefix${Flix.Delimiter}${args.map(e => e.toErased.toErasedString).mkString(Flix.Delimiter)}"
   }
 
   private def mkName(prefix: String, arg: BackendType): String =
@@ -65,10 +72,11 @@ sealed trait BackendObjType {
 
   private def mkName(prefix: String): String =
     mkName(prefix, Nil)
-}
 
-object BackendObjType {
-  case object Unit extends BackendObjType
+
+  case object Unit extends BackendObjType {
+    val InstanceField: StaticField = StaticField(this.jvmName, "INSTANCE", this.toTpe)
+  }
 
   case object BigInt extends BackendObjType
 
@@ -78,20 +86,41 @@ object BackendObjType {
 
   case class Lazy(tpe: BackendType) extends BackendObjType
 
-  case class Ref(tpe: BackendType) extends BackendObjType
+  case class Ref(tpe: BackendType) extends BackendObjType {
+    val ValueField: InstanceField = InstanceField(this.jvmName, "value", tpe)
+  }
 
   case class Tuple(elms: List[BackendType]) extends BackendObjType
 
   //case class Enum(sym: Symbol.EnumSym, args: List[BackendType]) extends BackendObjType
 
-  case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType
+  case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType {
+    val continuation: BackendObjType.Continuation = Continuation(result.toErased)
+  }
+
+  case class Continuation(result: BackendType) extends BackendObjType {
+    val ResultField: InstanceField = InstanceField(this.jvmName, "result", result)
+    val InvokeMethodName: String = "invoke"
+    val UnwindMethodName: String = "unwind"
+  }
 
   case object RecordEmpty extends BackendObjType {
-    val interface: JvmName = JvmName(RootPackage, s"IRecord$Delimiter")
+    val interface: BackendObjType.Record.type = Record
+
+    val InstanceField: StaticField = StaticField(this.jvmName, "INSTANCE", this.toTpe)
   }
 
   case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType {
-    val interface: JvmName = JvmName(RootPackage, s"IRecord$Delimiter")
+    val interface: BackendObjType.Record.type = Record
+
+    val LabelField: InstanceField = InstanceField(this.jvmName, "label", BackendObjType.String.toTpe)
+    val ValueField: InstanceField = InstanceField(this.jvmName, "value", value)
+    val RestField: InstanceField = InstanceField(this.jvmName, "rest", interface.toTpe)
+  }
+
+  case object Record extends BackendObjType {
+    val LookupFieldFunctionName: String = "lookupField"
+    val RestrictFieldFunctionName: String = "restrictField"
   }
 
   // case object SchemaEmpty extends BackendObjType

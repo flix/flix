@@ -170,6 +170,10 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)
         } yield tast
+        case Expression.LetRec(_, _, exp1, exp2, _, _, _) => for {
+          _ <- checkPats(exp1, root)
+          _ <- checkPats(exp2, root)
+        } yield tast
         case Expression.LetRegion(_, exp, _, _, _) =>
           for {
             _ <- checkPats(exp, root)
@@ -250,7 +254,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp2, root)
           } yield tast
         case Expression.Ascribe(exp, _, _, _) => checkPats(exp, root).map(const(tast))
-        case Expression.Cast(exp, _, _, _) => checkPats(exp, root).map(const(tast))
+        case Expression.Cast(exp, _, _, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
           for {
             _ <- checkPats(exp, root)
@@ -395,6 +399,11 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case TypedAst.Predicate.Body.Atom(_, _, polarity, terms, tpe, loc) => b0.toSuccess
 
       case TypedAst.Predicate.Body.Guard(exp, loc) =>
+        for {
+          e <- checkPats(exp, root)
+        } yield b0
+
+      case TypedAst.Predicate.Body.Loop(_, exp, loc) =>
         for {
           e <- checkPats(exp, root)
         } yield b0

@@ -27,11 +27,11 @@ namespace Test/Enum/Kinding {
         }
 
         pub enum EBool[a: Bool] {
-            case CBool1(Int -> Int & a)
+            case CBool1(Int -> Int32 & a)
         }
 
         pub enum ERecordRow[a: RecordRow] {
-            case CRecordRow1({ l :: Int | a })
+            case CRecordRow1({ l :: Int32 | a })
         }
 
         pub enum ESchemaRow[a: SchemaRow] {

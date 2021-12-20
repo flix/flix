@@ -58,11 +58,6 @@ object JvmName {
   val ConstructorMethod: String = "<init>"
 
   /**
-    * The Flix reserved delimiter for generated jvm classes.
-    */
-  val Delimiter: String = "$"
-
-  /**
     * Returns the JvmName of the given string `s`.
     */
   def mk(s: String): JvmName = {
@@ -84,6 +79,7 @@ object JvmName {
   val Character: JvmName = JvmName(JavaLang, "Character")
   val Class: JvmName = JvmName(JavaLang, "Class")
   val Double: JvmName = JvmName(JavaLang, "Double")
+  val Error: JvmName = JvmName(JavaLang, "Error")
   val Exception: JvmName = JvmName(JavaLang, "Exception")
   val Float: JvmName = JvmName(JavaLang, "Float")
   val Function: JvmName = JvmName(List("java", "util", "function"), "Function")
@@ -92,7 +88,6 @@ object JvmName {
   val Object: JvmName = JvmName(JavaLang, "Object")
   val Objects: JvmName = JvmName(JavaLang, "Objects")
   val Runnable: JvmName = JvmName(JavaLang, "Runnable")
-  val RuntimeException: JvmName = JvmName(JavaLang, "RuntimeException")
   val Short: JvmName = JvmName(JavaLang, "Short")
   val StringBuilder: JvmName = JvmName(JavaLang, "StringBuilder")
   val UnsupportedOperationException: JvmName = JvmName(JavaLang, "UnsupportedOperationException")
@@ -161,4 +156,9 @@ case class JvmName(pkg: List[String], name: String) {
     * Wraps this name in `backendObjType.Native`.
     */
   def toObjTpe: BackendObjType.Native = BackendObjType.Native(this)
+
+  /**
+    * Wraps this name in `BackendType.Reference(BackendObjType.Native(...))`.
+    */
+  def toTpe: BackendType.Reference = BackendType.Reference(this.toObjTpe)
 }

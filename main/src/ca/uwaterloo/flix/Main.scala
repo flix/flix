@@ -84,8 +84,6 @@ object Main {
       progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       writeClassFiles = !cmdOpts.interactive,
-      xlinter = cmdOpts.xlinter,
-      xnoboolunification = cmdOpts.xnoboolunification,
       xnostratifier = cmdOpts.xnostratifier,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono
@@ -224,12 +222,12 @@ object Main {
           Console.println(results.output(flix.getFormatter))
         }
       case Validation.Failure(errors) =>
-        errors.sortBy(_.source.name).foreach(e => println(e.message(flix.getFormatter)))
+        flix.mkMessages(errors.sortBy(_.source.name))
+          .foreach(println)
         println()
         println(s"Compilation failed with ${errors.length} error(s).")
         System.exit(1)
     }
-
   }
 
   /**
@@ -251,8 +249,6 @@ object Main {
                      xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
-                     xnoboolunification: Boolean = false,
-                     xlinter: Boolean = false,
                      xnostratifier: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
@@ -401,21 +397,15 @@ object Main {
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
 
-      // Xlinter.
-      opt[Unit]("Xlinter").action((_, c) => c.copy(xlinter = true)).
-        text("[experimental] enables the semantic linter.")
-
-      // Xno-bool-unification
-      opt[Unit]("Xno-bool-unification").action((_, c) => c.copy(xnoboolunification = true)).
-        text("[experimental] disables bool unification.")
-
       // Xno-stratifier
       opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
         text("[experimental] disables computation of stratification.")
 
+      // Xstatistics
       opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
         text("[experimental] prints compilation statistics.")
 
+      // Xstrictmono
       opt[Unit]("Xstrictmono").action((_, c) => c.copy(xstrictmono = true)).
         text("[experimental] enable strict monomorphization.")
 

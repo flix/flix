@@ -19,19 +19,16 @@ import {Enum} from "./Enum";
 import {TypeAlias} from "./TypeAlias";
 
 export interface Api {
+    version: string
     namespaces: [string]
     classes: ClassesByNS
-    defs: DefsByNS
     enums: EnumsByNs
     typeAliases: TypeAliasesByNs
+    defs: DefsByNS
 }
 
 type ClassesByNS = {
     [key: string]: [Class]
-}
-
-type DefsByNS = {
-    [key: string]: [Def]
 }
 
 type EnumsByNs = {
@@ -40,4 +37,8 @@ type EnumsByNs = {
 
 type TypeAliasesByNs = {
     [key: string]: [TypeAlias]
+}
+
+type DefsByNS = {
+    [key: string]: [Def]
 }

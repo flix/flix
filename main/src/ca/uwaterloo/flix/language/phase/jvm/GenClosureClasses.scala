@@ -38,7 +38,7 @@ object GenClosureClasses {
     //
     ParOps.parAgg(closures, Map.empty[JvmName, JvmClass])({
       case (macc, closure) =>
-        val jvmType = JvmOps.getClosureClassType(closure)
+        val jvmType = JvmOps.getClosureClassType(closure.sym, closure.tpe)
         val jvmName = jvmType.name
         val bytecode = genByteCode(closure)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
@@ -50,13 +50,18 @@ object GenClosureClasses {
     *
     * For example, given the symbol `mkAdder` with type (Int32, Int32) -> Int32 and the free variable `x`, we create:
     *
-    * public final class Clo$mkAdder implements Fn2$Int32$Int32$Int32 {
+    * public final class Clo$mkAdder implements Clo2$Int32$Int32$Int32 {
     * public int clo0;
     * public int arg0; // from Fn2$...
     * public int arg1; // from Fn2$...
     * public int result; // from Cont$...
     *
     * public Clo$mkAdder() { }
+    *
+    * public Clo2$Int32$Int32$Int32 getUniqueThreadClosure() {
+    *   Clo$mkAdder res = new Clo$mkAdder();
+    *   res.clo0 = this.clo0;
+    *   return res;
     *
     * public Cont$Int32 invoke() {
     *   this.res = this.x + this.arg0;
@@ -71,10 +76,10 @@ object GenClosureClasses {
     val MonoType.Arrow(_, tresult) = closure.tpe
 
     // `JvmType` of the interface for `closure.tpe`
-    val functionInterface = JvmOps.getFunctionInterfaceType(closure.tpe)
+    val functionInterface = JvmOps.getClosureAbstractClassType(closure.tpe)
 
     // `JvmType` of the class for `defn`
-    val classType = JvmOps.getClosureClassType(closure)
+    val classType = JvmOps.getClosureClassType(closure.sym, closure.tpe)
 
     // Class visitor
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,
@@ -89,8 +94,13 @@ object GenClosureClasses {
       AsmOps.compileField(visitor, s"clo$index", varType, isStatic = false, isPrivate = false)
     }
 
+    val defn = root.defs(closure.sym)
+
     // Invoke method of the class
-    compileInvokeMethod(visitor, classType, root.defs(closure.sym), closure.freeVars, tresult)
+    compileInvokeMethod(visitor, classType, defn, closure.freeVars, tresult)
+
+    // getUniqueThreadClosure method of the class
+    compileGetUniqueThreadClosureMethod(visitor, classType, defn, closure.freeVars)
 
     // Constructor of the class
     compileConstructor(visitor, functionInterface)
@@ -106,9 +116,10 @@ object GenClosureClasses {
                                   freeVars: List[FreeVar], resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
     // Continuation class
     val continuationType = JvmOps.getContinuationInterfaceType(defn.tpe)
+    val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(resultType))
 
     // Method header
-    val invokeMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, GenContinuationAbstractClasses.InvokeMethodName,
+    val invokeMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, backendContinuationType.InvokeMethodName,
       AsmOps.getMethodDescriptor(Nil, continuationType), null, null)
     invokeMethod.visitCode()
 
@@ -165,13 +176,40 @@ object GenClosureClasses {
     }
 
     // Saving the result on the `result` field of IFO
-    invokeMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenContinuationAbstractClasses.ResultFieldName, resultJvmType.toDescriptor)
+    invokeMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendContinuationType.ResultField.name, resultJvmType.toDescriptor)
 
     // Return
     invokeMethod.visitInsn(ACONST_NULL)
     invokeMethod.visitInsn(ARETURN)
     invokeMethod.visitMaxs(999, 999)
     invokeMethod.visitEnd()
+  }
+
+  private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def,
+                                                  freeVars: List[FreeVar])(implicit root: Root, flix: Flix): Unit = {
+
+    val closureAbstractClass = JvmOps.getClosureAbstractClassType(defn.tpe)
+
+    val m = visitor.visitMethod(ACC_PUBLIC, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), null, null)
+
+    // Create the new clo object
+    m.visitTypeInsn(NEW, classType.name.toInternalName)
+    m.visitInsn(DUP)
+    m.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+
+    // transfer the closure arguments
+    for ((f, i) <- freeVars.zipWithIndex) {
+      m.visitInsn(DUP)
+      val fieldDescriptor = JvmOps.getErasedJvmType(f.tpe).toDescriptor
+      m.visitIntInsn(ALOAD, 0)
+      m.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"clo$i", fieldDescriptor)
+      m.visitFieldInsn(PUTFIELD, classType.name.toInternalName, s"clo$i", fieldDescriptor)
+    }
+
+    m.visitInsn(ARETURN)
+
+    m.visitMaxs(999, 999)
+    m.visitEnd()
   }
 
   /**

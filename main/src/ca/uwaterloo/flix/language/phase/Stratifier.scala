@@ -177,6 +177,11 @@ object Stratifier extends Phase[Root, Root] {
         case (e1, e2) => Expression.Let(sym, mod, e1, e2, tpe, eff, loc)
       }
 
+    case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
+      }
+
     case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.LetRegion(sym, e, tpe, eff, loc)
@@ -290,9 +295,9 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.Ascribe(e, tpe, eff, loc)
       }
 
-    case Expression.Cast(exp, tpe, eff, loc) =>
+    case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Cast(e, tpe, eff, loc)
+        case e => Expression.Cast(e, declaredType, declaredEff, tpe, eff, loc)
       }
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
@@ -503,6 +508,9 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Let(_, _, exp1, exp2, _, _, _) =>
       constraintGraphOfExp(exp1) + constraintGraphOfExp(exp2)
 
+    case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
+      constraintGraphOfExp(exp1) + constraintGraphOfExp(exp2)
+
     case Expression.LetRegion(_, exp, _, _, _) =>
       constraintGraphOfExp(exp)
 
@@ -579,7 +587,7 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Ascribe(exp, _, _, _) =>
       constraintGraphOfExp(exp)
 
-    case Expression.Cast(exp, _, _, _) =>
+    case Expression.Cast(exp, _, _, _, _, _) =>
       constraintGraphOfExp(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
@@ -684,6 +692,7 @@ object Stratifier extends Phase[Root, Root] {
             case Polarity.Negative => (pos, neg :+ TypedPredicate(pred, atomTpe, loc))
           }
           case Body.Guard(_, _) => (pos, neg)
+          case Body.Loop(_, _, _) => (pos, neg)
         }
       }
       val edge = MultiEdge((headSym, headTpe), pos, neg)

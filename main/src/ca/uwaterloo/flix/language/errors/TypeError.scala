@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType, TypeDiff}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatEff, FormatKind, FormatScheme, FormatType}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -48,15 +48,118 @@ object TypeError {
          |
          |${code(loc, "unable to generalize the type scheme.")}
          |
+         |The declared type does not match the inferred type:
+         |
          |  Declared: ${cyan(FormatScheme.formatSchemeWithoutConstraints(declared))}
          |  Inferred: ${magenta(FormatScheme.formatSchemeWithoutConstraints(inferred))}
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
+    def explain(formatter: Formatter): Option[String] = Some({
+      val newLineAndIndent: String = System.lineSeparator() + "  "
+
+      def fmtTypeVar(tvar: Type, declared: Boolean): String = {
+        val color = if (declared) formatter.cyan _ else formatter.magenta _
+        s"${color(FormatType.formatType(tvar))} of kind: '${FormatKind.formatKind(tvar.kind)}'."
+      }
+
+      def fmtQuantifiers(quantifiers: List[Type.Var], declared: Boolean): String = {
+        if (quantifiers.isEmpty)
+          "<< no type variables >>"
+        else
+          quantifiers.map(fmtTypeVar(_, declared)).mkString(newLineAndIndent)
+      }
+
+      s"""
+         |The declared type variables:
+         |  ${fmtQuantifiers(declared.quantifiers, declared = true)}
+         |
+         |The inferred type variables:
+         |  ${fmtQuantifiers(inferred.quantifiers, declared = false)}
+         |""".stripMargin
+    })
+  }
+
+  /**
+    * Effect Generalization Error.
+    *
+    * @param declared the declared effect.
+    * @param inferred the inferred effect.
+    * @param loc      the location where the error occurred.
+    */
+  case class EffectGeneralizationError(declared: Type, inferred: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"The inferred effect '${FormatEff.formatEff(inferred)}' cannot be generalized to '${FormatEff.formatEff(declared)}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> The inferred effect: '${red(FormatEff.formatEff(inferred))}' cannot be generalized to '${red(FormatEff.formatEff(declared))}'.
+         |
+         |${code(loc, "unable to generalize the effect.")}
+         |
+         |""".stripMargin
+    }
+
     def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * Impure function declared as pure.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class ImpureDeclaredAsPure(loc: SourceLocation) extends TypeError {
+    def summary: String = "Impure function declared as pure."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> ${red("Impure")} function declared as ${green("pure")}.
+         |
+         |${code(loc, "impure function.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      """A function whose body is impure must be declared as so.
+        |
+        |For example:
+        |
+        |  def example(): Unit & Impure = println("hello")
+        |                      ^^^^^^^^
+        |""".stripMargin
+    })
+  }
+
+  /**
+    * Effect polymorphic function declared as pure.
+    *
+    * @param inferred the inferred effect.
+    * @param loc      the location where the error occurred.
+    */
+  case class EffectPolymorphicDeclaredAsPure(inferred: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = "Effect polymorphic function declared as pure."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> ${red("Effect polymorphic")} function declared as ${green("pure")}.
+         |
+         |${code(loc, "effect polymorphic function.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      """A function whose body is effect polymorphic must be declared as so.
+        |
+        |For example:
+        |
+        |  def example(f: Int32 -> Int32 & ef): Int32 & ef = f(123)
+        |                                             ^^^^
+        |""".stripMargin
+    })
   }
 
   /**
@@ -78,14 +181,63 @@ object TypeError {
          |
          |${code(loc, "mismatched types.")}
          |
-         |Type One: ${TypeDiff.diff(fullType1, fullType2)}
-         |Type Two: ${TypeDiff.diff(fullType2, fullType1)}
+         |Type One: ${FormatType.formatType(fullType1)}
+         |Type Two: ${FormatType.formatType(fullType2)}
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * Over-applied Function.
+    *
+    * @param excessArgument the type of the excess argument.
+    * @param fullType1      the first full type.
+    * @param fullType2      the second full type.
+    * @param loc            the location where the error occurred.
+    */
+  case class OverApplied(excessArgument: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Over-applied function. Excess argument of type: '${FormatType.formatType(excessArgument)}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Over-applied function. Excess argument of type: '${red(FormatType.formatType(excessArgument))}'.
+         |
+         |${code(loc, "over-applied function.")}
+         |
+         |Type One: ${FormatType.formatType(fullType1)}
+         |Type Two: ${FormatType.formatType(fullType2)}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * Under-applied Function.
+    *
+    * @param missingArgument the type of the missing argument.
+    * @param fullType1       the first full type.
+    * @param fullType2       the second full type.
+    * @param loc             the location where the error occurred.
+    */
+  case class UnderApplied(missingArgument: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Under-applied function. Missing argument of type: '${FormatType.formatType(missingArgument)}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Under-applied function. Missing argument of type: '${red(FormatType.formatType(missingArgument))}'.
+         |
+         |${code(loc, "under-applied function.")}
+         |
+         |Type One: ${FormatType.formatType(fullType1)}
+         |Type Two: ${FormatType.formatType(fullType2)}
+         |""".stripMargin
+    }
+
     def explain(formatter: Formatter): Option[String] = None
   }
 
@@ -107,6 +259,7 @@ object TypeError {
          |>> Unable to unify the Boolean formulas: '${red(FormatType.formatType(baseType1))}' and '${red(FormatType.formatType(baseType2))}'.
          |
          |${code(loc, "mismatched boolean formulas.")}
+         |
          |${appendMismatchedBooleans(formatter)}
          |""".stripMargin
     }
@@ -151,12 +304,10 @@ object TypeError {
          |>> Unable to unify the types: '${red(FormatType.formatType(tpe1))}' and '${red(FormatType.formatType(tpe2))}'.
          |
          |${code(loc, "mismatched arity of types.")}
+         |
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
@@ -176,18 +327,16 @@ object TypeError {
       import formatter._
       s"""${line(kind, source.format)}
          |>> Unable to unify the type variable '${red(baseVar.toString)}' with the type '${red(FormatType.formatType(baseType))}'.
+         |
          |>> The type variable occurs recursively within the type.
          |
          |${code(loc, "mismatched types.")}
          |
-         |Type One: ${TypeDiff.diff(fullType1, fullType2)}
-         |Type Two: ${TypeDiff.diff(fullType2, fullType1)}
+         |Type One: ${FormatType.formatType(fullType1)}
+         |Type Two: ${FormatType.formatType(fullType2)}
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
@@ -208,6 +357,7 @@ object TypeError {
          |>> Missing field '${red(field.name)}' of type '${cyan(FormatType.formatType(fieldType))}'.
          |
          |${code(loc, "missing field.")}
+         |
          |The record type:
          |
          |  ${FormatType.formatType(recordType)}
@@ -216,9 +366,6 @@ object TypeError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
@@ -239,6 +386,7 @@ object TypeError {
          |>> Missing predicate '${red(pred.name)}' of type '${cyan(FormatType.formatType(predType))}'.
          |
          |${code(loc, "missing predicate.")}
+         |
          |The schema type:
          |
          |  ${FormatType.formatType(schemaType)}
@@ -247,9 +395,6 @@ object TypeError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
@@ -271,9 +416,6 @@ object TypeError {
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
@@ -292,39 +434,165 @@ object TypeError {
          |>> Unexpected non-schema type: '${red(FormatType.formatType(tpe))}'.
          |
          |${code(loc, "unexpected non-schema type.")}
+         |
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
     def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-    * No matching instance error.
+    * Missing type class instance for a function type.
     *
     * @param clazz the class of the instance.
     * @param tpe   the type of the instance.
     * @param loc   the location where the error occurred.
     */
-  case class NoMatchingInstance(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"No instance of class '$clazz' for type '${FormatType.formatType(tpe)}'."
+  case class MissingArrowInstance(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"No instance of the '$clazz' class for the function type '${FormatType.formatType(tpe)}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
-         |>> No instance of class '${red(clazz.toString)}' for type ${red(FormatType.formatType(tpe))}.
+         |>> No instance of the '${cyan(clazz.toString)}' class for the ${magenta("function")} type '${red(FormatType.formatType(tpe))}'.
          |
-         |${code(loc, s"no instance of class '${clazz.toString}' for type ${FormatType.formatType(tpe)}")}
+         |>> Did you forget to apply the function to all of its arguments?
+         |
+         |${code(loc, s"missing instance")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * Missing type class instance.
+    *
+    * @param clazz the class of the instance.
+    * @param tpe   the type of the instance.
+    * @param loc   the location where the error occurred.
+    */
+  case class MissingInstance(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"No instance of the '$clazz' class for the type '${FormatType.formatType(tpe)}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> No instance of the '${cyan(clazz.toString)}' class for the type '${red(FormatType.formatType(tpe))}'.
+         |
+         |${code(loc, s"missing instance")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * Missing `Eq` instance.
+    *
+    * @param tpe the type of the instance.
+    * @param loc the location where the error occurred.
+    */
+  case class MissingEq(tpe: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Equality is not defined on '${FormatType.formatType(tpe)}'. Define or derive instance of Eq."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Equality is not defined on ${red(FormatType.formatType(tpe))}. Define or derive an instance of Eq.
+         |
+         |${code(loc, s"missing Eq instance")}
+         |
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Add an instance for the type."
+      s"""To define equality on '${FormatType.formatType(tpe)}', either:
+         |
+         |  (a) define an instance of Eq for '${FormatType.formatType(tpe)}', or
+         |  (b) derive an instance of Eq for '${FormatType.formatType(tpe)}'.
+         |
+         |To automatically derive an instance, you can write:
+         |
+         |  enum Color with Eq {
+         |    case Red, Green, Blue
+         |  }
+         |
+         |""".stripMargin
     })
+  }
 
+  /**
+    * Missing `Order` instance.
+    *
+    * @param tpe the type of the instance.
+    * @param loc the location where the error occurred.
+    */
+  case class MissingOrder(tpe: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Order is not defined on '${FormatType.formatType(tpe)}'. Define or derive instance of Order."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> Order is not defined on ${red(FormatType.formatType(tpe))}. Define or derive an instance of Order.
+         |
+         |${code(loc, s"missing Order instance")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""To define an order on '${FormatType.formatType(tpe)}', either:
+         |
+         |  (a) define an instance of Order for '${FormatType.formatType(tpe)}', or
+         |  (b) derive an instance of Order for '${FormatType.formatType(tpe)}'.
+         |
+         |To automatically derive an instance, you can write:
+         |
+         |  enum Color with Eq, Order {
+         |    case Red, Green, Blue
+         |  }
+         |
+         |Note: To derive Order you must also derive Eq.
+         |""".stripMargin
+    })
+  }
+
+  /**
+    * Missing `ToString` instance.
+    *
+    * @param tpe the type of the instance.
+    * @param loc the location where the error occurred.
+    */
+  case class MissingToString(tpe: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"ToString is not defined for '${FormatType.formatType(tpe)}'. Define or derive instance of ToString."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.format)}
+         |>> ToString is not defined on ${red(FormatType.formatType(tpe))}. Define or derive an instance of ToString.
+         |
+         |${code(loc, s"missing ToString instance")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""To define a string representation of '${FormatType.formatType(tpe)}', either:
+         |
+         |  (a) define an instance of ToString for '${FormatType.formatType(tpe)}', or
+         |  (b) derive an instance of ToString for '${FormatType.formatType(tpe)}'.
+         |
+         |To automatically derive an instance, you can write:
+         |
+         |  enum Color with ToString {
+         |    case Red, Green, Blue
+         |  }
+         |
+         |""".stripMargin
+    })
   }
 
   /**
@@ -340,22 +608,23 @@ object TypeError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.format)}
-         |>> Main function with wrong type.
+         |>> The main function has an unexpected type.
          |
-         |${code(loc, s"main function with wrong type.")}
+         |${code(loc, s"unexpected type.")}
+         |
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
       s"""The main function must have the form:
          |
-         |  def main(args: Array[String]): Int & Impure = ...
+         |  def main(args: Array[String]): Int32 & Impure = ...
          |
          |i.e.
          |- it must return an integer which is the exit code, and
          |- it must have a side-effect (such as printing to the screen).
          |
-         |(If the arguments are not needed, then 'args' can be replaced with '_'.
+         |If the arguments `args` are not needed they can be replaced by an '_'.
          |""".stripMargin
     })
   }

@@ -50,7 +50,7 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption]);
+            import static java.nio.file.Files.isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption]);
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let isRegular = isRegularFile(javaPath, []);
@@ -80,7 +80,7 @@ namespace File {
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:isSymbolicLink(##java.nio.file.Path);
+            import static java.nio.file.Files.isSymbolicLink(##java.nio.file.Path);
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let isSymbolic = isSymbolicLink(javaPath);
@@ -120,18 +120,69 @@ namespace File {
         }
 
     ///
+    /// Returns a string containing the given file `f`.
+    ///
+    pub def read(f: String): Result[String, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import static java.nio.file.Files.readString(##java.nio.file.Path);
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let result = readString(javaPath);
+            Ok(result)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns a string containing the given file `f` with the options `opts`.
+    /// The options `opts` to apply consists of
+    /// `offset` - the start offset in the given file `f`.
+    /// `count` - the number of bytes read.
+    /// `charSet` - the specific charset to be used to decode the bytes.
+    ///
+    pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, f : String): Result[String, String] & Impure = {
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileInputStream(##java.io.File) as newInputStream;
+            import java.io.FileInputStream.skip(Int64);
+            import java.io.FileInputStream.read(Array[Int8], Int32, Int32);
+            import static java.nio.charset.Charset.forName(String);
+            import new java.lang.String(Array[Int8], ##java.nio.charset.Charset) as newString;
+
+            let javaFile = newFile(f);
+            let stream = newInputStream(javaFile);
+            skip(stream, opts.offset);
+            let bytes = [0i8; opts.count];
+            read(stream, bytes, 0, opts.count);
+            let charSet = forName(opts.charSet);
+            let returnString = newString(bytes, charSet);
+            Ok(returnString)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+    }
+
+    ///
     /// Returns a list of all the lines in the given file `f`.
     ///
     pub def readLines(f: String): Result[List[String], String] & Impure = try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path);
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
             Ok(readAll(reader))
         } catch {
-            case _: ##java.io.IOException => Err("I/O Error")
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
         }
 
     ///
@@ -150,5 +201,309 @@ namespace File {
             acc
         else
             readAllHelper(r, line :: acc)
+
+    ///
+    /// Returns a list of all the lines in the given file `f` with the options `opts`.
+    /// The options `opts` to apply consists of
+    /// `charSet` - the specific charset to be used to decode the bytes.
+    ///
+    pub def readLinesWith(opts: {charSet :: String}, f: String): Result[List[String], String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
+            import static java.nio.charset.Charset.forName(String);
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let reader = newBufferedReader(javaPath, forName(opts.charSet));
+            Ok(readAll(reader))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns an iterator of the given file `f`
+    ///
+    pub def readLinesIter(f: String): Iterator[Result[String, String]] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path);
+            import java.io.BufferedReader.readLine();
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let reader = newBufferedReader(javaPath);
+            let line = ref readLine(reader);
+
+            let done = () -> Object.isNull(deref line);
+            let next = () -> {
+                try {
+                    let l = deref line;
+                    line := readLine(reader);
+                    Ok(l)
+                } catch {
+                    case ex: ##java.io.IOException => {
+                        line := null as String;
+                        import java.lang.Throwable.getMessage();
+                        Err(getMessage(ex))
+                    }
+                }
+            };
+            Iterator(done, next)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Iterator.singleton(Err(getMessage(ex)))
+        }
+
+    ///
+    /// Returns an iterator of the given file `f` with the options `opts`.
+    /// The options `opts` to apply consists of
+    /// `charSet` - the specific charset to be used to decode the bytes.
+    ///
+    pub def readLinesIterWith(opts: {charSet :: String}, f: String): Iterator[Result[String, String]] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
+            import static java.nio.charset.Charset.forName(String);
+            import java.io.BufferedReader.readLine();
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let reader = newBufferedReader(javaPath, forName(opts.charSet));
+            let line = ref readLine(reader);
+
+            let done = () -> Object.isNull(deref line);
+            let next = () -> {
+                try {
+                    let l = deref line;
+                    line := readLine(reader);
+                    Ok(l)
+                } catch {
+                    case ex: ##java.io.IOException => {
+                        line := null as String;
+                        import java.lang.Throwable.getMessage();
+                        Err(getMessage(ex))
+                    }
+                }
+            };
+            Iterator(done, next)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Iterator.singleton(Err(getMessage(ex)))
+        }
+
+    ///
+    /// Returns an array of all the bytes in the given file `f`.
+    ///
+    pub def readBytes(f: String): Result[Array[Int8], String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import static java.nio.file.Files.readAllBytes(##java.nio.file.Path);
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let bytes = readAllBytes(javaPath);
+
+            Ok(bytes)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns an array of all the bytes in the given file `f` and applying the options `opts`.
+    /// The options `opts` to apply consists of
+    /// `offset` - the start offset in the given file `f`.
+    /// `count` - the number of bytes read.
+    ///
+    pub def readBytesWith(opts: {offset :: Int64, count :: Int32}, f: String): Result[Array[Int8], String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileInputStream(##java.io.File) as newInputStream;
+            import java.io.FileInputStream.skip(Int64);
+            import java.io.FileInputStream.read(Array[Int8], Int32, Int32);
+
+            let javaFile = newFile(f);
+            let stream = newInputStream(javaFile);
+            skip(stream, opts.offset);
+            let bytes = [0i8; opts.count];
+            let numberRead = read(stream, bytes, 0, opts.count);
+
+            let res = readBytesWithHelper(bytes, numberRead, opts.count);
+
+            Ok(res)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Helper function for `readBytesWith`.
+    /// Returns an array that corresponds to the bytes actually read from the stream.
+    ///
+    def readBytesWithHelper(bytes: Array[Int8], numberRead: Int32, count: Int32): Array[Int8] & Impure =
+        let nothingRead = numberRead == -1;
+        let countBiggest = numberRead < count;
+        if (nothingRead) {
+            []
+        } else {
+            if (countBiggest) {
+                Array.slice(0, numberRead, bytes)
+            } else {
+                bytes
+            }
+        }
+
+    ///
+    /// Writes `data` to the given file `f`.
+    ///
+    /// Creates file `f` if it does not exist. Overwrites it if it exists.
+    ///
+    /// Returns `true` if the file was created.
+    ///
+    pub def write(f: String, data: t): Result[Bool, String] & Impure with ToString[t] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
+            import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let alreadyExists = File.exists(f);
+
+            let javaFile = newFile(f);
+            let w = newPrintWriter(javaFile);
+
+            println(w, "${data}");
+            close(w);
+
+            if (checkError(w)) {
+                Err("An error occurred when writing to the file: "+f)
+            }
+            else {
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Writes `data` to the given `f`.
+    ///
+    /// Creates `f` if it does not exist. Overwrites it if it exists.
+    ///
+    /// Returns `true` if the file `f` was created, and `false` if `f` was overwritten.
+    ///
+    pub def writeLines(f: String, data: f[String]): Result[Bool, String] & Impure with Foldable[f] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
+            import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let alreadyExists = File.exists(f);
+
+            let javaFile = newFile(f);
+            let w = newPrintWriter(javaFile);
+
+            Foldable.foldLeft((_, line) -> println(w, line), (), data);
+            close(w);
+
+            if (checkError(w)) {
+                Err("An error occurred when writing lines to the file: "+f)
+            }
+            else {
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Appends `data` to the given file `f`.
+    ///
+    /// Returns `true` if the file `f` was created, and `false` if `data` was appended to an existing `f`.
+    ///
+    pub def append(f: String, data: t): Result[Bool, String] & Impure with ToString[t] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileWriter(##java.io.File, Bool) as newFileWriter;
+            import new java.io.PrintWriter(##java.io.Writer) as newPrintWriter;
+            import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let alreadyExists = File.exists(f);
+
+            let javaFile = newFile(f);
+            // 2nd parameter `true` is for append.
+            let fileWriter = newFileWriter(javaFile, true);
+            let printWriter = newPrintWriter(fileWriter as ##java.io.Writer);
+
+            println(printWriter, "${data}");
+            close(printWriter);
+
+            if (checkError(printWriter)) {
+                Err("An error occurred when appending to the file: "+f)
+            }
+            else {
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Appends `data` to the given file `f`.
+    ///
+    /// Returns `true` if the file `f` was created, and `false` if `data` was appended to an existing `f`.
+    ///
+    pub def appendLines(f: String, data: f[String]): Result[Bool, String] & Impure with Foldable[f] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileWriter(##java.io.File, Bool) as newFileWriter;
+            import new java.io.PrintWriter(##java.io.Writer) as newPrintWriter;
+            import java.io.PrintWriter.println(String);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let alreadyExists = File.exists(f);
+
+            let javaFile = newFile(f);
+            // 2nd parameter `true` is for append.
+            let fileWriter = newFileWriter(javaFile, true);
+            let printWriter = newPrintWriter(fileWriter as ##java.io.Writer);
+
+            Foldable.foldLeft((_, line) -> println(printWriter, line), (), data);
+            close(printWriter);
+
+            if (checkError(printWriter)) {
+                Err("An error occurred when appending lines to the file: "+f)
+            }
+            else {
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
 
 }

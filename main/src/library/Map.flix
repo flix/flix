@@ -34,7 +34,7 @@ instance ToString[Map[k, v]] with ToString[k], ToString[v] {
 }
 
 instance Hash[Map[k, v]] with Hash[k], Hash[v] {
-    pub def hash(m: Map[k, v]): Int =
+    pub def hash(m: Map[k, v]): Int32 =
         Map.foldLeftWithKey((acc, k, v) -> acc * 17 + Hash.hash(k) + 19 * Hash.hash(v), 7937, m)
 }
 
@@ -111,7 +111,7 @@ namespace Map {
     /// Otherwise, returns `d`.
     ///
     @Time(Int32.log2(size(m))) @Space(1)
-    pub def getWithDefault(k: k, d: v, m: Map[k, v]): v with Order[k] = Option.getWithDefault(get(k, m), d)
+    pub def getWithDefault(k: k, d: v, m: Map[k, v]): v with Order[k] = Option.getWithDefault(d, get(k, m))
 
     ///
     /// Returns `true` if and only if `m` contains the key `k`.
@@ -319,15 +319,23 @@ namespace Map {
     ///
     /// Returns a map with mappings `k -> f(v)` for every `k -> v` in `m`.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
+    @ParallelWhenPure
     pub def map(f: v1 -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef with Order[k] = mapWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a map with mappings `k -> f(k, v)` for every `k -> v` in `m`.
     ///
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
+    @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef with Order[k] =
-        foldLeftWithKey((acc, k, v) -> insert(k, f(k, v), acc), empty(), m)
+        let Map(t) = m;
+        Map(RedBlackTree.mapWithKey(f, t))
 
     ///
     /// Alias for `foldLeftWithKey`.
@@ -418,11 +426,10 @@ namespace Map {
     ///
     /// Returns the number of mappings in `m` that satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
-    pub def count(f: (k, v) -> Bool, m: Map[k, v]): Int32 =
-        foldLeftWithKey((acc, k, v) -> if (f(k, v)) 1 + acc else acc, 0, m)
+    @ParallelWhenPure
+    pub def count(f: (k, v) -> Bool & ef, m: Map[k, v]): Int32 & ef =
+        let Map(t) = m;
+        RedBlackTree.count(f, t)
 
     ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.

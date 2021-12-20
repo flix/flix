@@ -521,4 +521,16 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.EmptyInterpolatedExpression](result)
   }
+
+  test("HalfInterpolationEscape.01") {
+    val input = "def f(): String = \"${}\""
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyInterpolatedExpression](result)
+  }
+
+  test("HalfInterpolationEscape.02") {
+    val input = s"""pub def foo(): String = "\\$$ {""""
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InvalidEscapeSequence](result)
+  }
 }

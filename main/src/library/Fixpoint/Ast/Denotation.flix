@@ -35,6 +35,7 @@ namespace Fixpoint/Ast {
     ///
     /// Returns a latticenal denotation associated with the type `t`.
     ///
+    @Internal
     pub def lattice(): Denotation[t] with LowerBound[t], JoinLattice[t], MeetLattice[t] =
         // TODO: Why are these type annotations necessary?
         Latticenal(
@@ -47,6 +48,7 @@ namespace Fixpoint/Ast {
     ///
     /// Boxes the lattice components inside the given denotation `d`.
     ///
+    @Internal
     pub def box(d: Denotation[t]): Denotation[Boxed] with Boxable[t] = match d {
         case Denotation.Relational => Denotation.Relational
         case Denotation.Latticenal(bot, leq, lub, glb) =>

@@ -78,7 +78,7 @@ namespace ReentrantLock {
     ///
     pub def tryLockNanos(lock: ReentrantLock, nanosTimeout: Int64): Result[Bool, ##java.lang.InterruptedException] & Impure =
         import java.util.concurrent.locks.ReentrantLock.tryLock(Int64, ##java.util.concurrent.TimeUnit);
-        import get java.util.concurrent.TimeUnit:NANOSECONDS as nano;
+        import static get java.util.concurrent.TimeUnit.NANOSECONDS as nano;
         let ReentrantLock(l) = lock;
         try {
             Ok(tryLock(l, nanosTimeout, nano()))

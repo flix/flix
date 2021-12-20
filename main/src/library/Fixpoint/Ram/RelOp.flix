@@ -32,7 +32,7 @@ namespace Fixpoint/Ram {
                 case Query(var, ramSym, prefixQuery, body) =>
                     let query = Array.formatWith(match (i, term) -> {
                         ToString.toString(BoolExp.Eq(RamTerm.RowLoad(var, i), term))
-                    }, " ∧ ", prefixQuery) as & Pure;
+                    }, " ∧ ", prefixQuery);
                     "query {${var} ∈ ${ramSym} | ${query}} do${nl}${String.indent(4, "${body}")}end"
                 case Project(terms, ramSym) =>
                     "project (${commaSeparate(terms)}) into ${ramSym}"
@@ -41,6 +41,6 @@ namespace Fixpoint/Ram {
                         List.map(ToString.toString, test) |>
                         String.intercalate(" ∧ ");
                     "if(${tst}) then${nl}${String.indent(4, "${then}")}end"
-            }
+            } as & Pure
     }
 }

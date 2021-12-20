@@ -606,6 +606,18 @@ object ParsedAst {
     case class LetMatchStar(sp1: SourcePosition, pat: ParsedAst.Pattern, tpe: Option[ParsedAst.Type], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * LetRecDef Expression (let rec using def keyword).
+      *
+      * @param sp1     the position of the first character in the expression.
+      * @param ident   the identifier of the function.
+      * @param fparams the formal parameters of the function.
+      * @param exp1    the function expression.
+      * @param exp2    the body expression.
+      * @param sp2     the position of the last character in the expression.
+      */
+    case class LetRecDef(sp1: SourcePosition, ident: Name.Ident, fparams: Seq[ParsedAst.FormalParam], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Let Import Expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -1217,6 +1229,16 @@ object ParsedAst {
         */
       case class Filter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
+      /**
+        * Loop Predicate.
+        *
+        * @param sp1    the position of the first character in the predicate.
+        * @param idents the variable bound by the predicate.
+        * @param exp    the expression to iterate over.
+        * @param sp2    the position of the last character in the predicate.
+        */
+      case class Loop(sp1: SourcePosition, idents: Seq[Name.Ident], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
+
     }
 
   }
@@ -1652,7 +1674,7 @@ object ParsedAst {
       * @param sig   the types of the formal parameters.
       * @param ident the name given to the imported constructor.
       */
-    case class Constructor(fqn: Seq[String], sig: Seq[ParsedAst.Type], ident: Name.Ident) extends JvmOp
+    case class Constructor(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Option[Type], eff: Option[Type], ident: Name.Ident) extends JvmOp
 
     /**
       * Method Invocation.
@@ -1661,7 +1683,7 @@ object ParsedAst {
       * @param sig   the types of the formal parameters.
       * @param ident the optional name given to the imported method.
       */
-    case class Method(fqn: Seq[String], sig: Seq[ParsedAst.Type], ident: Option[Name.Ident]) extends JvmOp
+    case class Method(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Option[Type], eff: Option[Type], ident: Option[Name.Ident]) extends JvmOp
 
     /**
       * Static Method Invocation.
@@ -1670,7 +1692,7 @@ object ParsedAst {
       * @param sig   the declared types of the formal parameters.
       * @param ident the optional name given to the imported method.
       */
-    case class StaticMethod(fqn: Seq[String], sig: Seq[ParsedAst.Type], ident: Option[Name.Ident]) extends JvmOp
+    case class StaticMethod(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Option[Type], eff: Option[Type], ident: Option[Name.Ident]) extends JvmOp
 
     /**
       * Get Object Field.
@@ -1678,7 +1700,7 @@ object ParsedAst {
       * @param fqn   the fully-qualified name of the field.
       * @param ident the name given to the imported field.
       */
-    case class GetField(fqn: Seq[String], ident: Name.Ident) extends JvmOp
+    case class GetField(fqn: Seq[String], tpe: Option[Type], eff: Option[Type], ident: Name.Ident) extends JvmOp
 
     /**
       * Put ObjectField.
@@ -1686,7 +1708,7 @@ object ParsedAst {
       * @param fqn   the fully-qualified name of the field.
       * @param ident the name given to the imported field.
       */
-    case class PutField(fqn: Seq[String], ident: Name.Ident) extends JvmOp
+    case class PutField(fqn: Seq[String], tpe: Option[Type], eff: Option[Type], ident: Name.Ident) extends JvmOp
 
     /**
       * Get Static Field.
@@ -1694,7 +1716,7 @@ object ParsedAst {
       * @param fqn   the fully-qualified name of the field.
       * @param ident the name given to the imported field.
       */
-    case class GetStaticField(fqn: Seq[String], ident: Name.Ident) extends JvmOp
+    case class GetStaticField(fqn: Seq[String], tpe: Option[Type], eff: Option[Type], ident: Name.Ident) extends JvmOp
 
     /**
       * Put Static Field.
@@ -1702,7 +1724,7 @@ object ParsedAst {
       * @param fqn   the fully-qualified name of the field.
       * @param ident the name given to the imported field.
       */
-    case class PutStaticField(fqn: Seq[String], ident: Name.Ident) extends JvmOp
+    case class PutStaticField(fqn: Seq[String], tpe: Option[Type], eff: Option[Type], ident: Name.Ident) extends JvmOp
 
   }
 

@@ -76,10 +76,13 @@ object Indexer {
     */
   private def visitEnum(enum0: Enum): Index = {
     val idx0 = Index.occurrenceOf(enum0)
-    val idx1 = enum0.cases.foldLeft(Index.empty) {
+    val idx1 = enum0.derives.foldLeft(Index.empty) {
+      case (idx, Ast.Derivation(clazz, loc)) => Index.useOf(clazz, loc)
+    }
+    val idx2 = enum0.cases.foldLeft(Index.empty) {
       case (idx, (tag, caze)) => idx ++ Index.occurrenceOf(caze)
     }
-    idx0 ++ idx1
+    idx0 ++ idx1 ++ idx2
   }
 
   /**
@@ -176,6 +179,9 @@ object Indexer {
     case Expression.Let(sym, _, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
+    case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
+      Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+
     case Expression.LetRegion(sym, exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
@@ -244,8 +250,10 @@ object Indexer {
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
 
-    case Expression.Cast(exp, tpe, eff, loc) =>
-      visitExp(exp) ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
+    case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+      val dt = declaredType.map(visitType).getOrElse(Index.empty)
+      val de = declaredEff.map(visitType).getOrElse(Index.empty)
+      visitExp(exp) ++ dt ++ de ++ visitType(tpe) ++ visitType(eff) ++ Index.occurrenceOf(exp0)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -393,6 +401,7 @@ object Indexer {
   private def visitBody(b0: Predicate.Body): Index = b0 match {
     case Body.Atom(pred, _, _, terms, _, _) => Index.occurrenceOf(pred) ++ Index.useOf(pred) ++ visitPats(terms)
     case Body.Guard(exp, _) => visitExp(exp)
+    case Body.Loop(_, exp, _) => visitExp(exp)
   }
 
   /**

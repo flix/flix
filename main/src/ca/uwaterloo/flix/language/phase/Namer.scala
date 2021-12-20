@@ -565,6 +565,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e1, e2) => NamedAst.Expression.Let(sym, mod, e1, e2, loc)
       }
 
+    case WeededAst.Expression.LetRec(ident, mod, exp1, exp2, loc) =>
+      // TODO: Scopedness?
+      val sym = Symbol.freshVarSym(ident, Scopedness.Unscoped, BoundBy.Let)
+      val env1 = env0 + (ident.name -> sym)
+      mapN(visitExp(exp1, env1, uenv0, tenv0), visitExp(exp2, env1, uenv0, tenv0)) {
+        case (e1, e2) => NamedAst.Expression.LetRec(sym, mod, e1, e2, loc)
+      }
+
     case WeededAst.Expression.LetRegion(ident, exp, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
@@ -1019,22 +1027,31 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       for {
         e <- visitExp(exp, outerEnv ++ headEnv0 ++ ruleEnv0, uenv0, tenv0)
       } yield NamedAst.Predicate.Body.Guard(e, loc)
+
+    case WeededAst.Predicate.Body.Loop(idents, exp, loc) =>
+      val varSyms = idents.map(ident => headEnv0(ident.name))
+      for {
+        e <- visitExp(exp, outerEnv ++ headEnv0 ++ ruleEnv0, uenv0, tenv0)
+      } yield NamedAst.Predicate.Body.Loop(varSyms, e, loc)
+
   }
 
   /**
     * Returns the identifiers that are visible in the head scope by the given body predicate `p0`.
     */
   private def visibleInHeadScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-    case WeededAst.Predicate.Body.Atom(_, den, polarity, terms, loc) => terms.flatMap(freeVars)
-    case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
+    case WeededAst.Predicate.Body.Atom(_, _, _, terms, _) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Guard(exp, _) => Nil
+    case WeededAst.Predicate.Body.Loop(idents, _, _) => idents
   }
 
   /**
     * Returns the identifiers that are visible in the rule scope by the given body predicate `p0`.
     */
   private def visibleInRuleScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-    case WeededAst.Predicate.Body.Atom(_, den, polarity, terms, loc) => terms.flatMap(freeVars)
-    case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
+    case WeededAst.Predicate.Body.Atom(_, _, _, terms, _) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Guard(_, _) => Nil
+    case WeededAst.Predicate.Body.Loop(_, _, _) =>  Nil
   }
 
   /**
@@ -1187,7 +1204,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case "float" => true
     case "float32" => true
     case "float64" => true
-    case "int" => true
     case "int8" => true
     case "int16" => true
     case "int32" => true
@@ -1231,6 +1247,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
     case WeededAst.Expression.Stm(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Let(ident, mod, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
+    case WeededAst.Expression.LetRec(ident, mod, exp1, exp2, loc) => filterBoundVars( freeVars(exp1) ++ freeVars(exp2), List(ident))
     case WeededAst.Expression.LetRegion(ident, exp, loc) => filterBoundVars(freeVars(exp), List(ident))
     case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
@@ -1414,8 +1431,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the free variables in the given body predicate `b0`.
     */
   private def freeVarsBodyPred(b0: WeededAst.Predicate.Body): List[Name.Ident] = b0 match {
-    case WeededAst.Predicate.Body.Atom(_, den, polarity, terms, loc) => terms.flatMap(freeVars)
-    case WeededAst.Predicate.Body.Guard(exp, loc) => freeVars(exp)
+    case WeededAst.Predicate.Body.Atom(_, _, _, terms, _) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Guard(exp, _) => freeVars(exp)
+    case WeededAst.Predicate.Body.Loop(_, exp, _) => freeVars(exp)
   }
 
   /**

@@ -27,7 +27,7 @@ enum Option[t] with Eq, Order, ToString {
 }
 
 instance Hash[Option[a]] with Hash[a] {
-    pub def hash(o: Option[a]): Int = match o {
+    pub def hash(o: Option[a]): Int32 = match o {
         case Some(y) => 919 * Hash.hash(y)
         case None => 1046527
     }
@@ -73,18 +73,18 @@ namespace Option {
     /// Returns `v` if `o` is `Some(v).` Otherwise returns `d`.
     ///
     @Time(1) @Space(1)
-    pub def getWithDefault(o: Option[a], d: a): a = match o {
+    pub def getWithDefault(d: a, o: Option[a]): a = match o {
         case None => d
         case Some(v) => v
     }
 
     ///
-    /// Returns `o1` if it is `Some(v)`. Otherwise returns `o2`.
+    /// Returns `o` if it is `Some(v)`. Otherwise returns `default`.
     ///
     @Time(1) @Space(1)
-    pub def withDefault(o1: Option[a], o2: Option[a]): Option[a] = match o1 {
-        case None => o2
-        case Some(_) => o1
+    pub def withDefault(default: {default :: Option[a]}, o: Option[a]): Option[a] = match o {
+        case None => default.default
+        case Some(_) => o
     }
 
     ///
@@ -164,26 +164,6 @@ namespace Option {
     pub def flatMap(f: a -> Option[b] & ef, o: Option[a]): Option[b] & ef = match o {
         case None => None
         case Some(v) => f(v)
-    }
-
-    ///
-    /// Returns `Some(f(v1, v2))` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
-    ///
-    @Time(time(f)) @Space(space(f))
-    pub def map2(f: (a, b) -> c & ef, o1: Option[a], o2: Option[b]): Option[c] & ef = match (o1, o2) {
-        case (None, _) => None
-        case (_, None) => None
-        case (Some(v1), Some(v2)) => Some(f(v1, v2))
-    }
-
-    ///
-    /// Returns `f(v1, v2)` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
-    ///
-    @Time(time(f)) @Space(space(f))
-    pub def flatMap2(f: (a, b) -> Option[c] & ef, o1: Option[a], o2: Option[b]): Option[c] & ef = match (o1, o2) {
-        case (None, _) => None
-        case (_, None) => None
-        case (Some(v1), Some(v2)) => f(v1, v2)
     }
 
     ///

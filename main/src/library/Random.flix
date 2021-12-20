@@ -87,6 +87,6 @@ namespace Random {
     ///
     /// Represents a random number generator.
     ///
-    opaque type Random = ##java.util.Random
+    pub opaque type Random = ##java.util.Random
 
 }

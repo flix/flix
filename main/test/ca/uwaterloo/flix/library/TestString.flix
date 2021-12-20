@@ -392,40 +392,6 @@ def mapWithIndex07(): Bool =
     String.mapWithIndex(test, "Ab") == "tF"
 
 /////////////////////////////////////////////////////////////////////////////
-// map2                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def map201(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "", "");
-    s == ""
-
-@test
-def map202(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "a", "");
-    s == ""
-
-@test
-def map203(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "", "1");
-    s == ""
-
-@test
-def map204(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "A", "1");
-    s == "1"
-
-@test
-def map205(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "a", "1");
-    s == "a"
-
-@test
-def map206(): Bool =
-    let s = String.map2((a, b) -> if (Char.isLowerCase(a)) a else b, "_bc__fgh", "12345678");
-    s == "1bc45fgh"
-
-/////////////////////////////////////////////////////////////////////////////
 // reverse                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -3333,6 +3299,23 @@ def stripSuffix06(): Bool = String.stripSuffix({substr = "def"}, "abcdef") == So
 
 @test
 def stripSuffix07(): Bool = String.stripPrefix({substr = "abc"}, "ABCDEF") == None
+
+/////////////////////////////////////////////////////////////////////////////
+// escapeInterpolation                                                     //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def escapeInterpolation01(): Bool = "\${" == ("$" + "{")
+
+@test
+def escapeInterpolation02(): Bool = "\${1 + {2}" == ("$" + "{1 + {2}")
+
+@test
+def escapeInterpolation03(): Bool = "\${}" == ("$" + "{}")
+
+@test
+def escapeInterpolation04(): String = "$"
+
 
 }
 

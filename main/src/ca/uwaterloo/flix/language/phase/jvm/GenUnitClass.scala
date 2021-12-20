@@ -19,35 +19,30 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Finality._
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Instancing._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 
 object GenUnitClass {
-
-  val InstanceFieldName = "INSTANCE"
-
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     Map(BackendObjType.Unit.jvmName -> JvmClass(BackendObjType.Unit.jvmName, genByteCode()))
   }
 
   private def genByteCode()(implicit flix: Flix): Array[Byte] = {
-    val cm = mkClass(BackendObjType.Unit.jvmName, Public, Final)
+    val cm = mkClass(BackendObjType.Unit.jvmName, IsFinal)
 
     // Singleton instance
-    cm.mkField(InstanceFieldName, BackendObjType.Unit.toTpe, Public, Final, Static)
+    BackendObjType.Unit.InstanceField.mkField(cm, IsPublic, IsFinal)
 
     cm.mkStaticConstructor(genStaticConstructor())
-    cm.mkObjectConstructor(Private)
+    cm.mkObjectConstructor(IsPrivate)
 
     cm.closeClassMaker
   }
 
   private def genStaticConstructor(): InstructionSet =
     NEW(BackendObjType.Unit.jvmName) ~
-      DUP() ~
-      invokeConstructor(BackendObjType.Unit.jvmName) ~
-      PUTSTATIC(BackendObjType.Unit.jvmName, InstanceFieldName, BackendObjType.Unit.toTpe) ~
+      DUP() ~ invokeConstructor(BackendObjType.Unit.jvmName) ~
+      BackendObjType.Unit.InstanceField.putField() ~
       RETURN()
 }

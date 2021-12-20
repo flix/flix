@@ -65,6 +65,9 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
       val erasedRefTypes: Iterable[BackendObjType.Ref] = JvmOps.getRefsOf(types)
       val erasedExtendTypes: Iterable[BackendObjType.RecordExtend] = JvmOps.getRecordExtendsOf(types)
+      val erasedContinuations: Iterable[BackendObjType.Continuation] = JvmOps.getContinuationsOf(types)
+
+      // TODO: all the type collection above should maybe have its own subphase
 
       //
       // Generate the main class.
@@ -79,7 +82,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate continuation classes for each function type in the program.
       //
-      val continuationInterfaces = GenContinuationAbstractClasses.gen(types)
+      val continuationInterfaces = GenContinuationAbstractClasses.gen(erasedContinuations)
 
       //
       // Generate a function abstract class for each function type in the program.
@@ -90,6 +93,11 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       // Generate function classes for each function in the program.
       //
       val functionClasses = GenFunctionClasses.gen(root.defs)
+
+      //
+      // Generate closure abstract classes for each function in the program.
+      //
+      val closureAbstractClasses = GenClosureAbstractClasses.gen(types)
 
       //
       // Generate closure classes for each closure in the program.
@@ -114,7 +122,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate record interface.
       //
-      val recordInterfaces = GenRecordInterfaces.gen()
+      val recordInterfaces = GenRecordInterface.gen()
 
       //
       // Generate empty record class.
@@ -175,6 +183,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
         continuationInterfaces,
         functionInterfaces,
         functionClasses,
+        closureAbstractClasses,
         closureClasses,
         enumInterfaces,
         tagClasses,

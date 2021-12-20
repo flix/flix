@@ -100,6 +100,9 @@ object Safety extends Phase[Root, Root] {
     case Expression.Let(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
+    case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ::: visitExp(exp2)
+
     case Expression.LetRegion(_, exp, _, _, _) =>
       visitExp(exp)
 
@@ -164,7 +167,7 @@ object Safety extends Phase[Root, Root] {
     case Expression.Ascribe(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Cast(exp, _, _, _) =>
+    case Expression.Cast(exp, _, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
@@ -274,6 +277,8 @@ object Safety extends Phase[Root, Root] {
       checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
 
     case Predicate.Body.Guard(exp, _) => visitExp(exp)
+
+    case Predicate.Body.Loop(_, exp, _) => visitExp(exp)
   }
 
   /**
@@ -320,6 +325,8 @@ object Safety extends Phase[Root, Root] {
     }
 
     case Predicate.Body.Guard(_, _) => Set.empty
+
+    case Predicate.Body.Loop(_, _, _) => Set.empty
   }
 
   /**

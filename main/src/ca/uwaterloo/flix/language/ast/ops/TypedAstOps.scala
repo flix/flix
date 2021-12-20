@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.ast.ops
 
-import ca.uwaterloo.flix.language.ast.Ast.Annotation.{Benchmark, Law, Lint, Test}
+import ca.uwaterloo.flix.language.ast.Ast.Annotation.{Benchmark, Test}
 import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
@@ -72,6 +72,10 @@ object TypedAstOps {
 
       case Expression.Let(sym, _, exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0 + (sym -> exp1.tpe))
+
+      case Expression.LetRec(sym, _, exp1, exp2, tpe, eff, loc) =>
+        val env1 = env0 + (sym -> exp1.tpe)
+        visitExp(exp1, env1) ++ visitExp(exp2, env1)
 
       case Expression.LetRegion(_, exp, _, _, _) =>
         visitExp(exp, env0)
@@ -155,7 +159,7 @@ object TypedAstOps {
       case Expression.Ascribe(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
-      case Expression.Cast(exp, tpe, eff, loc) =>
+      case Expression.Cast(exp, _, _, tpe, eff, loc) =>
         visitExp(exp, env0)
 
       case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
@@ -260,8 +264,9 @@ object TypedAstOps {
       * Finds the holes and hole contexts in the given body predicate `b0`.
       */
     def visitBody(b0: Predicate.Body, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = b0 match {
-      case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) => Map.empty
-      case Predicate.Body.Guard(exp, loc) => visitExp(exp, env0)
+      case Predicate.Body.Atom(_, _, _, _, _, _) => Map.empty
+      case Predicate.Body.Guard(exp, _) => visitExp(exp, env0)
+      case Predicate.Body.Loop(_, exp, _) => visitExp(exp, env0)
     }
 
     /**
@@ -349,6 +354,7 @@ object TypedAstOps {
     case Expression.Unary(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Let(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.LetRec(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.LetRegion(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expression.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -370,7 +376,7 @@ object TypedAstOps {
     case Expression.Deref(exp, _, _, _) => sigSymsOf(exp)
     case Expression.Assign(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Ascribe(exp, _, _, _) => sigSymsOf(exp)
-    case Expression.Cast(exp, _, _, _) => sigSymsOf(exp)
+    case Expression.Cast(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.InvokeConstructor(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
     case Expression.InvokeMethod(_, exp, args, _, _, _) => sigSymsOf(exp) ++ args.flatMap(sigSymsOf)
@@ -413,20 +419,6 @@ object TypedAstOps {
     */
   def isBenchmark(xs: List[Annotation]): Boolean = xs.exists {
     case Annotation(name, _, _) => name.isInstanceOf[Benchmark]
-  }
-
-  /**
-    * Returns `true` if the given annotations contains the [[Law]] annotation.
-    */
-  def isLaw(xs: List[Annotation]): Boolean = xs.exists {
-    case Annotation(name, _, _) => name.isInstanceOf[Law]
-  }
-
-  /**
-    * Returns `true` if the given annotations contains the [[Lint]] annotation.
-    */
-  def isLint(xs: List[Annotation]): Boolean = xs.exists {
-    case Annotation(name, _, _) => name.isInstanceOf[Lint]
   }
 
   /**
@@ -493,6 +485,9 @@ object TypedAstOps {
       freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.Let(sym, _, exp1, exp2, _, _, _) =>
+      (freeVars(exp1) ++ freeVars(exp2)) - sym
+
+    case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - sym
 
     case Expression.LetRegion(sym, exp, _, _, _) =>
@@ -569,7 +564,7 @@ object TypedAstOps {
     case Expression.Ascribe(exp, _, _, _) =>
       freeVars(exp)
 
-    case Expression.Cast(exp, _, _, _) =>
+    case Expression.Cast(exp, _, _, _, _, _) =>
       freeVars(exp)
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
@@ -729,6 +724,7 @@ object TypedAstOps {
         case (acc, term) => acc ++ freeVars(term)
       }
     case Body.Guard(exp, _) => freeVars(exp)
+    case Body.Loop(_, exp, _) => freeVars(exp)
   }
 
 

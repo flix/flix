@@ -21,16 +21,17 @@ pub enum MutList[a] {
     case MutList(Ref[Array[a]], Ref[Int32])
 }
 
-instance Eq[MutList[a]] with Eq[a] {
-        pub def eq(xs: MutList[a], ys: MutList[a]): Bool = {
-            let MutList(l1, n1) = xs;
-            let MutList(l2, n2) = ys;
-            deref n1 == deref n2 and
-                Array.slice(0, deref n1, deref l1) == Array.slice(0, deref n2, deref l2)
-        } as & Pure
-}
-
 namespace MutList {
+
+    ///
+    /// Returns `true` if the MutLists `xs` and `ys` are equal.
+    ///
+    pub def eq(xs: MutList[a], ys: MutList[a]): Bool & Impure with Eq[a] = {
+        let MutList(l1, n1) = xs;
+        let MutList(l2, n2) = ys;
+        deref n1 == deref n2 and
+            Array.slice(0, deref n1, deref l1) `Array.eq` Array.slice(0, deref n2, deref l2)
+    }
 
     ///
     /// Constant which stores the minimum capacity of a MutList.
@@ -40,7 +41,7 @@ namespace MutList {
     ///
     /// Returns a new empty mutable list with a default capacity.
     ///
-    pub def new(): MutList[a] & Impure = MutList(ref [default; minCapacity()], ref 0)
+    pub def new(): MutList[a] & Impure = MutList(ref [$DEFAULT$; minCapacity()], ref 0)
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -50,7 +51,7 @@ namespace MutList {
     pub def range(b: Int32, e: Int32): MutList[Int32] & Impure =
         let minCap = minCapacity();
         if (e - b < minCap)
-            let f = i -> if (b + i < e) b + i else default;
+            let f = i -> if (b + i < e) b + i else $DEFAULT$;
             MutList(ref Array.init(f, minCap), ref (e - b))
         else
             MutList(ref Array.range(b, e), ref (e - b))
@@ -430,7 +431,7 @@ namespace MutList {
     ///
     pub def clear!(v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
-        a := Array.new(default, Array.length(deref a));
+        a := Array.new($DEFAULT$, Array.length(deref a));
         l := 0
 
     ///
@@ -454,7 +455,7 @@ namespace MutList {
         if (len > 0)
             let last = (deref a)[len - 1];
             l := len - 1;
-            Array.put(default, len - 1, deref a);
+            Array.put($DEFAULT$, len - 1, deref a);
             compress!(v);
             Some(last)
         else
@@ -517,7 +518,7 @@ namespace MutList {
             removeHelper!(i + 1, n, a)
         }
         else if (i == n - 1)
-            a[i] = default
+            a[i] = $DEFAULT$
         else
             ()
 
@@ -612,7 +613,7 @@ namespace MutList {
             let minCap = minCapacity();
             let c = Order.max(l, minCap);
             l0 := l;
-            Array.updateSequence!(0, deref a, Array.new(default, c))
+            Array.updateSequence!(0, deref a, Array.new($DEFAULT$, c))
         }
         else
             ()
