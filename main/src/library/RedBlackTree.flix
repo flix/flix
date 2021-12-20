@@ -53,7 +53,7 @@ namespace RedBlackTree {
 
     instance Eq[RedBlackTree[k, v]] with Eq[k], Eq[v] {
         pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool with Eq[v] =
-            eqHelper(t1, t2, b -> b)
+            toList(t1) == toList(t2)
     }
 
     instance Functor[RedBlackTree[k]] {
@@ -71,7 +71,7 @@ namespace RedBlackTree {
     ///
     /// The color of a red-black tree node.
     ///
-    pub enum Color with Eq, Order {
+    pub enum Color {
 
         case Red
         case Black
@@ -662,20 +662,11 @@ namespace RedBlackTree {
     }
 
 
-    def eqHelper(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v], cont: Bool -> Bool): Bool with Eq[k], Eq[v] = match (t1, t2) {
-        case (Leaf, Leaf)                                         => cont(true)
-        case (DoubleBlackLeaf, DoubleBlackLeaf)                   => cont(true)
-        case (Node(c1, a1, k1, v1, b1), Node(c2, a2, k2, v2, b2)) =>
-            if (c1 == c2 and k1 == k2 and v1 == v2)
-                eqHelper(a1, a2, ans1 -> match ans1 {
-                    // Optimization: only pursue right branch if left branch equal...
-                    case true => eqHelper(b1, b2, ans2 -> cont(ans1 and ans2))
-                    case _    => cont(false)
-                 })
-            else
-                cont(false)
-        case _                                                    => cont(false)
-    }
+    ///
+    /// Returns the tree `t` as a list. Elements are ordered from smallest (left) to largest (right).
+    ///
+    pub def toList(t: RedBlackTree[k, v]): List[(k, v)] =
+        RedBlackTree.foldRight((k, v, xs) -> (k, v) :: xs, Nil, t)
 
     def nodeA(color: Color, left: m[RedBlackTree[k, v]], k: k, value: m[v], right: m[RedBlackTree[k, v]]): m[RedBlackTree[k, v]] with Applicative[m] =
         ((((l, v, r) -> Node(color, l, k, v, r)) `Functor.map` left) `Applicative.ap` value) `Applicative.ap` right
