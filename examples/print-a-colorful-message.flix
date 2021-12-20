@@ -14,4 +14,4 @@ def main(_args: Array[String]): Int32 & Impure =
             Console.cyan("f") :: Console.greenBright("u") :: Console.blueBright("l") :: Nil;
   let s5 = List.map(s -> Console.bgWhite(s), s4);
   List.map(s -> print(s), s5);
-    0 // exit code
+  0 // exit code
