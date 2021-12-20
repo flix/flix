@@ -266,7 +266,7 @@ namespace TestRedBlackTree {
     @test
     def count01(): Bool =
         let Map(t) = Map#{}: Map[Int32, Int32];
-        RedBlackTree1.count((k, v) -> k == v, t) == 0
+        RedBlackTree.count((k, v) -> k == v, t) == 0
 
     @test
     def count02(): Bool =
