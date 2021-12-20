@@ -425,7 +425,7 @@ namespace File {
             close(w);
 
             if (checkError(w)) {
-                Err("An error occurred when writing to the file: " + f)
+                Err("An error occurred when writing to the file: '${f}'.")
             }
             else {
                 Result.flatMap((exists) -> Ok(not exists), alreadyExists)
@@ -460,7 +460,7 @@ namespace File {
             close(w);
 
             if (checkError(w)) {
-                Err("An error occurred when writing lines to the file: " + f)
+                Err("An error occurred when writing lines to the file: '${f}'.")
             }
             else {
                 Result.flatMap((exists) -> Ok(not exists), alreadyExists)
@@ -496,7 +496,7 @@ namespace File {
             close(printWriter);
 
             if (checkError(printWriter)) {
-                Err("An error occurred when appending to the file: " + f)
+                Err("An error occurred when appending to the file: '${f}'.")
             }
             else {
                 Result.flatMap((exists) -> Ok(not exists), alreadyExists)
@@ -532,7 +532,7 @@ namespace File {
             close(printWriter);
 
             if (checkError(printWriter)) {
-                Err("An error occurred when appending lines to the file: " + f)
+                Err("An error occurred when appending lines to the file: '${f}'.")
             }
             else {
                 Result.flatMap((exists) -> Ok(not exists), alreadyExists)
@@ -570,7 +570,7 @@ namespace File {
             close(printWriter);
 
             if (checkError(printWriter)) {
-                Err("An error occurred when writing to the file: " + f)
+                Err("An error occurred when writing to the file: '${f}'.")
             }
             else {
                 Result.flatMap((exists) -> Ok(not exists), alreadyExists)
@@ -608,7 +608,7 @@ namespace File {
             close(printWriter);
 
             if (checkError(printWriter)) {
-                Err("An error occurred when writing to the file: " + f)
+                Err("An error occurred when appending to the file: '${f}'.")
             }
             else {
                 Result.flatMap((exists) -> Ok(not exists), alreadyExists)
@@ -637,7 +637,7 @@ namespace File {
             close(printWriter);
 
             if (checkError(printWriter)) {
-                Err("An error occurred when truncating the file: " + f)
+                Err("An error occurred when truncating to the file: '${f}'.")
             }
             else {
                 Result.flatMap((exists) -> Ok(not exists), alreadyExists)
