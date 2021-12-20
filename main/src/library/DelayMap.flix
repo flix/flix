@@ -181,6 +181,7 @@ namespace DelayMap {
     ///
     /// Helper function for `insertWithKey`. Applies `f` lazily.
     ///
+    @Lazy
     def insertWithKeyL(f: (k, v, v) -> v, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
         let DMap(t) = m;
         let f1 = (k1, v1, v2) -> lazy f(k1, force v1, force v2);
@@ -218,6 +219,7 @@ namespace DelayMap {
     ///
     /// Helper function for `mapWithKey`. Applies `f` lazily.
     ///
+    @Lazy
     def mapWithKeyL(f: (k, v1) -> v2, m: DelayMap[k, v1]): DelayMap[k, v2] =
         let DMap(tree) = m;
         let f1 = (k, v) -> lazy f(k, force v);
@@ -278,6 +280,7 @@ namespace DelayMap {
     ///
     /// Helper function for `unionWithKey`. Applies `f` lazily.
     ///
+    @Lazy
     def unionWithKeyL(f: (k, v, v) -> v, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
         use RedBlackTree.{blackHeight, foldRight, insertWith};
         let DMap(xs) = m1;
@@ -455,6 +458,7 @@ namespace DelayMap {
     ///
     /// Helper function for `updateWithKey`. Does not force the `v`.
     ///
+    @Lazy
     def updateWithKeyL(f: (k, v) -> Option[v], k: k, m: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
         let DMap(t) = m;
         let f1 = (k, v) -> {

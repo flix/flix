@@ -295,26 +295,28 @@ namespace LazyList {
     ///
     /// Returns an infinite LazyList of repeating `x`s.
     ///
-    @Experimental
+    @Experimental @Lazy
     pub def repeat(x: a): LazyList[a] =
         LList(lazy repeatHelper(x))
 
     ///
     /// Helper function for `repeat`.
     ///
+    @Lazy
     def repeatHelper(x: a): LazyList[a] =
         LCons(x, lazy repeatHelper(x))
 
     ///
     /// Returns an infinite sequence of integers starting from and including `n`.
     ///
-    @Experimental
+    @Experimental @Lazy
     pub def from(n: Int32): LazyList[Int32] =
         LList(lazy fromHelper(n))
 
     ///
     /// Helper function for `from`.
     ///
+    @Lazy
     def fromHelper(n: Int32): LazyList[Int32] =
         LCons(n, lazy fromHelper(n + 1))
 
@@ -338,6 +340,7 @@ namespace LazyList {
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
+    @Lazy
     def mapL(f: a -> b, l: LazyList[a]): LazyList[b] = match l {
         case ENil         => ENil
         case ECons(x, xs) => LList(lazy LCons(f(x), lazy mapL1(f,       xs)))
@@ -350,6 +353,7 @@ namespace LazyList {
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
+    @Lazy
     def mapL1(f: a -> b, l: LazyList[a]): LazyList[b] = match l {
         case ENil         => ENil
         case ECons(x, xs) => LCons(f(x), lazy mapL1(f,       xs))
@@ -403,12 +407,14 @@ namespace LazyList {
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
+    @Lazy
     def mapWithIndexL(f: (a, Int32) -> b, l: LazyList[a]): LazyList[b] =
         LList(lazy mapWithIndexLHelper(f, l, 0))
 
     ///
     /// Helper function for `mapWithIndexL`.
     ///
+    @Lazy
     def mapWithIndexLHelper(f: (a, Int32) -> b, l: LazyList[a], i: Int32): LazyList[b] = match l {
         case ENil         => ENil
         case ECons(x, xs) => LCons(f(x, i), lazy mapWithIndexLHelper(f,       xs, i + 1))
@@ -458,6 +464,7 @@ namespace LazyList {
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
+    @Lazy
     def flatMapL(f: a -> LazyList[b], l: LazyList[a]): LazyList[b] = match l {
         case ENil         => ENil
         case ECons(x, xs) => LList(lazy append(f(x), LList(lazy flatMapLHelper(f,       xs))))
@@ -468,6 +475,7 @@ namespace LazyList {
     ///
     /// Helper function for `flatMapL`.
     ///
+    @Lazy
     def flatMapLHelper(f: a -> LazyList[b], l: LazyList[a]): LazyList[b] = match l {
         case ENil         => ENil
         case ECons(x, xs) => append(f(x), LList(lazy flatMapLHelper(f,       xs)))
@@ -500,7 +508,7 @@ namespace LazyList {
     ///
     /// Reverses the list `l`.
     ///
-    @Experimental
+    @Experimental @Lazy
     pub def reverse(l: LazyList[a]): LazyList[a] =
         LList(lazy reverseAcc(l, ENil))
 
@@ -519,7 +527,7 @@ namespace LazyList {
     ///
     /// Does not force the tail of `l`.
     ///
-    @Experimental
+    @Experimental @Lazy
     pub def replace(x: a, y: a, l: LazyList[a]): LazyList[a] with Eq[a] =
         map(e -> if (x == e) y else e, l)
 
@@ -528,7 +536,7 @@ namespace LazyList {
     ///
     /// Forces the first element of the tail of `l2` unless that tail is an `LList`.
     ///
-    @Experimental
+    @Experimental @Lazy
     pub def intersperse(x: a, l: LazyList[a]): LazyList[a] = match l {
         case ENil           => ENil
         case ECons(x1, xs)  => if (isEmpty(      xs)) l else LCons(x1, lazy LCons(x, lazy intersperse(x,       xs)))
@@ -543,7 +551,7 @@ namespace LazyList {
     ///
     /// Forces the first element of the tail of `l2` unless that tail is an `LList`.
     ///
-    @Experimental
+    @Experimental @Lazy
     pub def intercalate(l1: LazyList[a], l2: LazyList[LazyList[a]]): LazyList[a] = match l2 {
         case ENil           => ENil
         case ECons(x, xs)   => if (isEmpty(      xs)) x else LList(lazy append(append(x, l1), intercalateHelper(l1,       xs)))
@@ -554,6 +562,7 @@ namespace LazyList {
     ///
     /// Helper function for `intercalate`.
     ///
+    @Lazy
     def intercalateHelper(l1: LazyList[a], l2: LazyList[LazyList[a]]): LazyList[a] = match l2 {
         case ENil           => ENil
         case ECons(x, xs)   => if (isEmpty(      xs)) x else append(append(x, l1), intercalateHelper(l1,       xs))
@@ -659,7 +668,7 @@ namespace LazyList {
     ///
     /// Does not force the tail of `l`.
     ///
-    @Experimental
+    @Experimental @Lazy
     pub def flatten(l: LazyList[LazyList[a]]): LazyList[a] = match l {
         case ENil         => ENil
         case ECons(x, xs) => LList(lazy append(x, flattenHelper(      xs)))
@@ -670,6 +679,7 @@ namespace LazyList {
     ///
     /// Helper function for `flatten`.
     ///
+    @Lazy
     def flattenHelper(l: LazyList[LazyList[a]]): LazyList[a] = match l {
         case ENil         => ENil
         case ECons(x, xs) => append(x,  LList(lazy flattenHelper(      xs)))
@@ -727,6 +737,7 @@ namespace LazyList {
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
+    @Lazy
     def filterL(f: a -> Bool, l: LazyList[a]): LazyList[a] = match l {
         case ENil         => ENil
         case ECons(x, xs) => if (f(x)) LCons(x, lazy filterL(f,       xs)) else LList(lazy filterL(f,       xs))
@@ -815,13 +826,14 @@ namespace LazyList {
     ///
     /// Does not force the tail of `l`.
     ///
-    @Experimental
+    @Experimental @Lazy
     pub def drop(n: Int32, l: LazyList[a]): LazyList[a] =
         LList(lazy dropHelper(n, l))
 
     ///
     /// Helper function for `drop`.
     ///
+    @Lazy
     def dropHelper(n: Int32, l: LazyList[a]): LazyList[a] =
         if (n < 1)
             l
@@ -853,12 +865,14 @@ namespace LazyList {
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
+    @Lazy
     def dropWhileL(f: a -> Bool, l: LazyList[a]): LazyList[a] =
         LList(lazy dropWhileLHelper(f, l))
 
     ///
     /// Helper function for `dropWhileL`.
     ///
+    @Lazy
     def dropWhileLHelper(f: a -> Bool, l: LazyList[a]): LazyList[a] = match l {
         case ENil         => ENil
         case ECons(x, xs) => if (f(x)) LList(lazy dropWhileLHelper(f,       xs)) else l
@@ -883,13 +897,14 @@ namespace LazyList {
     ///
     /// Does not force the tail of `l`.
     ///
-    @Experimental
+    @Experimental @Lazy
     pub def take(n: Int32, l: LazyList[a]): LazyList[a] =
         LList(lazy takeHelper(n, l))
 
     ///
     /// Helper function for `take`.
     ///
+    @Lazy
     def takeHelper(n: Int32, l: LazyList[a]): LazyList[a] =
         if (n <= 0)
             ENil
@@ -921,12 +936,14 @@ namespace LazyList {
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
+    @Lazy
     def takeWhileL(f: a -> Bool, l: LazyList[a]): LazyList[a] =
         LList(lazy takeWhileLHelper(f, l))
 
     ///
     /// Helper function for `takeWhileL`.
     ///
+    @Lazy
     def takeWhileLHelper(f: a -> Bool, l: LazyList[a]): LazyList[a] = match l {
         case ENil         => ENil
         case ECons(x, xs) => if (f(x)) LCons(x, lazy takeWhileL(f,       xs)) else ENil
@@ -960,7 +977,7 @@ namespace LazyList {
     ///
     /// Does not force the tail of either `l1` or `l2`.
     ///
-    @Experimental
+    @Experimental @Lazy
     pub def zip(l1: LazyList[a], l2: LazyList[b]): LazyList[(a, b)] = match (l1, l2) {
         case (ENil, _)                    => ENil
         case (_, ENil)                    => ENil
@@ -976,6 +993,7 @@ namespace LazyList {
     ///
     /// Helper function for `zip`.
     ///
+    @Lazy
     def zipHelper(l1: LazyList[a], l2: LazyList[b]): LazyList[(a, b)] = match (l1, l2) {
         case (ENil, _)                    => ENil
         case (_, ENil)                    => ENil
@@ -999,7 +1017,7 @@ namespace LazyList {
     /// - If `f` is pure then it is applied lazily (i.e. the tails are not forced).
     /// - If `f` is impure then it is applied eagerly (i.e. both lists `l1` and `l2` are forced).
     ///
-    @Experimental
+    @Experimental @LazyWhenPure
     pub def zipWith(f: (a, b) -> c & ef, l1: LazyList[a], l2: LazyList[b]): LazyList[c] & ef =
         map((x) -> f(fst(x), snd(x)), zip(l1, l2))
 
@@ -1023,12 +1041,14 @@ namespace LazyList {
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
+    @Lazy
     def filterMapL(f: a -> Option[b], l: LazyList[a]): LazyList[b] =
         LList(lazy filterMapLHelper(f, l))
 
     ///
     /// Helper function for `filterMapL`.
     ///
+    @Lazy
     def filterMapLHelper(f: a -> Option[b], l: LazyList[a]): LazyList[b] = match l {
         case ENil         => ENil
         case ECons(x, xs) =>
@@ -1106,7 +1126,7 @@ namespace LazyList {
     ///
     /// Does not force any elements of the list.
     ///
-    @Experimental
+    @Experimental @Lazy
     pub def toIterator(l: LazyList[a]): Iterator[a] & Impure =
         let cursor = ref l;
         let done = () -> match head(deref cursor) {
