@@ -15,7 +15,7 @@
  */
 namespace Console {
 
-    ///
+    /// test
     /// Reads a single line from the console.
     ///
     /// Returns `None` if nothing was entered or if no console is presented.
