@@ -173,7 +173,7 @@ namespace Channel {
     /// Returns the first channel that has an element in the array along with
     /// the index of the channel. Returns None if the default case is chosen.
     ///
-    pub def select(channels: Array[Mpmc], hasDefault: Bool): Option[(Int32, Boxed)] & Impure =
+    def select(channels: Array[Mpmc], hasDefault: Bool): Option[(Int32, Boxed)] & Impure =
         // Create a new lock and condition for this select. The condition is
         // potentially put into the waiting getters of the channels if a
         // default isn't defined.
