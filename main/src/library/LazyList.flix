@@ -791,7 +791,7 @@ namespace LazyList {
     ///
     /// Forces elements in the list until the first element (inclusive) that does not satisfy the predicate `f`.
     ///
-    @Experimental @Lazy
+    @Experimental
     pub def span(f: a -> Bool & ef, l: LazyList[a]): (LazyList[a], LazyList[a]) & ef =
         spanAcc(f, l, (ks, ls) -> (ks, ls))
 
