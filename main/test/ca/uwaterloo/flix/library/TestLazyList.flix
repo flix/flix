@@ -727,13 +727,13 @@ namespace TestLazyList {
     def toMap02(): Bool = LazyList.toMap(LList(lazy ENil): LazyList[(Unit, Unit)]) == Map#{}
 
     @test
-    def toMap03(): Bool = LazyList.toMap(ECons((1, true), ENil)) == Map#{1 -> true}
+    def toMap03(): Bool = LazyList.toMap(ECons((1, true), ENil)) == Map#{1 => true}
 
     @test
-    def toMap04(): Bool = LazyList.toMap(LList(lazy LCons((1, true), lazy LList(lazy LCons((2, false), lazy ENil))))) == Map#{1 -> true, 2 -> false}
+    def toMap04(): Bool = LazyList.toMap(LList(lazy LCons((1, true), lazy LList(lazy LCons((2, false), lazy ENil))))) == Map#{1 => true, 2 => false}
 
     @test
-    def toMap05(): Bool = LazyList.toMap(ECons((1, true), ECons((1, false), ENil))) == Map#{1 -> false}
+    def toMap05(): Bool = LazyList.toMap(ECons((1, true), ECons((1, false), ENil))) == Map#{1 => false}
 
 
     /////////////////////////////////////////////////////////////////////////////
