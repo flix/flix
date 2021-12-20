@@ -1817,13 +1817,13 @@ def toSet08(): Bool = List.toSet(2 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 3 :: 3 :: Ni
 def toMap01(): Bool = List.toMap(Nil: List[(Unit, Unit)]) == Map#{}
 
 @test
-def toMap02(): Bool = List.toMap((1, true) :: Nil) == Map#{1 -> true}
+def toMap02(): Bool = List.toMap((1, true) :: Nil) == Map#{1 => true}
 
 @test
-def toMap03(): Bool = List.toMap((1, true) :: (2, false) :: Nil) == Map#{1 -> true, 2 -> false}
+def toMap03(): Bool = List.toMap((1, true) :: (2, false) :: Nil) == Map#{1 => true, 2 => false}
 
 @test
-def toMap04(): Bool = List.toMap((1, true) :: (1, false) :: Nil) == Map#{1 -> true}
+def toMap04(): Bool = List.toMap((1, true) :: (1, false) :: Nil) == Map#{1 => true}
 
 /////////////////////////////////////////////////////////////////////////////
 // foreach                                                                 //

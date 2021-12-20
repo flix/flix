@@ -118,7 +118,7 @@ def toSet02(): Bool = Option.toSet(Some(1)) == Set#{1}
 def toMap01(): Bool = Option.toMap(None: Option[(Unit, Unit)]) == Map#{}
 
 @test
-def toMap02(): Bool = Option.toMap(Some((1, true))) == Map#{1 -> true}
+def toMap02(): Bool = Option.toMap(Some((1, true))) == Map#{1 => true}
 
 /////////////////////////////////////////////////////////////////////////////
 // toOk                                                                   //

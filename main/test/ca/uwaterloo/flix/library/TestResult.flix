@@ -346,7 +346,7 @@ def toSet02(): Bool = Result.toSet(Ok(1)) == Set#{1}
 def toMap01(): Bool = Result.toMap(Err(-1ii): Result[(Unit, Unit), _]) == Map#{}
 
 @test
-def toMap02(): Bool = Result.toMap(Ok((1, true))) == Map#{1 -> true}
+def toMap02(): Bool = Result.toMap(Ok((1, true))) == Map#{1 => true}
 
 /////////////////////////////////////////////////////////////////////////////
 // toOption                                                                //
