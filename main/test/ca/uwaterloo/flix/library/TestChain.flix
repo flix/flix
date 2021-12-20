@@ -1278,15 +1278,15 @@ namespace TestChain {
 
     @test
     def toMap02(): Bool =
-        Chain.toMap(Chain.singleton((1, 1))) == Map#{1 -> 1}
+        Chain.toMap(Chain.singleton((1, 1))) == Map#{1 => 1}
 
     @test
     def toMap03(): Bool =
-        Chain.toMap(List.toChain((1, 1) :: (2, 2) :: Nil)) == Map#{1 -> 1, 2 -> 2}
+        Chain.toMap(List.toChain((1, 1) :: (2, 2) :: Nil)) == Map#{1 => 1, 2 => 2}
 
     @test
     def toMap04(): Bool =
-        Chain.toMap(List.toChain((1, 1) :: (2, 2) :: (3, 3) :: Nil)) == Map#{1 -> 1, 2 -> 2, 3 -> 3}
+        Chain.toMap(List.toChain((1, 1) :: (2, 2) :: (3, 3) :: Nil)) == Map#{1 => 1, 2 => 2, 3 => 3}
 
     /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //

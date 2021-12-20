@@ -944,16 +944,16 @@ def toChain04(): Bool =
 def toMap01(): Bool = Set.toMap(Set#{}: Set[(Unit, Unit)]) == Map#{}
 
 @test
-def toMap02(): Bool = Set.toMap(Set#{(1, true)}) == Map#{1 -> true}
+def toMap02(): Bool = Set.toMap(Set#{(1, true)}) == Map#{1 => true}
 
 @test
-def toMap03(): Bool = Set.toMap(Set#{(1, true), (2, false)}) == Map#{1 -> true, 2 -> false}
+def toMap03(): Bool = Set.toMap(Set#{(1, true), (2, false)}) == Map#{1 => true, 2 => false}
 
 @test
-def toMap04(): Bool = Set.toMap(Set#{(1, true), (1, false)}) == Map#{1 -> false}
+def toMap04(): Bool = Set.toMap(Set#{(1, true), (1, false)}) == Map#{1 => false}
 
 @test
-def toMap05(): Bool = Set.toMap(Set#{(1, true), (2, false), (3, true)}) == Map#{1 -> true, 2 -> false, 3 -> true}
+def toMap05(): Bool = Set.toMap(Set#{(1, true), (2, false), (3, true)}) == Map#{1 => true, 2 => false, 3 => true}
 
 /////////////////////////////////////////////////////////////////////////////
 // eq                                                                      //
