@@ -130,7 +130,9 @@ object BoolUnification {
     case Type.True => true
     case Type.False => false
     case _ =>
-      val q = mkEq(f, Type.True)
+      // Make all variables flexible.
+      val f1 = f.map(tvar => tvar.copy(rigidity = Rigidity.Flexible))
+      val q = mkEq(f1, Type.True)
       try {
         successiveVariableElimination(q, q.typeVars.toList)
         true
