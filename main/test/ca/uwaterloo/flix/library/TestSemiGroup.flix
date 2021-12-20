@@ -308,7 +308,7 @@ namespace TestSemiGroup {
     def combineN07(): Bool = combineN(1 :: Nil, 2) == 1 :: 1 :: Nil
 
     @test
-    def combineN08(): Bool = combineN(Map#{1 -> "a"}, 4) == Map#{1 -> "aaaa"}
+    def combineN08(): Bool = combineN(Map#{1 => "a"}, 4) == Map#{1 => "aaaa"}
 
     /////////////////////////////////////////////////////////////////////////////
     // associative law                                                         //
