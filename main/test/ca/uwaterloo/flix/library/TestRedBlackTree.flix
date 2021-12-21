@@ -184,13 +184,13 @@ namespace TestRedBlackTree {
        loop(tree, Black)
 
     ///
-    /// Returns a tree with mappings `x -> ()` for all `x` in `xs`.
+    /// Returns a tree with mappings `x => ()` for all `x` in `xs`.
     ///
     def toTree(xs: List[Int32]): RedBlackTree[Int32, Unit]
         = List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), xs)
 
     ///
-    /// Returns a tree with `n` nodes `x -> ()` where `x` is a random integer.
+    /// Returns a tree with `n` nodes `x => ()` where `x` is a random integer.
     ///
     def random(n: Int32): RedBlackTree[Int32, Unit] & Impure = {
         let seed = 42i64;
@@ -327,17 +327,17 @@ namespace TestRedBlackTree {
 
     @test
     def minimumBy02(): Bool =
-        let Map(t) = Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5};
+        let Map(t) = Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5};
         RedBlackTree.minimumBy((x, _, y, _) -> x <=> y, t) == Some((1, 2))
 
     @test
     def minimumBy03(): Bool =
-        let Map(t) = Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5, 0 -> 2};
+        let Map(t) = Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2};
         RedBlackTree.minimumBy((x, _, y, _) -> x <=> y, t) == Some((0, 2))
 
     @test
     def minimumBy04(): Bool =
-        let Map(t) = Map#{1 -> 2, 2 -> 3, -44 -> 4, 5 -> 5, 0 -> 2};
+        let Map(t) = Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2};
         RedBlackTree.minimumBy((x, _, y, _) -> x <=> y, t) == Some((-44, 4))
 
     // TODO: Adapt these tests
