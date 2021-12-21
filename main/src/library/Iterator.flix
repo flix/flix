@@ -61,9 +61,13 @@ namespace Iterator {
         Iterator(done, next)
 
     ///
+    /// Returns an iterator over the results of `f`.
     ///
+    /// If `f` returns `Ok(x)`, then the next element is `x`.
     ///
-    pub def unfoldWithOk(f: Unit -> Result[a, b]): Iterator[a] & Impure =
+    /// If `f` returns `Err(e)`, then the iterator is depleted.
+    ///
+    pub def unfoldWithOk(f: Unit -> Result[a, b] & ef): Iterator[a] & Impure =
         let cursor = ref None;
         let done = () -> match f() {
             case Err(_) => true
