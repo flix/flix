@@ -920,4 +920,28 @@ namespace TestIterator {
         Iterator.intercalate(iterA, iterB) |>
             Iterator.toList == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: 11 :: 12 :: 13 :: 4 :: Nil
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // unfoldWithOk                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def unfoldWithOk01(): Bool & Impure =
+        let iter = Iterator1.unfoldWithOk(() -> Err(0));
+        Iterator.toList(iter) == Nil
+
+    @test
+    def unfoldWithOk02(): Bool & Impure =
+        let Iterator(d, n) = List.toIterator(1 :: 2 :: 3 :: 4 :: 5 :: Nil);
+        Iterator1.unfoldWithOk(() -> if (d()) Err("Done") else Ok(n())) |>
+            Iterator.toList == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+
+    @test
+    def unfoldWithOk03(): Bool & Impure =
+        let Iterator(d, n) = (1 :: 2 :: 3 :: 4 :: 5 :: Nil)   |>
+            List.map(x -> if (x == 4) Err("Done") else Ok(x)) |>
+            List.toIterator;
+        Iterator1.unfoldWithOk(() -> { d(); n() }) |>
+            Iterator.toList == 1 :: 2 :: 3 :: Nil
+
 }
