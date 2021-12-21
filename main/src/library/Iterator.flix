@@ -61,45 +61,26 @@ namespace Iterator {
         Iterator(done, next)
 
     ///
-    /// Returns an iterator that unfolds `f` until the resource at `x` is null.
     ///
-    /// Assumes that `f` eventually exhausts the resource at `x`.
     ///
-    /// Assumes `f` may throw a Java `RuntimeException`.
-    ///
-    pub def ofException(f: Unit -> a & ef, x: Ref[a]): Iterator[Result[a, String]] =
-        let done = () -> Object.isNull(deref x);
-        let next = () -> Result.try(f) as & Impure;
+    pub def unfoldWithOk(f: Unit -> Result[a, b]): Iterator[a] & Impure =
+        let cursor = ref None;
+        let done = () -> match f() {
+            case Err(_) => true
+            case Ok(x)  =>
+                cursor := Some(x);
+                false
+        };
+        let next = () -> match deref cursor {
+            case None    => bug!("Empty Iterator!")
+            case Some(x) =>
+                cursor := None;
+                x
+        };
         Iterator(done, next)
 
     ///
-    /// Returns an iterator that unfolds `f` until the resource at `x` is null.
-    ///
-    /// Assumes that `f` eventually exhausts the resource at `x`.
-    ///
-    /// Assumes `f` may throw a Java `RuntimeException`.
-    ///
-    /// If `f` throws a Java `RuntimeException`, then `g` is invoked.
-    ///
-    pub def ofExceptionWith(f: Unit -> a & ef1, g: Unit -> b & ef2, x: Ref[a]): Iterator[Result[a, String]] =
-        let done = () -> Object.isNull(deref x);
-        let next = () -> Result.tryWith(f, g) as & Impure;
-        Iterator(done, next)
-
-    ///
-    /// Returns an iterator that unfolds `f` until the resource at `x` is null.
-    ///
-    /// Assumes that `f` eventually exhausts the resource at `x`.
-    ///
-    /// If `f` throws a Java exception, the program crashes.
-    ///
-    pub def ofNullable(f: Unit -> a & ef, x: Ref[a]): Iterator[a] =
-        let done = () -> Object.isNull(deref x);
-        let next = () -> f() as & Impure;
-        Iterator(done, next)
-
-    ///
-    /// Return `Some(x)` if `iter` is not empty. Return `None` otherwise.
+    /// Returns `Some(x)` if `iter` is not empty. Return `None` otherwise.
     ///
     /// Consumes the head element of `iter`.
     ///
