@@ -264,6 +264,12 @@ object ClassMaker {
     def mkMethod(cm: AbstractClassMaker, ins: InstructionSet, v: Visibility, f: Final): Unit =
       cm.mkMethod(ins, name, d, v, f)
 
+    def mkAbstractMethod(cm: AbstractClassMaker): Unit =
+      cm.mkAbstractMethod(name, d)
+
+    def mkAbstractMethod(cm: InterfaceMaker): Unit =
+      cm.mkAbstractMethod(name, d)
+
     def invoke(): InstructionSet =
       INVOKEVIRTUAL(clazz, name, d)
   }

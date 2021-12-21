@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 
 /**
   * Generates bytecode for the record interface.
@@ -42,9 +41,8 @@ object GenRecordInterface {
   private def genByteCode()(implicit root: Root, flix: Flix): Array[Byte] = {
     val cm = ClassMaker.mkInterface(BackendObjType.Record.jvmName)
 
-    val stringToInterface = mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.Record.toTpe)
-    cm.mkAbstractMethod(BackendObjType.Record.LookupFieldFunctionName, stringToInterface)
-    cm.mkAbstractMethod(BackendObjType.Record.RestrictFieldFunctionName, stringToInterface)
+    BackendObjType.Record.LookupFieldMethod.mkAbstractMethod(cm)
+    BackendObjType.Record.RestrictFieldMethod.mkAbstractMethod(cm)
 
     cm.closeClassMaker
   }

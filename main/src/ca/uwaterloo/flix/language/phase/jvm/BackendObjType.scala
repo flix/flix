@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkName
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{InstanceField, StaticField}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{InstanceField, InstanceMethod, StaticField}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, RootPackage}
 
 /**
@@ -119,8 +120,10 @@ object BackendObjType {
   }
 
   case object Record extends BackendObjType {
-    val LookupFieldFunctionName: String = "lookupField"
-    val RestrictFieldFunctionName: String = "restrictField"
+    val LookupFieldMethod: InstanceMethod = InstanceMethod(this.jvmName, "lookupField",
+      mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.Record.toTpe))
+    val RestrictFieldMethod: InstanceMethod = InstanceMethod(this.jvmName, "restrictField",
+      mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.Record.toTpe))
   }
 
   // case object SchemaEmpty extends BackendObjType

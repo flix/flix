@@ -535,7 +535,7 @@ object GenExpression {
       visitor.visitLdcInsn(field.name)
 
       // Invoking the restrictField method
-      visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, BackendObjType.Record.RestrictFieldFunctionName,
+      visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, BackendObjType.Record.RestrictFieldMethod.name,
         AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
 
 
