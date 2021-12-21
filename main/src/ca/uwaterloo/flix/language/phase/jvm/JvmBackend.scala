@@ -131,7 +131,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
       //
       // Generate extended record classes for each (different) RecordExtend type in the program
-      // TODO
+      //
       val recordExtendClasses = GenRecordExtendClasses.gen(erasedExtendTypes)
 
       //

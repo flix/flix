@@ -64,15 +64,14 @@ object GenRecordExtendClasses {
   private def genByteCode(extendType: BackendObjType.RecordExtend)(implicit root: Root, flix: Flix): Array[Byte] = {
     val cm = ClassMaker.mkClass(extendType.jvmName, IsFinal, interfaces = List(extendType.interface.jvmName))
 
+    cm.mkObjectConstructor(IsPublic)
+
     extendType.LabelField.mkField(cm, IsPublic, NotFinal)
     extendType.ValueField.mkField(cm, IsPublic, NotFinal)
     extendType.RestField.mkField(cm, IsPublic, NotFinal)
 
-    cm.mkObjectConstructor(IsPublic)
-
-    val stringToRecordInterface = mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toTpe)
-    cm.mkMethod(genLookupFieldMethod(extendType), BackendObjType.Record.LookupFieldMethod.name, stringToRecordInterface, IsPublic, IsFinal)
-    cm.mkMethod(genRestrictFieldMethod(extendType), BackendObjType.Record.RestrictFieldMethod.name, stringToRecordInterface, IsPublic, IsFinal)
+    extendType.LookupFieldMethod.mkMethod(cm, genLookupFieldMethod(extendType), IsPublic, IsFinal)
+    extendType.RestrictFieldMethod.mkMethod(cm, genRestrictFieldMethod(extendType), IsPublic, IsFinal)
 
     cm.closeClassMaker
   }
@@ -93,7 +92,7 @@ object GenRecordExtendClasses {
       case FalseBranch =>
         thisLoad() ~ extendType.RestField.getField() ~
           ALOAD(1) ~
-          INVOKEINTERFACE(extendType.interface.jvmName, BackendObjType.Record.LookupFieldMethod.name, mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toTpe)) ~
+          BackendObjType.Record.LookupFieldMethod.invokeInterface() ~
           ARETURN()
     }
 
@@ -106,7 +105,7 @@ object GenRecordExtendClasses {
         thisLoad() ~
           DUP() ~ extendType.RestField.getField() ~
           ALOAD(1) ~
-          INVOKEINTERFACE(extendType.interface.jvmName, BackendObjType.Record.RestrictFieldMethod.name, mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toTpe)) ~
+          BackendObjType.Record.RestrictFieldMethod.invokeInterface() ~
           extendType.RestField.putField() ~
           thisLoad() ~ ARETURN()
     }

@@ -264,14 +264,21 @@ object ClassMaker {
     def mkMethod(cm: AbstractClassMaker, ins: InstructionSet, v: Visibility, f: Final): Unit =
       cm.mkMethod(ins, name, d, v, f)
 
+    def invoke(): InstructionSet =
+      INVOKEVIRTUAL(clazz, name, d)
+  }
+
+  sealed case class AbstractMethod(clazz: JvmName, name: String, d: MethodDescriptor) {
+    def implementation(clazz: JvmName): InstanceMethod = InstanceMethod(clazz, name, d)
+
     def mkAbstractMethod(cm: AbstractClassMaker): Unit =
       cm.mkAbstractMethod(name, d)
 
     def mkAbstractMethod(cm: InterfaceMaker): Unit =
       cm.mkAbstractMethod(name, d)
 
-    def invoke(): InstructionSet =
-      INVOKEVIRTUAL(clazz, name, d)
+    def invokeInterface(): InstructionSet =
+      INVOKEINTERFACE(clazz, name, d)
   }
 
   sealed case class StaticMethod(clazz: JvmName, name: String, d: MethodDescriptor) {

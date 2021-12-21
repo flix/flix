@@ -54,15 +54,14 @@ object GenRecordEmptyClass {
     * }
     */
   private def genByteCode()(implicit root: Root, flix: Flix): Array[Byte] = {
-    val interface = RecordEmpty.interface
     val cm = ClassMaker.mkClass(RecordEmpty.jvmName, IsFinal,
-      interfaces = List(interface.jvmName))
+      interfaces = List(RecordEmpty.interface.jvmName))
 
     cm.mkStaticConstructor(genStaticConstructor())
     cm.mkObjectConstructor(IsPrivate)
     RecordEmpty.InstanceField.mkStaticField(cm, IsPublic, IsFinal)
-    interface.LookupFieldMethod.mkMethod(cm, genLookupFieldMethod(), IsPublic, IsFinal)
-    interface.RestrictFieldMethod.mkMethod(cm, genRestrictFieldMethod(), IsPublic, IsFinal)
+    RecordEmpty.LookupFieldMethod.mkMethod(cm, genLookupFieldMethod(), IsPublic, IsFinal)
+    RecordEmpty.RestrictFieldMethod.mkMethod(cm, genRestrictFieldMethod(), IsPublic, IsFinal)
 
     cm.closeClassMaker
   }
@@ -75,15 +74,18 @@ object GenRecordEmptyClass {
       RETURN()
 
   private def genLookupFieldMethod(): InstructionSet =
-    throwUnsupportedOperationException(s"${BackendObjType.Record.LookupFieldMethod.name} method shouldn't be called")
+    throwUnsupportedOperationException(
+      s"${BackendObjType.Record.LookupFieldMethod.name} method shouldn't be called")
 
   private def genRestrictFieldMethod(): InstructionSet =
-    throwUnsupportedOperationException(s"${BackendObjType.Record.RestrictFieldMethod.name} method shouldn't be called")
+    throwUnsupportedOperationException(
+      s"${BackendObjType.Record.RestrictFieldMethod.name} method shouldn't be called")
 
   private def throwUnsupportedOperationException(msg: String): InstructionSet =
     NEW(JvmName.UnsupportedOperationException) ~
       DUP() ~
       pushString(msg) ~
-      INVOKESPECIAL(JvmName.UnsupportedOperationException, JvmName.ConstructorMethod, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
+      INVOKESPECIAL(JvmName.UnsupportedOperationException, JvmName.ConstructorMethod,
+        mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
       ATHROW()
 }

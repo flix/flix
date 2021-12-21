@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkName
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{InstanceField, InstanceMethod, StaticField}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{AbstractMethod, InstanceField, InstanceMethod, StaticField}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, RootPackage}
 
@@ -109,6 +109,9 @@ object BackendObjType {
     val interface: BackendObjType.Record.type = Record
 
     val InstanceField: StaticField = StaticField(this.jvmName, "INSTANCE", this.toTpe)
+
+    val LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName)
+    val RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName)
   }
 
   case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType {
@@ -117,12 +120,15 @@ object BackendObjType {
     val LabelField: InstanceField = InstanceField(this.jvmName, "label", BackendObjType.String.toTpe)
     val ValueField: InstanceField = InstanceField(this.jvmName, "value", value)
     val RestField: InstanceField = InstanceField(this.jvmName, "rest", interface.toTpe)
+
+    val LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName)
+    val RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName)
   }
 
   case object Record extends BackendObjType {
-    val LookupFieldMethod: InstanceMethod = InstanceMethod(this.jvmName, "lookupField",
+    val LookupFieldMethod: AbstractMethod = AbstractMethod(this.jvmName, "lookupField",
       mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.Record.toTpe))
-    val RestrictFieldMethod: InstanceMethod = InstanceMethod(this.jvmName, "restrictField",
+    val RestrictFieldMethod: AbstractMethod = AbstractMethod(this.jvmName, "restrictField",
       mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.Record.toTpe))
   }
 
