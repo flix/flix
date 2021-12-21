@@ -184,13 +184,13 @@ namespace TestRedBlackTree {
        loop(tree, Black)
 
     ///
-    /// Returns a tree with mappings `x => ()` for all `x` in `xs`.
+    /// Returns a tree with mappings `x -> ()` for all `x` in `xs`.
     ///
     def toTree(xs: List[Int32]): RedBlackTree[Int32, Unit]
         = List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), xs)
 
     ///
-    /// Returns a tree with `n` nodes `x => ()` where `x` is a random integer.
+    /// Returns a tree with `n` nodes `x -> ()` where `x` is a random integer.
     ///
     def random(n: Int32): RedBlackTree[Int32, Unit] & Impure = {
         let seed = 42i64;
