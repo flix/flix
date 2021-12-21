@@ -166,7 +166,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
       //
       // Generate the MatchError class.
-      // TODO
+      //
       val matchErrorClass = GenMatchErrorClass.gen()
 
       //
