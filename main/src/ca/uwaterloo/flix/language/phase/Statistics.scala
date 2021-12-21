@@ -104,6 +104,7 @@ object Statistics extends Phase[Root, Root] {
       case Expression.Unary(sop, exp, tpe, eff, loc) => visitExp(exp)
       case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.LetRegion(sym, exp, tpe, eff, loc) => visitExp(exp)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
       case Expression.Stm(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
@@ -203,6 +204,7 @@ object Statistics extends Phase[Root, Root] {
   private def visitBodyPredicate(body: Predicate.Body): Counter = body match {
     case Body.Atom(pred, den, polarity, terms, tpe, loc) => Counter.empty
     case Body.Guard(exp, loc) => visitExp(exp)
+    case Body.Loop(varSyms, exp, loc) => visitExp(exp)
   }
 
   /**

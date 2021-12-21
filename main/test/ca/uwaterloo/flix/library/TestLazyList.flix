@@ -668,23 +668,23 @@ namespace TestLazyList {
 
     @test
     def toArray01(): Bool & Impure =
-    	LazyList.toArray(ENil: LazyList[Unit]) == []
+    	LazyList.toArray(ENil: LazyList[Unit]) `Array.eq` []
 
     @test
     def toArray02(): Bool & Impure =
-    	LazyList.toArray(LList(lazy ENil): LazyList[Unit]) == []
+    	LazyList.toArray(LList(lazy ENil): LazyList[Unit]) `Array.eq` []
 
     @test
     def toArray03(): Bool & Impure =
-    	LazyList.range(-100, 1000) |> LazyList.toArray == Array.range(-100, 1000)
+    	LazyList.range(-100, 1000) |> LazyList.toArray `Array.eq` Array.range(-100, 1000)
 
     @test
     def toArray04(): Bool & Impure =
-    	LazyList.toArray(LCons(1, lazy ENil)) == [1]
+    	LazyList.toArray(LCons(1, lazy ENil)) `Array.eq` [1]
 
     @test
     def toArray05(): Bool & Impure =
-    	LazyList.toArray(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == [1, 2, 3]
+    	LazyList.toArray(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) `Array.eq` [1, 2, 3]
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -727,13 +727,13 @@ namespace TestLazyList {
     def toMap02(): Bool = LazyList.toMap(LList(lazy ENil): LazyList[(Unit, Unit)]) == Map#{}
 
     @test
-    def toMap03(): Bool = LazyList.toMap(ECons((1, true), ENil)) == Map#{1 -> true}
+    def toMap03(): Bool = LazyList.toMap(ECons((1, true), ENil)) == Map#{1 => true}
 
     @test
-    def toMap04(): Bool = LazyList.toMap(LList(lazy LCons((1, true), lazy LList(lazy LCons((2, false), lazy ENil))))) == Map#{1 -> true, 2 -> false}
+    def toMap04(): Bool = LazyList.toMap(LList(lazy LCons((1, true), lazy LList(lazy LCons((2, false), lazy ENil))))) == Map#{1 => true, 2 => false}
 
     @test
-    def toMap05(): Bool = LazyList.toMap(ECons((1, true), ECons((1, false), ENil))) == Map#{1 -> false}
+    def toMap05(): Bool = LazyList.toMap(ECons((1, true), ECons((1, false), ENil))) == Map#{1 => false}
 
 
     /////////////////////////////////////////////////////////////////////////////

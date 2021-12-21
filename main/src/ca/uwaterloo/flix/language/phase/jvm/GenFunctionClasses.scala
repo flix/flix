@@ -38,7 +38,7 @@ object GenFunctionClasses {
     // Generate a function class for each def and collect the results in a map.
     //
     ParOps.parAgg(defs, Map.empty[JvmName, JvmClass])({
-      case (macc, (sym, defn)) if JvmOps.nonLaw(defn) =>
+      case (macc, (sym, defn)) =>
         flix.subtask(sym.toString, sample = true)
 
         // `JvmType` of the interface for `def.tpe`
@@ -50,8 +50,6 @@ object GenFunctionClasses {
         // Name of the class
         val className = classType.name
         macc + (className -> JvmClass(className, genByteCode(classType, functionInterface, defn)))
-
-      case (macc, (_, _)) => macc
     }, _ ++ _)
   }
 
@@ -112,8 +110,12 @@ object GenFunctionClasses {
     // Continuation class
     val continuationType = JvmOps.getContinuationInterfaceType(defn.tpe)
 
+    // previous JvmOps function are already partial pattern matches
+    val MonoType.Arrow(_, closureResultType) = defn.tpe
+    val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(closureResultType))
+
     // Method header
-    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, GenContinuationAbstractClasses.InvokeMethodName,
+    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, backendContinuationType.InvokeMethodName,
       AsmOps.getMethodDescriptor(Nil, continuationType), null, null)
 
     // Enter label
@@ -152,7 +154,7 @@ object GenFunctionClasses {
       m.visitInsn(POP)
     }
 
-    m.visitFieldInsn(PUTFIELD, classType.name.toInternalName, GenContinuationAbstractClasses.ResultFieldName, resultJvmType.toDescriptor)
+    m.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendContinuationType.ResultField.name, resultJvmType.toDescriptor)
 
     // Return
     m.visitInsn(ACONST_NULL)

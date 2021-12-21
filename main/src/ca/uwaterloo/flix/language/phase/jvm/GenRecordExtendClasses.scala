@@ -22,16 +22,9 @@ import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBr
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{Final, Static, Visibility}
-import ca.uwaterloo.flix.language.phase.jvm.GenRecordInterface.{LookupFieldFunctionName, RestrictFieldFunctionName}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 
 object GenRecordExtendClasses {
-
-  val LabelFieldName: String = "label"
-  val ValueFieldName: String = "value"
-  val RestFieldName: String = "rest"
-
   /**
     * Returns a Map with an extended record class entry for each element in `ts`.
     */
@@ -69,17 +62,17 @@ object GenRecordExtendClasses {
     * then this field should no longer be in the record. We then return 'this'.
     */
   private def genByteCode(extendType: BackendObjType.RecordExtend)(implicit root: Root, flix: Flix): Array[Byte] = {
-    val cm = ClassMaker.mkClass(extendType.jvmName, IsFinal, interfaces = List(extendType.interface))
+    val cm = ClassMaker.mkClass(extendType.jvmName, IsFinal, interfaces = List(extendType.interface.jvmName))
 
-    cm.mkField(LabelFieldName, BackendObjType.String.toTpe, IsPublic, NotFinal)
-    cm.mkField(ValueFieldName, extendType.value, IsPublic, NotFinal)
-    cm.mkField(RestFieldName, extendType.interface.toObjTpe.toTpe, IsPublic, NotFinal)
+    extendType.LabelField.mkField(cm, IsPublic, NotFinal)
+    extendType.ValueField.mkField(cm, IsPublic, NotFinal)
+    extendType.RestField.mkField(cm, IsPublic, NotFinal)
 
     cm.mkObjectConstructor(IsPublic)
 
-    val stringToRecordInterface = mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toObjTpe.toTpe)
-    cm.mkMethod(genLookupFieldMethod(extendType), LookupFieldFunctionName, stringToRecordInterface, IsPublic, IsFinal)
-    cm.mkMethod(genRestrictFieldMethod(extendType), RestrictFieldFunctionName, stringToRecordInterface, IsPublic, IsFinal)
+    val stringToRecordInterface = mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toTpe)
+    cm.mkMethod(genLookupFieldMethod(extendType), BackendObjType.Record.LookupFieldFunctionName, stringToRecordInterface, IsPublic, IsFinal)
+    cm.mkMethod(genRestrictFieldMethod(extendType), BackendObjType.Record.RestrictFieldFunctionName, stringToRecordInterface, IsPublic, IsFinal)
 
     cm.closeClassMaker
   }
@@ -88,38 +81,33 @@ object GenRecordExtendClasses {
     * Compares the label of `this`and `ALOAD(1)` and executes the designated branch.
     */
   private def caseOnLabelEquality(extendType: BackendObjType.RecordExtend)(cases: Branch => InstructionSet): InstructionSet =
-    loadThis() ~
-      GETFIELD(extendType.jvmName, LabelFieldName, BackendObjType.String.toTpe) ~
+    thisLoad() ~ extendType.LabelField.getField() ~
       ALOAD(1) ~
-      INVOKEVIRTUAL(BackendObjType.String.jvmName, "equals", mkDescriptor(JvmName.Object.toObjTpe.toTpe)(BackendType.Bool)) ~
-      matchBool(cases)
+      INVOKEVIRTUAL(BackendObjType.String.jvmName, "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool)) ~
+      branch(Condition.Bool)(cases)
 
   private def genLookupFieldMethod(extendType: BackendObjType.RecordExtend)(implicit root: Root, flix: Flix): InstructionSet =
     caseOnLabelEquality(extendType) {
       case TrueBranch =>
-        loadThis() ~ ARETURN()
+        thisLoad() ~ ARETURN()
       case FalseBranch =>
-        loadThis() ~
-          GETFIELD(extendType.jvmName, RestFieldName, extendType.interface.toObjTpe.toTpe) ~
+        thisLoad() ~ extendType.RestField.getField() ~
           ALOAD(1) ~
-          INVOKEINTERFACE(extendType.interface, LookupFieldFunctionName, mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toObjTpe.toTpe)) ~
+          INVOKEINTERFACE(extendType.interface.jvmName, BackendObjType.Record.LookupFieldFunctionName, mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toTpe)) ~
           ARETURN()
     }
 
   private def genRestrictFieldMethod(extendType: BackendObjType.RecordExtend)(implicit root: Root, flix: Flix): InstructionSet =
     caseOnLabelEquality(extendType) {
       case TrueBranch =>
-        loadThis() ~
-          GETFIELD(extendType.jvmName, RestFieldName, extendType.interface.toObjTpe.toTpe) ~
+        thisLoad() ~ extendType.RestField.getField() ~
           ARETURN()
       case FalseBranch =>
-        loadThis() ~
-          DUP() ~
-          GETFIELD(extendType.jvmName, RestFieldName, extendType.interface.toObjTpe.toTpe) ~
+        thisLoad() ~
+          DUP() ~ extendType.RestField.getField() ~
           ALOAD(1) ~
-          INVOKEINTERFACE(extendType.interface, RestrictFieldFunctionName, mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toObjTpe.toTpe)) ~
-          PUTFIELD(extendType.jvmName, RestFieldName, extendType.interface.toObjTpe.toTpe) ~
-          loadThis() ~
-          ARETURN()
+          INVOKEINTERFACE(extendType.interface.jvmName, BackendObjType.Record.RestrictFieldFunctionName, mkDescriptor(BackendObjType.String.toTpe)(extendType.interface.toTpe)) ~
+          extendType.RestField.putField() ~
+          thisLoad() ~ ARETURN()
     }
 }

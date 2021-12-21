@@ -13,8 +13,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export interface SourceLocation {
-    name: string
-    beginLine: number
-    endLine: number
-}
+
+export type Annotation = "@Deprecated|@Experimental|@Parallel|@ParallelWhenPure|@Lazy|@LazyWhenPure"

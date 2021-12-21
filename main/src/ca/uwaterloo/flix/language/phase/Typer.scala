@@ -256,14 +256,19 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
                 case Validation.Failure(errs) =>
                   val instanceErrs = errs.collect {
                     case UnificationError.NoMatchingInstance(tconstr) =>
-                      if (tconstr.sym.name == "Eq")
-                        TypeError.MissingEq(tconstr.arg, tconstr.loc)
-                      else if (tconstr.sym.name == "Order")
-                        TypeError.MissingOrder(tconstr.arg, tconstr.loc)
-                      else if (tconstr.sym.name == "ToString")
-                        TypeError.MissingToString(tconstr.arg, tconstr.loc)
-                      else
-                        TypeError.NoMatchingInstance(tconstr.sym, tconstr.arg, tconstr.loc)
+                      tconstr.arg.typeConstructor match {
+                        case Some(tc: TypeConstructor.Arrow) =>
+                          TypeError.MissingArrowInstance(tconstr.sym, tconstr.arg, tconstr.loc)
+                        case _ =>
+                          if (tconstr.sym.name == "Eq")
+                            TypeError.MissingEq(tconstr.arg, tconstr.loc)
+                          else if (tconstr.sym.name == "Order")
+                            TypeError.MissingOrder(tconstr.arg, tconstr.loc)
+                          else if (tconstr.sym.name == "ToString")
+                            TypeError.MissingToString(tconstr.arg, tconstr.loc)
+                          else
+                            TypeError.MissingInstance(tconstr.sym, tconstr.arg, tconstr.loc)
+                      }
                   }
                   // Case 2: non instance error
                   if (instanceErrs.isEmpty) {
@@ -332,14 +337,14 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
       * Performs type resolution on the given enum and its cases.
       */
     def visitEnum(enum: KindedAst.Enum): Validation[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum match {
-      case KindedAst.Enum(doc, mod, enumSym, tparams, derives, cases0, tpe, sc, loc) =>
-        val tparams = getTypeParams(enum.tparams)
+      case KindedAst.Enum(doc, mod, enumSym, tparams0, derives, cases0, tpeDeprecated, sc, loc) =>
+        val tparams = getTypeParams(tparams0)
         val cases = cases0 map {
           case (name, KindedAst.Case(_, tagName, tagType, tagScheme)) =>
             name -> TypedAst.Case(enumSym, tagName, tagType, tagScheme, tagName.loc)
         }
 
-        Validation.Success(enumSym -> TypedAst.Enum(doc, mod, enumSym, tparams, cases, enum.tpeDeprecated, enum.sc, loc))
+        Validation.Success(enumSym -> TypedAst.Enum(doc, mod, enumSym, tparams, derives, cases, tpeDeprecated, sc, loc))
     }
 
     // Visit every enum in the ast.
@@ -715,6 +720,21 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
+          boundVar <- unifyTypeM(sym.tvar.ascribedWith(Kind.Star), tpe1, loc)
+          resultTyp = tpe2
+          resultEff = Type.mkAnd(eff1, eff2, loc)
+        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+
+      case KindedAst.Expression.LetRec(sym, mod, exp1, exp2, loc) =>
+        // Ensure that `exp1` is a lambda.
+        val a = Type.freshVar(Kind.Star, loc)
+        val b = Type.freshVar(Kind.Star, loc)
+        val ef = Type.freshVar(Kind.Bool, loc)
+        val expectedType = Type.mkArrowWithEffect(a, ef, b, loc)
+        for {
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          arrowTyp <- unifyTypeM(expectedType, tpe1, loc)
           boundVar <- unifyTypeM(sym.tvar.ascribedWith(Kind.Star), tpe1, loc)
           resultTyp = tpe2
           resultEff = Type.mkAnd(eff1, eff2, loc)
@@ -1612,6 +1632,13 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         val eff = Type.mkAnd(e1.eff, e2.eff, loc)
         TypedAst.Expression.Let(sym, mod, e1, e2, tpe, eff, loc)
 
+      case KindedAst.Expression.LetRec(sym, mod, exp1, exp2, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        val tpe = e2.tpe
+        val eff = Type.mkAnd(e1.eff, e2.eff, loc)
+        TypedAst.Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
+
       case KindedAst.Expression.LetRegion(sym, exp, evar, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = e.tpe
@@ -2119,17 +2146,21 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
       } yield (tconstrs, Type.mkSchemaRowExtend(pred, predicateType, restRow, loc))
 
-    //
-    //  exp : Bool
-    //  ----------
-    //  if exp : a
-    //
     case KindedAst.Predicate.Body.Guard(exp, loc) =>
-      // Infer the types of the terms.
       for {
         (constrs, tpe, eff) <- inferExp(exp, root)
         expEff <- unifyBoolM(Type.Pure, eff, loc)
         expTyp <- unifyTypeM(Type.Bool, tpe, loc)
+      } yield (constrs, mkAnySchemaRowType(loc))
+
+    case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
+      // TODO: Use type classes instead of array?
+      val tupleType = Type.mkTuple(varSyms.map(_.tvar.ascribedWith(Kind.Star)), loc)
+      val expectedType = Type.mkArray(tupleType, loc)
+      for {
+        (constrs, tpe, eff) <- inferExp(exp, root)
+        expEff <- unifyBoolM(Type.Pure, eff, loc)
+        expTyp <- unifyTypeM(expectedType, tpe, loc)
       } yield (constrs, mkAnySchemaRowType(loc))
   }
 
@@ -2144,6 +2175,11 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     case KindedAst.Predicate.Body.Guard(exp, loc) =>
       val e = reassembleExp(exp, root, subst0)
       TypedAst.Predicate.Body.Guard(e, loc)
+
+    case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
+      val e = reassembleExp(exp, root, subst0)
+      TypedAst.Predicate.Body.Loop(varSyms, e, loc)
+
   }
 
   /**

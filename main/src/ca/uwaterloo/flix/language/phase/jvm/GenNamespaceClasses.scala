@@ -80,6 +80,7 @@ object GenNamespaceClasses {
 
     // Jvm type of method args
     val MonoType.Arrow(targs, tresult) = defn.tpe
+    val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(tresult))
 
     // Erased argument and result type.
     val erasedArgs = targs map JvmOps.getErasedJvmType
@@ -110,7 +111,7 @@ object GenNamespaceClasses {
       // Incrementing the offset
       offset += AsmOps.getStackSize(arg)
     }
-    method.visitMethodInsn(INVOKEVIRTUAL, functionType.name.toInternalName, GenContinuationAbstractClasses.UnwindMethodName, AsmOps.getMethodDescriptor(Nil, erasedResult), false)
+    method.visitMethodInsn(INVOKEVIRTUAL, functionType.name.toInternalName, backendContinuationType.UnwindMethodName, AsmOps.getMethodDescriptor(Nil, erasedResult), false)
     // no erasure here because the ns function works on erased values
 
     // Return

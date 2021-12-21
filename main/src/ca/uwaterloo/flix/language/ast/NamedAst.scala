@@ -122,6 +122,8 @@ object NamedAst {
 
     case class Let(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
+    case class LetRec(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
     case class LetRegion(sym: Symbol.VarSym, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], loc: SourceLocation) extends NamedAst.Expression
@@ -291,6 +293,8 @@ object NamedAst {
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, terms: List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Predicate.Body
 
       case class Guard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
+
+      case class Loop(varSyms: List[Symbol.VarSym], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
     }
 

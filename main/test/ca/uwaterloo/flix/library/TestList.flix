@@ -1627,52 +1627,6 @@ def unzip304(): Bool = List.unzip3((1, 'a', true) :: (2, 'b', true) :: (3, 'c', 
                     (1 :: 2 :: 3 :: Nil, 'a' :: 'b' :: 'c' :: Nil, true :: true :: false :: Nil)
 
 /////////////////////////////////////////////////////////////////////////////
-// map2                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def map201(): Bool = List.map2((a, b) -> if (b) a+1 else a, Nil, Nil) == Nil
-
-@test
-def map202(): Bool = List.map2((a, b) -> if (b) a+1 else a, 1 :: Nil, Nil) == Nil
-
-@test
-def map203(): Bool = List.map2((a, b) -> if (b) a+1 else a, Nil, true :: Nil) == Nil
-
-@test
-def map204(): Bool = List.map2((a, b) -> if (b) a+1 else a, 1 :: Nil, true :: Nil) == 2 :: Nil
-
-@test
-def map205(): Bool = List.map2((a, b) -> if (b) a+1 else a, 1 :: Nil, false :: Nil) == 1 :: Nil
-
-@test
-def map206(): Bool = List.map2((a, b) -> if (b) a+1 else a, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil,
-                   false :: true :: true :: false :: false :: true :: true :: true ::Nil) ==
-                   1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
-
-/////////////////////////////////////////////////////////////////////////////
-// flatMap2                                                                //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def flatMap201(): Bool = List.flatMap2((a, b) -> if (b) List.repeat(a, a) else List.repeat(a+1, a+1), Nil, Nil) == Nil
-
-@test
-def flatMap202(): Bool = List.flatMap2((a, b) -> if (b) List.repeat(a, a) else List.repeat(a+1, a+1), 1 :: Nil, Nil) == Nil
-
-@test
-def flatMap203(): Bool = List.flatMap2((a, b) -> if (b) List.repeat(a, a) else List.repeat(a+1, a+1), Nil, true :: Nil) == Nil
-
-@test
-def flatMap204(): Bool = List.flatMap2((a, b) -> if (b) List.repeat(a, a) else List.repeat(a+1, a+1), 2 :: Nil, true :: Nil) == 2 :: 2 :: Nil
-
-@test
-def flatMap205(): Bool = List.flatMap2((a, b) -> if (b) List.repeat(a, a) else List.repeat(a+1, a+1), 2 :: Nil, false :: Nil) == 3 :: 3 :: 3 :: Nil
-
-@test
-def flatMap206(): Bool = List.flatMap2((a, b) -> if (b) List.repeat(a, a) else List.repeat(a+1, a+1), 1 :: 2 :: 3 :: 4 :: 5 :: Nil,
-                   false :: true :: true :: false :: false :: Nil) ==
-                   2 :: 2 :: 2 :: 2 :: 3 :: 3 :: 3 :: 5 :: 5 :: 5 :: 5 :: 5 :: 6 :: 6 :: 6 :: 6 :: 6 :: 6 :: Nil
-
-/////////////////////////////////////////////////////////////////////////////
 // fold2                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -1863,13 +1817,13 @@ def toSet08(): Bool = List.toSet(2 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 3 :: 3 :: Ni
 def toMap01(): Bool = List.toMap(Nil: List[(Unit, Unit)]) == Map#{}
 
 @test
-def toMap02(): Bool = List.toMap((1, true) :: Nil) == Map#{1 -> true}
+def toMap02(): Bool = List.toMap((1, true) :: Nil) == Map#{1 => true}
 
 @test
-def toMap03(): Bool = List.toMap((1, true) :: (2, false) :: Nil) == Map#{1 -> true, 2 -> false}
+def toMap03(): Bool = List.toMap((1, true) :: (2, false) :: Nil) == Map#{1 => true, 2 => false}
 
 @test
-def toMap04(): Bool = List.toMap((1, true) :: (1, false) :: Nil) == Map#{1 -> true}
+def toMap04(): Bool = List.toMap((1, true) :: (1, false) :: Nil) == Map#{1 => true}
 
 /////////////////////////////////////////////////////////////////////////////
 // foreach                                                                 //

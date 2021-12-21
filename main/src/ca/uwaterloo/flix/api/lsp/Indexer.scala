@@ -76,10 +76,13 @@ object Indexer {
     */
   private def visitEnum(enum0: Enum): Index = {
     val idx0 = Index.occurrenceOf(enum0)
-    val idx1 = enum0.cases.foldLeft(Index.empty) {
+    val idx1 = enum0.derives.foldLeft(Index.empty) {
+      case (idx, Ast.Derivation(clazz, loc)) => Index.useOf(clazz, loc)
+    }
+    val idx2 = enum0.cases.foldLeft(Index.empty) {
       case (idx, (tag, caze)) => idx ++ Index.occurrenceOf(caze)
     }
-    idx0 ++ idx1
+    idx0 ++ idx1 ++ idx2
   }
 
   /**
@@ -174,6 +177,9 @@ object Indexer {
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.Let(sym, _, exp1, exp2, _, _, _) =>
+      Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+
+    case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.LetRegion(sym, exp, _, _, _) =>
@@ -395,6 +401,7 @@ object Indexer {
   private def visitBody(b0: Predicate.Body): Index = b0 match {
     case Body.Atom(pred, _, _, terms, _, _) => Index.occurrenceOf(pred) ++ Index.useOf(pred) ++ visitPats(terms)
     case Body.Guard(exp, _) => visitExp(exp)
+    case Body.Loop(_, exp, _) => visitExp(exp)
   }
 
   /**

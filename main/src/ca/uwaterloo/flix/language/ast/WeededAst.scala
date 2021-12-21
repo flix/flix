@@ -119,6 +119,8 @@ object WeededAst {
 
     case class Let(ident: Name.Ident, mod: Ast.Modifiers, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    case class LetRec(ident: Name.Ident, mod: Ast.Modifiers, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class LetRegion(ident: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Match(exp: WeededAst.Expression, rules: List[WeededAst.MatchRule], loc: SourceLocation) extends WeededAst.Expression
@@ -289,6 +291,8 @@ object WeededAst {
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
 
       case class Guard(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
+
+      case class Loop(idents: List[Name.Ident], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 
     }
 

@@ -42,6 +42,6 @@ namespace Fixpoint/Ram {
                 case Guard3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
                 case Guard4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
                 case Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
-            }
+            } as & Pure
     }
 }

@@ -98,7 +98,7 @@ object ClassMaker {
     }
 
     def mkObjectConstructor(v: Visibility): Unit = {
-      val ins = loadThis() ~ invokeConstructor(JvmName.Object, MethodDescriptor.NothingToVoid) ~ RETURN()
+      val ins = thisLoad() ~ invokeConstructor(JvmName.Object, MethodDescriptor.NothingToVoid) ~ RETURN()
       mkConstructor(ins, MethodDescriptor.NothingToVoid, v)
     }
 
@@ -119,7 +119,7 @@ object ClassMaker {
     }
 
     def mkObjectConstructor(v: Visibility): Unit = {
-      val ins = loadThis() ~ invokeConstructor(JvmName.Object, MethodDescriptor.NothingToVoid) ~ RETURN()
+      val ins = thisLoad() ~ invokeConstructor(JvmName.Object, MethodDescriptor.NothingToVoid) ~ RETURN()
       mkConstructor(ins, MethodDescriptor.NothingToVoid, v)
     }
 
@@ -227,5 +227,33 @@ object ClassMaker {
     case object IsInterface extends Interface
 
     case object NotInterface extends Interface
+  }
+
+  sealed case class InstanceField(clazz: JvmName, name: String, tpe: BackendType) {
+    def mkField(cm: InstanceClassMaker, v: Visibility, f: Final): Unit =
+      cm.mkField(name, tpe, v, f)
+
+    def mkField(cm: AbstractClassMaker, v: Visibility, f: Final): Unit =
+      cm.mkField(name, tpe, v, f)
+
+    def putField(): InstructionSet =
+      PUTFIELD(clazz, name, tpe)
+
+    def getField(): InstructionSet =
+      GETFIELD(clazz, name, tpe)
+  }
+
+  sealed case class StaticField(clazz: JvmName, name: String, tpe: BackendType) {
+    def mkField(cm: InstanceClassMaker, v: Visibility, f: Final): Unit =
+      cm.mkStaticField(name, tpe, v, f)
+
+    def mkField(cm: AbstractClassMaker, v: Visibility, f: Final): Unit =
+      cm.mkStaticField(name, tpe, v, f)
+
+    def putField(): InstructionSet =
+      PUTSTATIC(clazz, name, tpe)
+
+    def getField(): InstructionSet =
+      GETSTATIC(clazz, name, tpe)
   }
 }

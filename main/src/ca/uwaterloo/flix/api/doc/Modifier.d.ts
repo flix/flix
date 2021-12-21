@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-export type Modifier = "public"
+export type Modifier = "override"

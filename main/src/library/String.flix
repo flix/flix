@@ -20,7 +20,7 @@ namespace String {
     /// Returns the character at position `i` in the string `s`.
     ///
     @Time(1) @Space(1)
-    pub def charAt(i: Int, s: String): Char =
+    pub def charAt(i: Int32, s: String): Char =
         import java.lang.String.charAt(Int32);
         charAt(s, i) as & Pure
 
@@ -44,7 +44,7 @@ namespace String {
     /// Returns the length of the string `s`.
     ///
     @Time(1) @Space(1)
-    pub def length(s: String): Int =
+    pub def length(s: String): Int32 =
         import java.lang.String.length();
         length(s) as & Pure
 
@@ -106,7 +106,7 @@ namespace String {
     ///
     @Time(1) @Space(1)
     pub def lineSeparator(): String =
-        import java.lang.System:lineSeparator();
+        import static java.lang.System.lineSeparator();
         lineSeparator() as & Pure
 
     ///
@@ -215,18 +215,6 @@ namespace String {
         init(i -> f(charAt(i, s), i), len)
 
     ///
-    /// Returns a string where the element at index `i` is `f(a, b)` where
-    /// `a` is the element at index `i` in `s` and `b` is the element at index `i` in `t`.
-    ///
-    /// If either `s` or `t` becomes depleted, then no further elements are added to the resulting string.
-    /// Functionally equivalent to zipWith.
-    ///
-    @Time(time(f) * Int32.min(length(s), length(t))) @Space(space(f) * Int32.min(length(s), length(t)))
-    pub def map2(f: (Char, Char) -> Char & ef, s: String, t: String): String & ef =
-        let len = Int32.min(length(s), length(t));
-        init(i -> f(charAt(i, s), charAt(i, t)), len)
-
-    ///
     /// Returns the reverse of `s`.
     ///
     @Time(length(s)) @Space(length(s))
@@ -303,7 +291,7 @@ namespace String {
     ///
     def isSubmatchHelper(pattern: String, s: String): Bool & Impure =
         try {
-            import java.util.regex.Pattern:compile(String);
+            import static java.util.regex.Pattern.compile(String);
             import java.util.regex.Pattern.matcher(##java.lang.CharSequence);
             import java.util.regex.Matcher.find(Int32);
             let cs1 = s as ##java.lang.CharSequence;
@@ -356,7 +344,7 @@ namespace String {
     /// Returns `None` if no character in `s` satisfies `f`.
     ///
     @Time(time(f) * length(s)) @Space(space(f))
-    pub def findIndexOfLeft(f: Char -> Bool, s: String): Option[Int] =
+    pub def findIndexOfLeft(f: Char -> Bool, s: String): Option[Int32] =
         let i = findIndexOfLeftHelper(f, s, length(s), 0);
         if (i < 0) None else Some(i)
 
@@ -378,7 +366,7 @@ namespace String {
     /// If nothing satisfies `f` return None.
     ///
     @Time(time(f) * length(s)) @Space(space(f))
-    pub def findIndexOfRight(f: Char -> Bool, s: String): Option[Int] =
+    pub def findIndexOfRight(f: Char -> Bool, s: String): Option[Int32] =
         let end = length(s) - 1;
         let i = findIndexOfRightHelper(f, s, end);
         if (i < 0) None else Some(i)

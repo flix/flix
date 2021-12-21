@@ -17,229 +17,170 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import org.objectweb.asm.{ClassWriter, Label}
-import org.objectweb.asm.Opcodes._
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.InstanceField
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 
 object GenReifiedSourceLocationClass {
 
-  val SourceFieldName: String = "source"
-  val BeginLineFieldName: String = "beginLine"
-  val BeginColFieldName: String = "beginCol"
-  val EndLineFieldName: String = "endLine"
-  val EndColFieldName: String = "endCol"
-  val ConstructorDescriptor: String = AsmOps.getMethodDescriptor(List(JvmType.String, JvmType.PrimInt, JvmType.PrimInt, JvmType.PrimInt, JvmType.PrimInt), JvmType.Void)
+  private def mkInstanceField(fieldName: String, tpe: BackendType) =
+    InstanceField(JvmName.ReifiedSourceLocation, fieldName, tpe)
+
+  private val sourceField: InstanceField =
+    mkInstanceField("source", BackendObjType.String.toTpe)
+  private val beginLineField: InstanceField =
+    mkInstanceField("beginLine", BackendType.Int32)
+  private val beginColField: InstanceField =
+    mkInstanceField("beginCol", BackendType.Int32)
+  private val endLineField: InstanceField =
+    mkInstanceField("endLine", BackendType.Int32)
+  private val endColField: InstanceField =
+    mkInstanceField("endCol", BackendType.Int32)
+  val ConstructorDescriptor: MethodDescriptor = mkDescriptor(BackendObjType.String.toTpe, BackendType.Int32, BackendType.Int32, BackendType.Int32, BackendType.Int32)(VoidableType.Void)
 
   def gen()(implicit flix: Flix): Map[JvmName, JvmClass] = {
-    val jvmName = JvmName.ReifiedSourceLocation
-    val bytecode = genByteCode(jvmName)
-    Map(jvmName -> JvmClass(jvmName, bytecode))
+    Map(JvmName.ReifiedSourceLocation -> JvmClass(JvmName.ReifiedSourceLocation, genByteCode()))
   }
 
-  private def genByteCode(name: JvmName)(implicit flix: Flix): Array[Byte] = {
-    // class writer
-    val visitor = AsmOps.mkClassWriter()
+  private def genByteCode()(implicit flix: Flix): Array[Byte] = {
+    val cm = ClassMaker.mkClass(JvmName.ReifiedSourceLocation, IsFinal)
 
-    // internal name of super
-    val superClass = JvmName.Object
+    sourceField.mkField(cm, IsPublic, IsFinal)
+    beginLineField.mkField(cm, IsPublic, IsFinal)
+    beginColField.mkField(cm, IsPublic, IsFinal)
+    endLineField.mkField(cm, IsPublic, IsFinal)
+    endColField.mkField(cm, IsPublic, IsFinal)
 
-    // Initialize the visitor to create a class.
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, name.toInternalName, null, superClass.toInternalName, null)
+    cm.mkConstructor(genConstructor(), ConstructorDescriptor, IsPublic)
+    cm.mkMethod(genEqualsMethod(), "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool), IsPublic, NotFinal)
+    cm.mkMethod(genHashCodeMethod(), "hashCode", mkDescriptor()(BackendType.Int32), IsPublic, NotFinal)
+    cm.mkMethod(genToStringMethod(), "toString", mkDescriptor()(BackendObjType.String.toTpe), IsPublic, NotFinal)
 
-    // Source of the class
-    visitor.visitSource(name.toInternalName, null)
-
-    def mkIntField(name: String): Unit = visitor.visitField(ACC_PUBLIC + ACC_FINAL, name, JvmType.PrimInt.toDescriptor, null, null).visitEnd()
-
-    visitor.visitField(ACC_PUBLIC + ACC_FINAL, SourceFieldName, JvmType.String.toDescriptor, null, null).visitEnd()
-    mkIntField(BeginLineFieldName)
-    mkIntField(BeginColFieldName)
-    mkIntField(EndLineFieldName)
-    mkIntField(EndColFieldName)
-
-    genConstructor(name, superClass, visitor)
-    genEquals(name, visitor)
-    genHashCode(name, visitor)
-    genToString(name, visitor)
-
-    visitor.visitEnd()
-    visitor.toByteArray
+    cm.closeClassMaker
   }
 
-  private def genToString(name: JvmName, visitor: ClassWriter): Unit = {
-    val stringToBuilderDescriptor = s"(${BackendObjType.String.jvmName.toDescriptor})${JvmName.StringBuilder.toDescriptor}"
-    val intToBuilderDescriptor = s"(${JvmType.PrimInt.toDescriptor})${JvmName.StringBuilder.toDescriptor}"
-    val builderName = JvmName.StringBuilder.toInternalName
-
-    val method = visitor.visitMethod(ACC_PUBLIC, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
-    method.visitCode()
-
-    method.visitTypeInsn(NEW, builderName)
-    method.visitInsn(DUP)
-    method.visitMethodInsn(INVOKESPECIAL, builderName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, SourceFieldName, BackendObjType.String.jvmName.toDescriptor)
-    method.visitMethodInsn(INVOKEVIRTUAL, builderName, "append", stringToBuilderDescriptor, false)
-    method.visitLdcInsn(":")
-    method.visitMethodInsn(INVOKEVIRTUAL, builderName, "append", stringToBuilderDescriptor, false)
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, BeginLineFieldName, JvmType.PrimInt.toDescriptor)
-    method.visitMethodInsn(INVOKEVIRTUAL, builderName, "append", intToBuilderDescriptor, false)
-    method.visitLdcInsn(":")
-    method.visitMethodInsn(INVOKEVIRTUAL, builderName, "append", stringToBuilderDescriptor, false)
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, BeginColFieldName, JvmType.PrimInt.toDescriptor)
-    method.visitMethodInsn(INVOKEVIRTUAL, builderName, "append", intToBuilderDescriptor, false)
-    method.visitMethodInsn(INVOKEVIRTUAL, builderName, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), false)
-    method.visitInsn(ARETURN)
-
-    method.visitMaxs(999, 999)
-    method.visitEnd()
+  private def genConstructor()(implicit flix: Flix): InstructionSet = {
+    // call super constructor
+    thisLoad() ~ invokeConstructor(JvmName.Object) ~
+      // store source
+      thisLoad() ~
+      ALOAD(1) ~
+      sourceField.putField() ~
+      // store begin line
+      thisLoad() ~
+      ILOAD(2) ~
+      beginLineField.putField() ~
+      // store begin col
+      thisLoad() ~
+      ILOAD(3) ~
+      beginColField.putField() ~
+      // store end line
+      thisLoad() ~
+      ILOAD(4) ~
+      endLineField.putField() ~
+      // store end col
+      thisLoad() ~
+      ILOAD(5) ~
+      endColField.putField() ~
+      // return
+      RETURN()
   }
 
-  private def genConstructor(name: JvmName, superClass: JvmName, visitor: ClassWriter)(implicit flix: Flix): Unit = {
-    val method = visitor.visitMethod(ACC_PUBLIC, "<init>", ConstructorDescriptor, null, null)
-    method.visitCode()
+  private def genToStringMethod(): InstructionSet = {
+    def appendString(): InstructionSet = INVOKEVIRTUAL(JvmName.StringBuilder, "append",
+      mkDescriptor(BackendObjType.String.toTpe)(JvmName.StringBuilder.toTpe))
 
-    method.visitVarInsn(ALOAD, 0)
-    method.visitMethodInsn(INVOKESPECIAL, superClass.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+    def appendInt(): InstructionSet = INVOKEVIRTUAL(JvmName.StringBuilder, "append",
+      mkDescriptor(BackendType.Int32)(JvmName.StringBuilder.toTpe))
 
-    method.visitVarInsn(ALOAD, 0)
-    method.visitVarInsn(ALOAD, 1)
-    method.visitFieldInsn(PUTFIELD, name.toInternalName, SourceFieldName, JvmType.String.toDescriptor)
-
-    method.visitVarInsn(ALOAD, 0)
-    method.visitVarInsn(ILOAD, 2)
-    method.visitFieldInsn(PUTFIELD, name.toInternalName, BeginLineFieldName, JvmType.PrimInt.toDescriptor)
-
-    method.visitVarInsn(ALOAD, 0)
-    method.visitVarInsn(ILOAD, 3)
-    method.visitFieldInsn(PUTFIELD, name.toInternalName, BeginColFieldName, JvmType.PrimInt.toDescriptor)
-
-    method.visitVarInsn(ALOAD, 0)
-    method.visitVarInsn(ILOAD, 4)
-    method.visitFieldInsn(PUTFIELD, name.toInternalName, EndLineFieldName, JvmType.PrimInt.toDescriptor)
-
-    method.visitVarInsn(ALOAD, 0)
-    method.visitVarInsn(ILOAD, 5)
-    method.visitFieldInsn(PUTFIELD, name.toInternalName, EndColFieldName, JvmType.PrimInt.toDescriptor)
-
-    method.visitInsn(RETURN)
-
-    method.visitMaxs(999, 999)
-    method.visitEnd()
+    // create string builder
+    NEW(JvmName.StringBuilder) ~ DUP() ~ invokeConstructor(JvmName.StringBuilder) ~
+      // build string
+      //TODO missing dups ???
+      DUP() ~ thisLoad() ~ sourceField.getField() ~ appendString() ~
+      DUP() ~ pushString(":") ~ appendString() ~
+      DUP() ~ thisLoad() ~ beginLineField.getField() ~ appendInt() ~
+      DUP() ~ pushString(":") ~ appendString() ~
+      DUP() ~ thisLoad() ~ beginColField.getField() ~ appendInt() ~
+      // create the string
+      INVOKEVIRTUAL(JvmName.StringBuilder, "toString", mkDescriptor()(BackendObjType.String.toTpe)) ~
+      ARETURN()
   }
 
-  private def genHashCode(name: JvmName, visitor: ClassWriter): Unit = {
-    val method = visitor.visitMethod(ACC_PUBLIC, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt), null, null)
-    method.visitCode()
+  private def genHashCodeMethod(): InstructionSet = {
+    def boxInt(): InstructionSet = INVOKESTATIC(JvmName.Integer, "valueOf",
+      mkDescriptor(BackendType.Int32)(JvmName.Integer.toTpe))
 
-    method.visitInsn(ICONST_5)
-    method.visitTypeInsn(ANEWARRAY, JvmName.Objects.toInternalName)
-    method.visitInsn(DUP)
-    method.visitInsn(ICONST_0)
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, SourceFieldName, JvmType.String.toDescriptor)
-    method.visitInsn(AASTORE)
-    method.visitInsn(DUP)
-    method.visitInsn(ICONST_1)
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, BeginLineFieldName, JvmType.PrimInt.toDescriptor)
-    method.visitMethodInsn(INVOKESTATIC, JvmName.Integer.toInternalName, "valueOf", s"(${JvmType.PrimInt.toDescriptor})Ljava/lang/Integer;", false)
-    method.visitInsn(AASTORE)
-    method.visitInsn(DUP)
-    method.visitInsn(ICONST_2)
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, BeginColFieldName, JvmType.PrimInt.toDescriptor)
-    method.visitMethodInsn(INVOKESTATIC, JvmName.Integer.toInternalName, "valueOf", s"(${JvmType.PrimInt.toDescriptor})Ljava/lang/Integer;", false)
-    method.visitInsn(AASTORE)
-    method.visitInsn(DUP)
-    method.visitInsn(ICONST_3)
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, EndLineFieldName, JvmType.PrimInt.toDescriptor)
-    method.visitMethodInsn(INVOKESTATIC, JvmName.Integer.toInternalName, "valueOf", s"(${JvmType.PrimInt.toDescriptor})Ljava/lang/Integer;", false)
-    method.visitInsn(AASTORE)
-    method.visitInsn(DUP)
-    method.visitInsn(ICONST_4)
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, EndColFieldName, JvmType.PrimInt.toDescriptor)
-    method.visitMethodInsn(INVOKESTATIC, JvmName.Integer.toInternalName, "valueOf", s"(${JvmType.PrimInt.toDescriptor})Ljava/lang/Integer;", false)
-    method.visitInsn(AASTORE)
-    method.visitMethodInsn(INVOKESTATIC, JvmName.Objects.toInternalName, "hash", s"([${JvmName.Object.toDescriptor})${JvmType.PrimInt.toDescriptor}", false)
-    method.visitInsn(IRETURN)
-
-    method.visitMaxs(999, 999)
-    method.visitEnd()
+    // create array
+    ICONST_5() ~
+      ANEWARRAY(JvmName.Object) ~ // TODO this was Objects??
+      // insert source
+      DUP() ~
+      ICONST_0() ~
+      thisLoad() ~ sourceField.getField() ~
+      AASTORE() ~
+      // insert begin line
+      DUP() ~
+      ICONST_1() ~
+      thisLoad() ~ beginLineField.getField() ~ boxInt() ~
+      AASTORE() ~
+      // insert begin col
+      DUP() ~
+      ICONST_2() ~
+      thisLoad() ~ beginColField.getField() ~ boxInt() ~
+      AASTORE() ~
+      // insert end line
+      DUP() ~
+      ICONST_3() ~
+      thisLoad() ~ endLineField.getField() ~ boxInt() ~
+      AASTORE() ~
+      // insert end col
+      DUP() ~
+      ICONST_4() ~
+      thisLoad() ~ endColField.getField() ~ boxInt() ~
+      AASTORE() ~
+      // hash the array
+      INVOKESTATIC(JvmName.Objects, "hash", mkDescriptor(BackendType.Array(JvmName.Object.toTpe))(BackendType.Int32)) ~
+      IRETURN()
   }
 
-  private def genEquals(name: JvmName, visitor: ClassWriter): Unit = {
-    val method = visitor.visitMethod(ACC_PUBLIC, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), null, null)
-    method.visitCode()
-
-    method.visitVarInsn(ALOAD, 0)
-    method.visitVarInsn(ALOAD, 1)
-    val continue = new Label()
-    method.visitJumpInsn(IF_ACMPNE, continue)
-    method.visitInsn(ICONST_1)
-    method.visitInsn(IRETURN)
-
-    method.visitLabel(continue)
-    method.visitVarInsn(ALOAD, 1)
-    val returnFalse1 = new Label()
-    method.visitJumpInsn(IFNULL, returnFalse1)
-    method.visitVarInsn(ALOAD, 0)
-    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.Object.toInternalName, "getClass", "()Ljava/lang/Class;", false)
-    method.visitVarInsn(ALOAD, 1)
-    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.Object.toInternalName, "getClass", "()Ljava/lang/Class;", false)
-    val compareFields = new Label()
-    method.visitJumpInsn(IF_ACMPEQ, compareFields)
-
-    method.visitLabel(returnFalse1)
-    method.visitInsn(ICONST_0)
-    method.visitInsn(IRETURN)
-
-    method.visitLabel(compareFields)
-    method.visitVarInsn(ALOAD, 1)
-    method.visitTypeInsn(CHECKCAST, name.toInternalName)
-    method.visitVarInsn(ASTORE, 2)
-    val returnFalse2 = new Label()
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, BeginLineFieldName, JvmType.PrimInt.toDescriptor)
-    method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, BeginLineFieldName, JvmType.PrimInt.toDescriptor)
-    method.visitJumpInsn(IF_ICMPNE, returnFalse2)
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, BeginColFieldName, JvmType.PrimInt.toDescriptor)
-    method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, BeginColFieldName, JvmType.PrimInt.toDescriptor)
-    method.visitJumpInsn(IF_ICMPNE, returnFalse2)
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, EndLineFieldName, JvmType.PrimInt.toDescriptor)
-    method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, EndLineFieldName, JvmType.PrimInt.toDescriptor)
-    method.visitJumpInsn(IF_ICMPNE, returnFalse2)
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, EndColFieldName, JvmType.PrimInt.toDescriptor)
-    method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, EndColFieldName, JvmType.PrimInt.toDescriptor)
-    method.visitJumpInsn(IF_ICMPNE, returnFalse2)
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, SourceFieldName, JvmType.String.toDescriptor)
-    method.visitVarInsn(ALOAD, 2)
-    method.visitFieldInsn(GETFIELD, name.toInternalName, SourceFieldName, JvmType.String.toDescriptor)
-    method.visitMethodInsn(INVOKESTATIC, JvmName.Objects.toInternalName, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object, JvmType.Object), JvmType.PrimBool), false)
-    method.visitJumpInsn(IFEQ, returnFalse2)
-    method.visitInsn(ICONST_1)
-    val returnInt = new Label()
-    method.visitJumpInsn(GOTO, returnInt)
-
-    method.visitLabel(returnFalse2)
-    method.visitInsn(ICONST_0)
-
-    method.visitLabel(returnInt)
-    method.visitInsn(IRETURN)
-
-    method.visitMaxs(999, 999)
-    method.visitEnd()
+  private def genEqualsMethod(): InstructionSet = withName(1, JvmName.Object.toTpe) { otherObj =>
+    // check exact equality
+    thisLoad() ~
+      otherObj.load() ~
+      ifTrue(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
+      // check `other == null`
+      otherObj.load() ~
+      ifTrue(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
+      // the class equality
+      thisLoad() ~
+      INVOKEVIRTUAL(JvmName.Object, "getClass", mkDescriptor()(JvmName.Class.toTpe)) ~
+      otherObj.load() ~
+      INVOKEVIRTUAL(JvmName.Object, "getClass", mkDescriptor()(JvmName.Class.toTpe)) ~
+      ifTrue(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
+      // check individual fields
+      otherObj.load() ~
+      CHECKCAST(JvmName.ReifiedSourceLocation) ~
+      storeWithName(2, JvmName.ReifiedSourceLocation.toTpe) { otherLoc =>
+        thisLoad() ~ beginLineField.getField() ~
+          otherLoc.load() ~ beginLineField.getField() ~
+          ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
+          thisLoad() ~ beginColField.getField() ~
+          otherLoc.load() ~ beginColField.getField() ~
+          ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
+          thisLoad() ~ endLineField.getField() ~
+          otherLoc.load() ~ endLineField.getField() ~
+          ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
+          thisLoad() ~ endColField.getField() ~
+          otherLoc.load() ~ endColField.getField() ~
+          ifTrue(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
+          thisLoad() ~ sourceField.getField() ~
+          otherLoc.load() ~ sourceField.getField() ~
+          INVOKESTATIC(JvmName.Objects, "equals", mkDescriptor(JvmName.Object.toTpe, JvmName.Object.toTpe)(BackendType.Bool)) ~
+          IRETURN()
+      }
   }
-
 }

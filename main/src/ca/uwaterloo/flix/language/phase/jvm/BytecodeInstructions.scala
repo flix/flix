@@ -59,6 +59,32 @@ object BytecodeInstructions {
       f => i2(i1(f))
   }
 
+  //
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Structures ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  //
+
+  sealed trait Condition
+
+  object Condition {
+    case object ACMPEQ extends Condition
+
+    case object ACMPNE extends Condition
+
+    case object Bool extends Condition
+
+    case object EQ extends Condition
+
+    case object ICMPEQ extends Condition
+
+    case object ICMPNE extends Condition
+
+    case object NE extends Condition
+
+    case object NONNULL extends Condition
+
+    case object NULL extends Condition
+  }
+
   sealed trait Branch
 
   object Branch {
@@ -67,12 +93,24 @@ object BytecodeInstructions {
     case object FalseBranch extends Branch
   }
 
+  // TODO: do this for methods
+  class Variable(tpe: BackendType, index: Int) {
+    def load(): InstructionSet = xLoad(tpe, index)
+
+    def store(): InstructionSet = xStore(tpe, index)
+  }
+
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~ Direct JVM Instructions ~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
   def AASTORE(): InstructionSet = f => {
     f.visitInstruction(Opcodes.AASTORE)
+    f
+  }
+
+  def ACONST_NULL(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.ACONST_NULL)
     f
   }
 
@@ -162,17 +200,25 @@ object BytecodeInstructions {
     f
   }
 
-  def IF_ACMPNE(cases: Branch => InstructionSet): InstructionSet =
-    branch(Opcodes.IF_ACMPNE)(cases)
+  def ICONST_2(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.ICONST_2)
+    f
+  }
 
-  def IFEQ(cases: Branch => InstructionSet): InstructionSet =
-    branch(Opcodes.IFEQ)(cases)
+  def ICONST_3(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.ICONST_3)
+    f
+  }
 
-  def IFNE(cases: Branch => InstructionSet): InstructionSet =
-    branch(Opcodes.IFNE)(cases)
+  def ICONST_4(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.ICONST_4)
+    f
+  }
 
-  def IFNULL(cases: Branch => InstructionSet): InstructionSet =
-    branch(Opcodes.IFNULL)(cases)
+  def ICONST_5(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.ICONST_5)
+    f
+  }
 
   def ILOAD(index: Int): InstructionSet = f => {
     f.visitVarInstruction(Opcodes.ILOAD, index)
@@ -229,6 +275,16 @@ object BytecodeInstructions {
     f
   }
 
+  def POP(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.POP)
+    f
+  }
+
+  def POP2(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.POP2)
+    f
+  }
+
   def PUTFIELD(className: JvmName, fieldName: String, fieldType: BackendType): InstructionSet = f => {
     f.visitFieldInstruction(Opcodes.PUTFIELD, className, fieldName, fieldType)
     f
@@ -248,27 +304,70 @@ object BytecodeInstructions {
   // ~~~~~~~~~~~~~~~~~~~~~~~~~ Meta JVM Instructions ~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
+  def branch(c: Condition)(cases: Branch => InstructionSet): InstructionSet = f0 => {
+    var f = f0
+    val jumpLabel = new Label()
+    val skipLabel = new Label()
+    f.visitJumpInstruction(opcodeOf(c), jumpLabel)
+
+    f = cases(FalseBranch)(f)
+    f.visitJumpInstruction(Opcodes.GOTO, skipLabel)
+
+    f.visitLabel(jumpLabel)
+    f = cases(TrueBranch)(f)
+    f.visitLabel(skipLabel)
+    f
+  }
+
   def cheat(command: MethodVisitor => Unit): InstructionSet = f => {
     f.cheat(command)
     f
   }
 
-  def matchBool(cases: Branch => InstructionSet): InstructionSet =
-    IFNE(cases)
+  def doWhile(c: Condition)(i: InstructionSet): InstructionSet = f0 => {
+    var f = f0
+    val start = new Label()
+    f.visitLabel(start)
+    f = i(f)
+    f.visitJumpInstruction(opcodeOf(c), start)
+    f
+  }
+
+  def ifTrue(c: Condition)(i: InstructionSet): InstructionSet = f0 => {
+    var f = f0
+    val jumpLabel = new Label()
+    f.visitJumpInstruction(opcodeOf(negated(c)), jumpLabel)
+    f = i(f)
+    f.visitLabel(jumpLabel)
+    f
+  }
 
   def invokeConstructor(className: JvmName, descriptor: MethodDescriptor = MethodDescriptor.NothingToVoid): InstructionSet =
     INVOKESPECIAL(className, JvmName.ConstructorMethod, descriptor)
 
+  def nop(): InstructionSet =
+    f => f
+
   def pushBool(b: Boolean): InstructionSet =
     if (b) ICONST_1() else ICONST_0()
+
+  def pushNull(): InstructionSet =
+    ACONST_NULL()
 
   def pushString(s: String): InstructionSet = f => {
     f.visitLoadConstantInstruction(s)
     f
   }
 
-  def loadThis(): InstructionSet =
+  def storeWithName(index: Int, tpe: BackendType)(body: Variable => InstructionSet): InstructionSet =
+    xStore(tpe, index) ~ body(new Variable(tpe, index))
+
+  // TODO: this should be "wrong" if used on F in a static context
+  def thisLoad(): InstructionSet =
     ALOAD(0)
+
+  def withName(index: Int, tpe: BackendType)(body: Variable => InstructionSet): InstructionSet =
+    body(new Variable(tpe, index))
 
   def xLoad(tpe: BackendType, index: Int): InstructionSet = tpe match {
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => ILOAD(index)
@@ -276,6 +375,15 @@ object BytecodeInstructions {
     case BackendType.Float32 => FLOAD(index)
     case BackendType.Float64 => DLOAD(index)
     case BackendType.Array(_) | BackendType.Reference(_) => ALOAD(index)
+  }
+
+  /**
+    * Pops the top of the stack using `POP` or `POP2` depending on the value size.
+    */
+  def xPop(tpe: BackendType): InstructionSet = tpe match {
+    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 |
+         BackendType.Float32 | BackendType.Array(_) | BackendType.Reference(_) => POP()
+    case BackendType.Int64 | BackendType.Float64 => POP2()
   }
 
   def xReturn(tpe: BackendType): InstructionSet = tpe match {
@@ -286,22 +394,39 @@ object BytecodeInstructions {
     case BackendType.Array(_) | BackendType.Reference(_) => ARETURN()
   }
 
+  def xStore(tpe: BackendType, index: Int): InstructionSet = tpe match {
+    case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => ISTORE(index)
+    case BackendType.Int64 => LSTORE(index)
+    case BackendType.Float32 => FSTORE(index)
+    case BackendType.Float64 => DSTORE(index)
+    case BackendType.Array(_) | BackendType.Reference(_) => ASTORE(index)
+  }
+
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
-  private def branch(opcode: Int)(cases: Branch => InstructionSet): InstructionSet = f0 => {
-    var f = f0
-    val jumpLabel = new Label()
-    val skipLabel = new Label()
-    f.visitJumpInstruction(opcode, jumpLabel)
+  private def opcodeOf(c: Condition): Int = c match {
+    case Condition.ACMPEQ => Opcodes.IF_ACMPEQ
+    case Condition.ACMPNE => Opcodes.IF_ACMPNE
+    case Condition.Bool => opcodeOf(Condition.NE)
+    case Condition.EQ => Opcodes.IFEQ
+    case Condition.ICMPEQ => Opcodes.IF_ICMPEQ
+    case Condition.ICMPNE => Opcodes.IF_ICMPNE
+    case Condition.NE => Opcodes.IFNE
+    case Condition.NONNULL => Opcodes.IFNONNULL
+    case Condition.NULL => Opcodes.IFNULL
+  }
 
-    f = cases(FalseBranch)(f)
-    f.visitJumpInstruction(Opcodes.GOTO, skipLabel)
-
-    f.visitLabel(jumpLabel)
-    f = cases(TrueBranch)(f)
-    f.visitLabel(skipLabel)
-    f
+  private def negated(c: Condition): Condition = c match {
+    case Condition.ACMPEQ => Condition.ACMPNE
+    case Condition.ACMPNE => Condition.ACMPEQ
+    case Condition.Bool => negated(Condition.NE)
+    case Condition.EQ => Condition.NE
+    case Condition.ICMPEQ => Condition.ICMPNE
+    case Condition.ICMPNE => Condition.ICMPEQ
+    case Condition.NE => Condition.EQ
+    case Condition.NONNULL => Condition.NULL
+    case Condition.NULL => Condition.NONNULL
   }
 }
