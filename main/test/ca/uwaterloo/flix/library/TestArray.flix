@@ -3178,13 +3178,13 @@ def toSet08(): Bool & Impure = Array.toSet([2,1,2,3,4,5,6,3,3]) == Set#{1, 2, 3,
 def toMap01(): Bool & Impure = Array.toMap([]: Array[(Int32, Bool)]) == Map#{}
 
 @test
-def toMap02(): Bool & Impure = Array.toMap([(1, true)]) == Map#{1 -> true}
+def toMap02(): Bool & Impure = Array.toMap([(1, true)]) == Map#{1 => true}
 
 @test
-def toMap03(): Bool & Impure = Array.toMap([(1, true), (2, false)]) == Map#{1 -> true, 2 -> false}
+def toMap03(): Bool & Impure = Array.toMap([(1, true), (2, false)]) == Map#{1 => true, 2 => false}
 
 @test
-def toMap04(): Bool & Impure = Array.toMap([(1, true), (1, false)]) == Map#{1 -> true}
+def toMap04(): Bool & Impure = Array.toMap([(1, true), (1, false)]) == Map#{1 => true}
 
 /////////////////////////////////////////////////////////////////////////////
 // findIndexOf                                                             //
