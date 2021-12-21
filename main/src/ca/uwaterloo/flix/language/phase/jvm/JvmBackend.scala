@@ -156,7 +156,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
       //
       // Generate the ReifiedSourceLocation class.
-      // TODO
+      //
       val rslClass = GenReifiedSourceLocationClass.gen()
 
       //
