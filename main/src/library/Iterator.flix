@@ -61,7 +61,7 @@ namespace Iterator {
         Iterator(done, next)
 
     ///
-    /// Returns `Some(x)` if `iter` is not empty. Return `None` otherwise.
+    /// Returns `Some(x)` if `iter` is not empty. Returns `None` otherwise.
     ///
     /// Consumes the head element of `iter`.
     ///
