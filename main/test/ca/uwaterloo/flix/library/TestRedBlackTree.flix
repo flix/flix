@@ -316,22 +316,22 @@ namespace TestRedBlackTree {
     @test
     def minimumBy01(): Bool =
         let Map(t) = Map#{}: Map[Int32, Int32];
-        RedBlackTree1.minimumBy((x, _, y, _) -> x <=> y, t) == None
+        RedBlackTree.minimumBy((x, _, y, _) -> x <=> y, t) == None
 
     @test
     def minimumBy02(): Bool =
         let Map(t) = Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5};
-        RedBlackTree1.minimumBy((x, _, y, _) -> x <=> y, t) == Some((1, 2))
+        RedBlackTree.minimumBy((x, _, y, _) -> x <=> y, t) == Some((1, 2))
 
     @test
     def minimumBy03(): Bool =
         let Map(t) = Map#{1 -> 2, 2 -> 3, 3 -> 4, 5 -> 5, 0 -> 2};
-        RedBlackTree1.minimumBy((x, _, y, _) -> x <=> y, t) == Some((0, 2))
+        RedBlackTree.minimumBy((x, _, y, _) -> x <=> y, t) == Some((0, 2))
 
     @test
     def minimumBy04(): Bool =
         let Map(t) = Map#{1 -> 2, 2 -> 3, -44 -> 4, 5 -> 5, 0 -> 2};
-        RedBlackTree1.minimumBy((x, _, y, _) -> x <=> y, t) == Some((-44, 4))
+        RedBlackTree.minimumBy((x, _, y, _) -> x <=> y, t) == Some((-44, 4))
 
     // TODO: Adapt these tests
     @test
@@ -340,7 +340,7 @@ namespace TestRedBlackTree {
         let Map(t) = List.zip(range, range) |> List.toMap;
         let a = Array.new(-1, 2000);
         let i = ref 0;
-        RedBlackTree1.count((_, v) -> { a[deref i] = v; i := 1 + deref i; true }, t);
+        RedBlackTree.count((_, v) -> { a[deref i] = v; i := 1 + deref i; true }, t);
         Array.sameElements(a, List.toArray(range))
 
     @test
@@ -348,8 +348,7 @@ namespace TestRedBlackTree {
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, range) |> List.toMap;
         let a = MutList.new();
-        RedBlackTree1.count((_, v) -> { let b = MutList.new(); MutList.push!(v, b); MutList.append!(a, b); true }, t);
+        RedBlackTree.count((_, v) -> { let b = MutList.new(); MutList.push!(v, b); MutList.append!(a, b); true }, t);
         MutList.eq(a, List.toMutList(range))
-
 
 }
