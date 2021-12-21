@@ -333,7 +333,7 @@ object CodeHinter {
     */
   private def checkEffect(tpe: Type, loc: SourceLocation): List[CodeHint] = {
     if (nonTrivialEffect(tpe)) {
-      CodeHint.NonTrivialEffect(loc) :: Nil
+      CodeHint.NonTrivialEffect(tpe, loc) :: Nil
     } else {
       Nil
     }
