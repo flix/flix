@@ -126,7 +126,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
       //
       // Generate empty record class.
-      // TODO
+      //
       val recordEmptyClasses = GenRecordEmptyClass.gen()
 
       //
