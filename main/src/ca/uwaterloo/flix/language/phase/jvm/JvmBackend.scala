@@ -81,7 +81,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
       //
       // Generate continuation classes for each function type in the program.
-      //
+      // TODO
       val continuationInterfaces = GenContinuationAbstractClasses.gen(erasedContinuations)
 
       //
@@ -121,22 +121,22 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
       //
       // Generate record interface.
-      //
+      // TODO
       val recordInterfaces = GenRecordInterface.gen()
 
       //
       // Generate empty record class.
-      //
+      // TODO
       val recordEmptyClasses = GenRecordEmptyClass.gen()
 
       //
       // Generate extended record classes for each (different) RecordExtend type in the program
-      //
+      // TODO
       val recordExtendClasses = GenRecordExtendClasses.gen(erasedExtendTypes)
 
       //
       // Generate references classes.
-      //
+      // TODO
       val refClasses = GenRefClasses.gen(erasedRefTypes)
 
       //
@@ -146,7 +146,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
       //
       // Generate the Unit class.
-      //
+      // TODO
       val unitClass = GenUnitClass.gen()
 
       //
@@ -156,7 +156,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
       //
       // Generate the ReifiedSourceLocation class.
-      //
+      // TODO
       val rslClass = GenReifiedSourceLocationClass.gen()
 
       //
@@ -166,12 +166,12 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
       //
       // Generate the MatchError class.
-      //
+      // TODO
       val matchErrorClass = GenMatchErrorClass.gen()
 
       //
       // Generate the GlobalCounter class.
-      //
+      // TODO
       val globalCounterClass = GenGlobalCounterClass.gen()
 
       //
