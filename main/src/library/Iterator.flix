@@ -618,8 +618,6 @@ namespace Iterator {
         };
         Iterator(done1, next1)
 
-    // TODO: Refactor `flatMapForward` and `intercalateForward` to use `forward`.
-
     ///
     /// Forwards the iterator the first non-empty iterator produced by `next`.
     ///
