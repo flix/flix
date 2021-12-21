@@ -81,7 +81,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
       //
       // Generate continuation classes for each function type in the program.
-      // TODO
+      //
       val continuationInterfaces = GenContinuationAbstractClasses.gen(erasedContinuations)
 
       //

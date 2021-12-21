@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkName
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{AbstractMethod, InstanceField, InstanceMethod, StaticField}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{InterfaceMethod, InstanceField, InstanceMethod, StaticField}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, RootPackage}
 
@@ -97,12 +97,18 @@ object BackendObjType {
 
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType {
     val continuation: BackendObjType.Continuation = Continuation(result.toErased)
+
+    val ResultField: InstanceField = continuation.ResultField
+
+    val InvokeMethod: InstanceMethod = continuation.InvokeMethod
+    val UnwindMethod: InstanceMethod = continuation.UnwindMethod
   }
 
   case class Continuation(result: BackendType) extends BackendObjType {
     val ResultField: InstanceField = InstanceField(this.jvmName, "result", result)
-    val InvokeMethodName: String = "invoke"
-    val UnwindMethodName: String = "unwind"
+
+    val InvokeMethod: InstanceMethod = InstanceMethod(this.jvmName, "invoke", mkDescriptor()(this.toTpe))
+    val UnwindMethod: InstanceMethod = InstanceMethod(this.jvmName, "unwind", mkDescriptor()(result))
   }
 
   case object RecordEmpty extends BackendObjType {
@@ -126,9 +132,9 @@ object BackendObjType {
   }
 
   case object Record extends BackendObjType {
-    val LookupFieldMethod: AbstractMethod = AbstractMethod(this.jvmName, "lookupField",
+    val LookupFieldMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "lookupField",
       mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.Record.toTpe))
-    val RestrictFieldMethod: AbstractMethod = AbstractMethod(this.jvmName, "restrictField",
+    val RestrictFieldMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "restrictField",
       mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.Record.toTpe))
   }
 
