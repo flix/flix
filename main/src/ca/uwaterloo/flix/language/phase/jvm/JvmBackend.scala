@@ -136,7 +136,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
       //
       // Generate references classes.
-      // TODO
+      //
       val refClasses = GenRefClasses.gen(erasedRefTypes)
 
       //
