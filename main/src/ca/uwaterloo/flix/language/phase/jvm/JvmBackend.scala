@@ -146,7 +146,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
       //
       // Generate the Unit class.
-      // TODO
+      //
       val unitClass = GenUnitClass.gen()
 
       //
