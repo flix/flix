@@ -514,14 +514,20 @@ namespace Nel {
        let Nel(x, xs) = l;
        List.toIterator(x :: xs)
 
-
-    pub def sequence(xs: Nel[m[a]]): m[Nel[a]] with Applicative[m] =
-        match xs {
+    ///
+    /// Returns the result of applying the applicative mapping function `f` to all the elements of the
+    /// non-empty list `l`.
+    ///
+    pub def sequence(l: Nel[m[a]]): m[Nel[a]] with Applicative[m] =
+        match l {
             case Nel(x, rs) => (((y, ys) -> Nel(y, ys)) `Functor.map` x) `Applicative.ap` Traversable.sequence(rs)
         }
 
-    pub def traverse(f: a -> m[b] & ef, xs: Nel[a]): m[Nel[b]] & ef with Applicative[m] =
-        match xs {
+    ///
+    /// Returns the result of running all the actions in the non-empty list `l`.
+    ///
+    pub def traverse(f: a -> m[b] & ef, l: Nel[a]): m[Nel[b]] & ef with Applicative[m] =
+        match l {
             case Nel(x, rs) => (((y, ys) -> Nel(y, ys)) `Functor.map` f(x)) `Applicative.ap` Traversable.traverse(f, rs)
         }
 

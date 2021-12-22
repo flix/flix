@@ -26,7 +26,7 @@ pub class Traversable[t : Type -> Type] with Functor[t] {
     pub def traverse(f: a -> m[b] & ef, t: t[a]): m[t[b]] & ef with Applicative[m]
 
     ///
-    /// Returns the result of running all the actions the data structure `t`.
+    /// Returns the result of running all the actions in the data structure `t`.
     ///
     pub def sequence(t: t[m[a]]): m[t[a]] with Applicative[m] =
         Traversable.traverse(identity, t)

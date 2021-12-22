@@ -1431,22 +1431,34 @@ namespace List {
     pub def toDelayMap(l: List[(a, b)]): DelayMap[a, b] with Order[a] =
         List.foldRight((x, m) -> DelayMap.insert(fst(x), snd(x), m), DelayMap.empty(), l)
 
+    ///
+    /// Helper function for `traverse` and `sequence`.
+    ///
+    /// Builds an "applicative list" from a head of one applictive action and an
+    /// applicative list of the tail.
+    ///
     def consA(mx: f[a], mxs: f[List[a]]): f[List[a]] with Applicative[f] =
         (((x, xs) -> x :: xs) `Functor.map` mx) `Applicative.ap` mxs
 
-    pub def traverse(f: a -> m[b] & ef, l: List[a]): m[List[b]] & ef with Applicative[m] =
-        def loop(xs, k) = match xs {
-            case Nil => k(Applicative.point(Nil))
-            case x :: rs => loop(rs, ks -> k(consA(f(x), ks)))
-        };
-        loop(l, ks -> ks as & ef)
-
-
+    ///
+    /// Returns the result of running all the actions in the list `l`.
+    ///
     pub def sequence(l: List[m[a]]): m[List[a]] with Applicative[m] =
         def loop(xs, k) = match xs {
             case Nil => k(Applicative.point(Nil))
             case mx :: rs => loop(rs, ks -> k(consA(mx, ks)))
         };
         loop(l, ks -> ks)
+
+    ///
+    /// Returns the result of applying the applicative mapping function `f` to all the elements of the
+    /// list `l`.
+    ///
+    pub def traverse(f: a -> m[b] & ef, l: List[a]): m[List[b]] & ef with Applicative[m] =
+        def loop(xs, k) = match xs {
+            case Nil => k(Applicative.point(Nil))
+            case x :: rs => loop(rs, ks -> k(consA(f(x), ks)))
+        };
+        loop(l, ks -> ks as & ef)
 
 }
