@@ -3178,13 +3178,13 @@ def toSet08(): Bool & Impure = Array.toSet([2,1,2,3,4,5,6,3,3]) == Set#{1, 2, 3,
 def toMap01(): Bool & Impure = Array.toMap([]: Array[(Int32, Bool)]) == Map#{}
 
 @test
-def toMap02(): Bool & Impure = Array.toMap([(1, true)]) == Map#{1 -> true}
+def toMap02(): Bool & Impure = Array.toMap([(1, true)]) == Map#{1 => true}
 
 @test
-def toMap03(): Bool & Impure = Array.toMap([(1, true), (2, false)]) == Map#{1 -> true, 2 -> false}
+def toMap03(): Bool & Impure = Array.toMap([(1, true), (2, false)]) == Map#{1 => true, 2 => false}
 
 @test
-def toMap04(): Bool & Impure = Array.toMap([(1, true), (1, false)]) == Map#{1 -> true}
+def toMap04(): Bool & Impure = Array.toMap([(1, true), (1, false)]) == Map#{1 => true}
 
 /////////////////////////////////////////////////////////////////////////////
 // findIndexOf                                                             //
@@ -3484,54 +3484,6 @@ def foreachWithIndex05(): Bool & Impure =
     let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
     Array.foreachWithIndex(fn, a);
     StringBuilder.toString(sb) == "FTTT"
-
-/////////////////////////////////////////////////////////////////////////////
-// foreachAccum                                                            //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def foreachAccum01(): Bool & Impure =
-    let a = []: Array[Int32];
-    let sb = StringBuilder.new();
-    let fn = (x,st) -> {
-        if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        st+1
-    };
-    let n = Array.foreachAccum(fn, 0, a);
-    StringBuilder.toString(sb) == "" and n == 0
-
-@test
-def foreachAccum02(): Bool & Impure =
-    let a = [0];
-    let sb = StringBuilder.new();
-    let fn = (x,st) -> {
-        if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        st+1
-    };
-    let n = Array.foreachAccum(fn, 0, a);
-    StringBuilder.toString(sb) == "F" and n == 1
-
-@test
-def foreachAccum03(): Bool & Impure =
-    let a = [1];
-    let sb = StringBuilder.new();
-    let fn = (x,st) -> {
-        if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        st+1
-    };
-    let n = Array.foreachAccum(fn, 0, a);
-    StringBuilder.toString(sb) == "T" and n == 1
-
-@test
-def foreachAccum04(): Bool & Impure =
-    let a = [0,1];
-    let sb = StringBuilder.new();
-    let fn = (x,st) -> {
-        if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        st+1
-    };
-    let n = Array.foreachAccum(fn, 0, a);
-    StringBuilder.toString(sb) == "FT" and n == 2
 
 /////////////////////////////////////////////////////////////////////////////
 // updateSequence                                                          //
