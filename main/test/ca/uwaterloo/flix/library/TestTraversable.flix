@@ -18,6 +18,44 @@ namespace TestTraversable {
 
     use Traversable.{sequence, traverse, mapAccumLeft, mapAccumRight};
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // for                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    // Just test `for` on List - `for` will work for every Traversable with a
+    // properly defined `traverse` method.
+
+    @test
+    def for01(): Bool =
+        let xs: List[Int] = Nil;
+        Traversable.for(xs, x -> Some(x+1)) == Some(Nil)
+
+    @test
+    def for02(): Bool =
+        let xs: List[Int] = 1 :: Nil;
+        Traversable.for(xs, x -> Some(x+1)) == Some(2 :: Nil)
+
+    @test
+    def for03(): Bool =
+        let xs: List[Int] = 1 :: 2 :: Nil;
+        Traversable.for(xs, x -> Some(x+1)) == Some(2 :: 3 :: Nil)
+
+    @test
+    def for04(): Bool =
+        let xs: List[Int] = Nil;
+        Traversable.for(xs, _ -> None) == Some(Nil)
+
+    @test
+    def for05(): Bool =
+        let xs: List[Int] = 1 :: Nil;
+        Traversable.for(xs, _ -> None) == None
+
+    @test
+    def for06(): Bool =
+        let xs: List[Int] = 1 :: 2 :: Nil;
+        Traversable.for(xs, _ -> None) == None
+
     /////////////////////////////////////////////////////////////////////////////
     // sequenceOption                                                          //
     /////////////////////////////////////////////////////////////////////////////
