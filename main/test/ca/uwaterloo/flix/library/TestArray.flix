@@ -3486,54 +3486,6 @@ def foreachWithIndex05(): Bool & Impure =
     StringBuilder.toString(sb) == "FTTT"
 
 /////////////////////////////////////////////////////////////////////////////
-// foreachAccum                                                            //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def foreachAccum01(): Bool & Impure =
-    let a = []: Array[Int32];
-    let sb = StringBuilder.new();
-    let fn = (x,st) -> {
-        if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        st+1
-    };
-    let n = Array.foreachAccum(fn, 0, a);
-    StringBuilder.toString(sb) == "" and n == 0
-
-@test
-def foreachAccum02(): Bool & Impure =
-    let a = [0];
-    let sb = StringBuilder.new();
-    let fn = (x,st) -> {
-        if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        st+1
-    };
-    let n = Array.foreachAccum(fn, 0, a);
-    StringBuilder.toString(sb) == "F" and n == 1
-
-@test
-def foreachAccum03(): Bool & Impure =
-    let a = [1];
-    let sb = StringBuilder.new();
-    let fn = (x,st) -> {
-        if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        st+1
-    };
-    let n = Array.foreachAccum(fn, 0, a);
-    StringBuilder.toString(sb) == "T" and n == 1
-
-@test
-def foreachAccum04(): Bool & Impure =
-    let a = [0,1];
-    let sb = StringBuilder.new();
-    let fn = (x,st) -> {
-        if (x > 0) StringBuilder.appendChar!(sb, 'T') else StringBuilder.appendChar!(sb, 'F');
-        st+1
-    };
-    let n = Array.foreachAccum(fn, 0, a);
-    StringBuilder.toString(sb) == "FT" and n == 2
-
-/////////////////////////////////////////////////////////////////////////////
 // updateSequence                                                          //
 /////////////////////////////////////////////////////////////////////////////
 
