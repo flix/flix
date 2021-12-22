@@ -686,6 +686,20 @@ namespace List {
     }
 
     ///
+    /// Lazily applies `f` to a start value `s` and all elements in `xs` going from right to left.
+    /// The function f must be pure.
+    ///
+    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
+    /// The foldRightL function exists to allow early termination of a fold.
+    ///
+    pub def foldRightL(f: (a, Lazy[b]) -> b, s: b, l: List[a]): b =
+        def loop(xs) = match xs {
+            case Nil     => s
+            case y :: ys => f(y, lazy loop(ys))
+        };
+        loop(l)
+
+    ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`

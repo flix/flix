@@ -352,16 +352,53 @@ namespace File {
     /// Returns an array that corresponds to the bytes actually read from the stream.
     ///
     def readBytesWithHelper(bytes: Array[Int8], numberRead: Int32, count: Int32): Array[Int8] & Impure =
-        let nothingRead = numberRead == -1;
-        let countBiggest = numberRead < count;
+        let nothingRead = (numberRead == -1);
         if (nothingRead) {
             []
         } else {
+            let countBiggest = numberRead < count;
             if (countBiggest) {
                 Array.slice(0, numberRead, bytes)
             } else {
                 bytes
             }
+        }
+
+    ///
+    /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
+    ///
+    pub def readChunks(f: String, chunkSize: Int32): Iterator[Result[Array[Int8], String]] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileInputStream(##java.io.File) as newInputStream;
+            import java.io.FileInputStream.read(Array[Int8]);
+
+            let javaFile = newFile(f);
+            let stream = newInputStream(javaFile);
+            let bytes = ref [0i8; chunkSize];
+            let numberRead = ref read(stream, deref bytes);
+
+            let done = () -> deref numberRead == -1;
+            let next = () -> {
+                try {
+                    let chunk = deref bytes;
+                    bytes := [0i8; chunkSize];
+                    let accRead = deref numberRead;
+                    numberRead := read(stream, deref bytes);
+                    Ok(readBytesWithHelper(chunk, accRead, chunkSize))
+                } catch {
+                    case ex: ##java.io.IOException => {
+                        numberRead := -1;
+                        import java.lang.Throwable.getMessage();
+                        Err(getMessage(ex))
+                    }
+                }
+            };
+            Iterator(done, next)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Iterator.singleton(Err(getMessage(ex)))
         }
 
     ///
@@ -388,7 +425,7 @@ namespace File {
             close(w);
 
             if (checkError(w)) {
-                Err("An error occurred when writing to the file: "+f)
+                Err("An error occurred when writing to the file: '${f}'.")
             }
             else {
                 Result.flatMap((exists) -> Ok(not exists), alreadyExists)
@@ -423,7 +460,7 @@ namespace File {
             close(w);
 
             if (checkError(w)) {
-                Err("An error occurred when writing lines to the file: "+f)
+                Err("An error occurred when writing lines to the file: '${f}'.")
             }
             else {
                 Result.flatMap((exists) -> Ok(not exists), alreadyExists)
@@ -459,7 +496,7 @@ namespace File {
             close(printWriter);
 
             if (checkError(printWriter)) {
-                Err("An error occurred when appending to the file: "+f)
+                Err("An error occurred when appending to the file: '${f}'.")
             }
             else {
                 Result.flatMap((exists) -> Ok(not exists), alreadyExists)
@@ -495,7 +532,112 @@ namespace File {
             close(printWriter);
 
             if (checkError(printWriter)) {
-                Err("An error occurred when appending lines to the file: "+f)
+                Err("An error occurred when appending lines to the file: '${f}'.")
+            }
+            else {
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Writes `data` to the given `f`.
+    ///
+    /// Creates `f` if it does not exist. Overwrites it if it exists.
+    ///
+    /// Returns `true` if the file `f` was created, and `false` if `f` was overwritten.
+    ///
+    pub def writeBytes(f: String, data: f[Int8]): Result[Bool, String] & Impure with Foldable[f] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileOutputStream(##java.io.File) as newFileStream;
+            import new java.io.PrintWriter(##java.io.OutputStream) as newPrintWriter;
+            import java.io.FileOutputStream.write(Array[Int8]);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let alreadyExists = File.exists(f);
+
+            let javaFile = newFile(f);
+            let fileStream = newFileStream(javaFile);
+            let printWriter = newPrintWriter(fileStream as ##java.io.OutputStream);
+
+            let dataAsArray = Foldable.toArray(data);
+            write(fileStream, dataAsArray);
+            close(printWriter);
+
+            if (checkError(printWriter)) {
+                Err("An error occurred when writing to the file: '${f}'.")
+            }
+            else {
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Appends `data` to the given `f`.
+    ///
+    /// Returns `true` if the file `f` was created, and `false` if `data` was appended to an existing `f`.
+    ///
+    pub def appendBytes(f: String, data: f[Int8]): Result[Bool, String] & Impure with Foldable[f] =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.FileOutputStream(##java.io.File, Bool) as newFileStream;
+            import new java.io.PrintWriter(##java.io.OutputStream) as newPrintWriter;
+            import java.io.FileOutputStream.write(Array[Int8]);
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let alreadyExists = File.exists(f);
+
+            let javaFile = newFile(f);
+            // 2nd parameter `true` is for append.
+            let fileStream = newFileStream(javaFile, true);
+            let printWriter = newPrintWriter(fileStream as ##java.io.OutputStream);
+
+            let dataAsArray = Foldable.toArray(data);
+            write(fileStream, dataAsArray);
+
+            close(printWriter);
+
+            if (checkError(printWriter)) {
+                Err("An error occurred when appending to the file: '${f}'.")
+            }
+            else {
+                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns `true` if the file `f` was created, and `false` if `f` was overwritten.
+    ///
+    pub def truncate(f: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
+            import java.io.PrintWriter.close();
+            import java.io.PrintWriter.checkError();
+
+            let alreadyExists = File.exists(f);
+
+            let javaFile = newFile(f);
+            let printWriter = newPrintWriter(javaFile);
+
+            close(printWriter);
+
+            if (checkError(printWriter)) {
+                Err("An error occurred when truncating to the file: '${f}'.")
             }
             else {
                 Result.flatMap((exists) -> Ok(not exists), alreadyExists)
