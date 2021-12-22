@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.debug.Audience
-import ca.uwaterloo.flix.language.debug.FormatEff.formatEff
+import ca.uwaterloo.flix.language.debug.FormatEff
 
 /**
   * A common super-type for code hints.
@@ -131,7 +131,7 @@ object CodeHint {
     * @param loc the location of the expression.
     */
   case class NonTrivialEffect(tpe: Type, loc: SourceLocation) extends CodeHint {
-    def summary: String = s"Expression has a non-trivial effect. ${formatEff(tpe)(Audience.External)}"
+    def summary: String = s"Expression has a non-trivial effect: ${FormatEff.formatEff(tpe)(Audience.External)}"
 
     def severity: Severity = Severity.Info
   }
