@@ -50,27 +50,30 @@ namespace Traversable {
         Traversable.traverse(f, t)
 
 
-    pub def mapAccumLeft(f: acc -> a -> (acc, b), start: acc, t: t[a]): (acc, t[b]) with Traversable[t] =
-        runContStateLeft(traverse(x1 -> ContStateLeft((k, s) -> let (s1, b) = f(s, x1); k(b, s1)), t), start)
+    pub def mapAccumLeft(f: acc -> a -> (acc, b) & ef, start: acc, t: t[a]): (acc, t[b]) & ef with Traversable[t] =
+        runContStateLeft(traverse(x1 -> ContStateLeft((k, s) -> let (s1, b) = f(s, x1); k(b, s1)), t), start) as & ef
 
-    /// A simple State monad implementation bursts the stack, use ContState the CPS-State monad instead...
+    /// Simple implementation of a State monad bursts the stack, use ContState the CPS-State monad instead.
+    /// We use an Impure continuation so we can internally cast the `ef` of `mapAccumLeft` and not lose
+    /// impurity information.
 
-    opaque type ContStateLeft[ka, s, a] = (a -> s -> ka) -> s -> ka
 
-    def applyLeft1(ma: ContStateLeft[ka, s, a], st: s, cont: a -> s -> ka): ka =
+    opaque type ContStateLeft[ka, s, a] = (a -> s -> ka & Impure) -> s -> ka & Impure
+
+    def applyLeft1(ma: ContStateLeft[ka, s, a], st: s, cont: a -> s -> ka & Impure): ka & Impure =
         let ContStateLeft(f) = ma;
         f(cont, st)
 
-    def runContStateLeft(ma: ContStateLeft[(s, a), s, a], st: s): (s, a) =
+    def runContStateLeft(ma: ContStateLeft[(s, a), s, a], st: s): (s, a) & Impure =
         let ContStateLeft(f) = ma;
-        let cont = (a, s) -> (s, a);
+        let cont = (a, s) -> (s, a) as & Impure;
         f(cont, st)
 
 
     instance Functor[ContStateLeft[ka, s]] {
         pub def map(f: a -> b & ef, ma: ContStateLeft[ka, s, a]): ContStateLeft[ka, s, b] & ef =
             ContStateLeft((k, s) ->
-                applyLeft1(ma, s, (a, s1) -> k(f(a) as & Pure, s1))
+                applyLeft1(ma, s, (a, s1) -> k(f(a) as & Impure, s1))
             ) as & ef
     }
 
@@ -82,32 +85,32 @@ namespace Traversable {
             ContStateLeft((k, s) ->
                 applyLeft1(mf, s, (f, s1) ->
                     applyLeft1(ma, s1, (a, s2) ->
-                        k(f(a) as & Pure, s2)))
+                        k(f(a) as & Impure, s2)))
             ) as & ef
     }
 
 
-    pub def mapAccumRight(f: acc -> a -> (acc, b), start: acc, t: t[a]): (acc, t[b]) with Traversable[t] =
-        runContStateRight(traverse(x1 -> ContStateRight((k, s) -> let (s1, b) = f(s, x1); k(b, s1)), t), start)
+    pub def mapAccumRight(f: acc -> a -> (acc, b) & ef, start: acc, t: t[a]): (acc, t[b]) & ef with Traversable[t] =
+        runContStateRight(traverse(x1 -> ContStateRight((k, s) -> let (s1, b) = f(s, x1); k(b, s1)), t), start) as & ef
 
     /// ContStateRight is exactly the same as ContStateLeft except the evaluation order of `ap` is flipped.
 
-    opaque type ContStateRight[ka, s, a] = (a -> s -> ka) -> s -> ka
+    opaque type ContStateRight[ka, s, a] = (a -> s -> ka & Impure) -> s -> ka & Impure
 
-    def applyRight1(ma: ContStateRight[ka, s, a], st: s, cont: a -> s -> ka): ka =
+    def applyRight1(ma: ContStateRight[ka, s, a], st: s, cont: a -> s -> ka & Impure): ka & Impure=
         let ContStateRight(f) = ma;
         f(cont, st)
 
-    def runContStateRight(ma: ContStateRight[(s, a), s, a], st: s): (s, a) =
+    def runContStateRight(ma: ContStateRight[(s, a), s, a], st: s): (s, a) & Impure=
         let ContStateRight(f) = ma;
-        let cont = (a, s) -> (s, a);
+        let cont = (a, s) -> (s, a) as & Impure;
         f(cont, st)
 
 
     instance Functor[ContStateRight[ka, s]] {
         pub def map(f: a -> b & ef, ma: ContStateRight[ka, s, a]): ContStateRight[ka, s, b] & ef =
             ContStateRight((k, s) ->
-                applyRight1(ma, s, (a, s1) -> k(f(a) as & Pure, s1))
+                applyRight1(ma, s, (a, s1) -> k(f(a) as & Impure, s1))
             ) as & ef
     }
 
@@ -118,7 +121,7 @@ namespace Traversable {
             ContStateRight((k, s) ->
                 applyRight1(ma, s, (a, s1) ->
                     applyRight1(mf, s1, (f, s2) ->
-                        k(f(a) as & Pure, s2)))
+                        k(f(a) as & Impure, s2)))
             ) as & ef
     }
 
