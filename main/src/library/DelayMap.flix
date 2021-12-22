@@ -426,14 +426,14 @@ namespace DelayMap {
     ///
     /// Otherwise, returns `m`.
     ///
-    @Experimental
+    @Experimental @LazyWhenPure
     pub def adjust(f: v -> v & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         adjustWithKey((_, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k -> f(k, v)` if `k -> v` is in `m`. Otherwise, returns `m`.
     ///
-    @Experimental
+    @Experimental @LazyWhenPure
     pub def adjustWithKey(f: (k, v) -> v & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         updateWithKey((k1, v) -> Some(f(k1, v)), k, m)
 
