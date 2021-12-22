@@ -295,6 +295,17 @@ namespace Set {
         RedBlackTree.foldRight((k, _, acc) -> f(k, acc), s, t)
 
     ///
+    /// Lazily applies `f` to a start value `s` and all elements in `xs` going from right to left.
+    /// The function f must be pure.
+    ///
+    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
+    /// The foldRightL function exists to allow early termination of a fold.
+    ///
+    pub def foldRightL(f: (a, Lazy[b]) -> b, s: b, xs: Set[a]): b =
+        let Set(es) = xs;
+        RedBlackTree.foldRight((k, _, acc) -> f(k, lazy acc), s, es)
+
+    ///
     /// Applies `f` to all elements in `s` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     /// Returns `None` if `s` is the empty set.

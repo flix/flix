@@ -405,6 +405,21 @@ def foldRight03(): Bool = Set.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Se
 def foldRight04(): Bool = Set.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Set#{3, 2, 1}) == 382
 
 /////////////////////////////////////////////////////////////////////////////
+// foldRightL                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldRightL01(): Bool = Set.foldRightL((e, i) -> (force i - e) * (e rem 2 + 1), 100, Set#{}) == 100
+
+@test
+def foldRightL02(): Bool = Set.foldRightL((e, i) -> (force i - e) * (e rem 2 + 1), 100, Set#{1}) == 198
+
+@test
+def foldRightL03(): Bool = Set.foldRightL((e, i) -> (force i - e) * (e rem 2 + 1), 100, Set#{2, 1}) == 194
+
+@test
+def foldRightL04(): Bool = Set.foldRightL((e, i) -> (force i - e) * (e rem 2 + 1), 100, Set#{3, 2, 1}) == 382
+
+/////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
