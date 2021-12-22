@@ -119,7 +119,7 @@ object GenClosureClasses {
     val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(resultType))
 
     // Method header
-    val invokeMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, backendContinuationType.InvokeMethodName,
+    val invokeMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, backendContinuationType.InvokeMethod.name,
       AsmOps.getMethodDescriptor(Nil, continuationType), null, null)
     invokeMethod.visitCode()
 
