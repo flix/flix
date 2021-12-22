@@ -130,7 +130,7 @@ object GenLazyClasses {
     method.visitFieldInsn(GETFIELD, internalClassType, "expression", JvmType.Object.toDescriptor)
     method.visitTypeInsn(CHECKCAST, functionType.name.toInternalName)
     // [this, value] the result of expression remains on the stack.
-    method.visitMethodInsn(INVOKEVIRTUAL, functionType.name.toInternalName, backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, erasedType), false)
+    method.visitMethodInsn(INVOKEVIRTUAL, functionType.name.toInternalName, backendContinuationType.UnwindMethodName, AsmOps.getMethodDescriptor(Nil, erasedType), false)
     // [] this.value now stores the result from expression.
     method.visitFieldInsn(PUTFIELD, internalClassType, "value", erasedValueTypeDescriptor)
 
