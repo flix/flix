@@ -404,7 +404,7 @@ namespace Chain {
     ///
     /// Helper function for `flatMap`.
     ///
-    pub def flatMapHelper(f: a -> Chain[b] & ef, c: Chain[a], acc: Chain[b]): Chain[b] & ef = match viewLeft(c) {
+    def flatMapHelper(f: a -> Chain[b] & ef, c: Chain[a], acc: Chain[b]): Chain[b] & ef = match viewLeft(c) {
         case NoneLeft        => acc
         case SomeLeft(x, rs) => flatMapHelper(f, rs, append(acc, f(x)))
     }
