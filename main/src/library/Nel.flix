@@ -311,6 +311,17 @@ namespace Nel {
     }
 
     ///
+    /// Lazily applies `f` to a start value `s` and all elements in `xs` going from right to left.
+    /// The function f must be pure.
+    ///
+    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
+    /// The foldRightL function exists to allow early termination of a fold.
+    ///
+    pub def foldRightL(f: (a, Lazy[b]) -> b, s: b, xs: Nel[a]): b = match xs {
+        case Nel(h, l) => f(h, lazy List.foldRightL(f, s, l))
+    }
+
+    ///
     /// Applies `combine` to all elements in `xs` until a single value is obtained.
     ///
     pub def reduce(xs: Nel[a]): a with SemiGroup[a] = match xs {

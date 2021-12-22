@@ -238,6 +238,16 @@ namespace Option {
     }
 
     ///
+    /// Returns `f(v, lazy z)` if `o` is `Some(v)`. Otherwise returns `z`.
+    ///
+    /// The function f must be pure.
+    ///
+    pub def foldRightL(f: (a, Lazy[b]) -> b, o: Option[a], z: b): b = match o {
+        case None => z
+        case Some(v) => f(v, lazy z)
+    }
+
+    ///
     /// Returns `Some(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Some(v_i)`. Otherwise returns `None`.
     ///
     @Time(List.length(xs)) @Space(List.length(xs))
