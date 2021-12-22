@@ -364,4 +364,23 @@ namespace TestMutMap {
         Map#{0 => "1", 1 => "2", 2 => "2"} |> Map.toMutMap |>
             MutMap.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightL                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def foldRightL01(): Bool & Impure = MutMap.foldRightL((v, s) -> force s + v, 0, MutMap.empty()) == 0
+
+    @test
+    def foldRightL02(): Bool & Impure = MutMap.foldRightL((v, s) -> force s + v, 0, MutMap.singleton(1, 2)) == 2
+
+    @test
+    def foldRightL03(): Bool & Impure =
+        let m = MutMap(ref Map#{1 => 2, 3 => 4});
+        MutMap.foldRightL((v, s) -> force s + v, 0, m) == 6
+
+    @test
+    def foldRightL04(): Bool & Impure =
+        let m = MutMap(ref Map#{1 => 2, 3 => 4, 5 => 6});
+        MutMap.foldRightL((v, s) -> force s + v, 0, m) == 12
 }
