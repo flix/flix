@@ -115,7 +115,7 @@ object GenFunctionClasses {
     val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(closureResultType))
 
     // Method header
-    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, backendContinuationType.InvokeMethod.name,
+    val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, backendContinuationType.InvokeMethodName,
       AsmOps.getMethodDescriptor(Nil, continuationType), null, null)
 
     // Enter label
