@@ -57,10 +57,14 @@ instance Functor[Nel] {
     pub def map(f: a -> b & ef, xs: Nel[a]): Nel[b] & ef = Nel.map(f, xs)
 }
 
-// TODO implement Applicative
-// instance Monad[Nel] {
-//     pub def flatMap(f: a -> Nel[b] & ef, x : Nel[a]) : Nel[b] & ef = Nel.flatMap(f, x)
-// }
+instance Applicative[Nel] {
+    pub def point(x: a): Nel[a] = Nel.singleton(x)
+    pub def ap(f: Nel[a -> b & ef], x: Nel[a]): Nel[b] & ef = Nel.ap(f, x)
+}
+
+instance Monad[Nel] {
+    pub def flatMap(f: a -> Nel[b] & ef, x : Nel[a]) : Nel[b] & ef = Nel.flatMap(f, x)
+}
 
 instance Foldable[Nel] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, xs: Nel[a]): b & ef = Nel.foldLeft(f, s, xs)
@@ -218,6 +222,27 @@ namespace Nel {
     def mapWithIndexHelper(f: (a, Int32) -> b & ef, xs: List[a], i: Int32): List[b] & ef = match xs {
         case Nil     => Nil
         case x :: rs => f(x, i) :: mapWithIndexHelper(f, rs, i + 1)
+    }
+
+    ///
+    /// Apply every function from `f` to every argument from `l` and return a non-empty list with all results.
+    /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
+    /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
+    ///
+    pub def ap(f: Nel[a -> b & ef], l: Nel[a]) : Nel[b] & ef =  match f {
+        case Nel(f1, Nil) => map(f1, l)
+        case Nel(f1, rs)  => apHelperList(f1, rs, l, ks -> ks as & ef)
+    }
+
+    ///
+    /// Helper function for `ap`.
+    ///
+    def apHelperList(f: a -> b & ef, fs: List[a -> b & ef], l: Nel[a], k: Nel[b] -> Nel[b] & ef): Nel[b] & ef = match fs {
+        case Nil      => k(map(f, l))
+        case f1 :: rs =>
+            let ks1 = map(f, l);
+            apHelperList(f1, rs, l, ks2 ->
+              k(append(ks1, ks2)))
     }
 
     ///
