@@ -108,7 +108,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val eff = Type.mkAnd(Type.KindedVar(1, Kind.Bool, loc, Rigidity.Flexible), Type.KindedVar(2, Kind.Bool, loc, Rigidity.Flexible), loc)
     val tpe = Type.mkArrowWithEffect(Type.BigInt, eff, Type.Bool, loc)
 
-    val expected = "BigInt -> Bool & (b1! ∧ b2!)"
+    val expected = "BigInt -> Bool & (b1 ∧ b2)"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
