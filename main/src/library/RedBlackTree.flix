@@ -60,6 +60,11 @@ namespace RedBlackTree {
         pub def map(f: a -> b & ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] & ef = mapWithKey((_, v) -> f(v), t)
     }
 
+    instance Foldable[RedBlackTree[k]] {
+        pub def foldLeft(f: (b, v) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldLeft((acc, _, v) -> f(acc, v), s, t)
+        pub def foldRight(f: (v, b) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRight((_, v, acc) -> f(v, acc), s, t)
+    }
+
     instance Traversable[RedBlackTree[k]] {
         pub def traverse(f: a -> m[b] & ef, t: RedBlackTree[k, a]): m[RedBlackTree[k, b]] & ef with Applicative[m] =
             mapAWithKey((_, v) -> f(v), t)

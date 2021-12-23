@@ -57,6 +57,11 @@ instance Functor[Map[k]] {
         Map(RedBlackTree.mapWithKey((_, v) -> f(v), tree))
 }
 
+instance Foldable[Map[k]] {
+    pub def foldLeft(f: (b, v) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldLeft((acc, v) -> f(acc, v), s, m)
+    pub def foldRight(f: (v, b) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRight((v, acc) -> f(v, acc), s, m)
+}
+
 instance Traversable[Map[k]] {
     pub def traverse(f: a -> m[b] & ef, t: Map[k, a]): m[Map[k, b]] & ef with Applicative[m] = Map.traverse(f, t)
     pub override def sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
