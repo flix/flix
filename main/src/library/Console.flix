@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 namespace Console {
-
+    /// test
     ///
     /// Reads a single line from the console.
     ///
