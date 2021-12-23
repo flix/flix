@@ -127,7 +127,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
           Some(ns -> JArray(sorted.map(visitDef)))
     }
 
-
     //
     // Compute all namespaces.
     //
