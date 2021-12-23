@@ -20,7 +20,8 @@ import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Modifier, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -70,13 +71,20 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     //
+    // Instances (for use in Enum documentation)
+    //
+    val instancesByEnum = root.instances.values.flatten.groupBy(getEnum).collect {
+      case (Some(enum), insts) => (enum, insts.toList)
+    }
+
+    //
     // Enums.
     //
     val enumsByNS = root.enums.values.groupBy(getNameSpace).map {
       case (ns, decls) =>
         val filtered = decls.filter(_.mod.isPublic).toList
         val sorted = filtered.sortBy(_.sym.name)
-        ns -> JArray(sorted.map(visitEnum))
+        ns -> JArray(sorted.map(visitEnum(_, instancesByEnum)))
     }
 
     //
@@ -108,6 +116,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         ns -> JArray(sorted.map(visitDef))
     }
 
+
     //
     // Compute all namespaces.
     //
@@ -134,6 +143,16 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
     root.toSuccess
   }
+
+  /**
+    * Returns the enum that is in the head position of the instance's type, if it exists.
+    * Returns `None` if the type is not an `enum` type.
+    */
+  def getEnum(inst: TypedAst.Instance): Option[Symbol.EnumSym] = inst.tpe.baseType match {
+    case Type.Cst(TypeConstructor.KindedEnum(sym, _), _) => Some(sym)
+    case _ => None
+  }
+
 
   /**
     * Returns the namespace of the given class `decl`.
@@ -348,14 +367,15 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given Enum `enum` as a JSON value.
     */
-  private def visitEnum(enum: Enum): JObject = enum match {
+  private def visitEnum(enum: Enum, instances: Map[Symbol.EnumSym, List[Instance]]): JObject = enum match {
     case Enum(doc, _, sym, tparams, derives, cases, _, _, loc) =>
       ("doc" -> visitDoc(doc)) ~
         ("sym" -> visitEnumSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
-        ("derives" -> derives.map{ d => visitClassSym(d.clazz) }) ~
+        ("derives" -> derives.map { d => visitClassSym(d.clazz) }) ~
         ("cases" -> cases.values.map(visitCase)) ~
-        ("loc" -> visitSourceLocation(loc))
+        ("loc" -> visitSourceLocation(loc)) ~
+        ("instances" -> instances.getOrElse(sym, Nil).map { i => visitClassSym(i.sym.clazz) })
   }
 
   /**
