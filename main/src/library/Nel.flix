@@ -229,21 +229,20 @@ namespace Nel {
     /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
     /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
     ///
-    pub def ap(f: Nel[a -> b & ef], l: Nel[a]) : Nel[b] & ef =  match f {
-        case Nel(f1, Nil) => map(f1, l)
-        case Nel(f1, rs)  => apHelperList(f1, rs, l, ks -> ks as & ef)
-    }
-
-    ///
-    /// Helper function for `ap`.
-    ///
-    def apHelperList(f: a -> b & ef, fs: List[a -> b & ef], l: Nel[a], k: Nel[b] -> Nel[b] & ef): Nel[b] & ef = match fs {
-        case Nil      => k(map(f, l))
-        case f1 :: rs =>
-            let ks1 = map(f, l);
-            apHelperList(f1, rs, l, ks2 ->
-              k(append(ks1, ks2)))
-    }
+    pub def ap(f: Nel[a -> b & ef], l: Nel[a]) : Nel[b] & ef =
+        // Note - loop has been worker-wrapper transformed to represent the list of
+        // functions as head (f1) and tail (fs) so we never have an empty list to deal with.
+        def loop(f1, fs, k) = match fs {
+            case Nil      => k(map(f1, l))
+            case f2 :: rs =>
+                let ks1 = map(f1, l);
+                loop(f2, rs, ks2 ->
+                  k(append(ks1, ks2)))
+        };
+        match f {
+            case Nel(f1, Nil) => map(f1, l)
+            case Nel(f1, rs)  => loop(f1, rs, ks -> ks as & ef)
+        }
 
     ///
     /// Returns the result of applying `f` to every element in `xs` and concatenating the results.
