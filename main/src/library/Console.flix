@@ -239,7 +239,7 @@ namespace Console {
     ///
     /// Ansi Colors.
     ///
-    pub enum Ansi {
+    enum Ansi {
         case Black
         case Red
         case Green
