@@ -81,184 +81,160 @@ namespace Console {
     ///
     /// Returns the string `s` formatted with the given RGB color `c`.
     ///
-    pub def rgb(c: (Int32, Int32 , Int32), s: String, isFg: Bool): String =
+    pub def rgb(c: (Int32, Int32 , Int32), s: String, opts: {isFg :: Bool}): String =
         match colorSupport() {
             case ColorSupport.None      => s
             case ColorSupport.Ansi      =>
-                let color = downsample(c, isFg);
+                let color = downsample(c, opts.isFg);
                 formatAnsi(color, s)
             case ColorSupport.TrueColor =>
-                formatTrueColor(c, s, isFg)
+                formatTrueColor(c, s, opts.isFg)
         }
 
     ///
     /// Returns the string `s` formatted with the default blue color.
     ///
     pub def blue(s: String): String =
-        let isFg = true;
-        rgb(Blue |> toRGB, s, isFg)
+        rgb(Blue |> toRGB, s, isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default cyan color.
     ///
     pub def cyan(s: String): String =
-        let isFg = true;
-        rgb(Cyan |> toRGB, s, isFg)
+        rgb(Cyan |> toRGB, s, isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default green color.
     ///
     pub def green(s: String): String =
-        let isFg = true;
-        rgb(Green |> toRGB, s, isFg)
+        rgb(Green |> toRGB, s, isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default magenta color.
     ///
     pub def magenta(s: String): String =
-        let isFg = true;
-        rgb(Magenta |> toRGB, s, isFg)
+        rgb(Magenta |> toRGB, s, isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default red color.
     ///
     pub def red(s: String): String =
-        let isFg = true;
-        rgb(Red |> toRGB, s, isFg)
+        rgb(Red |> toRGB, s, isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default yellow color.
     ///
     pub def yellow(s: String): String =
-        let isFg = true;
-        rgb(Yellow |> toRGB, s, isFg)
+        rgb(Yellow |> toRGB, s, isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default white color.
     ///
     pub def white(s: String): String =
-        let isFg = true;
-        rgb(White |> toRGB, s, isFg)
+        rgb(White |> toRGB, s, isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default black color.
     ///
     pub def black(s: String): String =
-        let isFg = true;
-        rgb(Black |> toRGB, s, isFg)
+        rgb(Black |> toRGB, s, isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright black color.
     ///
     pub def blackBright(s: String): String =
-        let isFg = true;
-        rgb(BrightBlack |> toRGB, s, isFg)
+        rgb(BrightBlack |> toRGB, s, isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright red color.
     ///
     pub def redBright(s: String): String =
-        let isFg = true;
-        rgb(BrightRed |> toRGB, s, isFg)
+        rgb(BrightRed |> toRGB, s, isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright green color.
     ///
     pub def greenBright(s: String): String =
-        let isFg = true;
-        rgb(BrightGreen |> toRGB, s, isFg)
+        rgb(BrightGreen |> toRGB, s, isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright yellow color.
     ///
     pub def yellowBright(s: String): String =
-        let isFg = true;
-        rgb(BrightYellow |> toRGB, s, isFg)
+        rgb(BrightYellow |> toRGB, s, isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright blue color.
     ///
     pub def blueBright(s: String): String =
-        let isFg = true;
-        rgb(BrightBlue |> toRGB, s, isFg)
+        rgb(BrightBlue |> toRGB, s, isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright magenta color.
     ///
     pub def magentaBright(s: String): String =
-        let isFg = true;
-        rgb(BrightMagenta |> toRGB, s, isFg)
+        rgb(BrightMagenta |> toRGB, s, isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright cyan color.
     ///
     pub def cyanBright(s: String): String =
-        let isFg = true;
-        rgb(BrightCyan |> toRGB, s, isFg)
+        rgb(BrightCyan |> toRGB, s, isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright white color.
     ///
     pub def whiteBright(s: String): String =
-        let isFg = true;
-        rgb(BrightWhite |> toRGB, s, isFg)
+        rgb(BrightWhite |> toRGB, s, isFg = true)
 
 
     ///
     /// Returns the string `s` with background color of the default black color.
     ///
     pub def bgBlack(s: String): String =
-        let isFg = false;
-        rgb(BackgroundBlack |> toRGB, s, isFg)
+        rgb(BackgroundBlack |> toRGB, s, isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default red color.
     ///
     pub def bgRed(s: String): String =
-        let isFg = false;
-        rgb(BackgroundRed |> toRGB, s, isFg)
+        rgb(BackgroundRed |> toRGB, s, isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default green color.
     ///
     pub def bgGreen(s: String): String =
-        let isFg = false;
-        rgb(Ansi.BackgroundGreen |> toRGB, s, isFg)
+        rgb(Ansi.BackgroundGreen |> toRGB, s, isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default yellow color.
     ///
     pub def bgYellow(s: String): String =
-        let isFg = false;
-        rgb(BackgroundYellow |> toRGB, s, isFg)
+        rgb(BackgroundYellow |> toRGB, s, isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default blue color.
     ///
     pub def bgBlue(s: String): String =
-        let isFg = false;
-        rgb(BackgroundBlue |> toRGB, s, isFg)
+        rgb(BackgroundBlue |> toRGB, s, isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default magenta color.
     ///
     pub def bgMagenta(s: String): String =
-        let isFg = false;
-        rgb(BackgroundMagenta |> toRGB, s, isFg)
+        rgb(BackgroundMagenta |> toRGB, s, isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default cyan color.
     ///
     pub def bgCyan(s: String): String =
-        let isFg = false;
-        rgb(BackgroundCyan |> toRGB, s, isFg)
+        rgb(BackgroundCyan |> toRGB, s, isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default white color.
     ///
     pub def bgWhite(s: String): String =
-        let isFg = false;
-        rgb(BackgroundWhite |> toRGB, s, isFg)
+        rgb(BackgroundWhite |> toRGB, s, isFg = false)
 
     ///
     /// Ansi Colors.
@@ -372,7 +348,6 @@ namespace Console {
                     Ansi.BackgroundMagenta :: Ansi.BackgroundCyan :: Ansi.BackgroundWhite :: Nil}
             };
         nearest(c, Ansi.BackgroundBlack, Int32.maxValue(), candidates) |> toAnsi
-
 
     ///
     /// Returns the ANSI color nearest to the given `target` color from the given list of `candidates`.
