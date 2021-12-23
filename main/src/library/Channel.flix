@@ -106,6 +106,7 @@ namespace Channel {
     /// negative. A channel with `bufferSize` zero means that sending and
     /// receiving is syncronized.
     ///
+    @Internal
     pub def new(bufferSize: Int32): Mpmc & Impure =
         import static dev.flix.runtime.GlobalCounter.newId();
         let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
@@ -127,6 +128,7 @@ namespace Channel {
     ///
     /// Implements the expression `c <- e`.
     ///
+    @Internal
     pub def put(e: Boxed, c: Mpmc): Mpmc & Impure =
         let Mpmc(_, channelLock, unBuffered, _, elementDeque, _, waitingPutters) = c;
         lock(channelLock);
@@ -159,6 +161,7 @@ namespace Channel {
     ///
     /// Implements to the expression `<- c`.
     ///
+    @Internal
     pub def get(c: Mpmc): Boxed & Impure =
         let Mpmc(_, channelLock, _, _, _, _, _) = c;
         lock(channelLock);
@@ -173,6 +176,7 @@ namespace Channel {
     /// Returns the first channel that has an element in the array along with
     /// the index of the channel. Returns None if the default case is chosen.
     ///
+    @Internal
     pub def select(channels: Array[Mpmc], hasDefault: Bool): Option[(Int32, Boxed)] & Impure =
         // Create a new lock and condition for this select. The condition is
         // potentially put into the waiting getters of the channels if a
@@ -188,6 +192,7 @@ namespace Channel {
     /// Wait for the channel to have available space.
     /// The channel lock is expected to be held.
     ///
+    @Internal
     def awaitAvailableSpace(c: Mpmc): Unit & Impure =
         let Mpmc(_, _, _, maxQueueSize, elementDeque, _, waitingPutters) = c;
         if (MutDeque.size(elementDeque) == maxQueueSize) {
