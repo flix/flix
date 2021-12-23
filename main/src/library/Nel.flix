@@ -57,10 +57,14 @@ instance Functor[Nel] {
     pub def map(f: a -> b & ef, xs: Nel[a]): Nel[b] & ef = Nel.map(f, xs)
 }
 
-// TODO implement Applicative
-// instance Monad[Nel] {
-//     pub def flatMap(f: a -> Nel[b] & ef, x : Nel[a]) : Nel[b] & ef = Nel.flatMap(f, x)
-// }
+instance Applicative[Nel] {
+    pub def point(x: a): Nel[a] = Nel.singleton(x)
+    pub def ap(f: Nel[a -> b & ef], x: Nel[a]): Nel[b] & ef = Nel.ap(f, x)
+}
+
+instance Monad[Nel] {
+    pub def flatMap(f: a -> Nel[b] & ef, x : Nel[a]) : Nel[b] & ef = Nel.flatMap(f, x)
+}
 
 instance Foldable[Nel] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, xs: Nel[a]): b & ef = Nel.foldLeft(f, s, xs)
@@ -219,6 +223,26 @@ namespace Nel {
         case Nil     => Nil
         case x :: rs => f(x, i) :: mapWithIndexHelper(f, rs, i + 1)
     }
+
+    ///
+    /// Apply every function from `f` to every argument from `l` and return a non-empty list with all results.
+    /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
+    /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
+    ///
+    pub def ap(f: Nel[a -> b & ef], l: Nel[a]) : Nel[b] & ef =
+        // Note - loop has been worker-wrapper transformed to represent the list of
+        // functions as head (f1) and tail (fs) so we never have an empty list to deal with.
+        def loop(f1, fs, k) = match fs {
+            case Nil      => k(map(f1, l))
+            case f2 :: rs =>
+                let ks1 = map(f1, l);
+                loop(f2, rs, ks2 ->
+                  k(append(ks1, ks2)))
+        };
+        match f {
+            case Nel(f1, Nil) => map(f1, l)
+            case Nel(f1, rs)  => loop(f1, rs, ks -> ks as & ef)
+        }
 
     ///
     /// Returns the result of applying `f` to every element in `xs` and concatenating the results.
