@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Console1 {
+namespace Console {
 
     ///
     /// Reads a single line from the console.
