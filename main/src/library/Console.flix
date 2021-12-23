@@ -240,7 +240,6 @@ namespace Console {
     /// Ansi Colors.
     /// TODO : add bright bg colors.
     ///
-    // TODO: Add background colors.
     enum Ansi {
         case Black
         case Red
