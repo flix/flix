@@ -195,6 +195,25 @@ def foldRight04(): Bool = Result.foldRight((i, b) -> if (i == 2 and b) true else
 @test
 def foldRight05(): Bool = Result.foldRight((i, b) -> if (i == 2 and b) true else false, Ok(2), true) == true
 
+
+/////////////////////////////////////////////////////////////////////////////
+// foldRightL                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldRightL01(): Bool = Result.foldRightL((i, b) -> if (i == 2 and force b) true else false, Err(-1ii), false) == false
+
+@test
+def foldRightL02(): Bool = Result.foldRightL((i, b) -> if (i == 2 and force b) true else false, Ok(1), false) == false
+
+@test
+def foldRightL03(): Bool = Result.foldRightL((i, b) -> if (i == 2 and force b) true else false, Ok(1), true) == false
+
+@test
+def foldRightL04(): Bool = Result.foldRightL((i, b) -> if (i == 2 and force b) true else false, Ok(2), false) == false
+
+@test
+def foldRightL05(): Bool = Result.foldRightL((i, b) -> if (i == 2 and force b) true else false, Ok(2), true) == true
+
 /////////////////////////////////////////////////////////////////////////////
 // sequence                                                                //
 /////////////////////////////////////////////////////////////////////////////
@@ -346,7 +365,7 @@ def toSet02(): Bool = Result.toSet(Ok(1)) == Set#{1}
 def toMap01(): Bool = Result.toMap(Err(-1ii): Result[(Unit, Unit), _]) == Map#{}
 
 @test
-def toMap02(): Bool = Result.toMap(Ok((1, true))) == Map#{1 -> true}
+def toMap02(): Bool = Result.toMap(Ok((1, true))) == Map#{1 => true}
 
 /////////////////////////////////////////////////////////////////////////////
 // toOption                                                                //

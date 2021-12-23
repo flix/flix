@@ -118,7 +118,7 @@ def toSet02(): Bool = Option.toSet(Some(1)) == Set#{1}
 def toMap01(): Bool = Option.toMap(None: Option[(Unit, Unit)]) == Map#{}
 
 @test
-def toMap02(): Bool = Option.toMap(Some((1, true))) == Map#{1 -> true}
+def toMap02(): Bool = Option.toMap(Some((1, true))) == Map#{1 => true}
 
 /////////////////////////////////////////////////////////////////////////////
 // toOk                                                                   //
@@ -273,6 +273,24 @@ def foldRight04(): Bool = Option.foldRight((i, b) -> if (i == 2 and b) true else
 
 @test
 def foldRight05(): Bool = Option.foldRight((i, b) -> if (i == 2 and b) true else false, Some(2), true) == true
+
+/////////////////////////////////////////////////////////////////////////////
+// foldRightL                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldRightL01(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, None, false) == false
+
+@test
+def foldRightL02(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, Some(1), false) == false
+
+@test
+def foldRightL03(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, Some(2), false) == false
+
+@test
+def foldRightL04(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, Some(1), true) == false
+
+@test
+def foldRightL05(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, Some(2), true) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // sequence                                                                //

@@ -206,6 +206,25 @@ namespace Nel {
     def mapWithIndex03(): Bool = mapWithIndex((_, i) -> i, Nel(21, 42 :: 84 :: Nil)) == Nel(0, 1 :: 2 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
+    // ap                                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def ap01(): Bool = ap(Nel((x -> x+1), Nil), Nel(5, Nil)) == Nel(6, Nil)
+
+    @test
+    def ap02(): Bool = ap(Nel((x -> x+1), Nil), Nel(0, 5 :: Nil)) == Nel(1, 6 :: Nil)
+
+    @test
+    def ap03(): Bool = ap(Nel((x -> x+1), (x -> x*2) :: Nil), Nel(0, 4 :: Nil)) == Nel(1, 5 :: 0 :: 8 :: Nil)
+
+    @test
+    def ap04(): Bool = ap(Nel((x -> x+1), (x -> x*2) :: Nil), Nel(0, 4 :: 8 :: Nil)) == Nel(1, 5 :: 9 :: 0 :: 8 :: 16 :: Nil)
+
+    @test
+    def ap05(): Bool = ap(Nel((x -> x+1), (x -> x*2) :: Nil), Nel(0, 4 :: 8 :: 16 :: Nil)) == Nel(1, 5 :: 9 :: 17 :: 0 :: 8 :: 16 :: 32 :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
     // flatMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -348,6 +367,19 @@ namespace Nel {
 
     @test
     def foldRight03(): Bool = foldRight((x, acc) -> acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightL                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightL01(): Bool = foldRightL((x, acc) -> force acc - x, 0, Nel(1, Nil)) == -1
+
+    @test
+    def foldRightL02(): Bool = foldRightL((x, acc) -> force acc - x, 0, Nel(1, 2 :: Nil)) == -3
+
+    @test
+    def foldRightL03(): Bool = foldRightL((x, acc) -> force acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
 
     /////////////////////////////////////////////////////////////////////////////
     // reduce                                                                  //

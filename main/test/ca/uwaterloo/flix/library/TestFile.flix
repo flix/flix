@@ -18,7 +18,7 @@ namespace TestFile {
 
     use File.{exists, isDirectory, isRegularFile, isReadable, isSymbolicLink,
         isWritable, isExecutable, readLines, readLinesWith, read, readWith,
-        readLinesIter, readLinesIterWith, readBytes, readBytesWith};
+        readLinesIter, readLinesIterWith, readBytes, readBytesWith, readChunks};
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
@@ -179,6 +179,22 @@ namespace TestFile {
         match readBytesWith({offset = 2i64, count = 2}, "./LICENSE.md") {
             case Ok(v) => v.length == 2
             case _ => false
+        }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // readChunks                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testReadChunks01(): Bool & Impure =
+        match readChunks("./LICENSE.md", 2) {
+            case Iterator(_, next) => Result.isOk(next())
+        }
+
+    @test
+    def testReadChunks02(): Bool & Impure =
+        match readChunks("./LICENSE.md", 2) {
+            case Iterator(done, _) => done() == false
         }
 
 }
