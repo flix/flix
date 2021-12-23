@@ -456,7 +456,7 @@ namespace File {
             let javaFile = newFile(f);
             let w = newPrintWriter(javaFile);
 
-            Foldable.foldLeft((_, line) -> println(w, line), (), data);
+            Foldable.foreach((line) -> println(w, line), data);
             close(w);
 
             if (checkError(w)) {
