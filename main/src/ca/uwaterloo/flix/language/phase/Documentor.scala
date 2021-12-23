@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Modifier, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Validation
@@ -372,10 +371,10 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       ("doc" -> visitDoc(doc)) ~
         ("sym" -> visitEnumSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
-        ("derives" -> derives.map { d => visitClassSym(d.clazz) }) ~
         ("cases" -> cases.values.map(visitCase)) ~
-        ("loc" -> visitSourceLocation(loc)) ~
-        ("instances" -> instances.getOrElse(sym, Nil).map { i => visitClassSym(i.sym.clazz) })
+        ("derives" -> derives.map { d => visitClassSym(d.clazz) }) ~
+        ("instances" -> instances.getOrElse(sym, Nil).map { i => visitClassSym(i.sym.clazz) }) ~
+        ("loc" -> visitSourceLocation(loc))
   }
 
   /**
