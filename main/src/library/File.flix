@@ -491,7 +491,7 @@ namespace File {
             let fileWriter = newFileWriter(javaFile, true);
             let printWriter = newPrintWriter(fileWriter as ##java.io.Writer);
 
-            Foldable.foldLeft((_, line) -> println(printWriter, line), (), data);
+            Foldable.foreach((line) -> println(printWriter, line), data);
             close(printWriter);
 
             if (checkError(printWriter)) {
