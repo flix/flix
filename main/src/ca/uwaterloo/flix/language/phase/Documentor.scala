@@ -383,7 +383,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       ("doc" -> visitDoc(doc)) ~
         ("sym" -> visitEnumSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
-        ("cases" -> cases.values.map(visitCase)) ~
+        ("cases" -> cases.values.toList.sortBy(_.loc).map(visitCase)) ~
         ("derives" -> derives.map { d => visitClassSym(d.clazz) }) ~
         ("instances" -> instances.getOrElse(sym, Nil).map { i => visitClassSym(i.sym.clazz) }) ~
         ("loc" -> visitSourceLocation(loc))
