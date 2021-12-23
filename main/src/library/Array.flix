@@ -1525,7 +1525,7 @@ namespace Array {
     /// The function returns the final value of the accumulator `s`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreachAccum(f: (a, st) -> st & ef, s: st, a: Array[a]): st & Impure =
+    def foreachAccum(f: (a, st) -> st & ef, s: st, a: Array[a]): st & Impure =
         foreachAccumHelper(f, a, length(a), s, 0)
 
     ///

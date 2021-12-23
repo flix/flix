@@ -617,14 +617,7 @@ namespace MutList {
     ///
     pub def reserve!(n: Int32, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
-        let c = capacity(v);
-        let len = deref l;
-        let empty = c - len;
-        if (n > empty)
-            let newCapacity = c + (n - empty);
-            let arr = deref a;
-            a := Array.init(i -> if (i < len) arr[i] else $DEFAULT$, newCapacity)
-        else ()
+        a := Array.copyOfRange(0, (deref l) + n, deref a)
 
     ///
     /// Returns `v` as an immutable list.
