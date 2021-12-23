@@ -59,8 +59,8 @@ object GenContinuationAbstractClasses {
     cm.mkObjectConstructor(IsPublic)
     // essentially an abstract field
     contType.ResultField.mkField(cm, IsPublic, NotFinal)
-    contType.InvokeMethod.mkAbstractMethod(cm)
-    contType.UnwindMethod.mkMethod(cm, genUnwindMethod(contType), IsPublic, IsFinal)
+    cm.mkAbstractMethod(contType.InvokeMethodName, mkDescriptor()(contType.toTpe))
+    cm.mkMethod(genUnwindMethod(contType), contType.UnwindMethodName, mkDescriptor()(contType.result), IsPublic, IsFinal)
     cm.mkMethod(genRunMethod(contType), "run", NothingToVoid, IsPublic, IsFinal)
 
     cm.closeClassMaker
@@ -73,7 +73,7 @@ object GenContinuationAbstractClasses {
           currentCont.load() ~
             previousCont.store() ~
             currentCont.load() ~
-            contType.InvokeMethod.invoke() ~
+            INVOKEVIRTUAL(contType.jvmName, contType.InvokeMethodName, mkDescriptor()(contType.toTpe)) ~
             DUP() ~
             currentCont.store()
         } ~
@@ -85,7 +85,7 @@ object GenContinuationAbstractClasses {
 
   private def genRunMethod(contType: BackendObjType.Continuation): InstructionSet =
     thisLoad() ~
-      contType.UnwindMethod.invoke() ~
+      INVOKEVIRTUAL(contType.jvmName, contType.UnwindMethodName, mkDescriptor()(contType.result)) ~
       xPop(contType.result) ~
       RETURN()
 }
