@@ -120,11 +120,11 @@ namespace TestIterator {
     def toMap02(): Bool & Impure =
         (("A", 1) :: ("B", 2) :: ("C", 3) :: ("D", 4) :: Nil)|>
         List.toIterator |>
-        Iterator.toMap == Map#{"A" -> 1, "B" -> 2, "C" -> 3, "D" -> 4}
+        Iterator.toMap == Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4}
 
     @test
     def toMap03(): Bool & Impure =
-        let map = Map#{"1" -> 2, "2" -> 3, "3" -> 4};
+        let map = Map#{"1" => 2, "2" => 3, "3" => 4};
         map |> Map.toList |> List.toIterator |> Iterator.toMap == map
 
 
