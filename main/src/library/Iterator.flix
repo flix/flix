@@ -79,7 +79,7 @@ namespace Iterator {
     ///
     pub def isEmpty(iter: Iterator[a]): Bool & Impure =
         let Iterator(done, _) = iter;
-        d()
+        done()
 
     ///
     /// Returns an iterator of all integers between `b` (inclusive) and `e` (exclusive).
