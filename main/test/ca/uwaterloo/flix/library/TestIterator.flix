@@ -47,32 +47,46 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def isEmpty01(): Bool & Impure =
+    def isEmpty01(): Bool & Impure = // empty
         Iterator.empty() |> Iterator.isEmpty
 
     @test
-    def isEmpty02(): Bool & Impure =
+    def isEmpty02(): Bool & Impure = // singleton
         let iter = Iterator.singleton(1);
         let _ = invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 1 :: Nil
 
     @test
-    def isEmpty03(): Bool & Impure =
+    def isEmpty03(): Bool & Impure = // range
         let iter = Iterator.range(0, 100);
         let _ = invokeIsEmpty(100, iter);
         Iterator.toList(iter) == List.range(0, 100)
 
     @test
-    def isEmpty04(): Bool & Impure =
+    def isEmpty04(): Bool & Impure = // repeat
         let iter = Iterator.repeat(2, 10);
         let _ = invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 10 :: 10 :: Nil
 
     @test
-    def isEmpty05(): Bool & Impure =
+    def isEmpty05(): Bool & Impure = // lazyFilter
         let iter = (1 :: 2 :: 3 :: Nil) |> List.toIterator |> Iterator.lazyFilter(i -> i < 3);
         let _ = invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 1 :: 2 :: Nil
+
+    @test
+    def isEmpty06(): Bool & Impure = // lazyMap
+        let iter = (1 :: 2 :: 3 :: Nil) |> List.toIterator |> Iterator.lazyMap(i -> i + 1);
+        let _ = invokeIsEmpty(100, iter);
+        Iterator.toList(iter) == 2 :: 3 :: 4 :: Nil
+
+    @test
+    def isEmpty07(): Bool & Impure = // append
+        let i1 = (1 :: 2 :: 3 :: Nil) |> List.toIterator;
+        let i2 = (4 :: 5 :: 6 :: Nil) |> List.toIterator;
+        let iter = Iterator.append(i1, i2);
+        let _ = invokeIsEmpty(100, iter);
+        Iterator.toList(iter) == 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil
 
     ///
     /// Helper function that invokes `Iterator.isEmpty` `n` times.
