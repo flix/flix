@@ -73,6 +73,15 @@ namespace Iterator {
             Some(next())
 
     ///
+    /// Returns true if the iterator is empty.
+    ///
+    /// Does **not** consume any elements of the iterator.
+    ///
+    pub def isEmpty(iter: Iterator[a]): Bool & Impure =
+        let Iterator(done, _) = iter;
+        d()
+
+    ///
     /// Returns an iterator of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns an empty iterator if `b >= e`.
