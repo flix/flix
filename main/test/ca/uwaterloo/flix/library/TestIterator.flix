@@ -972,7 +972,7 @@ namespace TestIterator {
     def intercalate01(): Bool & Impure =
         let iterA = Nil |> List.toIterator;
         let iterB = Nil |> List.toIterator;
-        Iterator.intercalate(iterA, iterB) |> Iterator.toList == Nil
+        Iterator.intercalate(iterA, iterB) |> Iterator.toList == Nil: List[Int32]
 
     @test
     def intercalate02(): Bool & Impure =

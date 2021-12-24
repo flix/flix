@@ -160,7 +160,7 @@ def toFailure02(): Bool = Option.toFailure(Some("err"), "default") == Failure(Ne
 // withDefault                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def withDefault01(): Bool = Option.withDefault(default = None, None) == None
+def withDefault01(): Bool = Option.withDefault(default = None, None) == None: Option[Int32]
 
 @test
 def withDefault02(): Bool = Option.withDefault(default = Some(1), None) == Some(1)
