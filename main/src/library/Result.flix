@@ -428,21 +428,11 @@ namespace Result {
     /// where `e` is the error message.
     ///
     pub def try(f: Unit -> a & ef): Result[a, String] & ef =
-        tryWith(f, () -> ())
-
-    ///
-    /// Returns `Ok(x)` if `f` was invoked without throwing an exception.
-    ///
-    /// If `f` throws a Java `RuntimeException` then `g` is invoked
-    /// and `Err(e)` is returned where `e` is the error message.
-    ///
-    pub def tryWith(f: Unit -> a & ef1, g: Unit -> b & ef2): Result[a, String] & (ef1 and ef2) =
         try {
             Ok(f())
         } catch {
             case e: ##java.lang.RuntimeException =>
                 import java.lang.Throwable.getMessage();
-                g();
                 Err(getMessage(e)) as & Pure
         }
 }
