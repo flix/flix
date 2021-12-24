@@ -913,11 +913,10 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("IllegalSingleVariable.Predicate.01") {
     val input =
       s"""
-         |def f(): Bool =
-         |  let _x: #{ A(Int), B(Int), C(Int) } = #{
+         |def f(): #{ A(Int), B(Int), C(Int) } =
+         |  #{
          |    A(x) :- B(x), C(y).
-         |  };
-         |  true
+         |  }
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
