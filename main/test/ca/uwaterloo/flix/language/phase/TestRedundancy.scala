@@ -916,7 +916,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       s"""
          |def f(): Bool =
-         |  let _x = #{
+         |  let _x: #{ A(Int), B(Int), C(Int) } = #{
          |    A(x) :- B(x), C(y).
          |  };
          |  true
