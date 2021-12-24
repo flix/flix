@@ -56,6 +56,24 @@ namespace TestIterator {
         let _ = invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 1 :: Nil
 
+    @test
+    def isEmpty03(): Bool & Impure =
+        let iter = Iterator.range(0, 100);
+        let _ = invokeIsEmpty(100, iter);
+        Iterator.toList(iter) == List.range(0, 100)
+
+    @test
+    def isEmpty04(): Bool & Impure =
+        let iter = Iterator.repeat(2, 10);
+        let _ = invokeIsEmpty(100, iter);
+        Iterator.toList(iter) == 10 :: 10 :: Nil
+
+    @test
+    def isEmpty05(): Bool & Impure =
+        let iter = (1 :: 2 :: 3 :: Nil) |> List.toIterator |> Iterator.lazyFilter(i -> i < 3);
+        let _ = invokeIsEmpty(100, iter);
+        Iterator.toList(iter) == 1 :: 2 :: Nil
+
     ///
     /// Helper function that invokes `Iterator.isEmpty` `n` times.
     ///
