@@ -61,7 +61,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Predicate.01") {
     val input =
       s"""
-         |def f(): #{ A(Int), B(Int) } =
+         |def f(): #{ A(Int32), B(Int32) } =
          |  #{
          |    A(_x) :- B(_x).
          |  }
@@ -74,7 +74,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Predicate.02") {
     val input =
       s"""
-         |def f(): #{ A(Int), B(Int), C(Int) } =
+         |def f(): #{ A(Int32), B(Int32), C(Int32) } =
          |  #{
          |    A(2) :- B(_x), C(_x).
          |  }
@@ -913,7 +913,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("IllegalSingleVariable.Predicate.01") {
     val input =
       s"""
-         |def f(): #{ A(Int), B(Int), C(Int) } =
+         |def f(): #{ A(Int32), B(Int32), C(Int32) } =
          |  #{
          |    A(x) :- B(x), C(y).
          |  }
