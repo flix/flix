@@ -944,4 +944,18 @@ namespace TestIterator {
         Iterator.unfoldWithOk(() -> { d(); n() }) |>
             Iterator.toList == 1 :: 2 :: 3 :: Nil
 
+    @test
+    def unfoldWithOk04(): Bool & Impure =
+        let Iterator(d, n) = List.toIterator(1 :: 2 :: 3 :: 4 :: 5 :: Nil);
+        let Iterator(d1, n1) = Iterator.unfoldWithOk(() -> if (d()) Err("Done") else Ok(n()));
+        def loop(n) =
+            if (n <= 0)
+                true
+            else {
+                d1();
+                loop(n - 1)
+            };
+        let _ = loop(10); // Call done 10 times
+        Iterator.toList(Iterator(d1, n1)) == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+
 }
