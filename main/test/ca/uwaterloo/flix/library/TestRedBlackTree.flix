@@ -340,22 +340,28 @@ namespace TestRedBlackTree {
         let Map(t) = Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2};
         RedBlackTree.minimumBy((x, _, y, _) -> x <=> y, t) == Some((-44, 4))
 
-    // TODO: Adapt these tests
     @test
-    def minimumBy08(): Bool & Impure =
+    def minimumBy05(): Bool & Impure = // This test fails. How do we observe the sequential path?
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, range) |> List.toMap;
         let a = Array.new(-1, 2000);
         let i = ref 0;
-        RedBlackTree.count((_, v) -> { a[deref i] = v; i := 1 + deref i; true }, t);
+        RedBlackTree1.minimumBy((_, x, _, y) -> { a[deref i] = x; i := 1 + deref i; x <=> y }, t);
         Array.sameElements(a, List.toArray(range))
 
     @test
-    def minimumBy09(): Bool & Impure =
+    def minimumBy06(): Bool & Impure = // This test fails. How do we observe the sequential path?
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, range) |> List.toMap;
         let a = MutList.new();
-        RedBlackTree.count((_, v) -> { let b = MutList.new(); MutList.push!(v, b); MutList.append!(a, b); true }, t);
+        RedBlackTree1.minimumBy((_, x, _, y) -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(a, b); x <=> y }, t);
+        MutList.toList(a) |> println;
         MutList.eq(a, List.toMutList(range))
+
+    @test
+    def minimumBy07(): Bool =
+        let range = List.range(0, 2000);
+        let Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
+        RedBlackTree1.minimumBy((_, x, _, y) -> x <=> y, t) == Some(1999, 0)
 
 }
