@@ -344,7 +344,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def bar(): Int = C.foo(E(123))    // E(123) has type E[_], not E[true]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.NoMatchingInstance](result)
+    expectError[TypeError.MissingInstance](result)
   }
 
   test("NoMatchingInstance.Relation.01") {
