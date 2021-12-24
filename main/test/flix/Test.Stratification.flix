@@ -82,10 +82,10 @@ namespace Test/Stratification {
     def testStratification10(): Unit =
         // `_a` and `_b` will not be in the same stratification since they do not include
         // the `Diff_10` of the other.
-        let _a = #{
+        let _a: #{ A10(Int), B10(Int), DiffA10(Int) } = #{
             A10(x) :- B10(x), DiffA10(_).
         };
-        let _b = #{
+        let _b: #{ B10(Int), A10(Int), DiffB10(Int) } = #{
             B10(x) :- not A10(x), DiffB10(x).
         };
         ()
@@ -94,14 +94,14 @@ namespace Test/Stratification {
     def testStratification11(): Unit =
         // `_b` and `_c` will not be in the same stratification since they do not include
         // the `Diff_11` of the other.
-        let _a = #{
+        let _a: #{ A11(Int), B11(Int), C11(Int) } = #{
             C11(12).
             A11(x) :- B11(x).
         };
-        let _b = #{
+        let _b: #{ A11(Int), B11(Int), C11(Int), DiffB11() } = #{
             B11(x) :- not C11(x), A11(x), DiffB11().
         };
-        let _c = #{
+        let _c: #{ A11(Int), B11(Int), C11(Int), DiffC11() } = #{
             B11(12).
             C11(x) :- A11(x), DiffC11().
         };
@@ -110,10 +110,10 @@ namespace Test/Stratification {
     @test
     def testStratification12(): Unit =
         // `_a` and `_b` will not be in the same stratification since they differ on the arity of `B12`.
-        let _a = #{
+        let _a: #{ A12(Int), B12(Int), C12(Int) } = #{
             A12(x) :- B12(x), C12(x).
         };
-        let _b = #{
+        let _b: #{ B12(Int, Int), A12(Int), C12(Int) } = #{
             B12(x, 2) :- not A12(x), C12(x).
         };
         ()
@@ -121,10 +121,10 @@ namespace Test/Stratification {
     @test
     def testStratification13(): Unit =
         // `_a` and `_b` will not be in the same stratification since they differ on the arity of `C13`.
-        let _a = #{
+        let _a: #{ A13(Int), B13(Int), C13(Int) } = #{
             A13(x) :- B13(x), C13(x).
         };
-        let _b = #{
+        let _b: #{ A13(Int), B13(Int), C13(Int, Int) }= #{
             B13(x) :- not A13(x), C13(x, 12).
         };
         ()
@@ -132,10 +132,10 @@ namespace Test/Stratification {
     @test
     def testStratification14(): Unit =
         // `_a` and `_b` will not be in the same stratification since they differ on the arity of `C14.
-        let _a = #{
+        let _a: #{ A14(Int), B14(Int), C14() } = #{
             A14(x) :- B14(x), C14().
         };
-        let _b = #{
+        let _b: #{ A14(Int), B14(Int), C14(Int) } = #{
             B14(x) :- not A14(x), C14(x).
         };
         ()
