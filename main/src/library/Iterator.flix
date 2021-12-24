@@ -434,11 +434,14 @@ namespace Iterator {
     ///
     pub def unfoldWithOk(f: Unit -> Result[a, b] & ef): Iterator[a] & Impure =
         let cursor = ref None;
-        let done = () -> match f() {
-            case Err(_) => true
-            case Ok(x)  =>
-                cursor := Some(x);
-                false
+        let done = () -> match deref cursor {
+            case None    => match f() {
+                case Err(_) => true
+                case Ok(x)  =>
+                    cursor := Some(x);
+                    false
+            }
+            case Some(_) => false
         };
         let next = () -> match deref cursor {
             case None    => bug!("Empty Iterator!")
