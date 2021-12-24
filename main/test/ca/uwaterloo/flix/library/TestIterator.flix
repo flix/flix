@@ -41,6 +41,34 @@ namespace TestIterator {
         Iterator.next(iter);
         Iterator.next(iter) == Some(2)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isEmpty (idempotency)                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def isEmpty01(): Bool & Impure =
+        Iterator.empty() |> Iterator.isEmpty
+
+    @test
+    def isEmpty02(): Bool & Impure =
+        let iter = Iterator.singleton(1);
+        let _ = invokeIsEmpty(100, iter);
+        Iterator.toList(iter) == 1 :: Nil
+
+    ///
+    /// Helper function that invokes `Iterator.isEmpty` `n` times.
+    ///
+    def invokeIsEmpty(n: Int32, iter: Iterator[a]): Bool & Impure =
+        def loop(m) =
+            if (m <= 0)
+                true
+            else {
+                Iterator.isEmpty(iter);
+                loop(m - 1)
+            };
+        loop(n)
+
     /////////////////////////////////////////////////////////////////////////////
     // range                                                                   //
     /////////////////////////////////////////////////////////////////////////////
