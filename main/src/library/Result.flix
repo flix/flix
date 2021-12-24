@@ -172,6 +172,17 @@ namespace Result {
     }
 
     ///
+    /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
+    ///
+    /// The function f must be pure.
+    ///
+    @Time(time(f)) @Space(space(f))
+    pub def foldRightL(f: (t, Lazy[a]) -> a, r: Result[t, e], z: a): a = match r {
+        case Ok(v) => f(v, lazy z)
+        case Err(_) => z
+    }
+
+    ///
     /// Returns `Ok(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Ok(v_i)`.
     /// Otherwise returns the first `Err` encountered.
     ///
