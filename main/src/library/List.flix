@@ -400,18 +400,15 @@ namespace List {
     }
 
     ///
-    /// Returns the reverse of `xs`.
+    /// Returns the reverse of `l`.
     ///
-    @Time(length(xs)) @Space(length(xs))
-    pub def reverse(xs: List[a]): List[a] = reverseHelper(xs, Nil)
-
-    ///
-    /// Helper function for `reverse`.
-    ///
-    def reverseHelper(xs: List[a], acc: List[a]): List[a] = match xs {
-        case Nil => acc
-        case x :: rs => reverseHelper(rs, x :: acc)
-    }
+    @Time(length(l)) @Space(length(l))
+    pub def reverse(l: List[a]): List[a] =
+        def loop(xs, acc) = match xs {
+            case Nil     => acc
+            case x :: rs => loop(rs, x :: acc)
+        };
+        loop(l, Nil)
 
     ///
     /// Returns `xs` with its elements rotated `n` positions to the left.
