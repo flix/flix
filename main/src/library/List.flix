@@ -897,23 +897,23 @@ namespace List {
     }
 
     ///
-    /// Returns the first `n` elements of `xs`.
+    /// Returns the first `n` elements of `l`.
     ///
-    /// Returns `xs` if `n > length(xs)`.
+    /// Returns `l` if `n > length(xs)`.
     /// Returns `Nil` if `n < 0`.
     ///
     @Time(n) @Space(n)
-    pub def take(n: Int32, xs: List[a]): List[a] = takeHelper(n, xs, ks -> ks)
-
-    ///
-    /// Helper function for `take`.
-    ///
-    def takeHelper(n: Int32, xs: List[a], k: List[a] -> List[a]): List[a] =
-        if (n < 0) k(Nil) else match (n, xs) {
-            case (_, Nil) => k(Nil)
-            case (0, _) => k(Nil)
-            case (i, x :: rs) => takeHelper(i-1, rs, ks -> k(x :: ks))
-        }
+    pub def take(n: Int32, l: List[a]): List[a] =
+        def loop(m, xs, k) =
+            if (m < 0)
+                k(Nil)
+            else
+                match (m, xs) {
+                    case (_, Nil)     => k(Nil)
+                    case (0, _)       => k(Nil)
+                    case (i, x :: rs) => loop(i - 1, rs, ks -> k(x :: ks))
+                };
+        loop(n, l, ks -> ks)
 
     ///
     /// Returns the longest prefix of `xs` that satisfies the predicate `f`.
