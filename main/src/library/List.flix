@@ -752,27 +752,20 @@ namespace List {
         loop(l)
 
     ///
-    /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
+    /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
     ///
-    /// Returns `true` if `xs` is empty.
+    /// Returns `true` if `l` is empty.
     ///
-    /// The function `f` must be pure.
-    ///
-    @Time(time(f) * length(xs)) @Space(space(f))
-    pub def forall(f: a -> Bool & ef, xs: List[a]): Bool & ef = match xs {
-        case Nil => true
-        case x :: rs => if (not f(x)) false else forall(f, rs)
-    }
-
-
-
-
-
+    @Time(time(f) * length(l)) @Space(space(f))
+    pub def forall(f: a -> Bool & ef, l: List[a]): Bool & ef =
+        def loop(xs) = match xs {
+            case Nil     => true
+            case x :: rs => if (not f(x)) false else loop(rs)
+        };
+        loop(l)
 
     ///
     /// Returns a list of every element in `l` that satisfies the predicate `f`.
-    ///
-    /// The function `f` must be pure.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def filter(f: a -> Bool & ef, l: List[a]): List[a] & ef =
