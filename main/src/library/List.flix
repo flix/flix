@@ -739,17 +739,17 @@ namespace List {
     }
 
     ///
-    /// Returns `true` if and only if at least one element in `xs` satisfies the predicate `f`.
+    /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
     ///
-    /// Returns `false` if `xs` is empty.
+    /// Returns `false` if `l` is empty.
     ///
-    /// The function `f` must be pure.
-    ///
-    @Time(time(f) * length(xs)) @Space(space(f))
-    pub def exists(f: a -> Bool, xs: List[a]): Bool = match xs {
-        case Nil => false
-        case x :: rs => if (f(x)) true else exists(f, rs)
-    }
+    @Time(time(f) * length(l)) @Space(space(f))
+    pub def exists(f: a -> Bool & ef, l: List[a]): Bool & ef =
+        def loop(xs) = match xs {
+            case Nil     => false
+            case x :: rs => if (f(x)) true else loop(rs)
+        };
+        loop(l)
 
     ///
     /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
