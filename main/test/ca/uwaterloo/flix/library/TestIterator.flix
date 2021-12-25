@@ -104,6 +104,30 @@ namespace TestIterator {
         let _ = invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 5 :: 7 :: 9 :: Nil
 
+    @test
+    def isEmpty10(): Bool & Impure = // flatMap
+        let i = (1 :: 2 :: 3 :: Nil) |> List.toIterator;
+        let iter = Iterator.flatMap(x -> Iterator.singleton(x + 1), i);
+        let _ = invokeIsEmpty(100, iter);
+        Iterator.toList(iter) == 2 :: 3 :: 4 :: Nil
+
+    @test
+    def isEmpty11(): Bool & Impure = // intersperse
+        let i = (1 :: 2 :: 3 :: Nil) |> List.toIterator;
+        let iter = Iterator.intersperse(5, i);
+        let _ = invokeIsEmpty(100, iter);
+        Iterator.toList(iter) == 1 :: 5 :: 2 :: 5 :: 3 :: Nil
+
+    @test
+    def isEmpty12(): Bool & Impure = // intercalate
+        let iterA  = (11 :: 12 :: 13 :: Nil) |> List.toIterator;
+        let iterB0 = (1 :: Nil) |> List.toIterator;
+        let iterB1 = (2 :: 3 :: Nil) |> List.toIterator;
+        let iterB  = (iterB0 :: iterB1 :: Nil) |> List.toIterator;
+        let iter = Iterator.intercalate(iterA, iterB);
+        let _ = invokeIsEmpty(100, iter);
+        Iterator.toList(iter) == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: Nil
+
     ///
     /// Helper function that invokes `Iterator.isEmpty` `n` times.
     ///
