@@ -303,7 +303,7 @@ namespace List {
 
 
     ///
-    /// Returns the result of applying `f` to every element in `xs`.
+    /// Returns the result of applying `f` to every element in `l`.
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
@@ -648,14 +648,16 @@ namespace List {
     pub def fold(xs: List[a]): a with Monoid[a] = Foldable.fold(xs)
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
+    /// Applies `f` to a start value `s` and all elements in `l` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, xs: List[a]): b & ef = match xs {
-        case Nil => s
-        case x :: rs => foldLeft(f, f(s, x), rs)
-    }
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: List[a]): b & ef =
+         def loop(g, t, xs) = match xs {
+            case Nil     => t
+            case x :: rs => loop(g, g(t, x), rs)
+         };
+         loop(f, s, l)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from right to left.
