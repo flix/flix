@@ -191,9 +191,9 @@ namespace List {
         reduceLeft(Order.maxBy(cmp), xs)
 
     ///
-    /// Returns the position of `a` in `xs`.
+    /// Returns the position of `a` in `l`.
     ///
-    /// Returns `-1` if `a` does not exist in `xs`.
+    /// Returns `-1` if `a` does not exist in `l`.
     ///
     pub def indexOf(a: a, l: List[a]): Int32 with Eq[a] =
         def loop(xs, acc) = match xs {
@@ -675,7 +675,7 @@ namespace List {
                                   // but the intermediate continuations are effect polymorphic
 
     ///
-    /// Lazily applies `f` to a start value `s` and all elements in `xs` going from right to left.
+    /// Lazily applies `f` to a start value `s` and all elements in `l` going from right to left.
     /// The function f must be pure.
     ///
     /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
@@ -820,8 +820,6 @@ namespace List {
     ///
     /// `ys` contains all elements of `xs` that satisfy the predicate `f`.
     /// `zs` contains all elements of `xs` that do not satisfy the predicate `f`.
-    ///
-    /// The function `f` must be pure.
     ///
     @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
     pub def partition(f: a -> Bool & ef, xs: List[a]): (List[a], List[a]) & ef = partitionHelper(f, xs, (ks, ls) -> (ks, ls))
@@ -1197,8 +1195,6 @@ namespace List {
 
     ///
     /// Applies `f` to every element of `xs`.
-    ///
-    /// The function `f` must be impure.
     ///
     @Time(time(f)) @Space(space(f))
     pub def foreach(f: a -> Unit & ef, xs: List[a]): Unit & ef = match xs {
