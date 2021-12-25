@@ -241,13 +241,13 @@ namespace List {
     /// Returns `Nil` if `b >= e`.
     ///
     @Time(e - b) @Space(e - b)
-    pub def range(b: Int32, e: Int32): List[Int32] = rangeHelper(b, e, xs -> xs)
-
-    ///
-    /// Helper function for `range`.
-    ///
-    def rangeHelper(b: Int32, e: Int32, k: List[Int32] -> List[Int32]): List[Int32] =
-        if (b >= e) k(Nil) else rangeHelper(b + 1, e, xs -> k(b :: xs))
+    pub def range(b: Int32, e: Int32): List[Int32] =
+        def loop(n, k) =
+            if (n >= e)
+                k(Nil)
+            else
+                loop(n + 1, ks -> k(n :: ks));
+        loop(b, ks -> ks)
 
     ///
     /// Returns a list with the element `a` repeated `n` times.
