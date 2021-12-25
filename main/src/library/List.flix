@@ -871,17 +871,22 @@ namespace List {
     }
 
     ///
-    /// Returns `xs` without the first `n` elements.
+    /// Returns `l` without the first `n` elements.
     ///
-    /// Returns `Nil` if `n > length(xs)`.
-    /// Returns `xs` if `n < 0`.
+    /// Returns `Nil` if `n > length(l)`.
+    /// Returns `l` if `n < 0`.
     ///
-    @Time(n) @Space(length(xs) - n)
-    pub def drop(n: Int32, xs: List[a]): List[a] = if (n < 0) xs else match (n, xs) {
-        case (_, Nil) => Nil
-        case (0, _) => xs
-        case (i, _ :: rs) => drop(i - 1, rs)
-    }
+    @Time(n) @Space(length(l) - n)
+    pub def drop(n: Int32, l: List[a]): List[a] =
+        def loop(m, xs) =
+            if (m <= 0)
+                xs
+            else
+                match (m, xs) {
+                    case (_, Nil)     => Nil
+                    case (i, _ :: rs) => loop(i - 1, rs)
+                };
+        loop(n, l)
 
     ///
     /// Returns `xs` without the longest prefix that satisfies the predicate `f`.
