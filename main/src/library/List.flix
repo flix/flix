@@ -660,21 +660,17 @@ namespace List {
          loop(s, l)
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `xs` going from right to left.
+    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, xs: List[a]): b & ef =
-        foldRightHelper(f, s, xs, s1 -> s1 as & ef) // NB: Cast required because the identity continuation is pure,
-                                                    // but the intermediate continuations are effect polymorphic
-
-    ///
-    /// Helper function for `foldRight`.
-    ///
-    def foldRightHelper(f: (a, b) -> b & ef, s: b, xs: List[a], k: b -> b & ef): b & ef = match xs {
-        case Nil => k(s)
-        case x :: rs => foldRightHelper(f, s, rs, s1 -> k(f(x, s1)))
-    }
+    pub def foldRight(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef =
+        def loop(xs, k) = match xs {
+            case Nil     => k(s)
+            case x :: rs => loop(rs, ks -> k(f(x, ks)))
+        };
+        loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
+                                  // but the intermediate continuations are effect polymorphic
 
     ///
     /// Lazily applies `f` to a start value `s` and all elements in `xs` going from right to left.
