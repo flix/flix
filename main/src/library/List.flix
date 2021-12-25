@@ -770,18 +770,17 @@ namespace List {
 
 
     ///
-    /// Returns a list of every element in `xs` that satisfies the predicate `f`.
+    /// Returns a list of every element in `l` that satisfies the predicate `f`.
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(xs)) @Space(space(f) * length(xs))
-    pub def filter(f: a -> Bool & ef, xs: List[a]): List[a] & ef = filterAcc(f, xs, Nil) |> List.reverse
-
-    pub def filterAcc(f: a -> Bool & ef, l: List[a], rs: List[a]): List[a] & ef = match l {
-        case Nil => rs
-        case x :: xs =>
-            if (f(x)) filterAcc(f, xs, x :: rs) else filterAcc(f, xs, rs)
-    }
+    @Time(time(f) * length(l)) @Space(space(f) * length(l))
+    pub def filter(f: a -> Bool & ef, l: List[a]): List[a] & ef =
+        def loop(xs, k) = match xs {
+            case Nil     => k(Nil)
+            case x :: rs => if (f(x)) loop(rs, ks -> k(x :: ks)) else loop(rs, k)
+        };
+        loop(l, ks -> ks)
 
     ///
     /// Returns the sublist of `xs` without the last element.
