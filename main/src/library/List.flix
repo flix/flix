@@ -653,11 +653,11 @@ namespace List {
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: List[a]): b & ef =
-         def loop(g, t, xs) = match xs {
+         def loop(t, xs) = match xs {
             case Nil     => t
-            case x :: rs => loop(g, g(t, x), rs)
+            case x :: rs => loop(f(t, x), rs)
          };
-         loop(f, s, l)
+         loop(s, l)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from right to left.
