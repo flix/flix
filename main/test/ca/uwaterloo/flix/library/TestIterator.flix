@@ -94,7 +94,7 @@ namespace TestIterator {
         let i2 = (4 :: 5 :: 6 :: Nil) |> List.toIterator;
         let iter = Iterator.zip(i1, i2);
         let _ = invokeIsEmpty(100, iter);
-        Iterator.toList(iter) == 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil
+        Iterator.toList(iter) == (1, 4) :: (2, 5) :: (3, 6) :: Nil
 
     @test
     def isEmpty09(): Bool & Impure = // lazyZipWith
