@@ -88,6 +88,22 @@ namespace TestIterator {
         let _ = invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil
 
+    @test
+    def isEmpty08(): Bool & Impure = // zip
+        let i1 = (1 :: 2 :: 3 :: Nil) |> List.toIterator;
+        let i2 = (4 :: 5 :: 6 :: Nil) |> List.toIterator;
+        let iter = Iterator.zip(i1, i2);
+        let _ = invokeIsEmpty(100, iter);
+        Iterator.toList(iter) == 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil
+
+    @test
+    def isEmpty09(): Bool & Impure = // lazyZipWith
+        let i1 = (1 :: 2 :: 3 :: Nil) |> List.toIterator;
+        let i2 = (4 :: 5 :: 6 :: Nil) |> List.toIterator;
+        let iter = Iterator.lazyZipWith((x, y) -> x + y, i1, i2);
+        let _ = invokeIsEmpty(100, iter);
+        Iterator.toList(iter) == 5 :: 7 :: 9 :: Nil
+
     ///
     /// Helper function that invokes `Iterator.isEmpty` `n` times.
     ///
