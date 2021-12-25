@@ -148,13 +148,15 @@ namespace List {
     }
 
     ///
-    /// Returns `true` if and only if `xs` contains the element `a`.
+    /// Returns `true` if and only if `l` contains the element `x`.
     ///
-    @Time(length(xs)) @Space(1)
-    pub def memberOf(a: a, xs: List[a]): Bool with Eq[a] = match xs {
-        case Nil => false
-        case x :: rs => if (x == a) true else memberOf(a, rs)
-    }
+    @Time(length(l)) @Space(1)
+    pub def memberOf(x: a, l: List[a]): Bool with Eq[a] =
+        def loop(ys) = match ys {
+            case Nil     => false
+            case y :: rs => if (x == y) true else loop(rs)
+        };
+        loop(l)
 
     ///
     /// Optionally finds the smallest element of `xs` according to the `Order` on `a`.
