@@ -130,15 +130,12 @@ namespace List {
     /// Returns the length of `xs`.
     ///
     @Time(length(xs)) @Space(1)
-    pub def length(xs: List[a]): Int32 = lengthHelper(xs, 0)
-
-    ///
-    /// Helper function for `length`.
-    ///
-    def lengthHelper(xs: List[a], ac: Int32): Int32 = match xs {
-        case _ :: rs => lengthHelper(rs, ac + 1)
-        case Nil => ac
-    }
+    pub def length(xs: List[a]): Int32 =
+        def loop(ys, acc) = match ys {
+            case Nil     => acc
+            case _ :: rs => loop(rs, acc + 1)
+        };
+        loop(xs, 0)
 
     ///
     /// Returns `ys` appended to `xs`.
