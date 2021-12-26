@@ -302,15 +302,6 @@ namespace TestRedBlackTree {
     def count08(): Bool & Impure =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, range) |> List.toMap;
-        let a = Array.new(-1, 2000);
-        let i = ref 0;
-        RedBlackTree.count((_, v) -> { a[deref i] = v; i := 1 + deref i; true }, t);
-        Array.sameElements(a, List.toArray(range))
-
-    @test
-    def count09(): Bool & Impure =
-        let range = List.range(0, 2000);
-        let Map(t) = List.zip(range, range) |> List.toMap;
         let a = MutList.new();
         RedBlackTree.count((_, v) -> { let b = MutList.new(); MutList.push!(v, b); MutList.append!(a, b); true }, t);
         MutList.eq(a, List.toMutList(range))
@@ -341,25 +332,33 @@ namespace TestRedBlackTree {
         RedBlackTree.minimumBy((x, _, y, _) -> x <=> y, t) == Some((-44, 4))
 
     @test
-    def minimumBy05(): Bool & Impure = // This test fails. How do we observe the sequential path?
-        let range = List.range(0, 2000);
-        let Map(t) = List.zip(range, range) |> List.toMap;
-        let a = Array.new(-1, 2000);
-        let i = ref 0;
-        RedBlackTree.minimumBy((_, x, _, y) -> { a[deref i] = x; i := 1 + deref i; x <=> y }, t);
-        Array.sameElements(a, List.toArray(range))
-
-    @test
-    def minimumBy06(): Bool & Impure = // This test fails. How do we observe the sequential path?
-        let range = List.range(0, 2000);
+    def minimumBy05(): Bool & Impure =
+        /*
+         * This test checks that the tree is traversed sequentially
+         * and is tightly coupled to the implementation.
+         * Since the keys and values are equal, the left-most / lowest valued key
+         * also holds the lowest value in the tree.
+         * Thus, all comparisons should yield `LessThan`.
+         * Additionally, since every node compares itself with the lowest value of
+         * its left subtree and the result of that is compared with the lowest value
+         * of right subtree, it yields a total of n - 1 comparisons (number of edges).
+         */
+        let n = 2000;
+        let range = List.range(0, n);
         let Map(t) = List.zip(range, range) |> List.toMap;
         let a = MutList.new();
-        RedBlackTree.minimumBy((_, x, _, y) -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(a, b); x <=> y }, t);
-        MutList.toList(a) |> println;
-        MutList.eq(a, List.toMutList(range))
+        RedBlackTree.minimumBy((_, x, _, y) -> {
+            let r = x <=> y;
+            let b = MutList.new();
+            MutList.push!(r, b);
+            MutList.append!(a, b);
+            r
+        }, t);
+        let res = MutList.toList(a);
+        res == List.repeat(n - 1, LessThan)
 
     @test
-    def minimumBy07(): Bool =
+    def minimumBy06(): Bool =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
         RedBlackTree.minimumBy((_, x, _, y) -> x <=> y, t) == Some(1999, 0)
