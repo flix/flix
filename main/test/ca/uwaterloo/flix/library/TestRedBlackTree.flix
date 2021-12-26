@@ -346,7 +346,7 @@ namespace TestRedBlackTree {
         let Map(t) = List.zip(range, range) |> List.toMap;
         let a = Array.new(-1, 2000);
         let i = ref 0;
-        RedBlackTree1.minimumBy((_, x, _, y) -> { a[deref i] = x; i := 1 + deref i; x <=> y }, t);
+        RedBlackTree.minimumBy((_, x, _, y) -> { a[deref i] = x; i := 1 + deref i; x <=> y }, t);
         Array.sameElements(a, List.toArray(range))
 
     @test
@@ -354,7 +354,7 @@ namespace TestRedBlackTree {
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, range) |> List.toMap;
         let a = MutList.new();
-        RedBlackTree1.minimumBy((_, x, _, y) -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(a, b); x <=> y }, t);
+        RedBlackTree.minimumBy((_, x, _, y) -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(a, b); x <=> y }, t);
         MutList.toList(a) |> println;
         MutList.eq(a, List.toMutList(range))
 
@@ -362,6 +362,6 @@ namespace TestRedBlackTree {
     def minimumBy07(): Bool =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
-        RedBlackTree1.minimumBy((_, x, _, y) -> x <=> y, t) == Some(1999, 0)
+        RedBlackTree.minimumBy((_, x, _, y) -> x <=> y, t) == Some(1999, 0)
 
 }
