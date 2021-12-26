@@ -669,37 +669,37 @@ namespace Test/Exp/Binary/Arithmetic {
     def testBinaryRemainder25(): Bool = (-120000000000i64 rem -50000000000i64) == -20000000000i64
 
     @test
-    def testBinaryRemainder41(): Bool = (1200000000000000000000ii rem 200000000000000000000ii) == 0ii
+    def testBinaryRemainder26(): Bool = (1200000000000000000000ii rem 200000000000000000000ii) == 0ii
 
     @test
-    def testBinaryRemainder42(): Bool = (1200000000000000000000ii rem 500000000000000000000ii) == 200000000000000000000ii
+    def testBinaryRemainder27(): Bool = (1200000000000000000000ii rem 500000000000000000000ii) == 200000000000000000000ii
 
     @test
-    def testBinaryRemainder43(): Bool = (-1200000000000000000000ii rem 500000000000000000000ii) == -200000000000000000000ii
+    def testBinaryRemainder28(): Bool = (-1200000000000000000000ii rem 500000000000000000000ii) == -200000000000000000000ii
 
     @test
-    def testBinaryRemainder44(): Bool = (1200000000000000000000ii rem -500000000000000000000ii) == 200000000000000000000ii
+    def testBinaryRemainder29(): Bool = (1200000000000000000000ii rem -500000000000000000000ii) == 200000000000000000000ii
 
     @test
-    def testBinaryRemainder45(): Bool = (-1200000000000000000000ii rem -500000000000000000000ii) == -200000000000000000000ii
+    def testBinaryRemainder30(): Bool = (-1200000000000000000000ii rem -500000000000000000000ii) == -200000000000000000000ii
 
     @test
-    def testBinaryRemainder46(): Bool = (1 rem 0) == 0
+    def testBinaryRemainder31(): Bool = (1 rem 0) == 0
 
     @test
-    def testBinaryRemainder47(): Bool = (1i8 rem 0i8) == 0i8
+    def testBinaryRemainder32(): Bool = (1i8 rem 0i8) == 0i8
 
     @test
-    def testBinaryRemainder48(): Bool = (1i16 rem 0i16) == 0i16
+    def testBinaryRemainder33(): Bool = (1i16 rem 0i16) == 0i16
 
     @test
-    def testBinaryRemainder49(): Bool = (1i32 rem 0i32) == 0i32
+    def testBinaryRemainder34(): Bool = (1i32 rem 0i32) == 0i32
 
     @test
-    def testBinaryRemainder50(): Bool = (1i64 rem 0i64) == 0i64
+    def testBinaryRemainder35(): Bool = (1i64 rem 0i64) == 0i64
 
     @test
-    def testBinaryRemainder51(): Bool = (1ii rem 0ii) == 0ii
+    def testBinaryRemainder36(): Bool = (1ii rem 0ii) == 0ii
 
     @test
     def testBinaryModulo01(): Bool = (1200000 mod 200000) == 0
@@ -777,37 +777,37 @@ namespace Test/Exp/Binary/Arithmetic {
     def testBinaryModulo25(): Bool = (-120000000000i64 mod -50000000000i64) == -20000000000i64
 
     @test
-    def testBinaryModulo41(): Bool = (1200000000000000000000ii mod 200000000000000000000ii) == 0ii
+    def testBinaryModulo26(): Bool = (1200000000000000000000ii mod 200000000000000000000ii) == 0ii
 
     @test
-    def testBinaryModulo42(): Bool = (1200000000000000000000ii mod 500000000000000000000ii) == 200000000000000000000ii
+    def testBinaryModulo27(): Bool = (1200000000000000000000ii mod 500000000000000000000ii) == 200000000000000000000ii
 
     @test
-    def testBinaryModulo43(): Bool = (-1200000000000000000000ii mod 500000000000000000000ii) == 300000000000000000000ii
+    def testBinaryModulo28(): Bool = (-1200000000000000000000ii mod 500000000000000000000ii) == 300000000000000000000ii
 
     @test
-    def testBinaryModulo44(): Bool = (1200000000000000000000ii mod -500000000000000000000ii) == -300000000000000000000ii
+    def testBinaryModulo29(): Bool = (1200000000000000000000ii mod -500000000000000000000ii) == -300000000000000000000ii
 
     @test
-    def testBinaryModulo45(): Bool = (-1200000000000000000000ii mod -500000000000000000000ii) == -200000000000000000000ii
+    def testBinaryModulo30(): Bool = (-1200000000000000000000ii mod -500000000000000000000ii) == -200000000000000000000ii
 
     @test
-    def testBinaryModulo46(): Bool = (1 mod 0) == 0
+    def testBinaryModulo31(): Bool = (1 mod 0) == 0
 
     @test
-    def testBinaryModulo47(): Bool = (1i8 mod 0i8) == 0i8
+    def testBinaryModulo32(): Bool = (1i8 mod 0i8) == 0i8
 
     @test
-    def testBinaryModulo48(): Bool = (1i16 mod 0i16) == 0i16
+    def testBinaryModulo33(): Bool = (1i16 mod 0i16) == 0i16
 
     @test
-    def testBinaryModulo49(): Bool = (1i32 mod 0i32) == 0i32
+    def testBinaryModulo34(): Bool = (1i32 mod 0i32) == 0i32
 
     @test
-    def testBinaryModulo50(): Bool = (1i64 mod 0i64) == 0i64
+    def testBinaryModulo35(): Bool = (1i64 mod 0i64) == 0i64
 
     @test
-    def testBinaryModulo51(): Bool = (1ii mod 0ii) == 0ii
+    def testBinaryModulo36(): Bool = (1ii mod 0ii) == 0ii
 
     @test
     def testBinaryExponentiate01(): Bool = (2 ** 0) == 1
