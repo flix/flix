@@ -664,8 +664,16 @@ namespace RedBlackTree {
             case _       => seqMinimumBy(cmp, t)
         }
 
+    ///
+    /// Applies `cmp` over the tree `t` in parallel and optionally returns the lowest
+    /// element according to `cmp`.
+    ///
+    /// The implementation spawns `n` threads each applying `cmp` sequentially
+    /// from left to right on some subtree that is disjoint from the rest of
+    /// the threads.
+    ///
     @Parallel
-    pub def parMinimumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] & Impure =
+    def parMinimumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] & Impure =
         if (n <= 0)
             parSeqMinimumBy(cmp, t)
         else
@@ -692,8 +700,14 @@ namespace RedBlackTree {
                     }
             }
 
-    // TODO: Naming scheme should follow the other similarly named function or they should be changed to match this
-    pub def parSeqMinimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef = match t {
+    ///
+    /// Applies `cmp` over the tree `t` sequentially and optionally returns the lowest
+    /// element according to `cmp`.
+    ///
+    /// Note that this is equivalent to `seqMinimumBy` but for performance reasons -- to avoid
+    /// megamorphic calls -- we use a copy here.
+    ///
+    def parSeqMinimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef = match t {
         case Leaf                   => None
         case DoubleBlackLeaf        => None
         case Node(_, a, k, v, b)    =>
@@ -710,7 +724,11 @@ namespace RedBlackTree {
             }
     }
 
-    pub def seqMinimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef = match t {
+    ///
+    /// Applies `cmp` over the tree `t` sequentially and optionally returns the lowest
+    /// element according to `cmp`.
+    ///
+    def seqMinimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef = match t {
         case Leaf                   => None
         case DoubleBlackLeaf        => None
         case Node(_, a, k, v, b)    =>
