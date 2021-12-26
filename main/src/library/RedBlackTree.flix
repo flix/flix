@@ -728,20 +728,7 @@ namespace RedBlackTree {
     /// Applies `cmp` over the tree `t` sequentially and optionally returns the lowest
     /// element according to `cmp`.
     ///
-    def seqMinimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef = match t {
-        case Leaf                   => None
-        case DoubleBlackLeaf        => None
-        case Node(_, a, k, v, b)    =>
-            def smallest(kl, vl, kr, vr) = if (cmp(kl, vl, kr, vr) == LessThan) (kl, vl) else (kr, vr);
-            let res = match seqMinimumBy(cmp, a) {
-                case None         => (k, v)
-                case Some(kl, vl) => smallest(kl, vl, k, v)
-            };
-            match seqMinimumBy(cmp, b) {
-                case None         => Some(res)
-                case Some(kr, vr) =>
-                    let (ks, vs) = res;
-                    Some(smallest(ks, vs, kr, vr))
-            }
-    }
+    def seqMinimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
+        reduceLeft((k1, v1, k2, v2) -> if (cmp(k1, v1, k2, v2) == LessThan) (k1, v1) else (k2, v2), t)
+
 }
