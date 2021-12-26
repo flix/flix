@@ -136,7 +136,8 @@ namespace Map {
     /// Returns `None` if `m` is empty.
     ///
     pub def minimumBy(cmp: (k, v, k, v) -> Comparison, m: Map[k, v]): Option[(k, v)] =
-        reduceLeftWithKey((k1, v1, k2, v2) -> if (cmp(k1, v1, k2, v2) == LessThan) (k1, v1) else (k2, v2), m)
+        let Map(t) = m;
+        RedBlackTree.minimumBy(cmp, t)
 
     ///
     /// Optionally finds `k => v` where `k` is the largest key according to the `Order` instance of `k`.
