@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkName
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{InterfaceMethod, InstanceField, InstanceMethod, StaticField}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.{InstanceField, InstanceMethod, InterfaceMethod, StaticField}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, RootPackage}
 
@@ -76,7 +76,7 @@ object BackendObjType {
 
 
   case object Unit extends BackendObjType {
-    val InstanceField: StaticField = StaticField(this.jvmName, "INSTANCE", this.toTpe)
+    def InstanceField: StaticField = StaticField(this.jvmName, "INSTANCE", this.toTpe)
   }
 
   case object BigInt extends BackendObjType
@@ -88,7 +88,7 @@ object BackendObjType {
   case class Lazy(tpe: BackendType) extends BackendObjType
 
   case class Ref(tpe: BackendType) extends BackendObjType {
-    val ValueField: InstanceField = InstanceField(this.jvmName, "value", tpe)
+    def ValueField: InstanceField = InstanceField(this.jvmName, "value", tpe)
   }
 
   case class Tuple(elms: List[BackendType]) extends BackendObjType
@@ -96,45 +96,52 @@ object BackendObjType {
   //case class Enum(sym: Symbol.EnumSym, args: List[BackendType]) extends BackendObjType
 
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType {
-    val continuation: BackendObjType.Continuation = Continuation(result.toErased)
+    def continuation: BackendObjType.Continuation = Continuation(result.toErased)
 
-    val ResultField: InstanceField = continuation.ResultField
+    def ResultField: InstanceField = continuation.ResultField
 
-    val InvokeMethod: InstanceMethod = continuation.InvokeMethod
-    val UnwindMethod: InstanceMethod = continuation.UnwindMethod
+    def InvokeMethod: InstanceMethod = continuation.InvokeMethod
+
+    def UnwindMethod: InstanceMethod = continuation.UnwindMethod
   }
 
   case class Continuation(result: BackendType) extends BackendObjType {
-    val ResultField: InstanceField = InstanceField(this.jvmName, "result", result)
+    def ResultField: InstanceField = InstanceField(this.jvmName, "result", result)
 
-    val InvokeMethod: InstanceMethod = InstanceMethod(this.jvmName, "invoke", mkDescriptor()(this.toTpe))
-    val UnwindMethod: InstanceMethod = InstanceMethod(this.jvmName, "unwind", mkDescriptor()(result))
+    def InvokeMethod: InstanceMethod = InstanceMethod(this.jvmName, "invoke", mkDescriptor()(this.toTpe))
+
+    def UnwindMethod: InstanceMethod = InstanceMethod(this.jvmName, "unwind", mkDescriptor()(result))
   }
 
   case object RecordEmpty extends BackendObjType {
-    val interface: BackendObjType.Record.type = Record
+    def interface: BackendObjType.Record.type = Record
 
-    val InstanceField: StaticField = StaticField(this.jvmName, "INSTANCE", this.toTpe)
+    def InstanceField: StaticField = StaticField(this.jvmName, "INSTANCE", this.toTpe)
 
-    val LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName)
-    val RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName)
+    def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName)
+
+    def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName)
   }
 
   case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType {
-    val interface: BackendObjType.Record.type = Record
+    def interface: BackendObjType.Record.type = Record
 
-    val LabelField: InstanceField = InstanceField(this.jvmName, "label", BackendObjType.String.toTpe)
-    val ValueField: InstanceField = InstanceField(this.jvmName, "value", value)
-    val RestField: InstanceField = InstanceField(this.jvmName, "rest", interface.toTpe)
+    def LabelField: InstanceField = InstanceField(this.jvmName, "label", BackendObjType.String.toTpe)
 
-    val LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName)
-    val RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName)
+    def ValueField: InstanceField = InstanceField(this.jvmName, "value", value)
+
+    def RestField: InstanceField = InstanceField(this.jvmName, "rest", interface.toTpe)
+
+    def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName)
+
+    def RestrictFieldMethod: InstanceMethod = interface.RestrictFieldMethod.implementation(this.jvmName)
   }
 
   case object Record extends BackendObjType {
-    val LookupFieldMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "lookupField",
+    def LookupFieldMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "lookupField",
       mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.Record.toTpe))
-    val RestrictFieldMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "restrictField",
+
+    def RestrictFieldMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "restrictField",
       mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.Record.toTpe))
   }
 

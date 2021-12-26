@@ -43,7 +43,7 @@ object VoidableType {
   * Represents all Flix types that are not objects on the JVM (array is an exception).
   */
 sealed trait BackendType extends VoidableType {
-  val toDescriptor: String = this match {
+  def toDescriptor: String = this match {
     case BackendType.Bool => "Z"
     case BackendType.Char => "C"
     case BackendType.Int8 => "B"
