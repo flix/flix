@@ -135,7 +135,8 @@ namespace Map {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def minimumBy(cmp: (k, v, k, v) -> Comparison, m: Map[k, v]): Option[(k, v)] =
+    @ParallelWhenPure
+    pub def minimumBy(cmp: (k, v, k, v) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
         let Map(t) = m;
         RedBlackTree.minimumBy(cmp, t)
 
