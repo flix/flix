@@ -354,8 +354,7 @@ namespace TestRedBlackTree {
             MutList.append!(a, b);
             r
         }, t);
-        let res = MutList.toList(a);
-        res == List.repeat(n - 1, LessThan)
+        MutList.toList(a) == List.repeat(n - 1, LessThan)
 
     @test
     def minimumBy06(): Bool =
