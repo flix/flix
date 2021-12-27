@@ -23,6 +23,24 @@ enum DelayMap[k, v] {
 namespace DelayMap {
 
     ///
+    /// Returns the number of threads to use for parallel evaluation.
+    ///
+    def threads(): Int32 =
+        // Note: We use a multiple of the number of physical cores for better performance.
+        let multiplier = 4;
+        multiplier * Environment.getVirtualProcessors()
+
+    ///
+    /// Determines whether to use parallel evaluation.
+    ///
+    /// By default we only enable parallel evaluation if the map has a certain size.
+    ///
+    def useParallelEvaluation(m: DelayMap[k, v]): Bool =
+        let DMap(t) = m;
+        let minSize = 2 ** RedBlackTree.blackHeight(t);
+        minSize >= 1024
+
+    ///
     /// Returns the empty map.
     ///
     @Experimental
@@ -208,7 +226,7 @@ namespace DelayMap {
     ///
     /// Returns a map with mappings `k -> f(k, v)` for every `k -> v` in `m`.
     ///
-    @Experimental @LazyWhenPure
+    @Experimental @LazyWhenPure @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef =
         let f1 = (args) -> f(fst(args), snd(args));
         reifyEff(f1) {
@@ -219,22 +237,25 @@ namespace DelayMap {
     ///
     /// Helper function for `mapWithKey`. Applies `f` lazily.
     ///
-    @Lazy
+    @Lazy @ParallelWhenPure
     def mapWithKeyL(f: (k, v1) -> v2, m: DelayMap[k, v1]): DelayMap[k, v2] =
-        let DMap(tree) = m;
-        let f1 = (k, v) -> lazy f(k, force v);
-        DMap(RedBlackTree.mapWithKey(f1, tree))
+        let DMap(t) = m;
+        let g = (k, v) -> lazy f(k, force v);
+        if (useParallelEvaluation(m))
+            DMap(RedBlackTree.parMapWithKey(threads() - 1, g, t)) as & Pure
+        else
+            DMap(RedBlackTree.seqMapWithKey(g, t))
 
     ///
     /// Helper function for `mapWithKey`. Applies `f` eagerly.
     ///
     def mapWithKeyE(f: (k, v1) -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef =
-        let DMap(tree) = m;
-        let f1 = (k, v) -> {
+        let DMap(t) = m;
+        let g = (k, v) -> {
                 let x1 = f(k, force v);
                 lazy x1
             };
-        DMap(RedBlackTree.mapWithKey(f1, tree))
+        DMap(RedBlackTree.seqMapWithKey(g, t))
 
     ///
     /// Returns a map of all mappings `k -> v` in `m` where `v` satisfies the predicate `f`.
@@ -416,10 +437,13 @@ namespace DelayMap {
     ///
     /// Returns `m` as a Map, i.e. every value is forced.
     ///
-    @Experimental
+    @Experimental @Parallel
     pub def toMap(m: DelayMap[k, v]): Map[k, v] =
         let DMap(t) = m;
-        Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
+        if (useParallelEvaluation(m))
+            Map(RedBlackTree.parMapWithKey(threads() - 1, (_, v) -> force v, t)) as & Pure
+        else
+            Map(RedBlackTree.seqMapWithKey((_, v) -> force v, t))
 
     ///
     /// Updates `m` with `k -> f(v)` if `k -> v` is in `m`.
@@ -489,9 +513,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def toMutMap(m: DelayMap[k, v]): MutMap[k, v] & Impure =
-        let DMap(t) = m;
-        let t1 = t |> RedBlackTree.mapWithKey((_, v) -> force v);
-        MutMap(ref Map(t1))
+        MutMap(ref toMap(m))
 
     ///
     /// Returns the map `m` as a set of key-value pairs.

@@ -201,61 +201,63 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // mapWithKey                                                              //
+    // seqMapWithKey                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
+    // TODO: Add tests for parMapWithKey
+
     @test
-    def mapWithKey01(): Bool =
+    def seqMapWithKey01(): Bool =
         let Map(t) = Map#{}: Map[Int32, Int32];
-        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == Map#{}
+        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{}
 
     @test
-    def mapWithKey02(): Bool =
+    def seqMapWithKey02(): Bool =
         let Map(t) = Map#{1 => 4};
-        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == Map#{1 => 5}
+        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{1 => 5}
 
     @test
-    def mapWithKey03(): Bool =
+    def seqMapWithKey03(): Bool =
         let Map(t) = Map#{2 => -1, 0 => 0};
-        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == Map#{2 => 1, 0 => 0}
+        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{2 => 1, 0 => 0}
 
     @test
-    def mapWithKey04(): Bool =
+    def seqMapWithKey04(): Bool =
         let Map(t) = Map#{2 => -1, 5 => 15, 11 => -9};
-        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == Map#{2 => 1, 5 => 20, 11 => 2}
+        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{2 => 1, 5 => 20, 11 => 2}
 
     @test
-    def mapWithKey05(): Bool =
+    def seqMapWithKey05(): Bool =
         let Map(t) = Map#{2 => -1, 5 => 15, 11 => -9, 8 => 8};
-        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == Map#{2 => 1, 5 => 20, 11 => 2, 8 => 16}
+        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{2 => 1, 5 => 20, 11 => 2, 8 => 16}
 
     @test
-    def mapWithKey06(): Bool =
+    def seqMapWithKey06(): Bool =
         let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
         let expected = List.zip(List.range(0, 2000), List.range(1, 2001)) |> List.toMap;
-        Map(RedBlackTree.mapWithKey((_, v) -> v + 1, t)) == expected
+        Map(RedBlackTree.seqMapWithKey((_, v) -> v + 1, t)) == expected
 
     @test
-    def mapWithKey07(): Bool =
+    def seqMapWithKey07(): Bool =
         let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         let expected = List.zip(List.range(0, 2000), List.range(-999, 1001)) |> List.toMap;
-        Map(RedBlackTree.mapWithKey((_, v) -> v + 1, t)) == expected
+        Map(RedBlackTree.seqMapWithKey((_, v) -> v + 1, t)) == expected
 
     @test
-    def mapWithKey08(): Bool & Impure =
+    def seqMapWithKey08(): Bool & Impure =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, range) |> List.toMap;
         let a = Array.new(-1, 2000);
         let i = ref 0;
-        RedBlackTree.mapWithKey((_, v) -> { a[deref i] = v; i := 1 + deref i; v }, t);
+        RedBlackTree.seqMapWithKey((_, v) -> { a[deref i] = v; i := 1 + deref i; v }, t);
         Array.sameElements(a, List.toArray(range))
 
     @test
-    def mapWithKey09(): Bool & Impure =
+    def seqMapWithKey09(): Bool & Impure =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, range) |> List.toMap;
         let a = MutList.new();
-        RedBlackTree.mapWithKey((_, v) -> { let b = MutList.new(); MutList.push!(v, b); MutList.append!(a, b); v }, t);
+        RedBlackTree.seqMapWithKey((_, v) -> { let b = MutList.new(); MutList.push!(v, b); MutList.append!(a, b); v }, t);
         MutList.eq(a, List.toMutList(range))
 
 

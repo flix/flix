@@ -397,7 +397,16 @@ namespace Map {
     @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef with Order[k] =
         let Map(t) = m;
-        Map(RedBlackTree.mapWithKey(f, t))
+        let f1 = r -> f(r.k, r.v);
+        reifyEff(f1) {
+            case Pure(g) =>
+                let g1 = (k, v) -> g({k = k, v = v});
+                if (useParallelEvaluation(m))
+                    Map(RedBlackTree.parMapWithKey(threads() - 1, g1, t)) as & Pure
+                else
+                    Map(RedBlackTree.seqMapWithKey(g1, t))
+            case _  => Map(RedBlackTree.seqMapWithKey(f, t))
+        }
 
     ///
     /// Alias for `foldLeftWithKey`.
@@ -729,6 +738,10 @@ namespace Map {
     ///
     pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] = {
         let Map(t) = m;
-        DMap(RedBlackTree.mapWithKey((_, v) -> lazy v, t))
+        let f = (_, v) -> lazy v;
+        if (useParallelEvaluation(m))
+            DMap(RedBlackTree.parMapWithKey(threads() - 1, f, t)) as & Pure
+        else
+            DMap(RedBlackTree.seqMapWithKey(f, t))
     }
 }

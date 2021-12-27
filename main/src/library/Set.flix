@@ -68,7 +68,7 @@ namespace Set {
     ///
     /// Determines whether to use parallel evaluation.
     ///
-    /// By default we only enable parallel evaluation if the map has a certain size.
+    /// By default we only enable parallel evaluation if the set has a certain size.
     ///
     def useParallelEvaluation(s: Set[a]): Bool =
         let Set(t) = s;

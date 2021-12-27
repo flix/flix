@@ -492,24 +492,6 @@ namespace RedBlackTree {
     }
 
     ///
-    /// Returns a RedBlackTree with mappings `k -> f(k, v)` for every `k -> v` in `t`.
-    ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def mapWithKey(f: (k, v1) -> v2 & ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & ef =
-        let f1 = (r) -> f(r.k, r.v);
-        reifyEff(f1) {
-            case Pure(g) =>
-                let g1 = (k, v) -> g({k = k, v = v});
-                if (useParallelEvaluation(t))
-                    parMapWithKey(threads() - 1, g1, t) as & Pure
-                else
-                    seqMapWithKey(g1, t)
-            case _  => seqMapWithKey(f, t)
-        }
-
-    ///
     /// Maps `f` over the tree `t` in parallel.
     ///
     /// The implementation spawns `n` threads each applying `f` sequentially
@@ -568,7 +550,7 @@ namespace RedBlackTree {
     }
 
     ///
-    /// Returns the number of mappings in `m` that satisfy the predicate `f`.
+    /// Returns the number of mappings `k => v` in `t` that satisfy the predicate `f`.
     ///
     /// Purity polymorphic: Runs in parallel when given a pure function `f`.
     ///
