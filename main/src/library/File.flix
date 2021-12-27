@@ -188,19 +188,16 @@ namespace File {
     ///
     /// Reads all lines from the given buffered reader `r` until it is empty.
     ///
-    def readAll(r: ##java.io.BufferedReader): List[String] & Impure = List.reverse(readAllHelper(r, Nil))
-
-    ///
-    /// Helper function for readAll.
-    /// Reads all lines from the buffered reader `r` until it is empty, returning a backward list.
-    ///
-    def readAllHelper(r: ##java.io.BufferedReader, acc: List[String]): List[String] & Impure =
+    def readAll(r: ##java.io.BufferedReader): List[String] & Impure =
         import java.io.BufferedReader.readLine();
-        let line = readLine(r);
-        if (Object.isNull(line))
-            acc
-        else
-            readAllHelper(r, line :: acc)
+        def loop(k) = {
+            let l = readLine(r);
+            if (Object.isNull(l))
+                k(Nil)
+            else
+                loop(ks -> k(l :: ks))
+        };
+        loop(identity)
 
     ///
     /// Returns a list of all the lines in the given file `f` with the options `opts`.
