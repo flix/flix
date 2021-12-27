@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.Kind.Bool
-import ca.uwaterloo.flix.language.ast.{Kind, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 object FormatType {
@@ -90,22 +90,34 @@ object FormatType {
 
       base match {
         case None => tpe match {
-          case Type.KindedVar(id, kind, loc, rigidity, text) => audience match {
-            case Audience.Internal => kind match {
-              // TODO: We need a systematic way to print type variables, their kind, and rigidity.
-              // TODO: We need to rid ourselves of alpha renaming. Its too brittle. We need something else.
-              case Bool => s"''$id"
-              case _ => s"'$id"
+          case Type.KindedVar(id, kind, _, rigidity, text) =>
+            val prefix: String = kind match {
+              case Kind.Wild => "_" + id.toString
+              case Kind.Star => "t" + id
+              case Kind.Bool => "b" + id
+              case Kind.RecordRow => "r" + id
+              case Kind.SchemaRow => "s" + id
+              case Kind.Predicate => "'" + id.toString
+              case Kind.Arrow(_, _) => "'" + id.toString
             }
-            case Audience.External => text match {
-              case None => s"'$id"
-              case Some(t) => t
+            val suffix = rigidity match {
+              case Rigidity.Flexible => ""
+              case Rigidity.Rigid => "!"
             }
-          }
+            val s = prefix + suffix
+            audience match {
+              case Audience.Internal => s
+              case Audience.External => text.getOrElse(s)
+            }
+
           case Type.Apply(tpe1, tpe2, loc) => s"${visit(tpe1)}[${visit(tpe2)}]"
+
           case Type.Alias(cst, aliasArgs, _, _) => formatApply(cst.sym.name, aliasArgs ++ args)
+
           case _: Type.Cst => throw InternalCompilerException("Unexpected type.")
+
           case _: Type.Ascribe => throw InternalCompilerException("Unexpected type.")
+
           case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected type.")
         }
 
