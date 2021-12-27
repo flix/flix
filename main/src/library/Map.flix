@@ -495,12 +495,21 @@ namespace Map {
 
 
     ///
-    /// Returns the number of mappings in `m` that satisfy the predicate `f`.
+    /// Returns the number of mappings `k => v` in `m` that satisfy the predicate `f`.
     ///
     @ParallelWhenPure
     pub def count(f: (k, v) -> Bool & ef, m: Map[k, v]): Int32 & ef =
         let Map(t) = m;
-        RedBlackTree.count(f, t)
+        let f1 = r -> f(r.k, r.v);
+        reifyEff(f1) {
+            case Pure(g) =>
+                let g1 = (k, v) -> g({k = k, v = v});
+                if (useParallelEvaluation(m))
+                    RedBlackTree.parCount(threads() - 1, g1, t) as & Pure
+                else
+                    RedBlackTree.seqCount(g1, t)
+            case _  => RedBlackTree.seqCount(f, t)
+        }
 
     ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.
