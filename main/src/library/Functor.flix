@@ -36,13 +36,21 @@ class Functor[m : Type -> Type] {
 }
 
 namespace Functor {
-  ///
-  /// Lifts the function `f` into the functor.
-  ///
-  pub def lift[a: Type, b: Type, ef: Bool, m: Type -> Type](f: a -> b & ef): m[a] -> m[b] & ef with Functor[m] = Functor.map(f)
+    ///
+    /// Lifts the function `f` into the functor.
+    ///
+    pub def lift[a: Type, b: Type, ef: Bool, m: Type -> Type](f: a -> b & ef): m[a] -> m[b] & ef with Functor[m] = Functor.map(f)
 
-  ///
-  /// Replaces the value `a` in `s` by the given value `x` preserving the structure of `s`.
-  ///
-  pub def as[a: Type, b: Type, m: Type -> Type](s: m[a], x: b): m[b] with Functor[m] = Functor.map(_ -> x, s)
+    ///
+    /// Replaces the value `a` in `s` by the given value `x` preserving the structure of `s`.
+    ///
+    pub def as[a: Type, b: Type, m: Type -> Type](s: m[a], x: b): m[b] with Functor[m] = Functor.map(_ -> x, s)
+
+    ///
+    /// Replaces the value `a` in `s` with `Unit` preserving the structure of `s`.
+    ///
+    /// This function is typically used to discard the return value of computing `s`.
+    ///
+    pub def ignore(s: m[a]): m[Unit] with Functor[m] = s `Functor.as` ()
+
 }

@@ -50,3 +50,53 @@ pub class Monad[m : Type -> Type] with Applicative[m] {
     ///
     law apCorrespondence: forall(f: m[a -> b], x: m[a]) with Eq[m[b]] . Applicative.ap(f, x) == Monad.flatMap(g -> Monad.flatMap(y -> Applicative.point(g(y)), x), f)
 }
+
+
+namespace Monad {
+
+    use Applicative.{point};
+
+    ///
+    /// The monadic `join` operator.
+    /// Collapse `x` - a monadic action nested in an outer monadic layer - to a single layer.
+    ///
+    /// E.g. for the Option monad: `join(Some(Some(1)))` becomes `Some(1)`.
+    ///
+    pub def join(x: m[m[a]]): m[a] with Monad[m] = flatMap(identity, x)
+
+    ///
+    /// Chain the evaluation of the monadic actions `x` and `k`.
+    /// The result of `x` is mapped by the monadic function `k`.
+    ///
+    pub def bind(x: m[a], k: a -> m[b] & ef): m[b] & ef with Monad[m] = flatMap(k, x)
+
+    ///
+    /// The left-to-right Kleisli composition operator for monads.
+    ///
+    /// Map `x` with the monadic function `f1` and then map its result with the function `f2`.
+    ///
+    pub def kleisliLeft(f1: a -> m[b] & ef1, f2: b -> m[c] & ef2, x: a): m[c] & (ef1 and ef2) with Monad[m] =
+        bind(f1(x), x1 -> f2(x1))
+
+    ///
+    /// The right-to-left Kleisli composition operator for monads.
+    ///
+    /// Map `x` with the monadic function `f2` and then map its result with the function `f1`.
+    ///
+    pub def kleisliRight(f1: b -> m[c] & ef1, f2: a -> m[b] & ef2, x: a): m[c] & (ef1 and ef2) with Monad[m] =
+        bind(f2(x), x1 -> f1(x1))
+
+
+    ///
+    /// Perform the monadic action `f` only when `x` evaluates to true.
+    ///
+    pub def whenTrueM(x: m[Bool], f: m[Unit]): m[Unit] with Monad[m] =
+        bind(x, x1 -> if (x1) f else point(()))
+
+    ///
+    /// Perform the monadic action `f` only when `x` evaluates to false.
+    ///
+    pub def whenFalseM(x: m[Bool], f: m[Unit]): m[Unit] with Monad[m] =
+        bind(x, x1 -> if (not x1) f else point(()))
+
+}
