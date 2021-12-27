@@ -24,14 +24,6 @@ pub lawless class Mod[a] {
     pub def mod(x: a, n: a): a
 }
 
-instance Mod[Float32] {
-    pub def mod(x: Float32, n: Float32): Float32 = $FLOAT32_REM$($FLOAT32_REM$(x, n) + n, n)
-}
-
-instance Mod[Float64] {
-    pub def mod(x: Float64, n: Float64): Float64 = $FLOAT64_REM$($FLOAT64_REM$(x, n) + n, n)
-}
-
 instance Mod[Int8] {
     pub def mod(x: Int8, n: Int8): Int8 =
         if (n == 0i8)
