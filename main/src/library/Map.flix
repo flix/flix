@@ -153,7 +153,7 @@ namespace Map {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
     ///
     @ParallelWhenPure
     pub def minimumKeyBy(cmp: (k, k) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
@@ -167,6 +167,36 @@ namespace Map {
                 else
                     RedBlackTree.seqMinimumBy(h, t)
             case _       => RedBlackTree.seqMinimumBy((kl, _, kr, _) -> cmp(kl, kr), t)
+        }
+
+    ///
+    /// Optionally finds `k -> v` where `v` is the smallest value.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    @Parallel
+    pub def minimumValue(m: Map[k, v]): Option[(k, v)] with Order[v] =
+        minimumValueBy((x, y) -> x <=> y, m)
+
+    ///
+    /// Optionally finds `k -> v` where `v` is the smallest value according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
+    ///
+    @ParallelWhenPure
+    pub def minimumValueBy(cmp: (v, v) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
+        let Map(t) = m;
+        let f = r -> cmp(r.vl, r.vr);
+        reifyEff(f) {
+            case Pure(g) =>
+                let h = (_, vl, _, vr) -> g({vl = vl, vr = vr});
+                if (useParallelEvaluation(m))
+                    RedBlackTree.parMinimumBy(threads() - 1, h, t) as & Pure
+                else
+                    RedBlackTree.seqMinimumBy(h, t)
+            case _       => RedBlackTree.seqMinimumBy((_, vl, _, vr) -> cmp(vl, vr), t)
         }
 
 
