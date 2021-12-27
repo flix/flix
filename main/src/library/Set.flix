@@ -141,12 +141,14 @@ namespace Set {
         RedBlackTree.minimum(es) |> Option.map(fst)
 
     ///
-    /// Optionally finds the smallest element of `xs` according to the given comparator `cmp`.
+    /// Optionally finds the smallest element of `s` according to the given comparator `cmp`.
     ///
-    /// Returns `None` if `xs` is empty.
+    /// Returns `None` if `s` is empty.
     ///
-    pub def minimumBy(cmp: (a, a) -> Comparison, xs: Set[a]): Option[a] =
-        reduceLeft(Order.minBy(cmp), xs)
+    @ParallelWhenPure
+    pub def minimumBy(cmp: (a, a) -> Comparison & ef, s: Set[a]): Option[a] & ef =
+        let Set(t) = s;
+        RedBlackTree.minimumBy((k1, _, k2, _) -> cmp(k1, k2), t) |> Option.map(fst)
 
     ///
     /// Optionally finds the largest element of `xs` according to the `Order` on `a`.
