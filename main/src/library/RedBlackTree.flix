@@ -643,4 +643,92 @@ namespace RedBlackTree {
             let b1 = seqCount(f, b);
             a1 + v1 + b1
     }
+
+    ///
+    /// Optionally finds `k -> v` where `k` is the smallest key according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def minimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
+        let f = r -> cmp(r.k1, r.v1, r.k2, r.v2);
+        reifyEff(f) {
+            case Pure(g) =>
+                let g1 = (k1, v1, k2, v2) -> g({k1 = k1, v1 = v1, k2 = k2, v2 = v2});
+                if (useParallelEvaluation(t))
+                    parMinimumBy(threads() - 1, g1, t) as & Pure
+                else
+                    seqMinimumBy(g1, t)
+            case _       => seqMinimumBy(cmp, t)
+        }
+
+    ///
+    /// Applies `cmp` over the tree `t` in parallel and optionally returns the lowest
+    /// element according to `cmp`.
+    ///
+    /// The implementation spawns `n` threads each applying `cmp` sequentially
+    /// from left to right on some subtree that is disjoint from the rest of
+    /// the threads.
+    ///
+    @Parallel
+    def parMinimumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] & Impure =
+        if (n <= 0)
+            parSeqMinimumBy(cmp, t)
+        else
+            match t {
+                case Leaf                => None
+                case DoubleBlackLeaf     => None
+                case Node(_, a, k, v, b) =>
+                    let chanL = chan Option[(k, v)] 1;
+                    let chanR = chan Option[(k, v)] 1;
+                    spawn (chanL <- parMinimumBy((n - 2) / 2, cmp, a));
+                    spawn (chanR <- parMinimumBy((n - 2) / 2, cmp, b));
+                    def smallest(kl, vl, kr, vr) = if (cmp(kl, vl, kr, vr) == LessThan) (kl, vl) else (kr, vr);
+                    let a1 = <- chanL;
+                    let res = match a1 {
+                        case None         => (k, v)
+                        case Some(kl, vl) => smallest(kl, vl, k, v)
+                    };
+                    let b1 = <- chanR;
+                    match b1 {
+                        case None         => Some(res)
+                        case Some(kr, vr) =>
+                            let (ks, vs) = res;
+                            Some(smallest(ks, vs, kr, vr))
+                    }
+            }
+
+    ///
+    /// Applies `cmp` over the tree `t` sequentially and optionally returns the lowest
+    /// element according to `cmp`.
+    ///
+    /// Note that this is equivalent to `seqMinimumBy` but for performance reasons -- to avoid
+    /// megamorphic calls -- we use a copy here.
+    ///
+    def parSeqMinimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef = match t {
+        case Leaf                   => None
+        case DoubleBlackLeaf        => None
+        case Node(_, a, k, v, b)    =>
+            def smallest(kl, vl, kr, vr) = if (cmp(kl, vl, kr, vr) == LessThan) (kl, vl) else (kr, vr);
+            let res = match parSeqMinimumBy(cmp, a) {
+                case None         => (k, v)
+                case Some(kl, vl) => smallest(kl, vl, k, v)
+            };
+            match parSeqMinimumBy(cmp, b) {
+                case None         => Some(res)
+                case Some(kr, vr) =>
+                    let (ks, vs) = res;
+                    Some(smallest(ks, vs, kr, vr))
+            }
+    }
+
+    ///
+    /// Applies `cmp` over the tree `t` sequentially and optionally returns the lowest
+    /// element according to `cmp`.
+    ///
+    def seqMinimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
+        reduceLeft((k1, v1, k2, v2) -> if (cmp(k1, v1, k2, v2) == LessThan) (k1, v1) else (k2, v2), t)
+
 }
