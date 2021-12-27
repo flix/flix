@@ -54,6 +54,24 @@ instance Order[Map[k, v]] with Order[k], Order[v] {
 namespace Map {
 
     ///
+    /// Returns the number of threads to use for parallel evaluation.
+    ///
+    def threads(): Int32 =
+        // Note: We use a multiple of the number of physical cores for better performance.
+        let multiplier = 4;
+        multiplier * Environment.getVirtualProcessors()
+
+    ///
+    /// Determines whether to use parallel evaluation.
+    ///
+    /// By default we only enable parallel evaluation if the map has a certain size.
+    ///
+    def useParallelEvaluation(m: Map[k, v]): Bool =
+        let Map(t) = m;
+        let minSize = 2 ** RedBlackTree.blackHeight(t);
+        minSize >= 1024
+
+    ///
     /// Returns the size of `m`.
     ///
     @Time(size(m)) @Space(Int32.log2(size(m)))
@@ -126,19 +144,31 @@ namespace Map {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def minimum(m: Map[k, v]): Option[(k, v)] =
-        let Map(xs) = m;
-        RedBlackTree.minimum(xs)
+    pub def minimumKey(m: Map[k, v]): Option[(k, v)] =
+        let Map(t) = m;
+        RedBlackTree.minimum(t)
 
     ///
-    /// Optionally finds `k => v` where `k` is the smallest key according to the given comparator `cmp`.
+    /// Optionally finds `k -> v` where `k` is the smallest key according to the given comparator `cmp`.
     ///
     /// Returns `None` if `m` is empty.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
     @ParallelWhenPure
-    pub def minimumBy(cmp: (k, v, k, v) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
+    pub def minimumKeyBy(cmp: (k, k) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
         let Map(t) = m;
-        RedBlackTree.minimumBy(cmp, t)
+        let f = r -> cmp(r.kl, r.kr);
+        reifyEff(f) {
+            case Pure(g) =>
+                let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
+                if (useParallelEvaluation(m))
+                    RedBlackTree.parMinimumBy(threads() - 1, h, t) as & Pure
+                else
+                    RedBlackTree.seqMinimumBy(h, t)
+            case _       => RedBlackTree.seqMinimumBy((kl, _, kr, _) -> cmp(kl, kr), t)
+        }
+
 
     ///
     /// Optionally finds `k => v` where `k` is the largest key according to the `Order` instance of `k`.

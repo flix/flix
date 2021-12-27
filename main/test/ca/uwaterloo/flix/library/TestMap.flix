@@ -1814,36 +1814,40 @@ def query18(): Bool =
     def hash05(): Bool = hash(Map#{1 => 'a', 2 => 'b', 3 => 'z', 4 => 'x'}) == hash(Map#{1 => 'a', 2 => 'b', 3 => 'z', 4 => 'x'})
 
     /////////////////////////////////////////////////////////////////////////////
-    // minimum                                                                 //
+    // minimumKey                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def minimum01(): Bool = Map.minimum(Map#{}: Map[Int32, Int32]) == None
+    def minimumKey01(): Bool = Map.minimumKey(Map#{}: Map[Int32, Int32]) == None
 
     @test
-    def minimum02(): Bool = Map.minimum(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((1, 2))
+    def minimumKey02(): Bool = Map.minimumKey(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((1, 2))
 
     @test
-    def minimum03(): Bool = Map.minimum(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((0, 2))
+    def minimumKey03(): Bool = Map.minimumKey(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((0, 2))
 
     @test
-    def minimum04(): Bool = Map.minimum(Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}) == Some((-44, 4))
+    def minimumKey04(): Bool = Map.minimumKey(Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}) == Some((-44, 4))
 
     /////////////////////////////////////////////////////////////////////////////
     // minimumBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def minimumBy01(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
+    def minimumKeyBy01(): Bool =
+        Map.minimumKeyBy((x, y) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
 
     @test
-    def minimumBy02(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((1, 2))
+    def minimumKeyBy02(): Bool =
+        Map.minimumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((1, 2))
 
     @test
-    def minimumBy03(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((0, 2))
+    def minimumKeyBy03(): Bool =
+        Map.minimumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((0, 2))
 
     @test
-    def minimumBy04(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}) == Some((-44, 4))
+    def minimumKeyBy04(): Bool =
+        Map.minimumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}) == Some((-44, 4))
 
     /////////////////////////////////////////////////////////////////////////////
     // maximum                                                                 //
