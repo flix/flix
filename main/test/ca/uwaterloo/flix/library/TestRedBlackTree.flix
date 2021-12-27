@@ -334,6 +334,7 @@ namespace TestRedBlackTree {
     @test
     def seqMinimumBy05(): Bool & Impure =
         // TODO: Simplify this test
+        // TODO: Refactor to use parMinimumBy
         /*
          * This test checks that the tree is traversed sequentially
          * and is tightly coupled to the implementation.
@@ -363,4 +364,5 @@ namespace TestRedBlackTree {
         let Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
         RedBlackTree.seqMinimumBy((_, x, _, y) -> x <=> y, t) == Some(1999, 0)
 
+    // TODO: Add tests for parMinimumBy
 }
