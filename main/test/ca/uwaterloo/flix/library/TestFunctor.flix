@@ -16,7 +16,7 @@
 
 namespace TestFunctor {
 
-    use Functor.{lift};
+    use Functor.{lift, ignore};
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -73,22 +73,22 @@ namespace TestFunctor {
 
     @test
     def ignore01(): Bool =
-        Functor.ignore(None) == None
+        ignore(None) == None
 
     @test
     def ignore02(): Bool =
-        Functor.ignore(Some(1)) == Some(())
+        ignore(Some(1)) == Some(())
 
     @test
     def ignore03(): Bool =
-        Functor.ignore(Nil) == Nil
+        ignore(Nil) == Nil
 
     @test
     def ignore04(): Bool =
-        Functor.ignore(1 :: Nil) == () :: Nil
+        ignore(1 :: Nil) == () :: Nil
 
     @test
     def ignore05(): Bool =
-        Functor.ignore(1 :: 2 :: Nil) == () :: () :: Nil
+        ignore(1 :: 2 :: Nil) == () :: () :: Nil
 
 }

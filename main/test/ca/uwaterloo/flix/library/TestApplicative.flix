@@ -16,125 +16,90 @@
 
 namespace TestApplicative {
 
-    use Applicative.{seqRight, seqLeft, whenTrue, whenFalse};
-
-    // Local definition of a State applicative so we can have observable side-effects
-    // to test `whenTrue` and `whenFalse`.
-
-    opaque type State[s, a] = s -> (s, a) & Impure
-
-    instance Functor[State[s]] {
-        pub def map(f: a -> b & ef, m: State[s, a]): State[s, b] & ef =
-            State(s ->
-                let State(m1) = m;
-                let (s1, a) = m1(s);
-                (s1, f(a)) as & Impure
-            ) as & ef
-    }
-
-    instance Applicative[State[s]] {
-        pub def point(x: a): State[s, a] = State(s -> (s, x) as & Impure)
-        pub def ap(mf: State[s, a -> b & ef], ma: State[s, a]): State[s, b] & ef =
-            State(s ->
-                let State(mf1) = mf;
-                let (s1, f) = mf1(s) as & Impure;
-                let State(ma1) = ma;
-                let (s2, b) = ma1(s1);
-                (s2, f(b)) as & Impure
-            ) as & ef
-    }
-
-    def runState(m: State[s, a], s: s): (s, a) & Impure =
-        let State(m1) = m;
-        m1(s)
-
-    def update(f: s -> s & ef): State[s, Unit] & ef =
-        State(s ->
-            (f(s) as & Impure, ())
-        ) as & ef
+    use Applicative.{product, productLeft, productRight};
 
     /////////////////////////////////////////////////////////////////////////////
-    // seqLeft                                                                 //
+    // product                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def seqLeft01(): Bool =
-        seqLeft(None, Some(2)) == None
+    def product01(): Bool =
+        product(None, Some(2)) == None
 
     @test
-    def seqLeft02(): Bool =
-        seqLeft(Some(1), None) == None
+    def product02(): Bool =
+        product(Some(1), None) == None
 
     @test
-    def seqLeft03(): Bool =
-        seqLeft(Some(1), Some(2)) == Some(1)
+    def product03(): Bool =
+        product(Some(1), Some(2)) == Some(1, 2)
 
     @test
-    def seqLeft04(): Bool =
-        seqLeft(Nil, 2 :: Nil) == Nil
+    def product04(): Bool =
+        product(Nil, 2 :: Nil) == Nil
 
     @test
-    def seqLeft05(): Bool =
-        seqLeft(1 :: Nil, Nil) == Nil
+    def product05(): Bool =
+        product(1 :: Nil, Nil) == Nil
 
     @test
-    def seqLeft06(): Bool =
-        seqLeft(1 :: Nil, 2 :: Nil) == 1 :: Nil
+    def product06(): Bool =
+        product(1 :: Nil, 2 :: Nil) == (1, 2) :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
-    // seqRight                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def seqRight01(): Bool =
-        seqRight(None, Some(2)) == None
-
-    @test
-    def seqRight02(): Bool =
-        seqRight(Some(1), None) == None
-
-    @test
-    def seqRight03(): Bool =
-        seqRight(Some(1), Some(2)) == Some(2)
-
-    @test
-    def seqRight04(): Bool =
-        seqRight(Nil, 2 :: Nil) == Nil
-
-    @test
-    def seqRight05(): Bool =
-        seqRight(1 :: Nil, Nil) == Nil
-
-    @test
-    def seqRight06(): Bool =
-        seqRight(1 :: Nil, 2 :: Nil) == 2 :: Nil
-
-    /////////////////////////////////////////////////////////////////////////////
-    // whenTrue                                                                //
+    // productLeft                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def whenTrue01(): Bool =
-        let ma = whenTrue(true, update(s -> s+100));
-        runState(ma, 0) as & Pure == (100, ())
+    def productLeft01(): Bool =
+        productLeft(None, Some(2)) == None
 
     @test
-    def whenTrue02(): Bool =
-        let ma = whenTrue(false, update(s -> s+100));
-        runState(ma, 0) as & Pure == (0, ())
+    def productLeft02(): Bool =
+        productLeft(Some(1), None) == None
+
+    @test
+    def productLeft03(): Bool =
+        productLeft(Some(1), Some(2)) == Some(1)
+
+    @test
+    def productLeft04(): Bool =
+        productLeft(Nil, 2 :: Nil) == Nil
+
+    @test
+    def productLeft05(): Bool =
+        productLeft(1 :: Nil, Nil) == Nil
+
+    @test
+    def productLeft06(): Bool =
+        productLeft(1 :: Nil, 2 :: Nil) == 1 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
-    // whenFalse                                                               //
+    // productRight                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def whenFalse01(): Bool =
-        let ma = whenFalse(false, update(s -> s+100));
-        runState(ma, 0) as & Pure == (100, ())
+    def productRight01(): Bool =
+        productRight(None, Some(2)) == None
 
     @test
-    def whenFalse02(): Bool =
-        let ma = whenFalse(true, update(s -> s+100));
-        runState(ma, 0) as & Pure == (0, ())
+    def productRight02(): Bool =
+        productRight(Some(1), None) == None
+
+    @test
+    def productRight03(): Bool =
+        productRight(Some(1), Some(2)) == Some(2)
+
+    @test
+    def productRight04(): Bool =
+        productRight(Nil, 2 :: Nil) == Nil
+
+    @test
+    def productRight05(): Bool =
+        productRight(1 :: Nil, Nil) == Nil
+
+    @test
+    def productRight06(): Bool =
+        productRight(1 :: Nil, 2 :: Nil) == 2 :: Nil
 
 }

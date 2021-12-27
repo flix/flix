@@ -125,27 +125,21 @@ pub class Applicative[m : Type -> Type] with Functor[m] {
 namespace Applicative {
 
     ///
+    /// Chain two applicative actions, returns the product of their results.
+    ///
+    pub def product(fa: m[a], fb: m[b]): m[(a, b)] with Applicative[m] =
+        Applicative.liftA2((a, b) -> (a, b), fa, fb)
+
+    ///
     /// Chain two applicative actions, return only the result of the first.
     ///
-    pub def seqLeft(fa: m[a], fb: m[b]): m[a] with Applicative[m] =
+    pub def productLeft(fa: m[a], fb: m[b]): m[a] with Applicative[m] =
         Applicative.liftA2((a, _) -> a, fa, fb)
 
     ///
     /// Chain two applicative actions, return only the result of the second.
     ///
-    pub def seqRight(fa: m[a], fb : m[b]): m[b] with Applicative[m] =
+    pub def productRight(fa: m[a], fb : m[b]): m[b] with Applicative[m] =
         Applicative.liftA2((_, b) -> b, fa, fb)
-
-    ///
-    /// Perform the applicative action `f` only when `x` is true.
-    ///
-    pub def whenTrue(x: Bool, f: m[Unit]): m[Unit] with Applicative[m] =
-        if (x) f else point(())
-
-    ///
-    /// Perform the applicative action `f` only when `x` is false.
-    ///
-    pub def whenFalse(x: Bool, f: m[Unit]): m[Unit] with Applicative[m] =
-        if (not x) f else point(())
 
 }
