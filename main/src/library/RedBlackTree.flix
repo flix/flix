@@ -66,6 +66,7 @@ namespace RedBlackTree {
 
     }
 
+/*
     ///
     /// Returns the number of threads to use for parallel evaluation.
     ///
@@ -82,6 +83,7 @@ namespace RedBlackTree {
     def useParallelEvaluation(t: RedBlackTree[k, v]): Bool =
         let minSize = 2 ** RedBlackTree.blackHeight(t);
         minSize >= 1024
+*/
 
     ///
     /// Returns the number of nodes in `tree`.
@@ -548,24 +550,6 @@ namespace RedBlackTree {
             let b1 = seqMapWithKey(f, b);
             Node(c, a1, k, v1, b1)
     }
-
-    ///
-    /// Returns the number of mappings `k => v` in `t` that satisfy the predicate `f`.
-    ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def count(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Int32 & ef =
-        let f1 = r -> f(r.k, r.v);
-        reifyEff(f1) {
-            case Pure(g) =>
-                let g1 = (k, v) -> g({k = k, v = v});
-                if (useParallelEvaluation(t))
-                    parCount(threads() - 1, g1, t) as & Pure
-                else
-                    seqCount(g1, t)
-            case _  => seqCount(f, t)
-        }
 
     ///
     /// Applies `f` over the tree `t` in parallel and returns the number of elements

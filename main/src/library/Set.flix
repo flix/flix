@@ -287,12 +287,21 @@ namespace Set {
 
 
     ///
-    /// Returns the number of elements in `xs` that satisfy the predicate `f`.
+    /// Returns the number of elements in `s` that satisfy the predicate `f`.
     ///
     @ParallelWhenPure
-    pub def count(f: a -> Bool & ef, xs: Set[a]): Int32 & ef =
-        let Set(t) = xs;
-        RedBlackTree.count((k, _) -> f(k), t)
+    pub def count(f: a -> Bool & ef, s: Set[a]): Int32 & ef =
+        let Set(t) = s;
+        reifyEff(f) {
+            case Pure(g) =>
+                let h = (k, _) -> g(k);
+                if (useParallelEvaluation(s))
+                    RedBlackTree.parCount(threads() - 1, h, t) as & Pure
+                else
+                    RedBlackTree.seqCount(h, t)
+            case _  => RedBlackTree.seqCount((k, _) -> f(k), t)
+        }
+
 
     ///
     /// Returns the union of the elements in `xs`.
