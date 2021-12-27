@@ -58,6 +58,24 @@ instance Foldable[Set] {
 namespace Set {
 
     ///
+    /// Returns the number of threads to use for parallel evaluation.
+    ///
+    def threads(): Int32 =
+        // Note: We use a multiple of the number of physical cores for better performance.
+        let multiplier = 4;
+        multiplier * Environment.getVirtualProcessors()
+
+    ///
+    /// Determines whether to use parallel evaluation.
+    ///
+    /// By default we only enable parallel evaluation if the map has a certain size.
+    ///
+    def useParallelEvaluation(s: Set[a]): Bool =
+        let Set(t) = s;
+        let minSize = 2 ** RedBlackTree.blackHeight(t);
+        minSize >= 1024
+
+    ///
     /// Returns the size of `xs`.
     ///
     @Time(size(xs)) @Space(1)
@@ -148,7 +166,17 @@ namespace Set {
     @ParallelWhenPure
     pub def minimumBy(cmp: (a, a) -> Comparison & ef, s: Set[a]): Option[a] & ef =
         let Set(t) = s;
-        RedBlackTree.minimumBy((k1, _, k2, _) -> cmp(k1, k2), t) |> Option.map(fst)
+        let f = r -> cmp(r.kl, r.kr);
+        reifyEff(f) {
+            case Pure(g) =>
+                let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
+                if (useParallelEvaluation(s))
+                    let o = RedBlackTree.parMinimumBy(threads() - 1, h, t) as & Pure;
+                    Option.map(fst, o)
+                else
+                    RedBlackTree.seqMinimumBy(h, t) |> Option.map(fst)
+            case _       => RedBlackTree.seqMinimumBy((kl, _, kr, _) -> cmp(kl, kr), t) |> Option.map(fst)
+        }
 
     ///
     /// Optionally finds the largest element of `xs` according to the `Order` on `a`.

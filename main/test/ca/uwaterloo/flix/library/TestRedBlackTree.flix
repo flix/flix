@@ -308,31 +308,32 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // minimumBy                                                               //
+    // seqMinimumBy                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def minimumBy01(): Bool =
+    def seqMinimumBy01(): Bool =
         let Map(t) = Map#{}: Map[Int32, Int32];
-        RedBlackTree.minimumBy((x, _, y, _) -> x <=> y, t) == None
+        RedBlackTree.seqMinimumBy((x, _, y, _) -> x <=> y, t) == None
 
     @test
-    def minimumBy02(): Bool =
+    def seqMinimumBy02(): Bool =
         let Map(t) = Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5};
-        RedBlackTree.minimumBy((x, _, y, _) -> x <=> y, t) == Some((1, 2))
+        RedBlackTree.seqMinimumBy((x, _, y, _) -> x <=> y, t) == Some((1, 2))
 
     @test
-    def minimumBy03(): Bool =
+    def seqMinimumBy03(): Bool =
         let Map(t) = Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2};
-        RedBlackTree.minimumBy((x, _, y, _) -> x <=> y, t) == Some((0, 2))
+        RedBlackTree.seqMinimumBy((x, _, y, _) -> x <=> y, t) == Some((0, 2))
 
     @test
-    def minimumBy04(): Bool =
+    def seqMinimumBy04(): Bool =
         let Map(t) = Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2};
-        RedBlackTree.minimumBy((x, _, y, _) -> x <=> y, t) == Some((-44, 4))
+        RedBlackTree.seqMinimumBy((x, _, y, _) -> x <=> y, t) == Some((-44, 4))
 
     @test
-    def minimumBy05(): Bool & Impure =
+    def seqMinimumBy05(): Bool & Impure =
+        // TODO: Simplify this test
         /*
          * This test checks that the tree is traversed sequentially
          * and is tightly coupled to the implementation.
@@ -347,7 +348,7 @@ namespace TestRedBlackTree {
         let range = List.range(0, n);
         let Map(t) = List.zip(range, range) |> List.toMap;
         let a = MutList.new();
-        RedBlackTree.minimumBy((_, x, _, y) -> {
+        RedBlackTree.seqMinimumBy((_, x, _, y) -> {
             let r = x <=> y;
             let b = MutList.new();
             MutList.push!(r, b);
@@ -357,9 +358,9 @@ namespace TestRedBlackTree {
         MutList.toList(a) == List.repeat(n - 1, LessThan)
 
     @test
-    def minimumBy06(): Bool =
+    def seqMinimumBy06(): Bool =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
-        RedBlackTree.minimumBy((_, x, _, y) -> x <=> y, t) == Some(1999, 0)
+        RedBlackTree.seqMinimumBy((_, x, _, y) -> x <=> y, t) == Some(1999, 0)
 
 }

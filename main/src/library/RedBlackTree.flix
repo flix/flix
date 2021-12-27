@@ -645,26 +645,6 @@ namespace RedBlackTree {
     }
 
     ///
-    /// Optionally finds `k -> v` where `k` is the smallest key according to the given comparator `cmp`.
-    ///
-    /// Returns `None` if `m` is empty.
-    ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def minimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
-        let f = r -> cmp(r.k1, r.v1, r.k2, r.v2);
-        reifyEff(f) {
-            case Pure(g) =>
-                let g1 = (k1, v1, k2, v2) -> g({k1 = k1, v1 = v1, k2 = k2, v2 = v2});
-                if (useParallelEvaluation(t))
-                    parMinimumBy(threads() - 1, g1, t) as & Pure
-                else
-                    seqMinimumBy(g1, t)
-            case _       => seqMinimumBy(cmp, t)
-        }
-
-    ///
     /// Applies `cmp` over the tree `t` in parallel and optionally returns the lowest
     /// element according to `cmp`.
     ///
