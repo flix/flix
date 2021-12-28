@@ -256,7 +256,7 @@ namespace TestRedBlackTree {
         let Map(t) = List.zip(range, range) |> List.toMap;
         let a = MutList.new();
         RedBlackTree.mapWithKey((_, v) -> { let b = MutList.new(); MutList.push!(v, b); MutList.append!(a, b); v }, t);
-        MutList.eq(a, List.toMutList(range))
+        MutList.sameElements(a, List.toMutList(range))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -304,7 +304,7 @@ namespace TestRedBlackTree {
         let Map(t) = List.zip(range, range) |> List.toMap;
         let a = MutList.new();
         RedBlackTree.count((_, v) -> { let b = MutList.new(); MutList.push!(v, b); MutList.append!(a, b); true }, t);
-        MutList.eq(a, List.toMutList(range))
+        MutList.sameElements(a, List.toMutList(range))
 
 
     /////////////////////////////////////////////////////////////////////////////

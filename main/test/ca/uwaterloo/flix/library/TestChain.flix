@@ -1234,19 +1234,19 @@ namespace TestChain {
 
     @test
     def toMutList01(): Bool & Impure =
-        Chain.toMutList(Chain.empty(): Chain[Int]) `MutList.eq` List.toMutList(Nil): MutList[Int]
+        Chain.toMutList(Chain.empty(): Chain[Int]) `MutList.sameElements` List.toMutList(Nil): MutList[Int]
 
     @test
     def toMutList02(): Bool & Impure =
-        Chain.toMutList(Chain.singleton(1)) `MutList.eq` List.toMutList(1 :: Nil)
+        Chain.toMutList(Chain.singleton(1)) `MutList.sameElements` List.toMutList(1 :: Nil)
 
     @test
     def toMutList03(): Bool & Impure =
-        Chain.toMutList(List.toChain(1 :: 2 :: Nil)) `MutList.eq` List.toMutList(1 :: 2 :: Nil)
+        Chain.toMutList(List.toChain(1 :: 2 :: Nil)) `MutList.sameElements` List.toMutList(1 :: 2 :: Nil)
 
     @test
     def toMutList04(): Bool & Impure =
-        Chain.toMutList(List.toChain(1 :: 2 :: 3 :: Nil)) `MutList.eq` List.toMutList(1 :: 2 :: 3 :: Nil)
+        Chain.toMutList(List.toChain(1 :: 2 :: 3 :: Nil)) `MutList.sameElements` List.toMutList(1 :: 2 :: 3 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
