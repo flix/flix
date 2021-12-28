@@ -79,4 +79,29 @@ namespace Monad {
         flatMap(x1 -> f1(x1), f2(x))
 
 
+    ///
+    /// `=<<` is an operator alias for `flatMap`.
+    ///
+    pub def =<<(k: a -> m[b] & ef, x: m[a]): m[b] & ef with Monad[m] = flatMap(k, x)
+
+    ///
+    /// `>>=` is the operator `=<<` with its arguments flipped.
+    ///
+    /// `>>=` is the monadic bind operator.
+    ///
+    pub def >>=(x: m[a], k: a -> m[b] & ef): m[b] & ef with Monad[m] = flatMap(k, x)
+
+    ///
+    /// `>=>` is an operator alias for `kleisliLeft`.
+    ///
+    pub def >=>(f1: a -> m[b] & ef1, f2: b -> m[c] & ef2): a -> m[c] & (ef1 and ef2) with Monad[m] = x ->
+        kleisliLeft(f1, f2, x)
+
+
+    ///
+    /// `<=<` is an operator alias for `kleisliRight`.
+    ///
+    pub def <=<(f1: b -> m[c] & ef1, f2: a -> m[b] & ef2): a -> m[c] & (ef1 and ef2) with Monad[m] = x ->
+        kleisliRight(f1, f2, x)
+
 }
