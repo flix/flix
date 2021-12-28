@@ -212,7 +212,7 @@ pub lawless class Foldable[t : Type -> Type] {
         Foldable.foldRight((x, acc) -> if (f(x)) x :: acc else acc, Nil, t)
 
     ///
-    /// Applies `f` to all elements in `t`.
+    /// Applies `f` to each element in `t`.
     ///
     pub def foreach(f: a -> Unit & Impure, t: t[a]): Unit & Impure =
         Foldable.foldLeft((_, x) -> f(x), (), t)
