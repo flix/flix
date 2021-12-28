@@ -121,3 +121,25 @@ pub class Applicative[m : Type -> Type] with Functor[m] {
     ///
     law mapCorrespondence: forall(f: a -> b, x: m[a]) with Eq[m[b]] . Functor.map(f, x) == Applicative.ap(Applicative.point(f), x)
 }
+
+namespace Applicative {
+
+    ///
+    /// Chain two applicative actions, returns the product of their results.
+    ///
+    pub def product(fa: m[a], fb: m[b]): m[(a, b)] with Applicative[m] =
+        Applicative.liftA2((a, b) -> (a, b), fa, fb)
+
+    ///
+    /// Chain two applicative actions, return only the result of the first.
+    ///
+    pub def productLeft(fa: m[a], fb: m[b]): m[a] with Applicative[m] =
+        Applicative.liftA2((a, _) -> a, fa, fb)
+
+    ///
+    /// Chain two applicative actions, return only the result of the second.
+    ///
+    pub def productRight(fa: m[a], fb : m[b]): m[b] with Applicative[m] =
+        Applicative.liftA2((_, b) -> b, fa, fb)
+
+}

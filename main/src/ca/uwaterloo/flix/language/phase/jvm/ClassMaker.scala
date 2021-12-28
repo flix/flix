@@ -54,7 +54,7 @@ sealed trait ClassMaker {
     * Closes the class maker.
     * This should be the last function called on the class maker.
     */
-  def closeClassMaker: Array[Byte] = {
+  def closeClassMaker(): Array[Byte] = {
     visitor.visitEnd()
     visitor.toByteArray
   }

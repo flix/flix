@@ -573,7 +573,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           } yield (constrs1 ++ constrs2, resultType, resultEff)
 
         case SemanticOperator.Float32Op.Add | SemanticOperator.Float32Op.Sub | SemanticOperator.Float32Op.Mul | SemanticOperator.Float32Op.Div
-             | SemanticOperator.Float32Op.Rem | SemanticOperator.Float32Op.Exp =>
+             | SemanticOperator.Float32Op.Exp =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -582,7 +582,7 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Float64Op.Add | SemanticOperator.Float64Op.Sub | SemanticOperator.Float64Op.Mul | SemanticOperator.Float64Op.Div
-             | SemanticOperator.Float64Op.Rem | SemanticOperator.Float64Op.Exp =>
+             | SemanticOperator.Float64Op.Exp =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
