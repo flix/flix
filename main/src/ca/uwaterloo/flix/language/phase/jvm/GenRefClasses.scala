@@ -36,6 +36,6 @@ object GenRefClasses {
     refType.ValueField.mkField(cm, IsPublic, NotFinal)
     cm.mkObjectConstructor(IsPublic)
 
-    cm.closeClassMaker
+    cm.closeClassMaker()
   }
 }
