@@ -37,7 +37,7 @@ object GenUnitClass {
     cm.mkStaticConstructor(genStaticConstructor())
     cm.mkObjectConstructor(IsPrivate)
 
-    cm.closeClassMaker
+    cm.closeClassMaker()
   }
 
   private def genStaticConstructor(): InstructionSet =
