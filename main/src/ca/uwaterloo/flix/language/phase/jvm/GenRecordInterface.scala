@@ -46,6 +46,6 @@ object GenRecordInterface {
     cm.mkAbstractMethod(BackendObjType.Record.LookupFieldFunctionName, stringToInterface)
     cm.mkAbstractMethod(BackendObjType.Record.RestrictFieldFunctionName, stringToInterface)
 
-    cm.closeClassMaker
+    cm.closeClassMaker()
   }
 }
