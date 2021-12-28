@@ -54,23 +54,23 @@ namespace Functor {
     pub def ignore(s: m[a]): m[Unit] with Functor[m] = s `Functor.as` ()
 
     ///
-    /// `<&>` is an operator alias for `map`.
+    /// `<$>` is an operator alias for `map`.
     ///
-    pub def <&>(f: a -> b & ef, x: m[a]): m[b] & ef with Functor[m]= Functor.map(f, x)
+    pub def <$>(f: a -> b & ef, x: m[a]): m[b] & ef with Functor[m]= Functor.map(f, x)
 
     ///
-    /// `<&&>` is the operator `<&>` with its arguments flipped.
+    /// `<$$>` is the operator `<$>` with its arguments flipped.
     ///
-    pub def <&&>(x: m[a], f: a -> b & ef): m[b] & ef with Functor[m]= Functor.map(f, x)
+    pub def <$$>(x: m[a], f: a -> b & ef): m[b] & ef with Functor[m]= Functor.map(f, x)
 
     ///
-    /// `<&` is an operator alias for `as`.
+    /// `<$` is an operator alias for `as`.
     ///
-    pub def <&(x: a, ma: f[b]): f[a] with Functor[f] = Functor.as(ma, x)
+    pub def <$(x: a, ma: f[b]): f[a] with Functor[f] = Functor.as(ma, x)
 
     ///
-    /// `<&` is the operator `&>` with its arguments flipped.
+    /// `<$` is the operator `$>` with its arguments flipped.
     ///
-    pub def &>(ma: f[a], x: b): f[b] with Functor[f] = Functor.as(ma, x)
+    pub def $>(ma: f[a], x: b): f[b] with Functor[f] = Functor.as(ma, x)
 
 }
