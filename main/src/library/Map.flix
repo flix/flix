@@ -166,7 +166,7 @@ namespace Map {
                     RedBlackTree.parMinimumBy(threads() - 1, h, t) as & Pure
                 else
                     RedBlackTree.reduceLeft((kl, vl, kr, vr) -> if (g({kl = kl, kr = kr}) == LessThan) (kl, vl) else (kr, vr), t)
-            case _ => RedBlackTree.reduceLeft((kl, vl, kr, vr) -> if (cmp(kl, kr    ) == LessThan) (kl, vl) else (kr, vr), t)
+            case _ => RedBlackTree.reduceLeft((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), t)
         }
 
     ///
@@ -195,8 +195,8 @@ namespace Map {
                 if (useParallelEvaluation(m))
                     RedBlackTree.parMinimumBy(threads() - 1, h, t) as & Pure
                 else
-                    RedBlackTree.seqMinimumBy(h, t)
-            case _       => RedBlackTree.seqMinimumBy((_, vl, _, vr) -> cmp(vl, vr), t)
+                    RedBlackTree.reduceLeft((kl, vl, kr, vr) -> if (g({vl = vl, vr = vr}) == LessThan) (kl, vl) else (kr, vr), t)
+            case _ => RedBlackTree.reduceLeft((kl, vl, kr, vr) -> if (cmp(vl, vr) == LessThan) (kl, vl) else (kr, vr), t)
         }
 
 
