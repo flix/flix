@@ -28,61 +28,61 @@ namespace TestMutSet {
     @test
     def sameElements02(): Bool & Impure =
         let s = MutSet.empty();
-        MutSet.add!(1, d);
+        MutSet.add!(1, s);
 
         let s2 = MutSet.empty();
-        MutSet.add!(1, d2);
+        MutSet.add!(1, s2);
 
         MutSet.sameElements(s, s2)
 
     @test
     def sameElements03(): Bool & Impure =
         let s = MutSet.empty();
-        MutSet.add!(1, d);
+        MutSet.add!(1, s);
 
         let s2 = MutSet.empty();
-        MutSet.add!(2, d2);
+        MutSet.add!(2, s2);
 
         not MutSet.sameElements(s, s2)
 
     @test
     def sameElements04(): Bool & Impure =
         let s = MutSet.empty();
-        MutSet.add!(1, d);
-        MutSet.add!(2, d);
-        MutSet.add!(3, d);
+        MutSet.add!(1, s);
+        MutSet.add!(2, s);
+        MutSet.add!(3, s);
 
         let s2 = MutSet.empty();
-        MutSet.add!(2, d2);
-        MutSet.add!(3, d2);
-        MutSet.add!(1, d2);
+        MutSet.add!(2, s2);
+        MutSet.add!(3, s2);
+        MutSet.add!(1, s2);
 
         MutSet.sameElements(s, s2)
 
     @test
     def sameElements05(): Bool & Impure =
         let s = MutSet.empty();
-        MutSet.add!("a", d);
-        MutSet.add!("b", d);
-        MutSet.add!("c", d);
+        MutSet.add!("a", s);
+        MutSet.add!("b", s);
+        MutSet.add!("c", s);
 
         let s2 = MutSet.empty();
-        MutSet.add!("c", d2);
-        MutSet.add!("a", d2);
-        MutSet.add!("b", d2);
+        MutSet.add!("c", s2);
+        MutSet.add!("a", s2);
+        MutSet.add!("b", s2);
 
         MutSet.sameElements(s, s2)
 
     @test
     def setSameElements06(): Bool & Impure =
         let s = MutSet.empty();
-        MutSet.add!("a", d);
-        MutSet.add!("b", d);
-        MutSet.add!("c", d);
+        MutSet.add!("a", s);
+        MutSet.add!("b", s);
+        MutSet.add!("c", s);
 
         let s2 = MutSet.empty();
-        MutSet.add!("c", d2);
-        MutSet.add!("a", d2);
+        MutSet.add!("c", s2);
+        MutSet.add!("a", s2);
 
         not MutSet.sameElements(s, s2)
 
