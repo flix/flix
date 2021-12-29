@@ -298,8 +298,8 @@ namespace Set {
                 if (useParallelEvaluation(s))
                     RedBlackTree.parCount(threads() - 1, h, t) as & Pure
                 else
-                    RedBlackTree.seqCount(h, t)
-            case _  => RedBlackTree.seqCount((k, _) -> f(k), t)
+                    RedBlackTree.foldLeft((b, k, _) -> if (g(k)) b + 1 else b, 0, t)
+            case _  => RedBlackTree.foldLeft((b, k, _) -> if (f(k)) b + 1 else b, 0, t)
         }
 
 
