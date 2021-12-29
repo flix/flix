@@ -590,23 +590,9 @@ namespace RedBlackTree {
         case Leaf                   => 0
         case DoubleBlackLeaf        => 0
         case Node(_, a, k, v, b)    =>
-            let a1 = seqCount(f, a);
+            let a1 = parSeqCount(f, a);
             let v1 = if (f(k, v)) 1 else 0;
-            let b1 = seqCount(f, b);
-            a1 + v1 + b1
-    }
-
-    ///
-    /// Applies `f` over the tree `t` sequentially from left to right and returns the number of elements
-    /// that satisfy the predicate `f`.
-    ///
-    pub def seqCount(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Int32 & ef = match t {
-        case Leaf                   => 0
-        case DoubleBlackLeaf        => 0
-        case Node(_, a, k, v, b)    =>
-            let a1 = seqCount(f, a);
-            let v1 = if (f(k, v)) 1 else 0;
-            let b1 = seqCount(f, b);
+            let b1 = parSeqCount(f, b);
             a1 + v1 + b1
     }
 
@@ -669,12 +655,4 @@ namespace RedBlackTree {
                     Some(smallest(ks, vs, kr, vr))
             }
     }
-
-    ///
-    /// Applies `cmp` over the tree `t` sequentially and optionally returns the lowest
-    /// element according to `cmp`.
-    ///
-    pub def seqMinimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
-        reduceLeft((k1, v1, k2, v2) -> if (cmp(k1, v1, k2, v2) == LessThan) (k1, v1) else (k2, v2), t)
-
 }
