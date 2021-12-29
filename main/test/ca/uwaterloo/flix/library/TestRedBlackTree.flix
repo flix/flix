@@ -201,114 +201,48 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // seqMapWithKey                                                           //
+    // Parallel Helper functions                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    // TODO: Add tests for parMapWithKey
+    ///
+    /// Returns the number of threads to use for parallel evaluation.
+    ///
+    def threads(): Int32 =
+        // Note: We use a multiple of the number of physical cores for better performance.
+        let multiplier = 4;
+        multiplier * Environment.getVirtualProcessors()
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parMapWithKey                                                           //
+    /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def seqMapWithKey01(): Bool =
-        let Map(t) = Map#{}: Map[Int32, Int32];
-        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{}
-
-    @test
-    def seqMapWithKey02(): Bool =
-        let Map(t) = Map#{1 => 4};
-        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{1 => 5}
-
-    @test
-    def seqMapWithKey03(): Bool =
-        let Map(t) = Map#{2 => -1, 0 => 0};
-        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{2 => 1, 0 => 0}
-
-    @test
-    def seqMapWithKey04(): Bool =
-        let Map(t) = Map#{2 => -1, 5 => 15, 11 => -9};
-        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{2 => 1, 5 => 20, 11 => 2}
-
-    @test
-    def seqMapWithKey05(): Bool =
-        let Map(t) = Map#{2 => -1, 5 => 15, 11 => -9, 8 => 8};
-        Map(RedBlackTree.seqMapWithKey((k, v) -> k + v, t)) == Map#{2 => 1, 5 => 20, 11 => 2, 8 => 16}
-
-    @test
-    def seqMapWithKey06(): Bool =
+    def parMapWithKey06(): Bool & Impure =
         let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
         let expected = List.zip(List.range(0, 2000), List.range(1, 2001)) |> List.toMap;
-        Map(RedBlackTree.seqMapWithKey((_, v) -> v + 1, t)) == expected
+        Map(RedBlackTree.parMapWithKey(threads() - 1, (_, v) -> v + 1, t)) == expected
 
     @test
-    def seqMapWithKey07(): Bool =
+    def parMapWithKey07(): Bool & Impure =
         let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         let expected = List.zip(List.range(0, 2000), List.range(-999, 1001)) |> List.toMap;
-        Map(RedBlackTree.seqMapWithKey((_, v) -> v + 1, t)) == expected
-
-    @test
-    def seqMapWithKey08(): Bool & Impure =
-        let range = List.range(0, 2000);
-        let Map(t) = List.zip(range, range) |> List.toMap;
-        let a = Array.new(-1, 2000);
-        let i = ref 0;
-        RedBlackTree.seqMapWithKey((_, v) -> { a[deref i] = v; i := 1 + deref i; v }, t);
-        Array.sameElements(a, List.toArray(range))
-
-    @test
-    def seqMapWithKey09(): Bool & Impure =
-        let range = List.range(0, 2000);
-        let Map(t) = List.zip(range, range) |> List.toMap;
-        let a = MutList.new();
-        RedBlackTree.seqMapWithKey((_, v) -> { let b = MutList.new(); MutList.push!(v, b); MutList.append!(a, b); v }, t);
-        MutList.sameElements(a, List.toMutList(range))
+        Map(RedBlackTree.parMapWithKey(threads() - 1, (_, v) -> v + 1, t)) == expected
 
 
     /////////////////////////////////////////////////////////////////////////////
     // seqCount                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    // TODO: Add tests for parCount
-
     @test
-    def seqCount01(): Bool =
-        let Map(t) = Map#{}: Map[Int32, Int32];
-        RedBlackTree.seqCount((k, v) -> k == v, t) == 0
-
-    @test
-    def seqCount02(): Bool =
-        let Map(t) = Map#{1 => 2};
-        RedBlackTree.seqCount((k, v) -> k == v, t) == 0
-
-    @test
-    def seqCount03(): Bool =
-        let Map(t) = Map#{1 => 1};
-        RedBlackTree.seqCount((k, v) -> k == v, t) == 1
-
-    @test
-    def seqCount04(): Bool =
-        let Map(t) = Map#{1 => 2, 2 => 3};
-        RedBlackTree.seqCount((k, v) -> k == v, t) == 0
-
-    @test
-    def seqCount05(): Bool =
-        let Map(t) = Map#{1 => 1, 2 => 3};
-        RedBlackTree.seqCount((k, v) -> k == v, t) == 1
-
-    @test
-    def seqCount06(): Bool =
+    def parCount01(): Bool & Impure =
         let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
-        RedBlackTree.seqCount((k, v) -> k == v, t) == 2000
+        RedBlackTree.parCount(threads() - 1, (k, v) -> k == v, t) == 2000
 
     @test
-    def seqCount07(): Bool =
+    def parCount02(): Bool & Impure =
         let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
-        RedBlackTree.seqCount((k, v) -> k - 1000 == v, t) == 2000
-
-    @test
-    def seqCount08(): Bool & Impure =
-        let range = List.range(0, 2000);
-        let Map(t) = List.zip(range, range) |> List.toMap;
-        let a = MutList.new();
-        RedBlackTree.seqCount((_, v) -> { let b = MutList.new(); MutList.push!(v, b); MutList.append!(a, b); true }, t);
-        MutList.sameElements(a, List.toMutList(range))
+        RedBlackTree.parCount(threads() - 1, (k, v) -> k - 1000 == v, t) == 2000
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -316,57 +250,15 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def seqMinimumBy01(): Bool =
-        let Map(t) = Map#{}: Map[Int32, Int32];
-        RedBlackTree.seqMinimumBy((x, _, y, _) -> x <=> y, t) == None
-
-    @test
-    def seqMinimumBy02(): Bool =
-        let Map(t) = Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5};
-        RedBlackTree.seqMinimumBy((x, _, y, _) -> x <=> y, t) == Some((1, 2))
-
-    @test
-    def seqMinimumBy03(): Bool =
-        let Map(t) = Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2};
-        RedBlackTree.seqMinimumBy((x, _, y, _) -> x <=> y, t) == Some((0, 2))
-
-    @test
-    def seqMinimumBy04(): Bool =
-        let Map(t) = Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2};
-        RedBlackTree.seqMinimumBy((x, _, y, _) -> x <=> y, t) == Some((-44, 4))
-
-    @test
-    def seqMinimumBy05(): Bool & Impure =
-        // TODO: Simplify this test
-        // TODO: Refactor to use parMinimumBy
-        /*
-         * This test checks that the tree is traversed sequentially
-         * and is tightly coupled to the implementation.
-         * Since the keys and values are equal, the left-most / lowest valued key
-         * also holds the lowest value in the tree.
-         * Thus, all comparisons should yield `LessThan`.
-         * Additionally, since every node compares itself with the lowest value of
-         * its left subtree and the result of that is compared with the lowest value
-         * of right subtree, it yields a total of n - 1 comparisons (number of edges).
-         */
-        let n = 2000;
-        let range = List.range(0, n);
+    def parMinimumBy01(): Bool & Impure =
+        let range = List.range(0, 2000);
         let Map(t) = List.zip(range, range) |> List.toMap;
-        let a = MutList.new();
-        RedBlackTree.seqMinimumBy((_, x, _, y) -> {
-            let r = x <=> y;
-            let b = MutList.new();
-            MutList.push!(r, b);
-            MutList.append!(a, b);
-            r
-        }, t);
-        MutList.toList(a) == List.repeat(n - 1, LessThan)
+        RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(0, 0)
 
     @test
-    def seqMinimumBy06(): Bool =
+    def parMinimumBy02(): Bool & Impure =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
-        RedBlackTree.seqMinimumBy((_, x, _, y) -> x <=> y, t) == Some(1999, 0)
+        RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(1999, 0)
 
-    // TODO: Add tests for parMinimumBy
 }
