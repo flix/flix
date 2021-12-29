@@ -44,6 +44,6 @@ object GenRecordInterface {
     BackendObjType.Record.LookupFieldMethod.mkInterfaceMethod(cm)
     BackendObjType.Record.RestrictFieldMethod.mkInterfaceMethod(cm)
 
-    cm.closeClassMaker
+    cm.closeClassMaker()
   }
 }

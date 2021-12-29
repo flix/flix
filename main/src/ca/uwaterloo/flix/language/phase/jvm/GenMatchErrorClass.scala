@@ -48,7 +48,7 @@ object GenMatchErrorClass {
     cm.mkMethod(genEqualsMethod(), "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool), IsPublic, NotFinal)
     cm.mkMethod(genHashCodeMethod(), "hashCode", mkDescriptor()(BackendType.Int32), IsPublic, NotFinal)
 
-    cm.closeClassMaker
+    cm.closeClassMaker()
   }
 
   private def genConstructor(): InstructionSet = {

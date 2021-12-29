@@ -425,7 +425,7 @@ namespace File {
                 Err("An error occurred when writing to the file: '${f}'.")
             }
             else {
-                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+                Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>
@@ -453,14 +453,14 @@ namespace File {
             let javaFile = newFile(f);
             let w = newPrintWriter(javaFile);
 
-            Foldable.foldLeft((_, line) -> println(w, line), (), data);
+            Foldable.foreach(line -> println(w, line), data);
             close(w);
 
             if (checkError(w)) {
                 Err("An error occurred when writing lines to the file: '${f}'.")
             }
             else {
-                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+                Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>
@@ -496,7 +496,7 @@ namespace File {
                 Err("An error occurred when appending to the file: '${f}'.")
             }
             else {
-                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+                Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>
@@ -525,14 +525,14 @@ namespace File {
             let fileWriter = newFileWriter(javaFile, true);
             let printWriter = newPrintWriter(fileWriter as ##java.io.Writer);
 
-            Foldable.foldLeft((_, line) -> println(printWriter, line), (), data);
+            Foldable.foreach(line -> println(printWriter, line), data);
             close(printWriter);
 
             if (checkError(printWriter)) {
                 Err("An error occurred when appending lines to the file: '${f}'.")
             }
             else {
-                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+                Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>
@@ -570,7 +570,7 @@ namespace File {
                 Err("An error occurred when writing to the file: '${f}'.")
             }
             else {
-                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+                Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>
@@ -608,7 +608,7 @@ namespace File {
                 Err("An error occurred when appending to the file: '${f}'.")
             }
             else {
-                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+                Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>
@@ -637,7 +637,7 @@ namespace File {
                 Err("An error occurred when truncating to the file: '${f}'.")
             }
             else {
-                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+                Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>

@@ -63,7 +63,7 @@ object GenContinuationAbstractClasses {
     contType.UnwindMethod.mkMethod(cm, genUnwindMethod(contType), IsPublic, IsFinal)
     cm.mkMethod(genRunMethod(contType), "run", NothingToVoid, IsPublic, IsFinal)
 
-    cm.closeClassMaker
+    cm.closeClassMaker()
   }
 
   private def genUnwindMethod(contType: BackendObjType.Continuation): InstructionSet =

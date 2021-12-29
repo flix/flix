@@ -73,7 +73,7 @@ object GenRecordExtendClasses {
     extendType.LookupFieldMethod.mkMethod(cm, genLookupFieldMethod(extendType), IsPublic, IsFinal)
     extendType.RestrictFieldMethod.mkMethod(cm, genRestrictFieldMethod(extendType), IsPublic, IsFinal)
 
-    cm.closeClassMaker
+    cm.closeClassMaker()
   }
 
   /**
