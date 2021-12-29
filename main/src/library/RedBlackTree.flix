@@ -66,25 +66,6 @@ namespace RedBlackTree {
 
     }
 
-/*
-    ///
-    /// Returns the number of threads to use for parallel evaluation.
-    ///
-    def threads(): Int32 =
-        // Note: We use a multiple of the number of physical cores for better performance.
-        let multiplier = 4;
-        multiplier * Environment.getVirtualProcessors()
-
-    ///
-    /// Determines whether to use parallel evaluation.
-    ///
-    /// By default we only enable parallel evaluation if the tree has a certain size.
-    ///
-    def useParallelEvaluation(t: RedBlackTree[k, v]): Bool =
-        let minSize = 2 ** RedBlackTree.blackHeight(t);
-        minSize >= 1024
-*/
-
     ///
     /// Returns the number of nodes in `tree`.
     ///
