@@ -187,7 +187,6 @@ namespace Console {
     pub def whiteBright(s: String): String =
         rgb(BrightWhite |> toRGB, s, isFg = true)
 
-
     ///
     /// Returns the string `s` with background color of the default black color.
     ///
@@ -237,8 +236,55 @@ namespace Console {
         rgb(BackgroundWhite |> toRGB, s, isFg = false)
 
     ///
+    /// Returns the string `s` with background color of the default black color.
+    ///
+    pub def bgBlackBright(s: String): String =
+        rgb(BackgroundBrightBlack |> toRGB, s, isFg = false)
+
+    ///
+    /// Returns the string `s` with background color of the default red color.
+    ///
+    pub def bgRedBright(s: String): String =
+        rgb(BackgroundBrightRed |> toRGB, s, isFg = false)
+
+    ///
+    /// Returns the string `s` with background color of the default green color.
+    ///
+    pub def bgGreenBright(s: String): String =
+        rgb(Ansi.BackgroundBrightGreen |> toRGB, s, isFg = false)
+
+    ///
+    /// Returns the string `s` with background color of the default yellow color.
+    ///
+    pub def bgYellowBright(s: String): String =
+        rgb(BackgroundBrightYellow |> toRGB, s, isFg = false)
+
+    ///
+    /// Returns the string `s` with background color of the default blue color.
+    ///
+    pub def bgBlueBright(s: String): String =
+        rgb(BackgroundBrightBlue |> toRGB, s, isFg = false)
+
+    ///
+    /// Returns the string `s` with background color of the default magenta color.
+    ///
+    pub def bgMagentaBright(s: String): String =
+        rgb(BackgroundBrightMagenta |> toRGB, s, isFg = false)
+
+    ///
+    /// Returns the string `s` with background color of the default cyan color.
+    ///
+    pub def bgCyanBright(s: String): String =
+        rgb(BackgroundBrightCyan |> toRGB, s, isFg = false)
+
+    ///
+    /// Returns the string `s` with background color of the default white color.
+    ///
+    pub def bgWhiteBright(s: String): String =
+        rgb(BackgroundBrightWhite |> toRGB, s, isFg = false)
+
+    ///
     /// Ansi Colors.
-    /// TODO : add bright bg colors.
     ///
     enum Ansi {
         case Black
@@ -265,6 +311,14 @@ namespace Console {
         case BackgroundMagenta
         case BackgroundCyan
         case BackgroundWhite
+        case BackgroundBrightBlack
+        case BackgroundBrightRed
+        case BackgroundBrightGreen
+        case BackgroundBrightYellow
+        case BackgroundBrightBlue
+        case BackgroundBrightMagenta
+        case BackgroundBrightCyan
+        case BackgroundBrightWhite
     }
 
     ///
@@ -272,30 +326,38 @@ namespace Console {
     ///
     def toAnsi(c: Ansi): Int32 =
         match c {
-            case Ansi.Black             => 30
-            case Ansi.Red               => 31
-            case Ansi.Green             => 32
-            case Ansi.Yellow            => 33
-            case Ansi.Blue              => 34
-            case Ansi.Magenta           => 35
-            case Ansi.Cyan              => 36
-            case Ansi.White             => 37
-            case Ansi.BrightBlack       => 90
-            case Ansi.BrightRed         => 91
-            case Ansi.BrightGreen       => 92
-            case Ansi.BrightYellow      => 93
-            case Ansi.BrightBlue        => 94
-            case Ansi.BrightMagenta     => 95
-            case Ansi.BrightCyan        => 96
-            case Ansi.BrightWhite       => 97
-            case Ansi.BackgroundBlack   => 40
-            case Ansi.BackgroundRed     => 41
-            case Ansi.BackgroundGreen   => 42
-            case Ansi.BackgroundYellow  => 43
-            case Ansi.BackgroundBlue    => 44
-            case Ansi.BackgroundMagenta => 45
-            case Ansi.BackgroundCyan    => 46
-            case Ansi.BackgroundWhite   => 47
+            case Ansi.Black                     => 30
+            case Ansi.Red                       => 31
+            case Ansi.Green                     => 32
+            case Ansi.Yellow                    => 33
+            case Ansi.Blue                      => 34
+            case Ansi.Magenta                   => 35
+            case Ansi.Cyan                      => 36
+            case Ansi.White                     => 37
+            case Ansi.BrightBlack               => 90
+            case Ansi.BrightRed                 => 91
+            case Ansi.BrightGreen               => 92
+            case Ansi.BrightYellow              => 93
+            case Ansi.BrightBlue                => 94
+            case Ansi.BrightMagenta             => 95
+            case Ansi.BrightCyan                => 96
+            case Ansi.BrightWhite               => 97
+            case Ansi.BackgroundBlack           => 40
+            case Ansi.BackgroundRed             => 41
+            case Ansi.BackgroundGreen           => 42
+            case Ansi.BackgroundYellow          => 43
+            case Ansi.BackgroundBlue            => 44
+            case Ansi.BackgroundMagenta         => 45
+            case Ansi.BackgroundCyan            => 46
+            case Ansi.BackgroundWhite           => 47
+            case Ansi.BackgroundBrightBlack     => 100
+            case Ansi.BackgroundBrightRed       => 101
+            case Ansi.BackgroundBrightGreen     => 102
+            case Ansi.BackgroundBrightYellow    => 103
+            case Ansi.BackgroundBrightBlue      => 104
+            case Ansi.BackgroundBrightMagenta   => 105
+            case Ansi.BackgroundBrightCyan      => 106
+            case Ansi.BackgroundBrightWhite     => 107
         }
 
     ///
@@ -307,30 +369,38 @@ namespace Console {
     ///
     def toRGB(c: Ansi): (Int32, Int32, Int32) =
         match c {
-            case Ansi.Black             => (  1,   1,   1)
-            case Ansi.Red               => (222,  56,  43)
-            case Ansi.Green             => ( 57, 181,  74)
-            case Ansi.Yellow            => (255, 199,   6)
-            case Ansi.Blue              => (  0, 111, 184)
-            case Ansi.Magenta           => (118,  38, 113)
-            case Ansi.Cyan              => ( 44, 181, 233)
-            case Ansi.White             => (204, 204, 204)
-            case Ansi.BrightBlack       => (128, 128, 128)
-            case Ansi.BrightRed         => (255,   0,   0)
-            case Ansi.BrightGreen       => (  0, 255,   0)
-            case Ansi.BrightYellow      => (255, 255,   0)
-            case Ansi.BrightBlue        => (  0,   0, 255)
-            case Ansi.BrightMagenta     => (255,   0, 255)
-            case Ansi.BrightCyan        => (  0, 255, 255)
-            case Ansi.BrightWhite       => (255, 255, 255)
-            case Ansi.BackgroundBlack   => (  1,   1,   1)
-            case Ansi.BackgroundRed     => (222,  56,  43)
-            case Ansi.BackgroundGreen   => ( 57, 181,  74)
-            case Ansi.BackgroundYellow  => (255, 199,   6)
-            case Ansi.BackgroundBlue    => (  0, 111, 184)
-            case Ansi.BackgroundMagenta => (118,  38, 113)
-            case Ansi.BackgroundCyan    => ( 44, 181, 233)
-            case Ansi.BackgroundWhite   => (204, 204, 204)
+            case Ansi.Black                     => (  1,   1,   1)
+            case Ansi.Red                       => (222,  56,  43)
+            case Ansi.Green                     => ( 57, 181,  74)
+            case Ansi.Yellow                    => (255, 199,   6)
+            case Ansi.Blue                      => (  0, 111, 184)
+            case Ansi.Magenta                   => (118,  38, 113)
+            case Ansi.Cyan                      => ( 44, 181, 233)
+            case Ansi.White                     => (204, 204, 204)
+            case Ansi.BrightBlack               => (128, 128, 128)
+            case Ansi.BrightRed                 => (255,   0,   0)
+            case Ansi.BrightGreen               => (  0, 255,   0)
+            case Ansi.BrightYellow              => (255, 255,   0)
+            case Ansi.BrightBlue                => (  0,   0, 255)
+            case Ansi.BrightMagenta             => (255,   0, 255)
+            case Ansi.BrightCyan                => (  0, 255, 255)
+            case Ansi.BrightWhite               => (255, 255, 255)
+            case Ansi.BackgroundBlack           => (  1,   1,   1)
+            case Ansi.BackgroundRed             => (222,  56,  43)
+            case Ansi.BackgroundGreen           => ( 57, 181,  74)
+            case Ansi.BackgroundYellow          => (255, 199,   6)
+            case Ansi.BackgroundBlue            => (  0, 111, 184)
+            case Ansi.BackgroundMagenta         => (118,  38, 113)
+            case Ansi.BackgroundCyan            => ( 44, 181, 233)
+            case Ansi.BackgroundWhite           => (204, 204, 204)
+            case Ansi.BackgroundBrightBlack     => (128, 128, 128)
+            case Ansi.BackgroundBrightRed       => (255,   0,   0)
+            case Ansi.BackgroundBrightGreen     => (  0, 255,   0)
+            case Ansi.BackgroundBrightYellow    => (255, 255,   0)
+            case Ansi.BackgroundBrightBlue      => (  0,   0, 255)
+            case Ansi.BackgroundBrightMagenta   => (255,   0, 255)
+            case Ansi.BackgroundBrightCyan      => (  0, 255, 255)
+            case Ansi.BackgroundBrightWhite     => (255, 255, 255)
         }
 
     ///
@@ -344,9 +414,12 @@ namespace Console {
                     Ansi.BrightYellow :: Ansi.BrightBlue :: Ansi.BrightMagenta :: Ansi.BrightCyan ::
                     Ansi.BrightWhite :: Nil }
             else {
-                Ansi.BackgroundBlack :: Ansi.BackgroundRed ::
-                    Ansi.BackgroundGreen :: Ansi.BackgroundYellow :: Ansi.BackgroundBlue ::
-                    Ansi.BackgroundMagenta :: Ansi.BackgroundCyan :: Ansi.BackgroundWhite :: Nil}
+                Ansi.BackgroundBlack :: Ansi.BackgroundRed :: Ansi.BackgroundGreen ::
+                    Ansi.BackgroundYellow :: Ansi.BackgroundBlue :: Ansi.BackgroundMagenta ::
+                    Ansi.BackgroundCyan :: Ansi.BackgroundWhite :: Ansi.BackgroundBrightBlack ::
+                    Ansi.BackgroundBrightRed :: Ansi.BackgroundBrightGreen :: Ansi.BackgroundBrightYellow ::
+                    Ansi.BackgroundBrightBlue :: Ansi.BackgroundBrightMagenta :: Ansi.BackgroundBrightCyan ::
+                    Ansi.BackgroundBrightWhite :: Nil}
             };
         nearest(c, Ansi.BackgroundBlack, Int32.maxValue(), candidates) |> toAnsi
 

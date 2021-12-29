@@ -63,7 +63,7 @@ object GenRecordEmptyClass {
     cm.mkMethod(genLookupFieldMethod(), BackendObjType.Record.LookupFieldFunctionName, stringToIRecord, IsPublic, IsFinal)
     cm.mkMethod(genRestrictFieldMethod(), BackendObjType.Record.RestrictFieldFunctionName, stringToIRecord, IsPublic, IsFinal)
 
-    cm.closeClassMaker
+    cm.closeClassMaker()
   }
 
   private def genStaticConstructor(): InstructionSet =

@@ -188,19 +188,16 @@ namespace File {
     ///
     /// Reads all lines from the given buffered reader `r` until it is empty.
     ///
-    def readAll(r: ##java.io.BufferedReader): List[String] & Impure = List.reverse(readAllHelper(r, Nil))
-
-    ///
-    /// Helper function for readAll.
-    /// Reads all lines from the buffered reader `r` until it is empty, returning a backward list.
-    ///
-    def readAllHelper(r: ##java.io.BufferedReader, acc: List[String]): List[String] & Impure =
+    def readAll(r: ##java.io.BufferedReader): List[String] & Impure =
         import java.io.BufferedReader.readLine();
-        let line = readLine(r);
-        if (Object.isNull(line))
-            acc
-        else
-            readAllHelper(r, line :: acc)
+        def loop(k) = {
+            let l = readLine(r);
+            if (Object.isNull(l))
+                k(Nil)
+            else
+                loop(ks -> k(l :: ks))
+        };
+        loop(identity)
 
     ///
     /// Returns a list of all the lines in the given file `f` with the options `opts`.
@@ -428,7 +425,7 @@ namespace File {
                 Err("An error occurred when writing to the file: '${f}'.")
             }
             else {
-                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+                Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>
@@ -456,14 +453,14 @@ namespace File {
             let javaFile = newFile(f);
             let w = newPrintWriter(javaFile);
 
-            Foldable.foldLeft((_, line) -> println(w, line), (), data);
+            Foldable.foreach(line -> println(w, line), data);
             close(w);
 
             if (checkError(w)) {
                 Err("An error occurred when writing lines to the file: '${f}'.")
             }
             else {
-                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+                Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>
@@ -499,7 +496,7 @@ namespace File {
                 Err("An error occurred when appending to the file: '${f}'.")
             }
             else {
-                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+                Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>
@@ -528,14 +525,14 @@ namespace File {
             let fileWriter = newFileWriter(javaFile, true);
             let printWriter = newPrintWriter(fileWriter as ##java.io.Writer);
 
-            Foldable.foldLeft((_, line) -> println(printWriter, line), (), data);
+            Foldable.foreach(line -> println(printWriter, line), data);
             close(printWriter);
 
             if (checkError(printWriter)) {
                 Err("An error occurred when appending lines to the file: '${f}'.")
             }
             else {
-                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+                Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>
@@ -573,7 +570,7 @@ namespace File {
                 Err("An error occurred when writing to the file: '${f}'.")
             }
             else {
-                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+                Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>
@@ -611,7 +608,7 @@ namespace File {
                 Err("An error occurred when appending to the file: '${f}'.")
             }
             else {
-                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+                Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>
@@ -640,7 +637,7 @@ namespace File {
                 Err("An error occurred when truncating to the file: '${f}'.")
             }
             else {
-                Result.flatMap((exists) -> Ok(not exists), alreadyExists)
+                Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
         } catch {
             case ex: ##java.io.IOException =>

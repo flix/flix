@@ -28,7 +28,7 @@ namespace Fixpoint {
         pub def eq(x: Tuple[v], y: Tuple[v]): Bool =
             let Tuple(a) = x;
             let Tuple(b) = y;
-            Array.eq(a, b) as & Pure
+            Array.sameElements(a, b) as & Pure
     }
 
     // NB: Unsafe instance.

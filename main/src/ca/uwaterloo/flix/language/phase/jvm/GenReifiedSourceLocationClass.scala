@@ -59,7 +59,7 @@ object GenReifiedSourceLocationClass {
     cm.mkMethod(genHashCodeMethod(), "hashCode", mkDescriptor()(BackendType.Int32), IsPublic, NotFinal)
     cm.mkMethod(genToStringMethod(), "toString", mkDescriptor()(BackendObjType.String.toTpe), IsPublic, NotFinal)
 
-    cm.closeClassMaker
+    cm.closeClassMaker()
   }
 
   private def genConstructor()(implicit flix: Flix): InstructionSet = {
