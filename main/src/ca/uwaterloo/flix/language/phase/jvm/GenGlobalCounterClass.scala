@@ -44,7 +44,7 @@ object GenGlobalCounterClass {
     counterField.mkField(cm, IsPublic, IsFinal)
     cm.mkStaticMethod(genNewIdMethod(), NewIdMethodName, MethodDescriptor(Nil, BackendType.Int64), IsPublic, IsFinal)
 
-    cm.closeClassMaker
+    cm.closeClassMaker()
   }
 
   private def genStaticConstructor(): InstructionSet =

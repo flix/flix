@@ -47,7 +47,7 @@ object GenMatchErrorClass {
     cm.mkMethod(genHashCodeMethod(), "hashCode", mkDescriptor()(BackendType.Int32), IsPublic, NotFinal)
     locationField.mkField(cm, IsPublic, IsFinal)
 
-    cm.closeClassMaker
+    cm.closeClassMaker()
   }
 
   private def genConstructor(): InstructionSet = {
