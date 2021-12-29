@@ -221,9 +221,41 @@ pub lawless class Foldable[t : Type -> Type] {
 
 namespace Foldable {
 
+    use Applicative.{*>};
+
     ///
     /// Returns the result of applying `combine` to all the elements in `t`, using `empty` as the initial value.
     ///
     pub def fold[t: Type -> Type, a: Type](t: t[a]): a with Foldable[t], Monoid[a] =
         Foldable.foldLeft((acc, x) -> Monoid.combine(acc, x), Monoid.empty(), t)
+
+    ///
+    /// A monadic version of `foldLeft`.
+    ///
+    /// Applies the monadic `f` to a start value `s` and all elements in `t` going
+    /// from left to right.
+    ///
+    pub def foldLeftM(f: (b, a) -> m[b], s: b, t: t[a]): m[b] with Foldable[t], Monad[m] =
+        let f1 = (x, k) -> z -> Monad.flatMap(k, f(z, x));
+        s |> Foldable.foldRight(f1, Applicative.point, t)
+
+    ///
+    /// A monadic version of `foldRight`.
+    ///
+    /// Applies the monadic `f` to a start value `s` and all elements in `t` going
+    /// from right to left.
+    ///
+    pub def foldRightM(f: (a, b) -> m[b], s: b, t: t[a]): m[b] with Foldable[t], Monad[m] =
+        let f1 = (k, x) -> z -> Monad.flatMap(k, f(x, z));
+        s |> Foldable.foldLeft(f1, Applicative.point, t)
+
+    ///
+    /// A monadic version of `foreach`.
+    ///
+    /// Apply `f` to every value in `t`. `f` is applied for its monadic effect,
+    /// the answer it produces is discarded.
+    ///
+    pub def foreachM(f: a -> m[b], t: t[a]): m[Unit] with Foldable[t], Monad[m] =
+        foldLeftM((acc, a) -> f(a) *> Applicative.point(acc), (), t)
+
 }
