@@ -16,7 +16,7 @@
 
 namespace TestApplicative {
 
-    use Applicative.{product, productLeft, productRight};
+    use Applicative.{product, productLeft, productRight, product3, product4, product5};
     use Applicative.{<*>, <**>, *>, <*};
 
     /////////////////////////////////////////////////////////////////////////////
@@ -102,6 +102,66 @@ namespace TestApplicative {
     @test
     def productRight06(): Bool =
         productRight(1 :: Nil, 2 :: Nil) == 2 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product3                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product301(): Bool =
+        product3(None, None, None) == None
+
+    @test
+    def product302(): Bool =
+        product3(None, Some(2), Some(3)) == None
+
+    @test
+    def product303(): Bool =
+        product3(Some(1), Some(2), None) == None
+
+    @test
+    def product304(): Bool =
+        product3(Some(1), Some(2), Some(3)) == Some((1, 2, 3))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product4                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product401(): Bool =
+        product4(None, None, None, None) == None
+
+    @test
+    def product402(): Bool =
+        product4(None, Some(2), Some(3), Some(4)) == None
+
+    @test
+    def product403(): Bool =
+        product4(Some(1), Some(2), Some(3), None) == None
+
+    @test
+    def product404(): Bool =
+        product4(Some(1), Some(2), Some(3), Some(4)) == Some((1, 2, 3, 4))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product5                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product501(): Bool =
+        product5(None, None, None, None, None) == None
+
+    @test
+    def product502(): Bool =
+        product5(None, Some(2), Some(3), Some(4), Some(5)) == None
+
+    @test
+    def product503(): Bool =
+        product5(Some(1), Some(2), Some(3), Some(4), None) == None
+
+    @test
+    def product504(): Bool =
+        product5(Some(1), Some(2), Some(3), Some(4), Some(5)) == Some((1, 2, 3, 4, 5))
 
     /////////////////////////////////////////////////////////////////////////////
     // symAp (<*>)                                                             //
