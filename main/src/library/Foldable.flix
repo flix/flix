@@ -235,9 +235,9 @@ namespace Foldable {
     /// Applies the monadic `f` to a start value `s` and all elements in `t` going
     /// from left to right.
     ///
-    pub def foldLeftM(f: (b, a) -> m[b], s: b, t: t[a]): m[b] with Foldable[t], Monad[m] =
+    pub def foldLeftM(f: (b, a) -> m[b] & ef, s: b, t: t[a]): m[b] & ef with Foldable[t], Monad[m] =
         let f1 = (x, k) -> z -> Monad.flatMap(k, f(z, x));
-        s |> Foldable.foldRight(f1, Applicative.point, t)
+        s |> Foldable.foldRight(f1, x1 -> Applicative.point(x1) as & ef, t)
 
     ///
     /// A monadic version of `foldRight`.
@@ -245,9 +245,9 @@ namespace Foldable {
     /// Applies the monadic `f` to a start value `s` and all elements in `t` going
     /// from right to left.
     ///
-    pub def foldRightM(f: (a, b) -> m[b], s: b, t: t[a]): m[b] with Foldable[t], Monad[m] =
+    pub def foldRightM(f: (a, b) -> m[b] & ef, s: b, t: t[a]): m[b] & ef with Foldable[t], Monad[m] =
         let f1 = (k, x) -> z -> Monad.flatMap(k, f(x, z));
-        s |> Foldable.foldLeft(f1, Applicative.point, t)
+        s |> Foldable.foldLeft(f1, x1 -> Applicative.point(x1) as & ef, t)
 
     ///
     /// A monadic version of `foreach`.
@@ -255,7 +255,7 @@ namespace Foldable {
     /// Apply `f` to every value in `t`. `f` is applied for its monadic effect,
     /// the answer it produces is discarded.
     ///
-    pub def foreachM(f: a -> m[b], t: t[a]): m[Unit] with Foldable[t], Monad[m] =
+    pub def foreachM(f: a -> m[b] & ef, t: t[a]): m[Unit] & ef with Foldable[t], Monad[m] =
         foldLeftM((acc, a) -> f(a) *> Applicative.point(acc), (), t)
 
 }
