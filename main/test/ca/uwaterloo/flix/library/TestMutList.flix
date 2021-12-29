@@ -16,7 +16,7 @@
 
 namespace TestMutList {
     use ToString.toString;
-    use MutList.eq;
+    use MutList.sameElements;
 
     ///
     /// Helper function to test capacity of internal array.
@@ -34,14 +34,14 @@ namespace TestMutList {
     def eq01(): Bool & Impure =
         let u: MutList[Int32] = MutList.new();
         let v: MutList[Int32] = MutList.new();
-        u `eq` v
+        u `sameElements` v
 
     @test
     def eq02(): Bool & Impure =
         let u = MutList.new();
         MutList.push!(0, u);
         let v = MutList.new();
-        (u `eq` v) == false
+        (u `sameElements` v) == false
 
     @test
     def eq03(): Bool & Impure =
@@ -51,7 +51,7 @@ namespace TestMutList {
         let v = MutList.new();
         MutList.push!(2, v);
         MutList.push!(3, v);
-        u `eq` v
+        u `sameElements` v
 
     @test
     def eq04(): Bool & Impure =
@@ -61,14 +61,14 @@ namespace TestMutList {
         let v = MutList.new();
         MutList.push!(2, v);
         MutList.push!(2, v);
-        (u `eq` v) == false
+        (u `sameElements` v) == false
 
     @test
     def eq05(): Bool & Impure =
         let u = MutList.new();
         MutList.push!(1, u);
         let v = MutList.new();
-        (u `eq` v) == false
+        (u `sameElements` v) == false
 
     /////////////////////////////////////////////////////////////////////////////
     // Order.compare                                                           //
@@ -564,7 +564,7 @@ namespace TestMutList {
     def copy01(): Bool & Impure =
         let v1 = MutList.range(0, 6);
         let v2 = MutList.copy(v1);
-        v1 `eq` v2
+        v1 `sameElements` v2
 
     @test
     def copy02(): Bool & Impure =
@@ -585,14 +585,14 @@ namespace TestMutList {
         let v1 = MutList.range(0, 1000);
         let MutList(l1, n1) = v1;
         let MutList(l2, n2) = MutList.copy(v1);
-        (deref n1 == deref n2) and (deref l1 `Array.eq` deref l2)
+        (deref n1 == deref n2) and (deref l1 `Array.sameElements` deref l2)
 
     @test
     def copy05(): Bool & Impure =
         let v1 = MutList.range(0, 3);
         let MutList(l1, n1) = v1;
         let MutList(l2, n2) = MutList.copy(v1);
-        (deref n1 == deref n2) and (deref l1 `Array.eq` deref l2) and
+        (deref n1 == deref n2) and (deref l1 `Array.sameElements` deref l2) and
             (Array.length(deref l2) == 8)
 
 
@@ -1259,7 +1259,7 @@ namespace TestMutList {
     def toList03(): Bool & Impure =
         let ml = MutList.range(0, 1000);
         ml |> MutList.toList == List.range(0, 1000) and
-           ml `eq` MutList.range(0, 1000)
+           ml `sameElements` MutList.range(0, 1000)
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
@@ -1297,74 +1297,74 @@ def cmp(x: Int32, y: Int32): Comparison =
 @test
 def sortWith01(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([]: Array[Int32]));
-    a `eq` Array.toMutList([]: Array[Int32])
+    a `sameElements` Array.toMutList([]: Array[Int32])
 
 @test
 def sortWith02(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([0]));
-    a `eq` Array.toMutList([0])
+    a `sameElements` Array.toMutList([0])
 
 @test
 def sortWith03(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([0,1]));
-    a `eq` Array.toMutList([0,1])
+    a `sameElements` Array.toMutList([0,1])
 
 @test
 def sortWith04(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([1,0]));
-    a `eq` Array.toMutList([0,1])
+    a `sameElements` Array.toMutList([0,1])
 
 @test
 def sortWith05(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([1,1]));
-    a `eq` Array.toMutList([1,1])
+    a `sameElements` Array.toMutList([1,1])
 
 @test
 def sortWith06(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([0,1,2,3,4,5]));
-    a `eq` Array.toMutList([0,1,2,3,4,5])
+    a `sameElements` Array.toMutList([0,1,2,3,4,5])
 
 @test
 def sortWith07(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([5,4,3,2,1,0]));
-    a `eq` Array.toMutList([0,1,2,3,4,5])
+    a `sameElements` Array.toMutList([0,1,2,3,4,5])
 
 @test
 def sortWith08(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([5,3,0,4,1,2]));
-    a `eq` Array.toMutList([0,1,2,3,4,5])
+    a `sameElements` Array.toMutList([0,1,2,3,4,5])
 
 @test
 def sortWith09(): Bool & Impure =
     let a = MutList.sortWith(cmp, Array.toMutList([2,3,0,4,1,2]));
-    a `eq` Array.toMutList([0,1,2,2,3,4])
+    a `sameElements` Array.toMutList([0,1,2,2,3,4])
 
 @test
 def sortWith10(): Bool & Impure =
     let a = MutList.sortWith(flip(cmp), Array.toMutList([0,1,2,3,4,5]));
-    a `eq` Array.toMutList([5,4,3,2,1,0])
+    a `sameElements` Array.toMutList([5,4,3,2,1,0])
 
 @test
 def sortWith11(): Bool & Impure =
     let a = MutList.sortWith(flip(cmp), Array.toMutList([5,4,3,2,1,0]));
-    a `eq` Array.toMutList([5,4,3,2,1,0])
+    a `sameElements` Array.toMutList([5,4,3,2,1,0])
 
 @test
 def sortWith12(): Bool & Impure =
     let a = MutList.sortWith(flip(cmp), Array.toMutList([5,3,0,4,1,2]));
-    a `eq` Array.toMutList([5,4,3,2,1,0])
+    a `sameElements` Array.toMutList([5,4,3,2,1,0])
 
 @test
 def sortWith13(): Bool & Impure =
     let a = MutList.sortWith(flip(cmp), Array.toMutList([2,3,0,4,1,2]));
-    a `eq` Array.toMutList([4,3,2,2,1,0])
+    a `sameElements` Array.toMutList([4,3,2,2,1,0])
 
 /////////////////////////////////////////////////////////////////////////////
 // sort                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 
 def testSortVsSortWith(a: MutList[Int32]) : Bool & Impure =
-    MutList.sort(a) `eq` MutList.sortWith(cmp, a)
+    MutList.sort(a) `sameElements` MutList.sortWith(cmp, a)
 
 @test
 def sort01(): Bool & Impure = testSortVsSortWith(Array.toMutList([]: Array[Int32]))
@@ -1401,79 +1401,79 @@ def sort09(): Bool & Impure = testSortVsSortWith(Array.toMutList([2,3,0,4,1,2]))
 def sortWith01!(): Bool & Impure =
     let a = Array.toMutList([]: Array[Int32]);
     MutList.sortWith(cmp, a);
-    a `eq` Array.toMutList([]: Array[Int32])
+    a `sameElements` Array.toMutList([]: Array[Int32])
 
 @test
 def sortWith02!(): Bool & Impure =
     let a = Array.toMutList([0]);
     MutList.sortWith!(cmp, a);
-    a `eq` Array.toMutList([0])
+    a `sameElements` Array.toMutList([0])
 
 @test
 def sortWith03!(): Bool & Impure =
     let a = Array.toMutList([0,1]);
     MutList.sortWith!(cmp, a);
-    a `eq` Array.toMutList([0,1])
+    a `sameElements` Array.toMutList([0,1])
 
 @test
 def sortWith04!(): Bool & Impure =
     let a = Array.toMutList([1,0]);
     MutList.sortWith!(cmp, a);
-    a `eq` Array.toMutList([0,1])
+    a `sameElements` Array.toMutList([0,1])
 
 @test
 def sortWith05!(): Bool & Impure =
     let a = Array.toMutList([1,1]);
     MutList.sortWith!(cmp, a);
-    a `eq` Array.toMutList([1,1])
+    a `sameElements` Array.toMutList([1,1])
 
 @test
 def sortWith06!(): Bool & Impure =
     let a = Array.toMutList([0,1,2,3,4,5]);
     MutList.sortWith!(cmp, a);
-    a `eq` Array.toMutList([0,1,2,3,4,5])
+    a `sameElements` Array.toMutList([0,1,2,3,4,5])
 
 @test
 def sortWith07!(): Bool & Impure =
     let a = Array.toMutList([5,4,3,2,1,0]);
     MutList.sortWith!(cmp, a);
-    a `eq` Array.toMutList([0,1,2,3,4,5])
+    a `sameElements` Array.toMutList([0,1,2,3,4,5])
 
 @test
 def sortWith08!(): Bool & Impure =
     let a = Array.toMutList([5,3,0,4,1,2]);
     MutList.sortWith!(cmp, a);
-    a `eq` Array.toMutList([0,1,2,3,4,5])
+    a `sameElements` Array.toMutList([0,1,2,3,4,5])
 
 @test
 def sortWith09!(): Bool & Impure =
     let a = Array.toMutList([2,3,0,4,1,2]);
     MutList.sortWith!(cmp, a);
-    a `eq` Array.toMutList([0,1,2,2,3,4])
+    a `sameElements` Array.toMutList([0,1,2,2,3,4])
 
 @test
 def sortWith10!(): Bool & Impure =
     let a = Array.toMutList([0,1,2,3,4,5]);
     MutList.sortWith!(flip(cmp), a);
-    a `eq` Array.toMutList([5,4,3,2,1,0])
+    a `sameElements` Array.toMutList([5,4,3,2,1,0])
 
 @test
 def sortWith11!(): Bool & Impure =
     let a = Array.toMutList([5,4,3,2,1,0]);
     MutList.sortWith!(flip(cmp), a);
-    a `eq` Array.toMutList([5,4,3,2,1,0])
+    a `sameElements` Array.toMutList([5,4,3,2,1,0])
 
 @test
 def sortWith12!(): Bool & Impure =
     let a = Array.toMutList([5,3,0,4,1,2]);
     MutList.sortWith!(flip(cmp), a);
-    a `eq` Array.toMutList([5,4,3,2,1,0])
+    a `sameElements` Array.toMutList([5,4,3,2,1,0])
 
 @test
 def sortWith13!(): Bool & Impure =
     let a = Array.toMutList([2,3,0,4,1,2]);
     MutList.sortWith!(flip(cmp), a);
-    a `eq` Array.toMutList([4,3,2,2,1,0])
+    a `sameElements` Array.toMutList([4,3,2,2,1,0])
 
 /////////////////////////////////////////////////////////////////////////////
 // sort!                                                                   //
@@ -1484,7 +1484,7 @@ def testSort!VsSortWith!(a: MutList[Int32]) : Bool & Impure =
     let c = MutList.copy(a);
     MutList.sort!(b);
     MutList.sortWith!(cmp, c);
-    b `eq` c
+    b `sameElements` c
 
 @test
 def sort!01(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([]: Array[Int32]))
@@ -1518,9 +1518,9 @@ def sort!09(): Bool & Impure = testSort!VsSortWith!(Array.toMutList([2,3,0,4,1,2
 /////////////////////////////////////////////////////////////////////////////
 
 def testSortByVsSort(a: MutList[Int32]) : Bool & Impure =
-    (MutList.sortBy(identity, a) `eq` MutList.sort(a)) and
-    (MutList.sortBy(x -> 4*x+7, a) `eq` MutList.sort(a)) and
-    (MutList.sortBy(x -> -x, a) `eq` MutList.sortWith(flip(cmp),a))
+    (MutList.sortBy(identity, a) `sameElements` MutList.sort(a)) and
+    (MutList.sortBy(x -> 4*x+7, a) `sameElements` MutList.sort(a)) and
+    (MutList.sortBy(x -> -x, a) `sameElements` MutList.sortWith(flip(cmp),a))
 
 @test
 def sortBy01(): Bool & Impure = testSortByVsSort(Array.toMutList([]: Array[Int32]))
@@ -1563,7 +1563,7 @@ instance Eq[R] {
 @test
 def sortBy10(): Bool & Impure =
     MutList.sortBy(r -> let R(x) = r; x.i, Array.toMutList([R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})]))
-    `eq` Array.toMutList([R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})])
+    `sameElements` Array.toMutList([R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})])
 
 /////////////////////////////////////////////////////////////////////////////
 // sortBy!                                                                 //
@@ -1574,8 +1574,8 @@ def testSortBy!VsSortBy(a: MutList[Int32]) : Bool & Impure =
     let c = MutList.copy(a);
     MutList.sortBy!(identity, b);
     MutList.sortBy!(x -> 4*x+7, c);
-    (b `eq` MutList.sortBy(x -> 4*x+7, a)) and
-    (c `eq` MutList.sortBy(identity, a))
+    (b `sameElements` MutList.sortBy(x -> 4*x+7, a)) and
+    (c `sameElements` MutList.sortBy(identity, a))
 
 @test
 def sortBy!01(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([]: Array[Int32]))
@@ -1614,13 +1614,13 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,
         let v2 = MutList.range(0, 5) |> MutList.toArray;
         let arr1 = [1, 2, 3];
         let arr2 = [0, 1, 2, 3, 4];
-        (v1 `Array.eq` arr1) and (v2 `Array.eq` arr2)
+        (v1 `Array.sameElements` arr1) and (v2 `Array.sameElements` arr2)
 
     @test
     def range02(): Bool & Impure =
         let v = MutList.range(-1, 3) |> MutList.toArray;
         let arr = [-1, 0, 1, 2];
-        (v `Array.eq` arr)
+        (v `Array.sameElements` arr)
 
     @test
     def range03(): Bool & Impure =
