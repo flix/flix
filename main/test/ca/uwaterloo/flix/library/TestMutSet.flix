@@ -73,4 +73,17 @@ namespace TestMutSet {
 
         MutSet.sameElements(d, d2)
 
+    @test
+    def setSameElements06(): Bool & Impure =
+        let d = MutSet.empty();
+        MutSet.add!("a", d);
+        MutSet.add!("b", d);
+        MutSet.add!("c", d);
+
+        let d2 = MutSet.empty();
+        MutSet.add!("c", d2);
+        MutSet.add!("a", d2);
+
+        not MutSet.sameElements(d, d2)
+
 }
