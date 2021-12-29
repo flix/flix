@@ -128,11 +128,6 @@ object SemanticOperator {
     case object Div extends Float32Op
 
     /**
-      * Remainder.
-      */
-    case object Rem extends Float32Op
-
-    /**
       * Exponentiate.
       */
     case object Exp extends Float32Op
@@ -200,11 +195,6 @@ object SemanticOperator {
       * Division.
       */
     case object Div extends Float64Op
-
-    /**
-      * Remainder.
-      */
-    case object Rem extends Float64Op
 
     /**
       * Exponentiate.
@@ -811,10 +801,11 @@ object SemanticOperator {
 object SemanticOperatorOps {
 
   /**
-   * Maps a semantic operator to a unary operator.
-   * @param sop The semantic operator.
-   * @return The appropriate unary operator.
-   */
+    * Maps a semantic operator to a unary operator.
+    *
+    * @param sop The semantic operator.
+    * @return The appropriate unary operator.
+    */
   def toUnaryOp(sop: SemanticOperator): UnaryOperator = sop match {
     case SemanticOperator.BoolOp.Not => UnaryOperator.LogicalNot
     case SemanticOperator.Float32Op.Neg | SemanticOperator.Float64Op.Neg
@@ -826,10 +817,11 @@ object SemanticOperatorOps {
   }
 
   /**
-   * Maps a semantic operator to a binary operator.
-   * @param sop The semantic operator.
-   * @return The appropriate binary operator.
-   */
+    * Maps a semantic operator to a binary operator.
+    *
+    * @param sop The semantic operator.
+    * @return The appropriate binary operator.
+    */
   def toBinaryOp(sop: SemanticOperator): BinaryOperator = sop match {
     case SemanticOperator.BoolOp.And => BinaryOperator.LogicalAnd
     case SemanticOperator.BoolOp.Or => BinaryOperator.LogicalOr
@@ -850,9 +842,9 @@ object SemanticOperatorOps {
          | SemanticOperator.Int16Op.Div | SemanticOperator.Int16Op.Div | SemanticOperator.Int32Op.Div
          | SemanticOperator.Int64Op.Div | SemanticOperator.BigIntOp.Div => BinaryOperator.Divide
 
-    case SemanticOperator.Float32Op.Rem | SemanticOperator.Float64Op.Rem | SemanticOperator.Int8Op.Rem
-         | SemanticOperator.Int16Op.Rem | SemanticOperator.Int16Op.Rem | SemanticOperator.Int32Op.Rem
-         | SemanticOperator.Int64Op.Rem | SemanticOperator.BigIntOp.Rem => BinaryOperator.Modulo
+    case SemanticOperator.Int8Op.Rem | SemanticOperator.Int16Op.Rem | SemanticOperator.Int16Op.Rem
+         | SemanticOperator.Int32Op.Rem | SemanticOperator.Int64Op.Rem
+         | SemanticOperator.BigIntOp.Rem => BinaryOperator.Modulo
 
     case SemanticOperator.Float32Op.Exp | SemanticOperator.Float64Op.Exp | SemanticOperator.Int8Op.Exp
          | SemanticOperator.Int16Op.Exp | SemanticOperator.Int16Op.Exp | SemanticOperator.Int32Op.Exp

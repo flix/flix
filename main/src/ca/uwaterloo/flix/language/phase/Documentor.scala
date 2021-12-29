@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Modifier, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -62,37 +62,53 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     //
     // Classes.
     //
-    val classesByNS = root.classes.values.groupBy(getNameSpace).map {
+    val classesByNS = root.classes.values.groupBy(getNameSpace).flatMap {
       case (ns, decls) =>
         val filtered = decls.filter(_.mod.isPublic).toList
         val sorted = filtered.sortBy(_.sym.name)
-        ns -> JArray(sorted.map(visitClass(_)(root)))
+        if (sorted.isEmpty)
+          None
+        else
+          Some(ns -> JArray(sorted.map(visitClass(_)(root))))
+    }
+
+    //
+    // Instances (for use in Enum documentation)
+    //
+    val instancesByEnum = root.instances.values.flatten.groupBy(getEnum).collect {
+      case (Some(enum), insts) => (enum, insts.toList)
     }
 
     //
     // Enums.
     //
-    val enumsByNS = root.enums.values.groupBy(getNameSpace).map {
+    val enumsByNS = root.enums.values.groupBy(getNameSpace).flatMap {
       case (ns, decls) =>
         val filtered = decls.filter(_.mod.isPublic).toList
         val sorted = filtered.sortBy(_.sym.name)
-        ns -> JArray(sorted.map(visitEnum))
+        if (sorted.isEmpty)
+          None
+        else
+          Some(ns -> JArray(sorted.map(visitEnum(_, instancesByEnum))))
     }
 
     //
     // Type Aliases.
     //
-    val typeAliasesByNS = root.typealiases.values.groupBy(getNameSpace).map {
+    val typeAliasesByNS = root.typealiases.values.groupBy(getNameSpace).flatMap {
       case (ns, decls) =>
         val filtered = decls.filter(_.mod.isPublic).toList
         val sorted = filtered.sortBy(_.sym.name)
-        ns -> JArray(sorted.map(visitTypeAlias))
+        if (sorted.isEmpty)
+          None
+        else
+          Some(ns -> JArray(sorted.map(visitTypeAlias)))
     }
 
     //
     // Defs.
     //
-    val defsByNS = root.defs.values.groupBy(getNameSpace).map {
+    val defsByNS = root.defs.values.groupBy(getNameSpace).flatMap {
       case (ns, decls) =>
         def isPublic(decl: TypedAst.Def): Boolean =
           decl.spec.mod.isPublic
@@ -105,7 +121,10 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
         val filtered = decls.filter(decl => isPublic(decl) && !isInternal(decl)).toList
         val sorted = filtered.sortBy(_.sym.name)
-        ns -> JArray(sorted.map(visitDef))
+        if (sorted.isEmpty)
+          None
+        else
+          Some(ns -> JArray(sorted.map(visitDef)))
     }
 
     //
@@ -134,6 +153,16 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
     root.toSuccess
   }
+
+  /**
+    * Returns the enum that is in the head position of the instance's type, if it exists.
+    * Returns `None` if the type is not an `enum` type.
+    */
+  def getEnum(inst: TypedAst.Instance): Option[Symbol.EnumSym] = inst.tpe.baseType match {
+    case Type.Cst(TypeConstructor.KindedEnum(sym, _), _) => Some(sym)
+    case _ => None
+  }
+
 
   /**
     * Returns the namespace of the given class `decl`.
@@ -348,13 +377,14 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given Enum `enum` as a JSON value.
     */
-  private def visitEnum(enum: Enum): JObject = enum match {
+  private def visitEnum(enum0: Enum, instances: Map[Symbol.EnumSym, List[Instance]]): JObject = enum0 match {
     case Enum(doc, _, sym, tparams, derives, cases, _, _, loc) =>
       ("doc" -> visitDoc(doc)) ~
         ("sym" -> visitEnumSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
-        ("derives" -> derives.map{ d => visitClassSym(d.clazz) }) ~
-        ("cases" -> cases.values.map(visitCase)) ~
+        ("cases" -> cases.values.toList.sortBy(_.loc).map(visitCase)) ~
+        ("derives" -> derives.map { d => visitClassSym(d.clazz) }) ~
+        ("instances" -> instances.getOrElse(sym, Nil).map { i => visitClassSym(i.sym.clazz) }) ~
         ("loc" -> visitSourceLocation(loc))
   }
 
