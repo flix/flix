@@ -17,6 +17,7 @@
 namespace TestApplicative {
 
     use Applicative.{product, productLeft, productRight};
+    use Applicative.{<*>, <**>, *>, <*};
 
     /////////////////////////////////////////////////////////////////////////////
     // product                                                                 //
@@ -101,5 +102,69 @@ namespace TestApplicative {
     @test
     def productRight06(): Bool =
         productRight(1 :: Nil, 2 :: Nil) == 2 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // symAp (<*>)                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def symAp01(): Bool =
+        None <*> None == None
+
+    @test
+    def symAp02(): Bool =
+        Some(x -> x+1) <*> None == None
+
+    @test
+    def symAp03(): Bool =
+        Some(x -> x+1) <*> Some(1) == Some(2)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // symReversedAp (<**>)                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def symReversedAp01(): Bool =
+        None <**> None == None
+
+    @test
+    def symReversedAp02(): Bool =
+        None <**> Some(x -> x+1) == None
+
+    @test
+    def symReversedAp03(): Bool =
+        Some(1) <**> Some(x -> x+1) == Some(2)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // symProductLeft (<*)                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def symProductLeft01(): Bool =
+        None <* Some(2) == None
+
+    @test
+    def symProductLeft02(): Bool =
+        Some(1) <* None == None
+
+    @test
+    def symProductLeft03(): Bool =
+        Some(1) <* Some(2) == Some(1)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // symProductRight (*>)                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def symProductRight01(): Bool =
+        None *> Some(2) == None
+
+    @test
+    def symProductRight02(): Bool =
+        Some(1) *> None == None
+
+    @test
+    def symProductRight03(): Bool =
+        Some(1) *> Some(2) == Some(2)
 
 }

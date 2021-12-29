@@ -16,7 +16,7 @@
 
 namespace TestArray {
 
-use Array.eq;
+use Array.sameElements;
 
 /////////////////////////////////////////////////////////////////////////////
 // new                                                                     //
@@ -1744,28 +1744,28 @@ def isSuffixOf13(): Bool & Impure = Array.isSuffixOf([1,2,3], [89,11,1,2,3])
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testEq01(): Bool & Impure = ([] : Array[Int]) `eq` ([] : Array[Int])
+def testEq01(): Bool & Impure = ([] : Array[Int]) `sameElements` ([] : Array[Int])
 
 @test
-def testEq02(): Bool & Impure = Bool.not([1] `eq` [])
+def testEq02(): Bool & Impure = Bool.not([1] `sameElements` [])
 
 @test
-def testEq03(): Bool & Impure = Bool.not([] `eq` [1])
+def testEq03(): Bool & Impure = Bool.not([] `sameElements` [1])
 
 @test
-def testEq04(): Bool & Impure = [1] `eq` [1]
+def testEq04(): Bool & Impure = [1] `sameElements` [1]
 
 @test
-def testEq05(): Bool & Impure = Bool.not([1] `eq` [2])
+def testEq05(): Bool & Impure = Bool.not([1] `sameElements` [2])
 
 @test
-def testEq06(): Bool & Impure = Bool.not([1,2] `eq` [1])
+def testEq06(): Bool & Impure = Bool.not([1,2] `sameElements` [1])
 
 @test
-def testEq07(): Bool & Impure = Bool.not([1] `eq` [1,2])
+def testEq07(): Bool & Impure = Bool.not([1] `sameElements` [1,2])
 
 @test
-def testEq08(): Bool & Impure = [1,2,3,4] `eq` [1,2,3,4]
+def testEq08(): Bool & Impure = [1,2,3,4] `sameElements` [1,2,3,4]
 
 /////////////////////////////////////////////////////////////////////////////
 // compare                                                                 //
@@ -3853,74 +3853,74 @@ def cmp(x: Int32, y: Int32): Comparison =
 @test
 def sortWith01(): Bool & Impure =
     let a = Array.sortWith(cmp, []: Array[Int32]);
-    a `eq` []: Array[Int32]
+    a `sameElements` []: Array[Int32]
 
 @test
 def sortWith02(): Bool & Impure =
     let a = Array.sortWith(cmp, [0]);
-    a `eq` [0]
+    a `sameElements` [0]
 
 @test
 def sortWith03(): Bool & Impure =
     let a = Array.sortWith(cmp, [0,1]);
-    a `eq` [0,1]
+    a `sameElements` [0,1]
 
 @test
 def sortWith04(): Bool & Impure =
     let a = Array.sortWith(cmp, [1,0]);
-    a `eq` [0,1]
+    a `sameElements` [0,1]
 
 @test
 def sortWith05(): Bool & Impure =
     let a = Array.sortWith(cmp, [1,1]);
-    a `eq` [1,1]
+    a `sameElements` [1,1]
 
 @test
 def sortWith06(): Bool & Impure =
     let a = Array.sortWith(cmp, [0,1,2,3,4,5]);
-    a `eq` [0,1,2,3,4,5]
+    a `sameElements` [0,1,2,3,4,5]
 
 @test
 def sortWith07(): Bool & Impure =
     let a = Array.sortWith(cmp, [5,4,3,2,1,0]);
-    a `eq` [0,1,2,3,4,5]
+    a `sameElements` [0,1,2,3,4,5]
 
 @test
 def sortWith08(): Bool & Impure =
     let a = Array.sortWith(cmp, [5,3,0,4,1,2]);
-    a `eq` [0,1,2,3,4,5]
+    a `sameElements` [0,1,2,3,4,5]
 
 @test
 def sortWith09(): Bool & Impure =
     let a = Array.sortWith(cmp, [2,3,0,4,1,2]);
-    a `eq` [0,1,2,2,3,4]
+    a `sameElements` [0,1,2,2,3,4]
 
 @test
 def sortWith10(): Bool & Impure =
     let a = Array.sortWith(flip(cmp), [0,1,2,3,4,5]);
-    a `eq` [5,4,3,2,1,0]
+    a `sameElements` [5,4,3,2,1,0]
 
 @test
 def sortWith11(): Bool & Impure =
     let a = Array.sortWith(flip(cmp), [5,4,3,2,1,0]);
-    a `eq` [5,4,3,2,1,0]
+    a `sameElements` [5,4,3,2,1,0]
 
 @test
 def sortWith12(): Bool & Impure =
     let a = Array.sortWith(flip(cmp), [5,3,0,4,1,2]);
-    a `eq` [5,4,3,2,1,0]
+    a `sameElements` [5,4,3,2,1,0]
 
 @test
 def sortWith13(): Bool & Impure =
     let a = Array.sortWith(flip(cmp), [2,3,0,4,1,2]);
-    a `eq` [4,3,2,2,1,0]
+    a `sameElements` [4,3,2,2,1,0]
 
 /////////////////////////////////////////////////////////////////////////////
 // sort                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 
 def testSortVsSortWith(a: Array[Int32]) : Bool & Impure =
-    Array.sort(a) `eq` Array.sortWith(cmp, a)
+    Array.sort(a) `sameElements` Array.sortWith(cmp, a)
 
 @test
 def sort01(): Bool & Impure = testSortVsSortWith([]: Array[Int32])
@@ -3957,79 +3957,79 @@ def sort09(): Bool & Impure = testSortVsSortWith([2,3,0,4,1,2])
 def sortWith01!(): Bool & Impure =
     let a = []: Array[Int32];
     Array.sortWith(cmp, a);
-    a `eq` []: Array[Int32]
+    a `sameElements` []: Array[Int32]
 
 @test
 def sortWith02!(): Bool & Impure =
     let a = [0];
     Array.sortWith!(cmp, a);
-    a `eq` [0]
+    a `sameElements` [0]
 
 @test
 def sortWith03!(): Bool & Impure =
     let a = [0,1];
     Array.sortWith!(cmp, a);
-    a `eq` [0,1]
+    a `sameElements` [0,1]
 
 @test
 def sortWith04!(): Bool & Impure =
     let a = [1,0];
     Array.sortWith!(cmp, a);
-    a `eq` [0,1]
+    a `sameElements` [0,1]
 
 @test
 def sortWith05!(): Bool & Impure =
     let a = [1,1];
     Array.sortWith!(cmp, a);
-    a `eq` [1,1]
+    a `sameElements` [1,1]
 
 @test
 def sortWith06!(): Bool & Impure =
     let a = [0,1,2,3,4,5];
     Array.sortWith!(cmp, a);
-    a `eq` [0,1,2,3,4,5]
+    a `sameElements` [0,1,2,3,4,5]
 
 @test
 def sortWith07!(): Bool & Impure =
     let a = [5,4,3,2,1,0];
     Array.sortWith!(cmp, a);
-    a `eq` [0,1,2,3,4,5]
+    a `sameElements` [0,1,2,3,4,5]
 
 @test
 def sortWith08!(): Bool & Impure =
     let a = [5,3,0,4,1,2];
     Array.sortWith!(cmp, a);
-    a `eq` [0,1,2,3,4,5]
+    a `sameElements` [0,1,2,3,4,5]
 
 @test
 def sortWith09!(): Bool & Impure =
     let a = [2,3,0,4,1,2];
     Array.sortWith!(cmp, a);
-    a `eq` [0,1,2,2,3,4]
+    a `sameElements` [0,1,2,2,3,4]
 
 @test
 def sortWith10!(): Bool & Impure =
     let a = [0,1,2,3,4,5];
     Array.sortWith!(flip(cmp), a);
-    a `eq` [5,4,3,2,1,0]
+    a `sameElements` [5,4,3,2,1,0]
 
 @test
 def sortWith11!(): Bool & Impure =
     let a = [5,4,3,2,1,0];
     Array.sortWith!(flip(cmp), a);
-    a `eq` [5,4,3,2,1,0]
+    a `sameElements` [5,4,3,2,1,0]
 
 @test
 def sortWith12!(): Bool & Impure =
     let a = [5,3,0,4,1,2];
     Array.sortWith!(flip(cmp), a);
-    a `eq` [5,4,3,2,1,0]
+    a `sameElements` [5,4,3,2,1,0]
 
 @test
 def sortWith13!(): Bool & Impure =
     let a = [2,3,0,4,1,2];
     Array.sortWith!(flip(cmp), a);
-    a `eq` [4,3,2,2,1,0]
+    a `sameElements` [4,3,2,2,1,0]
 
 /////////////////////////////////////////////////////////////////////////////
 // sort!                                                                   //
@@ -4040,7 +4040,7 @@ def testSort!VsSortWith!(a: Array[Int32]) : Bool & Impure =
     let c = Array.slice(0, Array.length(a), a);
     Array.sort!(b);
     Array.sortWith!(cmp, c);
-    b `eq` c
+    b `sameElements` c
 
 @test
 def sort!01(): Bool & Impure = testSort!VsSortWith!([]: Array[Int32])
@@ -4074,9 +4074,9 @@ def sort!09(): Bool & Impure = testSort!VsSortWith!([2,3,0,4,1,2])
 /////////////////////////////////////////////////////////////////////////////
 
 def testSortByVsSort(a: Array[Int32]) : Bool & Impure =
-    (Array.sortBy(identity, a) `eq` Array.sort(a)) and
-    (Array.sortBy(x -> 4*x+7, a) `eq` Array.sort(a)) and
-    (Array.sortBy(x -> -x, a) `eq` Array.sortWith(flip(cmp),a))
+    (Array.sortBy(identity, a) `sameElements` Array.sort(a)) and
+    (Array.sortBy(x -> 4*x+7, a) `sameElements` Array.sort(a)) and
+    (Array.sortBy(x -> -x, a) `sameElements` Array.sortWith(flip(cmp),a))
 
 @test
 def sortBy01(): Bool & Impure = testSortByVsSort([]: Array[Int32])
@@ -4119,7 +4119,7 @@ instance Eq[R] {
 @test
 def sortBy10(): Bool & Impure =
     Array.sortBy(r -> let R(x) = r; x.i, [R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})])
-    `eq` [R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})]
+    `sameElements` [R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})]
 
 /////////////////////////////////////////////////////////////////////////////
 // sortBy!                                                                 //
@@ -4130,8 +4130,8 @@ def testSortBy!VsSortBy(a: Array[Int32]) : Bool & Impure =
     let c = Array.slice(0, Array.length(a), a);
     Array.sortBy!(identity, b);
     Array.sortBy!(x -> 4*x+7, c);
-    (b `eq` Array.sortBy(x -> 4*x+7, a)) and
-    (c `eq` Array.sortBy(identity, a))
+    (b `sameElements` Array.sortBy(x -> 4*x+7, a)) and
+    (c `sameElements` Array.sortBy(identity, a))
 
 @test
 def sortBy!01(): Bool & Impure = testSortBy!VsSortBy([]: Array[Int32])
@@ -4248,7 +4248,7 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def toLazyList04(): Bool & Impure =
-        Array.range(-1000, 1000) |> Array.toLazyList |> LazyList.toArray `eq` Array.range(-1000, 1000)
+        Array.range(-1000, 1000) |> Array.toLazyList |> LazyList.toArray `sameElements` Array.range(-1000, 1000)
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
@@ -4276,11 +4276,11 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def copyOfRange01(): Bool & Impure =
-        Array.copyOfRange(0, 3, [true, false, true]) `eq` [true, false, true]
+        Array.copyOfRange(0, 3, [true, false, true]) `sameElements` [true, false, true]
 
     @test
     def copyOfRange02(): Bool & Impure =
-        Array.copyOfRange(1, 3, [true, false, true]) `eq` [false, true]
+        Array.copyOfRange(1, 3, [true, false, true]) `sameElements` [false, true]
 
     @test
     def copyOfRange03(): Bool & Impure =
@@ -4289,11 +4289,11 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def copyOfRange04(): Bool & Impure =
-        Array.copyOfRange(0, 3, ['a', 'b', 'c']) `eq` ['a', 'b', 'c']
+        Array.copyOfRange(0, 3, ['a', 'b', 'c']) `sameElements` ['a', 'b', 'c']
 
     @test
     def copyOfRange05(): Bool & Impure =
-        Array.copyOfRange(1, 3, ['a', 'b', 'c']) `eq` ['b', 'c']
+        Array.copyOfRange(1, 3, ['a', 'b', 'c']) `sameElements` ['b', 'c']
 
     @test
     def copyOfRange06(): Bool & Impure =
@@ -4302,11 +4302,11 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def copyOfRange07(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1.0f32, 2.0f32, 3.0f32]) `eq` [1.0f32, 2.0f32, 3.0f32]
+        Array.copyOfRange(0, 3, [1.0f32, 2.0f32, 3.0f32]) `sameElements` [1.0f32, 2.0f32, 3.0f32]
 
     @test
     def copyOfRange08(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1.0f32, 2.0f32, 3.0f32]) `eq` [2.0f32, 3.0f32]
+        Array.copyOfRange(1, 3, [1.0f32, 2.0f32, 3.0f32]) `sameElements` [2.0f32, 3.0f32]
 
     @test
     def copyOfRange09(): Bool & Impure =
@@ -4315,11 +4315,11 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def copyOfRange10(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1.0f64, 2.0f64, 3.0f64]) `eq` [1.0f64, 2.0f64, 3.0f64]
+        Array.copyOfRange(0, 3, [1.0f64, 2.0f64, 3.0f64]) `sameElements` [1.0f64, 2.0f64, 3.0f64]
 
     @test
     def copyOfRange11(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1.0f64, 2.0f64, 3.0f64]) `eq` [2.0f64, 3.0f64]
+        Array.copyOfRange(1, 3, [1.0f64, 2.0f64, 3.0f64]) `sameElements` [2.0f64, 3.0f64]
 
     @test
     def copyOfRange12(): Bool & Impure =
@@ -4328,11 +4328,11 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def copyOfRange13(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1i8, 2i8, 3i8]) `eq` [1i8, 2i8, 3i8]
+        Array.copyOfRange(0, 3, [1i8, 2i8, 3i8]) `sameElements` [1i8, 2i8, 3i8]
 
     @test
     def copyOfRange14(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1i8, 2i8, 3i8]) `eq` [2i8, 3i8]
+        Array.copyOfRange(1, 3, [1i8, 2i8, 3i8]) `sameElements` [2i8, 3i8]
 
     @test
     def copyOfRange15(): Bool & Impure =
@@ -4341,11 +4341,11 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def copyOfRange16(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1i16, 2i16, 3i16]) `eq` [1i16, 2i16, 3i16]
+        Array.copyOfRange(0, 3, [1i16, 2i16, 3i16]) `sameElements` [1i16, 2i16, 3i16]
 
     @test
     def copyOfRange17(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1i16, 2i16, 3i16]) `eq` [2i16, 3i16]
+        Array.copyOfRange(1, 3, [1i16, 2i16, 3i16]) `sameElements` [2i16, 3i16]
 
     @test
     def copyOfRange18(): Bool & Impure =
@@ -4354,11 +4354,11 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def copyOfRange19(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1, 2, 3]) `eq` [1, 2, 3]
+        Array.copyOfRange(0, 3, [1, 2, 3]) `sameElements` [1, 2, 3]
 
     @test
     def copyOfRange20(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1, 2, 3]) `eq` [2, 3]
+        Array.copyOfRange(1, 3, [1, 2, 3]) `sameElements` [2, 3]
 
     @test
     def copyOfRange21(): Bool & Impure =
@@ -4367,11 +4367,11 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def copyOfRange22(): Bool & Impure =
-        Array.copyOfRange(0, 3, [1i64, 2i64, 3i64]) `eq` [1i64, 2i64, 3i64]
+        Array.copyOfRange(0, 3, [1i64, 2i64, 3i64]) `sameElements` [1i64, 2i64, 3i64]
 
     @test
     def copyOfRange23(): Bool & Impure =
-        Array.copyOfRange(1, 3, [1i64, 2i64, 3i64]) `eq` [2i64, 3i64]
+        Array.copyOfRange(1, 3, [1i64, 2i64, 3i64]) `sameElements` [2i64, 3i64]
 
     @test
     def copyOfRange24(): Bool & Impure =
@@ -4382,21 +4382,21 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def copyOfRange25(): Bool & Impure =
         let a = Array.copyOfRange(0, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]);
         let b = [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']];
-        Array.flatten(a) `eq` Array.flatten(b)
+        Array.flatten(a) `sameElements` Array.flatten(b)
 
     @test
     def copyOfRange26(): Bool & Impure =
         let a = Array.copyOfRange(1, 3, [['a', 'b', 'c'], ['d', 'e', 'f', 'g'], ['h']]);
         let b = [['d', 'e', 'f', 'g'], ['h']];
-        Array.flatten(a) `eq` Array.flatten(b)
+        Array.flatten(a) `sameElements` Array.flatten(b)
 
     @test
     def copyOfRange27(): Bool & Impure =
-        Array.copyOfRange(0, 3, [Some(1), Some(2), None]) `eq` [Some(1), Some(2), None]
+        Array.copyOfRange(0, 3, [Some(1), Some(2), None]) `sameElements` [Some(1), Some(2), None]
 
     @test
     def copyOfRange28(): Bool & Impure =
-        Array.copyOfRange(1, 3, [Some(1), Some(2), None]) `eq` [Some(2), None]
+        Array.copyOfRange(1, 3, [Some(1), Some(2), None]) `sameElements` [Some(2), None]
 
     @test
     def copyOfRange29(): Bool & Impure =
@@ -4407,13 +4407,13 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def copyOfRange30(): Bool & Impure =
         let a = Array.copyOfRange(0, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
         let b = [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]];
-        Array.flatten(a) `eq` Array.flatten(b)
+        Array.flatten(a) `sameElements` Array.flatten(b)
 
     @test
     def copyOfRange31(): Bool & Impure =
         let a = Array.copyOfRange(1, 3, [[Some('a'), Some('b'), Some('c')], [Some('d'), Some('e'), Some('f'), Some('g')], [None]]);
         let b = [[Some('d'), Some('e'), Some('f'), Some('g')], [None]];
-        Array.flatten(a) `eq` Array.flatten(b)
+        Array.flatten(a) `sameElements` Array.flatten(b)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4430,18 +4430,18 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def toIterator03(): Bool & Impure =
-        [1, 2, 3] |> Array.toIterator |> Iterator.toArray `eq` [1, 2, 3]
+        [1, 2, 3] |> Array.toIterator |> Iterator.toArray `sameElements` [1, 2, 3]
 
     @test
     def toIterator04(): Bool & Impure =
-        Array.range(-100, 100) |> Array.toIterator |> Iterator.toArray `eq` Array.range(-100, 100)
+        Array.range(-100, 100) |> Array.toIterator |> Iterator.toArray `sameElements` Array.range(-100, 100)
 
     @test
     def toIterator05(): Bool & Impure = {
         let a = [1, 2, 3];
         let iter = Array.toIterator(a);
         a[0] = 10000;
-        Iterator.toArray(iter) `eq` [1, 2, 3]
+        Iterator.toArray(iter) `sameElements` [1, 2, 3]
     }
 
 }

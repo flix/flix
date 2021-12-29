@@ -142,4 +142,26 @@ namespace Applicative {
     pub def productRight(fa: m[a], fb : m[b]): m[b] with Applicative[m] =
         Applicative.liftA2((_, b) -> b, fa, fb)
 
+    ///
+    /// `<*>` is an operator alias for `ap`.
+    ///
+    pub def <*>(mf: m[a -> b & ef], ma: m[a]): m[b] & ef with Applicative[m] = Applicative.ap(mf, ma)
+
+    ///
+    /// `<**>` is a variant of the operator `<*>` with its arguments flipped.
+    ///
+    /// The order of evaluation is `ma` then `mf`.
+    ///
+    pub def <**>(ma : m[a], mf: m[a -> b & ef]): m[b] & ef with Applicative[m] = Applicative.liftA2((a, f) -> f(a), ma, mf)
+
+    ///
+    /// `<*` is an operator alias for `productLeft`.
+    ///
+    pub def <*(ma: m[a], mb : m[b]): m[a] with Applicative[m] = productLeft(ma, mb)
+
+    ///
+    /// `*>` is an operator alias for `productRight`.
+    ///
+    pub def *>(ma: m[a], mb : m[b]): m[b] with Applicative[m] = productRight(ma, mb)
+
 }
