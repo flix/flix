@@ -23,7 +23,7 @@ namespace TestMutSet {
     def sameElements01(): Bool & Impure =
         let s = MutSet.empty();
         let s2 = MutSet.empty();
-        MutSet.sameElements(d, d2)
+        MutSet.sameElements(s, s2)
 
     @test
     def sameElements02(): Bool & Impure =
@@ -33,7 +33,7 @@ namespace TestMutSet {
         let s2 = MutSet.empty();
         MutSet.add!(1, d2);
 
-        MutSet.sameElements(d, d2)
+        MutSet.sameElements(s, s2)
 
     @test
     def sameElements03(): Bool & Impure =
@@ -43,7 +43,7 @@ namespace TestMutSet {
         let s2 = MutSet.empty();
         MutSet.add!(2, d2);
 
-        not MutSet.sameElements(d, d2)
+        not MutSet.sameElements(s, s2)
 
     @test
     def sameElements04(): Bool & Impure =
@@ -57,7 +57,7 @@ namespace TestMutSet {
         MutSet.add!(3, d2);
         MutSet.add!(1, d2);
 
-        MutSet.sameElements(d, d2)
+        MutSet.sameElements(s, s2)
 
     @test
     def sameElements05(): Bool & Impure =
@@ -71,7 +71,7 @@ namespace TestMutSet {
         MutSet.add!("a", d2);
         MutSet.add!("b", d2);
 
-        MutSet.sameElements(d, d2)
+        MutSet.sameElements(s, s2)
 
     @test
     def setSameElements06(): Bool & Impure =
@@ -84,6 +84,6 @@ namespace TestMutSet {
         MutSet.add!("c", d2);
         MutSet.add!("a", d2);
 
-        not MutSet.sameElements(d, d2)
+        not MutSet.sameElements(s, s2)
 
 }
