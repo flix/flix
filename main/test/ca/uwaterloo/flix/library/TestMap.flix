@@ -689,6 +689,15 @@ def mapWithKey04(): Bool = Map.mapWithKey((k, v) -> k + v, Map#{2 => -1, 5 => 15
 def mapWithKey05(): Bool = Map.mapWithKey((k, v) -> k + v, Map#{2 => -1, 5 => 15, 11 => -9, 8 => 8})
                                         == Map#{2 => 1, 5 => 20, 11 => 2, 8 => 16}
 
+@test
+def mapWithKey06(): Bool & Impure =
+    let range = List.range(0, 2000);
+    let m = List.zip(range, range) |> List.toMap;
+    let a = MutList.new();
+    Map.mapWithKey((k, v) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); v }, m);
+    MutList.toList(a) == range
+
+
 /////////////////////////////////////////////////////////////////////////////
 // foldWithKey                                                             //
 /////////////////////////////////////////////////////////////////////////////
@@ -847,6 +856,15 @@ def count06(): Bool = Map.count((k, v) -> k == v, Map#{1 => 2, 2 => 2}) == 1
 
 @test
 def count07(): Bool = Map.count((k, v) -> k == v, Map#{1 => 1, 2 => 2}) == 2
+
+@test
+def count08(): Bool & Impure =
+    let range = List.range(0, 2000);
+    let m = List.zip(range, range) |> List.toMap;
+    let a = MutList.new();
+    Map.count((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); true }, m);
+    MutList.toList(a) == range
+
 
 /////////////////////////////////////////////////////////////////////////////
 // exists                                                                  //
@@ -1849,6 +1867,15 @@ def query18(): Bool =
     def minimumKeyBy04(): Bool =
         Map.minimumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}) == Some((-44, 4))
 
+    @test
+    def minimumKeyBy05(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, range) |> List.toMap;
+        let a = MutList.new();
+        Map.minimumKeyBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(a, b); x <=> y }, m);
+        MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
+
+
     /////////////////////////////////////////////////////////////////////////////
     // minimumValue                                                            //
     /////////////////////////////////////////////////////////////////////////////
@@ -1891,6 +1918,15 @@ def query18(): Bool =
     @test
     def minimumValueBy05(): Bool =
         Map.minimumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 4 => -44, 5 => 5, 0 => 2}) == Some((4, -44))
+
+    @test
+    def minimumValueBy06(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, List.reverse(range)) |> List.toMap;
+        let a = MutList.new();
+        Map.minimumValueBy((x, y) -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(a, b); x <=> y }, m);
+        MutList.toList(a) == List.reverse(List.range(1, 2000)) // The first / left most value is ignored
+
 
     /////////////////////////////////////////////////////////////////////////////
     // maximum                                                                 //
