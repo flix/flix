@@ -17,6 +17,7 @@
 namespace TestMonad {
 
     use Monad.{flatten, kleisliLeft, kleisliRight};
+    use Monad.{=<<, >>=, >=>, <=<};
 
     /////////////////////////////////////////////////////////////////////////////
     // flatten                                                                 //
@@ -60,5 +61,57 @@ namespace TestMonad {
     @test
     def kleisliRight02(): Bool =
         kleisliRight(x1 -> Some(ToString.toString(x1)), x2 -> Some(x2 + 1), 1) == Some("2")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // symFlatMap (=<<)                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def symFlatMap01(): Bool =
+        (x -> Some(x + 1)) =<< None == None
+
+    @test
+    def symFlatMap02(): Bool =
+        (x -> Some(x + 1)) =<< Some(1) == Some(2)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // symBind (>>=)                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def symBind01(): Bool =
+        None >>= (x -> Some(x + 1)) == None
+
+    @test
+    def symBind02(): Bool =
+        Some(1) >>= (x -> Some(x + 1)) == Some(2)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // symKleisliLeft (>=>)                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def symKleisliLeft01(): Bool =
+        let mf = (_ -> None) >=> (x2 -> Some(ToString.toString(x2)));
+        mf(1) == None
+
+    @test
+    def symKleisliLeft02(): Bool =
+        let mf = (x1 -> Some(x1 + 1)) >=> (x2 -> Some(ToString.toString(x2)));
+        mf(1) == Some("2")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // symKleisliRight (<=<)                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def symKleisliRight01(): Bool =
+        let mf = (x1 -> Some(ToString.toString(x1))) <=< (_ -> None);
+        mf(1) == None
+
+    @test
+    def symKleisliRight02(): Bool =
+        let mf = (x1 -> Some(ToString.toString(x1))) <=< (x2 -> Some(x2 + 1));
+        mf(1) == Some("2")
 
 }
