@@ -507,8 +507,8 @@ namespace Map {
                 if (useParallelEvaluation(m))
                     RedBlackTree.parCount(threads() - 1, g1, t) as & Pure
                 else
-                    RedBlackTree.seqCount(g1, t)
-            case _  => RedBlackTree.seqCount(f, t)
+                    RedBlackTree.foldLeft((b, k, v) -> if (g1(k, v)) b + 1 else b, 0, t)
+            case _  => RedBlackTree.foldLeft((b, k, v) -> if (f(k, v)) b + 1 else b, 0, t)
         }
 
     ///
