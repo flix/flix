@@ -174,8 +174,8 @@ namespace Set {
                     let o = RedBlackTree.parMinimumBy(threads() - 1, h, t) as & Pure;
                     Option.map(fst, o)
                 else
-                    RedBlackTree.seqMinimumBy(h, t) |> Option.map(fst)
-            case _       => RedBlackTree.seqMinimumBy((kl, _, kr, _) -> cmp(kl, kr), t) |> Option.map(fst)
+                    RedBlackTree.reduceLeft((kl, vl, kr, vr) -> if (g({kl = kl, kr = kr}) == LessThan) (kl, vl) else (kr, vr), t) |> Option.map(fst)
+            case _ => RedBlackTree.reduceLeft((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), t) |> Option.map(fst)
         }
 
     ///
