@@ -326,7 +326,7 @@ namespace MutSet {
     ///
     /// Returns `true` if MutSets `a` and `b` have the same elements, i.e. are structurally equal.
     ///
-    pub def sameElements(a: MutSet[a], b: MutSet[a]): Bool & Impure with Order[a] =
+    pub def sameElements(a: MutSet[t], b: MutSet[t]): Bool & Impure with Order[t] =
         MutSet.isSubsetOf(a, b) and MutSet.isSubsetOf(b, a)
 
 }

@@ -225,7 +225,7 @@ namespace MutDeque {
     ///
     /// Returns `true` if MutDeques `a` and `b` have the same elements, i.e. are structurally equal.
     ///
-    pub def sameElements(a: MutDeque[a], b: MutDeque[a]): Bool & Impure with Eq[a] =
+    pub def sameElements(a: MutDeque[t], b: MutDeque[t]): Bool & Impure with Eq[t] =
         let aSize = size(a);
         let bSize = size(b);
         if (aSize == bSize)
