@@ -61,7 +61,7 @@ namespace Iterator {
         Iterator(done, next)
 
     ///
-    /// Return `Some(x)` if `iter` is not empty. Return `None` otherwise.
+    /// Returns `Some(x)` if `iter` is not empty. Returns `None` otherwise.
     ///
     /// Consumes the head element of `iter`.
     ///
@@ -435,6 +435,32 @@ namespace Iterator {
             Some(foldLeft(f, next(), iter))
 
     ///
+    /// Returns an iterator over the results of `f`.
+    ///
+    /// If `f` returns `Ok(x)`, then the next element is `x`.
+    ///
+    /// If `f` returns `Err(e)`, then the iterator is depleted.
+    ///
+    pub def unfoldWithOk(f: Unit -> Result[a, b] & ef): Iterator[a] & Impure =
+        let cursor = ref None;
+        let done = () -> match deref cursor {
+            case None    => match f() {
+                case Err(_) => true
+                case Ok(x)  =>
+                    cursor := Some(x);
+                    false
+            }
+            case Some(_) => false
+        };
+        let next = () -> match deref cursor {
+            case None    => bug!("Empty Iterator!")
+            case Some(x) =>
+                cursor := None;
+                x
+        };
+        Iterator(done, next)
+
+    ///
     /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
     ///
     /// Consumes the entire iterator.
@@ -603,8 +629,6 @@ namespace Iterator {
                 n()
         };
         Iterator(done1, next1)
-
-    // TODO: Refactor `flatMapForward` and `intercalateForward` to use `forward`.
 
     ///
     /// Forwards the iterator the first non-empty iterator produced by `next`.
