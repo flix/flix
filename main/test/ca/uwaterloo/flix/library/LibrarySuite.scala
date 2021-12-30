@@ -66,6 +66,7 @@ class LibrarySuite extends Suites(
   new FlixTest("TestUpperBound", "main/test/ca/uwaterloo/flix/library/TestUpperBound.flix")(Options.TestWithLibAll),
   new FlixTest("TestGetOpt", "main/test/ca/uwaterloo/flix/library/TestGetOpt.flix")(Options.TestWithLibAll),
   new FlixTest("TestSemiGroup", "main/test/ca/uwaterloo/flix/library/TestSemiGroup.flix")(Options.TestWithLibAll),
+  new FlixTest("TestTraversable", "main/test/ca/uwaterloo/flix/library/TestTraversable.flix")(Options.TestWithLibAll),
   new FlixTest("TestFunctor", "main/test/ca/uwaterloo/flix/library/TestFunctor.flix")(Options.TestWithLibAll),
   new FlixTest("TestApplicative", "main/test/ca/uwaterloo/flix/library/TestApplicative.flix")(Options.TestWithLibAll),
   new FlixTest("TestMonad", "main/test/ca/uwaterloo/flix/library/TestMonad.flix")(Options.TestWithLibAll),
