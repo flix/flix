@@ -649,7 +649,7 @@ namespace RedBlackTree {
         ((((l, v, r) -> Node(color, l, k, v, r)) `Functor.map` left) `Applicative.ap` value) `Applicative.ap` right
 
     ///
-    /// Returns a RedBlackTree with mappings `k -> f(v)` for every `k -> v` in `tree`.
+    /// Returns a RedBlackTree with mappings `k => f(v)` for every `k => v` in `tree`.
     ///
     pub def mapAWithKey(f: (k, v1) -> m[v2] & ef, tree: RedBlackTree[k, v1]): m[RedBlackTree[k, v2]] & ef with Applicative[m] =
         mapAWithKeyHelper(f, tree, t -> t as & ef)
