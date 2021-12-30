@@ -165,17 +165,17 @@ namespace Set {
     ///
     @ParallelWhenPure
     pub def minimumBy(cmp: (a, a) -> Comparison & ef, s: Set[a]): Option[a] & ef =
-        let Set(t) = s;
         let f = r -> cmp(r.kl, r.kr);
         reifyEff(f) {
             case Pure(g) =>
-                let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
                 if (useParallelEvaluation(s))
+                    let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
+                    let Set(t) = s;
                     let o = RedBlackTree.parMinimumBy(threads() - 1, h, t) as & Pure;
                     Option.map(fst, o)
                 else
-                    RedBlackTree.reduceLeft((kl, vl, kr, vr) -> if (g({kl = kl, kr = kr}) == LessThan) (kl, vl) else (kr, vr), t) |> Option.map(fst)
-            case _ => RedBlackTree.reduceLeft((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), t) |> Option.map(fst)
+                    reduceLeft((x, y) -> if (cmp(x, y) == LessThan) x else y, s)
+            case _ => reduceLeft((x, y) -> if (cmp(x, y) == LessThan) x else y, s)
         }
 
     ///
@@ -291,15 +291,15 @@ namespace Set {
     ///
     @ParallelWhenPure
     pub def count(f: a -> Bool & ef, s: Set[a]): Int32 & ef =
-        let Set(t) = s;
         reifyEff(f) {
             case Pure(g) =>
-                let h = (k, _) -> g(k);
                 if (useParallelEvaluation(s))
+                    let h = (k, _) -> g(k);
+                    let Set(t) = s;
                     RedBlackTree.parCount(threads() - 1, h, t) as & Pure
                 else
-                    RedBlackTree.foldLeft((b, k, _) -> if (g(k)) b + 1 else b, 0, t)
-            case _  => RedBlackTree.foldLeft((b, k, _) -> if (f(k)) b + 1 else b, 0, t)
+                    foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
+            case _  => foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
         }
 
 
