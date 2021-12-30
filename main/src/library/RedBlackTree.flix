@@ -67,6 +67,23 @@ namespace RedBlackTree {
     }
 
     ///
+    /// Returns the number of threads to use for parallel evaluation.
+    ///
+    def threads(): Int32 =
+        // Note: We use a multiple of the number of physical cores for better performance.
+        let multiplier = 4;
+        multiplier * Environment.getVirtualProcessors()
+
+    ///
+    /// Determines whether to use parallel evaluation.
+    ///
+    /// By default we only enable parallel evaluation if the tree has a certain size.
+    ///
+    def useParallelEvaluation(t: RedBlackTree[k, v]): Bool =
+        let minSize = 2 ** RedBlackTree.blackHeight(t);
+        minSize >= 1024
+
+    ///
     /// Returns the number of nodes in `tree`.
     ///
     @Time(size(tree)) @Space(Int32.log2(size(tree)))
@@ -475,6 +492,24 @@ namespace RedBlackTree {
     }
 
     ///
+    /// Returns a RedBlackTree with mappings `k -> f(k, v)` for every `k -> v` in `t`.
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def mapWithKey(f: (k, v1) -> v2 & ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & ef =
+        let f1 = (r) -> f(r.k, r.v);
+        reifyEff(f1) {
+            case Pure(g) =>
+                if (useParallelEvaluation(t))
+                    let h = (k, v) -> g({k = k, v = v});
+                    parMapWithKey(threads() - 1, h, t) as & Pure
+                else
+                    seqMapWithKey(f, t)
+            case _  => seqMapWithKey(f, t)
+        }
+
+    ///
     /// Maps `f` over the tree `t` in parallel.
     ///
     /// The implementation spawns `n` threads each applying `f` sequentially
@@ -482,7 +517,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parMapWithKey(n: Int32, f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & Impure = {
+    def parMapWithKey(n: Int32, f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & Impure = {
         if (n <= 1)
             parSeqMapWithKey(f, t)
         else
@@ -522,7 +557,7 @@ namespace RedBlackTree {
     ///
     /// Sequentially maps `f` over the tree `t`.
     ///
-    pub def seqMapWithKey(f: (k, v1) -> v2 & ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & ef = match t {
+    def seqMapWithKey(f: (k, v1) -> v2 & ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & ef = match t {
         case Leaf                   => Leaf
         case DoubleBlackLeaf        => DoubleBlackLeaf
         case Node(c, a, k, v, b)    =>

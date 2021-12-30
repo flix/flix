@@ -23,24 +23,6 @@ enum DelayMap[k, v] {
 namespace DelayMap {
 
     ///
-    /// Returns the number of threads to use for parallel evaluation.
-    ///
-    def threads(): Int32 =
-        // Note: We use a multiple of the number of physical cores for better performance.
-        let multiplier = 4;
-        multiplier * Environment.getVirtualProcessors()
-
-    ///
-    /// Determines whether to use parallel evaluation.
-    ///
-    /// By default we only enable parallel evaluation if the map has a certain size.
-    ///
-    def useParallelEvaluation(m: DelayMap[k, v]): Bool =
-        let DMap(t) = m;
-        let minSize = 2 ** RedBlackTree.blackHeight(t);
-        minSize >= 1024
-
-    ///
     /// Returns the empty map.
     ///
     @Experimental
@@ -241,10 +223,7 @@ namespace DelayMap {
     def mapWithKeyL(f: (k, v1) -> v2, m: DelayMap[k, v1]): DelayMap[k, v2] =
         let DMap(t) = m;
         let g = (k, v) -> lazy f(k, force v);
-        if (useParallelEvaluation(m))
-            DMap(RedBlackTree.parMapWithKey(threads() - 1, g, t)) as & Pure
-        else
-            DMap(RedBlackTree.seqMapWithKey(g, t))
+        DMap(RedBlackTree.mapWithKey(g, t))
 
     ///
     /// Helper function for `mapWithKey`. Applies `f` eagerly.
@@ -255,7 +234,7 @@ namespace DelayMap {
                 let x1 = f(k, force v);
                 lazy x1
             };
-        DMap(RedBlackTree.seqMapWithKey(g, t))
+        DMap(RedBlackTree.mapWithKey(g, t))
 
     ///
     /// Returns a map of all mappings `k -> v` in `m` where `v` satisfies the predicate `f`.
@@ -440,10 +419,7 @@ namespace DelayMap {
     @Experimental @Parallel
     pub def toMap(m: DelayMap[k, v]): Map[k, v] =
         let DMap(t) = m;
-        if (useParallelEvaluation(m))
-            Map(RedBlackTree.parMapWithKey(threads() - 1, (_, v) -> force v, t)) as & Pure
-        else
-            Map(RedBlackTree.seqMapWithKey((_, v) -> force v, t))
+        Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
 
     ///
     /// Updates `m` with `k -> f(v)` if `k -> v` is in `m`.

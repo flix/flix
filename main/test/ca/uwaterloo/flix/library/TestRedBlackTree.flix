@@ -218,16 +218,54 @@ namespace TestRedBlackTree {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def parMapWithKey06(): Bool & Impure =
-        let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
-        let expected = List.zip(List.range(0, 2000), List.range(1, 2001)) |> List.toMap;
-        Map(RedBlackTree.parMapWithKey(threads() - 1, (_, v) -> v + 1, t)) == expected
+    def mapWithKey01(): Bool =
+        let Map(t) = Map#{}: Map[Unit, Unit];
+        let m = Map(RedBlackTree.mapWithKey((_, v) -> v, t));
+        m == Map#{}
 
     @test
-    def parMapWithKey07(): Bool & Impure =
+    def mapWithKey02(): Bool =
+        let Map(t) = Map#{1 => 4};
+        let m = Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
+        m == Map#{1 => 5}
+
+    @test
+    def mapWithKey03(): Bool =
+        let Map(t) = Map#{2 => -1, 0 => 0};
+        let m = Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
+        m == Map#{2 => 1, 0 => 0}
+
+    @test
+    def mapWithKey04(): Bool =
+        let Map(t) = Map#{2 => -1, 5 => 15, 11 => -9};
+        let m = Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
+        m == Map#{2 => 1, 5 => 20, 11 => 2}
+
+    @test
+    def mapWithKey05(): Bool =
+        let Map(t) = Map#{2 => -1, 5 => 15, 11 => -9, 8 => 8};
+        let m = Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
+        m == Map#{2 => 1, 5 => 20, 11 => 2, 8 => 16}
+
+    @test
+    def mapWithKey06(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, range) |> List.toMap;
+        let a = MutList.new();
+        Map.mapWithKey((k, v) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); v }, m);
+        MutList.toList(a) == range
+
+    @test
+    def mapWithKey07(): Bool =
+        let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
+        let expected = List.zip(List.range(0, 2000), List.range(1, 2001)) |> List.toMap;
+        Map(RedBlackTree.mapWithKey((_, v) -> v + 1, t)) == expected
+
+    @test
+    def mapWithKey08(): Bool =
         let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         let expected = List.zip(List.range(0, 2000), List.range(-999, 1001)) |> List.toMap;
-        Map(RedBlackTree.parMapWithKey(threads() - 1, (_, v) -> v + 1, t)) == expected
+        Map(RedBlackTree.mapWithKey((_, v) -> v + 1, t)) == expected
 
 
     /////////////////////////////////////////////////////////////////////////////
