@@ -15,4 +15,75 @@
  */
 namespace TestMutSet {
 
+    /////////////////////////////////////////////////////////////////////////////
+    // sameElements                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sameElements01(): Bool & Impure =
+        let s = MutSet.empty();
+        let s2 = MutSet.empty();
+        MutSet.sameElements(s, s2)
+
+    @test
+    def sameElements02(): Bool & Impure =
+        let s = MutSet.empty();
+        MutSet.add!(1, s);
+
+        let s2 = MutSet.empty();
+        MutSet.add!(1, s2);
+
+        MutSet.sameElements(s, s2)
+
+    @test
+    def sameElements03(): Bool & Impure =
+        let s = MutSet.empty();
+        MutSet.add!(1, s);
+
+        let s2 = MutSet.empty();
+        MutSet.add!(2, s2);
+
+        not MutSet.sameElements(s, s2)
+
+    @test
+    def sameElements04(): Bool & Impure =
+        let s = MutSet.empty();
+        MutSet.add!(1, s);
+        MutSet.add!(2, s);
+        MutSet.add!(3, s);
+
+        let s2 = MutSet.empty();
+        MutSet.add!(2, s2);
+        MutSet.add!(3, s2);
+        MutSet.add!(1, s2);
+
+        MutSet.sameElements(s, s2)
+
+    @test
+    def sameElements05(): Bool & Impure =
+        let s = MutSet.empty();
+        MutSet.add!("a", s);
+        MutSet.add!("b", s);
+        MutSet.add!("c", s);
+
+        let s2 = MutSet.empty();
+        MutSet.add!("c", s2);
+        MutSet.add!("a", s2);
+        MutSet.add!("b", s2);
+
+        MutSet.sameElements(s, s2)
+
+    @test
+    def setSameElements06(): Bool & Impure =
+        let s = MutSet.empty();
+        MutSet.add!("a", s);
+        MutSet.add!("b", s);
+        MutSet.add!("c", s);
+
+        let s2 = MutSet.empty();
+        MutSet.add!("c", s2);
+        MutSet.add!("a", s2);
+
+        not MutSet.sameElements(s, s2)
+
 }
