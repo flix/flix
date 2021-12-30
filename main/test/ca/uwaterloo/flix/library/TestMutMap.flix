@@ -15,4 +15,72 @@
  */
 namespace TestMutMap {
 
+    /////////////////////////////////////////////////////////////////////////////
+    // sameElements                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sameElements01(): Bool & Impure =
+        let m = MutMap.empty();
+        let m2 = MutMap.empty();
+
+        MutMap.sameElements(m, m2)
+
+    @test
+    def sameElements02(): Bool & Impure =
+        let m = MutMap.empty();
+        MutMap.put!(1, "a", m);
+
+        let m2 = MutMap.empty();
+        MutMap.put!(1, "a", m2);
+
+        MutMap.sameElements(m, m2)
+
+    @test
+    def sameElements03(): Bool & Impure =
+        let m = MutMap.empty();
+        MutMap.put!(1, "a", m);
+        MutMap.put!(1, "b", m);
+
+        let m2 = MutMap.empty();
+        MutMap.put!(1, "a", m2);
+
+        not MutMap.sameElements(m, m2)
+
+    @test
+    def sameElements04(): Bool & Impure =
+        let m = MutMap.empty();
+        MutMap.put!(1, "a", m);
+        MutMap.put!(2, "b", m);
+
+        let m2 = MutMap.empty();
+        MutMap.put!(1, "a", m2);
+
+        not MutMap.sameElements(m, m2)
+
+    @test
+    def sameElements05(): Bool & Impure =
+        let m = MutMap.empty();
+        MutMap.put!(1, "a", m);
+
+        let m2 = MutMap.empty();
+        MutMap.put!(1, "a", m2);
+        MutMap.put!(2, "b", m2);
+
+        not MutMap.sameElements(m, m2)
+
+    @test
+    def sameElements06(): Bool & Impure =
+        let m = MutMap.empty();
+        MutMap.put!(2, "b", m);
+        MutMap.put!(3, "c", m);
+        MutMap.put!(1, "a", m);
+
+        let m2 = MutMap.empty();
+        MutMap.put!(1, "a", m2);
+        MutMap.put!(2, "b", m2);
+        MutMap.put!(3, "c", m2);
+
+        MutMap.sameElements(m, m2)
+
 }
