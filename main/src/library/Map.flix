@@ -149,7 +149,7 @@ namespace Map {
         RedBlackTree.minimum(t)
 
     ///
-    /// Optionally finds `k -> v` where `k` is the smallest key according to the given comparator `cmp`.
+    /// Optionally finds `k => v` where `k` is the smallest key according to the given comparator `cmp`.
     ///
     /// Returns `None` if `m` is empty.
     ///
@@ -157,20 +157,20 @@ namespace Map {
     ///
     @ParallelWhenPure
     pub def minimumKeyBy(cmp: (k, k) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
-        let Map(t) = m;
         let f = r -> cmp(r.kl, r.kr);
         reifyEff(f) {
             case Pure(g) =>
-                let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
                 if (useParallelEvaluation(m))
+                    let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
+                    let Map(t) = m;
                     RedBlackTree.parMinimumBy(threads() - 1, h, t) as & Pure
                 else
-                    RedBlackTree.reduceLeft((kl, vl, kr, vr) -> if (g({kl = kl, kr = kr}) == LessThan) (kl, vl) else (kr, vr), t)
-            case _ => RedBlackTree.reduceLeft((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), t)
+                    reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), m)
+            case _ => reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), m)
         }
 
     ///
-    /// Optionally finds `k -> v` where `v` is the smallest value.
+    /// Optionally finds `k => v` where `v` is the smallest value.
     ///
     /// Returns `None` if `m` is empty.
     ///
@@ -179,7 +179,7 @@ namespace Map {
         minimumValueBy((x, y) -> x <=> y, m)
 
     ///
-    /// Optionally finds `k -> v` where `v` is the smallest value according to the given comparator `cmp`.
+    /// Optionally finds `k => v` where `v` is the smallest value according to the given comparator `cmp`.
     ///
     /// Returns `None` if `m` is empty.
     ///
@@ -187,16 +187,16 @@ namespace Map {
     ///
     @ParallelWhenPure
     pub def minimumValueBy(cmp: (v, v) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
-        let Map(t) = m;
         let f = r -> cmp(r.vl, r.vr);
         reifyEff(f) {
             case Pure(g) =>
-                let h = (_, vl, _, vr) -> g({vl = vl, vr = vr});
                 if (useParallelEvaluation(m))
+                    let h = (_, vl, _, vr) -> g({vl = vl, vr = vr});
+                    let Map(t) = m;
                     RedBlackTree.parMinimumBy(threads() - 1, h, t) as & Pure
                 else
-                    RedBlackTree.reduceLeft((kl, vl, kr, vr) -> if (g({vl = vl, vr = vr}) == LessThan) (kl, vl) else (kr, vr), t)
-            case _ => RedBlackTree.reduceLeft((kl, vl, kr, vr) -> if (cmp(vl, vr) == LessThan) (kl, vl) else (kr, vr), t)
+                    reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == LessThan) (kl, vl) else (kr, vr), m)
+            case _ => reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == LessThan) (kl, vl) else (kr, vr), m)
         }
 
 
@@ -499,16 +499,16 @@ namespace Map {
     ///
     @ParallelWhenPure
     pub def count(f: (k, v) -> Bool & ef, m: Map[k, v]): Int32 & ef =
-        let Map(t) = m;
         let f1 = r -> f(r.k, r.v);
         reifyEff(f1) {
             case Pure(g) =>
-                let g1 = (k, v) -> g({k = k, v = v});
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parCount(threads() - 1, g1, t) as & Pure
+                    let h = (k, v) -> g({k = k, v = v});
+                    let Map(t) = m;
+                    RedBlackTree.parCount(threads() - 1, h, t) as & Pure
                 else
-                    RedBlackTree.foldLeft((b, k, v) -> if (g1(k, v)) b + 1 else b, 0, t)
-            case _  => RedBlackTree.foldLeft((b, k, v) -> if (f(k, v)) b + 1 else b, 0, t)
+                    foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m)
+            case _  => foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m)
         }
 
     ///
