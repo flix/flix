@@ -52,9 +52,7 @@ instance Order[Map[k, v]] with Order[k], Order[v] {
 }
 
 instance Functor[Map[k]] {
-    pub def map(f: v1 -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef =
-        let Map(tree) = m;
-        Map(RedBlackTree.mapWithKey((_, v) -> f(v), tree))
+    pub def map(f: v1 -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef = Map.map(f, m)
 }
 
 instance Foldable[Map[k]] {
@@ -401,7 +399,7 @@ namespace Map {
     ///
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
     @ParallelWhenPure
-    pub def map(f: v1 -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef with Order[k] = mapWithKey((_, v) -> f(v), m)
+    pub def map(f: v1 -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef = mapWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a map with mappings `k => f(k, v)` for every `k => v` in `m`.
@@ -411,7 +409,7 @@ namespace Map {
     ///
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
     @ParallelWhenPure
-    pub def mapWithKey(f: (k, v1) -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef with Order[k] =
+    pub def mapWithKey(f: (k, v1) -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef =
         let Map(t) = m;
         Map(RedBlackTree.mapWithKey(f, t))
 
