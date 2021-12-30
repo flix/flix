@@ -98,6 +98,7 @@ object JvmName {
 
   val DevFlixRuntime: List[String] = List("dev", "flix", "runtime")
 
+  // TODO: These could be BackendObjType objects to allow method/field objects
   val FlixError: JvmName = JvmName(DevFlixRuntime, "FlixError")
   val GlobalCounter: JvmName = JvmName(DevFlixRuntime, "GlobalCounter")
   val HoleError: JvmName = JvmName(DevFlixRuntime, "HoleError")

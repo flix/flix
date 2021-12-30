@@ -420,4 +420,19 @@ namespace Result {
         case Err(_) => Iterator.empty()
         case Ok(x)  => Iterator.singleton(x)
     }
+
+    ///
+    /// Returns `Ok(x)` if `f` was invoked without throwing an exception.
+    ///
+    /// If `f` throws a Java `RuntimeException`, `Err(e)` is returned
+    /// where `e` is the error message.
+    ///
+    pub def try(f: Unit -> a & ef): Result[a, String] & ef =
+        try {
+            Ok(f())
+        } catch {
+            case e: ##java.lang.RuntimeException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(e)) as & Pure
+        }
 }

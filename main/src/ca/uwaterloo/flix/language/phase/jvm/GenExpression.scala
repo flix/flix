@@ -148,7 +148,7 @@ object GenExpression {
       }
       // Calling unwind and unboxing
       visitor.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName,
-        backendContinuationType.UnwindMethodName, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+        backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
     case Expression.ApplyDef(name, args, tpe, _) =>
@@ -171,7 +171,7 @@ object GenExpression {
           s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
       // Calling unwind and unboxing
-      visitor.visitMethodInsn(INVOKEVIRTUAL, defJvmType.name.toInternalName, backendContinuationType.UnwindMethodName,
+      visitor.visitMethodInsn(INVOKEVIRTUAL, defJvmType.name.toInternalName, backendContinuationType.UnwindMethod.name,
         AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
@@ -535,7 +535,7 @@ object GenExpression {
       visitor.visitLdcInsn(field.name)
 
       // Invoking the restrictField method
-      visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, BackendObjType.Record.RestrictFieldFunctionName,
+      visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, BackendObjType.Record.RestrictFieldMethod.name,
         AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
 
 
@@ -1410,8 +1410,8 @@ object GenExpression {
         case BinaryOperator.Exponentiate => throw InternalCompilerException("BinaryOperator.Exponentiate already handled.")
       }
       sop match {
-        case Float32Op.Add | Float32Op.Sub | Float32Op.Mul | Float32Op.Div | Float32Op.Rem => visitor.visitInsn(floatOp)
-        case Float64Op.Add | Float64Op.Sub | Float64Op.Mul | Float64Op.Div | Float64Op.Rem => visitor.visitInsn(doubleOp)
+        case Float32Op.Add | Float32Op.Sub | Float32Op.Mul | Float32Op.Div => visitor.visitInsn(floatOp)
+        case Float64Op.Add | Float64Op.Sub | Float64Op.Mul | Float64Op.Div => visitor.visitInsn(doubleOp)
         case Int8Op.Add | Int8Op.Sub | Int8Op.Mul | Int8Op.Div | Int8Op.Rem =>
           visitor.visitInsn(intOp)
           visitor.visitInsn(I2B)

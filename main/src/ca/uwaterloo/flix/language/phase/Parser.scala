@@ -1482,7 +1482,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     /**
       * An operator letter.
       */
-    val OperatorLetter: CharPredicate = CharPredicate("+-*<>=!&|^")
+    val OperatorLetter: CharPredicate = CharPredicate("+-*<>=!&|^$")
 
     /**
       * a (upper/lower case) letter, numeral, greek letter, or other legal character.

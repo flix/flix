@@ -54,7 +54,7 @@ sealed trait ClassMaker {
     * Closes the class maker.
     * This should be the last function called on the class maker.
     */
-  def closeClassMaker: Array[Byte] = {
+  def closeClassMaker(): Array[Byte] = {
     visitor.visitEnd()
     visitor.toByteArray
   }
@@ -244,16 +244,57 @@ object ClassMaker {
   }
 
   sealed case class StaticField(clazz: JvmName, name: String, tpe: BackendType) {
-    def mkField(cm: InstanceClassMaker, v: Visibility, f: Final): Unit =
+    def mkStaticField(cm: InstanceClassMaker, v: Visibility, f: Final): Unit =
       cm.mkStaticField(name, tpe, v, f)
 
-    def mkField(cm: AbstractClassMaker, v: Visibility, f: Final): Unit =
+    def mkStaticField(cm: AbstractClassMaker, v: Visibility, f: Final): Unit =
       cm.mkStaticField(name, tpe, v, f)
 
-    def putField(): InstructionSet =
+    def putStaticField(): InstructionSet =
       PUTSTATIC(clazz, name, tpe)
 
-    def getField(): InstructionSet =
+    def getStaticField(): InstructionSet =
       GETSTATIC(clazz, name, tpe)
+  }
+
+  sealed case class InstanceMethod(clazz: JvmName, name: String, d: MethodDescriptor) {
+    def mkMethod(cm: InstanceClassMaker, ins: InstructionSet, v: Visibility, f: Final): Unit =
+      cm.mkMethod(ins, name, d, v, f)
+
+    def mkMethod(cm: AbstractClassMaker, ins: InstructionSet, v: Visibility, f: Final): Unit =
+      cm.mkMethod(ins, name, d, v, f)
+
+    def mkAbstractMethod(cm: AbstractClassMaker): Unit =
+      cm.mkAbstractMethod(name, d)
+
+    def mkAbstractMethod(cm: InterfaceMaker): Unit =
+      cm.mkAbstractMethod(name, d)
+
+    def invoke(): InstructionSet =
+      INVOKEVIRTUAL(clazz, name, d)
+  }
+
+  sealed case class InterfaceMethod(clazz: JvmName, name: String, d: MethodDescriptor) {
+    def implementation(clazz: JvmName): InstanceMethod = InstanceMethod(clazz, name, d)
+
+    def mkInterfaceMethod(cm: AbstractClassMaker): Unit =
+      cm.mkAbstractMethod(name, d)
+
+    def mkInterfaceMethod(cm: InterfaceMaker): Unit =
+      cm.mkAbstractMethod(name, d)
+
+    def invokeInterface(): InstructionSet =
+      INVOKEINTERFACE(clazz, name, d)
+  }
+
+  sealed case class StaticMethod(clazz: JvmName, name: String, d: MethodDescriptor) {
+    def mkStaticMethod(cm: InstanceClassMaker, ins: InstructionSet, v: Visibility, f: Final): Unit =
+      cm.mkStaticMethod(ins, name, d, v, f)
+
+    def mkStaticMethod(cm: AbstractClassMaker, ins: InstructionSet, v: Visibility, f: Final): Unit =
+      cm.mkStaticMethod(ins, name, d, v, f)
+
+    def invokeStatic(): InstructionSet =
+      INVOKESTATIC(clazz, name, d)
   }
 }
