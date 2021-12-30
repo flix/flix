@@ -17,7 +17,7 @@
 ///
 /// A type class for data structures that can be traversed with an applicative functor.
 ///
-pub class Traversable[t : Type -> Type] with Functor[t], Foldable[t] {
+pub lawless class Traversable[t : Type -> Type] with Functor[t], Foldable[t] {
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
@@ -41,6 +41,8 @@ pub class Traversable[t : Type -> Type] with Functor[t], Foldable[t] {
     ///
     law identity: forall(t: t[a], f: a -> m[a]) with Eq[m[t[a]]], Applicative[m] . Traversable.sequence(Functor.map(f, t)) == Applicative.point(t)
 
+    // Missing laws: naturality and composition.
+
 }
 
 
@@ -62,7 +64,7 @@ namespace Traversable {
     /// `mapAccumLeft` is essentially the combination of `map` and `foldLeft` - like map it returns an updated copy
     /// of the intial structure, like `foldLeft` it passes an updating accumulator through each step of the traversal.
     ///
-    pub def mapAccumLeft(f: acc -> a -> (acc, b) & ef, start: acc, t: t[a]): (acc, t[b]) & ef with Traversable[t] =
+    pub def mapAccumLeft(f: (acc, a) -> (acc, b) & ef, start: acc, t: t[a]): (acc, t[b]) & ef with Traversable[t] =
         runContStateLeft(traverse(x1 -> ContStateLeft((k, s) -> let (s1, b) = f(s, x1); k(b, s1)), t), start) as & ef
 
     ///
@@ -121,7 +123,7 @@ namespace Traversable {
     /// `mapAccumRight` is essentially the combination of `map` and `foldLeft` - like map it returns an updated copy
     /// of the intial structure, like `foldRight` it passes an updating accumulator through each step of the traversal.
     ///
-    pub def mapAccumRight(f: acc -> a -> (acc, b) & ef, start: acc, t: t[a]): (acc, t[b]) & ef with Traversable[t] =
+    pub def mapAccumRight(f: (acc, a) -> (acc, b) & ef, start: acc, t: t[a]): (acc, t[b]) & ef with Traversable[t] =
         runContStateRight(traverse(x1 -> ContStateRight((k, s) -> let (s1, b) = f(s, x1); k(b, s1)), t), start) as & ef
 
 
