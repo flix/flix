@@ -18,7 +18,7 @@ namespace TestFoldable {
 
     use Applicative.{point, *>};
 
-    /// To check foldLeftM, foldRightM, foreachM we want a monad with
+    /// To test foldLeftM, foldRightM, foreachM we want a monad with
     /// "side-effects" so we can log direction of travel.
 
     opaque type Logger[i, a] = (Chain[i], a)
