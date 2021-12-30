@@ -335,7 +335,6 @@ namespace List {
     /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
     /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
     ///
-    /// TODO: More efficient implementation creating the result list in one go.
     pub def ap(f: List[a -> b & e], x: List[a]) : List[b] & e =
         map(g -> map(g, x), f) |> flatten
 
