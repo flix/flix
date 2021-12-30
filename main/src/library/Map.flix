@@ -51,6 +51,22 @@ instance Order[Map[k, v]] with Order[k], Order[v] {
 
 }
 
+instance Functor[Map[k]] {
+    pub def map(f: v1 -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef =
+        let Map(tree) = m;
+        Map(RedBlackTree.mapWithKey((_, v) -> f(v), tree))
+}
+
+instance Foldable[Map[k]] {
+    pub def foldLeft(f: (b, v) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldLeft((acc, v) -> f(acc, v), s, m)
+    pub def foldRight(f: (v, b) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRight((v, acc) -> f(v, acc), s, m)
+}
+
+instance Traversable[Map[k]] {
+    pub def traverse(f: a -> m[b] & ef, t: Map[k, a]): m[Map[k, b]] & ef with Applicative[m] = Map.traverse(f, t)
+    pub override def sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
+}
+
 namespace Map {
 
     ///
@@ -741,4 +757,28 @@ namespace Map {
         let f = (_, v) -> lazy v;
         DMap(RedBlackTree.mapWithKey(f, t))
     }
+
+    ///
+    /// Returns the result of running all the actions in the map `m`.
+    ///
+    pub def sequence(m: Map[k, m[v]]): m[Map[k, v]] with Applicative[m] =
+        let Map(tree) = m;
+        Functor.map(Map, Traversable.sequence(tree))
+
+    ///
+    /// Returns the result of applying the applicative mapping function `f` to all the values of the
+    /// map `m`.
+    ///
+    pub def traverse(f: v1 -> m[v2] & ef, m: Map[k, v1]): m[Map[k, v2]] & ef with Applicative[m] =
+        let Map(tree) = m;
+        Functor.map(Map, Traversable.traverse(f, tree))
+
+    ///
+    /// Returns the result of applying the applicative mapping function `f` to all the key-value pairs
+    /// of the map `m`.
+    ///
+    pub def traverseWithKey(f: (k, v1) -> m[v2] & ef, m: Map[k, v1]): m[Map[k, v2]] & ef with Applicative[m] =
+        let Map(tree) = m;
+        Functor.map(Map, RedBlackTree.mapAWithKey(f, tree))
+
 }

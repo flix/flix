@@ -316,4 +316,64 @@ namespace TestMutDeque {
         MutDeque.popBack(d) == None and
         MutDeque.popFront(d) == None
 
+    /////////////////////////////////////////////////////////////////////////////
+    // sameElements                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sameElements01(): Bool & Impure =
+        let d = MutDeque.new();
+        let d2 = MutDeque.new();
+        MutDeque.sameElements(d, d2)
+
+    @test
+    def sameElements02(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+
+        let d2 = MutDeque.new();
+        MutDeque.pushFront(1, d2);
+
+        MutDeque.sameElements(d, d2)
+
+    @test
+    def sameElements03(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+
+        let d2 = MutDeque.new();
+        MutDeque.pushFront(1, d2);
+        MutDeque.pushFront(2, d2);
+
+        not MutDeque.sameElements(d, d2)
+
+    @test
+    def sameElements04(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack("a", d);
+        MutDeque.pushBack("b", d);
+        MutDeque.pushBack("c", d);
+
+        let d2 = MutDeque.new();
+        MutDeque.pushFront("b", d2);
+        MutDeque.pushBack("c", d2);
+        MutDeque.pushFront("a", d2);
+
+        MutDeque.sameElements(d, d2)
+
+    @test
+    def sameElements05(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack("a", d);
+        MutDeque.pushBack("b", d);
+        MutDeque.pushBack("c", d);
+
+        let d2 = MutDeque.new();
+        MutDeque.pushFront("a", d2);
+        MutDeque.pushFront("b", d2);
+        MutDeque.pushBack("c", d2);
+
+        not MutDeque.sameElements(d, d2)
+
 }

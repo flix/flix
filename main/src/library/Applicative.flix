@@ -143,6 +143,24 @@ namespace Applicative {
         Applicative.liftA2((_, b) -> b, fa, fb)
 
     ///
+    /// Chain three applicative actions, return the 3-tuple of their results.
+    ///
+    pub def product3(x1: m[t1], x2: m[t2], x3: m[t3]): m[(t1, t2, t3)] with Applicative[m] =
+        Applicative.liftA3((a, b, c) -> (a, b, c), x1, x2, x3)
+
+    ///
+    /// Chain four applicative actions, return the 4-tuple of their results.
+    ///
+    pub def product4(x1: m[t1], x2: m[t2], x3: m[t3], x4: m[t4]): m[(t1, t2, t3, t4)] with Applicative[m] =
+        Applicative.liftA4((a, b, c, d) -> (a, b, c, d), x1, x2, x3, x4)
+
+    ///
+    /// Chain five applicative actions, return the 5-tuple of their results.
+    ///
+    pub def product5(x1: m[t1], x2: m[t2], x3: m[t3], x4: m[t4], x5: m[t5]): m[(t1, t2, t3, t4, t5)] with Applicative[m] =
+        Applicative.liftA5((a, b, c, d, e) -> (a, b, c, d, e), x1, x2, x3, x4, x5)
+
+    ///
     /// `<*>` is an operator alias for `ap`.
     ///
     pub def <*>(mf: m[a -> b & ef], ma: m[a]): m[b] & ef with Applicative[m] = Applicative.ap(mf, ma)

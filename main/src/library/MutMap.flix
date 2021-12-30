@@ -447,4 +447,10 @@ namespace MutMap {
         let MutMap(mm) = m;
         Map.queryWith(p, f, deref mm)
 
+    ///
+    /// Returns `true` if MutMaps `a` and `b` have the same elements, i.e. are structurally equal.
+    ///
+    pub def sameElements(a: MutMap[k, v], b: MutMap[k, v]): Bool & Impure with Order[k], Eq[v] =
+        MutMap.isSubmapOf(a, b) and MutMap.isSubmapOf(b, a)
+
 }

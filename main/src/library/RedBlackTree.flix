@@ -51,6 +51,28 @@ namespace RedBlackTree {
 
     }
 
+    instance Eq[RedBlackTree[k, v]] with Eq[k], Eq[v] {
+        pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool with Eq[v] =
+            toList(t1) == toList(t2)
+    }
+
+    instance Functor[RedBlackTree[k]] {
+        pub def map(f: a -> b & ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] & ef = mapWithKey((_, v) -> f(v), t)
+    }
+
+    instance Foldable[RedBlackTree[k]] {
+        pub def foldLeft(f: (b, v) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldLeft((acc, _, v) -> f(acc, v), s, t)
+        pub def foldRight(f: (v, b) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRight((_, v, acc) -> f(v, acc), s, t)
+    }
+
+    instance Traversable[RedBlackTree[k]] {
+        pub def traverse(f: a -> m[b] & ef, t: RedBlackTree[k, a]): m[RedBlackTree[k, b]] & ef with Applicative[m] =
+            mapAWithKey((_, v) -> f(v), t)
+
+        pub override def sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] =
+            mapAWithKey((_, v) -> v, t)
+    }
+
     ///
     /// The color of a red-black tree node.
     ///
@@ -611,6 +633,41 @@ namespace RedBlackTree {
             let b1 = parSeqCount(f, b);
             a1 + v1 + b1
     }
+
+    ///
+    /// Returns the tree `t` as a list. Elements are ordered from smallest (left) to largest (right).
+    ///
+    pub def toList(t: RedBlackTree[k, v]): List[(k, v)] =
+        RedBlackTree.foldRight((k, v, xs) -> (k, v) :: xs, Nil, t)
+
+    ///
+    /// Build a node applicatively.
+    ///
+    /// This is a helper function for `mapAWithKeyHelper`.
+    ///
+    def nodeA(color: Color, left: m[RedBlackTree[k, v]], k: k, value: m[v], right: m[RedBlackTree[k, v]]): m[RedBlackTree[k, v]] with Applicative[m] =
+        ((((l, v, r) -> Node(color, l, k, v, r)) `Functor.map` left) `Applicative.ap` value) `Applicative.ap` right
+
+    ///
+    /// Returns a RedBlackTree with mappings `k -> f(v)` for every `k -> v` in `tree`.
+    ///
+    pub def mapAWithKey(f: (k, v1) -> m[v2] & ef, tree: RedBlackTree[k, v1]): m[RedBlackTree[k, v2]] & ef with Applicative[m] =
+        mapAWithKeyHelper(f, tree, t -> t as & ef)
+
+    ///
+    /// Helper function for `mapAWithKey`.
+    ///
+    def mapAWithKeyHelper(f: (k, v1) -> m[v2] & ef,
+                        tree: RedBlackTree[k, v1],
+                        k: m[RedBlackTree[k, v2]] -> m[RedBlackTree[k, v2]] & ef): m[RedBlackTree[k, v2]] & ef with Applicative[m] =
+        match tree {
+            case Node(color, left, key, v, right) =>
+                mapAWithKeyHelper(f, left, kl ->
+                    mapAWithKeyHelper(f, right, kr ->
+                        let mv = f(key, v);
+                        k(nodeA(color, kl, key, mv, kr))))
+            case _                              => k(Applicative.point(Leaf))
+        }
 
     ///
     /// Applies `cmp` over the tree `t` in parallel and optionally returns the lowest
