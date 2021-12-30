@@ -37,7 +37,6 @@ trait Formatter {
           .append(red(">"))
           .append(" ")
           .append(currentLine)
-          .append(System.lineSeparator())
       }
       sb.append(System.lineSeparator())
         .append(msg)
