@@ -269,7 +269,7 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should not be reused.
     ///
-    pub def lazyFilter(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
+    pub def filterL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
 
         // Allocate a reference to hold the next element.
@@ -312,7 +312,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    pub def lazyMap(f: a -> b, iter: Iterator[a]): Iterator[b] =
+    pub def mapL(f: a -> b, iter: Iterator[a]): Iterator[b] =
         let Iterator(done, next) = iter;
         let next1 = () -> f(next());
         Iterator(done, next1)
@@ -365,17 +365,17 @@ namespace Iterator {
 
     ///
     /// Returns an iterator where the element at index `i` is `f(a, b)` where
-    /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
+    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
     ///
     /// Does *not* consume any elements from either iterator.
     ///
-    /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
+    /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
     ///
     /// The original iterators `iterA` and `iterB` should not be reused.
     ///
     /// An iterator should never be zipped with itself.
     ///
-    pub def lazyZipWith(f: (a, b) -> c, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] =
+    pub def zipWithL(f: (a, b) -> c, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] =
         let Iterator(done, next) = zip(iterA, iterB);
         let next1 = () -> {
             let (x, y) = next();
@@ -385,11 +385,11 @@ namespace Iterator {
 
     ///
     /// Returns an iterator where the element at index `i` is `f(a, b)` where
-    /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
+    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
     ///
     /// Consumes the entire iterator.
     ///
-    /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
+    /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
     ///
     /// The original iterators `iterA` and `iterB` should not be reused.
     ///
