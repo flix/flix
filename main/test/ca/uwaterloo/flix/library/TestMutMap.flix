@@ -21,8 +21,8 @@ namespace TestMutMap {
 
     @test
     def sameElements01(): Bool & Impure =
-        let m = MutMap.empty();
-        let m2 = MutMap.empty();
+        let m = MutMap.empty(): MutMap[Int32, Int32];
+        let m2 = MutMap.empty(): MutMap[Int32, Int32];
 
         MutMap.sameElements(m, m2)
 

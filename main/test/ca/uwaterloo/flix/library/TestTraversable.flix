@@ -477,17 +477,17 @@ namespace TestTraversable {
     @test
     def traverseMap04(): Bool =
         let m: Map[Int, Int] = Map#{};
-        traverse(_ -> None, m) == Some(Map#{})
+        traverse(_ -> None, m) == Some(Map#{}: Map[Int32, Int32])
 
     @test
     def traverseMap05(): Bool =
         let m: Map[Int, Int] = Map#{1 => 1};
-        traverse(_ -> None, m) == None
+        traverse(_ -> None, m) == None: Option[Int32]
 
     @test
     def traverseMap06(): Bool =
         let m: Map[Int, Int] = Map#{1 => 1, 2 => 2};
-        traverse(_ -> None, m) == None
+        traverse(_ -> None, m) == None: Option[Int32]
 
     /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeftMap                                                         //

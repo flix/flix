@@ -1035,7 +1035,7 @@ namespace TestIterator {
     @test
     def unfoldWithOk01(): Bool & Impure =
         let iter = Iterator.unfoldWithOk(() -> Err(0));
-        Iterator.toList(iter) == Nil
+        Iterator.toList(iter) == Nil: List[Int32]
 
     @test
     def unfoldWithOk02(): Bool & Impure =
