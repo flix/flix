@@ -46,8 +46,6 @@ pub def constant(y: a): b -> a = _ -> y
 pub def flip(f: (a, b) -> c & ef): (b, a) -> c & ef = (x, y) -> f(y, x)
 
 ///
-/// `on(f, g, x, y) = f(g(x), g(y))`
-///
 /// Partially applying this function in the form ``f `on` g`` lifts the binary function `f` to work on
 /// inputs transformed by `g`.
 ///
