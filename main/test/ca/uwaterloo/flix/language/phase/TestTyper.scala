@@ -218,7 +218,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.GeneralizationError](result)
   }
 
-  test("TestLeq.Class.01") {
+  test("NoMatchingInstance.01") {
     val input =
       """
         |class C[a] {
@@ -230,7 +230,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MissingInstance](result)
   }
 
-  test("TestLeq.Class.02") {
+  test("NoMatchingInstance.02") {
     val input =
       """
         |class C[a] {
@@ -242,7 +242,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MissingInstance](result)
   }
 
-  test("TestLeq.Class.03") {
+  test("NoMatchingInstance.03") {
     val input =
       """
         |enum Box[a] {
@@ -269,7 +269,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MissingInstance](result)
   }
 
-  test("TestLeq.Class.04") {
+  test("NoMatchingInstance.04") {
     val input =
       """
         |enum Box[a] {
@@ -296,7 +296,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MissingInstance](result)
   }
 
-  test("TestLeq.Class.05") {
+  test("NoMatchingInstance.05") {
     val input =
       """
         |class C[a] {
@@ -313,7 +313,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MissingInstance](result)
   }
 
-  test("TestLeq.Class.06") {
+  test("NoMatchingInstance.06") {
     val input =
       """
         |class C[a] {
@@ -321,6 +321,27 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |
         |def bar(x: a, y: b): (Int, Int) with C[a] = (C.foo(x), C.foo(y))
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MissingInstance](result)
+  }
+
+  test("NoMatchingInstance.07") {
+    val input =
+      """
+        |class C[a] {
+        |    pub def foo(x: a): Int
+        |}
+        |
+        |enum E[_: Bool] {
+        |    case E(Int)
+        |}
+        |
+        |instance C[E[true]] {
+        |    pub def foo(x: E[true]): Int = 1
+        |}
+        |
+        |def bar(): Int = C.foo(E(123))    // E(123) has type E[_], not E[true]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MissingInstance](result)
