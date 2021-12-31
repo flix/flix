@@ -188,7 +188,8 @@ object Typer {
       *
       * A definition is stale if it is (a) not in the old root or (b) in the change set.
       */
-    def isStale(sym: Symbol.DefnSym): Boolean = !oldRoot.defs.contains(sym) || changeSet.contains(sym.loc.source)
+    // TODO: Need a better way than to have changeSet == null.
+    def isStale(sym: Symbol.DefnSym): Boolean = changeSet == null || !oldRoot.defs.contains(sym) || changeSet.contains(sym.loc.source)
 
     // Compute the stale and fresh definitions.
     val staleDefs: Map[Symbol.DefnSym, KindedAst.Def] = root.defs.filter(kv => isStale(kv._1))

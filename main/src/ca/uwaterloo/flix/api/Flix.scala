@@ -66,7 +66,7 @@ class Flix {
   /**
     * The set of sources changed since last compilation.
     */
-  private var changeSet: Set[Ast.Source] = Set.empty
+  private var changeSet: Set[Ast.Source] = _
 
   /**
     * A cache of compiled ASTs (for incremental compilation).
@@ -369,7 +369,11 @@ class Flix {
   def markChanged(s: Ast.Source): Flix = {
     if (s == null)
       throw new IllegalArgumentException("'s' must be non-null.")
-    changeSet += s
+
+    if (changeSet == null)
+      changeSet = Set.empty[Ast.Source]
+
+    changeSet = changeSet + s
     this
   }
 
