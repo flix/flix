@@ -26,25 +26,38 @@ sealed trait ChangeSet {
   }
 
   /**
-    * Returns `true` if the given symbol `sym` is stale w.r.t. the current change set and `oldMap`.
+    * Returns two maps: `stale` and `fresh` according to the given `newMap` and `oldMap`.
+    *
+    * A fresh element is one that can be reused. A stale element is one that must be re-compiled.
+    * A element that is neither fresh nor stale can be deleted.
+    *
+    * An entry is stale if it is (a) stale w.r.t. the current change set and `oldMap`.
+    * An entry is fresh if it is (a) not stale and (b) occurs in `newMap`.
+    *
+    * Note that the union of stale and fresh does not have to equal `newMap` or `oldMap`.
+    * This happens if an element is deleted. Then it does not occur `newMap` but it occurs in `oldMap`.
+    * However, it is neither fresh nor stale. It should simply be forgotten.
     */
-  def isStale[V](sym: Symbol.DefnSym, oldMap: Map[Symbol.DefnSym, V]): Boolean = this match {
-    case ChangeSet.Everything => true
-    case ChangeSet.Changes(s) => !oldMap.contains(sym) || s.contains(sym.loc.source)
+  def partition[V1, V2](newMap: Map[Symbol.DefnSym, V1], oldMap: Map[Symbol.DefnSym, V2]): (Map[Symbol.DefnSym, V1], Map[Symbol.DefnSym, V2]) = {
+    val stale = newMap.filter(kv => isStale(kv._1, oldMap))
+    val fresh = (oldMap -- stale.keySet).filter(kv => newMap.contains(kv._1))
+    (stale, fresh)
   }
 
   /**
-    * Returns all mappings in the given `newMap` which are not stale w.r.t. the given `oldMap`.
+    * Returns `true` if the given symbol `sym` is stale w.r.t. the current change set and `oldMap`.
     */
-  def stale[V1, V2](newMap: Map[Symbol.DefnSym, V1], oldMap: Map[Symbol.DefnSym, V2]): Map[Symbol.DefnSym, V1] =
-    newMap.filter(kv => isStale(kv._1, oldMap))
+  private def isStale[V](sym: Symbol.DefnSym, oldMap: Map[Symbol.DefnSym, V]): Boolean = this match {
+    case ChangeSet.Everything => true
+    case ChangeSet.Changes(s) => !oldMap.contains(sym) || s.contains(sym.loc.source)
+  }
 
 }
 
 object ChangeSet {
 
   /**
-    * Represents a change set where everything is changed (i.e. used for a complete recompile).
+    * Represents a change set where everything is changed (used for a complete re-compilation).
     */
   case object Everything extends ChangeSet
 
