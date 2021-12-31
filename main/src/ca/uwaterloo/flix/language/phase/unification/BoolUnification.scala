@@ -17,7 +17,9 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
+import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -61,7 +63,7 @@ object BoolUnification {
     ///
     /// Run the expensive boolean unification algorithm.
     ///
-    booleanUnification(tpe1, tpe2)
+    booleanUnification(eraseAliases(tpe1), eraseAliases(tpe2))
   }
 
   /**
@@ -128,7 +130,9 @@ object BoolUnification {
     case Type.True => true
     case Type.False => false
     case _ =>
-      val q = mkEq(f, Type.True)
+      // Make all variables flexible.
+      val f1 = f.map(tvar => tvar.copy(rigidity = Rigidity.Flexible))
+      val q = mkEq(f1, Type.True)
       try {
         successiveVariableElimination(q, q.typeVars.toList)
         true
