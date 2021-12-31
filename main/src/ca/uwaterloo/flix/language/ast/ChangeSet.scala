@@ -26,12 +26,18 @@ sealed trait ChangeSet {
   }
 
   /**
-    * Returns `true` if the given symbol `sym` is stale.
+    * Returns `true` if the given symbol `sym` is stale w.r.t. the current change set and `oldMap`.
     */
-  def isStale[V](sym: Symbol.DefnSym, oldRoot: Map[Symbol.DefnSym, V]): Boolean = this match {
+  def isStale[V](sym: Symbol.DefnSym, oldMap: Map[Symbol.DefnSym, V]): Boolean = this match {
     case ChangeSet.Everything => true
-    case ChangeSet.Changes(s) => !oldRoot.contains(sym) || s.contains(sym.loc.source)
+    case ChangeSet.Changes(s) => !oldMap.contains(sym) || s.contains(sym.loc.source)
   }
+
+  /**
+    * Returns all mappings in the given `newMap` which are not stale w.r.t. the given `oldMap`.
+    */
+  def stale[V1, V2](newMap: Map[Symbol.DefnSym, V1], oldMap: Map[Symbol.DefnSym, V2]): Map[Symbol.DefnSym, V1] =
+    newMap.filter(kv => isStale(kv._1, oldMap))
 
 }
 
