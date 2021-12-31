@@ -41,7 +41,7 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
   *
   * The phase performs no AST rewrites; it can be disabled without affecting the runtime semantics.
   */
-object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
+object Redundancy {
 
   /**
     * Checks the given AST `root` for redundancies.

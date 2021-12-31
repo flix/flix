@@ -30,7 +30,7 @@ import scala.collection.mutable
 /**
   * The Resolver phase performs name resolution on the program.
   */
-object Resolver extends Phase[NamedAst.Root, ResolvedAst.Root] {
+object Resolver {
 
   /**
     * The maximum depth to which type aliases are unfolded.

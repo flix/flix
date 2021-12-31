@@ -431,9 +431,7 @@ class Flix {
       afterResolver <- Resolver.run(afterNamer)
       afterKinder <- Kinder.run(afterResolver)
       afterDeriver <- Deriver.run(afterKinder)
-
       afterTyper <- Typer.run(afterDeriver, cachedTypedAst, changeSet)
-
       afterStatistics <- Statistics.run(afterTyper)
       afterInstances <- Instances.run(afterStatistics)
       afterStratifier <- Stratifier.run(afterInstances)
@@ -462,28 +460,29 @@ class Flix {
     * Compiles the given typed ast to an executable ast.
     */
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = {
+    // Mark this object as implicit.
+    implicit val flix: Flix = this
+
     // Initialize fork join pool.
     initForkJoin()
 
-    // Construct the compiler pipeline.
-    val pipeline = Documentor |>
-      Lowering |>
-      Monomorph |>
-      Simplifier |>
-      ClosureConv |>
-      LambdaLift |>
-      Tailrec |>
-      Inliner |>
-      Optimizer |>
-      TreeShaker |>
-      VarNumbering |>
-      Finalize |>
-      Eraser |>
-      JvmBackend |>
-      Finish
-
-    // Apply the pipeline to the parsed AST.
-    val result = pipeline.run(typedAst)(this)
+    val result = for {
+      afterDocumentor <- Documentor.run(typedAst)
+      afterLowering <- Lowering.run(afterDocumentor)
+      afterMonomorph <- Monomorph.run(afterLowering)
+      afterSimplifier <- Simplifier.run(afterMonomorph)
+      afterClosureConv <- ClosureConv.run(afterSimplifier)
+      afterLambdaLift <- LambdaLift.run(afterClosureConv)
+      afterTailrec <- Tailrec.run(afterLambdaLift)
+      afterInliner <- Inliner.run(afterTailrec)
+      afterOptimizer <- Optimizer.run(afterInliner)
+      afterTreeShaker <- TreeShaker.run(afterOptimizer)
+      afterVarNumbering <- VarNumbering.run(afterTreeShaker)
+      afterFinalize <- Finalize.run(afterVarNumbering)
+      afterEraser <- Eraser.run(afterFinalize)
+      afterJvmBackend <- JvmBackend.run(afterEraser)
+      afterFinish <- Finish.run(afterJvmBackend)
+    } yield afterFinish
 
     // Shutdown fork join pool.
     shutdownForkJoin()

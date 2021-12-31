@@ -9,7 +9,7 @@ import ca.uwaterloo.flix.util.{Duration, Validation}
 /**
   * Prints some statistics at the end of compilation.
   */
-object Finish extends Phase[CompilationResult, CompilationResult] {
+object Finish {
 
   def run(result: CompilationResult)(implicit flix: Flix): Validation[CompilationResult, CompilationMessage] = {
     // Print throughput.

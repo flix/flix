@@ -29,7 +29,7 @@ import scala.collection.immutable.Seq
 /**
   * A phase to transform source files into abstract syntax trees.
   */
-object Parser extends Phase[List[Source], ParsedAst.Program] {
+object Parser {
 
   /**
     * Parses the given source inputs into an abstract syntax tree.

@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.Validation._
   * Specifically, it replaces `ApplyRef` AST nodes with `ApplyTail` AST nodes
   * when the `ApplyRef` node calls the same function and occurs in tail position.
   */
-object Tailrec extends Phase[Root, Root] {
+object Tailrec {
 
   /**
     * Identifies tail recursive calls in the given AST `root`.

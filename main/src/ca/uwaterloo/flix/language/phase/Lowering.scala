@@ -41,7 +41,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 // - Return a [[Validation]] from visitExp etc.
 // - Decide which expressions to allow as head and body terms.
 
-object Lowering extends Phase[Root, Root] {
+object Lowering {
 
   private object Defs {
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.solve")

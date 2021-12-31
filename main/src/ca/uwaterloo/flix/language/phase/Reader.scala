@@ -28,7 +28,7 @@ import java.nio.file.Files
 /**
   * A phase to read inputs into memory.
   */
-object Reader extends Phase[List[Input], List[Source]] {
+object Reader {
 
   /**
     * Reads the given source inputs into memory.

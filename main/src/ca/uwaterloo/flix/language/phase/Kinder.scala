@@ -48,9 +48,9 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
   *
   * In inferring types, variable type constructors are assumed to have kind * -> * -> * -> ???.
   */
-object Kinder extends Phase[ResolvedAst.Root, KindedAst.Root] {
+object Kinder {
 
-  override def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, CompilationMessage] = flix.phase("Kinder") {
+  def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, CompilationMessage] = flix.phase("Kinder") {
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
     visitTypeAliases(root.taOrder, root) flatMap {

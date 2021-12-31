@@ -34,7 +34,7 @@ import scala.collection.mutable
 /**
   * The Weeder phase performs simple syntactic checks and rewritings.
   */
-object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
+object Weeder {
 
   /**
     * Weeds the whole program.

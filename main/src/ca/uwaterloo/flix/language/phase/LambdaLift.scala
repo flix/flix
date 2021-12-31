@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
-object LambdaLift extends Phase[SimplifiedAst.Root, LiftedAst.Root] {
+object LambdaLift {
 
   /**
     * Mutable map of top level definitions.

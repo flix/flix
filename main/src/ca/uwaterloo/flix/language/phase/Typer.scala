@@ -194,8 +194,8 @@ object Typer {
     val staleDefs: Map[Symbol.DefnSym, KindedAst.Def] = root.defs.filter(kv => isStale(kv._1))
     val freshDefs: Map[Symbol.DefnSym, TypedAst.Def] = (oldRoot.defs -- staleDefs.keySet).filter(kv => root.defs.contains(kv._1))
 
-    println(s"Stale = ${staleDefs.keySet.size}")
-    println(s"Fresh = ${freshDefs.keySet.size}")
+    //println(s"Stale = ${staleDefs.keySet.size}")
+    //println(s"Fresh = ${freshDefs.keySet.size}")
 
     // Process the stale defs in parallel.
     val results = ParOps.parMap(staleDefs.values, visitDefn(_, Nil, root, classEnv))

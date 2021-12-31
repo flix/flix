@@ -28,9 +28,9 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
   * No errors are thrown in this phase: constructed instances must be well-formed.
   * Errors with overlapping instances or unfulfilled type constraints must be caught in later phases.
   */
-object Deriver extends Phase[KindedAst.Root, KindedAst.Root] {
+object Deriver {
 
-  override def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, Nothing] = flix.phase("Deriver") {
+  def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, Nothing] = flix.phase("Deriver") {
     val derivedInstances = root.enums.values.flatMap {
       enum => getDerivedInstances(enum, root)
     }
