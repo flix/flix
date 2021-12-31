@@ -222,4 +222,26 @@ namespace MutDeque {
         let MutDeque(a, _, _) = d;
         Array.length(deref a)
 
+    ///
+    /// Returns `true` if MutDeques `a` and `b` have the same elements, i.e. are structurally equal.
+    ///
+    pub def sameElements(a: MutDeque[t], b: MutDeque[t]): Bool & Impure with Eq[t] =
+        let aSize = size(a);
+        let bSize = size(b);
+        if (aSize == bSize)
+            let MutDeque(aArray, aFront, aBack) = a;
+            let aCap = capacity(a);
+            let a1 = [$DEFAULT$; aCap];
+            copyElements!(deref aFront, deref aBack, deref aArray, a1);
+
+
+            let MutDeque(bArray, bFront, bBack) = b;
+            let bCap = capacity(b);
+            let b1 = [$DEFAULT$; bCap];
+            copyElements!(deref bFront, deref bBack, deref bArray, b1);
+
+            Array.sameElements(a1, b1)
+        else
+            false
+
 }

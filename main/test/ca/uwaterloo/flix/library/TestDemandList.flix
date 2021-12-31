@@ -41,7 +41,7 @@ namespace TestDemandList {
 
     @test
     def toDemandList01(): Bool =
-        List.toDemandList(Nil) |> DemandList.toList == Nil
+        List.toDemandList(Nil) |> DemandList.toList == Nil: List[Int32]
 
     @test
     def toDemandList02(): Bool =
@@ -406,15 +406,15 @@ namespace TestDemandList {
 
     @test
     def drop01(): Bool =
-        Nil |> List.toDemandList |> DemandList.drop(-1) |> DemandList.toList == Nil
+        Nil |> List.toDemandList |> DemandList.drop(-1) |> DemandList.toList == Nil: List[Int32]
 
     @test
     def drop02(): Bool =
-        Nil |> List.toDemandList |> DemandList.drop(0) |> DemandList.toList == Nil
+        Nil |> List.toDemandList |> DemandList.drop(0) |> DemandList.toList == Nil: List[Int32]
 
     @test
     def drop03(): Bool =
-        Nil |> List.toDemandList |> DemandList.drop(1) |> DemandList.toList == Nil
+        Nil |> List.toDemandList |> DemandList.drop(1) |> DemandList.toList == Nil: List[Int32]
 
     @test
     def drop04(): Bool =

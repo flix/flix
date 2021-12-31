@@ -362,4 +362,26 @@ namespace TestRedBlackTree {
         let Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
         RedBlackTree.minimumBy((_, x, _, y) -> x <=> y, t) == Some(1999, 0)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // eq                                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    def toRedBlackTree(xs: List[(k, v)]): RedBlackTree.RedBlackTree[k, v] with Order[k] =
+        List.foldLeft((acc, kv) -> {let (k,v) = kv; RedBlackTree.insert(k, v, acc)}, RedBlackTree.empty(), xs)
+
+    @test
+    def eq01(): Bool =
+        RedBlackTree.empty(): RedBlackTree[Int32, Int32] == RedBlackTree.empty(): RedBlackTree[Int32, Int32]
+
+    @test
+    def eq02(): Bool =
+        toRedBlackTree(Nil): RedBlackTree[Int32, Int32] == toRedBlackTree(Nil): RedBlackTree[Int32, Int32]
+
+    @test
+    def eq03(): Bool =
+        toRedBlackTree((1, 1) :: Nil) == toRedBlackTree((1, 1) :: Nil)
+
+    @test
+    def neq01(): Bool =
+        toRedBlackTree((1, 1) :: Nil) != RedBlackTree.empty()
 }

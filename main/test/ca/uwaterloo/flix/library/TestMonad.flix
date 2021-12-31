@@ -44,7 +44,7 @@ namespace TestMonad {
 
     @test
     def kleisliLeft01(): Bool =
-        kleisliLeft(_ -> None, x2 -> Some(ToString.toString(x2)), 1) == None
+        kleisliLeft(_ -> None: Option[Int32], x2 -> Some(ToString.toString(x2)), 1) == None
 
     @test
     def kleisliLeft02(): Bool =
@@ -56,7 +56,7 @@ namespace TestMonad {
 
     @test
     def kleisliRight01(): Bool =
-        kleisliRight(x1 -> Some(ToString.toString(x1)), _ -> None, 1) == None
+        kleisliRight(x1 -> Some(ToString.toString(x1)), _ -> None: Option[Int32], 1) == None
 
     @test
     def kleisliRight02(): Bool =
@@ -92,7 +92,7 @@ namespace TestMonad {
 
     @test
     def symKleisliLeft01(): Bool =
-        let mf = (_ -> None) >=> (x2 -> Some(ToString.toString(x2)));
+        let mf = (_ -> None: Option[Int32]) >=> (x2 -> Some(ToString.toString(x2)));
         mf(1) == None
 
     @test
@@ -106,7 +106,7 @@ namespace TestMonad {
 
     @test
     def symKleisliRight01(): Bool =
-        let mf = (x1 -> Some(ToString.toString(x1))) <=< (_ -> None);
+        let mf = (x1 -> Some(ToString.toString(x1))) <=< (_ -> None: Option[Int32]);
         mf(1) == None
 
     @test

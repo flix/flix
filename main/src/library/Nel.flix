@@ -71,6 +71,11 @@ instance Foldable[Nel] {
     pub def foldRight(f: (a, b) -> b & ef, s: b, xs: Nel[a]): b & ef = Nel.foldRight(f, s, xs)
 }
 
+instance Traversable[Nel] {
+    pub def traverse(f: a -> m[b] & ef, t: Nel[a]): m[Nel[b]] & ef with Applicative[m] = Nel.traverse(f, t)
+    pub override def sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
+}
+
 namespace Nel {
 
     ///
@@ -532,6 +537,24 @@ namespace Nel {
     pub def toIterator(l: Nel[a]): Iterator[a] & Impure =
        let Nel(x, xs) = l;
        List.toIterator(x :: xs)
+
+    ///
+    /// Returns the result of applying the applicative mapping function `f` to all the elements of the
+    /// non-empty list `l`.
+    ///
+    pub def sequence(l: Nel[m[a]]): m[Nel[a]] with Applicative[m] =
+        match l {
+            case Nel(x, rs) => (((y, ys) -> Nel(y, ys)) `Functor.map` x) `Applicative.ap` Traversable.sequence(rs)
+        }
+
+    ///
+    /// Returns the result of running all the actions in the non-empty list `l`.
+    ///
+    pub def traverse(f: a -> m[b] & ef, l: Nel[a]): m[Nel[b]] & ef with Applicative[m] =
+        match l {
+            case Nel(x, rs) => (((y, ys) -> Nel(y, ys)) `Functor.map` f(x)) `Applicative.ap` Traversable.traverse(f, rs)
+        }
+
 
 }
 
