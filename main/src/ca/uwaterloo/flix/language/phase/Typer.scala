@@ -115,21 +115,10 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
         } yield TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
     }
 
-    /**
-      * Reassembles a set of instances of the same class.
-      */
-    def mapOverInstances(insts0: List[KindedAst.Instance]): Validation[(Symbol.ClassSym, List[TypedAst.Instance]), TypeError] = {
-      val instsVal = Validation.traverse(insts0)(visitInstance)
-
-      instsVal.map {
-        insts => insts.head.sym.clazz -> insts
-      }
+    val results = ParOps.parMap(root.instances.values.flatten, visitInstance)
+    Validation.sequence(results) map {
+      insts => insts.groupBy(inst => inst.sym.clazz)
     }
-
-    // visit each instance
-    val result = root.instances.values.map(mapOverInstances)
-    Validation.sequence(result).map(insts => insts.toMap)
-
   }
 
   /**
