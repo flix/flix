@@ -46,7 +46,7 @@ namespace TestSemiGroup {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def combineOption01(): Bool = combine(None, None) == None
+    def combineOption01(): Bool = combine(None, None) == None: Option[String]
 
     @test
     def combineOption02(): Bool = combine(Some("a"), None) == Some("a")
@@ -62,7 +62,7 @@ namespace TestSemiGroup {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def combineList01(): Bool = combine(Nil, Nil) == Nil
+    def combineList01(): Bool = combine(Nil, Nil) == Nil: List[Int32]
 
     @test
     def combineList02(): Bool = combine(1 :: Nil, Nil) == 1 :: Nil
@@ -81,19 +81,19 @@ namespace TestSemiGroup {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def combineMap01(): Bool = combine(Map#{}, Map#{}) == Map#{}
+    def combineMap01(): Bool = combine(Map#{}, Map#{}) == Map#{}: Map[Int32, String]
 
     @test
-    def combineMap02(): Bool = combine(Map#{1 -> "A"}, Map#{}) == Map#{1 -> "A"}
+    def combineMap02(): Bool = combine(Map#{1 => "A"}, Map#{}) == Map#{1 => "A"}
 
     @test
-    def combineMap03(): Bool = combine(Map#{}, Map#{1 -> "a"}) == Map#{1 -> "a"}
+    def combineMap03(): Bool = combine(Map#{}, Map#{1 => "a"}) == Map#{1 => "a"}
 
     @test
-    def combineMap04(): Bool = combine(Map#{1 -> "A"}, Map#{1 -> "a"}) == Map#{1 -> "Aa"}
+    def combineMap04(): Bool = combine(Map#{1 => "A"}, Map#{1 => "a"}) == Map#{1 => "Aa"}
 
     @test
-    def combineMap05(): Bool = combine(Map#{1 -> "A", 2 -> "B", 3 -> "C"}, Map#{2 -> "b", 3 -> "c", 4 -> "d"}) == Map#{1 -> "A", 2 -> "Bb", 3 -> "Cc", 4 -> "d"}
+    def combineMap05(): Bool = combine(Map#{1 => "A", 2 => "B", 3 => "C"}, Map#{2 => "b", 3 => "c", 4 => "d"}) == Map#{1 => "A", 2 => "Bb", 3 => "Cc", 4 => "d"}
 
     /////////////////////////////////////////////////////////////////////////////
     // Validation                                                              //
@@ -308,7 +308,7 @@ namespace TestSemiGroup {
     def combineN07(): Bool = combineN(1 :: Nil, 2) == 1 :: 1 :: Nil
 
     @test
-    def combineN08(): Bool = combineN(Map#{1 -> "a"}, 4) == Map#{1 -> "aaaa"}
+    def combineN08(): Bool = combineN(Map#{1 => "a"}, 4) == Map#{1 => "aaaa"}
 
     /////////////////////////////////////////////////////////////////////////////
     // associative law                                                         //

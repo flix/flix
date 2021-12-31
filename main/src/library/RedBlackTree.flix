@@ -51,6 +51,28 @@ namespace RedBlackTree {
 
     }
 
+    instance Eq[RedBlackTree[k, v]] with Eq[k], Eq[v] {
+        pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool with Eq[v] =
+            toList(t1) == toList(t2)
+    }
+
+    instance Functor[RedBlackTree[k]] {
+        pub def map(f: a -> b & ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] & ef = mapWithKey((_, v) -> f(v), t)
+    }
+
+    instance Foldable[RedBlackTree[k]] {
+        pub def foldLeft(f: (b, v) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldLeft((acc, _, v) -> f(acc, v), s, t)
+        pub def foldRight(f: (v, b) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRight((_, v, acc) -> f(v, acc), s, t)
+    }
+
+    instance Traversable[RedBlackTree[k]] {
+        pub def traverse(f: a -> m[b] & ef, t: RedBlackTree[k, a]): m[RedBlackTree[k, b]] & ef with Applicative[m] =
+            mapAWithKey((_, v) -> f(v), t)
+
+        pub override def sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] =
+            mapAWithKey((_, v) -> v, t)
+    }
+
     ///
     /// The color of a red-black tree node.
     ///
@@ -519,7 +541,7 @@ namespace RedBlackTree {
     @Parallel
     pub def parMapWithKey(n: Int32, f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & Impure = {
         if (n <= 1)
-            parMapWithKeySeq(f, t)
+            parSeqMapWithKey(f, t)
         else
             match t {
                 case Leaf                   => Leaf
@@ -542,15 +564,15 @@ namespace RedBlackTree {
     /// Note that this is equivalent to `seqMapWithKey` but for performance reasons -- to avoid
     /// megamorphic calls -- we use a copy here.
     ///
-    def parMapWithKeySeq(f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] = match t {
+    def parSeqMapWithKey(f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] = match t {
         // Note that while this is identical to `seqMapWithKey` it must still be its own function
         // because the parallel path must not be reuse the seq. path.
         case Leaf                   => Leaf
         case DoubleBlackLeaf        => DoubleBlackLeaf
         case Node(c, a, k, v, b)    =>
-            let a1 = parMapWithKeySeq(f, a);
+            let a1 = parSeqMapWithKey(f, a);
             let v1 = f(k, v);
-            let b1 = parMapWithKeySeq(f, b);
+            let b1 = parSeqMapWithKey(f, b);
             Node(c, a1, k, v1, b1)
     }
 
@@ -596,7 +618,7 @@ namespace RedBlackTree {
     @Parallel
     pub def parCount(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 & Impure = {
         if (n <= 1)
-            parCountSeq(f, t)
+            parSeqCount(f, t)
         else
             match t {
                 case Leaf                   => 0
@@ -620,7 +642,7 @@ namespace RedBlackTree {
     /// Note that this is equivalent to `seqCount` but for performance reasons -- to avoid
     /// megamorphic calls -- we use a copy here.
     ///
-    def parCountSeq(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 = match t {
+    def parSeqCount(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 = match t {
         case Leaf                   => 0
         case DoubleBlackLeaf        => 0
         case Node(_, a, k, v, b)    =>
@@ -643,4 +665,128 @@ namespace RedBlackTree {
             let b1 = seqCount(f, b);
             a1 + v1 + b1
     }
+
+    ///
+    /// Returns the tree `t` as a list. Elements are ordered from smallest (left) to largest (right).
+    ///
+    pub def toList(t: RedBlackTree[k, v]): List[(k, v)] =
+        RedBlackTree.foldRight((k, v, xs) -> (k, v) :: xs, Nil, t)
+
+    ///
+    /// Build a node applicatively.
+    ///
+    /// This is a helper function for `mapAWithKeyHelper`.
+    ///
+    def nodeA(color: Color, left: m[RedBlackTree[k, v]], k: k, value: m[v], right: m[RedBlackTree[k, v]]): m[RedBlackTree[k, v]] with Applicative[m] =
+        ((((l, v, r) -> Node(color, l, k, v, r)) `Functor.map` left) `Applicative.ap` value) `Applicative.ap` right
+
+    ///
+    /// Returns a RedBlackTree with mappings `k -> f(v)` for every `k -> v` in `tree`.
+    ///
+    pub def mapAWithKey(f: (k, v1) -> m[v2] & ef, tree: RedBlackTree[k, v1]): m[RedBlackTree[k, v2]] & ef with Applicative[m] =
+        mapAWithKeyHelper(f, tree, t -> t as & ef)
+
+    ///
+    /// Helper function for `mapAWithKey`.
+    ///
+    def mapAWithKeyHelper(f: (k, v1) -> m[v2] & ef,
+                        tree: RedBlackTree[k, v1],
+                        k: m[RedBlackTree[k, v2]] -> m[RedBlackTree[k, v2]] & ef): m[RedBlackTree[k, v2]] & ef with Applicative[m] =
+        match tree {
+            case Node(color, left, key, v, right) =>
+                mapAWithKeyHelper(f, left, kl ->
+                    mapAWithKeyHelper(f, right, kr ->
+                        let mv = f(key, v);
+                        k(nodeA(color, kl, key, mv, kr))))
+            case _                              => k(Applicative.point(Leaf))
+        }
+
+    ///
+    /// Optionally finds `k -> v` where `k` is the smallest key according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def minimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
+        let f = r -> cmp(r.k1, r.v1, r.k2, r.v2);
+        reifyEff(f) {
+            case Pure(g) =>
+                let g1 = (k1, v1, k2, v2) -> g({k1 = k1, v1 = v1, k2 = k2, v2 = v2});
+                if (useParallelEvaluation(t))
+                    parMinimumBy(threads() - 1, g1, t) as & Pure
+                else
+                    seqMinimumBy(g1, t)
+            case _       => seqMinimumBy(cmp, t)
+        }
+
+    ///
+    /// Applies `cmp` over the tree `t` in parallel and optionally returns the lowest
+    /// element according to `cmp`.
+    ///
+    /// The implementation spawns `n` threads each applying `cmp` sequentially
+    /// from left to right on some subtree that is disjoint from the rest of
+    /// the threads.
+    ///
+    @Parallel
+    def parMinimumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] & Impure =
+        if (n <= 0)
+            parSeqMinimumBy(cmp, t)
+        else
+            match t {
+                case Leaf                => None
+                case DoubleBlackLeaf     => None
+                case Node(_, a, k, v, b) =>
+                    let chanL = chan Option[(k, v)] 1;
+                    let chanR = chan Option[(k, v)] 1;
+                    spawn (chanL <- parMinimumBy((n - 2) / 2, cmp, a));
+                    spawn (chanR <- parMinimumBy((n - 2) / 2, cmp, b));
+                    def smallest(kl, vl, kr, vr) = if (cmp(kl, vl, kr, vr) == LessThan) (kl, vl) else (kr, vr);
+                    let a1 = <- chanL;
+                    let res = match a1 {
+                        case None         => (k, v)
+                        case Some(kl, vl) => smallest(kl, vl, k, v)
+                    };
+                    let b1 = <- chanR;
+                    match b1 {
+                        case None         => Some(res)
+                        case Some(kr, vr) =>
+                            let (ks, vs) = res;
+                            Some(smallest(ks, vs, kr, vr))
+                    }
+            }
+
+    ///
+    /// Applies `cmp` over the tree `t` sequentially and optionally returns the lowest
+    /// element according to `cmp`.
+    ///
+    /// Note that this is equivalent to `seqMinimumBy` but for performance reasons -- to avoid
+    /// megamorphic calls -- we use a copy here.
+    ///
+    def parSeqMinimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef = match t {
+        case Leaf                   => None
+        case DoubleBlackLeaf        => None
+        case Node(_, a, k, v, b)    =>
+            def smallest(kl, vl, kr, vr) = if (cmp(kl, vl, kr, vr) == LessThan) (kl, vl) else (kr, vr);
+            let res = match parSeqMinimumBy(cmp, a) {
+                case None         => (k, v)
+                case Some(kl, vl) => smallest(kl, vl, k, v)
+            };
+            match parSeqMinimumBy(cmp, b) {
+                case None         => Some(res)
+                case Some(kr, vr) =>
+                    let (ks, vs) = res;
+                    Some(smallest(ks, vs, kr, vr))
+            }
+    }
+
+    ///
+    /// Applies `cmp` over the tree `t` sequentially and optionally returns the lowest
+    /// element according to `cmp`.
+    ///
+    def seqMinimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
+        reduceLeft((k1, v1, k2, v2) -> if (cmp(k1, v1, k2, v2) == LessThan) (k1, v1) else (k2, v2), t)
+
+
 }

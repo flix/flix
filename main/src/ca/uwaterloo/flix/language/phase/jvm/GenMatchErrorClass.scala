@@ -42,12 +42,13 @@ object GenMatchErrorClass {
 
     cm.mkConstructor(genConstructor(), mkDescriptor(JvmName.ReifiedSourceLocation.toTpe)(VoidableType.Void), IsPublic)
 
+    locationField.mkField(cm, IsPublic, IsFinal)
+
     // TODO: Are these ever used?
     cm.mkMethod(genEqualsMethod(), "equals", mkDescriptor(JvmName.Object.toTpe)(BackendType.Bool), IsPublic, NotFinal)
     cm.mkMethod(genHashCodeMethod(), "hashCode", mkDescriptor()(BackendType.Int32), IsPublic, NotFinal)
-    locationField.mkField(cm, IsPublic, IsFinal)
 
-    cm.closeClassMaker
+    cm.closeClassMaker()
   }
 
   private def genConstructor(): InstructionSet = {

@@ -20,8 +20,6 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
-import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation._
 
 object CodeHinter {
 
@@ -55,7 +53,11 @@ object CodeHinter {
     case Expression.Var(_, _, _) => Nil
 
     case Expression.Def(sym, _, loc) =>
-      checkDeprecated(sym, loc)
+      checkDeprecated(sym, loc) ++
+        checkExperimental(sym, loc) ++
+        checkParallel(sym, loc) ++
+        checkUnsafe(sym, loc) ++
+        checkLazy(sym, loc)
 
     case Expression.Sig(_, _, _) => Nil
 
@@ -331,7 +333,7 @@ object CodeHinter {
     */
   private def checkEffect(tpe: Type, loc: SourceLocation): List[CodeHint] = {
     if (nonTrivialEffect(tpe)) {
-      CodeHint.NonTrivialEffect(loc) :: Nil
+      CodeHint.NonTrivialEffect(tpe, loc) :: Nil
     } else {
       Nil
     }
@@ -345,6 +347,58 @@ object CodeHinter {
     val isDeprecated = defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
     if (isDeprecated) {
       CodeHint.Deprecated(loc) :: Nil
+    } else {
+      Nil
+    }
+  }
+
+  /**
+    * Checks whether the given definition symbol `sym` is experimental.
+    */
+  private def checkExperimental(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
+    val defn = root.defs(sym)
+    val isExperimental = defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Experimental])
+    if (isExperimental) {
+      CodeHint.Experimental(loc) :: Nil
+    } else {
+      Nil
+    }
+  }
+
+  /**
+    * Checks whether the given definition symbol `sym` is unsafe.
+    */
+  private def checkParallel(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
+    val defn = root.defs(sym)
+    val isParallel = defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Parallel])
+    if (isParallel) {
+      CodeHint.Parallel(loc) :: Nil
+    } else {
+      Nil
+    }
+  }
+
+  /**
+    * Checks whether the given definition symbol `sym` is unsafe.
+    */
+  private def checkUnsafe(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
+    val defn = root.defs(sym)
+    val isUnsafe = defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Unsafe])
+    if (isUnsafe) {
+      CodeHint.Unsafe(loc) :: Nil
+    } else {
+      Nil
+    }
+  }
+
+  /**
+    * Checks whether the given definition symbol `sym` is lazy.
+    */
+  private def checkLazy(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
+    val defn = root.defs(sym)
+    val isLazy = defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Lazy])
+    if (isLazy) {
+      CodeHint.Lazy(loc) :: Nil
     } else {
       Nil
     }

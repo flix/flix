@@ -57,14 +57,23 @@ instance Functor[Nel] {
     pub def map(f: a -> b & ef, xs: Nel[a]): Nel[b] & ef = Nel.map(f, xs)
 }
 
-// TODO implement Applicative
-// instance Monad[Nel] {
-//     pub def flatMap(f: a -> Nel[b] & ef, x : Nel[a]) : Nel[b] & ef = Nel.flatMap(f, x)
-// }
+instance Applicative[Nel] {
+    pub def point(x: a): Nel[a] = Nel.singleton(x)
+    pub def ap(f: Nel[a -> b & ef], x: Nel[a]): Nel[b] & ef = Nel.ap(f, x)
+}
+
+instance Monad[Nel] {
+    pub def flatMap(f: a -> Nel[b] & ef, x : Nel[a]) : Nel[b] & ef = Nel.flatMap(f, x)
+}
 
 instance Foldable[Nel] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, xs: Nel[a]): b & ef = Nel.foldLeft(f, s, xs)
     pub def foldRight(f: (a, b) -> b & ef, s: b, xs: Nel[a]): b & ef = Nel.foldRight(f, s, xs)
+}
+
+instance Traversable[Nel] {
+    pub def traverse(f: a -> m[b] & ef, t: Nel[a]): m[Nel[b]] & ef with Applicative[m] = Nel.traverse(f, t)
+    pub override def sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
 }
 
 namespace Nel {
@@ -221,6 +230,26 @@ namespace Nel {
     }
 
     ///
+    /// Apply every function from `f` to every argument from `l` and return a non-empty list with all results.
+    /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
+    /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
+    ///
+    pub def ap(f: Nel[a -> b & ef], l: Nel[a]) : Nel[b] & ef =
+        // Note - loop has been worker-wrapper transformed to represent the list of
+        // functions as head (f1) and tail (fs) so we never have an empty list to deal with.
+        def loop(f1, fs, k) = match fs {
+            case Nil      => k(map(f1, l))
+            case f2 :: rs =>
+                let ks1 = map(f1, l);
+                loop(f2, rs, ks2 ->
+                  k(append(ks1, ks2)))
+        };
+        match f {
+            case Nel(f1, Nil) => map(f1, l)
+            case Nel(f1, rs)  => loop(f1, rs, ks -> ks as & ef)
+        }
+
+    ///
     /// Returns the result of applying `f` to every element in `xs` and concatenating the results.
     ///
     @Time(time(f) * length(xs)) @Space(time(f) * length(xs))
@@ -303,6 +332,17 @@ namespace Nel {
     ///
     pub def foldRight(f: (a, b) -> b & ef, s: b, xs: Nel[a]): b & ef = match xs {
         case Nel(h, l) => f(h, List.foldRight(f, s, l))
+    }
+
+    ///
+    /// Lazily applies `f` to a start value `s` and all elements in `xs` going from right to left.
+    /// The function f must be pure.
+    ///
+    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
+    /// The foldRightL function exists to allow early termination of a fold.
+    ///
+    pub def foldRightL(f: (a, Lazy[b]) -> b, s: b, xs: Nel[a]): b = match xs {
+        case Nel(h, l) => f(h, lazy List.foldRightL(f, s, l))
     }
 
     ///
@@ -497,6 +537,24 @@ namespace Nel {
     pub def toIterator(l: Nel[a]): Iterator[a] & Impure =
        let Nel(x, xs) = l;
        List.toIterator(x :: xs)
+
+    ///
+    /// Returns the result of applying the applicative mapping function `f` to all the elements of the
+    /// non-empty list `l`.
+    ///
+    pub def sequence(l: Nel[m[a]]): m[Nel[a]] with Applicative[m] =
+        match l {
+            case Nel(x, rs) => (((y, ys) -> Nel(y, ys)) `Functor.map` x) `Applicative.ap` Traversable.sequence(rs)
+        }
+
+    ///
+    /// Returns the result of running all the actions in the non-empty list `l`.
+    ///
+    pub def traverse(f: a -> m[b] & ef, l: Nel[a]): m[Nel[b]] & ef with Applicative[m] =
+        match l {
+            case Nel(x, rs) => (((y, ys) -> Nel(y, ys)) `Functor.map` f(x)) `Applicative.ap` Traversable.traverse(f, rs)
+        }
+
 
 }
 

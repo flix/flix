@@ -24,16 +24,6 @@ pub enum MutList[a] {
 namespace MutList {
 
     ///
-    /// Returns `true` if the MutLists `xs` and `ys` are equal.
-    ///
-    pub def eq(xs: MutList[a], ys: MutList[a]): Bool & Impure with Eq[a] = {
-        let MutList(l1, n1) = xs;
-        let MutList(l2, n2) = ys;
-        deref n1 == deref n2 and
-            Array.slice(0, deref n1, deref l1) `Array.eq` Array.slice(0, deref n2, deref l2)
-    }
-
-    ///
     /// Constant which stores the minimum capacity of a MutList.
     ///
     def minCapacity(): Int32 = 8
@@ -627,14 +617,7 @@ namespace MutList {
     ///
     pub def reserve!(n: Int32, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
-        let c = capacity(v);
-        let len = deref l;
-        let empty = c - len;
-        if (n > empty)
-            let newCapacity = c + (n - empty);
-            let arr = deref a;
-            a := Array.init(i -> if (i < len) arr[i] else $DEFAULT$, newCapacity)
-        else ()
+        a := Array.copyOfRange(0, (deref l) + n, deref a)
 
     ///
     /// Returns `v` as an immutable list.

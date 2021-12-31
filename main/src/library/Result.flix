@@ -172,6 +172,17 @@ namespace Result {
     }
 
     ///
+    /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
+    ///
+    /// The function f must be pure.
+    ///
+    @Time(time(f)) @Space(space(f))
+    pub def foldRightL(f: (t, Lazy[a]) -> a, r: Result[t, e], z: a): a = match r {
+        case Ok(v) => f(v, lazy z)
+        case Err(_) => z
+    }
+
+    ///
     /// Returns `Ok(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Ok(v_i)`.
     /// Otherwise returns the first `Err` encountered.
     ///
@@ -409,4 +420,19 @@ namespace Result {
         case Err(_) => Iterator.empty()
         case Ok(x)  => Iterator.singleton(x)
     }
+
+    ///
+    /// Returns `Ok(x)` if `f` was invoked without throwing an exception.
+    ///
+    /// If `f` throws a Java `RuntimeException`, `Err(e)` is returned
+    /// where `e` is the error message.
+    ///
+    pub def try(f: Unit -> a & ef): Result[a, String] & ef =
+        try {
+            Ok(f())
+        } catch {
+            case e: ##java.lang.RuntimeException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(e)) as & Pure
+        }
 }

@@ -58,6 +58,25 @@ instance Foldable[Option] {
     pub def foldRight(f: (a, b) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)
 }
 
+instance Traversable[Option] {
+    pub def traverse(f: a -> m[b] & ef, t: Option[a]): m[Option[b]] & ef with Applicative[m] =
+        use Applicative.{point};
+        use Functor.{map};
+        match t {
+            case None => point(None)
+            case Some(a) => f(a) |> map(Some)
+        }
+
+    pub override def sequence(t: Option[m[a]]): m[Option[a]] with Applicative[m] =
+        use Applicative.{point};
+        use Functor.{map};
+        match t {
+            case Some(ma) => map(Some, ma)
+            case None => point(None)
+        }
+
+}
+
 namespace Option {
 
     ///
@@ -216,6 +235,16 @@ namespace Option {
     pub def foldRight(f: (a, b) -> b & ef, o: Option[a], z: b): b & ef = match o {
         case None => z
         case Some(v) => f(v, z)
+    }
+
+    ///
+    /// Returns `f(v, lazy z)` if `o` is `Some(v)`. Otherwise returns `z`.
+    ///
+    /// The function f must be pure.
+    ///
+    pub def foldRightL(f: (a, Lazy[b]) -> b, o: Option[a], z: b): b = match o {
+        case None => z
+        case Some(v) => f(v, lazy z)
     }
 
     ///

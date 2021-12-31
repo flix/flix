@@ -32,17 +32,17 @@ object GenUnitClass {
     val cm = mkClass(BackendObjType.Unit.jvmName, IsFinal)
 
     // Singleton instance
-    BackendObjType.Unit.InstanceField.mkField(cm, IsPublic, IsFinal)
+    BackendObjType.Unit.InstanceField.mkStaticField(cm, IsPublic, IsFinal)
 
     cm.mkStaticConstructor(genStaticConstructor())
     cm.mkObjectConstructor(IsPrivate)
 
-    cm.closeClassMaker
+    cm.closeClassMaker()
   }
 
   private def genStaticConstructor(): InstructionSet =
     NEW(BackendObjType.Unit.jvmName) ~
       DUP() ~ invokeConstructor(BackendObjType.Unit.jvmName) ~
-      BackendObjType.Unit.InstanceField.putField() ~
+      BackendObjType.Unit.InstanceField.putStaticField() ~
       RETURN()
 }

@@ -201,7 +201,7 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def viewLeft01(): Bool = Chain.viewLeft(Chain.empty()) == Chain/ViewLeft.NoneLeft
+    def viewLeft01(): Bool = Chain.viewLeft(Chain.empty(): Chain[Int32]) == Chain/ViewLeft.NoneLeft
 
     @test
     def viewLeft02(): Bool = Chain.viewLeft(Chain.singleton(1)) == Chain/ViewLeft.SomeLeft(1, Chain.empty())
@@ -217,7 +217,7 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def viewRight01(): Bool = Chain.viewRight(Chain.empty()) == Chain/ViewRight.NoneRight
+    def viewRight01(): Bool = Chain.viewRight(Chain.empty(): Chain[Int32]) == Chain/ViewRight.NoneRight
 
     @test
     def viewRight02(): Bool = Chain.viewRight(Chain.singleton(1)) == Chain/ViewRight.SomeRight(Chain.empty(), 1)
@@ -1234,19 +1234,19 @@ namespace TestChain {
 
     @test
     def toMutList01(): Bool & Impure =
-        Chain.toMutList(Chain.empty(): Chain[Int]) `MutList.eq` List.toMutList(Nil): MutList[Int]
+        Chain.toMutList(Chain.empty(): Chain[Int]) `MutList.sameElements` List.toMutList(Nil): MutList[Int]
 
     @test
     def toMutList02(): Bool & Impure =
-        Chain.toMutList(Chain.singleton(1)) `MutList.eq` List.toMutList(1 :: Nil)
+        Chain.toMutList(Chain.singleton(1)) `MutList.sameElements` List.toMutList(1 :: Nil)
 
     @test
     def toMutList03(): Bool & Impure =
-        Chain.toMutList(List.toChain(1 :: 2 :: Nil)) `MutList.eq` List.toMutList(1 :: 2 :: Nil)
+        Chain.toMutList(List.toChain(1 :: 2 :: Nil)) `MutList.sameElements` List.toMutList(1 :: 2 :: Nil)
 
     @test
     def toMutList04(): Bool & Impure =
-        Chain.toMutList(List.toChain(1 :: 2 :: 3 :: Nil)) `MutList.eq` List.toMutList(1 :: 2 :: 3 :: Nil)
+        Chain.toMutList(List.toChain(1 :: 2 :: 3 :: Nil)) `MutList.sameElements` List.toMutList(1 :: 2 :: 3 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
@@ -1278,15 +1278,15 @@ namespace TestChain {
 
     @test
     def toMap02(): Bool =
-        Chain.toMap(Chain.singleton((1, 1))) == Map#{1 -> 1}
+        Chain.toMap(Chain.singleton((1, 1))) == Map#{1 => 1}
 
     @test
     def toMap03(): Bool =
-        Chain.toMap(List.toChain((1, 1) :: (2, 2) :: Nil)) == Map#{1 -> 1, 2 -> 2}
+        Chain.toMap(List.toChain((1, 1) :: (2, 2) :: Nil)) == Map#{1 => 1, 2 => 2}
 
     @test
     def toMap04(): Bool =
-        Chain.toMap(List.toChain((1, 1) :: (2, 2) :: (3, 3) :: Nil)) == Map#{1 -> 1, 2 -> 2, 3 -> 3}
+        Chain.toMap(List.toChain((1, 1) :: (2, 2) :: (3, 3) :: Nil)) == Map#{1 => 1, 2 => 2, 3 => 3}
 
     /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //

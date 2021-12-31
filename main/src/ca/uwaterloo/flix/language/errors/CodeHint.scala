@@ -15,7 +15,9 @@
  */
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.debug.Audience
+import ca.uwaterloo.flix.language.debug.FormatEff
 
 /**
   * A common super-type for code hints.
@@ -42,6 +44,28 @@ object CodeHint {
   }
 
   /**
+    * A code hint that indicates an experimental feature.
+    *
+    * @param loc the location of the expression.
+    */
+  case class Experimental(loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Experimental feature: may be changed or removed without warning!"
+
+    def severity: Severity = Severity.Info
+  }
+
+  /**
+    * A code hint that indicates laziness.
+    *
+    * @param loc the location of the expression.
+    */
+  case class Lazy(loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Uses lazy evaluation."
+
+    def severity: Severity = Severity.Info
+  }
+
+  /**
     * A code hint that indicates that a purity polymorphic operation is lazy.
     *
     * @param sym the symbol of the operation that is lazy.
@@ -51,6 +75,17 @@ object CodeHint {
     def summary: String = s"Lazy: The operation uses lazy evaluation (due to purity polymorphism)."
 
     def severity: Severity = Severity.Hint
+  }
+
+  /**
+    * A code hint that indicates parallelism.
+    *
+    * @param loc the location of the expression.
+    */
+  case class Parallel(loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Uses parallel evaluation."
+
+    def severity: Severity = Severity.Info
   }
 
   /**
@@ -92,10 +127,22 @@ object CodeHint {
   /**
     * A code hint that indicates that an expression has a non-trivial effect.
     *
+    * @param tpe the type of the expression.
     * @param loc the location of the expression.
     */
-  case class NonTrivialEffect(loc: SourceLocation) extends CodeHint {
-    def summary: String = s"Expression has a non-trivial effect."
+  case class NonTrivialEffect(tpe: Type, loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Expression has a non-trivial effect: ${FormatEff.formatEff(tpe)(Audience.External)}"
+
+    def severity: Severity = Severity.Info
+  }
+
+  /**
+    * A code hint that indicates unsafeness.
+    *
+    * @param loc the location of the expression.
+    */
+  case class Unsafe(loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Use of unsafe feature."
 
     def severity: Severity = Severity.Info
   }

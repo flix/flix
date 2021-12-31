@@ -210,9 +210,54 @@ pub lawless class Foldable[t : Type -> Type] {
     ///
     pub def filter(f: a -> Bool, t: t[a]): List[a] =
         Foldable.foldRight((x, acc) -> if (f(x)) x :: acc else acc, Nil, t)
+
+    ///
+    /// Applies `f` to each element in `t`.
+    ///
+    pub def foreach(f: a -> Unit & ef, t: t[a]): Unit & ef =
+        Foldable.foldLeft((_, x) -> f(x), (), t)
+
+
+    // Acknowledgement: `foldLeftM` and `foldRightM` are derived from Haskell's Data.Foldable.
+    // Because they use CPS, the implementations work for both strict and lazy languages.
+    // Counterintuitively `foldLeftM` uses a right-fold and `foldRighM` uses a left-fold
+    // but the "direction of travel" is observably correct.
+
+    ///
+    /// A monadic version of `foldLeft`.
+    ///
+    /// Applies the monadic `f` to a start value `s` and all elements in `t` going
+    /// from left to right.
+    ///
+    pub def foldLeftM(f: (b, a) -> m[b] & ef, s: b, t: t[a]): m[b] & ef with Monad[m] =
+        let f1 = (x, k) -> z -> Monad.flatMap(k, f(z, x));
+        s |> Foldable.foldRight(f1, x1 -> Applicative.point(x1) as & ef, t)
+
+    ///
+    /// A monadic version of `foldRight`.
+    ///
+    /// Applies the monadic `f` to a start value `s` and all elements in `t` going
+    /// from right to left.
+    ///
+    pub def foldRightM(f: (a, b) -> m[b] & ef, s: b, t: t[a]): m[b] & ef with Monad[m] =
+        let f1 = (k, x) -> z -> Monad.flatMap(k, f(x, z));
+        s |> Foldable.foldLeft(f1, x1 -> Applicative.point(x1) as & ef, t)
+
+    ///
+    /// A monadic version of `foreach`.
+    ///
+    /// Apply `f` to every value in `t`. `f` is applied for its monadic effect,
+    /// the answer it produces is discarded.
+    ///
+    pub def foreachM(f: a -> m[b] & ef, t: t[a]): m[Unit] & ef with Monad[m] =
+        use Applicative.{point, *>};
+        Foldable.foldLeftM((acc, a) -> f(a) *> point(acc), (), t)
+
 }
 
 namespace Foldable {
+
+    use Applicative.{*>};
 
     ///
     /// Returns the result of applying `combine` to all the elements in `t`, using `empty` as the initial value.

@@ -16,13 +16,6 @@
 namespace Array {
 
     ///
-    /// Returns `true` if the elements of `a` are equal to the elements of `b`.
-    ///
-    pub def eq(a: Array[v], b: Array[v]): Bool & Impure with Eq[v] =
-        (Array.length(a) == Array.length(b)) and
-        (Array.foldLeft((acc, p) -> let (x,y) = p; (acc and (x == y)), true, Array.zip(a, b)))
-
-    ///
     /// Compares `a` and `b` lexicographically.
     ///
     pub def compare(a: Array[v], b: Array[v]): Comparison & Impure with Order[v] =
@@ -1532,7 +1525,7 @@ namespace Array {
     /// The function returns the final value of the accumulator `s`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreachAccum(f: (a, st) -> st & ef, s: st, a: Array[a]): st & Impure =
+    def foreachAccum(f: (a, st) -> st & ef, s: st, a: Array[a]): st & Impure =
         foreachAccumHelper(f, a, length(a), s, 0)
 
     ///

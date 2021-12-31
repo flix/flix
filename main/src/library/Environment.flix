@@ -30,7 +30,7 @@ namespace Environment {
         } as & Pure
 
     ///
-    /// Gets the value of the specified environment variable.
+    /// Returns the value of the specified environment variable.
     ///
     pub def getVar(name: String): Option[String] =
         import static java.lang.System.getenv(String);
@@ -42,7 +42,7 @@ namespace Environment {
         }
 
     ///
-    /// Gets the system property by name.
+    /// Returns the system property by name.
     ///
     pub def getProp(name: String): Option[String] =
         import static java.lang.System.getProperty(String);
@@ -54,58 +54,58 @@ namespace Environment {
         }
 
     ///
-    /// Operating system name
+    /// Returns the operating system name
     ///
     pub def getOsName(): Option[String] = getProp("os.name")
 
     ///
-    /// Operating system architecture
+    ///  Returns the operating system architecture
     ///
     pub def getOsArch(): Option[String] = getProp("os.arch")
 
     ///
-    /// Operating system version
+    ///  Returns the operating system version
     ///
     pub def getOsVersion(): Option[String] = getProp("os.version")
 
     ///
-    /// File separator
+    ///  Returns the file separator
     ///
     pub def getFileSeparator(): String =
         import static get java.io.File.separator as sep;
         sep() as String & Pure
 
     ///
-    /// Path separator
+    /// Returns the path separator
     ///
     pub def getPathSeparator(): String =
         import static get java.io.File.pathSeparator as pathSep;
         pathSep() as String & Pure
 
     ///
-    /// Line separator
+    /// Returns the system line separator
     ///
     pub def getLineSeparator(): String =
         import static java.lang.System.lineSeparator();
         lineSeparator() as String & Pure
 
     ///
-    /// User's current working directory
+    /// Returns the user's current working directory
     ///
     pub def getCurrentWorkingDirectory(): Option[String] = getProp("user.dir")
 
     ///
-    /// Default temp file path
+    /// Returns the default temp file path
     ///
     pub def getTemporaryDirectory(): Option[String] = getProp("java.io.tmpdir")
 
     ///
-    /// User's account name
+    /// Returns the user's account name
     ///
     pub def getUserName(): Option[String] = getProp("user.name")
 
     ///
-    /// User's home directory
+    /// Returns the user's home directory
     ///
     pub def getUserHomeDirectory(): Option[String] = getProp("user.home")
 

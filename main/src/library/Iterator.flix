@@ -61,7 +61,7 @@ namespace Iterator {
         Iterator(done, next)
 
     ///
-    /// Return `Some(x)` if `iter` is not empty. Return `None` otherwise.
+    /// Returns `Some(x)` if `iter` is not empty. Returns `None` otherwise.
     ///
     /// Consumes the head element of `iter`.
     ///
@@ -71,6 +71,15 @@ namespace Iterator {
             None
         else
             Some(next())
+
+    ///
+    /// Returns true if the iterator is empty.
+    ///
+    /// Does **not** consume any elements of the iterator.
+    ///
+    pub def isEmpty(iter: Iterator[a]): Bool & Impure =
+        let Iterator(done, _) = iter;
+        done()
 
     ///
     /// Returns an iterator of all integers between `b` (inclusive) and `e` (exclusive).
@@ -260,7 +269,7 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should not be reused.
     ///
-    pub def lazyFilter(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
+    pub def filterL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
 
         // Allocate a reference to hold the next element.
@@ -303,7 +312,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    pub def lazyMap(f: a -> b, iter: Iterator[a]): Iterator[b] =
+    pub def mapL(f: a -> b, iter: Iterator[a]): Iterator[b] =
         let Iterator(done, next) = iter;
         let next1 = () -> f(next());
         Iterator(done, next1)
@@ -356,17 +365,17 @@ namespace Iterator {
 
     ///
     /// Returns an iterator where the element at index `i` is `f(a, b)` where
-    /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
+    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
     ///
     /// Does *not* consume any elements from either iterator.
     ///
-    /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
+    /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
     ///
     /// The original iterators `iterA` and `iterB` should not be reused.
     ///
     /// An iterator should never be zipped with itself.
     ///
-    pub def lazyZipWith(f: (a, b) -> c, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] =
+    pub def zipWithL(f: (a, b) -> c, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] =
         let Iterator(done, next) = zip(iterA, iterB);
         let next1 = () -> {
             let (x, y) = next();
@@ -376,11 +385,11 @@ namespace Iterator {
 
     ///
     /// Returns an iterator where the element at index `i` is `f(a, b)` where
-    /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
+    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
     ///
     /// Consumes the entire iterator.
     ///
-    /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
+    /// If either `iterA` or `iterB` becomes depleted, then no further elements are added to the resulting list.
     ///
     /// The original iterators `iterA` and `iterB` should not be reused.
     ///
@@ -424,6 +433,32 @@ namespace Iterator {
             None
         else
             Some(foldLeft(f, next(), iter))
+
+    ///
+    /// Returns an iterator over the results of `f`.
+    ///
+    /// If `f` returns `Ok(x)`, then the next element is `x`.
+    ///
+    /// If `f` returns `Err(e)`, then the iterator is depleted.
+    ///
+    pub def unfoldWithOk(f: Unit -> Result[a, b] & ef): Iterator[a] & Impure =
+        let cursor = ref None;
+        let done = () -> match deref cursor {
+            case None    => match f() {
+                case Err(_) => true
+                case Ok(x)  =>
+                    cursor := Some(x);
+                    false
+            }
+            case Some(_) => false
+        };
+        let next = () -> match deref cursor {
+            case None    => bug!("Empty Iterator!")
+            case Some(x) =>
+                cursor := None;
+                x
+        };
+        Iterator(done, next)
 
     ///
     /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
@@ -594,8 +629,6 @@ namespace Iterator {
                 n()
         };
         Iterator(done1, next1)
-
-    // TODO: Refactor `flatMapForward` and `intercalateForward` to use `forward`.
 
     ///
     /// Forwards the iterator the first non-empty iterator produced by `next`.

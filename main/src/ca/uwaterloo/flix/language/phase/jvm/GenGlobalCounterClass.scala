@@ -41,20 +41,20 @@ object GenGlobalCounterClass {
 
     cm.mkObjectConstructor(IsPrivate)
     cm.mkStaticConstructor(genStaticConstructor())
-    counterField.mkField(cm, IsPublic, IsFinal)
+    counterField.mkStaticField(cm, IsPublic, IsFinal)
     cm.mkStaticMethod(genNewIdMethod(), NewIdMethodName, MethodDescriptor(Nil, BackendType.Int64), IsPublic, IsFinal)
 
-    cm.closeClassMaker
+    cm.closeClassMaker()
   }
 
   private def genStaticConstructor(): InstructionSet =
     NEW(JvmName.AtomicLong) ~
       DUP() ~ invokeConstructor(JvmName.AtomicLong) ~
-      counterField.putField() ~
+      counterField.putStaticField() ~
       RETURN()
 
   private def genNewIdMethod()(implicit flix: Flix): InstructionSet =
-    counterField.getField() ~
+    counterField.getStaticField() ~
       INVOKEVIRTUAL(JvmName.AtomicLong, "getAndIncrement", MethodDescriptor(Nil, BackendType.Int64)) ~
       LRETURN()
 

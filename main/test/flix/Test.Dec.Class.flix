@@ -100,10 +100,6 @@ namespace Test/Dec/Class {
         instance Eff[Pure] {
             pub def isPure(_f: a -> b): Bool = true
         }
-
-        instance Eff[Impure] {
-            pub def isPure(_f: a -> b & Impure): Bool = false
-        }
     }
 
     namespace Test10 {
@@ -199,23 +195,53 @@ namespace Test/Dec/Class {
     }
 
     namespace Test16 {
-      lawless class D[a] {
-        pub def f(x: a, y: a): Bool
-      }
+        lawless class D[a] {
+            pub def f(x: a, y: a): Bool
+        }
 
-      class C[a] {
-        law l: forall (x: a, y: a) with D[a] . Test/Dec/Class/Test16/D.f(x, y)
-      }
+        class C[a] {
+            law l: forall (x: a, y: a) with D[a] . Test/Dec/Class/Test16/D.f(x, y)
+        }
     }
 
     namespace Test17 {
-      lawless class D[a] {
-        pub def f(x: a): Bool
-      }
+        lawless class D[a] {
+            pub def f(x: a): Bool
+        }
 
-      class E[a: Type -> Type] {
-        law l: forall (x: a[b]) with D[a[b]] . Test/Dec/Class/Test17/D.f(x)
-      }
+        class E[a: Type -> Type] {
+            law l: forall (x: a[b]) with D[a[b]] . Test/Dec/Class/Test17/D.f(x)
+        }
+    }
+
+    namespace Test18 {
+        pub enum E[_: Bool]
+        pub enum F[_: Bool, _: Type]
+
+        lawless class C[a]
+        lawless class D[a: Type -> Type]
+
+        instance C[E[true]]
+        instance C[F[false, a]]
+        instance D[F[true]]
+    }
+
+    namespace Test19 {
+        pub enum M[_: Bool, a: Type] {
+          case M(a)
+        }
+
+        instance Eq[M[true, a]] with Eq[a] {
+            pub def eq(x: M[true, a], y: M[true, a]): Bool = match (x, y) {
+                case (M(x1), M(y1)) => x1 == y1
+            }
+        }
+
+        @test
+        def testCallComplexBoolSig01(): Bool = M(10): M[true, Int] == M(10): M[true, Int]
+
+        @test
+        def testCallComplexBoolSig02(): Bool = M(10): M[true, Int] != M(11): M[true, Int]
     }
 
     pub enum List[a] {
