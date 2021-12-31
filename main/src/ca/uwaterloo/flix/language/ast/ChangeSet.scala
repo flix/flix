@@ -38,10 +38,14 @@ sealed trait ChangeSet {
     * This happens if a key is deleted. Then it does not occur `newMap` but it occurs in `oldMap`.
     * However, it is neither fresh nor stale. It should simply be forgotten.
     */
-  def partition[K <: Locatable, V1, V2](newMap: Map[K, V1], oldMap: Map[K, V2]): (Map[K, V1], Map[K, V2]) = {
-    val stale = newMap.filter(kv => isStale(kv._1, oldMap))
-    val fresh = (oldMap -- stale.keySet).filter(kv => newMap.contains(kv._1))
-    (stale, fresh)
+  def partition[K <: Locatable, V1, V2](newMap: Map[K, V1], oldMap: Map[K, V2]): (Map[K, V1], Map[K, V2]) = this match {
+    case ChangeSet.Everything =>
+      (newMap, Map.empty)
+
+    case ChangeSet.Changes(_) =>
+      val stale = newMap.filter(kv => isStale(kv._1, oldMap))
+      val fresh = (oldMap -- stale.keySet).filter(kv => newMap.contains(kv._1))
+      (stale, fresh)
   }
 
   /**
