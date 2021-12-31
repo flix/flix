@@ -42,12 +42,12 @@ object Typer {
   /**
     * Type checks the given AST root.
     */
-  def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: Set[Ast.Source])(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Typer") {
+  def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Typer") {
     // TODO: Move these subphase calls into the individual defs?
     val classEnv = flix.subphase("ClassEnv")(mkClassEnv(root.classes, root.instances))
     val classesVal = flix.subphase("Classes")(visitClasses(root, classEnv))
     val instancesVal = flix.subphase("Instances")(visitInstances(root, classEnv))
-    val defsVal = flix.subphase("Defs")(visitDefs(root, classEnv, oldRoot, changeSet))
+    val defsVal = visitDefs(root, classEnv, oldRoot, changeSet)
     val enumsVal = flix.subphase("Enums")(visitEnums(root))
     val typeAliases = flix.subphase("TypeAliases")(visitTypeAliases(root))
 
@@ -182,32 +182,25 @@ object Typer {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitDefs(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], oldRoot: TypedAst.Root, changeSet: Set[Ast.Source])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
-    /**
-      * A stale definition must be (re)-compiled.
-      *
-      * A definition is stale if it is (a) not in the old root or (b) in the change set.
-      */
-    // TODO: Need a better way than to have changeSet == null.
-    def isStale(sym: Symbol.DefnSym): Boolean = changeSet == null || !oldRoot.defs.contains(sym) || changeSet.contains(sym.loc.source)
+  private def visitDefs(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] =
+    flix.subphase("Defs") {
+      // Compute the stale and fresh definitions.
+      val staleDefs: Map[Symbol.DefnSym, KindedAst.Def] = root.defs.filter(kv => changeSet.isStale(kv._1, oldRoot))
+      val freshDefs: Map[Symbol.DefnSym, TypedAst.Def] = (oldRoot.defs -- staleDefs.keySet).filter(kv => root.defs.contains(kv._1))
 
-    // Compute the stale and fresh definitions.
-    val staleDefs: Map[Symbol.DefnSym, KindedAst.Def] = root.defs.filter(kv => isStale(kv._1))
-    val freshDefs: Map[Symbol.DefnSym, TypedAst.Def] = (oldRoot.defs -- staleDefs.keySet).filter(kv => root.defs.contains(kv._1))
+      //println(s"Stale = ${staleDefs.keySet.size}")
+      //println(s"Fresh = ${freshDefs.keySet.size}")
 
-    //println(s"Stale = ${staleDefs.keySet.size}")
-    //println(s"Fresh = ${freshDefs.keySet.size}")
+      // Process the stale defs in parallel.
+      val results = ParOps.parMap(staleDefs.values, visitDefn(_, Nil, root, classEnv))
 
-    // Process the stale defs in parallel.
-    val results = ParOps.parMap(staleDefs.values, visitDefn(_, Nil, root, classEnv))
-
-    // Sequence the results using the freshDefs as the initial value.
-    Validation.sequence(results) map {
-      case xs => xs.foldLeft(freshDefs) {
-        case (acc, defn) => acc + (defn.sym -> defn)
+      // Sequence the results using the freshDefs as the initial value.
+      Validation.sequence(results) map {
+        case xs => xs.foldLeft(freshDefs) {
+          case (acc, defn) => acc + (defn.sym -> defn)
+        }
       }
     }
-  }
 
   /**
     * Infers the type of the given definition `defn0`.
