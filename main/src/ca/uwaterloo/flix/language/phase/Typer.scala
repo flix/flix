@@ -32,7 +32,7 @@ import ca.uwaterloo.flix.util._
 
 import java.io.PrintWriter
 
-object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
+object Typer {
 
   /**
     * The expected scheme of the `main` function.
@@ -42,15 +42,14 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
   /**
     * Type checks the given AST root.
     */
-  def run(root: KindedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Typer") {
-    val classEnv = mkClassEnv(root.classes, root.instances)
-
-    val classesVal = visitClasses(root, classEnv)
-    val instancesVal = visitInstances(root, classEnv)
-    val defsVal = visitDefs(root, classEnv)
-    val enumsVal = visitEnums(root)
-
-    val typeAliases = visitTypeAliases(root)
+  def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: Set[Ast.Source])(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Typer") {
+    // TODO: Move these subphase calls into the individual defs?
+    val classEnv = flix.subphase("ClassEnv")(mkClassEnv(root.classes, root.instances))
+    val classesVal = flix.subphase("Classes")(visitClasses(root, classEnv))
+    val instancesVal = flix.subphase("Instances")(visitInstances(root, classEnv))
+    val defsVal = flix.subphase("Defs")(visitDefs(root, classEnv, oldRoot, changeSet))
+    val enumsVal = flix.subphase("Enums")(visitEnums(root))
+    val typeAliases = flix.subphase("TypeAliases")(visitTypeAliases(root))
 
     Validation.mapN(classesVal, instancesVal, defsVal, enumsVal) {
       case (classes, instances, defs, enums) =>
@@ -183,13 +182,27 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitDefs(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
-    // Compute the results in parallel.
-    val results = ParOps.parMap(root.defs.values, visitDefn(_, Nil, root, classEnv))
+  private def visitDefs(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], oldRoot: TypedAst.Root, changeSet: Set[Ast.Source])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
+    /**
+      * A stale definition must be (re)-compiled.
+      *
+      * A definition is stale if it is (a) not in the old root or (b) in the change set.
+      */
+    def isStale(sym: Symbol.DefnSym): Boolean = !oldRoot.defs.contains(sym) || changeSet.contains(sym.loc.source)
 
-    // Sequence the results.
+    // Compute the stale and fresh definitions.
+    val staleDefs: Map[Symbol.DefnSym, KindedAst.Def] = root.defs.filter(kv => isStale(kv._1))
+    val freshDefs: Map[Symbol.DefnSym, TypedAst.Def] = (oldRoot.defs -- staleDefs.keySet).filter(kv => root.defs.contains(kv._1))
+
+    println(s"Stale = ${staleDefs.keySet.size}")
+    println(s"Fresh = ${freshDefs.keySet.size}")
+
+    // Process the stale defs in parallel.
+    val results = ParOps.parMap(staleDefs.values, visitDefn(_, Nil, root, classEnv))
+
+    // Sequence the results using the freshDefs as the initial value.
     Validation.sequence(results) map {
-      case xs => xs.foldLeft(Map.empty[Symbol.DefnSym, TypedAst.Def]) {
+      case xs => xs.foldLeft(freshDefs) {
         case (acc, defn) => acc + (defn.sym -> defn)
       }
     }

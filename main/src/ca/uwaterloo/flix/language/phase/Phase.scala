@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.util.Validation
   * @tparam I the input type.
   * @tparam O the output type.
   */
+// TODO: Remove this trait.
 trait Phase[I, O] {
 
   /**

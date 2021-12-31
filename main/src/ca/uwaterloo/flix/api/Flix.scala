@@ -44,19 +44,34 @@ object Flix {
 class Flix {
 
   /**
+    * A sequence of strings to parsed into Flix ASTs.
+    */
+  private val strings = mutable.Set.empty[String]
+
+  /**
     * A sequence of paths to be parsed into Flix ASTs.
     */
-  private val paths = ListBuffer.empty[Path]
+  private val paths = mutable.Set.empty[Path]
 
   /**
     * A sequence of inputs to be parsed into Flix ASTs.
     */
-  private val inputs = ListBuffer.empty[Input]
+  private val inputs = mutable.Set.empty[Input]
 
   /**
     * A set of reachable root definitions.
     */
   private val reachableRoots = mutable.Set.empty[Symbol.DefnSym]
+
+  /**
+    * The set of sources changed since last compilation.
+    */
+  private var changeSet: Set[Ast.Source] = Set.empty
+
+  /**
+    * A cache of compiled ASTs (for incremental compilation).
+    */
+  private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, Map.empty, Map.empty)
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -337,6 +352,11 @@ class Flix {
   }
 
   /**
+    * Returns the reachable root definitions.
+    */
+  def getReachableRoots: Set[Symbol.DefnSym] = reachableRoots.toSet
+
+  /**
     * Adds the given fully-qualified name as a reachable root.
     */
   def addReachableRoot(fqn: String): scala.Unit = {
@@ -344,9 +364,14 @@ class Flix {
   }
 
   /**
-    * Returns the reachable root definitions.
+    * Marks the given source `s` as changed.
     */
-  def getReachableRoots: Set[Symbol.DefnSym] = reachableRoots.toSet
+  def markChanged(s: Ast.Source): Flix = {
+    if (s == null)
+      throw new IllegalArgumentException("'s' must be non-null.")
+    changeSet += s
+    this
+  }
 
   /**
     * Sets the options used for this Flix instance.
@@ -388,32 +413,40 @@ class Flix {
     * Compiles the Flix program and returns a typed ast.
     */
   def check(): Validation[TypedAst.Root, CompilationMessage] = {
+    // Mark this object as implicit.
+    implicit val flix: Flix = this
+
     // Initialize fork join pool.
     initForkJoin()
 
     // Reset the phase information.
     phaseTimers = ListBuffer.empty
 
-    // Construct the compiler pipeline.
-    val pipeline =
-      Reader |>
-        Parser |>
-        Weeder |>
-        Namer |>
-        Resolver |>
-        Kinder |>
-        Deriver |>
-        Typer |>
-        Statistics |>
-        Instances |>
-        Stratifier |>
-        PatternExhaustiveness |>
-        Redundancy |>
-        Terminator |>
-        Safety
+    // The compiler pipeline.
+    val result = for {
+      afterReader <- Reader.run(getInputs)
+      afterParser <- Parser.run(afterReader)
+      afterWeeder <- Weeder.run(afterParser)
+      afterNamer <- Namer.run(afterWeeder)
+      afterResolver <- Resolver.run(afterNamer)
+      afterKinder <- Kinder.run(afterResolver)
+      afterDeriver <- Deriver.run(afterKinder)
 
-    // Apply the pipeline to the parsed AST.
-    val result = pipeline.run(getInputs)(this)
+      afterTyper <- Typer.run(afterDeriver, cachedTypedAst, changeSet)
+
+      afterStatistics <- Statistics.run(afterTyper)
+      afterInstances <- Instances.run(afterStatistics)
+      afterStratifier <- Stratifier.run(afterInstances)
+      afterPatternExhaustiveness <- PatternExhaustiveness.run(afterStratifier)
+      afterRedundancy <- Redundancy.run(afterPatternExhaustiveness)
+      afterTerminator <- Terminator.run(afterRedundancy)
+      afterSafety <- Safety.run(afterTerminator)
+    } yield {
+      // Update caches.
+      this.cachedTypedAst = afterTyper
+
+      afterSafety
+    }
 
     // Shutdown fork join pool.
     shutdownForkJoin()
