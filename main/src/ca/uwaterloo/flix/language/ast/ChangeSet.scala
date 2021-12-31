@@ -28,9 +28,9 @@ sealed trait ChangeSet {
   /**
     * Returns `true` if the given symbol `sym` is stale.
     */
-  def isStale(sym: Symbol.DefnSym, oldRoot: TypedAst.Root): Boolean = this match {
+  def isStale[V](sym: Symbol.DefnSym, oldRoot: Map[Symbol.DefnSym, V]): Boolean = this match {
     case ChangeSet.Everything => true
-    case ChangeSet.Changes(s) => !oldRoot.defs.contains(sym) || s.contains(sym.loc.source)
+    case ChangeSet.Changes(s) => !oldRoot.contains(sym) || s.contains(sym.loc.source)
   }
 
 }

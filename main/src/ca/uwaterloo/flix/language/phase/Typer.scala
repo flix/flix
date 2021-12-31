@@ -185,7 +185,7 @@ object Typer {
   private def visitDefs(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] =
     flix.subphase("Defs") {
       // Compute the stale and fresh definitions.
-      val staleDefs: Map[Symbol.DefnSym, KindedAst.Def] = root.defs.filter(kv => changeSet.isStale(kv._1, oldRoot))
+      val staleDefs: Map[Symbol.DefnSym, KindedAst.Def] = root.defs.filter(kv => changeSet.isStale(kv._1, oldRoot.defs))
       val freshDefs: Map[Symbol.DefnSym, TypedAst.Def] = (oldRoot.defs -- staleDefs.keySet).filter(kv => root.defs.contains(kv._1))
 
       //println(s"Stale = ${staleDefs.keySet.size}")
