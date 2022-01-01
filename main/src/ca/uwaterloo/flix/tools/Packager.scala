@@ -206,14 +206,14 @@ object Packager {
     // Add all source files.
     for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
       if (sourceFile.getFileName.toString.endsWith(".flix")) {
-        flix.addPath(sourceFile)
+        flix.addSourcePath(sourceFile)
       }
     }
 
     // Add all test files.
     for (testFile <- getAllFiles(getTestDirectory(p))) {
       if (testFile.getFileName.toString.endsWith(".flix")) {
-        flix.addPath(testFile)
+        flix.addSourcePath(testFile)
       }
     }
 
@@ -221,7 +221,7 @@ object Packager {
     for (file <- getAllFiles(getLibraryDirectory(p))) {
       if (file.getFileName.toString.endsWith(".fpkg")) {
         // Case 1: It's a Flix package.
-        flix.addPath(file)
+        flix.addSourcePath(file)
       } else if (file.getFileName.toString.endsWith(".jar")) {
         // Case 2: It's a JAR.
         flix.addJar(file)

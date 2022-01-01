@@ -187,16 +187,11 @@ class Shell(initialPaths: List[Path], options: Options) {
     for (path <- this.sourcePaths) {
       val ext = path.toFile.getName.split('.').last
       ext match {
-        case "flix" => flix.addPath(path)
-        case "fpkg" => flix.addPath(path)
+        case "flix" => flix.addSourcePath(path)
+        case "fpkg" => flix.addSourcePath(path)
         case "jar" => flix.addJar(path)
         case _ => throw new IllegalStateException(s"Unrecognized file extension: '$ext'.")
       }
-    }
-
-    // Mark paths as changed.
-    for (source <- changeSet) {
-      flix.markChanged(source)
     }
 
     // Compute the TypedAst and store it.

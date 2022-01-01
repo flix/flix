@@ -32,7 +32,7 @@ trait TestUtils {
   /**
     * Compiles the given input string `s` with the given compilation options `o`.
     */
-  def compile(s: String, o: Options): Validation[CompilationResult, CompilationMessage] = new Flix().setOptions(o).addStr(s).compile()
+  def compile(s: String, o: Options): Validation[CompilationResult, CompilationMessage] = new Flix().setOptions(o).addSourceCode(s).compile()
 
   /**
     * Asserts that the validation is a failure with a value of the parametric type `T`.
