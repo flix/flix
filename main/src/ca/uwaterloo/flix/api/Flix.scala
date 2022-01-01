@@ -441,8 +441,10 @@ class Flix {
       afterTerminator <- Terminator.run(afterRedundancy)
       afterSafety <- Safety.run(afterTerminator)
     } yield {
-      // Update caches.
-      this.cachedTypedAst = afterTyper
+      if (!options.test) {
+        // Update caches.
+        this.cachedTypedAst = afterTyper
+      }
 
       afterSafety
     }
