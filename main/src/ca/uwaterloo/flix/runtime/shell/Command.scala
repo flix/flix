@@ -36,11 +36,6 @@ object Command {
   case object Run extends Command
 
   /**
-    * Shows the context for the given hole `fqn`.
-    */
-  case class Hole(fqnOpt: Option[String]) extends Command
-
-  /**
     * Reloads all source paths.
     */
   case object Reload extends Command
@@ -106,17 +101,6 @@ object Command {
     //
     if (input.startsWith(":run"))
       return Command.Run
-
-    //
-    // Hole
-    //
-    if (input.startsWith(":hole")) {
-      val fqn = input.substring(":hole".length).trim
-      if (fqn.isEmpty)
-        return Command.Hole(None)
-      else
-        return Command.Hole(Some(fqn))
-    }
 
     //
     // Reload
