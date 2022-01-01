@@ -308,9 +308,9 @@ class Flix {
     if (!Files.isReadable(p))
       throw new IllegalArgumentException(s"'$p' must be a readable file.")
 
-    if (p.getFileName.endsWith(".flix")) {
+    if (p.getFileName.toString.endsWith(".flix")) {
       inputs += (p.toString -> Input.TxtFile(p))
-    } else if (p.getFileName.endsWith(".fpkg")) {
+    } else if (p.getFileName.toString.endsWith(".fpkg")) {
       inputs += (p.toString -> Input.PkgFile(p))
     } else {
       throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
