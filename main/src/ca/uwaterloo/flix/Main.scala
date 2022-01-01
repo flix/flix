@@ -182,8 +182,8 @@ object Main {
     for (file <- cmdOpts.files) {
       val ext = file.getName.split('.').last
       ext match {
-        case "flix" => flix.addPath(file.toPath)
-        case "fpkg" => flix.addPath(file.toPath)
+        case "flix" => flix.addSourcePath(file.toPath)
+        case "fpkg" => flix.addSourcePath(file.toPath)
         case "jar" => flix.addJar(file.toPath)
         case _ =>
           Console.println(s"Unrecognized file extension: '$ext'.")
