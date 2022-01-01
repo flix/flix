@@ -160,9 +160,6 @@ class Shell(initialPaths: List[Path], options: Options) {
     case Command.Nop => // nop
     case Command.Run => execRun()
     case Command.Hole(fqnOpt) => execHole(fqnOpt)
-    case Command.Browse(ns) => execBrowse(ns)
-    case Command.Doc(fqn) => execDoc(fqn)
-    case Command.Search(s) => execSearch(s)
     case Command.Reload => execReload()
     case Command.Benchmark => execBenchmark()
     case Command.Test => execTest()
@@ -239,121 +236,6 @@ class Shell(initialPaths: List[Path], options: Options) {
           // Print the result to the terminal.
           terminal.writer().print(sb.toString())
       }
-  }
-
-  /**
-    * Executes the browse command.
-    */
-  private def execBrowse(nsOpt: Option[String])(implicit terminal: Terminal): Unit = nsOpt match {
-    case None =>
-      // Case 1: Browse available namespaces.
-
-      // Construct a new String Builder.
-      val sb = new StringBuilder()
-
-      // Find the available namespaces.
-      val namespaces = namespacesOf(this.root)
-
-      sb.append(flix.getFormatter.bold("Namespaces:"))
-        .append(System.lineSeparator())
-        .append(System.lineSeparator())
-      for (namespace <- namespaces.toList.sorted) {
-        sb.append(" " * 2)
-          .append(namespace)
-          .append(System.lineSeparator())
-      }
-      sb.append(System.lineSeparator())
-
-      // Print the result to the terminal.
-      terminal.writer().print(sb.toString())
-
-    case Some(ns) =>
-      // Case 2: Browse a specific namespace.
-
-      // Construct a new String Builder.
-      val sb = new StringBuilder()
-
-      // Print the matched definitions.
-      val matchedDefs = getDefinitionsByNamespace(ns, this.root)
-      if (matchedDefs.nonEmpty) {
-        sb.append(flix.getFormatter.bold("Definitions:"))
-          .append(System.lineSeparator())
-          .append(System.lineSeparator())
-        for (defn <- matchedDefs.sortBy(_.sym.name)) {
-          sb.append(" " * 2)
-            .append(prettyPrintDef(defn).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
-        }
-        sb.append(System.lineSeparator())
-      }
-
-      // Print the result to the terminal.
-      terminal.writer().print(sb.toString())
-  }
-
-  /**
-    * Executes the doc command.
-    */
-  private def execDoc(fqn: String)(implicit terminal: Terminal): Unit = {
-    val sym = Symbol.mkDefnSym(fqn)
-    this.root.defs.get(sym) match {
-      case None =>
-        // Case 1: Symbol not found.
-        terminal.writer().println(s"Undefined symbol: '$sym'.")
-      case Some(defn) =>
-        // Case 2: Symbol found.
-
-        // Construct a new String Builder.
-        val sb = new StringBuilder()
-        sb.append(prettyPrintDef(defn))
-          .append(System.lineSeparator())
-          .append(defn.spec.doc.text)
-          .append(System.lineSeparator())
-
-        // Print the result to the terminal.
-        terminal.writer().print(sb.toString())
-    }
-  }
-
-  /**
-    * Searches for the given `needle`.
-    */
-  private def execSearch(needle: String)(implicit terminal: Terminal): Unit = {
-    /**
-      * Returns `true` if the definition `d` is matched by the `needle`.
-      */
-    def isMatched(d: Def): Boolean = d.sym.name.toLowerCase.contains(needle.toLowerCase)
-
-    // Construct a new String Builder.
-    val sb = new StringBuilder()
-    sb.append(flix.getFormatter.bold("Definitions:"))
-      .append(System.lineSeparator())
-      .append(System.lineSeparator())
-
-    // Group definitions by namespace.
-    val defsByNamespace = this.root.defs.values.groupBy(_.sym.namespace).toList
-
-    // Loop through each namespace.
-    for ((ns, defns) <- defsByNamespace) {
-      // Compute the matched definitions.
-      val matchedDefs = defns.filter(isMatched)
-
-      // Print the namespace.
-      if (matchedDefs.nonEmpty) {
-        sb.append(" " * 2)
-          .append(flix.getFormatter.bold(ns.mkString("/")))
-          .append(System.lineSeparator())
-        for (defn <- matchedDefs) {
-          sb.append(" " * 4)
-            .append(prettyPrintDef(defn).replace(System.lineSeparator(), System.lineSeparator() + " " * 4))
-            .append(System.lineSeparator())
-        }
-        sb.append(System.lineSeparator())
-      }
-    }
-    sb.append(System.lineSeparator())
-
-    // Print the result to the terminal.
-    terminal.writer().print(sb.toString())
   }
 
   /**
@@ -491,9 +373,6 @@ class Shell(initialPaths: List[Path], options: Options) {
     w.println()
     w.println("  :run                            Runs the main function.")
     w.println("  :hole         <fqn>             Shows the hole context of <fqn>.")
-    w.println("  :browse       <ns>              Shows all entities in <ns>.")
-    w.println("  :doc          <fqn>             Shows documentation for <fqn>.")
-    w.println("  :search       <needle>          Shows all entities that match <needle>.")
     w.println("  :reload :r                      Recompiles every source file.")
     w.println("  :benchmark                      Run all benchmarks in the program and show the results.")
     w.println("  :test                           Run all unit tests in the program and show the results.")

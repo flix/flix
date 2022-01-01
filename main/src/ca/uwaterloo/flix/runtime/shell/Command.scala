@@ -41,21 +41,6 @@ object Command {
   case class Hole(fqnOpt: Option[String]) extends Command
 
   /**
-    * Shows the definitions, relations, and lattices in the given namespace.
-    */
-  case class Browse(ns: Option[String]) extends Command
-
-  /**
-    * Show the documentation for the given fully-qualified name.
-    */
-  case class Doc(fqn: String) extends Command
-
-  /**
-    * Searches for a definition symbol which contains `needle` as part of its name.
-    */
-  case class Search(needle: String) extends Command
-
-  /**
     * Reloads all source paths.
     */
   case object Reload extends Command
@@ -136,41 +121,6 @@ object Command {
         return Command.Hole(None)
       else
         return Command.Hole(Some(fqn))
-    }
-
-    //
-    // Browse
-    //
-    if (input.startsWith(":browse")) {
-      if (input.trim == ":browse") {
-        return Command.Browse(None)
-      }
-      val ns = input.substring(":browse".length).trim
-      return Command.Browse(Some(ns))
-    }
-
-    //
-    // Doc
-    //
-    if (input.startsWith(":doc ")) {
-      val fqn = input.substring(":doc ".length).trim
-      if (fqn.isEmpty) {
-        terminal.writer().println("Missing argument for command :doc.")
-        return Command.Nop
-      }
-      return Command.Doc(fqn)
-    }
-
-    //
-    // Search
-    //
-    if (input.startsWith(":search ")) {
-      val needle = input.substring(":search ".length).trim
-      if (needle.isEmpty) {
-        terminal.writer().println("Missing argument for command :search.")
-        return Command.Nop
-      }
-      return Command.Search(needle)
     }
 
     //
