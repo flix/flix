@@ -18,4 +18,4 @@ jobs:
         with:
           java-version: 1.11
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew clean build
