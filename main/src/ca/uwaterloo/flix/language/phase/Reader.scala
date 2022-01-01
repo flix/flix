@@ -40,7 +40,7 @@ object Reader {
       /**
         * Internal.
         */
-      case input@Input.Text(name, text) => Source(input, text.toCharArray) :: Nil
+      case input@Input.Text(name, text, stable) => Source(input, text.toCharArray, stable) :: Nil
 
       /**
         * Text file.
@@ -49,7 +49,7 @@ object Reader {
         val bytes = Files.readAllBytes(path)
         val str = new String(bytes, flix.defaultCharset)
         val arr = str.toCharArray
-        Source(input, arr) :: Nil
+        Source(input, arr, stable = false) :: Nil
 
       /**
         * Pkg file.

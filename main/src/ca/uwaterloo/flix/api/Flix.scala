@@ -278,7 +278,7 @@ class Flix {
     if (s == null)
       throw new IllegalArgumentException("'s' must be non-null.")
 
-    inputs += Input.Text("<unknown>", s)
+    inputs += Input.Text("<unknown>", s, stable = false)
     this
   }
 
@@ -300,7 +300,7 @@ class Flix {
       throw new IllegalArgumentException("'name' must be non-null.")
     if (text == null)
       throw new IllegalArgumentException("'text' must be non-null.")
-    inputs += Input.Text(name, text)
+    inputs += Input.Text(name, text, stable = false)
     this
   }
 
@@ -579,8 +579,8 @@ class Flix {
     val si2 = inputs.toList
     val si3 = options.lib match {
       case LibLevel.Nix => Nil
-      case LibLevel.Min => getInputs(coreLibrary)
-      case LibLevel.All => getInputs(coreLibrary ++ standardLibrary)
+      case LibLevel.Min => getInputs(coreLibrary, stable = true)
+      case LibLevel.All => getInputs(coreLibrary ++ standardLibrary, stable = true)
     }
     si1 ::: si2 ::: si3
   }
@@ -597,8 +597,8 @@ class Flix {
   /**
     * Returns the inputs for the given list of (path, text) pairs.
     */
-  private def getInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
-    case (xs, (name, text)) => Input.Text(name, text) :: xs
+  private def getInputs(xs: List[(String, String)], stable: Boolean): List[Input] = xs.foldLeft(List.empty[Input]) {
+    case (xs, (name, text)) => Input.Text(name, text, stable) :: xs
   }
 
   /**
