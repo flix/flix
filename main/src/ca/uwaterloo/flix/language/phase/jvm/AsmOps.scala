@@ -395,7 +395,7 @@ object AsmOps {
   def compileReifiedSourceLocation(mv: MethodVisitor, loc: SourceLocation): Unit = {
     mv.visitTypeInsn(NEW, JvmName.ReifiedSourceLocation.toInternalName)
     mv.visitInsn(DUP)
-    mv.visitLdcInsn(loc.source.format)
+    mv.visitLdcInsn(loc.source.name)
     mv.visitLdcInsn(loc.beginLine)
     mv.visitLdcInsn(loc.beginCol)
     mv.visitLdcInsn(loc.endLine)

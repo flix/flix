@@ -38,7 +38,7 @@ object TerminationError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unconditionally recursive definition '${red(sym.name)}'. All branches will recurse indefinitely.
          |
          |${code(sym.loc, "unconditional recursion.")}
