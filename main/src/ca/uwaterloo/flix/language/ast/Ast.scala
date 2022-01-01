@@ -34,12 +34,13 @@ object Ast {
     /**
       * A source that is backed by an internal resource.
       */
-    case class Internal(name: String, text: String) extends Input
+    case class Text(name: String, text: String) extends Input {
+      override def hashCode(): Int = name.hashCode
 
-    /**
-      * A source that is backed by a regular string.
-      */
-    case class Str(text: String) extends Input
+      override def equals(obj: Any): Boolean = obj match {
+        case that: Text => this.name == that.name
+      }
+    }
 
     /**
       * A source that is backed by a regular file.

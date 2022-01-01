@@ -44,11 +44,6 @@ object Flix {
 class Flix {
 
   /**
-    * A sequence of strings to parsed into Flix ASTs.
-    */
-  private val strings = ListBuffer.empty[String]
-
-  /**
     * A sequence of paths to be parsed into Flix ASTs.
     */
   private val paths = ListBuffer.empty[Path]
@@ -271,7 +266,8 @@ class Flix {
   def addStr(s: String): Flix = {
     if (s == null)
       throw new IllegalArgumentException("'s' must be non-null.")
-    strings += s
+
+    inputs += Input.Text("<unknown>", s)
     this
   }
 
@@ -293,7 +289,7 @@ class Flix {
       throw new IllegalArgumentException("'name' must be non-null.")
     if (text == null)
       throw new IllegalArgumentException("'text' must be non-null.")
-    inputs += Input.Internal(name, text)
+    inputs += Input.Text(name, text)
     this
   }
 
@@ -547,22 +543,14 @@ class Flix {
     * Returns a list of inputs constructed from the strings and paths passed to Flix.
     */
   private def getInputs: List[Input] = {
-    val si1 = getStringInputs
-    val si2 = getPathInputs
-    val si3 = inputs.toList
-    val si4 = options.lib match {
+    val si1 = getPathInputs
+    val si2 = inputs.toList
+    val si3 = options.lib match {
       case LibLevel.Nix => Nil
       case LibLevel.Min => getInputs(coreLibrary)
       case LibLevel.All => getInputs(coreLibrary ++ standardLibrary)
     }
-    si1 ::: si2 ::: si3 ::: si4
-  }
-
-  /**
-    * Returns the inputs corresponding to the strings passed to Flix.
-    */
-  private def getStringInputs: List[Input] = strings.foldLeft(List.empty[Input]) {
-    case (xs, s) => Input.Str(s) :: xs
+    si1 ::: si2 ::: si3
   }
 
   /**
@@ -578,7 +566,7 @@ class Flix {
     * Returns the inputs for the given list of (path, text) pairs.
     */
   private def getInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
-    case (xs, (name, text)) => Input.Internal(name, text) :: xs
+    case (xs, (name, text)) => Input.Text(name, text) :: xs
   }
 
   /**

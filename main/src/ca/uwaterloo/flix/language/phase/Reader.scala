@@ -40,12 +40,7 @@ object Reader extends Phase[List[Input], List[Source]] {
       /**
         * Internal.
         */
-      case Input.Internal(name, text) => Source(name, text.toCharArray) :: Nil
-
-      /**
-        * String.
-        */
-      case Input.Str(text) => Source("???", text.toCharArray) :: Nil
+      case Input.Text(name, text) => Source(name, text.toCharArray) :: Nil
 
       /**
         * Text file.
