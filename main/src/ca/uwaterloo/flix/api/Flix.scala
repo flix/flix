@@ -44,11 +44,6 @@ object Flix {
 class Flix {
 
   /**
-    * A sequence of strings to parsed into Flix ASTs.
-    */
-  private val strings = mutable.Set.empty[String]
-
-  /**
     * A sequence of paths to be parsed into Flix ASTs.
     */
   private val paths = mutable.Set.empty[Path]
