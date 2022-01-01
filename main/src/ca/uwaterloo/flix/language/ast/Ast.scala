@@ -62,7 +62,7 @@ object Ast {
     *
     * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
     */
-  case class Source(input: Input, data: Array[Char], stable: Boolean) {
+  case class Source(input: Input, data: Array[Char], stable: Boolean) extends Sourceable {
 
     def name: String = input match {
       case Input.Text(name, _, _) => name
@@ -71,6 +71,8 @@ object Ast {
     }
 
     def format: String = name
+
+    def src: Source = this
 
     override def equals(o: scala.Any): Boolean = o match {
       case that: Source => this.input == that.input
