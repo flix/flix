@@ -34,13 +34,13 @@ object Parser {
   /**
     * Parses the given source inputs into an abstract syntax tree.
     */
-  def run(sources: List[Source])(implicit flix: Flix): Validation[ParsedAst.Program, CompilationMessage] = flix.phase("Parser") {
+  def run(sources: List[Source], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] = flix.phase("Parser") {
     // Parse each source in parallel.
     val roots = sequence(ParOps.parMap(sources, parseRoot))
 
     // Sequence and combine the ASTs into one abstract syntax tree.
     mapN(roots) {
-      case as => ParsedAst.Program(as.toMap)
+      case as => ParsedAst.Root(as.toMap)
     }
   }
 
@@ -55,7 +55,7 @@ object Parser {
   /**
     * Attempts to parse the given `source` as a root.
     */
-  def parseRoot(source: Source)(implicit flix: Flix): Validation[(Ast.Source, ParsedAst.Root), CompilationMessage] = {
+  def parseRoot(source: Source)(implicit flix: Flix): Validation[(Ast.Source, ParsedAst.CompilationUnit), CompilationMessage] = {
     flix.subtask(source.name)
 
     val parser = new Parser(source)
@@ -84,8 +84,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Root                                                                    //
   /////////////////////////////////////////////////////////////////////////////
-  def Root: Rule1[ParsedAst.Root] = rule {
-    SP ~ UseDeclarations ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.Root
+  def Root: Rule1[ParsedAst.CompilationUnit] = rule {
+    SP ~ UseDeclarations ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.CompilationUnit
   }
 
   /////////////////////////////////////////////////////////////////////////////
