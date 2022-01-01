@@ -288,17 +288,17 @@ class Flix {
   /**
     * Adds the given path `p` to the list of paths to be parsed.
     */
-  def addPath(p: String): Flix = {
+  def addSourcePath(p: String): Flix = {
     if (p == null)
       throw new IllegalArgumentException("'p' must be non-null.")
-    addPath(Paths.get(p))
+    addSourcePath(Paths.get(p))
     this
   }
 
   /**
     * Adds the given path `p` to the list of paths to be parsed.
     */
-  def addPath(p: Path): Flix = {
+  def addSourcePath(p: Path): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))

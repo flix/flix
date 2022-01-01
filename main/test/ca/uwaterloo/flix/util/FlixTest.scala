@@ -39,7 +39,7 @@ class FlixTest(name: String, paths: List[String], options: Options) extends FunS
 
     // Add the given path.
     for (path <- paths)
-      flix.addPath(path)
+      flix.addSourcePath(path)
 
     // Compile and Evaluate the program to obtain the compilationResult.
     flix.compile() match {
