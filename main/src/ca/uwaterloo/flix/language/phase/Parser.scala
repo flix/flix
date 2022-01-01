@@ -34,15 +34,24 @@ object Parser {
   /**
     * Parses the given source inputs into an abstract syntax tree.
     */
-  def run(sources: List[Source], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] = flix.phase("Parser") {
-    // Parse each source in parallel.
-    val roots = sequence(ParOps.parMap(sources, parseRoot))
+  def run(root: Map[Source, Unit], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] =
+    flix.phase("Parser") {
+      // Compute the stale and fresh sources.
+      val (stale, fresh) = changeSet.partition(root, oldRoot.units)
 
-    // Sequence and combine the ASTs into one abstract syntax tree.
-    mapN(roots) {
-      case as => ParsedAst.Root(as.toMap)
+      // Parse each stale source in parallel.
+      val results = ParOps.parMap(stale.keys, parseRoot)
+
+      // Sequence and combine the ASTs into one abstract syntax tree.
+      Validation.sequence(results) map {
+        case as =>
+          val m = as.foldLeft(fresh) {
+            case (acc, (src, u)) => acc + (src -> u)
+          }
+
+          ParsedAst.Root(m)
+      }
     }
-  }
 
   /**
     * Replaces `"\n"` `"\r"` `"\t"` with spaces (not actual newlines etc. but dash n etc.).
@@ -55,7 +64,7 @@ object Parser {
   /**
     * Attempts to parse the given `source` as a root.
     */
-  def parseRoot(source: Source)(implicit flix: Flix): Validation[(Ast.Source, ParsedAst.CompilationUnit), CompilationMessage] = {
+  private def parseRoot(source: Source)(implicit flix: Flix): Validation[(Ast.Source, ParsedAst.CompilationUnit), CompilationMessage] = {
     flix.subtask(source.name)
 
     val parser = new Parser(source)
