@@ -42,18 +42,18 @@ object Reader {
         input match {
           case Input.Text(name, text, stable) =>
             val src = Source(input, text.toCharArray, stable)
-            result += (src -> Unit)
+            result += (src -> ())
 
           case Input.TxtFile(path) =>
             val bytes = Files.readAllBytes(path)
             val str = new String(bytes, flix.defaultCharset)
             val arr = str.toCharArray
             val src = Source(input, arr, stable = false)
-            result += (src -> Unit)
+            result += (src -> ())
 
           case Input.PkgFile(path) =>
             for (src <- Packager.unpack(path)) {
-              result += (src -> Unit)
+              result += (src -> ())
             }
         }
       }

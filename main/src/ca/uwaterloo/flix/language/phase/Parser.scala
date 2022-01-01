@@ -34,18 +34,19 @@ object Parser {
   /**
     * Parses the given source inputs into an abstract syntax tree.
     */
-  def run(sources: Map[Source, Unit], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] = flix.phase("Parser") {
-    // Parse each source in parallel.
+  def run(root: Map[Source, Unit], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] =
+    flix.phase("Parser") {
+      // Parse each source in parallel.
 
-   // val (stale, fresh) = changeSet.partition()
+      // val (stale, fresh) = changeSet.partition()
 
-    val roots = sequence(ParOps.parMap(sources.keys, parseRoot))
+      val roots = sequence(ParOps.parMap(root.keys, parseRoot))
 
-    // Sequence and combine the ASTs into one abstract syntax tree.
-    mapN(roots) {
-      case as => ParsedAst.Root(as.toMap)
+      // Sequence and combine the ASTs into one abstract syntax tree.
+      mapN(roots) {
+        case as => ParsedAst.Root(as.toMap)
+      }
     }
-  }
 
   /**
     * Replaces `"\n"` `"\r"` `"\t"` with spaces (not actual newlines etc. but dash n etc.).
