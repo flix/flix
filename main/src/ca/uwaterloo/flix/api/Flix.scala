@@ -278,7 +278,7 @@ class Flix {
     if (s == null)
       throw new IllegalArgumentException("'s' must be non-null.")
 
-    inputs += Input.Text("<unknown>", s, stable = false)
+    inputs += Input.Text("<unnamed>", s, stable = false)
     this
   }
 
