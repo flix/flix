@@ -42,7 +42,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |
          |${code(loc1, "the first instance was declared here.")}
          |
@@ -71,7 +71,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |
          |Mismatched signature '${red(sigSym.name)}' required by class '${red(sigSym.clazz.name)}'.
          |
@@ -99,7 +99,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |
          |Missing implementation of '${red(sig.name)}' required by class '${red(sig.clazz.name)}'.
          |
@@ -124,7 +124,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |
          |${code(loc, s"The signature ${defn.name} is not present in the class.")}
          |""".stripMargin
@@ -148,7 +148,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Duplicate type variable '${red(FormatType.formatType(tvar))}' in '${red(sym.name)}'.
          |
          |${code(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")}
@@ -174,7 +174,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Complex instance type '${red(FormatType.formatType(tpe))}' in '${red(sym.name)}'.
          |${code(loc, s"complex instance type")}
          |""".stripMargin
@@ -198,7 +198,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Illegal use of type alias '${red(alias.name)}' in instance declaration for '${red(clazz.name)}'.
          |${code(loc, s"illegal use of type alias")}
          |""".stripMargin
@@ -224,7 +224,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Orphan instance for type '${red(FormatType.formatType(tpe))}' in '${red(sym.name)}'.
          |${code(loc, s"orphan instance")}
          |""".stripMargin
@@ -249,7 +249,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Missing super class instance '${red(superClass.name)}' for type '${red(FormatType.formatType(tpe))}'.
          |
          |>> The class '${red(subClass.name)}' extends the class '${red(superClass.name)}'.
@@ -276,7 +276,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unlawful signature '${red(sym.name)}'.
          |
          |>> Each signature of a lawful class must appear in at least one law.
@@ -301,7 +301,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Illegal override of '${red(sym.name)}'.
          |
          |>> Only signatures with default implementations can be overridden.
@@ -327,7 +327,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unmarked override of '${red(sym.name)}'. This definition overrides a default implementation.
          |
          |${code(loc, s"unmarked override")}

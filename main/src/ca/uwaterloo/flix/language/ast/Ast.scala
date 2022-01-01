@@ -70,8 +70,6 @@ object Ast {
       case Input.PkgFile(path) => path.toString
     }
 
-    def format: String = name
-
     def src: Source = this
 
     override def equals(o: scala.Any): Boolean = o match {

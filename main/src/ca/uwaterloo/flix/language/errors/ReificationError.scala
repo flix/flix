@@ -43,7 +43,7 @@ object ReificationError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unable to reify the non-constant Bool '${red(FormatType.formatType(tpe))}'.
          |
          |${code(loc, "unable to reify type.")}
@@ -67,7 +67,7 @@ object ReificationError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unable to reify the type '${red(FormatType.formatType(tpe))}'.
          |
          |${code(loc, "unable to reify type.")}
@@ -91,7 +91,7 @@ object ReificationError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unexpected Boolean type: '${red(FormatType.formatType(tpe))}'.
          |
          |${code(loc, "unexpected Boolean type.")}
