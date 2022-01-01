@@ -161,7 +161,6 @@ class Shell(initialPaths: List[Path], options: Options) {
     case Command.Run => execRun()
     case Command.Hole(fqnOpt) => execHole(fqnOpt)
     case Command.Reload => execReload()
-    case Command.Benchmark => execBenchmark()
     case Command.Test => execTest()
     case Command.Warmup => execWarmup()
     case Command.Watch => execWatch()
@@ -289,14 +288,6 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Run all benchmarks in the program.
-    */
-  private def execBenchmark()(implicit terminal: Terminal): Unit = {
-    // Run all benchmarks.
-    Benchmarker.benchmark(this.compilationResult, terminal.writer())(options)
-  }
-
-  /**
     * Run all unit tests in the program.
     */
   private def execTest()(implicit terminal: Terminal): Unit = {
@@ -374,7 +365,6 @@ class Shell(initialPaths: List[Path], options: Options) {
     w.println("  :run                            Runs the main function.")
     w.println("  :hole         <fqn>             Shows the hole context of <fqn>.")
     w.println("  :reload :r                      Recompiles every source file.")
-    w.println("  :benchmark                      Run all benchmarks in the program and show the results.")
     w.println("  :test                           Run all unit tests in the program and show the results.")
     w.println("  :warmup                         Warms up the compiler by running it multiple times.")
     w.println("  :watch :w                       Watches all source files for changes.")

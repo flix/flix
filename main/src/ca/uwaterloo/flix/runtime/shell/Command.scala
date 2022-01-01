@@ -46,11 +46,6 @@ object Command {
   case object Reload extends Command
 
   /**
-    * Runs all benchmarks in the program.
-    */
-  case object Benchmark extends Command
-
-  /**
     * Runs all unit tests in the program.
     */
   case object Test extends Command
@@ -128,12 +123,6 @@ object Command {
     //
     if (input == ":r" || input == ":reload")
       return Command.Reload
-
-    //
-    // Benchmark
-    //
-    if (input == ":benchmark")
-      return Command.Benchmark
 
     //
     // Test
