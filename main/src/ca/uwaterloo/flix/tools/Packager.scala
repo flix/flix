@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.github.GitHub
@@ -358,8 +359,9 @@ object Packager {
       val name = entry.getName
       if (name.endsWith(".flix")) {
         val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
-        val array = new String(bytes, flix.defaultCharset).toCharArray
-        result += Source(name, array)
+        val str = new String(bytes, flix.defaultCharset)
+        val arr = str.toCharArray
+        result += Source(Ast.Input.Text(name, str, stable = false), arr, stable = false)
       }
     }
 
