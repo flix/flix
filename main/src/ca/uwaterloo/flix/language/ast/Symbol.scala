@@ -224,7 +224,7 @@ object Symbol {
   /**
     * Definition Symbol.
     */
-  final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Locatable {
+  final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Locatable {
 
     /**
       * Returns `true` if `this` symbol is equal to the main symbol.
@@ -240,6 +240,11 @@ object Symbol {
       case None => text
       case Some(i) => text + Flix.Delimiter + i
     }
+
+    /**
+      * Returns the source of `this` symbol.
+      */
+    def src: Ast.Source = loc.source
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
