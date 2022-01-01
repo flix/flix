@@ -322,8 +322,12 @@ class Flix {
   /**
     * Adds the given `input` under the given `name`.
     */
-  private def addInput(name: String, input: Input): Unit = {
-    inputs += name -> input
+  private def addInput(name: String, input: Input): Unit = inputs.get(name) match {
+    case None =>
+      inputs += name -> input
+    case Some(_) =>
+      changeSet = changeSet.markChanged(input)
+      inputs += name -> input
   }
 
   /**
@@ -362,17 +366,6 @@ class Flix {
     */
   def addReachableRoot(fqn: String): scala.Unit = {
     reachableRoots += Symbol.mkDefnSym(fqn)
-  }
-
-  /**
-    * Marks the given input `i` as changed.
-    */
-  def markChanged(i: Ast.Input): Flix = {
-    if (i == null)
-      throw new IllegalArgumentException("'s' must be non-null.")
-
-    changeSet = changeSet.markChanged(i)
-    this
   }
 
   /**

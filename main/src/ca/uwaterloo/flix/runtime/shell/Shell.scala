@@ -194,11 +194,6 @@ class Shell(initialPaths: List[Path], options: Options) {
       }
     }
 
-    // Mark paths as changed.
-    for (source <- changeSet) {
-      flix.markChanged(source)
-    }
-
     // Compute the TypedAst and store it.
     this.flix.check() match {
       case Validation.Success(root) =>
