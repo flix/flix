@@ -27,7 +27,7 @@ object ParsedAst {
     *
     * @param roots the roots of the abstract syntax trees in the program.
     */
-  case class Program(roots: List[ParsedAst.Root])
+  case class Program(roots: Map[Ast.Source, ParsedAst.Root])
 
   /**
     * Root. A collection of imports and declarations.

@@ -40,7 +40,7 @@ object Weeder {
     * Weeds the whole program.
     */
   def run(program: ParsedAst.Program)(implicit flix: Flix): Validation[WeededAst.Program, WeederError] = flix.phase("Weeder") {
-    val roots = Validation.sequence(ParOps.parMap(program.roots, visitRoot))
+    val roots = Validation.sequence(ParOps.parMap(program.roots.values, visitRoot))
 
     mapN(roots) {
       case rs => WeededAst.Program(rs, flix.getReachableRoots)

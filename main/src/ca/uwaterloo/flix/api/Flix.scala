@@ -66,6 +66,7 @@ class Flix {
   /**
     * A cache of compiled ASTs (for incremental compilation).
     */
+  private var cachedParsedAst: ParsedAst.Program = ParsedAst.Program(Map.empty)
   private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, Map.empty, Map.empty)
 
   /**
@@ -438,6 +439,7 @@ class Flix {
     } yield {
       if (!options.test) {
         // Update caches.
+        this.cachedParsedAst = afterParser
         this.cachedTypedAst = afterTyper
       }
 

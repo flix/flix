@@ -40,7 +40,7 @@ object Parser {
 
     // Sequence and combine the ASTs into one abstract syntax tree.
     mapN(roots) {
-      case as => ParsedAst.Program(as)
+      case as => ParsedAst.Program(as.toMap)
     }
   }
 
@@ -55,13 +55,13 @@ object Parser {
   /**
     * Attempts to parse the given `source` as a root.
     */
-  def parseRoot(source: Source)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] = {
+  def parseRoot(source: Source)(implicit flix: Flix): Validation[(Ast.Source, ParsedAst.Root), CompilationMessage] = {
     flix.subtask(source.name)
 
     val parser = new Parser(source)
     parser.Root.run() match {
       case scala.util.Success(ast) =>
-        ast.toSuccess
+        (source, ast).toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
         val loc = SourceLocation(None, source, SourceKind.Real, e.position.line, e.position.column, e.position.line, e.position.column)
         ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
@@ -1644,7 +1644,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def PossibleDocComment: Rule1[Option[ParsedAst.Doc]] = rule {
-    Comments.DocCommentBlock ~> { Some(_) } | Comment ~ push(None)
+    Comments.DocCommentBlock ~> {
+      Some(_)
+    } | Comment ~ push(None)
   }
 
   def optWS: Rule0 = rule {
