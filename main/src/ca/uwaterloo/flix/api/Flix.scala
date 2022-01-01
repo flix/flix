@@ -44,14 +44,9 @@ object Flix {
 class Flix {
 
   /**
-    * A sequence of paths to be parsed into Flix ASTs.
-    */
-  private val paths = mutable.Set.empty[Path]
-
-  /**
     * A sequence of inputs to be parsed into Flix ASTs.
     */
-  private val inputs = mutable.Set.empty[Input]
+  private val inputs = mutable.Map.empty[String, Input]
 
   /**
     * A set of reachable root definitions.
@@ -275,11 +270,7 @@ class Flix {
     * Adds the given string `s` to the list of strings to be parsed.
     */
   def addStr(s: String): Flix = {
-    if (s == null)
-      throw new IllegalArgumentException("'s' must be non-null.")
-
-    inputs += Input.Text("<unnamed>", s, stable = false)
-    this
+    addInput("<unnamed>", s)
   }
 
   /**
@@ -288,7 +279,7 @@ class Flix {
   def addPath(p: String): Flix = {
     if (p == null)
       throw new IllegalArgumentException("'p' must be non-null.")
-    paths += Paths.get(p)
+    addPath(Paths.get(p))
     this
   }
 
@@ -300,7 +291,7 @@ class Flix {
       throw new IllegalArgumentException("'name' must be non-null.")
     if (text == null)
       throw new IllegalArgumentException("'text' must be non-null.")
-    inputs += Input.Text(name, text, stable = false)
+    inputs += name -> Input.Text(name, text, stable = false)
     this
   }
 
@@ -317,7 +308,14 @@ class Flix {
     if (!Files.isReadable(p))
       throw new IllegalArgumentException(s"'$p' must be a readable file.")
 
-    paths += p
+    if (p.getFileName.endsWith(".flix")) {
+      inputs += (p.toString -> Input.TxtFile(p))
+    } else if (p.getFileName.endsWith(".fpkg")) {
+      inputs += (p.toString -> Input.PkgFile(p))
+    } else {
+      throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
+    }
+
     this
   }
 
@@ -575,23 +573,12 @@ class Flix {
     * Returns a list of inputs constructed from the strings and paths passed to Flix.
     */
   private def getInputs: List[Input] = {
-    val si1 = getPathInputs
-    val si2 = inputs.toList
-    val si3 = options.lib match {
+    val lib = options.lib match {
       case LibLevel.Nix => Nil
       case LibLevel.Min => getLibraryInputs(coreLibrary)
       case LibLevel.All => getLibraryInputs(coreLibrary ++ standardLibrary)
     }
-    si1 ::: si2 ::: si3
-  }
-
-  /**
-    * Returns the inputs corresponding to the paths passed to Flix.
-    */
-  private def getPathInputs: List[Input] = paths.foldLeft(List.empty[Input]) {
-    case (xs, p) if p.getFileName.toString.endsWith(".flix") => Input.TxtFile(p) :: xs
-    case (xs, p) if p.getFileName.toString.endsWith(".fpkg") => Input.PkgFile(p) :: xs
-    case (_, p) => throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
+    inputs.values.toList ::: lib
   }
 
   /**

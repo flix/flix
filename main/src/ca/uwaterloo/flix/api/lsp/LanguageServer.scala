@@ -328,7 +328,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           } else {
             // Case 2: Code hints are available.
             val results = PublishDiagnosticsParams.fromCodeHints(codeHints)
-            ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
+            ("id" -> requestId) ~ ("status" -> "failure") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
           }
 
         case Failure(errors) =>
