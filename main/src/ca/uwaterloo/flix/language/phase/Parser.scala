@@ -34,9 +34,12 @@ object Parser {
   /**
     * Parses the given source inputs into an abstract syntax tree.
     */
-  def run(sources: List[Source], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] = flix.phase("Parser") {
+  def run(sources: Map[Source, Unit], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] = flix.phase("Parser") {
     // Parse each source in parallel.
-    val roots = sequence(ParOps.parMap(sources, parseRoot))
+
+   // val (stale, fresh) = changeSet.partition()
+
+    val roots = sequence(ParOps.parMap(sources.keys, parseRoot))
 
     // Sequence and combine the ASTs into one abstract syntax tree.
     mapN(roots) {
