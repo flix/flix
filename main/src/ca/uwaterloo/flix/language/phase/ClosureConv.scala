@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
-object ClosureConv extends Phase[Root, Root] {
+object ClosureConv {
 
   /**
     * Performs closure conversion on the given AST `root`.

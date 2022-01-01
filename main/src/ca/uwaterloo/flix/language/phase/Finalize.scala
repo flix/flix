@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
-object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
+object Finalize {
 
   private type TopLevel = mutable.Map[Symbol.DefnSym, FinalAst.Def]
 

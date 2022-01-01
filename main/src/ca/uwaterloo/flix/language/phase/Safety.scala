@@ -16,7 +16,7 @@ import scala.annotation.tailrec
 /**
   * Performs safety and well-formedness.
   */
-object Safety extends Phase[Root, Root] {
+object Safety {
 
   /**
     * Performs safety and well-formedness checks on the given AST `root`.

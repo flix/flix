@@ -43,7 +43,7 @@ import scala.Function.const
   * pattern match and returns the result.
   *
   */
-object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
+object PatternExhaustiveness {
 
   /**
     * An ADT to make matching Type Constructors easier. We need to

@@ -224,7 +224,7 @@ object Symbol {
   /**
     * Definition Symbol.
     */
-  final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) {
+  final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Locatable {
 
     /**
       * Returns `true` if `this` symbol is equal to the main symbol.

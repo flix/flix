@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.runtime.shell
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.Ast.HoleContext
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.Ast.{HoleContext, Source}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
@@ -55,9 +55,14 @@ class Shell(initialPaths: List[Path], options: Options) {
   private val sourcePaths = mutable.Set.empty[Path] ++ initialPaths
 
   /**
-    * The current flix instance (initialized on startup).
+    * The set of changed sources.
     */
-  private var flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
+  private var changeSet: Set[Source] = Set.empty
+
+  /**
+    * The Flix instance (the same instance is used for incremental compilation).
+    */
+  private val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
 
   /**
     * The current typed ast root (initialized on startup).
@@ -356,9 +361,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def execReload()(implicit terminal: Terminal): Unit = {
     // Instantiate a fresh flix instance.
-    this.flix = new Flix()
     this.flix.setOptions(options)
-      .setFormatter(AnsiTerminalFormatter)
 
     // Add each path to Flix.
     for (path <- this.sourcePaths) {
@@ -369,6 +372,11 @@ class Shell(initialPaths: List[Path], options: Options) {
         case "jar" => flix.addJar(path)
         case _ => throw new IllegalStateException(s"Unrecognized file extension: '$ext'.")
       }
+    }
+
+    // Mark paths as changed.
+    for (source <- changeSet) {
+      flix.markChanged(source)
     }
 
     // Compute the TypedAst and store it.
@@ -634,6 +642,9 @@ class Shell(initialPaths: List[Path], options: Options) {
         }
 
         if (changed.nonEmpty) {
+          // Update the change set.
+          changeSet = changed.map(path => Source(path.toString, Array())).toSet
+
           // Print information to the user.
           terminal.writer().println()
           terminal.writer().println(s"Recompiling. File(s) changed: ${changed.mkString(", ")}")

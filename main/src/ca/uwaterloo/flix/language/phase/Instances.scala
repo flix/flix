@@ -25,12 +25,12 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
-object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
+object Instances {
 
   /**
     * Validates instances and classes in the given AST root.
     */
-  override def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Instances") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Instances") {
     Validation.sequenceX(List(
       visitInstances(root),
       visitClasses(root)

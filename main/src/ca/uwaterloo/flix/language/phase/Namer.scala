@@ -30,7 +30,7 @@ import scala.collection.mutable
 /**
   * The Namer phase introduces unique symbols for each syntactic entity in the program.
   */
-object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
+object Namer {
 
   /**
     * Introduces unique names for each syntactic entity in the given `program`.

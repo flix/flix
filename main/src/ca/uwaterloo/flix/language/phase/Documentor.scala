@@ -34,7 +34,7 @@ import java.nio.file.{Files, Path, Paths}
 /**
   * A phase that emits a JSON file for library documentation.
   */
-object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
+object Documentor {
 
   /**
     * The "Pseudo-name" of the root namespace.

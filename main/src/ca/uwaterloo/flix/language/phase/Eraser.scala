@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
-object Eraser extends Phase[FinalAst.Root, ErasedAst.Root] {
+object Eraser {
 
   def run(root: FinalAst.Root)(implicit flix: Flix): Validation[ErasedAst.Root, CompilationMessage] = flix.phase("Eraser") {
     val defs = root.defs.map { case (k, v) => k -> visitDef(v) }

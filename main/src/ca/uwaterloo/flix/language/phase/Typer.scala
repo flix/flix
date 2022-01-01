@@ -32,7 +32,7 @@ import ca.uwaterloo.flix.util._
 
 import java.io.PrintWriter
 
-object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
+object Typer {
 
   /**
     * The expected scheme of the `main` function.
@@ -42,14 +42,12 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
   /**
     * Type checks the given AST root.
     */
-  def run(root: KindedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Typer") {
+  def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Typer") {
     val classEnv = mkClassEnv(root.classes, root.instances)
-
     val classesVal = visitClasses(root, classEnv)
     val instancesVal = visitInstances(root, classEnv)
-    val defsVal = visitDefs(root, classEnv)
+    val defsVal = visitDefs(root, classEnv, oldRoot, changeSet)
     val enumsVal = visitEnums(root)
-
     val typeAliases = visitTypeAliases(root)
 
     Validation.mapN(classesVal, instancesVal, defsVal, enumsVal) {
@@ -62,40 +60,40 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
   /**
     * Creates a class environment from a the classes and instances in the root.
     */
-  private def mkClassEnv(classes0: Map[Symbol.ClassSym, KindedAst.Class], instances0: Map[Symbol.ClassSym, List[KindedAst.Instance]]): Map[Symbol.ClassSym, Ast.ClassContext] = {
-    classes0.map {
-      case (classSym, clazz) =>
-        val instances = instances0.getOrElse(classSym, Nil)
-        val envInsts = instances.map {
-          case KindedAst.Instance(_, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
-        }
-        // ignore the super class parameters since they should all be the same as the class param
-        val superClasses = clazz.superClasses.map(_.sym)
-        (classSym, Ast.ClassContext(superClasses, envInsts))
+  private def mkClassEnv(classes0: Map[Symbol.ClassSym, KindedAst.Class], instances0: Map[Symbol.ClassSym, List[KindedAst.Instance]])(implicit flix: Flix): Map[Symbol.ClassSym, Ast.ClassContext] =
+    flix.subphase("ClassEnv") {
+      classes0.map {
+        case (classSym, clazz) =>
+          val instances = instances0.getOrElse(classSym, Nil)
+          val envInsts = instances.map {
+            case KindedAst.Instance(_, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
+          }
+          // ignore the super class parameters since they should all be the same as the class param
+          val superClasses = clazz.superClasses.map(_.sym)
+          (classSym, Ast.ClassContext(superClasses, envInsts))
+      }
     }
-  }
 
   /**
     * Performs type inference and reassembly on all classes in the given AST root.
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitClasses(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Map[Symbol.ClassSym, TypedAst.Class], TypeError] = {
-
-    def visitClass(clazz: KindedAst.Class): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
-      case KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws0, loc) =>
-        val tparams = getTypeParams(List(tparam))
-        val tconstr = Ast.TypeConstraint(sym, tparam.tpe, sym.loc)
-        for {
-          sigs <- Validation.traverse(sigs.values)(visitSig(_, List(tconstr), root, classEnv))
-          laws <- Validation.traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
-        } yield (sym, TypedAst.Class(doc, mod, sym, tparams.head, superClasses, sigs, laws, loc))
+  private def visitClasses(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Map[Symbol.ClassSym, TypedAst.Class], TypeError] =
+    flix.subphase("Classes") {
+      // visit each class
+      val result = root.classes.values.map(visitClass(_, root, classEnv))
+      Validation.sequence(result).map(_.toMap)
     }
 
-    // visit each class
-    val result = root.classes.values.map(visitClass)
-
-    Validation.sequence(result).map(_.toMap)
+  private def visitClass(clazz: KindedAst.Class, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
+    case KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws0, loc) =>
+      val tparams = getTypeParams(List(tparam))
+      val tconstr = Ast.TypeConstraint(sym, tparam.tpe, sym.loc)
+      for {
+        sigs <- Validation.traverse(sigs.values)(visitSig(_, List(tconstr), root, classEnv))
+        laws <- Validation.traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
+      } yield (sym, TypedAst.Class(doc, mod, sym, tparams.head, superClasses, sigs, laws, loc))
   }
 
   /**
@@ -103,22 +101,22 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitInstances(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Map[Symbol.ClassSym, List[TypedAst.Instance]], TypeError] = {
-
-    /**
-      * Reassembles a single instance.
-      */
-    def visitInstance(inst: KindedAst.Instance): Validation[TypedAst.Instance, TypeError] = inst match {
-      case KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs0, ns, loc) =>
-        for {
-          defs <- Validation.traverse(defs0)(visitDefn(_, tconstrs, root, classEnv))
-        } yield TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
+  private def visitInstances(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Map[Symbol.ClassSym, List[TypedAst.Instance]], TypeError] =
+    flix.subphase("Instances") {
+      val results = ParOps.parMap(root.instances.values.flatten, visitInstance(_, root, classEnv))
+      Validation.sequence(results) map {
+        insts => insts.groupBy(inst => inst.sym.clazz)
+      }
     }
 
-    val results = ParOps.parMap(root.instances.values.flatten, visitInstance)
-    Validation.sequence(results) map {
-      insts => insts.groupBy(inst => inst.sym.clazz)
-    }
+  /**
+    * Reassembles a single instance.
+    */
+  private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Instance, TypeError] = inst match {
+    case KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs0, ns, loc) =>
+      for {
+        defs <- Validation.traverse(defs0)(visitDefn(_, tconstrs, root, classEnv))
+      } yield TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
   }
 
   /**
@@ -183,17 +181,24 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitDefs(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
-    // Compute the results in parallel.
-    val results = ParOps.parMap(root.defs.values, visitDefn(_, Nil, root, classEnv))
+  private def visitDefs(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] =
+    flix.subphase("Defs") {
+      // Compute the stale and fresh definitions.
+      val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
 
-    // Sequence the results.
-    Validation.sequence(results) map {
-      case xs => xs.foldLeft(Map.empty[Symbol.DefnSym, TypedAst.Def]) {
-        case (acc, defn) => acc + (defn.sym -> defn)
+      // println(s"Stale = ${staleDefs.keySet}")
+      // println(s"Fresh = ${freshDefs.keySet.size}")
+
+      // Process the stale defs in parallel.
+      val results = ParOps.parMap(staleDefs.values, visitDefn(_, Nil, root, classEnv))
+
+      // Sequence the results using the freshDefs as the initial value.
+      Validation.sequence(results) map {
+        case xs => xs.foldLeft(freshDefs) {
+          case (acc, defn) => acc + (defn.sym -> defn)
+        }
       }
     }
-  }
 
   /**
     * Infers the type of the given definition `defn0`.
@@ -321,42 +326,44 @@ object Typer extends Phase[KindedAst.Root, TypedAst.Root] {
   /**
     * Performs type inference and reassembly on all enums in the given AST root.
     */
-  private def visitEnums(root: KindedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.EnumSym, TypedAst.Enum], TypeError] = {
-    /**
-      * Performs type resolution on the given enum and its cases.
-      */
-    def visitEnum(enum: KindedAst.Enum): Validation[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum match {
-      case KindedAst.Enum(doc, mod, enumSym, tparams0, derives, cases0, tpeDeprecated, sc, loc) =>
-        val tparams = getTypeParams(tparams0)
-        val cases = cases0 map {
-          case (name, KindedAst.Case(_, tagName, tagType, tagScheme)) =>
-            name -> TypedAst.Case(enumSym, tagName, tagType, tagScheme, tagName.loc)
-        }
+  private def visitEnums(root: KindedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.EnumSym, TypedAst.Enum], TypeError] =
+    flix.subphase("Enums") {
+      // Visit every enum in the ast.
+      val result = root.enums.toList.map {
+        case (_, enum) => visitEnum(enum)
+      }
 
-        Validation.Success(enumSym -> TypedAst.Enum(doc, mod, enumSym, tparams, derives, cases, tpeDeprecated, sc, loc))
+      // Sequence the results and convert them back to a map.
+      Validation.sequence(result).map(_.toMap)
     }
 
-    // Visit every enum in the ast.
-    val result = root.enums.toList.map {
-      case (_, enum) => visitEnum(enum)
-    }
+  /**
+    * Performs type resolution on the given enum and its cases.
+    */
+  private def visitEnum(enum: KindedAst.Enum): Validation[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum match {
+    case KindedAst.Enum(doc, mod, enumSym, tparams0, derives, cases0, tpeDeprecated, sc, loc) =>
+      val tparams = getTypeParams(tparams0)
+      val cases = cases0 map {
+        case (name, KindedAst.Case(_, tagName, tagType, tagScheme)) =>
+          name -> TypedAst.Case(enumSym, tagName, tagType, tagScheme, tagName.loc)
+      }
 
-    // Sequence the results and convert them back to a map.
-    Validation.sequence(result).map(_.toMap)
+      Validation.Success(enumSym -> TypedAst.Enum(doc, mod, enumSym, tparams, derives, cases, tpeDeprecated, sc, loc))
   }
 
   /**
     * Performs typing on the type aliases in the given `root`.
     */
-  private def visitTypeAliases(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.TypeAliasSym, TypedAst.TypeAlias] = {
-    def visitTypeAlias(alias: KindedAst.TypeAlias): (Symbol.TypeAliasSym, TypedAst.TypeAlias) = alias match {
-      case KindedAst.TypeAlias(doc, mod, sym, tparams0, tpe, loc) =>
-        val tparams = getTypeParams(tparams0)
-        sym -> TypedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
-    }
+  private def visitTypeAliases(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.TypeAliasSym, TypedAst.TypeAlias] =
+    flix.subphase("TypeAliases") {
+      def visitTypeAlias(alias: KindedAst.TypeAlias): (Symbol.TypeAliasSym, TypedAst.TypeAlias) = alias match {
+        case KindedAst.TypeAlias(doc, mod, sym, tparams0, tpe, loc) =>
+          val tparams = getTypeParams(tparams0)
+          sym -> TypedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+      }
 
-    root.typeAliases.values.map(visitTypeAlias).toMap
-  }
+      root.typeAliases.values.map(visitTypeAlias).toMap
+    }
 
   /**
     * Visits all annotations.

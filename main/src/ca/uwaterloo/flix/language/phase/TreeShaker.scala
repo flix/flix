@@ -34,7 +34,7 @@ import ca.uwaterloo.flix.util.Validation._
   * (c) Appears in a function which itself is reachable.
   *
   */
-object TreeShaker extends Phase[Root, Root] {
+object TreeShaker {
 
   /**
     * Performs tree shaking on the given AST `root`.
