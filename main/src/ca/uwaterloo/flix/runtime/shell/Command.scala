@@ -41,11 +41,6 @@ object Command {
   case object Reload extends Command
 
   /**
-    * Runs all unit tests in the program.
-    */
-  case object Test extends Command
-
-  /**
     * Warms up the compiler.
     */
   case object Warmup extends Command
@@ -107,12 +102,6 @@ object Command {
     //
     if (input == ":r" || input == ":reload")
       return Command.Reload
-
-    //
-    // Test
-    //
-    if (input == ":test")
-      return Command.Test
 
     //
     // Warmup
