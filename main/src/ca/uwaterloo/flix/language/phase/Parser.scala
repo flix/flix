@@ -34,13 +34,13 @@ object Parser {
   /**
     * Parses the given source inputs into an abstract syntax tree.
     */
-  def run(sources: List[Source])(implicit flix: Flix): Validation[ParsedAst.Program, CompilationMessage] = flix.phase("Parser") {
+  def run(sources: List[Source], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] = flix.phase("Parser") {
     // Parse each source in parallel.
     val roots = sequence(ParOps.parMap(sources, parseRoot))
 
     // Sequence and combine the ASTs into one abstract syntax tree.
     mapN(roots) {
-      case as => ParsedAst.Program(as)
+      case as => ParsedAst.Root(as.toMap)
     }
   }
 
@@ -55,13 +55,13 @@ object Parser {
   /**
     * Attempts to parse the given `source` as a root.
     */
-  def parseRoot(source: Source)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] = {
+  def parseRoot(source: Source)(implicit flix: Flix): Validation[(Ast.Source, ParsedAst.CompilationUnit), CompilationMessage] = {
     flix.subtask(source.name)
 
     val parser = new Parser(source)
     parser.Root.run() match {
       case scala.util.Success(ast) =>
-        ast.toSuccess
+        (source, ast).toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
         val loc = SourceLocation(None, source, SourceKind.Real, e.position.line, e.position.column, e.position.line, e.position.column)
         ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
@@ -84,8 +84,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Root                                                                    //
   /////////////////////////////////////////////////////////////////////////////
-  def Root: Rule1[ParsedAst.Root] = rule {
-    SP ~ UseDeclarations ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.Root
+  def Root: Rule1[ParsedAst.CompilationUnit] = rule {
+    SP ~ UseDeclarations ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.CompilationUnit
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1644,7 +1644,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def PossibleDocComment: Rule1[Option[ParsedAst.Doc]] = rule {
-    Comments.DocCommentBlock ~> { Some(_) } | Comment ~ push(None)
+    Comments.DocCommentBlock ~> {
+      Some(_)
+    } | Comment ~ push(None)
   }
 
   def optWS: Rule0 = rule {

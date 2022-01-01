@@ -39,10 +39,10 @@ object Weeder {
   /**
     * Weeds the whole program.
     */
-  def run(program: ParsedAst.Program)(implicit flix: Flix): Validation[WeededAst.Program, WeederError] = flix.phase("Weeder") {
-    val roots = Validation.sequence(ParOps.parMap(program.roots, visitRoot))
+  def run(program: ParsedAst.Root)(implicit flix: Flix): Validation[WeededAst.Program, WeederError] = flix.phase("Weeder") {
+    val units = Validation.sequence(ParOps.parMap(program.units.values, visitCompilationUnit))
 
-    mapN(roots) {
+    mapN(units) {
       case rs => WeededAst.Program(rs, flix.getReachableRoots)
     }
   }
@@ -50,7 +50,7 @@ object Weeder {
   /**
     * Weeds the given abstract syntax tree.
     */
-  private def visitRoot(root: ParsedAst.Root)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] = {
+  private def visitCompilationUnit(root: ParsedAst.CompilationUnit)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] = {
     val usesVal = traverse(root.uses)(visitUse)
     val declarationsVal = traverse(root.decls)(visitDecl)
     val loc = mkSL(root.sp1, root.sp2)

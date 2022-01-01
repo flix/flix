@@ -23,21 +23,23 @@ import scala.collection.immutable.Seq
 object ParsedAst {
 
   /**
-    * Program. A collection of abstract syntax trees.
+    * A collection of abstract syntax trees.
     *
-    * @param roots the roots of the abstract syntax trees in the program.
+    * @param units the abstract syntax trees of the parsed compilation units.
     */
-  case class Program(roots: List[ParsedAst.Root])
+  case class Root(units: Map[Ast.Source, ParsedAst.CompilationUnit])
 
   /**
-    * Root. A collection of imports and declarations.
+    * A compilation unit (i.e. a source file).
+    *
+    * A collection of imports and declarations.
     *
     * @param sp1   the position of the first character in the source.
     * @param uses  the uses in the abstract syntax tree.
     * @param decls the declarations in the abstract syntax tree.
     * @param sp2   the position of the last character in the source.
     */
-  case class Root(sp1: SourcePosition, uses: Seq[ParsedAst.Use], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition)
+  case class CompilationUnit(sp1: SourcePosition, uses: Seq[ParsedAst.Use], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition)
 
   /**
     * Declarations.
