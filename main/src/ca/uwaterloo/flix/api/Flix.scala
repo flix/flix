@@ -269,8 +269,20 @@ class Flix {
   /**
     * Adds the given string `s` to the list of strings to be parsed.
     */
-  def addStr(s: String): Flix = {
-    addInput("<unnamed>", s)
+  def addSourceCode(s: String): Flix = {
+    addSourceCode("<unnamed>", s)
+  }
+
+  /**
+    * Adds the given string `text` with the given `name`.
+    */
+  def addSourceCode(name: String, text: String): Flix = {
+    if (name == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    if (text == null)
+      throw new IllegalArgumentException("'text' must be non-null.")
+    addInput(name, Input.Text(name, text, stable = false))
+    this
   }
 
   /**
@@ -280,18 +292,6 @@ class Flix {
     if (p == null)
       throw new IllegalArgumentException("'p' must be non-null.")
     addPath(Paths.get(p))
-    this
-  }
-
-  /**
-    * Adds the given string `text` with the given `name`.
-    */
-  def addInput(name: String, text: String): Flix = {
-    if (name == null)
-      throw new IllegalArgumentException("'name' must be non-null.")
-    if (text == null)
-      throw new IllegalArgumentException("'text' must be non-null.")
-    inputs += name -> Input.Text(name, text, stable = false)
     this
   }
 
@@ -309,14 +309,21 @@ class Flix {
       throw new IllegalArgumentException(s"'$p' must be a readable file.")
 
     if (p.getFileName.toString.endsWith(".flix")) {
-      inputs += (p.toString -> Input.TxtFile(p))
+      addInput(p.toString, Input.TxtFile(p))
     } else if (p.getFileName.toString.endsWith(".fpkg")) {
-      inputs += (p.toString -> Input.PkgFile(p))
+      addInput(p.toString, Input.PkgFile(p))
     } else {
       throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
     }
 
     this
+  }
+
+  /**
+    * Adds the given `input` under the given `name`.
+    */
+  private def addInput(name: String, input: Input): Unit = {
+    inputs += name -> input
   }
 
   /**

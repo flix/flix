@@ -291,13 +291,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     // Add sources.
     for ((uri, source) <- sources) {
-      flix.addInput(uri, source)
+      flix.addSourceCode(uri, source)
     }
 
     // Add sources from packages.
     for ((uri, items) <- packages) {
       for (src <- items) {
-        flix.addInput(uri, src)
+        flix.addSourceCode(uri, src)
       }
     }
 
