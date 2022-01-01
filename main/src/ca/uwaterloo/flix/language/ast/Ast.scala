@@ -57,14 +57,21 @@ object Ast {
   /**
     * A source is a name and an array of character data.
     */
-  case class Source(name: String, data: Array[Char]) {
+  case class Source(input: Input, data: Array[Char]) {
+
+    def name: String = input match {
+      case Input.Text(name, text) => name
+      case Input.TxtFile(path) => path.toString
+      case Input.PkgFile(path) => path.toString
+    }
+
     def format: String = name
 
     override def equals(o: scala.Any): Boolean = o match {
-      case that: Source => this.name == that.name
+      case that: Source => this.input == that.input
     }
 
-    override def hashCode(): Int = name.hashCode
+    override def hashCode(): Int = input.hashCode()
   }
 
   /**

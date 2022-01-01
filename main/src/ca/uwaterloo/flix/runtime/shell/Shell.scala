@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.runtime.shell
 
 import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.language.ast.Ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.debug.Audience
@@ -54,7 +55,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * The set of changed sources.
     */
-  private var changeSet: Set[Source] = Set.empty
+  private var changeSet: Set[Ast.Input] = Set.empty
 
   /**
     * The Flix instance (the same instance is used for incremental compilation).
@@ -352,7 +353,7 @@ class Shell(initialPaths: List[Path], options: Options) {
 
         if (changed.nonEmpty) {
           // Update the change set.
-          changeSet = changed.map(path => Source(path.toString, Array())).toSet
+          changeSet = changed.map(Ast.Input.TxtFile).toSet
 
           // Print information to the user.
           terminal.writer().println()

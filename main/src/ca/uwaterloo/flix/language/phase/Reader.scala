@@ -33,26 +33,28 @@ object Reader {
   /**
     * Reads the given source inputs into memory.
     */
-  def run(input: List[Input])(implicit flix: Flix): Validation[List[Source], CompilationMessage] = flix.phase("Reader") {
+  def run(inputs: List[Input])(implicit flix: Flix): Validation[List[Source], CompilationMessage] = flix.phase("Reader") {
     // Compute the sources.
-    val sources = input flatMap {
+    val sources = inputs flatMap {
 
       /**
         * Internal.
         */
-      case Input.Text(name, text) => Source(name, text.toCharArray) :: Nil
+      case input@Input.Text(name, text) => Source(input, text.toCharArray) :: Nil
 
       /**
         * Text file.
         */
-      case Input.TxtFile(path) =>
+      case input@Input.TxtFile(path) =>
         val bytes = Files.readAllBytes(path)
-        Source(path.toString, new String(bytes, flix.defaultCharset).toCharArray) :: Nil
+        val str = new String(bytes, flix.defaultCharset)
+        val arr = str.toCharArray
+        Source(input, arr) :: Nil
 
       /**
         * Pkg file.
         */
-      case Input.PkgFile(path) => Packager.unpack(path)
+      case i@Input.PkgFile(path) => Packager.unpack(path)
     }
 
     sources.toSuccess

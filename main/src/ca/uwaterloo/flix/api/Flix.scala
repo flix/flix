@@ -360,13 +360,13 @@ class Flix {
   }
 
   /**
-    * Marks the given source `src` as changed.
+    * Marks the given input `i` as changed.
     */
-  def markChanged(src: Ast.Source): Flix = {
-    if (src == null)
+  def markChanged(i: Ast.Input): Flix = {
+    if (i == null)
       throw new IllegalArgumentException("'s' must be non-null.")
 
-    changeSet = changeSet.markChanged(src)
+    changeSet = changeSet.markChanged(i)
     this
   }
 

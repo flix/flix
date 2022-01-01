@@ -18,11 +18,11 @@ package ca.uwaterloo.flix.language.ast
 sealed trait ChangeSet {
 
   /**
-    * Returns a new change set with `src` marked as changed.
+    * Returns a new change set with `i` marked as changed.
     */
-  def markChanged(src: Ast.Source): ChangeSet = this match {
-    case ChangeSet.Everything => ChangeSet.Changes(Set(src))
-    case ChangeSet.Changes(s) => ChangeSet.Changes(s + src)
+  def markChanged(i: Ast.Input): ChangeSet = this match {
+    case ChangeSet.Everything => ChangeSet.Changes(Set(i))
+    case ChangeSet.Changes(s) => ChangeSet.Changes(s + i)
   }
 
   /**
@@ -57,7 +57,7 @@ sealed trait ChangeSet {
   private def isStale[K <: Locatable, V](key: K, oldMap: Map[K, V]): Boolean = this match {
     case ChangeSet.Everything => true
     case ChangeSet.Changes(s) =>
-      !oldMap.contains(key) || s.contains(key.loc.source) || key.loc == SourceLocation.Unknown
+      !oldMap.contains(key) || s.contains(key.loc.source.input) || key.loc == SourceLocation.Unknown
   }
 
 }
@@ -72,7 +72,7 @@ object ChangeSet {
   /**
     * Represents the set `s` of changed sources.
     */
-  case class Changes(s: Set[Ast.Source]) extends ChangeSet
+  case class Changes(s: Set[Ast.Input]) extends ChangeSet
 
 }
 
