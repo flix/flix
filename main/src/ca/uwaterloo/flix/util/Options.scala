@@ -38,6 +38,7 @@ object Options {
     writeClassFiles = true,
     xallowredundancies = false,
     xnostratifier = false,
+    xperf = false,
     xstatistics = false,
     xstrictmono = false
   )
@@ -98,6 +99,7 @@ case class Options(lib: LibLevel,
                    writeClassFiles: Boolean,
                    xallowredundancies: Boolean,
                    xnostratifier: Boolean,
+                   xperf: Boolean,
                    xstatistics: Boolean,
                    xstrictmono: Boolean,
                   )
