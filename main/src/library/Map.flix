@@ -52,9 +52,7 @@ instance Order[Map[k, v]] with Order[k], Order[v] {
 }
 
 instance Functor[Map[k]] {
-    pub def map(f: v1 -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef =
-        let Map(tree) = m;
-        Map(RedBlackTree.mapWithKey((_, v) -> f(v), tree))
+    pub def map(f: v1 -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef = Map.map(f, m)
 }
 
 instance Foldable[Map[k]] {
@@ -68,6 +66,24 @@ instance Traversable[Map[k]] {
 }
 
 namespace Map {
+
+    ///
+    /// Returns the number of threads to use for parallel evaluation.
+    ///
+    def threads(): Int32 =
+        // Note: We use a multiple of the number of physical cores for better performance.
+        let multiplier = 4;
+        multiplier * Environment.getVirtualProcessors()
+
+    ///
+    /// Determines whether to use parallel evaluation.
+    ///
+    /// By default we only enable parallel evaluation if the map has a certain size.
+    ///
+    def useParallelEvaluation(m: Map[k, v]): Bool =
+        let Map(t) = m;
+        let minSize = 2 ** RedBlackTree.blackHeight(t);
+        minSize >= 1024
 
     ///
     /// Returns the size of `m`.
@@ -142,19 +158,63 @@ namespace Map {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def minimum(m: Map[k, v]): Option[(k, v)] =
-        let Map(xs) = m;
-        RedBlackTree.minimum(xs)
+    pub def minimumKey(m: Map[k, v]): Option[(k, v)] =
+        let Map(t) = m;
+        RedBlackTree.minimum(t)
 
     ///
     /// Optionally finds `k => v` where `k` is the smallest key according to the given comparator `cmp`.
     ///
     /// Returns `None` if `m` is empty.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
+    ///
     @ParallelWhenPure
-    pub def minimumBy(cmp: (k, v, k, v) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
-        let Map(t) = m;
-        RedBlackTree.minimumBy(cmp, t)
+    pub def minimumKeyBy(cmp: (k, k) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
+        def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), m);
+        let f = r -> cmp(r.kl, r.kr);
+        reifyEff(f) {
+            case Pure(g) =>
+                if (useParallelEvaluation(m))
+                    let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
+                    let Map(t) = m;
+                    RedBlackTree.parMinimumBy(threads() - 1, h, t) as & Pure
+                else
+                    min()
+            case _ => min()
+        }
+
+    ///
+    /// Optionally finds `k => v` where `v` is the smallest value.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    @Parallel
+    pub def minimumValue(m: Map[k, v]): Option[(k, v)] with Order[v] =
+        minimumValueBy((x, y) -> x <=> y, m)
+
+    ///
+    /// Optionally finds `k => v` where `v` is the smallest value according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
+    ///
+    @ParallelWhenPure
+    pub def minimumValueBy(cmp: (v, v) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
+        def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == LessThan) (kl, vl) else (kr, vr), m);
+        let f = r -> cmp(r.vl, r.vr);
+        reifyEff(f) {
+            case Pure(g) =>
+                if (useParallelEvaluation(m))
+                    let h = (_, vl, _, vr) -> g({vl = vl, vr = vr});
+                    let Map(t) = m;
+                    RedBlackTree.parMinimumBy(threads() - 1, h, t) as & Pure
+                else
+                    min()
+            case _ => min()
+        }
+
 
     ///
     /// Optionally finds `k => v` where `k` is the largest key according to the `Order` instance of `k`.
@@ -341,7 +401,7 @@ namespace Map {
     ///
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
     @ParallelWhenPure
-    pub def map(f: v1 -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef with Order[k] = mapWithKey((_, v) -> f(v), m)
+    pub def map(f: v1 -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef = mapWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a map with mappings `k => f(k, v)` for every `k => v` in `m`.
@@ -351,7 +411,7 @@ namespace Map {
     ///
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
     @ParallelWhenPure
-    pub def mapWithKey(f: (k, v1) -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef with Order[k] =
+    pub def mapWithKey(f: (k, v1) -> v2 & ef, m: Map[k, v1]): Map[k, v2] & ef =
         let Map(t) = m;
         Map(RedBlackTree.mapWithKey(f, t))
 
@@ -442,12 +502,21 @@ namespace Map {
 
 
     ///
-    /// Returns the number of mappings in `m` that satisfy the predicate `f`.
+    /// Returns the number of mappings `k => v` in `m` that satisfy the predicate `f`.
     ///
     @ParallelWhenPure
     pub def count(f: (k, v) -> Bool & ef, m: Map[k, v]): Int32 & ef =
-        let Map(t) = m;
-        RedBlackTree.count(f, t)
+        let f1 = r -> f(r.k, r.v);
+        reifyEff(f1) {
+            case Pure(g) =>
+                if (useParallelEvaluation(m))
+                    let h = (k, v) -> g({k = k, v = v});
+                    let Map(t) = m;
+                    RedBlackTree.parCount(threads() - 1, h, t) as & Pure
+                else
+                    foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m)
+            case _  => foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m)
+        }
 
     ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.
@@ -685,7 +754,8 @@ namespace Map {
     ///
     pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] = {
         let Map(t) = m;
-        DMap(RedBlackTree.mapWithKey((_, v) -> lazy v, t))
+        let f = (_, v) -> lazy v;
+        DMap(RedBlackTree.mapWithKey(f, t))
     }
 
     ///

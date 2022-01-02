@@ -523,11 +523,11 @@ namespace RedBlackTree {
         let f1 = (r) -> f(r.k, r.v);
         reifyEff(f1) {
             case Pure(g) =>
-                let g1 = (k, v) -> g({k = k, v = v});
                 if (useParallelEvaluation(t))
-                    parMapWithKey(threads() - 1, g1, t) as & Pure
+                    let h = (k, v) -> g({k = k, v = v});
+                    parMapWithKey(threads() - 1, h, t) as & Pure
                 else
-                    seqMapWithKey(g1, t)
+                    seqMapWithKey(f, t)
             case _  => seqMapWithKey(f, t)
         }
 
@@ -539,7 +539,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    pub def parMapWithKey(n: Int32, f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & Impure = {
+    def parMapWithKey(n: Int32, f: (k, v1) -> v2, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & Impure = {
         if (n <= 1)
             parSeqMapWithKey(f, t)
         else
@@ -590,24 +590,6 @@ namespace RedBlackTree {
     }
 
     ///
-    /// Returns the number of mappings in `m` that satisfy the predicate `f`.
-    ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def count(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Int32 & ef =
-        let f1 = r -> f(r.k, r.v);
-        reifyEff(f1) {
-            case Pure(g) =>
-                let g1 = (k, v) -> g({k = k, v = v});
-                if (useParallelEvaluation(t))
-                    parCount(threads() - 1, g1, t) as & Pure
-                else
-                    seqCount(g1, t)
-            case _  => seqCount(f, t)
-        }
-
-    ///
     /// Applies `f` over the tree `t` in parallel and returns the number of elements
     /// that satisfy the predicate `f`.
     ///
@@ -646,23 +628,9 @@ namespace RedBlackTree {
         case Leaf                   => 0
         case DoubleBlackLeaf        => 0
         case Node(_, a, k, v, b)    =>
-            let a1 = seqCount(f, a);
+            let a1 = parSeqCount(f, a);
             let v1 = if (f(k, v)) 1 else 0;
-            let b1 = seqCount(f, b);
-            a1 + v1 + b1
-    }
-
-    ///
-    /// Applies `f` over the tree `t` sequentially from left to right and returns the number of elements
-    /// that satisfy the predicate `f`.
-    ///
-    pub def seqCount(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Int32 & ef = match t {
-        case Leaf                   => 0
-        case DoubleBlackLeaf        => 0
-        case Node(_, a, k, v, b)    =>
-            let a1 = seqCount(f, a);
-            let v1 = if (f(k, v)) 1 else 0;
-            let b1 = seqCount(f, b);
+            let b1 = parSeqCount(f, b);
             a1 + v1 + b1
     }
 
@@ -681,7 +649,7 @@ namespace RedBlackTree {
         ((((l, v, r) -> Node(color, l, k, v, r)) `Functor.map` left) `Applicative.ap` value) `Applicative.ap` right
 
     ///
-    /// Returns a RedBlackTree with mappings `k -> f(v)` for every `k -> v` in `tree`.
+    /// Returns a RedBlackTree with mappings `k => f(v)` for every `k => v` in `tree`.
     ///
     pub def mapAWithKey(f: (k, v1) -> m[v2] & ef, tree: RedBlackTree[k, v1]): m[RedBlackTree[k, v2]] & ef with Applicative[m] =
         mapAWithKeyHelper(f, tree, t -> t as & ef)
@@ -702,26 +670,6 @@ namespace RedBlackTree {
         }
 
     ///
-    /// Optionally finds `k -> v` where `k` is the smallest key according to the given comparator `cmp`.
-    ///
-    /// Returns `None` if `m` is empty.
-    ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def minimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
-        let f = r -> cmp(r.k1, r.v1, r.k2, r.v2);
-        reifyEff(f) {
-            case Pure(g) =>
-                let g1 = (k1, v1, k2, v2) -> g({k1 = k1, v1 = v1, k2 = k2, v2 = v2});
-                if (useParallelEvaluation(t))
-                    parMinimumBy(threads() - 1, g1, t) as & Pure
-                else
-                    seqMinimumBy(g1, t)
-            case _       => seqMinimumBy(cmp, t)
-        }
-
-    ///
     /// Applies `cmp` over the tree `t` in parallel and optionally returns the lowest
     /// element according to `cmp`.
     ///
@@ -730,7 +678,7 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    def parMinimumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] & Impure =
+    pub def parMinimumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] & Impure =
         if (n <= 0)
             parSeqMinimumBy(cmp, t)
         else
@@ -780,13 +728,4 @@ namespace RedBlackTree {
                     Some(smallest(ks, vs, kr, vr))
             }
     }
-
-    ///
-    /// Applies `cmp` over the tree `t` sequentially and optionally returns the lowest
-    /// element according to `cmp`.
-    ///
-    def seqMinimumBy(cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
-        reduceLeft((k1, v1, k2, v2) -> if (cmp(k1, v1, k2, v2) == LessThan) (k1, v1) else (k2, v2), t)
-
-
 }

@@ -52,18 +52,18 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def minimum(m: MutMap[k, v]): Option[(k, v)] & Impure =
+    pub def minimumKey(m: MutMap[k, v]): Option[(k, v)] & Impure =
         let MutMap(mm) = m;
-        Map.minimum(deref mm)
+        Map.minimumKey(deref mm)
 
     ///
-    /// Optionally finds `k -> v` where `k` is the smallest key according to the given comparator `cmp`.
+    /// Optionally finds `k => v` where `k` is the smallest key according to the given comparator `cmp`.
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def minimumBy(cmp: (k, v, k, v) -> Comparison, m: MutMap[k, v]): Option[(k, v)] & Impure =
+    pub def minimumKeyBy(cmp: (k, k) -> Comparison, m: MutMap[k, v]): Option[(k, v)] & Impure =
         let MutMap(mm) = m;
-        Map.minimumBy(cmp, deref mm)
+        Map.minimumKeyBy(cmp, deref mm)
 
     ///
     /// Optionally finds `k -> v` where `k` is the largest key according to the `Order` instance of `k`.
