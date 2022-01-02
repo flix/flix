@@ -79,7 +79,7 @@ namespace Console {
         ()
 
     ///
-    /// Returns the string `s` formatted as bold.
+    /// Returns `s` formatted as bold.
     ///
     pub def bold(s: a): String with ToString[a] =
         let esc = escape();
