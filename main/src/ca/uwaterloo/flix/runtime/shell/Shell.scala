@@ -17,13 +17,11 @@
 package ca.uwaterloo.flix.runtime.shell
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.Ast.HoleContext
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
+import ca.uwaterloo.flix.language.ast.Ast
+import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.debug.Audience
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
 import org.jline.reader.{EndOfFileException, LineReaderBuilder, UserInterruptException}
@@ -55,14 +53,14 @@ class Shell(initialPaths: List[Path], options: Options) {
   private val sourcePaths = mutable.Set.empty[Path] ++ initialPaths
 
   /**
-    * The current flix instance (initialized on startup).
+    * The set of changed sources.
     */
-  private var flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
+  private var changeSet: Set[Ast.Input] = Set.empty
 
   /**
-    * The current typed ast root (initialized on startup).
+    * The Flix instance (the same instance is used for incremental compilation).
     */
-  private var root: Root = _
+  private val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
 
   /**
     * The current compilation result (initialized on startup).
@@ -154,13 +152,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   private def execute(cmd: Command)(implicit terminal: Terminal): Unit = cmd match {
     case Command.Nop => // nop
     case Command.Run => execRun()
-    case Command.Hole(fqnOpt) => execHole(fqnOpt)
-    case Command.Browse(ns) => execBrowse(ns)
-    case Command.Doc(fqn) => execDoc(fqn)
-    case Command.Search(s) => execSearch(s)
     case Command.Reload => execReload()
-    case Command.Benchmark => execBenchmark()
-    case Command.Test => execTest()
     case Command.Warmup => execWarmup()
     case Command.Watch => execWatch()
     case Command.Unwatch => execUnwatch()
@@ -185,187 +177,18 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Shows the hole context of the given `fqn`.
-    */
-  private def execHole(fqnOpt: Option[String])(implicit terminal: Terminal): Unit = fqnOpt match {
-    case None =>
-      // Case 1: Print all available holes.
-      prettyPrintHoles()
-    case Some(fqn) =>
-      // Case 2: Print the given hole.
-
-      // Compute the hole symbol.
-      val sym = Symbol.mkHoleSym(fqn)
-
-      // Retrieve all the holes in the program.
-      val holes = TypedAstOps.holesOf(root)
-
-      // Lookup the hole symbol.
-      holes.get(sym) match {
-        case None =>
-          // Case 1: Hole not found.
-          terminal.writer().println(s"Undefined hole: '$fqn'.")
-        case Some(HoleContext(_, holeType, env)) =>
-          // Case 2: Hole found.
-          val sb = new StringBuilder()
-
-          // Indent
-          sb.append("  ")
-
-          // Iterate through the premises, i.e. the variable symbols in scope.
-          for ((varSym, varType) <- env) {
-            sb.append(flix.getFormatter.blue(varSym.text))
-              .append(": ")
-              .append(flix.getFormatter.cyan(FormatType.formatType(varType)))
-              .append(" " * 6)
-          }
-
-          // Print the divider.
-          sb.append(System.lineSeparator())
-            .append("-" * 80)
-            .append(System.lineSeparator())
-
-          // Print the goal.
-          sb.append(flix.getFormatter.blue(sym.toString))
-            .append(": ")
-            .append(flix.getFormatter.cyan(FormatType.formatType(holeType)))
-            .append(System.lineSeparator())
-
-          // Print the result to the terminal.
-          terminal.writer().print(sb.toString())
-      }
-  }
-
-  /**
-    * Executes the browse command.
-    */
-  private def execBrowse(nsOpt: Option[String])(implicit terminal: Terminal): Unit = nsOpt match {
-    case None =>
-      // Case 1: Browse available namespaces.
-
-      // Construct a new String Builder.
-      val sb = new StringBuilder()
-
-      // Find the available namespaces.
-      val namespaces = namespacesOf(this.root)
-
-      sb.append(flix.getFormatter.bold("Namespaces:"))
-        .append(System.lineSeparator())
-        .append(System.lineSeparator())
-      for (namespace <- namespaces.toList.sorted) {
-        sb.append(" " * 2)
-          .append(namespace)
-          .append(System.lineSeparator())
-      }
-      sb.append(System.lineSeparator())
-
-      // Print the result to the terminal.
-      terminal.writer().print(sb.toString())
-
-    case Some(ns) =>
-      // Case 2: Browse a specific namespace.
-
-      // Construct a new String Builder.
-      val sb = new StringBuilder()
-
-      // Print the matched definitions.
-      val matchedDefs = getDefinitionsByNamespace(ns, this.root)
-      if (matchedDefs.nonEmpty) {
-        sb.append(flix.getFormatter.bold("Definitions:"))
-          .append(System.lineSeparator())
-          .append(System.lineSeparator())
-        for (defn <- matchedDefs.sortBy(_.sym.name)) {
-          sb.append(" " * 2)
-            .append(prettyPrintDef(defn).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
-        }
-        sb.append(System.lineSeparator())
-      }
-
-      // Print the result to the terminal.
-      terminal.writer().print(sb.toString())
-  }
-
-  /**
-    * Executes the doc command.
-    */
-  private def execDoc(fqn: String)(implicit terminal: Terminal): Unit = {
-    val sym = Symbol.mkDefnSym(fqn)
-    this.root.defs.get(sym) match {
-      case None =>
-        // Case 1: Symbol not found.
-        terminal.writer().println(s"Undefined symbol: '$sym'.")
-      case Some(defn) =>
-        // Case 2: Symbol found.
-
-        // Construct a new String Builder.
-        val sb = new StringBuilder()
-        sb.append(prettyPrintDef(defn))
-          .append(System.lineSeparator())
-          .append(defn.spec.doc.text)
-          .append(System.lineSeparator())
-
-        // Print the result to the terminal.
-        terminal.writer().print(sb.toString())
-    }
-  }
-
-  /**
-    * Searches for the given `needle`.
-    */
-  private def execSearch(needle: String)(implicit terminal: Terminal): Unit = {
-    /**
-      * Returns `true` if the definition `d` is matched by the `needle`.
-      */
-    def isMatched(d: Def): Boolean = d.sym.name.toLowerCase.contains(needle.toLowerCase)
-
-    // Construct a new String Builder.
-    val sb = new StringBuilder()
-    sb.append(flix.getFormatter.bold("Definitions:"))
-      .append(System.lineSeparator())
-      .append(System.lineSeparator())
-
-    // Group definitions by namespace.
-    val defsByNamespace = this.root.defs.values.groupBy(_.sym.namespace).toList
-
-    // Loop through each namespace.
-    for ((ns, defns) <- defsByNamespace) {
-      // Compute the matched definitions.
-      val matchedDefs = defns.filter(isMatched)
-
-      // Print the namespace.
-      if (matchedDefs.nonEmpty) {
-        sb.append(" " * 2)
-          .append(flix.getFormatter.bold(ns.mkString("/")))
-          .append(System.lineSeparator())
-        for (defn <- matchedDefs) {
-          sb.append(" " * 4)
-            .append(prettyPrintDef(defn).replace(System.lineSeparator(), System.lineSeparator() + " " * 4))
-            .append(System.lineSeparator())
-        }
-        sb.append(System.lineSeparator())
-      }
-    }
-    sb.append(System.lineSeparator())
-
-    // Print the result to the terminal.
-    terminal.writer().print(sb.toString())
-  }
-
-  /**
     * Reloads every source path.
     */
   private def execReload()(implicit terminal: Terminal): Unit = {
     // Instantiate a fresh flix instance.
-    this.flix = new Flix()
     this.flix.setOptions(options)
-      .setFormatter(AnsiTerminalFormatter)
 
     // Add each path to Flix.
     for (path <- this.sourcePaths) {
       val ext = path.toFile.getName.split('.').last
       ext match {
-        case "flix" => flix.addPath(path)
-        case "fpkg" => flix.addPath(path)
+        case "flix" => flix.addSourcePath(path)
+        case "fpkg" => flix.addSourcePath(path)
         case "jar" => flix.addJar(path)
         case _ => throw new IllegalStateException(s"Unrecognized file extension: '$ext'.")
       }
@@ -373,10 +196,7 @@ class Shell(initialPaths: List[Path], options: Options) {
 
     // Compute the TypedAst and store it.
     this.flix.check() match {
-      case Validation.Success(ast) =>
-        this.root = ast
-        // Pretty print the holes (if any).
-        prettyPrintHoles()
+      case Validation.Success(root) =>
 
         // Generate code.
         flix.codeGen(root) match {
@@ -396,25 +216,6 @@ class Shell(initialPaths: List[Path], options: Options) {
         terminal.writer().flush()
     }
 
-  }
-
-  /**
-    * Run all benchmarks in the program.
-    */
-  private def execBenchmark()(implicit terminal: Terminal): Unit = {
-    // Run all benchmarks.
-    Benchmarker.benchmark(this.compilationResult, terminal.writer())(options)
-  }
-
-  /**
-    * Run all unit tests in the program.
-    */
-  private def execTest()(implicit terminal: Terminal): Unit = {
-    // Run all unit tests.
-    val res = Tester.test(this.compilationResult)
-
-    // Print the result to the terminal.
-    terminal.writer().print(res.output(flix.getFormatter))
   }
 
   /**
@@ -483,12 +284,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     w.println()
     w.println("  :run                            Runs the main function.")
     w.println("  :hole         <fqn>             Shows the hole context of <fqn>.")
-    w.println("  :browse       <ns>              Shows all entities in <ns>.")
-    w.println("  :doc          <fqn>             Shows documentation for <fqn>.")
-    w.println("  :search       <needle>          Shows all entities that match <needle>.")
     w.println("  :reload :r                      Recompiles every source file.")
-    w.println("  :benchmark                      Run all benchmarks in the program and show the results.")
-    w.println("  :test                           Run all unit tests in the program and show the results.")
     w.println("  :warmup                         Warms up the compiler by running it multiple times.")
     w.println("  :watch :w                       Watches all source files for changes.")
     w.println("  :unwatch                        Unwatches all source files for changes.")
@@ -510,89 +306,6 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def execUnknown(s: String)(implicit terminal: Terminal): Unit = {
     terminal.writer().println(s"Unknown command '$s'. Try `:run` or `:help'.")
-  }
-
-  /**
-    * Returns the namespaces in the given AST `root`.
-    */
-  private def namespacesOf(root: Root): Set[String] = root.defs.keySet.map(_.namespace.mkString("/"))
-
-  /**
-    * Returns the definitions in the given namespace.
-    */
-  private def getDefinitionsByNamespace(ns: String, root: Root): List[Def] = {
-    val namespace: List[String] = getNameSpace(ns)
-    root.defs.foldLeft(Nil: List[Def]) {
-      case (xs, (s, defn)) if s.namespace == namespace && defn.spec.mod.isPublic && !defn.spec.mod.isSynthetic =>
-        defn :: xs
-      case (xs, _) => xs
-    }
-  }
-
-  /**
-    * Interprets the given string `ns` as a namespace.
-    */
-  private def getNameSpace(ns: String): List[String] = {
-    if (ns == "" || ns == ".") {
-      // Case 1: The empty namespace.
-      Nil
-    } else {
-      // Case 2: A (possibly) qualified namespace.
-      ns.split("/").toList
-    }
-  }
-
-  /**
-    * Pretty prints the given definition `defn`.
-    */
-  private def prettyPrintDef(defn: Def): String = {
-    val sb = new StringBuilder()
-    sb.append(flix.getFormatter.bold("def "))
-      .append(flix.getFormatter.blue(defn.sym.name))
-      .append("(")
-    if (defn.spec.fparams.nonEmpty) {
-      sb.append(defn.spec.fparams.head.sym.text)
-        .append(": ")
-        .append(flix.getFormatter.cyan(FormatType.formatType(defn.spec.fparams.head.tpe)))
-      for (fparam <- defn.spec.fparams.tail) {
-        sb.append(", ")
-          .append(fparam.sym.text)
-          .append(": ")
-          .append(flix.getFormatter.cyan(FormatType.formatType(fparam.tpe)))
-      }
-    }
-    sb.append("): ")
-      .append(flix.getFormatter.cyan(FormatType.formatType(defn.impl.inferredScheme.base.typeArguments.last)))
-      .append(System.lineSeparator())
-      .toString()
-  }
-
-  /**
-    * Pretty prints the holes in the program.
-    */
-  private def prettyPrintHoles()(implicit terminal: Terminal): Unit = {
-    // Print holes, if any.
-    val holes = TypedAstOps.holesOf(root)
-    val sb = new StringBuilder()
-
-    // Check if any holes are present.
-    if (holes.nonEmpty) {
-      sb.append(flix.getFormatter.bold("Holes:"))
-        .append(System.lineSeparator())
-
-      // Print each hole and its type.
-      for ((sym, ctx) <- holes) {
-        sb.append(" " * 2)
-          .append(flix.getFormatter.blue(sym.toString))
-          .append(": ")
-          .append(flix.getFormatter.cyan(FormatType.formatType(ctx.tpe)))
-          .append(System.lineSeparator())
-      }
-      sb.append(System.lineSeparator())
-    }
-
-    // Print the result to the terminal.
-    terminal.writer().print(sb.toString())
   }
 
   /**
@@ -634,6 +347,9 @@ class Shell(initialPaths: List[Path], options: Options) {
         }
 
         if (changed.nonEmpty) {
+          // Update the change set.
+          changeSet = changed.map(Ast.Input.TxtFile).toSet
+
           // Print information to the user.
           terminal.writer().println()
           terminal.writer().println(s"Recompiling. File(s) changed: ${changed.mkString(", ")}")

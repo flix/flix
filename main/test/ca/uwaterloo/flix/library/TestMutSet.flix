@@ -21,8 +21,8 @@ namespace TestMutSet {
 
     @test
     def sameElements01(): Bool & Impure =
-        let s = MutSet.empty();
-        let s2 = MutSet.empty();
+        let s = MutSet.empty(): MutSet[Int32];
+        let s2 = MutSet.empty(): MutSet[Int32];
         MutSet.sameElements(s, s2)
 
     @test

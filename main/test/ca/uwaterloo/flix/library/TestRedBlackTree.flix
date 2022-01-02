@@ -308,11 +308,11 @@ namespace TestRedBlackTree {
 
     @test
     def eq01(): Bool =
-        RedBlackTree.empty() == RedBlackTree.empty()
+        RedBlackTree.empty(): RedBlackTree[Int32, Int32] == RedBlackTree.empty(): RedBlackTree[Int32, Int32]
 
     @test
     def eq02(): Bool =
-        toRedBlackTree(Nil) == toRedBlackTree(Nil)
+        toRedBlackTree(Nil): RedBlackTree[Int32, Int32] == toRedBlackTree(Nil): RedBlackTree[Int32, Int32]
 
     @test
     def eq03(): Bool =

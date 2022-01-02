@@ -30,14 +30,14 @@ import scala.collection.mutable
 /**
   * The Namer phase introduces unique symbols for each syntactic entity in the program.
   */
-object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
+object Namer {
 
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
     * */
-  def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phase("Namer") {
+  def run(program: WeededAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phase("Namer") {
     // compute all the source locations
-    val locations = program.roots.foldLeft(Map.empty[Source, SourceLocation]) {
+    val locations = program.units.values.foldLeft(Map.empty[Source, SourceLocation]) {
       case (macc, root) => macc + (root.loc.source -> root.loc)
     }
 
@@ -53,7 +53,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     )
 
     // collect all the declarations.
-    val declarations = mapN(traverse(program.roots) {
+    val declarations = mapN(traverse(program.units.values) {
       case root => mapN(mergeUseEnvs(root.uses, UseEnv.empty)) {
         case uenv0 => root.decls.map(d => (uenv0, d))
       }
@@ -1076,6 +1076,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         }
       }
 
+    case WeededAst.Type.RigidVar(ident, loc) =>
+      // TODO: SuspiciousTypeVarName
+      // TODO: Check wild var and check not in tenv!
+      val tvar = Type.freshUnkindedVar(loc, Rigidity.Rigid, Some(ident.name))
+      NamedAst.Type.Var(tvar, loc).toSuccess
+
     case WeededAst.Type.Ambiguous(qname, loc) =>
       if (qname.isUnqualified) {
         val name = qname.ident.name
@@ -1357,6 +1363,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def freeVars(tpe0: WeededAst.Type): List[Name.Ident] = tpe0 match {
     case WeededAst.Type.Var(ident, loc) => ident :: Nil
+    case WeededAst.Type.RigidVar(ident, loc) => throw InternalCompilerException(s"Unexpected free rigid type variable: '${ident.name}'.") // TODO
     case WeededAst.Type.Ambiguous(qname, loc) => Nil
     case WeededAst.Type.Unit(loc) => Nil
     case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
@@ -1387,6 +1394,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     def visit(tpe0: WeededAst.Type): List[Name.Ident] = tpe0 match {
       case WeededAst.Type.Var(ident, loc) if tenv.contains(ident.name) => Nil
       case WeededAst.Type.Var(ident, loc) => ident :: Nil
+      case WeededAst.Type.RigidVar(ident, loc) => throw InternalCompilerException(s"Unexpected free rigid type variable: '${ident.name}'.") // TODO
       case WeededAst.Type.Ambiguous(qname, loc) => Nil
       case WeededAst.Type.Unit(loc) => Nil
       case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(visit)

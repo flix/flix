@@ -159,7 +159,7 @@ namespace TestMutDeque {
     @test
     def popFront01(): Bool & Impure =
         let d = MutDeque.new();
-        MutDeque.popFront(d) == None
+        MutDeque.popFront(d) == None: Option[Int32]
 
     @test
     def popFront02(): Bool & Impure =
@@ -215,7 +215,7 @@ namespace TestMutDeque {
     @test
     def popBack01(): Bool & Impure =
         let d = MutDeque.new();
-        MutDeque.popBack(d) == None
+        MutDeque.popBack(d) == None: Option[Int32]
 
     @test
     def popBack02(): Bool & Impure =
@@ -322,8 +322,8 @@ namespace TestMutDeque {
 
     @test
     def sameElements01(): Bool & Impure =
-        let d = MutDeque.new();
-        let d2 = MutDeque.new();
+        let d = MutDeque.new(): MutDeque[Int32];
+        let d2 = MutDeque.new(): MutDeque[Int32];
         MutDeque.sameElements(d, d2)
 
     @test
@@ -375,5 +375,4 @@ namespace TestMutDeque {
         MutDeque.pushBack("c", d2);
 
         not MutDeque.sameElements(d, d2)
-
 }

@@ -41,7 +41,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Multiple occurrences of the annotation '${red("@" + name)}'.
          |
          |${code(loc1, "the first occurrence was here.")}
@@ -72,7 +72,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Multiple declarations of the formal parameter '${red(name)}'.
          |
          |${code(loc1, "the first declaration was here.")}
@@ -103,7 +103,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Multiple occurrences of the modifier '${red(name)}'.
          |
          |${code(loc1, "the first occurrence was here.")}
@@ -133,7 +133,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Multiple declarations of the tag '${red(tag.name)}' in the enum '${cyan(enumName)}'.
          |
          |${code(loc1, "the first declaration was here.")}
@@ -162,7 +162,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Illegal array length.
          |
          |${code(loc, "illegal array length.")}
@@ -185,7 +185,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |
          |>> Illegal field name.
          |
@@ -210,7 +210,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |
          |>> The formal parameter '${red(name)}' must have a declared type.
          |
@@ -235,7 +235,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Illegal float.
          |
          |${code(loc, "illegal float.")}
@@ -260,7 +260,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Illegal int.
          |
          |${code(loc, "illegal int.")}
@@ -285,7 +285,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Illegal intrinsic.
          |
          |${code(loc, "illegal intrinsic.")}
@@ -308,7 +308,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Illegal modifier.
          |
          |${code(loc, "illegal modifier.")}
@@ -331,7 +331,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Illegal null pattern.
          |
          |${code(loc, "illegal null pattern.")}
@@ -354,7 +354,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Illegal jvm field or method name.
          |
          |${code(loc, "illegal name.")}
@@ -377,7 +377,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Wildcard not allowed here.
          |
          |${code(loc, "illegal wildcard.")}
@@ -402,7 +402,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Mismatched arity: expected: $expected, actual: $actual.
          |
          |${code(loc, "mismatched arity.")}
@@ -427,7 +427,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Multiple occurrences of '${red(name)}'  in pattern.
          |
          |${code(loc1, "the first occurrence was here.")}
@@ -457,7 +457,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Undefined annotation '${red(name)}'.
          |
          |${code(loc, "undefined annotation.")}
@@ -481,7 +481,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Illegal private declaration '${red(ident.name)}'.
          |
          |${code(loc, "illegal private declaration")}
@@ -506,7 +506,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Illegal type constraint parameter.
          |
          |${code(loc, "illegal type constraint parameter")}
@@ -531,7 +531,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Inconsistent type parameters.
          |
          |${code(loc, "inconsistent type parameters")}
@@ -556,7 +556,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unkinded type parameters.
          |
          |${code(loc, "unkinded type parameters")}
@@ -582,7 +582,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter.{line, code => fmtcode}
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Malformed unicode escape sequence.
          |
          |${fmtcode(loc, "malformed unicode escape sequence")}
@@ -608,7 +608,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Invalid escape sequence.
          |
          |${code(loc, "invalid escape sequence")}
@@ -634,7 +634,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Non-single-character literal.
          |
          |${code(loc, "non-single-character literal")}
@@ -659,7 +659,7 @@ object WeederError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Empty interpolated expression.
          |
          |${code(loc, "empty interpolated expression")}

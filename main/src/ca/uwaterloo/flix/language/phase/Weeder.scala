@@ -34,30 +34,37 @@ import scala.collection.mutable
 /**
   * The Weeder phase performs simple syntactic checks and rewritings.
   */
-object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
+object Weeder {
 
   /**
     * Weeds the whole program.
     */
-  def run(program: ParsedAst.Program)(implicit flix: Flix): Validation[WeededAst.Program, WeederError] = flix.phase("Weeder") {
-    val roots = Validation.sequence(ParOps.parMap(program.roots, visitRoot))
+  def run(root: ParsedAst.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] =
+    flix.phase("Weeder") {
+      // Compute the stale and fresh sources.
+      val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
 
-    mapN(roots) {
-      case rs => WeededAst.Program(rs, flix.getReachableRoots)
+      val results = ParOps.parMap(stale)(kv => visitCompilationUnit(kv._1, kv._2))
+      Validation.sequence(results) map {
+        case rs =>
+          val m = rs.foldLeft(fresh) {
+            case (acc, (k, v)) => acc + (k -> v)
+          }
+          WeededAst.Root(m, flix.getReachableRoots)
+      }
     }
-  }
 
   /**
     * Weeds the given abstract syntax tree.
     */
-  private def visitRoot(root: ParsedAst.Root)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] = {
-    val usesVal = traverse(root.uses)(visitUse)
-    val declarationsVal = traverse(root.decls)(visitDecl)
-    val loc = mkSL(root.sp1, root.sp2)
+  private def visitCompilationUnit(src: Ast.Source, unit: ParsedAst.CompilationUnit)(implicit flix: Flix): Validation[(Ast.Source, WeededAst.CompilationUnit), WeederError] = {
+    val usesVal = traverse(unit.uses)(visitUse)
+    val declarationsVal = traverse(unit.decls)(visitDecl)
+    val loc = mkSL(unit.sp1, unit.sp2)
 
     mapN(usesVal, declarationsVal) {
       case (uses, decls) =>
-        WeededAst.Root(uses.flatten, decls.flatten, loc)
+        src -> WeededAst.CompilationUnit(uses.flatten, decls.flatten, loc)
     }
   }
 
@@ -2068,6 +2075,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Type.Var(sp1, ident, sp2) => WeededAst.Type.Var(ident, mkSL(sp1, sp2))
 
+    case ParsedAst.Type.RigidVar(sp1, ident, sp2) => WeededAst.Type.RigidVar(ident, mkSL(sp1, sp2))
+
     case ParsedAst.Type.Ambiguous(sp1, qname, sp2) => WeededAst.Type.Ambiguous(qname, mkSL(sp1, sp2))
 
     case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(visitType), mkSL(sp1, sp2))
@@ -2563,6 +2572,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def leftMostSourcePosition(tpe: ParsedAst.Type): SourcePosition = tpe match {
     case ParsedAst.Type.Unit(sp1, _) => sp1
     case ParsedAst.Type.Var(sp1, _, _) => sp1
+    case ParsedAst.Type.RigidVar(sp1, _, _) => sp1
     case ParsedAst.Type.Ambiguous(sp1, _, _) => sp1
     case ParsedAst.Type.Tuple(sp1, _, _) => sp1
     case ParsedAst.Type.Record(sp1, _, _, _) => sp1

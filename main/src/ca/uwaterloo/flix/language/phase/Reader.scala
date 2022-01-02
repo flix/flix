@@ -24,44 +24,41 @@ import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 import java.nio.file.Files
+import scala.collection.mutable
 
 /**
   * A phase to read inputs into memory.
   */
-object Reader extends Phase[List[Input], List[Source]] {
+object Reader {
 
   /**
     * Reads the given source inputs into memory.
     */
-  def run(input: List[Input])(implicit flix: Flix): Validation[List[Source], CompilationMessage] = flix.phase("Reader") {
-    // Compute the sources.
-    val sources = input flatMap {
+  def run(inputs: List[Input])(implicit flix: Flix): Validation[Map[Source, Unit], CompilationMessage] =
+    flix.phase("Reader") {
 
-      /**
-        * Internal.
-        */
-      case Input.Internal(name, text) => Source(name, text.toCharArray) :: Nil
+      val result = mutable.Map.empty[Source, Unit]
+      for (input <- inputs) {
+        input match {
+          case Input.Text(name, text, stable) =>
+            val src = Source(input, text.toCharArray, stable)
+            result += (src -> ())
 
-      /**
-        * String.
-        */
-      case Input.Str(text) => Source("???", text.toCharArray) :: Nil
+          case Input.TxtFile(path) =>
+            val bytes = Files.readAllBytes(path)
+            val str = new String(bytes, flix.defaultCharset)
+            val arr = str.toCharArray
+            val src = Source(input, arr, stable = false)
+            result += (src -> ())
 
-      /**
-        * Text file.
-        */
-      case Input.TxtFile(path) =>
-        val bytes = Files.readAllBytes(path)
-        Source(path.toString, new String(bytes, flix.defaultCharset).toCharArray) :: Nil
+          case Input.PkgFile(path) =>
+            for (src <- Packager.unpack(path)) {
+              result += (src -> ())
+            }
+        }
+      }
 
-      /**
-        * Pkg file.
-        */
-      case Input.PkgFile(path) => Packager.unpack(path)
+      result.toMap.toSuccess
     }
-
-    sources.toSuccess
-  }
-
 
 }

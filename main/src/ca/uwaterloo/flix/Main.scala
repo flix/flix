@@ -94,6 +94,11 @@ object Main {
       options = options.copy(progress = false)
     }
 
+    // Don't use progress bar if not attached to a console.
+    if (System.console() == null) {
+      options = options.copy(progress = false)
+    }
+
     // check if command was passed.
     try {
       val cwd = Paths.get(".")
@@ -182,8 +187,8 @@ object Main {
     for (file <- cmdOpts.files) {
       val ext = file.getName.split('.').last
       ext match {
-        case "flix" => flix.addPath(file.toPath)
-        case "fpkg" => flix.addPath(file.toPath)
+        case "flix" => flix.addSourcePath(file.toPath)
+        case "fpkg" => flix.addSourcePath(file.toPath)
         case "jar" => flix.addJar(file.toPath)
         case _ =>
           Console.println(s"Unrecognized file extension: '$ext'.")
