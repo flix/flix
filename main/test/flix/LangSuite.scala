@@ -322,7 +322,6 @@ class LangSuite extends Suites(
   // Predicate.
   //
   new FlixTest("Test.Predicate", List(
-    "main/test/flix/Test.Predicate.Filter.flix",
     "main/test/flix/Test.Predicate.Guard.flix",
     "main/test/flix/Test.Predicate.Nullary.flix",
   ), Options.TestWithLibAll),

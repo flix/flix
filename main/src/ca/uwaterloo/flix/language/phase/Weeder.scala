@@ -1935,17 +1935,6 @@ object Weeder {
         case e => WeededAst.Predicate.Body.Guard(e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Predicate.Body.Filter(sp1, qname, terms, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      traverse(terms)(visitArgument) map {
-        case ts =>
-          // Check if the argument list is empty. If so, invoke the function with the Unit value.
-          val as = if (ts.isEmpty) List(WeededAst.Expression.Unit(loc)) else ts
-          val b = WeededAst.Expression.DefOrSig(qname, loc)
-          val e = WeededAst.Expression.Apply(b, as, loc)
-          WeededAst.Predicate.Body.Guard(e, loc)
-      }
-
     case ParsedAst.Predicate.Body.Loop(sp1, idents, exp, sp2) =>
       mapN(visitExp(exp)) {
         case e => WeededAst.Predicate.Body.Loop(idents.toList, e, mkSL(sp1, sp2))

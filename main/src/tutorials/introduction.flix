@@ -210,9 +210,9 @@ pub def main(_: Array[String]): Int32 & Impure =
         // d is y, and y is possibly zero according to the `isMaybeZero` filter
         // function then we infer a possible error for `r`.
         //
-        ArithmeticError(r) :- isMaybeZero(y),
-                              DivStm(r, _n, d),
-                              LocalVar(d; y).
+        ArithmeticError(r) :- DivStm(r, _n, d),
+                              LocalVar(d; y),
+                              if isMaybeZero(y).
 
         //
         // Let us now try to analyse the following small program:

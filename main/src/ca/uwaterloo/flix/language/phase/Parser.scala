@@ -1142,7 +1142,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
-    Predicates.Body.Positive | Predicates.Body.Negative | Predicates.Body.Guard | Predicates.Body.Loop | Predicates.Body.Filter
+    Predicates.Body.Positive | Predicates.Body.Negative | Predicates.Body.Guard | Predicates.Body.Loop
   }
 
   object Predicates {
@@ -1173,10 +1173,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       def Guard: Rule1[ParsedAst.Predicate.Body.Guard] = rule {
         SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Guard
-      }
-
-      def Filter: Rule1[ParsedAst.Predicate.Body.Filter] = rule {
-        SP ~ Names.QualifiedDefinition ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Body.Filter
       }
 
       // TODO: Allow single variable
