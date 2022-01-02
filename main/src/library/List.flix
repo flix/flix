@@ -1444,4 +1444,13 @@ namespace List {
         };
         loop(l, ks -> ks as & ef)
 
+    ///
+    /// Returns a map with elements of `s` as keys and `f` applied as values.
+    ///
+    /// If `xs` contains multiple mappings with the same key, `toMapWith` does not
+    /// make any guarantees about which mapping will be in the resulting map.
+    ///
+    pub def toMapWith(f: a -> b, s: List[a]): Map[a, b] with Order[a] =
+            List.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
+
 }
