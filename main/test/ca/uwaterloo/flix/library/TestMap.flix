@@ -1929,36 +1929,87 @@ def query18(): Bool =
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // maximum                                                                 //
+    // maximumKey                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def maximum01(): Bool = Map.maximum(Map#{}: Map[Int32, Int32]) == None
+    def maximumKey01(): Bool = Map.maximumKey(Map#{}: Map[Int32, Int32]) == None
 
     @test
-    def maximum02(): Bool = Map.maximum(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((5, 5))
+    def maximumKey02(): Bool = Map.maximumKey(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((5, 5))
 
     @test
-    def maximum03(): Bool = Map.maximum(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((5, 5))
+    def maximumKey03(): Bool = Map.maximumKey(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((5, 5))
 
     @test
-    def maximum04(): Bool = Map.maximum(Map#{1 => 2, 2 => 3, 107 => -107, 5 => 5, 0 => 2}) == Some((107, -107))
+    def maximumKey04(): Bool = Map.maximumKey(Map#{1 => 2, 2 => 3, 107 => -107, 5 => 5, 0 => 2}) == Some((107, -107))
+
 
     /////////////////////////////////////////////////////////////////////////////
-    // maximumBy                                                               //
+    // maximumKeyBy                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def maximumBy01(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
+    def maximumKeyBy01(): Bool = Map.maximumKeyBy((x, y) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
 
     @test
-    def maximumBy02(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((5, 5))
+    def maximumKeyBy02(): Bool = Map.maximumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((5, 5))
 
     @test
-    def maximumBy03(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((5, 5))
+    def maximumKeyBy03(): Bool = Map.maximumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((5, 5))
 
     @test
-    def maximumBy04(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{1 => 2, 2 => 3, 107 => -107, 5 => 5, 0 => 2}) == Some((107, -107))
+    def maximumKeyBy04(): Bool = Map.maximumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 107 => -107, 5 => 5, 0 => 2}) == Some((107, -107))
+
+    @test
+    def maximumKeyBy05(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, range) |> List.toMap;
+        let a = MutList.new();
+        Map.maximumKeyBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(a, b); x <=> y }, m);
+        MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximumValue                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximumValue01(): Bool = Map.maximumValue(Map#{}: Map[Int32, Int32]) == None
+
+    @test
+    def maximumValue02(): Bool = Map.maximumValue(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((5, 5))
+
+    @test
+    def maximumValue03(): Bool = Map.maximumValue(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((5, 5))
+
+    @test
+    def maximumValue04(): Bool = Map.maximumValue(Map#{1 => 2, 2 => 3, -107 => 107, 0 => 2}) == Some((-107, 107))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximumValueBy                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximumValueBy01(): Bool = Map.maximumValueBy((x, y) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
+
+    @test
+    def maximumValueBy02(): Bool = Map.maximumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((5, 5))
+
+    @test
+    def maximumValueBy03(): Bool = Map.maximumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((5, 5))
+
+    @test
+    def maximumValueBy04(): Bool = Map.maximumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, -107 => 107,5 => 5, 0 => 2}) == Some((-107, 107))
+
+    @test
+    def maximumValueBy05(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, range) |> List.toMap;
+        let a = MutList.new();
+        Map.maximumValueBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(a, b); x <=> y }, m);
+        MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
     /////////////////////////////////////////////////////////////////////////////
