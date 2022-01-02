@@ -401,7 +401,7 @@ object Main {
         text("[experimental] enables compiler debugging output.")
 
       // Xincremental.
-      opt[Unit]("Xincremental").action((_, c) => c.copy(xdebug = true)).
+      opt[Unit]("Xincremental").action((_, c) => c.copy(xincremental = true)).
         text("[experimental] enables incremental compilation.")
 
       // Xlib
