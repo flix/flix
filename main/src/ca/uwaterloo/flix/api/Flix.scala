@@ -439,6 +439,7 @@ class Flix {
       if (!options.test) {
         // Update caches.
         this.cachedParsedAst = afterParser
+        this.cachedWeededAst = afterWeeder
         this.cachedTypedAst = afterTyper
       }
 
