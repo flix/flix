@@ -86,6 +86,7 @@ object Main {
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       writeClassFiles = !cmdOpts.interactive,
       xnostratifier = cmdOpts.xnostratifier,
+      xperf = cmdOpts.xperf,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono
     )
@@ -257,6 +258,7 @@ object Main {
                      xdebug: Boolean = false,
                      xincremental: Boolean = false,
                      xnostratifier: Boolean = false,
+                     xperf: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
                      files: Seq[File] = Seq())
