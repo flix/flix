@@ -64,7 +64,7 @@ object Instances {
       checkLawApplication(class0)
     }
 
-    val results = ParOps.parMap(root.classes.values, visitClass)
+    val results = ParOps.parMap(root.classes.values)(visitClass)
     Validation.sequenceX(results)
   }
 
@@ -237,7 +237,7 @@ object Instances {
     }
 
     // Check the instances of each class in parallel.
-    val results = ParOps.parMap(root.instances.values, checkInstancesOfClass)
+    val results = ParOps.parMap(root.instances.values)(checkInstancesOfClass)
     Validation.traverseX(results)(identity)
   }
 }

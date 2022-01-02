@@ -103,7 +103,7 @@ object Typer {
     */
   private def visitInstances(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Map[Symbol.ClassSym, List[TypedAst.Instance]], TypeError] =
     flix.subphase("Instances") {
-      val results = ParOps.parMap(root.instances.values.flatten, visitInstance(_, root, classEnv))
+      val results = ParOps.parMap(root.instances.values.flatten)(visitInstance(_, root, classEnv))
       Validation.sequence(results) map {
         insts => insts.groupBy(inst => inst.sym.clazz)
       }
@@ -190,7 +190,7 @@ object Typer {
       // println(s"Fresh = ${freshDefs.keySet.size}")
 
       // Process the stale defs in parallel.
-      val results = ParOps.parMap(staleDefs.values, visitDefn(_, Nil, root, classEnv))
+      val results = ParOps.parMap(staleDefs.values)(visitDefn(_, Nil, root, classEnv))
 
       // Sequence the results using the freshDefs as the initial value.
       Validation.sequence(results) map {
