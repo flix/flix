@@ -679,7 +679,7 @@ namespace RedBlackTree {
     ///
     @Parallel
     pub def parMinimumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] & Impure =
-        parLimitBy(n, LessThan, cmp, t)
+        parLimitBy(n, (kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == LessThan) (kl, vl) else (kr, vr), t)
 
     ///
     /// Applies `cmp` over the tree `t` in parallel and optionally returns the largest
@@ -691,7 +691,7 @@ namespace RedBlackTree {
     ///
     @Parallel
     pub def parMaximumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] & Impure =
-        parLimitBy(n, GreaterThan, cmp, t)
+        parLimitBy(n, (kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == GreaterThan) (kl, vl) else (kr, vr), t)
 
     ///
     /// Helper function for `minimumBy` & `maximumBy`.
@@ -704,9 +704,9 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    def parLimitBy(n: Int32, decider: Comparison, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] & Impure =
+    def parLimitBy(n: Int32, selector: (k, v, k, v) -> (k, v), t: RedBlackTree[k, v]): Option[(k, v)] & Impure =
         if (n <= 0)
-            parSeqLimitBy(decider, cmp, t)
+            parSeqLimitBy(selector, t)
         else
             match t {
                 case Leaf                => None
@@ -714,9 +714,8 @@ namespace RedBlackTree {
                 case Node(_, a, k, v, b) =>
                     let chanL = chan Option[(k, v)] 1;
                     let chanR = chan Option[(k, v)] 1;
-                    spawn (chanL <- parLimitBy((n - 2) / 2, decider, cmp, a));
-                    spawn (chanR <- parLimitBy((n - 2) / 2, decider, cmp, b));
-                    def selector(kl, vl, kr, vr) = if (cmp(kl, vl, kr, vr) == decider) (kl, vl) else (kr, vr);
+                    spawn (chanL <- parLimitBy((n - 2) / 2, selector, a));
+                    spawn (chanR <- parLimitBy((n - 2) / 2, selector, b));
                     let a1 = <- chanL;
                     let res = match a1 {
                         case None         => (k, v)
@@ -735,16 +734,15 @@ namespace RedBlackTree {
     /// Applies `cmp` over the tree `t` sequentially and optionally returns the lowest
     /// element according to `cmp`.
     ///
-    def parSeqLimitBy(decider: Comparison, cmp: (k, v, k, v) -> Comparison & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef = match t {
+    def parSeqLimitBy(selector: (k, v, k, v) -> (k, v) & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef = match t {
         case Leaf                   => None
         case DoubleBlackLeaf        => None
         case Node(_, a, k, v, b)    =>
-            def selector(kl, vl, kr, vr) = if (cmp(kl, vl, kr, vr) == decider) (kl, vl) else (kr, vr);
-            let res = match parSeqLimitBy(decider, cmp, a) {
+            let res = match parSeqLimitBy(selector, a) {
                 case None         => (k, v)
                 case Some(kl, vl) => selector(kl, vl, k, v)
             };
-            match parSeqLimitBy(decider, cmp, b) {
+            match parSeqLimitBy(selector, b) {
                 case None         => Some(res)
                 case Some(kr, vr) =>
                     let (ks, vs) = res;
