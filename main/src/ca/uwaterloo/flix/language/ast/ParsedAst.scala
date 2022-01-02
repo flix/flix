@@ -1222,16 +1222,6 @@ object ParsedAst {
       case class Guard(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
-        * Filter Predicate.
-        *
-        * @param sp1   the position of the first character in the predicate.
-        * @param name  the qualified name of the filter function.
-        * @param terms the terms of the predicate.
-        * @param sp2   the position of the last character in the predicate.
-        */
-      case class Filter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Predicate.Body
-
-      /**
         * Loop Predicate.
         *
         * @param sp1    the position of the first character in the predicate.
