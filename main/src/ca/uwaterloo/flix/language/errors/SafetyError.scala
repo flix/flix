@@ -23,7 +23,7 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Illegal non-positively bound variable '${red(sym.text)}'.
          |
          |${code(loc, "the variable occurs in this negated atom.")}
@@ -51,7 +51,7 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Illegal negatively bound variable '${red(sym.text)}'.
          |
          |${code(loc, "the variable occurs in this negated atom.")}
@@ -74,7 +74,7 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Illegal negatively bound wildcard '${red("_")}'.
          |
          |${code(loc, "the wildcard occurs in this negated atom.")}

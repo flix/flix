@@ -51,7 +51,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Ambiguous tag '${red(tag)}'.
          |
          |${code(loc, "ambiguous tag name.")}
@@ -81,7 +81,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Illegal type: '${red(FormatType.formatType(tpe))}'.
          |
          |${code(loc, "illegal type.")}
@@ -106,7 +106,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Class '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
          |${code(loc, "inaccessible class.")}
@@ -133,7 +133,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Class '${red(sym.toString)}' is sealed from the namespace '${cyan(ns.toString)}'.
          |
          |${code(loc, "sealed class.")}
@@ -160,7 +160,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
          |${code(loc, "inaccessible definition.")}
@@ -187,7 +187,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
          |${code(loc, "inaccessible definition.")}
@@ -213,7 +213,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Enum '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
          |${code(loc, "inaccessible enum.")}
@@ -240,7 +240,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Type alias '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
          |${code(loc, "inaccessible type alias.")}
@@ -267,7 +267,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Recursion limit ($limit) reached while unfolding the '${red(ident.name)}' type alias.
          |
          |${code(loc, "recursion limit reached.")}
@@ -294,7 +294,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |
          |${code(loc, "Cyclic type aliases.")}
          |
@@ -329,7 +329,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Undefined name '${red(qn.toString)}'.
          |
          |${code(loc, "name not found")}
@@ -357,7 +357,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Undefined signature '${red(sig.name)}' in class '${red(clazz.toString)}'.
          |
          |${code(loc, "signature not found")}
@@ -384,7 +384,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Undefined class '${red(qn.toString)}'.
          |
          |${code(loc, "class not found")}
@@ -411,7 +411,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Undefined tag '${red(tag)}'.
          |
          |${code(loc, "tag not found.")}
@@ -438,7 +438,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Undefined type '${red(qn.toString)}'.
          |
          |${code(loc, "type not found.")}
@@ -464,7 +464,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Undefined class '${red(name)}'.
          |
          |${code(loc, "undefined class.")}
@@ -490,7 +490,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Undefined constructor in class '${cyan(className)}' with the given signature.
          |
          |${code(loc, "undefined constructor.")}
@@ -538,7 +538,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Undefined ${magenta(keyword)} method '${red(methodName)}' in class '${cyan(className)}'.
          |
          |${code(loc, "undefined method.")}
@@ -585,7 +585,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Undefined ${magenta(keyword)} field '${red(fieldName)}' in class '${cyan(className)}'.
          |
          |${code(loc, "undefined field.")}
@@ -624,7 +624,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |
          |${code(loc, "Cyclic inheritance.")}
          |
@@ -660,7 +660,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Duplicate derivation '${red(sym.name)}'.
          |
          |${code(loc1, "the first occurrence was here.")}
@@ -691,7 +691,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Illegal derivation '${red(sym.name)}'.
          |
          |${code(loc, "Illegal derivation.")}
@@ -716,7 +716,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Under-applied type alias '${red(sym.name)}'.
          |
          |${code(loc, "Under-applied type alias.")}

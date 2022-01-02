@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.Validation
 /**
   * The inliner replaces closures and functions by their code to improve performance.
   */
-object Inliner extends Phase[Root, Root] {
+object Inliner {
 
   /**
     * Performs inlining on the given AST `root`.

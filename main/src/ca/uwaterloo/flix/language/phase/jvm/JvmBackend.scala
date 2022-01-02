@@ -21,14 +21,13 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
-import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Validation}
 
 import java.lang.reflect.InvocationTargetException
 
-object JvmBackend extends Phase[Root, CompilationResult] {
+object JvmBackend {
 
   /**
     * Emits JVM bytecode for the given AST `root`.

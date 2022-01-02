@@ -22,9 +22,9 @@ import scala.collection.immutable.List
 
 object WeededAst {
 
-  case class Program(roots: List[WeededAst.Root], reachable: Set[Symbol.DefnSym])
+  case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], reachable: Set[Symbol.DefnSym])
 
-  case class Root(uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation)
+  case class CompilationUnit(uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation)
 
   sealed trait Declaration
 
@@ -302,7 +302,9 @@ object WeededAst {
 
   object Type {
 
-    case class Var(qname: Name.Ident, loc: SourceLocation) extends WeededAst.Type
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Type
+
+    case class RigidVar(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Type
 
     case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends WeededAst.Type
 

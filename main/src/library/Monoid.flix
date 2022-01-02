@@ -25,7 +25,7 @@ pub lawless class Monoid[a] with SemiGroup[a] {
     pub def empty(): a
 
     ///
-    /// Returns the result of __combining__ `x` and `y` using SemiGroup's combine.
+    /// Returns the result of combining `x` and `y` using SemiGroup's combine.
     ///
     pub def combine(x: a, y: a): a =
         SemiGroup.combine(x, y)

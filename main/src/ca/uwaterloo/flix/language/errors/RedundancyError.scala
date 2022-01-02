@@ -43,7 +43,7 @@ object RedundancyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Hidden variable symbol '${red(sym.text)}'. The symbol is marked as unused.
          |
          |${code(loc, "hidden symbol.")}
@@ -73,7 +73,7 @@ object RedundancyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Shadowed variable '${red(sym1.text)}'.
          |
          |${code(sym2.loc, "shadowing variable.")}
@@ -100,7 +100,7 @@ object RedundancyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unused definition '${red(sym.name)}'. The definition is never referenced.
          |
          |${code(sym.loc, "unused definition.")}
@@ -131,7 +131,7 @@ object RedundancyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
          |
          |${code(sym.loc, "unused enum.")}
@@ -164,7 +164,7 @@ object RedundancyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unused case '${red(tag.name)}' in enum '${cyan(sym.name)}'.
          |
          |${code(tag.loc, "unused tag.")}
@@ -196,7 +196,7 @@ object RedundancyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unused formal parameter '${red(sym.text)}'. The parameter is not used within its scope.
          |
          |${code(sym.loc, "unused formal parameter.")}
@@ -227,7 +227,7 @@ object RedundancyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unused type parameter '${red(ident.name)}'. The parameter is not referenced anywhere.
          |
          |${code(ident.loc, "unused type parameter.")}
@@ -258,7 +258,7 @@ object RedundancyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unused local variable '${red(sym.text)}'. The variable is not referenced within its scope.
          |
          |${code(sym.loc, "unused local variable.")}
@@ -290,7 +290,7 @@ object RedundancyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> This variable is named, but only used once '${red(sym.text)}'. Use a wildcard instead?
          |
          |${code(loc, "the variable occurs here.")}
@@ -319,7 +319,7 @@ object RedundancyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Useless expression: It has no side-effect(s) and its result is discarded.
          |
          |${code(loc, "useless expression.")}
@@ -348,7 +348,7 @@ object RedundancyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Redundant purity cast. The expression is already pure.
          |
          |${code(loc, "redundant cast")}
@@ -369,7 +369,7 @@ object RedundancyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Redundant effect cast. The expression already has the same effect.
          |
          |${code(loc, "redundant cast")}
@@ -392,7 +392,7 @@ object RedundancyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Type constraint '${red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}' is entailed by type constraint '${green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}'.
          |
          |${code(loc, "redundant type constraint.")}

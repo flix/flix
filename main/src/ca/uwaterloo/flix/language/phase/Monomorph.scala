@@ -56,7 +56,7 @@ import scala.collection.mutable
   *       c. We enqueue (or re-used) other functions referenced by the current function which require specialization.
   *       4. We reconstruct the AST from the specialized functions and remove all parametric functions.
   */
-object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
+object Monomorph {
 
   /**
     * A strict substitution is similar to a regular substitution except that free type variables are replaced by the

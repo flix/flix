@@ -40,7 +40,7 @@ import scala.collection.mutable
   *
   * Reports a [[StratificationError]] if the constraints cannot be stratified.
   */
-object Stratifier extends Phase[Root, Root] {
+object Stratifier {
   /**
     * Returns a stratified version of the given AST `root`.
     */

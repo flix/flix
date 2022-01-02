@@ -201,7 +201,7 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def viewLeft01(): Bool = Chain.viewLeft(Chain.empty()) == Chain/ViewLeft.NoneLeft
+    def viewLeft01(): Bool = Chain.viewLeft(Chain.empty(): Chain[Int32]) == Chain/ViewLeft.NoneLeft
 
     @test
     def viewLeft02(): Bool = Chain.viewLeft(Chain.singleton(1)) == Chain/ViewLeft.SomeLeft(1, Chain.empty())
@@ -217,7 +217,7 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def viewRight01(): Bool = Chain.viewRight(Chain.empty()) == Chain/ViewRight.NoneRight
+    def viewRight01(): Bool = Chain.viewRight(Chain.empty(): Chain[Int32]) == Chain/ViewRight.NoneRight
 
     @test
     def viewRight02(): Bool = Chain.viewRight(Chain.singleton(1)) == Chain/ViewRight.SomeRight(Chain.empty(), 1)

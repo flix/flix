@@ -232,7 +232,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   private def mkFlix(input: String, opts: Options)(implicit ws: WebSocket): Flix = {
     val flix = new Flix()
     flix.setOptions(opts)
-    flix.addStr(input)
+    flix.addSourceCode(input)
   }
 
   /**

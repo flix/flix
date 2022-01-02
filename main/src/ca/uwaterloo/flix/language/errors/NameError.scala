@@ -42,7 +42,7 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Ambiguous name '${red(name)}'. The name may refer to both a variable and a use of a name.
          |
          |${code(loc, "ambiguous name.")}
@@ -74,7 +74,7 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Duplicate definition of '${red(name)}'.
          |
          |${code(loc1, "the first definition was here.")}
@@ -109,7 +109,7 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Duplicate use of '${red(name)}'.
          |
          |${code(loc1, "the first use was here.")}
@@ -135,7 +135,7 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Duplicate use of the type or class '${red(name)}'.
          |
          |${code(loc1, "the first use was here.")}
@@ -161,7 +161,7 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Duplicate use of the tag '${red(name)}'.
          |
          |${code(loc1, "the first use was here.")}
@@ -187,7 +187,7 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Duplicate type or class declaration '${red(name)}'.
          |
          |${code(loc1, "the first occurrence was here.")}
@@ -213,7 +213,7 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Suspicious type variable '${red(name)}'. Did you mean: '${cyan(name.capitalize)}'?
          |
          |${code(loc, "Suspicious type variable.")}
@@ -241,7 +241,7 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Undefined Java class '${red(name)}'.
          |
          |${code(loc, "undefined Java class.")}
@@ -272,7 +272,7 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Undefined variable '${red(name)}'.
          |
          |${code(loc, "undefined variable.")}
@@ -295,7 +295,7 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Undefined type variable '${red(name)}'.
          |
          |${code(loc, "undefined type variable.")}
@@ -319,7 +319,7 @@ object NameError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unexpected signature '${red(name.name)}' which does not mention the type variable of the class.
          |
          |${code(loc, "unexpected signature.")}

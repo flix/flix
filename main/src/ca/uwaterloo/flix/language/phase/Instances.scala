@@ -18,19 +18,19 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
-object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
+object Instances {
 
   /**
     * Validates instances and classes in the given AST root.
     */
-  override def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Instances") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Instances") {
     Validation.sequenceX(List(
       visitInstances(root),
       visitClasses(root)
@@ -64,7 +64,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       checkLawApplication(class0)
     }
 
-    val results = ParOps.parMap(root.classes.values, visitClass)
+    val results = ParOps.parMap(root.classes.values)(visitClass)
     Validation.sequenceX(results)
   }
 
@@ -93,7 +93,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Checks that the instance type is simple:
       * * all type variables are unique
-      * * all type arguments are variables
+      * * all type arguments are variables or booleans
       */
     def checkSimple(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
       case TypedAst.Instance(_, _, sym, tpe, _, _, _, _) => tpe match {
@@ -109,7 +109,11 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
               // Case 1.2 We haven't seen it before. Add it to the list.
               else
                 (tvar :: seen).toSuccess
-            // Case 2: Non-type variable. Error.
+            // Case 2: True. Continue.
+            case (seen, Type.Cst(TypeConstructor.True, _)) => seen.toSuccess
+            // Case 3: False. Continue.
+            case (seen, Type.Cst(TypeConstructor.False, _)) => seen.toSuccess
+            // Case 4: Some other type. Error.
             case (_, _) => InstanceError.ComplexInstanceType(tpe, sym, sym.loc).toFailure
           }.map(_ => ())
         case Type.Alias(alias, _, _, _) => InstanceError.IllegalTypeAliasInstance(alias.sym, sym, sym.loc).toFailure
@@ -122,7 +126,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
       * Checks for overlap of instance types, assuming the instances are of the same class.
       */
     def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit flix: Flix): Validation[Unit, InstanceError] = {
-      Unification.unifyTypes(inst1.tpe, inst2.tpe) match {
+      Unification.unifyTypes(generifyBools(inst1.tpe), inst2.tpe) match {
         case Ok(_) =>
           Validation.Failure(LazyList(
             InstanceError.OverlappingInstances(inst1.sym.loc, inst2.sym.loc),
@@ -130,6 +134,20 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
           ))
         case Err(_) => ().toSuccess
       }
+    }
+
+    /**
+      * Converts `true` and `false` in the given type into type variables.
+      */
+    def generifyBools(tpe0: Type)(implicit flix: Flix): Type = tpe0 match {
+      case Type.Cst(TypeConstructor.True, loc) => Type.freshVar(Kind.Bool, loc)
+      case Type.Cst(TypeConstructor.False, loc) => Type.freshVar(Kind.Bool, loc)
+      case t: Type.KindedVar => t
+      case t: Type.Cst => t
+      case Type.Apply(tpe1, tpe2, loc) => Type.Apply(generifyBools(tpe1), generifyBools(tpe2), loc)
+      case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(generifyBools), generifyBools(tpe), loc)
+      case _: Type.UnkindedVar => throw InternalCompilerException("unexpected unkinded type")
+      case _: Type.Ascribe => throw InternalCompilerException("unexpected unkinded type")
     }
 
     /**
@@ -219,7 +237,7 @@ object Instances extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Check the instances of each class in parallel.
-    val results = ParOps.parMap(root.instances.values, checkInstancesOfClass)
+    val results = ParOps.parMap(root.instances.values)(checkInstancesOfClass)
     Validation.traverseX(results)(identity)
   }
 }

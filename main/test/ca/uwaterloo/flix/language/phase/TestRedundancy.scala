@@ -61,11 +61,10 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Predicate.01") {
     val input =
       s"""
-         |def f(): Bool =
-         |  let _x = #{
+         |def f(): #{ A(Int32), B(Int32) } =
+         |  #{
          |    A(_x) :- B(_x).
-         |  };
-         |  true
+         |  }
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -75,11 +74,10 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Predicate.02") {
     val input =
       s"""
-         |def f(): Bool =
-         |  let _x = #{
+         |def f(): #{ A(Int32), B(Int32), C(Int32) } =
+         |  #{
          |    A(2) :- B(_x), C(_x).
-         |  };
-         |  true
+         |  }
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -915,11 +913,10 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("IllegalSingleVariable.Predicate.01") {
     val input =
       s"""
-         |def f(): Bool =
-         |  let _x = #{
+         |def f(): #{ A(Int32), B(Int32), C(Int32) } =
+         |  #{
          |    A(x) :- B(x), C(y).
-         |  };
-         |  true
+         |  }
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)

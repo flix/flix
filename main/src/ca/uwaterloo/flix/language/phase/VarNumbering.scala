@@ -33,7 +33,7 @@ import scala.annotation.tailrec
   * slot, but longs and doubles require two consecutive slots. Thus, the n-th variable may not necessarily be the
   * n-th slot. This phase computes the specific offsets used by each formal parameter and local variable.
   */
-object VarNumbering extends Phase[Root, Root] {
+object VarNumbering {
 
   /**
     * Assigns a stack offset to each variable symbol in the program.
