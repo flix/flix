@@ -57,14 +57,14 @@ object Weeder {
   /**
     * Weeds the given abstract syntax tree.
     */
-  private def visitCompilationUnit(src: Ast.Source, unit: ParsedAst.CompilationUnit)(implicit flix: Flix): Validation[(Ast.Source, WeededAst.CompilationUnits), WeederError] = {
+  private def visitCompilationUnit(src: Ast.Source, unit: ParsedAst.CompilationUnit)(implicit flix: Flix): Validation[(Ast.Source, WeededAst.CompilationUnit), WeederError] = {
     val usesVal = traverse(unit.uses)(visitUse)
     val declarationsVal = traverse(unit.decls)(visitDecl)
     val loc = mkSL(unit.sp1, unit.sp2)
 
     mapN(usesVal, declarationsVal) {
       case (uses, decls) =>
-        src -> WeededAst.CompilationUnits(uses.flatten, decls.flatten, loc)
+        src -> WeededAst.CompilationUnit(uses.flatten, decls.flatten, loc)
     }
   }
 
