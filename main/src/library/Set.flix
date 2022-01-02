@@ -155,8 +155,8 @@ namespace Set {
     ///
     @ParallelWhenPure
     pub def minimumBy(cmp: (a, a) -> Comparison & ef, s: Set[a]): Option[a] & ef =
-        let f = r -> cmp(r.kl, r.kr);
         def min() = reduceLeft((x, y) -> if (cmp(x, y) == LessThan) x else y, s);
+        let f = r -> cmp(r.kl, r.kr);
         reifyEff(f) {
             case Pure(g) =>
                 if (useParallelEvaluation(s))

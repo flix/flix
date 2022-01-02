@@ -171,6 +171,7 @@ namespace Map {
     ///
     @ParallelWhenPure
     pub def minimumKeyBy(cmp: (k, k) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
+        def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), m);
         let f = r -> cmp(r.kl, r.kr);
         reifyEff(f) {
             case Pure(g) =>
@@ -179,8 +180,8 @@ namespace Map {
                     let Map(t) = m;
                     RedBlackTree.parMinimumBy(threads() - 1, h, t) as & Pure
                 else
-                    reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), m)
-            case _ => reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), m)
+                    min()
+            case _ => min()
         }
 
     ///
@@ -201,6 +202,7 @@ namespace Map {
     ///
     @ParallelWhenPure
     pub def minimumValueBy(cmp: (v, v) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
+        def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == LessThan) (kl, vl) else (kr, vr), m);
         let f = r -> cmp(r.vl, r.vr);
         reifyEff(f) {
             case Pure(g) =>
@@ -209,8 +211,8 @@ namespace Map {
                     let Map(t) = m;
                     RedBlackTree.parMinimumBy(threads() - 1, h, t) as & Pure
                 else
-                    reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == LessThan) (kl, vl) else (kr, vr), m)
-            case _ => reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == LessThan) (kl, vl) else (kr, vr), m)
+                    min()
+            case _ => min()
         }
 
 
