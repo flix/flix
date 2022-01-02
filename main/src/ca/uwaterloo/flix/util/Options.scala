@@ -27,6 +27,7 @@ object Options {
     debug = false,
     documentor = false,
     explain = false,
+    incremental = false,
     json = false,
     progress = false,
     test = false,
@@ -68,6 +69,7 @@ object Options {
   * @param lib                selects the level of libraries to include.
   * @param debug              enables the emission of debugging information.
   * @param documentor         enables generation of flixdoc.
+  * @param incremental        enables incremental compilation.
   * @param json               enable json output.
   * @param progress           print progress during compilation.
   * @param test               enables test mode.
@@ -85,6 +87,7 @@ case class Options(lib: LibLevel,
                    debug: Boolean,
                    documentor: Boolean,
                    explain: Boolean,
+                   incremental: Boolean,
                    json: Boolean,
                    progress: Boolean,
                    target: JvmTarget,
