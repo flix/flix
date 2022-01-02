@@ -13,7 +13,7 @@ object BenchmarkCompiler {
   /**
     * The number of compilations to perform when collecting statistics.
     */
-  val N = 14
+  val N = 10
 
   /**
     * Outputs statistics about the size of the generated JVM code.
@@ -191,19 +191,7 @@ object BenchmarkCompiler {
     // NB: We only use unit tests from the standard library because we want to test real code.
 
     flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
-    flix.addSourceCode("TestBigInt.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestBigInt.flix"))
     flix.addSourceCode("TestChain.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
-    flix.addSourceCode("TestChar.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChar.flix"))
-    flix.addSourceCode("TestDelayMap.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestDelayMap.flix"))
-    flix.addSourceCode("TestFloat32.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestFloat32.flix"))
-    flix.addSourceCode("TestFloat64.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestFloat64.flix"))
-    flix.addSourceCode("TestFromString.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestFromString.flix"))
-    flix.addSourceCode("TestGetOpt.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestGetOpt.flix"))
-    flix.addSourceCode("TestHash.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestHash.flix"))
-    flix.addSourceCode("TestInt8.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestInt8.flix"))
-    flix.addSourceCode("TestInt16.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestInt16.flix"))
-    flix.addSourceCode("TestInt32.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestInt32.flix"))
-    flix.addSourceCode("TestInt64.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestInt64.flix"))
     flix.addSourceCode("TestIterator.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"))
     flix.addSourceCode("TestLazyList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestLazyList.flix"))
     flix.addSourceCode("TestList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestList.flix"))
@@ -215,7 +203,6 @@ object BenchmarkCompiler {
     flix.addSourceCode("TestPrelude.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestPrelude.flix"))
     flix.addSourceCode("TestResult.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestResult.flix"))
     flix.addSourceCode("TestSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"))
-    flix.addSourceCode("TestString.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestString.flix"))
     flix.addSourceCode("TestValidation.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"))
 
     flix
