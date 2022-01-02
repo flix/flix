@@ -20,7 +20,7 @@
 /// A list is either the empty list represented by `Nil`, or
 /// an element `v` followed by a list `vs` represented by `v :: vs`.
 ///
-enum List[t] {
+pub enum List[t] {
     case Nil,
     case Cons(t, List[t])
 }

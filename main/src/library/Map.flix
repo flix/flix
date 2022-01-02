@@ -21,7 +21,7 @@ use RedBlackTree.RedBlackTree;
 ///
 /// A map is currently represented internally as a red-black tree.
 ///
-enum Map[k, v] {
+pub enum Map[k, v] {
     case Map(RedBlackTree[k, v])
 }
 
