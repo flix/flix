@@ -23,7 +23,7 @@
 ///
 /// Note - the constructors `Empty`, `One` and `Chain` should not be used directly.
 ///
-enum Chain[t] {
+pub enum Chain[t] {
     case Empty
     case One(t)
     case Chain(Chain[t], Chain[t])

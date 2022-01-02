@@ -21,7 +21,7 @@
 /// The constructor `Ok(v)` represents the successful value `v`,
 /// whereas the constructor `Err(v)` represents the error value `v`.
 ///
-enum Result[t, e] with Eq, Order, ToString {
+pub enum Result[t, e] with Eq, Order, ToString {
     case Ok(t),
     case Err(e)
 }
