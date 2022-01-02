@@ -62,6 +62,7 @@ class Flix {
     * A cache of compiled ASTs (for incremental compilation).
     */
   private var cachedParsedAst: ParsedAst.Root = ParsedAst.Root(Map.empty)
+  private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, Set.empty)
   private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, Map.empty, Map.empty)
 
   /**
@@ -421,7 +422,7 @@ class Flix {
     val result = for {
       afterReader <- Reader.run(getInputs)
       afterParser <- Parser.run(afterReader, cachedParsedAst, changeSet)
-      afterWeeder <- Weeder.run(afterParser)
+      afterWeeder <- Weeder.run(afterParser, cachedWeededAst, changeSet)
       afterNamer <- Namer.run(afterWeeder)
       afterResolver <- Resolver.run(afterNamer)
       afterKinder <- Kinder.run(afterResolver)
@@ -438,6 +439,7 @@ class Flix {
       if (!options.test) {
         // Update caches.
         this.cachedParsedAst = afterParser
+        this.cachedWeededAst = afterWeeder
         this.cachedTypedAst = afterTyper
       }
 

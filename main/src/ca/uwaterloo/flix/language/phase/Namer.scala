@@ -35,9 +35,9 @@ object Namer {
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
     * */
-  def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phase("Namer") {
+  def run(program: WeededAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phase("Namer") {
     // compute all the source locations
-    val locations = program.roots.foldLeft(Map.empty[Source, SourceLocation]) {
+    val locations = program.units.values.foldLeft(Map.empty[Source, SourceLocation]) {
       case (macc, root) => macc + (root.loc.source -> root.loc)
     }
 
@@ -53,7 +53,7 @@ object Namer {
     )
 
     // collect all the declarations.
-    val declarations = mapN(traverse(program.roots) {
+    val declarations = mapN(traverse(program.units.values) {
       case root => mapN(mergeUseEnvs(root.uses, UseEnv.empty)) {
         case uenv0 => root.decls.map(d => (uenv0, d))
       }

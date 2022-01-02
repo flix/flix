@@ -57,25 +57,25 @@ object Kinder {
       taenv =>
 
         // Extra type annotations are required due to limitations in Scala's type inference.
-        val enumsVal = Validation.sequence(ParOps.parMap(root.enums, {
+        val enumsVal = Validation.sequence(ParOps.parMap(root.enums)({
           pair: (Symbol.EnumSym, ResolvedAst.Enum) =>
             val (sym, enum) = pair
             visitEnum(enum, taenv, root).map(sym -> _)
         }))
 
-        val classesVal = Validation.sequence(ParOps.parMap(root.classes, {
+        val classesVal = Validation.sequence(ParOps.parMap(root.classes)({
           pair: (Symbol.ClassSym, ResolvedAst.Class) =>
             val (sym, clazz) = pair
             visitClass(clazz, taenv, root).map(sym -> _)
         }))
 
-        val defsVal = Validation.sequence(ParOps.parMap(root.defs, {
+        val defsVal = Validation.sequence(ParOps.parMap(root.defs)({
           pair: (Symbol.DefnSym, ResolvedAst.Def) =>
             val (sym, defn) = pair
             visitDef(defn, KindEnv.empty, taenv, root).map(sym -> _)
         }))
 
-        val instancesVal = Validation.sequence(ParOps.parMap(root.instances, {
+        val instancesVal = Validation.sequence(ParOps.parMap(root.instances)({
           pair: (Symbol.ClassSym, List[ResolvedAst.Instance]) =>
             val (sym, insts) = pair
             traverse(insts)(visitInstance(_, taenv, root)).map(sym -> _)
