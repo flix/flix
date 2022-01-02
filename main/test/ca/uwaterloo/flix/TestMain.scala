@@ -135,6 +135,12 @@ class TestMain extends FunSuite {
     assert(opts.xdebug)
   }
 
+  test("--Xincremental") {
+    val args = Array("--Xincremental", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xincremental)
+  }
+
   test("--Xno-stratifier") {
     val args = Array("--Xno-stratifier", "p.flix")
     val opts = Main.parseCmdOpts(args).get

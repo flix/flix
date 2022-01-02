@@ -80,6 +80,7 @@ object Main {
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
       explain = cmdOpts.explain,
+      incremental = cmdOpts.xincremental,
       json = cmdOpts.json,
       progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
@@ -254,6 +255,7 @@ object Main {
                      xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
+                     xincremental: Boolean = false,
                      xnostratifier: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
@@ -397,6 +399,10 @@ object Main {
       // Xdebug.
       opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
         text("[experimental] enables compiler debugging output.")
+
+      // Xincremental.
+      opt[Unit]("Xincremental").action((_, c) => c.copy(xincremental = true)).
+        text("[experimental] enables incremental compilation.")
 
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
