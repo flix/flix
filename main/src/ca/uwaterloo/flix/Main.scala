@@ -414,6 +414,10 @@ object Main {
       opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
         text("[experimental] disables computation of stratification.")
 
+      // Xperf
+      opt[Unit]("Xperf").action((_, c) => c.copy(xperf = true)).
+        text("[experimental] print performance information.")
+
       // Xstatistics
       opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
         text("[experimental] prints compilation statistics.")
