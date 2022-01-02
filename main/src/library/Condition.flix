@@ -23,7 +23,7 @@ opaque type Condition = ##java.util.concurrent.locks.Condition
 ///
 /// An enum reflecting the two exceptions occurring in condition methods, lock state errors and thread interruptions.
 ///
-enum ConditionError {
+pub enum ConditionError {
     case MonitorStateError(##java.lang.IllegalMonitorStateException)
     case InterruptedError(##java.lang.InterruptedException)
 }
