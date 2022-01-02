@@ -94,6 +94,11 @@ object Main {
       options = options.copy(progress = false)
     }
 
+    // Don't use progress bar if not attached to a console.
+    if (System.console() == null) {
+      options = options.copy(progress = false)
+    }
+
     // check if command was passed.
     try {
       val cwd = Paths.get(".")
