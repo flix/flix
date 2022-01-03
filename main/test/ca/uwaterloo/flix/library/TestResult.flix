@@ -701,4 +701,28 @@ def lift1012(): Bool = Result.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2
     def toIterator03(): Bool & Impure =
         Ok(1 :: 2 :: 3 :: Nil) |> Result.toIterator |> Iterator.toList == (1 :: 2 :: 3 :: Nil) :: Nil
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toMapWith                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMapWith01(): Bool =
+        Result.toMapWith(x -> 0 * x, Err(1)) == Map#{}
+
+    @test
+    def toMapWith02(): Bool =
+        Result.toMapWith(x -> 0 * x, Ok(1)) == Map#{1 => 0}
+
+    @test
+    def toMapWith03(): Bool =
+        Result.toMapWith(x -> 2 * x, Ok(1)) == Map#{1 => 2}
+
+    @test
+    def toMapWith04(): Bool =
+        Result.toMapWith(x -> x + 10, Ok(1)) == Map#{1 => 11}
+
+    @test
+    def toMapWith05(): Bool =
+        Result.toMapWith(x -> x + "b", Ok("a")) == Map#{"a" => "ab"}
+
 }
