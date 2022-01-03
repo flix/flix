@@ -89,6 +89,7 @@ namespace Console {
                 esc + "[1m" + ToString.toString(s) + esc + "[0m"
             case ColorSupport.TrueColor =>
                 esc + "[38;2;1m" + ToString.toString(s) + esc + "[0m"
+        }
 
     ///
     /// Returns `s` formatted with color `hexCode`.
