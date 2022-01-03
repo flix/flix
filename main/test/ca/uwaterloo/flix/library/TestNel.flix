@@ -794,19 +794,19 @@ namespace Nel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMapWith02(): Bool =
+    def toMapWith01(): Bool =
         Nel.toMapWith(x -> 0 * x, Nel(7, 1 :: 3 :: 6 :: Nil)) == Map#{1 => 0, 3 => 0, 6 => 0, 7 => 0}
 
     @test
-    def toMapWith03(): Bool =
+    def toMapWith02(): Bool =
         Nel.toMapWith(x -> 2 * x, Nel(7, 1 :: 3 :: 6 :: Nil)) == Map#{1 => 2, 3 => 6, 6 => 12, 7 => 14}
 
     @test
-    def toMapWith04(): Bool =
+    def toMapWith03(): Bool =
         Nel.toMapWith(x -> x + 10, Nel(7, 1 :: 3 :: 6 :: Nil)) == Map#{1 => 11, 3 => 13, 6 => 16, 7 => 17}
 
     @test
-    def toMapWith05(): Bool =
+    def toMapWith04(): Bool =
         Nel.toMapWith(x -> x + 10, Nel(7, 3 :: 6 :: 1 :: Nil)) == Map#{1 => 11, 3 => 13, 6 => 16, 7 => 17}
 
 }
