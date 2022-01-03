@@ -43,7 +43,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> The type scheme: '${red(FormatScheme.formatSchemeWithoutConstraints(inferred))}' cannot be generalized to '${red(FormatScheme.formatSchemeWithoutConstraints(declared))}'.
          |
          |${code(loc, "unable to generalize the type scheme.")}
@@ -92,7 +92,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> The inferred effect: '${red(FormatEff.formatEff(inferred))}' cannot be generalized to '${red(FormatEff.formatEff(declared))}'.
          |
          |${code(loc, "unable to generalize the effect.")}
@@ -113,7 +113,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> ${red("Impure")} function declared as ${green("pure")}.
          |
          |${code(loc, "impure function.")}
@@ -143,7 +143,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> ${red("Effect polymorphic")} function declared as ${green("pure")}.
          |
          |${code(loc, "effect polymorphic function.")}
@@ -176,7 +176,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unable to unify the types: '${red(FormatType.formatType(baseType1))}' and '${red(FormatType.formatType(baseType2))}'.
          |
          |${code(loc, "mismatched types.")}
@@ -202,7 +202,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Over-applied function. Excess argument of type: '${red(FormatType.formatType(excessArgument))}'.
          |
          |${code(loc, "over-applied function.")}
@@ -228,7 +228,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Under-applied function. Missing argument of type: '${red(FormatType.formatType(missingArgument))}'.
          |
          |${code(loc, "under-applied function.")}
@@ -255,7 +255,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unable to unify the Boolean formulas: '${red(FormatType.formatType(baseType1))}' and '${red(FormatType.formatType(baseType2))}'.
          |
          |${code(loc, "mismatched boolean formulas.")}
@@ -300,7 +300,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unable to unify the types: '${red(FormatType.formatType(tpe1))}' and '${red(FormatType.formatType(tpe2))}'.
          |
          |${code(loc, "mismatched arity of types.")}
@@ -325,7 +325,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unable to unify the type variable '${red(baseVar.toString)}' with the type '${red(FormatType.formatType(baseType))}'.
          |
          |>> The type variable occurs recursively within the type.
@@ -353,7 +353,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Missing field '${red(field.name)}' of type '${cyan(FormatType.formatType(fieldType))}'.
          |
          |${code(loc, "missing field.")}
@@ -382,7 +382,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Missing predicate '${red(pred.name)}' of type '${cyan(FormatType.formatType(predType))}'.
          |
          |${code(loc, "missing predicate.")}
@@ -409,7 +409,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unexpected non-record type: '${red(FormatType.formatType(tpe))}'.
          |
          |${code(loc, "unexpected non-record type.")}
@@ -430,7 +430,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Unexpected non-schema type: '${red(FormatType.formatType(tpe))}'.
          |
          |${code(loc, "unexpected non-schema type.")}
@@ -453,7 +453,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> No instance of the '${cyan(clazz.toString)}' class for the ${magenta("function")} type '${red(FormatType.formatType(tpe))}'.
          |
          |>> Did you forget to apply the function to all of its arguments?
@@ -478,7 +478,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> No instance of the '${cyan(clazz.toString)}' class for the type '${red(FormatType.formatType(tpe))}'.
          |
          |${code(loc, s"missing instance")}
@@ -500,7 +500,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Equality is not defined on ${red(FormatType.formatType(tpe))}. Define or derive an instance of Eq.
          |
          |${code(loc, s"missing Eq instance")}
@@ -535,7 +535,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> Order is not defined on ${red(FormatType.formatType(tpe))}. Define or derive an instance of Order.
          |
          |${code(loc, s"missing Order instance")}
@@ -571,7 +571,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> ToString is not defined on ${red(FormatType.formatType(tpe))}. Define or derive an instance of ToString.
          |
          |${code(loc, s"missing ToString instance")}
@@ -607,7 +607,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
          |>> The main function has an unexpected type.
          |
          |${code(loc, s"unexpected type.")}

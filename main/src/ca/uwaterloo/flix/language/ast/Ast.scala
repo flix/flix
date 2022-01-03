@@ -33,13 +33,17 @@ object Ast {
 
     /**
       * A source that is backed by an internal resource.
+      *
+      * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
       */
-    case class Internal(name: String, text: String) extends Input
+    case class Text(name: String, text: String, stable: Boolean) extends Input {
+      override def hashCode(): Int = name.hashCode
 
-    /**
-      * A source that is backed by a regular string.
-      */
-    case class Str(text: String) extends Input
+      override def equals(obj: Any): Boolean = obj match {
+        case that: Text => this.name == that.name
+        case _ => false
+      }
+    }
 
     /**
       * A source that is backed by a regular file.
@@ -55,15 +59,24 @@ object Ast {
 
   /**
     * A source is a name and an array of character data.
+    *
+    * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
     */
-  case class Source(name: String, data: Array[Char]) {
-    def format: String = name
+  case class Source(input: Input, data: Array[Char], stable: Boolean) extends Sourceable {
 
-    override def equals(o: scala.Any): Boolean = o match {
-      case that: Source => this.name == that.name
+    def name: String = input match {
+      case Input.Text(name, _, _) => name
+      case Input.TxtFile(path) => path.toString
+      case Input.PkgFile(path) => path.toString
     }
 
-    override def hashCode(): Int = name.hashCode
+    def src: Source = this
+
+    override def equals(o: scala.Any): Boolean = o match {
+      case that: Source => this.input == that.input
+    }
+
+    override def hashCode(): Int = input.hashCode()
   }
 
   /**

@@ -80,17 +80,24 @@ object Main {
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
       explain = cmdOpts.explain,
+      incremental = cmdOpts.xincremental,
       json = cmdOpts.json,
       progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       writeClassFiles = !cmdOpts.interactive,
       xnostratifier = cmdOpts.xnostratifier,
+      xperf = cmdOpts.xperf,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono
     )
 
     // Don't use progress bar if benchmarking.
     if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
+      options = options.copy(progress = false)
+    }
+
+    // Don't use progress bar if not attached to a console.
+    if (System.console() == null) {
       options = options.copy(progress = false)
     }
 
@@ -182,8 +189,8 @@ object Main {
     for (file <- cmdOpts.files) {
       val ext = file.getName.split('.').last
       ext match {
-        case "flix" => flix.addPath(file.toPath)
-        case "fpkg" => flix.addPath(file.toPath)
+        case "flix" => flix.addSourcePath(file.toPath)
+        case "fpkg" => flix.addSourcePath(file.toPath)
         case "jar" => flix.addJar(file.toPath)
         case _ =>
           Console.println(s"Unrecognized file extension: '$ext'.")
@@ -249,7 +256,9 @@ object Main {
                      xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
+                     xincremental: Boolean = false,
                      xnostratifier: Boolean = false,
+                     xperf: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
                      files: Seq[File] = Seq())
@@ -393,6 +402,10 @@ object Main {
       opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
         text("[experimental] enables compiler debugging output.")
 
+      // Xincremental.
+      opt[Unit]("Xincremental").action((_, c) => c.copy(xincremental = true)).
+        text("[experimental] enables incremental compilation.")
+
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
@@ -400,6 +413,10 @@ object Main {
       // Xno-stratifier
       opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
         text("[experimental] disables computation of stratification.")
+
+      // Xperf
+      opt[Unit]("Xperf").action((_, c) => c.copy(xperf = true)).
+        text("[experimental] print performance information.")
 
       // Xstatistics
       opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).

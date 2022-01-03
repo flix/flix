@@ -291,13 +291,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     // Add sources.
     for ((uri, source) <- sources) {
-      flix.addInput(uri, source)
+      flix.addSourceCode(uri, source)
     }
 
     // Add sources from packages.
     for ((uri, items) <- packages) {
       for (src <- items) {
-        flix.addInput(uri, src)
+        flix.addSourceCode(uri, src)
       }
     }
 
@@ -320,6 +320,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           // Compute elapsed time.
           val e = System.nanoTime() - t
 
+          if (flix.options.xperf) {
+            println(s"lsp/check: ${e / 1_000_000}ms")
+          }
+
           // Compute Code Quality hints.
           val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix)
           if (codeHints.isEmpty) {
@@ -328,7 +332,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           } else {
             // Case 2: Code hints are available.
             val results = PublishDiagnosticsParams.fromCodeHints(codeHints)
-            ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
+            ("id" -> requestId) ~ ("status" -> "failure") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
           }
 
         case Failure(errors) =>

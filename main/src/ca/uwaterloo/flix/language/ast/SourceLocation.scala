@@ -27,7 +27,7 @@ object SourceLocation {
     import scala.math.Ordered.orderingToOrdered
 
     def compare(x: SourceLocation, y: SourceLocation): Int =
-      (x.source.format, x.beginLine, x.beginCol) compare(y.source.format, y.beginLine, y.beginCol)
+      (x.source.name, x.beginLine, x.beginCol) compare(y.source.name, y.beginLine, y.beginCol)
   }
 
 }
@@ -88,7 +88,7 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
   /**
     * Returns a formatted string representation of `this` source location.
     */
-  def format: String = s"${source.format}:$beginLine:$beginCol"
+  def format: String = s"${source.name}:$beginLine:$beginCol"
 
   /**
     * Returns the hashCode of `this` source location.

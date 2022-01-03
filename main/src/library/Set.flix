@@ -21,7 +21,7 @@ use RedBlackTree.RedBlackTree;
 ///
 /// A set is currently represented internally as a red-black tree.
 ///
-enum Set[t] {
+pub enum Set[t] {
     case Set(RedBlackTree[t, Unit])
 }
 
@@ -55,6 +55,24 @@ instance Foldable[Set] {
 }
 
 namespace Set {
+
+    ///
+    /// Returns the number of threads to use for parallel evaluation.
+    ///
+    def threads(): Int32 =
+        // Note: We use a multiple of the number of physical cores for better performance.
+        let multiplier = 4;
+        multiplier * Environment.getVirtualProcessors()
+
+    ///
+    /// Determines whether to use parallel evaluation.
+    ///
+    /// By default we only enable parallel evaluation if the set has a certain size.
+    ///
+    def useParallelEvaluation(s: Set[a]): Bool =
+        let Set(t) = s;
+        let minSize = 2 ** RedBlackTree.blackHeight(t);
+        minSize >= 1024
 
     ///
     /// Returns the size of `s`.
@@ -137,8 +155,19 @@ namespace Set {
     ///
     @ParallelWhenPure
     pub def minimumBy(cmp: (a, a) -> Comparison & ef, s: Set[a]): Option[a] & ef =
-        let Set(t) = s;
-        RedBlackTree.minimumBy((k1, _, k2, _) -> cmp(k1, k2), t) |> Option.map(fst)
+        def min() = reduceLeft((x, y) -> if (cmp(x, y) == LessThan) x else y, s);
+        let f = r -> cmp(r.kl, r.kr);
+        reifyEff(f) {
+            case Pure(g) =>
+                if (useParallelEvaluation(s))
+                    let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
+                    let Set(t) = s;
+                    let o = RedBlackTree.parMinimumBy(threads() - 1, h, t) as & Pure;
+                    Option.map(fst, o)
+                else
+                    min()
+            case _ => min()
+        }
 
     ///
     /// Optionally finds the largest element of `s` according to the `Order` on `a`.
@@ -241,10 +270,20 @@ namespace Set {
     ///
     /// Returns the number of elements in `s` that satisfy the predicate `f`.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
     @ParallelWhenPure
     pub def count(f: a -> Bool & ef, s: Set[a]): Int32 & ef =
-        let Set(t) = s;
-        RedBlackTree.count((k, _) -> f(k), t)
+        reifyEff(f) {
+            case Pure(g) =>
+                if (useParallelEvaluation(s))
+                    let h = (k, _) -> g(k);
+                    let Set(t) = s;
+                    RedBlackTree.parCount(threads() - 1, h, t) as & Pure
+                else
+                    foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
+            case _  => foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
+        }
 
     ///
     /// Returns the union of the elements in `s`.

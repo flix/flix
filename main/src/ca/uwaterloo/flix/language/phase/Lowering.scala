@@ -41,7 +41,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 // - Return a [[Validation]] from visitExp etc.
 // - Decide which expressions to allow as head and body terms.
 
-object Lowering extends Phase[Root, Root] {
+object Lowering {
 
   private object Defs {
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.solve")
@@ -129,10 +129,10 @@ object Lowering extends Phase[Root, Root] {
     * Translates internal Datalog constraints into Flix Datalog constraints.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Lowering") {
-    val defs = ParOps.parMap(root.defs.values, (d: Def) => visitDef(d)(root, flix))
-    val sigs = ParOps.parMap(root.sigs.values, (s: Sig) => visitSig(s)(root, flix))
-    val instances = ParOps.parMap(root.instances.values, (insts: List[Instance]) => insts.map(i => visitInstance(i)(root, flix)))
-    val enums = ParOps.parMap(root.enums.values, (e: Enum) => visitEnum(e)(root, flix))
+    val defs = ParOps.parMap(root.defs.values)((d: Def) => visitDef(d)(root, flix))
+    val sigs = ParOps.parMap(root.sigs.values)((s: Sig) => visitSig(s)(root, flix))
+    val instances = ParOps.parMap(root.instances.values)((insts: List[Instance]) => insts.map(i => visitInstance(i)(root, flix)))
+    val enums = ParOps.parMap(root.enums.values)((e: Enum) => visitEnum(e)(root, flix))
 
     val newDefs = defs.map(kv => kv.sym -> kv).toMap
     val newSigs = sigs.map(kv => kv.sym -> kv).toMap
@@ -141,7 +141,7 @@ object Lowering extends Phase[Root, Root] {
 
     // Sigs are shared between the `sigs` field and the `classes` field.
     // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting classes.
-    val classes = ParOps.parMap(root.classes.values, (c: Class) => visitClass(c, newSigs)(root, flix))
+    val classes = ParOps.parMap(root.classes.values)((c: Class) => visitClass(c, newSigs)(root, flix))
     val newClasses = classes.map(kv => kv.sym -> kv).toMap
     root.copy(defs = newDefs, sigs = newSigs, instances = newInstances, enums = newEnums, classes = newClasses).toSuccess
   }

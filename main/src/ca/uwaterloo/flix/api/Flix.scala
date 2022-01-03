@@ -44,24 +44,26 @@ object Flix {
 class Flix {
 
   /**
-    * A sequence of strings to parsed into Flix ASTs.
-    */
-  private val strings = ListBuffer.empty[String]
-
-  /**
-    * A sequence of paths to be parsed into Flix ASTs.
-    */
-  private val paths = ListBuffer.empty[Path]
-
-  /**
     * A sequence of inputs to be parsed into Flix ASTs.
     */
-  private val inputs = ListBuffer.empty[Input]
+  private val inputs = mutable.Map.empty[String, Input]
 
   /**
     * A set of reachable root definitions.
     */
   private val reachableRoots = mutable.Set.empty[Symbol.DefnSym]
+
+  /**
+    * The set of sources changed since last compilation.
+    */
+  private var changeSet: ChangeSet = ChangeSet.Everything
+
+  /**
+    * A cache of compiled ASTs (for incremental compilation).
+    */
+  private var cachedParsedAst: ParsedAst.Root = ParsedAst.Root(Map.empty)
+  private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, Set.empty)
+  private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, Map.empty, Map.empty)
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -268,39 +270,36 @@ class Flix {
   /**
     * Adds the given string `s` to the list of strings to be parsed.
     */
-  def addStr(s: String): Flix = {
-    if (s == null)
-      throw new IllegalArgumentException("'s' must be non-null.")
-    strings += s
-    this
-  }
-
-  /**
-    * Adds the given path `p` to the list of paths to be parsed.
-    */
-  def addPath(p: String): Flix = {
-    if (p == null)
-      throw new IllegalArgumentException("'p' must be non-null.")
-    paths += Paths.get(p)
-    this
+  def addSourceCode(s: String): Flix = {
+    addSourceCode("<unnamed>", s)
   }
 
   /**
     * Adds the given string `text` with the given `name`.
     */
-  def addInput(name: String, text: String): Flix = {
+  def addSourceCode(name: String, text: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
     if (text == null)
       throw new IllegalArgumentException("'text' must be non-null.")
-    inputs += Input.Internal(name, text)
+    addInput(name, Input.Text(name, text, stable = false))
     this
   }
 
   /**
     * Adds the given path `p` to the list of paths to be parsed.
     */
-  def addPath(p: Path): Flix = {
+  def addSourcePath(p: String): Flix = {
+    if (p == null)
+      throw new IllegalArgumentException("'p' must be non-null.")
+    addSourcePath(Paths.get(p))
+    this
+  }
+
+  /**
+    * Adds the given path `p` to the list of paths to be parsed.
+    */
+  def addSourcePath(p: Path): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
@@ -310,8 +309,26 @@ class Flix {
     if (!Files.isReadable(p))
       throw new IllegalArgumentException(s"'$p' must be a readable file.")
 
-    paths += p
+    if (p.getFileName.toString.endsWith(".flix")) {
+      addInput(p.toString, Input.TxtFile(p))
+    } else if (p.getFileName.toString.endsWith(".fpkg")) {
+      addInput(p.toString, Input.PkgFile(p))
+    } else {
+      throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
+    }
+
     this
+  }
+
+  /**
+    * Adds the given `input` under the given `name`.
+    */
+  private def addInput(name: String, input: Input): Unit = inputs.get(name) match {
+    case None =>
+      inputs += name -> input
+    case Some(_) =>
+      changeSet = changeSet.markChanged(input)
+      inputs += name -> input
   }
 
   /**
@@ -341,16 +358,16 @@ class Flix {
   }
 
   /**
+    * Returns the reachable root definitions.
+    */
+  def getReachableRoots: Set[Symbol.DefnSym] = reachableRoots.toSet
+
+  /**
     * Adds the given fully-qualified name as a reachable root.
     */
   def addReachableRoot(fqn: String): scala.Unit = {
     reachableRoots += Symbol.mkDefnSym(fqn)
   }
-
-  /**
-    * Returns the reachable root definitions.
-    */
-  def getReachableRoots: Set[Symbol.DefnSym] = reachableRoots.toSet
 
   /**
     * Sets the options used for this Flix instance.
@@ -392,32 +409,41 @@ class Flix {
     * Compiles the Flix program and returns a typed ast.
     */
   def check(): Validation[TypedAst.Root, CompilationMessage] = {
+    // Mark this object as implicit.
+    implicit val flix: Flix = this
+
     // Initialize fork join pool.
     initForkJoin()
 
     // Reset the phase information.
     phaseTimers = ListBuffer.empty
 
-    // Construct the compiler pipeline.
-    val pipeline =
-      Reader |>
-        Parser |>
-        Weeder |>
-        Namer |>
-        Resolver |>
-        Kinder |>
-        Deriver |>
-        Typer |>
-        Statistics |>
-        Instances |>
-        Stratifier |>
-        PatternExhaustiveness |>
-        Redundancy |>
-        Terminator |>
-        Safety
-
-    // Apply the pipeline to the parsed AST.
-    val result = pipeline.run(getInputs)(this)
+    // The compiler pipeline.
+    val result = for {
+      afterReader <- Reader.run(getInputs)
+      afterParser <- Parser.run(afterReader, cachedParsedAst, changeSet)
+      afterWeeder <- Weeder.run(afterParser, cachedWeededAst, changeSet)
+      afterNamer <- Namer.run(afterWeeder)
+      afterResolver <- Resolver.run(afterNamer)
+      afterKinder <- Kinder.run(afterResolver)
+      afterDeriver <- Deriver.run(afterKinder)
+      afterTyper <- Typer.run(afterDeriver, cachedTypedAst, changeSet)
+      afterStatistics <- Statistics.run(afterTyper)
+      afterInstances <- Instances.run(afterStatistics)
+      afterStratifier <- Stratifier.run(afterInstances)
+      afterPatternExhaustiveness <- PatternExhaustiveness.run(afterStratifier)
+      afterRedundancy <- Redundancy.run(afterPatternExhaustiveness)
+      afterTerminator <- Terminator.run(afterRedundancy)
+      afterSafety <- Safety.run(afterTerminator)
+    } yield {
+      if (options.incremental) {
+        // We update the caches, but only if incremental compilation is enabled.
+        this.cachedParsedAst = afterParser
+        this.cachedWeededAst = afterWeeder
+        this.cachedTypedAst = afterTyper
+      }
+      afterSafety
+    }
 
     // Shutdown fork join pool.
     shutdownForkJoin()
@@ -433,28 +459,29 @@ class Flix {
     * Compiles the given typed ast to an executable ast.
     */
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = {
+    // Mark this object as implicit.
+    implicit val flix: Flix = this
+
     // Initialize fork join pool.
     initForkJoin()
 
-    // Construct the compiler pipeline.
-    val pipeline = Documentor |>
-      Lowering |>
-      Monomorph |>
-      Simplifier |>
-      ClosureConv |>
-      LambdaLift |>
-      Tailrec |>
-      Inliner |>
-      Optimizer |>
-      TreeShaker |>
-      VarNumbering |>
-      Finalize |>
-      Eraser |>
-      JvmBackend |>
-      Finish
-
-    // Apply the pipeline to the parsed AST.
-    val result = pipeline.run(typedAst)(this)
+    val result = for {
+      afterDocumentor <- Documentor.run(typedAst)
+      afterLowering <- Lowering.run(afterDocumentor)
+      afterMonomorph <- Monomorph.run(afterLowering)
+      afterSimplifier <- Simplifier.run(afterMonomorph)
+      afterClosureConv <- ClosureConv.run(afterSimplifier)
+      afterLambdaLift <- LambdaLift.run(afterClosureConv)
+      afterTailrec <- Tailrec.run(afterLambdaLift)
+      afterInliner <- Inliner.run(afterTailrec)
+      afterOptimizer <- Optimizer.run(afterInliner)
+      afterTreeShaker <- TreeShaker.run(afterOptimizer)
+      afterVarNumbering <- VarNumbering.run(afterTreeShaker)
+      afterFinalize <- Finalize.run(afterVarNumbering)
+      afterEraser <- Eraser.run(afterFinalize)
+      afterJvmBackend <- JvmBackend.run(afterEraser)
+      afterFinish <- Finish.run(afterJvmBackend)
+    } yield afterFinish
 
     // Shutdown fork join pool.
     shutdownForkJoin()
@@ -547,38 +574,19 @@ class Flix {
     * Returns a list of inputs constructed from the strings and paths passed to Flix.
     */
   private def getInputs: List[Input] = {
-    val si1 = getStringInputs
-    val si2 = getPathInputs
-    val si3 = inputs.toList
-    val si4 = options.lib match {
+    val lib = options.lib match {
       case LibLevel.Nix => Nil
-      case LibLevel.Min => getInputs(coreLibrary)
-      case LibLevel.All => getInputs(coreLibrary ++ standardLibrary)
+      case LibLevel.Min => getLibraryInputs(coreLibrary)
+      case LibLevel.All => getLibraryInputs(coreLibrary ++ standardLibrary)
     }
-    si1 ::: si2 ::: si3 ::: si4
-  }
-
-  /**
-    * Returns the inputs corresponding to the strings passed to Flix.
-    */
-  private def getStringInputs: List[Input] = strings.foldLeft(List.empty[Input]) {
-    case (xs, s) => Input.Str(s) :: xs
-  }
-
-  /**
-    * Returns the inputs corresponding to the paths passed to Flix.
-    */
-  private def getPathInputs: List[Input] = paths.foldLeft(List.empty[Input]) {
-    case (xs, p) if p.getFileName.toString.endsWith(".flix") => Input.TxtFile(p) :: xs
-    case (xs, p) if p.getFileName.toString.endsWith(".fpkg") => Input.PkgFile(p) :: xs
-    case (_, p) => throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
+    inputs.values.toList ::: lib
   }
 
   /**
     * Returns the inputs for the given list of (path, text) pairs.
     */
-  private def getInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
-    case (xs, (name, text)) => Input.Internal(name, text) :: xs
+  private def getLibraryInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
+    case (xs, (name, text)) => Input.Text(name, text, stable = true) :: xs
   }
 
   /**

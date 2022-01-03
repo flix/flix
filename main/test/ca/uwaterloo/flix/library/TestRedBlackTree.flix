@@ -201,166 +201,103 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // mapWithKey                                                              //
+    // Parallel Helper functions                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    ///
+    /// Returns the number of threads to use for parallel evaluation.
+    ///
+    def threads(): Int32 =
+        // Note: We use a multiple of the number of physical cores for better performance.
+        let multiplier = 4;
+        multiplier * Environment.getVirtualProcessors()
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parMapWithKey                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def mapWithKey01(): Bool =
-        let Map(t) = Map#{}: Map[Int32, Int32];
-        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == Map#{}
+        let Map(t) = Map#{}: Map[Unit, Unit];
+        let m = Map(RedBlackTree.mapWithKey((_, v) -> v, t));
+        m == Map#{}
 
     @test
     def mapWithKey02(): Bool =
         let Map(t) = Map#{1 => 4};
-        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == Map#{1 => 5}
+        let m = Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
+        m == Map#{1 => 5}
 
     @test
     def mapWithKey03(): Bool =
         let Map(t) = Map#{2 => -1, 0 => 0};
-        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == Map#{2 => 1, 0 => 0}
+        let m = Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
+        m == Map#{2 => 1, 0 => 0}
 
     @test
     def mapWithKey04(): Bool =
         let Map(t) = Map#{2 => -1, 5 => 15, 11 => -9};
-        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == Map#{2 => 1, 5 => 20, 11 => 2}
+        let m = Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
+        m == Map#{2 => 1, 5 => 20, 11 => 2}
 
     @test
     def mapWithKey05(): Bool =
         let Map(t) = Map#{2 => -1, 5 => 15, 11 => -9, 8 => 8};
-        Map(RedBlackTree.mapWithKey((k, v) -> k + v, t)) == Map#{2 => 1, 5 => 20, 11 => 2, 8 => 16}
+        let m = Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
+        m == Map#{2 => 1, 5 => 20, 11 => 2, 8 => 16}
 
     @test
-    def mapWithKey06(): Bool =
+    def mapWithKey06(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, range) |> List.toMap;
+        let a = MutList.new();
+        Map.mapWithKey((k, v) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); v }, m);
+        MutList.toList(a) == range
+
+    @test
+    def mapWithKey07(): Bool =
         let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
         let expected = List.zip(List.range(0, 2000), List.range(1, 2001)) |> List.toMap;
         Map(RedBlackTree.mapWithKey((_, v) -> v + 1, t)) == expected
 
     @test
-    def mapWithKey07(): Bool =
+    def mapWithKey08(): Bool =
         let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         let expected = List.zip(List.range(0, 2000), List.range(-999, 1001)) |> List.toMap;
         Map(RedBlackTree.mapWithKey((_, v) -> v + 1, t)) == expected
 
-    @test
-    def mapWithKey08(): Bool & Impure =
-        let range = List.range(0, 2000);
-        let Map(t) = List.zip(range, range) |> List.toMap;
-        let a = Array.new(-1, 2000);
-        let i = ref 0;
-        RedBlackTree.mapWithKey((_, v) -> { a[deref i] = v; i := 1 + deref i; v }, t);
-        Array.sameElements(a, List.toArray(range))
-
-    @test
-    def mapWithKey09(): Bool & Impure =
-        let range = List.range(0, 2000);
-        let Map(t) = List.zip(range, range) |> List.toMap;
-        let a = MutList.new();
-        RedBlackTree.mapWithKey((_, v) -> { let b = MutList.new(); MutList.push!(v, b); MutList.append!(a, b); v }, t);
-        MutList.sameElements(a, List.toMutList(range))
-
 
     /////////////////////////////////////////////////////////////////////////////
-    // count                                                                   //
+    // seqCount                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def count01(): Bool =
-        let Map(t) = Map#{}: Map[Int32, Int32];
-        RedBlackTree.count((k, v) -> k == v, t) == 0
-
-    @test
-    def count02(): Bool =
-        let Map(t) = Map#{1 => 2};
-        RedBlackTree.count((k, v) -> k == v, t) == 0
-
-    @test
-    def count03(): Bool =
-        let Map(t) = Map#{1 => 1};
-        RedBlackTree.count((k, v) -> k == v, t) == 1
-
-    @test
-    def count04(): Bool =
-        let Map(t) = Map#{1 => 2, 2 => 3};
-        RedBlackTree.count((k, v) -> k == v, t) == 0
-
-    @test
-    def count05(): Bool =
-        let Map(t) = Map#{1 => 1, 2 => 3};
-        RedBlackTree.count((k, v) -> k == v, t) == 1
-
-    @test
-    def count06(): Bool =
+    def parCount01(): Bool & Impure =
         let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
-        RedBlackTree.count((k, v) -> k == v, t) == 2000
+        RedBlackTree.parCount(threads() - 1, (k, v) -> k == v, t) == 2000
 
     @test
-    def count07(): Bool =
+    def parCount02(): Bool & Impure =
         let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
-        RedBlackTree.count((k, v) -> k - 1000 == v, t) == 2000
+        RedBlackTree.parCount(threads() - 1, (k, v) -> k - 1000 == v, t) == 2000
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // seqMinimumBy                                                            //
+    /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def count08(): Bool & Impure =
+    def parMinimumBy01(): Bool & Impure =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, range) |> List.toMap;
-        let a = MutList.new();
-        RedBlackTree.count((_, v) -> { let b = MutList.new(); MutList.push!(v, b); MutList.append!(a, b); true }, t);
-        MutList.sameElements(a, List.toMutList(range))
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // minimumBy                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+        RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(0, 0)
 
     @test
-    def minimumBy01(): Bool =
-        let Map(t) = Map#{}: Map[Int32, Int32];
-        RedBlackTree.minimumBy((x, _, y, _) -> x <=> y, t) == None
-
-    @test
-    def minimumBy02(): Bool =
-        let Map(t) = Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5};
-        RedBlackTree.minimumBy((x, _, y, _) -> x <=> y, t) == Some((1, 2))
-
-    @test
-    def minimumBy03(): Bool =
-        let Map(t) = Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2};
-        RedBlackTree.minimumBy((x, _, y, _) -> x <=> y, t) == Some((0, 2))
-
-    @test
-    def minimumBy04(): Bool =
-        let Map(t) = Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2};
-        RedBlackTree.minimumBy((x, _, y, _) -> x <=> y, t) == Some((-44, 4))
-
-    @test
-    def minimumBy05(): Bool & Impure =
-        /*
-         * This test checks that the tree is traversed sequentially
-         * and is tightly coupled to the implementation.
-         * Since the keys and values are equal, the left-most / lowest valued key
-         * also holds the lowest value in the tree.
-         * Thus, all comparisons should yield `LessThan`.
-         * Additionally, since every node compares itself with the lowest value of
-         * its left subtree and the result of that is compared with the lowest value
-         * of right subtree, it yields a total of n - 1 comparisons (number of edges).
-         */
-        let n = 2000;
-        let range = List.range(0, n);
-        let Map(t) = List.zip(range, range) |> List.toMap;
-        let a = MutList.new();
-        RedBlackTree.minimumBy((_, x, _, y) -> {
-            let r = x <=> y;
-            let b = MutList.new();
-            MutList.push!(r, b);
-            MutList.append!(a, b);
-            r
-        }, t);
-        MutList.toList(a) == List.repeat(n - 1, LessThan)
-
-    @test
-    def minimumBy06(): Bool =
+    def parMinimumBy02(): Bool & Impure =
         let range = List.range(0, 2000);
         let Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
-        RedBlackTree.minimumBy((_, x, _, y) -> x <=> y, t) == Some(1999, 0)
+        RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(1999, 0)
 
     /////////////////////////////////////////////////////////////////////////////
     // eq                                                                      //

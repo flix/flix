@@ -29,20 +29,29 @@ import scala.collection.immutable.Seq
 /**
   * A phase to transform source files into abstract syntax trees.
   */
-object Parser extends Phase[List[Source], ParsedAst.Program] {
+object Parser {
 
   /**
     * Parses the given source inputs into an abstract syntax tree.
     */
-  def run(sources: List[Source])(implicit flix: Flix): Validation[ParsedAst.Program, CompilationMessage] = flix.phase("Parser") {
-    // Parse each source in parallel.
-    val roots = sequence(ParOps.parMap(sources, parseRoot))
+  def run(root: Map[Source, Unit], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] =
+    flix.phase("Parser") {
+      // Compute the stale and fresh sources.
+      val (stale, fresh) = changeSet.partition(root, oldRoot.units)
 
-    // Sequence and combine the ASTs into one abstract syntax tree.
-    mapN(roots) {
-      case as => ParsedAst.Program(as)
+      // Parse each stale source in parallel.
+      val results = ParOps.parMap(stale.keys)(parseRoot)
+
+      // Sequence and combine the ASTs into one abstract syntax tree.
+      Validation.sequence(results) map {
+        case as =>
+          val m = as.foldLeft(fresh) {
+            case (acc, (src, u)) => acc + (src -> u)
+          }
+
+          ParsedAst.Root(m)
+      }
     }
-  }
 
   /**
     * Replaces `"\n"` `"\r"` `"\t"` with spaces (not actual newlines etc. but dash n etc.).
@@ -55,13 +64,13 @@ object Parser extends Phase[List[Source], ParsedAst.Program] {
   /**
     * Attempts to parse the given `source` as a root.
     */
-  def parseRoot(source: Source)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] = {
+  private def parseRoot(source: Source)(implicit flix: Flix): Validation[(Ast.Source, ParsedAst.CompilationUnit), CompilationMessage] = {
     flix.subtask(source.name)
 
     val parser = new Parser(source)
     parser.Root.run() match {
       case scala.util.Success(ast) =>
-        ast.toSuccess
+        (source, ast).toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
         val loc = SourceLocation(None, source, SourceKind.Real, e.position.line, e.position.column, e.position.line, e.position.column)
         ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
@@ -84,8 +93,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Root                                                                    //
   /////////////////////////////////////////////////////////////////////////////
-  def Root: Rule1[ParsedAst.Root] = rule {
-    SP ~ UseDeclarations ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.Root
+  def Root: Rule1[ParsedAst.CompilationUnit] = rule {
+    SP ~ UseDeclarations ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.CompilationUnit
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1133,7 +1142,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
-    Predicates.Body.Positive | Predicates.Body.Negative | Predicates.Body.Guard | Predicates.Body.Loop | Predicates.Body.Filter
+    Predicates.Body.Positive | Predicates.Body.Negative | Predicates.Body.Guard | Predicates.Body.Loop
   }
 
   object Predicates {
@@ -1164,10 +1173,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       def Guard: Rule1[ParsedAst.Predicate.Body.Guard] = rule {
         SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Guard
-      }
-
-      def Filter: Rule1[ParsedAst.Predicate.Body.Filter] = rule {
-        SP ~ Names.QualifiedDefinition ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Body.Filter
       }
 
       // TODO: Allow single variable
@@ -1644,7 +1649,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def PossibleDocComment: Rule1[Option[ParsedAst.Doc]] = rule {
-    Comments.DocCommentBlock ~> { Some(_) } | Comment ~ push(None)
+    Comments.DocCommentBlock ~> {
+      Some(_)
+    } | Comment ~ push(None)
   }
 
   def optWS: Rule0 = rule {

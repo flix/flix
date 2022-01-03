@@ -32,7 +32,7 @@ import ca.uwaterloo.flix.util.{Formatter, Validation}
   * - Elimination of dead branches (e.g. if (true) e1 else e2).
   * - Copy propagation (e.g. let z = w; let y = z; let x = y; x -> w)
   */
-object Optimizer extends Phase[Root, Root] {
+object Optimizer {
 
   /**
     * Returns an optimized version of the given AST `root`.
@@ -327,7 +327,7 @@ object Optimizer extends Phase[Root, Root] {
 
     // Print the ast if debugging is enabled.
     if (flix.options.debug) {
-      println(PrettyPrinter.Lifted.fmtRoot(result, Formatter.AnsiTerminalFormatter))
+      //println(PrettyPrinter.Lifted.fmtRoot(result, Formatter.AnsiTerminalFormatter))
     }
 
     result.toSuccess

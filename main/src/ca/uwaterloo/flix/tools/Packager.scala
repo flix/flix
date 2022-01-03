@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.github.GitHub
@@ -205,14 +206,14 @@ object Packager {
     // Add all source files.
     for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
       if (sourceFile.getFileName.toString.endsWith(".flix")) {
-        flix.addPath(sourceFile)
+        flix.addSourcePath(sourceFile)
       }
     }
 
     // Add all test files.
     for (testFile <- getAllFiles(getTestDirectory(p))) {
       if (testFile.getFileName.toString.endsWith(".flix")) {
-        flix.addPath(testFile)
+        flix.addSourcePath(testFile)
       }
     }
 
@@ -220,7 +221,7 @@ object Packager {
     for (file <- getAllFiles(getLibraryDirectory(p))) {
       if (file.getFileName.toString.endsWith(".fpkg")) {
         // Case 1: It's a Flix package.
-        flix.addPath(file)
+        flix.addSourcePath(file)
       } else if (file.getFileName.toString.endsWith(".jar")) {
         // Case 2: It's a JAR.
         flix.addJar(file)
@@ -358,8 +359,9 @@ object Packager {
       val name = entry.getName
       if (name.endsWith(".flix")) {
         val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
-        val array = new String(bytes, flix.defaultCharset).toCharArray
-        result += Source(name, array)
+        val str = new String(bytes, flix.defaultCharset)
+        val arr = str.toCharArray
+        result += Source(Ast.Input.Text(name, str, stable = false), arr, stable = false)
       }
     }
 

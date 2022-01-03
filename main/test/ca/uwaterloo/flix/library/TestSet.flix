@@ -464,6 +464,15 @@ def count06(): Bool = Set.count(i -> i > 3, Set#{1, 8}) == 1
 @test
 def count07(): Bool = Set.count(i -> i > 3, Set#{7, 6}) == 2
 
+@test
+def count08(): Bool & Impure =
+    let range = List.range(0, 2000);
+    let s = range |> List.toSet;
+    let a = MutList.new();
+    Set.count(x -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(a, b); true }, s);
+    MutList.toList(a) == range
+
+
 /////////////////////////////////////////////////////////////////////////////
 // flatten                                                                 //
 /////////////////////////////////////////////////////////////////////////////
@@ -808,6 +817,15 @@ def map14(): Bool = Set.map(x -> x rem 9, Set#{0, 5, 1, -9, -8}) == Set#{5, 1, 0
 
 @test
 def map15(): Bool = Set.map(x -> x rem 9, Set#{0, 5, 1, 10, 7, 19, 28, 2}) == Set#{0, 5, 7, 1, 2}
+
+@test
+def map16(): Bool & Impure =
+    let range = List.range(0, 2000);
+    let s = List.toSet(range);
+    let a = MutList.new();
+    Set.map(x -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(a, b); x }, s);
+    MutList.toList(a) == range
+
 
 /////////////////////////////////////////////////////////////////////////////
 // flatMap                                                                 //
@@ -1215,6 +1233,14 @@ def unfoldWithIter06(): Bool & Impure =
 
     @test
     def minimumBy04(): Bool = Set.minimumBy((x, y) -> x <=> y, Set.range(5, 55)) == Some(5)
+
+    @test
+    def minimumBy05(): Bool & Impure =
+        let s = List.range(0, 2000) |> List.toSet;
+        let a = MutList.new();
+        Set.minimumBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(a, b); x <=> y }, s);
+        MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
+
 
     /////////////////////////////////////////////////////////////////////////////
     // maximum                                                                 //

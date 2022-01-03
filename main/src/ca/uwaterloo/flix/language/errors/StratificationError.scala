@@ -33,7 +33,7 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
 
   def message(formatter: Formatter): String = {
     import formatter._
-    s"""${line(kind, source.format)}
+    s"""${line(kind, source.name)}
        |>> The expression is not stratified. A predicate depends negatively on itself.
        |
        |${code(loc, "the expression is not stratified.")}

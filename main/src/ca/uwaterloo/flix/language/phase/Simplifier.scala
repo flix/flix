@@ -28,7 +28,7 @@ import scala.collection.mutable
 /**
   * A phase that simplifies the TypedAst by elimination of pattern matching and other rewritings.
   */
-object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
+object Simplifier {
 
   type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Def]
 
