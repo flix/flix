@@ -1328,6 +1328,4 @@ def unfoldWithIter06(): Bool & Impure =
     def toMapWith05(): Bool =
         Set.toMapWith(x -> x + 10, Set#{7, 1, 3, 6}) == Map#{1 => 11, 3 => 13, 6 => 16, 7 => 17}
 
-    }
-
 }
