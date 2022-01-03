@@ -142,13 +142,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Enum: Rule1[ParsedAst.Declaration.Enum] = {
       def Case: Rule1[ParsedAst.Case] = {
+        // the optional `()` prevents () from being seen as an empty record row
         def CaseWithUnit: Rule1[ParsedAst.Case] = namedRule("Case") {
-          SP ~ Names.Tag ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) =>
+          SP ~ Names.Tag ~ SP ~ optional("()") ~> ((sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) =>
             ParsedAst.Case(sp1, ident, ParsedAst.Type.Unit(sp1, sp2), sp2))
         }
 
         def CaseWithType: Rule1[ParsedAst.Case] = namedRule("Case") {
-          SP ~ Names.Tag ~ Type ~ SP ~> ParsedAst.Case
+          SP ~ Names.Tag ~ Types.Tuple ~ SP ~> ParsedAst.Case
         }
 
         rule {
