@@ -1308,4 +1308,26 @@ def unfoldWithIter06(): Bool & Impure =
     def toIterator03(): Bool & Impure =
         Set.range(0, 100) |> Set.toIterator |> Iterator.toSet == Set.range(0, 100)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toMapWith                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMapWith02(): Bool =
+        Set.toMapWith(x -> 0 * x, Set#{}) == Map#{}
+
+    @test
+    def toMapWith03(): Bool =
+        Set.toMapWith(x -> 2 * x, Set#{1, 3, 6}) == Map#{1 => 2, 3 => 6, 6 => 12}
+
+    @test
+    def toMapWith04(): Bool =
+        Set.toMapWith(x -> x + 10, Set#{1, 3, 6}) == Map#{1 => 11, 3 => 13, 6 => 16}
+
+    @test
+    def toMapWith05(): Bool =
+        Set.toMapWith(x -> x + 10, Set#{7, 1, 3, 6}) == Map#{1 => 11, 3 => 13, 6 => 16, 7 => 17}
+
+    }
+
 }
