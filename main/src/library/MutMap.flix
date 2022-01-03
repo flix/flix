@@ -66,22 +66,22 @@ namespace MutMap {
         Map.minimumKeyBy(cmp, deref mm)
 
     ///
-    /// Optionally finds `k -> v` where `k` is the largest key according to the `Order` instance of `k`.
+    /// Optionally finds `k => v` where `k` is the largest key according to the `Order` instance of `k`.
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def maximum(m: MutMap[k, v]): Option[(k, v)] & Impure =
+    pub def maximumKey(m: MutMap[k, v]): Option[(k, v)] & Impure =
         let MutMap(mm) = m;
-        Map.maximum(deref mm)
+        Map.maximumKey(deref mm)
 
     ///
-    /// Optionally finds `k -> v` where `k` is the largest key according to the given comparator `cmp`.
+    /// Optionally finds `k => v` where `k` is the largest key according to the given comparator `cmp`.
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def maximumBy(cmp: (k, v, k, v) -> Comparison, m: MutMap[k, v]): Option[(k, v)] & Impure =
+    pub def maximumKeyBy(cmp: (k, k) -> Comparison, m: MutMap[k, v]): Option[(k, v)] & Impure =
         let MutMap(mm) = m;
-        Map.maximumBy(cmp, deref mm)
+        Map.maximumKeyBy(cmp, deref mm)
 
     ///
     /// Returns the keys of the mutable map `m`.
