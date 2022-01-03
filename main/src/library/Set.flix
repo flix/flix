@@ -270,6 +270,8 @@ namespace Set {
     ///
     /// Returns the number of elements in `s` that satisfy the predicate `f`.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
     @ParallelWhenPure
     pub def count(f: a -> Bool & ef, s: Set[a]): Int32 & ef =
         reifyEff(f) {

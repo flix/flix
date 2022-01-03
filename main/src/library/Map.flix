@@ -215,23 +215,67 @@ namespace Map {
             case _ => min()
         }
 
-
     ///
     /// Optionally finds `k => v` where `k` is the largest key according to the `Order` instance of `k`.
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def maximum(m: Map[k, v]): Option[(k, v)] =
-        let Map(xs) = m;
-        RedBlackTree.maximum(xs)
+    pub def maximumKey(m: Map[k, v]): Option[(k, v)] =
+        let Map(t) = m;
+        RedBlackTree.maximum(t)
 
     ///
     /// Optionally finds `k => v` where `k` is the largest key according to the given comparator `cmp`.
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def maximumBy(cmp: (k, v, k, v) -> Comparison, m: Map[k, v]): Option[(k, v)] =
-        reduceLeftWithKey((k1, v1, k2, v2) -> if (cmp(k1, v1, k2, v2) == GreaterThan) (k1, v1) else (k2, v2), m)
+    /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
+    ///
+    @ParallelWhenPure
+    pub def maximumKeyBy(cmp: (k, k) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
+        def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == GreaterThan) (kl, vl) else (kr, vr), m);
+        let f = r -> cmp(r.kl, r.kr);
+        reifyEff(f) {
+            case Pure(g) =>
+                if (useParallelEvaluation(m))
+                    let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
+                    let Map(t) = m;
+                    RedBlackTree.parMaximumBy(threads() - 1, h, t) as & Pure
+                else
+                    max()
+            case _ => max()
+        }
+
+    ///
+    /// Optionally finds `k => v` where `v` is the largest value.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    @Parallel
+    pub def maximumValue(m: Map[k, v]): Option[(k, v)] with Order[v] =
+        maximumValueBy((x, y) -> x <=> y, m)
+
+    ///
+    /// Optionally finds `k => v` where `v` is the largest value according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
+    ///
+    @ParallelWhenPure
+    pub def maximumValueBy(cmp: (v, v) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
+        def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == GreaterThan) (kl, vl) else (kr, vr), m);
+        let f = r -> cmp(r.vl, r.vr);
+        reifyEff(f) {
+            case Pure(g) =>
+                if (useParallelEvaluation(m))
+                    let h = (_, vl, _, vr) -> g({vl = vl, vr = vr});
+                    let Map(t) = m;
+                    RedBlackTree.parMaximumBy(threads() - 1, h, t) as & Pure
+                else
+                    max()
+            case _ => max()
+        }
 
     ///
     /// Returns the keys of `m`.
