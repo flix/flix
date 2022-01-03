@@ -78,6 +78,17 @@ namespace Console {
         Object.toOption(console()) |> Option.map(consoleFlush);
         ()
 
+    /// Returns `s` formatted as bold.
+    ///
+    pub def bold(s: a): String with ToString[a] =
+        let esc = escape();
+        match colorSupport() {
+            case ColorSupport.None      => ToString.toString(s)
+            case ColorSupport.Ansi      =>
+                esc + "[1m" + ToString.toString(s) + esc + "[0m"
+            case ColorSupport.TrueColor =>
+                esc + "[38;2;1m" + ToString.toString(s) + esc + "[0m"
+
     ///
     /// Returns `s` formatted with color `hexCode`.
     ///
