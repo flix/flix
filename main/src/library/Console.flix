@@ -78,6 +78,7 @@ namespace Console {
         Object.toOption(console()) |> Option.map(consoleFlush);
         ()
 
+    ///
     /// Returns `s` formatted as bold.
     ///
     pub def bold(s: a): String with ToString[a] =
