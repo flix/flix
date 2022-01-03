@@ -79,6 +79,25 @@ namespace Console {
         ()
 
     ///
+    /// Returns `s` formatted with color `hexCode`.
+    ///
+    pub def hexColor(hexCode: String, s: a): String & Impure with ToString[a] =
+        import static java.lang.Integer.parseInt(String, Int32);
+
+        let hexNumbers = String.replace(from = "#", to = "", hexCode);
+        if(String.length(hexNumbers) == 6) {
+            let red = String.slice(0, 2, hexNumbers);
+            let green = String.slice(2, 4, hexNumbers);
+            let blue = String.slice(4, 6, hexNumbers);
+
+            let color = (parseInt(red, 16), parseInt(green, 16), parseInt(blue, 16));
+
+            Console.rgb(color, ToString.toString(s), isFg = true)
+        } else {
+            ToString.toString(s)
+        }
+
+    ///
     /// Returns the string `s` formatted with the given RGB color `c`.
     ///
     pub def rgb(c: (Int32, Int32 , Int32), s: String, opts: {isFg :: Bool}): String =
