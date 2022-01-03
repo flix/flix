@@ -497,9 +497,6 @@ namespace Set {
     ///
     /// Returns a map with elements of `s` as keys and `f` applied as values.
     ///
-    /// If `s` contains multiple mappings with the same key, `toMapWith` does not
-    /// make any guarantees about which mapping will be in the resulting map.
-    ///
     pub def toMapWith(f: a -> b, s: Set[a]): Map[a, b] with Order[a] =
             Set.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
 
