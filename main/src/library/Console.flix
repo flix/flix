@@ -109,19 +109,6 @@ namespace Console {
         }
 
     ///
-    /// Returns `s` formatted as bold.
-    ///
-    pub def bold(s: a): String with ToString[a] =
-        let esc = escape();
-        match colorSupport() {
-            case ColorSupport.None      => ToString.toString(s)
-            case ColorSupport.Ansi      =>
-                esc + "[1m" + ToString.toString(s) + esc + "[0m"
-            case ColorSupport.TrueColor =>
-                esc + "[38;2;1m" + ToString.toString(s) + esc + "[0m"
-        }
-
-    ///
     /// Returns the string `s` formatted with the given RGB color `c`.
     ///
     pub def rgb(c: (Int32, Int32 , Int32), s: String, opts: {isFg :: Bool}): String =
