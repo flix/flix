@@ -23,41 +23,6 @@ namespace TestStringBuilder {
 def new01(): StringBuilder & Impure = StringBuilder.new()
 
 /////////////////////////////////////////////////////////////////////////////
-// append!                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def append01!(): Bool & Impure =
-    let sb1 = StringBuilder.new();
-    let sb2 = StringBuilder.new();
-    StringBuilder.append!(sb1, sb2);
-    StringBuilder.toString(sb1) == ""
-
-@test
-def append02!(): Bool & Impure =
-    let sb1 = StringBuilder.new();
-    let sb2 = StringBuilder.new();
-    StringBuilder.appendString!(sb1, "Hello");
-    StringBuilder.append!(sb1, sb2);
-    StringBuilder.toString(sb1) == "Hello"
-
-@test
-def append03!(): Bool & Impure =
-    let sb1 = StringBuilder.new();
-    let sb2 = StringBuilder.new();
-    StringBuilder.appendString!(sb2, "World!");
-    StringBuilder.append!(sb1, sb2);
-    StringBuilder.toString(sb1) == "World!"
-
-@test
-def append04!(): Bool & Impure =
-    let sb1 = StringBuilder.new();
-    let sb2 = StringBuilder.new();
-    StringBuilder.appendString!(sb1, "Hello");
-    StringBuilder.appendString!(sb2, " World!");
-    StringBuilder.append!(sb1, sb2);
-    StringBuilder.toString(sb1) == "Hello World!"
-
-/////////////////////////////////////////////////////////////////////////////
 // appendString!                                                           //
 /////////////////////////////////////////////////////////////////////////////
 @test
