@@ -301,6 +301,12 @@ namespace Result {
     }
 
     ///
+    /// Returns a map with elements of `s` as keys and `f` applied as values.
+    ///
+    pub def toMapWith(f: a -> b, s: Result[a, a]): Map[a, b] with Order[a] =
+            Result.foldRight((x, m) -> Map.insert(x, f(x), m), s, Map.empty())
+
+    ///
     /// Returns `Some(v)` if `r` is `Ok(v)`. Otherwise returns `None`.
     ///
     @Time(1) @Space(1)
@@ -435,11 +441,5 @@ namespace Result {
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(e)) as & Pure
         }
-
-    ///
-    /// Returns a map with elements of `s` as keys and `f` applied as values.
-    ///
-    pub def toMapWith(f: a -> b, s: Result[a, a]): Map[a, b] with Order[a] =
-            Result.foldRight((x, m) -> Map.insert(x, f(x), m), s, Map.empty())
 
 }

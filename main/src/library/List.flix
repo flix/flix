@@ -1198,6 +1198,15 @@ namespace List {
     pub def toMap(xs: List[(a, b)]): Map[a, b] with Order[a] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
 
     ///
+    /// Returns a map with elements of `s` as keys and `f` applied as values.
+    ///
+    /// If `s` contains multiple mappings with the same key, `toMapWith` does not
+    /// make any guarantees about which mapping will be in the resulting map.
+    ///
+    pub def toMapWith(f: a -> b, s: List[a]): Map[a, b] with Order[a] =
+            List.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
+
+    ///
     /// Applies `f` to every element of `xs`.
     ///
     @Time(time(f)) @Space(space(f))
@@ -1443,14 +1452,5 @@ namespace List {
             case x :: rs => loop(rs, ks -> k(consA(f(x), ks)))
         };
         loop(l, ks -> ks as & ef)
-
-    ///
-    /// Returns a map with elements of `s` as keys and `f` applied as values.
-    ///
-    /// If `s` contains multiple mappings with the same key, `toMapWith` does not
-    /// make any guarantees about which mapping will be in the resulting map.
-    ///
-    pub def toMapWith(f: a -> b, s: List[a]): Map[a, b] with Order[a] =
-            List.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
 
 }

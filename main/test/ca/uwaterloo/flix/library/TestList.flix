@@ -1841,6 +1841,30 @@ def toMap03(): Bool = List.toMap((1, true) :: (2, false) :: Nil) == Map#{1 => tr
 def toMap04(): Bool = List.toMap((1, true) :: (1, false) :: Nil) == Map#{1 => true}
 
 /////////////////////////////////////////////////////////////////////////////
+// toMapWith                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toMapWith01(): Bool =
+    List.toMapWith(x -> 2 * x, Nil) == Map#{}
+
+@test
+def toMapWith02(): Bool =
+    List.toMapWith(x -> 0 * x, 1 :: 3 :: 6 :: Nil) == Map#{1 => 0, 3 => 0, 6 => 0}
+
+@test
+def toMapWith03(): Bool =
+    List.toMapWith(x -> 2 * x, 1 :: 3 :: 6 :: Nil) == Map#{1 => 2, 3 => 6, 6 => 12}
+
+@test
+def toMapWith04(): Bool =
+    List.toMapWith(x -> x + 10, 1 :: 3 :: 6 :: Nil) == Map#{1 => 11, 3 => 13, 6 => 16}
+
+@test
+def toMapWith05(): Bool =
+    List.toMapWith(x -> x + 10, 3 :: 6 :: 1 :: Nil) == Map#{1 => 11, 3 => 13, 6 => 16}
+
+/////////////////////////////////////////////////////////////////////////////
 // foreach                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2410,30 +2434,5 @@ def distinctWith09(): Bool =
     @test
     def toIterator03(): Bool & Impure =
         List.range(-100, 100) |> List.toIterator |> Iterator.toList == List.range(-100, 100)
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toMapWith                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def toMapWith01(): Bool =
-        List.toMapWith(x -> 2 * x, Nil) == Map#{}
-
-    @test
-    def toMapWith02(): Bool =
-        List.toMapWith(x -> 0 * x, 1 :: 3 :: 6 :: Nil) == Map#{1 => 0, 3 => 0, 6 => 0}
-
-    @test
-    def toMapWith03(): Bool =
-        List.toMapWith(x -> 2 * x, 1 :: 3 :: 6 :: Nil) == Map#{1 => 2, 3 => 6, 6 => 12}
-
-    @test
-    def toMapWith04(): Bool =
-        List.toMapWith(x -> x + 10, 1 :: 3 :: 6 :: Nil) == Map#{1 => 11, 3 => 13, 6 => 16}
-
-    @test
-    def toMapWith05(): Bool =
-        List.toMapWith(x -> x + 10, 3 :: 6 :: 1 :: Nil) == Map#{1 => 11, 3 => 13, 6 => 16}
 
 }
