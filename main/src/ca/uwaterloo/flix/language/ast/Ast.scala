@@ -366,55 +366,63 @@ object Ast {
   }
 
   /**
-    * Contains the edges held in a single constraint.
+    * Represents a labelled edge in the labelled graph.
+    * The labels represent predicate nodes that must co-occur for the dependency to be relevant.
     */
-  case class MultiEdge(head: (Name.Pred, Type), positives: Vector[TypedPredicate], negatives: Vector[TypedPredicate])
+  case class LabelledEdge(head: PredicateNode, p: Polarity, labels: Vector[PredicateNode], body: PredicateNode, loc: SourceLocation)
 
   /**
-    * Represents a body predicate on a MultiEdge.
+    * Represents a node in the labelled graph.
     */
-  case class TypedPredicate(atom: Name.Pred, tpe: Type, loc: SourceLocation)
+  case class PredicateNode(pred: Name.Pred, tpe: Type)
 
-  object ConstraintGraph {
+  object LabelledGraph {
     /**
-      * The empty constraint graph.
+      * The empty labelled graph.
       */
-    val empty: ConstraintGraph = ConstraintGraph(Set.empty)
+    val empty: LabelledGraph = LabelledGraph(Set.empty)
   }
 
   /**
-    * Represents a constraint graph; a set dependency graphs representing each rule.
+    * Represents a labelled graph; the dependency graph with additional labels
+    * on the edges allowing more accurate filtering. The rule `A :- not B, C` would
+    * add dependency edges `B -x> A` and `C -> A`. The labelled graph can then
+    * add labels that allow the two edges to be filtered out together. If we
+    * look at a program consisting of A, B, and D. then the rule `C -> A`
+    * cannot be relevant, but by remembering that B occurred together with A,
+    * we can also rule out `B -x> A`. The labelled edges would be `B -[C]-x> A`
+    * and `C -[B]-> A`.
     */
-  case class ConstraintGraph(xs: Set[MultiEdge]) {
+  case class LabelledGraph(edges: Set[LabelledEdge]) {
     /**
-      * Returns a constraint graph with all dependency graphs in `this` and `that` constraint graph.
+      * Returns a labelled graph with all labelled edges in `this` and `that` labelled graph.
       */
-    def +(that: ConstraintGraph): ConstraintGraph = {
-      if (this eq ConstraintGraph.empty)
+    def +(that: LabelledGraph): LabelledGraph = {
+      if (this eq LabelledGraph.empty)
         that
-      else if (that eq ConstraintGraph.empty)
+      else if (that eq LabelledGraph.empty)
         this
       else
-        ConstraintGraph(this.xs ++ that.xs)
+        LabelledGraph(this.edges ++ that.edges)
     }
 
     /**
-      * Returns `this` constraint graph including only the edges where all
-      * its predicates is in `syms` and `typeEquality` returns true for the predicate type and its type in `syms`.
+      * Returns `this` labelled graph including only the edges where all
+      * its predicates (head, body, labels) is in `syms` and `typeEquality`
+      * returns true for the predicate type and its type in `syms`.
       * A rule like
-      * `A(ta) :- B(tb), C(tc), not D(tc).` is represented by `MultiEdge((A, ta), {(B, tb), (C, tc)}, {(D, td)})`
-      * and is only included in the output if `syms` contains all of `A, B, C, D` and `typeEquality(syms(A), ta)` etc.
+      * `A(ta) :- B(tb), not C(tc).` is represented by `edge((A, ta), pos, {(D, td)}, (B, tb))` etc.
+      * and is only included in the output if `syms` contains all of `A, B, C` and `typeEquality(syms(A), ta)` etc.
       */
-    def restrict(syms: Map[Name.Pred, Type], typeEquality: (Type, Type) => Boolean): ConstraintGraph =
-      ConstraintGraph(xs.filter {
-        case MultiEdge((head, headTpe), positives, negatives) =>
-          def checkBody(e: TypedPredicate): Boolean = e match {
-            case TypedPredicate(s, tpe, _) => syms.get(s).exists(typeEquality(_, tpe))
-          }
+    def restrict(syms: Map[Name.Pred, Type], typeEquality: (Type, Type) => Boolean): LabelledGraph = {
+      def check(p: PredicateNode): Boolean =
+        syms.get(p.pred).exists(typeEquality(_, p.tpe))
 
-          syms.get(head).exists(typeEquality(_, headTpe)) &&
-            positives.forall(checkBody) && negatives.forall(checkBody)
+      LabelledGraph(edges.filter {
+        case LabelledEdge(head, _, labels, body, _) =>
+          check(head) && check(body) && labels.forall(check)
       })
+    }
   }
 
   object Stratification {
