@@ -346,7 +346,7 @@ object InstanceError {
 
     override def message(formatter: Formatter): String  = {
       import formatter._
-      s"""${line(kind, source.format)}
+      s"""${line(kind, source.name)}
           |>> Missing type constraint
           |
       """.stripMargin
