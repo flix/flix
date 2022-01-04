@@ -368,6 +368,30 @@ def toMap01(): Bool = Result.toMap(Err(-1ii): Result[(Unit, Unit), _]) == Map#{}
 def toMap02(): Bool = Result.toMap(Ok((1, true))) == Map#{1 => true}
 
 /////////////////////////////////////////////////////////////////////////////
+// toMapWith                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toMapWith01(): Bool =
+    Result.toMapWith(x -> 0 * x, Err(1)) == Map#{}
+
+@test
+def toMapWith02(): Bool =
+    Result.toMapWith(x -> 0 * x, Ok(1)) == Map#{1 => 0}
+
+@test
+def toMapWith03(): Bool =
+    Result.toMapWith(x -> 2 * x, Ok(1)) == Map#{1 => 2}
+
+@test
+def toMapWith04(): Bool =
+    Result.toMapWith(x -> x + 10, Ok(1)) == Map#{1 => 11}
+
+@test
+def toMapWith05(): Bool =
+    Result.toMapWith(x -> x + "b", Ok("a")) == Map#{"a" => "ab"}
+
+/////////////////////////////////////////////////////////////////////////////
 // toOption                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
