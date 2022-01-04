@@ -17,6 +17,8 @@ package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.Type
 
+import scala.collection.mutable
+
 object FormatSimpleType {
   // MATT docs
   // MATT decide on how API should look (exposing to all types here)
@@ -26,7 +28,24 @@ object FormatSimpleType {
 
   // MATT docs
   // MATT private?
-  def format(tpe: SimpleType, nameContext: Map[Int, String]): String = {
+  def format(tpe: SimpleType, nc0: Map[Int, String]): String = {
+
+    // generates the names a, b, ..., z, a1, b1, ...., z1, a2, b2, ...
+    val nameGenerator = Iterator.iterate(('a', 0)) {
+      case ('z', n) => ('a', n + 1)
+      case (c, n) => ((c + 1).toChar, n)
+    } map {
+      case (c, 0) => s"$c"
+      case (c, n) => s"$c$n"
+    }
+
+    val nc = mutable.Map.from(nc0)
+    val names = mutable.Set.from(nc0.values)
+
+    def nextAvailableName(): String = {
+      nameGenerator.find(!names.contains(_)).get // safe to get since nameGenerator is infinite
+    }
+
     def visit(tpe: SimpleType): String = tpe match {
       case SimpleType.Unit => "Unit"
       case SimpleType.Null => "Null"
@@ -121,7 +140,10 @@ object FormatSimpleType {
         val string = visit(tpe)
         val strings = tpes.map(visit)
         string + strings.mkString("[", ", ", "]")
-      case SimpleType.Var(id) => nameContext(id) // MATT have to handle bad lookups
+      case SimpleType.Var(id) =>
+        val name = nc.getOrElseUpdate(id, nextAvailableName()) // MATT have to handle bad lookups
+        names.add(name)
+        name
       case SimpleType.Tuple(length, fields) =>
         val strings = fields.map(visit).padTo(length, "?")
         strings.mkString("(", ", ", ")")
