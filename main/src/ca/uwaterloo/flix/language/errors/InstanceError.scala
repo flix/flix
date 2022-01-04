@@ -349,13 +349,14 @@ object InstanceError {
       s"""${line(kind, source.name)}
           |>> Missing type constraint
           |
+          |${code(loc, s"missing type constraint")}
       """.stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Either add the `override` modifier or remove the definition."
-    }) // MATT hack
+    })
   }
 
 }
