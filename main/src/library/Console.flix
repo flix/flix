@@ -93,6 +93,8 @@ namespace Console {
 
     ///
     /// Returns `s` formatted with color `hexCode`.
+    /// Expected format of `hexCode`: "#" + "--" + "--" + "--"
+    /// where each -- is a hex number between 00 and FF.
     ///
     pub def hex(hexCode: String, s: a): String & Impure with ToString[a] =
         import static java.lang.Integer.parseInt(String, Int32);
