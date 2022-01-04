@@ -434,6 +434,12 @@ namespace Set {
         foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc), Map#{}, s)
 
     ///
+    /// Returns a map with elements of `s` as keys and `f` applied as values.
+    ///
+    pub def toMapWith(f: a -> b, s: Set[a]): Map[a, b] with Order[a] =
+            Set.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
+
+    ///
     /// Applies `f` to every element of `s`.
     ///
     @Time(size(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
