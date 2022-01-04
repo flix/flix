@@ -25,14 +25,14 @@ def new01(): StringBuilder & Impure = StringBuilder.new()
 /////////////////////////////////////////////////////////////////////////////
 // append!                                                                 //
 /////////////////////////////////////////////////////////////////////////////
-@test 
+@test
 def append01!(): Bool & Impure =
     let sb1 = StringBuilder.new();
     let sb2 = StringBuilder.new();
     StringBuilder.append!(sb1, sb2);
     StringBuilder.toString(sb1) == ""
 
-@test 
+@test
 def append02!(): Bool & Impure =
     let sb1 = StringBuilder.new();
     let sb2 = StringBuilder.new();
@@ -40,7 +40,7 @@ def append02!(): Bool & Impure =
     StringBuilder.append!(sb1, sb2);
     StringBuilder.toString(sb1) == "Hello"
 
-@test 
+@test
 def append03!(): Bool & Impure =
     let sb1 = StringBuilder.new();
     let sb2 = StringBuilder.new();
@@ -48,7 +48,7 @@ def append03!(): Bool & Impure =
     StringBuilder.append!(sb1, sb2);
     StringBuilder.toString(sb1) == "World!"
 
-@test 
+@test
 def append04!(): Bool & Impure =
     let sb1 = StringBuilder.new();
     let sb2 = StringBuilder.new();

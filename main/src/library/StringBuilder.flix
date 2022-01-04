@@ -29,14 +29,11 @@ namespace StringBuilder {
         StringBuilder(newStringBuilder())
 
     ///
-    /// Append the StringBuilder `sb2` to the end of StringBuilder `sb1`.
+    /// Append `s` to the StringBuilder `sb`.
     ///
-    pub def append!(sb1: StringBuilder, sb2: StringBuilder): Unit & Impure =
-        import java.lang.StringBuilder.append(##java.lang.CharSequence);
-        let StringBuilder(msb1) = sb1;
-        let StringBuilder(msb2) = sb2;
-        let cs2 = msb2 as ##java.lang.CharSequence;
-        msb1 `append` cs2;
+    pub def appendX!(sb: StringBuilder, x: a): Unit & Impure with ToString[a] =
+        let s = ToString.toString(x);
+        sb `appendString!` s;
         ()
 
     ///
