@@ -94,7 +94,7 @@ namespace Console {
     ///
     /// Returns `s` formatted with color `hexCode`.
     ///
-    pub def hexColor(hexCode: String, s: a): String & Impure with ToString[a] =
+    pub def hex(hexCode: String, s: a): String & Impure with ToString[a] =
         import static java.lang.Integer.parseInt(String, Int32);
 
         let hexNumbers = String.replace(from = "#", to = "", hexCode);
