@@ -31,7 +31,7 @@ namespace StringBuilder {
     ///
     /// Append `s` to the StringBuilder `sb`.
     ///
-    pub def appendX!(sb: StringBuilder, x: a): Unit & Impure with ToString[a] =
+    pub def append!(sb: StringBuilder, x: a): Unit & Impure with ToString[a] =
         let s = ToString.toString(x);
         sb `appendString!` s;
         ()
@@ -55,20 +55,6 @@ namespace StringBuilder {
         ()
 
     ///
-    /// Append the Int8 `i` to the StringBuilder `sb`.
-    ///
-    pub def appendInt8!(sb: StringBuilder, i: Int8): Unit & Impure =
-        sb `appendString!` Int8.toString(i);
-        ()
-
-    ///
-    /// Append the Int16 `i` to the StringBuilder `sb`.
-    ///
-    pub def appendInt16!(sb: StringBuilder, i: Int16): Unit & Impure =
-        sb `appendString!` Int16.toString(i);
-        ()
-
-    ///
     /// Append the Int32 `i` to the StringBuilder `sb`.
     ///
     pub def appendInt32!(sb: StringBuilder, i: Int32): Unit & Impure =
@@ -84,13 +70,6 @@ namespace StringBuilder {
         import java.lang.StringBuilder.append(Int64);
         let StringBuilder(msb) = sb;
         msb `append` i;
-        ()
-
-    ///
-    /// Append the BigInt `i` to the StringBuilder `sb`.
-    ///
-    pub def appendBigInt!(sb: StringBuilder, i: BigInt): Unit & Impure =
-        sb `appendString!` BigInt.toString(i);
         ()
 
     ///

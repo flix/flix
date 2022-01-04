@@ -106,57 +106,57 @@ def appendChar03!(): Bool & Impure =
     StringBuilder.toString(sb) == "ABC"
 
 /////////////////////////////////////////////////////////////////////////////
-// appendInt8!                                                             //
+// append! (Int8)                                                          //
 /////////////////////////////////////////////////////////////////////////////
 @test
 def appendInt801!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendInt8!(sb, 0i8);
+    StringBuilder.append!(sb, 0i8);
     StringBuilder.toString(sb) == "0"
 
 @test
 def appendInt802!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendInt8!(sb, 1i8);
+    StringBuilder.append!(sb, 1i8);
     StringBuilder.toString(sb) == "1"
 
 @test
 def appendInt803!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendInt8!(sb, -1i8);
+    StringBuilder.append!(sb, -1i8);
     StringBuilder.toString(sb) == "-1"
 
 @test
 def appendInt804!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendInt8!(sb, 127i8);
+    StringBuilder.append!(sb, 127i8);
     StringBuilder.toString(sb) == "127"
 
 @test
 def appendInt805!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendInt8!(sb, -127i8);
+    StringBuilder.append!(sb, -127i8);
     StringBuilder.toString(sb) == "-127"
 
 /////////////////////////////////////////////////////////////////////////////
-// appendInt16!                                                            //
+// append! (Int16)                                                         //
 /////////////////////////////////////////////////////////////////////////////
 @test
 def appendInt1601!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendInt16!(sb, 0i16);
+    StringBuilder.append!(sb, 0i16);
     StringBuilder.toString(sb) == "0"
 
 @test
 def appendInt1602!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendInt16!(sb, 1i16);
+    StringBuilder.append!(sb, 1i16);
     StringBuilder.toString(sb) == "1"
 
 @test
 def appendInt1603!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendInt16!(sb, -1i16);
+    StringBuilder.append!(sb, -1i16);
     StringBuilder.toString(sb) == "-1"
 
 /////////////////////////////////////////////////////////////////////////////
@@ -202,24 +202,24 @@ def appendInt6403!(): Bool & Impure =
     StringBuilder.toString(sb) == "-1"
 
 /////////////////////////////////////////////////////////////////////////////
-// appendBigInt!                                                           //
+// append! (BigInt)                                                        //
 /////////////////////////////////////////////////////////////////////////////
 @test
 def appendBigInt01!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendBigInt!(sb, 0ii);
+    StringBuilder.append!(sb, 0ii);
     StringBuilder.toString(sb) == "0"
 
 @test
 def appendBigInt02!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendBigInt!(sb, 1ii);
+    StringBuilder.append!(sb, 1ii);
     StringBuilder.toString(sb) == "1"
 
 @test
 def appendBigInt03!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendBigInt!(sb, -1ii);
+    StringBuilder.append!(sb, -1ii);
     StringBuilder.toString(sb) == "-1"
 
 /////////////////////////////////////////////////////////////////////////////
