@@ -83,7 +83,7 @@ object FormatSimpleType {
       case SimpleType.RecordConstructor => "{ ? }"
       case SimpleType.RecordRowConstructor(field) => s"( $field :: ? | ? )"
       case SimpleType.RecordRowHead(name, tpe) => s"( $name :: ${visit(tpe)} | ? )"
-      case SimpleType.Schema(fields, rest) => ???
+      case SimpleType.Schema(fields, rest) => ??? // MATT need special formatting for schema fields
       case SimpleType.SchemaRow(fields, rest) => ??? // MATT see above
       case SimpleType.SchemaRowEmpty => "#()"
       case SimpleType.SchemaEmpty => "#{}"
@@ -141,7 +141,7 @@ object FormatSimpleType {
         val strings = tpes.map(visit)
         string + strings.mkString("[", ", ", "]")
       case SimpleType.Var(id) =>
-        val name = nc.getOrElseUpdate(id, nextAvailableName()) // MATT have to handle bad lookups
+        val name = nc.getOrElseUpdate(id, nextAvailableName())
         names.add(name)
         name
       case SimpleType.Tuple(length, fields) =>

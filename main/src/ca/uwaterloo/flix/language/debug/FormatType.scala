@@ -28,6 +28,8 @@ object FormatType {
     */
   def formatType(tpe: Type)(implicit audience: Audience): String = {
 
+    return FormatSimpleType.formatWellKindedType(tpe, Map.empty) // MATT hacking for testing
+
     val renameMap = alphaRenameVars(tpe)
 
     def formatWellFormedRecordRow(row: Type, sep: String): String = flattenRecordRow(row) match {

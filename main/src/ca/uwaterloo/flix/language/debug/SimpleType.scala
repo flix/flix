@@ -300,6 +300,7 @@ object SimpleType {
     visit(row0) match {
       case RecordRowEmpty => RecordRowEmpty
       case RecordRow(fields, rest) => RecordRow(fields.sortBy(_.name), rest)
+      case Var(id) => Var(id)
       case _ => ??? // MATT ICE (do I need var here?)
     }
   }
@@ -325,6 +326,7 @@ object SimpleType {
     visit(row0) match {
       case SchemaRowEmpty => SchemaRowEmpty
       case SchemaRow(fields, rest) => SchemaRow(fields.sortBy(_.name), rest)
+      case Var(id) => Var(id)
       case _ => ??? // MATT ICE (do I need var here?)
     }
   }
