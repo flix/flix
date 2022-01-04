@@ -121,6 +121,30 @@ def toMap01(): Bool = Option.toMap(None: Option[(Unit, Unit)]) == Map#{}
 def toMap02(): Bool = Option.toMap(Some((1, true))) == Map#{1 => true}
 
 /////////////////////////////////////////////////////////////////////////////
+// toMapWith                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toMapWith01(): Bool =
+    Option.toMapWith(x -> 0 * x, None) == Map#{}
+
+@test
+def toMapWith02(): Bool =
+    Option.toMapWith(x -> 0 * x, Some(1)) == Map#{1 => 0}
+
+@test
+def toMapWith03(): Bool =
+    Option.toMapWith(x -> 2 * x, Some(1)) == Map#{1 => 2}
+
+@test
+def toMapWith04(): Bool =
+    Option.toMapWith(x -> x + 10, Some(1)) == Map#{1 => 11}
+
+@test
+def toMapWith05(): Bool =
+    Option.toMapWith(x -> x + "b", Some("a")) == Map#{"a" => "ab"}
+
+/////////////////////////////////////////////////////////////////////////////
 // toOk                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -799,6 +823,5 @@ def lift1012(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2
     @test
     def toIterator03(): Bool & Impure =
         Some(1 :: 2 :: 3 :: Nil) |> Option.toIterator |> Iterator.toList == (1 :: 2 :: 3 :: Nil) :: Nil
-
 
 }
