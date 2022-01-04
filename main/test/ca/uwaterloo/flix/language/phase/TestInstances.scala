@@ -599,4 +599,30 @@ class TestInstances extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.IllegalTypeAliasInstance](result)
   }
+
+  test("Test.MissingConstraint.01") {
+    val input =
+      """
+        |class C[a]
+        |class D[a] with C[a]
+        |
+        |instance C[(a, b)] with C[a], C[b]
+        |instance D[(a, b)]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.MissingConstraint](result)
+  }
+
+  test("Test.MissingConstraint.02") {
+    val input =
+      """
+        |class C[a]
+        |class D[a] with C[a]
+        |
+        |instance C[(a, b)] with C[a], C[b]
+        |instance D[(a, b)] with D[a], D[b]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    rejectError[InstanceError.MissingConstraint](result)
+  }
 }
