@@ -680,19 +680,15 @@ object Stratifier {
     */
   private def labelledGraphOfConstraint(c: Constraint): LabelledGraph = c match {
     case Constraint(_, Predicate.Head.Atom(headPred, _, _, headTpe, _), body0, _) =>
-      val labels: Vector[PredicateNode] = body0.collect {
-        case Body.Atom(bodyPred, _, _, _, bodyTpe, _) => PredicateNode(bodyPred, predicateInfoOf(bodyTpe))
+      val bodyLabels: Vector[Label] = body0.collect {
+        case Body.Atom(bodyPred, _, _, _, bodyTpe, _) => Label(bodyPred, predicateInfoOf(bodyTpe))
       }.toVector
+      val labels = bodyLabels :+ Label(headPred, predicateInfoOf(headTpe))
 
       val edges = body0.foldLeft(Set.empty[LabelledEdge]) {
         case (edges, body) => body match {
-          case Body.Atom(bodyPred, _, p, _, bodyTpe, bodyLoc) =>
-            edges + LabelledEdge(
-              PredicateNode(headPred, predicateInfoOf(headTpe)),
-              p,
-              labels,
-              PredicateNode(bodyPred, predicateInfoOf(bodyTpe)), bodyLoc
-            )
+          case Body.Atom(bodyPred, _, p, _, _, bodyLoc) =>
+            edges + LabelledEdge(headPred, p, labels, bodyPred, bodyLoc)
 
           case Body.Guard(_, _) => edges
 
@@ -744,9 +740,9 @@ object Stratifier {
   private def labelledGraphToDependencyGraph(g: LabelledGraph): UllmansAlgorithm.DependencyGraph =
     g.edges.map {
       case LabelledEdge(head, Polarity.Positive, _, body, loc) =>
-        UllmansAlgorithm.DependencyEdge.Positive(head.pred, body.pred, loc)
+        UllmansAlgorithm.DependencyEdge.Positive(head, body, loc)
       case LabelledEdge(head, Polarity.Negative, _, body, loc) =>
-        UllmansAlgorithm.DependencyEdge.Negative(head.pred, body.pred, loc)
+        UllmansAlgorithm.DependencyEdge.Negative(head, body, loc)
     }
 
   /**

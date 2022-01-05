@@ -368,13 +368,14 @@ object Ast {
   /**
     * Represents a labelled edge in the labelled graph.
     * The labels represent predicate nodes that must co-occur for the dependency to be relevant.
+    * `head` and `body` is always included in labels.
     */
-  case class LabelledEdge(head: PredicateNode, p: Polarity, labels: Vector[PredicateNode], body: PredicateNode, loc: SourceLocation)
+  case class LabelledEdge(head: Name.Pred, p: Polarity, labels: Vector[Label], body: Name.Pred, loc: SourceLocation)
 
   /**
-    * Represents a node in the labelled graph.
+    * Represents a label in the labelled graph.
     */
-  case class PredicateNode(pred: Name.Pred, info: PredicateInfo)
+  case class Label(pred: Name.Pred, info: PredicateInfo)
 
   /**
     * Additional information used to differentiate predicates (currently arity).
@@ -413,19 +414,18 @@ object Ast {
 
     /**
       * Returns `this` labelled graph including only the edges where all
-      * its predicates (head, body, labels) is in `syms` and `typeEquality`
-      * returns true for the predicate type and its type in `syms`.
+      * its labels are in `syms` and the predicateInfo matches.
       * A rule like
-      * `A(ta) :- B(tb), not C(tc).` is represented by `edge((A, info(ta)), pos, {(D, info(td))}, (B, info(tb)))` etc.
+      * `A(ta) :- B(tb), not C(tc).` is represented by `edge(A, pos, {(A, info(ta)), (B, info(tb)), (C, info(tc))}, (B, info(tb)))` etc.
       * and is only included in the output if `syms` contains all of `A, B, C` and `syms(A) == info(ta)` etc.
       */
     def restrict(syms: Map[Name.Pred, PredicateInfo]): LabelledGraph = {
-      def check(p: PredicateNode): Boolean =
-        syms.get(p.pred).contains(p.info)
+      def check(l: Label): Boolean =
+        syms.get(l.pred).contains(l.info)
 
       LabelledGraph(edges.filter {
-        case LabelledEdge(head, _, labels, body, _) =>
-          check(head) && check(body) && labels.forall(check)
+        case LabelledEdge(_, _, labels, _, _) =>
+          labels.forall(check)
       })
     }
   }
