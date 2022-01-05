@@ -374,7 +374,12 @@ object Ast {
   /**
     * Represents a node in the labelled graph.
     */
-  case class PredicateNode(pred: Name.Pred, tpe: Type)
+  case class PredicateNode(pred: Name.Pred, info: PredicateInfo)
+
+  /**
+    * Additional information used to differentiate predicates (currently arity).
+    */
+  type PredicateInfo = Int
 
   object LabelledGraph {
     /**
@@ -411,12 +416,12 @@ object Ast {
       * its predicates (head, body, labels) is in `syms` and `typeEquality`
       * returns true for the predicate type and its type in `syms`.
       * A rule like
-      * `A(ta) :- B(tb), not C(tc).` is represented by `edge((A, ta), pos, {(D, td)}, (B, tb))` etc.
-      * and is only included in the output if `syms` contains all of `A, B, C` and `typeEquality(syms(A), ta)` etc.
+      * `A(ta) :- B(tb), not C(tc).` is represented by `edge((A, info(ta)), pos, {(D, info(td))}, (B, info(tb)))` etc.
+      * and is only included in the output if `syms` contains all of `A, B, C` and `syms(A) == info(ta)` etc.
       */
-    def restrict(syms: Map[Name.Pred, Type], typeEquality: (Type, Type) => Boolean): LabelledGraph = {
+    def restrict(syms: Map[Name.Pred, PredicateInfo]): LabelledGraph = {
       def check(p: PredicateNode): Boolean =
-        syms.get(p.pred).exists(typeEquality(_, p.tpe))
+        syms.get(p.pred).contains(p.info)
 
       LabelledGraph(edges.filter {
         case LabelledEdge(head, _, labels, body, _) =>

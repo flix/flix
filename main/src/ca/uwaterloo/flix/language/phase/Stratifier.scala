@@ -73,19 +73,14 @@ object Stratifier {
   /**
     * A type alias for the stratification cache.
     */
-  private type Cache = mutable.Map[Map[Name.Pred, TypeKey], Stratification]
+  private type Cache = mutable.Map[Map[Name.Pred, PredicateInfo], Stratification]
 
   /**
-    * The type of the value used to calculate type equality.
-    */
-  private type TypeKey = Int
-
-  /**
-    * Computes the information used for type equality checking.
+    * Computes the additional information used used to differentiate predicates (currently arity).
     * The stratification precision can be changed by changing this
-    * function and fixing the `TypeKey` accordingly.
+    * function and fixing the `PredicateInfo` accordingly.
     */
-  private def typeKeyOf(tpe: Type): TypeKey = arityOf(tpe)
+  private def predicateInfoOf(tpe: Type): PredicateInfo = arityOf(tpe)
 
   /**
     * Computes the arity of a `Relation` or `Lattice` type.
@@ -685,14 +680,19 @@ object Stratifier {
     */
   private def labelledGraphOfConstraint(c: Constraint): LabelledGraph = c match {
     case Constraint(_, Predicate.Head.Atom(headPred, _, _, headTpe, _), body0, _) =>
-      val labels: Vector[PredicateNode] = body0.collect{
-        case Body.Atom(bodyPred, _, _, _, bodyTpe, _) => PredicateNode(bodyPred, bodyTpe)
+      val labels: Vector[PredicateNode] = body0.collect {
+        case Body.Atom(bodyPred, _, _, _, bodyTpe, _) => PredicateNode(bodyPred, predicateInfoOf(bodyTpe))
       }.toVector
 
       val edges = body0.foldLeft(Set.empty[LabelledEdge]) {
         case (edges, body) => body match {
           case Body.Atom(bodyPred, _, p, _, bodyTpe, bodyLoc) =>
-            edges + LabelledEdge(PredicateNode(headPred, headTpe), p, labels, PredicateNode(bodyPred, bodyTpe), bodyLoc)
+            edges + LabelledEdge(
+              PredicateNode(headPred, predicateInfoOf(headTpe)),
+              p,
+              labels,
+              PredicateNode(bodyPred, predicateInfoOf(bodyTpe)), bodyLoc
+            )
 
           case Body.Guard(_, _) => edges
 
@@ -709,9 +709,7 @@ object Stratifier {
     */
   private def stratifyWithCache(g: LabelledGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache): Validation[Stratification, StratificationError] = {
     // The key is the set of predicates that occur in the row type.
-    val predSyms = predicateSymbolsOf(tpe)
-
-    val key = predSyms.map { case (p, t) => p -> typeKeyOf(t) }
+    val key = predicateSymbolsOf(tpe)
 
     // Lookup the key in the stratification cache.
     cache.get(key) match {
@@ -722,8 +720,8 @@ object Stratifier {
       case None =>
         // Cache miss: Compute the stratification and possibly cache it.
 
-        // Compute the restricted constraint graph.
-        val rg = g.restrict(predSyms, (t1, t2) => typeKeyOf(t1) == typeKeyOf(t2))
+        // Compute the restricted labelled graph.
+        val rg = g.restrict(key)
 
         // Compute the stratification.
         UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc) match {
@@ -775,11 +773,11 @@ object Stratifier {
     * Returns the map of predicates that appears in the given Schema `tpe`.
     * A non-Schema type will result in an `InternalCompilerException`.
     */
-  private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Type] = {
+  private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, PredicateInfo] = {
     @tailrec
-    def visitType(tpe: Type, acc: Map[Name.Pred, Type]): Map[Name.Pred, Type] = tpe match {
+    def visitType(tpe: Type, acc: Map[Name.Pred, PredicateInfo]): Map[Name.Pred, PredicateInfo] = tpe match {
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) =>
-        visitType(rest, acc + (pred -> predType))
+        visitType(rest, acc + (pred -> predicateInfoOf(predType)))
       case _ => acc
     }
 
