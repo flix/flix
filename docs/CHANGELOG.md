@@ -20,7 +20,7 @@ Version 0.26.0:
 - Added support for local defs (let-rec) (thanks Jonathan!)
 - Applied subject-last principle more uniformly (thanks Dylan!)
 - Added additional code hints for effects (thanks Magnus!)
-  - Added experimental support for incremental compilation (thanks Magnus!)
+- Added experimental support for incremental compilation (thanks Magnus!)
 - Added `@Parallel` and `@Lazy` annotations (thanks Magnus!)
 - Added new `minimum/maximum` functions to `Map` (thanks Jakob!)
 - Incrementalized Parser, Weeder, and Typer (thanks Magnus!)
