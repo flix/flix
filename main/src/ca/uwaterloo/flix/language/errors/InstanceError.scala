@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
+import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType, FormatTypeConstraint}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -341,22 +341,22 @@ object InstanceError {
   }
 
   // MATT docs
-  case class MissingConstraint(loc: SourceLocation) extends InstanceError {
-    override def summary: String = s"Missing type constraint: " // MATT type constraint to string?
+  case class MissingConstraint(tconstr: Ast.TypeConstraint, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = s"Missing type constraint: ${FormatTypeConstraint.formatTypeConstraint(tconstr)}" // MATT type constraint to string?
 
+    // The constraint $tconstr is required because it is a constraint on super class $super
     override def message(formatter: Formatter): String  = {
       import formatter._
       s"""${line(kind, source.name)}
-          |>> Missing type constraint
+          |>> Missing type constraint: ${FormatTypeConstraint.formatTypeConstraint(tconstr)}
+          |
+          |The constraint ${FormatTypeConstraint.formatTypeConstraint(tconstr)} is required because it is a constraint on super class ${superClass.name}.
           |
           |${code(loc, s"missing type constraint")}
       """.stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Either add the `override` modifier or remove the definition."
-    })
+    def explain(formatter: Formatter): Option[String] = None
   }
 
 }

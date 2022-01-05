@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Kind, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Unification}
+import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
@@ -213,11 +213,14 @@ object Instances {
                 // MATT I think no because of simple types?
                 // MATT helper function?
                 Validation.traverseX(superInst.tconstrs) {
-                  tconstr => ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv) match {
-                    case Validation.Failure(errors) => Validation.Failure(errors.map(_ => InstanceError.MissingConstraint(sym.loc))) // MATT use full error stuff
-                    case Validation.Success(_) => ().toSuccess
-
-                  }
+                  tconstr =>
+                    ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv) match {
+                      case Validation.Failure(errors) => Validation.Failure(errors.map {
+                        case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingConstraint(missingTconstr, superClass, sym.loc)
+                        case _ => throw InternalCompilerException("Unexpected unification error")
+                      })
+                      case Validation.Success(_) => ().toSuccess
+                    }
                 }
               case None =>
                 // Case 2: No instance matches. Error.
