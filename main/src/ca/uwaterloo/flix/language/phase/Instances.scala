@@ -203,21 +203,23 @@ object Instances {
           superClass =>
             val superInsts = root.classEnv.get(superClass).map(_.instances).getOrElse(Nil)
             // Check each instance of the super class
-            superInsts.find(superInst => Unification.unifiesWith(tpe, superInst.tpe)) match {
-              case Some(superInst) =>
+            superInsts.iterator.flatMap {
+                  // find the instance whose type unifies and save the substitution
+                superInst => Unification.unifyTypes(tpe, superInst.tpe).toOption.map((superInst, _))
+              }.nextOption() match {
+              case Some((superInst, subst)) =>
                 // Case 1: An instance matches. Check that its constraints are entailed by this instance.
                 // MATT do we need to explore the whole tree?
                 // MATT I think no because of simple types?
                 // MATT helper function?
                 // MATT need to do some rigidity stuff here...
                 Validation.traverseX(superInst.tconstrs) {
-                  tconstr => ClassEnvironment.entail(tconstrs, tconstr, root.classEnv) match {
-                    case Validation.Failure(errors) => Validation.Failure(errors.map(_ => InstanceError.MissingConstraint(sym.loc))) // MATT use full error stuff
+                  tconstr => ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv) match {
+                    case Validation.Failure(errors) => Validation.Failure(errors.map(e => { println(e); InstanceError.MissingConstraint(sym.loc) })) // MATT use full error stuff
                     case Validation.Success(_) => ().toSuccess
 
                   }
                 }
-
               case None =>
                 // Case 2: No instance matches. Error.
                 InstanceError.MissingSuperClassInstance(tpe, sym, superClass, sym.loc).toFailure

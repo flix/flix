@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Formatter, Options}
 import org.scalatest.FunSuite
 
 class TestInstances extends FunSuite with TestUtils {
