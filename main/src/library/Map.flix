@@ -25,7 +25,7 @@ pub enum Map[k, v] {
     case Map(RedBlackTree[k, v])
 }
 
-instance Boxable[Map[k, v]]
+instance Boxable[Map[k, v]] with Boxable[k], Boxable[v]
 
 instance ToString[Map[k, v]] with ToString[k], ToString[v] {
     pub def toString(m: Map[k, v]): String =
