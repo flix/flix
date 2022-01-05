@@ -1,14 +1,5 @@
 # Changelog
 
-HEAD (in progress, not released):
-
-- Added a new file API (thanks Nina!)
-- Added `DelayList` and `DelayMap` (thanks Jakob!)
-- Added `Iterator` (thanks Jakob!)
-- Added `foldRightLazy` operations (thanks Nicola!)
-- Added automatic parallelization of certain `Set` and `Map` operations (thanks Jakob!)
-- Improved stratification algorithm (thanks Jonathan!)
-
 Version 0.26.0:
 
 - Released a completely revamped version of https://api.flix.dev/ (thanks Magnus!)
@@ -21,9 +12,8 @@ Version 0.26.0:
 - Applied subject-last principle more uniformly (thanks Dylan!)
 - Added additional code hints for effects (thanks Magnus!)
 - Added experimental support for incremental compilation (thanks Magnus!)
+    - Incrementalized Parser, Weeder, and Typer (thanks Magnus!)
 - Added `@Parallel` and `@Lazy` annotations (thanks Magnus!)
-- Added new `minimum/maximum` functions to `Map` (thanks Jakob!)
-- Incrementalized Parser, Weeder, and Typer (thanks Magnus!)
 - Various improvements to the standard library (thanks Nina!)
 
 Version 0.25.0:
@@ -263,3 +253,13 @@ Version 0.1:
 
 2016-06-08: 
 - Initial release.
+
+
+HEAD (in progress, not released):
+
+- Added a new file API (thanks Nina!)
+- Added `DelayList` and `DelayMap` (thanks Jakob!)
+- Added `Iterator` (thanks Jakob!)
+- Added `foldRightLazy` operations (thanks Nicola!)
+- Added automatic parallelization of certain `Set` and `Map` operations (thanks Jakob!)
+- Improved stratification algorithm (thanks Jonathan!)
