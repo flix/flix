@@ -618,6 +618,23 @@ class TestInstances extends FunSuite with TestUtils {
       """
         |class C[a]
         |class D[a] with C[a]
+        |class E[a] with D[a]
+        |
+        |class F[a]
+        |
+        |instance C[(a, b)] with C[a], C[b]
+        |instance D[(a, b)] with C[a], C[b], F[a], F[b]
+        |instance E[(a, b)] with C[a], C[b]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.MissingConstraint](result)
+  }
+
+  test("Test.MissingConstraint.03") {
+    val input =
+      """
+        |class C[a]
+        |class D[a] with C[a]
         |
         |instance C[(a, b)] with C[a], C[b]
         |instance D[(a, b)] with D[a], D[b]

@@ -212,10 +212,9 @@ object Instances {
                 // MATT do we need to explore the whole tree?
                 // MATT I think no because of simple types?
                 // MATT helper function?
-                // MATT need to do some rigidity stuff here...
                 Validation.traverseX(superInst.tconstrs) {
                   tconstr => ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv) match {
-                    case Validation.Failure(errors) => Validation.Failure(errors.map(e => { println(e); InstanceError.MissingConstraint(sym.loc) })) // MATT use full error stuff
+                    case Validation.Failure(errors) => Validation.Failure(errors.map(_ => InstanceError.MissingConstraint(sym.loc))) // MATT use full error stuff
                     case Validation.Success(_) => ().toSuccess
 
                   }
