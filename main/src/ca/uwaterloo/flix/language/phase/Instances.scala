@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Kind, Scheme, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Unification, UnificationError}
+import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
@@ -193,6 +193,17 @@ object Instances {
     }
 
     /**
+      * Finds an instance of the class for a given type.
+      */
+    def findInstanceForType(tpe: Type, clazz: Symbol.ClassSym): Option[(Ast.Instance, Substitution)] = {
+        val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
+        // lazily find the instance whose type unifies and save the substitution
+        superInsts.iterator.flatMap {
+          superInst => Unification.unifyTypes(tpe, superInst.tpe).toOption.map((superInst, _))
+        }.nextOption()
+    }
+
+    /**
       * Checks that there is an instance for each super class of the class of `inst`,
       * and that the constraints on `inst` entail the constraints on the super instance.
       */
@@ -201,17 +212,10 @@ object Instances {
         val superClasses = root.classEnv(sym.clazz).superClasses
         Validation.traverseX(superClasses) {
           superClass =>
-            val superInsts = root.classEnv.get(superClass).map(_.instances).getOrElse(Nil)
-            // Check each instance of the super class
-            superInsts.iterator.flatMap {
-                  // find the instance whose type unifies and save the substitution
-                superInst => Unification.unifyTypes(tpe, superInst.tpe).toOption.map((superInst, _))
-              }.nextOption() match {
+            // Find the instance of the superclass matching the type of this instance.
+            findInstanceForType(tpe, superClass) match {
               case Some((superInst, subst)) =>
                 // Case 1: An instance matches. Check that its constraints are entailed by this instance.
-                // MATT do we need to explore the whole tree?
-                // MATT I think no because of simple types?
-                // MATT helper function?
                 Validation.traverseX(superInst.tconstrs) {
                   tconstr =>
                     ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv) match {
