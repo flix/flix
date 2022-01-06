@@ -65,7 +65,7 @@ instance Functor[List] {
 }
 
 instance Applicative[List] {
-    pub def point(x: a) : List[a] = List.point(x)
+    pub def point(a: a) : List[a] = List.point(a)
     pub def ap(f: List[a -> b & e], x: List[a]) : List[b] & e = List.ap(f, x)
 }
 
@@ -200,10 +200,10 @@ namespace List {
     ///
     /// Returns `-1` if `a` does not exist in `l`.
     ///
-    pub def indexOf(x: a, l: List[a]): Int32 with Eq[a] =
+    pub def indexOf(a: a, l: List[a]): Int32 with Eq[a] =
         def loop(l2, acc) = match l2 {
             case Nil     => -1
-            case y :: ys => if (x == y) acc else loop(ys, acc + 1)
+            case x :: xs => if (a == x) acc else loop(xs, acc + 1)
         };
         loop(l, 0)
 
@@ -257,13 +257,13 @@ namespace List {
     /// Returns `Nil` if `n < 0`.
     ///
     @Time(n) @Space(n)
-    pub def repeat(n: Int32, x: a): List[a] = repeatHelper(x, n, l -> l)
+    pub def repeat(n: Int32, a: a): List[a] = repeatHelper(a, n, ks -> ks)
 
     ///
     /// Helper function for `repeat`.
     ///
-    def repeatHelper(x: a, n: Int32, k: List[a] -> List[a]): List[a] =
-        if (n <= 0) k(Nil) else repeatHelper(x, n - 1, l -> k(x :: l))
+    def repeatHelper(a: a, n: Int32, k: List[a] -> List[a]): List[a] =
+        if (n <= 0) k(Nil) else repeatHelper(a, n - 1, ks -> k(a :: ks))
 
 
     ///
@@ -317,7 +317,7 @@ namespace List {
     ///
     /// Return the singleton list with element `x`.
     ///
-    pub def point(x: a) : List[a] = x :: Nil
+    pub def point(a: a) : List[a] = a :: Nil
 
     ///
     /// Apply every function from `f` to every argument from `x` and return a list with all results.
@@ -437,22 +437,22 @@ namespace List {
     /// Returns `l` if `i < 0` or `i > length(l)-1`.
     ///
     @Time(i) @Space(i)
-    pub def update(i: Int32, x: a, l: List[a]): List[a] = updateHelper(i, x, l, ks -> ks)
+    pub def update(i: Int32, a: a, l: List[a]): List[a] = updateHelper(i, a, l, ks -> ks)
 
     ///
     /// Helper function for `update`.
     ///
-    def updateHelper(i: Int32, x: a, l: List[a], k: List[a] -> List[a]): List[a] = match (i, l) {
-        case (_, Nil) => k(l)
-        case (0, _ :: ys) => k(x :: ys)
-        case (p, y :: ys) => updateHelper(p - 1, x, ys, ks -> k(y :: ks))
+    def updateHelper(i: Int32, a: a, l: List[a], k: List[a] -> List[a]): List[a] = match (i, l) {
+        case (_, Nil)     => k(l)
+        case (0, _ :: xs) => k(a :: xs)
+        case (p, x :: xs) => updateHelper(p - 1, a, xs, ks -> k(x :: ks))
     }
 
     ///
-    /// Returns `l` with every occurrence of `x` replaced by `y`.
+    /// Returns `l` with every occurrence of `a` replaced by `b`.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def replace(x: a, y: a, l: List[a]): List[a] with Eq[a] = map(e -> if (e == x) y else e, l)
+    pub def replace(a: a, b: a, l: List[a]): List[a] with Eq[a] = map(e -> if (e == a) b else e, l)
 
     ///
     /// Returns `l2` with the `n` elements starting at index `i` replaced with the elements of `l1`.
@@ -533,22 +533,22 @@ namespace List {
     /// Helper function for `permutations` and `subsequences`.
     /// Returns `l` with `x` added to the beginning of each element in `l`.
     ///
-    def applyHelper(x: a, l: List[List[a]]): List[List[a]] = match l {
+    def applyHelper(a: a, l: List[List[a]]): List[List[a]] = match l {
         case Nil     => Nil
-        case y :: ys => (x :: y) :: applyHelper(x, ys)
+        case x :: xs => (a :: x) :: applyHelper(a, xs)
     }
 
     ///
     /// Returns `l` with `x` inserted between every two adjacent elements.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def intersperse(x: a, l: List[a]): List[a] = intersperseHelper(x, l, ks -> ks)
+    pub def intersperse(a: a, l: List[a]): List[a] = intersperseHelper(a, l, ks -> ks)
 
     ///
     /// Helper function for `intersperse`.
     ///
-    def intersperseHelper(x: a, l: List[a], k: List[a] -> List[a]): List[a] = match l {
-        case x1 :: x2 :: xs => intersperseHelper(x, x2 :: xs, ks -> k(x1 :: x :: ks))
+    def intersperseHelper(a: a, l: List[a], k: List[a] -> List[a]): List[a] = match l {
+        case x1 :: x2 :: xs => intersperseHelper(a, x2 :: xs, ks -> k(x1 :: a :: ks))
         case _              => k(l)
     }
 
@@ -941,9 +941,9 @@ namespace List {
     ///
     /// Helper function for `groupBy`.
     ///
-    def agreeHelper(f: (a, a) -> Bool, x: a, l: List[a]): Bool = match l {
+    def agreeHelper(f: (a, a) -> Bool, a: a, l: List[a]): Bool = match l {
         case Nil     => true
-        case y :: ys => if (f(y, x) and f(x, y)) agreeHelper(f, x, ys) else false
+        case x :: xs => if (f(x, a) and f(a, x)) agreeHelper(f, a, xs) else false
     }
 
     ///
@@ -1344,13 +1344,13 @@ namespace List {
     ///
     /// This is a generalization of `memberOf` that uses the function `f` for comparison.
     ///
-    def memberOfWith(f: (a, a) -> Bool, x: a, l: List[a]): Bool = match l {
+    def memberOfWith(f: (a, a) -> Bool, a: a, l: List[a]): Bool = match l {
         case Nil     => false
-        case y :: ys =>
-            if (f(x, y))
+        case x :: xs =>
+            if (f(a, x))
                 true
             else
-                memberOfWith(f, x, ys)
+                memberOfWith(f, a, xs)
     }
 
     ///
