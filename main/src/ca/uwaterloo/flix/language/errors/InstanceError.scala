@@ -340,23 +340,31 @@ object InstanceError {
     })
   }
 
-  // MATT docs
+  /**
+    * An error indicating that a required constraint is missing from an instance declaration.
+    *
+    * @param tconstr    the missing constraint.
+    * @param superClass the superclass that is the source of the constraint.
+    * @param loc        the location where the error occurred.
+    */
   case class MissingConstraint(tconstr: Ast.TypeConstraint, superClass: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
-    override def summary: String = s"Missing type constraint: ${FormatTypeConstraint.formatTypeConstraint(tconstr)}" // MATT type constraint to string?
+    override def summary: String = s"Missing type constraint: ${FormatTypeConstraint.formatTypeConstraint(tconstr)}"
 
-    // The constraint $tconstr is required because it is a constraint on super class $super
-    override def message(formatter: Formatter): String  = {
+    override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-          |>> Missing type constraint: ${FormatTypeConstraint.formatTypeConstraint(tconstr)}
-          |
-          |The constraint ${FormatTypeConstraint.formatTypeConstraint(tconstr)} is required because it is a constraint on super class ${superClass.name}.
-          |
+         |>> Missing type constraint: ${FormatTypeConstraint.formatTypeConstraint(tconstr)}
+         |
+         |The constraint ${FormatTypeConstraint.formatTypeConstraint(tconstr)} is required because it is a constraint on super class ${superClass.name}.
+         |
           |${code(loc, s"missing type constraint")}
       """.stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Add the missing type constraint."
+    })
   }
 
 }
