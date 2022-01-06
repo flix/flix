@@ -366,21 +366,15 @@ object Ast {
   }
 
   /**
-    * Represents a labelled edge in the labelled graph.
+    * Represents a positive or negative labelled dependency edge.
     * The labels represent predicate nodes that must co-occur for the dependency to be relevant.
-    * `head` and `body` is always included in labels.
     */
   case class LabelledEdge(head: Name.Pred, p: Polarity, labels: Vector[Label], body: Name.Pred, loc: SourceLocation)
 
   /**
     * Represents a label in the labelled graph.
     */
-  case class Label(pred: Name.Pred, info: PredicateInfo)
-
-  /**
-    * Additional information used to differentiate predicates (currently arity).
-    */
-  type PredicateInfo = Int
+  case class Label(pred: Name.Pred, arity: Int)
 
   object LabelledGraph {
     /**
@@ -414,14 +408,14 @@ object Ast {
 
     /**
       * Returns `this` labelled graph including only the edges where all
-      * its labels are in `syms` and the predicateInfo matches.
+      * its labels are in `syms` and the arity matches.
       * A rule like
-      * `A(ta) :- B(tb), not C(tc).` is represented by `edge(A, pos, {(A, info(ta)), (B, info(tb)), (C, info(tc))}, (B, info(tb)))` etc.
-      * and is only included in the output if `syms` contains all of `A, B, C` and `syms(A) == info(ta)` etc.
+      * `A(ta) :- B(tb), not C(tc).` is represented by `edge(A, pos, {(A, arity(ta)), (B, arity(tb)), (C, arity(tc))}, (B, arity(tb)))` etc.
+      * and is only included in the output if `syms` contains all of `A, B, C` and `syms(A) == arity(ta)` etc.
       */
-    def restrict(syms: Map[Name.Pred, PredicateInfo]): LabelledGraph = {
+    def restrict(syms: Map[Name.Pred, Int]): LabelledGraph = {
       def check(l: Label): Boolean =
-        syms.get(l.pred).contains(l.info)
+        syms.get(l.pred).contains(l.arity)
 
       LabelledGraph(edges.filter {
         case LabelledEdge(_, _, labels, _, _) =>

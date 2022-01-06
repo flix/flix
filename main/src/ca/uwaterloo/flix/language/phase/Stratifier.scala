@@ -73,14 +73,7 @@ object Stratifier {
   /**
     * A type alias for the stratification cache.
     */
-  private type Cache = mutable.Map[Map[Name.Pred, PredicateInfo], Stratification]
-
-  /**
-    * Computes the additional information used used to differentiate predicates (currently arity).
-    * The stratification precision can be changed by changing this
-    * function and fixing the `PredicateInfo` accordingly.
-    */
-  private def predicateInfoOf(tpe: Type): PredicateInfo = arityOf(tpe)
+  private type Cache = mutable.Map[Map[Name.Pred, Int], Stratification]
 
   /**
     * Computes the arity of a `Relation` or `Lattice` type.
@@ -680,10 +673,11 @@ object Stratifier {
     */
   private def labelledGraphOfConstraint(c: Constraint): LabelledGraph = c match {
     case Constraint(_, Predicate.Head.Atom(headPred, _, _, headTpe, _), body0, _) =>
+      // We add all body predicates and the head to the labels of each edge
       val bodyLabels: Vector[Label] = body0.collect {
-        case Body.Atom(bodyPred, _, _, _, bodyTpe, _) => Label(bodyPred, predicateInfoOf(bodyTpe))
+        case Body.Atom(bodyPred, _, _, _, bodyTpe, _) => Label(bodyPred, arityOf(bodyTpe))
       }.toVector
-      val labels = bodyLabels :+ Label(headPred, predicateInfoOf(headTpe))
+      val labels = bodyLabels :+ Label(headPred, arityOf(headTpe))
 
       val edges = body0.foldLeft(Set.empty[LabelledEdge]) {
         case (edges, body) => body match {
@@ -769,11 +763,11 @@ object Stratifier {
     * Returns the map of predicates that appears in the given Schema `tpe`.
     * A non-Schema type will result in an `InternalCompilerException`.
     */
-  private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, PredicateInfo] = {
+  private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Int] = {
     @tailrec
-    def visitType(tpe: Type, acc: Map[Name.Pred, PredicateInfo]): Map[Name.Pred, PredicateInfo] = tpe match {
+    def visitType(tpe: Type, acc: Map[Name.Pred, Int]): Map[Name.Pred, Int] = tpe match {
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) =>
-        visitType(rest, acc + (pred -> predicateInfoOf(predType)))
+        visitType(rest, acc + (pred -> arityOf(predType)))
       case _ => acc
     }
 
