@@ -52,7 +52,7 @@ object Stratifier {
       return root.toSuccess
 
     // Compute an over-approximation of the dependency graph for all constraints in the program.
-    val dg = flix.subphase("Compute Dependency Graph") {
+    val g = flix.subphase("Compute Dependency Graph") {
       ParOps.parAgg(root.defs, LabelledGraph.empty)({
         case (acc, (_, decl)) => acc + labelledGraphOfDef(decl)
       }, _ + _)
@@ -61,7 +61,7 @@ object Stratifier {
     // Compute the stratification at every datalog expression in the ast.`
     val defsVal = flix.subphase("Compute Stratification") {
       traverse(root.defs) {
-        case (sym, defn) => visitDef(defn)(dg, cache).map(d => sym -> d)
+        case (sym, defn) => visitDef(defn)(g, cache).map(d => sym -> d)
       }
     }
 
@@ -73,16 +73,16 @@ object Stratifier {
   /**
     * A type alias for the stratification cache.
     */
-  private type Cache = mutable.Map[Map[Name.Pred, Int], Stratification]
+  private type Cache = mutable.Map[Map[Name.Pred, List[Type]], Stratification]
 
   /**
-    * Computes the arity of a `Relation` or `Lattice` type.
+    * Computes the term types of a `Relation` or `Lattice` type.
     */
-  private def arityOf(tpe: Type): Int = eraseAliases(tpe) match {
+  private def termTypes(tpe: Type): List[Type] = eraseAliases(tpe) match {
     case Type.Apply(Type.Cst(TypeConstructor.Relation | TypeConstructor.Lattice, _), element, _) => element.baseType match {
-      case Type.Cst(TypeConstructor.Tuple(arity), _) => arity // Multi-ary
-      case Type.Cst(TypeConstructor.Unit, _) => 0 // Nullary
-      case _ => 1 // Unary
+      case Type.Cst(TypeConstructor.Tuple(_), _) => element.typeArguments // Multi-ary
+      case Type.Cst(TypeConstructor.Unit, _) => Nil
+      case _ => List(element) // Unary
     }
     case other => throw InternalCompilerException(s"Unexpected non-relation non-lattice type $other")
   }
@@ -675,9 +675,9 @@ object Stratifier {
     case Constraint(_, Predicate.Head.Atom(headPred, _, _, headTpe, _), body0, _) =>
       // We add all body predicates and the head to the labels of each edge
       val bodyLabels: Vector[Label] = body0.collect {
-        case Body.Atom(bodyPred, _, _, _, bodyTpe, _) => Label(bodyPred, arityOf(bodyTpe))
+        case Body.Atom(bodyPred, _, _, _, bodyTpe, _) => Label(bodyPred, termTypes(bodyTpe))
       }.toVector
-      val labels = bodyLabels :+ Label(headPred, arityOf(headTpe))
+      val labels = bodyLabels :+ Label(headPred, termTypes(headTpe))
 
       val edges = body0.foldLeft(Set.empty[LabelledEdge]) {
         case (edges, body) => body match {
@@ -763,11 +763,11 @@ object Stratifier {
     * Returns the map of predicates that appears in the given Schema `tpe`.
     * A non-Schema type will result in an `InternalCompilerException`.
     */
-  private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Int] = {
+  private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, List[Type]] = {
     @tailrec
-    def visitType(tpe: Type, acc: Map[Name.Pred, Int]): Map[Name.Pred, Int] = tpe match {
+    def visitType(tpe: Type, acc: Map[Name.Pred, List[Type]]): Map[Name.Pred, List[Type]] = tpe match {
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) =>
-        visitType(rest, acc + (pred -> arityOf(predType)))
+        visitType(rest, acc + (pred -> termTypes(predType)))
       case _ => acc
     }
 

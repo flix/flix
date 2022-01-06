@@ -374,7 +374,7 @@ object Ast {
   /**
     * Represents a label in the labelled graph.
     */
-  case class Label(pred: Name.Pred, arity: Int)
+  case class Label(pred: Name.Pred, terms: List[Type])
 
   object LabelledGraph {
     /**
@@ -408,20 +408,22 @@ object Ast {
 
     /**
       * Returns `this` labelled graph including only the edges where all
-      * its labels are in `syms` and the arity matches.
+      * its labels are in `syms` and the terms match.
       * A rule like
       * `A(ta) :- B(tb), not C(tc).` is represented by `edge(A, pos, {(A, arity(ta)), (B, arity(tb)), (C, arity(tc))}, (B, arity(tb)))` etc.
-      * and is only included in the output if `syms` contains all of `A, B, C` and `syms(A) == arity(ta)` etc.
+      * and is only included in the output if `syms` contains all of `A, B, C` and `maybeEq(syms(A), ta)` etc.
       */
-    def restrict(syms: Map[Name.Pred, Int]): LabelledGraph = {
+    def restrict(syms: Map[Name.Pred, List[Type]]): LabelledGraph = {
       def check(l: Label): Boolean =
-        syms.get(l.pred).contains(l.arity)
+        syms.get(l.pred).exists(terms => l.terms.length == terms.length && l.terms.zip(terms).forall{case (t1, t2) => maybeEq(t1, t2)})
 
       LabelledGraph(edges.filter {
         case LabelledEdge(_, _, labels, _, _) =>
           labels.forall(check)
       })
     }
+
+    private def maybeEq(t1: Type, t2: Type): Boolean = true
   }
 
   object Stratification {
