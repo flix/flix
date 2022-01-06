@@ -1194,6 +1194,15 @@ namespace List {
     pub def toMap(l: List[(a, b)]): Map[a, b] with Order[a] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), l)
 
     ///
+    /// Returns a map with elements of `s` as keys and `f` applied as values.
+    ///
+    /// If `s` contains multiple mappings with the same key, `toMapWith` does not
+    /// make any guarantees about which mapping will be in the resulting map.
+    ///
+    pub def toMapWith(f: a -> b, l: List[a]): Map[a, b] with Order[a] =
+            List.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), l)
+
+    ///
     /// Applies `f` to every element of `l`.
     ///
     @Time(time(f)) @Space(space(f))

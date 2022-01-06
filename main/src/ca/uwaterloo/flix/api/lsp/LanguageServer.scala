@@ -320,6 +320,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           // Compute elapsed time.
           val e = System.nanoTime() - t
 
+          if (flix.options.xperf) {
+            println(s"lsp/check: ${e / 1_000_000}ms")
+          }
+
           // Compute Code Quality hints.
           val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix)
           if (codeHints.isEmpty) {

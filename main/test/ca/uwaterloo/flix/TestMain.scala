@@ -165,6 +165,12 @@ class TestMain extends FunSuite {
     assert(opts.xlib == LibLevel.All)
   }
 
+  test("--Xperf") {
+    val args = Array("--Xperf", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xperf)
+  }
+
   test("--Xstrictmono") {
     val args = Array("--Xstrictmono")
     val opts = Main.parseCmdOpts(args).get

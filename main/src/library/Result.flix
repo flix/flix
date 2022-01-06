@@ -231,16 +231,16 @@ namespace Result {
     }
 
     ///
-    /// Returns the result of applying `f` to a start value `s` and the elements in `xs`
+    /// Returns the result of applying `f` to a start value `s` and the elements in `l`
     /// going from left to right.
     ///
     /// If at any step applying `f` fails (i.e. it produces a `Err(e)` value) the traversal
-    /// of `xs` is short-circuited and `Err(e)` is returned.
+    /// of `l` is short-circuited and `Err(e)` is returned.
     ///
-    /// If `f` is successfully applied to all elements in `xs` the result is of the form:
+    /// If `f` is successfully applied to all elements in `l` the result is of the form:
     /// `Ok(f(...f(f(s, x1), x2)..., xn))`.
     ///
-    pub def foldLeftM(f: (b, a) -> Result[b, e] & f, s: b, xs: List[a]): Result[b, e] & f = match xs {
+    pub def foldLeftM(f: (b, a) -> Result[b, e] & f, s: b, l: List[a]): Result[b, e] & f = match l {
         case Nil => Ok(s)
         case x :: rs => match f(s, x) {
             case Ok(s1) => foldLeftM(f, s1, rs)
@@ -249,22 +249,22 @@ namespace Result {
     }
 
     ///
-    /// Returns the result of applying `f` to a start value `s` and the elements in `xs`
+    /// Returns the result of applying `f` to a start value `s` and the elements in `l`
     /// going from right to left.
     ///
     /// If at any step applying `f` fails (i.e. it produces a `Err(e)` value) the traversal
-    /// of `xs` is short-circuited and `Err(e)` is returned.
+    /// of `l` is short-circuited and `Err(e)` is returned.
     ///
-    /// If `f` is successfully applied to all elements in `xs` the result is of the form:
+    /// If `f` is successfully applied to all elements in `l` the result is of the form:
     /// `Ok(f(x1, ...f(xn-1, f(xn, s))...))`.
     ///
-    pub def foldRightM(f: (a, b) -> Result[b, e] & f, s: b, xs: List[a]): Result[b, e] & f =
-        foldRightMHelper(f, s, xs, e1 -> Err(e1) as & f, s1 -> Ok(s1) as & f)
+    pub def foldRightM(f: (a, b) -> Result[b, e] & f, s: b, l: List[a]): Result[b, e] & f =
+        foldRightMHelper(f, s, l, e1 -> Err(e1) as & f, s1 -> Ok(s1) as & f)
 
     ///
     /// Helper function for `foldRightM`.
     ///
-    def foldRightMHelper(f: (a, b) -> Result[b, e] & f, s: b, xs: List[a], fk: e -> Result[b, e] & f, sk: b -> Result[b, e] & f): Result[b, e] & f = match xs {
+    def foldRightMHelper(f: (a, b) -> Result[b, e] & f, s: b, l: List[a], fk: e -> Result[b, e] & f, sk: b -> Result[b, e] & f): Result[b, e] & f = match l {
         case Nil => sk(s)
         case x :: rs =>
             foldRightMHelper(f, s, rs, fk, s1 -> match f(x, s1) {
@@ -299,6 +299,12 @@ namespace Result {
         case Ok((k, v)) => Map.singleton(k, v)
         case Err(_)     => Map.empty()
     }
+
+    ///
+    /// Returns a map with elements of `s` as keys and `f` applied as values.
+    ///
+    pub def toMapWith(f: a -> b, s: Result[a, a]): Map[a, b] with Order[a] =
+            Result.foldRight((x, m) -> Map.insert(x, f(x), m), s, Map.empty())
 
     ///
     /// Returns `Some(v)` if `r` is `Ok(v)`. Otherwise returns `None`.
@@ -435,4 +441,5 @@ namespace Result {
                 import java.lang.Throwable.getMessage();
                 Err(getMessage(e)) as & Pure
         }
+
 }

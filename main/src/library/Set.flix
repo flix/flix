@@ -270,6 +270,8 @@ namespace Set {
     ///
     /// Returns the number of elements in `s` that satisfy the predicate `f`.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
     @ParallelWhenPure
     pub def count(f: a -> Bool & ef, s: Set[a]): Int32 & ef =
         reifyEff(f) {
@@ -430,6 +432,12 @@ namespace Set {
     @Time(size(s)) @Space(size(s))
     pub def toMap(s: Set[(a, b)]): Map[a, b] with Order[a] =
         foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc), Map#{}, s)
+
+    ///
+    /// Returns a map with elements of `s` as keys and `f` applied as values.
+    ///
+    pub def toMapWith(f: a -> b, s: Set[a]): Map[a, b] with Order[a] =
+            Set.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
 
     ///
     /// Applies `f` to every element of `s`.
