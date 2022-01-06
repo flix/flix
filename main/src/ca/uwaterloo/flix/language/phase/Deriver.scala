@@ -697,8 +697,6 @@ object Deriver {
     * The instance is empty because the class has default definitions.
     */
   private def mkBoxableInstance(enum: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum match {
-    // MATT need to add tconstrs
-    // MATT make sure this is tested
     case KindedAst.Enum(_, _, _, tparams, _, _, _, sc, _) =>
       val boxableClassSym = PredefinedClasses.lookupClassSym("Boxable", root)
       val boxableInstanceSym = Symbol.freshInstanceSym(boxableClassSym, loc)
