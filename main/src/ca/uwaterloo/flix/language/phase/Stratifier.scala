@@ -73,7 +73,7 @@ object Stratifier {
   /**
     * A type alias for the stratification cache.
     */
-  private type Cache = mutable.Map[Map[Name.Pred, List[Type]], Stratification]
+  private type Cache = mutable.Map[Map[Name.Pred, Label], Stratification]
 
   /**
     * Computes the term types of a `Relation` or `Lattice` type.
@@ -672,12 +672,13 @@ object Stratifier {
     * Returns the labelled graph of the given constraint `c0`.
     */
   private def labelledGraphOfConstraint(c: Constraint): LabelledGraph = c match {
-    case Constraint(_, Predicate.Head.Atom(headPred, _, _, headTpe, _), body0, _) =>
+    case Constraint(_, Predicate.Head.Atom(headPred, den, _, headTpe, _), body0, _) =>
       // We add all body predicates and the head to the labels of each edge
       val bodyLabels: Vector[Label] = body0.collect {
-        case Body.Atom(bodyPred, _, _, _, bodyTpe, _) => Label(bodyPred, termTypes(bodyTpe))
+        case Body.Atom(bodyPred, Denotation.Relational, _, _, bodyTpe, _) => Label(bodyPred, lattice = false, termTypes(bodyTpe))
+        case Body.Atom(bodyPred, Denotation.Latticenal, _, _, bodyTpe, _) => Label(bodyPred, lattice = true, termTypes(bodyTpe))
       }.toVector
-      val labels = bodyLabels :+ Label(headPred, termTypes(headTpe))
+      val labels = bodyLabels :+ Label(headPred, den == Denotation.Latticenal, termTypes(headTpe))
 
       val edges = body0.foldLeft(Set.empty[LabelledEdge]) {
         case (edges, body) => body match {
@@ -763,11 +764,14 @@ object Stratifier {
     * Returns the map of predicates that appears in the given Schema `tpe`.
     * A non-Schema type will result in an `InternalCompilerException`.
     */
-  private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, List[Type]] = {
+  private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Label] = {
     @tailrec
-    def visitType(tpe: Type, acc: Map[Name.Pred, List[Type]]): Map[Name.Pred, List[Type]] = tpe match {
+    def visitType(tpe: Type, acc: Map[Name.Pred, Label]): Map[Name.Pred, Label] = tpe match {
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) =>
-        visitType(rest, acc + (pred -> termTypes(predType)))
+        val terms = termTypes(predType)
+        val Type.Apply(Type.Cst(den, _), _, _) = predType // same partial match as termTypes
+        val label = Label(pred, den == TypeConstructor.Lattice, terms)
+        visitType(rest, acc + (pred -> label))
       case _ => acc
     }
 

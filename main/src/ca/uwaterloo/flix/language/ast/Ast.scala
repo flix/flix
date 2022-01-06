@@ -374,7 +374,7 @@ object Ast {
   /**
     * Represents a label in the labelled graph.
     */
-  case class Label(pred: Name.Pred, terms: List[Type])
+  case class Label(pred: Name.Pred, lattice: Boolean, terms: List[Type])
 
   object LabelledGraph {
     /**
@@ -413,9 +413,13 @@ object Ast {
       * `A(ta) :- B(tb), not C(tc).` is represented by `edge(A, pos, {(A, arity(ta)), (B, arity(tb)), (C, arity(tc))}, (B, arity(tb)))` etc.
       * and is only included in the output if `syms` contains all of `A, B, C` and `maybeEq(syms(A), ta)` etc.
       */
-    def restrict(syms: Map[Name.Pred, List[Type]]): LabelledGraph = {
+    def restrict(syms: Map[Name.Pred, Label]): LabelledGraph = {
+      def termsEq(t1: List[Type], t2: List[Type]): Boolean =
+        t1.length == t2.length &&
+          t1.zip(t2).forall{case (t1, t2) => maybeEq(t1, t2)}
+
       def check(l: Label): Boolean =
-        syms.get(l.pred).exists(terms => l.terms.length == terms.length && l.terms.zip(terms).forall{case (t1, t2) => maybeEq(t1, t2)})
+        syms.get(l.pred).exists(l0 => l0.lattice == l.lattice && termsEq(l0.terms, l.terms))
 
       LabelledGraph(edges.filter {
         case LabelledEdge(_, _, labels, _, _) =>
@@ -423,7 +427,34 @@ object Ast {
       })
     }
 
-    private def maybeEq(t1: Type, t2: Type): Boolean = true
+    private val safeTypeConstructors = List(
+      TypeConstructor.Unit,
+      TypeConstructor.Null,
+      TypeConstructor.Bool,
+      TypeConstructor.Char,
+      TypeConstructor.Float32,
+      TypeConstructor.Float64,
+      TypeConstructor.Int8,
+      TypeConstructor.Int16,
+      TypeConstructor.Int32,
+      TypeConstructor.Int64,
+      TypeConstructor.BigInt,
+      TypeConstructor.Str,
+      TypeConstructor.Arrow,
+      TypeConstructor.Record,
+      TypeConstructor.Array,
+      TypeConstructor.Channel,
+      TypeConstructor.Lazy,
+      TypeConstructor.Native,
+      TypeConstructor.Tuple
+    )
+
+    private def maybeEq(t1: Type, t2: Type): Boolean = {
+      (t1.typeConstructor, t2.typeConstructor) match {
+        case (Some(tc1), Some(tc2)) => true
+        case _ => true
+      }
+    }
   }
 
   object Stratification {
