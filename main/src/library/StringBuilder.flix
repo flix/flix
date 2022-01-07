@@ -46,15 +46,6 @@ namespace StringBuilder {
         ()
 
     ///
-    /// Append the Int32 `i` to the StringBuilder `sb`.
-    ///
-    pub def appendInt32!(sb: StringBuilder, i: Int32): Unit & Impure =
-        import java.lang.StringBuilder.append(Int32);
-        let StringBuilder(msb) = sb;
-        msb `append` i;
-        ()
-
-    ///
     /// Append the Int64 `i` to the StringBuilder `sb`.
     ///
     pub def appendInt64!(sb: StringBuilder, i: Int64): Unit & Impure =
