@@ -46,24 +46,6 @@ namespace StringBuilder {
         ()
 
     ///
-    /// Append the Float32 `d` to the StringBuilder `sb`.
-    ///
-    pub def appendFloat32!(sb: StringBuilder, d: Float32): Unit & Impure =
-        import java.lang.StringBuilder.append(Float32);
-        let StringBuilder(msb) = sb;
-        msb `append` d;
-        ()
-
-    ///
-    /// Append the Float64 `d` to the StringBuilder `sb`.
-    ///
-    pub def appendFloat64!(sb: StringBuilder, d: Float64): Unit & Impure =
-        import java.lang.StringBuilder.append(Float64);
-        let StringBuilder(msb) = sb;
-        msb `append` d;
-        ()
-
-    ///
     /// Append the system line separator to the StringBuilder `sb`.
     ///
     pub def appendLineSeparator!(sb: StringBuilder): Unit & Impure =

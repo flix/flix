@@ -193,25 +193,25 @@ def appendBigInt03!(): Bool & Impure =
 @test
 def appendFloat3201!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendFloat32!(sb, 0.0f32);
+    StringBuilder.append!(sb, 0.0f32);
     StringBuilder.toString(sb) == "0.0"
 
 @test
 def appendFloat3202!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendFloat32!(sb, Float32.nan());
+    StringBuilder.append!(sb, Float32.nan());
     StringBuilder.toString(sb) == "NaN"
 
 @test
 def appendFloat3203!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendFloat32!(sb, Float32.positiveInfinity());
+    StringBuilder.append!(sb, Float32.positiveInfinity());
     StringBuilder.toString(sb) == "Infinity"
 
 @test
 def appendFloat3204!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendFloat32!(sb, Float32.negativeInfinity());
+    StringBuilder.append!(sb, Float32.negativeInfinity());
     StringBuilder.toString(sb) == "-Infinity"
 
 /////////////////////////////////////////////////////////////////////////////
@@ -220,25 +220,25 @@ def appendFloat3204!(): Bool & Impure =
 @test
 def appendFloat6401!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendFloat64!(sb, 0.0f64);
+    StringBuilder.append!(sb, 0.0f64);
     StringBuilder.toString(sb) == "0.0"
 
 @test
 def appendFloat6402!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendFloat64!(sb, Float64.nan());
+    StringBuilder.append!(sb, Float64.nan());
     StringBuilder.toString(sb) == "NaN"
 
 @test
 def appendFloat6403!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendFloat64!(sb, Float64.positiveInfinity());
+    StringBuilder.append!(sb, Float64.positiveInfinity());
     StringBuilder.toString(sb) == "Infinity"
 
 @test
 def appendFloat6404!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendFloat64!(sb, Float64.negativeInfinity());
+    StringBuilder.append!(sb, Float64.negativeInfinity());
     StringBuilder.toString(sb) == "-Infinity"
 
 /////////////////////////////////////////////////////////////////////////////
