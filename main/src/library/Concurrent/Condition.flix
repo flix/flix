@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+namespace Concurrent {
+
 ///
 /// A wrapper around a Java Condition.
 ///
@@ -93,5 +95,7 @@ namespace Condition {
         } catch {
             case e: ##java.lang.IllegalMonitorStateException => Err(e)
         }
+
+}
 
 }
