@@ -61,9 +61,34 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
+    ///
+    @ParallelWhenPure
     pub def minimumKeyBy(cmp: (k, k) -> Comparison, m: MutMap[k, v]): Option[(k, v)] & Impure =
         let MutMap(mm) = m;
         Map.minimumKeyBy(cmp, deref mm)
+
+    ///
+    /// Optionally finds `k => v` where `v` is the smallest value.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    @Parallel
+    pub def minimumValue(m: MutMap[k, v]): Option[(k, v)] & Impure with Order[v] =
+        let MutMap(mm) = m;
+        Map.minimumValue(deref mm)
+
+    ///
+    /// Optionally finds `k => v` where `v` is the smallest value according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
+    ///
+    @ParallelWhenPure
+    pub def minimumValueBy(cmp: (v, v) -> Comparison & ef, m: MutMap[k, v]): Option[(k, v)] & Impure =
+        let MutMap(mm) = m;
+        Map.minimumValueBy(cmp, deref mm)
 
     ///
     /// Optionally finds `k => v` where `k` is the largest key according to the `Order` instance of `k`.
