@@ -13,23 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 namespace Fixpoint/Ast {
-    pub enum VarSym with Eq, Order {
+    pub enum VarSym {
         case VarSym(String)
+    }
+
+    instance Eq[VarSym] {
+        pub def eq(a: VarSym, b: VarSym): Bool = match (a, b) {
+            case (VarSym(s1), VarSym(s2)) => s1 == s2
+        }
+    }
+
+    instance Order[VarSym] {
+        pub def compare(a: VarSym, b: VarSym): Comparison = match (a, b) {
+            case (VarSym(s1), VarSym(s2)) => s1 <=> s2
+        }
     }
 
     instance ToString[VarSym] {
         pub def toString(varSym: VarSym): String = match varSym {
             case VarSym(name) => name
-        }
-    }
-
-    namespace VarSym {
-        use Fixpoint/Ast.VarSym;
-        use Fixpoint/Ast.VarSym.VarSym;
-
-        pub def compare(a: VarSym, b: VarSym): Comparison = match (a, b) {
-            case (VarSym(s1), VarSym(s2)) => s1 <=> s2
         }
     }
 }
