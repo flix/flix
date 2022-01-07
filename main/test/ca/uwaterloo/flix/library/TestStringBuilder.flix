@@ -146,24 +146,24 @@ def appendInt3203!(): Bool & Impure =
     StringBuilder.toString(sb) == "-1"
 
 /////////////////////////////////////////////////////////////////////////////
-// appendInt64!                                                            //
+// append! (Int64)                                                         //
 /////////////////////////////////////////////////////////////////////////////
 @test
 def appendInt6401!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendInt64!(sb, 0i64);
+    StringBuilder.append!(sb, 0i64);
     StringBuilder.toString(sb) == "0"
 
 @test
 def appendInt6402!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendInt64!(sb, 1i64);
+    StringBuilder.append!(sb, 1i64);
     StringBuilder.toString(sb) == "1"
 
 @test
 def appendInt6403!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendInt64!(sb, -1i64);
+    StringBuilder.append!(sb, -1i64);
     StringBuilder.toString(sb) == "-1"
 
 /////////////////////////////////////////////////////////////////////////////
