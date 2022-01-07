@@ -95,21 +95,36 @@ namespace Console {
     /// Returns `s` formatted with color `hexCode`.
     /// Expected format of `hexCode` example: "#CC33AE"
     ///
-    pub def hex(hexCode: String, s: a): String & Impure with ToString[a] =
-        import static java.lang.Integer.parseInt(String, Int32);
-
-        let hexNumbers = String.replace(from = "#", to = "", hexCode);
-        if(String.length(hexNumbers) == 6) {
-            let red = String.slice(0, 2, hexNumbers);
-            let green = String.slice(2, 4, hexNumbers);
-            let blue = String.slice(4, 6, hexNumbers);
-
-            let color = (parseInt(red, 16), parseInt(green, 16), parseInt(blue, 16));
-
-            Console.rgb(color, ToString.toString(s), isFg = true)
-        } else {
-            ToString.toString(s)
+    pub def hex(hexCode: String, s: a): String with ToString[a] =
+        match String.stripPrefix(substr = "#", hexCode) {
+            case Some(hexNumbers) => {
+                if (String.length(hexNumbers) == 6) {
+                    let red = String.slice(0, 2, hexNumbers);
+                    let green = String.slice(2, 4, hexNumbers);
+                    let blue = String.slice(4, 6, hexNumbers);
+                    try {
+                        let color = (stringToHex(red), stringToHex(green), stringToHex(blue));
+                        Console.rgb(color, ToString.toString(s), isFg = true)
+                    } catch {
+                        case ex: ##java.lang.NumberFormatException =>
+                        import java.lang.Throwable.getMessage();
+                        "Error: " + getMessage(ex) as & Pure
+                    }
+                }
+                else {
+                    ToString.toString(s)
+                }
+            }
+            case _ => ToString.toString(s)
         }
+
+    ///
+    /// Helper for `hex`.
+    /// Returns `hexNo` as a hex number.
+    ///
+    def stringToHex(hexNo: String): Int32 & Pure =
+        import static java.lang.Integer.parseInt(String, Int32);
+        parseInt(hexNo, 16) as & Pure
 
     ///
     /// Returns the string `s` formatted with the given RGB color `c`.
