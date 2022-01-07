@@ -15,6 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+namespace Concurrent {
 
 namespace Channel {
 
@@ -468,5 +469,7 @@ namespace Channel {
     ///
     def lock(l: ReentrantLock): Unit & Impure =
         ReentrantLock.lock(l)
+
+}
 
 }
