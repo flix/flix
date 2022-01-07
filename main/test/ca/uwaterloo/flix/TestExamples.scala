@@ -27,6 +27,7 @@ class TestExamples extends Suites(
   new FlixTest("record-construction-and-use", "examples/record-construction-and-use.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("select-with-defaults-and-timers", "examples/select-with-defaults-and-timers.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("sending-and-receiving-on-channels", "examples/sending-and-receiving-on-channels.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("simple-card-game", "examples/simple-card-game.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("the-ast-typing-problem-with-polymorphic-records", "examples/the-ast-typing-problem-with-polymorphic-records.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("type-aliases", "examples/type-aliases.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("using-channels-and-select", "examples/using-channels-and-select.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
