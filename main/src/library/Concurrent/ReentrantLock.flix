@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+namespace Concurrent {
+
 ///
 /// A wrapper around a Java ReentrantLock.
 ///
@@ -97,4 +99,6 @@ namespace ReentrantLock {
         } catch {
             case e: ##java.lang.IllegalMonitorStateException => Err(e)
         }
+}
+
 }
