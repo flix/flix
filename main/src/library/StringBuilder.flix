@@ -29,14 +29,11 @@ namespace StringBuilder {
         StringBuilder(newStringBuilder())
 
     ///
-    /// Append the StringBuilder `sb2` to the end of StringBuilder `sb1`.
+    /// Append `x` to the StringBuilder `sb`.
     ///
-    pub def append!(sb1: StringBuilder, sb2: StringBuilder): Unit & Impure =
-        import java.lang.StringBuilder.append(##java.lang.CharSequence);
-        let StringBuilder(msb1) = sb1;
-        let StringBuilder(msb2) = sb2;
-        let cs2 = msb2 as ##java.lang.CharSequence;
-        msb1 `append` cs2;
+    pub def append!(sb: StringBuilder, x: a): Unit & Impure with ToString[a] =
+        let s = ToString.toString(x);
+        sb `appendString!` s;
         ()
 
     ///
@@ -46,72 +43,6 @@ namespace StringBuilder {
         import java.lang.StringBuilder.append(String);
         let StringBuilder(msb) = sb;
         msb `append` s;
-        ()
-
-    ///
-    /// Append the Char `c` to the StringBuilder `sb`.
-    ///
-    pub def appendChar!(sb: StringBuilder, c: Char): Unit & Impure =
-        import java.lang.StringBuilder.append(Char);
-        let StringBuilder(msb) = sb;
-        msb `append` c;
-        ()
-
-    ///
-    /// Append the Int8 `i` to the StringBuilder `sb`.
-    ///
-    pub def appendInt8!(sb: StringBuilder, i: Int8): Unit & Impure =
-        sb `appendString!` Int8.toString(i);
-        ()
-
-    ///
-    /// Append the Int16 `i` to the StringBuilder `sb`.
-    ///
-    pub def appendInt16!(sb: StringBuilder, i: Int16): Unit & Impure =
-        sb `appendString!` Int16.toString(i);
-        ()
-
-    ///
-    /// Append the Int32 `i` to the StringBuilder `sb`.
-    ///
-    pub def appendInt32!(sb: StringBuilder, i: Int32): Unit & Impure =
-        import java.lang.StringBuilder.append(Int32);
-        let StringBuilder(msb) = sb;
-        msb `append` i;
-        ()
-
-    ///
-    /// Append the Int64 `i` to the StringBuilder `sb`.
-    ///
-    pub def appendInt64!(sb: StringBuilder, i: Int64): Unit & Impure =
-        import java.lang.StringBuilder.append(Int64);
-        let StringBuilder(msb) = sb;
-        msb `append` i;
-        ()
-
-    ///
-    /// Append the BigInt `i` to the StringBuilder `sb`.
-    ///
-    pub def appendBigInt!(sb: StringBuilder, i: BigInt): Unit & Impure =
-        sb `appendString!` BigInt.toString(i);
-        ()
-
-    ///
-    /// Append the Float32 `d` to the StringBuilder `sb`.
-    ///
-    pub def appendFloat32!(sb: StringBuilder, d: Float32): Unit & Impure =
-        import java.lang.StringBuilder.append(Float32);
-        let StringBuilder(msb) = sb;
-        msb `append` d;
-        ()
-
-    ///
-    /// Append the Float64 `d` to the StringBuilder `sb`.
-    ///
-    pub def appendFloat64!(sb: StringBuilder, d: Float64): Unit & Impure =
-        import java.lang.StringBuilder.append(Float64);
-        let StringBuilder(msb) = sb;
-        msb `append` d;
         ()
 
     ///
