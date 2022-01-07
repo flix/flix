@@ -52,22 +52,22 @@ def appendString03!(): Bool & Impure =
 @test
 def appendChar01!(): Bool & Impure =
     let sb = StringBuilder.new();
-    Stringbuilder.append!(sb, 'A');
+    StringBuilder.append!(sb, 'A');
     StringBuilder.toString(sb) == "A"
 
 @test
 def appendChar02!(): Bool & Impure =
     let sb = StringBuilder.new();
-    Stringbuilder.append!(sb, 'A');
-    Stringbuilder.append!(sb, 'B');
+    StringBuilder.append!(sb, 'A');
+    StringBuilder.append!(sb, 'B');
     StringBuilder.toString(sb) == "AB"
 
 @test
 def appendChar03!(): Bool & Impure =
     let sb = StringBuilder.new();
-    Stringbuilder.append!(sb, 'A');
-    Stringbuilder.append!(sb, 'B');
-    Stringbuilder.append!(sb, 'C');
+    StringBuilder.append!(sb, 'A');
+    StringBuilder.append!(sb, 'B');
+    StringBuilder.append!(sb, 'C');
     StringBuilder.toString(sb) == "ABC"
 
 /////////////////////////////////////////////////////////////////////////////
@@ -253,9 +253,9 @@ def appendLineSeparator01!(): Bool & Impure =
 @test
 def appendLineSeparator02!(): Bool & Impure =
     let sb = StringBuilder.new();
-    Stringbuilder.append!(sb, 'A');
+    StringBuilder.append!(sb, 'A');
     StringBuilder.appendLineSeparator!(sb);
-    Stringbuilder.append!(sb, 'B');
+    StringBuilder.append!(sb, 'B');
     let s1 = "A" + String.lineSeparator() + "B";
     StringBuilder.toString(sb) == s1
 
@@ -439,14 +439,14 @@ def length01(): Bool & Impure =
 @test
 def length02(): Bool & Impure =
     let sb = StringBuilder.new();
-    Stringbuilder.append!(sb, 'A');
+    StringBuilder.append!(sb, 'A');
     StringBuilder.length(sb) == 1
 
 @test
 def length03(): Bool & Impure =
     let sb = StringBuilder.new();
-    Stringbuilder.append!(sb, 'A');
-    Stringbuilder.append!(sb, 'B');
+    StringBuilder.append!(sb, 'A');
+    StringBuilder.append!(sb, 'B');
     StringBuilder.length(sb) == 2
 
 @test
@@ -460,9 +460,9 @@ def length04(): Bool & Impure =
 def length05(): Bool & Impure =
     let sb = StringBuilder.new();
     StringBuilder.appendString!(sb, "Hello");
-    Stringbuilder.append!(sb, ' ');
+    StringBuilder.append!(sb, ' ');
     StringBuilder.appendString!(sb, "World");
-    Stringbuilder.append!(sb, '!');
+    StringBuilder.append!(sb, '!');
     StringBuilder.length(sb) == 12
 
 /////////////////////////////////////////////////////////////////////////////
