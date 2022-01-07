@@ -46,15 +46,6 @@ namespace StringBuilder {
         ()
 
     ///
-    /// Append the Char `c` to the StringBuilder `sb`.
-    ///
-    pub def appendChar!(sb: StringBuilder, c: Char): Unit & Impure =
-        import java.lang.StringBuilder.append(Char);
-        let StringBuilder(msb) = sb;
-        msb `append` c;
-        ()
-
-    ///
     /// Append the Int32 `i` to the StringBuilder `sb`.
     ///
     pub def appendInt32!(sb: StringBuilder, i: Int32): Unit & Impure =
