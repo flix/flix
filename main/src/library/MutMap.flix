@@ -109,6 +109,28 @@ namespace MutMap {
         Map.maximumKeyBy(cmp, deref mm)
 
     ///
+    /// Optionally finds `k => v` where `v` is the largest value.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    @Parallel
+    pub def maximumValue(m: MutMap[k, v]): Option[(k, v)] & Impure with Order[v] =
+        let MutMap(mm) = m;
+        Map.maximumValue(deref mm)
+
+    ///
+    /// Optionally finds `k => v` where `v` is the largest value according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
+    ///
+    @ParallelWhenPure
+    pub def maximumValueBy(cmp: (v, v) -> Comparison & ef, m: MutMap[k, v]): Option[(k, v)] & Impure =
+        let MutMap(mm) = m;
+        Map.maximumValueBy(cmp, deref mm)
+
+    ///
     /// Returns the keys of the mutable map `m`.
     ///
     pub def keysOf(m: MutMap[k, v]): Set[k] & Impure with Order[k] =
