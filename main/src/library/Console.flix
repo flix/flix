@@ -94,7 +94,7 @@ namespace Console {
     ///
     /// Returns `s` formatted with color `hexCode`.
     /// Expected format of `hexCode` example: "#CC33AE"
-    /// test
+    /// test2
     ///
     pub def hex(hexCode: String, s: a): String & Impure with ToString[a] =
         import static java.lang.Integer.parseInt(String, Int32);
