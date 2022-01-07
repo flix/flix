@@ -349,7 +349,7 @@ namespace Nel {
     /// Applies `combine` to all elements in `l` until a single value is obtained.
     ///
     pub def reduce(l: Nel[a]): a with SemiGroup[a] = match l {
-        case Nel(x, xs) => Foldable.foldLeft((acc, x) -> SemiGroup.combine(acc, x), x, xs)
+        case Nel(x, xs) => Foldable.foldLeft((acc, y) -> SemiGroup.combine(acc, y), x, xs)
     }
 
     ///
@@ -381,26 +381,12 @@ namespace Nel {
         case Nel(x, xs) => (if (f(x)) 1 else 0) + List.count(f, xs)
     }
 
-
-
-
-
-    /////////////////////////////////////////////////////////////////////////
-    ///// Functions below have not yet been adjusted                    /////
-    /////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
     ///
     /// Returns the concatenation of the elements in `l`.
     ///
     @Time(length(l)) @Space(length(l))
     pub def flatten(l: Nel[Nel[a]]): Nel[a] = match l {
-        case Nel(Nel(h, ys), zs) => Nel(h, ys ::: List.flatMap(toList, zs))
+        case Nel(Nel(y, ys), xs) => Nel(y, ys ::: List.flatMap(toList, xs))
     }
 
     ///
@@ -408,7 +394,7 @@ namespace Nel {
     ///
     @Time(time(f) * length(l)) @Space(space(f))
     pub def exists(f: a -> Bool, l: Nel[a]): Bool = match l {
-        case Nel(x, xs) => f(h) or List.exists(f, l)
+        case Nel(x, xs) => f(x) or List.exists(f, xs)
     }
 
     ///
@@ -416,7 +402,7 @@ namespace Nel {
     ///
     @Time(time(f) * length(l)) @Space(space(f))
     pub def forall(f: a -> Bool, l: Nel[a]): Bool = match l {
-        case Nel(x, xs) => f(h) and List.forall(f, l)
+        case Nel(x, xs) => f(x) and List.forall(f, xs)
     }
 
     ///
@@ -425,32 +411,32 @@ namespace Nel {
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def filter(f: a -> Bool, l: Nel[a]): List[a] = match l {
         case Nel(x, xs) =>
-            if (f(h))
-                h :: List.filter(f, l)
+            if (f(x))
+                x :: List.filter(f, xs)
             else
-                List.filter(f, l)
+                List.filter(f, xs)
     }
 
     ///
     /// Returns a non-empty list where the element at index `i` is `(a, b)` where
-    /// `a` is the element at index `i` in `l` and `b` is the element at index `i` in `ys`.
+    /// `a` is the element at index `i` in `l1` and `b` is the element at index `i` in `l2`.
     ///
-    /// If either `l` or `ys` becomes depleted, then no further elements are added to the resulting list.
+    /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
-    @Time(Int32.min(length(l), length(ys))) @Space(Int32.min(length(l), length(ys)))
-    pub def zip(l: Nel[a], ys: Nel[b]): Nel[(a,b)] = match (l, ys) {
-        case (Nel(h1, l1), Nel(h2, l2)) => Nel((h1, h2), List.zip(l1, l2))
+    @Time(Int32.min(length(l1), length(l2))) @Space(Int32.min(length(l1), length(l2)))
+    pub def zip(l1: Nel[a], l2: Nel[b]): Nel[(a,b)] = match (l1, l2) {
+        case (Nel(x, xs), Nel(y, ys)) => Nel((x, y), List.zip(xs, ys))
     }
 
     ///
     /// Returns a non-empty list where the element at index `i` is `f(a, b)` where
-    /// `a` is the element at index `i` in `l` and `b` is the element at index `i` in `ys`.
+    /// `a` is the element at index `i` in `l1` and `b` is the element at index `i` in `l2`.
     ///
-    /// If either `l` or `ys` becomes depleted, then no further elements are added to the resulting list.
+    /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
-    @Time(time(f) * Int32.min(length(l), length(ys))) @Space(space(f) * Int32.min(length(l), length(ys)))
-    pub def zipWith(f: (a, b) -> c, l: Nel[a], ys: Nel[b]): Nel[c] = match (l, ys) {
-        case (Nel(h1, l1), Nel(h2, l2)) => Nel(f(h1, h2), List.zipWith(f, l1, l2))
+    @Time(time(f) * Int32.min(length(l1), length(l2))) @Space(space(f) * Int32.min(length(l1), length(l2)))
+    pub def zipWith(f: (a, b) -> c, l1: Nel[a], l2: Nel[b]): Nel[c] = match (l1, l2) {
+        case (Nel(x, xs), Nel(y, ys)) => Nel(f(x, y), List.zipWith(f, xs, ys))
     }
 
     ///
@@ -459,8 +445,8 @@ namespace Nel {
     ///
     @Time(length(l)) @Space(length(l))
     pub def unzip(l: Nel[(a, b)]): (Nel[a], Nel[b]) = match l {
-        case Nel((a, b), l) =>
-            let (l1, l2) = List.unzip(l);
+        case Nel((a, b), xs) =>
+            let (l1, l2) = List.unzip(xs);
             (Nel(a, l1), Nel(b, l2))
     }
 
@@ -469,20 +455,21 @@ namespace Nel {
     ///
     @Time(1) @Space(1)
     pub def toList(l: Nel[a]): List[a] = match l {
-        case Nel(x, xs) => h :: l
+        case Nel(x, xs) => x :: xs
     }
 
     ///
     /// Returns `l` as an array.
     ///
-    pub def toArray(l: Nel[a]): Array[a] & Impure = l |> toList |> List.toArray
+    pub def toArray(l: Nel[a]): Array[a] & Impure =
+        l |> toList |> List.toArray
 
     ///
     /// Applies `f` to every element of `l`.
     ///
     @Time(time(f)) @Space(space(f))
     pub def foreach(f: a -> Unit & ef, l: Nel[a]): Unit & ef = match l {
-        case Nel(x, xs) => f(h); List.foreach(f, l)
+        case Nel(x, xs) => f(x); List.foreach(f, xs)
     }
 
     ///
@@ -496,8 +483,8 @@ namespace Nel {
     pub def sort(l: Nel[a]): Nel[a] with Order[a] =
         let list = (l |> toArray |> Array.sort |> Array.toList) as & Pure;
         match list {
-            case h :: l => Nel(x, xs)
-            case _      => unreachable!()
+            case x :: xs => Nel(x, xs)
+            case _       => unreachable!()
         }
 
     ///
@@ -511,8 +498,8 @@ namespace Nel {
     pub def sortBy(f: a -> b, l: Nel[a]): Nel[a] with Order[b] =
         let list = (l |> toArray |> Array.sortBy(f) |> Array.toList) as & Pure;
         match list {
-            case h :: l => Nel(x, xs)
-            case _      => unreachable!()
+            case x :: xs => Nel(x, xs)
+            case _       => unreachable!()
         }
 
     ///
@@ -526,31 +513,27 @@ namespace Nel {
     pub def sortWith(cmp: (a,a) -> Comparison, l: Nel[a]): Nel[a] =
         let list = (l |> toArray |> Array.sortWith(cmp) |> Array.toList) as & Pure;
         match list {
-            case h :: l => Nel(x, xs)
-            case _      => unreachable!()
+            case x :: xs => Nel(x, xs)
+            case _       => unreachable!()
         }
 
     ///
     /// Returns the sum of all elements in the list `l`.
     ///
-    pub def sum(l: Nel[Int32]): Int32 = match l {
-        case Nel(x, l) => sumAcc(x :: l, 0)
-    }
-
-    ///
-    /// Helper function for `sum`.
-    ///
-    def sumAcc(l: List[Int32], acc: Int32): Int32 = match l {
-        case Nil     => acc
-        case x :: l => sumAcc(l, x + acc)
-    }
+    pub def sum(l: Nel[Int32]): Int32 =
+        def loop(l2, acc) = match l2 {
+            case Nil     => acc
+            case x :: xs => loop(xs, x + acc)
+        };
+        let Nel(x, xs) = l;
+        loop(x :: xs, 0)
 
     ///
     /// Returns an iterator over `l`.
     ///
     pub def toIterator(l: Nel[a]): Iterator[a] & Impure =
-       let Nel(x, l) = l;
-       List.toIterator(x :: l)
+       let Nel(x, xs) = l;
+       List.toIterator(x :: xs)
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
@@ -558,7 +541,7 @@ namespace Nel {
     ///
     pub def sequence(l: Nel[m[a]]): m[Nel[a]] with Applicative[m] =
         match l {
-            case Nel(x, rs) => (((y, ys) -> Nel(y, ys)) `Functor.map` x) `Applicative.ap` Traversable.sequence(rs)
+            case Nel(x, xs) => (((y, ys) -> Nel(y, ys)) `Functor.map` x) `Applicative.ap` Traversable.sequence(xs)
         }
 
     ///
@@ -566,17 +549,17 @@ namespace Nel {
     ///
     pub def traverse(f: a -> m[b] & ef, l: Nel[a]): m[Nel[b]] & ef with Applicative[m] =
         match l {
-            case Nel(x, rs) => (((y, ys) -> Nel(y, ys)) `Functor.map` f(x)) `Applicative.ap` Traversable.traverse(f, rs)
+            case Nel(x, xs) => (((y, ys) -> Nel(y, ys)) `Functor.map` f(x)) `Applicative.ap` Traversable.traverse(f, xs)
         }
 
     ///
-    /// Returns a map with elements of `s` as keys and `f` applied as values.
+    /// Returns a map with elements of `l` as keys and `f` applied as values.
     ///
-    /// If `s` contains multiple mappings with the same key, `toMapWith` does not
+    /// If `l` contains multiple mappings with the same key, `toMapWith` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
-    pub def toMapWith(f: a -> b, s: Nel[a]): Map[a, b] with Order[a] =
-        Nel.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
+    pub def toMapWith(f: a -> b, l: Nel[a]): Map[a, b] with Order[a] =
+        Nel.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), l)
 
 }
 
