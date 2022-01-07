@@ -148,7 +148,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         def CaseWithType: Rule1[ParsedAst.Case] = namedRule("Case") {
-          SP ~ Names.Tag ~ Type ~ SP ~> ParsedAst.Case
+          SP ~ Names.Tag ~ Types.Tuple ~ SP ~> ParsedAst.Case
         }
 
         rule {
