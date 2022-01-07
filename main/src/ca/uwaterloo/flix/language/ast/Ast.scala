@@ -374,7 +374,28 @@ object Ast {
   /**
     * Represents a label in the labelled graph.
     */
-  case class Label(pred: Name.Pred, lattice: Boolean, terms: List[Type])
+  case class Label(pred: Name.Pred, den: Ast.Denotation, terms: List[Type], arity: Int)
+
+  /**
+    * Compare the labels by field, but not exactly for types.
+    * This will always correctly return true but might deem different labels
+    * equal depending on their term types.
+    */
+  def labelEquality(l1: Label, l2: Label): Boolean =
+    l1.pred == l2.pred &&
+      l1.den == l2.den &&
+      l1.terms.zip(l2.terms).forall { case (t1, t2) => typeConservativeEquality(t1, t2) } &&
+      l1.arity == l2.arity
+
+  /**
+    * Returns true if the types are equal but may return anything for different types.
+    */
+  private def typeConservativeEquality(t1: Type, t2: Type): Boolean = {
+    (t1.typeConstructor, t2.typeConstructor) match {
+      case (Some(tc1), Some(tc2)) => true
+      case _ => true
+    }
+  }
 
   object LabelledGraph {
     /**
@@ -414,12 +435,8 @@ object Ast {
       * and is only included in the output if `syms` contains all of `A, B, C` and `maybeEq(syms(A), ta)` etc.
       */
     def restrict(syms: Map[Name.Pred, Label]): LabelledGraph = {
-      def termsEq(t1: List[Type], t2: List[Type]): Boolean =
-        t1.length == t2.length &&
-          t1.zip(t2).forall{case (t1, t2) => maybeEq(t1, t2)}
-
       def check(l: Label): Boolean =
-        syms.get(l.pred).exists(l0 => l0.lattice == l.lattice && termsEq(l0.terms, l.terms))
+        syms.get(l.pred).exists(l0 => labelEquality(l0, l))
 
       LabelledGraph(edges.filter {
         case LabelledEdge(_, _, labels, _, _) =>
@@ -448,13 +465,6 @@ object Ast {
       TypeConstructor.Native,
       TypeConstructor.Tuple
     )
-
-    private def maybeEq(t1: Type, t2: Type): Boolean = {
-      (t1.typeConstructor, t2.typeConstructor) match {
-        case (Some(tc1), Some(tc2)) => true
-        case _ => true
-      }
-    }
   }
 
   object Stratification {

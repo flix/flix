@@ -675,10 +675,12 @@ object Stratifier {
     case Constraint(_, Predicate.Head.Atom(headPred, den, _, headTpe, _), body0, _) =>
       // We add all body predicates and the head to the labels of each edge
       val bodyLabels: Vector[Label] = body0.collect {
-        case Body.Atom(bodyPred, Denotation.Relational, _, _, bodyTpe, _) => Label(bodyPred, lattice = false, termTypes(bodyTpe))
-        case Body.Atom(bodyPred, Denotation.Latticenal, _, _, bodyTpe, _) => Label(bodyPred, lattice = true, termTypes(bodyTpe))
+        case Body.Atom(bodyPred, den, _, _, bodyTpe, _) =>
+          val terms = termTypes(bodyTpe)
+          Label(bodyPred, den, terms, terms.length)
       }.toVector
-      val labels = bodyLabels :+ Label(headPred, den == Denotation.Latticenal, termTypes(headTpe))
+      val headTerms = termTypes(headTpe)
+      val labels = bodyLabels :+ Label(headPred, den, headTerms, headTerms.length)
 
       val edges = body0.foldLeft(Set.empty[LabelledEdge]) {
         case (edges, body) => body match {
@@ -770,14 +772,19 @@ object Stratifier {
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) =>
         val terms = termTypes(predType)
         val Type.Apply(Type.Cst(den, _), _, _) = predType // same partial match as termTypes
-        val label = Label(pred, den == TypeConstructor.Lattice, terms)
+        val labelDen = den match {
+          case TypeConstructor.Relation => Denotation.Relational
+          case TypeConstructor.Lattice => Denotation.Latticenal
+          case other => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$other'")
+        }
+        val label = Label(pred, labelDen, terms, terms.length)
         visitType(rest, acc + (pred -> label))
       case _ => acc
     }
 
     Type.eraseAliases(tpe) match {
       case Type.Apply(Type.Cst(TypeConstructor.Schema, _), schemaRow, _) => visitType(schemaRow, Map.empty)
-      case other => throw InternalCompilerException(s"Unexpected non-schema type $other")
+      case other => throw InternalCompilerException(s"Unexpected non-schema type: '$other'")
     }
   }
 
