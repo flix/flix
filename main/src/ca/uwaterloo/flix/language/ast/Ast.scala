@@ -376,74 +376,6 @@ object Ast {
     */
   case class Label(pred: Name.Pred, den: Denotation, arity: Int, terms: List[Type])
 
-  /**
-    * Compare the labels by field, but not exactly for types.
-    * This will always correctly return true but might deem different labels
-    * equal depending on their term types.
-    */
-  def labelEquality(l1: Label, l2: Label): Boolean =
-    l1.pred == l2.pred &&
-      l1.den == l2.den &&
-      l1.terms.zip(l2.terms).forall { case (t1, t2) => typeConservativeEquality(t1, t2) } &&
-      l1.arity == l2.arity
-
-  /**
-    * Returns true if the types are equal but may return anything for different types.
-    */
-  private def typeConservativeEquality(tpe1: Type, tpe2: Type): Boolean = {
-    def certainType(t: TypeConstructor): Boolean = {
-      import TypeConstructor._
-      t match {
-        case Unit | Null | Bool | Char | Float32 | Float64 | Int8 | Int16 | Int32 |
-             Int64 | BigInt | Str | Arrow(_) | Array | Channel | Lazy | Tuple(_) => true
-        case RecordRowEmpty | RecordRowExtend(_) | Record | SchemaRowEmpty |
-             SchemaRowExtend(_) | Schema | Tag(_, _) | KindedEnum(_, _) |
-             UnkindedEnum(_) | UnappliedAlias(_) | Native(_) | ScopedRef |
-             Relation | Lattice | True | False | Not | And | Or | Region => false
-      }
-    }
-
-    (tpe1, tpe2) match {
-      case (_: Type.Var, _) | (_, _: Type.Var) => true // We don't know
-
-      case (Type.Cst(c1, _), Type.Cst(c2, _)) =>
-        if (certainType(c1) && certainType(c2)) {
-          import TypeConstructor._
-          (c1, c2) match {
-            case (Unit, Unit) => true
-            case (Null, Null) => true
-            case (Bool, Bool) => true
-            case (Char, Char) => true
-            case (Float32, Float32) => true
-            case (Float64, Float64) => true
-            case (Int8, Int8) => true
-            case (Int16, Int16) => true
-            case (Int32, Int32) => true
-            case (Int64, Int64) => true
-            case (BigInt, BigInt) => true
-            case (Str, Str) => true
-            case (Arrow(arity1), Arrow(arity2)) => arity1 == arity2
-            case (Array, Array) => true
-            case (Channel, Channel) => true
-            case (Lazy, Lazy) => true
-            case (Tuple(l1), Tuple(l2)) => l1 == l2
-            case _ => false // return true for mismatch of types we are certain of
-          }
-        } else true // we are not sure, so we guess true
-
-      case (Type.Alias(_, _, tpe, _), _) => typeConservativeEquality(tpe, tpe2)
-
-      case (_, Type.Alias(_, _, tpe, _)) => typeConservativeEquality(tpe1, tpe)
-
-      case (Type.Ascribe(_, _, _), _) | (_, Type.Ascribe(_, _, _)) => true // I'm not sure
-
-      case (Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) =>
-        typeConservativeEquality(t11, t21) && typeConservativeEquality(t12, t22)
-
-      case _ => false // structural mismatch
-    }
-  }
-
   object LabelledGraph {
     /**
       * The empty labelled graph.
@@ -476,12 +408,12 @@ object Ast {
 
     /**
       * Returns `this` labelled graph including only the edges where all
-      * its labels are in `syms` and the terms match.
+      * its labels are in `syms` and the labels match according to 'labelEquality'.
       * A rule like
-      * `A(ta) :- B(tb), not C(tc).` is represented by `edge(A, pos, {(A, arity(ta)), (B, arity(tb)), (C, arity(tc))}, (B, arity(tb)))` etc.
-      * and is only included in the output if `syms` contains all of `A, B, C` and `maybeEq(syms(A), ta)` etc.
+      * `A(ta) :- B(tb), not C(tc).` is represented by `edge(A, pos, {la, lb, lc}, B)` etc.
+      * and is only included in the output if `syms` contains all of `la.pred, lb.pred, lc.pred` and `labelEquality(syms(A), la)` etc.
       */
-    def restrict(syms: Map[Name.Pred, Label]): LabelledGraph = {
+    def restrict(syms: Map[Name.Pred, Label], labelEquality: (Label, Label) => Boolean): LabelledGraph = {
       def check(l: Label): Boolean =
         syms.get(l.pred).exists(l0 => labelEquality(l0, l))
 
