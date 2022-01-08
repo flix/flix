@@ -677,10 +677,10 @@ object Stratifier {
       val bodyLabels: Vector[Label] = body0.collect {
         case Body.Atom(bodyPred, den, _, _, bodyTpe, _) =>
           val terms = termTypes(bodyTpe)
-          Label(bodyPred, den, terms, terms.length)
+          Label(bodyPred, den, terms.length, terms)
       }.toVector
       val headTerms = termTypes(headTpe)
-      val labels = bodyLabels :+ Label(headPred, den, headTerms, headTerms.length)
+      val labels = bodyLabels :+ Label(headPred, den, headTerms.length, headTerms)
 
       val edges = body0.foldLeft(Set.empty[LabelledEdge]) {
         case (edges, body) => body match {
@@ -777,7 +777,7 @@ object Stratifier {
           case TypeConstructor.Lattice => Denotation.Latticenal
           case other => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$other'")
         }
-        val label = Label(pred, labelDen, terms, terms.length)
+        val label = Label(pred, labelDen, terms.length, terms)
         visitType(rest, acc + (pred -> label))
       case _ => acc
     }

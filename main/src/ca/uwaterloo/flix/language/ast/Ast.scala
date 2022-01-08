@@ -374,7 +374,7 @@ object Ast {
   /**
     * Represents a label in the labelled graph.
     */
-  case class Label(pred: Name.Pred, den: Ast.Denotation, terms: List[Type], arity: Int)
+  case class Label(pred: Name.Pred, den: Denotation, arity: Int, terms: List[Type])
 
   /**
     * Compare the labels by field, but not exactly for types.
