@@ -1442,103 +1442,103 @@ namespace TestDelayMap {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // minimum                                                                 //
+    // minimumKey                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def minimum01(): Bool =
+    def minimumKey01(): Bool =
         Map#{}: Map[Int32, Int32] |> Map.toDelayMap |>
-            DelayMap.minimum == None
+            DelayMap.minimumKey == None
 
     @test
-    def minimum02(): Bool =
+    def minimumKey02(): Bool =
         Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5} |> Map.toDelayMap |>
-            DelayMap.minimum == Some((1, 2))
+            DelayMap.minimumKey == Some((1, 2))
 
     @test
-    def minimum03(): Bool =
+    def minimumKey03(): Bool =
         Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2} |> Map.toDelayMap |>
-            DelayMap.minimum == Some((0, 2))
+            DelayMap.minimumKey == Some((0, 2))
 
     @test
-    def minimum04(): Bool =
+    def minimumKey04(): Bool =
         Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2} |> Map.toDelayMap |>
-            DelayMap.minimum == Some((-44, 4))
+            DelayMap.minimumKey == Some((-44, 4))
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // minimumBy                                                               //
+    // minimumKeyBy                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def minimumBy01(): Bool =
+    def minimumKeyBy01(): Bool =
         Map#{}: Map[Int32, Int32] |> Map.toDelayMap |>
-            DelayMap.minimumBy((x, _, y, _) -> x <=> y) == None
+            DelayMap.minimumKeyBy((x, y) -> x <=> y) == None
 
     @test
-    def minimumBy02(): Bool =
+    def minimumKeyBy02(): Bool =
         Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5} |> Map.toDelayMap |>
-            DelayMap.minimumBy((x, _, y, _) -> x <=> y) == Some((1, 2))
+            DelayMap.minimumKeyBy((x, y) -> x <=> y) == Some((1, 2))
 
     @test
-    def minimumBy03(): Bool =
+    def minimumKeyBy03(): Bool =
         Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2} |> Map.toDelayMap |>
-            DelayMap.minimumBy((x, _, y, _) -> x <=> y) == Some((0, 2))
+            DelayMap.minimumKeyBy((x, y) -> x <=> y) == Some((0, 2))
 
     @test
-    def minimumBy04(): Bool =
+    def minimumKeyBy04(): Bool =
         Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2} |> Map.toDelayMap |>
-            DelayMap.minimumBy((x, _, y, _) -> x <=> y) == Some((-44, 4))
+            DelayMap.minimumKeyBy((x, y) -> x <=> y) == Some((-44, 4))
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // maximum                                                                 //
+    // maximumKey                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def maximum01(): Bool =
+    def maximumKey01(): Bool =
         Map#{}: Map[Int32, Int32] |> Map.toDelayMap |>
-            DelayMap.maximum == None
+            DelayMap.maximumKey == None
 
     @test
-    def maximum02(): Bool =
+    def maximumKey02(): Bool =
         Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5} |> Map.toDelayMap |>
-            DelayMap.maximum == Some((5, 5))
+            DelayMap.maximumKey == Some((5, 5))
 
     @test
-    def maximum03(): Bool =
+    def maximumKey03(): Bool =
         Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2} |> Map.toDelayMap |>
-            DelayMap.maximum == Some((5, 5))
+            DelayMap.maximumKey == Some((5, 5))
 
     @test
-    def maximum04(): Bool =
+    def maximumKey04(): Bool =
         Map#{1 => 2, 2 => 3, 107 => -107, 5 => 5, 0 => 2} |> Map.toDelayMap |>
-            DelayMap.maximum == Some((107, -107))
+            DelayMap.maximumKey == Some((107, -107))
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // maximumBy                                                               //
+    // maximumKeyBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def maximumBy01(): Bool =
+    def maximumKeyBy01(): Bool =
         Map#{}: Map[Int32, Int32] |> Map.toDelayMap |>
-            DelayMap.maximumBy((x, _, y, _) -> x <=> y) == None
+            DelayMap.maximumKeyBy((x, y) -> x <=> y) == None
 
     @test
-    def maximumBy02(): Bool =
+    def maximumKeyBy02(): Bool =
         Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5} |> Map.toDelayMap |>
-            DelayMap.maximumBy((x, _, y, _) -> x <=> y) == Some((5, 5))
+            DelayMap.maximumKeyBy((x, y) -> x <=> y) == Some((5, 5))
 
     @test
-    def maximumBy03(): Bool =
+    def maximumKeyBy03(): Bool =
         Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2} |> Map.toDelayMap |>
-            DelayMap.maximumBy((x, _, y, _) -> x <=> y) == Some((5, 5))
+            DelayMap.maximumKeyBy((x, y) -> x <=> y) == Some((5, 5))
 
     @test
-    def maximumBy04(): Bool =
+    def maximumKeyBy04(): Bool =
         Map#{1 => 2, 2 => 3, 107 => -107, 5 => 5, 0 => 2} |> Map.toDelayMap |>
-            DelayMap.maximumBy((x, _, y, _) -> x <=> y) == Some((107, -107))
+            DelayMap.maximumKeyBy((x, y) -> x <=> y) == Some((107, -107))
 
 
     /////////////////////////////////////////////////////////////////////////////
