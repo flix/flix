@@ -153,6 +153,8 @@ namespace Set {
     ///
     /// Returns `None` if `s` is empty.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
     @ParallelWhenPure
     pub def minimumBy(cmp: (a, a) -> Comparison & ef, s: Set[a]): Option[a] & ef =
         def min() = reduceLeft((x, y) -> if (cmp(x, y) == LessThan) x else y, s);
@@ -183,8 +185,23 @@ namespace Set {
     ///
     /// Returns `None` if `s` is empty.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
     pub def maximumBy(cmp: (a, a) -> Comparison, s: Set[a]): Option[a] =
-        reduceLeft(Order.maxBy(cmp), s)
+        def max() = reduceLeft((x, y) -> if (cmp(x, y) == GreaterThan) x else y, s);
+        let f = r -> cmp(r.kl, r.kr);
+        reifyEff(f) {
+            case Pure(g) =>
+                if (useParallelEvaluation(s))
+                    let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
+                    let Set(t) = s;
+                    let o = RedBlackTree.parMaximumBy(threads() - 1, h, t) as & Pure;
+                    Option.map(fst, o)
+                else
+                    max()
+            case _ => max()
+        }
 
     ///
     /// Returns true if and only if every element in `s1` appears in `s2`.
