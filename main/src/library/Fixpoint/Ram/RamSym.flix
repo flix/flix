@@ -23,40 +23,16 @@ namespace Fixpoint/Ram {
         case New(String, Int32, Denotation[v])
     }
 
-    @Internal
-    pub def arityOf(ramSym: RamSym[v]): Int32 = match ramSym {
-        case Full(_, arity, _) => arity
-        case Delta(_, arity, _) => arity
-        case New(_, arity, _) => arity
-    }
-
-    @Internal
-    pub def toDenotation(ramSym: RamSym[v]): Denotation[v] = match ramSym {
-        case Full(_, _, den) => den
-        case Delta(_, _, den) => den
-        case New(_, _, den) => den
-    }
-
-    instance ToString[RamSym[v]] {
-        pub def toString(ramSym: RamSym[v]): String = match ramSym {
-            case Full(name, _, _) => name
-            case Delta(name, _, _) => "Δ${name}"
-            case New(name, _, _) => "Δ${name}'"
+    instance Eq[RamSym[v]] {
+        pub def eq(a: RamSym[v], b: RamSym[v]): Bool = match (a, b) {
+            case (Full(s1, _, _),  Full(s2, _, _))  => s1 == s2
+            case (Delta(s1, _, _), Delta(s2, _, _)) => s1 == s2
+            case (New(s1, _, _),   New(s2, _, _))   => s1 == s2
+            case _                                  => false
         }
     }
 
-    instance Eq[RamSym[v]] {
-        pub def eq(a: RamSym[v], b: RamSym[v]): Bool = Fixpoint/Ram/RamSym.compare(a, b) == EqualTo
-    }
-
     instance Order[RamSym[v]] {
-        pub def compare(a: RamSym[v], b: RamSym[v]): Comparison = Fixpoint/Ram/RamSym.compare(a, b)
-    }
-
-    namespace RamSym {
-        use Fixpoint/Ram.RamSym;
-        use Fixpoint/Ram.RamSym.{Full, Delta, New};
-
         pub def compare(a: RamSym[v], b: RamSym[v]): Comparison = match a {
             case Full(s1, _, _) => match b {
                 case Full(s2, _, _) => s1 <=> s2
@@ -72,5 +48,27 @@ namespace Fixpoint/Ram {
                 case _ => LessThan
             }
         }
+    }
+
+    instance ToString[RamSym[v]] {
+        pub def toString(ramSym: RamSym[v]): String = match ramSym {
+            case Full(name, _, _) => name
+            case Delta(name, _, _) => "Δ${name}"
+            case New(name, _, _) => "Δ${name}'"
+        }
+    }
+
+    @Internal
+    pub def arityOf(ramSym: RamSym[v]): Int32 = match ramSym {
+        case Full(_, arity, _) => arity
+        case Delta(_, arity, _) => arity
+        case New(_, arity, _) => arity
+    }
+
+    @Internal
+    pub def toDenotation(ramSym: RamSym[v]): Denotation[v] = match ramSym {
+        case Full(_, _, den) => den
+        case Delta(_, _, den) => den
+        case New(_, _, den) => den
     }
 }
