@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.StratificationError
+import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -61,7 +62,7 @@ object Stratifier {
     // Compute the stratification at every datalog expression in the ast.`
     val defsVal = flix.subphase("Compute Stratification") {
       traverse(root.defs) {
-        case (sym, defn) => visitDef(defn)(g, cache).map(d => sym -> d)
+        case (sym, defn) => visitDef(defn)(g, cache, flix).map(d => sym -> d)
       }
     }
 
@@ -90,7 +91,7 @@ object Stratifier {
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit g: LabelledGraph, cache: Cache): Validation[Def, CompilationMessage] =
+  private def visitDef(def0: Def)(implicit g: LabelledGraph, cache: Cache, flix: Flix): Validation[Def, CompilationMessage] =
     visitExp(def0.impl.exp) map {
       case e => def0.copy(impl = def0.impl.copy(exp = e))
     }
@@ -100,7 +101,7 @@ object Stratifier {
     *
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
-  private def visitExp(exp0: Expression)(implicit g: LabelledGraph, cache: Cache): Validation[Expression, StratificationError] = exp0 match {
+  private def visitExp(exp0: Expression)(implicit g: LabelledGraph, cache: Cache, flix: Flix): Validation[Expression, StratificationError] = exp0 match {
     case Expression.Unit(_) => exp0.toSuccess
 
     case Expression.Null(_, _) => exp0.toSuccess
@@ -700,7 +701,7 @@ object Stratifier {
     *
     * Uses the given cache and updates it if required.
     */
-  private def stratifyWithCache(g: LabelledGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache): Validation[Stratification, StratificationError] = {
+  private def stratifyWithCache(g: LabelledGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache, flix: Flix): Validation[Stratification, StratificationError] = {
     // The key is the set of predicates that occur in the row type.
     val key = predicateSymbolsOf(tpe)
 
@@ -732,73 +733,13 @@ object Stratifier {
   }
 
   /**
-    * Compare the labels by field, but not exactly for types.
-    * This will always correctly return true but might deem different labels
-    * equal depending on their term types.
+    * Compare the labels by field, and used unification for type equality.
     */
-  private def labelEquality(l1: Label, l2: Label): Boolean =
+  private def labelEquality(l1: Label, l2: Label)(implicit flix: Flix): Boolean =
     l1.pred == l2.pred &&
       l1.den == l2.den &&
-      l1.terms.zip(l2.terms).forall { case (t1, t2) => typeConservativeEquality(t1, t2) } &&
+      l1.terms.zip(l2.terms).forall { case (t1, t2) => Unification.unifiesWith(t1, t2) } &&
       l1.arity == l2.arity
-
-
-  /**
-    * Returns true if the types are equal but may return anything for different types.
-    */
-  private def typeConservativeEquality(tpe1: Type, tpe2: Type): Boolean = {
-    def certainType(t: TypeConstructor): Boolean = {
-      import TypeConstructor._
-      t match {
-        case Unit | Null | Bool | Char | Float32 | Float64 | Int8 | Int16 | Int32 |
-             Int64 | BigInt | Str | Arrow(_) | Array | Channel | Lazy | Tuple(_) => true
-        case RecordRowEmpty | RecordRowExtend(_) | Record | SchemaRowEmpty |
-             SchemaRowExtend(_) | Schema | Tag(_, _) | KindedEnum(_, _) |
-             UnkindedEnum(_) | UnappliedAlias(_) | Native(_) | ScopedRef |
-             Relation | Lattice | True | False | Not | And | Or | Region => false
-      }
-    }
-
-    (tpe1, tpe2) match {
-      case (_: Type.Var, _) | (_, _: Type.Var) => true // We don't know
-
-      case (Type.Cst(c1, _), Type.Cst(c2, _)) =>
-        if (certainType(c1) && certainType(c2)) {
-          import TypeConstructor._
-          (c1, c2) match {
-            case (Unit, Unit) => true
-            case (Null, Null) => true
-            case (Bool, Bool) => true
-            case (Char, Char) => true
-            case (Float32, Float32) => true
-            case (Float64, Float64) => true
-            case (Int8, Int8) => true
-            case (Int16, Int16) => true
-            case (Int32, Int32) => true
-            case (Int64, Int64) => true
-            case (BigInt, BigInt) => true
-            case (Str, Str) => true
-            case (Arrow(arity1), Arrow(arity2)) => arity1 == arity2
-            case (Array, Array) => true
-            case (Channel, Channel) => true
-            case (Lazy, Lazy) => true
-            case (Tuple(l1), Tuple(l2)) => l1 == l2
-            case _ => false // return true for mismatch of types we are certain of
-          }
-        } else true // we are not sure, so we guess true
-
-      case (Type.Alias(_, _, tpe, _), _) => typeConservativeEquality(tpe, tpe2)
-
-      case (_, Type.Alias(_, _, tpe, _)) => typeConservativeEquality(tpe1, tpe)
-
-      case (Type.Ascribe(_, _, _), _) | (_, Type.Ascribe(_, _, _)) => true // I'm not sure
-
-      case (Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) =>
-        typeConservativeEquality(t11, t21) && typeConservativeEquality(t12, t22)
-
-      case _ => false // structural mismatch
-    }
-  }
 
   /**
     * Computes the dependency graph from the labelled graph, throwing the labels away.
