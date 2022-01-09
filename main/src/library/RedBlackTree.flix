@@ -130,25 +130,25 @@ namespace RedBlackTree {
     }
 
     ///
-    /// Updates `tree` with `k -> v` if `k -> v1` is in `tree`.
+    /// Updates `tree` with `k => v` if `k => v1` is in `tree`.
     ///
-    /// Otherwise, updates `tree` with `k -> v`.
+    /// Otherwise, updates `tree` with `k => v`.
     ///
     @Time(Int32.log2(size(tree))) @Space(Int32.log2(size(tree)))
     pub def insert(k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] =
         blacken(insertHelper(k, v, tree))
 
     ///
-    /// Updates `tree` with `k -> f(k, v, v1)` if `k -> v1` is in `tree`.
+    /// Updates `tree` with `k => f(k, v, v1)` if `k => v1` is in `tree`.
     ///
-    /// Otherwise, updates `tree` with `k -> v`.
+    /// Otherwise, updates `tree` with `k => v`.
     ///
     @Time(time(f) + Int32.log2(size(tree))) @Space(space(f) + Int32.log2(size(tree)))
     pub def insertWith(f: (k, v, v) -> v & ef, k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & ef with Order[k] =
         blacken(insertWithHelper(f, k, v, tree))
 
     ///
-    /// Updates `tree` with `k -> v1` if `k -> v` is in `tree` and `f(k, v) = Some(v1)`.
+    /// Updates `tree` with `k => v1` if `k => v` is in `tree` and `f(k, v) = Some(v1)`.
     ///
     /// Otherwise, returns `tree`.
     ///
@@ -157,14 +157,14 @@ namespace RedBlackTree {
         blacken(updateWithHelper(f, k, tree))
 
     ///
-    /// Removes `k -> v` from `tree` if `tree` contains the key `k`.
+    /// Removes `k => v` from `tree` if `tree` contains the key `k`.
     ///
     /// Otherwise, returns `tree`.
     ///
     pub def remove(k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] = redden(removeHelper(k, tree))
 
     ///
-    /// Returns `Some(v)` if `k -> v` is in `tree`.
+    /// Returns `Some(v)` if `k => v` is in `tree`.
     ///
     /// Otherwise returns `None`.
     ///
@@ -486,7 +486,7 @@ namespace RedBlackTree {
     } as & ef
 
     ///
-    /// Extracts `k -> v` where `k` is the leftmost (i.e. smallest) key in the tree.
+    /// Extracts `k => v` where `k` is the leftmost (i.e. smallest) key in the tree.
     ///
     pub def minimumKey(tree: RedBlackTree[k, v]): Option[(k, v)] = match tree {
         case Node(_, Leaf, k, v, _) => Some((k, v))
@@ -495,7 +495,7 @@ namespace RedBlackTree {
     }
 
     ///
-    /// Extracts `k -> v` where `k` is the rightmost (i.e. largest) key in the tree.
+    /// Extracts `k => v` where `k` is the rightmost (i.e. largest) key in the tree.
     ///
     pub def maximumKey(tree: RedBlackTree[k, v]): Option[(k, v)] = match tree {
         case Node(_, _, k, v, Leaf) => Some((k, v))
@@ -514,7 +514,7 @@ namespace RedBlackTree {
     }
 
     ///
-    /// Returns a RedBlackTree with mappings `k -> f(k, v)` for every `k -> v` in `t`.
+    /// Returns a RedBlackTree with mappings `k => f(k, v)` for every `k => v` in `t`.
     ///
     /// Purity polymorphic: Runs in parallel when given a pure function `f`.
     ///
