@@ -146,7 +146,7 @@ namespace Set {
     ///
     pub def minimum(s: Set[a]): Option[a] =
         let Set(t) = s;
-        RedBlackTree.minimum(t) |> Option.map(fst)
+        RedBlackTree.minimumKey(t) |> Option.map(fst)
 
     ///
     /// Optionally finds the smallest element of `s` according to the given comparator `cmp`.
@@ -178,7 +178,7 @@ namespace Set {
     ///
     pub def maximum(s: Set[a]): Option[a] =
         let Set(t) = s;
-        RedBlackTree.maximum(t) |> Option.map(fst)
+        RedBlackTree.maximumKey(t) |> Option.map(fst)
 
     ///
     /// Optionally finds the largest element of `s` according to the given comparator `cmp`.
