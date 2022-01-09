@@ -92,39 +92,41 @@ namespace Console {
         }
 
     ///
-    /// Returns `s` formatted with color `hexCode`.
-    /// Expected format of `hexCode` example: "#CC33AE"
+    /// Returns `s` formatted with color `hexCode`
+    /// or if there's an error, returns the original string.
+    /// Expected format of `hexCode`: "#" + "--" + "--" + "--"
+    /// where each -- is a hex number between 00 and FF.
     ///
     pub def hex(hexCode: String, s: a): String with ToString[a] =
+        let text = ToString.toString(s);
         match String.stripPrefix(substr = "#", hexCode) {
-            case Some(hexNumbers) => {
-                if (String.length(hexNumbers) == 6) {
-                    let red = String.slice(0, 2, hexNumbers);
-                    let green = String.slice(2, 4, hexNumbers);
-                    let blue = String.slice(4, 6, hexNumbers);
-                    try {
-                        let color = (stringToHex(red), stringToHex(green), stringToHex(blue));
-                        Console.rgb(color, ToString.toString(s), isFg = true)
-                    } catch {
-                        case ex: ##java.lang.NumberFormatException =>
-                        import java.lang.Throwable.getMessage();
-                        "Error: " + getMessage(ex) as & Pure
+            case Some(hex) => {
+                if (String.length(hex) == 6) {
+                    let red = String.sliceLeft(2, hex);
+                    let green = String.slice(2, 4, hex);
+                    let blue = String.slice(4, 6, hex);
+
+                    match (stringToHex(red), stringToHex(green), stringToHex(blue)) {
+                        case (Some(r), Some(g), Some(b)) => rgb((r, g, b), text, isFg = true)
+                        case _                           => text
                     }
-                }
-                else {
-                    ToString.toString(s)
-                }
+                } else text
             }
-            case _ => ToString.toString(s)
+            case _ => text
         }
 
     ///
     /// Helper for `hex`.
     /// Returns `hexNo` as a hex number.
     ///
-    def stringToHex(hexNo: String): Int32 & Pure =
+    pub def stringToHex(hexNo: String): Option[Int32] & Pure =
         import static java.lang.Integer.parseInt(String, Int32);
-        parseInt(hexNo, 16) as & Pure
+        try {
+            Some(parseInt(hexNo, 16)) as & Pure
+        } catch {
+            case _: ##java.lang.NumberFormatException =>
+                None as Option[Int32]
+        }
 
     ///
     /// Returns the string `s` formatted with the given RGB color `c`.
