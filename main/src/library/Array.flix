@@ -875,10 +875,16 @@ namespace Array {
     /// Returns the sum of all elements in the array `a`.
     ///
     pub def sum(a: Array[Int32]): Int32 & Impure =
+        sumWith(x -> x, a)
+
+    ///
+    /// Returns the sum of all elements in the array `a` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, a: Array[a]): Int32 & Impure =
         let l = length(a);
         def loop(i, acc) =
             if (i < l)
-                loop(i + 1, a[i] + acc)
+                loop(i + 1, f(a[i]) + acc)
             else
                 acc;
         loop(0, 0)
