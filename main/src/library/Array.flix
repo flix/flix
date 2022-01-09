@@ -872,6 +872,18 @@ namespace Array {
         foldLeft((b,x) -> if (f(x)) b + 1 else b, 0, a) as & Impure
 
     ///
+    /// Returns the sum of all elements in the array `a`.
+    ///
+    pub def sum(a: Array[Int32]): Int32 & Impure =
+        let l = length(a);
+        def loop(i, acc) =
+            if (i < l)
+                loop(i + 1, a[i] + acc)
+            else
+                acc;
+        loop(0, 0)
+
+    ///
     /// Returns the concatenation of the arrays of in the array `arrs`.
     ///
     @Time(length(arrs)) @Space(length(arrs))
@@ -1701,21 +1713,6 @@ namespace Array {
             let ac1 = f(lo, ac);
             forWithAccum(lo+1, hi, ac1, f)
         }
-
-    ///
-    /// Returns the sum of all elements in the list `a`.
-    ///
-    pub def sum(a: Array[Int32]): Int32 & Impure =
-        sumAcc(a, 0, 0)
-
-    ///
-    /// Helper function for `sum`.
-    ///
-    def sumAcc(a: Array[Int32], i: Int32, acc: Int32): Int32 & Impure =
-        if (i < length(a))
-            sumAcc(a, i + 1, a[i] + acc)
-        else
-            acc
 
     ///
     /// Copies the range between `b` (inclusive) and `e` (exclusive) of a into a new array.
