@@ -188,7 +188,7 @@ namespace Set {
     /// Purity polymorphic: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def maximumBy(cmp: (a, a) -> Comparison, s: Set[a]): Option[a] =
+    pub def maximumBy(cmp: (a, a) -> Comparison & ef, s: Set[a]): Option[a] & ef =
         def max() = reduceLeft((x, y) -> if (cmp(x, y) == GreaterThan) x else y, s);
         let f = r -> cmp(r.kl, r.kr);
         reifyEff(f) {
