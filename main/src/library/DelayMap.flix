@@ -116,7 +116,7 @@ namespace DelayMap {
     @Experimental
     pub def minimumKey(m: DelayMap[k, v]): Option[(k, v)] =
         let DMap(t) = m;
-        match RedBlackTree.minimum(t) {
+        match RedBlackTree.minimumKey(t) {
             case None       => None
             case Some(k, v) => Some(k, force v)
         }
@@ -189,7 +189,7 @@ namespace DelayMap {
     @Experimental
     pub def maximumKey(m: DelayMap[k, v]): Option[(k, v)] =
         let DMap(t) = m;
-        match RedBlackTree.maximum(t) {
+        match RedBlackTree.maximumKey(t) {
             case None       => None
             case Some(k, v) => Some(k, force v)
         }
