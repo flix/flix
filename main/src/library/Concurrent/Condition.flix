@@ -35,8 +35,9 @@ namespace Concurrent {
         ///
         /// Causes the current thread to wait until it is signalled or interrupted.
         ///
-        pub def await(condition: Condition): Result[Unit, ConditionError] & Impure =
+        pub def await(condition: Concurrent.Condition): Result[Unit, ConditionError] & Impure =
             import java.util.concurrent.locks.Condition.await();
+            use Concurrent.Condition;
             let Condition(c) = condition;
             try {
                 Ok(await(c))
@@ -50,8 +51,9 @@ namespace Concurrent {
         /// time(nanos) elapses. The method returns an estimate of the number of nanoseconds remaining to wait
         /// given the supplied nanosTimeout value upon return, or a value less than or equal to zero if it timed out.
         ///
-        pub def awaitTimeout(condition: Condition, timeout: Int64): Result[Int64, ConditionError] & Impure =
+        pub def awaitTimeout(condition: Concurrent.Condition, timeout: Int64): Result[Int64, ConditionError] & Impure =
             import java.util.concurrent.locks.Condition.awaitNanos(Int64);
+            use Concurrent.Condition;
             let Condition(c) = condition;
             try {
                 Ok(awaitNanos(c, timeout))
@@ -63,8 +65,9 @@ namespace Concurrent {
         ///
         /// Causes the current thread to wait until it is signalled.
         ///
-        pub def awaitUninterruptibly(condition: Condition): Result[Unit, ##java.lang.IllegalMonitorStateException] & Impure =
+        pub def awaitUninterruptibly(condition: Concurrent.Condition): Result[Unit, ##java.lang.IllegalMonitorStateException] & Impure =
             import java.util.concurrent.locks.Condition.awaitUninterruptibly();
+            use Concurrent.Condition;
             let Condition(c) = condition;
             try {
                 Ok(awaitUninterruptibly(c))
@@ -75,8 +78,9 @@ namespace Concurrent {
         ///
         /// Wakes up one waiting thread.
         ///
-        pub def signal(condition: Condition): Result[Unit, ##java.lang.IllegalMonitorStateException] & Impure =
+        pub def signal(condition: Concurrent.Condition): Result[Unit, ##java.lang.IllegalMonitorStateException] & Impure =
             import java.util.concurrent.locks.Condition.signal();
+            use Concurrent.Condition;
             let Condition(c) = condition;
             try {
                 Ok(signal(c))
@@ -87,8 +91,9 @@ namespace Concurrent {
         ///
         /// Wakes up all waiting threads.
         ///
-        pub def signalAll(condition: Condition): Result[Unit, ##java.lang.IllegalMonitorStateException] & Impure =
+        pub def signalAll(condition: Concurrent.Condition): Result[Unit, ##java.lang.IllegalMonitorStateException] & Impure =
             import java.util.concurrent.locks.Condition.signalAll();
+            use Concurrent.Condition;
             let Condition(c) = condition;
             try {
                 Ok(signalAll(c))
