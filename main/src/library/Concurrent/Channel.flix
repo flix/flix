@@ -112,6 +112,7 @@ namespace Concurrent {
             import static dev.flix.runtime.GlobalCounter.newId();
             let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
             let unBuffered = bufferSize == 0;
+            use Concurrent.ReentrantLock;
             let reentrantLock = ReentrantLock.new(false);
             Mpmc(
                 newId(),
@@ -182,6 +183,7 @@ namespace Concurrent {
             // Create a new lock and condition for this select. The condition is
             // potentially put into the waiting getters of the channels if a
             // default isn't defined.
+            use Concurrent.ReentrantLock;
             let selectLock = ReentrantLock.new(false);
             let selectCondition = ReentrantLock.newCondition(selectLock);
 
@@ -379,7 +381,7 @@ namespace Concurrent {
         /// Add a condition to the list of waiting getters.
         /// The channel lock is expected to be held.
         ///
-        def addGetter(l: ReentrantLock, cond: Condition, c: Mpmc): Unit & Impure =
+        def addGetter(l: ReentrantLock, cond: Concurrent.Condition, c: Mpmc): Unit & Impure =
             let pair = (l, cond);
             let Mpmc(_, _, _, _, _, waitingGetters, _) = c;
 
@@ -432,7 +434,8 @@ namespace Concurrent {
         /// `bug!`.
         /// The channel lock is expected to be held.
         ///
-        def awaitCondition(c: Condition): Unit & Impure =
+        def awaitCondition(c: Concurrent.Condition): Unit & Impure =
+            use Concurrent.Condition;
             match Condition.awaitUninterruptibly(c) {
                 case Ok(_) => ()
                 case Err(_) =>
@@ -444,7 +447,8 @@ namespace Concurrent {
         /// Wrapper for `Condition.signalAll(c)` that handles `Err` with `bug!`.
         /// The condition lock is expected to be held.
         ///
-        def signalCondition(c: Condition): Unit & Impure =
+        def signalCondition(c: Concurrent.Condition): Unit & Impure =
+            use Concurrent.Condition;
             match Condition.signalAll(c) {
                 case Ok(_) => ()
                 case Err(_) =>

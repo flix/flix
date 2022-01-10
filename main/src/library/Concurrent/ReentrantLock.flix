@@ -34,8 +34,9 @@ namespace Concurrent {
         ///
         /// Returns true if this lock has fairness set true.
         ///
-        pub def isFair(lock: ReentrantLock): Bool & Impure =
+        pub def isFair(lock: Concurrent.ReentrantLock): Bool & Impure =
             import java.util.concurrent.locks.ReentrantLock.isFair();
+            use Concurrent.ReentrantLock;
             let ReentrantLock(l) = lock;
             isFair(l)
 
