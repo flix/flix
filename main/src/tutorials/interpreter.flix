@@ -53,7 +53,7 @@ enum BExp {
 //
 // We now define a small interpreter for arithmetic expressions.
 //
-def evalAExp(e: AExp): Int = match e {
+def evalAExp(e: AExp): Int32 = match e {
     case Cst(i)                 => i
     case Plus(e1, e2)           => evalAExp(e1) + evalAExp(e2)
     case Minus(e1, e2)          => evalAExp(e1) - evalAExp(e2)
@@ -84,19 +84,19 @@ def evalBExp(e: BExp): Bool = match e {
 //
 
 @test
-def testEvalAExp1(): Int = evalAExp(Cst(42))
+def testEvalAExp1(): Int32 = evalAExp(Cst(42))
 
 @test
-def testEvalAExp2(): Int = evalAExp(Plus(Cst(42), Cst(21)))
+def testEvalAExp2(): Int32 = evalAExp(Plus(Cst(42), Cst(21)))
 
 @test
-def testEvalAExp3(): Int = evalAExp(Minus(Cst(42), Cst(21)))
+def testEvalAExp3(): Int32 = evalAExp(Minus(Cst(42), Cst(21)))
 
 @test
-def testEvalAExp4(): Int = evalAExp(IfThenElse(True, Cst(1), Cst(2)))
+def testEvalAExp4(): Int32 = evalAExp(IfThenElse(True, Cst(1), Cst(2)))
 
 @test
-def testEvalAExp5(): Int = evalAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)))
+def testEvalAExp5(): Int32 = evalAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)))
 
 @test
 def testEvalBExp1(): Bool = evalBExp(True)
@@ -240,7 +240,7 @@ def testCompileBExp5(): List[Inst] = compileBExp(Neq(Cst(1), Cst(2)))
 //
 // Finally, we write an interpreter for the stack-based language:
 //
-def evalInst(instructions: List[Inst], stack: List[Int]): Int = match (instructions, stack) {
+def evalInst(instructions: List[Inst], stack: List[Int32]): Int32 = match (instructions, stack) {
     case (Nil, x :: _) => x
     case ((Push(i)) :: rs, st) => evalInst(rs, i :: st)
     case (Add :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 + i2) :: st)
@@ -278,19 +278,19 @@ def evalInst(instructions: List[Inst], stack: List[Int]): Int = match (instructi
 // and we can test the compiler and interpreter:
 //
 @test
-def testCompileAndEval1(): Int = evalInst(compileAExp(Cst(42)), Nil)
+def testCompileAndEval1(): Int32 = evalInst(compileAExp(Cst(42)), Nil)
 
 @test
-def testCompileAndEval2(): Int = evalInst(compileAExp(Plus(Cst(42), Cst(21))), Nil)
+def testCompileAndEval2(): Int32 = evalInst(compileAExp(Plus(Cst(42), Cst(21))), Nil)
 
 @test
-def testCompileAndEval3(): Int = evalInst(compileAExp(Minus(Cst(42), Cst(21))), Nil)
+def testCompileAndEval3(): Int32 = evalInst(compileAExp(Minus(Cst(42), Cst(21))), Nil)
 
 @test
-def testCompileAndEval4(): Int = evalInst(compileAExp(IfThenElse(True, Cst(1), Cst(2))), Nil)
+def testCompileAndEval4(): Int32 = evalInst(compileAExp(IfThenElse(True, Cst(1), Cst(2))), Nil)
 
 @test
-def testCompileAndEval5(): Int = evalInst(compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21))), Nil)
+def testCompileAndEval5(): Int32 = evalInst(compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21))), Nil)
 
 @test
-def testCompileAndEval6(): Int = evalInst(compileAExp(IfThenElse(Eq(Cst(1), Cst(2)), Cst(42), Times(Cst(21), Cst(82)))), Nil)
+def testCompileAndEval6(): Int32 = evalInst(compileAExp(IfThenElse(Eq(Cst(1), Cst(2)), Cst(42), Times(Cst(21), Cst(82)))), Nil)

@@ -388,15 +388,15 @@ namespace TestMonoid {
     def mapCombine01(): Bool = combine(Map#{}, Map#{}): Map[Int32, String] == Map#{}
 
     @test
-    def mapCombine02(): Bool = combine(Map#{1 -> "A"}, Map#{}) == Map#{1 -> "A"}
+    def mapCombine02(): Bool = combine(Map#{1 => "A"}, Map#{}) == Map#{1 => "A"}
 
     @test
-    def mapCombine03(): Bool = combine(Map#{}, Map#{1 -> "a"}) == Map#{1 -> "a"}
+    def mapCombine03(): Bool = combine(Map#{}, Map#{1 => "a"}) == Map#{1 => "a"}
 
     @test
-    def mapCombine04(): Bool = combine(Map#{1 -> "A"}, Map#{1 -> "a"}) == Map#{1 -> "Aa"}
+    def mapCombine04(): Bool = combine(Map#{1 => "A"}, Map#{1 => "a"}) == Map#{1 => "Aa"}
 
     @test
-    def mapCombine05(): Bool = combine(Map#{1 -> "A", 2 -> "B", 3 -> "C"}, Map#{2 -> "b", 3 -> "c", 4 -> "d"}) == Map#{1 -> "A", 2 -> "Bb", 3 -> "Cc", 4 -> "d"}
+    def mapCombine05(): Bool = combine(Map#{1 => "A", 2 => "B", 3 => "C"}, Map#{2 => "b", 3 => "c", 4 => "d"}) == Map#{1 => "A", 2 => "Bb", 3 => "Cc", 4 => "d"}
 
 }

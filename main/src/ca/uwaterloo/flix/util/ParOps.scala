@@ -29,7 +29,7 @@ object ParOps {
     * Apply the given function `f` to each element in the list `xs` in parallel.
     */
   @inline
-  def parMap[A, B](xs: Iterable[A], f: A => B)(implicit flix: Flix): Iterable[B] = {
+  def parMap[A, B](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
     // Build the parallel array.
     val parArray = xs.toParArray
 

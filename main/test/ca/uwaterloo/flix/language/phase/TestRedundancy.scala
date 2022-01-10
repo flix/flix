@@ -58,34 +58,13 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.HiddenVarSym](result)
   }
 
-  test("HiddenVarSym.Existential.01") {
-    val input =
-      s"""
-         |def f(): Bool = exists (_x: Bool). _x
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.HiddenVarSym](result)
-  }
-
-  test("HiddenVarSym.Universal.01") {
-    val input =
-      s"""
-         |def f(): Bool = forall (_x: Bool). _x
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.HiddenVarSym](result)
-  }
-
   test("HiddenVarSym.Predicate.01") {
     val input =
       s"""
-         |def f(): Bool =
-         |  let _x = #{
+         |def f(): #{ A(Int32), B(Int32) } =
+         |  #{
          |    A(_x) :- B(_x).
-         |  };
-         |  true
+         |  }
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -95,11 +74,10 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Predicate.02") {
     val input =
       s"""
-         |def f(): Bool =
-         |  let _x = #{
+         |def f(): #{ A(Int32), B(Int32), C(Int32) } =
+         |  #{
          |    A(2) :- B(_x), C(_x).
-         |  };
-         |  true
+         |  }
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -253,30 +231,6 @@ class TestRedundancy extends FunSuite with TestUtils {
         |        case (u, v) => (u, v)
         |        case (y, x) => (x, y)
         |    }
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
-  }
-
-  test("ShadowedVar.Existential.01") {
-    val input =
-      """
-        |def f(): Bool =
-        |    let x = 123;
-        |    exists (x: Bool). x
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
-  }
-
-  test("ShadowedVar.Universal.01") {
-    val input =
-      """
-        |def f(): Bool =
-        |    let x = 123;
-        |    forall (x: Bool). x
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -468,26 +422,6 @@ class TestRedundancy extends FunSuite with TestUtils {
          |pub def f(): (Int, Int) =
          |  let f = (x, y, z) -> (x, z);
          |  f(1, 2, 3)
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedFormalParam](result)
-  }
-
-  test("UnusedFormalParam.Forall.01") {
-    val input =
-      s"""
-         |pub def f(): Bool = forall(x: Int). true
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedFormalParam](result)
-  }
-
-  test("UnusedFormalParam.Exists.01") {
-    val input =
-      s"""
-         |pub def f(): Bool = exists(x: Int). true
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -825,6 +759,38 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
+  test("RedundantPurityCast.01") {
+    val input =
+      s"""
+         |pub def f(): Int32 = 123 as & Pure
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantPurityCast](result)
+  }
+
+  test("RedundantPurityCast.02") {
+    val input =
+      s"""
+         |pub def f(): Array[Int32] & Impure =
+         |  let x = [1, 2, 3];
+         |  x as & Pure
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantPurityCast](result)
+  }
+
+  test("RedundantEffectCast.01") {
+    val input =
+      s"""
+         |pub def f(g: Int32 -> Int32 & ef): Int32 & ef = g(123) as & ef
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantEffectCast](result)
+  }
+
   test("RedundantTypeConstraint.Class.01") {
     val input =
       """
@@ -947,11 +913,10 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("IllegalSingleVariable.Predicate.01") {
     val input =
       s"""
-         |def f(): Bool =
-         |  let _x = #{
+         |def f(): #{ A(Int32), B(Int32), C(Int32) } =
+         |  #{
          |    A(x) :- B(x), C(y).
-         |  };
-         |  true
+         |  }
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)

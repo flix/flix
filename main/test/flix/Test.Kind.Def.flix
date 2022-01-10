@@ -51,17 +51,17 @@ namespace Test/Def/Kinding {
         namespace Effect {
             pub enum EBool[_a: Bool]
 
-            pub def bool(): Int & ef = ???
+            pub def bool(): Int & ef = ??? as & ef
 
-            pub def func(x: Int -> Int & ef): Int & ef = ???
+            pub def func(x: Int -> Int & ef): Int & ef = ??? as & ef
 
-            pub def enum(x: EBool[ef]): Int & ef = ???
+            pub def enum(x: EBool[ef]): Int & ef = ??? as & ef
         }
 
         namespace Exp {
             rel R(i: Int)
 
-            pub def star(x: a): Int = ???: a; ???
+            pub def star(x: a): Int = let _: a = ???; ???
         }
     }
 
@@ -97,7 +97,7 @@ namespace Test/Def/Kinding {
             pub def starToStar[a: Type -> Type](x: a[Int]): Int with CStarToStar[a] = ???
 
             // cannot be inferred
-            pub def boolToStar[a: Bool -> Type, e: Bool](x: a[e]): Int & e with CBoolToStar[a] = ???
+            pub def boolToStar[a: Bool -> Type, ef: Bool](x: a[ef]): Int & ef with CBoolToStar[a] = ??? as & ef
         }
 
         namespace Enum {
@@ -120,17 +120,17 @@ namespace Test/Def/Kinding {
         namespace Effect {
             pub enum EBool[_a: Bool]
 
-            pub def bool[ef: Bool](): Int & ef = ???
+            pub def bool[ef: Bool](): Int & ef = ??? as & ef
 
-            pub def func[ef: Bool](x: Int -> Int & ef): Int & ef = ???
+            pub def func[ef: Bool](x: Int -> Int & ef): Int & ef = ??? as & ef
 
-            pub def enum[ef: Bool](x: EBool[ef]): Int & ef = ???
+            pub def enum[ef: Bool](x: EBool[ef]): Int & ef = ??? as & ef
         }
 
         namespace Exp {
             rel R(i: Int)
 
-            pub def star[a: Type](x: a): Int = ???: a; ???
+            pub def star[a: Type](x: a): Int = let _: a = ???; ???
         }
     }
 

@@ -32,9 +32,7 @@ object HoverProvider {
 
       case Some(entity) => entity match {
 
-        case Entity.Case(caze) => hoverTypAndEff(caze.sc.base, Type.Pure, caze.tag.loc)
-
-        case Entity.Enum(enu) => hoverTypeConstructor(enu.sc.base.typeConstructor.getOrElse(TypeConstructor.Unit), enu.sym.loc)
+        case Entity.Case(caze) => hoverType(caze.sc.base, caze.tag.loc)
 
         case Entity.Exp(exp) =>
           exp match {
@@ -42,24 +40,32 @@ object HoverProvider {
 
             case Expression.Sig(sym, _, loc) => hoverSig(sym, loc)
 
-            case Expression.FixpointConstraintSet(_, stf, tpe, loc) => hoverFixpoint(tpe, Type.Pure, stf, loc)
-
-            case Expression.FixpointMerge(_, _, stf, tpe, eff, loc) => hoverFixpoint(tpe, eff, stf, loc)
-
-            case Expression.FixpointSolve(_, stf, tpe, eff, loc) => hoverFixpoint(tpe, eff, stf, loc)
-
             case _ => hoverTypAndEff(exp.tpe, exp.eff, exp.loc)
           }
 
-        case Entity.Pattern(pat) => hoverTypAndEff(pat.tpe, Type.Pure, pat.loc)
+        case Entity.FormalParam(fparam) => hoverType(fparam.tpe, fparam.loc)
 
-        case Entity.LocalVar(sym, tpe) => hoverTypAndEff(tpe, Type.Pure, sym.loc)
+        case Entity.Pattern(pat) => hoverType(pat.tpe, pat.loc)
+
+        case Entity.LocalVar(sym, tpe) => hoverType(tpe, sym.loc)
 
         case Entity.TypeCon(tc, loc) => hoverTypeConstructor(tc, loc)
 
         case _ => mkNotFound(uri, pos)
       }
     }
+  }
+
+  private def hoverType(tpe: Type, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
+    val markup =
+      s"""```flix
+         |${FormatType.formatType(tpe)}
+         |```
+         |""".stripMargin
+    val contents = MarkupContent(MarkupKind.Markdown, markup)
+    val range = Range.from(loc)
+    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
+    ("status" -> "success") ~ ("result" -> result)
   }
 
   private def hoverTypAndEff(tpe: Type, eff: Type, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
@@ -104,20 +110,6 @@ object HoverProvider {
     ("status" -> "success") ~ ("result" -> result)
   }
 
-  private def hoverFixpoint(tpe: Type, eff: Type, stf: Ast.Stratification, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
-    val markup =
-      s"""```flix
-         |${formatTypAndEff(tpe, eff)}
-         |```
-         |
-         |${formatStratification(stf)}
-         |""".stripMargin
-    val contents = MarkupContent(MarkupKind.Markdown, markup)
-    val range = Range.from(loc)
-    val result = ("contents" -> contents.toJSON) ~ ("range" -> range.toJSON)
-    ("status" -> "success") ~ ("result" -> result)
-  }
-
   private def formatTypAndEff(tpe0: Type, eff0: Type): String = {
     val t = FormatType.formatType(tpe0)
     val e = eff0 match {
@@ -142,20 +134,6 @@ object HoverProvider {
 
   private def formatKind(tc: TypeConstructor): String = {
     FormatKind.formatKind(tc.kind)
-  }
-
-  private def formatStratification(stf: Ast.Stratification): String = {
-    val sb = new StringBuilder()
-    val max = stf.m.values.max
-    for (i <- 0 to max) {
-      sb.append("Stratum ").append(i).append(":").append("\r\n")
-      for ((sym, stratum) <- stf.m) {
-        if (i == stratum) {
-          sb.append("  ").append(sym).append("\r\n")
-        }
-      }
-    }
-    sb.toString()
   }
 
   /**

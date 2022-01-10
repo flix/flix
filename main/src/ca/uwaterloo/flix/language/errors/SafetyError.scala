@@ -1,15 +1,14 @@
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.vt.VirtualString._
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for safety errors.
   */
-sealed trait SafetyError extends CompilationError {
-  def kind: String = "Safety Error"
+sealed trait SafetyError extends CompilationMessage {
+  val kind: String = "Safety Error"
 }
 
 object SafetyError {
@@ -22,18 +21,24 @@ object SafetyError {
   case class IllegalNonPositivelyBoundVariable(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Illegal non-positively bound variable '$sym'."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal non-positively bound variable '" << Red(sym.text) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "the variable occurs in this negated atom.") << NewLine
-      if (!sym.isWild) {
-        vt << NewLine
-        vt << Underline("Tip:") << " Ensure that the variable occurs in at least one positive atom." << NewLine
-      }
-      vt
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal non-positively bound variable '${red(sym.text)}'.
+         |
+         |${code(loc, "the variable occurs in this negated atom.")}
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      if (!sym.isWild)
+        s"""
+           |${underline("Tip:")} Ensure that the variable occurs in at least one positive atom.
+           |""".stripMargin
+      else
+        ""
+    })
   }
 
   /**
@@ -44,14 +49,19 @@ object SafetyError {
   case class IllegalNegativelyBoundWildVariable(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Illegal negatively bound variable '$sym'."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal negatively bound variable '" << Red(sym.text) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "the variable occurs in this negated atom.") << NewLine
-      vt
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal negatively bound variable '${red(sym.text)}'.
+         |
+         |${code(loc, "the variable occurs in this negated atom.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -62,13 +72,18 @@ object SafetyError {
   case class IllegalNegativelyBoundWildcard(loc: SourceLocation) extends SafetyError {
     def summary: String = s"Illegal negatively bound wildcard '_'."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal negatively bound wildcard '" << Red("_") << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "the wildcard occurs in this negated atom.") << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal negatively bound wildcard '${red("_")}'.
+         |
+         |${code(loc, "the wildcard occurs in this negated atom.")}
+         |""".stripMargin
     }
-  }
 
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
+  }
 }
