@@ -115,7 +115,7 @@ namespace Console {
     /// Helper for `hex`.
     /// Returns `hexNo` as a hex number.
     ///
-    pub def stringToHex(hexNo: String): Option[Int32] & Pure =
+    def stringToHex(hexNo: String): Option[Int32] & Pure =
         import static java.lang.Integer.parseInt(String, Int32);
         try {
             Some(parseInt(hexNo, 16)) as & Pure
