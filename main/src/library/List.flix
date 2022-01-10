@@ -1362,7 +1362,7 @@ namespace List {
     ///
     /// Returns the sum of all elements in the list `l` according to the function `f`.
     ///
-    pub def sumWith(f: a -> Int32 & ef, l: List[a]): Int32 =
+    pub def sumWith(f: a -> Int32 & ef, l: List[a]): Int32 & ef =
         def loop(l2, acc) = match l2 {
             case Nil     => acc
             case x :: xs => loop(xs, f(x) + acc)
