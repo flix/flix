@@ -381,6 +381,23 @@ namespace Nel {
     }
 
     ///
+    /// Returns the sum of all elements in the list `l`.
+    ///
+    pub def sum(l: Nel[Int32]): Int32 =
+        sumWith(x -> x, l)
+
+    ///
+    /// Returns the sum of all elements in the list `l` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, l: Nel[a]): Int32 & ef =
+        def loop(l2, acc) = match l2 {
+            case Nil     => acc
+            case x :: xs => loop(xs, f(x) + acc)
+        };
+        let Nel(x, xs) = l;
+        loop(x :: xs, 0)
+
+    ///
     /// Returns the concatenation of the elements in `l`.
     ///
     @Time(length(l)) @Space(length(l))
@@ -515,17 +532,6 @@ namespace Nel {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
         }
-
-    ///
-    /// Returns the sum of all elements in the list `l`.
-    ///
-    pub def sum(l: Nel[Int32]): Int32 =
-        def loop(l2, acc) = match l2 {
-            case Nil     => acc
-            case x :: xs => loop(xs, x + acc)
-        };
-        let Nel(x, xs) = l;
-        loop(x :: xs, 0)
 
     ///
     /// Returns an iterator over `l`.
