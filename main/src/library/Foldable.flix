@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-///
+/// test comment
 /// A type class for data structures that can be folded.
 ///
 pub lawless class Foldable[t : Type -> Type] {
