@@ -160,7 +160,7 @@ namespace Map {
     ///
     pub def minimumKey(m: Map[k, v]): Option[(k, v)] =
         let Map(t) = m;
-        RedBlackTree.minimum(t)
+        RedBlackTree.minimumKey(t)
 
     ///
     /// Optionally finds `k => v` where `k` is the smallest key according to the given comparator `cmp`.
@@ -222,7 +222,7 @@ namespace Map {
     ///
     pub def maximumKey(m: Map[k, v]): Option[(k, v)] =
         let Map(t) = m;
-        RedBlackTree.maximum(t)
+        RedBlackTree.maximumKey(t)
 
     ///
     /// Optionally finds `k => v` where `k` is the largest key according to the given comparator `cmp`.
