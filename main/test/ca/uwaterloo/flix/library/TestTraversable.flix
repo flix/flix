@@ -432,12 +432,12 @@ namespace TestTraversable {
 
     @test
     def sequenceMap01(): Bool =
-        let m: Map[Int, Option[Int32]] = Map#{};
+        let m: Map[Int32, Option[Int32]] = Map#{};
         sequence(m) == Some(Map#{})
 
     @test
     def sequenceMap02(): Bool =
-        let m: Map[Int, Option[Int32]] = Map#{1 => None};
+        let m: Map[Int32, Option[Int32]] = Map#{1 => None};
         sequence(m) == None
 
     @test
@@ -550,12 +550,12 @@ namespace TestTraversable {
 
     @test
     def sequenceRedBlackTree01(): Bool =
-        let t: RedBlackTree.RedBlackTree[Int, Option[Int32]] = RedBlackTree.empty();
+        let t: RedBlackTree.RedBlackTree[Int32, Option[Int32]] = RedBlackTree.empty();
         sequence(t) == Some(RedBlackTree.empty())
 
     @test
     def sequenceRedBlackTree02(): Bool =
-        let t: RedBlackTree.RedBlackTree[Int, Option[Int32]] = toRedBlackTree((1, None) :: Nil);
+        let t: RedBlackTree.RedBlackTree[Int32, Option[Int32]] = toRedBlackTree((1, None) :: Nil);
         sequence(t) == None
 
     @test
