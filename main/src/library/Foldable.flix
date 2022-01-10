@@ -188,7 +188,7 @@ pub lawless class Foldable[t : Type -> Type] {
     ///
     /// Returns a map with elements of `s` as keys and `f` applied as values.
     ///
-    pub def toMapWith(f: a -> b, s: t[a]): Map[a, b] with Order[a], Foldable[t] =
+    pub def toMapWith(f: a -> b, s: t[a]): Map[a, b] with Order[a] =
             Foldable.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
 
     ///
