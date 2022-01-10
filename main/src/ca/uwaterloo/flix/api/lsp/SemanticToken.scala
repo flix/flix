@@ -18,10 +18,10 @@ package ca.uwaterloo.flix.api.lsp
 import ca.uwaterloo.flix.language.ast.SourceLocation
 
 /**
- * Represents a semantic token in LSP.
- *
- * @param loc The location of the token.
- * @param tokenType What kind of token this is ("number" or "string" or "function" or ...).
- * @param tokenModifiers A list of modifiers that apply to this token (e.g. "declaration" or "static").
- */
-case class SemanticToken(loc: SourceLocation, tokenType: SemanticTokenType, tokenModifiers: List[SemanticTokenModifier])
+  * Represents a semantic token in LSP.
+  *
+  * @param tpe the token type (e.g. variable).
+  * @param mod the token modifiers (e.g. static).
+  * @param loc the source location of the semantic token.
+  */
+case class SemanticToken(tpe: SemanticTokenType, mod: List[SemanticTokenModifier], loc: SourceLocation)
