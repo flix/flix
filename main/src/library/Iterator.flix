@@ -124,6 +124,26 @@ namespace Iterator {
         Iterator(done, next)
 
     ///
+    /// Returns the sum of all elements in the iterator `iter`.
+    ///
+    pub def sum(iter: Iterator[Int32]): Int32 & Impure =
+        sumWith(x -> x, iter)
+
+    ///
+    /// Returns the sum of all elements in the iterator `iter` according to the function `f`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, iter: Iterator[a]): Int32 & Impure =
+        let Iterator(done, next) = iter;
+        def loop(acc) =
+            if (done())
+                acc
+            else
+                loop(f(next()) + acc);
+        loop(0)
+
+    ///
     /// Returns an array with the elements of `iter`.
     ///
     pub def toArray(iter: Iterator[a]): Array[a] & Impure =
