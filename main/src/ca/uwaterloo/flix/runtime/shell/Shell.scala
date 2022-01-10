@@ -16,28 +16,22 @@
 
 package ca.uwaterloo.flix.runtime.shell
 
-import java.nio.file._
-import java.util.concurrent.Executors
-import java.util.logging.{Level, Logger}
-
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.Ast.HoleContext
-import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
+import ca.uwaterloo.flix.language.ast.Ast
+import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.debug.Audience
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
+import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.tc.Show
-import ca.uwaterloo.flix.util.tc.Show._
-import ca.uwaterloo.flix.util.vt.VirtualString._
-import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 import org.jline.reader.{EndOfFileException, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
-import scala.jdk.CollectionConverters._
+import java.nio.file._
+import java.util.concurrent.Executors
+import java.util.logging.{Level, Logger}
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 
 class Shell(initialPaths: List[Path], options: Options) {
 
@@ -47,11 +41,6 @@ class Shell(initialPaths: List[Path], options: Options) {
     * The number of warmup iterations.
     */
   private val WarmupIterations = 80
-
-  /**
-    * The default color context.
-    */
-  private implicit val terminalContext: TerminalContext = TerminalContext.AnsiTerminal
 
   /**
     * The executor service.
@@ -64,14 +53,14 @@ class Shell(initialPaths: List[Path], options: Options) {
   private val sourcePaths = mutable.Set.empty[Path] ++ initialPaths
 
   /**
-    * The current flix instance (initialized on startup).
+    * The set of changed sources.
     */
-  private var flix: Flix = _
+  private var changeSet: Set[Ast.Input] = Set.empty
 
   /**
-    * The current typed ast root (initialized on startup).
+    * The Flix instance (the same instance is used for incremental compilation).
     */
-  private var root: Root = _
+  private val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
 
   /**
     * The current compilation result (initialized on startup).
@@ -163,13 +152,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   private def execute(cmd: Command)(implicit terminal: Terminal): Unit = cmd match {
     case Command.Nop => // nop
     case Command.Run => execRun()
-    case Command.Hole(fqnOpt) => execHole(fqnOpt)
-    case Command.Browse(ns) => execBrowse(ns)
-    case Command.Doc(fqn) => execDoc(fqn)
-    case Command.Search(s) => execSearch(s)
     case Command.Reload => execReload()
-    case Command.Benchmark => execBenchmark()
-    case Command.Test => execTest()
     case Command.Warmup => execWarmup()
     case Command.Watch => execWatch()
     case Command.Unwatch => execUnwatch()
@@ -194,169 +177,26 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Shows the hole context of the given `fqn`.
-    */
-  private def execHole(fqnOpt: Option[String])(implicit terminal: Terminal): Unit = fqnOpt match {
-    case None =>
-      // Case 1: Print all available holes.
-      prettyPrintHoles()
-    case Some(fqn) =>
-      // Case 2: Print the given hole.
-
-      // Compute the hole symbol.
-      val sym = Symbol.mkHoleSym(fqn)
-
-      // Retrieve all the holes in the program.
-      val holes = TypedAstOps.holesOf(root)
-
-      // Lookup the hole symbol.
-      holes.get(sym) match {
-        case None =>
-          // Case 1: Hole not found.
-          terminal.writer().println(s"Undefined hole: '$fqn'.")
-        case Some(HoleContext(_, holeType, env)) =>
-          // Case 2: Hole found.
-          val vt = new VirtualTerminal
-
-          // Indent
-          vt << "  "
-
-          // Iterate through the premises, i.e. the variable symbols in scope.
-          for ((varSym, varType) <- env) {
-            vt << Blue(varSym.text) << ": " << Cyan(FormatType.formatType(varType)) << " " * 6
-          }
-
-          // Print the divider.
-          vt << NewLine << "-" * 80 << NewLine
-
-          // Print the goal.
-          vt << Blue(sym.toString) << ": " << Cyan(FormatType.formatType(holeType)) << NewLine
-
-          // Print the result to the terminal.
-          terminal.writer().print(vt.fmt)
-      }
-  }
-
-  /**
-    * Executes the browse command.
-    */
-  private def execBrowse(nsOpt: Option[String])(implicit terminal: Terminal): Unit = nsOpt match {
-    case None =>
-      // Case 1: Browse available namespaces.
-
-      // Construct a new virtual terminal.
-      val vt = new VirtualTerminal
-
-      // Find the available namespaces.
-      val namespaces = namespacesOf(this.root)
-
-      vt << Bold("Namespaces:") << Indent << NewLine << NewLine
-      for (namespace <- namespaces.toList.sorted) {
-        vt << namespace << NewLine
-      }
-      vt << Dedent << NewLine
-
-      // Print the result to the terminal.
-      terminal.writer().print(vt.fmt)
-
-    case Some(ns) =>
-      // Case 2: Browse a specific namespace.
-
-      // Construct a new virtual terminal.
-      val vt = new VirtualTerminal
-
-      // Print the matched definitions.
-      val matchedDefs = getDefinitionsByNamespace(ns, this.root)
-      if (matchedDefs.nonEmpty) {
-        vt << Bold("Definitions:") << Indent << NewLine << NewLine
-        for (defn <- matchedDefs.sortBy(_.sym.name)) {
-          prettyPrintDef(defn, vt)
-        }
-        vt << Dedent << NewLine
-      }
-
-      // Print the result to the terminal.
-      terminal.writer().print(vt.fmt)
-  }
-
-  /**
-    * Executes the doc command.
-    */
-  private def execDoc(fqn: String)(implicit terminal: Terminal): Unit = {
-    val sym = Symbol.mkDefnSym(fqn)
-    this.root.defs.get(sym) match {
-      case None =>
-        // Case 1: Symbol not found.
-        terminal.writer().println(s"Undefined symbol: '$sym'.")
-      case Some(defn) =>
-        // Case 2: Symbol found.
-
-        // Construct a new virtual terminal.
-        val vt = new VirtualTerminal
-        prettyPrintDef(defn, vt)
-        vt << defn.spec.doc.text
-        vt << NewLine
-
-        // Print the result to the terminal.
-        terminal.writer().print(vt.fmt)
-    }
-  }
-
-  /**
-    * Searches for the given `needle`.
-    */
-  private def execSearch(needle: String)(implicit terminal: Terminal): Unit = {
-    /**
-      * Returns `true` if the definition `d` is matched by the `needle`.
-      */
-    def isMatched(d: Def): Boolean = d.sym.name.toLowerCase.contains(needle.toLowerCase)
-
-    // Construct a new virtual terminal.
-    val vt = new VirtualTerminal
-    vt << Bold("Definitions:") << Indent << NewLine << NewLine
-
-    // Group definitions by namespace.
-    val defsByNamespace = this.root.defs.values.groupBy(_.sym.namespace).toList
-
-    // Loop through each namespace.
-    for ((ns, defns) <- defsByNamespace) {
-      // Compute the matched definitions.
-      val matchedDefs = defns.filter(isMatched)
-
-      // Print the namespace.
-      if (matchedDefs.nonEmpty) {
-        vt << Bold(ns.mkString("/")) << Indent << NewLine
-        for (defn <- matchedDefs) {
-          prettyPrintDef(defn, vt)
-        }
-        vt << Dedent << NewLine
-      }
-    }
-    vt << Dedent << NewLine
-
-    // Print the result to the terminal.
-    terminal.writer().print(vt.fmt)
-  }
-
-  /**
     * Reloads every source path.
     */
   private def execReload()(implicit terminal: Terminal): Unit = {
     // Instantiate a fresh flix instance.
-    this.flix = new Flix()
     this.flix.setOptions(options)
 
     // Add each path to Flix.
     for (path <- this.sourcePaths) {
-      this.flix.addPath(path)
+      val ext = path.toFile.getName.split('.').last
+      ext match {
+        case "flix" => flix.addSourcePath(path)
+        case "fpkg" => flix.addSourcePath(path)
+        case "jar" => flix.addJar(path)
+        case _ => throw new IllegalStateException(s"Unrecognized file extension: '$ext'.")
+      }
     }
 
     // Compute the TypedAst and store it.
     this.flix.check() match {
-      case Validation.Success(ast) =>
-        this.root = ast
-        // Pretty print the holes (if any).
-        prettyPrintHoles()
+      case Validation.Success(root) =>
 
         // Generate code.
         flix.codeGen(root) match {
@@ -364,14 +204,13 @@ class Shell(initialPaths: List[Path], options: Options) {
             compilationResult = m
           case Validation.Failure(errors) =>
             for (error <- errors) {
-              terminal.writer().print(error.message.fmt)
+              terminal.writer().print(error)
             }
         }
       case Validation.Failure(errors) =>
         terminal.writer().println()
-        for (error <- errors) {
-          terminal.writer().print(error.message.fmt)
-        }
+        flix.mkMessages(errors)
+          .foreach(terminal.writer().print)
         terminal.writer().println()
         terminal.writer().print(prompt)
         terminal.writer().flush()
@@ -380,30 +219,11 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
-    * Run all benchmarks in the program.
-    */
-  private def execBenchmark()(implicit terminal: Terminal): Unit = {
-    // Run all benchmarks.
-    Benchmarker.benchmark(this.compilationResult, terminal.writer())(options)
-  }
-
-  /**
-    * Run all unit tests in the program.
-    */
-  private def execTest()(implicit terminal: Terminal): Unit = {
-    // Run all unit tests.
-    val vt = Tester.test(this.compilationResult)
-
-    // Print the result to the terminal.
-    terminal.writer().print(vt.output.fmt)
-  }
-
-  /**
     * Warms up the compiler by running it multiple times.
     */
   private def execWarmup()(implicit terminal: Terminal): Unit = {
     val elapsed = mutable.ListBuffer.empty[Duration]
-    for (i <- 0 until WarmupIterations) {
+    for (_ <- 0 until WarmupIterations) {
       val t = System.nanoTime()
       execReload()
       terminal.writer().print(".")
@@ -464,12 +284,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     w.println()
     w.println("  :run                            Runs the main function.")
     w.println("  :hole         <fqn>             Shows the hole context of <fqn>.")
-    w.println("  :browse       <ns>              Shows all entities in <ns>.")
-    w.println("  :doc          <fqn>             Shows documentation for <fqn>.")
-    w.println("  :search       <needle>          Shows all entities that match <needle>.")
     w.println("  :reload :r                      Recompiles every source file.")
-    w.println("  :benchmark                      Run all benchmarks in the program and show the results.")
-    w.println("  :test                           Run all unit tests in the program and show the results.")
     w.println("  :warmup                         Warms up the compiler by running it multiple times.")
     w.println("  :watch :w                       Watches all source files for changes.")
     w.println("  :unwatch                        Unwatches all source files for changes.")
@@ -491,72 +306,6 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def execUnknown(s: String)(implicit terminal: Terminal): Unit = {
     terminal.writer().println(s"Unknown command '$s'. Try `:run` or `:help'.")
-  }
-
-  /**
-    * Returns the namespaces in the given AST `root`.
-    */
-  private def namespacesOf(root: Root): Set[String] = root.defs.keySet.map(_.namespace.mkString("/"))
-
-  /**
-    * Returns the definitions in the given namespace.
-    */
-  private def getDefinitionsByNamespace(ns: String, root: Root): List[Def] = {
-    val namespace: List[String] = getNameSpace(ns)
-    root.defs.foldLeft(Nil: List[Def]) {
-      case (xs, (s, defn)) if s.namespace == namespace && defn.spec.mod.isPublic && !defn.spec.mod.isSynthetic =>
-        defn :: xs
-      case (xs, _) => xs
-    }
-  }
-
-  /**
-    * Interprets the given string `ns` as a namespace.
-    */
-  private def getNameSpace(ns: String): List[String] = {
-    if (ns == "" || ns == ".") {
-      // Case 1: The empty namespace.
-      Nil
-    } else {
-      // Case 2: A (possibly) qualified namespace.
-      ns.split("/").toList
-    }
-  }
-
-  /**
-    * Pretty prints the given definition `defn` to the given virtual terminal `vt`.
-    */
-  private def prettyPrintDef(defn: Def, vt: VirtualTerminal): Unit = {
-    vt << Bold("def ") << Blue(defn.sym.name) << "("
-    if (defn.spec.fparams.nonEmpty) {
-      vt << defn.spec.fparams.head.sym.text << ": " << Cyan(FormatType.formatType(defn.spec.fparams.head.tpe))
-      for (fparam <- defn.spec.fparams.tail) {
-        vt << ", " << fparam.sym.text << ": " << Cyan(FormatType.formatType(fparam.tpe))
-      }
-    }
-    vt << "): " << Cyan(FormatType.formatType(defn.impl.inferredScheme.base.typeArguments.last)) << NewLine
-  }
-
-  /**
-    * Pretty prints the holes in the program.
-    */
-  private def prettyPrintHoles()(implicit terminal: Terminal): Unit = {
-    // Print holes, if any.
-    val holes = TypedAstOps.holesOf(root)
-    val vt = new VirtualTerminal
-
-    // Check if any holes are present.
-    if (holes.nonEmpty) {
-      vt << Bold("Holes:") << Indent
-      // Print each hole and its type.
-      for ((sym, ctx) <- holes) {
-        vt << NewLine << Blue(sym.toString) << ": " << Cyan(FormatType.formatType(ctx.tpe))
-      }
-      vt << Dedent << NewLine
-    }
-
-    // Print the result to the terminal.
-    terminal.writer().print(vt.fmt)
   }
 
   /**
@@ -598,6 +347,9 @@ class Shell(initialPaths: List[Path], options: Options) {
         }
 
         if (changed.nonEmpty) {
+          // Update the change set.
+          changeSet = changed.map(Ast.Input.TxtFile).toSet
+
           // Print information to the user.
           terminal.writer().println()
           terminal.writer().println(s"Recompiling. File(s) changed: ${changed.mkString(", ")}")

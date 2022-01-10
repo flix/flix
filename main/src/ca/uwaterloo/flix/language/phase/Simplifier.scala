@@ -17,7 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -27,11 +28,11 @@ import scala.collection.mutable
 /**
   * A phase that simplifies the TypedAst by elimination of pattern matching and other rewritings.
   */
-object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
+object Simplifier {
 
   type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Def]
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("Simplifier") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationMessage] = flix.phase("Simplifier") {
     //
     // A mutable map to contain fresh top-level definitions.
     //
@@ -44,7 +45,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       val ann = if (def0.spec.ann.isEmpty) Ast.Annotations.Empty else Ast.Annotations(def0.spec.ann.map(a => a.name))
       val fs = def0.spec.fparams.map(visitFormalParam)
       val exp = visitExp(def0.impl.exp)
-      SimplifiedAst.Def(ann, def0.spec.mod, def0.sym, fs, exp, def0.impl.inferredScheme.base, def0.spec.loc)
+      SimplifiedAst.Def(ann, def0.spec.mod, def0.sym, fs, exp, def0.impl.inferredScheme.base, def0.sym.loc)
     }
 
     /**
@@ -57,7 +58,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.Sig(sym, tpe, loc) => SimplifiedAst.Expression.HoleError(new Symbol.HoleSym(sym.clazz.namespace, sym.name, loc), tpe, loc) // TODO replace with implementation
 
-      case TypedAst.Expression.Hole(sym, tpe, eff, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, loc)
+      case TypedAst.Expression.Hole(sym, tpe, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, loc)
 
       case TypedAst.Expression.Unit(loc) => SimplifiedAst.Expression.Unit(loc)
 
@@ -110,10 +111,14 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), tpe, loc)
 
       case TypedAst.Expression.Stm(e1, e2, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Let(Symbol.freshVarSym("_", loc), visitExp(e1), visitExp(e2), tpe, loc)
+        val sym = Symbol.freshVarSym("_", BoundBy.Let, loc)
+        SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, loc)
 
       case TypedAst.Expression.Let(sym, mod, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, loc)
+
+      case TypedAst.Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc) =>
+        SimplifiedAst.Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, loc)
 
       case TypedAst.Expression.LetRegion(_, exp, _, _, _) =>
         visitExp(exp)
@@ -188,19 +193,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.Assign(e1, e2, tpe, loc)
 
-      case TypedAst.Expression.Existential(fparam, exp, loc) =>
-        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.Existential(p, e, loc)
-
-      case TypedAst.Expression.Universal(fparam, exp, loc) =>
-        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.Universal(p, e, loc)
-
       case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
 
-      case TypedAst.Expression.Cast(exp, tpe, eff, loc) =>
+      case TypedAst.Expression.Cast(exp, _, _, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Cast(e, tpe, loc)
 
@@ -310,6 +305,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Reify(_, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
+      case TypedAst.Expression.ReifyType(_, _, _, _, _) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
+      case TypedAst.Expression.ReifyEff(_, _, _, _, _, _, _) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.")
     }
 
     /**
@@ -441,7 +441,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       //
 
       // Generate a fresh variable to hold the result of the match expression.
-      val matchVar = Symbol.freshVarSym("matchVar", loc)
+      val matchVar = Symbol.freshVarSym("matchVar" + Flix.Delimiter, BoundBy.Let, loc)
 
       // Translate the match expression.
       val matchExp = visitExp(exp0)
@@ -552,7 +552,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           */
         case (TypedAst.Pattern.Tag(sym, tag, pat, tpe, loc) :: ps, v :: vs) =>
           val cond = SimplifiedAst.Expression.Is(sym, tag, SimplifiedAst.Expression.Var(v, tpe, loc), loc)
-          val freshVar = Symbol.freshVarSym("innerTag", loc)
+          val freshVar = Symbol.freshVarSym("innerTag" + Flix.Delimiter, BoundBy.Let, loc)
           val inner = patternMatchList(pat :: ps, freshVar :: vs, guard, succ, fail)
           val consequent = SimplifiedAst.Expression.Let(freshVar, SimplifiedAst.Expression.Untag(sym, tag, SimplifiedAst.Expression.Var(v, tpe, loc), pat.tpe, loc), inner, succ.tpe, loc)
           SimplifiedAst.Expression.IfThenElse(cond, consequent, fail, succ.tpe, loc)
@@ -565,7 +565,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           * variables.
           */
         case (TypedAst.Pattern.Tuple(elms, tpe, loc) :: ps, v :: vs) =>
-          val freshVars = elms.map(_ => Symbol.freshVarSym("innerElm", loc))
+          val freshVars = elms.map(_ => Symbol.freshVarSym("innerElm" + Flix.Delimiter, BoundBy.Let, loc))
           val zero = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
           elms.zip(freshVars).zipWithIndex.foldRight(zero) {
             case (((pat, name), idx), exp) =>
@@ -582,7 +582,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           */
         case (TypedAst.Pattern.Array(elms, tpe, loc) :: ps, v :: vs) =>
           val patternCheck = {
-            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm", loc))
+            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm" + Flix.Delimiter, BoundBy.Let, loc))
             val zero = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
             elms.zip(freshVars).zipWithIndex.foldRight(zero) {
               case (((pat, name), idx), exp) =>
@@ -613,7 +613,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
           val patternCheck = {
-            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm", loc))
+            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm" + Flix.Delimiter, BoundBy.Let, loc))
             val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
             val zero = sym.text match {
               case "_" => inner
@@ -653,7 +653,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
           val offset = mkSub(actualArrayLengthExp, expectedArrayLengthExp, loc)
           val patternCheck = {
-            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm", loc))
+            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm" + Flix.Delimiter, BoundBy.Let, loc))
             val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
             val zero = sym.text match {
               case "_" => inner
@@ -730,7 +730,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       //
       // Introduce a fresh variable for each match expression.
       //
-      val freshMatchVars = exps.map(_ => Symbol.freshVarSym("matchVar", loc))
+      val freshMatchVars = exps.map(_ => Symbol.freshVarSym("matchVar" + Flix.Delimiter, BoundBy.Let, loc))
 
       //
       // The default unmatched error expression.
@@ -783,9 +783,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     //
     val defns = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map {
-      case (k, TypedAst.Enum(doc, mod, sym, tparams, cases0, enumType, enumSc, loc)) =>
+      case (k, TypedAst.Enum(_, mod, sym, _, _, cases0, enumType, _, loc)) =>
         val cases = cases0 map {
-          case (tag, TypedAst.Case(enumSym, tagName, tagType, tagSc, tagLoc)) => tag -> SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)
+          case (tag, TypedAst.Case(enumSym, tagName, tagType, _, tagLoc)) => tag -> SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)
         }
         k -> SimplifiedAst.Enum(mod, sym, cases, enumType, loc)
     }
@@ -861,6 +861,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(exp1), visitExp(exp2), tpe, loc)
 
+      case SimplifiedAst.Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+        SimplifiedAst.Expression.LetRec(sym, visitExp(exp1), visitExp(exp2), tpe, loc)
+
       case SimplifiedAst.Expression.Is(sym, tag, exp, loc) =>
         SimplifiedAst.Expression.Is(sym, tag, visitExp(exp), loc)
 
@@ -918,14 +921,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Assign(visitExp(exp1), visitExp(exp2), tpe, loc)
-
-      case SimplifiedAst.Expression.Existential(params, exp, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.Existential(params, e, loc)
-
-      case SimplifiedAst.Expression.Universal(params, exp, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.Universal(params, e, loc)
 
       case SimplifiedAst.Expression.Cast(exp, tpe, loc) =>
         val e = visitExp(exp)

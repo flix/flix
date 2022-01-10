@@ -19,7 +19,9 @@ use Fixpoint/Ast.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Denota
 use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
-use Fixpoint/Ast.BodyPredicate.{BodyAtom, Guard0, Guard1, Guard2, Guard3, Guard4, Guard5};
+use Fixpoint/Ast.BodyPredicate.{BodyAtom};
+use Fixpoint/Ast.BodyPredicate.{Guard0, Guard1, Guard2, Guard3, Guard4, Guard5};
+use Fixpoint/Ast.BodyPredicate.{Loop1};
 use Fixpoint/Ast.PredSym.PredSym;
 
 namespace Fixpoint {
@@ -31,7 +33,7 @@ namespace Fixpoint {
     /// This means to compile all rules in stratum 0, then stratum 1 and so on.
     /// A rule belongs to the same stratum as its head predicate.
     ///
-    def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] with ToString[v] = match d {
+    def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] & Impure with ToString[v] = match d {
         case Datalog(facts, rules) =>
             let stmts = MutList.new();
             Array.foreach(compileRule(stmts), facts);
@@ -43,7 +45,7 @@ namespace Fixpoint {
             Map.foreach(_ -> List.toArray >> compileStratum(stmts));
             RamStmt.Seq(MutList.toArray(stmts))
         case _ => bug!("Datalog normalization bug")
-    } as & Pure
+    }
 
     ///
     /// Compile all rules to be evaluated in `stratum` to RAM
@@ -247,11 +249,11 @@ namespace Fixpoint {
     ///
     /// Note that row variables not unique across rules.
     ///
-    def augmentBody(body: Array[BodyPredicate[v]]): Array[(BodyPredicate[v], RowVar)] =
+    def augmentBody(body: Array[BodyPredicate[v]]): Array[(BodyPredicate[v], RowVar)] & Impure =
         Array.mapWithIndex(atom -> i -> match atom {
             case BodyAtom(predSym, _, Polarity.Positive, _) => (atom, RowVar.Named("${predSym}$${i}"))
             case _ => (atom, RowVar.Named("IfYouSeeThisYouFoundABug"))
-        }, body) as & Pure
+        }, body)
 
     ///
     /// Unifies each relational variable that occurs in a rule body with an attribute
@@ -262,7 +264,7 @@ namespace Fixpoint {
     /// `x` is mapped to B$1[0] because `x` occurs positively in the second atom.
     /// `s` is mapped to the glb of all its positive occurences because it is latticenal.
     ///
-    def unifyVars(body: Array[(BodyPredicate[v], RowVar)]): Map[VarSym, RamTerm[v]] =
+    def unifyVars(body: Array[(BodyPredicate[v], RowVar)]): Map[VarSym, RamTerm[v]] & Impure =
         Array.foldLeft(acc -> match (atom, rowVar) -> match atom {
             case BodyAtom(_, denotation, Polarity.Positive, terms) =>
                 Array.mapWithIndex(term -> i -> (term, i), terms) |>
@@ -280,7 +282,7 @@ namespace Fixpoint {
                     case _ => x -> x
                 }, acc)
             case _ => acc
-        }, Map#{}, body) as & Pure
+        }, Map#{}, body)
 
     ///
     /// Equates every term in a positive body atom with a RAM term corresponding to an attribute
@@ -298,7 +300,7 @@ namespace Fixpoint {
     /// (2) comes from the negative atom `not A(x)`.
     /// (3) is a function call that computes the expression `x > 0`.
     ///
-    def compileBody(env: Map[VarSym, RamTerm[v]], body: Array[(BodyPredicate[v], RowVar)]): List[BoolExp[v]] =
+    def compileBody(env: Map[VarSym, RamTerm[v]], body: Array[(BodyPredicate[v], RowVar)]): List[BoolExp[v]] & Impure =
         Array.foldRight(match (atom, rowVar) -> acc ->
             let compileBodyTerm = term -> j -> match term {
                 case BodyTerm.Wild      => RamTerm.RowLoad(rowVar, j)
@@ -348,7 +350,9 @@ namespace Fixpoint {
                     let t4 = unwrap(Map.get(v4, env));
                     let t5 = unwrap(Map.get(v5, env));
                     BoolExp.Guard5(f, t1, t2, t3, t4, t5) :: acc
-            }, Nil, body) as & Pure
+                case Loop1(_) =>
+                    ??? // TODO
+            }, Nil, body)
 
     def unwrap(o: Option[a]): a = match o {
         case Some(a) => a

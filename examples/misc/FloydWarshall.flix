@@ -75,7 +75,7 @@ def main(_: Array[String]): Int32 & Impure =
         ShortestDist(a, c; sum(d1, d2)) :- ShortestDist(a, b; d1), ShortestDist(b, c; d2).
 
         // If you can get from a->a with negative distance, then it is part of a negative cycle
-        ShortestDist(a, a; Top) :- ShortestDist(a, a; d), negativeDist(d).
+        ShortestDist(a, a; Top) :- ShortestDist(a, a; d), if negativeDist(d).
 
         // Example input data
         Edge("a", "b", 1).

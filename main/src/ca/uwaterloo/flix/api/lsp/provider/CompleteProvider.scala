@@ -80,7 +80,6 @@ object CompleteProvider {
       CompletionItem("let", "let ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("lawless", "lawless ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("lazy", "lazy ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
-      CompletionItem("main", "main ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("match", "match ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("namespace", "namespace ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("null", "null ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
@@ -205,18 +204,16 @@ object CompleteProvider {
       case Type.KindedVar(id, kind, loc, rigidity, text) if tvar.id == id => Type.KindedVar(id, kind, loc, rigidity, Some(newText))
       case Type.KindedVar(_, _, _, _, _) => tpe
       case Type.Cst(_, _) => tpe
-      case Type.Lambda(tvar2, tpe, loc) if tvar == tvar2 =>
-        val t = replaceText(tvar, tpe, newText)
-        Type.Lambda(tvar2.asKinded.copy(text = Some(newText)), t, loc)
-
-      case Type.Lambda(tvar2, tpe, loc) =>
-        val t = replaceText(tvar, tpe, newText)
-        Type.Lambda(tvar, t, loc)
 
       case Type.Apply(tpe1, tpe2, loc) =>
         val t1 = replaceText(tvar, tpe1, newText)
         val t2 = replaceText(tvar, tpe2, newText)
         Type.Apply(t1, t2, loc)
+
+      case Type.Alias(sym, args0, tpe0, loc) =>
+        val args = args0.map(replaceText(tvar, _, newText))
+        val t = replaceText(tvar, tpe0, newText)
+        Type.Alias(sym, args, t, loc)
 
       case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable.")
       case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
@@ -288,11 +285,18 @@ object CompleteProvider {
       return Nil
     }
 
-    // TODO: Add support for classes and enums?
-    // TODO: Use the current position to determine what to suggest.
+    ///
+    /// If the search word is `List.f` we should not include the namespace.
+    ///
+    /// That is, exclude the namespace if there is a period, but not at the end.
+    ///
+    val withoutNS = word match {
+      case None => false
+      case Some(prefix) => prefix.contains(".") && !prefix.endsWith(".")
+    }
 
-    val defSuggestions = root.defs.values.filter(matchesDef(_, word, uri)).map(getDefCompletionItem)
-    val sigSuggestions = root.sigs.values.filter(matchesSig(_, word, uri)).map(getSigCompletionItem)
+    val defSuggestions = root.defs.values.filter(matchesDef(_, word, uri)).map(getDefCompletionItem(withoutNS, _))
+    val sigSuggestions = root.sigs.values.filter(matchesSig(_, word, uri)).map(getSigCompletionItem(withoutNS, _))
     (defSuggestions ++ sigSuggestions).toList.sortBy(_.label)
   }
 
@@ -310,7 +314,7 @@ object CompleteProvider {
         else
           decl.sym.text.startsWith(s)
     }
-    val isInFile = decl.spec.loc.source.name == uri
+    val isInFile = decl.sym.loc.source.name == uri
 
     isMatch && (isPublic || isInFile)
   }
@@ -329,7 +333,7 @@ object CompleteProvider {
         else
           sign.sym.name.startsWith(s)
     }
-    val isInFile = sign.spec.loc.source.name == uri
+    val isInFile = sign.sym.loc.source.name == uri
 
     isMatch && (isPublic || isInFile)
   }
@@ -337,8 +341,8 @@ object CompleteProvider {
   /**
     * Returns a completion item for the given definition `decl`.
     */
-  private def getDefCompletionItem(decl: TypedAst.Def): CompletionItem = {
-    val name = decl.sym.toString
+  private def getDefCompletionItem(withoutNS: Boolean, decl: TypedAst.Def): CompletionItem = {
+    val name = if (withoutNS) decl.sym.text else decl.sym.toString
     val label = getDefLabel(decl)
     val insertText = getApplySnippet(name, decl.spec.fparams)
     val detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme))
@@ -352,8 +356,8 @@ object CompleteProvider {
   /**
     * Returns a completion item for the given signature `decl`.
     */
-  private def getSigCompletionItem(decl: TypedAst.Sig): CompletionItem = {
-    val name = decl.sym.toString
+  private def getSigCompletionItem(withoutNS: Boolean, decl: TypedAst.Sig): CompletionItem = {
+    val name = if (withoutNS) decl.sym.name else decl.sym.toString
     val label = getSigLabel(decl)
     val insertText = getApplySnippet(name, decl.spec.fparams)
     val detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme))

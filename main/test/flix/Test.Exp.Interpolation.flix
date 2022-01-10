@@ -213,11 +213,11 @@ namespace Test/Exp/Interpolation {
 
     def toLowerCase(s: String): String =
         import java.lang.String.toLowerCase();
-        s.toLowerCase() as & Pure
+        (s |> toLowerCase) as & Pure
 
     def toUpperCase(s: String): String =
         import java.lang.String.toUpperCase();
-        s.toUpperCase() as & Pure
+        (s |> toUpperCase) as & Pure
 
 }
 
@@ -234,7 +234,7 @@ namespace Test/Exp/Interpolation {
 ///
 ///instance ToString[Int32] {
 ///    def toString(x: Int32): String =
-///        import java.lang.Integer:toString(Int32);
+///        import static java.lang.Integer.toString(Int32);
 ///        x.toString() as & Pure
 ///}
 ///

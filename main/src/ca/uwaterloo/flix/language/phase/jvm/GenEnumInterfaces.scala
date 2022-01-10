@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm.Opcodes._
 
@@ -31,14 +31,14 @@ object GenEnumInterfaces {
     */
   def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, tpe@MonoType.Enum(sym, _)) =>
+      case (macc, tpe: MonoType.Enum) =>
         // Case 1: The type constructor is an enum.
         // Construct enum interface.
         val jvmType = JvmOps.getEnumInterfaceType(tpe)
         val jvmName = jvmType.name
         val bytecode = genByteCode(jvmType)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
-      case (macc, tpe) =>
+      case (macc, _) =>
         // Case 2: The type constructor is a non-enum.
         // Nothing to be done. Return the map.
         macc
