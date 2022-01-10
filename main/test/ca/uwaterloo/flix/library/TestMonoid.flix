@@ -17,29 +17,29 @@
 namespace TestMonoid {
 
     use Monoid.{empty, combine};
-    use Monoid.{combineAll};
+    use Monoid.{fold};
 
     /////////////////////////////////////////////////////////////////////////////
-    // combineAll                                                              //
+    // fold                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def combineAll01(): Bool = combineAll(Nil: List[Unit]) == ()
+    def fold01(): Bool = fold(Nil: List[Unit]) == ()
 
     @test
-    def combineAll02(): Bool = combineAll(() :: Nil) == ()
+    def fold02(): Bool = fold(() :: Nil) == ()
 
     @test
-    def combineAll03(): Bool = combineAll(Nil: List[String]) == ""
+    def fold03(): Bool = fold(Nil: List[String]) == ""
 
     @test
-    def combineAll04(): Bool = combineAll("a" :: Nil) == "a"
+    def fold04(): Bool = fold("a" :: Nil) == "a"
 
     @test
-    def combineAll05(): Bool = combineAll("a" :: "b" :: Nil) == "ab"
+    def fold05(): Bool = fold("a" :: "b" :: Nil) == "ab"
 
     @test
-    def combineAll06(): Bool = combineAll("a" :: "b" :: "cdefg" :: Nil) == "abcdefg"
+    def fold06(): Bool = fold("a" :: "b" :: "cdefg" :: Nil) == "abcdefg"
 
     /////////////////////////////////////////////////////////////////////////////
     // Unit                                                                    //
