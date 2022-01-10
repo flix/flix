@@ -666,6 +666,7 @@ namespace LazyList {
     ///
     /// Returns the sum of all elements in the LazyList `l`.
     ///
+    @Experimental
     pub def sum(l: LazyList[Int32]): Int32 =
         sumWith(x -> x, l)
 
@@ -674,6 +675,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def sumWith(f: a -> Int32 & ef, l: LazyList[a]): Int32 & ef =
         def loop(k, acc) = match k {
             case ENil         => acc
