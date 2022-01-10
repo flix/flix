@@ -42,7 +42,7 @@ object Packager {
     *
     * The package is installed at `lib/<owner>/<repo>`
     */
-  def install(project: String, p: Path, o: Options): Unit = {
+  def install(project: String, p: Path, o: Options): Option[Unit] = {
     val proj = GitHub.parseProject(project)
     val release = GitHub.getLatestRelease(proj)
     val assets = release.assets.filter(_.name.endsWith(".fpkg"))
@@ -62,6 +62,7 @@ object Packager {
         stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
       }
     }
+    Some()
   }
 
   /**
@@ -69,7 +70,7 @@ object Packager {
     *
     * The project must not already exist.
     */
-  def init(p: Path, o: Options): Unit = {
+  def init(p: Path, o: Options): Option[Unit] = {
     //
     // Check that the current working directory is usable.
     //
@@ -148,12 +149,13 @@ object Packager {
         |def test01(): Bool = 1 + 1 == 2
         |""".stripMargin
     }
+    Some()
   }
 
   /**
     * Type checks the source files for the given project path `p`.
     */
-  def check(p: Path, o: Options): Unit = {
+  def check(p: Path, o: Options): Option[Unit] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -166,9 +168,10 @@ object Packager {
     addSourcesAndPackages(p, o)
 
     flix.check() match {
-      case Validation.Success(_) => ()
+      case Validation.Success(_) => Some()
       case Validation.Failure(errors) =>
         errors.foreach(e => println(e.message(flix.getFormatter)))
+        None
     }
   }
 
@@ -202,7 +205,7 @@ object Packager {
   /**
     * Adds all source files and packages to the given `flix` object.
     */
-  private def addSourcesAndPackages(p: Path, o: Options)(implicit flix: Flix): Unit = {
+  private def addSourcesAndPackages(p: Path, o: Options)(implicit flix: Flix): Option[Unit] = {
     // Add all source files.
     for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
       if (sourceFile.getFileName.toString.endsWith(".flix")) {
@@ -227,12 +230,13 @@ object Packager {
         flix.addJar(file)
       }
     }
+    Some()
   }
 
   /**
     * Builds a jar package for the given project path `p`.
     */
-  def buildJar(p: Path, o: Options): Unit = {
+  def buildJar(p: Path, o: Options): Some[Unit] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -266,12 +270,13 @@ object Packager {
 
     // Close the zip file.
     zip.finish()
+    Some()
   }
 
   /**
     * Builds a flix package for the given project path `p`.
     */
-  def buildPkg(p: Path, o: Options): Unit = {
+  def buildPkg(p: Path, o: Options): Option[Unit] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -300,29 +305,32 @@ object Packager {
 
     // Close the zip file.
     zip.finish()
+    Some()
   }
 
   /**
     * Runs the main function in flix package for the given project path `p`.
     */
-  def run(p: Path, o: Options): Unit = {
+  def run(p: Path, o: Options): Option[Unit] = {
     for {
       compilationResult <- build(p, o)
       main <- compilationResult.getMain
     } yield {
       val exitCode = main(Array.empty)
       println(s"Main exited with status code $exitCode.")
+      if (exitCode == 0) Some() else None
     }
   }
 
   /**
     * Runs all benchmarks in the flix package for the given project path `p`.
     */
-  def benchmark(p: Path, o: Options): Unit = {
+  def benchmark(p: Path, o: Options): Option[Unit] = {
     build(p, o) match {
-      case None => // nop
+      case None => None
       case Some(compilationResult) =>
         Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
+        Some()
     }
   }
 

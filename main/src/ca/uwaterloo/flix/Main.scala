@@ -110,33 +110,26 @@ object Main {
         // nop, continue
 
         case Command.Init =>
-          Packager.init(cwd, options)
-          System.exit(0)
+          exitWith(Packager.init(cwd, options))
 
         case Command.Check =>
-          Packager.check(cwd, options)
-          System.exit(0)
+          exitWith(Packager.check(cwd, options))
 
         case Command.Build =>
-          Packager.build(cwd, options, loadClasses = false)
-          System.exit(0)
+          exitWith(Packager.build(cwd, options, loadClasses = false))
 
         case Command.BuildJar =>
-          Packager.buildJar(cwd, options)
-          System.exit(0)
+          exitWith(Packager.buildJar(cwd, options))
 
         case Command.BuildPkg =>
-          Packager.buildPkg(cwd, options)
-          System.exit(0)
+          exitWith(Packager.buildPkg(cwd, options))
 
         case Command.Run =>
-          Packager.run(cwd, options)
-          System.exit(0)
+          exitWith(Packager.run(cwd, options))
 
         case Command.Benchmark =>
           val o = options.copy(progress = false)
-          Packager.benchmark(cwd, o)
-          System.exit(0)
+          exitWith(Packager.benchmark(cwd, o))
 
         case Command.Test =>
           val o = options.copy(progress = false)
@@ -147,8 +140,7 @@ object Main {
 
         case Command.Install(project) =>
           val o = options.copy(progress = false)
-          Packager.install(project, cwd, o)
-          System.exit(0)
+          exitWith(Packager.install(project, cwd, o))
 
       }
     } catch {
@@ -235,6 +227,14 @@ object Main {
         println(s"Compilation failed with ${errors.length} error(s).")
         System.exit(1)
     }
+  }
+
+  /**
+    * Converts an option type to an exit code.
+    */
+  private def exitWith(o: Option[_]): Unit = o match {
+    case None => System.exit(1)
+    case Some(_) => System.exit(0)
   }
 
   /**
