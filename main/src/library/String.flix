@@ -142,7 +142,7 @@ namespace String {
             ()
         else {
             let c = f(i);
-            StringBuilder.appendChar!(sb, c);
+            StringBuilder.append!(sb, c);
             initWorker(sb, f, len, i+1)
         }
 
@@ -192,7 +192,7 @@ namespace String {
         case x :: rs => {
             let sb = StringBuilder.new();
             StringBuilder.appendString!(sb, x);
-            let appendStep = s -> { StringBuilder.appendChar!(sb, sep); StringBuilder.appendString!(sb, s) };
+            let appendStep = s -> { StringBuilder.append!(sb, sep); StringBuilder.appendString!(sb, s) };
             List.foreach(appendStep, rs);
             StringBuilder.toString(sb)
         }
@@ -661,7 +661,7 @@ namespace String {
         match a1 {
             case None => StringBuilder.toString(sb)
             case Some(c, st1) => {
-                StringBuilder.appendChar!(sb, c);
+                StringBuilder.append!(sb, c);
                 unfoldHelper(f, sb, st1)
             }
         }
@@ -684,7 +684,7 @@ namespace String {
     def unfoldWithIterHelper(next: Unit -> Option[Char] & ef, sb: StringBuilder): String & Impure = match next() {
         case None => StringBuilder.toString(sb)
         case Some(c) => {
-            StringBuilder.appendChar!(sb, c);
+            StringBuilder.append!(sb, c);
             unfoldWithIterHelper(next, sb)
         }
     }
@@ -1009,7 +1009,7 @@ namespace String {
                 first := false;
                 StringBuilder.appendString!(sb, s)
             } else {
-                StringBuilder.appendChar!(sb, ' ');
+                StringBuilder.append!(sb, ' ');
                 StringBuilder.appendString!(sb, s)
             };
         List.foreach(step, xs);

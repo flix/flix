@@ -39,6 +39,6 @@ object GenFlixErrorClass {
   private def genConstructor()(implicit flix: Flix): InstructionSet =
     thisLoad() ~
       ALOAD(1) ~
-      invokeConstructor(JvmName.FlixError, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
+      invokeConstructor(JvmName.Error, mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void)) ~
       RETURN()
 }
