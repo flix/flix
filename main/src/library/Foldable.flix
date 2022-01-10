@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-/// test comment
+///
 /// A type class for data structures that can be folded.
 ///
 pub lawless class Foldable[t : Type -> Type] {
@@ -186,6 +186,12 @@ pub lawless class Foldable[t : Type -> Type] {
         Foldable.foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc), Map.empty(), t)
 
     ///
+    /// Returns a map with elements of `s` as keys and `f` applied as values.
+    ///
+    pub def toMapWith(f: a -> b, s: t[a]): Map[a, b] with Order[a], Foldable[t] =
+            Foldable.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
+
+    ///
     /// Returns `t` without the longest prefix that satisfies the predicate `f`.
     ///
     /// Returns an immutable list.
@@ -264,11 +270,5 @@ namespace Foldable {
     ///
     pub def fold[t: Type -> Type, a: Type](t: t[a]): a with Foldable[t], Monoid[a] =
         Foldable.foldLeft((acc, x) -> Monoid.combine(acc, x), Monoid.empty(), t)
-
-    ///
-    /// Returns a map with elements of `s` as keys and `f` applied as values.
-    ///
-    pub def toMapWith(f: a -> b, s: t[a]): Map[a, b] with Order[a], Foldable[t] =
-            Foldable.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
 
 }
