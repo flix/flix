@@ -664,6 +664,26 @@ namespace LazyList {
         foldLeft((i, x) -> if (f(x)) i + 1 else i, 0, l)
 
     ///
+    /// Returns the sum of all elements in the LazyList `l`.
+    ///
+    pub def sum(l: LazyList[Int32]): Int32 =
+        sumWith(x -> x, l)
+
+    ///
+    /// Returns the sum of all elements in the LazyList `l` according to the function `f`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, l: LazyList[a]): Int32 & ef =
+        def loop(k, acc) = match k {
+            case ENil         => acc
+            case ECons(x, xs) => loop(      xs, f(x) + acc)
+            case LCons(x, xs) => loop(force xs, f(x) + acc)
+            case LList(xs)    => loop(force xs,        acc)
+        };
+        loop(l, 0)
+
+    ///
     /// Returns the concatenation of the elements in `l`.
     ///
     /// Does not force the tail of `l`.
@@ -1199,24 +1219,5 @@ namespace LazyList {
         case ECons(x, xs) => toSetAcc(      xs, Set.insert(x, acc))
         case LCons(x, xs) => toSetAcc(force xs, Set.insert(x, acc))
         case LList(xs)    => toSetAcc(force xs, acc)
-    }
-
-    ///
-    /// Returns the sum of all elements in the list `l`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def sum(l: LazyList[Int32]): Int32 =
-        sumAcc(l, 0)
-
-    ///
-    /// Helper function for `sum`.
-    ///
-    def sumAcc(l: LazyList[Int32], acc: Int32): Int32 = match l {
-        case ENil         => acc
-        case ECons(x, xs) => sumAcc(      xs, x + acc)
-        case LCons(x, xs) => sumAcc(force xs, x + acc)
-        case LList(xs)    => sumAcc(force xs,     acc)
     }
 }
