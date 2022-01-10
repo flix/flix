@@ -99,21 +99,17 @@ namespace Console {
     ///
     pub def hex(hexCode: String, s: a): String with ToString[a] =
         let text = ToString.toString(s);
-        match String.stripPrefix(substr = "#", hexCode) {
-            case Some(hex) => {
-                if (String.length(hex) == 6) {
-                    let red = String.sliceLeft(2, hex);
-                    let green = String.slice(2, 4, hex);
-                    let blue = String.slice(4, 6, hex);
-
-                    match (stringToHex(red), stringToHex(green), stringToHex(blue)) {
-                        case (Some(r), Some(g), Some(b)) => rgb((r, g, b), text, isFg = true)
-                        case _                           => text
-                    }
-                } else text
-            }
-            case _ => text
-        }
+        let hexOpt: Option[String] = {
+            use Option.flatMap;
+            let* hex = String.stripPrefix(substr = "#", hexCode);
+            if (String.length(hex) == 6) {
+                let* r = String.sliceLeft(2, hex) |> stringToHex;
+                let* g = String.slice(2, 4, hex) |> stringToHex;
+                let* b = String.slice(4, 6, hex) |> stringToHex;
+                Some(rgb((r, g, b), text, isFg = true))
+            } else None as Option[String]
+        };
+        hexOpt |> Option.getWithDefault(text)
 
     ///
     /// Helper for `hex`.
