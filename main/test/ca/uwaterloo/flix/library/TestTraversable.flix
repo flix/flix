@@ -461,32 +461,32 @@ namespace TestTraversable {
 
     @test
     def traverseMap01(): Bool =
-        let m: Map[Int, Int] = Map#{};
+        let m: Map[Int32, Int32] = Map#{};
         traverse(x -> Some(x+1), m) == Some(Map#{})
 
     @test
     def traverseMap02(): Bool =
-        let m: Map[Int, Int] = Map#{1 => 1};
+        let m: Map[Int32, Int32] = Map#{1 => 1};
         traverse(x -> Some(x+1), m) == Some(Map#{1 => 2})
 
     @test
     def traverseMap03(): Bool =
-        let m: Map[Int, Int] = Map#{1 => 1, 2 => 2};
+        let m: Map[Int32, Int32] = Map#{1 => 1, 2 => 2};
         traverse(x -> Some(x+1), m) == Some(Map#{1 => 2, 2 => 3})
 
     @test
     def traverseMap04(): Bool =
-        let m: Map[Int, Int] = Map#{};
+        let m: Map[Int32, Int32] = Map#{};
         traverse(_ -> None: Option[Int32], m) == Some(Map#{})
 
     @test
     def traverseMap05(): Bool =
-        let m: Map[Int, Int] = Map#{1 => 1};
+        let m: Map[Int32, Int32] = Map#{1 => 1};
         traverse(_ -> None: Option[Int32], m) == None
 
     @test
     def traverseMap06(): Bool =
-        let m: Map[Int, Int] = Map#{1 => 1, 2 => 2};
+        let m: Map[Int32, Int32] = Map#{1 => 1, 2 => 2};
         traverse(_ -> None: Option[Int32], m) == None
 
     /////////////////////////////////////////////////////////////////////////////
@@ -495,22 +495,22 @@ namespace TestTraversable {
 
     @test
     def mapAccumLeftMap01(): Bool =
-        let m: Map[Int, Int] = Map#{};
+        let m: Map[Int32, Int32] = Map#{};
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (10, Map#{})
 
     @test
     def mapAccumLeftMap02(): Bool =
-        let m: Map[Int, Int] = Map#{1 => 1};
+        let m: Map[Int32, Int32] = Map#{1 => 1};
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (11, Map#{1 => 11})
 
     @test
     def mapAccumLeftMap03(): Bool =
-        let m: Map[Int, Int]  = Map#{1 => 1, 2 => 2};
+        let m: Map[Int32, Int32]  = Map#{1 => 1, 2 => 2};
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (12, Map#{1 => 11, 2 => 13})
 
     @test
     def mapAccumLeftMap04(): Bool =
-        let m: Map[Int, Int]  = Map#{1 => 1, 2 => 2, 3 => 3};
+        let m: Map[Int32, Int32]  = Map#{1 => 1, 2 => 2, 3 => 3};
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (13, Map#{1 => 11, 2 => 13, 3 => 15})
 
     /////////////////////////////////////////////////////////////////////////////
@@ -519,22 +519,22 @@ namespace TestTraversable {
 
     @test
     def mapAccumRightMap01(): Bool =
-        let m: Map[Int, Int] = Map#{};
+        let m: Map[Int32, Int32] = Map#{};
         mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (10, Map#{})
 
     @test
     def mapAccumRightMap02(): Bool =
-        let m: Map[Int, Int] = Map#{1 => 1};
+        let m: Map[Int32, Int32] = Map#{1 => 1};
         mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (11, Map#{1 => 11})
 
     @test
     def mapAccumRightMap03(): Bool =
-        let m: Map[Int, Int]  = Map#{1 => 1, 2 => 2};
+        let m: Map[Int32, Int32]  = Map#{1 => 1, 2 => 2};
         mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (12, Map#{1 => 12, 2 => 12})
 
     @test
     def mapAccumRightMap04(): Bool =
-        let m: Map[Int, Int]  = Map#{1 => 1, 2 => 2, 3 => 3};
+        let m: Map[Int32, Int32]  = Map#{1 => 1, 2 => 2, 3 => 3};
         mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (13, Map#{1 => 13, 2 => 13, 3 => 13})
 
     /////////////////////////////////////////////////////////////////////////////
@@ -579,32 +579,32 @@ namespace TestTraversable {
 
     @test
     def traverseRedBlackTree01(): Bool =
-        let t: RedBlackTree.RedBlackTree[Int, Int] = RedBlackTree.empty();
+        let t: RedBlackTree.RedBlackTree[Int32, Int32] = RedBlackTree.empty();
         traverse(x -> Some(x+1), t) == Some(RedBlackTree.empty())
 
     @test
     def traverseRedBlackTree02(): Bool =
-        let t: RedBlackTree.RedBlackTree[Int, Int] = toRedBlackTree((1, 1) :: Nil);
+        let t: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: Nil);
         traverse(x -> Some(x+1), t) == Some(toRedBlackTree((1, 2) :: Nil))
 
     @test
     def traverseRedBlackTree03(): Bool =
-        let t: RedBlackTree.RedBlackTree[Int, Int] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
+        let t: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
         traverse(x -> Some(x+1), t) == Some(toRedBlackTree((1, 2) :: (2, 3) :: Nil))
 
     @test
     def traverseRedBlackTree04(): Bool =
-        let t: RedBlackTree.RedBlackTree[Int, Int] = RedBlackTree.empty();
+        let t: RedBlackTree.RedBlackTree[Int32, Int32] = RedBlackTree.empty();
         traverse(_ -> None: Option[Int32], t) == Some(RedBlackTree.empty())
 
     @test
     def traverseRedBlackTree05(): Bool =
-        let t: RedBlackTree.RedBlackTree[Int, Int] = toRedBlackTree((1, 1):: Nil);
+        let t: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1):: Nil);
         traverse(_ -> None: Option[Int32], t) == None
 
     @test
     def traverseRedBlackTree06(): Bool =
-        let t: RedBlackTree.RedBlackTree[Int, Int] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
+        let t: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
         traverse(_ -> None: Option[Int32], t) == None
 
     /////////////////////////////////////////////////////////////////////////////
@@ -613,22 +613,22 @@ namespace TestTraversable {
 
     @test
     def mapAccumLeftRedBlackTree01(): Bool =
-        let m: RedBlackTree.RedBlackTree[Int, Int] = RedBlackTree.empty();
+        let m: RedBlackTree.RedBlackTree[Int32, Int32] = RedBlackTree.empty();
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (10, RedBlackTree.empty())
 
     @test
     def mapAccumLeftRedBlackTree02(): Bool =
-        let m: RedBlackTree.RedBlackTree[Int, Int] = toRedBlackTree((1, 1) :: Nil);
+        let m: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: Nil);
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (11, toRedBlackTree((1, 11) :: Nil))
 
     @test
     def mapAccumLeftRedBlackTree03(): Bool =
-        let m: RedBlackTree.RedBlackTree[Int, Int] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
+        let m: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (12, toRedBlackTree((1, 11) :: (2, 13) :: Nil))
 
     @test
     def mapAccumLeftRedBlackTree04(): Bool =
-        let m: RedBlackTree.RedBlackTree[Int, Int] = toRedBlackTree((1, 1) :: (2, 2) :: (3, 3) :: Nil);
+        let m: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: (3, 3) :: Nil);
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (13, toRedBlackTree((1, 11) :: (2, 13) :: (3, 15) :: Nil))
 
 
@@ -638,22 +638,22 @@ namespace TestTraversable {
 
     @test
     def mapAccumRightRedBlackTree01(): Bool =
-        let m: RedBlackTree.RedBlackTree[Int, Int] = RedBlackTree.empty();
+        let m: RedBlackTree.RedBlackTree[Int32, Int32] = RedBlackTree.empty();
         mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (10, RedBlackTree.empty())
 
     @test
     def mapAccumRightRedBlackTree02(): Bool =
-        let m: RedBlackTree.RedBlackTree[Int, Int] = toRedBlackTree((1, 1) :: Nil);
+        let m: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: Nil);
         mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (11, toRedBlackTree((1, 11) :: Nil))
 
     @test
     def mapAccumRightRedBlackTree03(): Bool =
-        let m: RedBlackTree.RedBlackTree[Int, Int] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
+        let m: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
         mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (12, toRedBlackTree((1, 12) :: (2, 12) :: Nil))
 
     @test
     def mapAccumRightRedBlackTree04(): Bool =
-        let m: RedBlackTree.RedBlackTree[Int, Int] = toRedBlackTree((1, 1) :: (2, 2) :: (3, 3) :: Nil);
+        let m: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: (3, 3) :: Nil);
         mapAccumRight((acc, x) -> (acc+1, x+acc), 10, m) == (13, toRedBlackTree((1, 13) :: (2, 13) :: (3, 13) :: Nil))
 
 }
