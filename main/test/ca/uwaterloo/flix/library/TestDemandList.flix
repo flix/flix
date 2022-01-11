@@ -1026,4 +1026,33 @@ namespace TestDemandList {
     def sum07(): Bool =
         DemandList.range(1, 101) |> DemandList.sum == 5050
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        List.toIterator(Nil) |> Iterator.sumWith(x -> x + 1) == 0
+
+    @test
+    def sumWith02(): Bool =
+        List.toDemandList(1 :: Nil) |> DemandList.sumWith(x -> x + 1) == 2
+
+    @test
+    def sumWith03(): Bool =
+        List.toDemandList(1 :: 2 :: 3 :: Nil) |> DemandList.sumWith(x -> x + 1) == 9
+
+    @test
+    def sumWith04(): Bool =
+        List.toDemandList(1 :: 2 :: 3 :: -3 :: Nil) |> DemandList.sumWith(x -> x + 1) == 7
+
+    @test
+    def sumWith05(): Bool =
+        List.toDemandList(-1 :: -2 :: -3 :: -4 :: Nil) |> DemandList.sumWith(x -> x + 1) == -6
+
+    @test
+    def sumWith06(): Bool =
+        List.toDemandList(10 :: -10 :: Nil) |> DemandList.sumWith(x -> x + 1) == 2
+
 }
