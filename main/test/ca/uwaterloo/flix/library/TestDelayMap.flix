@@ -1600,4 +1600,77 @@ namespace TestDelayMap {
         List.range(1, 101) |> List.zip(List.range(1, 101)) |> List.toDelayMap |>
             DelayMap.sumValues == 5050
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumKeys                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumKeys01(): Bool =
+        DelayMap.empty() |> DelayMap.sumKeys == 0
+
+    @test
+    def sumKeys02(): Bool =
+        Map#{1 => 1} |> Map.toDelayMap |>
+            DelayMap.sumKeys == 1
+
+    @test
+    def sumKeys03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toDelayMap |>
+            DelayMap.sumKeys == 6
+
+    @test
+    def sumKeys04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |> Map.toDelayMap |>
+            DelayMap.sumKeys == 3
+
+    @test
+    def sumKeys05(): Bool =
+        Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4} |> Map.toDelayMap |>
+            DelayMap.sumKeys == -12
+
+    @test
+    def sumKeys06(): Bool =
+        Map#{10 => 10, -10 => -10} |> Map.toDelayMap |>
+            DelayMap.sumKeys == 0
+
+    @test
+    def sumKeys07(): Bool =
+        List.range(1, 101) |> List.zip(List.range(1, 101)) |> List.toDelayMap |>
+            DelayMap.sumKeys == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        DelayMap.empty() |> DelayMap.sumWith((k, v) -> k + v) == 0
+
+    @test
+    def sumWith02(): Bool =
+        Map#{1 => 1} |> Map.toDelayMap |>
+            DelayMap.sumWith((k, v) -> k + v) == 2
+
+    @test
+    def sumWith03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toDelayMap |>
+            DelayMap.sumWith((k, v) -> k + v) == 12
+
+    @test
+    def sumWith04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |> Map.toDelayMap |>
+            DelayMap.sumWith((k, v) -> k + v) == 6
+
+    @test
+    def sumWith05(): Bool =
+        Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4} |> Map.toDelayMap |>
+            DelayMap.sumWith((k, v) -> k + v) == -20
+
+    @test
+    def sumWith06(): Bool =
+        Map#{10 => 10, -10 => -10} |> Map.toDelayMap |>
+            DelayMap.sumWith((k, v) -> k + v) == 0
+
 }
