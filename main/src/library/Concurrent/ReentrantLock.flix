@@ -29,14 +29,14 @@ namespace Concurrent {
         ///
         pub def new(fair: Bool): Concurrent.ReentrantLock & Impure =
             import new java.util.concurrent.locks.ReentrantLock(Bool) as reentrantLock;
-            ReentrantLock(reentrantLock(fair))
+            Concurrent/ReentrantLock.ReentrantLock(reentrantLock(fair))
 
         ///
         /// Returns true if this lock has fairness set true.
         ///
         pub def isFair(lock: Concurrent.ReentrantLock): Bool & Impure =
             import java.util.concurrent.locks.ReentrantLock.isFair();
-            let Concurrent/Concurrent.ReentrantLock(l) = lock;
+            let Concurrent/ReentrantLock.ReentrantLock(l) = lock;
             isFair(l)
 
         ///
@@ -44,7 +44,7 @@ namespace Concurrent {
         ///
         pub def lock(lock: Concurrent.ReentrantLock): Unit & Impure =
             import java.util.concurrent.locks.ReentrantLock.lock() as lockIt;
-            let Concurrent/Concurrent.ReentrantLock(l) = lock;
+            let Concurrent/ReentrantLock.ReentrantLock(l) = lock;
             lockIt(l)
 
         ///
@@ -52,7 +52,7 @@ namespace Concurrent {
         ///
         pub def lockInterruptibly(lock: Concurrent.ReentrantLock): Result[Unit, ##java.lang.InterruptedException] & Impure =
             import java.util.concurrent.locks.ReentrantLock.lockInterruptibly();
-            let Concurrent/Concurrent.ReentrantLock(l) = lock;
+            let Concurrent/ReentrantLock.ReentrantLock(l) = lock;
             try {
                 Ok(lockInterruptibly(l))
             } catch {
@@ -64,7 +64,7 @@ namespace Concurrent {
         ///
         pub def newCondition(lock: Concurrent.ReentrantLock): Condition & Impure =
             import java.util.concurrent.locks.ReentrantLock.newCondition();
-            let Concurrent/Concurrent.ReentrantLock(l) = lock;
+            let Concurrent/ReentrantLock.ReentrantLock(l) = lock;
             Condition(newCondition(l))
 
         ///
@@ -72,7 +72,7 @@ namespace Concurrent {
         ///
         pub def tryLock(lock: Concurrent.ReentrantLock): Bool & Impure =
             import java.util.concurrent.locks.ReentrantLock.tryLock();
-            let Concurrent/Concurrent.ReentrantLock(l) = lock;
+            let Concurrent/ReentrantLock.ReentrantLock(l) = lock;
             tryLock(l)
 
         ///
@@ -81,7 +81,7 @@ namespace Concurrent {
         pub def tryLockNanos(lock: Concurrent.ReentrantLock, nanosTimeout: Int64): Result[Bool, ##java.lang.InterruptedException] & Impure =
             import java.util.concurrent.locks.ReentrantLock.tryLock(Int64, ##java.util.concurrent.TimeUnit);
             import static get java.util.concurrent.TimeUnit.NANOSECONDS as nano;
-            let Concurrent/Concurrent.ReentrantLock(l) = lock;
+            let Concurrent/ReentrantLock.ReentrantLock(l) = lock;
             try {
                 Ok(tryLock(l, nanosTimeout, nano()))
             } catch {
@@ -93,7 +93,7 @@ namespace Concurrent {
         ///
         pub def unlock(lock: Concurrent.ReentrantLock): Result[Unit, ##java.lang.IllegalMonitorStateException] & Impure =
             import java.util.concurrent.locks.ReentrantLock.unlock();
-            let Concurrent/Concurrent.ReentrantLock(l) = lock;
+            let Concurrent/ReentrantLock.ReentrantLock(l) = lock;
             try {
                 Ok(unlock(l))
             } catch {
