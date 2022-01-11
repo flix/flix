@@ -10,7 +10,7 @@ def f(): M = Map#{ 1 => "Hello", 2 => "World"}
 type alias N[a] = Map[a, Result[Int, String]]
 
 /// A function that returns a map of type N.
-def g(): N[Int] = Map#{ 1 => Ok(123), 2 => Err("Hello") }
+def g(): N[Int32] = Map#{ 1 => Ok(123), 2 => Err("Hello") }
 
 /// Another function that returns a map of type N.
 def h(): N[Bool] = Map#{ true => Ok(456) }

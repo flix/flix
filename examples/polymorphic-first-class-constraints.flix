@@ -7,7 +7,7 @@ rel LabelPath[l](x: String, l: l, y: String)
 /// Note that the return type is `closed` which means that the
 /// facts can *only* be used within a constraint system that
 /// has labelled edges and paths of ints.
-def getEdgesWithNumbers(): #{ LabelEdge[Int], LabelPath[Int] } = #{
+def getEdgesWithNumbers(): #{ LabelEdge[Int32], LabelPath[Int32] } = #{
     LabelEdge("a", 1, "b").
     LabelEdge("b", 1, "c").
     LabelEdge("c", 2, "d").

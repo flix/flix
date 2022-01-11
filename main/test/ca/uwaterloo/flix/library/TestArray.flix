@@ -1744,7 +1744,7 @@ def isSuffixOf13(): Bool & Impure = Array.isSuffixOf([1,2,3], [89,11,1,2,3])
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testEq01(): Bool & Impure = ([] : Array[Int]) `sameElements` ([] : Array[Int])
+def testEq01(): Bool & Impure = ([] : Array[Int32]) `sameElements` ([] : Array[Int32])
 
 @test
 def testEq02(): Bool & Impure = Bool.not([1] `sameElements` [])
@@ -1772,7 +1772,7 @@ def testEq08(): Bool & Impure = [1,2,3,4] `sameElements` [1,2,3,4]
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def testCompare01(): Bool & Impure = (([] : Array[Int]) `Array.compare` ([] : Array[Int])) == EqualTo
+def testCompare01(): Bool & Impure = (([] : Array[Int32]) `Array.compare` ([] : Array[Int32])) == EqualTo
 
 @test
 def testCompare02(): Bool & Impure = ([1] `Array.compare` []) == GreaterThan
