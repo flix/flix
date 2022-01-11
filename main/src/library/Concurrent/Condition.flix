@@ -32,17 +32,19 @@ namespace Concurrent {
 
     namespace Condition {
 
+
         ///
         /// Causes the current thread to wait until it is signalled or interrupted.
         ///
-        pub def await(condition: Concurrent.Condition): Result[Unit, ConditionError] & Impure =
+        pub def await(condition: Concurrent.Condition): Result[Unit, Concurrent.ConditionError] & Impure =
             import java.util.concurrent.locks.Condition.await();
+            //use Concurrent/Condition.Condition;
             let Concurrent/Condition.Condition(c) = condition;
             try {
                 Ok(await(c))
             } catch {
-                case e: ##java.lang.InterruptedException => Err(InterruptedError(e))
-                case e: ##java.lang.IllegalMonitorStateException => Err(MonitorStateError(e))
+                case e: ##java.lang.InterruptedException => Err(Concurrent/ConditionError.InterruptedError(e))
+                case e: ##java.lang.IllegalMonitorStateException => Err(Concurrent/ConditionError.MonitorStateError(e))
             }
 
         ///
@@ -50,14 +52,14 @@ namespace Concurrent {
         /// time(nanos) elapses. The method returns an estimate of the number of nanoseconds remaining to wait
         /// given the supplied nanosTimeout value upon return, or a value less than or equal to zero if it timed out.
         ///
-        pub def awaitTimeout(condition: Concurrent.Condition, timeout: Int64): Result[Int64, ConditionError] & Impure =
+        pub def awaitTimeout(condition: Concurrent.Condition, timeout: Int64): Result[Int64, Concurrent.ConditionError] & Impure =
             import java.util.concurrent.locks.Condition.awaitNanos(Int64);
             let Concurrent/Condition.Condition(c) = condition;
             try {
                 Ok(awaitNanos(c, timeout))
             } catch {
-                case e: ##java.lang.InterruptedException => Err(InterruptedError(e))
-                case e: ##java.lang.IllegalMonitorStateException => Err(MonitorStateError(e))
+                case e: ##java.lang.InterruptedException => Err(Concurrent/ConditionError.InterruptedError(e))
+                case e: ##java.lang.IllegalMonitorStateException => Err(Concurrent/ConditionError.MonitorStateError(e))
             }
 
         ///
