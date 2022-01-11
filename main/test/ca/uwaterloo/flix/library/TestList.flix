@@ -1042,7 +1042,7 @@ def foldRightL04(): Bool = List.foldRightL((e, i) -> (force i - e) * (e rem 2 + 
 // reduceLeft                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def reduceLeft01(): Bool = List.reduceLeft((a, b) -> a-b, Nil: List[Int]) == None
+def reduceLeft01(): Bool = List.reduceLeft((a, b) -> a-b, Nil: List[Int32]) == None
 
 @test
 def reduceLeft02(): Bool = List.reduceLeft((a, b) -> a-b, 1 :: Nil) == Some(1)
@@ -1060,7 +1060,7 @@ def reduceLeft05(): Bool = List.reduceLeft((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :: Ni
 // reduceRight                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def reduceRight01(): Bool = List.reduceRight((a, b) -> a-b, Nil: List[Int]) == None
+def reduceRight01(): Bool = List.reduceRight((a, b) -> a-b, Nil: List[Int32]) == None
 
 @test
 def reduceRight02(): Bool = List.reduceRight((a, b) -> a-b, 1 :: Nil) == Some(1)
@@ -2372,7 +2372,7 @@ def distinctWith09(): Bool =
 
     @test
     def toChain01(): Bool =
-        List.toChain(Nil: List[Int]) == Chain.empty(): Chain[Int]
+        List.toChain(Nil: List[Int32]) == Chain.empty(): Chain[Int32]
 
     @test
     def toChain02(): Bool =

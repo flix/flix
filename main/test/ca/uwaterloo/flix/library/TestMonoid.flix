@@ -17,29 +17,6 @@
 namespace TestMonoid {
 
     use Monoid.{empty, combine};
-    use Monoid.{combineAll};
-
-    /////////////////////////////////////////////////////////////////////////////
-    // combineAll                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def combineAll01(): Bool = combineAll(Nil: List[Unit]) == ()
-
-    @test
-    def combineAll02(): Bool = combineAll(() :: Nil) == ()
-
-    @test
-    def combineAll03(): Bool = combineAll(Nil: List[String]) == ""
-
-    @test
-    def combineAll04(): Bool = combineAll("a" :: Nil) == "a"
-
-    @test
-    def combineAll05(): Bool = combineAll("a" :: "b" :: Nil) == "ab"
-
-    @test
-    def combineAll06(): Bool = combineAll("a" :: "b" :: "cdefg" :: Nil) == "abcdefg"
 
     /////////////////////////////////////////////////////////////////////////////
     // Unit                                                                    //
