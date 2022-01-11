@@ -970,7 +970,7 @@ def union16(): Bool = Map.union(Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{1
 // unionWith                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def unionWith01(): Bool = Map.unionWith((v1, v2) -> v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
+def unionWith01(): Bool = Map.unionWith((v1, v2) -> v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int32, Int32]
 
 @test
 def unionWith02(): Bool = Map.unionWith((v1, v2) -> v1 - v2, Map#{1 => 2}, Map#{}) == Map#{1 => 2}
@@ -1022,7 +1022,7 @@ def unionWith16(): Bool = Map.unionWith((v1, v2) -> v1 - v2, Map#{2 => 7, 11 => 
 // unionWithKey                                                            //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def unionWithKey01(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
+def unionWithKey01(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int32, Int32]
 
 @test
 def unionWithKey02(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2}, Map#{}) == Map#{1 => 2}
@@ -1126,7 +1126,7 @@ def intersection16(): Bool = Map.intersection(Map#{2 => 7, 11 => 14, 9 => 8, 15 
 // intersectionWith                                                        //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def intersectionWith01(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
+def intersectionWith01(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int32, Int32]
 
 @test
 def intersectionWith02(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2}, Map#{}) == Map#{}
@@ -1178,7 +1178,7 @@ def intersectionWith16(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{
 // intersectionWithKey                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def intersectionWithKey01(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
+def intersectionWithKey01(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int32, Int32]
 
 @test
 def intersectionWithKey02(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2}, Map#{}) == Map#{}
@@ -1282,7 +1282,7 @@ def difference16(): Bool = Map.difference(Map#{2 => 7, 11 => 14, 9 => 8, 15 => 2
 // differenceWith                                                          //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def differenceWith01(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
+def differenceWith01(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{}) == Map#{}: Map[Int32, Int32]
 
 @test
 def differenceWith02(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2}, Map#{}) == Map#{1 => 2}
@@ -1349,7 +1349,7 @@ def differenceWith21(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(
 // differenceWithKey                                                       //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def differenceWithKey01(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
+def differenceWithKey01(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{}) == Map#{}: Map[Int32, Int32]
 
 @test
 def differenceWithKey02(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2}, Map#{}) == Map#{1 => 2}
@@ -2034,7 +2034,7 @@ def query18(): Bool =
 
     @test
     def toChain01(): Bool =
-        Map.toChain(Map#{}: Map[Int, Int]) == Chain.empty(): Chain[(Int, Int)]
+        Map.toChain(Map#{}: Map[Int32, Int32]) == Chain.empty(): Chain[(Int32, Int32)]
 
     @test
     def toChain02(): Bool =

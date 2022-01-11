@@ -768,7 +768,7 @@ namespace TestIterator {
 
     @test
     def reduceLeft01(): Bool & Impure =
-        let iter = List.toIterator(Nil: List[Int]);
+        let iter = List.toIterator(Nil: List[Int32]);
         Iterator.reduceLeft((a, b) -> a - b, iter) == None
 
     @test

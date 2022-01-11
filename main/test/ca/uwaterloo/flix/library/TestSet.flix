@@ -408,7 +408,7 @@ def foldRight04(): Bool = Set.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Se
 // reduceLeft                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def reduceLeft01(): Bool = Set.reduceLeft((a, b) -> a-b, Set#{}: Set[Int]) == None
+def reduceLeft01(): Bool = Set.reduceLeft((a, b) -> a-b, Set#{}: Set[Int32]) == None
 
 @test
 def reduceLeft02(): Bool = Set.reduceLeft((a, b) -> a-b, Set#{1}) == Some(1)
@@ -426,7 +426,7 @@ def reduceLeft05(): Bool = Set.reduceLeft((a, b) -> a-b, Set#{4, 3, 2, 1}) == So
 // reduceRight                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def reduceRight01(): Bool = Set.reduceRight((a, b) -> a-b, Set#{}: Set[Int]) == None
+def reduceRight01(): Bool = Set.reduceRight((a, b) -> a-b, Set#{}: Set[Int32]) == None
 
 @test
 def reduceRight02(): Bool = Set.reduceRight((a, b) -> a-b, Set#{1}) == Some(1)
@@ -941,7 +941,7 @@ def toList04(): Bool = Set.toList(Set#{1, 2, 3}) == 3 :: 2 :: 1 :: Nil
 
 @test
 def toChain01(): Bool =
-    Set.toChain(Set#{}: Set[Int]) == Chain.empty(): Chain[Int]
+    Set.toChain(Set#{}: Set[Int32]) == Chain.empty(): Chain[Int32]
 
 @test
 def toChain02(): Bool =
