@@ -602,6 +602,68 @@ namespace TestChain {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool =
+        List.toChain(Nil) |> Chain.sum == 0
+
+    @test
+    def sum02(): Bool =
+        List.toChain(1 :: Nil) |> Chain.sum == 1
+
+    @test
+    def sum03(): Bool =
+        List.toChain(1 :: 2 :: 3 :: Nil) |> Chain.sum == 6
+
+    @test
+    def sum04(): Bool =
+        List.toChain(1 :: 2 :: 3 :: -3 :: Nil) |> Chain.sum == 3
+
+    @test
+    def sum05(): Bool =
+        List.toChain(-1 :: -2 :: -3 :: -4 :: Nil) |> Chain.sum == -10
+
+    @test
+    def sum06(): Bool =
+        List.toChain(10 :: -10 :: Nil) |> Chain.sum == 0
+
+    @test
+    def sum07(): Bool =
+        List.range(1, 101) |> List.toChain |> Chain.sum == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        List.toChain(Nil) |> Chain.sumWith(x -> x + 1) == 0
+
+    @test
+    def sumWith02(): Bool =
+        List.toChain(1 :: Nil) |> Chain.sumWith(x -> x + 1) == 2
+
+    @test
+    def sumWith03(): Bool =
+        List.toChain(1 :: 2 :: 3 :: Nil) |> Chain.sumWith(x -> x + 1) == 9
+
+    @test
+    def sumWith04(): Bool =
+        List.toChain(1 :: 2 :: 3 :: -3 :: Nil) |> Chain.sumWith(x -> x + 1) == 7
+
+    @test
+    def sumWith05(): Bool =
+        List.toChain(-1 :: -2 :: -3 :: -4 :: Nil) |> Chain.sumWith(x -> x + 1) == -6
+
+    @test
+    def sumWith06(): Bool =
+        List.toChain(10 :: -10 :: Nil) |> Chain.sumWith(x -> x + 1) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // flatten                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
