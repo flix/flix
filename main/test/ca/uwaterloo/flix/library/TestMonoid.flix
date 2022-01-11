@@ -17,29 +17,6 @@
 namespace TestMonoid {
 
     use Monoid.{empty, combine};
-    use Monoid.{fold};
-
-    /////////////////////////////////////////////////////////////////////////////
-    // fold                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def fold01(): Bool = fold(Nil: List[Unit]) == ()
-
-    @test
-    def fold02(): Bool = fold(() :: Nil) == ()
-
-    @test
-    def fold03(): Bool = fold(Nil: List[String]) == ""
-
-    @test
-    def fold04(): Bool = fold("a" :: Nil) == "a"
-
-    @test
-    def fold05(): Bool = fold("a" :: "b" :: Nil) == "ab"
-
-    @test
-    def fold06(): Bool = fold("a" :: "b" :: "cdefg" :: Nil) == "abcdefg"
 
     /////////////////////////////////////////////////////////////////////////////
     // Unit                                                                    //
