@@ -62,10 +62,10 @@ namespace Concurrent {
         ///
         /// Returns a Condition instance for use with this Lock instance.
         ///
-        pub def newCondition(lock: Concurrent.ReentrantLock): Concurrent.Condition2 & Impure =
+        pub def newCondition(lock: Concurrent.ReentrantLock): Concurrent.Condition & Impure =
             import java.util.concurrent.locks.ReentrantLock.newCondition();
             let Concurrent/ReentrantLock.ReentrantLock(l) = lock;
-            Concurrent/Condition2.Condition2(newCondition(l))
+            Concurrent/Condition.Condition(newCondition(l))
 
         ///
         /// Acquires the lock only if it is not held by another thread at the time of invocation.
