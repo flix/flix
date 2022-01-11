@@ -1033,7 +1033,7 @@ namespace TestDemandList {
 
     @test
     def sumWith01(): Bool =
-        List.toIterator(Nil) |> Iterator.sumWith(x -> x + 1) == 0
+        List.toDemandList(Nil) |> DemandList.sumWith(x -> x + 1) == 0
 
     @test
     def sumWith02(): Bool =

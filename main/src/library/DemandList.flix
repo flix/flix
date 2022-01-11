@@ -100,7 +100,7 @@ namespace DemandList {
     /// Returns the sum of all elements in `l` according to the function `f`.
     ///
     @Experimental
-    def sumWith(f: a -> Int32 & ef, l: DemandList[a, Forced]): Int32 & ef =
+    pub def sumWith(f: a -> Int32 & ef, l: DemandList[a, Forced]): Int32 & ef =
         def loop(k, acc) = match k {
             case ENil         => acc
             case ECons(x, xs) => loop(      xs, f(x) + acc)
