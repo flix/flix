@@ -42,7 +42,7 @@ object Packager {
     *
     * The package is installed at `lib/<owner>/<repo>`
     */
-  def install(project: String, p: Path, o: Options): Option[Unit] = {
+  def install(project: String, p: Path, o: Options): PackagerResult[Unit] = {
     val proj = GitHub.parseProject(project)
     val release = GitHub.getLatestRelease(proj)
     val assets = release.assets.filter(_.name.endsWith(".fpkg"))
@@ -62,7 +62,7 @@ object Packager {
         stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
       }
     }
-    Some(())
+    PackagerResult.genericSuccess
   }
 
   /**
@@ -70,7 +70,7 @@ object Packager {
     *
     * The project must not already exist.
     */
-  def init(p: Path, o: Options): Option[Unit] = {
+  def init(p: Path, o: Options): PackagerResult[Unit] = {
     //
     // Check that the current working directory is usable.
     //
@@ -149,13 +149,13 @@ object Packager {
         |def test01(): Bool = 1 + 1 == 2
         |""".stripMargin
     }
-    Some(())
+    PackagerResult.genericSuccess
   }
 
   /**
     * Type checks the source files for the given project path `p`.
     */
-  def check(p: Path, o: Options): Option[Unit] = {
+  def check(p: Path, o: Options): PackagerResult[Unit] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -168,17 +168,17 @@ object Packager {
     addSourcesAndPackages(p, o)
 
     flix.check() match {
-      case Validation.Success(_) => Some(())
+      case Validation.Success(_) => PackagerResult.genericSuccess
       case Validation.Failure(errors) =>
         errors.foreach(e => println(e.message(flix.getFormatter)))
-        None
+        PackagerResult.Failure(1)
     }
   }
 
   /**
     * Builds (compiles) the source files for the given project path `p`.
     */
-  def build(p: Path, o: Options, loadClasses: Boolean = true)(implicit flix: Flix = new Flix()): Option[CompilationResult] = {
+  def build(p: Path, o: Options, loadClasses: Boolean = true)(implicit flix: Flix = new Flix()): PackagerResult[CompilationResult] = {
     flix.setFormatter(AnsiTerminalFormatter)
     // Check that the path is a project path.
     if (!isProjectPath(p))
@@ -195,17 +195,17 @@ object Packager {
     addSourcesAndPackages(p, o)
 
     flix.compile() match {
-      case Validation.Success(r) => Some(r)
+      case Validation.Success(r) => PackagerResult.Success(r)
       case Validation.Failure(errors) =>
         errors.foreach(e => println(e.message(flix.getFormatter)))
-        None
+        PackagerResult.genericFailure
     }
   }
 
   /**
     * Adds all source files and packages to the given `flix` object.
     */
-  private def addSourcesAndPackages(p: Path, o: Options)(implicit flix: Flix): Option[Unit] = {
+  private def addSourcesAndPackages(p: Path, o: Options)(implicit flix: Flix): PackagerResult[Unit] = {
     // Add all source files.
     for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
       if (sourceFile.getFileName.toString.endsWith(".flix")) {
@@ -230,13 +230,13 @@ object Packager {
         flix.addJar(file)
       }
     }
-    Some(())
+    PackagerResult.genericSuccess
   }
 
   /**
     * Builds a jar package for the given project path `p`.
     */
-  def buildJar(p: Path, o: Options): Some[Unit] = {
+  def buildJar(p: Path, o: Options): PackagerResult[Unit] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -270,13 +270,13 @@ object Packager {
 
     // Close the zip file.
     zip.finish()
-    Some(())
+    PackagerResult.genericSuccess
   }
 
   /**
     * Builds a flix package for the given project path `p`.
     */
-  def buildPkg(p: Path, o: Options): Option[Unit] = {
+  def buildPkg(p: Path, o: Options): PackagerResult[Unit] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -305,46 +305,47 @@ object Packager {
 
     // Close the zip file.
     zip.finish()
-    Some(())
+    PackagerResult.genericSuccess
   }
 
   /**
     * Runs the main function in flix package for the given project path `p`.
     */
-  def run(p: Path, o: Options): Option[Unit] = {
-    for {
-      compilationResult <- build(p, o)
+  def run(p: Path, o: Options): PackagerResult[Unit] = {
+    val res = for {
+      compilationResult <- build(p, o).toOption
       main <- compilationResult.getMain
     } yield {
       val exitCode = main(Array.empty)
       println(s"Main exited with status code $exitCode.")
-      if (exitCode == 0) Some(()) else None
+      PackagerResult.forCode(exitCode)
     }
+    res.getOrElse(PackagerResult.genericFailure)
   }
 
   /**
     * Runs all benchmarks in the flix package for the given project path `p`.
     */
-  def benchmark(p: Path, o: Options): Option[Unit] = {
-    build(p, o) match {
-      case None => None
-      case Some(compilationResult) =>
+  def benchmark(p: Path, o: Options): PackagerResult[Unit] = {
+    build(p, o) map {
+      compilationResult =>
         Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
-        Some(())
     }
   }
 
   /**
     * Runs all tests in the flix package for the given project path `p`.
     */
-  def test(p: Path, o: Options): Tester.OverallTestResult = {
+  def test(p: Path, o: Options): PackagerResult[Unit] = {
     implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
-    build(p, o) match {
-      case None => Tester.OverallTestResult.NoTests
-      case Some(compilationResult) =>
+    build(p, o) flatMap {
+      compilationResult =>
         val results = Tester.test(compilationResult)
         Console.println(results.output(flix.getFormatter))
-        results.overallResult
+        results.overallResult match {
+          case Tester.OverallTestResult.Failure => PackagerResult.genericFailure
+          case Tester.OverallTestResult.Success | Tester.OverallTestResult.NoTests => PackagerResult.genericSuccess
+        }
     }
   }
 
@@ -546,4 +547,73 @@ object Packager {
     }
   }
 
+  /**
+    * Monad indicating success or failure of a packager operation.
+    */
+  sealed trait PackagerResult[T] {
+    /**
+      * Converts this PackagerResult into an option type (forgetting the failure code).
+      */
+    def toOption: Option[T] = this match {
+      case PackagerResult.Success(value) => Some(value)
+      case PackagerResult.Failure(_) => None
+    }
+
+    /**
+      * Maps over the success value, if present.
+      */
+    def map[U](f: T => U): PackagerResult[U] = this match {
+      case PackagerResult.Success(value) => PackagerResult.Success(f(value))
+      case PackagerResult.Failure(x) => PackagerResult.Failure(x)
+    }
+
+    /**
+      * Flat-maps over the success value, if present.
+      */
+    def flatMap[U](f: T => PackagerResult[U]): PackagerResult[U] = this match {
+      case PackagerResult.Success(value) => f(value)
+      case PackagerResult.Failure(x) => PackagerResult.Failure(x)
+    }
+
+    /**
+      * The exit code associated with this PackagerResult.
+      */
+    val code: Int
+  }
+
+  object PackagerResult {
+    private val GenericSuccessCode = 0
+    private val GenericFailureCode = 1
+
+    case class Success[T](value: T) extends PackagerResult[T] {
+      val code: Int = GenericSuccessCode
+    }
+
+    case class Failure[T](code: Int) extends PackagerResult[T]
+
+    /**
+      * A success with no value.
+      */
+    def genericSuccess: PackagerResult[Unit] = {
+      Success(())
+    }
+
+    /**
+      * A failure with the default failing exit code.
+      */
+    def genericFailure[T]: PackagerResult[T] = {
+      Failure(GenericFailureCode)
+    }
+
+    /**
+      * Converts the given code into a packager result.
+      */
+    def forCode(code: Int): PackagerResult[Unit] = {
+      if (code == 0) {
+        genericSuccess
+      } else {
+        Failure(code)
+      }
+    }
+  }
 }

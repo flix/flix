@@ -110,38 +110,43 @@ object Main {
         // nop, continue
 
         case Command.Init =>
-          exitWith(Packager.init(cwd, options))
+          val result = Packager.init(cwd, options)
+          System.exit(result.code)
 
         case Command.Check =>
-          exitWith(Packager.check(cwd, options))
+          val result = Packager.check(cwd, options)
+          System.exit(result.code)
 
         case Command.Build =>
-          exitWith(Packager.build(cwd, options, loadClasses = false))
+          val result = Packager.build(cwd, options, loadClasses = false)
+          System.exit(result.code)
 
         case Command.BuildJar =>
-          exitWith(Packager.buildJar(cwd, options))
+          val result = Packager.buildJar(cwd, options)
+          System.exit(result.code)
 
         case Command.BuildPkg =>
-          exitWith(Packager.buildPkg(cwd, options))
+          val result = Packager.buildPkg(cwd, options)
+          System.exit(result.code)
 
         case Command.Run =>
-          exitWith(Packager.run(cwd, options))
+          val result = Packager.run(cwd, options)
+          System.exit(result.code)
 
         case Command.Benchmark =>
           val o = options.copy(progress = false)
-          exitWith(Packager.benchmark(cwd, o))
+          val result = Packager.benchmark(cwd, o)
+          System.exit(result.code)
 
         case Command.Test =>
           val o = options.copy(progress = false)
-          Packager.test(cwd, o) match {
-            case Tester.OverallTestResult.NoTests | Tester.OverallTestResult.Success => System.exit(0)
-            case Tester.OverallTestResult.Failure => System.exit(1)
-          }
+          val result = Packager.test(cwd, o)
+          System.exit(result.code)
 
         case Command.Install(project) =>
           val o = options.copy(progress = false)
-          exitWith(Packager.install(project, cwd, o))
-
+          val result = Packager.install(project, cwd, o)
+          System.exit(result.code)
       }
     } catch {
       case ex: RuntimeException =>
@@ -227,14 +232,6 @@ object Main {
         println(s"Compilation failed with ${errors.length} error(s).")
         System.exit(1)
     }
-  }
-
-  /**
-    * Converts an option type to an exit code.
-    */
-  private def exitWith(o: Option[_]): Unit = o match {
-    case None => System.exit(1)
-    case Some(_) => System.exit(0)
   }
 
   /**
