@@ -433,8 +433,7 @@ namespace Concurrent {
         /// The channel lock is expected to be held.
         ///
         def awaitCondition(c: Concurrent.Condition): Unit & Impure =
-            use Concurrent.Condition;
-            match Condition.awaitUninterruptibly(c) {
+            match Concurrent/Condition.awaitUninterruptibly(c) {
                 case Ok(_) => ()
                 case Err(_) =>
                     // Error: await without holding the corresponding lock
@@ -446,8 +445,7 @@ namespace Concurrent {
         /// The condition lock is expected to be held.
         ///
         def signalCondition(c: Concurrent.Condition): Unit & Impure =
-            use Concurrent.Condition;
-            match Condition.signalAll(c) {
+            match Concurrent/Condition.signalAll(c) {
                 case Ok(_) => ()
                 case Err(_) =>
                     // Error: await without holding the corresponding lock
