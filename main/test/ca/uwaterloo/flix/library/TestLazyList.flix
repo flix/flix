@@ -1283,7 +1283,7 @@ namespace TestLazyList {
 
     @test
     def reduceLeft01(): Bool =
-        LazyList.reduceLeft((a, b) -> a + b, ENil: LazyList[Int]) == None
+        LazyList.reduceLeft((a, b) -> a + b, ENil: LazyList[Int32]) == None
 
     @test
     def reduceLeft02(): Bool =
@@ -1312,11 +1312,11 @@ namespace TestLazyList {
 
     @test
     def reduceRight01(): Bool =
-        LazyList.reduceRight((a, b) -> a + b, ENil: LazyList[Int]) == None
+        LazyList.reduceRight((a, b) -> a + b, ENil: LazyList[Int32]) == None
 
     @test
     def reduceRight02(): Bool =
-        LazyList.reduceRight((a, b) -> a + b, LList(lazy ENil): LazyList[Int]) == None
+        LazyList.reduceRight((a, b) -> a + b, LList(lazy ENil): LazyList[Int32]) == None
 
     @test
     def reduceRight03(): Bool =
