@@ -111,42 +111,42 @@ object Main {
 
         case Command.Init =>
           val result = Packager.init(cwd, options)
-          System.exit(result.code)
+          System.exit(getCode(result))
 
         case Command.Check =>
           val result = Packager.check(cwd, options)
-          System.exit(result.code)
+          System.exit(getCode(result))
 
         case Command.Build =>
           val result = Packager.build(cwd, options, loadClasses = false)
-          System.exit(result.code)
+          System.exit(getCode(result))
 
         case Command.BuildJar =>
           val result = Packager.buildJar(cwd, options)
-          System.exit(result.code)
+          System.exit(getCode(result))
 
         case Command.BuildPkg =>
           val result = Packager.buildPkg(cwd, options)
-          System.exit(result.code)
+          System.exit(getCode(result))
 
         case Command.Run =>
           val result = Packager.run(cwd, options)
-          System.exit(result.code)
+          System.exit(getCode(result))
 
         case Command.Benchmark =>
           val o = options.copy(progress = false)
           val result = Packager.benchmark(cwd, o)
-          System.exit(result.code)
+          System.exit(getCode(result))
 
         case Command.Test =>
           val o = options.copy(progress = false)
           val result = Packager.test(cwd, o)
-          System.exit(result.code)
+          System.exit(getCode(result))
 
         case Command.Install(project) =>
           val o = options.copy(progress = false)
           val result = Packager.install(project, cwd, o)
-          System.exit(result.code)
+          System.exit(getCode(result))
       }
     } catch {
       case ex: RuntimeException =>
@@ -232,6 +232,14 @@ object Main {
         println(s"Compilation failed with ${errors.length} error(s).")
         System.exit(1)
     }
+  }
+
+  /**
+    * Extracts the exit code from the given result.
+    */
+  private def getCode(result: Result[_, Int]): Int = result match {
+    case Result.Ok(_) => 0
+    case Result.Err(code) => code
   }
 
   /**
