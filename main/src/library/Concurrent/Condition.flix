@@ -37,8 +37,7 @@ namespace Concurrent {
         ///
         pub def await(condition: Concurrent.Condition): Result[Unit, ConditionError] & Impure =
             import java.util.concurrent.locks.Condition.await();
-            use Concurrent.Condition;
-            let Condition(c) = condition;
+            let Concurrent/Concurrent.Condition(c) = condition;
             try {
                 Ok(await(c))
             } catch {
@@ -53,8 +52,7 @@ namespace Concurrent {
         ///
         pub def awaitTimeout(condition: Concurrent.Condition, timeout: Int64): Result[Int64, ConditionError] & Impure =
             import java.util.concurrent.locks.Condition.awaitNanos(Int64);
-            use Concurrent.Condition;
-            let Condition(c) = condition;
+            let Concurrent/Concurrent.Condition(c) = condition;
             try {
                 Ok(awaitNanos(c, timeout))
             } catch {
@@ -67,8 +65,7 @@ namespace Concurrent {
         ///
         pub def awaitUninterruptibly(condition: Concurrent.Condition): Result[Unit, ##java.lang.IllegalMonitorStateException] & Impure =
             import java.util.concurrent.locks.Condition.awaitUninterruptibly();
-            use Concurrent.Condition;
-            let Condition(c) = condition;
+            let Concurrent/Concurrent.Condition(c) = condition;
             try {
                 Ok(awaitUninterruptibly(c))
             } catch {
@@ -80,8 +77,7 @@ namespace Concurrent {
         ///
         pub def signal(condition: Concurrent.Condition): Result[Unit, ##java.lang.IllegalMonitorStateException] & Impure =
             import java.util.concurrent.locks.Condition.signal();
-            use Concurrent.Condition;
-            let Condition(c) = condition;
+            let Concurrent/Concurrent.Condition(c) = condition;
             try {
                 Ok(signal(c))
             } catch {
@@ -93,8 +89,7 @@ namespace Concurrent {
         ///
         pub def signalAll(condition: Concurrent.Condition): Result[Unit, ##java.lang.IllegalMonitorStateException] & Impure =
             import java.util.concurrent.locks.Condition.signalAll();
-            use Concurrent.Condition;
-            let Condition(c) = condition;
+            let Concurrent/Concurrent.Condition(c) = condition;
             try {
                 Ok(signalAll(c))
             } catch {

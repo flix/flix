@@ -112,7 +112,6 @@ namespace Concurrent {
             import static dev.flix.runtime.GlobalCounter.newId();
             let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
             let unBuffered = bufferSize == 0;
-            use Concurrent.ReentrantLock;
             let reentrantLock = ReentrantLock.new(false);
             Mpmc(
                 newId(),
@@ -273,7 +272,7 @@ namespace Concurrent {
         /// has an element in the array along with its index. Returns false if the
         /// default case is chosen (no element was immediately available).
         ///
-        def selectHelper(channels: Array[Mpmc], hasDefault: Bool, sortedChannels: Array[Mpmc], selectLock: ReentrantLock, selectCondition: Condition): Option[(Int32, Boxed)] & Impure =
+        def selectHelper(channels: Array[Mpmc], hasDefault: Bool, sortedChannels: Array[Mpmc], selectLock: Concurrent.ReentrantLock, selectCondition: Concurrent.Condition): Option[(Int32, Boxed)] & Impure =
             // bug if the thread is interrupted
             if (threadInterrupted()) bug!("thread interrupted") else
 
@@ -381,7 +380,7 @@ namespace Concurrent {
         /// Add a condition to the list of waiting getters.
         /// The channel lock is expected to be held.
         ///
-        def addGetter(l: ReentrantLock, cond: Concurrent.Condition, c: Mpmc): Unit & Impure =
+        def addGetter(l: Concurrent.ReentrantLock, cond: Concurrent.Condition, c: Mpmc): Unit & Impure =
             let pair = (l, cond);
             let Mpmc(_, _, _, _, _, waitingGetters, _) = c;
 
@@ -460,7 +459,7 @@ namespace Concurrent {
         /// Wrapper for `ReentrantLock.unlock(l)` that handles `Err` with `bug!`.
         /// The lock is expected to be held.
         ///
-        def unlock(l: ReentrantLock): Unit & Impure =
+        def unlock(l: Concurrent.ReentrantLock): Unit & Impure =
             match ReentrantLock.unlock(l) {
                 case Ok(_) => ()
                 case Err(_) =>
@@ -471,7 +470,7 @@ namespace Concurrent {
         ///
         /// Wrapper for `ReentrantLock.lock(l)`.
         ///
-        def lock(l: ReentrantLock): Unit & Impure =
+        def lock(l: Concurrent.ReentrantLock): Unit & Impure =
             ReentrantLock.lock(l)
 
     }
