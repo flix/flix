@@ -2539,6 +2539,35 @@ namespace TestLazyList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        List.toLazyList(Nil) |> LazyList.sumWith(x -> x + 1) == 0
+
+    @test
+    def sumWith02(): Bool =
+        List.toLazyList(1 :: Nil) |> LazyList.sumWith(x -> x + 1) == 2
+
+    @test
+    def sumWith03(): Bool =
+        List.toLazyList(1 :: 2 :: 3 :: Nil) |> LazyList.sumWith(x -> x + 1) == 9
+
+    @test
+    def sumWith04(): Bool =
+        List.toLazyList(1 :: 2 :: 3 :: -3 :: Nil) |> LazyList.sumWith(x -> x + 1) == 7
+
+    @test
+    def sumWith05(): Bool =
+        List.toLazyList(-1 :: -2 :: -3 :: -4 :: Nil) |> LazyList.sumWith(x -> x + 1) == -6
+
+    @test
+    def sumWith06(): Bool =
+        List.toLazyList(10 :: -10 :: Nil) |> LazyList.sumWith(x -> x + 1) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // order                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
