@@ -62,7 +62,7 @@ object Packager {
         stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
       }
     }
-    Some()
+    Some(())
   }
 
   /**
@@ -149,7 +149,7 @@ object Packager {
         |def test01(): Bool = 1 + 1 == 2
         |""".stripMargin
     }
-    Some()
+    Some(())
   }
 
   /**
@@ -168,7 +168,7 @@ object Packager {
     addSourcesAndPackages(p, o)
 
     flix.check() match {
-      case Validation.Success(_) => Some()
+      case Validation.Success(_) => Some(())
       case Validation.Failure(errors) =>
         errors.foreach(e => println(e.message(flix.getFormatter)))
         None
@@ -230,7 +230,7 @@ object Packager {
         flix.addJar(file)
       }
     }
-    Some()
+    Some(())
   }
 
   /**
@@ -270,7 +270,7 @@ object Packager {
 
     // Close the zip file.
     zip.finish()
-    Some()
+    Some(())
   }
 
   /**
@@ -305,7 +305,7 @@ object Packager {
 
     // Close the zip file.
     zip.finish()
-    Some()
+    Some(())
   }
 
   /**
@@ -318,7 +318,7 @@ object Packager {
     } yield {
       val exitCode = main(Array.empty)
       println(s"Main exited with status code $exitCode.")
-      if (exitCode == 0) Some() else None
+      if (exitCode == 0) Some(()) else None
     }
   }
 
@@ -330,7 +330,7 @@ object Packager {
       case None => None
       case Some(compilationResult) =>
         Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
-        Some()
+        Some(())
     }
   }
 
