@@ -17,7 +17,7 @@
 namespace Test/Exp/Jvm/TestTryCatch {
 
     def exception(): Unit & Impure =
-        import java.lang.Math:floorDiv(Int, Int);
+        import static java.lang.Math.floorDiv(Int, Int);
         floorDiv(1, 0);
         ()
 
@@ -66,7 +66,7 @@ namespace Test/Exp/Jvm/TestTryCatch {
             exception();
             false
         } catch {
-            case e: ##java.lang.ArithmeticException => if (e.toString().isEmpty()) false else true
+            case e: ##java.lang.ArithmeticException => if (isEmpty(toString(e))) false else true
             case _: ##java.lang.Exception => false
         }
 
@@ -78,7 +78,7 @@ namespace Test/Exp/Jvm/TestTryCatch {
             exception();
             false
         } catch {
-            case e: ##java.lang.ArithmeticException => if (e.getMessage().isEmpty()) false else true
+            case e: ##java.lang.ArithmeticException => if (isEmpty(getMessage(e))) false else true
             case _: ##java.lang.Exception => false
         }
 

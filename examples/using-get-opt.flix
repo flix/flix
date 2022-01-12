@@ -45,6 +45,6 @@ def main(args: Array[String]): Int32 & Impure =
     let header = "Usage: <program> [OPTION...] files...";
     let options1 = options();
     match getOpt(Permute, options1, args2) {
-        case Success(opts)   => {Console.printLine("Optionals: ${opts.options}"); Console.printLine("Non-optionals: ${opts.nonOptions}"); 0}
-        case Failure(errs)  => {Console.printLine("Errors: ${errs}");  Console.printLine(usageInfo(header, options1)); 1}
+        case Success(opts)   => {println("Optionals: ${opts.options}"); println("Non-optionals: ${opts.nonOptions}"); 0}
+        case Failure(errs)  => {println("Errors: ${errs}");  println(usageInfo(header, options1)); 1}
     }

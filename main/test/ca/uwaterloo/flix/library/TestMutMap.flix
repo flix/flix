@@ -13,44 +13,74 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 namespace TestMutMap {
 
-    use ToString.toString;
-
     /////////////////////////////////////////////////////////////////////////////
-    // toString                                                                //
+    // sameElements                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toString01(): Bool & Impure =
-        let s = MutMap.empty();
-        MutMap.put!(1, 45, s);
-        toString(s) == "MutMap#{1 -> 45}"
+    def sameElements01(): Bool & Impure =
+        let m = MutMap.empty(): MutMap[Int32, Int32];
+        let m2 = MutMap.empty(): MutMap[Int32, Int32];
+
+        MutMap.sameElements(m, m2)
 
     @test
-    def toString02(): Bool & Impure =
-        let s = MutMap.empty();
-        MutMap.put!(1, 3, s);
-        MutMap.put!(2, 4, s);
-        toString(s) == "MutMap#{1 -> 3, 2 -> 4}"
+    def sameElements02(): Bool & Impure =
+        let m = MutMap.empty();
+        MutMap.put!(1, "a", m);
+
+        let m2 = MutMap.empty();
+        MutMap.put!(1, "a", m2);
+
+        MutMap.sameElements(m, m2)
 
     @test
-    def toString03(): Bool & Impure =
-        let s = MutMap.empty();
-        MutMap.put!(1, 'a', s);
-        MutMap.put!(92, 'b', s);
-        MutMap.put!(94, 'c', s);
-        MutMap.put!(97, 'd', s);
-        toString(s) == "MutMap#{1 -> a, 92 -> b, 94 -> c, 97 -> d}"
+    def sameElements03(): Bool & Impure =
+        let m = MutMap.empty();
+        MutMap.put!(1, "a", m);
+        MutMap.put!(1, "b", m);
+
+        let m2 = MutMap.empty();
+        MutMap.put!(1, "a", m2);
+
+        not MutMap.sameElements(m, m2)
 
     @test
-    def toString04(): Bool & Impure =
-        let s = MutMap.empty();
-        MutMap.put!('a', 6, s);
-        MutMap.put!('b', 7, s);
-        MutMap.put!('c', 10, s);
-        MutMap.put!('d', 1337, s);
-        toString(s) == "MutMap#{a -> 6, b -> 7, c -> 10, d -> 1337}"
+    def sameElements04(): Bool & Impure =
+        let m = MutMap.empty();
+        MutMap.put!(1, "a", m);
+        MutMap.put!(2, "b", m);
+
+        let m2 = MutMap.empty();
+        MutMap.put!(1, "a", m2);
+
+        not MutMap.sameElements(m, m2)
+
+    @test
+    def sameElements05(): Bool & Impure =
+        let m = MutMap.empty();
+        MutMap.put!(1, "a", m);
+
+        let m2 = MutMap.empty();
+        MutMap.put!(1, "a", m2);
+        MutMap.put!(2, "b", m2);
+
+        not MutMap.sameElements(m, m2)
+
+    @test
+    def sameElements06(): Bool & Impure =
+        let m = MutMap.empty();
+        MutMap.put!(2, "b", m);
+        MutMap.put!(3, "c", m);
+        MutMap.put!(1, "a", m);
+
+        let m2 = MutMap.empty();
+        MutMap.put!(1, "a", m2);
+        MutMap.put!(2, "b", m2);
+        MutMap.put!(3, "c", m2);
+
+        MutMap.sameElements(m, m2)
 
 }

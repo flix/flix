@@ -1,6 +1,6 @@
 name: Java CI
 
-on: [push, pull_request]
+on: [pull_request]
 
 # Cancel previous runs if the PR is updated
 concurrency:
@@ -18,4 +18,4 @@ jobs:
         with:
           java-version: 1.11
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew clean build

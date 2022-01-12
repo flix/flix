@@ -21,41 +21,6 @@ pub enum MutList[a] {
     case MutList(Ref[Array[a]], Ref[Int32])
 }
 
-instance ToString[MutList[a]] with ToString[a] {
-    pub def toString(v: MutList[a]): String = {
-        let s = MutList.formatWith(x -> "${x}", ", ", v) as & Pure;
-        "MutList#{${s}}"
-    }
-}
-
-instance Eq[MutList[a]] with Eq[a] {
-        pub def eq(xs: MutList[a], ys: MutList[a]): Bool = {
-            let MutList(l1, n1) = xs;
-            let MutList(l2, n2) = ys;
-            deref n1 == deref n2 and
-                Array.slice(deref l1, 0, deref n1) == Array.slice(deref l2, 0, deref n2)
-        } as & Pure
-}
-
-instance Order[MutList[v]] with Order[v] {
-    ///
-    /// Compares `u` and `v` lexicographically.
-    ///
-    pub def compare(u: MutList[v], v: MutList[v]): Comparison =
-        (let MutList(a, _) = u;
-        let MutList(b, _) = v;
-        deref a <=> deref b) as & Pure
-}
-
-instance Functor[MutList] {
-    pub def map(f: a -> b & ef, v: MutList[a]): MutList[b] & ef = MutList.map(f, v) as & ef
-}
-
-instance Foldable[MutList] {
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, v: MutList[a]): b & ef = MutList.foldLeft(f, s, v) as & ef
-    pub def foldRight(f: (a, b) -> b & ef, s: b, v: MutList[a]): b & ef = MutList.foldRight(f, s, v) as & ef
-}
-
 namespace MutList {
 
     ///
@@ -66,7 +31,7 @@ namespace MutList {
     ///
     /// Returns a new empty mutable list with a default capacity.
     ///
-    pub def new(): MutList[a] & Impure = MutList(ref [default; minCapacity()], ref 0)
+    pub def new(): MutList[a] & Impure = MutList(ref [$DEFAULT$; minCapacity()], ref 0)
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -76,7 +41,7 @@ namespace MutList {
     pub def range(b: Int32, e: Int32): MutList[Int32] & Impure =
         let minCap = minCapacity();
         if (e - b < minCap)
-            let f = i -> if (b + i < e) b + i else default;
+            let f = i -> if (b + i < e) b + i else $DEFAULT$;
             MutList(ref Array.init(f, minCap), ref (e - b))
         else
             MutList(ref Array.range(b, e), ref (e - b))
@@ -89,7 +54,7 @@ namespace MutList {
         if (i >= deref l)
             bug!("Invalid argument ${i}")
         else
-            Array.get(deref a, i)
+            Array.get(i, deref a)
 
     ///
     /// Returns the number of elements in the given mutable list `v`.
@@ -392,11 +357,6 @@ namespace MutList {
         }
 
     ///
-    /// Returns the result of applying `combine` to all the elements in `v`, using `empty` as the initial value.
-    ///
-    pub def fold(v: MutList[a]): a with Monoid[a] = Foldable.fold(v)
-
-    ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
@@ -461,7 +421,7 @@ namespace MutList {
     ///
     pub def clear!(v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
-        a := Array.new(default, Array.length(deref a));
+        a := Array.new($DEFAULT$, Array.length(deref a));
         l := 0
 
     ///
@@ -472,9 +432,9 @@ namespace MutList {
         let MutList(a, l) = v;
         let len = deref l;
         if (len > minCapacity())
-            MutList(ref Array.slice(deref a, 0, len), ref len)
+            MutList(ref Array.slice(0, len, deref a), ref len)
         else
-            MutList(ref Array.slice(deref a, 0, capacity(v)), ref len)
+            MutList(ref Array.slice(0, capacity(v), deref a), ref len)
 
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
@@ -485,7 +445,7 @@ namespace MutList {
         if (len > 0)
             let last = (deref a)[len - 1];
             l := len - 1;
-            Array.put(deref a, len - 1, default);
+            Array.put($DEFAULT$, len - 1, deref a);
             compress!(v);
             Some(last)
         else
@@ -516,7 +476,7 @@ namespace MutList {
         if (capacity(v) - len == 0)
             reserve!(len, v)
         else ();
-        let sub = Array.slice(deref a, i, len);
+        let sub = Array.slice(i, len, deref a);
         Array.updateSequence!(i + 1, sub, deref a);
         (deref a)[i] = x;
         l := len + 1
@@ -548,7 +508,7 @@ namespace MutList {
             removeHelper!(i + 1, n, a)
         }
         else if (i == n - 1)
-            a[i] = default
+            a[i] = $DEFAULT$
         else
             ()
 
@@ -601,8 +561,8 @@ namespace MutList {
         else {
             let x = a[i];
             let y = a[j];
-            Array.put(a, i, y);
-            Array.put(a, j, x);
+            Array.put(y, i, a);
+            Array.put(x, j, a);
             reverseHelper!(a, halflen, i + 1, j - 1)
         }
 
@@ -618,7 +578,7 @@ namespace MutList {
         if (n < capv and capv != minCap) {
             let len = deref l;
             let newCap = Order.max(n, minCap);
-            a := Array.slice(deref a, 0, newCap);
+            a := Array.slice(0, newCap, deref a);
             l := Order.min(len, newCap)
         }
         else ()
@@ -643,7 +603,7 @@ namespace MutList {
             let minCap = minCapacity();
             let c = Order.max(l, minCap);
             l0 := l;
-            Array.updateSequence!(0, deref a, Array.new(default, c))
+            Array.updateSequence!(0, deref a, Array.new($DEFAULT$, c))
         }
         else
             ()
@@ -657,19 +617,12 @@ namespace MutList {
     ///
     pub def reserve!(n: Int32, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
-        let c = capacity(v);
-        let len = deref l;
-        let empty = c - len;
-        if (n > empty)
-            let newCapacity = c + (n - empty);
-            let arr = deref a;
-            a := Array.init(i -> if (i < len) arr[i] else default, newCapacity)
-        else ()
+        a := Array.copyOfRange(0, (deref l) + n, deref a)
 
     ///
     /// Returns `v` as an immutable list.
     ///
-    pub def toImm(v: MutList[a]): List[a] & Impure =
+    pub def toList(v: MutList[a]): List[a] & Impure =
         foldRight((x, acc) -> x :: acc, Nil, v)
 
     ///
@@ -677,7 +630,13 @@ namespace MutList {
     ///
     pub def toArray(v: MutList[a]): Array[a] & Impure =
         let MutList(a, l) = v;
-        Array.slice(deref a, 0, deref l)
+        Array.slice(0, deref l, deref a)
+
+    ///
+    /// Returns the mutable list `xs` as a chain.
+    ///
+    pub def toChain(xs: MutList[a]): Chain[a] & Impure =
+        foldLeft((ac, x) -> Chain.snoc(ac, x), Chain.empty(), xs)
 
     ///
     /// Returns `true` if the mutable lists `v1` and `v2` have the same elements, i.e. are structurally equal.
@@ -715,9 +674,9 @@ namespace MutList {
         StringBuilder.toString(sb)
 
     ///
-    /// Apply the effectful function `f` to all the elements in `v`.
+    /// Applies `f` to all the elements in `v`.
     ///
-    pub def foreach(f: a ~> Unit, v: MutList[a]): Unit & Impure =
+    pub def foreach(f: a -> Unit & ef, v: MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         if (len < 1)
@@ -728,7 +687,7 @@ namespace MutList {
     ///
     /// Helper function for `foreach`.
     ///
-    def foreachHelper(f: a ~> Unit, a: Array[a], i: Int32, n: Int32): Unit & Impure =
+    def foreachHelper(f: a -> Unit & ef, a: Array[a], i: Int32, n: Int32): Unit & Impure =
         if (i >= n)
             ()
         else {
@@ -737,9 +696,9 @@ namespace MutList {
         }
 
     ///
-    /// Apply the effectful function `f` to all the elements in `v`.
+    /// Applies `f` to all the elements in `v`.
     ///
-    pub def foreachWithIndex(f: (a, Int32) ~> Unit, v: MutList[a]): Unit & Impure =
+    pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, v: MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         if (len < 1)
@@ -750,7 +709,7 @@ namespace MutList {
     ///
     /// Helper function for `foreachWithIndex`.
     ///
-    def foreachWithIndexHelper(f: (a, Int32) ~> Unit, a: Array[a], i: Int32, n: Int32): Unit & Impure =
+    def foreachWithIndexHelper(f: (a, Int32) -> Unit & ef, a: Array[a], i: Int32, n: Int32): Unit & Impure =
         if (i >= n)
             ()
         else {
@@ -845,7 +804,7 @@ namespace MutList {
     ///
     pub def sortWith!(cmp: (a,a) -> Comparison, v: mut MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
-        Array.sortWithin!(cmp, deref a, 0, (deref l) - 1)
+        Array.sortWithin!(cmp, 0, (deref l) - 1, deref a)
 
     ///
     /// Returns the sum of all elements in the list `v`.

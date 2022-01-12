@@ -11,7 +11,7 @@ def testChoose02(): Option[String] & Impure =
     Random.choose(r, a)
 
 @test
-def testChoose03(): Option[Result[Int, Int]] & Impure =
+def testChoose03(): Option[Result[Int32, Int32]] & Impure =
     let r = Random.new();
     let a = [Ok(123), Ok(456), Err(789)];
     Random.choose(r, a)

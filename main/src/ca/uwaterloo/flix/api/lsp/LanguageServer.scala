@@ -23,8 +23,7 @@ import ca.uwaterloo.flix.language.debug._
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
-import ca.uwaterloo.flix.util.vt.TerminalContext
-import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options, Result, StreamOps}
+import ca.uwaterloo.flix.util._
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -74,11 +73,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   implicit val DefaultAudience: Audience = Audience.External
 
   /**
-    * The terminal context used for formatting.
-    */
-  implicit val DefaultTerminalContext: TerminalContext = TerminalContext.NoTerminal
-
-  /**
     * The default compiler options.
     */
   val DefaultOptions: Options = Options.Default
@@ -94,6 +88,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   val packages: mutable.Map[String, List[String]] = mutable.Map.empty
 
   /**
+    * A set of JAR URIs.
+    */
+  val jars: mutable.Set[String] = mutable.Set.empty
+
+  /**
     * The current AST root. The root is null until the source code is compiled.
     */
   var root: Root = _
@@ -102,6 +101,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * The current reverse index. The index is empty until the source code is compiled.
     */
   var index: Index = Index.empty
+
+  /**
+    * A Boolean that records if the root AST is current (i.e. up-to-date).
+    */
+  private var current: Boolean = false
 
   /**
     * Invoked when the server is started.
@@ -167,6 +171,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("api/remUri") => Request.parseRemUri(json)
       case JString("api/addPkg") => Request.parseAddPkg(json)
       case JString("api/remPkg") => Request.parseRemPkg(json)
+      case JString("api/addJar") => Request.parseAddJar(json)
+      case JString("api/remJar") => Request.parseRemJar(json)
       case JString("api/version") => Request.parseVersion(json)
       case JString("api/shutdown") => Request.parseShutdown(json)
 
@@ -176,6 +182,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       case JString("lsp/highlight") => Request.parseHighlight(json)
       case JString("lsp/hover") => Request.parseHover(json)
       case JString("lsp/goto") => Request.parseGoto(json)
+      case JString("lsp/implementation") => Request.parseImplementation(json)
       case JString("lsp/rename") => Request.parseRename(json)
       case JString("lsp/documentSymbols") => Request.parseDocumentSymbols(json)
       case JString("lsp/workspaceSymbols") => Request.parseWorkspaceSymbols(json)
@@ -193,10 +200,12 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     */
   private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
     case Request.AddUri(id, uri, src) =>
+      current = false
       sources += (uri -> src)
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemUri(id, uri) =>
+      current = false
       sources -= uri
       ("id" -> id) ~ ("status" -> "success")
 
@@ -223,6 +232,14 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       packages -= uri
       ("id" -> id) ~ ("status" -> "success")
 
+    case Request.AddJar(id, uri) =>
+      jars += uri
+      ("id" -> id) ~ ("status" -> "success")
+
+    case Request.RemJar(id, uri) =>
+      jars -= uri
+      ("id" -> id) ~ ("status" -> "success")
+
     case Request.Version(id) => processVersion(id)
 
     case Request.Shutdown(id) => processShutdown()
@@ -242,6 +259,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     case Request.Goto(id, uri, pos) =>
       ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
 
+    case Request.Implementation(id, uri, pos) =>
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root).map(_.toJSON))
+
     case Request.Rename(id, newName, uri, pos) =>
       ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root)
 
@@ -255,7 +275,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
       ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
 
     case Request.SemanticTokens(id, uri) =>
-      ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root)
+      if (current)
+        ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root)
+      else
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ("data" -> Nil))
 
   }
 
@@ -268,14 +291,19 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     // Add sources.
     for ((uri, source) <- sources) {
-      flix.addInput(uri, source)
+      flix.addSourceCode(uri, source)
     }
 
     // Add sources from packages.
     for ((uri, items) <- packages) {
       for (src <- items) {
-        flix.addInput(uri, src)
+        flix.addSourceCode(uri, src)
       }
+    }
+
+    // Add JARs.
+    for (uri <- jars) {
+      flix.addJar(uri)
     }
 
     // Measure elapsed time.
@@ -287,30 +315,38 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           // Case 1: Compilation was successful. Build the reverse index.
           this.root = root
           this.index = Indexer.visitRoot(root)
+          this.current = true
 
           // Compute elapsed time.
           val e = System.nanoTime() - t
 
-          // Compute Code Quality hints.
-          val hints = CodeHinter.run(root)(flix)
+          if (flix.options.xperf) {
+            println(s"lsp/check: ${e / 1_000_000}ms")
+          }
 
-          hints match {
-            case Success(_) =>
-              // Case 1: No code hints.
-              ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)
-            case Failure(errors) =>
-              // Case 2: Code hints are available.
-              val results = PublishDiagnosticsParams.from(errors)
-              ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
+          // Compute Code Quality hints.
+          val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix)
+          if (codeHints.isEmpty) {
+            // Case 1: No code hints.
+            ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)
+          } else {
+            // Case 2: Code hints are available.
+            val results = PublishDiagnosticsParams.fromCodeHints(codeHints)
+            ("id" -> requestId) ~ ("status" -> "failure") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
           }
 
         case Failure(errors) =>
           // Case 2: Compilation failed. Send back the error messages.
-          val results = PublishDiagnosticsParams.from(errors)
+
+          // Mark the AST as outdated.
+          current = false
+          val results = PublishDiagnosticsParams.fromMessages(errors)
           ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
       }
     } catch {
       case t: Throwable =>
+        // Mark the AST as outdated.
+        current = false
         t.printStackTrace(System.err)
         ("id" -> requestId) ~ ("status" -> "failure")
     }
@@ -330,7 +366,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
       val main = Symbol.Main
       root.defs.get(main) match {
-        case Some(defn) if matchesUri(uri, defn.spec.loc) =>
+        case Some(defn) if matchesUri(uri, defn.sym.loc) =>
           val runMain = Command("Run", "flix.runMain", Nil)
           val runMainWithArgs = Command("Run with args...", "flix.runMainWithArgs", Nil)
           val runMainNewTerminal = Command("Run (in new terminal)", "flix.runMainNewTerminal", Nil)

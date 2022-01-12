@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
@@ -238,7 +238,7 @@ object GenTagClasses {
     method.visitInsn(DUP)
 
     // Getting instance of `UnitClass`
-    method.visitFieldInsn(GETSTATIC, JvmName.Unit.toInternalName, GenUnitClass.InstanceFieldName, JvmName.Unit.toDescriptor)
+    method.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
     // Calling constructor on the object
     method.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>",
       AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)

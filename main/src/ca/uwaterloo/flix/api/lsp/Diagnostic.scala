@@ -15,8 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.util.vt.TerminalContext
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.errors.CodeHint
+import ca.uwaterloo.flix.util.Formatter
 import org.json4s.JsonDSL._
 import org.json4s._
 
@@ -24,13 +25,28 @@ import org.json4s._
   * Companion object for [[Diagnostic]].
   */
 object Diagnostic {
-  def from(compilationError: CompilationError): Diagnostic = {
-    val range = Range.from(compilationError.loc)
-    val severity = Some(DiagnosticSeverity.from(compilationError.severity))
-    val code = compilationError.kind
-    val message = compilationError.summary
-    val fullMessage = compilationError.message.fmt(TerminalContext.NoTerminal)
-    Diagnostic(range, severity, Some(code), None, message, fullMessage, Nil)
+  def from(compilationMessage: CompilationMessage, formatter: Formatter): Diagnostic = {
+    val range = Range.from(compilationMessage.loc)
+    val severity = Some(DiagnosticSeverity.Error)
+    val code = compilationMessage.kind
+    val summary = compilationMessage.summary
+    val explanationHeading =
+      s"""
+         |${formatter.underline("Explanation:")}
+         |""".stripMargin
+    val explanation = compilationMessage.explain(formatter) match {
+      case None => ""
+      case Some(expl) => explanationHeading + expl
+    }
+    val fullMessage = compilationMessage.message(formatter) + explanation
+    Diagnostic(range, severity, Some(code), None, summary, fullMessage, Nil)
+  }
+
+  def from(codeHint: CodeHint, formatter: Formatter): Diagnostic = {
+    val range = Range.from(codeHint.loc)
+    val severity = Some(DiagnosticSeverity.from(codeHint.severity))
+    val summary = codeHint.summary
+    Diagnostic(range, severity, None, None, summary, summary, Nil)
   }
 }
 
