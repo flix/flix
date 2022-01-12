@@ -187,7 +187,7 @@ namespace Test/Exp/Interpolation {
 
     @test
     def interpolation35(): Bool =
-        let x = Ok(Some(123)): Result[Option[Int], Int32];
+        let x = Ok(Some(123)): Result[Option[Int32], Int32];
         "${x}" == "Ok(Some(123))"
 
     @test

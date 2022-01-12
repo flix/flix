@@ -1,20 +1,20 @@
 namespace Test/Integ/Class/Schema {
-    rel R(x: Int, y: Bool)
+    rel R(x: Int32, y: Bool)
 
     lawless class C[a] {
-        pub def f(_x: a): #{ R(Int, Bool) } = #{
+        pub def f(_x: a): #{ R(Int32, Bool) } = #{
             R(1, true).
         }
     }
 
     lawless class D[a] {
-        pub def f(x: a): #{ R(Int, Bool) }
+        pub def f(x: a): #{ R(Int32, Bool) }
     }
 
-    instance C[Int]
+    instance C[Int32]
 
-    instance D[Int] {
-        pub def f(_x: Int): #{ R(Int, Bool) } = #{
+    instance D[Int32] {
+        pub def f(_x: Int): #{ R(Int32, Bool) } = #{
             R(2, false).
         }
     }

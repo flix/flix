@@ -40,7 +40,7 @@ namespace Test/Enum/Kinding {
 
         // These pass kinding but cause a crash in the Finalizer.
 //        pub enum EStarToStar[a: Type -> Type] {
-//            case CStarToStar1(a[Int])
+//            case CStarToStar1(a[Int32])
 //        }
 //
 //        pub enum EBoolToStar[a: Bool -> Type] {
