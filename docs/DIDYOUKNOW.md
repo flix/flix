@@ -76,3 +76,14 @@ Did you know that:
 - The Flix compiler is X lines of the code.
 
 - Flix has no compiler warnings, only compiler errors.
+
+## Other
+
+Did you know that:
+
+- Flix is developed by programming language researchers at Aarhus University (Denmark) 
+  in collaboration with researchers at the University of Waterloo (Canada).
+
+- Flix has received grants from the Independent Research Fund Denmark and from Amazon Research.
+
+- 
