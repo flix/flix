@@ -1,16 +1,16 @@
 namespace Test/Exp/ArraySlice {
 
     @test
-    def testArraySlice01(): Array[Int] & Impure = let x = [1, 2, 3]; x[0..2]
+    def testArraySlice01(): Array[Int32] & Impure = let x = [1, 2, 3]; x[0..2]
 
     @test
-    def testArraySlice02(): Array[Int] & Impure = let x = [1, 2, 3, 4]; x[2..3]
+    def testArraySlice02(): Array[Int32] & Impure = let x = [1, 2, 3, 4]; x[2..3]
 
     @test
-    def testArraySlice03(): Array[Int] & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]; x[10..15]
+    def testArraySlice03(): Array[Int32] & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]; x[10..15]
 
     @test
-    def testArraySlice04(): Array[Int] & Impure = let x = [1, 2]; x[1..2]
+    def testArraySlice04(): Array[Int32] & Impure = let x = [1, 2]; x[1..2]
 
     @test
     def testArraySlice05(): Array[Bool] & Impure = let x = [true, false]; x[0..1]
@@ -67,24 +67,24 @@ namespace Test/Exp/ArraySlice {
     def testArraySlice22(): Array[String] & Impure = let x = ["World", "Hello", "World"]; x[2..3]
 
     @test
-    def testArraySlice23(): Array[Array[Int]] & Impure = let x = [[1, 2], [1, 2]]; x[1..2]
+    def testArraySlice23(): Array[Array[Int32]] & Impure = let x = [[1, 2], [1, 2]]; x[1..2]
 
     @test
-    def testArraySlice24(): Array[Array[Int]] & Impure = let x = [[1], [1, 2, 3, 4, 5, 6, 7, 8]]; x[0..2]
+    def testArraySlice24(): Array[Array[Int32]] & Impure = let x = [[1], [1, 2, 3, 4, 5, 6, 7, 8]]; x[0..2]
 
     @test
-    def testArraySlice25(): Array[Array[Int]] & Impure = let x = [[1, 2, 3, 4, 5], [2]]; x[0..1]
+    def testArraySlice25(): Array[Array[Int32]] & Impure = let x = [[1, 2, 3, 4, 5], [2]]; x[0..1]
 
     @test
-    def testArraySlice26(): Array[Array[Int]] & Impure = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[0..3]
+    def testArraySlice26(): Array[Array[Int32]] & Impure = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[0..3]
 
     @test
-    def testArraySlice27(): Array[(List[Int])] & Impure = let x = [(1 :: Nil), (2 :: Nil)]; x[1..2]
+    def testArraySlice27(): Array[(List[Int32])] & Impure = let x = [(1 :: Nil), (2 :: Nil)]; x[1..2]
 
     @test
     def testArraySlice28(): Array[(Bool, Bool)] & Impure = let x = [(true, true), (true, false), (true, true)]; x[1..2]
 
     @test
-    def testArraySlice29(): Array[Option[Int]] & Impure = let x = [Some(1), Some(2), Some(3), Some(4), None]; x[1..2]
+    def testArraySlice29(): Array[Option[Int32]] & Impure = let x = [Some(1), Some(2), Some(3), Some(4), None]; x[1..2]
 
 }

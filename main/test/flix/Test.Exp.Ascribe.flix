@@ -40,5 +40,5 @@ namespace Test/Exp/Ascribe {
     def testAscribe13(): (Int, Int, Int) = (1, 2, 3) : (Int, Int, Int)
 
     @test
-    def testAscribe14(): Option[Int] = Some(42) : Option[Int]
+    def testAscribe14(): Option[Int32] = Some(42) : Option[Int32]
 }

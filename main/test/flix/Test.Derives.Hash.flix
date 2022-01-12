@@ -52,7 +52,7 @@ namespace Test/Derives/Hash {
     def testHashEq03(): Bool = hash(Enum.TupleCase(123, true)) == hash(Enum.TupleCase(123, true))
 
     @test
-    def testHashEq04(): Bool = hash(PolyEnum.EmptyCase: PolyEnum[Int]) == hash(PolyEnum.EmptyCase: PolyEnum[Int])
+    def testHashEq04(): Bool = hash(PolyEnum.EmptyCase: PolyEnum[Int32]) == hash(PolyEnum.EmptyCase: PolyEnum[Int32])
 
     @test
     def testHashEq05(): Bool = hash(PolyEnum.SingletonCase(123)) == hash(PolyEnum.SingletonCase(123))
@@ -70,10 +70,10 @@ namespace Test/Derives/Hash {
     def testHashEq09(): Bool = hash(PolyEnum.SingletonCase(Enum.SingletonCase(123))) == hash(PolyEnum.SingletonCase(Enum.SingletonCase(123)))
 
     @test
-    def testHashEq10(): Bool = hash(PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int]]) == hash(PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int]])
+    def testHashEq10(): Bool = hash(PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int32]]) == hash(PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int32]])
 
     @test
-    def testHashEq11(): Bool = hash(PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int]]) == hash(PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int]])
+    def testHashEq11(): Bool = hash(PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int32]]) == hash(PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int32]])
 
     @test
     def testHashEq12(): Bool = hash(PolyEnum.SingletonCase(PolyEnum.SingletonCase(123))) == hash(PolyEnum.SingletonCase(PolyEnum.SingletonCase(123)))

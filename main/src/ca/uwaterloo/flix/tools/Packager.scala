@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.github.GitHub
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
+import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
 import ca.uwaterloo.flix.util._
 
 import java.io.{File, PrintWriter}
@@ -42,7 +43,7 @@ object Packager {
     *
     * The package is installed at `lib/<owner>/<repo>`
     */
-  def install(project: String, p: Path, o: Options): Unit = {
+  def install(project: String, p: Path, o: Options): Result[Unit, Int] = {
     val proj = GitHub.parseProject(project)
     val release = GitHub.getLatestRelease(proj)
     val assets = release.assets.filter(_.name.endsWith(".fpkg"))
@@ -62,6 +63,7 @@ object Packager {
         stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
       }
     }
+    ().toOk
   }
 
   /**
@@ -69,7 +71,7 @@ object Packager {
     *
     * The project must not already exist.
     */
-  def init(p: Path, o: Options): Unit = {
+  def init(p: Path, o: Options): Result[Unit, Int] = {
     //
     // Check that the current working directory is usable.
     //
@@ -148,12 +150,13 @@ object Packager {
         |def test01(): Bool = 1 + 1 == 2
         |""".stripMargin
     }
+    ().toOk
   }
 
   /**
     * Type checks the source files for the given project path `p`.
     */
-  def check(p: Path, o: Options): Unit = {
+  def check(p: Path, o: Options): Result[Unit, Int] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -166,16 +169,17 @@ object Packager {
     addSourcesAndPackages(p, o)
 
     flix.check() match {
-      case Validation.Success(_) => ()
+      case Validation.Success(_) => ().toOk
       case Validation.Failure(errors) =>
         errors.foreach(e => println(e.message(flix.getFormatter)))
+        Result.Err(1)
     }
   }
 
   /**
     * Builds (compiles) the source files for the given project path `p`.
     */
-  def build(p: Path, o: Options, loadClasses: Boolean = true)(implicit flix: Flix = new Flix()): Option[CompilationResult] = {
+  def build(p: Path, o: Options, loadClasses: Boolean = true)(implicit flix: Flix = new Flix()): Result[CompilationResult, Int] = {
     flix.setFormatter(AnsiTerminalFormatter)
     // Check that the path is a project path.
     if (!isProjectPath(p))
@@ -192,17 +196,17 @@ object Packager {
     addSourcesAndPackages(p, o)
 
     flix.compile() match {
-      case Validation.Success(r) => Some(r)
+      case Validation.Success(r) => Result.Ok(r)
       case Validation.Failure(errors) =>
         errors.foreach(e => println(e.message(flix.getFormatter)))
-        None
+        1.toErr
     }
   }
 
   /**
     * Adds all source files and packages to the given `flix` object.
     */
-  private def addSourcesAndPackages(p: Path, o: Options)(implicit flix: Flix): Unit = {
+  private def addSourcesAndPackages(p: Path, o: Options)(implicit flix: Flix): Result[Unit, Int] = {
     // Add all source files.
     for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
       if (sourceFile.getFileName.toString.endsWith(".flix")) {
@@ -227,12 +231,13 @@ object Packager {
         flix.addJar(file)
       }
     }
+    ().toOk
   }
 
   /**
     * Builds a jar package for the given project path `p`.
     */
-  def buildJar(p: Path, o: Options): Unit = {
+  def buildJar(p: Path, o: Options): Result[Unit, Int] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -266,12 +271,13 @@ object Packager {
 
     // Close the zip file.
     zip.finish()
+    ().toOk
   }
 
   /**
     * Builds a flix package for the given project path `p`.
     */
-  def buildPkg(p: Path, o: Options): Unit = {
+  def buildPkg(p: Path, o: Options): Result[Unit, Int] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -300,28 +306,30 @@ object Packager {
 
     // Close the zip file.
     zip.finish()
+    ().toOk
   }
 
   /**
     * Runs the main function in flix package for the given project path `p`.
     */
-  def run(p: Path, o: Options): Unit = {
-    for {
-      compilationResult <- build(p, o)
+  def run(p: Path, o: Options): Result[Unit, Int] = {
+    val res = for {
+      compilationResult <- build(p, o).toOption
       main <- compilationResult.getMain
     } yield {
       val exitCode = main(Array.empty)
       println(s"Main exited with status code $exitCode.")
+      resultFor(exitCode)
     }
+    res.getOrElse(1.toErr)
   }
 
   /**
     * Runs all benchmarks in the flix package for the given project path `p`.
     */
-  def benchmark(p: Path, o: Options): Unit = {
-    build(p, o) match {
-      case None => // nop
-      case Some(compilationResult) =>
+  def benchmark(p: Path, o: Options): Result[Unit, Int] = {
+    build(p, o) map {
+      compilationResult =>
         Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
     }
   }
@@ -329,14 +337,16 @@ object Packager {
   /**
     * Runs all tests in the flix package for the given project path `p`.
     */
-  def test(p: Path, o: Options): Tester.OverallTestResult = {
+  def test(p: Path, o: Options): Result[Unit, Int] = {
     implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
-    build(p, o) match {
-      case None => Tester.OverallTestResult.NoTests
-      case Some(compilationResult) =>
+    build(p, o) flatMap {
+      compilationResult =>
         val results = Tester.test(compilationResult)
         Console.println(results.output(flix.getFormatter))
-        results.overallResult
+        results.overallResult match {
+          case Tester.OverallTestResult.Failure => 1.toErr
+          case Tester.OverallTestResult.Success | Tester.OverallTestResult.NoTests => ().toOk
+        }
     }
   }
 
@@ -538,4 +548,14 @@ object Packager {
     }
   }
 
+  /**
+    * Converts the given exit code into a result.
+    */
+  private def resultFor(code: Int): Result[Unit, Int] = {
+    if (code == 0) {
+      ().toOk
+    } else {
+      code.toErr
+    }
+  }
 }

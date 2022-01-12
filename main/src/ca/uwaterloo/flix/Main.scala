@@ -110,46 +110,43 @@ object Main {
         // nop, continue
 
         case Command.Init =>
-          Packager.init(cwd, options)
-          System.exit(0)
+          val result = Packager.init(cwd, options)
+          System.exit(getCode(result))
 
         case Command.Check =>
-          Packager.check(cwd, options)
-          System.exit(0)
+          val result = Packager.check(cwd, options)
+          System.exit(getCode(result))
 
         case Command.Build =>
-          Packager.build(cwd, options, loadClasses = false)
-          System.exit(0)
+          val result = Packager.build(cwd, options, loadClasses = false)
+          System.exit(getCode(result))
 
         case Command.BuildJar =>
-          Packager.buildJar(cwd, options)
-          System.exit(0)
+          val result = Packager.buildJar(cwd, options)
+          System.exit(getCode(result))
 
         case Command.BuildPkg =>
-          Packager.buildPkg(cwd, options)
-          System.exit(0)
+          val result = Packager.buildPkg(cwd, options)
+          System.exit(getCode(result))
 
         case Command.Run =>
-          Packager.run(cwd, options)
-          System.exit(0)
+          val result = Packager.run(cwd, options)
+          System.exit(getCode(result))
 
         case Command.Benchmark =>
           val o = options.copy(progress = false)
-          Packager.benchmark(cwd, o)
-          System.exit(0)
+          val result = Packager.benchmark(cwd, o)
+          System.exit(getCode(result))
 
         case Command.Test =>
           val o = options.copy(progress = false)
-          Packager.test(cwd, o) match {
-            case Tester.OverallTestResult.NoTests | Tester.OverallTestResult.Success => System.exit(0)
-            case Tester.OverallTestResult.Failure => System.exit(1)
-          }
+          val result = Packager.test(cwd, o)
+          System.exit(getCode(result))
 
         case Command.Install(project) =>
           val o = options.copy(progress = false)
-          Packager.install(project, cwd, o)
-          System.exit(0)
-
+          val result = Packager.install(project, cwd, o)
+          System.exit(getCode(result))
       }
     } catch {
       case ex: RuntimeException =>
@@ -235,6 +232,14 @@ object Main {
         println(s"Compilation failed with ${errors.length} error(s).")
         System.exit(1)
     }
+  }
+
+  /**
+    * Extracts the exit code from the given result.
+    */
+  private def getCode(result: Result[_, Int]): Int = result match {
+    case Result.Ok(_) => 0
+    case Result.Err(code) => code
   }
 
   /**
