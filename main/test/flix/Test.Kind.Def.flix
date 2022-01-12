@@ -13,7 +13,7 @@ namespace Test/Def/Kinding {
 
             pub def bool(x: Int -> Int & a): Int = ???
 
-            pub def starToStar(x: a[Int]): Int = ???
+            pub def starToStar(x: a[Int32]): Int = ???
         }
 
         namespace Return {
@@ -28,7 +28,7 @@ namespace Test/Def/Kinding {
 
             pub def star(x: a): Int with CStar[a] = ???
 
-            pub def starToStar(x: a[Int]): Int with CStarToStar[a] = ???
+            pub def starToStar(x: a[Int32]): Int with CStarToStar[a] = ???
         }
 
         namespace Enum {
@@ -78,7 +78,7 @@ namespace Test/Def/Kinding {
 
             pub def bool[a: Bool](x: Int -> Int & a): Int = ???
 
-            pub def starToStar[a: Type -> Type](x: a[Int]): Int = ???
+            pub def starToStar[a: Type -> Type](x: a[Int32]): Int = ???
         }
 
         namespace Return {
@@ -94,7 +94,7 @@ namespace Test/Def/Kinding {
 
             pub def star[a: Type](x: a): Int with CStar[a] = ???
 
-            pub def starToStar[a: Type -> Type](x: a[Int]): Int with CStarToStar[a] = ???
+            pub def starToStar[a: Type -> Type](x: a[Int32]): Int with CStarToStar[a] = ???
 
             // cannot be inferred
             pub def boolToStar[a: Bool -> Type, ef: Bool](x: a[ef]): Int & ef with CBoolToStar[a] = ??? as & ef

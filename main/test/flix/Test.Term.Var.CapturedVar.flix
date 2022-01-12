@@ -278,7 +278,7 @@ namespace Test/Term/Lit/Var/CapturedVar {
     ///////////////////////////////////////////////////////////////////////////////
     @test
     def testOptionCapturedVar01(): Bool =
-        let c: Option[Int] = None;
+        let c: Option[Int32] = None;
         let x = #R(c).;
         let y = #R(c) :- R(c).;
         let r = query x, y select 42 from R(c);

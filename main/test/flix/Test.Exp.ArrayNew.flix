@@ -1,19 +1,19 @@
 namespace Test/Exp/ArrayNew {
 
     @test
-    def testArrayNew01(): Array[Int] & Impure = [10; 0]
+    def testArrayNew01(): Array[Int32] & Impure = [10; 0]
 
     @test
-    def testArrayNew02(): Array[Int] & Impure = [1; 1]
+    def testArrayNew02(): Array[Int32] & Impure = [1; 1]
 
     @test
-    def testArrayNew03(): Array[Int] & Impure = [0; 2]
+    def testArrayNew03(): Array[Int32] & Impure = [0; 2]
 
     @test
-    def testArrayNew04(): Array[Int] & Impure = [0; 113]
+    def testArrayNew04(): Array[Int32] & Impure = [0; 113]
 
     @test
-    def testArrayNew05(): Array[Int] & Impure = [0; 500]
+    def testArrayNew05(): Array[Int32] & Impure = [0; 500]
 
     @test
     def testArrayNew06(): Array[Unit] & Impure = [(); 5]
@@ -52,15 +52,15 @@ namespace Test/Exp/ArrayNew {
     def testArrayNew17(): Array[String] & Impure = ["foo"; 5]
 
     @test
-    def testArrayNew18(): Array[Array[Int]] & Impure = [[10; 10]; 5]
+    def testArrayNew18(): Array[Array[Int32]] & Impure = [[10; 10]; 5]
 
     @test
     def testArrayNew19(): Array[(Int, Int)] & Impure = [(1, 2); 5]
 
     @test
-    def testArrayNew20(): Array[(List[Int])] & Impure = [(1 :: Nil); 5]
+    def testArrayNew20(): Array[(List[Int32])] & Impure = [(1 :: Nil); 5]
 
     @test
-    def testArrayNew21(): Array[Option[Int]] & Impure = [None; 1]
+    def testArrayNew21(): Array[Option[Int32]] & Impure = [None; 1]
 
 }
