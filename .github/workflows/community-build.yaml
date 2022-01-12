@@ -8,7 +8,7 @@ jobs:
     env:
       # === ADD PROJECTS HERE === #
       #   (space-separated list)  #
-      PROJECTS: ""
+      PROJECTS: magnus-madsen/helloworld
 
       PROJ_DIR: project-build
 
