@@ -63,27 +63,31 @@ Did you know that:
 
 - Flix library uses records to for certain function arguments.
 
-## Ecosystem / Visual Studio Code
+## Ecosystem
 
 Did you know that:
+
+- Flix has an official Visual Studio Code extension?
 
 ## Compiler
 
 Did you know that:
 
-- the Flix compiler supports incremental and parallel compilation?
-
-- The Flix compiler is X lines of the code.
-
 - Flix has no compiler warnings, only compiler errors.
+
+- the Flix compiler supports incremental and parallel compilation.
+
+- the Flix compiler is about 70,000 lines of code. The entire Flix project is about 150,000 lines of code.
+
+- the Flix compiler has more than 11,000 manually written unit tests.
 
 ## Other
 
 Did you know that:
 
 - Flix is developed by programming language researchers at Aarhus University (Denmark) 
-  in collaboration with researchers at the University of Waterloo (Canada).
+  in collaboration with researchers at the University of Waterloo (Canada) and 
+  by a growing open source community.
 
-- Flix has received grants from the Independent Research Fund Denmark and from Amazon Research.
-
-- 
+- Flix has received grants from the Independent Research Fund Denmark, 
+  from Amazon Research, and from the Concordium Foundation.
