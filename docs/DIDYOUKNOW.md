@@ -63,11 +63,19 @@ Did you know that:
 
 - Flix library uses records to for certain function arguments.
 
+- Flix compiles to JVM bytecode and runs on the Java Virtual Machine.
+
+- Flix supports first-class Datalog constraints.
+
+- Flix supports stratified negation.
+
 ## Ecosystem
 
 Did you know that:
 
 - Flix has an official Visual Studio Code extension?
+
+- the Visual Studio Code extension uses the real Flix compiler?
 
 ## Compiler
 
@@ -77,7 +85,9 @@ Did you know that:
 
 - the Flix compiler supports incremental and parallel compilation.
 
-- the Flix compiler is about 70,000 lines of code. The entire Flix project is about 150,000 lines of code.
+- the Flix compiler has more than 28 compiler phases?
+
+- the Flix compiler is about 70,000 lines of code. 
 
 - the Flix compiler has more than 11,000 manually written unit tests.
 
@@ -91,3 +101,10 @@ Did you know that:
 
 - Flix has received grants from the Independent Research Fund Denmark, 
   from Amazon Research, and from the Concordium Foundation.
+
+- Flix has been discussed on Reddit, HackerNews, and LambdaTheUltimate?
+
+- more than 40 people have contributed to the Flix compiler.
+
+- more than 1,500 pull requests have been merged into the Flix compiler.
+
