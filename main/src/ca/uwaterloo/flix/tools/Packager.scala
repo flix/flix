@@ -63,7 +63,7 @@ object Packager {
         stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
       }
     }
-    genericSuccess
+    ().toOk
   }
 
   /**
@@ -150,7 +150,7 @@ object Packager {
         |def test01(): Bool = 1 + 1 == 2
         |""".stripMargin
     }
-    genericSuccess
+    ().toOk
   }
 
   /**
@@ -169,7 +169,7 @@ object Packager {
     addSourcesAndPackages(p, o)
 
     flix.check() match {
-      case Validation.Success(_) => genericSuccess
+      case Validation.Success(_) => ().toOk
       case Validation.Failure(errors) =>
         errors.foreach(e => println(e.message(flix.getFormatter)))
         Result.Err(1)
@@ -231,7 +231,7 @@ object Packager {
         flix.addJar(file)
       }
     }
-    genericSuccess
+    ().toOk
   }
 
   /**
@@ -271,7 +271,7 @@ object Packager {
 
     // Close the zip file.
     zip.finish()
-    genericSuccess
+    ().toOk
   }
 
   /**
@@ -306,7 +306,7 @@ object Packager {
 
     // Close the zip file.
     zip.finish()
-    genericSuccess
+    ().toOk
   }
 
   /**
@@ -345,7 +345,7 @@ object Packager {
         Console.println(results.output(flix.getFormatter))
         results.overallResult match {
           case Tester.OverallTestResult.Failure => genericFailure
-          case Tester.OverallTestResult.Success | Tester.OverallTestResult.NoTests => genericSuccess
+          case Tester.OverallTestResult.Success | Tester.OverallTestResult.NoTests => ().toOk
         }
     }
   }
@@ -549,11 +549,6 @@ object Packager {
   }
 
   /**
-    * Returns a success without a value.
-    */
-  private def genericSuccess: Result[Unit, Int] = ().toOk
-
-  /**
     * Returns a failure with the default failure code.
     */
   private def genericFailure[T]: Result[T, Int] = 1.toErr
@@ -563,7 +558,7 @@ object Packager {
     */
   private def resultFor(code: Int): Result[Unit, Int] = {
     if (code == 0) {
-      genericSuccess
+      ().toOk
     } else {
       code.toErr
     }
