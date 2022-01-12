@@ -1,7 +1,7 @@
 namespace Test/Exp/Tag/Lambda {
 
     @test
-    def testTagLambda01(): Option[Int] = (Some)(42)
+    def testTagLambda01(): Option[Int32] = (Some)(42)
 
     @test
     def testTagLambda02(): Result[Int, Int] = (Ok)(42)
@@ -10,7 +10,7 @@ namespace Test/Exp/Tag/Lambda {
     def testTagLambda03(): Result[Int, Int] = (Err)(42)
 
     @test
-    def testTagLambda04(): Option[Int] =
+    def testTagLambda04(): Option[Int32] =
         let f = Some;
             f(123)
 
@@ -25,7 +25,7 @@ namespace Test/Exp/Tag/Lambda {
             f(42)
 
     @test
-    def testTagLambda07(): List[Option[Int]] = List.map(Some, 1 :: 2 :: 3 :: Nil)
+    def testTagLambda07(): List[Option[Int32]] = List.map(Some, 1 :: 2 :: 3 :: Nil)
 
     @test
     def testTagLambda08(): List[Result[Int, Int]] = List.map(Ok, 1 :: 2 :: 3 :: Nil)

@@ -88,16 +88,16 @@ namespace Test/Exp/Tuple {
     def testTupleTuple06(): ((Int, Int), (Int, Int), (Int, Int)) = ((1, 2), (3, 4), (5, 6))
 
     @test
-    def testOptionTuple01(): (Option[Int], Option[Int]) = (None, None)
+    def testOptionTuple01(): (Option[Int32], Option[Int32]) = (None, None)
 
     @test
-    def testOptionTuple02(): (Option[Int], Option[Int]) = (None, Some(2))
+    def testOptionTuple02(): (Option[Int32], Option[Int32]) = (None, Some(2))
 
     @test
-    def testOptionTuple03(): (Option[Int], Option[Int]) = (Some(1), None)
+    def testOptionTuple03(): (Option[Int32], Option[Int32]) = (Some(1), None)
 
     @test
-    def testOptionTuple04(): (Option[Int], Option[Int]) = (Some(1), Some(2))
+    def testOptionTuple04(): (Option[Int32], Option[Int32]) = (Some(1), Some(2))
 
     @test
     def testOptionTuple05(): Option[(Int, Int)] = None
@@ -124,10 +124,10 @@ namespace Test/Exp/Tuple {
     def testResultTuple06(): Result[Int, (Int, Int)] = Err((1, 2))
 
     @test
-    def testListTuple01(): (List[Int], List[Int]) = (Nil, Nil)
+    def testListTuple01(): (List[Int32], List[Int32]) = (Nil, Nil)
 
     @test
-    def testListTuple02(): (List[Int], List[Int]) = (1 :: Nil, 2 :: Nil)
+    def testListTuple02(): (List[Int32], List[Int32]) = (1 :: Nil, 2 :: Nil)
 
     @test
     def testListTuple03(): List[(Int, Int)] = Nil

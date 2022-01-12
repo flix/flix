@@ -62,13 +62,13 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannel11(): Bool & Impure =
-        let c = chan Option[Int] 1;
+        let c = chan Option[Int32] 1;
         c <- None;
         None == <- c
 
     @test
     def testBufferedChannel12(): Bool & Impure =
-        let c = chan Option[Int] 1;
+        let c = chan Option[Int32] 1;
         c <- Some(123);
         Some(123) == <- c
 
@@ -86,7 +86,7 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannel15(): Bool & Impure =
-        let c = chan Array[Int] 1;
+        let c = chan Array[Int32] 1;
         c <- [1, 2, 3];
         2 == (<- c)[1]
 
@@ -160,13 +160,13 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannelWithSpawn11(): Bool & Impure =
-        let c = chan Option[Int] 1;
+        let c = chan Option[Int32] 1;
         spawn c <- None;
         None == <- c
 
     @test
     def testBufferedChannelWithSpawn12(): Bool & Impure =
-        let c = chan Option[Int] 1;
+        let c = chan Option[Int32] 1;
         spawn c <- Some(123);
         Some(123) == <- c
 
@@ -184,7 +184,7 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannelWithSpawn15(): Bool & Impure =
-        let c = chan Array[Int] 1;
+        let c = chan Array[Int32] 1;
         spawn c <- [1, 2, 3];
         2 == (<- c)[1]
 

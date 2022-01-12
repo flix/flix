@@ -29,7 +29,7 @@ namespace Test/Exp/Infix {
         pub def div(x: a, y: a): a
     }
 
-    instance Divisible[Int] {
+    instance Divisible[Int32] {
         pub def div(x: Int, y: Int): Int = x / y
     }
 

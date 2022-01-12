@@ -71,7 +71,7 @@ namespace Test/Derives/Eq {
     def testEq10(): Bool = PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int32]] == PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int32]]
 
     @test
-    def testEq11(): Bool = PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int32]] == PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int]]
+    def testEq11(): Bool = PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int32]] == PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int32]]
 
     @test
     def testEq12(): Bool = PolyEnum.SingletonCase(PolyEnum.SingletonCase(123)) == PolyEnum.SingletonCase(PolyEnum.SingletonCase(123))

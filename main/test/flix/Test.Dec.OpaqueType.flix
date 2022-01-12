@@ -23,7 +23,7 @@ namespace Test/Dec/OpaqueType {
     /**
      * An opaque type for an Option.
      */
-    opaque type A = Option[Int]
+    opaque type A = Option[Int32]
 
     /**
      * An opaque type for a Result.

@@ -9,10 +9,10 @@
 ///
 enum Expression {
     // A variable expression. A variable is represented by an integer.
-    case Var(Int),
+    case Var(Int32),
 
     // A lambda abstraction expression. A variable is represented by an integer.
-    case Abs(Int, Expression),
+    case Abs(Int32, Expression),
 
     // A function application expression.
     case App(Expression, Expression)
@@ -105,7 +105,7 @@ def step(e0: Expression): Expression =
 ///
 /// Replaces every occurrence of the variable `x` in the expression `e0` with the expression `r0`.
 ///
-def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 {
+def substitute(e0: Expression, x: Int32, r0: Expression): Expression = match e0 {
     case Var(y)      => if (x == y) r0 else Var(y)
     case Abs(y, e)   => if (x == y) Abs(y, e) else Abs(y, substitute(e, x, r0))
     case App(e1, e2) => App(substitute(e1, x, r0), substitute(e2, x, r0))
@@ -114,7 +114,7 @@ def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 {
 ///
 /// Performs alpha conversion by introducing fresh variables for all variables in the given expression `e0`.
 ///
-def alpha(e0: Expression, m: Map[Int, Int]): Expression = match e0 {
+def alpha(e0: Expression, m: Map[Int32, Int32]): Expression = match e0 {
     case Var(x) =>
         // Check if we need to rename the variable.
         match Map.get(x, m) {
@@ -162,4 +162,4 @@ def testOmega(): Expression = eval(
 /// Returns a fresh variable name.
 /// (Relies on an unsafe and impure built-in Flix function!).
 ///
-def freshVar(): Int = ??? // TODO
+def freshVar(): Int32 = ??? // TODO

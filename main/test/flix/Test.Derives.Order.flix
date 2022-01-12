@@ -52,7 +52,7 @@ namespace Test/Derives/Order {
     def testEq03(): Bool = compare(Enum.TupleCase(123, true), Enum.TupleCase(123, true)) == EqualTo
 
     @test
-    def testEq04(): Bool = compare(PolyEnum.EmptyCase: PolyEnum[Int], PolyEnum.EmptyCase: PolyEnum[Int]) == EqualTo
+    def testEq04(): Bool = compare(PolyEnum.EmptyCase: PolyEnum[Int32], PolyEnum.EmptyCase: PolyEnum[Int32]) == EqualTo
 
     @test
     def testEq05(): Bool = compare(PolyEnum.SingletonCase(123), PolyEnum.SingletonCase(123)) == EqualTo
@@ -70,10 +70,10 @@ namespace Test/Derives/Order {
     def testEq09(): Bool = compare(PolyEnum.SingletonCase(Enum.SingletonCase(123)), PolyEnum.SingletonCase(Enum.SingletonCase(123))) == EqualTo
 
     @test
-    def testEq10(): Bool = compare(PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int]], PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int]]) == EqualTo
+    def testEq10(): Bool = compare(PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int32]], PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int32]]) == EqualTo
 
     @test
-    def testEq11(): Bool = compare(PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int]], PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int]]) == EqualTo
+    def testEq11(): Bool = compare(PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int32]], PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int32]]) == EqualTo
 
     @test
     def testEq12(): Bool = compare(PolyEnum.SingletonCase(PolyEnum.SingletonCase(123)), PolyEnum.SingletonCase(PolyEnum.SingletonCase(123))) == EqualTo
