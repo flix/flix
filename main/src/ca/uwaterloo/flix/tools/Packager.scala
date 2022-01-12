@@ -199,7 +199,7 @@ object Packager {
       case Validation.Success(r) => Result.Ok(r)
       case Validation.Failure(errors) =>
         errors.foreach(e => println(e.message(flix.getFormatter)))
-        genericFailure
+        1.toErr
     }
   }
 
@@ -321,7 +321,7 @@ object Packager {
       println(s"Main exited with status code $exitCode.")
       resultFor(exitCode)
     }
-    res.getOrElse(genericFailure)
+    res.getOrElse(1.toErr)
   }
 
   /**
@@ -344,7 +344,7 @@ object Packager {
         val results = Tester.test(compilationResult)
         Console.println(results.output(flix.getFormatter))
         results.overallResult match {
-          case Tester.OverallTestResult.Failure => genericFailure
+          case Tester.OverallTestResult.Failure => 1.toErr
           case Tester.OverallTestResult.Success | Tester.OverallTestResult.NoTests => ().toOk
         }
     }
@@ -547,11 +547,6 @@ object Packager {
       FileVisitResult.CONTINUE
     }
   }
-
-  /**
-    * Returns a failure with the default failure code.
-    */
-  private def genericFailure[T]: Result[T, Int] = 1.toErr
 
   /**
     * Converts the given exit code into a result.
