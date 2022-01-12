@@ -61,7 +61,7 @@ namespace Test/Exp/Match/Array {
     }
 
     @test
-    def testMatchEmptyOptionIntArray01(): Bool & Impure = match ([]: Array[Option[Int]]) {
+    def testMatchEmptyOptionIntArray01(): Bool & Impure = match ([]: Array[Option[Int32]]) {
         case [] => true
         case _  => false
     }

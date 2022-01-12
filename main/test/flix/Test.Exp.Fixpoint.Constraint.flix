@@ -67,7 +67,7 @@ namespace Test/Exp/Fixpoint/Constraint {
     }
 
     @test
-    def testOptionConstraint01(): #{A(Option[Int]), R(Option[Int])} = #{
+    def testOptionConstraint01(): #{A(Option[Int32]), R(Option[Int32])} = #{
         A(None). A(Some(21)). A(Some(42)).
         R(x) :- A(x).
     }

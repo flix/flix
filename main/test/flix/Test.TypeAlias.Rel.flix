@@ -22,8 +22,8 @@ namespace Test/TypeAlias/Rel {
         C(1, 2, 3).
     }
 
-    rel D(x: List[Int])
-    rel E(x: Option[Int])
+    rel D(x: List[Int32])
+    rel E(x: Option[Int32])
     rel F(x: Result[Bool, String])
 
     @test
@@ -49,7 +49,7 @@ namespace Test/TypeAlias/Rel {
     rel I[a, b, c](x: a, y: b, z: c)
 
     @test
-    def testPolyTypeAlias01(): #{G[Int]} = #{
+    def testPolyTypeAlias01(): #{G[Int32]} = #{
         G(1). G(2). G(3).
     }
 
@@ -79,12 +79,12 @@ namespace Test/TypeAlias/Rel {
     }
 
     @test
-    def testPolyTypeAlias07(): #{G[Option[Int]]} = #{
+    def testPolyTypeAlias07(): #{G[Option[Int32]]} = #{
         G(None). G(Some(21)). G(Some(42)).
     }
 
     @test
-    def testPolyTypeAlias08(): #{G[Int], H[Bool, Int], I[Bool, Int, String]} = #{
+    def testPolyTypeAlias08(): #{G[Int32], H[Bool, Int], I[Bool, Int, String]} = #{
         G(1). G(2). G(3).
         H(true, 21). H(false, 42).
         I(true, 21, "Hello"). I(false, 42, "World!").
