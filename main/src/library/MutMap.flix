@@ -64,7 +64,7 @@ namespace MutMap {
     /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
     ///
     @ParallelWhenPure
-    pub def minimumKeyBy(cmp: (k, k) -> Comparison, m: MutMap[k, v]): Option[(k, v)] & Impure =
+    pub def minimumKeyBy(cmp: (k, k) -> Comparison & ef, m: MutMap[k, v]): Option[(k, v)] & Impure =
         let MutMap(mm) = m;
         Map.minimumKeyBy(cmp, deref mm)
 
@@ -104,7 +104,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def maximumKeyBy(cmp: (k, k) -> Comparison, m: MutMap[k, v]): Option[(k, v)] & Impure =
+    pub def maximumKeyBy(cmp: (k, k) -> Comparison & ef, m: MutMap[k, v]): Option[(k, v)] & Impure =
         let MutMap(mm) = m;
         Map.maximumKeyBy(cmp, deref mm)
 

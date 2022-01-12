@@ -40,7 +40,7 @@ namespace Test/Exp/Cast {
     def testCast13(): (Int, Int, Int) = (1, 2, 3) as (Int, Int, Int)
 
     @test
-    def testCast14(): Option[Int] = Some(42) as Option[Int]
+    def testCast14(): Option[Int32] = Some(42) as Option[Int32]
 
     @test
     def testCastWithEff01(): Unit & Impure = () as Unit & Impure
@@ -82,7 +82,7 @@ namespace Test/Exp/Cast {
     def testCastWithEff13(): (Int, Int, Int) & Impure = (1, 2, 3) as (Int, Int, Int) & Impure
 
     @test
-    def testCastWithEff14(): Option[Int] & Impure = Some(42) as Option[Int] & Impure
+    def testCastWithEff14(): Option[Int32] & Impure = Some(42) as Option[Int32] & Impure
 
     @test
     def testCastWithWildAndEff01(): Unit & Impure = () as & Impure
@@ -124,6 +124,6 @@ namespace Test/Exp/Cast {
     def testCastWithWildAndEff13(): (Int, Int, Int) & Impure = (1, 2, 3) as & Impure
 
     @test
-    def testCastWithWildAndEff14(): Option[Int] & Impure = Some(42) as & Impure
+    def testCastWithWildAndEff14(): Option[Int32] & Impure = Some(42) as & Impure
 
 }

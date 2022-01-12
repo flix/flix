@@ -1214,7 +1214,7 @@ namespace TestChain {
 
     @test
     def toList01(): Bool =
-        Chain.toList(Chain.empty(): Chain[Int]) == Nil: List[Int]
+        Chain.toList(Chain.empty(): Chain[Int32]) == Nil: List[Int32]
 
     @test
     def toList02(): Bool =
@@ -1234,7 +1234,7 @@ namespace TestChain {
 
     @test
     def toMutList01(): Bool & Impure =
-        Chain.toMutList(Chain.empty(): Chain[Int]) `MutList.sameElements` List.toMutList(Nil): MutList[Int]
+        Chain.toMutList(Chain.empty(): Chain[Int32]) `MutList.sameElements` List.toMutList(Nil): MutList[Int32]
 
     @test
     def toMutList02(): Bool & Impure =
@@ -1254,7 +1254,7 @@ namespace TestChain {
 
     @test
     def toSet01(): Bool =
-        Chain.toSet(Chain.empty(): Chain[Int]) == Set#{}: Set[Int]
+        Chain.toSet(Chain.empty(): Chain[Int32]) == Set#{}: Set[Int32]
 
     @test
     def toSet02(): Bool =
@@ -1274,7 +1274,7 @@ namespace TestChain {
 
     @test
     def toMap01(): Bool =
-        Chain.toMap(Chain.empty(): Chain[(Int, Int)]) == Map#{}: Map[Int, Int]
+        Chain.toMap(Chain.empty(): Chain[(Int32, Int32)]) == Map#{}: Map[Int32, Int32]
 
     @test
     def toMap02(): Bool =

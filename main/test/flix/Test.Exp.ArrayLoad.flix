@@ -226,12 +226,12 @@ namespace Test/Exp/ArrayLoad {
     def testArrayLoad75(): String & Impure = let x = [["World", "World", "World"], ["World", "World", "World"], ["World", "World", "World"]]; x[1][2]
 
     @test
-    def testArrayLoad77(): Option[Int] & Impure = let x = [Some(5), Some(6), Some(7)]; x[1]
+    def testArrayLoad77(): Option[Int32] & Impure = let x = [Some(5), Some(6), Some(7)]; x[1]
 
     @test
-    def testArrayLoad78(): Option[Int] & Impure = let x = [[None, Some(4), Some(999)], [Some(9), Some(5), None, None]]; x[1][2]
+    def testArrayLoad78(): Option[Int32] & Impure = let x = [[None, Some(4), Some(999)], [Some(9), Some(5), None, None]]; x[1][2]
 
     @test
-    def testArrayLoad79(): Array[List[Int]] & Impure = let x = [[1 :: Nil], [3 :: Nil]]; x[0]
+    def testArrayLoad79(): Array[List[Int32]] & Impure = let x = [[1 :: Nil], [3 :: Nil]]; x[0]
 
 }
