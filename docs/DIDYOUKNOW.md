@@ -31,8 +31,6 @@ Did you know that:
 
 - Flix has no overloading. Functions are given useful names instead. (But Flix has type classes).
 
-- Flix's standard library is extensive.
-
 - Flix does not have variadic functions.
 
 - Flix does not have labelled arguments.
@@ -43,9 +41,31 @@ Did you know that:
 
 - Type classes can be declared sealed.
 
+- Flix compiles to JVM bytecode and runs on the Java Virtual Machine.
+
+- Flix supports first-class Datalog constraints.
+
+- Flix supports stratified negation.
+
+- Flix supports partial application, i.e. a function can be called with fewer
+  arguments that its declared number of formal parameters.
+
+- the Flix type and effect system is based on Hindley-Miler.
+  The same core type system that powers OCaml, Standard ML, and Haskell.
+
+- the Flix type and effect system is sound, i.e. if a program type checks
+  then a type error cannot occur at run-time.
+
+- the Flix type and effect system supports complete type inference, i.e.
+  if a program is typeable then the type inference in the Flix compiler
+  will find the typing without a single annotation.
+
 ## Standard Library
 
 Did you know that:
+
+- Flix's standard library is extensive.
+
 
 - Flix has minimal prelude with only 18 functions.
 
@@ -62,25 +82,6 @@ Did you know that:
 - The Flix standard library is X lines of code.
 
 - Flix library uses records to for certain function arguments.
-
-- Flix compiles to JVM bytecode and runs on the Java Virtual Machine.
-
-- Flix supports first-class Datalog constraints.
-
-- Flix supports stratified negation.
-
-- Flix supports partial application, i.e. a function can be called with fewer 
-  arguments that its declared number of formal parameters.
-
-- the Flix type and effect system is based on Hindley-Miler. 
-  The same core type system that powers OCaml, Standard ML, and Haskell.
-
-- the Flix type and effect system is sound, i.e. if a program type checks
-  then a type error cannot occur at run-time.
-
-- the Flix type and effect system supports complete type inference, i.e. 
-  if a program is typeable then the type inference in the Flix compiler 
-  will find the typing without a single annotation.
 
 ## Ecosystem
 
