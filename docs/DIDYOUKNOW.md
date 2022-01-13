@@ -4,54 +4,50 @@
 
 Did you know that:
 
-- unique combination of features.
+- Flix offers a unique combination of features, including: algebraic data types and pattern matching, 
+  extensible records, type classes, higher-kinded types, channel and process-based concurrency, 
+  a polymorphic effect system, purity polymorphic functions, and first-class Datalog constraints.
 
-- Flix has no global state.
+- Flix has no implicit global state. Any global state must be passed around explicitly.
 
 - Flix is one language. There are no pragmas or compiler flags to enable or disable features. 
 
-- Flix supports type parameter elision.
+- Flix supports type parameter elision. That is, in most cases, a polymorphic function does 
+  can be written without explicitly declaring its type parameters.
 
-- in Flix division by zero yields zero.
+- the Flix type and effect system can enforce purity.
 
-- Did you know that the Flix type and effect system can enforce purity?
-  For example, equality and comparison functions must be pure.
+- Flix supports effect polymorphism? For example, the effect of `List.map` 
+  depends on the effect of its argument.
 
-- Did you know that Flix disallows unused variables and shadowed variables?
-  Research has shown that such redundancies are correlated with bugs.
+- every declaration in Flix is private by default.
 
-- Did you know that Flix supports effect polymorphism?
-  For example, the effect of `List.map` depends on the effect of its argument.
-
-- Everything in Flix is private by default.
-
-- In Flix, nothing in is executed before main.
-
-- Flix has no implicit coercions (but does provide several explicit coercion functions).
-
-- Flix does not allow unused declarations.
-
-- Flix has no overloading. Functions are given useful names instead. (But Flix has type classes).
-
-- Flix does not have variadic functions.
-
-- Flix does not have labelled arguments.
-
-- In Flix type classes can provide default implementations. A default implementation can be
-  overriden by specific instances (usually for performance reasons).
+- In Flix nothing in is executed before main. There is no global state nor any static initializers.
 
 - Flix supports full tail call elimination, i.e. tail calls do not grow the stack.
   (Flix-- being on the JVM -- has to emulate tail calls until Project Loom arrives.)
 
 - Flix supports extensible records with row polymorphism.
 
-- Type classes can be declared sealed.
+- Flix supports string interpolation by default, e.g. "Hello ${name}". String interpolation
+  uses the `ToString` type class -- as it should be.
+
+- Flix supports the "pipeline" operator `|>` and the Flix standard library is designed 
+  to make good use of it.
+
+- Flix supports set and map literals `Set#{1, 2, 3}` and `Map#{1 => 2, 3 => 4}`.
+
+- Flix supports monadic do-notation called `let*`.
+
+- Flix supports "program holes" written as either `???` or as `?name`.
+
+- Flix supports infix function applications via backticks.
 
 - Flix compiles to JVM bytecode and runs on the Java Virtual Machine.
 
-- Flix supports first-class Datalog constraints.
+- Flix supports first-class Datalog constraints, i.e. Datalog program fragments are values.
 
-- Flix supports stratified negation.
+- Flix supports compile-time checked stratified negation.
 
 - Flix supports partial application, i.e. a function can be called with fewer
   arguments that its declared number of formal parameters.
@@ -65,6 +61,26 @@ Did you know that:
 - the Flix type and effect system supports complete type inference, i.e.
   if a program is typeable then the type inference in the Flix compiler
   will find the typing without a single annotation.
+
+- The Flix "Tips and Tricks"-section https://doc.flix.dev/tipstricks/ contains many useful niceties.
+
+- Flix -- by design -- has no implicit coercions (but does provide several explicit coercion functions).
+
+- Flix -- by design -- disallows unused variables and shadowed variables. Research has shown that such
+  redundancies are correlated with bugs.
+
+- Flix -- by design -- disallows allow unused declarations. This prevents bit rot.
+
+- Flix -- by design -- does not support function overloading. Instead, functions are given meaningful names, e.g.
+  `Map.insert` and `Map.insertWithKey`.
+
+- Flix -- by design -- does not support variadic functions. We believe such overloading
+  is unprincipled and unnecessary.
+
+- Flix -- by design -- does not support labelled arguments. Records can be used instead and works
+  both for top-level, local, and first-class functions.
+
+- Flix defines division by zero to equal zero.
 
 ## Standard Library
 
@@ -80,11 +96,18 @@ Did you know that:
   (they can be called with pure or impure functions). The exceptions are functions
   that define (or use) equality, ordering, etc.
 
-- mutable data structures usually have two operations. For example, map and transform!.
+- Mutating data structure operations end with an exclamation mark. For example `Array.transform!`.
 
-- Destructive operations are marked with '!'
+- the Flix standard library uses records to avoid confusion when functions take multiple arguments of
+  the same type. For example, `String.contains` must be called as `String.contains(substr = "foo", "bar")`.
 
-- Flix library uses records to for certain function arguments.
+- the Flix `List` module has more than 95 functions.
+
+- the Flix `String` module has more than 95 functions.
+
+- the Flix `Foldable` module offers more than 30 functions.
+
+- Flix uses monomorphization hence primitive values are (almost) never boxed.
 
 ## Ecosystem
 
@@ -116,13 +139,11 @@ Did you know that:
 
 - Flix has community build where Flix libraries can be included in the CI process used to build Flix?
 
-- Several novel aspects of the Flix programming language has been described in the research literature?
-
 ## Compiler
 
 Did you know that:
 
-- by design Flix has no compiler warnings, only compiler errors.
+- Flix -- by design -- has no compiler warnings, only compiler errors.
   Warnings can be ignored, but errors cannot be.
 
 - the Flix compiler supports incremental and parallel compilation.
@@ -142,6 +163,8 @@ Did you know that:
 - Flix is developed by programming language researchers at Aarhus University (Denmark) 
   in collaboration with researchers at the University of Waterloo (Canada), and at
   Eberhard Karls University of Tübingen (Germany), and by a growing open source community.
+
+- Several novel aspects of the Flix programming language has been described in the research literature?
 
 - Flix has received grants from the Independent Research Fund Denmark, 
   from Amazon Research, and from the Concordium Foundation.
