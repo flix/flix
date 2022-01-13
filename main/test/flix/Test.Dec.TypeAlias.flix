@@ -52,7 +52,7 @@ namespace Test/Dec/TypeAlias {
     def testTypeAlias02(): Fahrenheit = 123
 
     @test
-    def testTypeAlias03(): Int = (123: Celsius) + (123: Fahrenheit)
+    def testTypeAlias03(): Int32 = (123: Celsius) + (123: Fahrenheit)
 
     @test
     def testTypeAlias04(): USD = 123.456

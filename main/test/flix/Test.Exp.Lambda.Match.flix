@@ -31,27 +31,27 @@ namespace Test/Exp/Lambda/Match {
     def testLambdaMatch08(): US -> Int = match US(Fahrenheit(x)) -> x
 
     @test
-    def testLambdaMatch09(): Int = (match x -> x)(1)
+    def testLambdaMatch09(): Int32 = (match x -> x)(1)
 
     @test
-    def testLambdaMatch10(): Int = (match (x, y) -> x + y)((1, 2))
+    def testLambdaMatch10(): Int32 = (match (x, y) -> x + y)((1, 2))
 
     @test
-    def testLambdaMatch11(): Int = (match (x, y, z) -> x + y + z)(((1, 2, 3)))
+    def testLambdaMatch11(): Int32 = (match (x, y, z) -> x + y + z)(((1, 2, 3)))
 
     @test
-    def testLambdaMatch12(): Int = (match ((x, y), (z, w)) -> x + y + z + w)(((1, 2), (3, 4)))
+    def testLambdaMatch12(): Int32 = (match ((x, y), (z, w)) -> x + y + z + w)(((1, 2), (3, 4)))
 
     @test
-    def testLambdaMatch13(): Int = (match Celsius(x) -> x)(Celsius(42))
+    def testLambdaMatch13(): Int32 = (match Celsius(x) -> x)(Celsius(42))
 
     @test
-    def testLambdaMatch14(): Int = (match Fahrenheit(x) -> x)(Fahrenheit(42))
+    def testLambdaMatch14(): Int32 = (match Fahrenheit(x) -> x)(Fahrenheit(42))
 
     @test
-    def testLambdaMatch15(): Int = (match EU(Celsius(x)) -> x)(EU(Celsius(42)))
+    def testLambdaMatch15(): Int32 = (match EU(Celsius(x)) -> x)(EU(Celsius(42)))
 
     @test
-    def testLambdaMatch16(): Int = (match US(Fahrenheit(x)) -> x)(US(Fahrenheit(42)))
+    def testLambdaMatch16(): Int32 = (match US(Fahrenheit(x)) -> x)(US(Fahrenheit(42)))
 
 }

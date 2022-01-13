@@ -159,9 +159,9 @@ namespace Test/Dec/Class {
         }
 
         instance C[Int32] {
-            pub def f(): Int = 0
+            pub def f(): Int32 = 0
 
-            override pub def h(): Int = 1
+            override pub def h(): Int32 = 1
         }
 
         @test

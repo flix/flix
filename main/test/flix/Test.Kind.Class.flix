@@ -11,7 +11,7 @@ namespace Test/Class/Kinding {
         namespace Sig {
             namespace FormalParams {
                 lawless class CStar1[a] {
-                    pub def star(x: a): Int = ???
+                    pub def star(x: a): Int32 = ???
                 }
             }
 
@@ -33,13 +33,13 @@ namespace Test/Class/Kinding {
                 pub enum EStar[_a: Type]
 
                 lawless class CStar1[a] {
-                    pub def star(x: EStar[a]): Int = ???
+                    pub def star(x: EStar[a]): Int32 = ???
                 }
             }
 
             namespace Exp {
                 lawless class CStar1[a] {
-                    pub def star(x: a): Int = let _: a = ???; ???
+                    pub def star(x: a): Int32 = let _: a = ???; ???
                 }
             }
         }
@@ -88,11 +88,11 @@ namespace Test/Class/Kinding {
         namespace Sig {
             namespace FormalParams {
                 lawless class CStar1[a: Type] {
-                    pub def star(x: a): Int = ???
+                    pub def star(x: a): Int32 = ???
                 }
 
                 lawless class CStarToStar1[a: Type -> Type] {
-                    pub def starToStar(x: a[Int32]): Int = ???
+                    pub def starToStar(x: a[Int32]): Int32 = ???
                 }
             }
 
@@ -129,17 +129,17 @@ namespace Test/Class/Kinding {
                 pub enum EStarToStar[_a: Type -> Type]
 
                 lawless class CStar1[a: Type] {
-                    pub def star(x: EStar[a]): Int = ???
+                    pub def star(x: EStar[a]): Int32 = ???
                 }
 
                 lawless class CStarToStar1[a: Type -> Type] {
-                    pub def starToStar(x: EStarToStar[a]): Int = ???
+                    pub def starToStar(x: EStarToStar[a]): Int32 = ???
                 }
             }
 
             namespace Exp {
                 lawless class CStar1[a: Type] {
-                    pub def star(x: a): Int = let _: a = ???; ???
+                    pub def star(x: a): Int32 = let _: a = ???; ???
                 }
             }
         }
