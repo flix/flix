@@ -35,6 +35,9 @@ Did you know that:
 - Flix supports the "pipeline" operator `|>` and the Flix standard library is designed 
   to make good use of it.
 
+- In Flix variables and function definitions must be lowercase whereas enum cases and types must be uppercase. 
+  This convention makes it faster and simpler to read signatures.
+
 - Flix supports set and map literals `Set#{1, 2, 3}` and `Map#{1 => 2, 3 => 4}`.
 
 - Flix supports monadic do-notation called `let*`.
