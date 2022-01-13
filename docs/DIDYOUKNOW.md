@@ -69,7 +69,18 @@ Did you know that:
 
 - Flix supports stratified negation.
 
-- The Flix type and effect system is based on Hindley-Miler and sound.
+- Flix supports partial application, i.e. a function can be called with fewer 
+  arguments that its declared number of formal parameters.
+
+- the Flix type and effect system is based on Hindley-Miler. 
+  The same core type system that powers OCaml, Standard ML, and Haskell.
+
+- the Flix type and effect system is sound, i.e. if a program type checks
+  then a type error cannot occur at run-time.
+
+- the Flix type and effect system supports complete type inference, i.e. 
+  if a program is typeable then the type inference in the Flix compiler 
+  will find the typing without a single annotation.
 
 ## Ecosystem
 
