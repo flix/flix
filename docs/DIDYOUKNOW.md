@@ -69,42 +69,70 @@ Did you know that:
 
 - Flix supports stratified negation.
 
+- The Flix type and effect system is based on Hindley-Miler and sound.
+
 ## Ecosystem
 
 Did you know that:
 
-- Flix has an official Visual Studio Code extension?
+- Flix has an official Visual Studio Code extension.
 
-- the Visual Studio Code extension uses the real Flix compiler?
+- Flix has an official dark theme inspired by Monokai called "Flixify Dark".
+
+- the Flix website (https://flix.dev/) lists the design principles behind Flix.
+
+- Flix has an online playground available at https://play.flix.dev/
+
+- Flix has online API documentation available at https://doc.flix.dev/
+
+- the Flix VSCode extension uses the real Flix compiler?
+
+- the Flix VSCode extension supports auto-complete, jump to definition, 
+  hover to see type and effect, find all usages, renaming, and more.
+
+- the Flix VSCode extension has built-in snippets for type class instances.
+  Try `instance Eq [auto complete]`.
+
+- the Flix VSCode extension supports semantic tokens (highlighting based not just on the syntax, 
+  but on the semantics of a program.)
+
+- the Flix VSCode extension has built-in "code hints" that suggests when lazy and/or parallel
+  evaluation is enabled (or inhibited by impurity).
+
+- Flix has community build where Flix libraries can be included in the CI process used to build Flix?
+
+- Several novel aspects of the Flix programming language has been described in the research literature?
 
 ## Compiler
 
 Did you know that:
 
-- Flix has no compiler warnings, only compiler errors.
+- by design Flix has no compiler warnings, only compiler errors.
+  Warnings can be ignored, but errors cannot be.
 
 - the Flix compiler supports incremental and parallel compilation.
 
 - the Flix compiler has more than 28 compiler phases?
 
-- the Flix compiler is about 70,000 lines of code. 
+- the Flix compiler contains more than 150,000 lines of code.
 
-- the Flix compiler has more than 11,000 manually written unit tests.
+- the Flix compiler has more than 12,500 manually written unit tests.
+
+- the performance of the Flix compiler is tracked at https://arewefast.flix.dev/
 
 ## Other
 
 Did you know that:
 
 - Flix is developed by programming language researchers at Aarhus University (Denmark) 
-  in collaboration with researchers at the University of Waterloo (Canada) and 
-  by a growing open source community.
+  in collaboration with researchers at the University of Waterloo (Canada), at
+  Eberhard Karls University of Tübingen (Germany), and by a growing open source community.
 
 - Flix has received grants from the Independent Research Fund Denmark, 
   from Amazon Research, and from the Concordium Foundation.
 
-- Flix has been discussed on Reddit, HackerNews, and LambdaTheUltimate?
+- Flix has been discussed on Reddit, HackerNews, and LambdaTheUltimate.
 
 - more than 40 people have contributed to the Flix compiler.
 
 - more than 1,500 pull requests have been merged into the Flix compiler.
-
