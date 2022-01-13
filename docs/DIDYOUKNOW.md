@@ -45,6 +45,8 @@ Did you know that:
 
 - Flix compiles to JVM bytecode and runs on the Java Virtual Machine.
 
+- Flix supports channels and processes, including the powerful `select` expression.
+
 - Flix supports first-class Datalog constraints, i.e. Datalog program fragments are values.
 
 - Flix supports compile-time checked stratified negation.
