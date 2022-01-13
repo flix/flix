@@ -67,7 +67,7 @@ namespace Test/Exp/Fixpoint/Compose {
         solve c1 <+> c2
 
     @test
-    def testFixpointCompose11(): (#{ P(Int32, Int32, Int32) }, #{ P(Int, String, Int) }) =
+    def testFixpointCompose11(): (#{ P(Int32, Int32, Int32) }, #{ P(Int32, String, Int32) }) =
         let c1 = #P(1, 123, 1).;
         let c2 = #P(2, 123, 2).;
         let c3 = #P(1, "a", 1).;
@@ -77,7 +77,7 @@ namespace Test/Exp/Fixpoint/Compose {
         (ra, rb)
 
     @test
-    def testFixpointCompose12(): (#{ P(Int32, Int32, Int32) }, #{ P(Int, String, Int) }) =
+    def testFixpointCompose12(): (#{ P(Int32, Int32, Int32) }, #{ P(Int32, String, Int32) }) =
         let c1 = #P(1, 123, 1).;
         let c2 = #P(x, 555, z) :- P(x, 555, z).;
         let c3 = #P(1, "a", 1).;

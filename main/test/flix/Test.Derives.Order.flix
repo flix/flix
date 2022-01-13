@@ -3,8 +3,8 @@ namespace Test/Derives/Order {
 
     pub enum Enum with Eq, Order {
       case EmptyCase
-      case SingletonCase(Int)
-      case TupleCase(Int, Bool)
+      case SingletonCase(Int32)
+      case TupleCase(Int32, Bool)
     }
 
     pub enum PolyEnum[a] with Eq, Order {

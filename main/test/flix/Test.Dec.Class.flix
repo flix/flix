@@ -18,10 +18,10 @@ namespace Test/Dec/Class {
         }
 
         instance X[Int32] {
-            pub def f(x: Int): Bool = x == 0
+            pub def f(x: Int32): Bool = x == 0
         }
 
-        pub def g(x: Int): Bool = Test/Dec/Class/Test03/X.f(x)
+        pub def g(x: Int32): Bool = Test/Dec/Class/Test03/X.f(x)
     }
 
     namespace Test04 {
@@ -54,7 +54,7 @@ namespace Test/Dec/Class {
         }
 
         instance C[Int32] {
-            pub def f(x: Int): Bool = x == 0
+            pub def f(x: Int32): Bool = x == 0
         }
 
         instance C[List[a]] with C[a] {
@@ -112,7 +112,7 @@ namespace Test/Dec/Class {
         lawless class E[a] with D[a]
 
         instance C[Int32] {
-            pub def f(_x: Int): Bool = true
+            pub def f(_x: Int32): Bool = true
         }
 
         instance D[Int32]
@@ -133,7 +133,7 @@ namespace Test/Dec/Class {
         }
 
         instance C[Int32] {
-            pub def f(_x: Int, _y: Int): Bool = true
+            pub def f(_x: Int, _y: Int32): Bool = true
         }
     }
 

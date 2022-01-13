@@ -3,7 +3,7 @@ namespace Test/Def/Kinding {
     namespace Implicit {
 
         namespace FormalParams {
-            rel R(i: Int)
+            rel R(i: Int32)
 
             pub def star(x: a): Int = ???
 
@@ -17,7 +17,7 @@ namespace Test/Def/Kinding {
         }
 
         namespace Return {
-            rel R(i: Int)
+            rel R(i: Int32)
 
             pub def star(): a = ???
         }
@@ -59,7 +59,7 @@ namespace Test/Def/Kinding {
         }
 
         namespace Exp {
-            rel R(i: Int)
+            rel R(i: Int32)
 
             pub def star(x: a): Int = let _: a = ???; ???
         }
@@ -68,7 +68,7 @@ namespace Test/Def/Kinding {
     namespace Explicit {
 
         namespace FormalParams {
-            rel R(i: Int)
+            rel R(i: Int32)
 
             pub def star[a: Type](x: a): Int = ???
 
@@ -82,7 +82,7 @@ namespace Test/Def/Kinding {
         }
 
         namespace Return {
-            rel R(i: Int)
+            rel R(i: Int32)
 
             pub def star[a: Type](): a = ???
         }
@@ -128,7 +128,7 @@ namespace Test/Def/Kinding {
         }
 
         namespace Exp {
-            rel R(i: Int)
+            rel R(i: Int32)
 
             pub def star[a: Type](x: a): Int = let _: a = ???; ???
         }

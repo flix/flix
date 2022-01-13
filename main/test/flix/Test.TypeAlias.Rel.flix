@@ -1,8 +1,8 @@
 namespace Test/TypeAlias/Rel {
 
-    rel A(x: Int)
-    rel B(x: Int, y: Int)
-    rel C(x: Int, y: Int, z: Int)
+    rel A(x: Int32)
+    rel B(x: Int, y: Int32)
+    rel C(x: Int, y: Int, z: Int32)
 
     @test
     def testTypeAlias01(): #{A} = #{

@@ -10,13 +10,13 @@ namespace Test/Exp/Lambda/Match {
     def testLambdaMatch01(): Int -> Int = match x -> x
 
     @test
-    def testLambdaMatch02(): ((Int, Int)) -> Int = match (x, y) -> (x + y) : Int32
+    def testLambdaMatch02(): ((Int32, Int32)) -> Int = match (x, y) -> (x + y) : Int32
 
     @test
     def testLambdaMatch03(): ((Int32, Int32, Int32)) -> Int = match (x, y, z) -> (x + y + z) : Int32
 
     @test
-    def testLambdaMatch04(): (((Int, Int), (Int, Int))) -> Int = match ((x, y), (z, w)) -> (x + y + z + w) : Int32
+    def testLambdaMatch04(): (((Int32, Int32), (Int32, Int32))) -> Int = match ((x, y), (z, w)) -> (x + y + z + w) : Int32
 
     @test
     def testLambdaMatch05(): Celsius -> Int = match Celsius(x) -> x

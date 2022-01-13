@@ -10,7 +10,7 @@ namespace Test/Exp/Tag {
         case OfInt16(Int16)
         case OfInt32(Int32)
         case OfInt64(Int64)
-        case OfBigInt(BigInt)
+        case OfBigInt(BigInt32)
         case OfString(String)
         case OfArrayOfInt(Array[Int32])
         case OfArrayOfString(Array[String])
@@ -161,7 +161,7 @@ namespace Test/Exp/Tag {
     }
 
     pub enum Rank {
-        case N(Int), Jack, Queen, King, Ace
+        case N(Int32), Jack, Queen, King, Ace
     }
 
     pub enum Card {

@@ -122,17 +122,17 @@ namespace Test/Term/Lit {
     /// BigInt                                                                  ///
     ///////////////////////////////////////////////////////////////////////////////
     @test
-    def testBigIntLit01(): #{ R(BigInt) } =
+    def testBigIntLit01(): #{ R(BigInt32) } =
         let x = #R(0ii).;
         solve x
 
     @test
-    def testBigIntLit02(): #{ R(BigInt) } =
+    def testBigIntLit02(): #{ R(BigInt32) } =
         let x = #R(123ii).;
         solve x
 
     @test
-    def testBigIntLit03(): #{ R(BigInt) } =
+    def testBigIntLit03(): #{ R(BigInt32) } =
         let x = #R(-123ii).;
         solve x
 

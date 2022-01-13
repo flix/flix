@@ -55,7 +55,7 @@ namespace Test/Exp/Fixpoint/Constraint {
     }
 
     @test
-    def testBigIntConstraint01(): #{A(BigInt), R(BigInt)} = #{
+    def testBigIntConstraint01(): #{A(BigInt32), R(BigInt32)} = #{
         A(0ii). A(21ii). A(42ii).
         R(x) :- A(x).
     }

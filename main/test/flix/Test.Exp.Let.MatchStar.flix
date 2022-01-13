@@ -137,13 +137,13 @@ namespace Test/Exp/LetMatchStar {
     @test
     def testPatMatch03(): Option[Int32] =
         use Option.flatMap;
-        let* (x, y): (Int, Int) = Some((1, 2));
+        let* (x, y): (Int32, Int32) = Some((1, 2));
         Some(x + y)
 
     @test
     def testPatMatch04(): Option[Int32] =
         use Option.flatMap;
-        let* (x, y, z): (Int, Bool, Int) = Some((1, true, 3));
+        let* (x, y, z): (Int32, Bool, Int32) = Some((1, true, 3));
         if (y) Some(x) else Some(z)
 
 }

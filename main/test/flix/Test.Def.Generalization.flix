@@ -33,10 +33,10 @@ namespace Test/Def/Generalization {
     def testGen10(): {f :: a | r} -> {f :: a | r} = x -> x
 
     @test
-    def testGen11(): #{Edge(Int, Int)} -> #{Edge(Int, Int)} = x -> x
+    def testGen11(): #{Edge(Int32, Int32)} -> #{Edge(Int32, Int32)} = x -> x
 
     @test
-    def testGen12(): #{Edge(Int, Int) | r} -> #{Edge(Int, Int) | r} = x -> x
+    def testGen12(): #{Edge(Int32, Int32) | r} -> #{Edge(Int32, Int32) | r} = x -> x
 
     @test
     def testGen13(): (a -> a) -> (a -> a) = x -> x
@@ -60,25 +60,25 @@ namespace Test/Def/Generalization {
     def testGen19(): {x :: Int | r} -> {x :: Int | r}  = r -> { x = 21 | r}
 
     @test
-    def testGen20(): #{A(Int)} = #{}
+    def testGen20(): #{A(Int32)} = #{}
 
     @test
-    def testGen21(): #{A(Int), B(Int)} = #{A(21).}
+    def testGen21(): #{A(Int32), B(Int32)} = #{A(21).}
 
     @test
-    def testGen22(): #{A(Int), B(Int), C(Int)} = #{A(21). B(42).}
+    def testGen22(): #{A(Int32), B(Int32), C(Int32)} = #{A(21). B(42).}
 
     @test
-    def testGen23(): #{A(Int) | r} = #{}
+    def testGen23(): #{A(Int32) | r} = #{}
 
     @test
-    def testGen24(): #{A(Int), B(Int) | r} = #{A(21).}
+    def testGen24(): #{A(Int32), B(Int32) | r} = #{A(21).}
 
     @test
-    def testGen25(): #{A(Int), B(Int), C(Int) | r} = #{A(21). B(42).}
+    def testGen25(): #{A(Int32), B(Int32), C(Int32) | r} = #{A(21). B(42).}
 
     @test
-    def testGen26(): #{A(Int) | r1} -> #{B(Int) | r2} -> #{A(Int), B(Int) | r} = x -> y -> x <+> y
+    def testGen26(): #{A(Int32) | r1} -> #{B(Int32) | r2} -> #{A(Int32), B(Int32) | r} = x -> y -> x <+> y
 
     @test
     def testLeq01(): List[a] = Nil
@@ -135,13 +135,13 @@ namespace Test/Def/Generalization {
     def testLeq18(): a -> (a -> a) = x -> (_ -> x)
 
     @test
-    def testLeq19(): Int -> (b -> Int) = x -> (_ -> x)
+    def testLeq19(): Int -> (b -> Int32) = x -> (_ -> x)
 
     @test
     def testLeq20(): a -> (Int -> a) = x -> (_ -> x)
 
     @test
-    def testLeq21(): Int -> (Int -> Int) = x -> (_ -> x)
+    def testLeq21(): Int -> (Int -> Int32) = x -> (_ -> x)
 
     @test
     def testLeq22(): {} -> {x :: Int} = r -> {+x = 21 | r}

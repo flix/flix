@@ -51,31 +51,31 @@ namespace Test/Currying {
     ///
     /// A function of arity 2.
     ///
-    def f(x: Int, y: Int): Int = x + y
+    def f(x: Int, y: Int32): Int = x + y
 
     ///
     /// A function of arity 3.
     ///
-    def g(x: Int, y: Int, z: Int): Int = x + y + z
+    def g(x: Int, y: Int, z: Int32): Int = x + y + z
 
     ///
     /// A function of arity 4.
     ///
-    def h(x: Int, y: Int, z: Int, w: Int): Int = x + y + z + w
+    def h(x: Int, y: Int, z: Int, w: Int32): Int = x + y + z + w
 
     ///
     /// A curried function of arity 2.
     ///
-    def i(x: Int): Int -> Int = y -> x + y
+    def i(x: Int32): Int -> Int = y -> x + y
 
     ///
     /// A curried function of arity 3.
     ///
-    def j(x: Int): Int -> Int -> Int = y -> z -> x + y + z
+    def j(x: Int32): Int -> Int -> Int = y -> z -> x + y + z
 
     ///
     /// A curried higher-order function.
     ///
-    def k(f: Int -> Int): Int -> Int = x -> f(x)
+    def k(f: Int -> Int32): Int -> Int = x -> f(x)
 
 }

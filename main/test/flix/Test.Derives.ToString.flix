@@ -1,8 +1,8 @@
 namespace Test/Derives/ToString {
     pub enum Enum with ToString {
       case EmptyCase
-      case SingletonCase(Int)
-      case TupleCase(Int, Bool)
+      case SingletonCase(Int32)
+      case TupleCase(Int32, Bool)
     }
 
     pub enum PolyEnum[a] with ToString {
