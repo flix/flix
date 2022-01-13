@@ -149,6 +149,10 @@ Did you know that:
 
 - Flix has community build where Flix libraries can be included in the CI process used to build Flix?
 
+- Flix has a nascent build system and package manager (the latter based on GitHub releases). 
+  Today it is possible to build, package, and install Flix packages, but there is no dependency 
+  management yet.
+
 ## Compiler
 
 Did you know that:
