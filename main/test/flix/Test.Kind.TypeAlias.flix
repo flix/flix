@@ -18,7 +18,7 @@ namespace Test/Enum/Kinding {
 
         type alias TSchemaRow[a: SchemaRow] = #{ R | a }
 
-        type alias TStarToStar[a: Type -> Type] = a[Int]
+        type alias TStarToStar[a: Type -> Type] = a[Int32]
 
         type alias TBoolToStar[a: Bool -> Type] = a[Pure]
 

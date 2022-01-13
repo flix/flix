@@ -71,7 +71,7 @@ namespace DelayMap {
         RedBlackTree.isEmpty(t)
 
     ///
-    /// Returns an updated map with `k -> v`.
+    /// Returns an updated map with `k => v`.
     ///
     @Experimental
     pub def insert(k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
@@ -79,7 +79,7 @@ namespace DelayMap {
         DMap(RedBlackTree.insert(k, lazy v, t))
 
     ///
-    /// Returns `Some(v)` if `k -> v` is in `m`.
+    /// Returns `Some(v)` if `k => v` is in `m`.
     ///
     /// Otherwise returns `None`.
     ///
@@ -92,7 +92,7 @@ namespace DelayMap {
         }
 
     ///
-    /// Returns `v` if `k -> v` is in `m`.
+    /// Returns `v` if `k => v` is in `m`.
     ///
     /// Otherwise, returns `d`.
     ///
@@ -109,14 +109,14 @@ namespace DelayMap {
         RedBlackTree.memberOf(k, t)
 
     ///
-    /// Optionally finds `k -> v` where `k` is the smallest key according to the `Order` instance of `k`.
+    /// Optionally finds `k => v` where `k` is the smallest key according to the `Order` instance of `k`.
     ///
     /// Returns `None` if `m` is empty.
     ///
     @Experimental
     pub def minimumKey(m: DelayMap[k, v]): Option[(k, v)] =
         let DMap(t) = m;
-        match RedBlackTree.minimum(t) {
+        match RedBlackTree.minimumKey(t) {
             case None       => None
             case Some(k, v) => Some(k, force v)
         }
@@ -129,7 +129,7 @@ namespace DelayMap {
     /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
     ///
     @ParallelWhenPure @Experimental
-    pub def minimumKeyBy(cmp: (k, k) -> Comparison, m: DelayMap[k, v]): Option[(k, v)] =
+    pub def minimumKeyBy(cmp: (k, k) -> Comparison & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), m);
         let f = r -> cmp(r.kl, r.kr);
         reifyEff(f) {
@@ -163,7 +163,7 @@ namespace DelayMap {
     /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
     ///
     @ParallelWhenPure @Experimental
-    pub def minimumValueBy(cmp: (v, v) -> Comparison, m: DelayMap[k, v]): Option[(k, v)] =
+    pub def minimumValueBy(cmp: (v, v) -> Comparison & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == LessThan) (kl, vl) else (kr, vr), m);
         let f = r -> cmp(r.vl, r.vr);
         reifyEff(f) {
@@ -189,7 +189,7 @@ namespace DelayMap {
     @Experimental
     pub def maximumKey(m: DelayMap[k, v]): Option[(k, v)] =
         let DMap(t) = m;
-        match RedBlackTree.maximum(t) {
+        match RedBlackTree.maximumKey(t) {
             case None       => None
             case Some(k, v) => Some(k, force v)
         }
@@ -202,7 +202,7 @@ namespace DelayMap {
     /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
     ///
     @ParallelWhenPure @Experimental
-    pub def maximumKeyBy(cmp: (k, k) -> Comparison, m: DelayMap[k, v]): Option[(k, v)] =
+    pub def maximumKeyBy(cmp: (k, k) -> Comparison & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == GreaterThan) (kl, vl) else (kr, vr), m);
         let f = r -> cmp(r.kl, r.kr);
         reifyEff(f) {
@@ -221,13 +221,39 @@ namespace DelayMap {
         }
 
     ///
-    /// Optionally finds `k -> v` where `k` is the largest key according to the given comparator `cmp`.
+    /// Optionally finds `k => v` where `v` is the largest value.
     ///
     /// Returns `None` if `m` is empty.
     ///
-    @Experimental
-    pub def maximumBy(cmp: (k, v, k, v) -> Comparison, m: DelayMap[k, v]): Option[(k, v)] =
-        reduceLeftWithKey((k1, v1, k2, v2) -> if (cmp(k1, v1, k2, v2) == GreaterThan) (k1, v1) else (k2, v2), m)
+    @Parallel @Experimental
+    pub def maximumValue(m: DelayMap[k, v]): Option[(k, v)] with Order[v] =
+        maximumValueBy((x, y) -> x <=> y, m)
+
+    ///
+    /// Optionally finds `k => v` where `k` is the largest value according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
+    ///
+    @ParallelWhenPure @Experimental
+    pub def maximumValueBy(cmp: (v, v) -> Comparison & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
+        def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == GreaterThan) (kl, vl) else (kr, vr), m);
+        let f = r -> cmp(r.vl, r.vr);
+        reifyEff(f) {
+            case Pure(g) =>
+                if (useParallelEvaluation(m))
+                    let h = (_, vl, _, vr) -> g({vl = force vl, vr = force vr});
+                    let DMap(t) = m;
+                    let res = RedBlackTree.parMaximumBy(threads() - 1, h, t) as & Pure;
+                    match res {
+                        case None       => None
+                        case Some(k, v) => Some(k, force v)
+                    }
+                else
+                    max()
+            case _ => max()
+        }
 
     ///
     /// Returns the keys of `m`.
@@ -252,18 +278,18 @@ namespace DelayMap {
         DMap(RedBlackTree.remove(k, t))
 
     ///
-    /// Updates `m` with `k -> f(v, v1)` if `k -> v1` is in `m`.
+    /// Updates `m` with `k => f(v, v1)` if `k => v1` is in `m`.
     ///
-    /// Otherwise, updates `m` with `k -> v`.
+    /// Otherwise, updates `m` with `k => v`.
     ///
     @Experimental @LazyWhenPure
     pub def insertWith(f: (v, v) -> v & ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         insertWithKey((_, v1, v2) -> f(v1, v2), k, v, m)
 
     ///
-    /// Updates `m` with `k -> f(k, v, v1)` if `k -> v1` is in `m`.
+    /// Updates `m` with `k => f(k, v, v1)` if `k => v1` is in `m`.
     ///
-    /// Otherwise, updates `m` with `k -> v`.
+    /// Otherwise, updates `m` with `k => v`.
     ///
     @Experimental @LazyWhenPure
     pub def insertWithKey(f: (k, v, v) -> v & ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
@@ -294,14 +320,14 @@ namespace DelayMap {
         DMap(RedBlackTree.insertWith(f1, k, lazy v, t))
 
     ///
-    /// Returns a map with mappings `k -> f(v)` for every `k -> v` in `m`.
+    /// Returns a map with mappings `k => f(v)` for every `k => v` in `m`.
     ///
     @Experimental @LazyWhenPure
     pub def map(f: v1 -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef with Order[k] =
         mapWithKey((_, v) -> f(v), m)
 
     ///
-    /// Returns a map with mappings `k -> f(k, v)` for every `k -> v` in `m`.
+    /// Returns a map with mappings `k => f(k, v)` for every `k => v` in `m`.
     ///
     @Experimental @LazyWhenPure @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef =
@@ -332,14 +358,14 @@ namespace DelayMap {
         DMap(RedBlackTree.mapWithKey(g, t))
 
     ///
-    /// Returns a map of all mappings `k -> v` in `m` where `v` satisfies the predicate `f`.
+    /// Returns a map of all mappings `k => v` in `m` where `v` satisfies the predicate `f`.
     ///
     @Experimental
     pub def filter(f: v -> Bool & ef, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         filterWithKey((_, v) -> f(v), m)
 
     ///
-    /// Returns a map of all mappings `k -> v` in `m` where `(k, v)` satisfies the predicate `f`.
+    /// Returns a map of all mappings `k => v` in `m` where `(k, v)` satisfies the predicate `f`.
     ///
     @Experimental
     pub def filterWithKey(f: (k, v) -> Bool & ef, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
@@ -517,7 +543,7 @@ namespace DelayMap {
         Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
 
     ///
-    /// Updates `m` with `k -> f(v)` if `k -> v` is in `m`.
+    /// Updates `m` with `k => f(v)` if `k => v` is in `m`.
     ///
     /// Otherwise, returns `m`.
     ///
@@ -526,21 +552,21 @@ namespace DelayMap {
         adjustWithKey((_, v1) -> f(v1), k, m)
 
     ///
-    /// Updates `m` with `k -> f(k, v)` if `k -> v` is in `m`. Otherwise, returns `m`.
+    /// Updates `m` with `k => f(k, v)` if `k => v` is in `m`. Otherwise, returns `m`.
     ///
     @Experimental @LazyWhenPure
     pub def adjustWithKey(f: (k, v) -> v & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         updateWithKey((k1, v) -> Some(f(k1, v)), k, m)
 
     ///
-    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
+    /// Updates `m` with `k => v1` if `k => v` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
     ///
     @Experimental @LazyWhenPure
     pub def update(f: v -> Option[v] & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         updateWithKey((_, v1) -> f(v1), k, m)
 
     ///
-    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1)`. Otherwise, returns `m`.
+    /// Updates `m` with `k => v1` if `k => v` is in `m` and `f(k, v) = Some(v1)`. Otherwise, returns `m`.
     ///
     @Experimental @LazyWhenPure
     pub def updateWithKey(f: (k, v) -> Option[v] & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =

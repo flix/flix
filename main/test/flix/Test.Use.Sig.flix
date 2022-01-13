@@ -3,7 +3,7 @@ namespace A {
         pub def f(): a
     }
 
-    instance FClass[Int] {
+    instance FClass[Int32] {
         pub def f(): Int = 1
     }
 
@@ -28,7 +28,7 @@ namespace B {
         pub def f(): a
     }
 
-    instance FClass[Int] {
+    instance FClass[Int32] {
         pub def f(): Int = 2
     }
 
@@ -54,7 +54,7 @@ namespace C {
         pub def f(): a
     }
 
-    instance FClass[Int] {
+    instance FClass[Int32] {
         pub def f(): Int = 3
     }
 
@@ -89,7 +89,7 @@ pub lawless class GClass[a] {
     pub def g(): a
 }
 
-instance GClass[Int] {
+instance GClass[Int32] {
     pub def g(): Int = 4
 }
 
@@ -98,7 +98,7 @@ namespace X {
         pub def g(): a
     }
 
-    instance GClass[Int] {
+    instance GClass[Int32] {
         pub def g(): Int = 5
     }
 
@@ -107,7 +107,7 @@ namespace X {
             pub def g(): a
         }
 
-        instance GClass[Int] {
+        instance GClass[Int32] {
             pub def g(): Int = 6
         }
 
@@ -116,7 +116,7 @@ namespace X {
                 pub def g(): a
             }
 
-            instance GClass[Int] {
+            instance GClass[Int32] {
                 pub def g(): Int = 7
             }
         }

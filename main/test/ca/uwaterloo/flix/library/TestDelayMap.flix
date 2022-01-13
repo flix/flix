@@ -371,7 +371,7 @@ namespace TestDelayMap {
     def unionWith01(): Bool =
         let m1 = Map.toDelayMap(Map#{});
         let m2 = Map.toDelayMap(Map#{});
-        DelayMap.unionWith((v1, v2) -> v1 - v2, m1, m2) |> DelayMap.toMap == Map#{}: Map[Int, Int]
+        DelayMap.unionWith((v1, v2) -> v1 - v2, m1, m2) |> DelayMap.toMap == Map#{}: Map[Int32, Int32]
 
     @test
     def unionWith02(): Bool =
@@ -472,7 +472,7 @@ namespace TestDelayMap {
     def unionWithKeyPure01(): Bool =
         let m1 = Map.toDelayMap(Map#{});
         let m2 = Map.toDelayMap(Map#{});
-        DelayMap.unionWithKey((k, v1, v2) -> k + v1 - v2, m1, m2) |> DelayMap.toMap == Map#{}: Map[Int, Int]
+        DelayMap.unionWithKey((k, v1, v2) -> k + v1 - v2, m1, m2) |> DelayMap.toMap == Map#{}: Map[Int32, Int32]
 
     @test
     def unionWithKeyPure02(): Bool =
@@ -573,7 +573,7 @@ namespace TestDelayMap {
     def unionWithKeyImpure01(): Bool & Impure =
         let m1 = Map.toDelayMap(Map#{});
         let m2 = Map.toDelayMap(Map#{});
-        DelayMap.unionWithKey((k, v1, v2) -> k + v1 - v2 as & Impure, m1, m2) |> DelayMap.toMap == Map#{}: Map[Int, Int]
+        DelayMap.unionWithKey((k, v1, v2) -> k + v1 - v2 as & Impure, m1, m2) |> DelayMap.toMap == Map#{}: Map[Int32, Int32]
 
     @test
     def unionWithKeyImpure02(): Bool & Impure =

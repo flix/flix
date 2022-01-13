@@ -50,7 +50,7 @@ namespace Test/Derives/ToString {
     def testToString03(): Bool = "${Enum.TupleCase(123, true)}" == "TupleCase(123, true)"
 
     @test
-    def testToString04(): Bool = "${PolyEnum.EmptyCase: PolyEnum[Int]}" == "EmptyCase"
+    def testToString04(): Bool = "${PolyEnum.EmptyCase: PolyEnum[Int32]}" == "EmptyCase"
 
     @test
     def testToString05(): Bool = "${PolyEnum.SingletonCase(123)}" == "SingletonCase(123)"
@@ -68,10 +68,10 @@ namespace Test/Derives/ToString {
     def testToString09(): Bool = "${PolyEnum.SingletonCase(Enum.SingletonCase(123))}" == "SingletonCase(SingletonCase(123))"
 
     @test
-    def testToString10(): Bool = "${PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int]]}" == "EmptyCase"
+    def testToString10(): Bool = "${PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int32]]}" == "EmptyCase"
 
     @test
-    def testToString11(): Bool = "${PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int]]}" == "SingletonCase(EmptyCase)"
+    def testToString11(): Bool = "${PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int32]]}" == "SingletonCase(EmptyCase)"
 
     @test
     def testToString12(): Bool = "${PolyEnum.SingletonCase(PolyEnum.SingletonCase(123))}" == "SingletonCase(SingletonCase(123))"

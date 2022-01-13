@@ -181,7 +181,7 @@ namespace Test/Exp/Force {
 
     @test
     def testPrecedenceForce04(): Bool =
-        let x = lazy 2 : Lazy[Int];
+        let x = lazy 2 : Lazy[Int32];
         let y = force x : Int;
         y == 2
 

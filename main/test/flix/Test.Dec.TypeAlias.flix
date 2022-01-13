@@ -23,7 +23,7 @@ namespace Test/Dec/TypeAlias {
     /**
      * A type alias for Option of Int.
      */
-    type alias A = Option[Int]
+    type alias A = Option[Int32]
 
     /**
      * A type alias for a Result.
@@ -82,10 +82,10 @@ namespace Test/Dec/TypeAlias {
     def testTypeAlias12(): C[Bool] = Some(true)
 
     @test
-    def testTypeAlias13(): C[Int] = None
+    def testTypeAlias13(): C[Int32] = None
 
     @test
-    def testTypeAlias14(): C[Int] = Some(123)
+    def testTypeAlias14(): C[Int32] = Some(123)
 
     @test
     def testTypeAlias15(): D[Bool, Int] = Ok(true)
@@ -97,13 +97,13 @@ namespace Test/Dec/TypeAlias {
     def testTypeAlias17(): E[Bool] = Ok(true)
 
     @test
-    def testTypeAlias18(): E[Int] = Ok(123)
+    def testTypeAlias18(): E[Int32] = Ok(123)
 
     @test
     def testTypeAlias19(): E[Bool] = Err("Hello World")
 
     @test
-    def testTypeAlias20(): E[Int] = Err("Hello World")
+    def testTypeAlias20(): E[Int32] = Err("Hello World")
 
     /**
      * An opaque type for Int.
@@ -145,10 +145,10 @@ namespace Test/Dec/TypeAlias {
     def testTypeAlias23(): V[Bool] = Y(Some(true))
 
     @test
-    def testTypeAlias24(): V[Int] = Y(None)
+    def testTypeAlias24(): V[Int32] = Y(None)
 
     @test
-    def testTypeAlias25(): V[Int] = Y(Some(123))
+    def testTypeAlias25(): V[Int32] = Y(Some(123))
 
     @test
     def testTypeAlias26(): W[Bool, Int] = Z(Ok(true))

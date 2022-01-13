@@ -37,12 +37,9 @@ pub lawless class Monoid[a] with SemiGroup[a] {
 namespace Monoid {
 
     ///
-    /// Returns the result of applying `combine` to all the elements of list `xs`,
-    /// using `empty` as the initial value.
-    /// TODO: should this be deleted? Not the same as CombineN in SemiGroup
+    /// Returns the result of applying `combine` to all the elements in `t`, using `empty` as the initial value.
     ///
-    pub def combineAll(xs: List[a]): a with Monoid[a] =
-        List.foldLeft((ac, x) -> combine(ac, x), Monoid.empty(), xs)
+    pub def fold[f: Type -> Type, a: Type](f: f[a]): a with Foldable[f], Monoid[a] = Foldable.fold(f)
 
 }
 
