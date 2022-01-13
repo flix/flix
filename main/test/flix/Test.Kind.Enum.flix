@@ -13,7 +13,7 @@ namespace Test/Enum/Kinding {
     }
 
     namespace Explicit {
-        rel R(i: Int)
+        rel R(i: Int32)
 
         pub enum EStar[a: Type] {
             case CStar1(a)

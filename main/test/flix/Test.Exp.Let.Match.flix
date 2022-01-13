@@ -66,11 +66,11 @@ namespace Test/Exp/Let/Match {
             x == 42
 
     enum Celsius {
-        case Celsius(Int)
+        case Celsius(Int32)
     }
 
     enum Fahrenheit {
-        case Fahrenheit(Int)
+        case Fahrenheit(Int32)
     }
 
     enum Box[a] {

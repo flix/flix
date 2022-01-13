@@ -44,8 +44,8 @@ namespace Test/Dec/RelAlias {
 
     def f(_: Z[_]): Unit = ()
 
-    rel A(x: Int)
-    rel B(x: Bool, y: Int)
+    rel A(x: Int32)
+    rel B(x: Bool, y: Int32)
     rel C[a](x: a, y: a)
 
     type alias X = #{ A, B }
