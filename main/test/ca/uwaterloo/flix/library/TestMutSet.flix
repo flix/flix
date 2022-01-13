@@ -13,44 +13,77 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 namespace TestMutSet {
 
-    use ToString.toString;
-
     /////////////////////////////////////////////////////////////////////////////
-    // toString                                                                //
+    // sameElements                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toString01(): Bool & Impure =
+    def sameElements01(): Bool & Impure =
+        let s = MutSet.empty(): MutSet[Int32];
+        let s2 = MutSet.empty(): MutSet[Int32];
+        MutSet.sameElements(s, s2)
+
+    @test
+    def sameElements02(): Bool & Impure =
         let s = MutSet.empty();
         MutSet.add!(1, s);
-        toString(s) == "MutSet#{1}"
+
+        let s2 = MutSet.empty();
+        MutSet.add!(1, s2);
+
+        MutSet.sameElements(s, s2)
 
     @test
-    def toString02(): Bool & Impure =
+    def sameElements03(): Bool & Impure =
+        let s = MutSet.empty();
+        MutSet.add!(1, s);
+
+        let s2 = MutSet.empty();
+        MutSet.add!(2, s2);
+
+        not MutSet.sameElements(s, s2)
+
+    @test
+    def sameElements04(): Bool & Impure =
         let s = MutSet.empty();
         MutSet.add!(1, s);
         MutSet.add!(2, s);
-        toString(s) == "MutSet#{1, 2}"
+        MutSet.add!(3, s);
+
+        let s2 = MutSet.empty();
+        MutSet.add!(2, s2);
+        MutSet.add!(3, s2);
+        MutSet.add!(1, s2);
+
+        MutSet.sameElements(s, s2)
 
     @test
-    def toString03(): Bool & Impure =
+    def sameElements05(): Bool & Impure =
         let s = MutSet.empty();
-        MutSet.add!(1, s);
-        MutSet.add!(92, s);
-        MutSet.add!(94, s);
-        MutSet.add!(97, s);
-        toString(s) == "MutSet#{1, 92, 94, 97}"
+        MutSet.add!("a", s);
+        MutSet.add!("b", s);
+        MutSet.add!("c", s);
+
+        let s2 = MutSet.empty();
+        MutSet.add!("c", s2);
+        MutSet.add!("a", s2);
+        MutSet.add!("b", s2);
+
+        MutSet.sameElements(s, s2)
 
     @test
-    def toString04(): Bool & Impure =
+    def setSameElements06(): Bool & Impure =
         let s = MutSet.empty();
-        MutSet.add!('a', s);
-        MutSet.add!('b', s);
-        MutSet.add!('c', s);
-        MutSet.add!('d', s);
-        toString(s) == "MutSet#{a, b, c, d}"
+        MutSet.add!("a", s);
+        MutSet.add!("b", s);
+        MutSet.add!("c", s);
+
+        let s2 = MutSet.empty();
+        MutSet.add!("c", s2);
+        MutSet.add!("a", s2);
+
+        not MutSet.sameElements(s, s2)
 
 }

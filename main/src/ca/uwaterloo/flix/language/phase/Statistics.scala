@@ -25,8 +25,8 @@ import ca.uwaterloo.flix.util.Validation.ToSuccess
 /**
   * Collects statistics about the AST and reports them to stdout.
   */
-object Statistics extends Phase[Root, Root] {
-  override def run(root: Root)(implicit flix: Flix): Validation[Root, Nothing] = flix.phase("Statistics") {
+object Statistics {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, Nothing] = flix.phase("Statistics") {
     // Return early if stats have not been enabled.
     if (!flix.options.xstatistics) {
       return root.toSuccess
@@ -98,12 +98,13 @@ object Statistics extends Phase[Root, Root] {
       case Expression.Var(sym, tpe, loc) => Counter.empty
       case Expression.Def(sym, tpe, loc) => Counter.empty
       case Expression.Sig(sym, tpe, loc) => Counter.empty
-      case Expression.Hole(sym, tpe, eff, loc) => Counter.empty
+      case Expression.Hole(sym, tpe, loc) => Counter.empty
       case Expression.Lambda(fparam, exp, tpe, loc) => visitExp(exp)
       case Expression.Apply(exp, exps, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(exps.map(visitExp))
       case Expression.Unary(sop, exp, tpe, eff, loc) => visitExp(exp)
       case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.LetRegion(sym, exp, tpe, eff, loc) => visitExp(exp)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
       case Expression.Stm(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
@@ -124,10 +125,8 @@ object Statistics extends Phase[Root, Root] {
       case Expression.Ref(exp, tpe, eff, loc) => visitExp(exp)
       case Expression.Deref(exp, tpe, eff, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.Existential(fparam, exp, loc) => visitExp(exp)
-      case Expression.Universal(fparam, exp, loc) => visitExp(exp)
       case Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
-      case Expression.Cast(exp, tpe, eff, loc) => visitExp(exp)
+      case Expression.Cast(exp, _, _, tpe, eff, loc) => visitExp(exp)
       case Expression.TryCatch(exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitCatchRule))
       case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) => Counter.merge(args.map(visitExp))
       case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(args.map(visitExp))
@@ -150,6 +149,8 @@ object Statistics extends Phase[Root, Root] {
       case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) => visitExp(exp)
       case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) => visitExp(exp)
       case Expression.Reify(t, tpe, eff, loc) => Counter.empty
+      case Expression.ReifyType(t, k, tpe, eff, loc) => Counter.empty
+      case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
     }
 
     base ++ subExprs
@@ -203,6 +204,7 @@ object Statistics extends Phase[Root, Root] {
   private def visitBodyPredicate(body: Predicate.Body): Counter = body match {
     case Body.Atom(pred, den, polarity, terms, tpe, loc) => Counter.empty
     case Body.Guard(exp, loc) => visitExp(exp)
+    case Body.Loop(varSyms, exp, loc) => visitExp(exp)
   }
 
   /**

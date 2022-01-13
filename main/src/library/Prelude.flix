@@ -1,7 +1,32 @@
 ///
 /// Ref[t] is a type alias for a scoped ref with a global lifetime.
 ///
-type alias Ref[t] = ScopedRef[t, false]
+pub type alias Ref[t] = ScopedRef[t, false]
+
+///
+/// The Reified Flix Bools.
+///
+pub enum ReifiedBool with Eq, Order, ToString {
+    case ErasedBool,
+    case ReifiedTrue,
+    case ReifiedFalse
+}
+
+///
+/// The Reified Flix Types.
+///
+pub enum ReifiedType with Eq, Order, ToString {
+    case ErasedType,
+    case ReifiedBool,
+    case ReifiedChar,
+    case ReifiedFloat32,
+    case ReifiedFloat64,
+    case ReifiedInt8,
+    case ReifiedInt16,
+    case ReifiedInt32,
+    case ReifiedInt64,
+    case ReifiedArray(ReifiedType)
+}
 
 ///
 /// The identity function.
@@ -20,8 +45,6 @@ pub def constant(y: a): b -> a = _ -> y
 ///
 pub def flip(f: (a, b) -> c & ef): (b, a) -> c & ef = (x, y) -> f(y, x)
 
-///
-/// `on(f, g, x, y) = f(g(x), g(y))`
 ///
 /// Partially applying this function in the form ``f `on` g`` lifts the binary function `f` to work on
 /// inputs transformed by `g`.
@@ -87,7 +110,7 @@ pub def ||>(x: (a, b), f: ((a, b)) -> c & ef): c & ef = f(x)
 /// Converts `x` to a string and prints it to standard out.
 ///
 pub def print(x: a): Unit & Impure with ToString[a] =
-    import get java.lang.System:out as getOut;
+    import static get java.lang.System.out as getOut;
     import java.io.PrintStream.print(String);
     x |> ToString.toString |> print(getOut())
 
@@ -95,7 +118,7 @@ pub def print(x: a): Unit & Impure with ToString[a] =
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
 pub def println(x: a): Unit & Impure with ToString[a] =
-    import get java.lang.System:out as getOut;
+    import static get java.lang.System.out as getOut;
     import java.io.PrintStream.println(String);
     x |> ToString.toString |> println(getOut())
 
@@ -114,10 +137,10 @@ pub def <==>(x: Bool, y: Bool): Bool = x == y
 ///
 pub def bug!(m: String): a =
     let f = () -> {
-        import get java.lang.System:err as getErr;
+        import static get java.lang.System.err as getErr;
         import java.io.PrintStream.println(String);
         import java.lang.String.repeat(Int32);
-        let prt = s -> getErr().println(s);
+        let prt = println(getErr());
         prt(repeat("*", 80));
         prt("**") ;
         prt("**  BUG: ${m}") ;
@@ -136,9 +159,11 @@ pub def unreachable!(): a = bug!("Reached unreachable expression.")
 ///
 /// Meta-programming facility to express the time complexity of a function `f`.
 ///
+@Internal
 pub def time(_: a -> Int32): Int32 = 1
 
 ///
 /// Meta-programming facility to express the space complexity of a function `f`.
 ///
+@Internal
 pub def space(_: a -> Int32): Int32 = 1

@@ -17,8 +17,11 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.util.InternalCompilerException
+
+import java.util.Objects
 
 object Symbol {
 
@@ -36,19 +39,11 @@ object Symbol {
   }
 
   /**
-    * Returns a fresh def symbol with the given text.
+    * Returns a fresh instance symbol with the given class.
     */
-  def freshDefnSym(text: String, loc: SourceLocation)(implicit flix: Flix): DefnSym = {
-    val id = Some(flix.genSym.freshId())
-    new DefnSym(id, Nil, text, loc)
-  }
-
-  /**
-    * Returns a fresh def symbol with the given text in the given namespace.
-    */
-  def freshDefnSym(ns: List[String], text: String, loc: SourceLocation)(implicit flix: Flix): DefnSym = {
-    val id = Some(flix.genSym.freshId())
-    new DefnSym(id, ns, text, loc)
+  def freshInstanceSym(clazz: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix): InstanceSym = {
+    val id = flix.genSym.freshId()
+    new InstanceSym(id, clazz, loc)
   }
 
   /**
@@ -63,28 +58,28 @@ object Symbol {
     * Returns a fresh variable symbol based on the given symbol.
     */
   def freshVarSym(sym: VarSym)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), sym.text, sym.tvar, Scopedness.Unscoped, sym.loc)
+    new VarSym(flix.genSym.freshId(), sym.text, sym.tvar, Scopedness.Unscoped, sym.boundBy, sym.loc)
   }
 
   /**
     * Returns a fresh variable symbol for the given identifier.
     */
-  def freshVarSym(ident: Name.Ident)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), Scopedness.Unscoped, ident.loc)
+  def freshVarSym(ident: Name.Ident, boundBy: BoundBy)(implicit flix: Flix): VarSym = {
+    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), Scopedness.Unscoped, boundBy, ident.loc)
   }
 
   /**
     * Returns a fresh variable symbol for the given identifier and scopedness.
     */
-  def freshVarSym(ident: Name.Ident, scopedness: Scopedness)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), scopedness, ident.loc)
+  def freshVarSym(ident: Name.Ident, scopedness: Scopedness, boundBy: BoundBy)(implicit flix: Flix): VarSym = {
+    new VarSym(flix.genSym.freshId(), ident.name, Type.freshUnkindedVar(ident.loc), scopedness, boundBy, ident.loc)
   }
 
   /**
     * Returns a fresh variable symbol with the given text.
     */
-  def freshVarSym(text: String, loc: SourceLocation)(implicit flix: Flix): VarSym = {
-    new VarSym(flix.genSym.freshId(), text, Type.freshUnkindedVar(loc), Scopedness.Unscoped, loc)
+  def freshVarSym(text: String, boundBy: BoundBy, loc: SourceLocation)(implicit flix: Flix): VarSym = {
+    new VarSym(flix.genSym.freshId(), text, Type.freshUnkindedVar(loc), Scopedness.Unscoped, boundBy, loc)
   }
 
   /**
@@ -170,12 +165,13 @@ object Symbol {
   /**
     * Variable Symbol.
     *
-    * @param id   the globally unique name of the symbol.
-    * @param text the original name, as it appears in the source code, of the symbol
-    * @param tvar the type variable associated with the symbol. This type variable always has kind `Star`.
-    * @param loc  the source location associated with the symbol.
+    * @param id      the globally unique name of the symbol.
+    * @param text    the original name, as it appears in the source code, of the symbol
+    * @param tvar    the type variable associated with the symbol. This type variable always has kind `Star`.
+    * @param boundBy the way the variable is bound.
+    * @param loc     the source location associated with the symbol.
     */
-  final class VarSym(val id: Int, val text: String, val tvar: Type.UnkindedVar, val scopedness: Scopedness, val loc: SourceLocation) {
+  final class VarSym(val id: Int, val text: String, val tvar: Type.UnkindedVar, val scopedness: Scopedness, val boundBy: BoundBy, val loc: SourceLocation) {
 
     /**
       * The internal stack offset. Computed during variable numbering.
@@ -222,13 +218,13 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = text + "$" + id
+    override def toString: String = text + Flix.Delimiter + id
   }
 
   /**
     * Definition Symbol.
     */
-  final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) {
+  final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Locatable {
 
     /**
       * Returns `true` if `this` symbol is equal to the main symbol.
@@ -242,8 +238,13 @@ object Symbol {
       */
     def name: String = id match {
       case None => text
-      case Some(i) => text + "$" + i
+      case Some(i) => text + Flix.Delimiter + i
     }
+
+    /**
+      * Returns the source of `this` symbol.
+      */
+    def src: Ast.Source = loc.source
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
@@ -311,6 +312,34 @@ object Symbol {
   }
 
   /**
+    * Instance Symbol.
+    */
+  final class InstanceSym(val id: Int, val clazz: Symbol.ClassSym, val loc: SourceLocation) {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: InstanceSym => this.id == that.id && this.clazz == that.clazz
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = Objects.hash(id, clazz)
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = clazz.toString + Flix.Delimiter + id
+
+    /**
+      * The name of the instance.
+      */
+    val name: String = clazz.name
+  }
+
+  /**
     * Signature Symbol.
     */
   final class SigSym(val clazz: Symbol.ClassSym, val name: String, val loc: SourceLocation) {
@@ -353,7 +382,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = text + "$" + id
+    override def toString: String = text + Flix.Delimiter + id
   }
 
   /**

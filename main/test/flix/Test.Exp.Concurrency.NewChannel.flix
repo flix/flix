@@ -67,10 +67,10 @@ namespace Test/Exp/Concurrency/NewChannel {
     def testNewChannel22(): Channel[String] & Impure = chan String 1
 
     @test
-    def testNewChannel23(): Channel[Option[Int]] & Impure = chan Option[Int] 0
+    def testNewChannel23(): Channel[Option[Int32]] & Impure = chan Option[Int32] 0
 
     @test
-    def testNewChannel24(): Channel[Option[Int]] & Impure = chan Option[Int] 1
+    def testNewChannel24(): Channel[Option[Int32]] & Impure = chan Option[Int32] 1
 
     @test
     def testNewChannel25(): Channel[Result[Int, String]] & Impure = chan Result[Int, String] 0
@@ -79,10 +79,10 @@ namespace Test/Exp/Concurrency/NewChannel {
     def testNewChannel26(): Channel[Result[Int, String]] & Impure = chan Result[Int, String] 1
 
     @test
-    def testNewChannel27(): Channel[Channel[Int]] & Impure = chan Channel[Int] 0
+    def testNewChannel27(): Channel[Channel[Int32]] & Impure = chan Channel[Int32] 0
 
     @test
-    def testNewChannel28(): Channel[Channel[Int]] & Impure = chan Channel[Int] 1
+    def testNewChannel28(): Channel[Channel[Int32]] & Impure = chan Channel[Int32] 1
 
     @test
     def testNewChannel29(): Channel[Channel[String]] & Impure = chan Channel[String] 0

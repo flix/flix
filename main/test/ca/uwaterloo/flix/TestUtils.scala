@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.{CompilationError, ast}
+import ca.uwaterloo.flix.language.{CompilationMessage, ast}
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{Options, Validation}
@@ -32,12 +32,12 @@ trait TestUtils {
   /**
     * Compiles the given input string `s` with the given compilation options `o`.
     */
-  def compile(s: String, o: Options): Validation[CompilationResult, CompilationError] = new Flix().setOptions(o).addStr(s).compile()
+  def compile(s: String, o: Options): Validation[CompilationResult, CompilationMessage] = new Flix().setOptions(o).addSourceCode(s).compile()
 
   /**
     * Asserts that the validation is a failure with a value of the parametric type `T`.
     */
-  def expectError[T](result: Validation[CompilationResult, CompilationError])(implicit classTag: ClassTag[T]): Unit = result match {
+  def expectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result match {
     case Validation.Success(_) => fail(s"Expected Failure, but got Success.")
     case Validation.Failure(errors) =>
       val expected = classTag.runtimeClass
@@ -52,7 +52,7 @@ trait TestUtils {
   /**
     * Asserts that the validation does not contain a value of the parametric type `T`.
     */
-  def rejectError[T](result: Validation[CompilationResult, CompilationError])(implicit classTag: ClassTag[T]): Unit = result match {
+  def rejectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result match {
     case Validation.Success(_) => ()
     case Validation.Failure(errors) =>
       val rejected = classTag.runtimeClass

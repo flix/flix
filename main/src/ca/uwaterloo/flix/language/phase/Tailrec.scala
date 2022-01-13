@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -28,12 +28,12 @@ import ca.uwaterloo.flix.util.Validation._
   * Specifically, it replaces `ApplyRef` AST nodes with `ApplyTail` AST nodes
   * when the `ApplyRef` node calls the same function and occurs in tail position.
   */
-object Tailrec extends Phase[Root, Root] {
+object Tailrec {
 
   /**
     * Identifies tail recursive calls in the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Tailrec") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Tailrec") {
     //
     // Rewrite tail calls.
     //

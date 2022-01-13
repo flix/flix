@@ -29,6 +29,7 @@ namespace Choice {
     ///
     /// Always returns `true`.
     ///
+    @Experimental
     pub def assertAbsent(c: Choice[_, true, false]): Bool = choose c {
         case Absent => true
     }
@@ -38,6 +39,7 @@ namespace Choice {
     ///
     /// Always returns `true`.
     ///
+    @Experimental
     pub def assertPresent(c: Choice[_, false, true]): Bool = choose c {
         case Present(_) => true
     }
@@ -45,6 +47,7 @@ namespace Choice {
     ///
     /// Returns `true` if `c` is `Absent`.
     ///
+    @Experimental
     pub def isAbsent(c: Choice[_, _, _]): Bool = choose c {
         case Absent     => true
         case Present(_) => false
@@ -53,6 +56,7 @@ namespace Choice {
     ///
     /// Returns `true` if `c` is `Present`.
     ///
+    @Experimental
     pub def isPresent(c: Choice[_, _, _]): Bool = choose c {
         case Absent     => false
         case Present(_) => true
@@ -61,6 +65,7 @@ namespace Choice {
     ///
     /// Returns `v` where `c` must be `Present(v)`.
     ///
+    @Experimental
     pub def unbox(c: Choice[s, false, true]): s =
         choose c {
             case Present(x) => x
@@ -69,19 +74,21 @@ namespace Choice {
     ///
     /// Returns `v` if `o` is `Present(v).` Otherwise returns `d`.
     ///
-    pub def getWithDefault(c: Choice[s, _, _], d: s): s =
+    @Experimental
+    pub def getWithDefault(d: s, c: Choice[s, _, _]): s =
         choose c {
             case Absent     => d
             case Present(v) => v
         }
 
     ///
-    /// Returns `c1` if it is `Present(v)`. Otherwise returns `c2`.
+    /// Returns `c` if it is `Present(v)`. Otherwise returns `default`.
     ///
+    @Experimental
     pub def withDefault[s : Type, a1 : Bool, p1 : Bool, a2 : Bool, p2 : Bool]
-                       (c1: Choice[s, a1, p1], c2: Choice[s, a2, p2]): Choice[s, a1 and a2, p1 or (a1 and p2)] =
-        choose* c1 {
-            case Absent     => c2
+                       (default: {default :: Choice[s, a2, p2]}, c: Choice[s, a1, p1]): Choice[s, a1 and a2, p1 or (a1 and p2)] =
+        choose* c {
+            case Absent     => default.default
             case Present(v) => Present(v)
         }
 
@@ -90,6 +97,7 @@ namespace Choice {
     ///
     /// The function `f` must be pure.
     ///
+    @Experimental
     pub def filter[t : Type, a : Bool, p : Bool]
                   (f: t -> Bool, c: Choice[t, a, p]): Choice[t, a or p, p] =
         choose* c {
@@ -100,6 +108,7 @@ namespace Choice {
     ///
     /// Returns `Present(f(v))` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
+    @Experimental
     pub def map[s: Type, t: Type, a: Bool, p: Bool](f: s -> t, c: Choice[s, a, p]): Choice[t, a, p] =
         choose* c {
             case Absent     => Absent
@@ -109,6 +118,7 @@ namespace Choice {
     ///
     /// Returns `f(v)` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
+    @Experimental
     pub def flatMap[s : Type, t : Type, a1 : Bool, p1 : Bool, a2 : Bool, p2 : Bool]
                    (f: s -> Choice[t, a2, p2], c: Choice[s, a1, p1]): Choice[t, a1 or (p1 and a2), p1 and p2] =
         choose* c {
@@ -119,6 +129,7 @@ namespace Choice {
     ///
     /// Returns `v` if `c` is `Present(v)`. Otherwise returns `Absent`.
     ///
+    @Experimental
     pub def flatten[t : Type, a1 : Bool, p1 : Bool, a2 : Bool, p2 : Bool]
         (c: Choice[Choice[t, a1, p1], a2, p2]): Choice[t, (a1 and p2) or a2, p1 and p2] =
         choose* c {
@@ -129,6 +140,7 @@ namespace Choice {
     ///
     /// Returns `Absent` if `c` is `Present(_)`. Otherwise returns `Present(v)`.
     ///
+    @Experimental
     pub def invert[s: Type, a: Bool, p: Bool](c: Choice[s, a, p], v: s): Choice[s, p, a] = choose* c {
         case Absent     => Present(v)
         case Present(_) => Absent

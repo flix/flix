@@ -28,7 +28,7 @@ namespace BenchmarkList {
     /// create a list of integers, filter all its even numbers, and compute the length of the result.
     ///
     @benchmark
-    pub def benchmark05(): Bool = List.length(List.filter(x -> x % 2 == 0, List.range(0, 1000))) == 500
+    pub def benchmark05(): Bool = List.length(List.filter(x -> x rem 2 == 0, List.range(0, 1000))) == 500
 
     ///
     /// create a list of integers, append it to a list of integers, and compute the length of the result.
@@ -46,7 +46,7 @@ namespace BenchmarkList {
     /// create a list of integers, flatMap it over lists of integers, and compute the length of the result.
     ///
     @benchmark
-    pub def benchmark08(): Bool = List.length(List.flatMap(x -> List.repeat(x, 20), List.range(0, 20))) == 400
+    pub def benchmark08(): Bool = List.length(List.flatMap(x -> List.repeat(20, x), List.range(0, 20))) == 400
 
     ///
     /// create a list of integers and compute its sum via foldLeft.

@@ -55,6 +55,16 @@ object Request {
   case class RemPkg(requestId: String, uri: String) extends Request
 
   /**
+    * A request to add (or update) the JAR at the given uri.
+    */
+  case class AddJar(requestId: String, uri: String) extends Request
+
+  /**
+    * A request to remove the package at the given uri.
+    */
+  case class RemJar(requestId: String, uri: String) extends Request
+
+  /**
     * A request for the compiler version.
     */
   case class Version(requestId: String) extends Request
@@ -83,6 +93,11 @@ object Request {
     * A request to go to a declaration.
     */
   case class Goto(requestId: String, uri: String, pos: Position) extends Request
+
+  /**
+    * A request to find implementations.
+    */
+  case class Implementation(requestId: String, uri: String, pos: Position) extends Request
 
   /**
     * A request to get highlight information.
@@ -178,6 +193,33 @@ object Request {
     } yield Request.RemPkg(id, uri)
   }
 
+
+  /**
+    * Tries to parse the given `json` value as a [[AddJar]] request.
+    */
+  def parseAddJar(json: json4s.JValue): Result[Request, String] = {
+    try {
+      for {
+        id <- parseId(json)
+        uri <- parseUri(json)
+      } yield {
+        Request.AddJar(id, uri)
+      }
+    } catch {
+      case ex: IllegalArgumentException => Result.Err(ex.getMessage)
+    }
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[RemJar]] request.
+    */
+  def parseRemJar(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+    } yield Request.RemJar(id, uri)
+  }
+
   /**
     * Tries to parse the given `json` value as a [[Version]] request.
     */
@@ -235,6 +277,17 @@ object Request {
       uri <- parseUri(json)
       pos <- Position.parse(json \\ "position")
     } yield Request.Goto(id, uri, pos)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Implementation]] request.
+    */
+  def parseImplementation(json: JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      uri <- parseUri(json)
+      pos <- Position.parse(json \\ "position")
+    } yield Request.Implementation(id, uri, pos)
   }
 
   /**

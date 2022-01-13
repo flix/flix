@@ -19,21 +19,21 @@ namespace Environment {
     /// Returns an map of the current system environment.
     ///
     pub def getEnv(): Map[String, String] =
-        import java.lang.System:getenv();
+        import static java.lang.System.getenv();
         import java.util.Map.entrySet();
         import java.util.Set.iterator();
         try {
-            let iter = getenv().entrySet().iterator();
+            let iter = getenv() |> entrySet |> iterator;
             getEnvHelper(iter, Map.empty())
         } catch {
             case _:##java.lang.Exception => Map.empty()
         } as & Pure
 
     ///
-    /// Gets the value of the specified environment variable.
+    /// Returns the value of the specified environment variable.
     ///
     pub def getVar(name: String): Option[String] =
-        import java.lang.System:getenv(String);
+        import static java.lang.System.getenv(String);
         try {
             let result = getenv(name) as & Pure;
             Object.toOption(result)
@@ -42,10 +42,10 @@ namespace Environment {
         }
 
     ///
-    /// Gets the system property by name.
+    /// Returns the system property by name.
     ///
     pub def getProp(name: String): Option[String] =
-        import java.lang.System:getProperty(String);
+        import static java.lang.System.getProperty(String);
         try {
             let result = getProperty(name) as & Pure;
             Object.toOption(result)
@@ -54,58 +54,58 @@ namespace Environment {
         }
 
     ///
-    /// Operating system name
+    /// Returns the operating system name
     ///
     pub def getOsName(): Option[String] = getProp("os.name")
 
     ///
-    /// Operating system architecture
+    ///  Returns the operating system architecture
     ///
     pub def getOsArch(): Option[String] = getProp("os.arch")
 
     ///
-    /// Operating system version
+    ///  Returns the operating system version
     ///
     pub def getOsVersion(): Option[String] = getProp("os.version")
 
     ///
-    /// File separator
+    ///  Returns the file separator
     ///
     pub def getFileSeparator(): String =
-        import get java.io.File:separator as sep;
+        import static get java.io.File.separator as sep;
         sep() as String & Pure
 
     ///
-    /// Path separator
+    /// Returns the path separator
     ///
     pub def getPathSeparator(): String =
-        import get java.io.File:pathSeparator as pathSep;
+        import static get java.io.File.pathSeparator as pathSep;
         pathSep() as String & Pure
 
     ///
-    /// Line separator
+    /// Returns the system line separator
     ///
     pub def getLineSeparator(): String =
-        import java.lang.System:lineSeparator();
+        import static java.lang.System.lineSeparator();
         lineSeparator() as String & Pure
 
     ///
-    /// User's current working directory
+    /// Returns the user's current working directory
     ///
     pub def getCurrentWorkingDirectory(): Option[String] = getProp("user.dir")
 
     ///
-    /// Default temp file path
+    /// Returns the default temp file path
     ///
     pub def getTemporaryDirectory(): Option[String] = getProp("java.io.tmpdir")
 
     ///
-    /// User's account name
+    /// Returns the user's account name
     ///
     pub def getUserName(): Option[String] = getProp("user.name")
 
     ///
-    /// User's home directory
+    /// Returns the user's home directory
     ///
     pub def getUserHomeDirectory(): Option[String] = getProp("user.home")
 
@@ -115,19 +115,19 @@ namespace Environment {
     /// The returned value is never less than one.
     ///
     pub def getVirtualProcessors(): Int32 =
-        import java.lang.Runtime:getRuntime();
+        import static java.lang.Runtime.getRuntime();
         import java.lang.Runtime.availableProcessors();
-        getRuntime().availableProcessors() as & Pure
+        (getRuntime() |> availableProcessors) as & Pure
 
     def getEnvHelper(iter: ##java.util.Iterator, m: Map[String, String]): Map[String, String] & Impure =
         import java.util.Iterator.hasNext();
         import java.util.Iterator.next();
         import java.util.Map$Entry.getKey();
         import java.util.Map$Entry.getValue();
-        if (iter.hasNext())
-            let entry = iter.next() as ##java.util.Map$Entry;
-            let key = entry.getKey() as String;
-            let value = entry.getValue() as String;
+        if (hasNext(iter))
+            let entry = next(iter) as ##java.util.Map$Entry;
+            let key = getKey(entry) as String;
+            let value = getValue(entry) as String;
             getEnvHelper(iter, Map.insert(key, value, m))
         else
             m

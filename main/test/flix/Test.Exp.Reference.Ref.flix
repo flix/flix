@@ -40,10 +40,10 @@ namespace Test/Exp/Reference/Ref {
     def testRef13(): Ref[(Int, Int, Int)] & Impure = ref (1, 2, 3)
 
     @test
-    def testRef14(): Ref[Option[Int]] & Impure = ref None : Option[Int]
+    def testRef14(): Ref[Option[Int32]] & Impure = ref None : Option[Int32]
 
     @test
-    def testRef15(): Ref[Option[Int]] & Impure = ref Some(42)
+    def testRef15(): Ref[Option[Int32]] & Impure = ref Some(42)
 
     @test
     def testRef16(): Ref[Result[Int, String]] & Impure = ref Ok(42): Result[Int, String]

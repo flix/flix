@@ -26,6 +26,8 @@ object Options {
     lib = LibLevel.All,
     debug = false,
     documentor = false,
+    explain = false,
+    incremental = false,
     json = false,
     progress = false,
     test = false,
@@ -35,10 +37,10 @@ object Options {
     loadClassFiles = true,
     writeClassFiles = true,
     xallowredundancies = false,
-    xlinter = false,
-    xnoboolunification = false,
     xnostratifier = false,
-    xstatistics = false
+    xperf = false,
+    xstatistics = false,
+    xstrictmono = false
   )
 
   /**
@@ -68,6 +70,7 @@ object Options {
   * @param lib                selects the level of libraries to include.
   * @param debug              enables the emission of debugging information.
   * @param documentor         enables generation of flixdoc.
+  * @param incremental        enables incremental compilation.
   * @param json               enable json output.
   * @param progress           print progress during compilation.
   * @param test               enables test mode.
@@ -77,13 +80,15 @@ object Options {
   * @param loadClassFiles     loads the generated class files into the JVM.
   * @param writeClassFiles    enables output of class files.
   * @param xallowredundancies disables the redundancy checker.
-  * @param xlinter            enables the semantic linter.
-  * @param xnoboolunification disables boolean unification.
   * @param xnostratifier      disables computation of stratification.
+  * @param xstatistics        enables statistics collection.
+  * @param xstrictmono        enables strict monomorphization.
   */
 case class Options(lib: LibLevel,
                    debug: Boolean,
                    documentor: Boolean,
+                   explain: Boolean,
+                   incremental: Boolean,
                    json: Boolean,
                    progress: Boolean,
                    target: JvmTarget,
@@ -93,10 +98,10 @@ case class Options(lib: LibLevel,
                    loadClassFiles: Boolean,
                    writeClassFiles: Boolean,
                    xallowredundancies: Boolean,
-                   xlinter: Boolean,
-                   xnoboolunification: Boolean,
                    xnostratifier: Boolean,
-                   xstatistics: Boolean
+                   xperf: Boolean,
+                   xstatistics: Boolean,
+                   xstrictmono: Boolean,
                   )
 
 /**

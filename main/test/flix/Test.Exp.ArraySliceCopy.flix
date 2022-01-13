@@ -1,16 +1,16 @@
 namespace Test/Exp/ArraySliceCopy {
 
     @test
-    def testArraySliceCopy01(): Array[Int] & Impure = let x = [1, 2, 3]; x[..]
+    def testArraySliceCopy01(): Array[Int32] & Impure = let x = [1, 2, 3]; x[..]
 
     @test
-    def testArraySliceCopy02(): Array[Int] & Impure = let x = [1, 2, 3, 4]; x[..]
+    def testArraySliceCopy02(): Array[Int32] & Impure = let x = [1, 2, 3, 4]; x[..]
 
     @test
-    def testArraySliceCopy03(): Array[Int] & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]; x[..]
+    def testArraySliceCopy03(): Array[Int32] & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]; x[..]
 
     @test
-    def testArraySliceCopy04(): Array[Int] & Impure = let x = [1, 2]; x[..]
+    def testArraySliceCopy04(): Array[Int32] & Impure = let x = [1, 2]; x[..]
 
     @test
     def testArraySliceCopy05(): Array[Bool] & Impure = let x = [true, false]; x[..]
@@ -67,27 +67,27 @@ namespace Test/Exp/ArraySliceCopy {
     def testArraySliceCopy22(): Array[String] & Impure = let x = ["World", "Hello", "World"]; x[..]
 
     @test
-    def testArraySliceCopy23(): Array[Array[Int]]  & Impure= let x = [[1, 2], [1, 2]]; x[..]
+    def testArraySliceCopy23(): Array[Array[Int32]]  & Impure= let x = [[1, 2], [1, 2]]; x[..]
 
     @test
-    def testArraySliceCopy24(): Array[Array[Int]] & Impure = let x = [[1], [1, 2, 3, 4, 5, 6, 7, 8]]; x[..]
+    def testArraySliceCopy24(): Array[Array[Int32]] & Impure = let x = [[1], [1, 2, 3, 4, 5, 6, 7, 8]]; x[..]
 
     @test
-    def testArraySliceCopy25(): Array[Array[Int]] & Impure = let x = [[1, 2, 3, 4, 5], [2]]; x[..]
+    def testArraySliceCopy25(): Array[Array[Int32]] & Impure = let x = [[1, 2, 3, 4, 5], [2]]; x[..]
 
     @test
-    def testArraySliceCopy26(): Array[Array[Int]] & Impure = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[..]
+    def testArraySliceCopy26(): Array[Array[Int32]] & Impure = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[..]
 
     @test
-    def testArraySliceCopy27(): Array[Int] & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; x[..]
+    def testArraySliceCopy27(): Array[Int32] & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; x[..]
 
     @test
-    def testArraySliceCopy28(): Array[(List[Int])] & Impure = let x = [(1 :: Nil), (2 :: Nil)]; x[..]
+    def testArraySliceCopy28(): Array[(List[Int32])] & Impure = let x = [(1 :: Nil), (2 :: Nil)]; x[..]
 
     @test
     def testArraySliceCopy29(): Array[(Bool, Bool)] & Impure = let x = [(true, true), (true, false), (true, true)]; x[..]
 
     @test
-    def testArraySliceCopy30(): Array[Option[Int]] & Impure = let x = [None, None, Some(2), Some(2)]; x[..]
+    def testArraySliceCopy30(): Array[Option[Int32]] & Impure = let x = [None, None, Some(2), Some(2)]; x[..]
 
 }

@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst.Root
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.Validation
@@ -25,12 +25,12 @@ import ca.uwaterloo.flix.util.Validation
 /**
   * The inliner replaces closures and functions by their code to improve performance.
   */
-object Inliner extends Phase[Root, Root] {
+object Inliner {
 
   /**
     * Performs inlining on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Inliner") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Inliner") {
     // TODO: Implement inliner.
     return root.toSuccess
   }

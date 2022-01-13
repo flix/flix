@@ -39,7 +39,7 @@ namespace Test/Class/Kinding {
 
             namespace Exp {
                 lawless class CStar1[a] {
-                    pub def star(x: a): Int = ???: a; ???
+                    pub def star(x: a): Int = let _: a = ???; ???
                 }
             }
         }
@@ -92,7 +92,7 @@ namespace Test/Class/Kinding {
                 }
 
                 lawless class CStarToStar1[a: Type -> Type] {
-                    pub def starToStar(x: a[Int]): Int = ???
+                    pub def starToStar(x: a[Int32]): Int = ???
                 }
             }
 
@@ -102,7 +102,7 @@ namespace Test/Class/Kinding {
                 }
 
                 lawless class CStarToStar1[a: Type -> Type] {
-                    pub def starToStar(): a[Int] = ???
+                    pub def starToStar(): a[Int32] = ???
                 }
             }
 
@@ -116,7 +116,7 @@ namespace Test/Class/Kinding {
                 }
 
                 lawless class CStarToStar1[a: Type -> Type] {
-                    pub def starToStar(x: a[Int]): Int with CStarToStar[a] = ???
+                    pub def starToStar(x: a[Int32]): Int with CStarToStar[a] = ???
                 }
 
                 lawless class CBoolToStar1[a: Bool -> Type] {
@@ -139,7 +139,7 @@ namespace Test/Class/Kinding {
 
             namespace Exp {
                 lawless class CStar1[a: Type] {
-                    pub def star(x: a): Int = ???: a; ???
+                    pub def star(x: a): Int = let _: a = ???; ???
                 }
             }
         }
@@ -151,7 +151,7 @@ namespace Test/Class/Kinding {
                 }
 
                 class CStarToStar1[a: Type -> Type] {
-                    law starToStar: forall(x: a[Int]) . ???
+                    law starToStar: forall(x: a[Int32]) . ???
                 }
             }
 
@@ -165,7 +165,7 @@ namespace Test/Class/Kinding {
                 }
 
                 class CStarToStar1[a: Type -> Type] {
-                    law starToStar: forall(x: a[Int]) with CStarToStar[a] . ???
+                    law starToStar: forall(x: a[Int32]) with CStarToStar[a] . ???
                 }
 
                 class CBoolToStar1[a: Bool -> Type] {

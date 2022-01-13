@@ -56,12 +56,12 @@ namespace BigInt {
     /// The bits of x have positions: 0 (rightmost bit), 1, 2, ...
     ///
     pub def getBit(x: BigInt, position: Int32): Int32 =
-        if ((x >>> position) % 2ii == 0ii) 0 else 1
+        if ((x >>> position) rem 2ii == 0ii) 0 else 1
 
     ///
     /// Returns the greatest common non-negative divisor of `x` and `y`.
     ///
-    pub def gcd(x: BigInt, y: BigInt): BigInt = if (y == 0ii) abs(x) else gcd(y, x % y)
+    pub def gcd(x: BigInt, y: BigInt): BigInt = if (y == 0ii) abs(x) else gcd(y, x rem y)
 
     ///
     /// Returns `x` with the bit at position `position` set (to 1).
@@ -97,7 +97,7 @@ namespace BigInt {
     pub def fromString(s: String): Result[BigInt, String] = try {
         import java.lang.String.strip();
         import new java.math.BigInteger(String) as parseBigInt;
-        Ok(s.strip().parseBigInt()) as & Pure
+        Ok(s |> strip |> parseBigInt) as & Pure
     } catch {
         case _: ##java.lang.NumberFormatException => Err("BigInt.fromString")
     }
@@ -181,7 +181,7 @@ namespace BigInt {
         import new java.math.BigDecimal(BigInt) as newBigDecimal;
         import java.math.BigDecimal.floatValue();
         let xd = newBigDecimal(x) as & Pure;
-        let d = xd.floatValue() as & Pure;
+        let d = floatValue(xd) as & Pure;
         let* f32min = Float32.tryToBigInt(Float32.minValue());
         let* f32max = Float32.tryToBigInt(Float32.maxValue());
         if (x < f32min or x > f32max)
@@ -204,7 +204,7 @@ namespace BigInt {
         import new java.math.BigDecimal(BigInt) as newBigDecimal;
         import java.math.BigDecimal.doubleValue();
         let xd = newBigDecimal(x) as & Pure;
-        let d = xd.doubleValue() as & Pure;
+        let d = doubleValue(xd) as & Pure;
         let* f64min = Float64.tryToBigInt(Float64.minValue());
         let* f64max = Float64.tryToBigInt(Float64.maxValue());
         if (x < f64min or x > f64max)
@@ -302,7 +302,7 @@ namespace BigInt {
             let* f32max = Float32.tryToBigInt(maximum);
             let x1 = clamp(x, f32min, f32max);
             let xd = newBigDecimal(x1) as & Pure;
-            Some(xd.floatValue()) as & Pure
+            Some(floatValue(xd)) as & Pure
         };
         match step() {
             case None => Float32.nan()
@@ -323,7 +323,7 @@ namespace BigInt {
             let* f64max = Float64.tryToBigInt(maximum);
             let x1 = clamp(x, f64min, f64max);
             let xd = newBigDecimal(x1) as & Pure;
-            Some(xd.doubleValue()) as & Pure
+            Some(doubleValue(xd)) as & Pure
         };
         match step() {
             case None => Float64.nan()

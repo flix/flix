@@ -1,13 +1,13 @@
 namespace Test/Exp/Record/Restrict {
 
     @test
-    def testRecordRestrict01(): { lstName :: String, age :: Int, cowboy :: Bool } =
+    def testRecordRestrict01(): { lstName :: String, age :: Int32, cowboy :: Bool } =
         let r0 = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
         let r1 = { -fstName | r0 };
         r1
 
     @test
-    def testRecordRestrict02(): { age :: Int, cowboy :: Bool } =
+    def testRecordRestrict02(): { age :: Int32, cowboy :: Bool } =
         let r0 = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
         let r1 = { -fstName | r0 };
         let r2 = { -lstName | r1 };
@@ -49,7 +49,7 @@ namespace Test/Exp/Record/Restrict {
         { -age, -cowboy | r0 }
 
     @test
-    def testRecordRestrictMultiple02(): { age :: Int, cowboy :: Bool } =
+    def testRecordRestrictMultiple02(): { age :: Int32, cowboy :: Bool } =
         let r0 = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
         { -fstName, -lstName | r0 }
 
@@ -69,12 +69,12 @@ namespace Test/Exp/Record/Restrict {
         {  -cowboy, -age, -lstName, -fstName | r0 }
 
     @test
-    def testRecordRestrictDuplicateLabels01(): { a :: Int, a :: Int } =
+    def testRecordRestrictDuplicateLabels01(): { a :: Int32, a :: Int32 } =
         let r = { a = 1, a = 2, a = 3};
         { -a | r }
 
     @test
-    def testRecordRestrictDuplicateLabels02(): { a :: Int } =
+    def testRecordRestrictDuplicateLabels02(): { a :: Int32 } =
         let r = { a = 1, a = 2, a = 3};
         { -a, -a | r }
 
@@ -84,22 +84,22 @@ namespace Test/Exp/Record/Restrict {
         { -a, -a, -a | r }
 
     @test
-    def testRecordRestrictDuplicateLabels04(): { b :: Int, a :: Int, b :: Int, a :: Int } =
+    def testRecordRestrictDuplicateLabels04(): { b :: Int32, a :: Int32, b :: Int32, a :: Int32 } =
         let r = { a = 1, b = 42, a = 2, b = 84, a = 3};
         { -a | r }
 
     @test
-    def testRecordRestrictDuplicateLabels05(): { a :: Int, b :: Int, a :: Int } =
+    def testRecordRestrictDuplicateLabels05(): { a :: Int32, b :: Int32, a :: Int32 } =
         let r = { a = 1, b = 42, a = 2, b = 84, a = 3};
         { -a, -b | r }
 
     @test
-    def testRecordRestrictDuplicateLabels06(): { b :: Int, a :: Int } =
+    def testRecordRestrictDuplicateLabels06(): { b :: Int32, a :: Int32 } =
         let r = { a = 1, b = 42, a = 2, b = 84, a = 3};
         { -a, -b, -a | r }
 
     @test
-    def testRecordRestrictDuplicateLabels07(): { a :: Int } =
+    def testRecordRestrictDuplicateLabels07(): { a :: Int32 } =
         let r = { a = 1, b = 42, a = 2, b = 84, a = 3};
         { -a, -b, -a, -b | r }
 
