@@ -106,22 +106,22 @@ namespace Test/Exp/Tuple {
     def testOptionTuple06(): Option[(Int, Int)] = Some((1, 2))
 
     @test
-    def testResultTuple01(): (Result[Int, Int], Result[Int, Int]) = (Ok(1), Ok(2))
+    def testResultTuple01(): (Result[Int32, Int32], Result[Int32, Int32]) = (Ok(1), Ok(2))
 
     @test
-    def testResultTuple02(): (Result[Int, Int], Result[Int, Int]) = (Ok(1), Err(2))
+    def testResultTuple02(): (Result[Int32, Int32], Result[Int32, Int32]) = (Ok(1), Err(2))
 
     @test
-    def testResultTuple03(): (Result[Int, Int], Result[Int, Int]) = (Err(1), Ok(2))
+    def testResultTuple03(): (Result[Int32, Int32], Result[Int32, Int32]) = (Err(1), Ok(2))
 
     @test
-    def testResultTuple04(): (Result[Int, Int], Result[Int, Int]) = (Err(1), Err(2))
+    def testResultTuple04(): (Result[Int32, Int32], Result[Int32, Int32]) = (Err(1), Err(2))
 
     @test
-    def testResultTuple05(): Result[Int, (Int, Int)] = Ok(1)
+    def testResultTuple05(): Result[Int32, (Int, Int)] = Ok(1)
 
     @test
-    def testResultTuple06(): Result[Int, (Int, Int)] = Err((1, 2))
+    def testResultTuple06(): Result[Int32, (Int, Int)] = Err((1, 2))
 
     @test
     def testListTuple01(): (List[Int32], List[Int32]) = (Nil, Nil)

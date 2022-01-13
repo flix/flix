@@ -85,13 +85,13 @@ namespace Test/Derives/Order {
     def testEq14(): Bool = compare(RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase), RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase)) == EqualTo
 
     @test
-    def testEq15(): Bool = compare(PolyMultiEnum.EmptyCase: PolyMultiEnum[Int, Bool], PolyMultiEnum.EmptyCase: PolyMultiEnum[Int, Bool]) == EqualTo
+    def testEq15(): Bool = compare(PolyMultiEnum.EmptyCase: PolyMultiEnum[Int32, Bool], PolyMultiEnum.EmptyCase: PolyMultiEnum[Int32, Bool]) == EqualTo
 
     @test
-    def testEq16(): Bool = compare(PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int, Bool], PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int, Bool]) == EqualTo
+    def testEq16(): Bool = compare(PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Bool], PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Bool]) == EqualTo
 
     @test
-    def testEq17(): Bool = compare(PolyMultiEnum.RightCase(true): PolyMultiEnum[Int, Bool], PolyMultiEnum.RightCase(true): PolyMultiEnum[Int, Bool]) == EqualTo
+    def testEq17(): Bool = compare(PolyMultiEnum.RightCase(true): PolyMultiEnum[Int32, Bool], PolyMultiEnum.RightCase(true): PolyMultiEnum[Int32, Bool]) == EqualTo
 
     @test
     def testEq18(): Bool = compare(PolyMultiEnum.BothCase(123, true), PolyMultiEnum.BothCase(123, true)) == EqualTo

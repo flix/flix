@@ -83,13 +83,13 @@ namespace Test/Derives/ToString {
     def testToString14(): Bool = "${RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase)}" == "RecursiveCase(EmptyCase)"
 
     @test
-    def testToString15(): Bool = "${PolyMultiEnum.EmptyCase: PolyMultiEnum[Int, Bool]}" == "EmptyCase"
+    def testToString15(): Bool = "${PolyMultiEnum.EmptyCase: PolyMultiEnum[Int32, Bool]}" == "EmptyCase"
 
     @test
-    def testToString16(): Bool = "${PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int, Bool]}" == "LeftCase(123)"
+    def testToString16(): Bool = "${PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Bool]}" == "LeftCase(123)"
 
     @test
-    def testToString17(): Bool = "${PolyMultiEnum.RightCase(true): PolyMultiEnum[Int, Bool]}" == "RightCase(true)"
+    def testToString17(): Bool = "${PolyMultiEnum.RightCase(true): PolyMultiEnum[Int32, Bool]}" == "RightCase(true)"
 
     @test
     def testToString18(): Bool = "${PolyMultiEnum.BothCase(123, true)}" == "BothCase(123, true)"

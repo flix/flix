@@ -13,7 +13,7 @@ namespace Test/Exp/Lambda/Match {
     def testLambdaMatch02(): ((Int, Int)) -> Int = match (x, y) -> (x + y) : Int32
 
     @test
-    def testLambdaMatch03(): ((Int, Int, Int)) -> Int = match (x, y, z) -> (x + y + z) : Int32
+    def testLambdaMatch03(): ((Int32, Int32, Int32)) -> Int = match (x, y, z) -> (x + y + z) : Int32
 
     @test
     def testLambdaMatch04(): (((Int, Int), (Int, Int))) -> Int = match ((x, y), (z, w)) -> (x + y + z + w) : Int32

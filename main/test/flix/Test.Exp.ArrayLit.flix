@@ -229,13 +229,13 @@ namespace Test/Exp/ArrayLit {
     def testArrayLit77(): Array[(Int, Int)] & Impure = [(12, 42)]
 
     @test
-    def testArrayLit78(): Array[(Int, Int, Int)] & Impure = [(12, 42, 34), (12, 42, 34)]
+    def testArrayLit78(): Array[(Int32, Int32, Int32)] & Impure = [(12, 42, 34), (12, 42, 34)]
 
     @test
-    def testArrayLit79(): Array[(Int, Int, Int)] & Impure = [(12, 42, 12), (12, 23, 12), (12,12,12)]
+    def testArrayLit79(): Array[(Int32, Int32, Int32)] & Impure = [(12, 42, 12), (12, 23, 12), (12,12,12)]
 
     @test
-    def testArrayLit80(): Array[(Int, Int, Int, Int)] & Impure = [(12, 42, 12, 12), (12, 23, 12, 12), (12,12,12, 31)]
+    def testArrayLit80(): Array[(Int, Int32, Int, Int)] & Impure = [(12, 42, 12, 12), (12, 23, 12, 12), (12,12,12, 31)]
 
     @test
     def testArrayLit81(): Array[(Int, Int)] & Impure =[(1,1), (1,1), (2,2), (3,3), (1,1), (2,1), (5,5)]

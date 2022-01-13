@@ -85,13 +85,13 @@ namespace Test/Derives/Hash {
     def testHashEq14(): Bool = hash(RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase)) == hash(RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase))
 
     @test
-    def testHashEq15(): Bool = hash(PolyMultiEnum.EmptyCase: PolyMultiEnum[Int, Bool]) == hash(PolyMultiEnum.EmptyCase: PolyMultiEnum[Int, Bool])
+    def testHashEq15(): Bool = hash(PolyMultiEnum.EmptyCase: PolyMultiEnum[Int32, Bool]) == hash(PolyMultiEnum.EmptyCase: PolyMultiEnum[Int32, Bool])
 
     @test
-    def testHashEq16(): Bool = hash(PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int, Bool]) == hash(PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int, Bool])
+    def testHashEq16(): Bool = hash(PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Bool]) == hash(PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Bool])
 
     @test
-    def testHashEq17(): Bool = hash(PolyMultiEnum.RightCase(true): PolyMultiEnum[Int, Bool]) == hash(PolyMultiEnum.RightCase(true): PolyMultiEnum[Int, Bool])
+    def testHashEq17(): Bool = hash(PolyMultiEnum.RightCase(true): PolyMultiEnum[Int32, Bool]) == hash(PolyMultiEnum.RightCase(true): PolyMultiEnum[Int32, Bool])
 
     @test
     def testHashEq18(): Bool = hash(PolyMultiEnum.BothCase(123, true)) == hash(PolyMultiEnum.BothCase(123, true))

@@ -74,13 +74,13 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannel13(): Bool & Impure =
-        let c = chan Result[Int, String] 1;
+        let c = chan Result[Int32, String] 1;
         c <- Ok(123);
         Ok(123) == <- c
 
     @test
     def testBufferedChannel14(): Bool & Impure =
-        let c = chan Result[Int, String] 1;
+        let c = chan Result[Int32, String] 1;
         c <- Err("Goodbye World!");
         Err("Goodbye World!") == <- c
 
@@ -172,13 +172,13 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannelWithSpawn13(): Bool & Impure =
-        let c = chan Result[Int, String] 1;
+        let c = chan Result[Int32, String] 1;
         spawn c <- Ok(123);
         Ok(123) == <- c
 
     @test
     def testBufferedChannelWithSpawn14(): Bool & Impure =
-        let c = chan Result[Int, String] 1;
+        let c = chan Result[Int32, String] 1;
         spawn c <- Err("Goodbye World!");
         Err("Goodbye World!") == <- c
 

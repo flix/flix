@@ -238,10 +238,10 @@ namespace Test/Dec/Class {
         }
 
         @test
-        def testCallComplexBoolSig01(): Bool = M(10): M[true, Int] == M(10): M[true, Int]
+        def testCallComplexBoolSig01(): Bool = M(10): M[true, Int32] == M(10): M[true, Int32]
 
         @test
-        def testCallComplexBoolSig02(): Bool = M(10): M[true, Int] != M(11): M[true, Int]
+        def testCallComplexBoolSig02(): Bool = M(10): M[true, Int32] != M(11): M[true, Int32]
     }
 
     pub enum List[a] {

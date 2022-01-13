@@ -28,7 +28,7 @@ namespace Test/Dec/TypeAlias {
     /**
      * A type alias for a Result.
      */
-    type alias B = Result[Bool, Int]
+    type alias B = Result[Bool, Int32]
 
     /**
      * A polymorphic type alias for a Option.
@@ -88,10 +88,10 @@ namespace Test/Dec/TypeAlias {
     def testTypeAlias14(): C[Int32] = Some(123)
 
     @test
-    def testTypeAlias15(): D[Bool, Int] = Ok(true)
+    def testTypeAlias15(): D[Bool, Int32] = Ok(true)
 
     @test
-    def testTypeAlias16(): D[Bool, Int] = Err(123)
+    def testTypeAlias16(): D[Bool, Int32] = Err(123)
 
     @test
     def testTypeAlias17(): E[Bool] = Ok(true)
@@ -151,10 +151,10 @@ namespace Test/Dec/TypeAlias {
     def testTypeAlias25(): V[Int32] = Y(Some(123))
 
     @test
-    def testTypeAlias26(): W[Bool, Int] = Z(Ok(true))
+    def testTypeAlias26(): W[Bool, Int32] = Z(Ok(true))
 
     @test
-    def testTypeAlias27(): W[Bool, Int] = Z(Err(123))
+    def testTypeAlias27(): W[Bool, Int32] = Z(Err(123))
 
     enum Option[t] {
         case None,

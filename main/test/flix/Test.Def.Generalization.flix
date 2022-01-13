@@ -96,37 +96,37 @@ namespace Test/Def/Generalization {
     def testLeq05(): List[Result[t, e]] = Nil
 
     @test
-    def testLeq06(): Result[Int, a] = Ok(21)
+    def testLeq06(): Result[Int32, a] = Ok(21)
 
     @test
-    def testLeq07(): Result[Int, Bool] = Ok(21)
+    def testLeq07(): Result[Int32, Bool] = Ok(21)
 
     @test
-    def testLeq08(): Result[Int, String] = Ok(21)
+    def testLeq08(): Result[Int32, String] = Ok(21)
 
     @test
-    def testLeq09(): Result[Int, Result[t, e]] = Ok(21)
+    def testLeq09(): Result[Int32, Result[t, e]] = Ok(21)
 
     @test
-    def testLeq10(): Result[a, Int] = Err(21)
+    def testLeq10(): Result[a, Int32] = Err(21)
 
     @test
-    def testLeq11(): Result[Bool, Int] = Err(21)
+    def testLeq11(): Result[Bool, Int32] = Err(21)
 
     @test
-    def testLeq12(): Result[String, Int] = Err(21)
+    def testLeq12(): Result[String, Int32] = Err(21)
 
     @test
-    def testLeq13(): Result[Result[t, e], Int] = Err(21)
+    def testLeq13(): Result[Result[t, e], Int32] = Err(21)
 
     @test
-    def testLeq14(): List[Result[Int, Option[a]]] = Ok(21) :: Nil
+    def testLeq14(): List[Result[Int32, Option[a]]] = Ok(21) :: Nil
 
     @test
-    def testLeq15(): List[Result[Int, Result[t, e]]] = Ok(21) :: Nil
+    def testLeq15(): List[Result[Int32, Result[t, e]]] = Ok(21) :: Nil
 
     @test
-    def testLeq16(): List[Result[Int, Map[k, v]]] = Ok(21) :: Nil
+    def testLeq16(): List[Result[Int32, Map[k, v]]] = Ok(21) :: Nil
 
     @test
     def testLeq17(): a -> (b -> a) = x -> (_ -> x)
