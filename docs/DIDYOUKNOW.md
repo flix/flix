@@ -4,6 +4,8 @@
 
 Did you know that:
 
+- unique combination of features.
+
 - Flix has no global state.
 
 - Flix is one language. There are no pragmas or compiler flags to enable or disable features. 
@@ -35,15 +37,13 @@ Did you know that:
 
 - Flix does not have labelled arguments.
 
-- Default Implementations
+- In Flix type classes can provide default implementations. A default implementation can be
+  overriden by specific instances (usually for performance reasons).
 
-- Explicit Override
+- Flix supports full tail call elimination, i.e. tail calls do not grow the stack.
+  (Flix-- being on the JVM -- has to emulate tail calls until Project Loom arrives.)
 
-- Full tail calls. 
-
-- extensible records
-
-- unique combination of features.
+- Flix supports extensible records with row types.
 
 - Type classes can be declared sealed.
 
@@ -70,21 +70,19 @@ Did you know that:
 
 Did you know that:
 
-- Flix's standard library is extensive.
+- Flix has an extensive standard library with more than 2,000 functions 
+  spanning more than 30,000 lines of code.
 
-- Flix has minimal prelude with only 18 functions.
+- the Flix Prelude (the collection of functions which are imported by default) is 
+  deliberately kept minimal and contains less than 20 functions.
 
-- All functions in the Flix prelude are total. Most functions in the Flix library are total.
+- most higher-order functions in the Flix standard library are effect polymorphic
+  (they can be called with pure or impure functions). The exceptions are functions
+  that define (or use) equality, ordering, etc.
 
-- No blessed library.
-
-- Mutable data is functional data
-
-- Consistent names of functional and destructive operations
+- mutable data structures usually have two operations. For example, map and transform!.
 
 - Destructive operations are marked with '!'
-
-- The Flix standard library is X lines of code.
 
 - Flix library uses records to for certain function arguments.
 
@@ -142,7 +140,7 @@ Did you know that:
 Did you know that:
 
 - Flix is developed by programming language researchers at Aarhus University (Denmark) 
-  in collaboration with researchers at the University of Waterloo (Canada), at
+  in collaboration with researchers at the University of Waterloo (Canada), and at
   Eberhard Karls University of Tübingen (Germany), and by a growing open source community.
 
 - Flix has received grants from the Independent Research Fund Denmark, 
