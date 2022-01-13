@@ -77,10 +77,18 @@ Did you know that:
 - Flix -- by design -- does not support variadic functions. We believe such overloading
   is unprincipled and unnecessary.
 
-- Flix -- by design -- does not support labelled arguments. Records can be used instead and works
+- Flix -- by design -- does not support labelled arguments. Records can be used as an alternative and works
   both for top-level, local, and first-class functions.
 
-- Flix defines division by zero to equal zero.
+- Flix has a unique meta-programming facility that allows a higher-order function to inspect
+  the purity of its function argument(s).
+
+- Flix names its floats and integers types after their sizes (`Float32`, `Float64` and `Int32` and `Int64`).
+
+- Controversial: Flix defines division by zero to equal zero.
+
+- Controversial: Flix defines String division as concatenation with the path separator. 
+  For example, `"Foo" / "Bar.txt" => "Foo\Bar.txt"` on Windows.
 
 ## Standard Library
 
@@ -107,7 +115,7 @@ Did you know that:
 
 - the Flix `Foldable` module offers more than 30 functions.
 
-- Flix uses monomorphization hence primitive values are (almost) never boxed.
+- the Flix standard library follows the convention of "subject-last" to allow for pipelining (`|>`).
 
 ## Ecosystem
 
@@ -145,6 +153,8 @@ Did you know that:
 
 - Flix -- by design -- has no compiler warnings, only compiler errors.
   Warnings can be ignored, but errors cannot be.
+
+- Flix uses monomorphization hence primitive values are (almost) never boxed.
 
 - the Flix compiler supports incremental and parallel compilation.
 
