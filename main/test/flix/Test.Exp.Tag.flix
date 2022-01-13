@@ -10,7 +10,7 @@ namespace Test/Exp/Tag {
         case OfInt16(Int16)
         case OfInt32(Int32)
         case OfInt64(Int64)
-        case OfBigInt(BigInt32)
+        case OfBigInt(BigInt)
         case OfString(String)
         case OfArrayOfInt(Array[Int32])
         case OfArrayOfString(Array[String])

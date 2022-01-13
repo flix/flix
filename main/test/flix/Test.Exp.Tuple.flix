@@ -52,10 +52,10 @@ namespace Test/Exp/Tuple {
     def testInt64Tuple02(): (Int64, Int64, Int64) = (1i64, 2i64, 3i64)
 
     @test
-    def testBigIntTuple01(): (BigInt, BigInt32) = (1ii, 2ii)
+    def testBigIntTuple01(): (BigInt, BigInt) = (1ii, 2ii)
 
     @test
-    def testBigIntTuple02(): (BigInt, BigInt, BigInt32) = (1ii, 2ii, 3ii)
+    def testBigIntTuple02(): (BigInt, BigInt, BigInt) = (1ii, 2ii, 3ii)
 
     @test
     def testStringTuple01(): (String, String) = ("abc", "def")

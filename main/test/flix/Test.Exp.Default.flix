@@ -28,6 +28,6 @@ namespace Test/Exp/Default {
     def testDefaultInt64(): Bool = ($DEFAULT$: Int64) == 0i64
 
     @test
-    def testDefaultBigInt(): Bool = ($DEFAULT$: BigInt32) == 0ii
+    def testDefaultBigInt(): Bool = ($DEFAULT$: BigInt) == 0ii
 
 }
