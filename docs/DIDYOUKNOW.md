@@ -39,6 +39,12 @@ Did you know that:
 
 - Explicit Override
 
+- Full tail calls. 
+
+- extensible records
+
+- unique combination of features.
+
 - Type classes can be declared sealed.
 
 - Flix compiles to JVM bytecode and runs on the Java Virtual Machine.
@@ -65,7 +71,6 @@ Did you know that:
 Did you know that:
 
 - Flix's standard library is extensive.
-
 
 - Flix has minimal prelude with only 18 functions.
 
