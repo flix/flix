@@ -43,7 +43,7 @@ Did you know that:
 - Flix supports full tail call elimination, i.e. tail calls do not grow the stack.
   (Flix-- being on the JVM -- has to emulate tail calls until Project Loom arrives.)
 
-- Flix supports extensible records with row types.
+- Flix supports extensible records with row polymorphism.
 
 - Type classes can be declared sealed.
 
