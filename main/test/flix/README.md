@@ -17,7 +17,7 @@ We aim to obey four rules:
     - Int64
     - BigInt
     - String
-    - Array of a primitive (e.g. Char and/or Int).
+    - Array of a primitive (e.g. Char and/or Int32).
     - Array of a non-primitive (e.g. Option, List, and/or Result).
     - Enums and Tuples.
     - Polymorphic enums.

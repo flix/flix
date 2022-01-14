@@ -1,43 +1,43 @@
 namespace Test/Exp/Fixpoint/Compose {
 
     @test
-    def testFixpointCompose01(): #{ A(Int, Int, Int) } =
+    def testFixpointCompose01(): #{ A(Int32, Int32, Int32) } =
         let c1 = #A(1, 1, 1).;
         solve c1 <+> c1
 
     @test
-    def testFixpointCompose02(): #{ A(Int, Int, Int)  } =
+    def testFixpointCompose02(): #{ A(Int32, Int32, Int32)  } =
         let c1 = #A(1, 1, 1).;
         solve c1 <+> c1 <+> c1
 
     @test
-    def testFixpointCompose03(): #{ A(Int, Int, Int)  } =
+    def testFixpointCompose03(): #{ A(Int32, Int32, Int32)  } =
         let c1 = #A(1, 1, 1).;
         solve (solve c1 <+> c1) <+> (solve c1 <+> c1)
 
     @test
-    def testFixpointCompose04(): #{ A(Int, Int, Int)  } =
+    def testFixpointCompose04(): #{ A(Int32, Int32, Int32)  } =
         let c1 = #A(1, 1, 1).;
         let c2 = #A(2, 2, 2).;
         let c3 = #A(x, y, z) :- A(x, y, z).;
         solve c1 <+> c2 <+> c3
 
     @test
-    def testFixpointCompose05(): #{ A(Int, Int, Int)  } =
+    def testFixpointCompose05(): #{ A(Int32, Int32, Int32)  } =
         let c1 = #A(1, 1, 1).;
         let c2 = #A(2, 2, 2).;
         let c3 = #A(x, y, z) :- A(x, y, z).;
         solve (solve (c1 <+> c2) <+> c3)
 
     @test
-    def testFixpointCompose06(): #{ A(Int, Int, Int)  } =
+    def testFixpointCompose06(): #{ A(Int32, Int32, Int32)  } =
         let c1 = #A(1, 1, 1).;
         let c2 = #A(2, 2, 2).;
         let c3 = #A(x, y, z) :- A(x, y, z).;
         solve (c1 <+> solve (c2 <+> c3))
 
     @test
-    def testFixpointCompose07(): #{ A(Int, Int, Int)  } =
+    def testFixpointCompose07(): #{ A(Int32, Int32, Int32)  } =
         let c1 = #A(1, 1, 1).;
         let c2 = #A(2, 2, 2).;
         let c3 = #A(x, y, z) :- A(x, y, z).;
@@ -45,7 +45,7 @@ namespace Test/Exp/Fixpoint/Compose {
         solve c1 <+> c2 <+> c3 <+> c4
 
     @test
-    def testFixpointCompose08(): #{ A(Int, Int, Int)  } =
+    def testFixpointCompose08(): #{ A(Int32, Int32, Int32)  } =
         let c1 = #A(1, 1, 1).;
         let c2 = #A(2, 2, 2).;
         let c3 = #A(x, y, z) :- A(x, y, z).;
@@ -53,7 +53,7 @@ namespace Test/Exp/Fixpoint/Compose {
         solve (solve (c1 <+> c2)) <+> (c3 <+> c4)
 
     @test
-    def testFixpointCompose09(): #{ A(Int, Int, Int)  } =
+    def testFixpointCompose09(): #{ A(Int32, Int32, Int32)  } =
         let c1 = #A(1, 1, 1).;
         let c2 = #A(2, 2, 2).;
         let c3 = #A(x, y, z) :- A(x, y, z).;
@@ -61,13 +61,13 @@ namespace Test/Exp/Fixpoint/Compose {
         solve (c1 <+> c2) <+> (c2 <+> c1) <+> (c3 <+> c4) <+> (c4 <+> c3)
 
     @test
-    def testFixpointCompose10(): #{ P(Int, Int, Int) } =
+    def testFixpointCompose10(): #{ P(Int32, Int32, Int32) } =
         let c1 = #P(1, 123, 1).;
         let c2 = #P(2, 123, 2).;
         solve c1 <+> c2
 
     @test
-    def testFixpointCompose11(): (#{ P(Int, Int, Int) }, #{ P(Int, String, Int) }) =
+    def testFixpointCompose11(): (#{ P(Int32, Int32, Int32) }, #{ P(Int32, String, Int32) }) =
         let c1 = #P(1, 123, 1).;
         let c2 = #P(2, 123, 2).;
         let c3 = #P(1, "a", 1).;
@@ -77,7 +77,7 @@ namespace Test/Exp/Fixpoint/Compose {
         (ra, rb)
 
     @test
-    def testFixpointCompose12(): (#{ P(Int, Int, Int) }, #{ P(Int, String, Int) }) =
+    def testFixpointCompose12(): (#{ P(Int32, Int32, Int32) }, #{ P(Int32, String, Int32) }) =
         let c1 = #P(1, 123, 1).;
         let c2 = #P(x, 555, z) :- P(x, 555, z).;
         let c3 = #P(1, "a", 1).;

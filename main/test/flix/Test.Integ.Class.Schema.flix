@@ -14,7 +14,7 @@ namespace Test/Integ/Class/Schema {
     instance C[Int32]
 
     instance D[Int32] {
-        pub def f(_x: Int): #{ R(Int32, Bool) } = #{
+        pub def f(_x: Int32): #{ R(Int32, Bool) } = #{
             R(2, false).
         }
     }
