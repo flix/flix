@@ -872,6 +872,28 @@ namespace Array {
         foldLeft((b,x) -> if (f(x)) b + 1 else b, 0, a) as & Impure
 
     ///
+    /// Returns the product of all elements in the array `a`.
+    ///
+    pub def product(a: Array[Int32]): Int32 & Impure =
+        productWith(x -> x, a)
+
+    ///
+    /// Returns the product of all elements in the array `a` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, a: Array[a]): Int32 & Impure =
+        if (isEmpty(a))
+            0
+        else {
+            let l = length(a);
+            def loop(i, acc) =
+                if (i < l)
+                    loop(i + 1, f(a[i]) * acc)
+                else
+                    acc;
+            loop(0, 1)
+        }
+
+    ///
     /// Returns the concatenation of the arrays of in the array `arrs`.
     ///
     @Time(length(arrs)) @Space(length(arrs))
