@@ -664,6 +664,29 @@ namespace LazyList {
         foldLeft((i, x) -> if (f(x)) i + 1 else i, 0, l)
 
     ///
+    /// Returns the product of all elements in the LazyList `l`.
+    ///
+    @Experimental
+    pub def product(l: LazyList[Int32]): Int32 =
+        productWith(x -> x, l)
+
+    ///
+    /// Returns the product of all elements in the LazyList `l` according to the function `f`.
+    ///
+    @Experimental
+    pub def productWith(f: a -> Int32 & ef, l: LazyList[a]): Int32 & ef =
+        if (isEmpty(l))
+            0
+        else
+            def loop(l1, acc) = match l1 {
+                case ENil         => acc
+                case ECons(x, xs) => loop(      xs, f(x) * acc)
+                case LCons(x, xs) => loop(force xs, f(x) * acc)
+                case LList(xs)    => loop(force xs,        acc)
+            };
+            loop(l, 1)
+
+    ///
     /// Returns the concatenation of the elements in `l`.
     ///
     /// Does not force the tail of `l`.
