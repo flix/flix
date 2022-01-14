@@ -124,7 +124,35 @@ namespace Iterator {
         Iterator(done, next)
 
     ///
+    /// Returns the product of all elements in the iterator `iter`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def product(iter: Iterator[Int32]): Int32 & Impure =
+        productWith(x -> x, iter)
+
+    ///
+    /// Returns the product of all elements in the iterator `iter` according to the function `f`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def productWith(f: a -> Int32 & ef, iter: Iterator[a]): Int32 & Impure =
+        if (isEmpty(iter))
+            0
+        else {
+            let Iterator(done, next) = iter;
+            def loop(acc) =
+                if (done())
+                    acc
+                else
+                    loop(f(next()) * acc);
+            loop(1)
+        }
+
+    ///
     /// Returns an array with the elements of `iter`.
+    ///
+    /// Consumes the entire iterator.
     ///
     pub def toArray(iter: Iterator[a]): Array[a] & Impure =
         let Iterator(done, next) = iter;
