@@ -866,6 +866,108 @@ def count08(): Bool & Impure =
     MutList.toList(a) == range
 
 
+    /////////////////////////////////////////////////////////////////////////////
+    // productValues                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productValues01(): Bool =
+        Map.empty() |> Map.productValues == 0
+
+    @test
+    def productValues02(): Bool =
+        Map#{1 => 1} |>
+            Map.productValues == 1
+
+    @test
+    def productValues03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |>
+            Map.productValues == 6
+
+    @test
+    def productValues04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |>
+            Map.productValues == -18
+
+    @test
+    def productValues05(): Bool =
+        Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4} |>
+            Map.productValues == 24
+
+    @test
+    def productValues06(): Bool =
+        Map#{10 => 10, -10 => -10} |>
+            Map.productValues == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productKeys                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productKeys01(): Bool =
+        Map.empty() |> Map.productValues == 0
+
+    @test
+    def productKeys02(): Bool =
+        Map#{1 => 1} |>
+            Map.productKeys == 1
+
+    @test
+    def productKeys03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |>
+            Map.productKeys == 6
+
+    @test
+    def productKeys04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |>
+            Map.productKeys == -18
+
+    @test
+    def productKeys05(): Bool =
+        Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4} |>
+            Map.productKeys == 40
+
+    @test
+    def productKeys06(): Bool =
+        Map#{10 => 10, -10 => -10} |>
+            Map.productKeys == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool =
+        Map.empty() |> Map.productWith((k, v) -> k + v) == 0
+
+    @test
+    def productWith02(): Bool =
+        Map#{1 => 1} |>
+            Map.productWith((k, v) -> k + v) == 2
+
+    @test
+    def productWith03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |>
+            Map.productWith((k, v) -> k + v) == 48
+
+    @test
+    def productWith04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |>
+            Map.productWith((k, v) -> k + v) == -288
+
+    @test
+    def productWith05(): Bool =
+        Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4} |>
+            Map.productWith((k, v) -> k + v) == 384
+
+    @test
+    def productWith06(): Bool =
+        Map#{10 => 10, -10 => -10} |>
+            Map.productWith((k, v) -> k + v) == -400
+
+
 /////////////////////////////////////////////////////////////////////////////
 // exists                                                                  //
 /////////////////////////////////////////////////////////////////////////////
