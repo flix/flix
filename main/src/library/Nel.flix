@@ -381,6 +381,23 @@ namespace Nel {
     }
 
     ///
+    /// Returns the product of all elements in the list `l`.
+    ///
+    pub def product(l: Nel[Int32]): Int32 =
+        productWith(x -> x, l)
+
+    ///
+    /// Returns the product of all elements in the list `l` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, l: Nel[a]): Int32 & ef =
+        def loop(l1, acc) = match l1 {
+            case Nil     => acc
+            case x :: xs => loop(xs, f(x) * acc)
+        };
+        let Nel(x, xs) = l;
+        loop(x :: xs, 1)
+
+    ///
     /// Returns the concatenation of the elements in `l`.
     ///
     @Time(length(l)) @Space(length(l))
