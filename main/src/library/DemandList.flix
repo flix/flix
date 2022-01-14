@@ -398,6 +398,29 @@ namespace DemandList {
     }
 
     ///
+    /// Returns the product of all elements in the DemandList `l`.
+    ///
+    @Experimental
+    pub def product(l: DemandList[Int32, Forced]): Int32 =
+        productWith(x -> x, l)
+
+    ///
+    /// Returns the product of all elements in the DemandList `l` according to the function `f`.
+    ///
+    @Experimental
+    pub def productWith(f: a -> Int32 & ef, l: DemandList[a, Forced]): Int32 & ef =
+        if (isEmpty(l))
+            0
+        else
+            def loop(l1, acc) = match l1 {
+                case ENil         => acc
+                case ECons(x, xs) => loop(      xs, f(x) * acc)
+                case LCons(x, xs) => loop(force xs, f(x) * acc)
+                case LList(xs)    => loop(force xs,        acc)
+            };
+            loop(l, 1)
+
+    ///
     /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
     ///
     /// Returns `false` if `l` is empty.

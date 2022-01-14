@@ -639,6 +639,64 @@ namespace TestDemandList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool =
+        List.toDemandList(Nil) |> DemandList.product == 0
+
+    @test
+    def product02(): Bool =
+        List.toDemandList(1 :: Nil) |> DemandList.product == 1
+
+    @test
+    def product03(): Bool =
+        List.toDemandList(1 :: 2 :: 3 :: Nil) |> DemandList.product == 6
+
+    @test
+    def product04(): Bool =
+        List.toDemandList(1 :: 2 :: 3 :: -3 :: Nil) |> DemandList.product == -18
+
+    @test
+    def product05(): Bool =
+        List.toDemandList(-1 :: -2 :: -3 :: -4 :: Nil) |> DemandList.product == 24
+
+    @test
+    def product06(): Bool =
+        List.toDemandList(10 :: -10 :: Nil) |> DemandList.product == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool =
+        List.toDemandList(Nil) |> DemandList.productWith(x -> x + 1) == 0
+
+    @test
+    def productWith02(): Bool =
+        List.toDemandList(1 :: Nil) |> DemandList.productWith(x -> x + 1) == 2
+
+    @test
+    def productWith03(): Bool =
+        List.toDemandList(1 :: 2 :: 3 :: Nil) |> DemandList.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith04(): Bool =
+        List.toDemandList(1 :: 2 :: 3 :: -3 :: Nil) |> DemandList.productWith(x -> x + 1) == -48
+
+    @test
+    def productWith05(): Bool =
+        List.toDemandList(-2 :: -3 :: -4 :: -5 :: Nil) |> DemandList.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith06(): Bool =
+        List.toDemandList(10 :: -10 :: Nil) |> DemandList.productWith(x -> x + 1) == -99
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
