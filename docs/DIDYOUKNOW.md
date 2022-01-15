@@ -215,3 +215,7 @@ Did you know that:
 - more than 40 people have contributed to the Flix compiler.
 
 - more than 1,500 pull requests have been merged into the Flix compiler.
+
+- Flix used to support uniform function call syntax (UFCS) but we could not
+  overcome the fundamental ambiguities in the expression `e1.f(e2)`.
+
