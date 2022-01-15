@@ -4,43 +4,49 @@
 
 Did you know that:
 
-- Flix offers a unique combination of features, including: algebraic data types and pattern matching, 
-  extensible records, type classes, higher-kinded types, channel and process-based concurrency, 
-  a polymorphic effect system, purity polymorphic functions, and first-class Datalog constraints.
+- Flix offers a unique combination of features, including: algebraic data types
+  and pattern matching, extensible records, type classes, higher-kinded types,
+  polymorphic effects, and first-class Datalog constraints.
 
-- Flix has no implicit global state. Any global state must be passed around explicitly.
+- Flix has no global state. Any state must be passed around explicitly.
 
-- Flix is one language. There are no pragmas or compiler flags to enable or disable features. 
+- Flix is one language. There are no pragmas or compiler flags to enable or
+  disable features.
 
-- Flix supports type parameter elision. That is, in most cases, a polymorphic function does 
-  can be written without explicitly declaring its type parameters.
+- Flix supports type parameter elision. That is, polymorphic functions can be
+  written without explicitly introducing their type parameters. For example,
+  `def map(f: a -> b, l: List[a]): List[b]`.
 
-- the Flix type and effect system can enforce purity.
+- the Flix type and effect system can enforce that a function argument is pure.
 
-- Flix supports effect polymorphism. For example, the effect of `List.map` 
-  depends on the effect of its argument.
+- Flix supports effect polymorphism. For example, the `List.map` function is
+  effect polymorphic: its purity depends on the purity of its function argument.
 
-- every declaration in Flix is private by default.
+- in Flix every declaration is private by default.
 
-- In Flix nothing in is executed before `main`. There is no global state nor any static initializers.
+- In Flix no execution happens before `main`. There is no global state nor any
+  static field initializers.
 
-- Flix supports full tail call elimination, i.e. tail calls do not grow the stack.
-  (Flix-- being on the JVM -- has to emulate tail calls until Project Loom arrives.)
+- Flix supports full tail call elimination, i.e. tail calls do not grow the
+  stack. Flix -- being on the JVM -- emulates tail calls until Project Loom
+  arrives.
 
 - Flix supports extensible records with row polymorphism.
 
-- Flix supports string interpolation by default, e.g. "Hello ${name}". String interpolation
-  uses the `ToString` type class -- as it should be.
+- Flix supports string interpolation by default, e.g. "Hello ${name}". String
+  interpolation uses the `ToString` type class.
 
-- Flix supports the "pipeline" operator `|>` and the Flix standard library is designed 
-  to make good use of it.
+- Flix supports the "pipeline" operator `|>` and the Flix standard library is
+  designed around it.
 
-- In Flix variables and function definitions must be lowercase whereas enum cases and types must be uppercase. 
-  This convention makes it faster and simpler to read signatures.
+- In Flix type variables are lowercase and types are uppercase.
+
+- In Flix local variables and functions are lowercase whereas enum constructors
+  are uppercase.
 
 - Flix supports set and map literals `Set#{1, 2, 3}` and `Map#{1 => 2, 3 => 4}`.
 
-- Flix supports monadic do-notation called `let*`.
+- Flix supports monadic do-notation with the `let*` construct.
 
 - Flix supports "program holes" written as either `???` or as `?name`.
 
@@ -48,78 +54,92 @@ Did you know that:
 
 - Flix compiles to JVM bytecode and runs on the Java Virtual Machine.
 
-- Flix supports channels and processes, including the powerful `select` expression.
+- Flix supports channel and process-based concurrency, including the powerful
+  `select` expression.
 
-- Flix supports first-class Datalog constraints, i.e. Datalog program fragments are values.
+- Flix supports first-class Datalog constraints, i.e. Datalog program fragments
+  are values that can be passed to and returned from functions, etc.
 
 - Flix supports compile-time checked stratified negation.
 
 - Flix supports partial application, i.e. a function can be called with fewer
-  arguments that its declared number of formal parameters.
+  arguments that its declared formal parameters.
 
-- the Flix type and effect system is based on Hindley-Milner.
-  The same core type system that powers OCaml, Standard ML, and Haskell.
+- the Flix type and effect system is powered by Hindley-Milner. The same core
+  type system that is used by OCaml, Standard ML, and Haskell.
 
-- the Flix type and effect system is sound, i.e. if a program type checks
-  then a type error cannot occur at run-time.
+- the Flix type and effect system is sound, i.e. if a program type checks then a
+  type error cannot occur at run-time. If an expression is pure then it cannot
+  have a side-effect.
 
-- the Flix type and effect system supports complete type inference, i.e.
-  if a program is typeable then the type inference in the Flix compiler
-  will find the typing without a single annotation.
+- the Flix type and effect system supports complete type inference, i.e. if a
+  program is typeable then the type inference with find the typing.
 
-- The Flix "Tips and Tricks"-section https://doc.flix.dev/tipstricks/ contains many useful niceties.
+- The Flix "Tips and Tricks"-section https://doc.flix.dev/tipstricks/ describes
+  many useful smaller features of the language.
 
-- Flix -- by design -- has no implicit coercions (but does provide several explicit coercion functions).
+- Flix has a unique meta-programming feature that allows a higher-order
+  functions to inspect the purity of its function argument(s).
 
-- Flix -- by design -- disallows unused variables and shadowed variables. Unused and shadowed variables are a frequent source of bugs.
+- Flix names its floats and integers types after their sizes, e.g. `Float32`,
+  `Float64`, `Int32` and `Int64`.
 
-- Flix -- by design -- disallows allow unused declarations. This prevents bit rot.
+- Flix -- by design -- uses records for labelled arguments. Records are a
+  natural part of the type system and works for top-level, local, and
+  first-class functions.
 
-- Flix -- by design -- does not support function overloading. Instead, functions are given meaningful names, e.g.
-  `Map.insert` and `Map.insertWithKey`.
+- Flix -- by design -- has no implicit coercions, but provide several functions
+  for explicit coercions.
 
-- Flix -- by design -- does not support variadic functions. We believe such overloading
-  is unprincipled and unnecessary.
+- Flix -- by design -- disallows unused variables and shadowed variables since
+  these are a frequently source of bugs.
 
-- Flix -- by design -- uses records for labelled arguments. Records are part of the type system and works
-  for top-level, local, and first-class functions. 
+- Flix -- by design -- disallows allow unused declarations. This prevents bit
+  rot.
 
-- Flix has a unique meta-programming facility that allows a higher-order function to inspect
-  the purity of its function argument(s).
+- Flix -- by design -- does not support unprincipled overloading. Instead,
+  functions are given meaningful names, e.g. `Map.insert` and
+  `Map.insertWithKey`.
 
-- Flix names its floats and integers types after their sizes (`Float32`, `Float64` and `Int32` and `Int64`).
+- Flix -- by design -- does not support variadic functions. We believe it is
+  better to pass an explicit array or list.
 
 - Controversial: Flix defines division by zero to equal zero.
 
-- Controversial: Flix defines String division as concatenation with the path separator. 
-  For example, `"Foo" / "Bar.txt" => "Foo\Bar.txt"` on Windows.
+- Controversial: Flix defines String division as concatenation with the path
+  separator. For example, `"Foo" / "Bar.txt" => "Foo\Bar.txt"` on Windows.
 
 ## Standard Library
 
 Did you know that:
 
-- Flix has an extensive standard library with more than 2,000 functions 
-  spanning more than 30,000 lines of code.
+- Flix has an extensive standard library with more than 2,000 functions spanning
+  more than 30,000 lines of code.
 
-- the Flix Prelude (the collection of functions which are imported by default) is 
-  deliberately kept minimal and contains less than 20 functions.
+- the Flix Prelude, i.e. the functions which are imported by default, is kept
+  minimal and contains less than 20 functions.
 
-- most higher-order functions in the Flix standard library are effect polymorphic
-  (they can be called with pure or impure functions). The exceptions are functions
-  that define (or use) equality, ordering, etc.
+- most higher-order functions in the Flix standard library are effect
+  polymorphic, i.e. they can be called with pure or impure functions.
 
-- operations that mutate data structures end with an exclamation mark. For example `Array.transform!`.
+- the Flix type and effect system enforces that equality and ordering functions
+  must be pure.
 
-- the Flix standard library uses records to avoid confusion when functions take multiple arguments of
-  the same type. For example, `String.contains` must be called as `String.contains(substr = "foo", "bar")`.
+- by convention, operations that mutate data structures end with an exclamation
+  mark. For example `Array.transform!`.
 
-- the Flix `List` module has more than 95 functions.
+- the Flix standard library uses records to avoid confusion when a function
+  takes multiple arguments of the same type. For example, `String.contains` must
+  be called as `String.contains(substr = "foo", "bar")`.
 
-- the Flix `String` module has more than 95 functions.
+- the Flix `List` module offers more than 95 functions.
+
+- the Flix `String` module offers more than 95 functions.
 
 - the Flix `Foldable` module offers more than 30 functions.
 
-- the Flix standard library follows the convention of "subject-last" to allow for pipelining (`|>`).
+- the Flix standard library follows the convention of "subject-last" to enable
+  pipelining (`|>`).
 
 ## Ecosystem
 
@@ -137,38 +157,39 @@ Did you know that:
 
 - the Flix VSCode extension uses the real Flix compiler.
 
-- the Flix VSCode extension supports auto-complete, jump to definition, 
-  hover to see type and effect, find all usages, renaming, and more.
+- the Flix VSCode extension supports auto-complete, jump to definition, hover to
+  show the type and effect of an expression, find all usages, and more.
 
-- the Flix VSCode extension has built-in snippets for type class instances.
-  Try `instance Eq [auto complete]`.
+- the Flix VSCode extension has built-in snippets for type class instances. Try
+  `instance Eq [auto complete]`.
 
-- the Flix VSCode extension supports semantic tokens (highlighting based not just on the syntax, 
-  but on the semantics of a program.)
+- the Flix VSCode extension supports semantic highlighting.
 
-- the Flix VSCode extension has built-in "code hints" that suggests when lazy and/or parallel
-  evaluation is enabled (or inhibited by impurity).
+- the Flix VSCode extension has built-in "code hints" that suggests when lazy
+  and/or parallel evaluation is enabled or inhibited by impurity.
 
-- Flix has community build where Flix libraries can be included in the CI process used to build Flix.
+- Flix has community build where Flix libraries can be included in the CI
+  pipeline used to build the Flix compiler.
 
-- Flix has a nascent build system and package manager (the latter based on GitHub releases). 
-  Today it is possible to build, package, and install Flix packages, but there is no dependency 
-  management yet.
+- Flix has a nascent build system and package manager based on GitHub releases.
+  Today it is possible to build, package, and install Flix packages. Dependency
+  management is in the works.
 
 ## Compiler
 
 Did you know that:
 
-- Flix -- by design -- has no compiler warnings, only compiler errors.
-  Warnings can be ignored, but errors cannot be.
+- Flix -- by design -- has no compiler warnings, only compiler errors. Warnings
+  can be ignored, but errors cannot be.
 
-- Flix uses monomorphization hence primitive values are (almost) never boxed.
+- the Flix compiler uses monomorphization hence primitive values are (almost)
+  never boxed.
 
 - the Flix compiler supports incremental and parallel compilation.
 
 - the Flix compiler has more than 28 compiler phases.
 
-- the Flix compiler contains more than 150,000 lines of code.
+- the Flix compiler contains more than 80,000 lines of code.
 
 - the Flix compiler has more than 12,500 manually written unit tests.
 
@@ -178,14 +199,16 @@ Did you know that:
 
 Did you know that:
 
-- Flix is developed by programming language researchers at Aarhus University (Denmark) 
-  in collaboration with researchers at the University of Waterloo (Canada), and at
-  Eberhard Karls University of Tübingen (Germany), and by a growing open source community.
+- Flix is developed by programming language researchers at Aarhus University
+  (Denmark) in collaboration with researchers at the University of Waterloo
+  (Canada), and at Eberhard Karls University of Tübingen (Germany), and by a
+  growing open source community.
 
-- Several novel aspects of the Flix programming language has been described in the research literature.
+- Several novel aspects of the Flix programming language has been described in
+  the research literature.
 
-- Flix has received grants from the Independent Research Fund Denmark, 
-  from Amazon Research, and from the Concordium Foundation.
+- Flix has received grants from the Independent Research Fund Denmark, from
+  Amazon Research, and from the Concordium Foundation.
 
 - Flix has been discussed on Reddit, HackerNews, and LambdaTheUltimate.
 
