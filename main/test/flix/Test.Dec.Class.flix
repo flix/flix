@@ -176,14 +176,14 @@ namespace Test/Dec/Class {
 
     namespace Test14 {
         lawless class C[a] {
-            pub def c(x: a): Int
+            pub def c(x: a): Int32
         }
 
         lawless class D[a] with C[a] {
-            pub def d(x: a): Int
+            pub def d(x: a): Int32
         }
 
-        pub def f(x: a): Int with D[a] = Test/Dec/Class/Test14/C.c(x) + Test/Dec/Class/Test14/D.d(x)
+        pub def f(x: a): Int32 with D[a] = Test/Dec/Class/Test14/C.c(x) + Test/Dec/Class/Test14/D.d(x)
     }
 
     namespace Test15 {

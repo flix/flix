@@ -14,7 +14,7 @@ namespace Test/Exp/Record/Extend {
         r2
 
     @test
-    def testRecordExtend03(): { fstName :: String, lstName :: String, age :: Int } =
+    def testRecordExtend03(): { fstName :: String, lstName :: String, age :: Int32 } =
         let r0 = {};
         let r1 = { +fstName = "Lucky" | r0 };
         let r2 = { +lstName = "Luke" | r1 };
@@ -55,14 +55,14 @@ namespace Test/Exp/Record/Extend {
             r2
 
     @test
-    def testRecordDuplicateExtend02(): { x :: Int, x :: Int, x :: Int } =
+    def testRecordDuplicateExtend02(): { x :: Int, x :: Int, x :: Int32 } =
         let r0 = { +x = 123 | {} };
         let r1 = { +x = 456 | r0 };
         let r2 = { +x = 789 | r1 };
             r2
 
     @test
-    def testRecordDuplicateExtend03(): { x :: Int, y :: Char, x :: Int, y :: Char, x :: Int } =
+    def testRecordDuplicateExtend03(): { x :: Int, y :: Char, x :: Int, y :: Char, x :: Int32 } =
         let r0 = { +x = 123 | {} };
         let r1 = { +y = 'a' | r0 };
         let r2 = { +x = 456 | r1 };

@@ -51,7 +51,7 @@ namespace Test/Currying {
     ///
     /// A function of arity 2.
     ///
-    def f(x: Int, y: Int32): Int32 = x + y
+    def f(x: Int32, y: Int32): Int32 = x + y
 
     ///
     /// A function of arity 3.
@@ -66,16 +66,16 @@ namespace Test/Currying {
     ///
     /// A curried function of arity 2.
     ///
-    def i(x: Int32): Int -> Int = y -> x + y
+    def i(x: Int32): Int32 -> Int32 = y -> x + y
 
     ///
     /// A curried function of arity 3.
     ///
-    def j(x: Int32): Int -> Int -> Int = y -> z -> x + y + z
+    def j(x: Int32): Int32 -> Int32 -> Int32 = y -> z -> x + y + z
 
     ///
     /// A curried higher-order function.
     ///
-    def k(f: Int -> Int32): Int -> Int = x -> f(x)
+    def k(f: Int32 -> Int32): Int32 -> Int32 = x -> f(x)
 
 }

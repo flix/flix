@@ -10,7 +10,7 @@ namespace Test/Exp/Record/Polymorphism {
         let _p6 = withZ(p3, 84);
         ()
 
-    def withZ(rec: { x :: Int, y :: Int }, z: Int32): { x :: Int, y :: Int, z :: Int } =
+    def withZ(rec: { x :: Int, y :: Int32 }, z: Int32): { x :: Int, y :: Int, z :: Int32 } =
         { +z = z | rec }
 
     @test
@@ -23,7 +23,7 @@ namespace Test/Exp/Record/Polymorphism {
         let _p6 = withAge(p3, 84);
         ()
 
-    def withAge(rec: { fstName :: String, lstName :: String }, age: Int32): { fstName :: String, lstName :: String, age :: Int } =
+    def withAge(rec: { fstName :: String, lstName :: String }, age: Int32): { fstName :: String, lstName :: String, age :: Int32 } =
         { +age = age | rec }
 
     @test
