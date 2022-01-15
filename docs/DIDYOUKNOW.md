@@ -216,6 +216,18 @@ Did you know that:
 
 - more than 1,500 pull requests have been merged into the Flix compiler.
 
+## History
+
 - Flix used to support uniform function call syntax (UFCS) but we could not
   overcome the fundamental ambiguities in the expression `e1.f(e2)`.
+
+- Flix used to support the `switch` expression, but it was removed since
+  `if-then-else` and `match` can express the same things. 
+
+- Flix used to support invoking nullary functions without parentheses. For
+  example, if `def f(): Int32 = 123` then one could write `f + 42`. This feature
+  was removed due to its inherent ambiguities. 
+
+- Flix used to infix type applications. For example, the type `Map[Int32,
+  String]` could be written as ```Int32 `Map` String```. 
 
