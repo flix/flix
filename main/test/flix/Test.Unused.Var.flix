@@ -55,17 +55,17 @@ namespace Test/Unused/Var {
         }
 
     @test
-    def testUnusedVar10(): Int & Impure =
-        let c = chan Int 1;
+    def testUnusedVar10(): Int32 & Impure =
+        let c = chan Int32 1;
         c <- 0;
         select {
             case _foo <- c => 123
         }
 
     @test
-    def testUnusedVar11(): Int & Impure =
-        let c1 = chan Int 1;
-        let c2 = chan Int 1;
+    def testUnusedVar11(): Int32 & Impure =
+        let c1 = chan Int32 1;
+        let c2 = chan Int32 1;
         c1 <- 0;
         c2 <- 0;
         select {

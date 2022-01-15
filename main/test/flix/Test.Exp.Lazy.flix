@@ -67,7 +67,7 @@ namespace Test/Exp/Lazy {
         lazy (lazy 123)
 
     @test
-    def testNestedLazy02(): Lazy[Int -> Lazy[String]] =
+    def testNestedLazy02(): Lazy[Int32 -> Lazy[String]] =
         lazy (x -> if (x < 0) lazy "neg" else lazy "pos")
 
     @test

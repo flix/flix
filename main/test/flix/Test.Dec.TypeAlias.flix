@@ -3,12 +3,12 @@ namespace Test/Dec/TypeAlias {
     /**
      * A type alias for degrees celsius.
      */
-    type alias Celsius = Int
+    type alias Celsius = Int32
 
     /**
      * A type alias for degrees fahrenheit.
      */
-    type alias Fahrenheit = Int
+    type alias Fahrenheit = Int32
 
     /**
      * A type alias for united states dollars.
@@ -108,7 +108,7 @@ namespace Test/Dec/TypeAlias {
     /**
      * An opaque type for Int.
      */
-    opaque type X = Int
+    opaque type X = Int32
 
     /**
      * An opaque type for Option.
