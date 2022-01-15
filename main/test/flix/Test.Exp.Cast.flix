@@ -19,16 +19,16 @@ namespace Test/Exp/Cast {
     def testCast06(): Float64 = 0.0f64 as Float64
 
     @test
-    def testCast07(): Int328 = 0i8 as Int8
+    def testCast07(): Int8 = 0i8 as Int8
 
     @test
-    def testCast08(): Int3216 = 0i16 as Int16
+    def testCast08(): Int16 = 0i16 as Int16
 
     @test
     def testCast09(): Int32 = 0i32 as Int32
 
     @test
-    def testCast10(): Int3264 = 0i64 as Int64
+    def testCast10(): Int64 = 0i64 as Int64
 
     @test
     def testCast11(): BigInt = 0ii as BigInt
@@ -61,16 +61,16 @@ namespace Test/Exp/Cast {
     def testCastWithEff06(): Float64 & Impure = 0.0f64 as Float64 & Impure
 
     @test
-    def testCastWithEff07(): Int328 & Impure = 0i8 as Int8 & Impure
+    def testCastWithEff07(): Int8 & Impure = 0i8 as Int8 & Impure
 
     @test
-    def testCastWithEff08(): Int3216 & Impure = 0i16 as Int16 & Impure
+    def testCastWithEff08(): Int16 & Impure = 0i16 as Int16 & Impure
 
     @test
     def testCastWithEff09(): Int32 & Impure = 0i32 as Int32 & Impure
 
     @test
-    def testCastWithEff10(): Int3264 & Impure = 0i64 as Int64 & Impure
+    def testCastWithEff10(): Int64 & Impure = 0i64 as Int64 & Impure
 
     @test
     def testCastWithEff11(): BigInt & Impure = 0ii as BigInt & Impure
@@ -103,16 +103,16 @@ namespace Test/Exp/Cast {
     def testCastWithWildAndEff06(): Float64 & Impure = 0.0f64 as & Impure
 
     @test
-    def testCastWithWildAndEff07(): Int328 & Impure = 0i8 as & Impure
+    def testCastWithWildAndEff07(): Int8 & Impure = 0i8 as & Impure
 
     @test
-    def testCastWithWildAndEff08(): Int3216 & Impure = 0i16 as & Impure
+    def testCastWithWildAndEff08(): Int16 & Impure = 0i16 as & Impure
 
     @test
     def testCastWithWildAndEff09(): Int32 & Impure = 0i32 as & Impure
 
     @test
-    def testCastWithWildAndEff10(): Int3264 & Impure = 0i64 as & Impure
+    def testCastWithWildAndEff10(): Int64 & Impure = 0i64 as & Impure
 
     @test
     def testCastWithWildAndEff11(): BigInt & Impure = 0ii as & Impure

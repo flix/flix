@@ -19,16 +19,16 @@ namespace Test/Exp/Ascribe {
     def testAscribe06(): Float64 = 0.0f64 : Float64
 
     @test
-    def testAscribe07(): Int328 = 0i8 : Int328
+    def testAscribe07(): Int8 = 0i8 : Int8
 
     @test
-    def testAscribe08(): Int3216 = 0i16 : Int3216
+    def testAscribe08(): Int16 = 0i16 : Int16
 
     @test
     def testAscribe09(): Int32 = 0i32 : Int32
 
     @test
-    def testAscribe10(): Int3264 = 0i64 : Int3264
+    def testAscribe10(): Int64 = 0i64 : Int64
 
     @test
     def testAscribe11(): BigInt = 0ii : BigInt

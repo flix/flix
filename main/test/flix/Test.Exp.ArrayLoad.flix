@@ -43,31 +43,31 @@ namespace Test/Exp/ArrayLoad {
     def testArrayLoad14(): Char & Impure = let x = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n']; x[9]
 
     @test
-    def testArrayLoad15(): Int328 & Impure = let x = [1i8]; x[0]
+    def testArrayLoad15(): Int8 & Impure = let x = [1i8]; x[0]
 
     @test
-    def testArrayLoad16(): Int328 & Impure = let x = [1i8, 2i8, 3i8]; x[1]
+    def testArrayLoad16(): Int8 & Impure = let x = [1i8, 2i8, 3i8]; x[1]
 
     @test
-    def testArrayLoad17(): Int328 & Impure = let x = [1i8, 2i8, 3i8, 4i8]; x[2]
+    def testArrayLoad17(): Int8 & Impure = let x = [1i8, 2i8, 3i8, 4i8]; x[2]
 
     @test
-    def testArrayLoad18(): Int3216 & Impure = let x = [1i16]; x[0]
+    def testArrayLoad18(): Int16 & Impure = let x = [1i16]; x[0]
 
     @test
-    def testArrayLoad19(): Int3216 & Impure = let x = [1i16, 2i16, 3i16]; x[1]
+    def testArrayLoad19(): Int16 & Impure = let x = [1i16, 2i16, 3i16]; x[1]
 
     @test
-    def testArrayLoad20(): Int3216 & Impure = let x = [1i16, 2i16, 3i16, 4i16]; x[2]
+    def testArrayLoad20(): Int16 & Impure = let x = [1i16, 2i16, 3i16, 4i16]; x[2]
 
     @test
-    def testArrayLoad21(): Int3264 & Impure = let x = [1i64]; x[0]
+    def testArrayLoad21(): Int64 & Impure = let x = [1i64]; x[0]
 
     @test
-    def testArrayLoad22(): Int3264 & Impure = let x = [1i64, 2i64, 3i64]; x[1]
+    def testArrayLoad22(): Int64 & Impure = let x = [1i64, 2i64, 3i64]; x[1]
 
     @test
-    def testArrayLoad23(): Int3264 & Impure = let x = [1i64, 2i64, 3i64, 4i64]; x[2]
+    def testArrayLoad23(): Int64 & Impure = let x = [1i64, 2i64, 3i64, 4i64]; x[2]
 
     @test
     def testArrayLoad24(): Float32 & Impure = let x = [1.0f32]; x[0]
@@ -139,49 +139,49 @@ namespace Test/Exp/ArrayLoad {
     def testArrayLoad46(): Char & Impure = let x = [['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', 'c']]; x[2][1]
 
     @test
-    def testArrayLoad47(): Int328 & Impure = let x = [[1i8, 2i8, 3i8]]; x[0][1]
+    def testArrayLoad47(): Int8 & Impure = let x = [[1i8, 2i8, 3i8]]; x[0][1]
 
     @test
-    def testArrayLoad48(): Int328 & Impure = let x = [[1i8, 2i8], [1i8, 2i8]]; x[1][0]
+    def testArrayLoad48(): Int8 & Impure = let x = [[1i8, 2i8], [1i8, 2i8]]; x[1][0]
 
     @test
-    def testArrayLoad49(): Int328 & Impure = let x = [[1i8, 2i8, 3i8, 4i8],[1i8]]; x[0][3]
+    def testArrayLoad49(): Int8 & Impure = let x = [[1i8, 2i8, 3i8, 4i8],[1i8]]; x[0][3]
 
     @test
-    def testArrayLoad50(): Int328 & Impure = let x = [[1i8], [1i8, 2i8, 3i8, 4i8]]; x[1][3]
+    def testArrayLoad50(): Int8 & Impure = let x = [[1i8], [1i8, 2i8, 3i8, 4i8]]; x[1][3]
 
     @test
-    def testArrayLoad51(): Int328 & Impure = let x = [[1i8, 2i8, 3i8], [1i8, 2i8, 3i8], [1i8, 2i8, 3i8]]; x[2][2]
+    def testArrayLoad51(): Int8 & Impure = let x = [[1i8, 2i8, 3i8], [1i8, 2i8, 3i8], [1i8, 2i8, 3i8]]; x[2][2]
 
     @test
-    def testArrayLoad52(): Int3216 & Impure = let x = [[1i16, 2i16, 3i16]]; x[0][1]
+    def testArrayLoad52(): Int16 & Impure = let x = [[1i16, 2i16, 3i16]]; x[0][1]
 
     @test
-    def testArrayLoad53(): Int3216 & Impure = let x = [[1i16, 2i16], [1i16, 2i16]]; x[1][1]
+    def testArrayLoad53(): Int16 & Impure = let x = [[1i16, 2i16], [1i16, 2i16]]; x[1][1]
 
     @test
-    def testArrayLoad54(): Int3216 & Impure = let x = [[1i16, 2i16, 3i16, 4i16], [1i16]]; x[0][1]
+    def testArrayLoad54(): Int16 & Impure = let x = [[1i16, 2i16, 3i16, 4i16], [1i16]]; x[0][1]
 
     @test
-    def testArrayLoad55(): Int3216 & Impure = let x = [[1i16], [1i16, 2i16, 3i16, 4i16]]; x[1][1]
+    def testArrayLoad55(): Int16 & Impure = let x = [[1i16], [1i16, 2i16, 3i16, 4i16]]; x[1][1]
 
     @test
-    def testArrayLoad56(): Int3216 & Impure = let x = [[1i16, 2i16, 3i16], [1i16, 2i16, 3i16], [1i16, 2i16, 3i16]]; x[1][2]
+    def testArrayLoad56(): Int16 & Impure = let x = [[1i16, 2i16, 3i16], [1i16, 2i16, 3i16], [1i16, 2i16, 3i16]]; x[1][2]
 
     @test
-    def testArrayLoad57(): Int3264 & Impure = let x = [[1i64, 2i64, 3i64]]; x[0][2]
+    def testArrayLoad57(): Int64 & Impure = let x = [[1i64, 2i64, 3i64]]; x[0][2]
 
     @test
-    def testArrayLoad58(): Int3264 & Impure = let x = [[1i64, 2i64], [1i64, 2i64]]; x[1][1]
+    def testArrayLoad58(): Int64 & Impure = let x = [[1i64, 2i64], [1i64, 2i64]]; x[1][1]
 
     @test
-    def testArrayLoad59(): Int3264 & Impure = let x = [[1i64], [1i64, 2i64, 3i64, 4i64]]; x[1][2]
+    def testArrayLoad59(): Int64 & Impure = let x = [[1i64], [1i64, 2i64, 3i64, 4i64]]; x[1][2]
 
     @test
-    def testArrayLoad60(): Int3264 & Impure = let x = [[1i64, 2i64, 3i64, 4i64], [1i64]]; x[1][0]
+    def testArrayLoad60(): Int64 & Impure = let x = [[1i64, 2i64, 3i64, 4i64], [1i64]]; x[1][0]
 
     @test
-    def testArrayLoad61(): Int3264 & Impure = let x = [[1i64, 2i64, 3i64], [1i64, 2i64, 3i64], [1i64, 2i64, 3i64]]; x[2][0]
+    def testArrayLoad61(): Int64 & Impure = let x = [[1i64, 2i64, 3i64], [1i64, 2i64, 3i64], [1i64, 2i64, 3i64]]; x[2][0]
 
     @test
     def testArrayLoad62(): Float32 & Impure = let x = [[1.0f32, 2.0f32, 3.0f32]]; x[0][0]
