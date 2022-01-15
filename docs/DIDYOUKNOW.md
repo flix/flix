@@ -17,12 +17,12 @@ Did you know that:
 
 - the Flix type and effect system can enforce purity.
 
-- Flix supports effect polymorphism? For example, the effect of `List.map` 
+- Flix supports effect polymorphism. For example, the effect of `List.map` 
   depends on the effect of its argument.
 
 - every declaration in Flix is private by default.
 
-- In Flix nothing in is executed before main. There is no global state nor any static initializers.
+- In Flix nothing in is executed before `main`. There is no global state nor any static initializers.
 
 - Flix supports full tail call elimination, i.e. tail calls do not grow the stack.
   (Flix-- being on the JVM -- has to emulate tail calls until Project Loom arrives.)
@@ -57,7 +57,7 @@ Did you know that:
 - Flix supports partial application, i.e. a function can be called with fewer
   arguments that its declared number of formal parameters.
 
-- the Flix type and effect system is based on Hindley-Miler.
+- the Flix type and effect system is based on Hindley-Milner.
   The same core type system that powers OCaml, Standard ML, and Haskell.
 
 - the Flix type and effect system is sound, i.e. if a program type checks
@@ -71,8 +71,7 @@ Did you know that:
 
 - Flix -- by design -- has no implicit coercions (but does provide several explicit coercion functions).
 
-- Flix -- by design -- disallows unused variables and shadowed variables. Research has shown that such
-  redundancies are correlated with bugs.
+- Flix -- by design -- disallows unused variables and shadowed variables. Unused and shadowed variables are a frequent source of bugs.
 
 - Flix -- by design -- disallows allow unused declarations. This prevents bit rot.
 
@@ -82,8 +81,8 @@ Did you know that:
 - Flix -- by design -- does not support variadic functions. We believe such overloading
   is unprincipled and unnecessary.
 
-- Flix -- by design -- does not support labelled arguments. Records can be used as an alternative and works
-  both for top-level, local, and first-class functions.
+- Flix -- by design -- uses records for labelled arguments. Records are part of the type system and works
+  for top-level, local, and first-class functions. 
 
 - Flix has a unique meta-programming facility that allows a higher-order function to inspect
   the purity of its function argument(s).
@@ -109,7 +108,7 @@ Did you know that:
   (they can be called with pure or impure functions). The exceptions are functions
   that define (or use) equality, ordering, etc.
 
-- Mutating data structure operations end with an exclamation mark. For example `Array.transform!`.
+- operations that mutate data structures end with an exclamation mark. For example `Array.transform!`.
 
 - the Flix standard library uses records to avoid confusion when functions take multiple arguments of
   the same type. For example, `String.contains` must be called as `String.contains(substr = "foo", "bar")`.
@@ -136,7 +135,7 @@ Did you know that:
 
 - Flix has online API documentation available at https://doc.flix.dev/
 
-- the Flix VSCode extension uses the real Flix compiler?
+- the Flix VSCode extension uses the real Flix compiler.
 
 - the Flix VSCode extension supports auto-complete, jump to definition, 
   hover to see type and effect, find all usages, renaming, and more.
@@ -150,7 +149,7 @@ Did you know that:
 - the Flix VSCode extension has built-in "code hints" that suggests when lazy and/or parallel
   evaluation is enabled (or inhibited by impurity).
 
-- Flix has community build where Flix libraries can be included in the CI process used to build Flix?
+- Flix has community build where Flix libraries can be included in the CI process used to build Flix.
 
 - Flix has a nascent build system and package manager (the latter based on GitHub releases). 
   Today it is possible to build, package, and install Flix packages, but there is no dependency 
@@ -167,7 +166,7 @@ Did you know that:
 
 - the Flix compiler supports incremental and parallel compilation.
 
-- the Flix compiler has more than 28 compiler phases?
+- the Flix compiler has more than 28 compiler phases.
 
 - the Flix compiler contains more than 150,000 lines of code.
 
@@ -183,7 +182,7 @@ Did you know that:
   in collaboration with researchers at the University of Waterloo (Canada), and at
   Eberhard Karls University of Tübingen (Germany), and by a growing open source community.
 
-- Several novel aspects of the Flix programming language has been described in the research literature?
+- Several novel aspects of the Flix programming language has been described in the research literature.
 
 - Flix has received grants from the Independent Research Fund Denmark, 
   from Amazon Research, and from the Concordium Foundation.
