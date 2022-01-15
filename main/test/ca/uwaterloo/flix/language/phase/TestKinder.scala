@@ -813,7 +813,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.TypeAlias.Type.01") {
     val input =
       """
-        |type alias T = Pure -> Int32]32
+        |type alias T = Pure -> Int32]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
