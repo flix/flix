@@ -228,6 +228,6 @@ Did you know that:
   example, if `def f(): Int32 = 123` then one could write `f + 42`. This feature
   was removed due to its inherent ambiguities. 
 
-- Flix used to infix type applications. For example, the type `Map[Int32,
-  String]` could be written as ```Int32 `Map` String```. 
+- Flix used to support infix type applications. For example, the type
+  `Map[Int32, String]` could be written as ```Int32 `Map` String```. 
 
