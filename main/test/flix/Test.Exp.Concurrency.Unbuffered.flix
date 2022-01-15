@@ -62,38 +62,38 @@ namespace Test/Exp/Concurrency/Unbuffered {
 
     @test
     def testUnbufferedChannelPutGet11(): Bool & Impure =
-        let c = chan Option[Int] 0;
+        let c = chan Option[Int32] 0;
         spawn c <- None;
         None == <- c
 
     @test
     def testUnbufferedChannelPutGet12(): Bool & Impure =
-        let c = chan Option[Int] 0;
+        let c = chan Option[Int32] 0;
         spawn c <- Some(123);
         Some(123) == <- c
 
     @test
     def testUnbufferedChannelPutGet13(): Bool & Impure =
-        let c = chan Result[Int, String] 0;
+        let c = chan Result[Int32, String] 0;
         spawn c <- Ok(123);
         Ok(123) == <- c
 
     @test
     def testUnbufferedChannelPutGet14(): Bool & Impure =
-        let c = chan Result[Int, String] 0;
+        let c = chan Result[Int32, String] 0;
         spawn c <- Err("Goodbye World!");
         Err("Goodbye World!") == <- c
 
     @test
     def testUnbufferedChannelPutGet15(): Bool & Impure =
-        let c = chan Array[Int] 0;
+        let c = chan Array[Int32] 0;
         spawn c <- [1, 2, 3];
         2 == (<- c)[1]
 
     @test
     def testUnbufferedChannelPutGet16(): Bool & Impure =
-        let c1 = chan Channel[Int] 0;
-        let c2 = chan Int 0;
+        let c1 = chan Channel[Int32] 0;
+        let c2 = chan Int32 0;
         spawn c1 <- c2;
         spawn c2 <- 42;
         42 == <- <- c1
@@ -159,38 +159,38 @@ namespace Test/Exp/Concurrency/Unbuffered {
         c <- "Hello World!"
 
     @test
-    def testUnbufferedChannelGetPut11(): Channel[Option[Int]] & Impure =
-        let c = chan Option[Int] 0;
+    def testUnbufferedChannelGetPut11(): Channel[Option[Int32]] & Impure =
+        let c = chan Option[Int32] 0;
         spawn <- c;
         c <- None
 
     @test
-    def testUnbufferedChannelGetPut12(): Channel[Option[Int]] & Impure =
-        let c = chan Option[Int] 0;
+    def testUnbufferedChannelGetPut12(): Channel[Option[Int32]] & Impure =
+        let c = chan Option[Int32] 0;
         spawn <- c;
         c <- Some(123)
 
     @test
-    def testUnbufferedChannelGetPut13(): Channel[Result[Int, String]] & Impure =
-        let c = chan Result[Int, String] 0;
+    def testUnbufferedChannelGetPut13(): Channel[Result[Int32, String]] & Impure =
+        let c = chan Result[Int32, String] 0;
         spawn <- c;
         c <- Ok(123)
 
     @test
-    def testUnbufferedChannelGetPut14(): Channel[Result[Int, String]] & Impure =
-        let c = chan Result[Int, String] 0;
+    def testUnbufferedChannelGetPut14(): Channel[Result[Int32, String]] & Impure =
+        let c = chan Result[Int32, String] 0;
         spawn <- c;
         c <- Err("Goodbye World!")
 
     @test
-    def testUnbufferedChannelGetPut15(): Channel[Array[Int]] & Impure =
-        let c = chan Array[Int] 0;
+    def testUnbufferedChannelGetPut15(): Channel[Array[Int32]] & Impure =
+        let c = chan Array[Int32] 0;
         spawn <- c;
         c <- [1, 2, 3]
 
     @test
-    def testUnbufferedChannelGetPut16(): Channel[Int] & Impure =
-        let c1 = chan Channel[Int] 0;
+    def testUnbufferedChannelGetPut16(): Channel[Int32] & Impure =
+        let c1 = chan Channel[Int32] 0;
         let c2 = chan Int 0;
         spawn <- <- c1;
         spawn c1 <- c2;

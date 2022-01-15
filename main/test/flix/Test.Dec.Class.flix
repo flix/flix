@@ -17,11 +17,11 @@ namespace Test/Dec/Class {
             pub def f(x: a): Bool
         }
 
-        instance X[Int] {
-            pub def f(x: Int): Bool = x == 0
+        instance X[Int32] {
+            pub def f(x: Int32): Bool = x == 0
         }
 
-        pub def g(x: Int): Bool = Test/Dec/Class/Test03/X.f(x)
+        pub def g(x: Int32): Bool = Test/Dec/Class/Test03/X.f(x)
     }
 
     namespace Test04 {
@@ -53,8 +53,8 @@ namespace Test/Dec/Class {
             pub def f(x: a): Bool
         }
 
-        instance C[Int] {
-            pub def f(x: Int): Bool = x == 0
+        instance C[Int32] {
+            pub def f(x: Int32): Bool = x == 0
         }
 
         instance C[List[a]] with C[a] {
@@ -66,7 +66,7 @@ namespace Test/Dec/Class {
             }
         }
 
-        pub def g(x: List[Int]): Bool = Test/Dec/Class/Test06/C.f(x)
+        pub def g(x: List[Int32]): Bool = Test/Dec/Class/Test06/C.f(x)
     }
 
     namespace Test07 {
@@ -100,10 +100,6 @@ namespace Test/Dec/Class {
         instance Eff[Pure] {
             pub def isPure(_f: a -> b): Bool = true
         }
-
-        instance Eff[Impure] {
-            pub def isPure(_f: a ~> b): Bool = false
-        }
     }
 
     namespace Test10 {
@@ -115,13 +111,13 @@ namespace Test/Dec/Class {
 
         lawless class E[a] with D[a]
 
-        instance C[Int] {
-            pub def f(_x: Int): Bool = true
+        instance C[Int32] {
+            pub def f(_x: Int32): Bool = true
         }
 
-        instance D[Int]
+        instance D[Int32]
 
-        instance E[Int]
+        instance E[Int32]
 
         pub def g(x: a): Bool with D[a] = Test/Dec/Class/Test10/C.f(x)
 
@@ -136,8 +132,8 @@ namespace Test/Dec/Class {
             law reflexivity: forall (x: a, y: a) . Test/Dec/Class/Test11/C.f(x, y) == Test/Dec/Class/Test11/C.f(y, x)
         }
 
-        instance C[Int] {
-            pub def f(_x: Int, _y: Int): Bool = true
+        instance C[Int32] {
+            pub def f(_x: Int, _y: Int32): Bool = true
         }
     }
 
@@ -162,10 +158,10 @@ namespace Test/Dec/Class {
             pub def h(): a = Test/Dec/Class/Test13/C.g()
         }
 
-        instance C[Int] {
-            pub def f(): Int = 0
+        instance C[Int32] {
+            pub def f(): Int32 = 0
 
-            override pub def h(): Int = 1
+            override pub def h(): Int32 = 1
         }
 
         @test
@@ -199,23 +195,53 @@ namespace Test/Dec/Class {
     }
 
     namespace Test16 {
-      lawless class D[a] {
-        pub def f(x: a, y: a): Bool
-      }
+        lawless class D[a] {
+            pub def f(x: a, y: a): Bool
+        }
 
-      class C[a] {
-        law l: forall (x: a, y: a) with D[a] . Test/Dec/Class/Test16/D.f(x, y)
-      }
+        class C[a] {
+            law l: forall (x: a, y: a) with D[a] . Test/Dec/Class/Test16/D.f(x, y)
+        }
     }
 
     namespace Test17 {
-      lawless class D[a] {
-        pub def f(x: a): Bool
-      }
+        lawless class D[a] {
+            pub def f(x: a): Bool
+        }
 
-      class E[a: Type -> Type] {
-        law l: forall (x: a[b]) with D[a[b]] . Test/Dec/Class/Test17/D.f(x)
-      }
+        class E[a: Type -> Type] {
+            law l: forall (x: a[b]) with D[a[b]] . Test/Dec/Class/Test17/D.f(x)
+        }
+    }
+
+    namespace Test18 {
+        pub enum E[_: Bool]
+        pub enum F[_: Bool, _: Type]
+
+        lawless class C[a]
+        lawless class D[a: Type -> Type]
+
+        instance C[E[true]]
+        instance C[F[false, a]]
+        instance D[F[true]]
+    }
+
+    namespace Test19 {
+        pub enum M[_: Bool, a: Type] {
+          case M(a)
+        }
+
+        instance Eq[M[true, a]] with Eq[a] {
+            pub def eq(x: M[true, a], y: M[true, a]): Bool = match (x, y) {
+                case (M(x1), M(y1)) => x1 == y1
+            }
+        }
+
+        @test
+        def testCallComplexBoolSig01(): Bool = M(10): M[true, Int32] == M(10): M[true, Int32]
+
+        @test
+        def testCallComplexBoolSig02(): Bool = M(10): M[true, Int32] != M(11): M[true, Int32]
     }
 
     pub enum List[a] {

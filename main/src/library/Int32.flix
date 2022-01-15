@@ -98,12 +98,12 @@ namespace Int32 {
 
     ///
     /// Returns the logical right shift of `x` by `distance`.
-    /// Only the rightmost 5 bits of `distance` are considered (ie. `distance % 32`).
+    /// Only the rightmost 5 bits of `distance` are considered (ie. `distance rem 32`).
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     @Time(1) @Space(1)
     pub def logicalRightShift(x: Int32, distance: Int32): Int32 =
-        if (x < 0 and distance % size() != 0)
+        if (x < 0 and distance rem size() != 0)
             ((x >>> 1) &&& maxValue()) >>> (distance - 1)
         else
             x >>> distance
@@ -115,7 +115,7 @@ namespace Int32 {
     @Time(1) @Space(1)
     pub def bitCount(x: Int32): Int32 = {
         if      (x == 0)        0
-        else if (x % 2 != 0)    bitCount(logicalRightShift(x, 1)) + 1
+        else if (x rem 2 != 0)    bitCount(logicalRightShift(x, 1)) + 1
         else                    bitCount(logicalRightShift(x, 1))
     }
 
@@ -243,7 +243,7 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def getBit(x: Int32, position: Int32): Int32 =
-        if ((x >>> position) % 2 == 0) 0 else 1
+        if ((x >>> position) rem 2 == 0) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `position` set (to 1).
@@ -300,8 +300,8 @@ namespace Int32 {
     @Time(1) @Space(1)
     pub def fromString(s: String): Result[Int32, String] = try {
         import java.lang.String.strip();
-        import java.lang.Integer:parseInt(String);
-        Ok(s.strip().parseInt()) as & Pure
+        import static java.lang.Integer.parseInt(String);
+        Ok(s |> strip |> parseInt) as & Pure
     } catch {
         case _: ##java.lang.NumberFormatException => Err("Int32.fromString")
     }
@@ -316,12 +316,12 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt8(x: Int32): Option[Int8] =
-        import java.lang.Integer:valueOf(Int32);
+        import static java.lang.Integer.valueOf(Int32);
         import java.lang.Integer.byteValue();
         if (x < Int8.toInt32(Int8.minValue()) or x > Int8.toInt32(Int8.maxValue()))
             None
         else
-            Some(valueOf(x).byteValue()) as & Pure
+            Some(valueOf(x) |> byteValue) as & Pure
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -333,12 +333,12 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt16(x: Int32): Option[Int16] =
-        import java.lang.Integer:valueOf(Int32);
+        import static java.lang.Integer.valueOf(Int32);
         import java.lang.Integer.shortValue();
         if (x < Int16.toInt32(Int16.minValue()) or x > Int16.toInt32(Int16.maxValue()))
             None
         else
-            Some(valueOf(x).shortValue()) as & Pure
+            Some(valueOf(x) |> shortValue) as & Pure
 
     ///
     /// Convert `x` to a Int64.
@@ -347,9 +347,9 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def toInt64(x: Int32): Int64 =
-        import java.lang.Integer:valueOf(Int32);
+        import static java.lang.Integer.valueOf(Int32);
         import java.lang.Integer.longValue();
-        valueOf(x).longValue() as & Pure
+        (valueOf(x) |> longValue) as & Pure
 
     ///
     /// Convert `x` to a BigInt.
@@ -358,10 +358,10 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def toBigInt(x: Int32): BigInt =
-        import java.lang.Integer:valueOf(Int32) as i16ValueOf;
+        import static java.lang.Integer.valueOf(Int32) as i16ValueOf;
         import java.lang.Integer.longValue();
-        import java.math.BigInteger:valueOf(Int64) as asBigInt;
-        i16ValueOf(x).longValue().asBigInt() as & Pure
+        import static java.math.BigInteger.valueOf(Int64) as asBigInt;
+        (i16ValueOf(x) |> longValue |> asBigInt) as & Pure
 
     ///
     /// Convert `x` to an Float32.
@@ -370,9 +370,9 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def toFloat32(x: Int32): Float32 =
-        import java.lang.Integer:valueOf(Int32);
+        import static java.lang.Integer.valueOf(Int32);
         import java.lang.Integer.floatValue();
-        valueOf(x).floatValue() as & Pure
+        (valueOf(x) |> floatValue) as & Pure
 
     ///
     /// Convert `x` to a Float64.
@@ -381,9 +381,9 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def toFloat64(x: Int32): Float64 =
-        import java.lang.Integer:valueOf(Int32);
+        import static java.lang.Integer.valueOf(Int32);
         import java.lang.Integer.doubleValue();
-        valueOf(x).doubleValue() as & Pure
+        (valueOf(x) |> doubleValue) as & Pure
 
     ///
     /// Helper function for the `clamp` conversion functions.
@@ -404,11 +404,11 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt8(x: Int32, minimum: Int8, maximum: Int8): Int8 =
-        import java.lang.Integer:valueOf(Int32);
+        import static java.lang.Integer.valueOf(Int32);
         import java.lang.Integer.byteValue();
         let mini32 = Int8.toInt32(minimum);
         let maxi32 = Int8.toInt32(maximum);
-        valueOf(clamp(x, mini32, maxi32)).byteValue() as & Pure
+        (valueOf(clamp(x, mini32, maxi32)) |> byteValue) as & Pure
 
 
     ///
@@ -418,10 +418,10 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt16(x: Int32, minimum: Int16, maximum: Int16): Int16 =
-        import java.lang.Integer:valueOf(Int32);
+        import static java.lang.Integer.valueOf(Int32);
         import java.lang.Integer.shortValue();
         let mini32 = Int16.toInt32(minimum);
         let maxi32 = Int16.toInt32(maximum);
-        valueOf(clamp(x, mini32, maxi32)).shortValue() as & Pure
+        (valueOf(clamp(x, mini32, maxi32)) |> shortValue) as & Pure
 
 }

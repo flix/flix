@@ -29,7 +29,7 @@ def main(_args: Array[String]) : Int32 & Impure =
     };
 
     // Computes a map from parts to delivery dates.
-    let m = query p select (c; d) from ReadyDate(c; d) |> Foldable.toMap;
+    let m = query p select (c; d) from ReadyDate(c; d) |> Array.toMap;
 
     // Looks up the delivery date for the car and prints it.
     Map.getWithDefault("Car", 0, m) |> println;

@@ -15,21 +15,13 @@
  */
 
 ///
-/// A type class for modulo (i.e. remainder).
+/// A type class for remainder.
 ///
 pub lawless class Rem[a] {
     ///
-    /// Returns `x` modulo `n`.
+    /// Returns the remainder of `x / n`.
     ///
     pub def rem(x: a, n: a): a
-}
-
-instance Rem[Float32] {
-    pub def rem(x: Float32, n: Float32): Float32 = $FLOAT32_REM$(x, n)
-}
-
-instance Rem[Float64] {
-    pub def rem(x: Float64, n: Float64): Float64 = $FLOAT64_REM$(x, n)
 }
 
 instance Rem[Int8] {

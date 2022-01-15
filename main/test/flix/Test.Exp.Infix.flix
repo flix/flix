@@ -18,19 +18,19 @@ namespace Test/Exp/Infix {
     @test
     def testInfix06(): Bool = 3 `Test/Exp/Infix/Divisible.div` 2 == 3 / 2
 
-    def add(x: Int, y: Int): Int = x + y
-    def sub(x: Int, y: Int): Int = x - y
+    def add(x: Int, y: Int32): Int32 = x + y
+    def sub(x: Int, y: Int32): Int32 = x - y
 
     namespace A {
-        pub def mul(x: Int, y: Int): Int = x * y
+        pub def mul(x: Int, y: Int32): Int32 = x * y
     }
 
     lawless class Divisible[a] {
         pub def div(x: a, y: a): a
     }
 
-    instance Divisible[Int] {
-        pub def div(x: Int, y: Int): Int = x / y
+    instance Divisible[Int32] {
+        pub def div(x: Int, y: Int32): Int32 = x / y
     }
 
 }

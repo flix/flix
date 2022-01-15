@@ -1,14 +1,14 @@
 namespace BenchmarkConstraint {
 
-    rel DirectedEdge(x: Int, y: Int)
-    rel DirectedPath(x: Int, y: Int)
+    rel DirectedEdge(x: Int32, y: Int32)
+    rel DirectedPath(x: Int32, y: Int32)
 
     ///
     /// create a set of facts.
     ///
     @benchmark
     pub def benchmark01(): Bool =
-        let fold = (acc: #{ DirectedEdge }, s: Int) -> {
+        let fold = (acc: #{ DirectedEdge }, s: Int32) -> {
             let d = s + 1;
             acc <+> DirectedEdge(s, d).
         };
@@ -20,7 +20,7 @@ namespace BenchmarkConstraint {
     ///
     @benchmark
     pub def benchmark02(): Bool =
-        let fold = (acc: #{ DirectedEdge }, s: Int) -> {
+        let fold = (acc: #{ DirectedEdge }, s: Int32) -> {
             let d = s + 1;
             acc <+> DirectedEdge(s, d).
         };
@@ -35,7 +35,7 @@ namespace BenchmarkConstraint {
     ///
     @benchmark
     pub def benchmark03(): Bool =
-        let fold = (acc: #{ DirectedEdge, DirectedPath }, s: Int) -> {
+        let fold = (acc: #{ DirectedEdge, DirectedPath }, s: Int32) -> {
             let d = s + 1;
             acc <+> DirectedEdge(s, d).
         };

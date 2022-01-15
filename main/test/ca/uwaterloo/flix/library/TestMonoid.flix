@@ -17,29 +17,6 @@
 namespace TestMonoid {
 
     use Monoid.{empty, combine};
-    use Monoid.{combineAll};
-
-    /////////////////////////////////////////////////////////////////////////////
-    // combineAll                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def combineAll01(): Bool = combineAll(Nil: List[Unit]) == ()
-
-    @test
-    def combineAll02(): Bool = combineAll(() :: Nil) == ()
-
-    @test
-    def combineAll03(): Bool = combineAll(Nil: List[String]) == ""
-
-    @test
-    def combineAll04(): Bool = combineAll("a" :: Nil) == "a"
-
-    @test
-    def combineAll05(): Bool = combineAll("a" :: "b" :: Nil) == "ab"
-
-    @test
-    def combineAll06(): Bool = combineAll("a" :: "b" :: "cdefg" :: Nil) == "abcdefg"
 
     /////////////////////////////////////////////////////////////////////////////
     // Unit                                                                    //
@@ -388,15 +365,15 @@ namespace TestMonoid {
     def mapCombine01(): Bool = combine(Map#{}, Map#{}): Map[Int32, String] == Map#{}
 
     @test
-    def mapCombine02(): Bool = combine(Map#{1 -> "A"}, Map#{}) == Map#{1 -> "A"}
+    def mapCombine02(): Bool = combine(Map#{1 => "A"}, Map#{}) == Map#{1 => "A"}
 
     @test
-    def mapCombine03(): Bool = combine(Map#{}, Map#{1 -> "a"}) == Map#{1 -> "a"}
+    def mapCombine03(): Bool = combine(Map#{}, Map#{1 => "a"}) == Map#{1 => "a"}
 
     @test
-    def mapCombine04(): Bool = combine(Map#{1 -> "A"}, Map#{1 -> "a"}) == Map#{1 -> "Aa"}
+    def mapCombine04(): Bool = combine(Map#{1 => "A"}, Map#{1 => "a"}) == Map#{1 => "Aa"}
 
     @test
-    def mapCombine05(): Bool = combine(Map#{1 -> "A", 2 -> "B", 3 -> "C"}, Map#{2 -> "b", 3 -> "c", 4 -> "d"}) == Map#{1 -> "A", 2 -> "Bb", 3 -> "Cc", 4 -> "d"}
+    def mapCombine05(): Bool = combine(Map#{1 => "A", 2 => "B", 3 => "C"}, Map#{2 => "b", 3 => "c", 4 => "d"}) == Map#{1 => "A", 2 => "Bb", 3 => "Cc", 4 => "d"}
 
 }

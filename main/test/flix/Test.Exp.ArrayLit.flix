@@ -4,16 +4,16 @@ namespace Test/Exp/ArrayLit {
     def testArrayLit01(): Array[Unit] & Impure = []
 
     @test
-    def testArrayLit02(): Array[Int] & Impure = [1]
+    def testArrayLit02(): Array[Int32] & Impure = [1]
 
     @test
-    def testArrayLit04(): Array[Int] & Impure = [1, 2, 3, 4]
+    def testArrayLit04(): Array[Int32] & Impure = [1, 2, 3, 4]
 
     @test
-    def testArrayLit05(): Array[Int] & Impure = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    def testArrayLit05(): Array[Int32] & Impure = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
     @test
-    def testArrayLit06(): Array[Int] & Impure = [1, 2]
+    def testArrayLit06(): Array[Int32] & Impure = [1, 2]
 
     @test
     def testArrayLit07(): Array[Bool] & Impure = [true]
@@ -97,19 +97,19 @@ namespace Test/Exp/ArrayLit {
     def testArrayLit33(): Array[String] & Impure = ["World", "Hello", "World"]
 
     @test
-    def testArrayLit34(): Array[Array[Int]] & Impure = [[1,2,3]]
+    def testArrayLit34(): Array[Array[Int32]] & Impure = [[1,2,3]]
 
     @test
-    def testArrayLit35(): Array[Array[Int]] & Impure = [[1, 2], [1, 2]]
+    def testArrayLit35(): Array[Array[Int32]] & Impure = [[1, 2], [1, 2]]
 
     @test
-    def testArrayLit36(): Array[Array[Int]] & Impure = [[1], [1, 2, 3, 4, 5, 6, 7, 8]]
+    def testArrayLit36(): Array[Array[Int32]] & Impure = [[1], [1, 2, 3, 4, 5, 6, 7, 8]]
 
     @test
-    def testArrayLit37(): Array[Array[Int]] & Impure = [[1, 2, 3, 4, 5], [2]]
+    def testArrayLit37(): Array[Array[Int32]] & Impure = [[1, 2, 3, 4, 5], [2]]
 
     @test
-    def testArrayLit38(): Array[Array[Int]] & Impure = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]
+    def testArrayLit38(): Array[Array[Int32]] & Impure = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]
 
     @test
     def testArrayLit39(): Array[Array[Bool]] & Impure = [[true, false]]
@@ -226,19 +226,19 @@ namespace Test/Exp/ArrayLit {
     def testArrayLit76(): Array[Array[String]] & Impure = [["Hello", "World", "World", "Hello"] ,["Hello"]]
 
     @test
-    def testArrayLit77(): Array[(Int, Int)] & Impure = [(12, 42)]
+    def testArrayLit77(): Array[(Int32, Int32)] & Impure = [(12, 42)]
 
     @test
-    def testArrayLit78(): Array[(Int, Int, Int)] & Impure = [(12, 42, 34), (12, 42, 34)]
+    def testArrayLit78(): Array[(Int32, Int32, Int32)] & Impure = [(12, 42, 34), (12, 42, 34)]
 
     @test
-    def testArrayLit79(): Array[(Int, Int, Int)] & Impure = [(12, 42, 12), (12, 23, 12), (12,12,12)]
+    def testArrayLit79(): Array[(Int32, Int32, Int32)] & Impure = [(12, 42, 12), (12, 23, 12), (12,12,12)]
 
     @test
-    def testArrayLit80(): Array[(Int, Int, Int, Int)] & Impure = [(12, 42, 12, 12), (12, 23, 12, 12), (12,12,12, 31)]
+    def testArrayLit80(): Array[(Int32, Int32, Int32, Int32)] & Impure = [(12, 42, 12, 12), (12, 23, 12, 12), (12,12,12, 31)]
 
     @test
-    def testArrayLit81(): Array[(Int, Int)] & Impure =[(1,1), (1,1), (2,2), (3,3), (1,1), (2,1), (5,5)]
+    def testArrayLit81(): Array[(Int32, Int32)] & Impure =[(1,1), (1,1), (2,2), (3,3), (1,1), (2,1), (5,5)]
 
     @test
     def testArrayLit82(): Array[(Bool, Bool)] & Impure =[(true, true)]
@@ -250,15 +250,15 @@ namespace Test/Exp/ArrayLit {
     def testArrayLit84(): Array[(Bool, Bool, Bool)] & Impure =[(true, true, true), (true, false, false), (true, true, false)]
 
     @test
-    def testArrayLit85(): Array[(List[Int])] & Impure = [(Nil)]
+    def testArrayLit85(): Array[(List[Int32])] & Impure = [(Nil)]
 
     @test
-    def testArrayLit86(): Array[(List[Int])] & Impure = [(1 :: Nil)]
+    def testArrayLit86(): Array[(List[Int32])] & Impure = [(1 :: Nil)]
 
     @test
     def testArrayLit88(): Array[Option[String]] & Impure = [Some("Hello World")]
 
     @test
-    def testArrayLit89(): Array[Option[Int]] & Impure = [Some(1), Some(2), None]
+    def testArrayLit89(): Array[Option[Int32]] & Impure = [Some(1), Some(2), None]
 
 }
