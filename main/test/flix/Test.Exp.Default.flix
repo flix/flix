@@ -16,16 +16,16 @@ namespace Test/Exp/Default {
     def testDefaultFloat64(): Bool = ($DEFAULT$: Float64) == 0.0f64
 
     @test
-    def testDefaultInt8(): Bool = ($DEFAULT$: Int8) == 0i8
+    def testDefaultInt8(): Bool = ($DEFAULT$: Int328) == 0i8
 
     @test
-    def testDefaultInt16(): Bool = ($DEFAULT$: Int16) == 0i16
+    def testDefaultInt16(): Bool = ($DEFAULT$: Int3216) == 0i16
 
     @test
     def testDefaultInt32(): Bool = ($DEFAULT$: Int32) == 0i32
 
     @test
-    def testDefaultInt64(): Bool = ($DEFAULT$: Int64) == 0i64
+    def testDefaultInt64(): Bool = ($DEFAULT$: Int3264) == 0i64
 
     @test
     def testDefaultBigInt(): Bool = ($DEFAULT$: BigInt) == 0ii

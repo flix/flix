@@ -1,7 +1,7 @@
 namespace Test/Exp/Record/Multiple {
 
     @test
-    def testMultipleRecordOps01(): { a :: Int, d :: Int32 } =
+    def testMultipleRecordOps01(): { a :: Int32, d :: Int32 } =
         let r = { a = 1, b = 2, c = 3};
         { a = 42, -b, -c, +d = 84 | r }
 

@@ -133,7 +133,7 @@ namespace Test/Dec/Class {
         }
 
         instance C[Int32] {
-            pub def f(_x: Int, _y: Int32): Bool = true
+            pub def f(_x: Int32, _y: Int32): Bool = true
         }
     }
 
