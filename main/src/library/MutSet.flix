@@ -251,6 +251,20 @@ namespace MutSet {
         Set.count(f, deref ms)
 
     ///
+    /// Returns the sum of all elements in the mutable set `s`.
+    ///
+    pub def sum(s: MutSet[Int32]): Int32 & Impure =
+        let MutSet(ss) = s;
+        Set.sum(deref ss)
+
+    ///
+    /// Returns the sum of all elements in the mutable set `s` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, s: MutSet[a]): Int32 & Impure =
+        let MutSet(ss) = s;
+        Set.sumWith(f, deref ss)
+
+    ///
     /// Returns `true` if and only if at least one element in the mutable set `s` satisfies the predicate function `f`.
     ///
     /// Returns `false` if `s` is the empty set.

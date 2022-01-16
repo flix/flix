@@ -381,6 +381,18 @@ namespace Nel {
     }
 
     ///
+    /// Returns the sum of all elements in the list `l`.
+    ///
+    pub def sum(l: Nel[Int32]): Int32 =
+        Foldable.sum(l)
+
+    ///
+    /// Returns the sum of all elements in the list `l` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, l: Nel[a]): Int32 & ef =
+        Foldable.sumWith(f, l)
+
+    ///
     /// Returns the product of all elements in the list `l`.
     ///
     pub def product(l: Nel[Int32]): Int32 =
@@ -527,17 +539,6 @@ namespace Nel {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
         }
-
-    ///
-    /// Returns the sum of all elements in the list `l`.
-    ///
-    pub def sum(l: Nel[Int32]): Int32 =
-        def loop(l2, acc) = match l2 {
-            case Nil     => acc
-            case x :: xs => loop(xs, x + acc)
-        };
-        let Nel(x, xs) = l;
-        loop(x :: xs, 0)
 
     ///
     /// Returns an iterator over `l`.

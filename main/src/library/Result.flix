@@ -145,6 +145,18 @@ namespace Result {
     ///
     /// Returns `v` if `r` is `Ok(v)` else `0`.
     ///
+    pub def sum(r: Result[Int32, e]): Int32 =
+        foldLeft((acc, x) -> acc + x, 0, r)
+
+    ///
+    /// Returns `f(v)` if `r` is `Ok(v)` else `0`.
+    ///
+    pub def sumWith(f: t -> Int32 & ef, r: Result[t, e]): Int32 & ef =
+        foldLeft((acc, x) -> acc + f(x), 0, r)
+
+    ///
+    /// Returns `v` if `r` is `Ok(v)` else `0`.
+    ///
     pub def product(r: Result[Int32, e]): Int32 =
         if (isErr(r))
             0

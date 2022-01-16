@@ -98,19 +98,20 @@ namespace DemandList {
     ///
     /// Returns the sum of all elements in the list `l`.
     ///
+    /// Forces the entire list `l`.
+    ///
     @Experimental
     pub def sum(l: DemandList[Int32, Forced]): Int32 =
-        sumAcc(l, 0)
+        foldLeft((acc, x) -> acc + x, 0, l)
 
     ///
-    /// Helper function for `sum`.
+    /// Returns the sum of all elements in `l` according to the function `f`.
     ///
-    def sumAcc(l: DemandList[Int32, Forced], acc: Int32): Int32 = match l {
-        case ENil         => acc
-        case ECons(x, xs) => sumAcc(      xs, x + acc)
-        case LCons(x, xs) => sumAcc(force xs, x + acc)
-        case LList(xs)    => sumAcc(force xs,     acc)
-    }
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def sumWith(f: a -> Int32 & ef, l: DemandList[a, Forced]): Int32 & ef =
+        foldLeft((acc, x) -> acc + f(x), 0, l)
 
     ///
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.

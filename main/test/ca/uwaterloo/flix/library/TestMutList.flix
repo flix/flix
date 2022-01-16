@@ -1692,30 +1692,59 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,
 
     @test
     def sum01(): Bool & Impure =
-        MutList.sum(MutList.new()) == 0
+        List.toMutList(Nil) |> MutList.sum == 0
 
     @test
     def sum02(): Bool & Impure =
-        (1 :: Nil) |> List.toMutList |> MutList.sum == 1
+        List.toMutList(1 :: Nil) |> MutList.sum == 1
 
     @test
     def sum03(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toMutList |> MutList.sum == 6
+        List.toMutList(1 :: 2 :: 3 :: Nil) |> MutList.sum == 6
 
     @test
     def sum04(): Bool & Impure =
-        (1 :: 2 :: 3 :: -3 :: Nil) |> List.toMutList |> MutList.sum == 3
+        List.toMutList(1 :: 2 :: 3 :: -3 :: Nil) |> MutList.sum == 3
 
     @test
     def sum05(): Bool & Impure =
-        (-1 :: -2 :: -3 :: -4 :: Nil) |> List.toMutList |> MutList.sum == -10
+        List.toMutList(-1 :: -2 :: -3 :: -4 :: Nil) |> MutList.sum == -10
 
     @test
     def sum06(): Bool & Impure =
-        (10 :: -10 :: Nil) |> List.toMutList |> MutList.sum == 0
+        List.toMutList(10 :: -10 :: Nil) |> MutList.sum == 0
 
     @test
     def sum07(): Bool & Impure =
         List.range(1, 101) |> List.toMutList |> MutList.sum == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool & Impure =
+        List.toMutList(Nil) |> MutList.sumWith(x -> x + 1) == 0
+
+    @test
+    def sumWith02(): Bool & Impure =
+        List.toMutList(1 :: Nil) |> MutList.sumWith(x -> x + 1) == 2
+
+    @test
+    def sumWith03(): Bool & Impure =
+        List.toMutList(1 :: 2 :: 3 :: Nil) |> MutList.sumWith(x -> x + 1) == 9
+
+    @test
+    def sumWith04(): Bool & Impure =
+        List.toMutList(1 :: 2 :: 3 :: -3 :: Nil) |> MutList.sumWith(x -> x + 1) == 7
+
+    @test
+    def sumWith05(): Bool & Impure =
+        List.toMutList(-1 :: -2 :: -3 :: -4 :: Nil) |> MutList.sumWith(x -> x + 1) == -6
+
+    @test
+    def sumWith06(): Bool & Impure =
+        List.toMutList(10 :: -10 :: Nil) |> MutList.sumWith(x -> x + 1) == 2
 
 }

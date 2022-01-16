@@ -82,9 +82,9 @@ object Main {
       explain = cmdOpts.explain,
       incremental = cmdOpts.xincremental,
       json = cmdOpts.json,
+      output = cmdOpts.output.map(s => Paths.get(s)),
       progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
-      writeClassFiles = !cmdOpts.interactive,
       xnostratifier = cmdOpts.xnostratifier,
       xperf = cmdOpts.xperf,
       xstatistics = cmdOpts.xstatistics,
@@ -254,6 +254,7 @@ object Main {
                      json: Boolean = false,
                      listen: Option[Int] = None,
                      lsp: Option[Int] = None,
+                     output: Option[String] = None,
                      test: Boolean = false,
                      threads: Option[Int] = None,
                      xbenchmarkCodeSize: Boolean = false,
@@ -376,6 +377,11 @@ object Main {
       opt[Int]("lsp").action((s, c) => c.copy(lsp = Some(s))).
         valueName("<port>").
         text("starts the LSP server and listens on the given port.")
+
+      // Output.
+      opt[String]("output").action((s, c) => c.copy(output = Some(s))).
+        text("specifies the output directory for JVM bytecode.")
+
       // Test.
       opt[Unit]("test").action((_, c) => c.copy(test = true)).
         text("runs unit tests.")

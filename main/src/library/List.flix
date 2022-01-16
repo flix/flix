@@ -1369,11 +1369,13 @@ namespace List {
     /// Returns the sum of all elements in the list `l`.
     ///
     pub def sum(l: List[Int32]): Int32 =
-        def loop(l2, acc) = match l2 {
-            case Nil     => acc
-            case x :: xs => loop(xs, x + acc)
-        };
-        loop(l, 0)
+        Foldable.sum(l)
+
+    ///
+    /// Returns the sum of all elements in the list `l` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, l: List[a]): Int32 & ef =
+        Foldable.sumWith(f, l)
 
     ///
     /// Returns the elements of `l` as a `DemandList`.

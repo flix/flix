@@ -2386,6 +2386,7 @@ def distinctWith09(): Bool =
     def toChain04(): Bool =
         List.toChain(1 :: 2 :: 3 :: Nil) == (1 `Chain.cons` (2 `Chain.cons` (3 `Chain.cons` Chain.empty())))
 
+
     /////////////////////////////////////////////////////////////////////////////
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
@@ -2417,6 +2418,35 @@ def distinctWith09(): Bool =
     @test
     def sum07(): Bool =
         List.range(1, 101) |> List.sum == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        List.sumWith(x -> x + 1, Nil: List[Int32]) == 0
+
+    @test
+    def sumWith02(): Bool =
+        List.sumWith(x -> x + 1, 1 :: Nil) == 2
+
+    @test
+    def sumWith03(): Bool =
+        List.sumWith(x -> x + 1, 1 :: 2 :: 3 :: Nil) == 9
+
+    @test
+    def sumWith04(): Bool =
+        List.sumWith(x -> x + 1, 1 :: 2 :: 3 :: -3 :: Nil) == 7
+
+    @test
+    def sumWith05(): Bool =
+        List.sumWith(x -> x + 1, -1 :: -2 :: -3 :: -4 :: Nil) == -6
+
+    @test
+    def sumWith06(): Bool =
+        List.sumWith(x -> x + 1, 10 :: -10 :: Nil) == 2
 
 
     /////////////////////////////////////////////////////////////////////////////
