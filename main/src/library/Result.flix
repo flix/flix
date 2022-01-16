@@ -146,15 +146,13 @@ namespace Result {
     /// Returns `v` if `r` is `Ok(v)` else `0`.
     ///
     pub def sum(r: Result[Int32, e]): Int32 =
-        sumWith(identity, r)
+        foldLeft((acc, x) -> acc + x, 0, r)
 
     ///
     /// Returns `f(v)` if `r` is `Ok(v)` else `0`.
     ///
-    pub def sumWith(f: t -> Int32 & ef, r: Result[t, e]): Int32 & ef = match r {
-        case Ok(v)  => f(v)
-        case Err(_) => 0
-    }
+    pub def sumWith(f: t -> Int32 & ef, r: Result[t, e]): Int32 & ef =
+        foldLeft((acc, x) -> acc + f(x), 0, r)
 
     ///
     /// Returns `Some(v)` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.
