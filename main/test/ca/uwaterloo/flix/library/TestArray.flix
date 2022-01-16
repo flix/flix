@@ -4230,6 +4230,36 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def sum07(): Bool & Impure =
         Array.range(1, 101) |> Array.sum == 5050
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool & Impure =
+        Array.sumWith(x -> x + 1, []) == 0
+
+    @test
+    def sumWith02(): Bool & Impure =
+        Array.sumWith(x -> x + 1, [1]) == 2
+
+    @test
+    def sumWith03(): Bool & Impure =
+        Array.sumWith(x -> x + 1, [1, 2, 3]) == 9
+
+    @test
+    def sumWith04(): Bool & Impure =
+        Array.sumWith(x -> x + 1, [1, 2, 3, -3]) == 7
+
+    @test
+    def sumWith05(): Bool & Impure =
+        Array.sumWith(x -> x + 1, [-1, -2, -3, -4]) == -6
+
+    @test
+    def sumWith06(): Bool & Impure =
+        Array.sumWith(x -> x + 1, [10, -10]) == 2
+
+
     /////////////////////////////////////////////////////////////////////////////
     // toLazyList                                                              //
     /////////////////////////////////////////////////////////////////////////////

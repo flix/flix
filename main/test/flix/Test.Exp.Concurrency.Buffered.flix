@@ -74,13 +74,13 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannel13(): Bool & Impure =
-        let c = chan Result[Int, String] 1;
+        let c = chan Result[Int32, String] 1;
         c <- Ok(123);
         Ok(123) == <- c
 
     @test
     def testBufferedChannel14(): Bool & Impure =
-        let c = chan Result[Int, String] 1;
+        let c = chan Result[Int32, String] 1;
         c <- Err("Goodbye World!");
         Err("Goodbye World!") == <- c
 
@@ -93,7 +93,7 @@ namespace Test/Exp/Concurrency/Buffered {
     @test
     def testBufferedChannel16(): Bool & Impure =
         let c1 = chan Channel[Int32] 1;
-        let c2 = chan Int 1;
+        let c2 = chan Int32 1;
         c1 <- c2;
         c2 <- 42;
         42 == <- <- c1
@@ -172,13 +172,13 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannelWithSpawn13(): Bool & Impure =
-        let c = chan Result[Int, String] 1;
+        let c = chan Result[Int32, String] 1;
         spawn c <- Ok(123);
         Ok(123) == <- c
 
     @test
     def testBufferedChannelWithSpawn14(): Bool & Impure =
-        let c = chan Result[Int, String] 1;
+        let c = chan Result[Int32, String] 1;
         spawn c <- Err("Goodbye World!");
         Err("Goodbye World!") == <- c
 
@@ -191,7 +191,7 @@ namespace Test/Exp/Concurrency/Buffered {
     @test
     def testBufferedChannelWithSpawn16(): Bool & Impure =
         let c1 = chan Channel[Int32] 1;
-        let c2 = chan Int 1;
+        let c2 = chan Int32 1;
         spawn c1 <- c2;
         spawn c2 <- 42;
         42 == <- <- c1

@@ -36,37 +36,37 @@ namespace Test/Exp/Apply/Tail {
     @test
     def testApplyTail12(): Int32 =  ping(1234567, x -> x)
 
-    def odd(n: Int): Bool = match n {
+    def odd(n: Int32): Bool = match n {
         case 0 => false
         case 1 => true
         case x => even(x - 1)
     }
 
-    def even(n: Int): Bool = match n {
+    def even(n: Int32): Bool = match n {
         case 0 => true
         case 1 => false
         case x => odd(x - 1)
     }
 
-    def a(x: Int): Bool = b(x + 1)
+    def a(x: Int32): Bool = b(x + 1)
 
-    def b(x: Int): Bool = c(x - 1)
+    def b(x: Int32): Bool = c(x - 1)
 
-    def c(x: Int): Bool = x == 42
+    def c(x: Int32): Bool = x == 42
 
-    def a1(x: Int, f: Int32 -> Int): Bool = b1(f(x), y -> y - 1)
+    def a1(x: Int32, f: Int32 -> Int32): Bool = b1(f(x), y -> y - 1)
 
-    def b1(x: Int, f: Int32 -> Int): Bool = c1(f(x), y -> y == 42)
+    def b1(x: Int32, f: Int32 -> Int32): Bool = c1(f(x), y -> y == 42)
 
-    def c1(x: Int, f: Int32 -> Bool): Bool = f(x)
+    def c1(x: Int32, f: Int32 -> Bool): Bool = f(x)
 
-    def ping(n: Int, c: Int32 -> Int): Int32 = match n {
+    def ping(n: Int32, c: Int32 -> Int32): Int32 = match n {
         case 0 => c(0)
         case 1 => c(1)
         case x => pong(x - 1, z -> c(z + 1))
     }
 
-    def pong(n: Int, c: Int32 -> Int): Int32 = match n {
+    def pong(n: Int32, c: Int32 -> Int32): Int32 = match n {
         case 0 => c(0)
         case 1 => c(1)
         case x => ping(x - 1, z -> c(z + 1))

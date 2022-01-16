@@ -303,6 +303,18 @@ namespace Set {
         }
 
     ///
+    /// Returns the sum of all elements in the set `s`.
+    ///
+    pub def sum(s: Set[Int32]): Int32 =
+        Foldable.sum(s)
+
+    ///
+    /// Returns the sum of all elements in the set `s` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
+        Foldable.sumWith(f, s)
+
+    ///
     /// Returns the union of the elements in `s`.
     ///
     @Time(size(s) * Int32.log2(size(s))) @Space(size(s) * Int32.log2(size(s)))

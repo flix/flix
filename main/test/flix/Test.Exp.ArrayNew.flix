@@ -55,7 +55,7 @@ namespace Test/Exp/ArrayNew {
     def testArrayNew18(): Array[Array[Int32]] & Impure = [[10; 10]; 5]
 
     @test
-    def testArrayNew19(): Array[(Int, Int)] & Impure = [(1, 2); 5]
+    def testArrayNew19(): Array[(Int32, Int32)] & Impure = [(1, 2); 5]
 
     @test
     def testArrayNew20(): Array[(List[Int32])] & Impure = [(1 :: Nil); 5]

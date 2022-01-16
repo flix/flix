@@ -17,7 +17,7 @@
 namespace Test/Exp/Jvm/TestTryCatch {
 
     def exception(): Unit & Impure =
-        import static java.lang.Math.floorDiv(Int, Int);
+        import static java.lang.Math.floorDiv(Int32, Int32);
         floorDiv(1, 0);
         ()
 

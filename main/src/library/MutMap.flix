@@ -420,6 +420,27 @@ namespace MutMap {
         Map.count(f, deref mm)
 
     ///
+    /// Returns the sum of all keys in the map `m`.
+    ///
+    pub def sumKeys(m: MutMap[Int32, v]): Int32 & Impure =
+        let MutMap(mm) = m;
+        Map.sumKeys(deref mm)
+
+    ///
+    /// Returns the sum of all values in the map `m`.
+    ///
+    pub def sumValues(m: MutMap[k, Int32]): Int32 & Impure =
+        let MutMap(mm) = m;
+        Map.sumValues(deref mm)
+
+    ///
+    /// Returns the sum of all key-value pairs `k => v` in the map `m` according to the function `f`.
+    ///
+    pub def sumWith(f: (k, v) -> Int32 & ef, m: MutMap[k, v]): Int32 & Impure =
+        let MutMap(mm) = m;
+        Map.sumWith(f, deref mm)
+
+    ///
     /// Returns `true` if and only if at least one mapping in the mutable map `m` satisfies the predicate function `f`.
     ///
     /// Returns `false` if `m` is the empty map.

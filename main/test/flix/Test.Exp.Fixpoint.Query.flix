@@ -82,7 +82,7 @@ namespace Test/Exp/Fixpoint/Query {
         Food(x) :- Vegetable(x).
     }
 
-    def pathDb(): #{Edge(Int, Int), Path(Int, Int) | r} = #{
+    def pathDb(): #{Edge(Int32, Int32), Path(Int32, Int32) | r} = #{
         Edge(1, 2). Edge(2, 3). Edge(3, 4). Edge(4, 5).
         Edge(5, 6). Edge(6, 7). Edge(7, 8). Edge(8, 9).
 

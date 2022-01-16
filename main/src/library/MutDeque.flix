@@ -88,6 +88,29 @@ namespace MutDeque {
         deref f == deref b
 
     ///
+    /// Returns the sum of all elements in the deque `d`.
+    ///
+    pub def sum(d: MutDeque[Int32]): Int32 & Impure =
+        sumWith(identity, d)
+
+    ///
+    /// Returns the sum of all elements in the deque `d` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, d: MutDeque[a]): Int32 & Impure =
+        // TODO: Refactor when fold is implemented
+        let MutDeque(ar_, front_, back_) = d;
+        let ar = deref ar_;
+        let front = deref front_;
+        let back = deref back_;
+        let c = capacity(d) - 1;
+        def loop(i, e, acc) =
+            if (i == e)
+                acc
+            else
+                loop((i + 1) &&& c, e, f(ar[i]) + acc);
+        loop(front, back, 0)
+
+    ///
     /// Returns `Some(x)` where `x` is the element at the front. Returns `None` if `d` is empty.
     ///
     pub def popFront(d: MutDeque[a]): Option[a] & Impure =

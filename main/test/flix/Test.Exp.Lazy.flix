@@ -67,7 +67,7 @@ namespace Test/Exp/Lazy {
         lazy (lazy 123)
 
     @test
-    def testNestedLazy02(): Lazy[Int -> Lazy[String]] =
+    def testNestedLazy02(): Lazy[Int32 -> Lazy[String]] =
         lazy (x -> if (x < 0) lazy "neg" else lazy "pos")
 
     @test
@@ -88,7 +88,7 @@ namespace Test/Exp/Lazy {
         lazy Card(Hearts, N(4))
 
     @test
-    def testPolyLazy01(): Lazy[Poly[Int, String]] =
+    def testPolyLazy01(): Lazy[Poly[Int32, String]] =
         lazy This(123)
 
     @test
@@ -96,7 +96,7 @@ namespace Test/Exp/Lazy {
         lazy That("str")
 
     @test
-    def testPolyLazy03(): Lazy[Poly[String, Int]] =
+    def testPolyLazy03(): Lazy[Poly[String, Int32]] =
         lazy Both("str", 123)
 
     pub enum Suit {
@@ -104,7 +104,7 @@ namespace Test/Exp/Lazy {
     }
 
     pub enum Rank {
-        case N(Int), Jack, Queen, King, Ace
+        case N(Int32), Jack, Queen, King, Ace
     }
 
     pub enum Card {
