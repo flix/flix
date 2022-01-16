@@ -200,15 +200,13 @@ namespace Option {
     /// Returns `v` if `o` is `Some(v)` else `0`.
     ///
     pub def product(o: Option[Int32]): Int32 =
-        productWith(v -> v, o)
+        Foldable.product(o)
 
     ///
     /// Returns `f(v)` if `o` is `Some(v)` else `0`.
     ///
-    pub def productWith(f: a -> Int32 & ef, o: Option[a]): Int32 & ef = match o {
-        case None    => 0
-        case Some(v) => f(v)
-    }
+    pub def productWith(f: a -> Int32 & ef, o: Option[a]): Int32 & ef =
+        Foldable.productWith(f, o)
 
     ///
     /// Returns `o` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.

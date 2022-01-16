@@ -875,7 +875,10 @@ namespace Array {
     /// Returns the product of all elements in the array `a`.
     ///
     pub def product(a: Array[Int32]): Int32 & Impure =
-        productWith(x -> x, a)
+        if (isEmpty(a))
+            0
+        else
+            foldLeft((acc, x) -> acc * x, 1, a)
 
     ///
     /// Returns the product of all elements in the array `a` according to the function `f`.
@@ -883,15 +886,8 @@ namespace Array {
     pub def productWith(f: a -> Int32 & ef, a: Array[a]): Int32 & Impure =
         if (isEmpty(a))
             0
-        else {
-            let l = length(a);
-            def loop(i, acc) =
-                if (i < l)
-                    loop(i + 1, f(a[i]) * acc)
-                else
-                    acc;
-            loop(0, 1)
-        }
+        else
+            foldLeft((acc, x) -> acc * f(x), 1, a)
 
     ///
     /// Returns the concatenation of the arrays of in the array `arrs`.

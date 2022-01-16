@@ -129,7 +129,10 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def product(iter: Iterator[Int32]): Int32 & Impure =
-        productWith(x -> x, iter)
+        if (isEmpty(iter))
+            0
+        else
+            foldLeft((acc, x) -> acc * x, 1, iter)
 
     ///
     /// Returns the product of all elements in the iterator `iter` according to the function `f`.
@@ -139,15 +142,8 @@ namespace Iterator {
     pub def productWith(f: a -> Int32 & ef, iter: Iterator[a]): Int32 & Impure =
         if (isEmpty(iter))
             0
-        else {
-            let Iterator(done, next) = iter;
-            def loop(acc) =
-                if (done())
-                    acc
-                else
-                    loop(f(next()) * acc);
-            loop(1)
-        }
+        else
+            foldLeft((acc, x) -> acc * f(x), 1, iter)
 
     ///
     /// Returns an array with the elements of `iter`.
