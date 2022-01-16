@@ -117,7 +117,7 @@ namespace MutList {
     /// Returns the sum of all elements in the MutList `v`.
     ///
     pub def sum(v: MutList[Int32]): Int32 & Impure =
-        sumWith(x -> x, v)
+        sumWith(identity, v)
 
     ///
     /// Returns the sum of all elements in the MutList `v` according to the function `f`.

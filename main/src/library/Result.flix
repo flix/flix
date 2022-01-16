@@ -146,14 +146,14 @@ namespace Result {
     /// Returns `v` if `r` is `Ok(v)` else `0`.
     ///
     pub def sum(r: Result[Int32, e]): Int32 =
-        sumWith(x -> x, r)
+        sumWith(identity, r)
 
     ///
     /// Returns `f(v)` if `r` is `Ok(v)` else `0`.
     ///
     pub def sumWith(f: t -> Int32 & ef, r: Result[t, e]): Int32 & ef = match r {
-        case Err(_) => 0
         case Ok(v)  => f(v)
+        case Err(_) => 0
     }
 
     ///

@@ -92,12 +92,16 @@ namespace DemandList {
     ///
     /// Returns the sum of all elements in the list `l`.
     ///
+    /// Forces the entire list `l`.
+    ///
     @Experimental
     pub def sum(l: DemandList[Int32, Forced]): Int32 =
-        sumWith(x -> x, l)
+        sumWith(identity, l)
 
     ///
     /// Returns the sum of all elements in `l` according to the function `f`.
+    ///
+    /// Forces the entire list `l`.
     ///
     @Experimental
     pub def sumWith(f: a -> Int32 & ef, l: DemandList[a, Forced]): Int32 & ef =

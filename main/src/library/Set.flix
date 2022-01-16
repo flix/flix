@@ -306,7 +306,7 @@ namespace Set {
     /// Returns the sum of all elements in the set `s`.
     ///
     pub def sum(s: Set[Int32]): Int32 =
-        sumWith(x -> x, s)
+        sumWith(identity, s)
 
     ///
     /// Returns the sum of all elements in the set `s` according to the function `f`.

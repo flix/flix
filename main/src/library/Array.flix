@@ -875,7 +875,7 @@ namespace Array {
     /// Returns the sum of all elements in the array `a`.
     ///
     pub def sum(a: Array[Int32]): Int32 & Impure =
-        sumWith(x -> x, a)
+        sumWith(identity, a)
 
     ///
     /// Returns the sum of all elements in the array `a` according to the function `f`.

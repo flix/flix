@@ -126,8 +126,10 @@ namespace Iterator {
     ///
     /// Returns the sum of all elements in the iterator `iter`.
     ///
+    /// Consumes the entire iterator.
+    ///
     pub def sum(iter: Iterator[Int32]): Int32 & Impure =
-        sumWith(x -> x, iter)
+        sumWith(identity, iter)
 
     ///
     /// Returns the sum of all elements in the iterator `iter` according to the function `f`.

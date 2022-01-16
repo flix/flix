@@ -666,9 +666,11 @@ namespace LazyList {
     ///
     /// Returns the sum of all elements in the LazyList `l`.
     ///
+    /// Forces the entire list `l`.
+    ///
     @Experimental
     pub def sum(l: LazyList[Int32]): Int32 =
-        sumWith(x -> x, l)
+        sumWith(identity, l)
 
     ///
     /// Returns the sum of all elements in the LazyList `l` according to the function `f`.

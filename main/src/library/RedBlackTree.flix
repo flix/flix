@@ -649,8 +649,8 @@ namespace RedBlackTree {
     ///
     /// Returns the sum of all key-value pairs `k => v` in the tree `t` according to the function `f`.
     ///
-    // TODO: Parallel impl
     pub def sumWith(f: (k, v) -> Int32 & ef, t: RedBlackTree[k, v]): Int32 & ef =
+        // TODO: Parallel impl
         foldLeft((acc, k, v) -> f(k, v) + acc, 0, t)
 
     ///

@@ -91,12 +91,13 @@ namespace MutDeque {
     /// Returns the sum of all elements in the deque `d`.
     ///
     pub def sum(d: MutDeque[Int32]): Int32 & Impure =
-        sumWith(x -> x, d)
+        sumWith(identity, d)
 
     ///
     /// Returns the sum of all elements in the deque `d` according to the function `f`.
     ///
     pub def sumWith(f: a -> Int32 & ef, d: MutDeque[a]): Int32 & Impure =
+        // TODO: Refactor when fold is implemented
         let MutDeque(ar_, front_, back_) = d;
         let ar = deref ar_;
         let front = deref front_;

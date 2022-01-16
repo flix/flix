@@ -1357,7 +1357,7 @@ namespace List {
     /// Returns the sum of all elements in the list `l`.
     ///
     pub def sum(l: List[Int32]): Int32 =
-        sumWith(x -> x, l)
+        sumWith(identity, l)
 
     ///
     /// Returns the sum of all elements in the list `l` according to the function `f`.

@@ -572,8 +572,8 @@ namespace Map {
     ///
     /// Returns the sum of all key-value pairs `k => v` in the map `m` according to the function `f`.
     ///
-    // TODO: Purity polymorphic
     pub def sumWith(f: (k, v) -> Int32 & ef, m: Map[k, v]): Int32 & ef =
+        // TODO: Purity polymorphic
         foldLeftWithKey((acc, k, v) -> f(k, v) + acc, 0, m)
 
     ///
