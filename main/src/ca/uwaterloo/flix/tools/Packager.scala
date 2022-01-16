@@ -187,9 +187,9 @@ object Packager {
 
     // Configure a new Flix object.
     val newOptions = o.copy(
-      targetDirectory = getBuildDirectory(p),
-      loadClassFiles = loadClasses,
-      writeClassFiles = true)
+      output = Some(getBuildDirectory(p)),
+      loadClassFiles = loadClasses
+    )
     flix.setOptions(newOptions)
 
     // Add sources and packages.

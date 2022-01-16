@@ -205,11 +205,11 @@ object JvmBackend {
     // Write each class (and interface) to disk.
     //
     // NB: In interactive and test mode we skip writing the files to disk.
-    if (flix.options.writeClassFiles && !flix.options.test) {
+    if (flix.options.output.nonEmpty) {
       flix.subphase("WriteClasses") {
         for ((_, jvmClass) <- allClasses) {
           flix.subtask(jvmClass.name.toBinaryName, sample = true)
-          JvmOps.writeClass(flix.options.targetDirectory, jvmClass)
+          JvmOps.writeClass(flix.options.output.get, jvmClass)
         }
       }
     }
