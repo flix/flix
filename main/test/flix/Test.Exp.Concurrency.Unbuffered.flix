@@ -191,7 +191,7 @@ namespace Test/Exp/Concurrency/Unbuffered {
     @test
     def testUnbufferedChannelGetPut16(): Channel[Int32] & Impure =
         let c1 = chan Channel[Int32] 0;
-        let c2 = chan Int 0;
+        let c2 = chan Int32 0;
         spawn <- <- c1;
         spawn c1 <- c2;
         c2 <- 42

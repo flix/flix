@@ -51,13 +51,13 @@ namespace Test/Def/Generalization {
     def testGen16(): a -> (b -> a) = x -> (_ -> x)
 
     @test
-    def testGen17(): r -> {x :: Int | r} = r -> {+x = 21 | r}
+    def testGen17(): r -> {x :: Int32 | r} = r -> {+x = 21 | r}
 
     @test
-    def testGen18(): {x :: Int | r} -> r = r -> { -x | r}
+    def testGen18(): {x :: Int32 | r} -> r = r -> { -x | r}
 
     @test
-    def testGen19(): {x :: Int | r} -> {x :: Int | r}  = r -> { x = 21 | r}
+    def testGen19(): {x :: Int32 | r} -> {x :: Int32 | r}  = r -> { x = 21 | r}
 
     @test
     def testGen20(): #{A(Int32)} = #{}
@@ -135,22 +135,22 @@ namespace Test/Def/Generalization {
     def testLeq18(): a -> (a -> a) = x -> (_ -> x)
 
     @test
-    def testLeq19(): Int -> (b -> Int32) = x -> (_ -> x)
+    def testLeq19(): Int32 -> (b -> Int32) = x -> (_ -> x)
 
     @test
-    def testLeq20(): a -> (Int -> a) = x -> (_ -> x)
+    def testLeq20(): a -> (Int32 -> a) = x -> (_ -> x)
 
     @test
-    def testLeq21(): Int -> (Int -> Int32) = x -> (_ -> x)
+    def testLeq21(): Int32 -> (Int32 -> Int32) = x -> (_ -> x)
 
     @test
-    def testLeq22(): {} -> {x :: Int} = r -> {+x = 21 | r}
+    def testLeq22(): {} -> {x :: Int32} = r -> {+x = 21 | r}
 
     @test
-    def testLeq23(): {x :: Int} -> {} = r -> {-x | r}
+    def testLeq23(): {x :: Int32} -> {} = r -> {-x | r}
 
     @test
-    def testLeq24(): {x :: Int} -> {x :: Int} = r -> {x = 21 | r}
+    def testLeq24(): {x :: Int32} -> {x :: Int32} = r -> {x = 21 | r}
 
     @test
     def testLeq25(): (Unit -> b & e) -> b & e = f -> f()

@@ -40,7 +40,7 @@ namespace Test/Derives/Order {
         case RecursiveCase(MutRecursiveEnum1)
     }
 
-    pub opaque type OpaqueType with Eq, Order = Int
+    pub opaque type OpaqueType with Eq, Order = Int32
 
     @test
     def testEq01(): Bool = compare(Enum.EmptyCase, Enum.EmptyCase) == EqualTo

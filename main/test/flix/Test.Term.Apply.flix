@@ -168,7 +168,7 @@ namespace Test/Term/Apply {
     pub def two(): Int32 = 2
     pub def inc(x: Int32): Int32 = x + 1
     pub def dec(x: Int32): Int32 = x - 1
-    pub def add(x: Int, y: Int32): Int32 = x + y
+    pub def add(x: Int32, y: Int32): Int32 = x + y
 
     pub def identity(x: a): a = x
     pub def fst(p: (a, b)): a = let (x, _) = p; x

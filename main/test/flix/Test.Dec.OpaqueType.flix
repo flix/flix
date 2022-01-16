@@ -3,12 +3,12 @@ namespace Test/Dec/OpaqueType {
     /**
      * An opaque type for degrees celsius.
      */
-    opaque type Celsius = Int
+    opaque type Celsius = Int32
 
     /**
      * An opaque type for degrees fahrenheit.
      */
-    opaque type Fahrenheit = Int
+    opaque type Fahrenheit = Int32
 
     /**
      * An opaque type for united states dollars.
@@ -150,7 +150,7 @@ namespace Test/Dec/OpaqueType {
     /**
      * A type alias for Int.
      */
-    type alias Y = Int
+    type alias Y = Int32
 
     /**
      * A polymorphic type alias for Option.

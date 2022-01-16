@@ -182,7 +182,7 @@ namespace Test/Exp/Force {
     @test
     def testPrecedenceForce04(): Bool =
         let x = lazy 2 : Lazy[Int32];
-        let y = force x : Int;
+        let y = force x : Int32;
         y == 2
 
     pub enum Suit {

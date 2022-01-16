@@ -25,31 +25,31 @@ class TestKinder extends FunSuite with TestUtils {
   private val DefaultOptions = Options.TestWithLibNix
 
   test("MismatchedTypeParamKind.Implicit.01") {
-    val input = "def f(g: Int -> o & o): Int = 123"
+    val input = "def f(g: Int32 -> o & o): Int32 = 123"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("MismatchedTypeParamKind.Implicit.02") {
-    val input = "def f(g: Int -> Int & e): e = g(123)"
+    val input = "def f(g: Int32 -> Int32 & e): e = g(123)"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("MismatchedTypeParamKind.Implicit.03") {
-    val input = "def f(s: #{| a}, r: {| a}): Int = 123"
+    val input = "def f(s: #{| a}, r: {| a}): Int32 = 123"
     val result = compile(input, Options.TestWithLibNix)
     expectError[KindError](result)
   }
 
   test("MismatchedTypeParamKind.Implicit.04") {
-    val input = "def f(s: #{X(Int) | a}, r: {x :: Int | a}): Int = 123"
+    val input = "def f(s: #{X(Int32) | a}, r: {x :: Int32 | a}): Int32 = 123"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("MismatchedTypeParamKind.Implicit.05") {
-    val input = "def f(a: e): Int & not e = 123"
+    val input = "def f(a: e): Int32 & not e = 123"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -61,7 +61,7 @@ class TestKinder extends FunSuite with TestUtils {
         |  case E1(a)
         |}
         |
-        |def f(g: E[a -> b & e]): Int & not (a or b) = 123
+        |def f(g: E[a -> b & e]): Int32 & not (a or b) = 123
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
@@ -72,7 +72,7 @@ class TestKinder extends FunSuite with TestUtils {
     val input =
       """
         |enum E[o] {
-        |    case A(Int -> o & o)
+        |    case A(Int32 -> o & o)
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -83,7 +83,7 @@ class TestKinder extends FunSuite with TestUtils {
     val input =
       """
         |enum E[e] {
-        |    case A((Int -> Int & e) -> e)
+        |    case A((Int32 -> Int32 & e) -> e)
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -105,7 +105,7 @@ class TestKinder extends FunSuite with TestUtils {
     val input =
       """
         |enum E[a] {
-        |    case A(#{X(Int) | a}, {x :: Int | a})
+        |    case A(#{X(Int32) | a}, {x :: Int32 | a})
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -116,7 +116,7 @@ class TestKinder extends FunSuite with TestUtils {
     val input =
       """
         |enum E[e] {
-        |    case A(e -> Int & not e)
+        |    case A(e -> Int32 & not e)
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -130,7 +130,7 @@ class TestKinder extends FunSuite with TestUtils {
         |  case D1(a)
         |}
         |enum E[a, b, e] {
-        |    case A(D[a -> b & e] -> Int & not (a or b))
+        |    case A(D[a -> b & e] -> Int32 & not (a or b))
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -138,13 +138,13 @@ class TestKinder extends FunSuite with TestUtils {
   }
 
   test("MismatchedTypeParamKind.TypeAlias.01") {
-    val input = "type alias T[o] = Int -> o & o"
+    val input = "type alias T[o] = Int32 -> o & o"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("MismatchedTypeParamKind.TypeAlias.02") {
-    val input = "type alias T[e] = (Int -> Int & e) -> e"
+    val input = "type alias T[e] = (Int32 -> Int32 & e) -> e"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -156,13 +156,13 @@ class TestKinder extends FunSuite with TestUtils {
   }
 
   test("MismatchedTypeParamKind.TypeAlias.04") {
-    val input = "type alias T[a] = (#{X(Int) | a}, {x :: Int | a})"
+    val input = "type alias T[a] = (#{X(Int32) | a}, {x :: Int32 | a})"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("MismatchedTypeParamKind.TypeAlias.05") {
-    val input = "type alias T[e] = e -> Int & not e"
+    val input = "type alias T[e] = e -> Int32 & not e"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -175,7 +175,7 @@ class TestKinder extends FunSuite with TestUtils {
         |  case None
         |}
         |
-        |type alias T[a, b, e] = Option[a -> b & e] -> Int & not (a or b)
+        |type alias T[a, b, e] = Option[a -> b & e] -> Int32 & not (a or b)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
@@ -188,7 +188,7 @@ class TestKinder extends FunSuite with TestUtils {
         |  case C(a, b)
         |}
         |
-        |def f(p: P[Int]): Int = 123
+        |def f(p: P[Int32]): Int32 = 123
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
@@ -202,7 +202,7 @@ class TestKinder extends FunSuite with TestUtils {
         |}
         |
         |enum E {
-        |  case A(P[Int])
+        |  case A(P[Int32])
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -217,7 +217,7 @@ class TestKinder extends FunSuite with TestUtils {
         |  case C(a, b)
         |}
         |
-        |def f(p: P): Int = 123
+        |def f(p: P): Int32 = 123
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
@@ -245,7 +245,7 @@ class TestKinder extends FunSuite with TestUtils {
         |  case C(a, b, c)
         |}
         |
-        |def f(p: P[Int, Int]): Int = 123
+        |def f(p: P[Int32, Int32]): Int32 = 123
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
@@ -259,7 +259,7 @@ class TestKinder extends FunSuite with TestUtils {
         |}
         |
         |enum E {
-        |  case A(P[Int, Int])
+        |  case A(P[Int32, Int32])
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -267,13 +267,13 @@ class TestKinder extends FunSuite with TestUtils {
   }
 
   test("IllegalUninhabitedType.07") {
-    val input = """def f(x: true): Int = 123"""
+    val input = """def f(x: true): Int32 = 123"""
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalUninhabitedType.08") {
-    val input = "def f(): Int = 1 as Pure"
+    val input = "def f(): Int32 = 1 as Pure"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -285,13 +285,13 @@ class TestKinder extends FunSuite with TestUtils {
         |  case C(a, b)
         |}
         |
-        |def f(): Int = 1 as E[Int]""".stripMargin
+        |def f(): Int32 = 1 as E[Int32]""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalUninhabitedType.10") {
-    val input = "def f(): Int = 1: Pure"
+    val input = "def f(): Int32 = 1: Pure"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -303,31 +303,31 @@ class TestKinder extends FunSuite with TestUtils {
         |  case C(a, b)
         |}
         |
-        |def f(): Int = 1: E[Int]""".stripMargin
+        |def f(): Int32 = 1: E[Int32]""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalEffect.01") {
-    val input = "def f(): Int = 1 as & Int"
+    val input = "def f(): Int32 = 1 as & Int32"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalEffect.02") {
-    val input = "def f(): Int = 1 as Int & Int"
+    val input = "def f(): Int32 = 1 as Int32 & Int32"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalEffect.03") {
-    val input = "def f(): Int = 1: & Int"
+    val input = "def f(): Int32 = 1: & Int32"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalEffect.04") {
-    val input = "def f(): Int = 1: Int & Int"
+    val input = "def f(): Int32 = 1: Int32 & Int32"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -339,7 +339,7 @@ class TestKinder extends FunSuite with TestUtils {
         |  case C(a, b)
         |}
         |
-        |def f(p: P[Int, String, String]): Int = 123
+        |def f(p: P[Int32, String, String]): Int32 = 123
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
@@ -348,9 +348,9 @@ class TestKinder extends FunSuite with TestUtils {
   test("IllegalTypeApplication.02") {
     val input =
       """
-        |type alias R = {x :: Int}
+        |type alias R = {x :: Int32}
         |
-        |def f(p: R[Int]): Int = 123
+        |def f(p: R[Int32]): Int32 = 123
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
@@ -359,42 +359,42 @@ class TestKinder extends FunSuite with TestUtils {
   test("IllegalTypeApplication.03") {
     val input =
       """
-        |rel A(a: Int)
+        |rel A(a: Int32)
         |
         |type alias S = #{ A }
         |
-        |def f(p: S[Int]): Int = 123
+        |def f(p: S[Int32]): Int32 = 123
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalTypeApplication.04") {
-    val input = "def f(p: String[Int]): Int = 123"
+    val input = "def f(p: String[Int32]): Int32 = 123"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalTypeApplication.05") {
-    val input = "def f(): Int = 1 as Int & Int and true"
+    val input = "def f(): Int32 = 1 as Int32 & Int32 and true"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalTypeApplication.06") {
-    val input = "def f(): Int = 1 as Int & true or Int"
+    val input = "def f(): Int32 = 1 as Int32 & true or Int32"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalTypeApplication.07") {
-    val input = "def f(): Int = 1 as Int & not Int"
+    val input = "def f(): Int32 = 1 as Int32 & not Int32"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalTypeApplication.08") {
-    val input = "def f(a: (Int, true)): Int = 1"
+    val input = "def f(a: (Int32, true)): Int32 = 1"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -420,7 +420,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Expression.Ascribe.01") {
     val input =
       """
-        |def f(): Int = 1: Pure
+        |def f(): Int32 = 1: Pure
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -429,7 +429,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Expression.Ascribe.02") {
     val input =
       """
-        |def f(): Int = 1: & Unit
+        |def f(): Int32 = 1: & Unit
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -449,7 +449,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Expression.Ascribe.04") {
     val input =
       """
-        |def foo(x: a[Int]): Int =
+        |def foo(x: a[Int32]): Int32 =
         |  let _x: a = ???;
         |  123
         |""".stripMargin
@@ -473,8 +473,8 @@ class TestKinder extends FunSuite with TestUtils {
       """
         |enum E
         |
-        |pub def foo(): Int =
-        |    let x: E[Int] = ???; 0
+        |pub def foo(): Int32 =
+        |    let x: E[Int32] = ???; 0
         |
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -486,8 +486,8 @@ class TestKinder extends FunSuite with TestUtils {
       """
         |enum E[a, b]
         |
-        |pub def foo(): Int =
-        |    let x: E[Int] = ???; 0
+        |pub def foo(): Int32 =
+        |    let x: E[Int32] = ???; 0
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -496,7 +496,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Expression.Cast.01") {
     val input =
       """
-        |def f(): Int = 1 as Pure
+        |def f(): Int32 = 1 as Pure
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -505,7 +505,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Expression.Cast.02") {
     val input =
       """
-        |def f(): Int = 1 as & Unit
+        |def f(): Int32 = 1 as & Unit
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -516,7 +516,7 @@ class TestKinder extends FunSuite with TestUtils {
       """
         |enum E
         |
-        |pub def foo(): Int = 0 as E[Int]
+        |pub def foo(): Int32 = 0 as E[Int32]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -527,7 +527,7 @@ class TestKinder extends FunSuite with TestUtils {
       """
         |enum E[a, b]
         |
-        |pub def foo(): Int = 0 as E[Int]
+        |pub def foo(): Int32 = 0 as E[Int32]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -535,7 +535,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Type.01") {
     val input =
       """
-        |def f(x: Int[Int]): Int = ???
+        |def f(x: Int[Int32]): Int32 = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -544,7 +544,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Type.02") {
     val input =
       """
-        |def f(x: Int -> Int & Int): Int = ???
+        |def f(x: Int32 -> Int32 & Int32): Int32 = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -553,7 +553,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Type.03") {
     val input =
       """
-        |def f(x: Pure -> Int & Int): Int = ???
+        |def f(x: Pure -> Int32 & Int32): Int32 = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -562,7 +562,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Type.04") {
     val input =
       """
-        |def f[r: Type](x: {name :: Int | r} ): Int = ???
+        |def f[r: Type](x: {name :: Int32 | r} ): Int32 = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -571,7 +571,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Type.05") {
     val input =
       """
-        |def f[r: Type](x: #{| r} ): Int = ???
+        |def f[r: Type](x: #{| r} ): Int32 = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -582,7 +582,7 @@ class TestKinder extends FunSuite with TestUtils {
       """
         |enum E[a]
         |
-        |def f(x: E[Int, Int]): Int = ???
+        |def f(x: E[Int32, Int32]): Int32 = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -591,7 +591,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Type.07") {
     val input =
       """
-        |def f(x: Int[Int]): Int = ???
+        |def f(x: Int32[Int32]): Int32 = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -600,7 +600,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Parameter.01") {
     val input =
       """
-        |def f(x: Pure): Int = ???
+        |def f(x: Pure): Int32 = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -611,7 +611,7 @@ class TestKinder extends FunSuite with TestUtils {
       """
         |enum E[a]
         |
-        |def f(x: E): Int = ???
+        |def f(x: E): Int32 = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -640,7 +640,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Return.03") {
     val input =
       """
-        |def f(): Int[Int] = ???
+        |def f(): Int32[Int32] = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -660,7 +660,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Mismatch.01") {
     val input =
       """
-        |def f(x: a): Int & a = ???
+        |def f(x: a): Int32 & a = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.MismatchedKinds](result)
@@ -671,7 +671,7 @@ class TestKinder extends FunSuite with TestUtils {
       """
         |class C[a: Type -> Type]
         |
-        |def f(x: a): Int with C[a] = ???
+        |def f(x: a): Int32 with C[a] = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.MismatchedKinds](result)
@@ -680,7 +680,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Mismatch.03") {
     val input =
       """
-        |def f(x: a -> a & a): Int = ???
+        |def f(x: a -> a & a): Int32 = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.MismatchedKinds](result)
@@ -725,7 +725,7 @@ class TestKinder extends FunSuite with TestUtils {
     val input =
       """
         |enum E[a] {
-        |  case C({i :: Int | a})
+        |  case C({i :: Int32 | a})
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -736,7 +736,7 @@ class TestKinder extends FunSuite with TestUtils {
     val input =
       """
         |enum E {
-        |  case C(Int -> Int & Int)
+        |  case C(Int32 -> Int32 & Int32)
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -747,7 +747,7 @@ class TestKinder extends FunSuite with TestUtils {
     val input =
       """
         |enum E[a] {
-        |  case C(Int -> Int & a)
+        |  case C(Int32 -> Int32 & a)
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -758,7 +758,7 @@ class TestKinder extends FunSuite with TestUtils {
     val input =
       """
         |enum E {
-        |  case C(Int[Int])
+        |  case C(Int32[Int32])
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -813,7 +813,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.TypeAlias.Type.01") {
     val input =
       """
-        |type alias T = Pure -> Int
+        |type alias T = Pure -> Int32
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -822,7 +822,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.TypeAlias.Type.02") {
     val input =
       """
-        |type alias T[a] = Int -> Int & a
+        |type alias T[a] = Int32 -> Int32 & a
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -831,7 +831,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.TypeAlias.Type.03") {
     val input =
       """
-        |rel A(x: Int)
+        |rel A(x: Int32)
         |
         |type alias Z[r] = #{ A | r }
         |""".stripMargin
@@ -854,7 +854,7 @@ class TestKinder extends FunSuite with TestUtils {
     val input =
       """
         |class C[a: Type -> Type] {
-        |  pub def f(x: a): Int = ???
+        |  pub def f(x: a): Int32 = ???
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -865,7 +865,7 @@ class TestKinder extends FunSuite with TestUtils {
     val input =
       """
         |class C[a] {
-        |  pub def f(x: {l ::  Int | a}): Int = ???
+        |  pub def f(x: {l ::  Int32 | a}): Int32 = ???
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)

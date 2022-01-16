@@ -33,6 +33,6 @@ def testLambda10Helper(): Int32 -> Int32 = x -> x
 @test
 def testLambda11(): Bool = testLambda11Helper1() == 4
 def testLambda11Helper1(): Int32 =
-    let x = (a: Int) -> testLambda11Helper2(a);
+    let x = (a: Int32) -> testLambda11Helper2(a);
     x(4)
 def testLambda11Helper2(x: a): a = x
