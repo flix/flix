@@ -875,19 +875,13 @@ namespace Array {
     /// Returns the sum of all elements in the array `a`.
     ///
     pub def sum(a: Array[Int32]): Int32 & Impure =
-        sumWith(identity, a)
+        foldLeft((acc, x) -> acc + x, 0, a)
 
     ///
     /// Returns the sum of all elements in the array `a` according to the function `f`.
     ///
     pub def sumWith(f: a -> Int32 & ef, a: Array[a]): Int32 & Impure =
-        let l = length(a);
-        def loop(i, acc) =
-            if (i < l)
-                loop(i + 1, f(a[i]) + acc)
-            else
-                acc;
-        loop(0, 0)
+        foldLeft((acc, x) -> acc + f(x), 0, a)
 
     ///
     /// Returns the concatenation of the arrays of in the array `arrs`.
