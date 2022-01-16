@@ -35,7 +35,19 @@ pub lawless class Foldable[t : Type -> Type] {
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
     pub def count(f: a -> Bool, t: t[a]): Int32 =
-      Foldable.foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, t)
+        Foldable.foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, t)
+
+    ///
+    /// Returns the sum of all elements in `t`.
+    ///
+    pub def sum(t: t[Int32]): Int32 =
+        Foldable.foldLeft((acc, x) -> acc + x, 0, t)
+
+    ///
+    /// Returns the sum of all elements in `t` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, t: t[a]): Int32 & ef =
+        Foldable.foldLeft((acc, x) -> acc + f(x), 0, t)
 
     ///
     /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
