@@ -866,6 +866,118 @@ def count08(): Bool & Impure =
     MutList.toList(a) == range
 
 
+    /////////////////////////////////////////////////////////////////////////////
+    // sumValues                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumValues01(): Bool =
+        Map.empty() |> Map.sumValues == 0
+
+    @test
+    def sumValues02(): Bool =
+        Map#{1 => 1} |>
+            Map.sumValues == 1
+
+    @test
+    def sumValues03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |>
+            Map.sumValues == 6
+
+    @test
+    def sumValues04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |>
+            Map.sumValues == 3
+
+    @test
+    def sumValues05(): Bool =
+        Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4} |>
+            Map.sumValues == -10
+
+    @test
+    def sumValues06(): Bool =
+        Map#{10 => 10, -10 => -10} |>
+            Map.sumValues == 0
+
+    @test
+    def sumValues07(): Bool =
+        List.range(1, 101) |> List.zip(List.range(1, 101)) |> List.toMap |>
+            Map.sumValues == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumKeys                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumKeys01(): Bool =
+        Map.empty() |> Map.sumKeys == 0
+
+    @test
+    def sumKeys02(): Bool =
+        Map#{1 => 1} |>
+            Map.sumKeys == 1
+
+    @test
+    def sumKeys03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |>
+            Map.sumKeys == 6
+
+    @test
+    def sumKeys04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |>
+            Map.sumKeys == 3
+
+    @test
+    def sumKeys05(): Bool =
+        Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4} |>
+            Map.sumKeys == -12
+
+    @test
+    def sumKeys06(): Bool =
+        Map#{10 => 10, -10 => -10} |>
+            Map.sumKeys == 0
+
+    @test
+    def sumKeys07(): Bool =
+        List.range(1, 101) |> List.zip(List.range(1, 101)) |> List.toMap |>
+            Map.sumKeys == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        Map.empty() |> Map.sumWith((k, v) -> k + v) == 0
+
+    @test
+    def sumWith02(): Bool =
+        Map#{1 => 1} |>
+            Map.sumWith((k, v) -> k + v) == 2
+
+    @test
+    def sumWith03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |>
+            Map.sumWith((k, v) -> k + v) == 12
+
+    @test
+    def sumWith04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |>
+            Map.sumWith((k, v) -> k + v) == 6
+
+    @test
+    def sumWith05(): Bool =
+        Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4} |>
+            Map.sumWith((k, v) -> k + v) == -20
+
+    @test
+    def sumWith06(): Bool =
+        Map#{10 => 10, -10 => -10} |>
+            Map.sumWith((k, v) -> k + v) == 0
+
+
 /////////////////////////////////////////////////////////////////////////////
 // exists                                                                  //
 /////////////////////////////////////////////////////////////////////////////

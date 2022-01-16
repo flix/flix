@@ -473,6 +473,68 @@ def count08(): Bool & Impure =
     MutList.toList(a) == range
 
 
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool =
+        Set.empty() |> Set.sum == 0
+
+    @test
+    def sum02(): Bool =
+        Set#{1} |> Set.sum == 1
+
+    @test
+    def sum03(): Bool =
+        Set#{1, 2, 3} |> Set.sum == 6
+
+    @test
+    def sum04(): Bool =
+        Set#{1, 2, 3, -3} |> Set.sum == 3
+
+    @test
+    def sum05(): Bool =
+        Set#{1, 2, -3, -4} |> Set.sum == -4
+
+    @test
+    def sum06(): Bool =
+        Set#{10, -10} |> Set.sum == 0
+
+    @test
+    def sum07(): Bool =
+        Set.range(1, 101) |> Set.sum == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        Set.empty() |> Set.sumWith(x -> x + 1) == 0
+
+    @test
+    def sumWith02(): Bool =
+        Set#{1} |> Set.sumWith(x -> x + 1) == 2
+
+    @test
+    def sumWith03(): Bool =
+        Set#{1, 2, 3} |> Set.sumWith(x -> x + 1) == 9
+
+    @test
+    def sumWith04(): Bool =
+        Set#{1, 2, 3, -3} |> Set.sumWith(x -> x + 1) == 7
+
+    @test
+    def sumWith05(): Bool =
+        Set#{-1, -2, -3, -4} |> Set.sumWith(x -> x + 1) == -6
+
+    @test
+    def sumWith06(): Bool =
+        Set#{10, -10} |> Set.sumWith(x -> x + 1) == 2
+
+
 /////////////////////////////////////////////////////////////////////////////
 // flatten                                                                 //
 /////////////////////////////////////////////////////////////////////////////

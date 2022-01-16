@@ -114,6 +114,18 @@ namespace MutList {
         foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, v)
 
     ///
+    /// Returns the sum of all elements in the MutList `v`.
+    ///
+    pub def sum(v: MutList[Int32]): Int32 & Impure =
+        foldLeft((acc, x) -> acc + x, 0, v)
+
+    ///
+    /// Returns the sum of all elements in the MutList `v` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, v: MutList[a]): Int32 & Impure =
+        foldLeft((acc, x) -> acc + f(x), 0, v)
+
+    ///
     /// Returns `true` if the given predicate `f` holds for at least one element of the given mutable list `v`.
     ///
     /// Returns `false` if the given mutable list `v` is empty.
@@ -806,19 +818,4 @@ namespace MutList {
         let MutList(a, l) = v;
         Array.sortWithin!(cmp, 0, (deref l) - 1, deref a)
 
-    ///
-    /// Returns the sum of all elements in the list `v`.
-    ///
-    pub def sum(v: MutList[Int32]): Int32 & Impure =
-        let MutList(a, l) = v;
-        sumAcc(deref a, deref l, 0, 0)
-
-    ///
-    /// Helper function for `sum`.
-    ///
-    def sumAcc(a: Array[Int32], l: Int32, i: Int32, acc: Int32): Int32 & Impure =
-        if (i < l)
-            sumAcc(a, l, i + 1, a[i] + acc)
-        else
-            acc
 }

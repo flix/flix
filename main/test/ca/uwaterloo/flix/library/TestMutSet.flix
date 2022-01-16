@@ -86,4 +86,66 @@ namespace TestMutSet {
 
         not MutSet.sameElements(s, s2)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool & Impure =
+        MutSet.empty() |> MutSet.sum == 0
+
+    @test
+    def sum02(): Bool & Impure =
+        Set#{1} |> Set.toMutSet |> MutSet.sum == 1
+
+    @test
+    def sum03(): Bool & Impure =
+        Set#{1, 2, 3} |> Set.toMutSet |> MutSet.sum == 6
+
+    @test
+    def sum04(): Bool & Impure =
+        Set#{1, 2, 3, -3} |> Set.toMutSet |> MutSet.sum == 3
+
+    @test
+    def sum05(): Bool & Impure =
+        Set#{1, 2, -3, -4} |> Set.toMutSet |> MutSet.sum == -4
+
+    @test
+    def sum06(): Bool & Impure =
+        Set#{10, -10} |> Set.toMutSet |> MutSet.sum == 0
+
+    @test
+    def sum07(): Bool & Impure =
+        Set.range(1, 101) |> Set.toMutSet |> MutSet.sum == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool & Impure =
+        MutSet.empty() |> MutSet.sumWith(x -> x + 1) == 0
+
+    @test
+    def sumWith02(): Bool & Impure =
+        Set#{1} |> Set.toMutSet |> MutSet.sumWith(x -> x + 1) == 2
+
+    @test
+    def sumWith03(): Bool & Impure =
+        Set#{1, 2, 3} |> Set.toMutSet |> MutSet.sumWith(x -> x + 1) == 9
+
+    @test
+    def sumWith04(): Bool & Impure =
+        Set#{1, 2, 3, -3} |> Set.toMutSet |> MutSet.sumWith(x -> x + 1) == 7
+
+    @test
+    def sumWith05(): Bool & Impure =
+        Set#{-1, -2, -3, -4} |> Set.toMutSet |> MutSet.sumWith(x -> x + 1) == -6
+
+    @test
+    def sumWith06(): Bool & Impure =
+        Set#{10, -10} |> Set.toMutSet |> MutSet.sumWith(x -> x + 1) == 2
+
 }

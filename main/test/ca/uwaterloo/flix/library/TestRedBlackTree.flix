@@ -321,4 +321,117 @@ namespace TestRedBlackTree {
     @test
     def neq01(): Bool =
         toRedBlackTree((1, 1) :: Nil) != RedBlackTree.empty()
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumValues                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumValues01(): Bool =
+        RedBlackTree.empty() |> RedBlackTree.sumValues == 0
+
+    @test
+    def sumValues02(): Bool =
+        let Map(t) = Map#{1 => 1};
+        RedBlackTree.sumValues(t) == 1
+
+    @test
+    def sumValues03(): Bool =
+        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
+        RedBlackTree.sumValues(t) == 6
+
+    @test
+    def sumValues04(): Bool =
+        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
+        RedBlackTree.sumValues(t) == 3
+
+    @test
+    def sumValues05(): Bool =
+        let Map(t) = Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4};
+        RedBlackTree.sumValues(t) == -10
+
+    @test
+    def sumValues06(): Bool =
+        let Map(t) = Map#{10 => 10, -10 => -10};
+        RedBlackTree.sumValues(t) == 0
+
+    @test
+    def sumValues07(): Bool =
+        let Map(t) = List.range(1, 101) |> List.zip(List.range(1, 101)) |> List.toMap;
+        RedBlackTree.sumValues(t) == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumKeys                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumKeys01(): Bool =
+        RedBlackTree.empty() |> RedBlackTree.sumKeys == 0
+
+    @test
+    def sumKeys02(): Bool =
+        let Map(t) = Map#{1 => 1};
+        RedBlackTree.sumKeys(t) == 1
+
+    @test
+    def sumKeys03(): Bool =
+        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
+        RedBlackTree.sumKeys(t) == 6
+
+    @test
+    def sumKeys04(): Bool =
+        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
+        RedBlackTree.sumKeys(t) == 3
+
+    @test
+    def sumKeys05(): Bool =
+        let Map(t) = Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4};
+        RedBlackTree.sumKeys(t) == -12
+
+    @test
+    def sumKeys06(): Bool =
+        let Map(t) = Map#{10 => 10, -10 => -10};
+        RedBlackTree.sumKeys(t) == 0
+
+    @test
+    def sumKeys07(): Bool =
+        let Map(t) = List.range(1, 101) |> List.zip(List.range(1, 101)) |> List.toMap;
+        RedBlackTree.sumKeys(t) == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        RedBlackTree.empty() |> RedBlackTree.sumWith((k, v) -> k + v) == 0
+
+    @test
+    def sumWith02(): Bool =
+        let Map(t) = Map#{1 => 1};
+        RedBlackTree.sumWith((k, v) -> k + v, t) == 2
+
+    @test
+    def sumWith03(): Bool =
+        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
+        RedBlackTree.sumWith((k, v) -> k + v, t) == 12
+
+    @test
+    def sumWith04(): Bool =
+        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
+        RedBlackTree.sumWith((k, v) -> k + v, t) == 6
+
+    @test
+    def sumWith05(): Bool =
+        let Map(t) = Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4};
+        RedBlackTree.sumWith((k, v) -> k + v, t) == -20
+
+    @test
+    def sumWith06(): Bool =
+        let Map(t) = Map#{10 => 10, -10 => -10};
+        RedBlackTree.sumWith((k, v) -> k + v, t) == 0
+
 }
