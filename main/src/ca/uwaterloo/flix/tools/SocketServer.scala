@@ -117,18 +117,10 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       case _ => false
     }
 
-    // --Xno-stratifier
-    val xnostratifier = json \\ "xnostratifier" match {
-      case JBool(b) => b
-      case _ => false
-    }
-
     // Construct the options object.
     val opts = Options.Default.copy(
       lib = if (xcore) LibLevel.Min else LibLevel.All,
-      writeClassFiles = false,
-      xallowredundancies = xallowredundancies,
-      xnostratifier = xnostratifier,
+      xallowredundancies = xallowredundancies
     )
 
     // Return the source and options.
