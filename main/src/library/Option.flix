@@ -200,15 +200,13 @@ namespace Option {
     /// Returns `v` if `o` is `Some(v)` else `0`.
     ///
     pub def sum(o: Option[Int32]): Int32 =
-        sumWith(v -> v, o)
+        Foldable.sum(o)
 
     ///
     /// Returns `f(v)` if `o` is `Some(v)` else `0`.
     ///
-    pub def sumWith(f: a -> Int32 & ef, o: Option[a]): Int32 & ef = match o {
-        case None    => 0
-        case Some(v) => f(v)
-    }
+    pub def sumWith(f: a -> Int32 & ef, o: Option[a]): Int32 & ef =
+        Foldable.sumWith(f, o)
 
     ///
     /// Returns `o` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.

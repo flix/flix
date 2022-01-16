@@ -670,7 +670,7 @@ namespace LazyList {
     ///
     @Experimental
     pub def sum(l: LazyList[Int32]): Int32 =
-        sumWith(identity, l)
+        Foldable.sum(l)
 
     ///
     /// Returns the sum of all elements in the LazyList `l` according to the function `f`.
@@ -679,13 +679,7 @@ namespace LazyList {
     ///
     @Experimental
     pub def sumWith(f: a -> Int32 & ef, l: LazyList[a]): Int32 & ef =
-        def loop(k, acc) = match k {
-            case ENil         => acc
-            case ECons(x, xs) => loop(      xs, f(x) + acc)
-            case LCons(x, xs) => loop(force xs, f(x) + acc)
-            case LList(xs)    => loop(force xs,        acc)
-        };
-        loop(l, 0)
+        Foldable.sumWith(f ,l)
 
     ///
     /// Returns the concatenation of the elements in `l`.
