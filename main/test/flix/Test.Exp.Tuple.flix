@@ -64,10 +64,10 @@ namespace Test/Exp/Tuple {
     def testStringTuple02(): (String, String, String) = ("abc", "def", "geh")
 
     @test
-    def testRecordTuple01(): ({x :: Int}, {x :: Int}) = ({x = 1}, {x = 2})
+    def testRecordTuple01(): ({x :: Int32}, {x :: Int32}) = ({x = 1}, {x = 2})
 
     @test
-    def testRecordTuple02(): ({x :: Int}, {x :: Int}, {x :: Int}) = ({x = 1}, {x = 2}, {x = 3})
+    def testRecordTuple02(): ({x :: Int32}, {x :: Int32}, {x :: Int32}) = ({x = 1}, {x = 2}, {x = 3})
 
     @test
     def testTupleTuple01(): (Int32, (Int32, Int32)) = (1, (2, 3))

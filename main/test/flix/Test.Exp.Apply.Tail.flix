@@ -54,19 +54,19 @@ namespace Test/Exp/Apply/Tail {
 
     def c(x: Int32): Bool = x == 42
 
-    def a1(x: Int, f: Int32 -> Int32): Bool = b1(f(x), y -> y - 1)
+    def a1(x: Int32, f: Int32 -> Int32): Bool = b1(f(x), y -> y - 1)
 
-    def b1(x: Int, f: Int32 -> Int32): Bool = c1(f(x), y -> y == 42)
+    def b1(x: Int32, f: Int32 -> Int32): Bool = c1(f(x), y -> y == 42)
 
-    def c1(x: Int, f: Int32 -> Bool): Bool = f(x)
+    def c1(x: Int32, f: Int32 -> Bool): Bool = f(x)
 
-    def ping(n: Int, c: Int32 -> Int32): Int32 = match n {
+    def ping(n: Int32, c: Int32 -> Int32): Int32 = match n {
         case 0 => c(0)
         case 1 => c(1)
         case x => pong(x - 1, z -> c(z + 1))
     }
 
-    def pong(n: Int, c: Int32 -> Int32): Int32 = match n {
+    def pong(n: Int32, c: Int32 -> Int32): Int32 = match n {
         case 0 => c(0)
         case 1 => c(1)
         case x => ping(x - 1, z -> c(z + 1))

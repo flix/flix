@@ -25,7 +25,7 @@ namespace Test/Class/Kinding {
                 class CStar[a: Type]
 
                 lawless class CStar1[a] {
-                    pub def star(x: a): Int with CStar[a] = ???
+                    pub def star(x: a): Int32 with CStar[a] = ???
                 }
             }
 
@@ -112,15 +112,15 @@ namespace Test/Class/Kinding {
                 class CBoolToStar[a: Bool -> Type]
 
                 lawless class CStar1[a: Type] {
-                    pub def star(x: a): Int with CStar[a] = ???
+                    pub def star(x: a): Int32 with CStar[a] = ???
                 }
 
                 lawless class CStarToStar1[a: Type -> Type] {
-                    pub def starToStar(x: a[Int32]): Int with CStarToStar[a] = ???
+                    pub def starToStar(x: a[Int32]): Int32 with CStarToStar[a] = ???
                 }
 
                 lawless class CBoolToStar1[a: Bool -> Type] {
-                    pub def boolToStar(x: a[Pure]): Int with CBoolToStar[a] = ???
+                    pub def boolToStar(x: a[Pure]): Int32 with CBoolToStar[a] = ???
                 }
             }
 
