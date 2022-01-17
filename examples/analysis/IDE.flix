@@ -1,15 +1,15 @@
 enum Value with Eq, Order, ToString {
     case Bot,
-    case Cst(Int),
+    case Cst(Int32),
     case Top
 }
 
-def sum(e1: Value, e2: Int): Value = match e1 {
+def sum(e1: Value, e2: Int32): Value = match e1 {
     case Value.Cst(n) => Value.Cst(n+e2)
     case _ => e1
 }
 
-def prod(e1: Value, e2: Int): Value = match (e1, e2) {
+def prod(e1: Value, e2: Int32): Value = match (e1, e2) {
     case (Value.Cst(n), _) => Value.Cst(n*e2)
     case (Value.Bot, _) => Value.Bot
     case (_, zero) => if(zero == 0) Value.Cst(0) else e1
@@ -49,7 +49,7 @@ instance MeetLattice[Value] {
 
 enum Transformer with Eq, Order, ToString {
     case BotTrans,
-    case NonBotTrans(Int,Int,Value)
+    case NonBotTrans(Int32,Int32,Value)
 }
 
 def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {

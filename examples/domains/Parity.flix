@@ -64,7 +64,7 @@ namespace Domain/Parity {
     ///
     /// Abstracts a concrete integer into the Parity domain.
     ///
-    pub def alpha(i: Int): Parity = if (i % 2 != 0) Odd else Even
+    pub def alpha(i: Int32): Parity = if (i % 2 != 0) Odd else Even
 
     ///
     /// Over-approximates integer `increment`.
@@ -312,8 +312,8 @@ namespace Domain/Parity {
 
 //    law monotone2(f: (Parity, Parity) -> Parity): Bool = PartialOrder.monotone2(f, leq, leq, leq)
 
-//    law safe1(fa: Parity -> Parity, fc: Int -> Int): Bool = PartialOrder.safe1(fa, fc, alpha, alpha, leq)
+//    law safe1(fa: Parity -> Parity, fc: Int32 -> Int32): Bool = PartialOrder.safe1(fa, fc, alpha, alpha, leq)
 
-//    law safe2(fa: (Parity, Parity) -> Parity, fc: (Int, Int) -> Int): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
+//    law safe2(fa: (Parity, Parity) -> Parity, fc: (Int32, Int32) -> Int32): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
 
 }
