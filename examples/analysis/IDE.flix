@@ -85,10 +85,12 @@ instance MeetLattice[Value] {
     }
 }
 
-enum Transformer with Eq, Order, ToString {
-    case BotTrans,
-    case NonBotTrans(Int32,Int32,Value)
-}
+    ///
+    /// The Bottom Element of `Const`.
+    ///
+    instance LowerBound[Const] {
+        pub def minValue(): Const = Const.Bot
+    }
 
 def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) {
 case (_,Transformer.BotTrans) => Transformer.BotTrans
