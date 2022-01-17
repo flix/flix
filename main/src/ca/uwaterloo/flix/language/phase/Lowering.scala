@@ -16,9 +16,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
@@ -41,7 +41,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 // - Return a [[Validation]] from visitExp etc.
 // - Decide which expressions to allow as head and body terms.
 
-object Lowering extends Phase[Root, Root] {
+object Lowering {
 
   private object Defs {
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.solve")
@@ -128,20 +128,20 @@ object Lowering extends Phase[Root, Root] {
   /**
     * Translates internal Datalog constraints into Flix Datalog constraints.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Lowering") {
-    val defs = ParOps.parMap(root.defs.values, (d: Def) => visitDef(d)(root, flix))
-    val sigs = ParOps.parMap(root.sigs.values, (s: Sig) => visitSig(s)(root, flix))
-    val instances = ParOps.parMap(root.instances.values, (insts: List[Instance]) => insts.map(i => visitInstance(i)(root, flix)))
-    val enums = ParOps.parMap(root.enums.values, (e: Enum) => visitEnum(e)(root, flix))
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Lowering") {
+    val defs = ParOps.parMap(root.defs.values)((d: Def) => visitDef(d)(root, flix))
+    val sigs = ParOps.parMap(root.sigs.values)((s: Sig) => visitSig(s)(root, flix))
+    val instances = ParOps.parMap(root.instances.values)((insts: List[Instance]) => insts.map(i => visitInstance(i)(root, flix)))
+    val enums = ParOps.parMap(root.enums.values)((e: Enum) => visitEnum(e)(root, flix))
 
     val newDefs = defs.map(kv => kv.sym -> kv).toMap
     val newSigs = sigs.map(kv => kv.sym -> kv).toMap
-    val newInstances = instances.map(kv => kv.head.sym -> kv).toMap
+    val newInstances = instances.map(kv => kv.head.sym.clazz -> kv).toMap
     val newEnums = enums.map(kv => kv.sym -> kv).toMap
 
     // Sigs are shared between the `sigs` field and the `classes` field.
     // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting classes.
-    val classes = ParOps.parMap(root.classes.values, (c: Class) => visitClass(c, newSigs)(root, flix))
+    val classes = ParOps.parMap(root.classes.values)((c: Class) => visitClass(c, newSigs)(root, flix))
     val newClasses = classes.map(kv => kv.sym -> kv).toMap
     root.copy(defs = newDefs, sigs = newSigs, instances = newInstances, enums = newEnums, classes = newClasses).toSuccess
   }
@@ -181,7 +181,7 @@ object Lowering extends Phase[Root, Root] {
     * Lowers the given enum `enum0`.
     */
   private def visitEnum(enum0: Enum)(implicit root: Root, flix: Flix): Enum = enum0 match {
-    case Enum(doc, mod, sym, tparams, cases0, tpeDeprecated0, sc0, loc) =>
+    case Enum(doc, mod, sym, tparams, derives, cases0, tpeDeprecated0, sc0, loc) =>
       val tpeDeprecated = visitType(tpeDeprecated0)
       val sc = visitScheme(sc0)
       val cases = cases0.map {
@@ -190,7 +190,7 @@ object Lowering extends Phase[Root, Root] {
           val caseSc = visitScheme(caseSc0)
           (tag, Case(caseSym, tag, caseTpeDeprecated, caseSc, loc))
       }
-      Enum(doc, mod, sym, tparams, cases, tpeDeprecated, sc, loc)
+      Enum(doc, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc)
   }
 
   /**
@@ -283,9 +283,9 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Sig(sym, t, loc)
 
-    case Expression.Hole(sym, tpe, eff, loc) =>
+    case Expression.Hole(sym, tpe, loc) =>
       val t = visitType(tpe)
-      Expression.Hole(sym, t, eff, loc)
+      Expression.Hole(sym, t, loc)
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       val p = visitFormalParam(fparam)
@@ -315,6 +315,12 @@ object Lowering extends Phase[Root, Root] {
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
       Expression.Let(sym, mod, e1, e2, t, eff, loc)
+
+    case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      Expression.LetRec(sym, mod, e1, e2, t, eff, loc)
 
     case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -425,25 +431,16 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(tpe)
       Expression.Assign(e1, e2, t, eff, loc)
 
-    case Expression.Existential(fparam, exp, loc) =>
-      val p = visitFormalParam(fparam)
-      val e = visitExp(exp)
-      Expression.Existential(p, e, loc)
-
-    case Expression.Universal(fparam, exp, loc) =>
-      val p = visitFormalParam(fparam)
-      val e = visitExp(exp)
-      Expression.Universal(p, e, loc)
-
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       Expression.Ascribe(e, t, eff, loc)
 
-    case Expression.Cast(exp, tpe, eff, loc) =>
+    case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = visitExp(exp)
+      val dt = declaredType.map(visitType)
       val t = visitType(tpe)
-      Expression.Cast(e, t, eff, loc)
+      Expression.Cast(e, dt, declaredEff, t, eff, loc)
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -541,18 +538,19 @@ object Lowering extends Phase[Root, Root] {
       val resultType = Types.Datalog
       Expression.Apply(defExp, argExps, resultType, eff, loc)
 
-    case Expression.FixpointFilter(pred, exp, tpe, eff, loc) =>
+    case Expression.FixpointFilter(pred, exp, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Filter)
       val defExp = Expression.Def(defn.sym, Types.FilterType, loc)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       val resultType = Types.Datalog
       Expression.Apply(defExp, argExps, resultType, eff, loc)
 
-    case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
+    case Expression.FixpointProjectIn(exp, pred, _, eff, loc) =>
       // Compute the arity of the functor F[(a, b, c)] or F[a].
-      val arity = exp.tpe match {
+      val arity = Type.eraseAliases(exp.tpe) match {
         case Type.Apply(_, innerType, _) => innerType.typeConstructor match {
           case Some(TypeConstructor.Tuple(l)) => l
+          case Some(TypeConstructor.Unit) => 0
           case _ => 1
         }
         case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.")
@@ -572,7 +570,7 @@ object Lowering extends Phase[Root, Root] {
     case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
       // Compute the arity of the predicate symbol.
       // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
-      val arity = tpe match {
+      val arity = Type.eraseAliases(tpe) match {
         case Type.Apply(Type.Cst(TypeConstructor.Array, _), innerType, _) => innerType.typeConstructor match {
           case Some(TypeConstructor.Tuple(_)) => innerType.typeArguments.length
           case Some(TypeConstructor.Unit) => 0
@@ -596,6 +594,18 @@ object Lowering extends Phase[Root, Root] {
       val t = visitType(t0)
       val tpe = visitType(tpe0)
       Expression.Reify(t, tpe, eff, loc)
+
+    case Expression.ReifyType(t0, k, tpe0, eff, loc) =>
+      val t = visitType(t0)
+      val tpe = visitType(tpe0)
+      Expression.ReifyType(t, k, tpe, eff, loc)
+
+    case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+      val t = visitType(tpe)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      Expression.ReifyEff(sym, e1, e2, e3, t, eff, loc)
 
   }
 
@@ -686,14 +696,15 @@ object Lowering extends Phase[Root, Root] {
         case _ => tpe0
       }
 
-      case Type.Cst(tc, loc) => tpe0
+      case Type.Cst(_, _) => tpe0
 
       case Type.Apply(tpe1, tpe2, loc) =>
         val t1 = visitType(tpe1)
         val t2 = visitType(tpe2)
         Type.Apply(t1, t2, loc)
 
-      case _: Type.Lambda => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case Type.Alias(sym, args, t, loc) => Type.Alias(sym, args.map(visit), visit(t), loc)
+
       case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
       case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }
@@ -719,8 +730,8 @@ object Lowering extends Phase[Root, Root] {
   private def visitChoiceRule(rule0: ChoiceRule)(implicit root: Root, flix: Flix): ChoiceRule = rule0 match {
     case ChoiceRule(pat, exp) =>
       val p = pat.map {
-        case p@ChoicePattern.Wild(loc) => p
-        case p@ChoicePattern.Absent(loc) => p
+        case p@ChoicePattern.Wild(_) => p
+        case p@ChoicePattern.Absent(_) => p
         case ChoicePattern.Present(sym, tpe, loc) =>
           val t = visitType(tpe)
           ChoicePattern.Present(sym, t, loc)
@@ -800,7 +811,7 @@ object Lowering extends Phase[Root, Root] {
     * Lowers the given body predicate `p0`.
     */
   private def visitBodyPred(cparams0: List[ConstraintParam], p0: Predicate.Body)(implicit root: Root, flix: Flix): Expression = p0 match {
-    case Body.Atom(pred, den, polarity, terms, tpe, loc) =>
+    case Body.Atom(pred, den, polarity, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val polarityExp = mkPolarity(polarity, loc)
@@ -812,6 +823,9 @@ object Lowering extends Phase[Root, Root] {
       // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
       val quantifiedFreeVars = quantifiedVars(cparams0, exp0)
       mkGuard(quantifiedFreeVars, exp0, loc)
+
+    case Body.Loop(varSyms, exp, loc) =>
+      ??? // TODO
   }
 
   /**
@@ -827,7 +841,7 @@ object Lowering extends Phase[Root, Root] {
     // Case 3: The expression contains quantified variables. We translate it to an application term.
     //
     exp0 match {
-      case Expression.Var(sym, _, loc) =>
+      case Expression.Var(sym, _, _) =>
         // Case 1: Variable term.
         if (isQuantifiedVar(sym, cparams0)) {
           // Case 1.1: Quantified variable.
@@ -1038,8 +1052,9 @@ object Lowering extends Phase[Root, Root] {
 
     // Special case: No free variables.
     if (fvs.isEmpty) {
+      val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
       // Construct a lambda that takes the unit argument.
-      val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
+      val fparam = FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
       val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
       return mkTag(Enums.BodyPredicate, s"Guard0", lambdaExp, Types.BodyPredicate, loc)
@@ -1047,7 +1062,7 @@ object Lowering extends Phase[Root, Root] {
 
     // Introduce a fresh variable for each free variable.
     val freshVars = fvs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
-      case (acc, (oldSym, tpe)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
+      case (acc, (oldSym, _)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
     }
 
     // Substitute every symbol in `exp` for its fresh equivalent.
@@ -1087,8 +1102,9 @@ object Lowering extends Phase[Root, Root] {
 
     // Special case: No free variables.
     if (fvs.isEmpty) {
+      val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
       // Construct a lambda that takes the unit argument.
-      val fparam = FormalParam(Symbol.freshVarSym("_unit", loc), Ast.Modifiers.Empty, Type.Unit, loc)
+      val fparam = FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
       val lambdaExp = Expression.Lambda(fparam, exp, tpe, loc)
       return mkTag(Enums.HeadTerm, s"App0", lambdaExp, Types.HeadTerm, loc)
@@ -1096,7 +1112,7 @@ object Lowering extends Phase[Root, Root] {
 
     // Introduce a fresh variable for each free variable.
     val freshVars = fvs.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
-      case (acc, (oldSym, tpe)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
+      case (acc, (oldSym, _)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
     }
 
     // Substitute every symbol in `exp` for its fresh equivalent.
@@ -1268,7 +1284,7 @@ object Lowering extends Phase[Root, Root] {
 
     case Expression.Sig(_, _, _) => exp0
 
-    case Expression.Hole(_, _, _, _) => exp0
+    case Expression.Hole(_, _, _) => exp0
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       val p = substFormalParam(fparam, subst)
@@ -1295,6 +1311,12 @@ object Lowering extends Phase[Root, Root] {
       val e2 = substExp(exp2, subst)
       Expression.Let(s, mod, e1, e2, tpe, eff, loc)
 
+    case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+      val s = subst.getOrElse(sym, sym)
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.LetRec(s, mod, e1, e2, tpe, eff, loc)
+
     case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)
       val e = substExp(exp, subst)
@@ -1311,7 +1333,7 @@ object Lowering extends Phase[Root, Root] {
       val e2 = substExp(exp2, subst)
       Expression.Stm(e1, e2, tpe, eff, loc)
 
-    case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
+    case Expression.Match(_, _, _, _, _) => ??? // TODO
 
     case Expression.Choose(exps, rules, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
@@ -1387,25 +1409,15 @@ object Lowering extends Phase[Root, Root] {
       val e2 = substExp(exp2, subst)
       Expression.Assign(e1, e2, tpe, eff, loc)
 
-    case Expression.Existential(fparam, exp, loc) =>
-      val f = substFormalParam(fparam, subst)
-      val e = substExp(exp, subst)
-      Expression.Existential(f, e, loc)
-
-    case Expression.Universal(fparam, exp, loc) =>
-      val f = substFormalParam(fparam, subst)
-      val e = substExp(exp, subst)
-      Expression.Universal(f, e, loc)
-
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.Ascribe(e, tpe, eff, loc)
 
-    case Expression.Cast(exp, tpe, eff, loc) =>
+    case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = substExp(exp, subst)
-      Expression.Cast(e, tpe, eff, loc)
+      Expression.Cast(e, declaredType, declaredEff, tpe, eff, loc)
 
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
+    case Expression.TryCatch(_, _, _, _, _) => ??? // TODO
 
     case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
       val as = args.map(substExp(_, subst))
@@ -1429,7 +1441,7 @@ object Lowering extends Phase[Root, Root] {
       val e2 = substExp(exp2, subst)
       Expression.PutField(field, e1, e2, tpe, eff, loc)
 
-    case Expression.GetStaticField(field, tpe, eff, loc) => exp0
+    case Expression.GetStaticField(_, _, _, _) => exp0
 
     case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
@@ -1448,7 +1460,7 @@ object Lowering extends Phase[Root, Root] {
       val e2 = substExp(exp2, subst)
       Expression.PutChannel(e1, e2, tpe, eff, loc)
 
-    case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? // TODO
+    case Expression.SelectChannel(_, _, _, _, _) => ??? // TODO
 
     case Expression.Spawn(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
@@ -1486,7 +1498,16 @@ object Lowering extends Phase[Root, Root] {
     case Expression.Reify(t, tpe, eff, loc) =>
       Expression.Reify(t, tpe, eff, loc)
 
-    case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
+    case Expression.ReifyType(t, k, tpe, eff, loc) =>
+      Expression.ReifyType(t, k, tpe, eff, loc)
+
+    case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      val e3 = substExp(exp3, subst)
+      Expression.ReifyEff(sym, e1, e2, e3, tpe, eff, loc)
+
+    case Expression.FixpointConstraintSet(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression near ${loc.format}.")
   }
 
   /**

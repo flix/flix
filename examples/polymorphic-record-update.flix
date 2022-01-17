@@ -3,14 +3,14 @@ def setX(r: {x :: Int32, y :: Int32}, v: Int32): {x :: Int32, y :: Int32} =
     { x = v | r }
 
 /// Returns the value 1 + 3 = 4.
-def main2(): Int =
+def main2(): Int32 =
     let r1 = {x = 1, y = 2};
     let r2 = setX(r1, 3);
     r1.x + r2.x
 
 /// Returns the record `r` with a new value of its `y` label.
 /// Preserves (retains) all other labels polymorphically.
-def setY(r: {y :: Int | a}, v: Int): {y :: Int | a} =
+def setY(r: {y :: Int32 | a}, v: Int32): {y :: Int32 | a} =
     { y = v | r }
 
 /// Returns the value 0 + 1 + 3 = 4.

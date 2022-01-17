@@ -74,7 +74,7 @@ namespace Test/Exp/Reference/Assign {
 
     @test
     def testAssignOption01(): Bool & Impure =
-        let l = ref None : Option[Int];
+        let l = ref None : Option[Int32];
         l := Some(123);
         deref l == Some(123)
 

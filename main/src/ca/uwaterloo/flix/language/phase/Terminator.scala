@@ -25,9 +25,9 @@ import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 /**
   * Performs checks related to termination.
   */
-object Terminator extends Phase[Root, Root] {
+object Terminator {
 
-  override def run(root: Root)(implicit flix: Flix): Validation[Root, TerminationError] = flix.phase("Terminator") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, TerminationError] = flix.phase("Terminator") {
     val defVal = Validation.traverseX(root.defs.values)(checkDef)
 
     defVal map {
@@ -69,7 +69,7 @@ object Terminator extends Phase[Root, Root] {
       case Expression.Var(_, _, _) => false
       case Expression.Def(_, _, _) => false
       case Expression.Sig(_, _, _) => false
-      case Expression.Hole(_, _, _, _) => false
+      case Expression.Hole(_, _, _) => false
       case Expression.Lambda(_, _, _, _) => false
 
       // If the Apply is a recursive call, then return true
@@ -80,6 +80,7 @@ object Terminator extends Phase[Root, Root] {
       case Expression.Unary(_, exp, _, _, _) => visit(exp)
       case Expression.Binary(_, exp1, exp2, _, _, _) => visit(exp1) || visit(exp2)
       case Expression.Let(_, _, exp1, exp2, _, _, _) => visit(exp1) || visit(exp2)
+      case Expression.LetRec(_, _, exp1, exp2, _, _, _) => visit(exp1) || visit(exp2)
       case Expression.LetRegion(_, exp, _, _, _) => visit(exp)
       case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => visit(exp1) || (visit(exp2) && visit(exp3))
       case Expression.Stm(exp1, exp2, _, _, _) => visit(exp1) || visit(exp2)
@@ -100,10 +101,8 @@ object Terminator extends Phase[Root, Root] {
       case Expression.Ref(exp, _, _, _) => visit(exp)
       case Expression.Deref(exp, _, _, _) => visit(exp)
       case Expression.Assign(exp1, exp2, _, _, _) => visit(exp1) || visit(exp2)
-      case Expression.Existential(_, exp, _) => visit(exp)
-      case Expression.Universal(_, exp, _) => visit(exp)
       case Expression.Ascribe(exp, _, _, _) => visit(exp)
-      case Expression.Cast(exp, _, _, _) => visit(exp)
+      case Expression.Cast(exp, _, _, _, _, _) => visit(exp)
       case Expression.TryCatch(exp, rules, _, _, _) => visit(exp) || rules.forall { rule => visit(rule.exp) }
       case Expression.InvokeConstructor(_, args, _, _, _) => args.exists(visit)
       case Expression.InvokeMethod(_, exp, args, _, _, _) => visit(exp) || args.exists(visit)
@@ -128,6 +127,8 @@ object Terminator extends Phase[Root, Root] {
       case Expression.FixpointProjectIn(exp, _, _, _, _) => visit(exp)
       case Expression.FixpointProjectOut(_, exp, _, _, _) => visit(exp)
       case Expression.Reify(_, _, _, _) => false // reify expressions always terminate.
+      case Expression.ReifyType(_, _, _, _, _) => false // reify expressions always terminate.
+      case Expression.ReifyEff(_, _, _, _, _, _, _) => false // reify expressions always terminate.
     }
 
     visit(exp0)

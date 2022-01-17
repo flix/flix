@@ -20,7 +20,7 @@ namespace Epoch {
     /// Returns the number of nano seconds since the Unix epoch.
     ///
     pub def nanoseconds(): Int64 & Impure =
-        import java.lang.System:nanoTime();
+        import static java.lang.System.nanoTime();
         nanoTime()
 
     ///

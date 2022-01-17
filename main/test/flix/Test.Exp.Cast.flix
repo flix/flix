@@ -37,10 +37,10 @@ namespace Test/Exp/Cast {
     def testCast12(): String = "hello world" as String
 
     @test
-    def testCast13(): (Int, Int, Int) = (1, 2, 3) as (Int, Int, Int)
+    def testCast13(): (Int32, Int32, Int32) = (1, 2, 3) as (Int32, Int32, Int32)
 
     @test
-    def testCast14(): Option[Int] = Some(42) as Option[Int]
+    def testCast14(): Option[Int32] = Some(42) as Option[Int32]
 
     @test
     def testCastWithEff01(): Unit & Impure = () as Unit & Impure
@@ -79,10 +79,10 @@ namespace Test/Exp/Cast {
     def testCastWithEff12(): String & Impure = "hello world" as String & Impure
 
     @test
-    def testCastWithEff13(): (Int, Int, Int) & Impure = (1, 2, 3) as (Int, Int, Int) & Impure
+    def testCastWithEff13(): (Int32, Int32, Int32) & Impure = (1, 2, 3) as (Int32, Int32, Int32) & Impure
 
     @test
-    def testCastWithEff14(): Option[Int] & Impure = Some(42) as Option[Int] & Impure
+    def testCastWithEff14(): Option[Int32] & Impure = Some(42) as Option[Int32] & Impure
 
     @test
     def testCastWithWildAndEff01(): Unit & Impure = () as & Impure
@@ -121,9 +121,9 @@ namespace Test/Exp/Cast {
     def testCastWithWildAndEff12(): String & Impure = "hello world" as & Impure
 
     @test
-    def testCastWithWildAndEff13(): (Int, Int, Int) & Impure = (1, 2, 3) as & Impure
+    def testCastWithWildAndEff13(): (Int32, Int32, Int32) & Impure = (1, 2, 3) as & Impure
 
     @test
-    def testCastWithWildAndEff14(): Option[Int] & Impure = Some(42) as & Impure
+    def testCastWithWildAndEff14(): Option[Int32] & Impure = Some(42) as & Impure
 
 }

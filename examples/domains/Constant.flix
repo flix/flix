@@ -135,12 +135,12 @@ namespace Domain/Constant {
     ///
     /// Over-approximates integer `modulus`.
     ///
-//    #safe2((x, y) -> x % y)
+//    #safe2((x, y) -> x rem y)
 //    #strict2 #monotone2
     pub def modulo(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 % n2)
+        case (Cst(n1), Cst(n2)) => Cst(n1 rem n2)
         case _                  => Top
     }
 

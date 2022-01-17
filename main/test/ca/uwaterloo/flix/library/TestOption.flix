@@ -34,16 +34,16 @@ def isEmpty03(): Bool = Option.isEmpty(Some(22ii)) == false
 // getWithDefault                                                          //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def getWithDefault01(): Bool = Option.getWithDefault(None, 32) == 32
+def getWithDefault01(): Bool = Option.getWithDefault(32, None) == 32
 
 @test
-def getWithDefault02(): Bool = Option.getWithDefault(Some(30), 32) == 30
+def getWithDefault02(): Bool = Option.getWithDefault(32, Some(30)) == 30
 
 @test
-def getWithDefault03(): Bool = Option.getWithDefault(None, 32ii) == 32ii
+def getWithDefault03(): Bool = Option.getWithDefault(32ii, None) == 32ii
 
 @test
-def getWithDefault04(): Bool = Option.getWithDefault(Some(30ii), 32ii) == 30ii
+def getWithDefault04(): Bool = Option.getWithDefault(32ii, Some(30ii)) == 30ii
 
 /////////////////////////////////////////////////////////////////////////////
 // exists                                                                  //
@@ -94,54 +94,6 @@ def map02(): Bool = Option.map(i -> 2*i, Some(1)) == Some(2)
 def map03(): Bool = Option.map(i -> 2*i, Some(2)) == Some(4)
 
 /////////////////////////////////////////////////////////////////////////////
-// map2                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def map201(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, None, None) == None
-
-@test
-def map202(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), None) == None
-
-@test
-def map203(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, None, Some(true)) == None
-
-@test
-def map204(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), Some(true)) == Some(2)
-
-@test
-def map205(): Bool = Option.map2((i, b) -> if (b) 2*i else 3*i, Some(1), Some(false)) == Some(3)
-
-/////////////////////////////////////////////////////////////////////////////
-// flatMap                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def flatMap01(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), None) == None
-
-@test
-def flatMap02(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), Some(1)) == None
-
-@test
-def flatMap03(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), Some(2)) == Some(4)
-
-/////////////////////////////////////////////////////////////////////////////
-// flatMap2                                                                //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def flatMap201(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, None, None) == None
-
-@test
-def flatMap202(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, Some(5), None) == None
-
-@test
-def flatMap203(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, None, Some(true)) == None
-
-@test
-def flatMap204(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, Some(1), Some(false)) == None
-
-@test
-def flatMap205(): Bool = Option.flatMap2((i, b) -> if (b) Some(2*i) else None, Some(1), Some(true)) == Some(2)
-
-/////////////////////////////////////////////////////////////////////////////
 // toList                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -166,7 +118,31 @@ def toSet02(): Bool = Option.toSet(Some(1)) == Set#{1}
 def toMap01(): Bool = Option.toMap(None: Option[(Unit, Unit)]) == Map#{}
 
 @test
-def toMap02(): Bool = Option.toMap(Some((1, true))) == Map#{1 -> true}
+def toMap02(): Bool = Option.toMap(Some((1, true))) == Map#{1 => true}
+
+/////////////////////////////////////////////////////////////////////////////
+// toMapWith                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toMapWith01(): Bool =
+    Option.toMapWith(x -> 0 * x, None) == Map#{}
+
+@test
+def toMapWith02(): Bool =
+    Option.toMapWith(x -> 0 * x, Some(1)) == Map#{1 => 0}
+
+@test
+def toMapWith03(): Bool =
+    Option.toMapWith(x -> 2 * x, Some(1)) == Map#{1 => 2}
+
+@test
+def toMapWith04(): Bool =
+    Option.toMapWith(x -> x + 10, Some(1)) == Map#{1 => 11}
+
+@test
+def toMapWith05(): Bool =
+    Option.toMapWith(x -> x + "b", Some("a")) == Map#{"a" => "ab"}
 
 /////////////////////////////////////////////////////////////////////////////
 // toOk                                                                   //
@@ -208,16 +184,16 @@ def toFailure02(): Bool = Option.toFailure(Some("err"), "default") == Failure(Ne
 // withDefault                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def withDefault01(): Bool = Option.withDefault(None: Option[Unit], None: Option[Unit]) == None
+def withDefault01(): Bool = Option.withDefault(default = None, None) == None: Option[Int32]
 
 @test
-def withDefault02(): Bool = Option.withDefault(None, Some(1)) == Some(1)
+def withDefault02(): Bool = Option.withDefault(default = Some(1), None) == Some(1)
 
 @test
-def withDefault03(): Bool = Option.withDefault(Some(1), None) == Some(1)
+def withDefault03(): Bool = Option.withDefault(default = None, Some(1)) == Some(1)
 
 @test
-def withDefault04(): Bool = Option.withDefault(Some(1), Some(2)) == Some(1)
+def withDefault04(): Bool = Option.withDefault(default = Some(2), Some(1)) == Some(1)
 
 /////////////////////////////////////////////////////////////////////////////
 // replace                                                                 //
@@ -245,6 +221,35 @@ def count02(): Bool = Option.count(i -> i == 2, Some(1)) == 0
 
 @test
 def count03(): Bool = Option.count(i -> i == 2, Some(2)) == 1
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool = Option.sum(None) == 0
+
+    @test
+    def sum02(): Bool = Option.sum(Some(1)) == 1
+
+    @test
+    def sum03(): Bool = Option.sum(Some(-2)) == -2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool = Option.sumWith(x -> x + 1, None) == 0
+
+    @test
+    def sumWith02(): Bool = Option.sumWith(x -> x + 1, Some(1)) == 2
+
+    @test
+    def sumWith03(): Bool = Option.sumWith(x -> x + 1, Some(-2)) == -1
+
 
 /////////////////////////////////////////////////////////////////////////////
 // find                                                                    //
@@ -321,6 +326,24 @@ def foldRight04(): Bool = Option.foldRight((i, b) -> if (i == 2 and b) true else
 
 @test
 def foldRight05(): Bool = Option.foldRight((i, b) -> if (i == 2 and b) true else false, Some(2), true) == true
+
+/////////////////////////////////////////////////////////////////////////////
+// foldRightL                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldRightL01(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, None, false) == false
+
+@test
+def foldRightL02(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, Some(1), false) == false
+
+@test
+def foldRightL03(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, Some(2), false) == false
+
+@test
+def foldRightL04(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, Some(1), true) == false
+
+@test
+def foldRightL05(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, Some(2), true) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // sequence                                                                //
@@ -510,6 +533,31 @@ def ap03(): Bool = Option.ap(None, Some(123)): Option[Int32] == None
 
 @test
 def ap04(): Bool = Option.ap(None, None): Option[Unit] == None
+
+/////////////////////////////////////////////////////////////////////////////
+// flatMap                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def flatMap01(): Bool = Option.flatMap(x -> Some(x + 1), Some(123)) == Some(124)
+
+@test
+def flatMap02(): Bool = Option.flatMap(x -> Some(x + 1), None: Option[Int32]) == None
+
+@test
+def flatMap03(): Bool = Option.flatMap(_x -> None, Some(123)): Option[Int32] == None
+
+@test
+def flatMap04(): Bool = Option.flatMap(_x -> None, None): Option[Unit] == None
+
+@test
+def flatMap05(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), None) == None
+
+@test
+def flatMap06(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), Some(1)) == None
+
+@test
+def flatMap07(): Bool = Option.flatMap(i -> if (i == 1) None else Some(2*i), Some(2)) == Some(4)
 
 /////////////////////////////////////////////////////////////////////////////
 // lift2                                                                   //
@@ -787,5 +835,22 @@ def lift1012(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2
 
     @test
     def hash05(): Bool = hash(None: Option[Unit]) != hash(Some((())))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toIterator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toIterator01(): Bool & Impure =
+        None: Option[Int32] |> Option.toIterator |> Iterator.toList == Nil
+
+    @test
+    def toIterator02(): Bool & Impure =
+        Some(1) |> Option.toIterator |> Iterator.toList == 1 :: Nil
+
+    @test
+    def toIterator03(): Bool & Impure =
+        Some(1 :: 2 :: 3 :: Nil) |> Option.toIterator |> Iterator.toList == (1 :: 2 :: 3 :: Nil) :: Nil
 
 }
