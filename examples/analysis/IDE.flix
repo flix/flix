@@ -1,20 +1,58 @@
-enum Value with Eq, Order, ToString {
-    case Bot,
-    case Cst(Int32),
-    case Top
-}
+/*
+ * Copyright 2021 Magnus Madsen, Ondřej Lhoták
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-def sum(e1: Value, e2: Int32): Value = match e1 {
-    case Value.Cst(n) => Value.Cst(n+e2)
-    case _ => e1
-}
+///
+/// A fully polymorphic implementation of the IDE framework written in Flix.
+///
+/// Written by Magnus Madsen, Ondřej Lhoták.
+///
+namespace IDE {
 
-def prod(e1: Value, e2: Int32): Value = match (e1, e2) {
-    case (Value.Cst(n), _) => Value.Cst(n*e2)
-    case (Value.Bot, _) => Value.Bot
-    case (_, zero) => if(zero == 0) Value.Cst(0) else e1
-    case _ => e1
-}
+    ///
+    /// An IDE instance where:
+    ///
+    /// - p is the type of procedures.
+    /// - n is the type of program point.
+    /// - d is the type of analysis data elements.
+    ///
+    type alias IDE[p, n, d, f, l] = {
+        zero            :: d,
+        main            :: p,
+        cfg             :: List[(n, n)],
+        startNodes      :: List[(p, n)],            // TODO: Ondrej: Should this also be a function?
+        endNodes        :: List[(p, n)],
+        callGraph       :: List[(n, p)],
+        eshIntra        :: List[(n, d, d, f)],      // TODO: Ought to be a function: (n, d)      -> (d, f)
+        eshCallStart    :: List[(n, d, p, d, f)],   // TODO: Ought to be a function: (n, d, p)   -> (d, f)
+        eshEndReturn    :: List[(p, d, n, d, f)],   // TODO: Ought to be a function: (p, d, n)   -> (d, f)
+        id              :: f,
+        apply           :: (f, l) -> l,
+        compose         :: (f, f) -> f
+    }
+
+    ///
+    /// Solves the given IDE instances.
+    ///
+    pub def run(ide: IDE[p, n, d, f, l]): List[(n, d, l)] & Impure
+        with LowerBound[f], JoinLattice[f], MeetLattice[f],
+             LowerBound[l], JoinLattice[l], MeetLattice[l],
+             Boxable[n], Boxable[d], Boxable[p], Boxable[f],  Boxable[l] =
+
+        // Extract main.
+        let main = ide.main;
 
 instance LowerBound[Value] {
     pub def minValue(): Value = Value.Bot

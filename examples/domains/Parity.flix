@@ -64,7 +64,7 @@ namespace Domain/Parity {
     ///
     /// Abstracts a concrete integer into the Parity domain.
     ///
-    pub def alpha(i: Int32): Parity = if (i rem 2 != 0) Odd else Even
+    pub def alpha(i: Int): Parity = if (i rem 2 != 0) Odd else Even
 
     ///
     /// Over-approximates integer `increment`.
