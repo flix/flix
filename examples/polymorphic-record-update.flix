@@ -1,5 +1,5 @@
 /// Returns the record `r` with a new value of its `x` label.
-def setX(r: {x :: Int32, y :: Int}, v: Int): {x :: Int32, y :: Int} =
+def setX(r: {x :: Int32, y :: Int32}, v: Int32): {x :: Int32, y :: Int32} =
     { x = v | r }
 
 /// Returns the value 1 + 3 = 4.

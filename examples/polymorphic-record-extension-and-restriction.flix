@@ -1,6 +1,6 @@
 /// Polymorphically extends the record `r` with an `age` label.
 /// Preserves (retains) all other labels polymorphically.
-def withAge(r: {| a}, v: Int32): {age :: Int32 | a} =
+def withAge(r: {| a}, v: Int): {age :: Int32 | a} =
     { +age = v | r }
 
 /// Polymorphically restricts (removes) the `age` label from `r`.
