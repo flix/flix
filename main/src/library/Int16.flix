@@ -217,7 +217,7 @@ namespace Int16 {
     /// Returns a value with a single one-bit at bit number `position`.
     /// Returns 0 if `position` is outside the range 0-15 inclusive.
     ///
-    def bitPositionToInt32(position: Int32): Int16 =
+    def bitPositionToInt(position: Int32): Int16 =
         if (position < 0 or position > size() - 1) 0i16 else 1i16 <<< position
 
     ///
