@@ -8,7 +8,7 @@ enum Suit with Eq, ToString {
 
 // A Rank type deriving an Eq and Order instance
 enum Rank with Eq, Order {
-    case Number(Int)
+    case Number(Int32)
     case Jack
     case Queen
     case King
@@ -16,7 +16,7 @@ enum Rank with Eq, Order {
 }
 
 // A Card type deriving an Eq instance
-opaque type Card with Eq = (Rank, Suit) 
+opaque type Card with Eq = (Rank, Suit)
 
 // An instance of ToString for Ranks
 instance ToString[Rank] {
