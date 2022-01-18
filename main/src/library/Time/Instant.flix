@@ -27,7 +27,7 @@ namespace Time {
         /// Returns the current time from the system clock.
         ///
         @Experimental
-        pub def now(): Instant & Impure =
+        pub def now(): Time.Instant & Impure =
             import static java.time.Instant.now();
             Instant(now())
 
@@ -35,7 +35,7 @@ namespace Time {
         /// Returns `true` if `x` is before `y`.
         ///
         @Experimental
-        pub def before(x: Instant, y: Instant): Bool =
+        pub def before(x: Time.Instant, y: Time.Instant): Bool =
             import java.time.Instant.isBefore(##java.time.Instant);
             let Instant(t1) = x;
             let Instant(t2) = y;
@@ -45,7 +45,7 @@ namespace Time {
         /// Returns `true` if `x` is after `y`.
         ///
         @Experimental
-        pub def after(x: Instant, y: Instant): Bool =
+        pub def after(x: Time.Instant, y: Time.Instant): Bool =
             import java.time.Instant.isAfter(##java.time.Instant);
             let Instant(t1) = x;
             let Instant(t2) = y;
@@ -55,7 +55,7 @@ namespace Time {
         /// Returns the given instant `x` plus `d` number of nano seconds.
         ///
         @Experimental
-        pub def plus(x: Instant, d: Int64): Instant =
+        pub def plus(x: Time.Instant, d: Int64): Time.Instant =
             import java.time.Instant.plusNanos(Int64);
             let Instant(t) = x;
             Instant(t `plusNanos` d) as & Pure
@@ -64,7 +64,7 @@ namespace Time {
         /// Returns the given instant `x` minus `d` number of nano seconds.
         ///
         @Experimental
-        pub def minus(x: Instant, d: Int64): Instant =
+        pub def minus(x: Time.Instant, d: Int64): Time.Instant =
             import java.time.Instant.minusNanos(Int64);
             let Instant(t) = x;
             Instant(t `minusNanos` d) as & Pure
