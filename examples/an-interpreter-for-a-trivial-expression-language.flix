@@ -3,7 +3,7 @@
 ///
 enum AExp {
     /// a literal integer constant.
-    case Cst(Int),
+    case Cst(Int32),
 
     /// a binary addition expression: e1 + e2.
     case Plus(AExp, AExp),

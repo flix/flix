@@ -14,8 +14,8 @@ enum Month with Eq, Order, ToString {
     case December
 }
 
-type alias Year = Int
-type alias Day = Int
+type alias Year = Int32
+type alias Day = Int32
 
 /// The Date type derives the type classes Eq and Order
 opaque type Date with Eq, Order = (Year, Month, Day)

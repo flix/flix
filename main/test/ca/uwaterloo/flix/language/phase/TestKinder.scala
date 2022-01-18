@@ -535,7 +535,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Type.01") {
     val input =
       """
-        |def f(x: Int[Int32]): Int32 = ???
+        |def f(x: Int32[Int32]): Int32 = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)

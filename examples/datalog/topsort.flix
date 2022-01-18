@@ -1,6 +1,6 @@
 // https://github.com/souffle-lang/benchmarks/tree/master/benchmarks/topological_ordering
 
-def genEdges(n: Int): #{Edge(Int, Int) | _} = {
+def genEdges(n: Int32): #{Edge(Int32, Int32) | _} = {
     if (n <= 0) #{}
     else #{
         Edge(n, n*2).

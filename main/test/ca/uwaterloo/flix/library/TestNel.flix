@@ -369,17 +369,17 @@ namespace Nel {
     def foldRight03(): Bool = foldRight((x, acc) -> acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightL                                                              //
+    // foldRightLazy                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldRightL01(): Bool = foldRightL((x, acc) -> force acc - x, 0, Nel(1, Nil)) == -1
+    def foldRightLazy01(): Bool = foldRightLazy((x, acc) -> force acc - x, 0, Nel(1, Nil)) == -1
 
     @test
-    def foldRightL02(): Bool = foldRightL((x, acc) -> force acc - x, 0, Nel(1, 2 :: Nil)) == -3
+    def foldRightLazy02(): Bool = foldRightLazy((x, acc) -> force acc - x, 0, Nel(1, 2 :: Nil)) == -3
 
     @test
-    def foldRightL03(): Bool = foldRightL((x, acc) -> force acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
+    def foldRightLazy03(): Bool = foldRightLazy((x, acc) -> force acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
 
     /////////////////////////////////////////////////////////////////////////////
     // reduce                                                                  //
