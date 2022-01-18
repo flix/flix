@@ -29,7 +29,7 @@ namespace Time {
         @Experimental
         pub def now(): Time.Instant & Impure =
             import static java.time.Instant.now();
-            Time/Instant(now())
+            Time/Instant.Instant(now())
 
         ///
         /// Returns `true` if `x` is before `y`.
@@ -58,7 +58,7 @@ namespace Time {
         pub def plus(x: Time.Instant, d: Int64): Time.Instant =
             import java.time.Instant.plusNanos(Int64);
             let Time/Instant.Instant(t) = x;
-            Time/Instant(t `plusNanos` d) as & Pure
+            Time/Instant.Instant(t `plusNanos` d) as & Pure
 
         ///
         /// Returns the given instant `x` minus `d` number of nano seconds.
@@ -67,7 +67,7 @@ namespace Time {
         pub def minus(x: Time.Instant, d: Int64): Time.Instant =
             import java.time.Instant.minusNanos(Int64);
             let Time/Instant.Instant(t) = x;
-            Time/Instant(t `minusNanos` d) as & Pure
+            Time/Instant.Instant(t `minusNanos` d) as & Pure
 
     }
 
