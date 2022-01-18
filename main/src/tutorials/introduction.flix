@@ -14,7 +14,7 @@
 // We will represent the program-under-analysis using three input
 // relations. One for each type of statement:
 //
-rel LitStm(r: String, c: Int)         // r = c
+rel LitStm(r: String, c: Int32)         // r = c
 rel AddStm(r: String, x: String, y: String) // r = x + y
 rel DivStm(r: String, x: String, y: String) // r = x / y
 
@@ -210,9 +210,9 @@ pub def main(_: Array[String]): Int32 & Impure =
         // d is y, and y is possibly zero according to the `isMaybeZero` filter
         // function then we infer a possible error for `r`.
         //
-        ArithmeticError(r) :- isMaybeZero(y),
-                              DivStm(r, _n, d),
-                              LocalVar(d; y).
+        ArithmeticError(r) :- DivStm(r, _n, d),
+                              LocalVar(d; y),
+                              if isMaybeZero(y).
 
         //
         // Let us now try to analyse the following small program:

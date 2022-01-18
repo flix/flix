@@ -1,16 +1,16 @@
 namespace Test/Exp/ArraySliceNoEndIndex {
 
     @test
-    def testArraySliceNoEndIndex01(): Array[Int] & Impure = let x = [1, 2, 3]; x[0..]
+    def testArraySliceNoEndIndex01(): Array[Int32] & Impure = let x = [1, 2, 3]; x[0..]
 
     @test
-    def testArraySliceNoEndIndex02(): Array[Int] & Impure = let x = [1, 2, 3, 4]; x[2..]
+    def testArraySliceNoEndIndex02(): Array[Int32] & Impure = let x = [1, 2, 3, 4]; x[2..]
 
     @test
-    def testArraySliceNoEndIndex03(): Array[Int] & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]; x[10..]
+    def testArraySliceNoEndIndex03(): Array[Int32] & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]; x[10..]
 
     @test
-    def testArraySliceNoEndIndex04(): Array[Int] & Impure = let x = [1, 2]; x[1..]
+    def testArraySliceNoEndIndex04(): Array[Int32] & Impure = let x = [1, 2]; x[1..]
 
     @test
     def testArraySliceNoEndIndex05(): Array[Bool] & Impure = let x = [true, false]; x[0..]
@@ -67,27 +67,27 @@ namespace Test/Exp/ArraySliceNoEndIndex {
     def testArraySliceNoEndIndex22(): Array[String] & Impure = let x = ["World", "Hello", "World"]; x[2..]
 
     @test
-    def testArraySliceNoEndIndex23(): Array[Array[Int]] & Impure = let x = [[1, 2], [1, 2]]; x[1..]
+    def testArraySliceNoEndIndex23(): Array[Array[Int32]] & Impure = let x = [[1, 2], [1, 2]]; x[1..]
 
     @test
-    def testArraySliceNoEndIndex24(): Array[Array[Int]] & Impure = let x = [[1], [1, 2, 3, 4, 5, 6, 7, 8]]; x[0..]
+    def testArraySliceNoEndIndex24(): Array[Array[Int32]] & Impure = let x = [[1], [1, 2, 3, 4, 5, 6, 7, 8]]; x[0..]
 
     @test
-    def testArraySliceNoEndIndex25(): Array[Array[Int]] & Impure = let x = [[1, 2, 3, 4, 5], [2]]; x[0..]
+    def testArraySliceNoEndIndex25(): Array[Array[Int32]] & Impure = let x = [[1, 2, 3, 4, 5], [2]]; x[0..]
 
     @test
-    def testArraySliceNoEndIndex26(): Array[Array[Int]] & Impure = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[0..]
+    def testArraySliceNoEndIndex26(): Array[Array[Int32]] & Impure = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[0..]
 
     @test
-    def testArraySliceNoEndIndex27(): Array[Int] & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; x[0..]
+    def testArraySliceNoEndIndex27(): Array[Int32] & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; x[0..]
 
     @test
-    def testArraySliceNoEndIndex28(): Array[(List[Int])] & Impure = let x = [(1 :: Nil), (2 :: Nil)]; x[0..]
+    def testArraySliceNoEndIndex28(): Array[(List[Int32])] & Impure = let x = [(1 :: Nil), (2 :: Nil)]; x[0..]
 
     @test
     def testArraySliceNoEndIndex29(): Array[(Bool, Bool)] & Impure = let x = [(true, true), (true, false), (true, true)]; x[0..]
 
     @test
-    def testArraySliceNoEndIndex30(): Array[Option[Int]] & Impure = let x = [None, None, None, None, Some(1)]; x[0..]
+    def testArraySliceNoEndIndex30(): Array[Option[Int32]] & Impure = let x = [None, None, None, None, Some(1)]; x[0..]
 
 }

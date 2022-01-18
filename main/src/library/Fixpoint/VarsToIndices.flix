@@ -20,17 +20,19 @@ use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar};
 /// This implies substituting named references to row variables with indices
 /// in where clauses, range queries and project operations.
 namespace Fixpoint {
-    pub def lowerStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {
+
+    @Internal
+    pub def lowerStmt(stmt: RamStmt[v]): RamStmt[v] & Impure = match stmt {
         case RamStmt.Insert(op) => RamStmt.Insert(lowerOp(op, Map#{}, 0))
         case RamStmt.Merge(_, _) => stmt
         case RamStmt.Assign(_, _) => stmt
         case RamStmt.Purge(_) => stmt
-        case RamStmt.Seq(xs) => RamStmt.Seq(Array.map(lowerStmt, xs)) as & Pure
+        case RamStmt.Seq(xs) => RamStmt.Seq(Array.map(lowerStmt, xs))
         case RamStmt.Until(test, body) => RamStmt.Until(test, lowerStmt(body))
         case RamStmt.Comment(_) => stmt
     }
 
-    def lowerOp(op: RelOp[v], rowVars: Map[RowVar, RowVar], depth: Int32): RelOp[v] =
+    def lowerOp(op: RelOp[v], rowVars: Map[RowVar, RowVar], depth: Int32): RelOp[v] & Impure =
         match op {
             case RelOp.Search(var, ramSym, body) =>
                 let newVar = RowVar.Index(depth);
@@ -39,19 +41,19 @@ namespace Fixpoint {
             case RelOp.Query(var, ramSym, prefixQuery, body) =>
                 let newVar = RowVar.Index(depth);
                 let newVars = Map.insert(var, newVar, rowVars);
-                let newQuery = Array.map(match (j, t) -> (j, lowerTerm(rowVars, t)), prefixQuery) as & Pure;
+                let newQuery = Array.map(match (j, t) -> (j, lowerTerm(rowVars, t)), prefixQuery);
                 RelOp.Query(newVar, ramSym, newQuery, lowerOp(body, newVars, depth + 1))
             case RelOp.Project(terms, ramSym) =>
-                 RelOp.Project(Array.map(lowerTerm(rowVars), terms), ramSym) as & Pure
+                 RelOp.Project(Array.map(lowerTerm(rowVars), terms), ramSym)
             case RelOp.If(test, then) =>
                  RelOp.If(List.map(lowerExp(rowVars), test), lowerOp(then, rowVars, depth))
         }
 
-    def lowerExp(rowVars: Map[RowVar, RowVar], exp: BoolExp[v]): BoolExp[v] =
+    def lowerExp(rowVars: Map[RowVar, RowVar], exp: BoolExp[v]): BoolExp[v] & Impure =
         match exp {
             case BoolExp.Empty(_) => exp
             case BoolExp.NotMemberOf(terms, ramSym) =>
-                 BoolExp.NotMemberOf(Array.map(lowerTerm(rowVars), terms), ramSym) as & Pure
+                 BoolExp.NotMemberOf(Array.map(lowerTerm(rowVars), terms), ramSym)
             case BoolExp.Eq(lhs, rhs) =>
                  BoolExp.Eq(lowerTerm(rowVars, lhs), lowerTerm(rowVars, rhs))
             case BoolExp.Leq(f, lhs, rhs) =>

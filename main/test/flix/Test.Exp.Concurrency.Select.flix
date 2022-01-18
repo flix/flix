@@ -2,7 +2,7 @@ namespace Test/Exp/Concurrency/Select {
 
     @test
     def testSelectBuffered01(): Bool & Impure =
-        let c1 = chan Int 1;
+        let c1 = chan Int32 1;
         spawn c1 <- 1;
         select {
             case x <- c1 => x == 1
@@ -10,8 +10,8 @@ namespace Test/Exp/Concurrency/Select {
 
     @test
     def testSelectBuffered02(): Bool & Impure =
-        let c1 = chan Int 1;
-        let c2 = chan Int 1;
+        let c1 = chan Int32 1;
+        let c2 = chan Int32 1;
         spawn c1 <- 1;
         spawn c2 <- 2;
         select {
@@ -21,9 +21,9 @@ namespace Test/Exp/Concurrency/Select {
 
     @test
     def testSelectBuffered03(): Bool & Impure =
-        let c1 = chan Int 1;
-        let c2 = chan Int 1;
-        let c3 = chan Int 1;
+        let c1 = chan Int32 1;
+        let c2 = chan Int32 1;
+        let c3 = chan Int32 1;
         spawn c1 <- 1;
         spawn c2 <- 2;
         spawn c3 <- 3;
@@ -35,10 +35,10 @@ namespace Test/Exp/Concurrency/Select {
 
     @test
     def testSelectBuffered04(): Bool & Impure =
-        let c1 = chan Int 1;
-        let c2 = chan Int 1;
-        let c3 = chan Int 1;
-        let c4 = chan Int 1;
+        let c1 = chan Int32 1;
+        let c2 = chan Int32 1;
+        let c3 = chan Int32 1;
+        let c4 = chan Int32 1;
         spawn c1 <- 1;
         spawn c2 <- 2;
         spawn c3 <- 3;
@@ -56,10 +56,10 @@ namespace Test/Exp/Concurrency/Select {
 
     @test
     def testSelectBuffered05(): Bool & Impure =
-        let c1 = chan Int 1;
-        let c2 = chan Int 1;
-        let c3 = chan Int 1;
-        let c4 = chan Int 1;
+        let c1 = chan Int32 1;
+        let c2 = chan Int32 1;
+        let c3 = chan Int32 1;
+        let c4 = chan Int32 1;
         spawn c1 <- 1;
         spawn c2 <- 2;
         spawn c3 <- 3;
@@ -77,10 +77,10 @@ namespace Test/Exp/Concurrency/Select {
 
     @test
     def testSelectBuffered06(): Bool & Impure =
-        let c1 = chan Int 1;
-        let c2 = chan Int 1;
-        let c3 = chan Int 1;
-        let c4 = chan Int 1;
+        let c1 = chan Int32 1;
+        let c2 = chan Int32 1;
+        let c3 = chan Int32 1;
+        let c4 = chan Int32 1;
         spawn c2 <- 1;
         select {
             case _ <- c4 => false

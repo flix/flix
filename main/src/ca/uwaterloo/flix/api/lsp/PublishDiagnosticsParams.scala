@@ -15,9 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.util.vt.TerminalContext
-import ca.uwaterloo.flix.util.vt.TerminalContext.NoTerminal
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.errors.CodeHint
+import ca.uwaterloo.flix.util.Formatter
 import org.json4s.JsonDSL._
 import org.json4s._
 
@@ -25,16 +25,30 @@ import org.json4s._
   * Companion object of [[PublishDiagnosticsParams]].
   */
 object PublishDiagnosticsParams {
-  def from(errors: LazyList[CompilationError]): List[PublishDiagnosticsParams] = {
-    implicit val ctx: TerminalContext = NoTerminal
+  def fromMessages(errors: LazyList[CompilationMessage]): List[PublishDiagnosticsParams] = {
+    val formatter: Formatter = Formatter.NoFormatter
 
     // Group the error messages by source.
     val errorsBySource = errors.toList.groupBy(_.loc.source)
 
-    // Translate each compilation error to a diagnostic.
+    // Translate each compilation message to a diagnostic.
     errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
-      case (acc, (source, compilationErrors)) =>
-        val diagnostics = compilationErrors.map(Diagnostic.from)
+      case (acc, (source, compilationMessages)) =>
+        val diagnostics = compilationMessages.map(msg => Diagnostic.from(msg, formatter))
+        PublishDiagnosticsParams(source.name, diagnostics) :: acc
+    }
+  }
+
+  def fromCodeHints(codeHints: List[CodeHint]): List[PublishDiagnosticsParams] = {
+    val formatter: Formatter = Formatter.NoFormatter
+
+    // Group the error messages by source.
+    val errorsBySource = codeHints.groupBy(_.loc.source)
+
+    // Translate each code hint to a diagnostic.
+    errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
+      case (acc, (source, codeHints)) =>
+        val diagnostics = codeHints.map(codeHint => Diagnostic.from(codeHint, formatter))
         PublishDiagnosticsParams(source.name, diagnostics) :: acc
     }
   }

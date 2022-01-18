@@ -23,7 +23,7 @@ pub enum Validation[t, e] with Eq, Order, ToString {
 }
 
 instance Hash[Validation[t, e]] with Hash[t], Hash[e] {
-    pub def hash(x: Validation[t, e]): Int = match x {
+    pub def hash(x: Validation[t, e]): Int32 = match x {
         case Success(v) => 5407 + 197 * Hash.hash(v)
         case Failure(v) => 5413 + 199 * Hash.hash(v)
     }
@@ -46,18 +46,18 @@ namespace Validation {
     /// Returns `t` if `v` is `Success(t).` Otherwise returns `d`.
     ///
     @Time(1) @Space(1)
-    pub def getWithDefault(v: Validation[t, e], d: t): t = match v {
+    pub def getWithDefault( d: t, v: Validation[t, e]): t = match v {
         case Success(t) => t
         case Failure(_) => d
     }
 
     ///
-    /// Returns `v1` if it is `Success(v)`. Otherwise returns `v2`.
+    /// Returns `v` if it is `Success(v)`. Otherwise returns `default`.
     ///
     @Time(1) @Space(1)
-    pub def withDefault(v1: Validation[t, e], v2: Validation[t, e]): Validation[t, e] = match v1 {
-        case Success(_) => v1
-        case Failure(_) => v2
+    pub def withDefault(default: {default :: Validation[t, e]}, v: Validation[t, e]): Validation[t, e] = match v {
+        case Success(_) => v
+        case Failure(_) => default.default
     }
 
     ///
