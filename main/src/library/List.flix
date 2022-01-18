@@ -668,9 +668,9 @@ namespace List {
     /// The function f must be pure.
     ///
     /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
-    /// The foldRightL function exists to allow early termination of a fold.
+    /// The foldRightLazy function exists to allow early termination of a fold.
     ///
-    pub def foldRightL(f: (a, Lazy[b]) -> b, s: b, l: List[a]): b =
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b, s: b, l: List[a]): b =
         def loop(l2) = match l2 {
             case Nil     => s
             case y :: ys => f(y, lazy loop(ys))
