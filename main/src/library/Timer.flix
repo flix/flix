@@ -21,7 +21,7 @@ namespace Timer {
     ///
     pub def days(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
-        spawn sleepAndSend(n * Duration.oneDay(), c);
+        spawn sleepAndSend(n * Time/Duration.oneDay(), c);
         c
 
     ///
@@ -29,7 +29,7 @@ namespace Timer {
     ///
     pub def hours(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
-        spawn sleepAndSend(n * Duration.oneHour(), c);
+        spawn sleepAndSend(n * Time/Duration.oneHour(), c);
         c
 
     ///
@@ -37,7 +37,7 @@ namespace Timer {
     ///
     pub def minutes(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
-        spawn sleepAndSend(n * Duration.oneMinute(), c);
+        spawn sleepAndSend(n * Time/Duration.oneMinute(), c);
         c
 
     ///
@@ -45,7 +45,7 @@ namespace Timer {
     ///
     pub def seconds(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
-        spawn sleepAndSend(n * Duration.oneSecond(), c);
+        spawn sleepAndSend(n * Time/Duration.oneSecond(), c);
         c
 
     ///
@@ -53,7 +53,7 @@ namespace Timer {
     ///
     pub def milliseconds(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
-        spawn sleepAndSend(n * Duration.oneMillisecond(), c);
+        spawn sleepAndSend(n * Time/Duration.oneMillisecond(), c);
         c
 
     ///
@@ -61,7 +61,7 @@ namespace Timer {
     ///
     pub def microseconds(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
-        spawn sleepAndSend(n * Duration.oneMicrosecond(), c);
+        spawn sleepAndSend(n * Time/Duration.oneMicrosecond(), c);
         c
 
     ///
@@ -69,7 +69,7 @@ namespace Timer {
     ///
     pub def nanoseconds(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
-        spawn sleepAndSend(n * Duration.oneNanosecond(), c);
+        spawn sleepAndSend(n * Time/Duration.oneNanosecond(), c);
         c
 
     ///
