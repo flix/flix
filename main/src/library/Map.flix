@@ -505,9 +505,9 @@ namespace Map {
     /// The function f must be pure.
     ///
     /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
-    /// The foldRightL function exists to allow early termination of a fold.
+    /// The foldRightLazy function exists to allow early termination of a fold.
     ///
-    pub def foldRightL(f: (v, Lazy[b]) -> b, s: b, m: Map[k, v]): b =
+    pub def foldRightLazy(f: (v, Lazy[b]) -> b, s: b, m: Map[k, v]): b =
         foldRightWithKey((_, v, acc) -> f(v, lazy acc), s, m)
 
     ///

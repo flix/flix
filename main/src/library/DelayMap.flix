@@ -554,7 +554,7 @@ namespace DelayMap {
     /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
     ///
     @Experimental
-    pub def foldRightL(f: (v, Lazy[b]) -> b, s: b, m: DelayMap[k, v]): b =
+    pub def foldRightLazy(f: (v, Lazy[b]) -> b, s: b, m: DelayMap[k, v]): b =
         foldRightWithKey((_, v, acc) -> f(v, lazy acc), s, m)
 
     ///

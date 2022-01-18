@@ -560,23 +560,23 @@ namespace TestMutList {
     def foldRight05(): Bool & Impure = MutList.foldRight((x, acc) -> x + acc, 42, MutList.new()) == 42
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightL                                                              //
+    // foldRightLazy                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldRightL01(): Bool & Impure = MutList.foldRightL((x, acc) -> force acc + x, 0, MutList.range(1, 5)) == 10
+    def foldRightLazy01(): Bool & Impure = MutList.foldRightLazy((x, acc) -> force acc + x, 0, MutList.range(1, 5)) == 10
 
     @test
-    def foldRightL02(): Bool & Impure = MutList.foldRightL((x, acc) -> Int32.toString(x) + force acc, "", MutList.range(3, 8)) == "34567"
+    def foldRightLazy02(): Bool & Impure = MutList.foldRightLazy((x, acc) -> Int32.toString(x) + force acc, "", MutList.range(3, 8)) == "34567"
 
     @test
-    def foldRightL03(): Bool & Impure = MutList.foldRightL((x, acc) -> x :: force acc, Nil, MutList.range(0, 6)) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+    def foldRightLazy03(): Bool & Impure = MutList.foldRightLazy((x, acc) -> x :: force acc, Nil, MutList.range(0, 6)) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
 
     @test
-    def foldRightL04(): Bool & Impure = MutList.foldRightL((x, acc) -> x - force acc, 0, MutList.range(0, 100)) == -50
+    def foldRightLazy04(): Bool & Impure = MutList.foldRightLazy((x, acc) -> x - force acc, 0, MutList.range(0, 100)) == -50
 
     @test
-    def foldRightL05(): Bool & Impure = MutList.foldRightL((x, acc) -> x + force acc, 42, MutList.new()) == 42
+    def foldRightLazy05(): Bool & Impure = MutList.foldRightLazy((x, acc) -> x + force acc, 42, MutList.new()) == 42
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //

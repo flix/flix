@@ -366,21 +366,23 @@ namespace TestMutMap {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightL                                                              //
+    // foldRightLazy                                                           //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def foldRightL01(): Bool & Impure = MutMap.foldRightL((v, s) -> force s + v, 0, MutMap.empty()) == 0
 
     @test
-    def foldRightL02(): Bool & Impure = MutMap.foldRightL((v, s) -> force s + v, 0, MutMap.singleton(1, 2)) == 2
+    def foldRightLazy01(): Bool & Impure = MutMap.foldRightLazy((v, s) -> force s + v, 0, MutMap.empty()) == 0
 
     @test
-    def foldRightL03(): Bool & Impure =
+    def foldRightLazy02(): Bool & Impure = MutMap.foldRightLazy((v, s) -> force s + v, 0, MutMap.singleton(1, 2)) == 2
+
+    @test
+    def foldRightLazy03(): Bool & Impure =
         let m = MutMap(ref Map#{1 => 2, 3 => 4});
-        MutMap.foldRightL((v, s) -> force s + v, 0, m) == 6
+        MutMap.foldRightLazy((v, s) -> force s + v, 0, m) == 6
 
     @test
-    def foldRightL04(): Bool & Impure =
+    def foldRightLazy04(): Bool & Impure =
         let m = MutMap(ref Map#{1 => 2, 3 => 4, 5 => 6});
-        MutMap.foldRightL((v, s) -> force s + v, 0, m) == 12
+        MutMap.foldRightLazy((v, s) -> force s + v, 0, m) == 12
+
 }

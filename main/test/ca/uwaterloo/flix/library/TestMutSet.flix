@@ -229,21 +229,22 @@ namespace TestMutSet {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightL                                                              //
+    // foldRightLazy                                                           //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def foldRightL01(): Bool & Impure = MutSet.foldRightL((e, i) -> (force i - e) * (e rem 2 + 1), 100, MutSet.empty()) == 100
+    def foldRightLazy01(): Bool & Impure = MutSet.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, MutSet.empty()) == 100
 
     @test
-    def foldRightL02(): Bool & Impure = MutSet.foldRightL((e, i) -> (force i - e) * (e rem 2 + 1), 100, MutSet.singleton(1)) == 198
+    def foldRightLazy02(): Bool & Impure = MutSet.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, MutSet.singleton(1)) == 198
 
     @test
-    def foldRightL03(): Bool & Impure =
+    def foldRightLazy03(): Bool & Impure =
         let s = MutSet(ref Set#{2, 1});
-        MutSet.foldRightL((e, i) -> (force i - e) * (e rem 2 + 1), 100, s) == 194
+        MutSet.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, s) == 194
 
     @test
-    def foldRightL04(): Bool & Impure =
+    def foldRightLazy04(): Bool & Impure =
         let s = MutSet(ref Set#{3, 2, 1});
-        MutSet.foldRightL((e, i) -> (force i - e) * (e rem 2 + 1), 100, s) == 382
+        MutSet.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, s) == 382
+
 }
