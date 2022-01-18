@@ -38,7 +38,6 @@ namespace Concurrent {
         ///
         pub def await(condition: Concurrent.Condition): Result[Unit, Concurrent.ConditionError] & Impure =
             import java.util.concurrent.locks.Condition.await();
-            //use Concurrent/Condition.Condition;
             let Concurrent/Condition.Condition(c) = condition;
             try {
                 Ok(await(c))
