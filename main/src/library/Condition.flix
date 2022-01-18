@@ -23,7 +23,7 @@ opaque type Condition = ##java.util.concurrent.locks.Condition
 ///
 /// An enum reflecting the two exceptions occurring in condition methods, lock state errors and thread interruptions.
 ///
-enum ConditionError {
+pub enum ConditionError {
     case MonitorStateError(##java.lang.IllegalMonitorStateException)
     case InterruptedError(##java.lang.InterruptedException)
 }
@@ -37,7 +37,7 @@ namespace Condition {
         import java.util.concurrent.locks.Condition.await();
         let Condition(c) = condition;
         try {
-            Ok(c.await())
+            Ok(await(c))
         } catch {
             case e: ##java.lang.InterruptedException => Err(InterruptedError(e))
             case e: ##java.lang.IllegalMonitorStateException => Err(MonitorStateError(e))
@@ -52,7 +52,7 @@ namespace Condition {
         import java.util.concurrent.locks.Condition.awaitNanos(Int64);
         let Condition(c) = condition;
         try {
-            Ok(c.awaitNanos(timeout))
+            Ok(awaitNanos(c, timeout))
         } catch {
             case e: ##java.lang.InterruptedException => Err(InterruptedError(e))
             case e: ##java.lang.IllegalMonitorStateException => Err(MonitorStateError(e))
@@ -65,7 +65,7 @@ namespace Condition {
         import java.util.concurrent.locks.Condition.awaitUninterruptibly();
         let Condition(c) = condition;
         try {
-            Ok(c.awaitUninterruptibly())
+            Ok(awaitUninterruptibly(c))
         } catch {
             case e: ##java.lang.IllegalMonitorStateException => Err(e)
         }
@@ -77,7 +77,7 @@ namespace Condition {
         import java.util.concurrent.locks.Condition.signal();
         let Condition(c) = condition;
         try {
-            Ok(c.signal())
+            Ok(signal(c))
         } catch {
             case e: ##java.lang.IllegalMonitorStateException => Err(e)
         }
@@ -89,7 +89,7 @@ namespace Condition {
         import java.util.concurrent.locks.Condition.signalAll();
         let Condition(c) = condition;
         try {
-            Ok(c.signalAll())
+            Ok(signalAll(c))
         } catch {
             case e: ##java.lang.IllegalMonitorStateException => Err(e)
         }

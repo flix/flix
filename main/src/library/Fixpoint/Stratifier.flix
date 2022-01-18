@@ -29,13 +29,13 @@ namespace Fixpoint {
     /// Initially, all IDB predicates are assigned to stratum 0.
     /// I.e. facts are ignored in the stratification.
     ///
-    def stratify(d: Datalog[v]): Map[PredSym, Int32] = match d {
+    def stratify(d: Datalog[v]): Map[PredSym, Int32] & Impure = match d {
         case Datalog(_, rules) =>
             Array.foldRight(match Constraint(HeadAtom(p, _, _), _) -> Map.insert(p, 0), Map#{}, rules) |>
             stratifyHelper(mkDepGraph(d))
         case Model(_) => Map#{} // Models contain only facts.
         case Join(d1, d2) => Map.unionWith(Int32.max, stratify(d1), stratify(d2))
-    } as & Pure
+    }
 
     def stratifyHelper(g: PrecedenceGraph, stf: Map[PredSym, Int32]): Map[PredSym, Int32] = match g {
         case PrecedenceGraph(xs) =>
@@ -76,14 +76,14 @@ namespace Fixpoint {
                 stf
     }
 
-    def mkDepGraph(d: Datalog[v]): PrecedenceGraph = match d {
-        case Datalog(_, rules) => Array.fold(Array.map(precedenceHelper, rules)) as & Pure
+    def mkDepGraph(d: Datalog[v]): PrecedenceGraph & Impure = match d {
+        case Datalog(_, rules) => Array.fold(Array.map(precedenceHelper, rules))
         case Model(_) => Monoid.empty()
         case Join(d1, d2) => Monoid.combine(mkDepGraph(d1), mkDepGraph(d2))
     }
 
-    def precedenceHelper(cnst: Constraint[v]): PrecedenceGraph = match cnst {
-        case Constraint(head, body) => Array.fold(Array.map(mkDepEdge(head), body)) as & Pure
+    def precedenceHelper(cnst: Constraint[v]): PrecedenceGraph & Impure = match cnst {
+        case Constraint(head, body) => Array.fold(Array.map(mkDepEdge(head), body))
     }
 
     def mkDepEdge(dst: HeadPredicate[v], src: BodyPredicate[v]): PrecedenceGraph = match (dst, src) {

@@ -16,15 +16,14 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation}
-import ca.uwaterloo.flix.util.vt.VirtualString._
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for naming errors.
   */
-sealed trait NameError extends CompilationError {
+sealed trait NameError extends CompilationMessage {
   val kind = "Name Error"
 }
 
@@ -39,20 +38,28 @@ object NameError {
     * @param loc2 the location of the use.
     */
   case class AmbiguousVarOrUse(name: String, loc: SourceLocation, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Ambiguous name. The name may refer to both a variable and a use."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Ambiguous name '" << Red(name) << "'. The name may refer to both a variable and a use." << NewLine
-      vt << NewLine
-      vt << Code(loc, "ambiguous name.") << NewLine
-      vt << NewLine
-      vt << "The relevant declarations are:" << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the var was declared here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the use was declared here.") << NewLine
+    def summary: String = s"Ambiguous name: '$name'. The name may refer to both a variable and a use of a name."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Ambiguous name '${red(name)}'. The name may refer to both a variable and a use of a name.
+         |
+         |${code(loc, "ambiguous name.")}
+         |
+         |The relevant declarations are:
+         |
+         |${code(loc1, "the 'var' was declared here.")}
+         |
+         |${code(loc2, "the 'use' was declared here.")}
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      """Flix is not able to determine if the name refers to a local variable or to a
+        |name that has been brought into scope with a use declaration.
+        |""".stripMargin
+    })
   }
 
   /**
@@ -63,18 +70,30 @@ object NameError {
     * @param loc2 the location of the second definition.
     */
   case class DuplicateDefOrSig(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate definition."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate definition '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
+    def summary: String = s"Duplicate definition of '$name'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Duplicate definition of '${red(name)}'.
+         |
+         |${code(loc1, "the first definition was here.")}
+         |
+         |${code(loc2, "the second definition was here.")}
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      """Flix does not support function overloading, i.e. you cannot define two functions
+        |with the same name, even if their formal parameters differ.
+        |
+        |If you want two functions to share the same name you have to either:
+        |
+        |    (a) put each function into its own namespace, or
+        |    (b) introduce a type class and implement two instances.
+        |""".stripMargin
+    })
+
     def loc: SourceLocation = loc1
   }
 
@@ -86,16 +105,21 @@ object NameError {
     * @param loc2 the location of the second use.
     */
   case class DuplicateUseDefOrSig(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate use."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate use of '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first use was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second use was here.") << NewLine
+    def summary: String = s"Duplicate use of '$name'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Duplicate use of '${red(name)}'.
+         |
+         |${code(loc1, "the first use was here.")}
+         |
+         |${code(loc2, "the second use was here.")}
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = None
+
     def loc: SourceLocation = loc1
   }
 
@@ -107,16 +131,21 @@ object NameError {
     * @param loc2 the location of the second use.
     */
   case class DuplicateUseTypeOrClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate use."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate use of the type or class '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first use was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second use was here.") << NewLine
+    def summary: String = s"Duplicate use of '$name'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Duplicate use of the type or class '${red(name)}'.
+         |
+         |${code(loc1, "the first use was here.")}
+         |
+         |${code(loc2, "the second use was here.")}
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = None
+
     def loc: SourceLocation = loc1
   }
 
@@ -128,16 +157,21 @@ object NameError {
     * @param loc2 the location of the second use.
     */
   case class DuplicateUseTag(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate use."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate use of the tag '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first use was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second use was here.") << NewLine
+    def summary: String = s"Duplicate use of '$name'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Duplicate use of the tag '${red(name)}'.
+         |
+         |${code(loc1, "the first use was here.")}
+         |
+         |${code(loc2, "the second use was here.")}
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = None
+
     def loc: SourceLocation = loc1
   }
 
@@ -149,20 +183,23 @@ object NameError {
     * @param loc2 the location of the second definition.
     */
   case class DuplicateTypeOrClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate type or class declaration."
+    def summary: String = s"Duplicate type or class declaration '$name'."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate type or class declaration '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Duplicate type or class declaration '${red(name)}'.
+         |
+         |${code(loc1, "the first occurrence was here.")}
+         |
+         |${code(loc2, "the second occurrence was here.")}
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = None
+
     def loc: SourceLocation = loc1
+
   }
 
   /**
@@ -172,16 +209,25 @@ object NameError {
     * @param loc  the location of the suspicious type variable.
     */
   case class SuspiciousTypeVarName(name: String, loc: SourceLocation) extends NameError {
-    def summary: String = s"Suspicious type variable. Did you mean: '${name.capitalize}'?"
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Suspicious type variable '" << Red(name) << s"'. Did you mean: '" << Cyan(name.capitalize) << "'?" << NewLine
-      vt << NewLine
-      vt << Code(loc, "Suspicious type variable.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Type variables are always lowercase. Named types are uppercase." << NewLine
+    def summary: String = s"Suspicious type variable '$name'. Did you mean: '${name.capitalize}'?"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Suspicious type variable '${red(name)}'. Did you mean: '${cyan(name.capitalize)}'?
+         |
+         |${code(loc, "Suspicious type variable.")}
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      """Flix uses lowercase variables. The provided type variable looks suspiciously
+        |like the name of a built-in type. Perhaps you meant to use the built-in type?
+        |
+        |For example, `Int32` is a built-in type whereas `int32` is a type variable.
+        |""".stripMargin
+    })
+
   }
 
   /**
@@ -191,14 +237,28 @@ object NameError {
     * @param loc  the location of the class name.
     */
   case class UndefinedNativeClass(name: String, loc: SourceLocation) extends NameError {
-    def summary: String = s"Undefined class."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined class '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "undefined class.") << NewLine
+    def summary: String = s"Undefined Java class '$name'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined Java class '${red(name)}'.
+         |
+         |${code(loc, "undefined Java class.")}
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      """Flix cannot find the Java class. You can check:
+        |
+        |    (a) if there is a simple typo.
+        |    (b) that the relevant JARs are included.
+        |    (c) that you are using the right Java version.
+        |
+        |Flix automatically includes JARs that are passed as arguments and JAR files
+        |located in the `lib` directory.
+        |""".stripMargin
+    })
   }
 
   /**
@@ -208,14 +268,20 @@ object NameError {
     * @param loc  the location of the undefined variable.
     */
   case class UndefinedVar(name: String, loc: SourceLocation) extends NameError {
-    def summary: String = s"Undefined variable."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined variable '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "undefined variable.") << NewLine
+    def summary: String = s"Undefined variable '$name'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined variable '${red(name)}'.
+         |
+         |${code(loc, "undefined variable.")}
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      "Flix cannot find the variable. Maybe there is a typo?"
+    })
   }
 
   /**
@@ -225,14 +291,21 @@ object NameError {
     * @param loc  the location of the undefined type variable.
     */
   case class UndefinedTypeVar(name: String, loc: SourceLocation) extends NameError {
-    def summary: String = s"Undefined type variable."
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined type variable '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "undefined type variable.") << NewLine
+    def summary: String = s"Undefined type variable '$name'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined type variable '${red(name)}'.
+         |
+         |${code(loc, "undefined type variable.")}
+         |""".stripMargin
+
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      "Flix cannot find the type variable. Maybe there is a typo?"
+    })
   }
 
   /**
@@ -242,17 +315,21 @@ object NameError {
     * @param loc  the location where the error occurred.
     */
   case class IllegalSignature(name: Name.Ident, loc: SourceLocation) extends NameError {
-    def summary: String = "Illegal signature."
+    def summary: String = s"Unexpected signature which does not mention the type variable of the class."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal signature '" << Red(name.name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "Illegal signature.")
-      vt << NewLine
-      vt << Underline("Tip:") << " Change the signature to include the class type parameter, or remove the signature."
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected signature '${red(name.name)}' which does not mention the type variable of the class.
+         |
+         |${code(loc, "unexpected signature.")}
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      "Every signature in a type class must mention the type variable of the class."
+    })
+
   }
 
 }

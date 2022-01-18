@@ -83,8 +83,8 @@ namespace Domain/ParitySign {
     ///
     pub def alpha(i: Int): ParitySign = {
         if      (i == 0)    Zer
-        else if (i <= 0)    if (i % 2 != 0) ONeg else ENeg
-        else                if (i % 2 != 0) OPos else EPos
+        else if (i <= 0)    if (i rem 2 != 0) ONeg else ENeg
+        else                if (i rem 2 != 0) OPos else EPos
     }
 
     ///

@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestInstances extends FunSuite with TestUtils {
@@ -115,6 +115,34 @@ class TestInstances extends FunSuite with TestUtils {
     expectError[InstanceError.OverlappingInstances](result)
   }
 
+  test("Test.OverlappingInstances.Bool.01") {
+    val input =
+      """
+        |lawless class C[a]
+        |
+        |enum E[_: Bool]
+        |
+        |instance C[E[true]]
+        |instance C[E[false]]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.OverlappingInstances](result)
+  }
+
+  test("Test.OverlappingInstances.Bool.02") {
+    val input =
+      """
+        |lawless class C[a]
+        |
+        |enum E[_: Bool, _: Type]
+        |
+        |instance C[E[true, a]]
+        |instance C[E[false, a]]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.OverlappingInstances](result)
+  }
+
   test("Test.ComplexInstanceType.01") {
     val input =
       """
@@ -147,17 +175,6 @@ class TestInstances extends FunSuite with TestUtils {
         |class C[a]
         |
         |instance C[Box[Int]]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.ComplexInstanceType](result)
-  }
-
-  test("Test.ComplexInstanceType.04") {
-    val input =
-      """
-        |class C[a]
-        |
-        |instance C[a -> b]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstanceType](result)
@@ -307,7 +324,7 @@ class TestInstances extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[CompilationError](result) // TODO should be MismatchedSignature
+    expectError[CompilationMessage](result) // TODO should be MismatchedSignature
   }
 
   test("Test.MismatchedSignatures.04") {
@@ -559,5 +576,27 @@ class TestInstances extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.ComplexInstanceType](result)
     rejectError[InstanceError.ExtraneousDefinition](result)
+  }
+
+  test("Test.TypeAliasInstance.01") {
+    val input =
+      """
+        |class C[a]
+        |type alias T = Int
+        |instance C[T]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.IllegalTypeAliasInstance](result)
+  }
+
+  test("Test.TypeAliasInstance.02") {
+    val input =
+      """
+        |class C[a]
+        |type alias T[a] = Int
+        |instance C[T[a]]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.IllegalTypeAliasInstance](result)
   }
 }

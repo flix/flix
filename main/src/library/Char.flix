@@ -38,8 +38,8 @@ namespace Char {
     ///
     @Time(1) @Space(1)
     pub def isLetter(c: Char): Bool =
-        import java.lang.Character:isLetter(Char);
-        c.isLetter() as & Pure
+        import static java.lang.Character.isLetter(Char);
+        isLetter(c) as & Pure
 
     ///
     /// Returns `true` if the given char `c` is a recognized Unicode digit.
@@ -47,8 +47,8 @@ namespace Char {
     ///
     @Time(1) @Space(1)
     pub def isDigit(c: Char): Bool =
-        import java.lang.Character:isDigit(Char);
-        c.isDigit() as & Pure
+        import static java.lang.Character.isDigit(Char);
+        isDigit(c) as & Pure
 
     ///
     /// Returns `true` if the given char `c` is strictly in the range of ASCII digits 0...9.
@@ -84,24 +84,24 @@ namespace Char {
     ///
     @Time(1) @Space(1)
     pub def isLowerCase(c: Char): Bool =
-        import java.lang.Character:isLowerCase(Char);
-        c.isLowerCase() as & Pure
+        import static java.lang.Character.isLowerCase(Char);
+        isLowerCase(c) as & Pure
 
     ///
     /// Returns `true` if the given char `c` is uppercase.
     ///
     @Time(1) @Space(1)
     pub def isUpperCase(c: Char): Bool =
-        import java.lang.Character:isUpperCase(Char);
-        c.isUpperCase() as & Pure
+        import static java.lang.Character.isUpperCase(Char);
+        isUpperCase(c) as & Pure
 
     ///
     /// Returns `true` if the given char `c` is a white space character.
     ///
     @Time(1) @Space(1)
     pub def isWhiteSpace(c: Char): Bool =
-        import java.lang.Character:isWhitespace(Char);
-        c.isWhitespace() as & Pure
+        import static java.lang.Character.isWhitespace(Char);
+        isWhitespace(c) as & Pure
 
     ///
     /// Converts a letter to its lowercase version.
@@ -110,8 +110,8 @@ namespace Char {
     ///
     @Time(1) @Space(1)
     pub def toLowerCase(c: Char): Char =
-        import java.lang.Character:toLowerCase(Char);
-        c.toLowerCase() as & Pure
+        import static java.lang.Character.toLowerCase(Char);
+        toLowerCase(c) as & Pure
 
     ///
     /// Converts a letter to its uppercase version.
@@ -120,8 +120,8 @@ namespace Char {
     ///
     @Time(1) @Space(1)
     pub def toUpperCase(c: Char): Char =
-        import java.lang.Character:toUpperCase(Char);
-        c.toUpperCase() as & Pure
+        import static java.lang.Character.toUpperCase(Char);
+        toUpperCase(c) as & Pure
 
     ///
     /// Returns the character `c` as a string.
