@@ -22,6 +22,6 @@ pub lawless class Iterable[t: Type -> Type] {
     ///
     /// Returns an iterator of `t`.
     ///
-    pub def iterator(t: t[a]): Iterator[a] & Impure = ???
+    pub def iterator(t: t[a]): Iterator[a] & Impure
 
 }
