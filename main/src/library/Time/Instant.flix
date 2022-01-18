@@ -37,8 +37,8 @@ namespace Time {
         @Experimental
         pub def before(x: Time.Instant, y: Time.Instant): Bool =
             import java.time.Instant.isBefore(##java.time.Instant);
-            let Instant(t1) = x;
-            let Instant(t2) = y;
+            let Time/Instant.Instant(t1) = x;
+            let Time/Instant.Instant(t2) = y;
             (t1 `isBefore` t2) as & Pure
 
         ///
@@ -47,8 +47,8 @@ namespace Time {
         @Experimental
         pub def after(x: Time.Instant, y: Time.Instant): Bool =
             import java.time.Instant.isAfter(##java.time.Instant);
-            let Instant(t1) = x;
-            let Instant(t2) = y;
+            let Time/Instant.Instant(t1) = x;
+            let Time/Instant.Instant(t2) = y;
             (t1 `isAfter` t2) as & Pure
 
         ///
@@ -57,7 +57,7 @@ namespace Time {
         @Experimental
         pub def plus(x: Time.Instant, d: Int64): Time.Instant =
             import java.time.Instant.plusNanos(Int64);
-            let Instant(t) = x;
+            let Time/Instant.Instant(t) = x;
             Instant(t `plusNanos` d) as & Pure
 
         ///
@@ -66,7 +66,7 @@ namespace Time {
         @Experimental
         pub def minus(x: Time.Instant, d: Int64): Time.Instant =
             import java.time.Instant.minusNanos(Int64);
-            let Instant(t) = x;
+            let Time/Instant.Instant(t) = x;
             Instant(t `minusNanos` d) as & Pure
 
     }
