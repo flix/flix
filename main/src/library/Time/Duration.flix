@@ -14,41 +14,52 @@
  * limitations under the License.
  */
 
-namespace Duration {
+namespace Time {
 
-    ///
-    /// Returns the number of nanoseconds in one 24 hour day.
-    ///
-    pub def oneDay(): Int64 = 24i64 * oneHour()
+    namespace Duration {
 
-    ///
-    /// Returns the number of nanoseconds in one hour.
-    ///
-    pub def oneHour(): Int64 = 60i64 * oneMinute()
+        ///
+        /// Returns the number of nanoseconds in one 24 hour day.
+        ///
+        @Experimental
+        pub def oneDay(): Int64 = 24i64 * oneHour()
 
-    ///
-    /// Returns the number of nanoseconds in one minute.
-    ///
-    pub def oneMinute(): Int64 = 60i64 * oneSecond()
+        ///
+        /// Returns the number of nanoseconds in one hour.
+        ///
+        @Experimental
+        pub def oneHour(): Int64 = 60i64 * oneMinute()
 
-    ///
-    /// Returns the number of nanoseconds in one second.
-    ///
-    pub def oneSecond(): Int64 = 1000i64 * oneMillisecond()
+        ///
+        /// Returns the number of nanoseconds in one minute.
+        ///
+        @Experimental
+        pub def oneMinute(): Int64 = 60i64 * oneSecond()
 
-    ///
-    /// Returns the number of nanoseconds in one millisecond.
-    ///
-    pub def oneMillisecond(): Int64 = 1000i64 * oneMicrosecond()
+        ///
+        /// Returns the number of nanoseconds in one second.
+        ///
+        @Experimental
+        pub def oneSecond(): Int64 = 1000i64 * oneMillisecond()
 
-    ///
-    /// Returns the number of nanoseconds in one microsecond.
-    ///
-    pub def oneMicrosecond(): Int64 = 1000i64 * oneNanosecond()
+        ///
+        /// Returns the number of nanoseconds in one millisecond.
+        ///
+        @Experimental
+        pub def oneMillisecond(): Int64 = 1000i64 * oneMicrosecond()
 
-    ///
-    /// Returns the number of nanoseconds in one nanosecond, i.e. one.
-    ///
-    pub def oneNanosecond(): Int64 = 1i64
+        ///
+        /// Returns the number of nanoseconds in one microsecond.
+        ///
+        @Experimental
+        pub def oneMicrosecond(): Int64 = 1000i64 * oneNanosecond()
+
+        ///
+        /// Returns the number of nanoseconds in one nanosecond, i.e. one.
+        ///
+        @Experimental
+        pub def oneNanosecond(): Int64 = 1i64
+
+    }
 
 }
