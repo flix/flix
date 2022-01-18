@@ -159,7 +159,6 @@ class Flix {
     "File.flix" -> LocalResource.get("/src/library/File.flix"),
 
     "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
-    "Epoch.flix" -> LocalResource.get("/src/library/Epoch.flix"),
 
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
@@ -175,12 +174,14 @@ class Flix {
     "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
     "Ticker.flix" -> LocalResource.get("/src/library/Ticker.flix"),
     "Timer.flix" -> LocalResource.get("/src/library/Timer.flix"),
-    "Duration.flix" -> LocalResource.get("/src/library/Duration.flix"),
-    "Instant.flix" -> LocalResource.get("/src/library/Instant.flix"),
 
     "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
     "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
+
+    "Time/Duration.flix" -> LocalResource.get("/src/library/Time/Duration.flix"),
+    "Time/Epoch.flix" -> LocalResource.get("/src/library/Time/Epoch.flix"),
+    "Time/Instant.flix" -> LocalResource.get("/src/library/Time/Instant.flix"),
 
     "Fixpoint/Compiler.flix" -> LocalResource.get("/src/library/Fixpoint/Compiler.flix"),
     "Fixpoint/Debugging.flix" -> LocalResource.get("/src/library/Fixpoint/Debugging.flix"),
