@@ -1,6 +1,49 @@
 # Changelog
 
-HEAD:
+Version 0.26.0:
+
+- Released a completely revamped version of https://api.flix.dev/ (thanks Magnus!)
+- Improved type error messages (thanks Magnus!)
+- Rewrote the `Console` API (thanks Nina!)
+- Added monadic folds to `Foldable` (thanks Stephen!)
+- Added additional monadic operators (thanks Stephen!)
+- Added `Traversable` type class (thanks Stephen!)
+- Added support for local defs (let-rec) (thanks Jonathan!)
+- Applied subject-last principle more uniformly (thanks Dylan!)
+- Added additional code hints for effects (thanks Magnus!)
+- Added experimental support for incremental compilation (thanks Magnus!)
+    - Incrementalized Parser, Weeder, and Typer (thanks Magnus!)
+- Added `@Parallel` and `@Lazy` annotations (thanks Magnus!)
+- Various improvements to the standard library (thanks Nina!)
+
+Version 0.25.0:
+
+- Added support for semantic tokens (thanks Magnus, Jacob, and Matthew!)
+- Added support for inclusion of external JARs (thanks Matthew!)
+- Added Monad type class (thanks Felix!)
+- Added examples with derive (thanks Matthew!)
+- Added experimental support for reifyEff (thanks Magnus!)
+- Updates to String functions (thanks Nina!)
+- Updates to SemiGroup (thanks Nina!)
+- Updates to Koans (thanks Jonathan!)
+- Tweaks to code generation (thanks Jonathan!)
+- Reduced memory usage (thanks Magnus!)
+- Several bug fixes (thanks everyone!)
+
+Version 0.24.0:
+- Added support for schema rows (thanks Matthew!)
+- Added support for labelled records (thanks Matthew!)
+- Added `rem` and `mod` keywords (thanks Matthew!)
+- Added `MutDeque` (thanks Jakob!)
+- Added extra Datalog examples (thanks Jonathan!)
+- Improvements to monomorphization (thanks Magnus!)
+- Updated String signatures (thanks Nina!)
+- Fixed a performance bug in the parser (thanks Magnus!)
+
+Version 0.23.0:
+- Added support for go to implementation (thanks Nicola!)
+- Added code hint for complex effects (thanks Magnus!)
+- Added support for `install` package (thanks Matthew!)
 
 Version 0.22.0:
 - Added support for Workspace Symbols (thanks Nicola!)
@@ -210,3 +253,13 @@ Version 0.1:
 
 2016-06-08: 
 - Initial release.
+
+
+HEAD (in progress, not released):
+
+- Added a new file API (thanks Nina!)
+- Added `DelayList` and `DelayMap` (thanks Jakob!)
+- Added `Iterator` (thanks Jakob!)
+- Added `foldRightLazy` operations (thanks Nicola!)
+- Added automatic parallelization of certain `Set` and `Map` operations (thanks Jakob!)
+- Improved stratification algorithm (thanks Jonathan!)

@@ -19,12 +19,6 @@
 ///
 opaque type MutMap[k, v] = Ref[Map[k, v]]
 
-instance ToString[MutMap[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: MutMap[k, v]): String =
-        let s = MutMap.foldRightWithKey((k, v, acc) -> "${k} -> ${v}, ${acc}", "", m) as & Pure;
-        "MutMap#{${String.dropRight(2, s)}}"
-}
-
 namespace MutMap {
 
     ///
@@ -58,36 +52,83 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def minimum(m: MutMap[k, v]): Option[(k, v)] & Impure =
+    pub def minimumKey(m: MutMap[k, v]): Option[(k, v)] & Impure =
         let MutMap(mm) = m;
-        Map.minimum(deref mm)
+        Map.minimumKey(deref mm)
 
     ///
-    /// Optionally finds `k -> v` where `k` is the smallest key according to the given comparator `cmp`.
+    /// Optionally finds `k => v` where `k` is the smallest key according to the given comparator `cmp`.
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def minimumBy(cmp: (k, v, k, v) -> Comparison, m: MutMap[k, v]): Option[(k, v)] & Impure =
+    /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
+    ///
+    @ParallelWhenPure
+    pub def minimumKeyBy(cmp: (k, k) -> Comparison & ef, m: MutMap[k, v]): Option[(k, v)] & Impure =
         let MutMap(mm) = m;
-        Map.minimumBy(cmp, deref mm)
+        Map.minimumKeyBy(cmp, deref mm)
 
     ///
-    /// Optionally finds `k -> v` where `k` is the largest key according to the `Order` instance of `k`.
+    /// Optionally finds `k => v` where `v` is the smallest value.
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def maximum(m: MutMap[k, v]): Option[(k, v)] & Impure =
+    @Parallel
+    pub def minimumValue(m: MutMap[k, v]): Option[(k, v)] & Impure with Order[v] =
         let MutMap(mm) = m;
-        Map.maximum(deref mm)
+        Map.minimumValue(deref mm)
 
     ///
-    /// Optionally finds `k -> v` where `k` is the largest key according to the given comparator `cmp`.
+    /// Optionally finds `k => v` where `v` is the smallest value according to the given comparator `cmp`.
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def maximumBy(cmp: (k, v, k, v) -> Comparison, m: MutMap[k, v]): Option[(k, v)] & Impure =
+    /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
+    ///
+    @ParallelWhenPure
+    pub def minimumValueBy(cmp: (v, v) -> Comparison & ef, m: MutMap[k, v]): Option[(k, v)] & Impure =
         let MutMap(mm) = m;
-        Map.maximumBy(cmp, deref mm)
+        Map.minimumValueBy(cmp, deref mm)
+
+    ///
+    /// Optionally finds `k => v` where `k` is the largest key according to the `Order` instance of `k`.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    pub def maximumKey(m: MutMap[k, v]): Option[(k, v)] & Impure =
+        let MutMap(mm) = m;
+        Map.maximumKey(deref mm)
+
+    ///
+    /// Optionally finds `k => v` where `k` is the largest key according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    pub def maximumKeyBy(cmp: (k, k) -> Comparison & ef, m: MutMap[k, v]): Option[(k, v)] & Impure =
+        let MutMap(mm) = m;
+        Map.maximumKeyBy(cmp, deref mm)
+
+    ///
+    /// Optionally finds `k => v` where `v` is the largest value.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    @Parallel
+    pub def maximumValue(m: MutMap[k, v]): Option[(k, v)] & Impure with Order[v] =
+        let MutMap(mm) = m;
+        Map.maximumValue(deref mm)
+
+    ///
+    /// Optionally finds `k => v` where `v` is the largest value according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `m` is empty.
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
+    ///
+    @ParallelWhenPure
+    pub def maximumValueBy(cmp: (v, v) -> Comparison & ef, m: MutMap[k, v]): Option[(k, v)] & Impure =
+        let MutMap(mm) = m;
+        Map.maximumValueBy(cmp, deref mm)
 
     ///
     /// Returns the keys of the mutable map `m`.
@@ -226,7 +267,7 @@ namespace MutMap {
     ///
     pub def remove!(k: k, m: mut MutMap[k, v]): Unit & Impure with Order[k] =
         let MutMap(mm) = m;
-        mm := Map.delete(k, deref mm)
+        mm := Map.remove(k, deref mm)
 
     ///
     /// Applies the function `f` to every value in the mutable map `m`.
@@ -379,6 +420,27 @@ namespace MutMap {
         Map.count(f, deref mm)
 
     ///
+    /// Returns the sum of all keys in the map `m`.
+    ///
+    pub def sumKeys(m: MutMap[Int32, v]): Int32 & Impure =
+        let MutMap(mm) = m;
+        Map.sumKeys(deref mm)
+
+    ///
+    /// Returns the sum of all values in the map `m`.
+    ///
+    pub def sumValues(m: MutMap[k, Int32]): Int32 & Impure =
+        let MutMap(mm) = m;
+        Map.sumValues(deref mm)
+
+    ///
+    /// Returns the sum of all key-value pairs `k => v` in the map `m` according to the function `f`.
+    ///
+    pub def sumWith(f: (k, v) -> Int32 & ef, m: MutMap[k, v]): Int32 & Impure =
+        let MutMap(mm) = m;
+        Map.sumWith(f, deref mm)
+
+    ///
     /// Returns `true` if and only if at least one mapping in the mutable map `m` satisfies the predicate function `f`.
     ///
     /// Returns `false` if `m` is the empty map.
@@ -410,7 +472,7 @@ namespace MutMap {
     ///
     /// Returns the mutable map `m` as an immutable map.
     ///
-    pub def toImm(m: MutMap[k, v]): Map[k, v] & Impure =
+    pub def toMap(m: MutMap[k, v]): Map[k, v] & Impure =
         let MutMap(mm) = m;
         deref mm
 
@@ -431,9 +493,7 @@ namespace MutMap {
     ///
     /// Applies `f` to every element in the mutable map `m`.
     ///
-    /// The function `f` must be impure.
-    ///
-    pub def foreach(f: (k, v) ~> Unit, m: MutMap[k, v]): Unit & Impure =
+    pub def foreach(f: (k, v) -> Unit & ef, m: MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         Map.foreach(f, deref mm)
 
@@ -451,8 +511,14 @@ namespace MutMap {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison & ef, f: (k, v) ~> Unit, m: MutMap[k, v]): Unit & Impure =
+    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, m: MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         Map.queryWith(p, f, deref mm)
+
+    ///
+    /// Returns `true` if MutMaps `a` and `b` have the same elements, i.e. are structurally equal.
+    ///
+    pub def sameElements(a: MutMap[k, v], b: MutMap[k, v]): Bool & Impure with Order[k], Eq[v] =
+        MutMap.isSubmapOf(a, b) and MutMap.isSubmapOf(b, a)
 
 }

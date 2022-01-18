@@ -1,58 +1,58 @@
 namespace Test/Exp/List {
 
     @test
-    def testList01(): List[Int] = Nil
+    def testList01(): List[Int32] = Nil
 
     @test
-    def testList02(): List[Int] = 1 :: Nil
+    def testList02(): List[Int32] = 1 :: Nil
 
     @test
-    def testList03(): List[Int] = 1 :: 2 :: Nil
+    def testList03(): List[Int32] = 1 :: 2 :: Nil
 
     @test
-    def testListOption01(): List[Option[Int]] = Nil
+    def testListOption01(): List[Option[Int32]] = Nil
 
     @test
-    def testListOption02(): List[Option[Int]] = None :: Nil
+    def testListOption02(): List[Option[Int32]] = None :: Nil
 
     @test
-    def testListOption03(): List[Option[Int]] = None :: None :: Nil
+    def testListOption03(): List[Option[Int32]] = None :: None :: Nil
 
     @test
-    def testListOption04(): List[Option[Int]] = None :: Some(42) :: Nil
+    def testListOption04(): List[Option[Int32]] = None :: Some(42) :: Nil
 
     @test
-    def testListOption05(): List[Option[Int]] = Some(21) :: Some(42) :: Nil
+    def testListOption05(): List[Option[Int32]] = Some(21) :: Some(42) :: Nil
 
     @test
-    def testListList01(): List[List[Int]] = Nil
+    def testListList01(): List[List[Int32]] = Nil
 
     @test
-    def testListList02(): List[List[Int]] = Nil :: Nil
+    def testListList02(): List[List[Int32]] = Nil :: Nil
 
     @test
-    def testListList03(): List[List[Int]] = (1 :: Nil) :: Nil
+    def testListList03(): List[List[Int32]] = (1 :: Nil) :: Nil
 
     @test
-    def testListList04(): List[List[Int]] = (1 :: Nil) :: (2 :: Nil) :: Nil
+    def testListList04(): List[List[Int32]] = (1 :: Nil) :: (2 :: Nil) :: Nil
 
     @test
-    def testListList05(): List[List[Int]] = (1 :: Nil) :: (2 :: Nil) :: (Nil) :: Nil
+    def testListList05(): List[List[Int32]] = (1 :: Nil) :: (2 :: Nil) :: (Nil) :: Nil
 
     @test
-    def testListAppend01(): List[Int] = Nil ::: Nil
+    def testListAppend01(): List[Int32] = Nil ::: Nil
 
     @test
-    def testListAppend02(): List[Int] = 1 :: Nil ::: 2 :: Nil
+    def testListAppend02(): List[Int32] = 1 :: Nil ::: 2 :: Nil
 
     @test
-    def testListAppend03(): List[Int] = 1 :: 2 :: Nil ::: 3 :: 4 :: Nil
+    def testListAppend03(): List[Int32] = 1 :: 2 :: Nil ::: 3 :: 4 :: Nil
 
     @test
-    def testListAppend05(): List[Int] = Nil ::: Nil ::: Nil
+    def testListAppend05(): List[Int32] = Nil ::: Nil ::: Nil
 
     @test
-    def testListAppend06(): List[Int] = 1 :: Nil ::: 2 :: Nil ::: 3 :: Nil
+    def testListAppend06(): List[Int32] = 1 :: Nil ::: 2 :: Nil ::: 3 :: Nil
 
 }
 

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.ClassContext
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -36,7 +36,7 @@ object ClassEnvironment {
 
     val superClasses = tconstrs0.flatMap(bySuper(_, classEnv))
 
-    // Case 1: tconstrs0 entail tconstr if tconstr is a super class of any member or tconstrs0
+    // Case 1: tconstrs0 entail tconstr if tconstr is a super class of any member of tconstrs0
     if (superClasses.contains(tconstr)) {
       ().toSuccess
     } else {
@@ -80,8 +80,11 @@ object ClassEnvironment {
     * Normalizes a list of type constraints, converting to head-normal form and removing semantic duplicates.
     */
   def reduce(tconstrs0: List[Ast.TypeConstraint], classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
+    val tconstrs1 = tconstrs0.map {
+      case Ast.TypeConstraint(clazz, tpe, loc) => Ast.TypeConstraint(clazz, Type.eraseAliases(tpe), loc)
+    }
     for {
-      tconstrs <- Validation.sequence(tconstrs0.map(toHeadNormalForm(_, classEnv)))
+      tconstrs <- Validation.sequence(tconstrs1.map(toHeadNormalForm(_, classEnv)))
     } yield simplify(tconstrs.flatten, classEnv)
   }
 
@@ -101,10 +104,16 @@ object ClassEnvironment {
     */
   private def byInst(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
     val matchingInstances = classEnv.get(tconstr.sym).map(_.instances).getOrElse(Nil)
+    val tconstrSc = Scheme.generalize(Nil, tconstr.arg)
 
     def tryInst(inst: Ast.Instance): Validation[List[Ast.TypeConstraint], UnificationError] = {
+      val instSc = Scheme.generalize(Nil, inst.tpe)
+
+      // NB: This is different from the THIH implementation.
+      // We also check `leq` instead of just `unifies` in order to support complex types in instances.
       for {
-        subst <- Unification.unifyTypes(tconstr.arg, inst.tpe).toValidation
+        _ <- Scheme.checkLessThanEqual(instSc, tconstrSc, Map.empty)
+        subst <- Unification.unifyTypes(inst.tpe, tconstr.arg).toValidation
       } yield inst.tconstrs.map(subst(_))
     }
 

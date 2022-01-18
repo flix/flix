@@ -31,10 +31,10 @@ object StreamOps {
     val buffer = new Array[Byte](0xFFFF)
 
     var read: Int = inputStream.read(buffer)
-    do {
+    while (read != -1) {
       outputStream.write(buffer, 0, read)
       read = inputStream.read(buffer)
-    } while (read != -1)
+    }
 
     outputStream.toByteArray
   }

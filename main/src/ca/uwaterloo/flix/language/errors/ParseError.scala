@@ -16,10 +16,9 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.util.vt.VirtualString._
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * An error raised to indicate a parse error.
@@ -27,14 +26,20 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
   * @param msg the error message.
   * @param loc the source location.
   */
-case class ParseError(msg: String, loc: SourceLocation) extends CompilationError {
-  def kind = "Parse Error"
+case class ParseError(msg: String, loc: SourceLocation) extends CompilationMessage {
+  val kind = "Parse Error"
+
   def summary: String = msg
-  def message: VirtualTerminal = {
-    val vt = new VirtualTerminal
-    vt << Line(kind, source.format) << NewLine
-    vt << ">> Parse Error:" << NewLine
-    vt << NewLine
-    vt << Red(msg) << NewLine
+
+  def message(formatter: Formatter): String = {
+    import formatter._
+    s"""${line(kind, source.name)}
+       |>> Parse Error: ${red(msg)}
+       |""".stripMargin
   }
+
+  /**
+    * Returns a formatted string with helpful suggestions.
+    */
+  def explain(formatter: Formatter): Option[String] = None
 }

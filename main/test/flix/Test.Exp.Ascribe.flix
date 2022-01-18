@@ -37,8 +37,8 @@ namespace Test/Exp/Ascribe {
     def testAscribe12(): String = "hello world" : String
 
     @test
-    def testAscribe13(): (Int, Int, Int) = (1, 2, 3) : (Int, Int, Int)
+    def testAscribe13(): (Int32, Int32, Int32) = (1, 2, 3) : (Int32, Int32, Int32)
 
     @test
-    def testAscribe14(): Option[Int] = Some(42) : Option[Int]
+    def testAscribe14(): Option[Int32] = Some(42) : Option[Int32]
 }

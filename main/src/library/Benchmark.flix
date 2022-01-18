@@ -43,6 +43,7 @@ namespace Benchmark {
     ///
     /// A smart constructor for a benchmark.
     ///
+    @Experimental
     pub def defBenchmark(name: String, f: Unit -> a): Benchmark =
         let fn = () -> {
             let _ = f();
@@ -57,12 +58,13 @@ namespace Benchmark {
     ///
     /// Runs all benchmarks in `bs`. Attempts to spend no more than `budget` time.
     ///
+    @Experimental
     pub def runWithBudget(bs: Array[Benchmark], budget: Int64): Int32 & Impure =
         if (bs.length == 0) {
             println("No benchmarks");
             1
         } else {
-            import java.lang.System:nanoTime();
+            import static java.lang.System.nanoTime();
             let t = nanoTime();
             printHeader();
             println("");
@@ -104,7 +106,7 @@ namespace Benchmark {
     /// Runs the given benchmark `b` exactly `n` times.
     ///
     def runBenchmark(b: Benchmark, n: Int32): BenchmarkResult & Impure =
-        import java.lang.System:nanoTime();
+        import static java.lang.System.nanoTime();
         let Benchmark(r) = b;
         let t = nanoTime();
         let _ = loop(r.f, n);
@@ -119,7 +121,7 @@ namespace Benchmark {
     ///
     def runBenchmarkOnce(b: Benchmark): Int64 & Impure =
         let Benchmark(r) = b;
-        import java.lang.System:nanoTime();
+        import static java.lang.System.nanoTime();
         let t = nanoTime();
         let _ = (r.f)();
         (nanoTime() - t) / scaleFactor()

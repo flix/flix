@@ -4,6 +4,6 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 
 object FormatSourceLocation {
 
-  def format(loc: SourceLocation): String = loc.source.format + ":" + loc.beginLine
+  def format(loc: SourceLocation): String = loc.source.name + ":" + loc.beginLine
 
 }
