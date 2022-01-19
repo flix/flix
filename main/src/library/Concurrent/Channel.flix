@@ -70,11 +70,11 @@ namespace Concurrent/Channel {
     pub enum Mpmc {
         case Mpmc(
             Int64, // id
-            ReentrantLock, // channelLock
+            Concurrent/ReentrantLock.ReentrantLock, // channelLock
             Bool, // unBuffered
             Int32, // maxQueueSize
             MutDeque[Boxed], // elementDeque
-            MutList[(ReentrantLock, Condition)], // waitingGetters
+            MutList[(Concurrent/ReentrantLock.ReentrantLock, Condition)], // waitingGetters
             Condition // waitingPutters
         )
     }
