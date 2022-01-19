@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-///
-/// A wrapper around a Java ReentrantLock.
-///
-opaque type ReentrantLock = ##java.util.concurrent.locks.ReentrantLock
-
 namespace Concurrent/ReentrantLock {
+
+    ///
+    /// A wrapper around a Java ReentrantLock.
+    ///
+    pub opaque type ReentrantLock = ##java.util.concurrent.locks.ReentrantLock
 
     ///
     /// Creates an instance of ReentrantLock with the given fairness policy.
