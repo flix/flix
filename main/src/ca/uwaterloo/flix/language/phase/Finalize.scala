@@ -17,18 +17,18 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
-object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
+object Finalize {
 
   private type TopLevel = mutable.Map[Symbol.DefnSym, FinalAst.Def]
 
-  def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, CompilationError] = flix.phase("Finalize") {
+  def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, CompilationMessage] = flix.phase("Finalize") {
 
     val m: TopLevel = mutable.Map.empty
 
@@ -177,6 +177,12 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.Let(sym, e1, e2, t, loc)
 
+      case LiftedAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        val t = visitType(tpe)
+        FinalAst.Expression.LetRec(varSym, index, defSym, e1, e2, t, loc)
+
       case LiftedAst.Expression.Is(sym, tag, exp, loc) =>
         val e1 = visit(exp)
         FinalAst.Expression.Is(sym, tag, e1, loc)
@@ -272,12 +278,6 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
         val e2 = visit(exp2)
         val t = visitType(tpe)
         FinalAst.Expression.Assign(e1, e2, t, loc)
-
-      case LiftedAst.Expression.Existential(fparam, exp, loc) =>
-        throw InternalCompilerException(s"Unexpected Existential expression, should have been handled earlier")
-
-      case LiftedAst.Expression.Universal(fparam, exp, loc) =>
-        throw InternalCompilerException(s"Unexpected Universal expression, should have been handled earlier")
 
       case LiftedAst.Expression.Cast(exp, tpe, loc) =>
         val e = visit(exp)
@@ -395,100 +395,113 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
   }
 
   // TODO: Should be private
-  def visitType(t0: Type): MonoType = {
-    val base = t0.typeConstructor
-    val args = t0.typeArguments.map(visitType)
 
-    base match {
-      case None => t0 match {
-        case Type.KindedVar(id, _, _, _, _) => MonoType.Var(id)
-        case _ => throw InternalCompilerException(s"Unexpected type: '$t0'.")
-      }
+  /**
+    * Finalizes the given type.
+    */
+  def visitType(tpe0: Type): MonoType = {
 
-      case Some(tc) =>
-        tc match {
-          case TypeConstructor.Unit => MonoType.Unit
+    def visit(t0: Type): MonoType = {
 
-          case TypeConstructor.Null => MonoType.Unit
+      val base = t0.typeConstructor
+      val args = t0.typeArguments.map(visit)
 
-          case TypeConstructor.Bool => MonoType.Bool
-
-          case TypeConstructor.Char => MonoType.Char
-
-          case TypeConstructor.Float32 => MonoType.Float32
-
-          case TypeConstructor.Float64 => MonoType.Float64
-
-          case TypeConstructor.Int8 => MonoType.Int8
-
-          case TypeConstructor.Int16 => MonoType.Int16
-
-          case TypeConstructor.Int32 => MonoType.Int32
-
-          case TypeConstructor.Int64 => MonoType.Int64
-
-          case TypeConstructor.BigInt => MonoType.BigInt
-
-          case TypeConstructor.Str => MonoType.Str
-
-          case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
-
-          case TypeConstructor.Array => MonoType.Array(args.head)
-
-          case TypeConstructor.Channel => MonoType.Channel(args.head)
-
-          case TypeConstructor.Lazy => MonoType.Lazy(args.head)
-
-          case TypeConstructor.KindedEnum(sym, _) => MonoType.Enum(sym, args)
-
-          case TypeConstructor.Tag(sym, _) =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
-          case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
-
-          case TypeConstructor.ScopedRef =>
-            MonoType.Ref(args.head)
-
-          case TypeConstructor.Region =>
-            MonoType.Unit // TODO: Should be erased?
-
-          case TypeConstructor.Tuple(l) => MonoType.Tuple(args)
-
-          case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(1).init, args.last)
-
-          case TypeConstructor.RecordRowExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
-
-          case TypeConstructor.Record => args.head
-
-          case TypeConstructor.True => MonoType.Unit
-
-          case TypeConstructor.False => MonoType.Unit
-
-          case TypeConstructor.Not => MonoType.Unit
-
-          case TypeConstructor.And => MonoType.Unit
-
-          case TypeConstructor.Or => MonoType.Unit
-
-          case TypeConstructor.UnkindedEnum(sym) =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
-          case TypeConstructor.Relation =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
-          case TypeConstructor.Lattice =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
-          case TypeConstructor.SchemaRowEmpty =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
-          case TypeConstructor.SchemaRowExtend(pred) =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
-
-          case TypeConstructor.Schema =>
-            throw InternalCompilerException(s"Unexpected type: '$t0'.")
+      base match {
+        case None => t0 match {
+          case Type.KindedVar(id, _, _, _, _) => MonoType.Var(id)
+          case _ => throw InternalCompilerException(s"Unexpected type: $t0")
         }
+
+        case Some(tc) =>
+          tc match {
+            case TypeConstructor.Unit => MonoType.Unit
+
+            case TypeConstructor.Null => MonoType.Unit
+
+            case TypeConstructor.Bool => MonoType.Bool
+
+            case TypeConstructor.Char => MonoType.Char
+
+            case TypeConstructor.Float32 => MonoType.Float32
+
+            case TypeConstructor.Float64 => MonoType.Float64
+
+            case TypeConstructor.Int8 => MonoType.Int8
+
+            case TypeConstructor.Int16 => MonoType.Int16
+
+            case TypeConstructor.Int32 => MonoType.Int32
+
+            case TypeConstructor.Int64 => MonoType.Int64
+
+            case TypeConstructor.BigInt => MonoType.BigInt
+
+            case TypeConstructor.Str => MonoType.Str
+
+            case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
+
+            case TypeConstructor.Array => MonoType.Array(args.head)
+
+            case TypeConstructor.Channel => MonoType.Channel(args.head)
+
+            case TypeConstructor.Lazy => MonoType.Lazy(args.head)
+
+            case TypeConstructor.KindedEnum(sym, _) => MonoType.Enum(sym, args)
+
+            case TypeConstructor.Tag(sym, _) =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+            case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
+
+            case TypeConstructor.ScopedRef =>
+              MonoType.Ref(args.head)
+
+            case TypeConstructor.Region =>
+              MonoType.Unit // TODO: Should be erased?
+
+            case TypeConstructor.Tuple(l) => MonoType.Tuple(args)
+
+            case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(1).init, args.last)
+
+            case TypeConstructor.RecordRowExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
+
+            case TypeConstructor.Record => args.head
+
+            case TypeConstructor.True => MonoType.Unit
+
+            case TypeConstructor.False => MonoType.Unit
+
+            case TypeConstructor.Not => MonoType.Unit
+
+            case TypeConstructor.And => MonoType.Unit
+
+            case TypeConstructor.Or => MonoType.Unit
+
+            case TypeConstructor.UnkindedEnum(_) =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+            case TypeConstructor.UnappliedAlias(_) =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+            case TypeConstructor.Relation =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+            case TypeConstructor.Lattice =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+            case TypeConstructor.SchemaRowEmpty =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+            case TypeConstructor.SchemaRowExtend(pred) =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+            case TypeConstructor.Schema =>
+              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+          }
+      }
     }
+
+    visit(Type.eraseAliases(tpe0))
   }
 
   // TODO: Deprecated
@@ -497,24 +510,6 @@ object Finalize extends Phase[LiftedAst.Root, FinalAst.Root] {
       val freeArgs = fvs.map(_.tpe)
       MonoType.Arrow(freeArgs ::: targs, tresult)
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-  }
-
-  // TODO: Deprecated
-  // TODO: This should be done in a prior phase, perhaps during lambda lifting, or not done at all...
-  private def lit2symTemporaryToBeRemoved(exp0: LiftedAst.Expression, loc: SourceLocation, m: TopLevel)(implicit flix: Flix): Symbol.DefnSym = {
-    // Generate a top-level function for the constant.
-    val sym = Symbol.freshDefnSym("lit", loc)
-    val lit = visitExp(exp0, m)
-    val ann = Ast.Annotations.Empty
-    val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-    val varX = Symbol.freshVarSym("_unit", loc)
-    varX.setStackOffset(0)
-    val fparam = FinalAst.FormalParam(varX, MonoType.Unit)
-    val fs = List(fparam)
-    val tpe = MonoType.Arrow(MonoType.Unit :: Nil, visitType(exp0.tpe))
-    val defn = FinalAst.Def(ann, mod, sym, fs, lit, tpe, exp0.loc)
-    m += (sym -> defn)
-    sym
   }
 
 }

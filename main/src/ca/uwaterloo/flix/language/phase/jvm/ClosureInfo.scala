@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.FinalAst.FreeVar
-import ca.uwaterloo.flix.language.ast.{Symbol, MonoType}
+import ca.uwaterloo.flix.language.ast.ErasedAst.FreeVar
+import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 
 /**
   * Meta information about a closure.

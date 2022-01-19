@@ -61,14 +61,14 @@ namespace BenchmarkMap {
     ///
     @benchmark
     pub def benchmark09(): Bool =
-        Map.size(Map.foldLeftWithKey((acc, k, _) -> Map.delete(k, acc), range(0, 24), range(0, 12))) == 12
+        Map.size(Map.foldLeftWithKey((acc, k, _) -> Map.remove(k, acc), range(0, 24), range(0, 12))) == 12
 
     ///
     /// create a map of `Int32 -> Int32`, delete the upper half of the mappings and compute the size.
     ///
     @benchmark
     pub def benchmark10(): Bool =
-        Map.size(Map.foldLeftWithKey((acc, k, _) -> Map.delete(k, acc), range(0, 24), range(12, 24))) == 12
+        Map.size(Map.foldLeftWithKey((acc, k, _) -> Map.remove(k, acc), range(0, 24), range(12, 24))) == 12
 
     ///
     /// create two maps of `Int32 -> Int32`, find their difference and compute the size.
@@ -103,7 +103,7 @@ namespace BenchmarkMap {
     ///
     @benchmark
     pub def benchmark15(): Bool =
-        Map.size(Map.filterWithKey((k, _) -> k % 2 == 0, range(0, 24))) == 12
+        Map.size(Map.filterWithKey((k, _) -> k rem 2 == 0, range(0, 24))) == 12
 
     ///
     /// create a map of `Int32 -> Int32` and find the first mapping that satisfies a predicate, searching left to right.

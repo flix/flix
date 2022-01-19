@@ -242,19 +242,19 @@ def range05(): Bool = List.range(1, 4) == 1 :: 2 :: 3 :: Nil
 // repeat                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def repeat01(): Bool = List.repeat(1, -1) == Nil
+def repeat01(): Bool = List.repeat(-1, 1) == Nil
 
 @test
-def repeat02(): Bool = List.repeat(1, 0) == Nil
+def repeat02(): Bool = List.repeat(0, 1) == Nil
 
 @test
 def repeat03(): Bool = List.repeat(1, 1) == 1 :: Nil
 
 @test
-def repeat04(): Bool = List.repeat(1, 2) == 1 :: 1 :: Nil
+def repeat04(): Bool = List.repeat(2, 1) == 1 :: 1 :: Nil
 
 @test
-def repeat05(): Bool = List.repeat(1, 3) == 1 :: 1 :: 1 :: Nil
+def repeat05(): Bool = List.repeat(3, 1) == 1 :: 1 :: 1 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // scan                                                                    //
@@ -997,37 +997,52 @@ def fold04(): Bool = List.fold(("a", "b") :: ("c", "d") :: ("e", "f") :: Nil) ==
 // foldLeft                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldLeft01(): Bool = List.foldLeft((i, e) -> (i - e)*(e % 2 + 1), 100, Nil) == 100
+def foldLeft01(): Bool = List.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, Nil) == 100
 
 @test
-def foldLeft02(): Bool = List.foldLeft((i, e) -> (i - e)*(e % 2 + 1), 100, 1 :: Nil) == 198
+def foldLeft02(): Bool = List.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, 1 :: Nil) == 198
 
 @test
-def foldLeft03(): Bool = List.foldLeft((i, e) -> (i - e)*(e % 2 + 1), 100, 1 :: 2 :: Nil) == 196
+def foldLeft03(): Bool = List.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, 1 :: 2 :: Nil) == 196
 
 @test
-def foldLeft04(): Bool = List.foldLeft((i, e) -> (i - e)*(e % 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 386
+def foldLeft04(): Bool = List.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 386
 
 /////////////////////////////////////////////////////////////////////////////
 // foldRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRight01(): Bool = List.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, Nil) == 100
+def foldRight01(): Bool = List.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Nil) == 100
 
 @test
-def foldRight02(): Bool = List.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, 1 :: Nil) == 198
+def foldRight02(): Bool = List.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, 1 :: Nil) == 198
 
 @test
-def foldRight03(): Bool = List.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, 1 :: 2 :: Nil) == 194
+def foldRight03(): Bool = List.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
 
 @test
-def foldRight04(): Bool = List.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
+def foldRight04(): Bool = List.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
+
+/////////////////////////////////////////////////////////////////////////////
+// foldRightLazy                                                           //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldRightLazy01(): Bool = List.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, Nil) == 100
+
+@test
+def foldRightLazy02(): Bool = List.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, 1 :: Nil) == 198
+
+@test
+def foldRightLazy03(): Bool = List.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
+
+@test
+def foldRightLazy04(): Bool = List.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def reduceLeft01(): Bool = List.reduceLeft((a, b) -> a-b, Nil: List[Int]) == None
+def reduceLeft01(): Bool = List.reduceLeft((a, b) -> a-b, Nil: List[Int32]) == None
 
 @test
 def reduceLeft02(): Bool = List.reduceLeft((a, b) -> a-b, 1 :: Nil) == Some(1)
@@ -1045,7 +1060,7 @@ def reduceLeft05(): Bool = List.reduceLeft((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :: Ni
 // reduceRight                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def reduceRight01(): Bool = List.reduceRight((a, b) -> a-b, Nil: List[Int]) == None
+def reduceRight01(): Bool = List.reduceRight((a, b) -> a-b, Nil: List[Int32]) == None
 
 @test
 def reduceRight02(): Bool = List.reduceRight((a, b) -> a-b, 1 :: Nil) == Some(1)
@@ -1627,52 +1642,6 @@ def unzip304(): Bool = List.unzip3((1, 'a', true) :: (2, 'b', true) :: (3, 'c', 
                     (1 :: 2 :: 3 :: Nil, 'a' :: 'b' :: 'c' :: Nil, true :: true :: false :: Nil)
 
 /////////////////////////////////////////////////////////////////////////////
-// map2                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def map201(): Bool = List.map2((a, b) -> if (b) a+1 else a, Nil, Nil) == Nil
-
-@test
-def map202(): Bool = List.map2((a, b) -> if (b) a+1 else a, 1 :: Nil, Nil) == Nil
-
-@test
-def map203(): Bool = List.map2((a, b) -> if (b) a+1 else a, Nil, true :: Nil) == Nil
-
-@test
-def map204(): Bool = List.map2((a, b) -> if (b) a+1 else a, 1 :: Nil, true :: Nil) == 2 :: Nil
-
-@test
-def map205(): Bool = List.map2((a, b) -> if (b) a+1 else a, 1 :: Nil, false :: Nil) == 1 :: Nil
-
-@test
-def map206(): Bool = List.map2((a, b) -> if (b) a+1 else a, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil,
-                   false :: true :: true :: false :: false :: true :: true :: true ::Nil) ==
-                   1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
-
-/////////////////////////////////////////////////////////////////////////////
-// flatMap2                                                                //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def flatMap201(): Bool = List.flatMap2((a, b) -> if (b) List.repeat(a, a) else List.repeat(a+1, a+1), Nil, Nil) == Nil
-
-@test
-def flatMap202(): Bool = List.flatMap2((a, b) -> if (b) List.repeat(a, a) else List.repeat(a+1, a+1), 1 :: Nil, Nil) == Nil
-
-@test
-def flatMap203(): Bool = List.flatMap2((a, b) -> if (b) List.repeat(a, a) else List.repeat(a+1, a+1), Nil, true :: Nil) == Nil
-
-@test
-def flatMap204(): Bool = List.flatMap2((a, b) -> if (b) List.repeat(a, a) else List.repeat(a+1, a+1), 2 :: Nil, true :: Nil) == 2 :: 2 :: Nil
-
-@test
-def flatMap205(): Bool = List.flatMap2((a, b) -> if (b) List.repeat(a, a) else List.repeat(a+1, a+1), 2 :: Nil, false :: Nil) == 3 :: 3 :: 3 :: Nil
-
-@test
-def flatMap206(): Bool = List.flatMap2((a, b) -> if (b) List.repeat(a, a) else List.repeat(a+1, a+1), 1 :: 2 :: 3 :: 4 :: 5 :: Nil,
-                   false :: true :: true :: false :: false :: Nil) ==
-                   2 :: 2 :: 2 :: 2 :: 3 :: 3 :: 3 :: 5 :: 5 :: 5 :: 5 :: 5 :: 6 :: 6 :: 6 :: 6 :: 6 :: 6 :: Nil
-
-/////////////////////////////////////////////////////////////////////////////
 // fold2                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -1778,56 +1747,56 @@ def foldRight210(): Bool = List.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, 
 // filterMap                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def filterMap01(): Bool = List.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, Nil) == Nil
+def filterMap01(): Bool = List.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Nil) == Nil
 
 @test
-def filterMap02(): Bool = List.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, 1 :: Nil) == Nil
+def filterMap02(): Bool = List.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, 1 :: Nil) == Nil
 
 @test
-def filterMap03(): Bool = List.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, 2 :: Nil) == 1 :: Nil
+def filterMap03(): Bool = List.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, 2 :: Nil) == 1 :: Nil
 
 @test
-def filterMap04(): Bool = List.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, 1 :: 3 :: Nil) == Nil
+def filterMap04(): Bool = List.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, 1 :: 3 :: Nil) == Nil
 
 @test
-def filterMap05(): Bool = List.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, 1 :: 4 :: Nil) == 2 :: Nil
+def filterMap05(): Bool = List.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, 1 :: 4 :: Nil) == 2 :: Nil
 
 @test
-def filterMap06(): Bool = List.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, 6 :: -1 :: Nil) == 3 :: Nil
+def filterMap06(): Bool = List.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, 6 :: -1 :: Nil) == 3 :: Nil
 
 @test
-def filterMap07(): Bool = List.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, 8 :: 6 :: Nil) == 4 :: 3 :: Nil
+def filterMap07(): Bool = List.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, 8 :: 6 :: Nil) == 4 :: 3 :: Nil
 
 @test
-def filterMap08(): Bool = List.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil) ==
+def filterMap08(): Bool = List.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil) ==
                         0 :: 1 :: 2 :: 5 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // findMap                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def findMap01(): Bool = List.findMap(i -> if (i % 2 == 0) Some(i/2) else None, Nil) == None
+def findMap01(): Bool = List.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Nil) == None
 
 @test
-def findMap02(): Bool = List.findMap(i -> if (i % 2 == 0) Some(i/2) else None, 1 :: Nil) == None
+def findMap02(): Bool = List.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, 1 :: Nil) == None
 
 @test
-def findMap03(): Bool = List.findMap(i -> if (i % 2 == 0) Some(i/2) else None, 2 :: Nil) == Some(1)
+def findMap03(): Bool = List.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, 2 :: Nil) == Some(1)
 
 @test
-def findMap04(): Bool = List.findMap(i -> if (i % 2 == 0) Some(i/2) else None, 1 :: 3 :: Nil) == None
+def findMap04(): Bool = List.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, 1 :: 3 :: Nil) == None
 
 @test
-def findMap05(): Bool = List.findMap(i -> if (i % 2 == 0) Some(i/2) else None, 1 :: 4 :: Nil) == Some(2)
+def findMap05(): Bool = List.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, 1 :: 4 :: Nil) == Some(2)
 
 @test
-def findMap06(): Bool = List.findMap(i -> if (i % 2 == 0) Some(i/2) else None, 6 :: -1 :: Nil) == Some(3)
+def findMap06(): Bool = List.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, 6 :: -1 :: Nil) == Some(3)
 
 @test
-def findMap07(): Bool = List.findMap(i -> if (i % 2 == 0) Some(i/2) else None, 8 :: 6 :: Nil) == Some(4)
+def findMap07(): Bool = List.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, 8 :: 6 :: Nil) == Some(4)
 
 @test
-def findMap08(): Bool = List.findMap(i -> if (i % 2 == 0) Some(i/2) else None, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil) == Some(0)
+def findMap08(): Bool = List.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil) == Some(0)
 
 /////////////////////////////////////////////////////////////////////////////
 // toSet                                                                   //
@@ -1863,13 +1832,37 @@ def toSet08(): Bool = List.toSet(2 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 3 :: 3 :: Ni
 def toMap01(): Bool = List.toMap(Nil: List[(Unit, Unit)]) == Map#{}
 
 @test
-def toMap02(): Bool = List.toMap((1, true) :: Nil) == Map#{1 -> true}
+def toMap02(): Bool = List.toMap((1, true) :: Nil) == Map#{1 => true}
 
 @test
-def toMap03(): Bool = List.toMap((1, true) :: (2, false) :: Nil) == Map#{1 -> true, 2 -> false}
+def toMap03(): Bool = List.toMap((1, true) :: (2, false) :: Nil) == Map#{1 => true, 2 => false}
 
 @test
-def toMap04(): Bool = List.toMap((1, true) :: (1, false) :: Nil) == Map#{1 -> true}
+def toMap04(): Bool = List.toMap((1, true) :: (1, false) :: Nil) == Map#{1 => true}
+
+/////////////////////////////////////////////////////////////////////////////
+// toMapWith                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toMapWith01(): Bool =
+    List.toMapWith(x -> 2 * x, Nil) == Map#{}
+
+@test
+def toMapWith02(): Bool =
+    List.toMapWith(x -> 0 * x, 1 :: 3 :: 6 :: Nil) == Map#{1 => 0, 3 => 0, 6 => 0}
+
+@test
+def toMapWith03(): Bool =
+    List.toMapWith(x -> 2 * x, 1 :: 3 :: 6 :: Nil) == Map#{1 => 2, 3 => 6, 6 => 12}
+
+@test
+def toMapWith04(): Bool =
+    List.toMapWith(x -> x + 10, 1 :: 3 :: 6 :: Nil) == Map#{1 => 11, 3 => 13, 6 => 16}
+
+@test
+def toMapWith05(): Bool =
+    List.toMapWith(x -> x + 10, 3 :: 6 :: 1 :: Nil) == Map#{1 => 11, 3 => 13, 6 => 16}
 
 /////////////////////////////////////////////////////////////////////////////
 // foreach                                                                 //
@@ -2185,7 +2178,7 @@ def unfoldWithOkIter02(): Bool & Impure =
 def unfoldWithOkIter03(): Bool & Impure =
     let x = ref 1;
     let step = () ->
-        if (deref x % 5 > 0) {
+        if (deref x rem 5 > 0) {
             let c = deref x;
             x := deref x + 1;
             Ok(Some(c))
@@ -2361,17 +2354,37 @@ def distinctWith09(): Bool =
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toLazy                                                                  //
+    // toLazyList                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toLazy01(): Bool = Nil: List[Unit] |> List.toLazy == LazyList.empty()
+    def toLazyList01(): Bool = Nil: List[Unit] |> List.toLazyList == LazyList.empty()
 
     @test
-    def toLazy02(): Bool = List.range(-1000, 1000) |> List.toLazy == LazyList.range(-1000, 1000)
+    def toLazyList02(): Bool = List.range(-1000, 1000) |> List.toLazyList == LazyList.range(-1000, 1000)
 
     @test
-    def toLazy03(): Bool = List.range(-1000, 1000) |> List.toLazy |> LazyList.toList == List.range(-1000, 1000)
+    def toLazyList03(): Bool = List.range(-1000, 1000) |> List.toLazyList |> LazyList.toList == List.range(-1000, 1000)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toChain                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toChain01(): Bool =
+        List.toChain(Nil: List[Int32]) == Chain.empty(): Chain[Int32]
+
+    @test
+    def toChain02(): Bool =
+        List.toChain(1 :: Nil) == Chain.singleton(1)
+
+    @test
+    def toChain03(): Bool =
+        List.toChain(1 :: 2 :: Nil) == (1 `Chain.cons` (2 `Chain.cons` Chain.empty()))
+
+    @test
+    def toChain04(): Bool =
+        List.toChain(1 :: 2 :: 3 :: Nil) == (1 `Chain.cons` (2 `Chain.cons` (3 `Chain.cons` Chain.empty())))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2406,5 +2419,50 @@ def distinctWith09(): Bool =
     def sum07(): Bool =
         List.range(1, 101) |> List.sum == 5050
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        List.sumWith(x -> x + 1, Nil: List[Int32]) == 0
+
+    @test
+    def sumWith02(): Bool =
+        List.sumWith(x -> x + 1, 1 :: Nil) == 2
+
+    @test
+    def sumWith03(): Bool =
+        List.sumWith(x -> x + 1, 1 :: 2 :: 3 :: Nil) == 9
+
+    @test
+    def sumWith04(): Bool =
+        List.sumWith(x -> x + 1, 1 :: 2 :: 3 :: -3 :: Nil) == 7
+
+    @test
+    def sumWith05(): Bool =
+        List.sumWith(x -> x + 1, -1 :: -2 :: -3 :: -4 :: Nil) == -6
+
+    @test
+    def sumWith06(): Bool =
+        List.sumWith(x -> x + 1, 10 :: -10 :: Nil) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toIterator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toIterator01(): Bool & Impure =
+        Nil: List[Int32] |> List.toIterator |> Iterator.toList == Nil
+
+    @test
+    def toIterator02(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toIterator03(): Bool & Impure =
+        List.range(-100, 100) |> List.toIterator |> Iterator.toList == List.range(-100, 100)
 
 }

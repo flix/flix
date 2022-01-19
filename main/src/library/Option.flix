@@ -21,13 +21,13 @@
 /// The constructor `None` represents an absent value,
 /// whereas the constructor `Some(v)` represents the value `v`.
 ///
-enum Option[t] with Eq, Order, ToString {
+pub enum Option[t] with Eq, Order, ToString {
     case None,
     case Some(t)
 }
 
 instance Hash[Option[a]] with Hash[a] {
-    pub def hash(o: Option[a]): Int = match o {
+    pub def hash(o: Option[a]): Int32 = match o {
         case Some(y) => 919 * Hash.hash(y)
         case None => 1046527
     }
@@ -49,9 +49,32 @@ instance Applicative[Option] {
     override pub def liftA5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r & e, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4], x5: Option[t5]): Option[r] & e = Option.lift5(f, x1, x2, x3, x4, x5)
 }
 
+instance Monad[Option] {
+    pub def flatMap(f: a -> Option[b] & ef, x : Option[a]) : Option[b] & ef = Option.flatMap(f, x)
+}
+
 instance Foldable[Option] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldLeft(f, s, o)
     pub def foldRight(f: (a, b) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)
+}
+
+instance Traversable[Option] {
+    pub def traverse(f: a -> m[b] & ef, t: Option[a]): m[Option[b]] & ef with Applicative[m] =
+        use Applicative.{point};
+        use Functor.{map};
+        match t {
+            case None => point(None)
+            case Some(a) => f(a) |> map(Some)
+        }
+
+    pub override def sequence(t: Option[m[a]]): m[Option[a]] with Applicative[m] =
+        use Applicative.{point};
+        use Functor.{map};
+        match t {
+            case Some(ma) => map(Some, ma)
+            case None => point(None)
+        }
+
 }
 
 namespace Option {
@@ -69,18 +92,18 @@ namespace Option {
     /// Returns `v` if `o` is `Some(v).` Otherwise returns `d`.
     ///
     @Time(1) @Space(1)
-    pub def getWithDefault(o: Option[a], d: a): a = match o {
+    pub def getWithDefault(d: a, o: Option[a]): a = match o {
         case None => d
         case Some(v) => v
     }
 
     ///
-    /// Returns `o1` if it is `Some(v)`. Otherwise returns `o2`.
+    /// Returns `o` if it is `Some(v)`. Otherwise returns `default`.
     ///
     @Time(1) @Space(1)
-    pub def withDefault(o1: Option[a], o2: Option[a]): Option[a] = match o1 {
-        case None => o2
-        case Some(_) => o1
+    pub def withDefault(default: {default :: Option[a]}, o: Option[a]): Option[a] = match o {
+        case None => default.default
+        case Some(_) => o
     }
 
     ///
@@ -155,32 +178,11 @@ namespace Option {
         }
 
     ///
-    /// Returns `Some(f(v1, v2))` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
-    ///
-    @Time(time(f)) @Space(space(f))
-    pub def map2(f: (a, b) -> c & ef, o1: Option[a], o2: Option[b]): Option[c] & ef = match (o1, o2) {
-        case (None, _) => None
-        case (_, None) => None
-        case (Some(v1), Some(v2)) => Some(f(v1, v2))
-    }
-
-    ///
     /// Returns `f(v)` if `o` is `Some(v)`. Otherwise returns `None`.
     ///
-    @Time(time(f)) @Space(space(f))
     pub def flatMap(f: a -> Option[b] & ef, o: Option[a]): Option[b] & ef = match o {
         case None => None
         case Some(v) => f(v)
-    }
-
-    ///
-    /// Returns `f(v1, v2)` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
-    ///
-    @Time(time(f)) @Space(space(f))
-    pub def flatMap2(f: (a, b) -> Option[c] & ef, o1: Option[a], o2: Option[b]): Option[c] & ef = match (o1, o2) {
-        case (None, _) => None
-        case (_, None) => None
-        case (Some(v1), Some(v2)) => f(v1, v2)
     }
 
     ///
@@ -193,6 +195,18 @@ namespace Option {
         case None => 0
         case Some(v) => if (f(v)) 1 else 0
     }
+
+    ///
+    /// Returns `v` if `o` is `Some(v)` else `0`.
+    ///
+    pub def sum(o: Option[Int32]): Int32 =
+        Foldable.sum(o)
+
+    ///
+    /// Returns `f(v)` if `o` is `Some(v)` else `0`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, o: Option[a]): Int32 & ef =
+        Foldable.sumWith(f, o)
 
     ///
     /// Returns `o` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.
@@ -233,6 +247,16 @@ namespace Option {
     pub def foldRight(f: (a, b) -> b & ef, o: Option[a], z: b): b & ef = match o {
         case None => z
         case Some(v) => f(v, z)
+    }
+
+    ///
+    /// Returns `f(v, lazy z)` if `o` is `Some(v)`. Otherwise returns `z`.
+    ///
+    /// The function f must be pure.
+    ///
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b, o: Option[a], z: b): b = match o {
+        case None => z
+        case Some(v) => f(v, lazy z)
     }
 
     ///
@@ -353,6 +377,12 @@ namespace Option {
     }
 
     ///
+    /// Returns a map with elements of `s` as keys and `f` applied as values.
+    ///
+    pub def toMapWith(f: a -> b, s: Option[a]): Map[a, b] with Order[a] =
+            Option.foldRight((x, m) -> Map.insert(x, f(x), m), s, Map.empty())
+
+    ///
     /// Returns the Option value `Ok(v)` if `o` is `Some(v)`. Otherwise returns `Err(e)`.
     ///
     @Time(1) @Space(1)
@@ -410,10 +440,8 @@ namespace Option {
     ///
     /// Applies `f` to `v` if `o` is `Some(v)`. Otherwise does nothing.
     ///
-    /// The function `f` must be impure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def foreach(f: a ~> Unit, o: Option[a]): Unit & Impure = match o {
+    pub def foreach(f: a -> Unit & ef, o: Option[a]): Unit & ef = match o {
         case None    => ()
         case Some(v) => f(v)
     }
@@ -498,5 +526,13 @@ namespace Option {
     @Time(time(f)) @Space(space(f))
     pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & f, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8], o9: Option[t9], o10: Option[t10]): Option[u] & f =
         ap(lift9(f, o1, o2, o3, o4, o5, o6, o7, o8, o9), o10)
+
+    ///
+    /// Returns an iterator over `o` with 1 element or an empty iterator if `o` is `None`.
+    ///
+    pub def toIterator(o: Option[a]): Iterator[a] & Impure = match o {
+        case None    => Iterator.empty()
+        case Some(x) => Iterator.singleton(x)
+    }
 
 }

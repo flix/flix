@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.Kinder
+import ca.uwaterloo.flix.language.phase.{Kinder, Resolver}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -199,16 +199,26 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of enums.
+    * A type constructor that represents the type of enums.
     */
   @IntroducedBy(Kinder.getClass)
   case class KindedEnum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
 
   /**
-    * An unkinded type constructor that represent the type of enums.
+    * An unkinded type constructor that represents the type of enums.
     */
   @EliminatedBy(Kinder.getClass)
   case class UnkindedEnum(sym: Symbol.EnumSym) extends TypeConstructor {
+    override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type constructor")
+  }
+
+  /**
+    * A type alias that has not yet been applied.
+    *
+    * Only exists temporarily in the Resolver.
+    */
+  @EliminatedBy(Resolver.getClass)
+  case class UnappliedAlias(sym: Symbol.TypeAliasSym) extends TypeConstructor {
     override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type constructor")
   }
 

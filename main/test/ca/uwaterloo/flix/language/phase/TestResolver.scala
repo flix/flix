@@ -44,11 +44,11 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |enum A {
-         |  case Foo(Int)
+         |  case Foo(Int32)
          |}
          |
          |enum B {
-         |  case Foo(Int)
+         |  case Foo(Int32)
          |}
          |
          |def f(): A = Foo(42)
@@ -61,11 +61,11 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f(): Int = 42
+         |  def f(): Int32 = 42
          |}
          |
          |namespace B {
-         |  def g(): Int = A.f()
+         |  def g(): Int32 = A.f()
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -76,10 +76,10 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f(): Int = A/B/C.g()
+         |  def f(): Int32 = A/B/C.g()
          |
          |  namespace B/C {
-         |    def g(): Int = A.f()
+         |    def g(): Int32 = A.f()
          |  }
          |}
        """.stripMargin
@@ -159,6 +159,36 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
+  test("InaccessibleTypeAlias.01") {
+    val input =
+      s"""
+         |namespace A {
+         |  type alias Color = Int32
+         |}
+         |
+         |namespace B {
+         |  def g(): A.Color = 123
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTypeAlias](result)
+  }
+
+  test("InaccessibleTypeAlias.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  def f(): A/B/C.Color = 123
+         |
+         |  namespace B/C {
+         |    type alias Color = Int32
+         |  }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTypeAlias](result)
+  }
+
   test("InaccessibleClass.01") {
     val input =
       s"""
@@ -169,7 +199,7 @@ class TestResolver extends FunSuite with TestUtils {
          |}
          |
          |namespace B {
-         |  def g(x: a): Int with A.Show[a] = ???
+         |  def g(x: a): Int32 with A.Show[a] = ???
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -180,7 +210,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f(x: a): Int with A/B/C.Show[a] = ???
+         |  def f(x: a): Int32 with A/B/C.Show[a] = ???
          |
          |  namespace B/C {
          |    class Show[a] {
@@ -201,7 +231,7 @@ class TestResolver extends FunSuite with TestUtils {
         |}
         |
         |namespace O {
-        |    instance N.C[Int]
+        |    instance N.C[Int32]
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -231,7 +261,7 @@ class TestResolver extends FunSuite with TestUtils {
         |}
         |
         |namespace O {
-        |    instance N.C[Int]
+        |    instance N.C[Int32]
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -245,7 +275,7 @@ class TestResolver extends FunSuite with TestUtils {
         |    sealed class C[a]
         |
         |    namespace O {
-        |        instance N.C[Int]
+        |        instance N.C[Int32]
         |    }
         |}
         |""".stripMargin
@@ -268,7 +298,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.SealedClass](result)
   }
 
-  test("RecursionLimit.01") {
+  test("CyclicTypeAliases.01") {
     val input =
       s"""
          |type alias Foo = Foo
@@ -277,10 +307,10 @@ class TestResolver extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.RecursionLimit](result)
+    expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
-  test("RecursionLimit.02") {
+  test("CyclicTypeAliases.02") {
     val input =
       s"""
          |type alias Foo = Bar
@@ -290,10 +320,10 @@ class TestResolver extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.RecursionLimit](result)
+    expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
-  test("RecursionLimit.03") {
+  test("CyclicTypeAliases.03") {
     val input =
       s"""
          |type alias Foo = Bar
@@ -304,10 +334,10 @@ class TestResolver extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.RecursionLimit](result)
+    expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
-  test("RecursionLimit.04") {
+  test("CyclicTypeAliases.04") {
     val input =
       s"""
          |enum Option[t] {
@@ -321,10 +351,10 @@ class TestResolver extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.RecursionLimit](result)
+    expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
-  test("RecursionLimit.05") {
+  test("CyclicTypeAliases.05") {
     val input =
       s"""
          |enum Option[t] {
@@ -339,11 +369,11 @@ class TestResolver extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.RecursionLimit](result)
+    expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
   test("UndefinedName.01") {
-    val input = "def f(): Int = x"
+    val input = "def f(): Int32 = x"
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
@@ -352,7 +382,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f(x: Int, y: Int): Int = x + y + z
+         |  def f(x: Int32, y: Int32): Int32 = x + y + z
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -379,7 +409,7 @@ class TestResolver extends FunSuite with TestUtils {
          |
          |namespace B {
          |    use A.f;
-         |    def g(): Int = f(1)
+         |    def g(): Int32 = f(1)
          |}
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -389,7 +419,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedClass.01") {
     val input =
       """
-        |instance C[Int]
+        |instance C[Int32]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedClass](result)
@@ -496,7 +526,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import foo.bar.Baz:f();
+         |    import static foo.bar.Baz.f();
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -529,7 +559,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import get foo.bar.Baz:f as getF;
+         |    import static get foo.bar.Baz.f as getF;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -540,7 +570,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import set foo.bar.Baz:f as setF;
+         |    import static set foo.bar.Baz.f as setF;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -595,7 +625,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import java.lang.String:isEmpty();
+         |    import static java.lang.String.isEmpty();
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -640,7 +670,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import get java.lang.Character:foo as getFoo;
+         |    import static get java.lang.Character.foo as getFoo;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -651,7 +681,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import set java.lang.Character:foo as setFoo;
+         |    import static set java.lang.Character.foo as setFoo;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -697,7 +727,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    case Bar
          |  }
          |
-         |  def f(b: B): Int = match b {
+         |  def f(b: B): Int32 = match b {
          |    case B.Qux => 42
          |  }
          |}
@@ -726,7 +756,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f(): Int = Foo.Bar
+         |  def f(): Int32 = Foo.Bar
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -737,7 +767,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f(): Int = Foo/Bar.Qux(true)
+         |  def f(): Int32 = Foo/Bar.Qux(true)
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -808,6 +838,49 @@ class TestResolver extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.DuplicateDerivation](result)
+  }
+
+  test("UnderAppliedTypeAlias.01") {
+    val input =
+      """
+        |type alias T[a] = a
+        |type alias S = T
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UnderAppliedTypeAlias](result)
+  }
+
+  test("UnderAppliedTypeAlias.02") {
+    val input =
+      """
+        |type alias T[a, b] = (a, b)
+        |type alias S = T[Int32]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UnderAppliedTypeAlias](result)
+  }
+
+  test("UnderAppliedTypeAlias.03") {
+    val input =
+      """
+        |type alias T[a] = a
+        |
+        |def f(x: T): Int32 = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UnderAppliedTypeAlias](result)
+  }
+
+  test("UnderAppliedTypeAlias.04") {
+    val input =
+      """
+        |type alias T[a] = a
+        |enum E[f: Type -> Type]
+        |
+        |def f(x: E[T]): Int32 = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UnderAppliedTypeAlias](result)
   }
 
   test("IllegalDerivation.01") {

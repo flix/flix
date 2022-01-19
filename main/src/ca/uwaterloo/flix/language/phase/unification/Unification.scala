@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.Kinder
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -85,6 +84,10 @@ object Unification {
           unifyVar(x.asKinded, tpe1)
 
       case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(Substitution.empty)
+
+      case (Type.Alias(_, _, tpe, _), _) => unifyTypes(tpe, tpe2)
+
+      case (_, Type.Alias(_, _, tpe, _)) => unifyTypes(tpe1, tpe)
 
       case _ if tpe1.kind == Kind.Bool || tpe2.kind == Kind.Bool =>
         BoolUnification.unify(tpe1, tpe2)
@@ -241,7 +244,11 @@ object Unification {
           Ok(subst, subst(tpe1))
 
         case Result.Err(UnificationError.MismatchedTypes(baseType1, baseType2)) =>
-          Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, loc))
+          (baseType1.typeConstructor, baseType2.typeConstructor) match {
+            case (Some(TypeConstructor.Arrow(_)), _) => Err(getUnderOrOverAppliedError(baseType1, baseType2, type1, type2, loc))
+            case (_, Some(TypeConstructor.Arrow(_))) => Err(getUnderOrOverAppliedError(baseType2, baseType1, type1, type2, loc))
+            case _ => Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, loc))
+          }
 
         case Result.Err(UnificationError.MismatchedBools(baseType1, baseType2)) =>
           Err(TypeError.MismatchedBools(baseType1, baseType2, Some(type1), Some(type2), loc))
@@ -275,6 +282,29 @@ object Unification {
       }
     }
     )
+  }
+
+  /**
+    * Returns a [[TypeError.OverApplied]] or [[TypeError.UnderApplied]] type error, if applicable.
+    */
+  private def getUnderOrOverAppliedError(arrowType: Type, argType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+    val default = TypeError.MismatchedTypes(arrowType, argType, fullType1, fullType2, loc)
+
+    arrowType match {
+      case Type.Apply(arg, resultType, _) =>
+        if (Unification.unifiesWith(resultType, argType)) {
+          arrowType.typeArguments.lift(1) match {
+            case None => default
+            case Some(excessArgument) => TypeError.OverApplied(excessArgument, fullType1, fullType2, loc)
+          }
+        } else {
+          arrowType.typeArguments.lift(1) match {
+            case None => default
+            case Some(missingArgument) => TypeError.UnderApplied(missingArgument, fullType1, fullType2, loc)
+          }
+        }
+      case _ => default
+    }
   }
 
   /**
@@ -315,10 +345,6 @@ object Unification {
     * Unifies the two given Boolean formulas `tpe1` and `tpe2`.
     */
   def unifyBoolM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
-    // Return if Boolean unification is disabled.
-    if (flix.options.xnoboolunification)
-      return liftM(Type.True)
-
     InferMonad((s: Substitution) => {
       val bf1 = s(tpe1)
       val bf2 = s(tpe2)

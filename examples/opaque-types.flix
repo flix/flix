@@ -3,10 +3,10 @@
 /// would otherwise be the same. For example:
 
 /// An opaque type for US dollars.
-opaque type USD = Int
+opaque type USD = Int32
 
 /// An opaque type for Canadian dollars.
-opaque type CAD = Int
+opaque type CAD = Int32
 
 ///
 /// A function that adds two US dollar amounts.

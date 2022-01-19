@@ -28,7 +28,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NonPositivelyBoundVariable.01") {
     val input =
       """
-        |pub def f(): #{ A(Int), B(Int) } = #{
+        |pub def f(): #{ A(Int32), B(Int32) } = #{
         |    A(x) :- not B(x).
         |}
       """.stripMargin
@@ -39,7 +39,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NonPositivelyBoundVariable.02") {
     val input =
       """
-        |pub def f(): #{ A(Int), B(Int), R(Int) } = solve {
+        |pub def f(): #{ A(Int32), B(Int32), R(Int32) } = solve #{
         |    R(x) :- not A(x), not B(x).
         |}
     """.stripMargin
@@ -50,7 +50,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NonPositivelyBoundVariable.03") {
     val input =
       """
-        |pub def f(): #{ A(Int), B(Int), R(Int) } = #{
+        |pub def f(): #{ A(Int32), B(Int32), R(Int32) } = #{
         |    R(x) :- not A(x), B(12), if x > 5.
         |}
     """.stripMargin
@@ -61,7 +61,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NegativelyBoundWildVariable.01") {
     val input =
       """
-        |pub def f(): #{ A(Int), B(Int), R(Int) } = #{
+        |pub def f(): #{ A(Int32), B(Int32), R(Int32) } = #{
         |    R(x) :- A(x), not B(_y).
         |}
       """.stripMargin
@@ -73,7 +73,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NegativelyBoundWildVariable.02") {
     val input =
       """
-        |pub def f(): #{ A(Int), B(Int), R(Int) } = solve {
+        |pub def f(): #{ A(Int32), B(Int32), R(Int32) } = solve #{
         |    R(1) :- not A(_x), not B(_y).
         |}
       """.stripMargin
@@ -84,7 +84,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NegativelyBoundWildVariable.03") {
     val input =
       """
-        |pub def f(): #{ A(Int), B(Int), R(Int) } = #{
+        |pub def f(): #{ A(Int32), B(Int32), R(Int32) } = #{
         |    R(1) :- A(y), not A(_y), not B(y).
         |}
       """.stripMargin
@@ -95,7 +95,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NegativelyBoundWildcard.01") {
     val input =
       """
-        |pub def f(): #{ A(Int), B(Int) } = #{
+        |pub def f(): #{ A(Int32), B(Int32) } = #{
         |    A(1) :- not B(_).
         |}
       """.stripMargin
@@ -106,7 +106,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NegativelyBoundWildcard.02") {
     val input =
       """
-        |pub def f(): #{ A(Int), B(Int) } = solve {
+        |pub def f(): #{ A(Int32), B(Int32) } = solve #{
         |    A(1) :- not B(_), A(_).
         |}
       """.stripMargin
@@ -117,7 +117,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NegativelyBoundWildcard.03") {
     val input =
       """
-        |pub def f(): #{ A(Int), B(Int) } = #{
+        |pub def f(): #{ A(Int32), B(Int32) } = #{
         |    A(1) :- not B(z), A(z), not B(_).
         |}
       """.stripMargin

@@ -1,5 +1,5 @@
 namespace A {
-    pub def f(): Int = 1
+    pub def f(): Int32 = 1
 
     @test
     def testNamespace01(): Bool =
@@ -18,7 +18,7 @@ namespace A {
 }
 
 namespace B {
-    pub def f(): Int = 2
+    pub def f(): Int32 = 2
 
     @test
     def testNamespace04(): Bool =
@@ -38,7 +38,7 @@ namespace B {
 }
 
 namespace C {
-    pub def f(): Int = 3
+    pub def f(): Int32 = 3
 
     @test
     def testNamespace07(): Bool =
@@ -67,13 +67,13 @@ namespace D {
     def testNamespace11(): Bool = gz() == 7
 }
 
-pub def g(): Int = 4
+pub def g(): Int32 = 4
 namespace X {
-    pub def g(): Int = 5
+    pub def g(): Int32 = 5
     namespace Y {
-        pub def g(): Int = 6
+        pub def g(): Int32 = 6
         namespace Z {
-            pub def g(): Int = 7
+            pub def g(): Int32 = 7
         }
     }
 }
@@ -99,3 +99,28 @@ def testNamespace15(): Bool =
     use X/Y.{g => gxy};
     use X/Y/Z.{g => gxyz};
     (gx() + gxy() + gxyz()) == 18
+
+namespace Op {
+    pub def <><(left: String, right: String): String  = "${left} fish ${right}"
+    pub def prefish(left: String, right: String): String = "${left} fish ${right}"
+}
+
+@test
+def testNamespace16(): Bool =
+    use Op.{<><};
+    "one" <>< "two" == "one fish two"
+
+@test
+def testNamespace17(): Bool =
+    use Op.{<>< => ><>};
+    "one" ><> "two" == "one fish two"
+
+@test
+def testNamespace18(): Bool =
+    use Op.{<>< => fish};
+    fish("one", "two") == "one fish two"
+
+@test
+def testNamespace19(): Bool =
+    use Op.{prefish => ><>};
+    "one" ><> "two" == "one fish two"

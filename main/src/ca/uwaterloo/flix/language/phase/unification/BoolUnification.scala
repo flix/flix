@@ -17,7 +17,9 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
+import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -29,12 +31,6 @@ object BoolUnification {
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
   def unify(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-    ///
-    /// Return immediately if Boolean unification is disabled.
-    ///
-    if (flix.options.xnoboolunification)
-      return Ok(Substitution.empty)
-
     ///
     /// Perform aggressive matching to optimize for common cases.
     ///
@@ -67,7 +63,7 @@ object BoolUnification {
     ///
     /// Run the expensive boolean unification algorithm.
     ///
-    booleanUnification(tpe1, tpe2)
+    booleanUnification(eraseAliases(tpe1), eraseAliases(tpe2))
   }
 
   /**
@@ -115,7 +111,10 @@ object BoolUnification {
       val t0 = Substitution.singleton(x, Type.False)(f)
       val t1 = Substitution.singleton(x, Type.True)(f)
       val se = successiveVariableElimination(mkAnd(t0, t1), xs)
-      val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshVar(Kind.Bool, f.loc), mkNot(se(t1)))))
+
+      // Investigate impact on Monomorph semantics:
+      val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(x, mkNot(se(t1)))))
+      //val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshVar(Kind.Bool, f.loc), mkNot(se(t1)))))
       st ++ se
   }
 
@@ -131,7 +130,9 @@ object BoolUnification {
     case Type.True => true
     case Type.False => false
     case _ =>
-      val q = mkEq(f, Type.True)
+      // Make all variables flexible.
+      val f1 = f.map(tvar => tvar.copy(rigidity = Rigidity.Flexible))
+      val q = mkEq(f1, Type.True)
       try {
         successiveVariableElimination(q, q.typeVars.toList)
         true
