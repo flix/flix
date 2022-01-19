@@ -673,4 +673,31 @@ object WeederError {
     })
 
   }
+
+  /**
+    * An error raised to indicate that a newly defined type (or alias) has a
+    * pre-defined name.
+    *
+    * @param ident  the name that conflicts.
+    * @param loc    the location where the error occurred.
+    */
+  case class ReservedTypeName(ident: Name.Ident, loc: SourceLocation) extends WeederError {
+    def summary: String = "Re-definition of a pre-defined type name."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Re-definition of pre-defined type name '${red(ident.name)}'.
+         |
+         |${code(loc, "re-definition of a pre-defined type name")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Try to find a new type name that doesn't match one that is pre-defined."
+    })
+
+  }
 }
