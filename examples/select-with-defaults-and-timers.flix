@@ -18,7 +18,7 @@ def recvWithDefault(c: Channel[Int32]): Int32 & Impure =
 def recvWithTimeout(c: Channel[Int32]): Int32 & Impure =
     select {
         case x <- c                   => x
-        case _ <- Timer.seconds(1i64) => 2
+        case _ <- Concurrent/Channel/Timer.seconds(1i64) => 2
     }
 
 /// Creates two channels `c1` and `c2`.
