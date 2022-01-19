@@ -28,7 +28,7 @@ pub enum ConditionError {
     case InterruptedError(##java.lang.InterruptedException)
 }
 
-namespace Condition {
+namespace Concurrent/Condition {
 
     ///
     /// Causes the current thread to wait until it is signalled or interrupted.

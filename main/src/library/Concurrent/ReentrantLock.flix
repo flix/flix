@@ -19,7 +19,7 @@
 ///
 opaque type ReentrantLock = ##java.util.concurrent.locks.ReentrantLock
 
-namespace ReentrantLock {
+namespace Concurrent/ReentrantLock {
 
     ///
     /// Creates an instance of ReentrantLock with the given fairness policy.

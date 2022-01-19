@@ -16,7 +16,7 @@
 // limitations under the License.
 //
 
-namespace Channel {
+namespace Concurrent/Channel {
 
     ///
     /// An enum that represents a multiple-producer, multiple-consumer (mpmc)

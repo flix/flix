@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace Timer {
+namespace Concurrent/Channel/Timer {
 
     ///
     /// Returns a channel that receives the Unit value after `n` days.
