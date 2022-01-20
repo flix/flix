@@ -266,7 +266,7 @@ namespace Option {
     ///
     /// The function f must be pure.
     ///
-    pub def foldRightL(f: (a, Lazy[b]) -> b, o: Option[a], z: b): b = match o {
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b, o: Option[a], z: b): b = match o {
         case None => z
         case Some(v) => f(v, lazy z)
     }

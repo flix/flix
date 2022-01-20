@@ -338,10 +338,10 @@ namespace Nel {
     /// The function f must be pure.
     ///
     /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
-    /// The foldRightL function exists to allow early termination of a fold.
+    /// The foldRightLazy function exists to allow early termination of a fold.
     ///
-    pub def foldRightL(f: (a, Lazy[b]) -> b, s: b, l: Nel[a]): b = match l {
-        case Nel(x, xs) => f(x, lazy List.foldRightL(f, s, xs))
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b, s: b, l: Nel[a]): b = match l {
+        case Nel(x, xs) => f(x, lazy List.foldRightLazy(f, s, xs))
     }
 
     ///

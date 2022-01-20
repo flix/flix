@@ -356,22 +356,22 @@ def foldRight04(): Bool = Option.foldRight((i, b) -> if (i == 2 and b) true else
 def foldRight05(): Bool = Option.foldRight((i, b) -> if (i == 2 and b) true else false, Some(2), true) == true
 
 /////////////////////////////////////////////////////////////////////////////
-// foldRightL                                                              //
+// foldRightLazy                                                           //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRightL01(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, None, false) == false
+def foldRightLazy01(): Bool = Option.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, None, false) == false
 
 @test
-def foldRightL02(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, Some(1), false) == false
+def foldRightLazy02(): Bool = Option.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Some(1), false) == false
 
 @test
-def foldRightL03(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, Some(2), false) == false
+def foldRightLazy03(): Bool = Option.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Some(2), false) == false
 
 @test
-def foldRightL04(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, Some(1), true) == false
+def foldRightLazy04(): Bool = Option.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Some(1), true) == false
 
 @test
-def foldRightL05(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, Some(2), true) == true
+def foldRightLazy05(): Bool = Option.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Some(2), true) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // sequence                                                                //
