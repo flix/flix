@@ -338,11 +338,11 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    pub def replace(x: a, y: a, iter: Iterator[a]): Iterator[a] with Eq[a] =
+    pub def replace(from :: a, to :: a, iter: Iterator[a]): Iterator[a] with Eq[a] =
         let Iterator(done, next) = iter;
         let next1 = () -> {
             let el = next();
-            if (el == x) y else el
+            if (el == from) to else el
         };
         Iterator(done, next1)
 

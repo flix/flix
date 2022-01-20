@@ -533,8 +533,8 @@ namespace Array {
     /// Returns a copy of `a` with every occurrence of `x` replaced by `y`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def replace(x: a, y: a, a: Array[a]): Array[a] & Impure with Eq[a] =
-        map(e -> if (e == x) y else e, a)
+    pub def replace(from :: a, to :: a, a: Array[a]): Array[a] & Impure with Eq[a] =
+        map(e -> if (e == from) to else e, a)
 
     ///
     /// Replace every occurrence of `x` by `y` in the array `a`, mutating it in place.
