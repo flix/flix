@@ -528,8 +528,8 @@ namespace LazyList {
     /// Does not force the tail of `l`.
     ///
     @Experimental @Lazy
-    pub def replace(from :: a, to :: a, l: LazyList[a]): LazyList[a] with Eq[a] =
-        map(e -> if (from == e) to else e, l)
+    pub def replace(from: {from :: a}, to: {to :: a}, l: LazyList[a]): LazyList[a] with Eq[a] =
+        map(e -> if (from.from == e) to.to else e, l)
 
     ///
     /// Returns `xs` with `a` inserted between every two adjacent elements.

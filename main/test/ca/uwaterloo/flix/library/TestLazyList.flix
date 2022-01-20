@@ -1619,7 +1619,7 @@ namespace TestLazyList {
 
     @test
     def replace07(): Bool =
-        LazyList.replace(0, 1, ECons(0, ECons(0, ECons(0, ENil)))) == ECons(1, ECons(1, ECons(1, ENil)))
+        LazyList.replace(from = 0, to = 1, ECons(0, ECons(0, ECons(0, ENil)))) == ECons(1, ECons(1, ECons(1, ENil)))
 
     @test
     def replace08(): Bool =

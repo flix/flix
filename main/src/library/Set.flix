@@ -411,8 +411,8 @@ namespace Set {
     /// Note: The returned set may be smaller than `s`.
     ///
     @Time(Int32.log2(size(s))) @Space(Int32.log2(size(s)))
-    pub def replace(from :: a, to :: a, s: Set[a]): Set[a] with Order[a] =
-        if (memberOf(from, s)) insert(to, remove(from, s)) else s
+    pub def replace(from: {from :: a}, to: {to :: a}, s: Set[a]): Set[a] with Order[a] =
+        if (memberOf(from.from, s)) insert(to.to, remove(from.from, s)) else s
 
     ///
     /// Returns a pair of sets `(s1, s2)`.

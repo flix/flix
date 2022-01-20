@@ -92,9 +92,9 @@ namespace MutSet {
     ///
     /// The mutable set `s` is unchanged if the element `x` is not in it.
     ///
-    pub def replace!(x: a, y: a, s: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def replace!(from: {from :: a}, to: {to :: a}, s: mut MutSet[a]): Unit & Impure with Order[a] =
         let MutSet(ms) = s;
-        ms := Set.replace(x, y, deref ms)
+        ms := Set.replace(from.from, to.to, deref ms)
 
     ///
     /// Applies the function `f` to every element in the mutable set `s`.

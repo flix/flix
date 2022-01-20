@@ -273,7 +273,7 @@ namespace Nel {
     /// Returns `l` with every occurrence of `x` replaced by `y`.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def replace(from :: a, to :: a, l: Nel[a]): Nel[a] with Eq[a] = map(e -> if (e == from) to else e, l)
+    pub def replace(from: {from :: a}, to: {to :: a}, l: Nel[a]): Nel[a] with Eq[a] = map(e -> if (e == from.from) to.to else e, l)
 
     ///
     /// Returns all permutations of `l` in lexicographical order by element indices in `l`.

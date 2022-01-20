@@ -553,8 +553,8 @@ namespace MutList {
     ///
     /// Replaces all occurrences of the `x` with `y` in the given mutable list `v`.
     ///
-    pub def replace!(x: a, y: a, v: mut MutList[a]): Unit & Impure with Eq[a] =
-        transform!(e -> if (e == x) y else e, v)
+    pub def replace!(from: {from :: a}, to: {to :: a}, v: mut MutList[a]): Unit & Impure with Eq[a] =
+        transform!(e -> if (e == from.from) to.to else e, v)
 
     ///
     /// Reverses the order of the elements in the given mutable list `v`.
