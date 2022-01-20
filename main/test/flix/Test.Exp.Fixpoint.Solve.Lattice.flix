@@ -3,7 +3,7 @@ namespace Test/Exp/Fixpoint/Solve/Lattice {
     enum Constant {
           case Top,
 
-        case Cst(Int),
+        case Cst(Int32),
 
           case Bot
     }

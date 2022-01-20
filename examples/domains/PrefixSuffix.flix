@@ -9,9 +9,9 @@ namespace Domain/PrefixSuffix {
     enum PrefixSuffix with Eq {
                    case Top,
 
-        case Pre(Int), case Suf(Int),
+        case Pre(Int32), case Suf(Int32),
 
-              case PreSuf(Int, Int),
+              case PreSuf(Int32, Int32),
 
                    case Bot
     }

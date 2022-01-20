@@ -49,7 +49,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq03") {
     val input =
       """
-        |def foo(): Result[a, Int] = Ok(21)
+        |def foo(): Result[a, Int32] = Ok(21)
         |
         |enum Result[t, e] {
         |    case Ok(t),
@@ -63,7 +63,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq04") {
     val input =
       """
-        |def foo(): Result[Int, a] = Err(21)
+        |def foo(): Result[Int32, a] = Err(21)
         |
         |enum Result[t, e] {
         |    case Ok(t),
@@ -95,7 +95,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq07") {
     val input =
       """
-        |def foo(): {x :: Int | r} = {x = 21}
+        |def foo(): {x :: Int32 | r} = {x = 21}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
@@ -104,7 +104,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq08") {
     val input =
       """
-        |def foo(): {x :: Int, y :: Int | r} = {y = 42, x = 21}
+        |def foo(): {x :: Int32, y :: Int32 | r} = {y = 42, x = 21}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
@@ -113,8 +113,8 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestOccurs01") {
     val input =
       """
-        |rel A(v: Int)
-        |rel B(v: Int)
+        |rel A(v: Int32)
+        |rel B(v: Int32)
         |
         |def foo(a: #{A | r}, b: #{B | r}): #{A, B} = solve (a <+> b)
         |""".stripMargin
@@ -135,7 +135,7 @@ class TestTyper extends FunSuite with TestUtils {
   }
 
   test("TestMismatchedTypes.03") {
-    val input = "def foo(): {a :: Int} = {a = 2} <+> {a = 2}"
+    val input = "def foo(): {a :: Int32} = {a = 2} <+> {a = 2}"
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
@@ -146,6 +146,48 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedTypes](result)
   }
 
+  test("TestOverApplied.01") {
+    val input =
+      """
+        |def f(s: String): String = s
+        |def over(): String = f("hello", 123)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.OverApplied](result)
+  }
+
+  test("TestOverApplied.02") {
+    val input =
+      """
+        |def f(s: String): String = s
+        |def over(): String = f("hello", 123, true)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.OverApplied](result)
+  }
+
+  test("TestUnderApplied.01") {
+    val input =
+      """
+        |def f(x: String, y: Int32): Bool = true
+        |def under(): String = f("hello"): String
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UnderApplied](result)
+  }
+
+  test("TestUnderApplied.02") {
+    val input =
+      """
+        |def f(x: String, y: Int32, z: Bool): Bool = true
+        |def under(): String = f("hello"): String
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UnderApplied](result)
+  }
+
   test("TestLeq.Wildcard.01") {
     val input = "def foo(a: _): _ = a"
     val result = compile(input, Options.TestWithLibNix)
@@ -153,30 +195,30 @@ class TestTyper extends FunSuite with TestUtils {
   }
 
   test("TestLeq.Wildcard.02") {
-    val input = "def foo(a: Int): _ = a"
+    val input = "def foo(a: Int32): _ = a"
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
   }
 
   test("TestLeq.Wildcard.03") {
-    val input = "def foo(a: Int): Int & _ = a"
+    val input = "def foo(a: Int32): Int32 & _ = a"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.EffectGeneralizationError](result)
   }
 
   test("TestLeq.Wildcard.04") {
-    val input = "def foo(a: Int): Int & _ = a"
+    val input = "def foo(a: Int32): Int32 & _ = a"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.GeneralizationError](result)
+    expectError[TypeError.EffectGeneralizationError](result)
   }
 
   test("TestLeq.Wildcard.05") {
-    val input = "def foo(g: Int -> Int & _): Int & _ = g(1)"
+    val input = "def foo(g: Int32 -> Int32 & _): Int32 & _ = g(1)"
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.GeneralizationError](result)
   }
 
-  test("TestLeq.Class.01") {
+  test("NoMatchingInstance.01") {
     val input =
       """
         |class C[a] {
@@ -185,22 +227,22 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(x: a): String = C.foo(x)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.NoMatchingInstance](result)
+    expectError[TypeError.MissingInstance](result)
   }
 
-  test("TestLeq.Class.02") {
+  test("NoMatchingInstance.02") {
     val input =
       """
         |class C[a] {
         |  pub def foo(x: a): String
         |}
-        |def foo(x: Int): String = C.foo(x)
+        |def foo(x: Int32): String = C.foo(x)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.NoMatchingInstance](result)
+    expectError[TypeError.MissingInstance](result)
   }
 
-  test("TestLeq.Class.03") {
+  test("NoMatchingInstance.03") {
     val input =
       """
         |enum Box[a] {
@@ -211,8 +253,8 @@ class TestTyper extends FunSuite with TestUtils {
         |    pub def foo(x: a): String
         |}
         |
-        |instance C[Int] {
-        |    pub def foo(x: Int): String = "123"
+        |instance C[Int32] {
+        |    pub def foo(x: Int32): String = "123"
         |}
         |
         |instance C[Box[a]] with C[a] {
@@ -221,13 +263,13 @@ class TestTyper extends FunSuite with TestUtils {
         |    }
         |}
         |
-        |def doF(x: Box[Float]): String = C.foo(x)
+        |def doF(x: Box[Float64]): String = C.foo(x)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.NoMatchingInstance](result)
+    expectError[TypeError.MissingInstance](result)
   }
 
-  test("TestLeq.Class.04") {
+  test("NoMatchingInstance.04") {
     val input =
       """
         |enum Box[a] {
@@ -238,8 +280,8 @@ class TestTyper extends FunSuite with TestUtils {
         |    pub def foo(x: a): String
         |}
         |
-        |instance C[Int] {
-        |    pub def foo(x: Int): String = "123"
+        |instance C[Int32] {
+        |    pub def foo(x: Int32): String = "123"
         |}
         |
         |instance C[Box[a]] with C[a] {
@@ -248,40 +290,61 @@ class TestTyper extends FunSuite with TestUtils {
         |    }
         |}
         |
-        |def doF(x: Box[Int]): String = C.foo(C.foo(x))
+        |def doF(x: Box[Int32]): String = C.foo(C.foo(x))
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.NoMatchingInstance](result)
+    expectError[TypeError.MissingInstance](result)
   }
 
-  test("TestLeq.Class.05") {
+  test("NoMatchingInstance.05") {
     val input =
       """
         |class C[a] {
-        |    pub def foo(x: a): Int
+        |    pub def foo(x: a): Int32
         |}
         |
-        |instance C[Int] {
-        |    pub def foo(x: Int): Int = x
+        |instance C[Int32] {
+        |    pub def foo(x: Int32): Int32 = x
         |}
         |
-        |def bar(x: a, y: Int): (Int, Int) = (C.foo(x), C.foo(y))
+        |def bar(x: a, y: Int32): (Int32, Int32) = (C.foo(x), C.foo(y))
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.NoMatchingInstance](result)
+    expectError[TypeError.MissingInstance](result)
   }
 
-  test("TestLeq.Class.06") {
+  test("NoMatchingInstance.06") {
     val input =
       """
         |class C[a] {
-        |    pub def foo(x: a): Int
+        |    pub def foo(x: a): Int32
         |}
         |
-        |def bar(x: a, y: b): (Int, Int) with C[a] = (C.foo(x), C.foo(y))
+        |def bar(x: a, y: b): (Int32, Int32) with C[a] = (C.foo(x), C.foo(y))
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.NoMatchingInstance](result)
+    expectError[TypeError.MissingInstance](result)
+  }
+
+  test("NoMatchingInstance.07") {
+    val input =
+      """
+        |class C[a] {
+        |    pub def foo(x: a): Int32
+        |}
+        |
+        |enum E[_: Bool] {
+        |    case E(Int32)
+        |}
+        |
+        |instance C[E[true]] {
+        |    pub def foo(x: E[true]): Int32 = 1
+        |}
+        |
+        |def bar(): Int32 = C.foo(E(123))    // E(123) has type E[_], not E[true]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MissingInstance](result)
   }
 
   test("NoMatchingInstance.Relation.01") {
@@ -301,13 +364,63 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.NoMatchingInstance](result)
+    expectError[TypeError.MissingInstance](result)
+  }
+
+  test("MissingEq.01") {
+    val input =
+      """
+        |pub enum E {
+        |   case E
+        |}
+        |
+        |def foo(x: E, y: E): Bool = x == y
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.MissingEq](result)
+  }
+
+  test("MissingOrder.01") {
+    val input =
+      """
+        |pub enum E {
+        |   case E
+        |}
+        |
+        |def foo(x: E, y: E): Bool = x <= y
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.MissingOrder](result)
+  }
+
+  test("MissingToString.01") {
+    val input =
+      s"""
+         |pub enum E {
+         |   case E
+         |}
+         |
+         |def foo(x: E): String = ToString.toString(x)
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.MissingToString](result)
+  }
+
+  test("MissingArrowInstance.01") {
+    val input =
+      s"""
+         |def main(_args: Array[String]): Int32 & Impure =
+         |    println(x -> x + 41i32);
+         |    0
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.MissingArrowInstance](result)
   }
 
   test("TestChoose.Arity1.01") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = x -> {
         |        choose x {
         |            case Absent => 1
@@ -328,7 +441,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.Arity1.02") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = x -> {
         |        choose x {
         |            case Present(_) => 1
@@ -349,7 +462,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.Arity1.03") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = x -> {
         |        choose x {
         |            case Absent => 1
@@ -370,7 +483,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.Arity1.04") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = x -> {
         |        choose x {
         |            case Present(_) => 1
@@ -391,7 +504,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.AbsentAbsent.01") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = (x, y) -> {
         |        choose (x, y) {
         |            case (Absent, Absent) => 1
@@ -412,7 +525,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.AbsentAbsent.02") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = (x, y) -> {
         |        choose (x, y) {
         |            case (Absent, Absent) => 1
@@ -433,7 +546,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.AbsentAbsent.03") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = (x, y) -> {
         |        choose (x, y) {
         |            case (Absent, Absent) => 1
@@ -454,7 +567,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.AbsentAbsent.IfThenElse.01") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = (x, y) -> {
         |        choose (x, y) {
         |            case (Absent, Absent) => 1
@@ -475,7 +588,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.AbsentAbsent.IfThenElse.02") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = (x, y) -> {
         |        choose (x, y) {
         |            case (Absent, Absent) => 1
@@ -496,7 +609,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.AbsentPresent.01") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = (x, y) -> {
         |        choose (x, y) {
         |            case (Absent, Present(_)) => 1
@@ -517,7 +630,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.AbsentPresent.02") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = (x, y) -> {
         |        choose (x, y) {
         |            case (Absent, Present(_)) => 1
@@ -538,7 +651,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.AbsentPresent.03") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = (x, y) -> {
         |        choose (x, y) {
         |            case (Absent, Present(_)) => 1
@@ -559,7 +672,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.AbsentPresent.IfThenElse.01") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = (x, y) -> {
         |        choose (x, y) {
         |            case (Absent, Present(_)) => 1
@@ -580,7 +693,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.AbsentPresent.IfThenElse.02") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = (x, y) -> {
         |        choose (x, y) {
         |            case (Absent, Present(_)) => 1
@@ -601,7 +714,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.TwoCases.01") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = (x, y) -> {
         |        choose (x, y) {
         |            case (Absent, Absent)         => 1
@@ -623,7 +736,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.TwoCases.02") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = (x, y) -> {
         |        choose (x, y) {
         |            case (Absent, Absent)         => 1
@@ -645,7 +758,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.TwoCases.03") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = (x, y) -> {
         |        choose (x, y) {
         |            case (Absent, Present(_)) => 1
@@ -667,7 +780,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.TwoCases.04") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = (x, y) -> {
         |        choose (x, y) {
         |            case (Absent, Present(_)) => 1
@@ -689,7 +802,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.ThreeCases.01") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = (x, y) -> {
         |        choose (x, y) {
         |            case (Absent, Present(_))       => 1
@@ -712,7 +825,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestChoose.ThreeCases.02") {
     val input =
       """
-        |def foo(): Int =
+        |def foo(): Int32 =
         |    let f = (x, y) -> {
         |        choose (x, y) {
         |            case (Absent, Absent)           => 1
@@ -953,7 +1066,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def f(x: Bool, y: Bool): Bool = ???
         |
-        |law l: forall (x: Int, y: Bool) . f(x, y)
+        |law l: forall (x: Int32, y: Bool) . f(x, y)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
@@ -1091,9 +1204,70 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.IllegalMain.07") {
     val input =
       """
-        |def main(blah: Array[String]): Int & ef = ???
+        |def main(blah: Array[String]): Int32 & ef = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.IllegalMain](result)
   }
+
+  test("Test.ImpureDeclaredAsPure.01") {
+    val input =
+      """
+        |pub def f(): Int32 = 123 as & Impure
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.ImpureDeclaredAsPure](result)
+  }
+
+  test("Test.ImpureDeclaredAsPure.02") {
+    val input =
+      """
+        |def f(): Int32 & Pure = 123 as & Impure
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.ImpureDeclaredAsPure](result)
+  }
+
+  test("Test.EffectPolymorphicDeclaredAsPure.01") {
+    val input =
+      """
+        |def f(g: Int32 -> Int32 & ef): Int32 = g(123)
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectPolymorphicDeclaredAsPure](result)
+  }
+
+  test("Test.EffectPolymorphicDeclaredAsPure.02") {
+    val input =
+      """
+        |def f(g: Int32 -> Int32 & ef): Int32 & Pure = g(123)
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectPolymorphicDeclaredAsPure](result)
+  }
+
+  test("Test.EffectGeneralizationError.01") {
+    val input =
+      """
+        |def f(g: Int32 -> Int32 & ef): Int32 & ef = 123
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectGeneralizationError](result)
+  }
+
+  test("Test.EffectGeneralizationError.02") {
+    val input =
+      """
+        |def f(g: Int32 -> Int32 & ef1, h: Int32 -> Int32 & ef2): Int32 & (ef1 and ef2) = 123
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.EffectGeneralizationError](result)
+  }
+
 }
