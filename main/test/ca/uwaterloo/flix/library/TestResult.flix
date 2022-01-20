@@ -226,22 +226,22 @@ def foldRight05(): Bool = Result.foldRight((i, b) -> if (i == 2 and b) true else
 
 
 /////////////////////////////////////////////////////////////////////////////
-// foldRightL                                                              //
+// foldRightLazy                                                           //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRightL01(): Bool = Result.foldRightL((i, b) -> if (i == 2 and force b) true else false, Err(-1ii), false) == false
+def foldRightLazy01(): Bool = Result.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Err(-1ii), false) == false
 
 @test
-def foldRightL02(): Bool = Result.foldRightL((i, b) -> if (i == 2 and force b) true else false, Ok(1), false) == false
+def foldRightLazy02(): Bool = Result.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Ok(1), false) == false
 
 @test
-def foldRightL03(): Bool = Result.foldRightL((i, b) -> if (i == 2 and force b) true else false, Ok(1), true) == false
+def foldRightLazy03(): Bool = Result.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Ok(1), true) == false
 
 @test
-def foldRightL04(): Bool = Result.foldRightL((i, b) -> if (i == 2 and force b) true else false, Ok(2), false) == false
+def foldRightLazy04(): Bool = Result.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Ok(2), false) == false
 
 @test
-def foldRightL05(): Bool = Result.foldRightL((i, b) -> if (i == 2 and force b) true else false, Ok(2), true) == true
+def foldRightLazy05(): Bool = Result.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Ok(2), true) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // sequence                                                                //

@@ -189,7 +189,7 @@ namespace Result {
     /// The function f must be pure.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foldRightL(f: (t, Lazy[a]) -> a, r: Result[t, e], z: a): a = match r {
+    pub def foldRightLazy(f: (t, Lazy[a]) -> a, r: Result[t, e], z: a): a = match r {
         case Ok(v) => f(v, lazy z)
         case Err(_) => z
     }

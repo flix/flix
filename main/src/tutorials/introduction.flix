@@ -35,7 +35,7 @@ lat LocalVar(k: String, v: Constant)
 enum Constant {
       case Top,
 
-    case Cst(Int),
+    case Cst(Int32),
 
       case Bot
 }
@@ -125,7 +125,7 @@ instance ToString[Constant] {
 // an element of the constant propagation lattice. Strictly speaking,
 // this is not necessary.
 //
-def alpha(i: Int): Constant = Cst(i)
+def alpha(i: Int32): Constant = Cst(i)
 
 //
 // We must define the sum transfer function:
