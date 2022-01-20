@@ -48,26 +48,26 @@ namespace Validation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def getWithDefault01(): Bool = (Success(123)).getWithDefault(456) == 123
+    def getWithDefault01(): Bool = getWithDefault(456, Success(123)) == 123
 
     @test
-    def getWithDefault02(): Bool = (Failure(Nel(42, Nil))).getWithDefault(456) == 456
+    def getWithDefault02(): Bool = getWithDefault(456, Failure(Nel(42, Nil))) == 456
 
     /////////////////////////////////////////////////////////////////////////////
     // withDefault                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def withDefault01(): Bool = withDefault(Success(1), Success(2)): Validation[_, Unit] == Success(1)
+    def withDefault01(): Bool = withDefault(default = Success(2), Success(1)): Validation[_, Unit] == Success(1)
 
     @test
-    def withDefault02(): Bool = withDefault(Success(1), Failure(Nel(1, Nil))) == Success(1)
+    def withDefault02(): Bool = withDefault(default = Failure(Nel(1, Nil)), Success(1)) == Success(1)
 
     @test
-    def withDefault03(): Bool = withDefault(Failure(Nel(1, Nil)), Success(2)) == Success(2)
+    def withDefault03(): Bool = withDefault(default = Success(2), Failure(Nel(1, Nil))) == Success(2)
 
     @test
-    def withDefault04(): Bool = withDefault(Failure(Nel(1, Nil)), Failure(Nel(2, Nil))): Validation[Unit, _] == Failure(Nel(2, Nil))
+    def withDefault04(): Bool = withDefault(default = Failure(Nel(2, Nil)), Failure(Nel(1, Nil))): Validation[Unit, _] == Failure(Nel(2, Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
@@ -185,30 +185,30 @@ namespace Validation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toOption01(): Bool = (Success(123)).toOption() == Some(123)
+    def toOption01(): Bool = (Success(123) |> toOption) == Some(123)
 
     @test
-    def toOption02(): Bool = (Failure(Nel(42, Nil))).toOption(): Option[Int32] == None
+    def toOption02(): Bool = (Failure(Nel(42, Nil)) |> toOption): Option[Int32] == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toResult                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toResult01(): Bool = (Success(123)).toResult(): Result[_, Nel[Unit]] == Ok(123)
+    def toResult01(): Bool = (Success(123) |> toResult): Result[_, Nel[Unit]] == Ok(123)
 
     @test
-    def toResult02(): Bool = (Failure(Nel(42, Nil))).toResult(): Result[Unit, _] == Err(Nel(42, Nil))
+    def toResult02(): Bool = (Failure(Nel(42, Nil)) |> toResult): Result[Unit, _] == Err(Nel(42, Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toList01(): Bool = (Success(123)).toList() == 123 :: Nil
+    def toList01(): Bool = (Success(123) |> toList) == 123 :: Nil
 
     @test
-    def toList02(): Bool = (Failure(Nel(42, Nil)): Validation[Unit, _]).toList() == Nil
+    def toList02(): Bool = ((Failure(Nel(42, Nil)): Validation[Unit, _]) |> toList) == Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // lift2                                                                   //

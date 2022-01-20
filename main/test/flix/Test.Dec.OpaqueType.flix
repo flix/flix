@@ -3,12 +3,12 @@ namespace Test/Dec/OpaqueType {
     /**
      * An opaque type for degrees celsius.
      */
-    opaque type Celsius = Int
+    opaque type Celsius = Int32
 
     /**
      * An opaque type for degrees fahrenheit.
      */
-    opaque type Fahrenheit = Int
+    opaque type Fahrenheit = Int32
 
     /**
      * An opaque type for united states dollars.
@@ -23,12 +23,12 @@ namespace Test/Dec/OpaqueType {
     /**
      * An opaque type for an Option.
      */
-    opaque type A = Option[Int]
+    opaque type A = Option[Int32]
 
     /**
      * An opaque type for a Result.
      */
-    opaque type B = Result[Int, String]
+    opaque type B = Result[Int32, String]
 
     /**
      * An opaque type for a polymorphic pair.
@@ -38,7 +38,7 @@ namespace Test/Dec/OpaqueType {
     /**
      * An opaque type for a polymorphic Result.
      */
-    opaque type C[a] = Result[a, Int]
+    opaque type C[a] = Result[a, Int32]
 
     /**
      * An opaque type for a polymorphic Result.
@@ -110,7 +110,7 @@ namespace Test/Dec/OpaqueType {
     }
 
     @test
-    def testOpaqueType17(): Pair[Int, Int] = Pair((21, 42))
+    def testOpaqueType17(): Pair[Int32, Int32] = Pair((21, 42))
 
     @test
     def testOpaqueType18(): Bool = match Pair((21, 42)) {
@@ -118,7 +118,7 @@ namespace Test/Dec/OpaqueType {
     }
 
     @test
-    def testOpaqueType19(): Pair[Bool, Int] = Pair((true, 42))
+    def testOpaqueType19(): Pair[Bool, Int32] = Pair((true, 42))
 
     @test
     def testOpaqueType20(): Bool = match Pair((true, 42)) {
@@ -134,13 +134,13 @@ namespace Test/Dec/OpaqueType {
     }
 
     @test
-    def testOpaqueType23(): D[Bool, Int, String] = D(Ok(true))
+    def testOpaqueType23(): D[Bool, Int32, String] = D(Ok(true))
 
     @test
-    def testOpaqueType24(): D[Bool, Int, String] = D(Err(Ok(123)))
+    def testOpaqueType24(): D[Bool, Int32, String] = D(Err(Ok(123)))
 
     @test
-    def testOpaqueType25(): D[Bool, Int, String] = D(Err(Err("hello")))
+    def testOpaqueType25(): D[Bool, Int32, String] = D(Err(Err("hello")))
 
     /**
      * A type alias for Bool.
@@ -150,7 +150,7 @@ namespace Test/Dec/OpaqueType {
     /**
      * A type alias for Int.
      */
-    type alias Y = Int
+    type alias Y = Int32
 
     /**
      * A polymorphic type alias for Option.

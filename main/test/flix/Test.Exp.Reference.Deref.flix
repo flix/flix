@@ -67,7 +67,7 @@ namespace Test/Exp/Reference/Deref {
 
     @test
     def testDeref14(): Bool & Impure =
-        let l = ref None : Option[Int];
+        let l = ref None : Option[Int32];
         deref l == None
 
     @test

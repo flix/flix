@@ -1,26 +1,26 @@
 namespace Test/Term/Apply {
 
     @test
-    def testTermApply01(): #{ R(Int) } = solve #{
+    def testTermApply01(): #{ R(Int32) } = solve #{
         R(zer()).
         R(one()).
         R(two()).
     }
 
     @test
-    def testTermApply02(): #{ R(Int) } = solve #{
+    def testTermApply02(): #{ R(Int32) } = solve #{
         R(inc(1)).
         R(dec(2)).
     }
 
     @test
-    def testTermApply03(): #{ R(Int) } = solve #{
+    def testTermApply03(): #{ R(Int32) } = solve #{
         R(inc(dec(1))).
         R(dec(inc(2))).
     }
 
     @test
-    def testTermApply04(): #{ A(Int), B(Int), R(Int) } = solve #{
+    def testTermApply04(): #{ A(Int32), B(Int32), R(Int32) } = solve #{
         A(0). A(1). A(3).
         B(1). B(2). B(3).
 
@@ -29,7 +29,7 @@ namespace Test/Term/Apply {
     }
 
     @test
-    def testTermApply05(): #{ A(Int), B(Int), R(Int) } = solve #{
+    def testTermApply05(): #{ A(Int32), B(Int32), R(Int32) } = solve #{
         A(0). A(1). A(3).
         B(1). B(2). B(3).
 
@@ -37,7 +37,7 @@ namespace Test/Term/Apply {
     }
 
     @test
-    def testTermApply06(): #{ A(Int), B(Int), R(Int) } = solve #{
+    def testTermApply06(): #{ A(Int32), B(Int32), R(Int32) } = solve #{
         A(0). A(1). A(3).
         B(1). B(2). B(3).
 
@@ -45,7 +45,7 @@ namespace Test/Term/Apply {
     }
 
     @test
-    def testTermApply07(): #{ A(Int), B(Int), R(Int) } = solve #{
+    def testTermApply07(): #{ A(Int32), B(Int32), R(Int32) } = solve #{
         A(0). A(1). A(3).
         B(1). B(2). B(3).
 
@@ -53,7 +53,7 @@ namespace Test/Term/Apply {
     }
 
     @test
-    def testTermApply08(): #{ A(Int), B(Int), R(Int) } = solve #{
+    def testTermApply08(): #{ A(Int32), B(Int32), R(Int32) } = solve #{
         A(0). A(1). A(3).
         B(1). B(2). B(3).
 
@@ -61,12 +61,12 @@ namespace Test/Term/Apply {
     }
 
     @test
-    def testTermApply09(): #{ R(Int) } = solve #{
+    def testTermApply09(): #{ R(Int32) } = solve #{
         R(identity(42)).
     }
 
     @test
-    def testTermApply10(): #{ R(Int) } = solve #{
+    def testTermApply10(): #{ R(Int32) } = solve #{
         R(fst((1, 2))).
         R(snd((1, 2))).
     }
@@ -163,28 +163,28 @@ namespace Test/Term/Apply {
         let m = query ho3(_ -> "hello") select x from P(x);
         Array.memberOf("hello", m)
 
-    pub def zer(): Int = 0
-    pub def one(): Int = 1
-    pub def two(): Int = 2
-    pub def inc(x: Int): Int = x + 1
-    pub def dec(x: Int): Int = x - 1
-    pub def add(x: Int, y: Int): Int = x + y
+    pub def zer(): Int32 = 0
+    pub def one(): Int32 = 1
+    pub def two(): Int32 = 2
+    pub def inc(x: Int32): Int32 = x + 1
+    pub def dec(x: Int32): Int32 = x - 1
+    pub def add(x: Int32, y: Int32): Int32 = x + y
 
     pub def identity(x: a): a = x
     pub def fst(p: (a, b)): a = let (x, _) = p; x
     pub def snd(p: (a, b)): b = let (_, y) = p; y
 
-    pub def ho1(f: Int -> Int): #{A(Int), R(Int) | r} = #{
+    pub def ho1(f: Int32 -> Int32): #{A(Int32), R(Int32) | r} = #{
         A(1). A(2). A(3).
         R(f(x)) :- A(x), A(_y).
     }
 
-    pub def ho2(f: (Int, Int) -> Int): #{A(Int), R(Int) | r} = #{
+    pub def ho2(f: (Int32, Int32) -> Int32): #{A(Int32), R(Int32) | r} = #{
         A(1). A(2). A(3).
         R(f(x, y)) :- A(x), A(y).
     }
 
-    pub def ho3(f: Int -> a): #{A(Int), P(a) | r} with Boxable[a] = #{
+    pub def ho3(f: Int32 -> a): #{A(Int32), P(a) | r} with Boxable[a] = #{
         A(1). A(2). A(3).
         P(f(x)) :- A(x).
     }

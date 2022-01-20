@@ -11,7 +11,7 @@ namespace Test/Exp/Record/Select {
         r.lstName
 
     @test
-    def testRecordSelect03(): Int =
+    def testRecordSelect03(): Int32 =
         let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
         r.age
 
@@ -75,7 +75,7 @@ namespace Test/Exp/Record/Select {
         ()
 
     @test
-    def testSelectDuplicateLabels01(): Int =
+    def testSelectDuplicateLabels01(): Int32 =
         let r = { a = 21, a = 42, a = 84};
         let a1 = r.a;
         let a2 = { -a | r }.a;
@@ -83,7 +83,7 @@ namespace Test/Exp/Record/Select {
         a1 + a2 + a3
 
     @test
-    def testSelectDuplicateLabels02(): Int =
+    def testSelectDuplicateLabels02(): Int32 =
         let r = { a = 21, b = true, a = 42, b = false, a = 84};
         let a1 = r.a;
         let a2 = { -a | r }.a;
@@ -96,7 +96,7 @@ namespace Test/Exp/Record/Select {
         { -a | r }.a
 
     @test
-    def testSelectDuplicateLabels04(): Int =
+    def testSelectDuplicateLabels04(): Int32 =
         let r = { a = true, a = "hello world", a = 84};
         { -a, -a | r }.a
 
