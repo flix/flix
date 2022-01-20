@@ -94,7 +94,7 @@ namespace MutSet {
     ///
     pub def replace!(from: {from :: a}, to: {to :: a}, s: mut MutSet[a]): Unit & Impure with Order[a] =
         let MutSet(ms) = s;
-        ms := Set.replace(from.from, to.to, deref ms)
+        ms := Set.replace(from = from.from, to = to.to, deref ms)
 
     ///
     /// Applies the function `f` to every element in the mutable set `s`.
