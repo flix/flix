@@ -60,7 +60,7 @@ namespace Concurrent/ReentrantLock {
     ///
     /// Returns a Condition instance for use with this Lock instance.
     ///
-    pub def newCondition(lock: Concurrent/ReentrantLock.ReentrantLock): Condition & Impure =
+    pub def newCondition(lock: Concurrent/ReentrantLock.ReentrantLock): Concurrent/Condition.Condition & Impure =
         import java.util.concurrent.locks.ReentrantLock.newCondition();
         let ReentrantLock(l) = lock;
         Condition(newCondition(l))
