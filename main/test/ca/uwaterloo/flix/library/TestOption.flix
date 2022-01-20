@@ -223,16 +223,16 @@ def withDefault04(): Bool = Option.withDefault(Some(1), Some(2)) == Some(1)
 // replace                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def replace01(): Bool = Option.replace(3, 4, None) == None
+def replace01(): Bool = Option.replace(from = 3, to = 4, None) == None
 
 @test
-def replace02(): Bool = Option.replace(3, 4, Some(2)) == Some(2)
+def replace02(): Bool = Option.replace(from = 3, to = 4, Some(2)) == Some(2)
 
 @test
-def replace03(): Bool = Option.replace(3, 4, Some(3)) == Some(4)
+def replace03(): Bool = Option.replace(from = 3, to = 4, Some(3)) == Some(4)
 
 @test
-def replace04(): Bool = Option.replace(3, 4, Some(4)) == Some(4)
+def replace04(): Bool = Option.replace(from = 3, to = 4, Some(4)) == Some(4)
 
 /////////////////////////////////////////////////////////////////////////////
 // count                                                                   //

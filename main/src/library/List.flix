@@ -464,7 +464,7 @@ namespace List {
     /// Returns `xs` with every occurrence of `x` replaced by `y`.
     ///
     @Time(length(xs)) @Space(length(xs))
-    pub def replace(x: a, y: a, xs: List[a]): List[a] with Eq[a] = map(e -> if (e == x) y else e, xs)
+    pub def replace(from :: a, to :: a, xs: List[a]): List[a] with Eq[a] = map(e -> if (e == from) to else e, xs)
 
     ///
     /// Returns `ys` with the `n` elements starting at index `i` replaced with the elements of `xs`.

@@ -245,16 +245,16 @@ namespace Nel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def replace01(): Bool = replace(1, 42, Nel(1, Nil)) == Nel(42, Nil)
+    def replace01(): Bool = replace(from = 1, to = 42, Nel(1, Nil)) == Nel(42, Nil)
 
     @test
-    def replace02(): Bool = replace(7, 42, Nel(1, Nil)) == Nel(1, Nil)
+    def replace02(): Bool = replace(from = 7, to = 42, Nel(1, Nil)) == Nel(1, Nil)
 
     @test
-    def replace03(): Bool = replace(2, 42, Nel(1, 2 :: Nil)) == Nel(1, 42 :: Nil)
+    def replace03(): Bool = replace(from = 2, to = 42, Nel(1, 2 :: Nil)) == Nel(1, 42 :: Nil)
 
     @test
-    def replace04(): Bool = replace(7, 42, Nel(1, 2 :: Nil)) == Nel(1, 2 :: Nil)
+    def replace04(): Bool = replace(from = 7, to = 42, Nel(1, 2 :: Nil)) == Nel(1, 2 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // permutations                                                            //

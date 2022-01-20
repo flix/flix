@@ -188,32 +188,32 @@ namespace TestIterator {
     @test
     def replace01(): Bool & Impure =
         Nil: List[Int32] |> Iterator.toIter |> Iterator.toList ==
-        Nil: List[Int32] |> Iterator.toIter |> Iterator.replace(1, 2) |> Iterator.toList
+        Nil: List[Int32] |> Iterator.toIter |> Iterator.replace(from = 1, to = 2) |> Iterator.toList
 
     @test
     def replace02(): Bool & Impure =
-        Iterator.repeat("a", 10) |> Iterator.replace("a", "b") |> Iterator.toList == List.repeat("b", 10)
+        Iterator.repeat("a", 10) |> Iterator.replace(from = "a", to = "b") |> Iterator.toList == List.repeat("b", 10)
 
     @test
     def replace03(): Bool & Impure =
         let iter = Iterator.range(0, 10);
         not (iter |> Iterator.isEmpty) and
-        not (iter |> Iterator.replace(5, 100) |> Iterator.isEmpty)
+        not (iter |> Iterator.replace(from = 5, to = 100) |> Iterator.isEmpty)
 
     @test
     def replace04(): Bool & Impure =
-        let iter = Iterator.range(0, 10) |> Iterator.replace(5, 100);
+        let iter = Iterator.range(0, 10) |> Iterator.replace(from = 5, to = 100);
         not (iter |> Iterator.memberOf(5)) and iter |> Iterator.isEmpty
 
     @test
     def replace05(): Bool & Impure =
-        let iter = Iterator.range(0, 10) |> Iterator.replace(5, 100);
+        let iter = Iterator.range(0, 10) |> Iterator.replace(from = 5, to = 100);
         iter |> Iterator.memberOf(100) and not (iter |> Iterator.isEmpty)
 
     @test
     def replace06(): Bool & Impure =
         let list = "a" :: "b" :: "c" :: Nil;
-        list |> Iterator.toIter |> Iterator.replace("c", "d") |> Iterator.toList == ("a" :: "b" :: "d" :: Nil)
+        list |> Iterator.toIter |> Iterator.replace(from = "c", to = "d") |> Iterator.toList == ("a" :: "b" :: "d" :: Nil)
 
 
     /////////////////////////////////////////////////////////////////////////////

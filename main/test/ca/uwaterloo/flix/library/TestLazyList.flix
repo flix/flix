@@ -2356,67 +2356,67 @@ namespace TestLazyList {
 
     @test
     def replace01(): Bool =
-        LazyList.replace(3, 4, ENil) == ENil
+        LazyList.replace(from = 3, to = 4, ENil) == ENil
 
     @test
     def replace02(): Bool =
-        LazyList.replace(3, 4, LList(lazy ENil)) == ENil
+        LazyList.replace(from = 3, to = 4, LList(lazy ENil)) == ENil
 
     @test
     def replace03(): Bool =
-        LazyList.replace(3, 4, LCons(1, lazy ENil)) == ECons(1, ENil)
+        LazyList.replace(from = 3, to = 4, LCons(1, lazy ENil)) == ECons(1, ENil)
 
     @test
     def replace04(): Bool =
-        LazyList.replace(3, 4, LList(lazy ECons(1, LList(lazy ENil)))) == ECons(1, ENil)
+        LazyList.replace(from = 3, to = 4, LList(lazy ECons(1, LList(lazy ENil)))) == ECons(1, ENil)
 
     @test
     def replace05(): Bool =
-        LazyList.replace(3, 4, LCons(1, lazy LList(lazy ENil))) == ECons(1, ENil)
+        LazyList.replace(from = 3, to = 4, LCons(1, lazy LList(lazy ENil))) == ECons(1, ENil)
 
     @test
     def replace06(): Bool =
-        LazyList.replace(3, 4, ECons(1, ENil)) == ECons(1, ENil)
+        LazyList.replace(from = 3, to = 4, ECons(1, ENil)) == ECons(1, ENil)
 
     @test
     def replace07(): Bool =
-        LazyList.replace(3, 4, LCons(3, lazy ENil)) == ECons(4, ENil)
+        LazyList.replace(from = 3, to = 4, LCons(3, lazy ENil)) == ECons(4, ENil)
 
     @test
     def replace08(): Bool =
-        LazyList.replace(3, 4, LList(lazy LCons(3, lazy ENil))) == ECons(4, ENil)
+        LazyList.replace(from = 3, to = 4, LList(lazy LCons(3, lazy ENil))) == ECons(4, ENil)
 
     @test
     def replace09(): Bool =
-        LazyList.replace(3, 4, ECons(3, LList(lazy ENil))) == ECons(4, ENil)
+        LazyList.replace(from = 3, to = 4, ECons(3, LList(lazy ENil))) == ECons(4, ENil)
 
     @test
     def replace10(): Bool =
-        LazyList.replace(3, 4, ECons(3, ENil)) == ECons(4, ENil)
+        LazyList.replace(from = 3, to = 4, ECons(3, ENil)) == ECons(4, ENil)
 
     @test
     def replace11(): Bool =
-        LazyList.replace(3, 4, LCons(4, lazy ECons(4, ECons(4, ENil)))) == ECons(4, ECons(4, ECons(4, ENil)))
+        LazyList.replace(from = 3, to = 4, LCons(4, lazy ECons(4, ECons(4, ENil)))) == ECons(4, ECons(4, ECons(4, ENil)))
 
     @test
     def replace12(): Bool =
-        LazyList.replace(3, 4, LList(lazy ECons(2, LList(lazy LCons(2, lazy LList(lazy LCons(2, lazy LList(lazy ENil)))))))) == ECons(2, ECons(2, ECons(2, ENil)))
+        LazyList.replace(from = 3, to = 4, LList(lazy ECons(2, LList(lazy LCons(2, lazy LList(lazy LCons(2, lazy LList(lazy ENil)))))))) == ECons(2, ECons(2, ECons(2, ENil)))
 
     @test
     def replace13(): Bool =
-        LazyList.replace(3, 4, ECons(2, LCons(2, lazy LList(lazy ECons(2, ENil))))) == ECons(2, ECons(2, ECons(2, ENil)))
+        LazyList.replace(from = 3, to = 4, ECons(2, LCons(2, lazy LList(lazy ECons(2, ENil))))) == ECons(2, ECons(2, ECons(2, ENil)))
 
     @test
     def replace14(): Bool =
-        LazyList.replace(3, 4, ECons(2, ECons(3, LList(lazy ECons(2, ENil))))) == ECons(2, ECons(4, ECons(2, ENil)))
+        LazyList.replace(from = 3, to = 4, ECons(2, ECons(3, LList(lazy ECons(2, ENil))))) == ECons(2, ECons(4, ECons(2, ENil)))
 
     @test
     def replace15(): Bool =
-        LazyList.replace(3, 4, ECons(2, LList(lazy LCons(3, lazy ECons(2, ENil))))) == ECons(2, ECons(4, ECons(2, ENil)))
+        LazyList.replace(from = 3, to = 4, ECons(2, LList(lazy LCons(3, lazy ECons(2, ENil))))) == ECons(2, ECons(4, ECons(2, ENil)))
 
     @test
     def replace16(): Bool =
-        LazyList.replace(3, 4, ECons(2, ECons(3, LList(lazy ECons(2, LList(lazy ENil)))))) == ECons(2, ECons(4, ECons(2, ENil)))
+        LazyList.replace(from = 3, to = 4, ECons(2, ECons(3, LList(lazy ECons(2, LList(lazy ENil)))))) == ECons(2, ECons(4, ECons(2, ENil)))
 
 
     /////////////////////////////////////////////////////////////////////////////

@@ -705,8 +705,8 @@ namespace LazyList {
     ///
     /// Returns `l` with every occurrence of `x` replaced by `y`.
     ///
-    pub def replace(x: a, y: a, l: LazyList[a]): LazyList[a] with Eq[a] =
-        map(e -> if (x == e) y else e, l)
+    pub def replace(from :: a, to :: a, l: LazyList[a]): LazyList[a] with Eq[a] =
+        map(e -> if (from == e) to else e, l)
 
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
