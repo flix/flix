@@ -63,7 +63,7 @@ namespace Concurrent/ReentrantLock {
     pub def newCondition(lock: Concurrent/ReentrantLock.ReentrantLock): Concurrent/Condition.Condition & Impure =
         import java.util.concurrent.locks.ReentrantLock.newCondition();
         let ReentrantLock(l) = lock;
-        Concurrent/Condition.Condition(newCondition(l))
+        Concurrent.Condition(newCondition(l))
 
     ///
     /// Acquires the lock only if it is not held by another thread at the time of invocation.
