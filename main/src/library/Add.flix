@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-///
+/// test
 /// A type class for addition.
 ///
 pub lawless class Add[a] {
