@@ -74,8 +74,8 @@ namespace Concurrent/Channel {
             Bool, // unBuffered
             Int32, // maxQueueSize
             MutDeque[Boxed], // elementDeque
-            MutList[(Concurrent/ReentrantLock.ReentrantLock, Condition)], // waitingGetters
-            Condition // waitingPutters
+            MutList[(Concurrent/ReentrantLock.ReentrantLock, Concurrent/Condition.Condition)], // waitingGetters
+            Concurrent/Condition.Condition // waitingPutters
         )
     }
 
@@ -270,7 +270,7 @@ namespace Concurrent/Channel {
     /// has an element in the array along with its index. Returns false if the
     /// default case is chosen (no element was immediately available).
     ///
-    def selectHelper(channels: Array[Mpmc], hasDefault: Bool, sortedChannels: Array[Mpmc], selectLock: Concurrent/ReentrantLock.ReentrantLock, selectCondition: Condition): Option[(Int32, Boxed)] & Impure =
+    def selectHelper(channels: Array[Mpmc], hasDefault: Bool, sortedChannels: Array[Mpmc], selectLock: Concurrent/ReentrantLock.ReentrantLock, selectCondition: Concurrent/Condition.Condition): Option[(Int32, Boxed)] & Impure =
         // bug if the thread is interrupted
         if (threadInterrupted()) bug!("thread interrupted") else
 
@@ -378,7 +378,7 @@ namespace Concurrent/Channel {
     /// Add a condition to the list of waiting getters.
     /// The channel lock is expected to be held.
     ///
-    def addGetter(l: Concurrent/ReentrantLock.ReentrantLock, cond: Condition, c: Mpmc): Unit & Impure =
+    def addGetter(l: Concurrent/ReentrantLock.ReentrantLock, cond: Concurrent/Condition.Condition, c: Mpmc): Unit & Impure =
         let pair = (l, cond);
         let Mpmc(_, _, _, _, _, waitingGetters, _) = c;
 
@@ -431,7 +431,7 @@ namespace Concurrent/Channel {
     /// `bug!`.
     /// The channel lock is expected to be held.
     ///
-    def awaitCondition(c: Condition): Unit & Impure =
+    def awaitCondition(c: Concurrent/Condition.Condition): Unit & Impure =
         match Concurrent/Condition.awaitUninterruptibly(c) {
             case Ok(_) => ()
             case Err(_) =>
@@ -443,7 +443,7 @@ namespace Concurrent/Channel {
     /// Wrapper for `Concurrent/Condition.signalAll(c)` that handles `Err` with `bug!`.
     /// The condition lock is expected to be held.
     ///
-    def signalCondition(c: Condition): Unit & Impure =
+    def signalCondition(c: Concurrent/Condition.Condition): Unit & Impure =
         match Concurrent/Condition.signalAll(c) {
             case Ok(_) => ()
             case Err(_) =>
