@@ -126,7 +126,6 @@ class Flix {
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
-    "Condition.flix" -> LocalResource.get("/src/library/Condition.flix"),
     "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
     "DelayMap.flix" -> LocalResource.get("/src/library/DelayMap.flix"),
     "DemandList.flix" -> LocalResource.get("/src/library/DemandList.flix"),
@@ -145,7 +144,6 @@ class Flix {
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
-    "ReentrantLock.flix" -> LocalResource.get("/src/library/ReentrantLock.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
@@ -171,13 +169,15 @@ class Flix {
 
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
-    "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
-    "Ticker.flix" -> LocalResource.get("/src/library/Ticker.flix"),
-    "Timer.flix" -> LocalResource.get("/src/library/Timer.flix"),
-
     "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
     "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
+
+    "Concurrent/Channel.flix" -> LocalResource.get("/src/library/Concurrent/Channel.flix"),
+    "Concurrent/Condition.flix" -> LocalResource.get("/src/library/Concurrent/Condition.flix"),
+    "Concurrent/ReentrantLock.flix" -> LocalResource.get("/src/library/Concurrent/ReentrantLock.flix"),
+    "Concurrent/Channel/Ticker.flix" -> LocalResource.get("/src/library/Concurrent/Channel/Ticker.flix"),
+    "Concurrent/Channel/Timer.flix" -> LocalResource.get("/src/library/Concurrent/Channel/Timer.flix"),
 
     "Time/Duration.flix" -> LocalResource.get("/src/library/Time/Duration.flix"),
     "Time/Epoch.flix" -> LocalResource.get("/src/library/Time/Epoch.flix"),

@@ -17,18 +17,17 @@
 ///
 /// A wrapper around a Java Condition.
 ///
-opaque type Condition = ##java.util.concurrent.locks.Condition
+pub opaque type Condition = ##java.util.concurrent.locks.Condition
 
+namespace Concurrent/Condition {
 
-///
-/// An enum reflecting the two exceptions occurring in condition methods, lock state errors and thread interruptions.
-///
-pub enum ConditionError {
-    case MonitorStateError(##java.lang.IllegalMonitorStateException)
-    case InterruptedError(##java.lang.InterruptedException)
-}
-
-namespace Condition {
+    ///
+    /// An enum reflecting the two exceptions occurring in condition methods, lock state errors and thread interruptions.
+    ///
+    pub enum ConditionError {
+        case MonitorStateError(##java.lang.IllegalMonitorStateException)
+        case InterruptedError(##java.lang.InterruptedException)
+    }
 
     ///
     /// Causes the current thread to wait until it is signalled or interrupted.

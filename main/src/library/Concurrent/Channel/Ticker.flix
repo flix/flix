@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace Ticker {
+namespace Concurrent/Channel/Ticker {
 
     ///
     /// Returns a channel that receives the Unit value repeatedly every `n` days.
