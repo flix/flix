@@ -846,7 +846,7 @@ def flatMap10(): Bool = Set.flatMap(x -> Set#{x, 2*x, 3*x}, Set#{1, 4, 3, 2}) ==
 // replace                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def replace01(): Bool = Set.replace(3, 4, Set#{}) == Set#{}
+def replace01(): Bool = Set.replace(from = 3, to = 4, Set#{}) == Set#{}
 
 @test
 def replace02(): Bool = Set.replace(3, 4, Set#{1}) == Set#{1}
