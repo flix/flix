@@ -704,6 +704,15 @@ namespace MutList {
         StringBuilder.toString(sb)
 
     ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `v` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, v: MutList[a]): String & Impure with ToString[a] =
+        let sb = StringBuilder.new();
+        foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), (), v);
+        StringBuilder.toString(sb) |> String.dropRight(1)
+
+    ///
     /// Applies `f` to all the elements in `v`.
     ///
     pub def foreach(f: a -> Unit & ef, v: MutList[a]): Unit & Impure =

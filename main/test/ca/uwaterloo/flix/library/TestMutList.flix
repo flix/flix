@@ -1747,4 +1747,29 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,
     def sumWith06(): Bool & Impure =
         List.toMutList(10 :: -10 :: Nil) |> MutList.sumWith(x -> x + 1) == 2
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool & Impure =
+        (Nil: List[Int32]) |> List.toMutList |>
+            MutList.join(",") == ""
+
+    @test
+    def join02(): Bool & Impure =
+        (1 :: Nil) |> List.toMutList |>
+            MutList.join(",") == "1"
+
+    @test
+    def join03(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toMutList |>
+            MutList.join(",") == "1,2,3"
+
+    @test
+    def join04(): Bool & Impure =
+        ("1" :: "2" :: "3" :: Nil) |> List.toMutList |>
+            MutList.join(",") == "1,2,3"
+
 }
