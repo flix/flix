@@ -146,8 +146,10 @@ namespace MutDeque {
         def loop(i, e, acc) =
             if (i == e)
                 acc
-            else
-                loop((i - 1) &&& c, e, f(ar[i], acc));
+            else {
+                let j = (i - 1) &&& c;
+                loop(j, e, f(ar[j], acc))
+            };
         loop(back, front, s)
 
     ///
