@@ -2564,6 +2564,29 @@ namespace TestLazyList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // span span fusion                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def spanSpanFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
+        LazyList.span(x -> { l := "a" :: deref l; x < 3 }) |> fst |>
+        LazyList.span(x -> { l := "b" :: deref l; x < 3 }); // The working list is `1 :: 2 :: Nil`
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: Nil)
+
+    @test
+    def spanSpanFusion02(): Bool & Impure =
+        let l = ref Nil;
+        let _ =
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
+        LazyList.span(x -> { l := "a" :: deref l; x < 3 } as & Pure) |> fst |>
+        LazyList.span(x -> { l := "b" :: deref l; x < 3 } as & Pure) |> fst |>
+        LazyList.toList;
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
