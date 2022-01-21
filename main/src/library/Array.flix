@@ -1610,6 +1610,15 @@ namespace Array {
         StringBuilder.toString(sb)
 
     ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `a` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, a: MutList[a]): String & Impure with ToString[a] =
+        let sb = StringBuilder.new();
+        foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), (), a);
+        StringBuilder.toString(sb) |> String.dropRight(1)
+
+    ///
     /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to
     /// their `Order` instance.
     ///

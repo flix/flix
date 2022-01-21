@@ -4533,4 +4533,25 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
         Iterator.toArray(iter) `sameElements` [1, 2, 3]
     }
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool & Impure =
+        Array.join(",", []: Array[Int32]) == ""
+
+    @test
+    def join02(): Bool & Impure =
+        Array.join(",", [1]) == "1"
+
+    @test
+    def join03(): Bool & Impure =
+        Array.join(",", [1, 2, 3]) == "1,2,3"
+
+    @test
+    def join04(): Bool & Impure =
+        Array.join(",", ["1", "2", "3"]) == "1,2,3"
+
 }
