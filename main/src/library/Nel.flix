@@ -573,5 +573,12 @@ namespace Nel {
     pub def toMapWith(f: a -> b, l: Nel[a]): Map[a, b] with Order[a] =
         Nel.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), l)
 
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `l` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, l: Nel[a]): String with ToString[a] =
+        Foldable.join(sep, l)
+
 }
 
