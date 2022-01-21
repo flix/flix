@@ -97,7 +97,29 @@ namespace MutDeque {
     /// Returns the sum of all elements in the deque `d` according to the function `f`.
     ///
     pub def sumWith(f: a -> Int32 & ef, d: MutDeque[a]): Int32 & Impure =
-        // TODO: Refactor when fold is implemented
+        foldLeft((acc, x) -> f(x) + acc, 0, d)
+
+    ///
+    /// Returns the product of all elements in the deque `d`.
+    ///
+    pub def product(d: MutDeque[Int32]): Int32 & Impure =
+        productWith(identity, d)
+
+    ///
+    /// Returns the product of all elements in the deque `d` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, d: MutDeque[a]): Int32 & Impure =
+        if (isEmpty(d))
+            0
+        else
+            foldLeft((acc, x) -> f(x) * acc, 1, d)
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `d` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, d: MutDeque[a]): b & Impure =
         let MutDeque(ar_, front_, back_) = d;
         let ar = deref ar_;
         let front = deref front_;
@@ -107,8 +129,8 @@ namespace MutDeque {
             if (i == e)
                 acc
             else
-                loop((i + 1) &&& c, e, f(ar[i]) + acc);
-        loop(front, back, 0)
+                loop((i + 1) &&& c, e, f(acc, ar[i]));
+        loop(front, back, s)
 
     ///
     /// Returns `Some(x)` where `x` is the element at the front. Returns `None` if `d` is empty.

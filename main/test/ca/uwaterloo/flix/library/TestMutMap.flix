@@ -83,6 +83,7 @@ namespace TestMutMap {
 
         MutMap.sameElements(m, m2)
 
+
     /////////////////////////////////////////////////////////////////////////////
     // sumValues                                                               //
     /////////////////////////////////////////////////////////////////////////////
@@ -193,5 +194,107 @@ namespace TestMutMap {
     def sumWith06(): Bool & Impure =
         Map#{10 => 10, -10 => -10} |> Map.toMutMap |>
             MutMap.sumWith((k, v) -> k + v) == 0
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productValues                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productValues01(): Bool & Impure =
+        MutMap.empty() |> MutMap.productValues == 0
+
+    @test
+    def productValues02(): Bool & Impure =
+        Map#{1 => 1} |> Map.toMutMap |>
+            MutMap.productValues == 1
+
+    @test
+    def productValues03(): Bool & Impure =
+        Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toMutMap |>
+            MutMap.productValues == 6
+
+    @test
+    def productValues04(): Bool & Impure =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |> Map.toMutMap |>
+            MutMap.productValues == -18
+
+    @test
+    def productValues05(): Bool & Impure =
+        Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4} |> Map.toMutMap |>
+            MutMap.productValues == 24
+
+    @test
+    def productValues06(): Bool & Impure =
+        Map#{10 => 10, -10 => -10} |> Map.toMutMap |>
+            MutMap.productValues == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productKeys                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productKeys01(): Bool & Impure =
+        MutMap.empty() |> MutMap.productValues == 0
+
+    @test
+    def productKeys02(): Bool & Impure =
+        Map#{1 => 1} |> Map.toMutMap |>
+            MutMap.productKeys == 1
+
+    @test
+    def productKeys03(): Bool & Impure =
+        Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toMutMap |>
+            MutMap.productKeys == 6
+
+    @test
+    def productKeys04(): Bool & Impure =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |> Map.toMutMap |>
+            MutMap.productKeys == -18
+
+    @test
+    def productKeys05(): Bool & Impure =
+        Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4} |> Map.toMutMap |>
+            MutMap.productKeys == 40
+
+    @test
+    def productKeys06(): Bool & Impure =
+        Map#{10 => 10, -10 => -10} |> Map.toMutMap |>
+            MutMap.productKeys == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool & Impure =
+        MutMap.empty() |> MutMap.productWith((k, v) -> k + v) == 0
+
+    @test
+    def productWith02(): Bool & Impure =
+        Map#{1 => 1} |> Map.toMutMap |>
+            MutMap.productWith((k, v) -> k + v) == 2
+
+    @test
+    def productWith03(): Bool & Impure =
+        Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toMutMap |>
+            MutMap.productWith((k, v) -> k + v) == 48
+
+    @test
+    def productWith04(): Bool & Impure =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |> Map.toMutMap |>
+            MutMap.productWith((k, v) -> k + v) == -288
+
+    @test
+    def productWith05(): Bool & Impure =
+        Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4} |> Map.toMutMap |>
+            MutMap.productWith((k, v) -> k + v) == 384
+
+    @test
+    def productWith06(): Bool & Impure =
+        Map#{10 => 10, -10 => -10} |> Map.toMutMap |>
+            MutMap.productWith((k, v) -> k + v) == -400
 
 }

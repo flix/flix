@@ -682,6 +682,24 @@ namespace LazyList {
         Foldable.sumWith(f ,l)
 
     ///
+    /// Returns the product of all elements in the LazyList `l`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def product(l: LazyList[Int32]): Int32 =
+        Foldable.product(l)
+
+    ///
+    /// Returns the product of all elements in the LazyList `l` according to the function `f`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def productWith(f: a -> Int32 & ef, l: LazyList[a]): Int32 & ef =
+        Foldable.productWith(f, l)
+
+    ///
     /// Returns the concatenation of the elements in `l`.
     ///
     /// Does not force the tail of `l`.

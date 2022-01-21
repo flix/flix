@@ -434,4 +434,106 @@ namespace TestRedBlackTree {
         let Map(t) = Map#{10 => 10, -10 => -10};
         RedBlackTree.sumWith((k, v) -> k + v, t) == 0
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productValues                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productValues01(): Bool =
+        RedBlackTree.empty() |> RedBlackTree.productValues == 0
+
+    @test
+    def productValues02(): Bool =
+        let Map(t) = Map#{1 => 1};
+        RedBlackTree.productValues(t) == 1
+
+    @test
+    def productValues03(): Bool =
+        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
+        RedBlackTree.productValues(t) == 6
+
+    @test
+    def productValues04(): Bool =
+        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
+        RedBlackTree.productValues(t) == -18
+
+    @test
+    def productValues05(): Bool =
+        let Map(t) = Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4};
+        RedBlackTree.productValues(t) == 24
+
+    @test
+    def productValues06(): Bool =
+        let Map(t) = Map#{10 => 10, -10 => -10};
+        RedBlackTree.productValues(t) == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productKeys                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productKeys01(): Bool =
+        RedBlackTree.empty() |> RedBlackTree.productKeys == 0
+
+    @test
+    def productKeys02(): Bool =
+        let Map(t) = Map#{1 => 1};
+        RedBlackTree.productKeys(t) == 1
+
+    @test
+    def productKeys03(): Bool =
+        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
+        RedBlackTree.productKeys(t) == 6
+
+    @test
+    def productKeys04(): Bool =
+        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
+        RedBlackTree.productKeys(t) == -18
+
+    @test
+    def productKeys05(): Bool =
+        let Map(t) = Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4};
+        RedBlackTree.productKeys(t) == 40
+
+    @test
+    def productKeys06(): Bool =
+        let Map(t) = Map#{10 => 10, -10 => -10};
+        RedBlackTree.productKeys(t) == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool =
+        RedBlackTree.empty() |> RedBlackTree.productWith((k, v) -> k + v) == 0
+
+    @test
+    def productWith02(): Bool =
+        let Map(t) = Map#{1 => 1};
+        RedBlackTree.productWith((k, v) -> k + v, t) == 2
+
+    @test
+    def productWith03(): Bool =
+        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
+        RedBlackTree.productWith((k, v) -> k + v, t) == 48
+
+    @test
+    def productWith04(): Bool =
+        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
+        RedBlackTree.productWith((k, v) -> k + v, t) == -288
+
+    @test
+    def productWith05(): Bool =
+        let Map(t) = Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4};
+        RedBlackTree.productWith((k, v) -> k + v, t) == 384
+
+    @test
+    def productWith06(): Bool =
+        let Map(t) = Map#{10 => 10, -10 => -10};
+        RedBlackTree.productWith((k, v) -> k + v, t) == -400
+
 }
