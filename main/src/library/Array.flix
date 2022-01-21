@@ -1613,7 +1613,7 @@ namespace Array {
     /// Returns the concatenation of the string representation
     /// of each element in `a` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, a: MutList[a]): String & Impure with ToString[a] =
+    pub def join(sep: String, a: Array[a]): String & Impure with ToString[a] =
         let sb = StringBuilder.new();
         foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), (), a);
         StringBuilder.toString(sb) |> String.dropRight(1)
