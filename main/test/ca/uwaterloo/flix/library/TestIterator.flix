@@ -1171,4 +1171,29 @@ namespace TestIterator {
     def sumWith06(): Bool & Impure =
         List.toIterator(10 :: -10 :: Nil) |> Iterator.sumWith(x -> x + 1) == 2
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool & Impure =
+        (Nil: List[Int32]) |> List.toIterator |>
+            Iterator.join(",") == ""
+
+    @test
+    def join02(): Bool & Impure =
+        (1 :: Nil) |> List.toIterator |>
+            Iterator.join(",") == "1"
+
+    @test
+    def join03(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
+            Iterator.join(",") == "1,2,3"
+
+    @test
+    def join04(): Bool & Impure =
+        ("1" :: "2" :: "3" :: Nil) |> List.toIterator |>
+            Iterator.join(",") == "1,2,3"
+
 }
