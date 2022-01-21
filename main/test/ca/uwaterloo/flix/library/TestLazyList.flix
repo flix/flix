@@ -2680,4 +2680,29 @@ namespace TestLazyList {
     def order07(): Bool =
         ((1 :: Nil) |> List.toLazyList) <=> ((1 :: 1 :: Nil) |> List.toLazyList) == LessThan
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool =
+        (Nil: List[Int32]) |> List.toLazyList |>
+            LazyList.join(",") == ""
+
+    @test
+    def join02(): Bool =
+        (1 :: Nil) |> List.toLazyList |>
+            LazyList.join(",") == "1"
+
+    @test
+    def join03(): Bool =
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
+            LazyList.join(",") == "1,2,3"
+
+    @test
+    def join04(): Bool =
+        ("1" :: "2" :: "3" :: Nil) |> List.toLazyList |>
+            LazyList.join(",") == "1,2,3"
+
 }

@@ -96,6 +96,15 @@ namespace LazyList {
         StringBuilder.toString(sb)
 
     ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `l` with `sep` inserted between each element.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def join(sep: String, l: LazyList[a]): String with ToString[a] =
+        Foldable.join(sep, l)
+
+    ///
     /// Returns an empty LazyList.
     ///
     @Experimental
