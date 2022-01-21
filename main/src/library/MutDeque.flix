@@ -133,9 +133,9 @@ namespace MutDeque {
         loop(front, back, s)
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `d` going from left to right.
+    /// Applies `f` to a start value `s` and all elements in `d` going from right to left.
     ///
-    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
     pub def foldRight(f: (a, b) -> b & ef, s: b, d: MutDeque[a]): b & Impure =
         let MutDeque(ar_, front_, back_) = d;
