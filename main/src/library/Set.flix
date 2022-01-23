@@ -541,4 +541,11 @@ namespace Set {
     pub def toIterator(s: Set[a]): Iterator[a] & Impure =
         List.toIterator(Set.toList(s))
 
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `s` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, s: Set[a]): String with ToString[a] =
+        Foldable.join(sep, s)
+
 }
