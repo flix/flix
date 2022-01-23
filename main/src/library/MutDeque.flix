@@ -315,4 +315,13 @@ namespace MutDeque {
     pub def toList(d: MutDeque[a]): List[a] & Impure =
         foldRight((x, acc) -> x :: acc, Nil, d)
 
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `d` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, d: MutDeque[a]): String & Impure with ToString[a] =
+        let sb = StringBuilder.new();
+        foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), (), d);
+        StringBuilder.toString(sb) |> String.dropRight(1)
+
 }
