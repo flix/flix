@@ -917,4 +917,11 @@ namespace Chain {
         };
         loop(viewLeft(c), Applicative.point(empty()))
 
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `c` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, c: Chain[a]): String with ToString[a] =
+        Foldable.join(sep, c)
+
 }

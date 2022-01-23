@@ -1565,4 +1565,24 @@ namespace TestChain {
         Chain.sortWith(flip(cmp), List.toChain(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == List.toChain(4 :: 3 :: 2 :: 2 :: 1 :: 0 :: Nil)
 
 
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool =
+        Nil: List[Int32] |> List.toChain |> Chain.join(",") == ""
+
+    @test
+    def join02(): Bool =
+        (1 :: Nil) |> List.toChain |> Chain.join(",") == "1"
+
+    @test
+    def join03(): Bool =
+        (1 :: 2 :: 3 :: Nil) |> List.toChain |> Chain.join(",") == "1,2,3"
+
+    @test
+    def join04(): Bool =
+        ("1" :: "2" :: "3" :: Nil) |> List.toChain |> Chain.join(",") == "1,2,3"
+
 }
