@@ -265,6 +265,20 @@ namespace MutSet {
         Set.sumWith(f, deref ss)
 
     ///
+    /// Returns the product of all elements in the set `s`.
+    ///
+    pub def product(s: MutSet[Int32]): Int32 & Impure =
+        let MutSet(ss) = s;
+        Set.product(deref ss)
+
+    ///
+    /// Returns the product of all elements in the set `s` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, s: MutSet[a]): Int32 & Impure =
+        let MutSet(ss) = s;
+        Set.productWith(f, deref ss)
+
+    ///
     /// Returns `true` if and only if at least one element in the mutable set `s` satisfies the predicate function `f`.
     ///
     /// Returns `false` if `s` is the empty set.

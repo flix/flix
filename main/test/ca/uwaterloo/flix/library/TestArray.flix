@@ -1921,6 +1921,65 @@ def count06(): Bool & Impure = Array.count(i -> i > 3, [8,1]) == 1
 @test
 def count07(): Bool & Impure = Array.count(i -> i > 3, [6,7]) == 2
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool & Impure =
+        Array.product([]) == 0
+
+    @test
+    def product02(): Bool & Impure =
+        Array.product([1]) == 1
+
+    @test
+    def product03(): Bool & Impure =
+        Array.product([1, 2, 3]) == 6
+
+    @test
+    def product04(): Bool & Impure =
+        Array.product([1, 2, 3, -3]) == -18
+
+    @test
+    def product05(): Bool & Impure =
+        Array.product([-1, -2, -3, -4]) == 24
+
+    @test
+    def product06(): Bool & Impure =
+        Array.product([10, -10]) == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool & Impure =
+        Array.productWith(x -> x + 1, []) == 0
+
+    @test
+    def productWith02(): Bool & Impure =
+        Array.productWith(x -> x + 1, [1]) == 2
+
+    @test
+    def productWith03(): Bool & Impure =
+        Array.productWith(x -> x + 1, [1, 2, 3]) == 24
+
+    @test
+    def productWith04(): Bool & Impure =
+        Array.productWith(x -> x + 1, [1, 2, 3, -3]) == -48
+
+    @test
+    def productWith05(): Bool & Impure =
+        Array.productWith(x -> x + 1, [-2, -3, -4, -5]) == 24
+
+    @test
+    def productWith06(): Bool & Impure =
+        Array.productWith(x -> x + 1, [10, -10]) == -99
+
+
 /////////////////////////////////////////////////////////////////////////////
 // flatten                                                                 //
 /////////////////////////////////////////////////////////////////////////////

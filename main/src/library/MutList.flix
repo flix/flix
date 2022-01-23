@@ -126,6 +126,24 @@ namespace MutList {
         foldLeft((acc, x) -> acc + f(x), 0, v)
 
     ///
+    /// Returns the product of all elements in the mutable list `v`.
+    ///
+    pub def product(v: MutList[Int32]): Int32 & Impure =
+        if (isEmpty(v))
+            0
+        else
+            foldLeft((acc, x) -> acc * x, 1, v)
+
+    ///
+    /// Returns the product of all elements in the mutable list `v` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, v: MutList[a]): Int32 & Impure =
+        if (isEmpty(v))
+            0
+        else
+            foldLeft((acc, x) -> acc * f(x), 1, v)
+
+    ///
     /// Returns `true` if the given predicate `f` holds for at least one element of the given mutable list `v`.
     ///
     /// Returns `false` if the given mutable list `v` is empty.

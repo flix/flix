@@ -315,6 +315,18 @@ namespace Set {
         Foldable.sumWith(f, s)
 
     ///
+    /// Returns the product of all elements in the set `s`.
+    ///
+    pub def product(s: Set[Int32]): Int32 =
+        Foldable.product(s)
+
+    ///
+    /// Returns the product of all elements in the set `s` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
+        Foldable.productWith(f, s)
+
+    ///
     /// Returns the union of the elements in `s`.
     ///
     @Time(size(s) * Int32.log2(size(s))) @Space(size(s) * Int32.log2(size(s)))

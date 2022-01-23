@@ -682,6 +682,24 @@ namespace LazyList {
         Foldable.sumWith(f ,l)
 
     ///
+    /// Returns the product of all elements in the LazyList `l`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def product(l: LazyList[Int32]): Int32 =
+        Foldable.product(l)
+
+    ///
+    /// Returns the product of all elements in the LazyList `l` according to the function `f`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def productWith(f: a -> Int32 & ef, l: LazyList[a]): Int32 & ef =
+        Foldable.productWith(f, l)
+
+    ///
     /// Returns the concatenation of the elements in `l`.
     ///
     /// Does not force the tail of `l`.
@@ -807,33 +825,59 @@ namespace LazyList {
     /// `l1` is the longest prefix of `l` that satisfies the predicate `f`.
     /// `l2` is the remainder of `l`.
     ///
-    /// Forces elements in the list until the first element (inclusive) that does not satisfy the predicate `f`.
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    ///
+    /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
+    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     @Experimental @LazyWhenPure
     pub def span(f: a -> Bool & ef, l: LazyList[a]): (LazyList[a], LazyList[a]) & ef =
         reifyEff(f) {
             case Pure(g) =>
-                let s = lazy spanAcc(g, l, (ks, ls) -> (ks, ls));
-                (LList(lazy fst(force s)), LList(lazy snd(force s)))
-            case _       => spanAcc(f, l, (ks, ls) -> (ks, ls))
+                spanLAcc(g, l)
+            case _       => spanEAcc(f, l, (ks, ls) -> (ks, ls))
         }
 
     ///
     /// Helper function for `span`.
     ///
-    def spanAcc(f: a -> Bool & ef, l: LazyList[a], k: (LazyList[a], LazyList[a]) -> (LazyList[a], LazyList[a])): (LazyList[a], LazyList[a]) & ef = match l {
+    /// Applies `f` lazily (i.e. the tail is not forced).
+    ///
+    def spanLAcc(f: a -> Bool, l: LazyList[a]): (LazyList[a], LazyList[a]) = match l {
+        case ENil         => (ENil, ENil)
+        case ECons(x, xs) =>
+            if (f(x))
+                let t = lazy spanLAcc(f, xs);
+                (LCons(x, lazy fst(force t)), LList(lazy snd(force t)))
+            else
+                (ENil, l)
+        case LCons(x, xs) =>
+            if (f(x))
+                let t = lazy spanLAcc(f, force xs);
+                (LCons(x, lazy fst(force t)), LList(lazy snd(force t)))
+            else
+                (ENil, l)
+        case LList(xs)    => spanLAcc(f, force xs)
+    }
+
+    ///
+    /// Helper function for `span`.
+    ///
+    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
+    ///
+    def spanEAcc(f: a -> Bool & ef, l: LazyList[a], k: (LazyList[a], LazyList[a]) -> (LazyList[a], LazyList[a])): (LazyList[a], LazyList[a]) & ef = match l {
         case ENil         => k(ENil, ENil)
         case ECons(x, xs) =>
             if (f(x))
-                spanAcc(f, xs, (ks, ls) -> k(ECons(x, ks), ls))
+                spanEAcc(f, xs, (ks, ls) -> k(ECons(x, ks), ls))
             else
                 k(ENil, l)
         case LCons(x, xs) =>
             if (f(x))
-                spanAcc(f, force xs, (ks, ls) -> k(ECons(x, ks), ls))
+                spanEAcc(f, force xs, (ks, ls) -> k(ECons(x, ks), ls))
             else
                 k(ENil, l)
-        case LList(xs)    => spanAcc(f, force xs, k)
+        case LList(xs)    => spanEAcc(f, force xs, k)
     }
 
     ///

@@ -176,6 +176,34 @@ def count03(): Bool = Result.count(i -> i == 2, Ok(2)) == 1
     def sumWith03(): Bool = Result.sumWith(x -> x + 1, Ok(-2)) == -1
 
 
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool = Result.product(Err(false)) == 0
+
+    @test
+    def product02(): Bool = Result.product(Ok(1)) == 1
+
+    @test
+    def product03(): Bool = Result.product(Ok(-2)) == -2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool = Result.productWith(x -> x + 1, Err(false)) == 0
+
+    @test
+    def productWith02(): Bool = Result.productWith(x -> x + 1, Ok(1)) == 2
+
+    @test
+    def productWith03(): Bool = Result.productWith(x -> x + 1, Ok(-2)) == -1
+
+
 /////////////////////////////////////////////////////////////////////////////
 // find                                                                    //
 /////////////////////////////////////////////////////////////////////////////
