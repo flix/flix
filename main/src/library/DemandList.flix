@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+// type alias DemandList[a] = DemandList.DemandList[a, True]
+
+// instance Foldable[DemandList] {
+//     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DemandList[a]): b & ef = DemandList.foldLeft(f, s, l)
+//     pub def foldRight(f: (a, b) -> b & ef, s: b, l: DemandList[a]): b & ef = DemandList.foldRight(f, s, l)
+// }
 
 namespace DemandList {
 
@@ -397,6 +403,26 @@ namespace DemandList {
             flatMapEHelper(f, force xs, ks -> k(append(xs1, ks)))
         case LList(xs)    => flatMapEHelper(f, force xs, k)
     }
+
+    ///
+    /// Returns the product of all elements in the DemandList `l`.
+    ///
+    @Experimental
+    pub def product(l: DemandList[Int32, Forced]): Int32 =
+        if (isEmpty(l))
+            0
+        else
+            foldLeft((acc, x) -> acc * x, 1, l)
+
+    ///
+    /// Returns the product of all elements in the DemandList `l` according to the function `f`.
+    ///
+    @Experimental
+    pub def productWith(f: a -> Int32 & ef, l: DemandList[a, Forced]): Int32 & ef =
+        if (isEmpty(l))
+            0
+        else
+            foldLeft((acc, x) -> acc * f(x), 1, l)
 
     ///
     /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.

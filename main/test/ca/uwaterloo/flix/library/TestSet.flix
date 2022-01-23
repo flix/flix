@@ -535,6 +535,64 @@ def count08(): Bool & Impure =
         Set#{10, -10} |> Set.sumWith(x -> x + 1) == 2
 
 
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool =
+        Set.product(Set.empty()) == 0
+
+    @test
+    def product02(): Bool =
+       Set#{1} |> Set.product == 1
+
+    @test
+    def product03(): Bool =
+        Set#{1, 2, 3} |> Set.product == 6
+
+    @test
+    def product04(): Bool =
+        Set#{1, 2, 3, -3} |> Set.product == -18
+
+    @test
+    def product05(): Bool =
+        Set#{-1, -2, -3, -4} |> Set.product == 24
+
+    @test
+    def product06(): Bool =
+        Set#{10, -10} |> Set.product == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool =
+        Set#{} |> Set.productWith(x -> x + 1) == 0
+
+    @test
+    def productWith02(): Bool =
+        Set#{1} |> Set.productWith(x -> x + 1) == 2
+
+    @test
+    def productWith03(): Bool =
+        Set#{1, 2, 3} |> Set.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith04(): Bool =
+        Set#{1, 2, 3, -3} |> Set.productWith(x -> x + 1) == -48
+
+    @test
+    def productWith05(): Bool =
+        Set#{-2, -3, -4, -5} |> Set.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith06(): Bool =
+        Set#{10, -10} |> Set.productWith(x -> x + 1) == -99
+
+
 /////////////////////////////////////////////////////////////////////////////
 // flatten                                                                 //
 /////////////////////////////////////////////////////////////////////////////

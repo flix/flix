@@ -573,8 +573,29 @@ namespace Map {
     /// Returns the sum of all key-value pairs `k => v` in the map `m` according to the function `f`.
     ///
     pub def sumWith(f: (k, v) -> Int32 & ef, m: Map[k, v]): Int32 & ef =
-        // TODO: Purity polymorphic
+        // TODO: Purity polymorphic / Parallel when pure
         foldLeftWithKey((acc, k, v) -> f(k, v) + acc, 0, m)
+
+    ///
+    /// Returns the product of all keys in the map `m`.
+    ///
+    pub def productKeys(m: Map[Int32, v]): Int32 =
+        let Map(t) = m;
+        RedBlackTree.productKeys(t)
+
+    ///
+    /// Returns the product of all values in the map `m`.
+    ///
+    pub def productValues(m: Map[k, Int32]): Int32 =
+        let Map(t) = m;
+        RedBlackTree.productValues(t)
+
+    ///
+    /// Returns the product of all key-value pairs `k => v` in the map `m` according to the function `f`.
+    ///
+    pub def productWith(f: (k, v) -> Int32 & ef, m: Map[k, v]): Int32 & ef =
+        let Map(t) = m;
+        RedBlackTree.productWith(f, t)
 
     ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.

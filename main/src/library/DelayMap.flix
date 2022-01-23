@@ -679,4 +679,27 @@ namespace DelayMap {
         let DMap(t) = m;
         RedBlackTree.foldLeft((acc, k, v) -> acc + f(k, force v), 0, t)
 
+    ///
+    /// Returns the product of all keys in the DelayMap `m`.
+    ///
+    @Experimental
+    pub def productKeys(m: DelayMap[Int32, v]): Int32 =
+        let DMap(t) = m;
+        RedBlackTree.productKeys(t)
+
+    ///
+    /// Returns the product of all values in the DelayMap `m`.
+    ///
+    @Experimental
+    pub def productValues(m: DelayMap[k, Int32]): Int32 =
+        productWith((_, v) -> v, m)
+
+    ///
+    /// Returns the product of all key-value pairs `k => v` in the DelayMap `m` according to the function `f`.
+    ///
+    @Experimental
+    pub def productWith(f: (k, v) -> Int32 & ef, m: DelayMap[k, v]): Int32 & ef =
+        let DMap(t) = m;
+        RedBlackTree.productWith((k, v) -> f(k, force v), t)
+
 }

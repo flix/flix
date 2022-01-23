@@ -828,6 +828,64 @@ namespace TestLazyList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool =
+        List.toLazyList(Nil) |> LazyList.product == 0
+
+    @test
+    def product02(): Bool =
+        List.toLazyList(1 :: Nil) |> LazyList.product == 1
+
+    @test
+    def product03(): Bool =
+        List.toLazyList(1 :: 2 :: 3 :: Nil) |> LazyList.product == 6
+
+    @test
+    def product04(): Bool =
+        List.toLazyList(1 :: 2 :: 3 :: -3 :: Nil) |> LazyList.product == -18
+
+    @test
+    def product05(): Bool =
+        List.toLazyList(-1 :: -2 :: -3 :: -4 :: Nil) |> LazyList.product == 24
+
+    @test
+    def product06(): Bool =
+        List.toLazyList(10 :: -10 :: Nil) |> LazyList.product == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool =
+        List.toLazyList(Nil) |> LazyList.productWith(x -> x + 1) == 0
+
+    @test
+    def productWith02(): Bool =
+        List.toLazyList(1 :: Nil) |> LazyList.productWith(x -> x + 1) == 2
+
+    @test
+    def productWith03(): Bool =
+        List.toLazyList(1 :: 2 :: 3 :: Nil) |> LazyList.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith04(): Bool =
+        List.toLazyList(1 :: 2 :: 3 :: -3 :: Nil) |> LazyList.productWith(x -> x + 1) == -48
+
+    @test
+    def productWith05(): Bool =
+        List.toLazyList(-2 :: -3 :: -4 :: -5 :: Nil) |> LazyList.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith06(): Bool =
+        List.toLazyList(10 :: -10 :: Nil) |> LazyList.productWith(x -> x + 1) == -99
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // drop                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -2503,6 +2561,29 @@ namespace TestLazyList {
                 LCons(7, lazy LList(lazy ENil))))))))))))))))))))))))
             == (ECons(4, ECons(6, ENil)),
                     ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // span span fusion                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def spanSpanFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
+        LazyList.span(x -> { l := "a" :: deref l; x < 3 }) |> fst |>
+        LazyList.span(x -> { l := "b" :: deref l; x < 3 }); // The working list is `1 :: 2 :: Nil`
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: Nil)
+
+    @test
+    def spanSpanFusion02(): Bool & Impure =
+        let l = ref Nil;
+        let _ =
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
+        LazyList.span(x -> { l := "a" :: deref l; x < 3 } as & Pure) |> fst |>
+        LazyList.span(x -> { l := "b" :: deref l; x < 3 } as & Pure) |> fst |>
+        LazyList.toList;
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
 
 
     /////////////////////////////////////////////////////////////////////////////

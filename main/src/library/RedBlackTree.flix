@@ -768,4 +768,24 @@ namespace RedBlackTree {
                     Some(selector(ks, vs, kr, vr))
             }
     }
+
+    ///
+    /// Returns the product of all keys in the tree `t`.
+    ///
+    pub def productKeys(t: RedBlackTree[Int32, v]): Int32 =
+        productWith((k, _) -> k, t)
+
+    ///
+    /// Returns the product of all values in the tree `t`.
+    ///
+    pub def productValues(t: RedBlackTree[k, Int32]): Int32 =
+        productWith((_, v) -> v, t)
+
+    ///
+    /// Returns the product of all key-value pairs `k => v` in the tree `t` according to the function `f`.
+    ///
+    // TODO: Parallel impl
+    pub def productWith(f: (k, v) -> Int32 & ef, t: RedBlackTree[k, v]): Int32 & ef =
+        if (isEmpty(t)) 0 else foldLeft((acc, k, v) -> f(k, v) * acc, 1, t)
+
 }

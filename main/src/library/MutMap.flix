@@ -441,6 +441,27 @@ namespace MutMap {
         Map.sumWith(f, deref mm)
 
     ///
+    /// Returns the product of all keys in the mutable map `m`.
+    ///
+    pub def productKeys(m: MutMap[Int32, v]): Int32 & Impure =
+        let MutMap(mm) = m;
+        Map.productKeys(deref mm)
+
+    ///
+    /// Returns the product of all values in the mutable map `m`.
+    ///
+    pub def productValues(m: MutMap[k, Int32]): Int32 & Impure =
+        let MutMap(mm) = m;
+        Map.productValues(deref mm)
+
+    ///
+    /// Returns the product of all key-value pairs `k => v` in the mutable map `m` according to the function `f`.
+    ///
+    pub def productWith(f: (k, v) -> Int32 & ef, m: MutMap[k, v]): Int32 & Impure =
+        let MutMap(mm) = m;
+        Map.productWith(f, deref mm)
+
+    ///
     /// Returns `true` if and only if at least one mapping in the mutable map `m` satisfies the predicate function `f`.
     ///
     /// Returns `false` if `m` is the empty map.
