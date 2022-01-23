@@ -530,18 +530,18 @@ namespace Array {
         init(f, length(a))
 
     ///
-    /// Returns a copy of `a` with every occurrence of `x` replaced by `y`.
+    /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def replace(x: a, y: a, a: Array[a]): Array[a] & Impure with Eq[a] =
-        map(e -> if (e == x) y else e, a)
+    pub def replace(from: {from :: a}, to: {to :: a}, a: Array[a]): Array[a] & Impure with Eq[a] =
+        map(e -> if (e == from.from) to.to else e, a)
 
     ///
-    /// Replace every occurrence of `x` by `y` in the array `a`, mutating it in place.
+    /// Replace every occurrence of `from` by `to` in the array `a`, mutating it in place.
     ///
     @Time(length(a)) @Space(1)
-    pub def replace!(x: a, y: a, a: mut Array[a]): Unit & Impure with Eq[a] =
-        transform!(e -> if (e == x) y else e, a)
+    pub def replace!(from: {from :: a}, to: {to :: a}, a: mut Array[a]): Unit & Impure with Eq[a] =
+        transform!(e -> if (e == from.from) to.to else e, a)
 
     ///
     /// Returns `b` with the `n` elements starting at index `i` replaced with the elements of `a`.
