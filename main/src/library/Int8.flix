@@ -201,7 +201,7 @@ namespace Int8 {
     ///
     @Time(1) @Space(1)
     pub def highestOneBit(x: Int8): Int8 =
-        bitPositionToInt(highestOneBitPosition(x))
+        bitPositionToInt8(highestOneBitPosition(x))
 
     ///
     /// Returns a value with at most a single one-bit, in the position
@@ -210,14 +210,14 @@ namespace Int8 {
     ///
     @Time(1) @Space(1)
     pub def lowestOneBit(x: Int8): Int8 =
-        bitPositionToInt(lowestOneBitPosition(x))
+        bitPositionToInt8(lowestOneBitPosition(x))
 
     ///
     /// Helper function for highestOneBit and lowestOneBit.
     /// Returns a value with a single one-bit at bit number `position`.
     /// Returns 0 if `position` is outside the range 0-7 inclusive.
     ///
-    def bitPositionToInt(position: Int32): Int8 =
+    def bitPositionToInt8(position: Int32): Int8 =
         if (position < 0 or position > size() - 1) 0i8 else 1i8 <<< position
 
     ///

@@ -133,6 +133,26 @@ namespace MutDeque {
         loop(front, back, s)
 
     ///
+    /// Applies `f` to a start value `s` and all elements in `d` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, d: MutDeque[a]): b & Impure =
+        let MutDeque(ar_, front_, back_) = d;
+        let ar = deref ar_;
+        let front = deref front_;
+        let back = deref back_;
+        let c = capacity(d) - 1;
+        def loop(i, e, acc) =
+            if (i == e)
+                acc
+            else {
+                let j = (i - 1) &&& c;
+                loop(j, e, f(ar[j], acc))
+            };
+        loop(back, front, s)
+
+    ///
     /// Returns `Some(x)` where `x` is the element at the front. Returns `None` if `d` is empty.
     ///
     pub def popFront(d: MutDeque[a]): Option[a] & Impure =
@@ -288,5 +308,11 @@ namespace MutDeque {
             Array.sameElements(a1, b1)
         else
             false
+
+    ///
+    /// Returns `d` as a `List`.
+    ///
+    pub def toList(d: MutDeque[a]): List[a] & Impure =
+        foldRight((x, acc) -> x :: acc, Nil, d)
 
 }

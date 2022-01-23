@@ -923,31 +923,31 @@ namespace TestMutList {
         MutList.push!(2, v);
         MutList.push!(1, v);
         MutList.push!(1, v);
-        MutList.replace!(1, 42, v);
+        MutList.replace!(from = 1, to = 42, v);
         MutList.sameElements(List.toMutList(42 :: 2 :: 2 :: 42 :: 42 :: Nil), v)
 
     @test
     def replace!02(): Bool & Impure =
         let v = MutList.range(4, 7);
-        MutList.replace!(4, 0, v);
+        MutList.replace!(from = 4, to = 0, v);
         MutList.sameElements(List.toMutList(0 :: 5 :: 6 :: Nil), v)
 
     @test
     def replace!03(): Bool & Impure =
         let v = MutList.range(4, 7);
-        MutList.replace!(5, 0, v);
+        MutList.replace!(from = 5, to = 0, v);
         MutList.sameElements(List.toMutList(4 :: 0 :: 6 :: Nil), v)
 
     @test
     def replace!04(): Bool & Impure =
         let v = MutList.range(4, 7);
-        MutList.replace!(6, 0, v);
+        MutList.replace!(from = 6, to = 0, v);
         MutList.sameElements(List.toMutList(4 :: 5 :: 0 :: Nil), v)
 
     @test
     def replace!05(): Bool & Impure =
         let v = List.toMutList(List.repeat(97, 'a'));
-        MutList.replace!('a', 'z', v);
+        MutList.replace!(from = 'a', to = 'z', v);
         MutList.sameElements(List.toMutList(List.repeat(97, 'z')), v)
 
     /////////////////////////////////////////////////////////////////////////////

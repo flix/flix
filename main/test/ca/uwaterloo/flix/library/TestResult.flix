@@ -64,16 +64,16 @@ def withDefault04(): Bool = Result.withDefault({default = Err(true)}, Err(false)
 // replace                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def replace01(): Bool = Result.replace(3, 4, Err(false)) == Err(false)
+def replace01(): Bool = Result.replace(from = 3, to = 4, Err(false)) == Err(false)
 
 @test
-def replace02(): Bool = Result.replace(3, 4, Ok(2): Result[_, Unit]) == Ok(2)
+def replace02(): Bool = Result.replace(from = 3, to = 4, Ok(2): Result[_, Unit]) == Ok(2)
 
 @test
-def replace03(): Bool = Result.replace(3, 4, Ok(3)): Result[_, Unit] == Ok(4)
+def replace03(): Bool = Result.replace(from = 3, to = 4, Ok(3)): Result[_, Unit] == Ok(4)
 
 @test
-def replace04(): Bool = Result.replace(3, 4, Ok(4)): Result[_, Unit] == Ok(4)
+def replace04(): Bool = Result.replace(from = 3, to = 4, Ok(4)): Result[_, Unit] == Ok(4)
 
 /////////////////////////////////////////////////////////////////////////////
 // exists                                                                  //

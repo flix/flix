@@ -88,13 +88,13 @@ namespace MutSet {
         ms := Set.filter(f, deref ms)
 
     ///
-    /// Replaces the element `x` with the element `y` if `x` is in the mutable set `s`.
+    /// Replaces the element `from` with the element `to` if `from` is in the mutable set `s`.
     ///
-    /// The mutable set `s` is unchanged if the element `x` is not in it.
+    /// The mutable set `s` is unchanged if the element `from` is not in it.
     ///
-    pub def replace!(x: a, y: a, s: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def replace!(from: {from :: a}, to: {to :: a}, s: mut MutSet[a]): Unit & Impure with Order[a] =
         let MutSet(ms) = s;
-        ms := Set.replace(x, y, deref ms)
+        ms := Set.replace(from = from.from, to = to.to, deref ms)
 
     ///
     /// Applies the function `f` to every element in the mutable set `s`.

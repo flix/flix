@@ -999,42 +999,42 @@ def update07(): Bool & Impure =
 
 @test
 def replace01(): Bool & Impure =
-    let a = Array.replace(3, 4, []);
+    let a = Array.replace(from = 3, to = 4, []);
     Array.sameElements(a, []: Array[Int32])
 
 @test
 def replace02(): Bool & Impure =
-    let a = Array.replace(3, 4, [1]);
+    let a = Array.replace(from = 3, to = 4, [1]);
     Array.sameElements(a, [1])
 
 @test
 def replace03(): Bool & Impure =
-    let a = Array.replace(3, 4, [3]);
+    let a = Array.replace(from = 3, to = 4, [3]);
     Array.sameElements(a, [4])
 
 @test
 def replace04(): Bool & Impure =
-    let a = Array.replace(3, 4, [4]);
+    let a = Array.replace(from = 3, to = 4, [4]);
     Array.sameElements(a, [4])
 
 @test
 def replace05(): Bool & Impure =
-    let a = Array.replace(3, 4, [1, 2]);
+    let a = Array.replace(from = 3, to = 4, [1, 2]);
     Array.sameElements(a, [1,2])
 
 @test
 def replace06(): Bool & Impure =
-    let a = Array.replace(3, 4, [1,3]);
+    let a = Array.replace(from = 3, to = 4, [1,3]);
     Array.sameElements(a, [1,4])
 
 @test
 def replace07(): Bool & Impure =
-    let a = Array.replace(3, 4, [3,4]);
+    let a = Array.replace(from = 3, to = 4, [3,4]);
     Array.sameElements(a, [4,4])
 
 @test
 def replace08(): Bool & Impure =
-    let a = Array.replace(3, 4, [3,3]);
+    let a = Array.replace(from = 3, to = 4, [3,3]);
     Array.sameElements(a, [4,4])
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1044,49 +1044,49 @@ def replace08(): Bool & Impure =
 @test
 def replace01!(): Bool & Impure =
     let a: Array[Int32] = [];
-    Array.replace!(3, 4, a);
+    Array.replace!(from = 3, to = 4, a);
     Array.sameElements(a, []: Array[Int32])
 
 @test
 def replace02!(): Bool & Impure =
     let a = [1];
-    Array.replace!(3, 4, a);
+    Array.replace!(from = 3, to = 4, a);
     Array.sameElements(a, [1])
 
 @test
 def replace03!(): Bool & Impure =
     let a = [3];
-    Array.replace!(3, 4, a);
+    Array.replace!(from = 3, to = 4, a);
     Array.sameElements(a, [4])
 
 @test
 def replace04!(): Bool & Impure =
     let a = [4];
-    Array.replace!(3, 4, a);
+    Array.replace!(from = 3, to = 4, a);
     Array.sameElements(a, [4])
 
 @test
 def replace05!(): Bool & Impure =
     let a = [1, 2];
-    Array.replace!(3, 4, a);
+    Array.replace!(from = 3, to = 4, a);
     Array.sameElements(a, [1,2])
 
 @test
 def replace06!(): Bool & Impure =
     let a = [1,3];
-    Array.replace!(3, 4, a);
+    Array.replace!(from = 3, to = 4, a);
     Array.sameElements(a, [1,4])
 
 @test
 def replace07!(): Bool & Impure =
     let a = [3,4];
-    Array.replace!(3, 4, a);
+    Array.replace!(from = 3, to = 4, a);
     Array.sameElements(a, [4,4])
 
 @test
 def replace08!(): Bool & Impure =
     let a = [3,3];
-    Array.replace!(3, 4, a);
+    Array.replace!(from = 3, to = 4, a);
     Array.sameElements(a, [4,4])
 
 /////////////////////////////////////////////////////////////////////////////
