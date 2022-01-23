@@ -201,7 +201,7 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def highestOneBit(x: Int16): Int16 =
-        bitPositionToInt(highestOneBitPosition(x))
+        bitPositionToInt16(highestOneBitPosition(x))
 
     ///
     /// Returns a value with at most a single one-bit, in the position
@@ -210,14 +210,14 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def lowestOneBit(x: Int16): Int16 =
-        bitPositionToInt(lowestOneBitPosition(x))
+        bitPositionToInt16(lowestOneBitPosition(x))
 
     ///
     /// Helper function for highestOneBit and lowestOneBit.
     /// Returns a value with a single one-bit at bit number `position`.
     /// Returns 0 if `position` is outside the range 0-15 inclusive.
     ///
-    def bitPositionToInt(position: Int32): Int16 =
+    def bitPositionToInt16(position: Int32): Int16 =
         if (position < 0 or position > size() - 1) 0i16 else 1i16 <<< position
 
     ///
