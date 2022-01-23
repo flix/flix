@@ -1200,6 +1200,14 @@ namespace List {
             List.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), l)
 
     ///
+    /// Returns the list `l` as a mutable deque.
+    ///
+    pub def toMutDeque(l: List[a]): MutDeque[a] & Impure =
+        let d = MutDeque.new();
+        List.foldLeft((_, x) -> MutDeque.pushBack(x, d), (), l);
+        d
+
+    ///
     /// Applies `f` to every element of `l`.
     ///
     @Time(time(f)) @Space(space(f))
