@@ -72,7 +72,7 @@ namespace Result {
     }
 
     ///
-    /// Returns `Ok(y)` if `r` is `Ok(x)`. Otherwise returns `r`.
+    /// Returns `Ok(to)` if `r` is `Ok(from)`. Otherwise returns `r`.
     ///
     @Time(1) @Space(1)
     pub def replace(from: {from :: t}, to: {to :: t}, r: Result[t, e]): Result[t, e] with Eq[t] = match r {

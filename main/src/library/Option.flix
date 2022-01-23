@@ -107,7 +107,7 @@ namespace Option {
     }
 
     ///
-    /// Returns `Some(y)` if `o` is `Some(x)`. Otherwise returns `o`.
+    /// Returns `Some(to)` if `o` is `Some(from)`. Otherwise returns `o`.
     ///
     @Time(1) @Space(1)
     pub def replace(from: {from :: a}, to: {to :: a}, o: Option[a]): Option[a] with Eq[a] = match o {

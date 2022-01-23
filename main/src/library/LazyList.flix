@@ -523,7 +523,7 @@ namespace LazyList {
     }
 
     ///
-    /// Returns `l` with every occurrence of `x` replaced by `y`.
+    /// Returns `l` with every occurrence of `from` replaced by `to`.
     ///
     /// Does not force the tail of `l`.
     ///

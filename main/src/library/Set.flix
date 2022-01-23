@@ -406,7 +406,7 @@ namespace Set {
         foldLeft((acc, x) -> union(acc, f(x)), empty(), s)
 
     ///
-    /// Replaces the element `x` with `y` if `x` is in `s`. Otherwise, returns `s`.
+    /// Replaces the element `from` with `to` if `from` is in `s`. Otherwise, returns `s`.
     ///
     /// Note: The returned set may be smaller than `s`.
     ///

@@ -334,7 +334,7 @@ namespace Iterator {
         Iterator(done, next1)
 
     ///
-    /// Returns an iterator with every occurrence of `x` replaced by `y` in `iter`.
+    /// Returns an iterator with every occurrence of `from` replaced by `to` in `iter`.
     ///
     /// Does *not* consume any elements from the iterator.
     ///
