@@ -533,4 +533,10 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InvalidEscapeSequence](result)
   }
+
+  test("IllegalModifier.01") {
+    val input = "pub instance I[a]"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModifier](result)
+  }
 }
