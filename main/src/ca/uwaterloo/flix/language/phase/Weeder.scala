@@ -150,7 +150,7 @@ object Weeder {
       val doc = visitDoc(doc0)
       val tpe = visitType(tpe0)
       for {
-        mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public))
+        mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Unlawful))
         defs <- traverse(defs0)(visitInstanceDef)
         constrs <- traverse(constrs0)(visitTypeConstraint)
       } yield List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, constrs, defs.flatten, mkSL(sp1, sp2)))
@@ -2033,6 +2033,7 @@ object Weeder {
       case "pub" => Ast.Modifier.Public
       case "sealed" => Ast.Modifier.Sealed
       case "scoped" => Ast.Modifier.Scoped
+      case "unlawful" => Ast.Modifier.Unlawful
       case s => throw InternalCompilerException(s"Unknown modifier '$s' near ${mkSL(m.sp1, m.sp2).format}.")
     }
 
