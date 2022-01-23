@@ -331,6 +331,7 @@ object Documentor {
     case Modifier.Scoped => "scoped"
     case Modifier.Sealed => "sealed"
     case Modifier.Synthetic => "synthetic"
+    case Modifier.Unlawful => "unlawful"
   })
 
   /**
