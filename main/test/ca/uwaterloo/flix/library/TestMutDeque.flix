@@ -607,4 +607,106 @@ namespace TestMutDeque {
         MutDeque.pushBack(-10, d);
         MutDeque.productWith(x -> x + 1, d) == -99
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldLeft01(): Bool & Impure =
+        MutDeque.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, MutDeque.new()) == 100
+
+    @test
+    def foldLeft02(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, d) == 198
+
+    @test
+    def foldLeft03(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushFront(1, d);
+        MutDeque.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, d) == 198
+
+    @test
+    def foldLeft04(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushFront(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, d) == 196
+
+    @test
+    def foldLeft05(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, d) == 386
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRight01(): Bool & Impure =
+        MutDeque.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, MutDeque.new()) == 100
+
+    @test
+    def foldRight02(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, d) == 198
+
+    @test
+    def foldRight03(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushFront(1, d);
+        MutDeque.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, d) == 198
+
+    @test
+    def foldRight04(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushFront(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, d) == 194
+
+    @test
+    def foldRight05(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, d) == 382
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toList                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toList01(): Bool & Impure =
+        MutDeque.toList(MutDeque.new(): MutDeque[Int32]) == Nil: List[Int32]
+
+    @test
+    def toList02(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.toList(d) == 1 :: Nil
+
+    @test
+    def toList03(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.toList(d) == 1 :: 2 :: Nil
+
+    @test
+    def toList04(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.toList(d) == 1 :: 2 :: 3 :: Nil
+
 }
