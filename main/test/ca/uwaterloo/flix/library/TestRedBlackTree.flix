@@ -536,4 +536,51 @@ namespace TestRedBlackTree {
         let Map(t) = Map#{10 => 10, -10 => -10};
         RedBlackTree.productWith((k, v) -> k + v, t) == -400
 
+    /////////////////////////////////////////////////////////////////////////////
+    // joinValues                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinValues01(): Bool =
+        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.joinValues(",") == ""
+
+    @test
+    def joinValues02(): Bool =
+        let Map(t) = Map#{1 => 1};
+        RedBlackTree.joinValues(",", t) == "1"
+
+    @test
+    def joinValues03(): Bool =
+        let Map(t) = Map#{0 => 1, 1 => 2, 2 => 2};
+        RedBlackTree.joinValues(",", t) == "1,2,2"
+
+    @test
+    def joinValues04(): Bool =
+        let Map(t) = Map#{0 => "1", 1 => "2", 2 => "2"};
+        RedBlackTree.joinValues(",", t) == "1,2,2"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinKeys                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinKeys01(): Bool =
+        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.joinKeys(",") == ""
+
+    @test
+    def joinKeys02(): Bool =
+        let Map(t) = Map#{1 => 1};
+        RedBlackTree.joinKeys(",", t) == "1"
+
+    @test
+    def joinKeys03(): Bool =
+        let Map(t) = Map#{0 => 1, 1 => 2, 2 => 2};
+        RedBlackTree.joinKeys(",", t) == "0,1,2"
+
+    @test
+    def joinKeys04(): Bool =
+        let Map(t) = Map#{"0" => 1, "1" => 2, "2" => 2};
+        RedBlackTree.joinKeys(",", t) == "0,1,2"
+
 }
