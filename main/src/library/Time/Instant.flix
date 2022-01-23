@@ -1,0 +1,74 @@
+/*
+ * Copyright 2019 Magnus Madsen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+namespace Time {
+
+    ///
+    /// A wrapper around a Java instant.
+    ///
+    opaque type Instant = ##java.time.Instant
+
+    namespace Instant {
+
+        ///
+        /// Returns the current time from the system clock.
+        ///
+        @Experimental
+        pub def now(): Time.Instant & Impure =
+            import static java.time.Instant.now();
+            Time/Instant.Instant(now())
+
+        ///
+        /// Returns `true` if `x` is before `y`.
+        ///
+        @Experimental
+        pub def before(x: Time.Instant, y: Time.Instant): Bool =
+            import java.time.Instant.isBefore(##java.time.Instant);
+            let Time/Instant.Instant(t1) = x;
+            let Time/Instant.Instant(t2) = y;
+            (t1 `isBefore` t2) as & Pure
+
+        ///
+        /// Returns `true` if `x` is after `y`.
+        ///
+        @Experimental
+        pub def after(x: Time.Instant, y: Time.Instant): Bool =
+            import java.time.Instant.isAfter(##java.time.Instant);
+            let Time/Instant.Instant(t1) = x;
+            let Time/Instant.Instant(t2) = y;
+            (t1 `isAfter` t2) as & Pure
+
+        ///
+        /// Returns the given instant `x` plus `d` number of nano seconds.
+        ///
+        @Experimental
+        pub def plus(x: Time.Instant, d: Int64): Time.Instant =
+            import java.time.Instant.plusNanos(Int64);
+            let Time/Instant.Instant(t) = x;
+            Time/Instant.Instant(t `plusNanos` d) as & Pure
+
+        ///
+        /// Returns the given instant `x` minus `d` number of nano seconds.
+        ///
+        @Experimental
+        pub def minus(x: Time.Instant, d: Int64): Time.Instant =
+            import java.time.Instant.minusNanos(Int64);
+            let Time/Instant.Instant(t) = x;
+            Time/Instant.Instant(t `minusNanos` d) as & Pure
+
+    }
+
+}

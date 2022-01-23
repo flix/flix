@@ -42,7 +42,7 @@ namespace Comparison {
     /// `EqualTo` if `i == 0`.
     /// `GreaterThan` if `i > 0`.
     ///
-    pub def fromInt(i: Int32): Comparison =
+    pub def fromInt32(i: Int32): Comparison =
         if (i < 0) LessThan
         else if (i == 0) EqualTo
         else GreaterThan

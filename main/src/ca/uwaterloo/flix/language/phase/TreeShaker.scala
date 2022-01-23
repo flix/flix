@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst.Root
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.Symbol
@@ -34,12 +34,12 @@ import ca.uwaterloo.flix.util.Validation._
   * (c) Appears in a function which itself is reachable.
   *
   */
-object TreeShaker extends Phase[Root, Root] {
+object TreeShaker {
 
   /**
     * Performs tree shaking on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("TreeShaker") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("TreeShaker") {
     // Compute the symbols that are always reachable.
     val initReach = initReachable(root)
 
@@ -171,6 +171,9 @@ object TreeShaker extends Phase[Root, Root] {
     case Expression.Let(_, exp1, exp2, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
+    case Expression.LetRec(_, _, _, exp1, exp2, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
     case Expression.Is(_, _, exp, _) =>
       visitExp(exp)
 
@@ -224,12 +227,6 @@ object TreeShaker extends Phase[Root, Root] {
 
     case Expression.Assign(exp1, exp2, tpe, _) =>
       visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.Existential(_, exp, _) =>
-      visitExp(exp)
-
-    case Expression.Universal(_, exp, _) =>
-      visitExp(exp)
 
     case Expression.Cast(exp, _, _) =>
       visitExp(exp)

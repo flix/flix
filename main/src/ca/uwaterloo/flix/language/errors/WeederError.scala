@@ -16,16 +16,15 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
-import ca.uwaterloo.flix.util.vt.VirtualString._
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for weeding errors.
   */
-sealed trait WeederError extends CompilationError {
-  def kind = "Syntax Error"
+sealed trait WeederError extends CompilationMessage {
+  val kind = "Syntax Error"
 }
 
 object WeederError {
@@ -40,19 +39,25 @@ object WeederError {
   case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Multiple occurrences of the annotation '$name'."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Multiple occurrences of the annotation '" << Red("@" + name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Remove one of the two annotations." << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Multiple occurrences of the annotation '${red("@" + name)}'.
+         |
+         |${code(loc1, "the first occurrence was here.")}
+         |
+         |${code(loc2, "the second occurrence was here.")}
+         |
+         |""".stripMargin
     }
 
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Remove one of the two annotations."
+    })
+
     def loc: SourceLocation = loc1
+
   }
 
   /**
@@ -65,19 +70,25 @@ object WeederError {
   case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Multiple declarations of the formal parameter '$name'."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Multiple declarations of the formal parameter '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first declaration was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second declaration was here.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Remove or rename one of the formal parameters to avoid the name clash." << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Multiple declarations of the formal parameter '${red(name)}'.
+         |
+         |${code(loc1, "the first declaration was here.")}
+         |
+         |${code(loc2, "the second declaration was here.")}
+         |
+         |""".stripMargin
     }
 
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Remove or rename one of the formal parameters to avoid the name clash."
+    })
+
     def loc: SourceLocation = loc1
+
   }
 
   /**
@@ -90,15 +101,21 @@ object WeederError {
   case class DuplicateModifier(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Duplicate modifier '$name'."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Multiple occurrences of the modifier '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second occurrence was here.") << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Multiple occurrences of the modifier '${red(name)}'.
+         |
+         |${code(loc1, "the first occurrence was here.")}
+         |
+         |${code(loc2, "the second occurrence was here.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
 
     def loc: SourceLocation = loc1
   }
@@ -114,19 +131,25 @@ object WeederError {
   case class DuplicateTag(enumName: String, tag: Name.Tag, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Duplicate tag: '$tag'."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Multiple declarations of the tag '" << Red(tag.name) << "' in the enum '" << Cyan(enumName) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first declaration was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second declaration was here.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Remove or rename one of the tags to avoid the name clash." << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Multiple declarations of the tag '${red(tag.name)}' in the enum '${cyan(enumName)}'.
+         |
+         |${code(loc1, "the first declaration was here.")}
+         |
+         |${code(loc2, "the second declaration was here.")}
+         |
+         |""".stripMargin
     }
 
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Remove or rename one of the tags to avoid the name clash."
+    })
+
     def loc: SourceLocation = loc1
+
   }
 
   /**
@@ -137,13 +160,19 @@ object WeederError {
   case class IllegalArrayLength(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal array length"
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal array length." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal array length.") << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal array length.
+         |
+         |${code(loc, "illegal array length.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -154,13 +183,20 @@ object WeederError {
   case class IllegalFieldName(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal field name"
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal field name." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal field name.") << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |
+         |>> Illegal field name.
+         |
+         |${code(loc, "illegal field name.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -172,53 +208,21 @@ object WeederError {
   case class IllegalFormalParameter(name: String, loc: SourceLocation) extends WeederError {
     def summary: String = "The formal parameter must have a declared type."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> The formal parameter '" << Red(name) << "' must have a declared type." << NewLine
-      vt << NewLine
-      vt << Code(loc, "has no declared type.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Explicitly declare the type of the formal parameter." << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |
+         |>> The formal parameter '${red(name)}' must have a declared type.
+         |
+         |${code(loc, "has no declared type.")}
+         |""".stripMargin
     }
-  }
 
-  /**
-    * An error raised to indicate an illegal existential quantification expression.
-    *
-    * @param loc the location where the illegal expression occurs.
-    */
-  case class IllegalExistential(loc: SourceLocation) extends WeederError {
-    def summary: String = "The existential quantifier does not declare any formal parameters."
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Explicitly declare the type of the formal parameter."
+    })
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> The existential quantifier does not declare any formal parameters." << NewLine
-      vt << NewLine
-      vt << Code(loc, "quantifier must declare at least one parameter.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Add a formal parameter or remove the quantifier." << NewLine
-    }
-  }
-
-  /**
-    * An error raised to indicate an illegal universal quantification expression.
-    *
-    * @param loc the location where the illegal expression occurs.
-    */
-  case class IllegalUniversal(loc: SourceLocation) extends WeederError {
-    def summary: String = "The universal quantifier does not declare any formal parameters."
-
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> The universal quantifier does not declare any formal parameters." << NewLine
-      vt << NewLine
-      vt << Code(loc, "quantifier must declare at least one parameter.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Add a formal parameter or remove the quantifier." << NewLine
-    }
   }
 
   /**
@@ -229,15 +233,21 @@ object WeederError {
   case class IllegalFloat(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal float."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal float." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal float.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Ensure that the literal is within bounds." << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal float.
+         |
+         |${code(loc, "illegal float.")}
+         |
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Ensure that the literal is within bounds."
+    })
+
   }
 
   /**
@@ -248,15 +258,21 @@ object WeederError {
   case class IllegalInt(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal int."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal int." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal int.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Ensure that the literal is within bounds." << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal int.
+         |
+         |${code(loc, "illegal int.")}
+         |
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Ensure that the literal is within bounds."
+    })
+
   }
 
   /**
@@ -267,13 +283,19 @@ object WeederError {
   case class IllegalIntrinsic(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal intrinsic"
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal intrinsic." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal intrinsic.") << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal intrinsic.
+         |
+         |${code(loc, "illegal intrinsic.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -284,13 +306,19 @@ object WeederError {
   case class IllegalModifier(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal modifier."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal modifier." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal modifier.") << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal modifier.
+         |
+         |${code(loc, "illegal modifier.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -301,13 +329,19 @@ object WeederError {
   case class IllegalNullPattern(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal null pattern"
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal null pattern." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal null pattern.") << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal null pattern.
+         |
+         |${code(loc, "illegal null pattern.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -318,13 +352,19 @@ object WeederError {
   case class IllegalJvmFieldOrMethodName(loc: SourceLocation) extends WeederError {
     def summary: String = "Illegal jvm field or method name."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal jvm field or method name." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal name.") << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal jvm field or method name.
+         |
+         |${code(loc, "illegal name.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -335,13 +375,19 @@ object WeederError {
   case class IllegalWildcard(loc: SourceLocation) extends WeederError {
     def summary: String = "Wildcard not allowed here."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Wildcard not allowed here." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal wildcard.") << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Wildcard not allowed here.
+         |
+         |${code(loc, "illegal wildcard.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -354,13 +400,19 @@ object WeederError {
   case class MismatchedArity(expected: Int, actual: Int, loc: SourceLocation) extends WeederError {
     def summary: String = s"Mismatched arity: expected: $expected, actual: $actual."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << s">> Mismatched arity: expected: $expected, actual: $actual." << NewLine
-      vt << NewLine
-      vt << Code(loc, "mismatched arity.") << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Mismatched arity: expected: $expected, actual: $actual.
+         |
+         |${code(loc, "mismatched arity.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -373,19 +425,25 @@ object WeederError {
   case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     def summary: String = s"Multiple occurrences of '$name' in pattern."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Multiple occurrences of '" << Red(name) << "'  in pattern." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " A variable may only occur once in a pattern." << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Multiple occurrences of '${red(name)}'  in pattern.
+         |
+         |${code(loc1, "the first occurrence was here.")}
+         |
+         |${code(loc2, "the second occurrence was here.")}
+         |
+         |""".stripMargin
     }
 
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} A variable may only occur once in a pattern."
+    })
+
     def loc: SourceLocation = loc1 min loc2
+
   }
 
   /**
@@ -397,13 +455,19 @@ object WeederError {
   case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
     def summary: String = s"Undefined annotation $name"
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined annotation '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "undefined annotation.") << NewLine
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined annotation '${red(name)}'.
+         |
+         |${code(loc, "undefined annotation.")}
+         |""".stripMargin
     }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -415,15 +479,21 @@ object WeederError {
   case class IllegalPrivateDeclaration(ident: Name.Ident, loc: SourceLocation) extends WeederError {
     def summary: String = s"Illegal private declaration '${ident.name}'."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal private declaration '" << Red(ident.name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal private declaration") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << s" Mark the declaration as 'pub'."
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal private declaration '${red(ident.name)}'.
+         |
+         |${code(loc, "illegal private declaration")}
+         |
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Mark the declaration as 'pub'."
+    })
+
   }
 
   /**
@@ -434,15 +504,21 @@ object WeederError {
   case class IllegalTypeConstraintParameter(loc: SourceLocation) extends WeederError {
     def summary: String = s"Illegal type constraint parameter."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal type constraint parameter." << NewLine
-      vt << NewLine
-      vt << Code(loc, "illegal type constraint parameter") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << s" Type constraint parameters must be composed only of type variables."
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal type constraint parameter.
+         |
+         |${code(loc, "illegal type constraint parameter")}
+         |
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Type constraint parameters must be composed only of type variables."
+    })
+
   }
 
   /**
@@ -453,15 +529,21 @@ object WeederError {
   case class InconsistentTypeParameters(loc: SourceLocation) extends WeederError {
     def summary: String = "Either all or none of the type parameters must be annotated with a kind."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Inconsistent type parameters." << NewLine
-      vt << NewLine
-      vt << Code(loc, "inconsistent type parameters") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << s" Either all or none of the type parameters must be annotated with a kind."
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Inconsistent type parameters.
+         |
+         |${code(loc, "inconsistent type parameters")}
+         |
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Either all or none of the type parameters must be annotated with a kind."
+    })
+
   }
 
   /**
@@ -472,15 +554,21 @@ object WeederError {
   case class UnkindedTypeParameters(loc: SourceLocation) extends WeederError {
     def summary: String = "Type parameters here must be annotated with a kind."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Unkinded type parameters." << NewLine
-      vt << NewLine
-      vt << Code(loc, "unkinded type parameters") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << s" Type parameters here must be annotated with a kind."
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unkinded type parameters.
+         |
+         |${code(loc, "unkinded type parameters")}
+         |
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Type parameters here must be annotated with a kind."
+    })
+
   }
 
   /**
@@ -490,17 +578,23 @@ object WeederError {
     * @param loc  the location where the error occurred.
     */
   case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Malformed unicode escape sequence '${code}'."
+    def summary: String = s"Malformed unicode escape sequence '$code'."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Malformed unicode escape sequence." << NewLine
-      vt << NewLine
-      vt << Code(loc, "malformed unicode escape sequence") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
+    def message(formatter: Formatter): String = {
+      import formatter.{line, code => fmtcode}
+      s"""${line(kind, source.name)}
+         |>> Malformed unicode escape sequence.
+         |
+         |${fmtcode(loc, "malformed unicode escape sequence")}
+         |
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")}" + " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
+    })
+
   }
 
   /**
@@ -510,17 +604,23 @@ object WeederError {
     * @param loc  the location where the error occurred.
     */
   case class InvalidEscapeSequence(char: Char, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Invalid escape sequence '\\${char}'."
+    def summary: String = s"Invalid escape sequence '\\$char'."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Invalid escape sequence." << NewLine
-      vt << NewLine
-      vt << Code(loc, "invalid escape sequence") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\n', and '\\r'."
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Invalid escape sequence.
+         |
+         |${code(loc, "invalid escape sequence")}
+         |
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")}" + " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\${', '\\n', and '\\r'."
+    })
+
   }
 
   /**
@@ -532,15 +632,21 @@ object WeederError {
   case class NonSingleCharacter(chars: String, loc: SourceLocation) extends WeederError {
     def summary: String = "Non-single-character literal."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Non-single-character literal." << NewLine
-      vt << NewLine
-      vt << Code(loc, "non-single-character literal") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " A character literal must consist of a single character."
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Non-single-character literal.
+         |
+         |${code(loc, "non-single-character literal")}
+         |
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} A character literal must consist of a single character."
+    })
+
   }
 
   /**
@@ -551,15 +657,47 @@ object WeederError {
   case class EmptyInterpolatedExpression(loc: SourceLocation) extends WeederError {
     def summary: String = "Empty interpolated expression."
 
-    def message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Empty interpolated expression." << NewLine
-      vt << NewLine
-      vt << Code(loc, "empty interpolated expression") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Add an expression to the interpolation or remove the interpolation."
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Empty interpolated expression.
+         |
+         |${code(loc, "empty interpolated expression")}
+         |
+         |""".stripMargin
     }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Add an expression to the interpolation or remove the interpolation."
+    })
+
   }
 
+  /**
+    * An error raised to indicate that a newly defined type (or alias) has a
+    * pre-defined name.
+    *
+    * @param ident  the name that conflicts.
+    * @param loc    the location where the error occurred.
+    */
+  case class ReservedTypeName(ident: Name.Ident, loc: SourceLocation) extends WeederError {
+    def summary: String = "Re-definition of a pre-defined type name."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Re-definition of pre-defined type name '${red(ident.name)}'.
+         |
+         |${code(loc, "re-definition of a pre-defined type name")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Try to find a new type name that doesn't match one that is pre-defined."
+    })
+
+  }
 }
