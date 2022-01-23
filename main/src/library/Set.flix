@@ -418,13 +418,13 @@ namespace Set {
         foldLeft((acc, x) -> union(acc, f(x)), empty(), s)
 
     ///
-    /// Replaces the element `x` with `y` if `x` is in `s`. Otherwise, returns `s`.
+    /// Replaces the element `from` with `to` if `from` is in `s`. Otherwise, returns `s`.
     ///
     /// Note: The returned set may be smaller than `s`.
     ///
     @Time(Int32.log2(size(s))) @Space(Int32.log2(size(s)))
-    pub def replace(x: a, y: a, s: Set[a]): Set[a] with Order[a] =
-        if (memberOf(x, s)) insert(y, remove(x, s)) else s
+    pub def replace(from: {from :: a}, to: {to :: a}, s: Set[a]): Set[a] with Order[a] =
+        if (memberOf(from.from, s)) insert(to.to, remove(from.from, s)) else s
 
     ///
     /// Returns a pair of sets `(s1, s2)`.

@@ -196,7 +196,7 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def highestOneBit(x: Int64): Int64 =
-        bitPositionToInt(highestOneBitPosition(x))
+        bitPositionToInt64(highestOneBitPosition(x))
 
     ///
     /// Returns a value with at most a single one-bit, in the position
@@ -205,14 +205,14 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def lowestOneBit(x: Int64): Int64 =
-        bitPositionToInt(lowestOneBitPosition(x))
+        bitPositionToInt64(lowestOneBitPosition(x))
 
     ///
     /// Helper function for highestOneBit and lowestOneBit.
     /// Returns a value with a single one-bit at bit number `position`.
     /// Returns 0 if `position` is outside the range 0-63 inclusive.
     ///
-    def bitPositionToInt(position: Int32): Int64 =
+    def bitPositionToInt64(position: Int32): Int64 =
         if (position < 0 or position > size() - 1) 0i64 else 1i64 <<< position
 
     ///
