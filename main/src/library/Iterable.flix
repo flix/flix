@@ -25,3 +25,17 @@ pub lawless class Iterable[t: Type -> Type] {
     pub def iterator(t: t[a]): Iterator[a] & Impure
 
 }
+
+instance Iterable[List] {
+    pub def iterator(t: List[a]): Iterator[a] & Impure =
+        let list = ref t;
+        let done = () -> List.isEmpty(deref list);
+        let next = () -> match deref list {
+                case Cons(x, xs)  => {
+                    list := xs;
+                    x
+                }
+                case Nil => bug!("Empty Iterator!") as & Impure
+            };
+        Iterator(done, next)
+}
