@@ -25,7 +25,7 @@ pub enum Set[t] {
     case Set(RedBlackTree[t, Unit])
 }
 
-instance Boxable[Set[t]]
+instance Boxable[Set[t]] with Boxable[t]
 
 instance ToString[Set[a]] with ToString[a] {
     pub def toString(s: Set[a]): String =
