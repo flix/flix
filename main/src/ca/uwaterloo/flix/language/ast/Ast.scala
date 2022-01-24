@@ -372,9 +372,10 @@ object Ast {
 
   /**
     * Represents a positive or negative labelled dependency edge.
+    *
     * The labels represent predicate nodes that must co-occur for the dependency to be relevant.
     */
-  case class LabelledEdge(head: Name.Pred, p: Polarity, labels: Vector[Label], body: Name.Pred, loc: SourceLocation)
+  case class LabelledEdge(head: Name.Pred, polarity: Polarity, labels: Vector[Label], body: Name.Pred, loc: SourceLocation)
 
   /**
     * Represents a label in the labelled graph.
@@ -385,7 +386,7 @@ object Ast {
     /**
       * The empty labelled graph.
       */
-    val empty: LabelledGraph = LabelledGraph(Set.empty)
+    val empty: LabelledGraph = LabelledGraph(Vector.empty)
   }
 
   /**
@@ -398,7 +399,7 @@ object Ast {
     * we can also rule out `B -x> A`. The labelled edges would be `B -[C]-x> A`
     * and `C -[B]-> A`.
     */
-  case class LabelledGraph(edges: Set[LabelledEdge]) {
+  case class LabelledGraph(edges: Vector[LabelledEdge]) {
     /**
       * Returns a labelled graph with all labelled edges in `this` and `that` labelled graph.
       */
@@ -412,19 +413,17 @@ object Ast {
     }
 
     /**
-      * Returns `this` labelled graph including only the edges where all
-      * its labels are in `syms` and the labels match according to 'labelEquality'.
-      * A rule like
-      * `A(ta) :- B(tb), not C(tc).` is represented by `edge(A, pos, {la, lb, lc}, B)` etc.
-      * and is only included in the output if `syms` contains all of `la.pred, lb.pred, lc.pred` and `labelEquality(syms(A), la)` etc.
+      * Returns `this` labelled graph including only the edges where all its labels are in
+      * `syms` and the labels match according to `'`labelEq`'`.
+      *
+      * A rule like `A(ta) :- B(tb), not C(tc).` is represented by `edge(A, pos, {la, lb, lc}, B)` etc.
+      * and is only included in the output if `syms` contains all of `la.pred, lb.pred, lc.pred` and `labelEq(syms(A), la)` etc.
       */
-    def restrict(syms: Map[Name.Pred, Label], labelEquality: (Label, Label) => Boolean): LabelledGraph = {
-      def check(l: Label): Boolean =
-        syms.get(l.pred).exists(l0 => labelEquality(l0, l))
+    def restrict(syms: Map[Name.Pred, Label], labelEq: (Label, Label) => Boolean): LabelledGraph = {
+      def include(l: Label): Boolean = syms.get(l.pred).exists(l2 => labelEq(l, l2))
 
       LabelledGraph(edges.filter {
-        case LabelledEdge(_, _, labels, _, _) =>
-          labels.forall(check)
+        case LabelledEdge(_, _, labels, _, _) => labels.forall(include)
       })
     }
   }
@@ -433,7 +432,7 @@ object Ast {
     /**
       * Represents the empty stratification.
       */
-    val Empty: Stratification = Stratification(Map.empty)
+    val empty: Stratification = Stratification(Map.empty)
   }
 
   /**

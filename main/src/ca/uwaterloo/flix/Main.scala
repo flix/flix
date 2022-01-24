@@ -85,7 +85,6 @@ object Main {
       output = cmdOpts.output.map(s => Paths.get(s)),
       progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
-      xnostratifier = cmdOpts.xnostratifier,
       xperf = cmdOpts.xperf,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono
@@ -263,7 +262,6 @@ object Main {
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
                      xincremental: Boolean = false,
-                     xnostratifier: Boolean = false,
                      xperf: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
@@ -420,10 +418,6 @@ object Main {
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
-
-      // Xno-stratifier
-      opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
-        text("[experimental] disables computation of stratification.")
 
       // Xperf
       opt[Unit]("Xperf").action((_, c) => c.copy(xperf = true)).
