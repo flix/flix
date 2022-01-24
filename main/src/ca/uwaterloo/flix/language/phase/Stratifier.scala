@@ -707,8 +707,8 @@ object Stratifier {
   private def labelEquality(l1: Label, l2: Label)(implicit flix: Flix): Boolean =
     l1.pred == l2.pred &&
       l1.den == l2.den &&
-      l1.terms.zip(l2.terms).forall { case (t1, t2) => Unification.unifiesWith(t1, t2) } &&
-      l1.arity == l2.arity
+      l1.arity == l2.arity &&
+      l1.terms.zip(l2.terms).forall { case (t1, t2) => Unification.unifiesWith(t1, t2) }
 
   /**
     * Computes the dependency graph from the labelled graph, throwing the labels away.
