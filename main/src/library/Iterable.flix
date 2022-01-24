@@ -39,3 +39,16 @@ instance Iterable[List] {
             };
         Iterator(done, next)
 }
+
+instance Iterable[MutList] {
+    pub def iterator(t: MutList[a]): Iterator[a] & Impure =
+        let i = ref 0;
+        let list = ref t;
+        let done = () -> MutList.isEmpty(deref list);
+        let next = () -> {
+                let elem = MutList.get(deref i, deref list);
+                i := deref i + 1;
+                elem
+            };
+        Iterator(done, next)
+}
