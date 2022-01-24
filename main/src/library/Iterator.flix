@@ -20,7 +20,7 @@ pub enum Iterator[a] {
 
 namespace Iterator {
 
-    ///
+    /// test
     /// Returns `Some(x)` if `x` is the first element of `iter`.
     ///
     /// Returns `None` if `iter` is empty.
