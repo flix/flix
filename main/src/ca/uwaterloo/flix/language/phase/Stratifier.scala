@@ -29,7 +29,6 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import scala.annotation.tailrec
-import scala.collection.mutable
 
 /**
   * The stratification phase breaks constraints into strata.
@@ -45,9 +44,6 @@ object Stratifier {
     * Returns a stratified version of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Stratifier") {
-    // A cache of stratifications. Only caches successful stratifications.
-    val cache: Cache = mutable.Map.empty
-
     // Check if computation of stratification is disabled.
     if (flix.options.xnostratifier)
       return root.toSuccess
@@ -62,7 +58,7 @@ object Stratifier {
     // Compute the stratification at every datalog expression in the ast.`
     val defsVal = flix.subphase("Compute Stratification") {
       traverse(root.defs) {
-        case (sym, defn) => visitDef(defn)(g, cache, flix).map(d => sym -> d)
+        case (sym, defn) => visitDef(defn)(g, flix).map(d => sym -> d)
       }
     }
 
@@ -70,11 +66,6 @@ object Stratifier {
       case ds => root.copy(defs = ds.toMap)
     }
   }
-
-  /**
-    * A type alias for the stratification cache.
-    */
-  private type Cache = mutable.Map[Map[Name.Pred, Label], Stratification]
 
   /**
     * Computes the term types of a `Relation` or `Lattice` type.
@@ -91,7 +82,7 @@ object Stratifier {
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit g: LabelledGraph, cache: Cache, flix: Flix): Validation[Def, CompilationMessage] =
+  private def visitDef(def0: Def)(implicit g: LabelledGraph, flix: Flix): Validation[Def, CompilationMessage] =
     visitExp(def0.impl.exp) map {
       case e => def0.copy(impl = def0.impl.copy(exp = e))
     }
@@ -101,7 +92,7 @@ object Stratifier {
     *
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
-  private def visitExp(exp0: Expression)(implicit g: LabelledGraph, cache: Cache, flix: Flix): Validation[Expression, StratificationError] = exp0 match {
+  private def visitExp(exp0: Expression)(implicit g: LabelledGraph, flix: Flix): Validation[Expression, StratificationError] = exp0 match {
     case Expression.Unit(_) => exp0.toSuccess
 
     case Expression.Null(_, _) => exp0.toSuccess
@@ -379,7 +370,7 @@ object Stratifier {
 
     case Expression.FixpointConstraintSet(cs0, _, tpe, loc) =>
       // Compute the stratification.
-      val stf = stratifyWithCache(g, tpe, loc)
+      val stf = stratify(g, tpe, loc)
 
       mapN(stf) {
         case s =>
@@ -389,7 +380,7 @@ object Stratifier {
 
     case Expression.FixpointMerge(exp1, exp2, _, tpe, eff, loc) =>
       // Compute the stratification.
-      val stf = stratifyWithCache(g, tpe, loc)
+      val stf = stratify(g, tpe, loc)
 
       mapN(visitExp(exp1), visitExp(exp2), stf) {
         case (e1, e2, s) => Expression.FixpointMerge(e1, e2, s, tpe, eff, loc)
@@ -397,7 +388,7 @@ object Stratifier {
 
     case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
       // Compute the stratification.
-      val stf = stratifyWithCache(g, tpe, loc)
+      val stf = stratify(g, tpe, loc)
 
       mapN(visitExp(exp), stf) {
         case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
@@ -698,38 +689,16 @@ object Stratifier {
 
   /**
     * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
-    *
-    * Uses the given cache and updates it if required.
     */
-  private def stratifyWithCache(g: LabelledGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache, flix: Flix): Validation[Stratification, StratificationError] = {
+  private def stratify(g: LabelledGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Stratification, StratificationError] = {
     // The key is the set of predicates that occur in the row type.
     val key = predicateSymbolsOf(tpe)
 
-    // Lookup the key in the stratification cache.
-    cache.get(key) match {
-      case Some(stf) =>
-        // Cache hit: Return the stratification.
-        stf.toSuccess
+    // Compute the restricted labelled graph.
+    val rg = g.restrict(key, labelEquality)
 
-      case None =>
-        // Cache miss: Compute the stratification and possibly cache it.
-
-        // Compute the restricted labelled graph.
-        val rg = g.restrict(key, labelEquality)
-
-        // Compute the stratification.
-        UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc) match {
-          case Validation.Success(stf) =>
-            // Cache the stratification.
-            cache.put(key, stf)
-
-            // And return it.
-            stf.toSuccess
-          case Validation.Failure(errors) =>
-            // Unable to stratify. Do not cache the result.
-            Validation.Failure(errors)
-        }
-    }
+    // Compute the stratification.
+    UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc)
   }
 
   /**
