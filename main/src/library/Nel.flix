@@ -270,10 +270,10 @@ namespace Nel {
     }
 
     ///
-    /// Returns `l` with every occurrence of `x` replaced by `y`.
+    /// Returns `l` with every occurrence of `from` replaced by `to`.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def replace(x: a, y: a, l: Nel[a]): Nel[a] with Eq[a] = map(e -> if (e == x) y else e, l)
+    pub def replace(from: {from :: a}, to: {to :: a}, l: Nel[a]): Nel[a] with Eq[a] = map(e -> if (e == from.from) to.to else e, l)
 
     ///
     /// Returns all permutations of `l` in lexicographical order by element indices in `l`.
@@ -338,10 +338,10 @@ namespace Nel {
     /// The function f must be pure.
     ///
     /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
-    /// The foldRightL function exists to allow early termination of a fold.
+    /// The foldRightLazy function exists to allow early termination of a fold.
     ///
-    pub def foldRightL(f: (a, Lazy[b]) -> b, s: b, l: Nel[a]): b = match l {
-        case Nel(x, xs) => f(x, lazy List.foldRightL(f, s, xs))
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b, s: b, l: Nel[a]): b = match l {
+        case Nel(x, xs) => f(x, lazy List.foldRightLazy(f, s, xs))
     }
 
     ///
@@ -379,6 +379,30 @@ namespace Nel {
     pub def count(f: a -> Bool, l: Nel[a]): Int32 = match l {
         case Nel(x, xs) => (if (f(x)) 1 else 0) + List.count(f, xs)
     }
+
+    ///
+    /// Returns the sum of all elements in the list `l`.
+    ///
+    pub def sum(l: Nel[Int32]): Int32 =
+        Foldable.sum(l)
+
+    ///
+    /// Returns the sum of all elements in the list `l` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, l: Nel[a]): Int32 & ef =
+        Foldable.sumWith(f, l)
+
+    ///
+    /// Returns the product of all elements in the list `l`.
+    ///
+    pub def product(l: Nel[Int32]): Int32 =
+        Foldable.product(l)
+
+    ///
+    /// Returns the product of all elements in the list `l` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, l: Nel[a]): Int32 & ef =
+        Foldable.productWith(f, l)
 
     ///
     /// Returns the concatenation of the elements in `l`.
@@ -517,17 +541,6 @@ namespace Nel {
         }
 
     ///
-    /// Returns the sum of all elements in the list `l`.
-    ///
-    pub def sum(l: Nel[Int32]): Int32 =
-        def loop(l2, acc) = match l2 {
-            case Nil     => acc
-            case x :: xs => loop(xs, x + acc)
-        };
-        let Nel(x, xs) = l;
-        loop(x :: xs, 0)
-
-    ///
     /// Returns an iterator over `l`.
     ///
     pub def toIterator(l: Nel[a]): Iterator[a] & Impure =
@@ -559,6 +572,13 @@ namespace Nel {
     ///
     pub def toMapWith(f: a -> b, l: Nel[a]): Map[a, b] with Order[a] =
         Nel.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), l)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `l` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, l: Nel[a]): String with ToString[a] =
+        Foldable.join(sep, l)
 
 }
 

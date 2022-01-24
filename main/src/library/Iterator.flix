@@ -124,7 +124,47 @@ namespace Iterator {
         Iterator(done, next)
 
     ///
+    /// Returns the sum of all elements in the iterator `iter`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def sum(iter: Iterator[Int32]): Int32 & Impure =
+        foldLeft((acc, x) -> acc + x, 0, iter)
+
+    ///
+    /// Returns the sum of all elements in the iterator `iter` according to the function `f`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, iter: Iterator[a]): Int32 & Impure =
+        foldLeft((acc, x) -> acc + f(x), 0, iter)
+
+    ///
+    /// Returns the product of all elements in the iterator `iter`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def product(iter: Iterator[Int32]): Int32 & Impure =
+        if (isEmpty(iter))
+            0
+        else
+            foldLeft((acc, x) -> acc * x, 1, iter)
+
+    ///
+    /// Returns the product of all elements in the iterator `iter` according to the function `f`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def productWith(f: a -> Int32 & ef, iter: Iterator[a]): Int32 & Impure =
+        if (isEmpty(iter))
+            0
+        else
+            foldLeft((acc, x) -> acc * f(x), 1, iter)
+
+    ///
     /// Returns an array with the elements of `iter`.
+    ///
+    /// Consumes the entire iterator.
     ///
     pub def toArray(iter: Iterator[a]): Array[a] & Impure =
         let Iterator(done, next) = iter;
@@ -318,15 +358,15 @@ namespace Iterator {
         Iterator(done, next1)
 
     ///
-    /// Returns an iterator with every occurrence of `x` replaced by `y` in `iter`.
+    /// Returns an iterator with every occurrence of `from` replaced by `to` in `iter`.
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    pub def replace(x: a, y: a, iter: Iterator[a]): Iterator[a] with Eq[a] =
+    pub def replace(from: {from :: a}, to: {to :: a}, iter: Iterator[a]): Iterator[a] with Eq[a] =
         let Iterator(done, next) = iter;
         let next1 = () -> {
             let el = next();
-            if (el == x) y else el
+            if (el == from.from) to.to else el
         };
         Iterator(done, next1)
 
@@ -639,4 +679,16 @@ namespace Iterator {
         else
             let Iterator(d, n) = next();
             if (d()) intercalateForward(done, next) else Some(Iterator(d, n))
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `iter` with `sep` inserted between each element.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def join(sep: String, iter: Iterator[a]): String & Impure with ToString[a] =
+        let sb = StringBuilder.new();
+        foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), (), iter);
+        StringBuilder.toString(sb) |> String.dropRight(1)
+
 }

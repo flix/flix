@@ -325,6 +325,11 @@ object Ast {
       */
     case object Synthetic extends Modifier
 
+    /**
+      * The unlawful modifier.
+      */
+    case object Unlawful extends Modifier
+
   }
 
   /**

@@ -96,6 +96,15 @@ namespace LazyList {
         StringBuilder.toString(sb)
 
     ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `l` with `sep` inserted between each element.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def join(sep: String, l: LazyList[a]): String with ToString[a] =
+        Foldable.join(sep, l)
+
+    ///
     /// Returns an empty LazyList.
     ///
     @Experimental
@@ -523,13 +532,13 @@ namespace LazyList {
     }
 
     ///
-    /// Returns `l` with every occurrence of `x` replaced by `y`.
+    /// Returns `l` with every occurrence of `from` replaced by `to`.
     ///
     /// Does not force the tail of `l`.
     ///
     @Experimental @Lazy
-    pub def replace(x: a, y: a, l: LazyList[a]): LazyList[a] with Eq[a] =
-        map(e -> if (x == e) y else e, l)
+    pub def replace(from: {from :: a}, to: {to :: a}, l: LazyList[a]): LazyList[a] with Eq[a] =
+        map(e -> if (from.from == e) to.to else e, l)
 
     ///
     /// Returns `xs` with `a` inserted between every two adjacent elements.
@@ -664,6 +673,42 @@ namespace LazyList {
         foldLeft((i, x) -> if (f(x)) i + 1 else i, 0, l)
 
     ///
+    /// Returns the sum of all elements in the LazyList `l`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def sum(l: LazyList[Int32]): Int32 =
+        Foldable.sum(l)
+
+    ///
+    /// Returns the sum of all elements in the LazyList `l` according to the function `f`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def sumWith(f: a -> Int32 & ef, l: LazyList[a]): Int32 & ef =
+        Foldable.sumWith(f ,l)
+
+    ///
+    /// Returns the product of all elements in the LazyList `l`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def product(l: LazyList[Int32]): Int32 =
+        Foldable.product(l)
+
+    ///
+    /// Returns the product of all elements in the LazyList `l` according to the function `f`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def productWith(f: a -> Int32 & ef, l: LazyList[a]): Int32 & ef =
+        Foldable.productWith(f, l)
+
+    ///
     /// Returns the concatenation of the elements in `l`.
     ///
     /// Does not force the tail of `l`.
@@ -789,33 +834,59 @@ namespace LazyList {
     /// `l1` is the longest prefix of `l` that satisfies the predicate `f`.
     /// `l2` is the remainder of `l`.
     ///
-    /// Forces elements in the list until the first element (inclusive) that does not satisfy the predicate `f`.
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    ///
+    /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
+    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
     ///
     @Experimental @LazyWhenPure
     pub def span(f: a -> Bool & ef, l: LazyList[a]): (LazyList[a], LazyList[a]) & ef =
         reifyEff(f) {
             case Pure(g) =>
-                let s = lazy spanAcc(g, l, (ks, ls) -> (ks, ls));
-                (LList(lazy fst(force s)), LList(lazy snd(force s)))
-            case _       => spanAcc(f, l, (ks, ls) -> (ks, ls))
+                spanLAcc(g, l)
+            case _       => spanEAcc(f, l, (ks, ls) -> (ks, ls))
         }
 
     ///
     /// Helper function for `span`.
     ///
-    def spanAcc(f: a -> Bool & ef, l: LazyList[a], k: (LazyList[a], LazyList[a]) -> (LazyList[a], LazyList[a])): (LazyList[a], LazyList[a]) & ef = match l {
+    /// Applies `f` lazily (i.e. the tail is not forced).
+    ///
+    def spanLAcc(f: a -> Bool, l: LazyList[a]): (LazyList[a], LazyList[a]) = match l {
+        case ENil         => (ENil, ENil)
+        case ECons(x, xs) =>
+            if (f(x))
+                let t = lazy spanLAcc(f, xs);
+                (LCons(x, lazy fst(force t)), LList(lazy snd(force t)))
+            else
+                (ENil, l)
+        case LCons(x, xs) =>
+            if (f(x))
+                let t = lazy spanLAcc(f, force xs);
+                (LCons(x, lazy fst(force t)), LList(lazy snd(force t)))
+            else
+                (ENil, l)
+        case LList(xs)    => spanLAcc(f, force xs)
+    }
+
+    ///
+    /// Helper function for `span`.
+    ///
+    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
+    ///
+    def spanEAcc(f: a -> Bool & ef, l: LazyList[a], k: (LazyList[a], LazyList[a]) -> (LazyList[a], LazyList[a])): (LazyList[a], LazyList[a]) & ef = match l {
         case ENil         => k(ENil, ENil)
         case ECons(x, xs) =>
             if (f(x))
-                spanAcc(f, xs, (ks, ls) -> k(ECons(x, ks), ls))
+                spanEAcc(f, xs, (ks, ls) -> k(ECons(x, ks), ls))
             else
                 k(ENil, l)
         case LCons(x, xs) =>
             if (f(x))
-                spanAcc(f, force xs, (ks, ls) -> k(ECons(x, ks), ls))
+                spanEAcc(f, force xs, (ks, ls) -> k(ECons(x, ks), ls))
             else
                 k(ENil, l)
-        case LList(xs)    => spanAcc(f, force xs, k)
+        case LList(xs)    => spanEAcc(f, force xs, k)
     }
 
     ///
@@ -1199,24 +1270,5 @@ namespace LazyList {
         case ECons(x, xs) => toSetAcc(      xs, Set.insert(x, acc))
         case LCons(x, xs) => toSetAcc(force xs, Set.insert(x, acc))
         case LList(xs)    => toSetAcc(force xs, acc)
-    }
-
-    ///
-    /// Returns the sum of all elements in the list `l`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def sum(l: LazyList[Int32]): Int32 =
-        sumAcc(l, 0)
-
-    ///
-    /// Helper function for `sum`.
-    ///
-    def sumAcc(l: LazyList[Int32], acc: Int32): Int32 = match l {
-        case ENil         => acc
-        case ECons(x, xs) => sumAcc(      xs, x + acc)
-        case LCons(x, xs) => sumAcc(force xs, x + acc)
-        case LList(xs)    => sumAcc(force xs,     acc)
     }
 }

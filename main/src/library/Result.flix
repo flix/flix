@@ -72,11 +72,11 @@ namespace Result {
     }
 
     ///
-    /// Returns `Ok(y)` if `r` is `Ok(x)`. Otherwise returns `r`.
+    /// Returns `Ok(to)` if `r` is `Ok(from)`. Otherwise returns `r`.
     ///
     @Time(1) @Space(1)
-    pub def replace(x: t, y: t, r: Result[t, e]): Result[t, e] with Eq[t] = match r {
-        case Ok(v) => Ok(if (v == x) y else v)
+    pub def replace(from: {from :: t}, to: {to :: t}, r: Result[t, e]): Result[t, e] with Eq[t] = match r {
+        case Ok(v) => Ok(if (v == from.from) to.to else v)
         case Err(_) => r
     }
 
@@ -143,6 +143,36 @@ namespace Result {
     }
 
     ///
+    /// Returns `v` if `r` is `Ok(v)` else `0`.
+    ///
+    pub def sum(r: Result[Int32, e]): Int32 =
+        foldLeft((acc, x) -> acc + x, 0, r)
+
+    ///
+    /// Returns `f(v)` if `r` is `Ok(v)` else `0`.
+    ///
+    pub def sumWith(f: t -> Int32 & ef, r: Result[t, e]): Int32 & ef =
+        foldLeft((acc, x) -> acc + f(x), 0, r)
+
+    ///
+    /// Returns `v` if `r` is `Ok(v)` else `0`.
+    ///
+    pub def product(r: Result[Int32, e]): Int32 =
+        if (isErr(r))
+            0
+        else
+            foldLeft((acc, x) -> acc * x, 1, r)
+
+    ///
+    /// Returns `f(v)` if `r` is `Ok(v)` else `0`.
+    ///
+    pub def productWith(f: t -> Int32 & ef, r: Result[t, e]): Int32 & ef =
+        if (isErr(r))
+            0
+        else
+            foldLeft((acc, x) -> acc * f(x), 1, r)
+
+    ///
     /// Returns `Some(v)` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.
     ///
     /// The function `f` must be pure.
@@ -177,7 +207,7 @@ namespace Result {
     /// The function f must be pure.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foldRightL(f: (t, Lazy[a]) -> a, r: Result[t, e], z: a): a = match r {
+    pub def foldRightLazy(f: (t, Lazy[a]) -> a, r: Result[t, e], z: a): a = match r {
         case Ok(v) => f(v, lazy z)
         case Err(_) => z
     }

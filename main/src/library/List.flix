@@ -449,10 +449,10 @@ namespace List {
     }
 
     ///
-    /// Returns `l` with every occurrence of `a` replaced by `b`.
+    /// Returns `l` with every occurrence of `from` replaced by `to`.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def replace(a: a, b: a, l: List[a]): List[a] with Eq[a] = map(e -> if (e == a) b else e, l)
+    pub def replace(from: {from :: a}, to: {to :: a}, l: List[a]): List[a] with Eq[a] = map(e -> if (e == from.from) to.to else e, l)
 
     ///
     /// Returns `l2` with the `n` elements starting at index `i` replaced with the elements of `l1`.
@@ -668,9 +668,9 @@ namespace List {
     /// The function f must be pure.
     ///
     /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
-    /// The foldRightL function exists to allow early termination of a fold.
+    /// The foldRightLazy function exists to allow early termination of a fold.
     ///
-    pub def foldRightL(f: (a, Lazy[b]) -> b, s: b, l: List[a]): b =
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b, s: b, l: List[a]): b =
         def loop(l2) = match l2 {
             case Nil     => s
             case y :: ys => f(y, lazy loop(ys))
@@ -712,6 +712,18 @@ namespace List {
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def count(f: a -> Bool, l: List[a]): Int32 =
         foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, l)
+
+    ///
+    /// Returns the product of all elements in the list `l`.
+    ///
+    pub def product(l: List[Int32]): Int32 =
+        Foldable.product(l)
+
+    ///
+    /// Returns the product of all elements in the list `l` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, l: List[a]): Int32 & ef =
+        Foldable.productWith(f, l)
 
     ///
     /// Returns the concatenation of the elements in `l`.
@@ -1141,6 +1153,13 @@ namespace List {
         StringBuilder.toString(sb)
 
     ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `l` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, l: List[a]): String with ToString[a] =
+        Foldable.join(sep, l)
+
+    ///
     /// Returns the elements of `l` as a lazy list.
     ///
     pub def toLazyList(l: List[a]): LazyList[a] = match l {
@@ -1186,6 +1205,14 @@ namespace List {
     ///
     pub def toMapWith(f: a -> b, l: List[a]): Map[a, b] with Order[a] =
             List.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), l)
+
+    ///
+    /// Returns the list `l` as a mutable deque.
+    ///
+    pub def toMutDeque(l: List[a]): MutDeque[a] & Impure =
+        let d = MutDeque.new();
+        List.foldLeft((_, x) -> MutDeque.pushBack(x, d), (), l);
+        d
 
     ///
     /// Applies `f` to every element of `l`.
@@ -1357,11 +1384,13 @@ namespace List {
     /// Returns the sum of all elements in the list `l`.
     ///
     pub def sum(l: List[Int32]): Int32 =
-        def loop(l2, acc) = match l2 {
-            case Nil     => acc
-            case x :: xs => loop(xs, x + acc)
-        };
-        loop(l, 0)
+        Foldable.sum(l)
+
+    ///
+    /// Returns the sum of all elements in the list `l` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, l: List[a]): Int32 & ef =
+        Foldable.sumWith(f, l)
 
     ///
     /// Returns the elements of `l` as a `DemandList`.

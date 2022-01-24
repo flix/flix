@@ -186,7 +186,7 @@ object BenchmarkCompiler {
   private def newFlix(o: Options): Flix = {
     val flix = new Flix()
 
-    flix.setOptions(opts = o.copy(loadClassFiles = false, writeClassFiles = false))
+    flix.setOptions(opts = o.copy(loadClassFiles = false))
 
     // NB: We only use unit tests from the standard library because we want to test real code.
 

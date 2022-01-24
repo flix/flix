@@ -35,7 +35,37 @@ pub lawless class Foldable[t : Type -> Type] {
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
     pub def count(f: a -> Bool, t: t[a]): Int32 =
-      Foldable.foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, t)
+        Foldable.foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, t)
+
+    ///
+    /// Returns the sum of all elements in `t`.
+    ///
+    pub def sum(t: t[Int32]): Int32 =
+        Foldable.foldLeft((acc, x) -> acc + x, 0, t)
+
+    ///
+    /// Returns the sum of all elements in `t` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, t: t[a]): Int32 & ef =
+        Foldable.foldLeft((acc, x) -> acc + f(x), 0, t)
+
+    ///
+    /// Returns the product of all elements in `t`.
+    ///
+    pub def product(t: t[Int32]): Int32 =
+        if (Foldable.isEmpty(t))
+            0
+        else
+            Foldable.foldLeft((acc, x) -> acc * x, 1, t)
+
+    ///
+    /// Returns the product of all elements in `t` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, t: t[a]): Int32 & ef =
+        if (Foldable.isEmpty(t))
+            0
+        else
+            Foldable.foldLeft((acc, x) -> acc * f(x), 1, t)
 
     ///
     /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
@@ -258,6 +288,16 @@ pub lawless class Foldable[t : Type -> Type] {
     pub def foreachM(f: a -> m[b] & ef, t: t[a]): m[Unit] & ef with Monad[m] =
         use Applicative.{point, *>};
         Foldable.foldLeftM((acc, a) -> f(a) *> point(acc), (), t)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `t` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, t: t[a]): String with ToString[a] = {
+        let sb = StringBuilder.new();
+        t |> Foldable.foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), ());
+        StringBuilder.toString(sb) |> String.dropRight(1)
+    } as & Pure
 
 }
 

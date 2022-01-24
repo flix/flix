@@ -473,6 +473,126 @@ def count08(): Bool & Impure =
     MutList.toList(a) == range
 
 
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool =
+        Set.empty() |> Set.sum == 0
+
+    @test
+    def sum02(): Bool =
+        Set#{1} |> Set.sum == 1
+
+    @test
+    def sum03(): Bool =
+        Set#{1, 2, 3} |> Set.sum == 6
+
+    @test
+    def sum04(): Bool =
+        Set#{1, 2, 3, -3} |> Set.sum == 3
+
+    @test
+    def sum05(): Bool =
+        Set#{1, 2, -3, -4} |> Set.sum == -4
+
+    @test
+    def sum06(): Bool =
+        Set#{10, -10} |> Set.sum == 0
+
+    @test
+    def sum07(): Bool =
+        Set.range(1, 101) |> Set.sum == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        Set.empty() |> Set.sumWith(x -> x + 1) == 0
+
+    @test
+    def sumWith02(): Bool =
+        Set#{1} |> Set.sumWith(x -> x + 1) == 2
+
+    @test
+    def sumWith03(): Bool =
+        Set#{1, 2, 3} |> Set.sumWith(x -> x + 1) == 9
+
+    @test
+    def sumWith04(): Bool =
+        Set#{1, 2, 3, -3} |> Set.sumWith(x -> x + 1) == 7
+
+    @test
+    def sumWith05(): Bool =
+        Set#{-1, -2, -3, -4} |> Set.sumWith(x -> x + 1) == -6
+
+    @test
+    def sumWith06(): Bool =
+        Set#{10, -10} |> Set.sumWith(x -> x + 1) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool =
+        Set.product(Set.empty()) == 0
+
+    @test
+    def product02(): Bool =
+       Set#{1} |> Set.product == 1
+
+    @test
+    def product03(): Bool =
+        Set#{1, 2, 3} |> Set.product == 6
+
+    @test
+    def product04(): Bool =
+        Set#{1, 2, 3, -3} |> Set.product == -18
+
+    @test
+    def product05(): Bool =
+        Set#{-1, -2, -3, -4} |> Set.product == 24
+
+    @test
+    def product06(): Bool =
+        Set#{10, -10} |> Set.product == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool =
+        Set#{} |> Set.productWith(x -> x + 1) == 0
+
+    @test
+    def productWith02(): Bool =
+        Set#{1} |> Set.productWith(x -> x + 1) == 2
+
+    @test
+    def productWith03(): Bool =
+        Set#{1, 2, 3} |> Set.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith04(): Bool =
+        Set#{1, 2, 3, -3} |> Set.productWith(x -> x + 1) == -48
+
+    @test
+    def productWith05(): Bool =
+        Set#{-2, -3, -4, -5} |> Set.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith06(): Bool =
+        Set#{10, -10} |> Set.productWith(x -> x + 1) == -99
+
+
 /////////////////////////////////////////////////////////////////////////////
 // flatten                                                                 //
 /////////////////////////////////////////////////////////////////////////////
@@ -864,28 +984,28 @@ def flatMap10(): Bool = Set.flatMap(x -> Set#{x, 2*x, 3*x}, Set#{1, 4, 3, 2}) ==
 // replace                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def replace01(): Bool = Set.replace(3, 4, Set#{}) == Set#{}
+def replace01(): Bool = Set.replace(from = 3, to = 4, Set#{}) == Set#{}
 
 @test
-def replace02(): Bool = Set.replace(3, 4, Set#{1}) == Set#{1}
+def replace02(): Bool = Set.replace(from = 3, to = 4, Set#{1}) == Set#{1}
 
 @test
-def replace03(): Bool = Set.replace(3, 4, Set#{3}) == Set#{4}
+def replace03(): Bool = Set.replace(from = 3, to = 4, Set#{3}) == Set#{4}
 
 @test
-def replace04(): Bool = Set.replace(3, 4, Set#{4}) == Set#{4}
+def replace04(): Bool = Set.replace(from = 3, to = 4, Set#{4}) == Set#{4}
 
 @test
-def replace05(): Bool = Set.replace(3, 4, Set#{1, 2}) == Set#{1, 2}
+def replace05(): Bool = Set.replace(from = 3, to = 4, Set#{1, 2}) == Set#{1, 2}
 
 @test
-def replace06(): Bool = Set.replace(3, 4, Set#{1, 3}) == Set#{1, 4}
+def replace06(): Bool = Set.replace(from = 3, to = 4, Set#{1, 3}) == Set#{1, 4}
 
 @test
-def replace07(): Bool = Set.replace(3, 4, Set#{3, 2}) == Set#{4, 2}
+def replace07(): Bool = Set.replace(from = 3, to = 4, Set#{3, 2}) == Set#{4, 2}
 
 @test
-def replace08(): Bool = Set.replace(3, 4, Set#{3, 4}) == Set#{4}
+def replace08(): Bool = Set.replace(from = 3, to = 4, Set#{3, 4}) == Set#{4}
 
 /////////////////////////////////////////////////////////////////////////////
 // partition                                                               //
@@ -1328,5 +1448,26 @@ def unfoldWithIter06(): Bool & Impure =
     @test
     def toIterator03(): Bool & Impure =
         Set.range(0, 100) |> Set.toIterator |> Iterator.toSet == Set.range(0, 100)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool =
+        Set.join(",", Set.empty(): Set[Int32]) == ""
+
+    @test
+    def join02(): Bool =
+        Set.join(",", Set#{1}) == "1"
+
+    @test
+    def join03(): Bool =
+        Set.join(",", Set#{1, 2, 3}) == "1,2,3"
+
+    @test
+    def join04(): Bool =
+        Set.join(",", Set#{"1", "2", "3"}) == "1,2,3"
 
 }

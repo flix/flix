@@ -460,6 +460,30 @@ namespace Chain {
     }
 
     ///
+    /// Returns the sum of all elements in the chain `c`.
+    ///
+    pub def sum(c: Chain[Int32]): Int32 =
+        Foldable.sum(c)
+
+    ///
+    /// Returns the sum of all elements in the chain `c` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, c: Chain[a]): Int32 & ef =
+        Foldable.sumWith(f, c)
+
+    ///
+    /// Returns the product of all elements in the list `l`.
+    ///
+    pub def product(c: Chain[Int32]): Int32 =
+        Foldable.product(c)
+
+    ///
+    /// Returns the product of all elements in the list `l` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, c: Chain[a]): Int32 & ef =
+        Foldable.productWith(f, c)
+
+    ///
     /// Returns the concatenation of the elements in `c`.
     ///
     pub def flatten(c: Chain[Chain[a]]): Chain[a] =
@@ -892,5 +916,12 @@ namespace Chain {
             case SomeLeft(x, rs) => loop(viewLeft(rs), snocA(acc, f(x)))
         };
         loop(viewLeft(c), Applicative.point(empty()))
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `c` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, c: Chain[a]): String with ToString[a] =
+        Foldable.join(sep, c)
 
 }

@@ -1,8 +1,8 @@
 namespace Test/TypeAlias/Rel {
 
-    rel A(x: Int)
-    rel B(x: Int, y: Int)
-    rel C(x: Int, y: Int, z: Int)
+    rel A(x: Int32)
+    rel B(x: Int32, y: Int32)
+    rel C(x: Int32, y: Int32, z: Int32)
 
     @test
     def testTypeAlias01(): #{A} = #{
@@ -59,22 +59,22 @@ namespace Test/TypeAlias/Rel {
     }
 
     @test
-    def testPolyTypeAlias03(): #{H[Bool, Int]} = #{
+    def testPolyTypeAlias03(): #{H[Bool, Int32]} = #{
         H(true, 21). H(false, 42).
     }
 
     @test
-    def testPolyTypeAlias04(): #{H[Int, Bool]} = #{
+    def testPolyTypeAlias04(): #{H[Int32, Bool]} = #{
         H(21, true). H(42, false).
     }
 
     @test
-    def testPolyTypeAlias05(): #{I[Bool, Int, String]} = #{
+    def testPolyTypeAlias05(): #{I[Bool, Int32, String]} = #{
         I(true, 21, "Hello"). I(false, 42, "World!").
     }
 
     @test
-    def testPolyTypeAlias06(): #{I[Int, String, Bool]} = #{
+    def testPolyTypeAlias06(): #{I[Int32, String, Bool]} = #{
         I(21, "Hello", true). I(42, "World!", false).
     }
 
@@ -84,7 +84,7 @@ namespace Test/TypeAlias/Rel {
     }
 
     @test
-    def testPolyTypeAlias08(): #{G[Int32], H[Bool, Int], I[Bool, Int, String]} = #{
+    def testPolyTypeAlias08(): #{G[Int32], H[Bool, Int32], I[Bool, Int32, String]} = #{
         G(1). G(2). G(3).
         H(true, 21). H(false, 42).
         I(true, 21, "Hello"). I(false, 42, "World!").

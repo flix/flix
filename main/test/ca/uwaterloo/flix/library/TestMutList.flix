@@ -161,6 +161,65 @@ namespace TestMutList {
     @test
     def count04(): Bool & Impure = MutList.count(x -> x == 11, MutList.range(0, 21)) == 1
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool & Impure =
+        List.toMutList(Nil) |> MutList.product == 0
+
+    @test
+    def product02(): Bool & Impure =
+        List.toMutList(1 :: Nil) |> MutList.product == 1
+
+    @test
+    def product03(): Bool & Impure =
+        List.toMutList(1 :: 2 :: 3 :: Nil) |> MutList.product == 6
+
+    @test
+    def product04(): Bool & Impure =
+        List.toMutList(1 :: 2 :: 3 :: -3 :: Nil) |> MutList.product == -18
+
+    @test
+    def product05(): Bool & Impure =
+        List.toMutList(-1 :: -2 :: -3 :: -4 :: Nil) |> MutList.product == 24
+
+    @test
+    def product06(): Bool & Impure =
+        List.toMutList(10 :: -10 :: Nil) |> MutList.product == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool & Impure =
+        List.toMutList(Nil) |> MutList.productWith(x -> x + 1) == 0
+
+    @test
+    def productWith02(): Bool & Impure =
+        List.toMutList(1 :: Nil) |> MutList.productWith(x -> x + 1) == 2
+
+    @test
+    def productWith03(): Bool & Impure =
+        List.toMutList(1 :: 2 :: 3 :: Nil) |> MutList.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith04(): Bool & Impure =
+        List.toMutList(1 :: 2 :: 3 :: -3 :: Nil) |> MutList.productWith(x -> x + 1) == -48
+
+    @test
+    def productWith05(): Bool & Impure =
+        List.toMutList(-2 :: -3 :: -4 :: -5 :: Nil) |> MutList.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith06(): Bool & Impure =
+        List.toMutList(10 :: -10 :: Nil) |> MutList.productWith(x -> x + 1) == -99
+
+
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
@@ -864,31 +923,31 @@ namespace TestMutList {
         MutList.push!(2, v);
         MutList.push!(1, v);
         MutList.push!(1, v);
-        MutList.replace!(1, 42, v);
+        MutList.replace!(from = 1, to = 42, v);
         MutList.sameElements(List.toMutList(42 :: 2 :: 2 :: 42 :: 42 :: Nil), v)
 
     @test
     def replace!02(): Bool & Impure =
         let v = MutList.range(4, 7);
-        MutList.replace!(4, 0, v);
+        MutList.replace!(from = 4, to = 0, v);
         MutList.sameElements(List.toMutList(0 :: 5 :: 6 :: Nil), v)
 
     @test
     def replace!03(): Bool & Impure =
         let v = MutList.range(4, 7);
-        MutList.replace!(5, 0, v);
+        MutList.replace!(from = 5, to = 0, v);
         MutList.sameElements(List.toMutList(4 :: 0 :: 6 :: Nil), v)
 
     @test
     def replace!04(): Bool & Impure =
         let v = MutList.range(4, 7);
-        MutList.replace!(6, 0, v);
+        MutList.replace!(from = 6, to = 0, v);
         MutList.sameElements(List.toMutList(4 :: 5 :: 0 :: Nil), v)
 
     @test
     def replace!05(): Bool & Impure =
         let v = List.toMutList(List.repeat(97, 'a'));
-        MutList.replace!('a', 'z', v);
+        MutList.replace!(from = 'a', to = 'z', v);
         MutList.sameElements(List.toMutList(List.repeat(97, 'z')), v)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1633,30 +1692,84 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,
 
     @test
     def sum01(): Bool & Impure =
-        MutList.sum(MutList.new()) == 0
+        List.toMutList(Nil) |> MutList.sum == 0
 
     @test
     def sum02(): Bool & Impure =
-        (1 :: Nil) |> List.toMutList |> MutList.sum == 1
+        List.toMutList(1 :: Nil) |> MutList.sum == 1
 
     @test
     def sum03(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toMutList |> MutList.sum == 6
+        List.toMutList(1 :: 2 :: 3 :: Nil) |> MutList.sum == 6
 
     @test
     def sum04(): Bool & Impure =
-        (1 :: 2 :: 3 :: -3 :: Nil) |> List.toMutList |> MutList.sum == 3
+        List.toMutList(1 :: 2 :: 3 :: -3 :: Nil) |> MutList.sum == 3
 
     @test
     def sum05(): Bool & Impure =
-        (-1 :: -2 :: -3 :: -4 :: Nil) |> List.toMutList |> MutList.sum == -10
+        List.toMutList(-1 :: -2 :: -3 :: -4 :: Nil) |> MutList.sum == -10
 
     @test
     def sum06(): Bool & Impure =
-        (10 :: -10 :: Nil) |> List.toMutList |> MutList.sum == 0
+        List.toMutList(10 :: -10 :: Nil) |> MutList.sum == 0
 
     @test
     def sum07(): Bool & Impure =
         List.range(1, 101) |> List.toMutList |> MutList.sum == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool & Impure =
+        List.toMutList(Nil) |> MutList.sumWith(x -> x + 1) == 0
+
+    @test
+    def sumWith02(): Bool & Impure =
+        List.toMutList(1 :: Nil) |> MutList.sumWith(x -> x + 1) == 2
+
+    @test
+    def sumWith03(): Bool & Impure =
+        List.toMutList(1 :: 2 :: 3 :: Nil) |> MutList.sumWith(x -> x + 1) == 9
+
+    @test
+    def sumWith04(): Bool & Impure =
+        List.toMutList(1 :: 2 :: 3 :: -3 :: Nil) |> MutList.sumWith(x -> x + 1) == 7
+
+    @test
+    def sumWith05(): Bool & Impure =
+        List.toMutList(-1 :: -2 :: -3 :: -4 :: Nil) |> MutList.sumWith(x -> x + 1) == -6
+
+    @test
+    def sumWith06(): Bool & Impure =
+        List.toMutList(10 :: -10 :: Nil) |> MutList.sumWith(x -> x + 1) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool & Impure =
+        (Nil: List[Int32]) |> List.toMutList |>
+            MutList.join(",") == ""
+
+    @test
+    def join02(): Bool & Impure =
+        (1 :: Nil) |> List.toMutList |>
+            MutList.join(",") == "1"
+
+    @test
+    def join03(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toMutList |>
+            MutList.join(",") == "1,2,3"
+
+    @test
+    def join04(): Bool & Impure =
+        ("1" :: "2" :: "3" :: Nil) |> List.toMutList |>
+            MutList.join(",") == "1,2,3"
 
 }

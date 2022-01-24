@@ -126,7 +126,6 @@ class Flix {
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
-    "Condition.flix" -> LocalResource.get("/src/library/Condition.flix"),
     "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
     "DelayMap.flix" -> LocalResource.get("/src/library/DelayMap.flix"),
     "DemandList.flix" -> LocalResource.get("/src/library/DemandList.flix"),
@@ -136,6 +135,7 @@ class Flix {
     "Int16.flix" -> LocalResource.get("/src/library/Int16.flix"),
     "Int32.flix" -> LocalResource.get("/src/library/Int32.flix"),
     "Int64.flix" -> LocalResource.get("/src/library/Int64.flix"),
+    "Iterable.flix" -> LocalResource.get("/src/library/Iterable.flix"),
     "Iterator.flix" -> LocalResource.get("/src/library/Iterator.flix"),
     "LazyList.flix" -> LocalResource.get("/src/library/LazyList.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),
@@ -144,7 +144,6 @@ class Flix {
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
-    "ReentrantLock.flix" -> LocalResource.get("/src/library/ReentrantLock.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
@@ -158,7 +157,6 @@ class Flix {
     "File.flix" -> LocalResource.get("/src/library/File.flix"),
 
     "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
-    "Epoch.flix" -> LocalResource.get("/src/library/Epoch.flix"),
 
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
@@ -168,18 +166,23 @@ class Flix {
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
     "Traversable.flix" -> LocalResource.get("/src/library/Traversable.flix"),
+    "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
 
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
-
-    "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
-    "Ticker.flix" -> LocalResource.get("/src/library/Ticker.flix"),
-    "Timer.flix" -> LocalResource.get("/src/library/Timer.flix"),
-    "Duration.flix" -> LocalResource.get("/src/library/Duration.flix"),
-    "Instant.flix" -> LocalResource.get("/src/library/Instant.flix"),
 
     "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
     "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
+
+    "Concurrent/Channel.flix" -> LocalResource.get("/src/library/Concurrent/Channel.flix"),
+    "Concurrent/Condition.flix" -> LocalResource.get("/src/library/Concurrent/Condition.flix"),
+    "Concurrent/ReentrantLock.flix" -> LocalResource.get("/src/library/Concurrent/ReentrantLock.flix"),
+    "Concurrent/Channel/Ticker.flix" -> LocalResource.get("/src/library/Concurrent/Channel/Ticker.flix"),
+    "Concurrent/Channel/Timer.flix" -> LocalResource.get("/src/library/Concurrent/Channel/Timer.flix"),
+
+    "Time/Duration.flix" -> LocalResource.get("/src/library/Time/Duration.flix"),
+    "Time/Epoch.flix" -> LocalResource.get("/src/library/Time/Epoch.flix"),
+    "Time/Instant.flix" -> LocalResource.get("/src/library/Time/Instant.flix"),
 
     "Fixpoint/Compiler.flix" -> LocalResource.get("/src/library/Fixpoint/Compiler.flix"),
     "Fixpoint/Debugging.flix" -> LocalResource.get("/src/library/Fixpoint/Debugging.flix"),

@@ -375,4 +375,359 @@ namespace TestMutDeque {
         MutDeque.pushBack("c", d2);
 
         not MutDeque.sameElements(d, d2)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.sum(d) == 0
+
+    @test
+    def sum02(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.sum(d) == 1
+
+    @test
+    def sum03(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.sum(d) == 6
+
+    @test
+    def sum04(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushBack(-3, d);
+        MutDeque.sum(d) == 3
+
+    @test
+    def sum05(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushFront(-3, d);
+        MutDeque.sum(d) == 3
+
+    @test
+    def sum06(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(-1, d);
+        MutDeque.pushBack(-2, d);
+        MutDeque.pushFront(-3, d);
+        MutDeque.pushFront(-4, d);
+        MutDeque.sum(d) == -10
+
+    @test
+    def sum07(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(10, d);
+        MutDeque.pushBack(-10, d);
+        MutDeque.sum(d) == 0
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.sumWith(x -> x + 1, d) == 0
+
+    @test
+    def sumWith02(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.sumWith(x -> x + 1, d) == 2
+
+    @test
+    def sumWith03(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.sumWith(x -> x + 1, d) == 9
+
+    @test
+    def sumWith04(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushBack(-3, d);
+        MutDeque.sumWith(x -> x + 1, d) == 7
+
+    @test
+    def sumWith05(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushFront(-3, d);
+        MutDeque.sumWith(x -> x + 1, d) == 7
+
+    @test
+    def sumWith06(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(-1, d);
+        MutDeque.pushBack(-2, d);
+        MutDeque.pushFront(-3, d);
+        MutDeque.pushFront(-4, d);
+        MutDeque.sumWith(x -> x + 1, d) == -6
+
+    @test
+    def sumWith07(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(10, d);
+        MutDeque.pushBack(-10, d);
+        MutDeque.sumWith(x -> x + 1, d) == 2
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.product(d) == 0
+
+    @test
+    def product02(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.product(d) == 1
+
+    @test
+    def product03(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.product(d) == 6
+
+    @test
+    def product04(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushBack(-3, d);
+        MutDeque.product(d) == -18
+
+    @test
+    def product05(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushFront(-3, d);
+        MutDeque.product(d) == -18
+
+    @test
+    def product06(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(-1, d);
+        MutDeque.pushBack(-2, d);
+        MutDeque.pushFront(-3, d);
+        MutDeque.pushFront(-4, d);
+        MutDeque.product(d) == 24
+
+    @test
+    def product07(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(10, d);
+        MutDeque.pushBack(-10, d);
+        MutDeque.product(d) == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.productWith(x -> x + 1, d) == 0
+
+    @test
+    def productWith02(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.productWith(x -> x + 1, d) == 2
+
+    @test
+    def productWith03(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.productWith(x -> x + 1, d) == 24
+
+    @test
+    def productWith04(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushBack(-3, d);
+        MutDeque.productWith(x -> x + 1, d) == -48
+
+    @test
+    def productWith05(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushFront(-3, d);
+        MutDeque.productWith(x -> x + 1, d) == -48
+
+    @test
+    def productWith06(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(-2, d);
+        MutDeque.pushBack(-3, d);
+        MutDeque.pushFront(-4, d);
+        MutDeque.pushFront(-5, d);
+        MutDeque.productWith(x -> x + 1, d) == 24
+
+    @test
+    def productWith07(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(10, d);
+        MutDeque.pushBack(-10, d);
+        MutDeque.productWith(x -> x + 1, d) == -99
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldLeft01(): Bool & Impure =
+        MutDeque.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, MutDeque.new()) == 100
+
+    @test
+    def foldLeft02(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, d) == 198
+
+    @test
+    def foldLeft03(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushFront(1, d);
+        MutDeque.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, d) == 198
+
+    @test
+    def foldLeft04(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushFront(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, d) == 196
+
+    @test
+    def foldLeft05(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, d) == 386
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRight01(): Bool & Impure =
+        MutDeque.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, MutDeque.new()) == 100
+
+    @test
+    def foldRight02(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, d) == 198
+
+    @test
+    def foldRight03(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushFront(1, d);
+        MutDeque.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, d) == 198
+
+    @test
+    def foldRight04(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushFront(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, d) == 194
+
+    @test
+    def foldRight05(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, d) == 382
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toList                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toList01(): Bool & Impure =
+        MutDeque.toList(MutDeque.new(): MutDeque[Int32]) == Nil: List[Int32]
+
+    @test
+    def toList02(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.toList(d) == 1 :: Nil
+
+    @test
+    def toList03(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.toList(d) == 1 :: 2 :: Nil
+
+    @test
+    def toList04(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.toList(d) == 1 :: 2 :: 3 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool & Impure =
+        (Nil: List[Int32]) |> List.toMutDeque |> MutDeque.join(",") == ""
+
+    @test
+    def join02(): Bool & Impure =
+        (1 :: Nil) |> List.toMutDeque |> MutDeque.join(",") == "1"
+
+    @test
+    def join03(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toMutDeque |> MutDeque.join(",") == "1,2,3"
+
+    @test
+    def join04(): Bool & Impure =
+        ("1" :: "2" :: "3" :: Nil) |> List.toMutDeque |> MutDeque.join(",") == "1,2,3"
+
 }

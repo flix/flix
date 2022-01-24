@@ -9,7 +9,7 @@ namespace Domain/Constant {
     enum Constant with Eq, ToString {
           case Top,
 
-        case Cst(Int),
+        case Cst(Int32),
 
           case Bot
     }
@@ -60,7 +60,7 @@ namespace Domain/Constant {
     ///
     /// Abstracts a concrete integer into the Sign domain.
     ///
-    pub def alpha(i: Int): Constant = Cst(i)
+    pub def alpha(i: Int32): Constant = Cst(i)
 
     /**
      * Over-approximates integer `increment`.
@@ -302,6 +302,6 @@ namespace Domain/Constant {
 
 //    law safe1(fa: Constant -> Constant, fc: Int32 -> Int32): Bool = PartialOrder.safe1(fa, fc, alpha, alpha, leq)
 
-//    law safe2(fa: (Constant, Constant) -> Constant, fc: (Int, Int) -> Int): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
+//    law safe2(fa: (Constant, Constant) -> Constant, fc: (Int32, Int32) -> Int32): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
 
 }

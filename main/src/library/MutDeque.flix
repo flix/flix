@@ -88,6 +88,71 @@ namespace MutDeque {
         deref f == deref b
 
     ///
+    /// Returns the sum of all elements in the deque `d`.
+    ///
+    pub def sum(d: MutDeque[Int32]): Int32 & Impure =
+        sumWith(identity, d)
+
+    ///
+    /// Returns the sum of all elements in the deque `d` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, d: MutDeque[a]): Int32 & Impure =
+        foldLeft((acc, x) -> f(x) + acc, 0, d)
+
+    ///
+    /// Returns the product of all elements in the deque `d`.
+    ///
+    pub def product(d: MutDeque[Int32]): Int32 & Impure =
+        productWith(identity, d)
+
+    ///
+    /// Returns the product of all elements in the deque `d` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, d: MutDeque[a]): Int32 & Impure =
+        if (isEmpty(d))
+            0
+        else
+            foldLeft((acc, x) -> f(x) * acc, 1, d)
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `d` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, d: MutDeque[a]): b & Impure =
+        let MutDeque(ar_, front_, back_) = d;
+        let ar = deref ar_;
+        let front = deref front_;
+        let back = deref back_;
+        let c = capacity(d) - 1;
+        def loop(i, e, acc) =
+            if (i == e)
+                acc
+            else
+                loop((i + 1) &&& c, e, f(acc, ar[i]));
+        loop(front, back, s)
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `d` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, d: MutDeque[a]): b & Impure =
+        let MutDeque(ar_, front_, back_) = d;
+        let ar = deref ar_;
+        let front = deref front_;
+        let back = deref back_;
+        let c = capacity(d) - 1;
+        def loop(i, e, acc) =
+            if (i == e)
+                acc
+            else {
+                let j = (i - 1) &&& c;
+                loop(j, e, f(ar[j], acc))
+            };
+        loop(back, front, s)
+
+    ///
     /// Returns `Some(x)` where `x` is the element at the front. Returns `None` if `d` is empty.
     ///
     pub def popFront(d: MutDeque[a]): Option[a] & Impure =
@@ -243,5 +308,20 @@ namespace MutDeque {
             Array.sameElements(a1, b1)
         else
             false
+
+    ///
+    /// Returns `d` as a `List`.
+    ///
+    pub def toList(d: MutDeque[a]): List[a] & Impure =
+        foldRight((x, acc) -> x :: acc, Nil, d)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `d` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, d: MutDeque[a]): String & Impure with ToString[a] =
+        let sb = StringBuilder.new();
+        foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), (), d);
+        StringBuilder.toString(sb) |> String.dropRight(1)
 
 }

@@ -199,16 +199,16 @@ def withDefault04(): Bool = Option.withDefault(default = Some(2), Some(1)) == So
 // replace                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def replace01(): Bool = Option.replace(3, 4, None) == None
+def replace01(): Bool = Option.replace(from = 3, to = 4, None) == None
 
 @test
-def replace02(): Bool = Option.replace(3, 4, Some(2)) == Some(2)
+def replace02(): Bool = Option.replace(from = 3, to = 4, Some(2)) == Some(2)
 
 @test
-def replace03(): Bool = Option.replace(3, 4, Some(3)) == Some(4)
+def replace03(): Bool = Option.replace(from = 3, to = 4, Some(3)) == Some(4)
 
 @test
-def replace04(): Bool = Option.replace(3, 4, Some(4)) == Some(4)
+def replace04(): Bool = Option.replace(from = 3, to = 4, Some(4)) == Some(4)
 
 /////////////////////////////////////////////////////////////////////////////
 // count                                                                   //
@@ -221,6 +221,63 @@ def count02(): Bool = Option.count(i -> i == 2, Some(1)) == 0
 
 @test
 def count03(): Bool = Option.count(i -> i == 2, Some(2)) == 1
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool = Option.sum(None) == 0
+
+    @test
+    def sum02(): Bool = Option.sum(Some(1)) == 1
+
+    @test
+    def sum03(): Bool = Option.sum(Some(-2)) == -2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool = Option.sumWith(x -> x + 1, None) == 0
+
+    @test
+    def sumWith02(): Bool = Option.sumWith(x -> x + 1, Some(1)) == 2
+
+    @test
+    def sumWith03(): Bool = Option.sumWith(x -> x + 1, Some(-2)) == -1
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool = Option.product(None) == 0
+
+    @test
+    def product02(): Bool = Option.product(Some(1)) == 1
+
+    @test
+    def product03(): Bool = Option.product(Some(-2)) == -2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool = Option.productWith(x -> x + 1, None) == 0
+
+    @test
+    def productWith02(): Bool = Option.productWith(x -> x + 1, Some(1)) == 2
+
+    @test
+    def productWith03(): Bool = Option.productWith(x -> x + 1, Some(-2)) == -1
+
 
 /////////////////////////////////////////////////////////////////////////////
 // find                                                                    //
@@ -299,22 +356,22 @@ def foldRight04(): Bool = Option.foldRight((i, b) -> if (i == 2 and b) true else
 def foldRight05(): Bool = Option.foldRight((i, b) -> if (i == 2 and b) true else false, Some(2), true) == true
 
 /////////////////////////////////////////////////////////////////////////////
-// foldRightL                                                              //
+// foldRightLazy                                                           //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRightL01(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, None, false) == false
+def foldRightLazy01(): Bool = Option.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, None, false) == false
 
 @test
-def foldRightL02(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, Some(1), false) == false
+def foldRightLazy02(): Bool = Option.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Some(1), false) == false
 
 @test
-def foldRightL03(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, Some(2), false) == false
+def foldRightLazy03(): Bool = Option.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Some(2), false) == false
 
 @test
-def foldRightL04(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, Some(1), true) == false
+def foldRightLazy04(): Bool = Option.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Some(1), true) == false
 
 @test
-def foldRightL05(): Bool = Option.foldRightL((i, b) -> if (i == 2 and force b) true else false, Some(2), true) == true
+def foldRightLazy05(): Bool = Option.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Some(2), true) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // sequence                                                                //

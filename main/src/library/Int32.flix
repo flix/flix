@@ -198,7 +198,7 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def highestOneBit(x: Int32): Int32 =
-        bitPositionToInt(highestOneBitPosition(x))
+        bitPositionToInt32(highestOneBitPosition(x))
 
     ///
     /// Returns a value with at most a single one-bit, in the position
@@ -207,7 +207,7 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def lowestOneBit(x: Int32): Int32 =
-        bitPositionToInt(lowestOneBitPosition(x))
+        bitPositionToInt32(lowestOneBitPosition(x))
 
     ///
     /// Helper function for highestOneBit and lowestOneBit.
@@ -215,7 +215,7 @@ namespace Int32 {
     /// Returns 0 if `position` is outside the range 0-31 inclusive.
     ///
     @Time(1) @Space(1)
-    def bitPositionToInt(position: Int32): Int32 =
+    def bitPositionToInt32(position: Int32): Int32 =
         if (position < 0 or position > size() - 1) 0 else 1 <<< position
 
     ///

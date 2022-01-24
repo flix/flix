@@ -17,7 +17,7 @@ rel SummaryEdge(node: String, factin: String, factout: String)
 rel Results(node: String, fact: String)
 
 rel Facts(fact: String)
-rel Identity(node: String)
+rel Id(node: String)
 
 // Rules
 def main(_: Array[String]): Int32 & Impure =
@@ -85,14 +85,14 @@ def main(_: Array[String]): Int32 & Impure =
         EshIntra("n1","g","g").
         EshIntra("n2","x","x").
 
-        Identity("n3").
-        Identity("sp").
-        Identity("n4").
-        Identity("n6").
-        Identity("n8").
-        Identity("n9").
+        Id("n3").
+        Id("sp").
+        Id("n4").
+        Id("n6").
+        Id("n8").
+        Id("n9").
 
-        EshIntra(idnode,f,f) :- Facts(f), Identity(idnode).
+        EshIntra(idnode,f,f) :- Facts(f), Id(idnode).
         EshIntra("n5","a","a").
         EshIntra("n6","g","a").
         EshIntra("n7","a","a").

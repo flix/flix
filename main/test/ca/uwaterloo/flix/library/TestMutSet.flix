@@ -86,4 +86,145 @@ namespace TestMutSet {
 
         not MutSet.sameElements(s, s2)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool & Impure =
+        MutSet.empty() |> MutSet.sum == 0
+
+    @test
+    def sum02(): Bool & Impure =
+        Set#{1} |> Set.toMutSet |> MutSet.sum == 1
+
+    @test
+    def sum03(): Bool & Impure =
+        Set#{1, 2, 3} |> Set.toMutSet |> MutSet.sum == 6
+
+    @test
+    def sum04(): Bool & Impure =
+        Set#{1, 2, 3, -3} |> Set.toMutSet |> MutSet.sum == 3
+
+    @test
+    def sum05(): Bool & Impure =
+        Set#{1, 2, -3, -4} |> Set.toMutSet |> MutSet.sum == -4
+
+    @test
+    def sum06(): Bool & Impure =
+        Set#{10, -10} |> Set.toMutSet |> MutSet.sum == 0
+
+    @test
+    def sum07(): Bool & Impure =
+        Set.range(1, 101) |> Set.toMutSet |> MutSet.sum == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool & Impure =
+        MutSet.empty() |> MutSet.sumWith(x -> x + 1) == 0
+
+    @test
+    def sumWith02(): Bool & Impure =
+        Set#{1} |> Set.toMutSet |> MutSet.sumWith(x -> x + 1) == 2
+
+    @test
+    def sumWith03(): Bool & Impure =
+        Set#{1, 2, 3} |> Set.toMutSet |> MutSet.sumWith(x -> x + 1) == 9
+
+    @test
+    def sumWith04(): Bool & Impure =
+        Set#{1, 2, 3, -3} |> Set.toMutSet |> MutSet.sumWith(x -> x + 1) == 7
+
+    @test
+    def sumWith05(): Bool & Impure =
+        Set#{-1, -2, -3, -4} |> Set.toMutSet |> MutSet.sumWith(x -> x + 1) == -6
+
+    @test
+    def sumWith06(): Bool & Impure =
+        Set#{10, -10} |> Set.toMutSet |> MutSet.sumWith(x -> x + 1) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool & Impure =
+        MutSet.product(MutSet.empty()) == 0
+
+    @test
+    def product02(): Bool & Impure =
+        Set#{1} |> Set.toMutSet |> MutSet.product == 1
+
+    @test
+    def product03(): Bool & Impure =
+        Set#{1, 2, 3} |> Set.toMutSet |> MutSet.product == 6
+
+    @test
+    def product04(): Bool & Impure =
+        Set#{1, 2, 3, -3} |> Set.toMutSet |> MutSet.product == -18
+
+    @test
+    def product05(): Bool & Impure =
+        Set#{-1, -2, -3, -4} |> Set.toMutSet |> MutSet.product == 24
+
+    @test
+    def product06(): Bool & Impure =
+        Set#{10, -10} |> Set.toMutSet |> MutSet.product == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool & Impure =
+        MutSet.empty() |> MutSet.productWith(x -> x + 1) == 0
+
+    @test
+    def productWith02(): Bool & Impure =
+        Set#{1} |> Set.toMutSet |> MutSet.productWith(x -> x + 1) == 2
+
+    @test
+    def productWith03(): Bool & Impure =
+        Set#{1, 2, 3} |> Set.toMutSet |> MutSet.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith04(): Bool & Impure =
+        Set#{1, 2, 3, -3} |> Set.toMutSet |> MutSet.productWith(x -> x + 1) == -48
+
+    @test
+    def productWith05(): Bool & Impure =
+        Set#{-2, -3, -4, -5} |> Set.toMutSet |> MutSet.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith06(): Bool & Impure =
+        Set#{10, -10} |> Set.toMutSet |> MutSet.productWith(x -> x + 1) == -99
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool & Impure =
+        MutSet.join(",", MutSet.empty(): MutSet[Int32]) == ""
+
+    @test
+    def join02(): Bool & Impure =
+        Set#{1} |> Set.toMutSet |> MutSet.join(",") == "1"
+
+    @test
+    def join03(): Bool & Impure =
+        Set#{1, 2, 3} |> Set.toMutSet |> MutSet.join(",") == "1,2,3"
+
+    @test
+    def join04(): Bool & Impure =
+        Set#{"1", "2", "3"} |> Set.toMutSet |> MutSet.join(",") == "1,2,3"
+
 }

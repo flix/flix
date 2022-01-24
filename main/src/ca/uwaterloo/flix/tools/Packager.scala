@@ -140,8 +140,8 @@ object Packager {
     newFile(mainSourceFile) {
       """// The main entry point.
         |def main(_args: Array[String]): Int32 & Impure =
-        |  println("Hello World!");
-        |  0 // exit code
+        |    println("Hello World!");
+        |    0 // exit code
         |""".stripMargin
     }
 
@@ -187,9 +187,9 @@ object Packager {
 
     // Configure a new Flix object.
     val newOptions = o.copy(
-      targetDirectory = getBuildDirectory(p),
-      loadClassFiles = loadClasses,
-      writeClassFiles = true)
+      output = Some(getBuildDirectory(p)),
+      loadClassFiles = loadClasses
+    )
     flix.setOptions(newOptions)
 
     // Add sources and packages.

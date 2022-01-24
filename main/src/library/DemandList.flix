@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+// type alias DemandList[a] = DemandList.DemandList[a, True]
+
+// instance Foldable[DemandList] {
+//     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DemandList[a]): b & ef = DemandList.foldLeft(f, s, l)
+//     pub def foldRight(f: (a, b) -> b & ef, s: b, l: DemandList[a]): b & ef = DemandList.foldRight(f, s, l)
+// }
 
 namespace DemandList {
 
@@ -92,19 +98,20 @@ namespace DemandList {
     ///
     /// Returns the sum of all elements in the list `l`.
     ///
+    /// Forces the entire list `l`.
+    ///
     @Experimental
     pub def sum(l: DemandList[Int32, Forced]): Int32 =
-        sumAcc(l, 0)
+        foldLeft((acc, x) -> acc + x, 0, l)
 
     ///
-    /// Helper function for `sum`.
+    /// Returns the sum of all elements in `l` according to the function `f`.
     ///
-    def sumAcc(l: DemandList[Int32, Forced], acc: Int32): Int32 = match l {
-        case ENil         => acc
-        case ECons(x, xs) => sumAcc(      xs, x + acc)
-        case LCons(x, xs) => sumAcc(force xs, x + acc)
-        case LList(xs)    => sumAcc(force xs,     acc)
-    }
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def sumWith(f: a -> Int32 & ef, l: DemandList[a, Forced]): Int32 & ef =
+        foldLeft((acc, x) -> acc + f(x), 0, l)
 
     ///
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
@@ -398,6 +405,26 @@ namespace DemandList {
     }
 
     ///
+    /// Returns the product of all elements in the DemandList `l`.
+    ///
+    @Experimental
+    pub def product(l: DemandList[Int32, Forced]): Int32 =
+        if (isEmpty(l))
+            0
+        else
+            foldLeft((acc, x) -> acc * x, 1, l)
+
+    ///
+    /// Returns the product of all elements in the DemandList `l` according to the function `f`.
+    ///
+    @Experimental
+    pub def productWith(f: a -> Int32 & ef, l: DemandList[a, Forced]): Int32 & ef =
+        if (isEmpty(l))
+            0
+        else
+            foldLeft((acc, x) -> acc * f(x), 1, l)
+
+    ///
     /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
     ///
     /// Returns `false` if `l` is empty.
@@ -512,4 +539,17 @@ namespace DemandList {
         case LCons(x, xs) => if (f(x)) dropWhileE(f, force xs) else l
         case LList(xs)    => dropWhileE(f, force xs)
     }
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `v` with `sep` inserted between each element.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def join(sep: String, l: DemandList[a, Forced]): String with ToString[a] = {
+        let sb = StringBuilder.new();
+        foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), (), l);
+        StringBuilder.toString(sb) |> String.dropRight(1)
+    } as & Pure
+
 }

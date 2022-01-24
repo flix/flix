@@ -264,16 +264,16 @@ namespace Nel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def replace01(): Bool = replace(1, 42, Nel(1, Nil)) == Nel(42, Nil)
+    def replace01(): Bool = replace(from = 1, to = 42, Nel(1, Nil)) == Nel(42, Nil)
 
     @test
-    def replace02(): Bool = replace(7, 42, Nel(1, Nil)) == Nel(1, Nil)
+    def replace02(): Bool = replace(from = 7, to = 42, Nel(1, Nil)) == Nel(1, Nil)
 
     @test
-    def replace03(): Bool = replace(2, 42, Nel(1, 2 :: Nil)) == Nel(1, 42 :: Nil)
+    def replace03(): Bool = replace(from = 2, to = 42, Nel(1, 2 :: Nil)) == Nel(1, 42 :: Nil)
 
     @test
-    def replace04(): Bool = replace(7, 42, Nel(1, 2 :: Nil)) == Nel(1, 2 :: Nil)
+    def replace04(): Bool = replace(from = 7, to = 42, Nel(1, 2 :: Nil)) == Nel(1, 2 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // permutations                                                            //
@@ -369,17 +369,17 @@ namespace Nel {
     def foldRight03(): Bool = foldRight((x, acc) -> acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightL                                                              //
+    // foldRightLazy                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldRightL01(): Bool = foldRightL((x, acc) -> force acc - x, 0, Nel(1, Nil)) == -1
+    def foldRightLazy01(): Bool = foldRightLazy((x, acc) -> force acc - x, 0, Nel(1, Nil)) == -1
 
     @test
-    def foldRightL02(): Bool = foldRightL((x, acc) -> force acc - x, 0, Nel(1, 2 :: Nil)) == -3
+    def foldRightLazy02(): Bool = foldRightLazy((x, acc) -> force acc - x, 0, Nel(1, 2 :: Nil)) == -3
 
     @test
-    def foldRightL03(): Bool = foldRightL((x, acc) -> force acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
+    def foldRightLazy03(): Bool = foldRightLazy((x, acc) -> force acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
 
     /////////////////////////////////////////////////////////////////////////////
     // reduce                                                                  //
@@ -435,6 +435,113 @@ namespace Nel {
 
     @test
     def count04(): Bool = count(x -> x == 2, Nel(2, 2 :: 1 :: 2 :: Nil)) == 3
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool =
+        Nel.sum(Nel(1, Nil)) == 1
+
+    @test
+    def sum02(): Bool =
+        Nel.sum(Nel(1, 2 :: 3 :: Nil)) == 6
+
+    @test
+    def sum03(): Bool =
+        Nel.sum(Nel(1, 2 :: 3 :: -3 :: Nil)) == 3
+
+    @test
+    def sum04(): Bool =
+        Nel.sum(Nel(-1, -2 :: -3 :: -4 :: Nil)) == -10
+
+    @test
+    def sum05(): Bool =
+        Nel.sum(Nel(10, -10 :: Nil)) == 0
+
+    @test
+    def sum06(): Bool = match List.range(1, 101) {
+        case x :: xs => Nel.sum(Nel(x, xs)) == 5050
+        case _       => unreachable!()
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        Nel.sumWith(x -> x + 1, Nel(1, Nil)) == 2
+
+    @test
+    def sumWith02(): Bool =
+        Nel.sumWith(x -> x + 1, Nel(1, 2 :: 3 :: Nil)) == 9
+
+    @test
+    def sumWith03(): Bool =
+        Nel.sumWith(x -> x + 1, Nel(1, 2 :: 3 :: -3 :: Nil)) == 7
+
+    @test
+    def sumWith04(): Bool =
+        Nel.sumWith(x -> x + 1, Nel(-1, -2 :: -3 :: -4 :: Nil)) == -6
+
+    @test
+    def sumWith05(): Bool =
+        Nel.sumWith(x -> x + 1, Nel(10, -10 :: Nil)) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool =
+        Nel.product(Nel(1, Nil)) == 1
+
+    @test
+    def product02(): Bool =
+        Nel.product(Nel(1, 2 :: 3 :: Nil)) == 6
+
+    @test
+    def product03(): Bool =
+        Nel.product(Nel(1, 2 :: 3 :: -3 :: Nil)) == -18
+
+    @test
+    def product04(): Bool =
+        Nel.product(Nel(-1, -2 :: -3 :: -4 :: Nil)) == 24
+
+    @test
+    def product05(): Bool =
+        Nel.product(Nel(10, -10 :: Nil)) == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool =
+        Nel.productWith(x -> x + 1, Nel(1, Nil)) == 2
+
+    @test
+    def productWith02(): Bool =
+        Nel.productWith(x -> x + 1, Nel(1, 2 :: 3 :: Nil)) == 24
+
+    @test
+    def productWith03(): Bool =
+        Nel.productWith(x -> x + 1, Nel(1, 2 :: 3 :: -3 :: Nil)) == -48
+
+    @test
+    def productWith04(): Bool =
+        Nel.productWith(x -> x + 1, Nel(-2, -3 :: -4 :: -5 :: Nil)) == 24
+
+    @test
+    def productWith05(): Bool =
+        Nel.productWith(x -> x + 1, Nel(10, -10 :: Nil)) == -99
+
 
     /////////////////////////////////////////////////////////////////////////////
     // flatten                                                                 //
@@ -744,38 +851,6 @@ namespace Nel {
     @test
     def sortBy09(): Bool = testSortByVsSort(Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
-    /////////////////////////////////////////////////////////////////////////////
-    // sum                                                                     //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def sum01(): Bool =
-        Nel.sum(Nel(0, Nil)) == 0
-
-    @test
-    def sum02(): Bool =
-        Nel.sum(Nel(1, Nil)) == 1
-
-    @test
-    def sum03(): Bool =
-        Nel.sum(Nel(1, 2 :: 3 :: Nil)) == 6
-
-    @test
-    def sum04(): Bool =
-        Nel.sum(Nel(1, 2 :: 3 :: -3 :: Nil)) == 3
-
-    @test
-    def sum05(): Bool =
-        Nel.sum(Nel(-1, -2 :: -3 :: -4 :: Nil)) == -10
-
-    @test
-    def sum06(): Bool =
-        Nel.sum(Nel(10, -10 :: Nil)) == 0
-
-    @test
-    def sum07(): Bool =
-        Nel(1, List.range(2, 101)) |> Nel.sum == 5050
-
 
     /////////////////////////////////////////////////////////////////////////////
     // toIterator                                                              //
@@ -808,5 +883,22 @@ namespace Nel {
     @test
     def toMapWith04(): Bool =
         Nel.toMapWith(x -> x + 10, Nel(7, 3 :: 6 :: 1 :: Nil)) == Map#{1 => 11, 3 => 13, 6 => 16, 7 => 17}
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool =
+        Nel.join(",", Nel(1, Nil)) == "1"
+
+    @test
+    def join02(): Bool =
+        Nel.join(",", Nel(1, 2 :: 3 :: Nil)) == "1,2,3"
+
+    @test
+    def join03(): Bool =
+        Nel.join(",", Nel("1", "2" :: "3" :: Nil)) == "1,2,3"
 
 }

@@ -540,11 +540,6 @@ namespace Map {
         let Map(xs) = m;
         RedBlackTree.reduceRight(f, xs)
 
-
-
-
-
-
     ///
     /// Returns the number of mappings `k => v` in `m` that satisfy the predicate `f`.
     ///
@@ -561,6 +556,46 @@ namespace Map {
                     foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m)
             case _  => foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m)
         }
+
+    ///
+    /// Returns the sum of all keys in the map `m`.
+    ///
+    pub def sumKeys(m: Map[Int32, v]): Int32 =
+        sumWith((k, _) -> k, m)
+
+    ///
+    /// Returns the sum of all values in the map `m`.
+    ///
+    pub def sumValues(m: Map[k, Int32]): Int32 =
+        sumWith((_, v) -> v, m)
+
+    ///
+    /// Returns the sum of all key-value pairs `k => v` in the map `m` according to the function `f`.
+    ///
+    pub def sumWith(f: (k, v) -> Int32 & ef, m: Map[k, v]): Int32 & ef =
+        // TODO: Purity polymorphic / Parallel when pure
+        foldLeftWithKey((acc, k, v) -> f(k, v) + acc, 0, m)
+
+    ///
+    /// Returns the product of all keys in the map `m`.
+    ///
+    pub def productKeys(m: Map[Int32, v]): Int32 =
+        let Map(t) = m;
+        RedBlackTree.productKeys(t)
+
+    ///
+    /// Returns the product of all values in the map `m`.
+    ///
+    pub def productValues(m: Map[k, Int32]): Int32 =
+        let Map(t) = m;
+        RedBlackTree.productValues(t)
+
+    ///
+    /// Returns the product of all key-value pairs `k => v` in the map `m` according to the function `f`.
+    ///
+    pub def productWith(f: (k, v) -> Int32 & ef, m: Map[k, v]): Int32 & ef =
+        let Map(t) = m;
+        RedBlackTree.productWith(f, t)
 
     ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.
@@ -824,5 +859,21 @@ namespace Map {
     pub def traverseWithKey(f: (k, v1) -> m[v2] & ef, m: Map[k, v1]): m[Map[k, v2]] & ef with Applicative[m] =
         let Map(tree) = m;
         Functor.map(Map, RedBlackTree.mapAWithKey(f, tree))
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each key `k` in `m` with `sep` inserted between each element.
+    ///
+    pub def joinKeys(sep: String, m: Map[k, v]): String with ToString[k] =
+        let Map(t) = m;
+        RedBlackTree.joinKeys(sep, t)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each value `v` in `m` with `sep` inserted between each element.
+    ///
+    pub def joinValues(sep: String, m: Map[k, v]): String with ToString[v] =
+        let Map(t) = m;
+        RedBlackTree.joinValues(sep, t)
 
 }

@@ -420,6 +420,48 @@ namespace MutMap {
         Map.count(f, deref mm)
 
     ///
+    /// Returns the sum of all keys in the map `m`.
+    ///
+    pub def sumKeys(m: MutMap[Int32, v]): Int32 & Impure =
+        let MutMap(mm) = m;
+        Map.sumKeys(deref mm)
+
+    ///
+    /// Returns the sum of all values in the map `m`.
+    ///
+    pub def sumValues(m: MutMap[k, Int32]): Int32 & Impure =
+        let MutMap(mm) = m;
+        Map.sumValues(deref mm)
+
+    ///
+    /// Returns the sum of all key-value pairs `k => v` in the map `m` according to the function `f`.
+    ///
+    pub def sumWith(f: (k, v) -> Int32 & ef, m: MutMap[k, v]): Int32 & Impure =
+        let MutMap(mm) = m;
+        Map.sumWith(f, deref mm)
+
+    ///
+    /// Returns the product of all keys in the mutable map `m`.
+    ///
+    pub def productKeys(m: MutMap[Int32, v]): Int32 & Impure =
+        let MutMap(mm) = m;
+        Map.productKeys(deref mm)
+
+    ///
+    /// Returns the product of all values in the mutable map `m`.
+    ///
+    pub def productValues(m: MutMap[k, Int32]): Int32 & Impure =
+        let MutMap(mm) = m;
+        Map.productValues(deref mm)
+
+    ///
+    /// Returns the product of all key-value pairs `k => v` in the mutable map `m` according to the function `f`.
+    ///
+    pub def productWith(f: (k, v) -> Int32 & ef, m: MutMap[k, v]): Int32 & Impure =
+        let MutMap(mm) = m;
+        Map.productWith(f, deref mm)
+
+    ///
     /// Returns `true` if and only if at least one mapping in the mutable map `m` satisfies the predicate function `f`.
     ///
     /// Returns `false` if `m` is the empty map.
@@ -499,5 +541,21 @@ namespace MutMap {
     ///
     pub def sameElements(a: MutMap[k, v], b: MutMap[k, v]): Bool & Impure with Order[k], Eq[v] =
         MutMap.isSubmapOf(a, b) and MutMap.isSubmapOf(b, a)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each key `k` in `m` with `sep` inserted between each element.
+    ///
+    pub def joinKeys(sep: String, m: MutMap[k, v]): String & Impure with ToString[k] =
+        let MutMap(mm) = m;
+        Map.joinKeys(sep, deref mm)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each value `v` in `m` with `sep` inserted between each element.
+    ///
+    pub def joinValues(sep: String, m: MutMap[k, v]): String & Impure with ToString[v] =
+        let MutMap(mm) = m;
+        Map.joinValues(sep, deref mm)
 
 }

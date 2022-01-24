@@ -1,8 +1,8 @@
 namespace Test/Derives/ToString {
     pub enum Enum with ToString {
       case EmptyCase
-      case SingletonCase(Int)
-      case TupleCase(Int, Bool)
+      case SingletonCase(Int32)
+      case TupleCase(Int32, Bool)
     }
 
     pub enum PolyEnum[a] with ToString {
@@ -38,7 +38,7 @@ namespace Test/Derives/ToString {
         case RecursiveCase(MutRecursiveEnum1)
     }
 
-    pub opaque type OpaqueType with ToString = Int
+    pub opaque type OpaqueType with ToString = Int32
 
     @test
     def testToString01(): Bool = "${Enum.EmptyCase}" == "EmptyCase"
@@ -83,13 +83,13 @@ namespace Test/Derives/ToString {
     def testToString14(): Bool = "${RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase)}" == "RecursiveCase(EmptyCase)"
 
     @test
-    def testToString15(): Bool = "${PolyMultiEnum.EmptyCase: PolyMultiEnum[Int, Bool]}" == "EmptyCase"
+    def testToString15(): Bool = "${PolyMultiEnum.EmptyCase: PolyMultiEnum[Int32, Bool]}" == "EmptyCase"
 
     @test
-    def testToString16(): Bool = "${PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int, Bool]}" == "LeftCase(123)"
+    def testToString16(): Bool = "${PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Bool]}" == "LeftCase(123)"
 
     @test
-    def testToString17(): Bool = "${PolyMultiEnum.RightCase(true): PolyMultiEnum[Int, Bool]}" == "RightCase(true)"
+    def testToString17(): Bool = "${PolyMultiEnum.RightCase(true): PolyMultiEnum[Int32, Bool]}" == "RightCase(true)"
 
     @test
     def testToString18(): Bool = "${PolyMultiEnum.BothCase(123, true)}" == "BothCase(123, true)"

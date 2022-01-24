@@ -999,42 +999,42 @@ def update07(): Bool & Impure =
 
 @test
 def replace01(): Bool & Impure =
-    let a = Array.replace(3, 4, []);
+    let a = Array.replace(from = 3, to = 4, []);
     Array.sameElements(a, []: Array[Int32])
 
 @test
 def replace02(): Bool & Impure =
-    let a = Array.replace(3, 4, [1]);
+    let a = Array.replace(from = 3, to = 4, [1]);
     Array.sameElements(a, [1])
 
 @test
 def replace03(): Bool & Impure =
-    let a = Array.replace(3, 4, [3]);
+    let a = Array.replace(from = 3, to = 4, [3]);
     Array.sameElements(a, [4])
 
 @test
 def replace04(): Bool & Impure =
-    let a = Array.replace(3, 4, [4]);
+    let a = Array.replace(from = 3, to = 4, [4]);
     Array.sameElements(a, [4])
 
 @test
 def replace05(): Bool & Impure =
-    let a = Array.replace(3, 4, [1, 2]);
+    let a = Array.replace(from = 3, to = 4, [1, 2]);
     Array.sameElements(a, [1,2])
 
 @test
 def replace06(): Bool & Impure =
-    let a = Array.replace(3, 4, [1,3]);
+    let a = Array.replace(from = 3, to = 4, [1,3]);
     Array.sameElements(a, [1,4])
 
 @test
 def replace07(): Bool & Impure =
-    let a = Array.replace(3, 4, [3,4]);
+    let a = Array.replace(from = 3, to = 4, [3,4]);
     Array.sameElements(a, [4,4])
 
 @test
 def replace08(): Bool & Impure =
-    let a = Array.replace(3, 4, [3,3]);
+    let a = Array.replace(from = 3, to = 4, [3,3]);
     Array.sameElements(a, [4,4])
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1044,49 +1044,49 @@ def replace08(): Bool & Impure =
 @test
 def replace01!(): Bool & Impure =
     let a: Array[Int32] = [];
-    Array.replace!(3, 4, a);
+    Array.replace!(from = 3, to = 4, a);
     Array.sameElements(a, []: Array[Int32])
 
 @test
 def replace02!(): Bool & Impure =
     let a = [1];
-    Array.replace!(3, 4, a);
+    Array.replace!(from = 3, to = 4, a);
     Array.sameElements(a, [1])
 
 @test
 def replace03!(): Bool & Impure =
     let a = [3];
-    Array.replace!(3, 4, a);
+    Array.replace!(from = 3, to = 4, a);
     Array.sameElements(a, [4])
 
 @test
 def replace04!(): Bool & Impure =
     let a = [4];
-    Array.replace!(3, 4, a);
+    Array.replace!(from = 3, to = 4, a);
     Array.sameElements(a, [4])
 
 @test
 def replace05!(): Bool & Impure =
     let a = [1, 2];
-    Array.replace!(3, 4, a);
+    Array.replace!(from = 3, to = 4, a);
     Array.sameElements(a, [1,2])
 
 @test
 def replace06!(): Bool & Impure =
     let a = [1,3];
-    Array.replace!(3, 4, a);
+    Array.replace!(from = 3, to = 4, a);
     Array.sameElements(a, [1,4])
 
 @test
 def replace07!(): Bool & Impure =
     let a = [3,4];
-    Array.replace!(3, 4, a);
+    Array.replace!(from = 3, to = 4, a);
     Array.sameElements(a, [4,4])
 
 @test
 def replace08!(): Bool & Impure =
     let a = [3,3];
-    Array.replace!(3, 4, a);
+    Array.replace!(from = 3, to = 4, a);
     Array.sameElements(a, [4,4])
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1920,6 +1920,65 @@ def count06(): Bool & Impure = Array.count(i -> i > 3, [8,1]) == 1
 
 @test
 def count07(): Bool & Impure = Array.count(i -> i > 3, [6,7]) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool & Impure =
+        Array.product([]) == 0
+
+    @test
+    def product02(): Bool & Impure =
+        Array.product([1]) == 1
+
+    @test
+    def product03(): Bool & Impure =
+        Array.product([1, 2, 3]) == 6
+
+    @test
+    def product04(): Bool & Impure =
+        Array.product([1, 2, 3, -3]) == -18
+
+    @test
+    def product05(): Bool & Impure =
+        Array.product([-1, -2, -3, -4]) == 24
+
+    @test
+    def product06(): Bool & Impure =
+        Array.product([10, -10]) == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool & Impure =
+        Array.productWith(x -> x + 1, []) == 0
+
+    @test
+    def productWith02(): Bool & Impure =
+        Array.productWith(x -> x + 1, [1]) == 2
+
+    @test
+    def productWith03(): Bool & Impure =
+        Array.productWith(x -> x + 1, [1, 2, 3]) == 24
+
+    @test
+    def productWith04(): Bool & Impure =
+        Array.productWith(x -> x + 1, [1, 2, 3, -3]) == -48
+
+    @test
+    def productWith05(): Bool & Impure =
+        Array.productWith(x -> x + 1, [-2, -3, -4, -5]) == 24
+
+    @test
+    def productWith06(): Bool & Impure =
+        Array.productWith(x -> x + 1, [10, -10]) == -99
+
 
 /////////////////////////////////////////////////////////////////////////////
 // flatten                                                                 //
@@ -4230,6 +4289,36 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def sum07(): Bool & Impure =
         Array.range(1, 101) |> Array.sum == 5050
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool & Impure =
+        Array.sumWith(x -> x + 1, []) == 0
+
+    @test
+    def sumWith02(): Bool & Impure =
+        Array.sumWith(x -> x + 1, [1]) == 2
+
+    @test
+    def sumWith03(): Bool & Impure =
+        Array.sumWith(x -> x + 1, [1, 2, 3]) == 9
+
+    @test
+    def sumWith04(): Bool & Impure =
+        Array.sumWith(x -> x + 1, [1, 2, 3, -3]) == 7
+
+    @test
+    def sumWith05(): Bool & Impure =
+        Array.sumWith(x -> x + 1, [-1, -2, -3, -4]) == -6
+
+    @test
+    def sumWith06(): Bool & Impure =
+        Array.sumWith(x -> x + 1, [10, -10]) == 2
+
+
     /////////////////////////////////////////////////////////////////////////////
     // toLazyList                                                              //
     /////////////////////////////////////////////////////////////////////////////
@@ -4443,5 +4532,26 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
         a[0] = 10000;
         Iterator.toArray(iter) `sameElements` [1, 2, 3]
     }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool & Impure =
+        Array.join(",", []: Array[Int32]) == ""
+
+    @test
+    def join02(): Bool & Impure =
+        Array.join(",", [1]) == "1"
+
+    @test
+    def join03(): Bool & Impure =
+        Array.join(",", [1, 2, 3]) == "1,2,3"
+
+    @test
+    def join04(): Bool & Impure =
+        Array.join(",", ["1", "2", "3"]) == "1,2,3"
 
 }

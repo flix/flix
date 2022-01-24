@@ -599,28 +599,28 @@ def update07(): Bool = List.update(2, 5, 1 :: 2 :: Nil) == 1 :: 2 :: Nil
 // replace                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def replace01(): Bool = List.replace(3, 4, Nil) == Nil
+def replace01(): Bool = List.replace(from = 3, to = 4, Nil) == Nil
 
 @test
-def replace02(): Bool = List.replace(3, 4, 1 :: Nil) == 1 :: Nil
+def replace02(): Bool = List.replace(from = 3, to = 4, 1 :: Nil) == 1 :: Nil
 
 @test
-def replace03(): Bool = List.replace(3, 4, 3 :: Nil) == 4 :: Nil
+def replace03(): Bool = List.replace(from = 3, to = 4, 3 :: Nil) == 4 :: Nil
 
 @test
-def replace04(): Bool = List.replace(3, 4, 4 :: Nil) == 4 :: Nil
+def replace04(): Bool = List.replace(from = 3, to = 4, 4 :: Nil) == 4 :: Nil
 
 @test
-def replace05(): Bool = List.replace(3, 4, 1 :: 2 :: Nil) == 1 :: 2 :: Nil
+def replace05(): Bool = List.replace(from = 3, to = 4, 1 :: 2 :: Nil) == 1 :: 2 :: Nil
 
 @test
-def replace06(): Bool = List.replace(3, 4, 1 :: 3 :: Nil) == 1 :: 4 :: Nil
+def replace06(): Bool = List.replace(from = 3, to = 4, 1 :: 3 :: Nil) == 1 :: 4 :: Nil
 
 @test
-def replace07(): Bool = List.replace(3, 4, 3 :: 4 :: Nil) == 4 :: 4 :: Nil
+def replace07(): Bool = List.replace(from = 3, to = 4, 3 :: 4 :: Nil) == 4 :: 4 :: Nil
 
 @test
-def replace08(): Bool = List.replace(3, 4, 3 :: 3 :: Nil) == 4 :: 4 :: Nil
+def replace08(): Bool = List.replace(from = 3, to = 4, 3 :: 3 :: Nil) == 4 :: 4 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // patch                                                                   //
@@ -1024,19 +1024,19 @@ def foldRight03(): Bool = List.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, 1
 def foldRight04(): Bool = List.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
 
 /////////////////////////////////////////////////////////////////////////////
-// foldRightL                                                              //
+// foldRightLazy                                                           //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRightL01(): Bool = List.foldRightL((e, i) -> (force i - e) * (e rem 2 + 1), 100, Nil) == 100
+def foldRightLazy01(): Bool = List.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, Nil) == 100
 
 @test
-def foldRightL02(): Bool = List.foldRightL((e, i) -> (force i - e) * (e rem 2 + 1), 100, 1 :: Nil) == 198
+def foldRightLazy02(): Bool = List.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, 1 :: Nil) == 198
 
 @test
-def foldRightL03(): Bool = List.foldRightL((e, i) -> (force i - e) * (e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
+def foldRightLazy03(): Bool = List.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
 
 @test
-def foldRightL04(): Bool = List.foldRightL((e, i) -> (force i - e) * (e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
+def foldRightLazy04(): Bool = List.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
@@ -2386,6 +2386,7 @@ def distinctWith09(): Bool =
     def toChain04(): Bool =
         List.toChain(1 :: 2 :: 3 :: Nil) == (1 `Chain.cons` (2 `Chain.cons` (3 `Chain.cons` Chain.empty())))
 
+
     /////////////////////////////////////////////////////////////////////////////
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
@@ -2420,6 +2421,93 @@ def distinctWith09(): Bool =
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        List.sumWith(x -> x + 1, Nil: List[Int32]) == 0
+
+    @test
+    def sumWith02(): Bool =
+        List.sumWith(x -> x + 1, 1 :: Nil) == 2
+
+    @test
+    def sumWith03(): Bool =
+        List.sumWith(x -> x + 1, 1 :: 2 :: 3 :: Nil) == 9
+
+    @test
+    def sumWith04(): Bool =
+        List.sumWith(x -> x + 1, 1 :: 2 :: 3 :: -3 :: Nil) == 7
+
+    @test
+    def sumWith05(): Bool =
+        List.sumWith(x -> x + 1, -1 :: -2 :: -3 :: -4 :: Nil) == -6
+
+    @test
+    def sumWith06(): Bool =
+        List.sumWith(x -> x + 1, 10 :: -10 :: Nil) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool =
+        List.product(Nil) == 0
+
+    @test
+    def product02(): Bool =
+        List.product(1 :: Nil) == 1
+
+    @test
+    def product03(): Bool =
+        List.product(1 :: 2 :: 3 :: Nil) == 6
+
+    @test
+    def product04(): Bool =
+        List.product(1 :: 2 :: 3 :: -3 :: Nil) == -18
+
+    @test
+    def product05(): Bool =
+        List.product(-1 :: -2 :: -3 :: -4 :: Nil) == 24
+
+    @test
+    def product06(): Bool =
+        List.product(10 :: -10 :: Nil) == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool =
+        List.productWith(x -> x + 1, Nil) == 0
+
+    @test
+    def productWith02(): Bool =
+        List.productWith(x -> x + 1, 1 :: Nil) == 2
+
+    @test
+    def productWith03(): Bool =
+        List.productWith(x -> x + 1, 1 :: 2 :: 3 :: Nil) == 24
+
+    @test
+    def productWith04(): Bool =
+        List.productWith(x -> x + 1, 1 :: 2 :: 3 :: -3 :: Nil) == -48
+
+    @test
+    def productWith05(): Bool =
+        List.productWith(x -> x + 1, -2 :: -3 :: -4 :: -5 :: Nil) == 24
+
+    @test
+    def productWith06(): Bool =
+        List.productWith(x -> x + 1, 10 :: -10 :: Nil) == -99
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // toIterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -2434,5 +2522,44 @@ def distinctWith09(): Bool =
     @test
     def toIterator03(): Bool & Impure =
         List.range(-100, 100) |> List.toIterator |> Iterator.toList == List.range(-100, 100)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool & Impure =
+        let d0: MutDeque[Int32] = List.toMutDeque(Nil);
+        let d1: MutDeque[Int32] = MutDeque.new();
+        MutDeque.sameElements(d0, d1)
+
+    @test
+    def toMutDeque02(): Bool & Impure =
+        let d0 = List.toMutDeque(1 :: Nil);
+        let d1 = MutDeque.new();
+        MutDeque.pushBack(1, d1);
+        MutDeque.sameElements(d0, d1)
+
+    @test
+    def toMutDeque03(): Bool & Impure =
+        let d0 = List.toMutDeque(1 :: 2 :: Nil);
+        let d1 = MutDeque.new();
+        MutDeque.pushBack(1, d1);
+        MutDeque.pushBack(2, d1);
+        MutDeque.sameElements(d0, d1)
+
+    @test
+    def toMutDeque04(): Bool & Impure =
+        let d0 = List.toMutDeque(1 :: 2 :: 3 :: Nil);
+        let d1 = MutDeque.new();
+        MutDeque.pushFront(2, d1);
+        MutDeque.pushFront(1, d1);
+        MutDeque.pushBack(3, d1);
+        MutDeque.sameElements(d0, d1)
+
+    @test
+    def toMutDeque05(): Bool & Impure =
+        List.toMutDeque(1 :: 2 :: 3 :: Nil) |> MutDeque.toList == 1 :: 2 :: 3 :: Nil
 
 }

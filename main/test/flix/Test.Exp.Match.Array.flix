@@ -67,7 +67,7 @@ namespace Test/Exp/Match/Array {
     }
 
     @test
-    def testMatchEmptyResultArray01(): Bool & Impure = match ([]: Array[Result[Int,String]]) {
+    def testMatchEmptyResultArray01(): Bool & Impure = match ([]: Array[Result[Int32,String]]) {
         case [] => true
         case _  => false
     }

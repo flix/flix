@@ -661,8 +661,65 @@ namespace DelayMap {
     /// Returns the sum of all values in `m`.
     ///
     @Experimental
-    pub def sum(m: DelayMap[k, Int32]): Int32 =
+    pub def sumKeys(m: DelayMap[Int32, v]): Int32 =
+        sumWith((k, _) -> k, m)
+
+    ///
+    /// Returns the sum of all values in `m`.
+    ///
+    @Experimental
+    pub def sumValues(m: DelayMap[k, Int32]): Int32 =
+        sumWith((_, v) -> v, m)
+
+    ///
+    /// Returns the sum of all key-value pairs `k => v` in `m` according to the function `f`.
+    ///
+    @Experimental
+    pub def sumWith(f: (k, v) -> Int32 & ef, m: DelayMap[k, v]): Int32 & ef =
         let DMap(t) = m;
-        RedBlackTree.foldLeft((acc, _, v) -> acc + force v, 0, t)
+        RedBlackTree.foldLeft((acc, k, v) -> acc + f(k, force v), 0, t)
+
+    ///
+    /// Returns the product of all keys in the DelayMap `m`.
+    ///
+    @Experimental
+    pub def productKeys(m: DelayMap[Int32, v]): Int32 =
+        let DMap(t) = m;
+        RedBlackTree.productKeys(t)
+
+    ///
+    /// Returns the product of all values in the DelayMap `m`.
+    ///
+    @Experimental
+    pub def productValues(m: DelayMap[k, Int32]): Int32 =
+        productWith((_, v) -> v, m)
+
+    ///
+    /// Returns the product of all key-value pairs `k => v` in the DelayMap `m` according to the function `f`.
+    ///
+    @Experimental
+    pub def productWith(f: (k, v) -> Int32 & ef, m: DelayMap[k, v]): Int32 & ef =
+        let DMap(t) = m;
+        RedBlackTree.productWith((k, v) -> f(k, force v), t)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each key `k` in `m` with `sep` inserted between each element.
+    ///
+    pub def joinKeys(sep: String, m: DelayMap[k, v]): String with ToString[k] = {
+        let sb = StringBuilder.new();
+        foldLeftWithKey((_, k, _) -> StringBuilder.append!(sb, "${k}" + sep), (), m );
+        StringBuilder.toString(sb) |> String.dropRight(1)
+    } as & Pure
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each value `v` in `m` with `sep` inserted between each element.
+    ///
+    pub def joinValues(sep: String, m: DelayMap[k, v]): String with ToString[v] = {
+        let sb = StringBuilder.new();
+        foldLeftWithKey((_, _, v) -> StringBuilder.append!(sb, "${v}" + sep), (), m);
+        StringBuilder.toString(sb) |> String.dropRight(1)
+    } as & Pure
 
 }

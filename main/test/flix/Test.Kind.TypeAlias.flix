@@ -6,15 +6,15 @@ namespace Test/Enum/Kinding {
     }
 
     namespace Explicit {
-        rel R(i: Int)
+        rel R(i: Int32)
 
         type alias TStar[a: Type] = a
 
         type alias TStarStar[a: Type, b: Type] = (a, b)
 
-        type alias TBool[a: Bool] = Int -> Int & a
+        type alias TBool[a: Bool] = Int32 -> Int32 & a
 
-        type alias TRecordRow[a: RecordRow] = { l :: Int | a }
+        type alias TRecordRow[a: RecordRow] = { l :: Int32 | a }
 
         type alias TSchemaRow[a: SchemaRow] = #{ R | a }
 

@@ -16,7 +16,7 @@
 // limitations under the License.
 //
 
-namespace Channel {
+namespace Concurrent/Channel {
 
     ///
     /// An enum that represents a multiple-producer, multiple-consumer (mpmc)
@@ -70,12 +70,12 @@ namespace Channel {
     pub enum Mpmc {
         case Mpmc(
             Int64, // id
-            ReentrantLock, // channelLock
+            Concurrent/ReentrantLock.ReentrantLock, // channelLock
             Bool, // unBuffered
             Int32, // maxQueueSize
             MutDeque[Boxed], // elementDeque
-            MutList[(ReentrantLock, Condition)], // waitingGetters
-            Condition // waitingPutters
+            MutList[(Concurrent/ReentrantLock.ReentrantLock, Concurrent/Condition.Condition)], // waitingGetters
+            Concurrent/Condition.Condition // waitingPutters
         )
     }
 
@@ -111,7 +111,7 @@ namespace Channel {
         import static dev.flix.runtime.GlobalCounter.newId();
         let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
         let unBuffered = bufferSize == 0;
-        let reentrantLock = ReentrantLock.new(false);
+        let reentrantLock = Concurrent/ReentrantLock.new(false);
         Mpmc(
             newId(),
             reentrantLock,
@@ -119,7 +119,7 @@ namespace Channel {
             if (unBuffered) 1 else bufferSize,
             MutDeque.new(),
             MutList.new(),
-            ReentrantLock.newCondition(reentrantLock)
+            Concurrent/ReentrantLock.newCondition(reentrantLock)
         )
 
     ///
@@ -181,8 +181,8 @@ namespace Channel {
         // Create a new lock and condition for this select. The condition is
         // potentially put into the waiting getters of the channels if a
         // default isn't defined.
-        let selectLock = ReentrantLock.new(false);
-        let selectCondition = ReentrantLock.newCondition(selectLock);
+        let selectLock = Concurrent/ReentrantLock.new(false);
+        let selectCondition = Concurrent/ReentrantLock.newCondition(selectLock);
 
         // Sort channels to avoid deadlocks
         let sortedChannels = Array.sort(channels);
@@ -215,10 +215,10 @@ namespace Channel {
         match optionalElement {
             case None => { // No element was found
                 // Create a new lock and condition
-                let conditionLock = ReentrantLock.new(false);
+                let conditionLock = Concurrent/ReentrantLock.new(false);
                 lock(conditionLock);
 
-                let condition = ReentrantLock.newCondition(conditionLock);
+                let condition = Concurrent/ReentrantLock.newCondition(conditionLock);
                 // Add LockConditionPair to the channel
                 let pair = (conditionLock, condition);
 
@@ -270,7 +270,7 @@ namespace Channel {
     /// has an element in the array along with its index. Returns false if the
     /// default case is chosen (no element was immediately available).
     ///
-    def selectHelper(channels: Array[Mpmc], hasDefault: Bool, sortedChannels: Array[Mpmc], selectLock: ReentrantLock, selectCondition: Condition): Option[(Int32, Boxed)] & Impure =
+    def selectHelper(channels: Array[Mpmc], hasDefault: Bool, sortedChannels: Array[Mpmc], selectLock: Concurrent/ReentrantLock.ReentrantLock, selectCondition: Concurrent/Condition.Condition): Option[(Int32, Boxed)] & Impure =
         // bug if the thread is interrupted
         if (threadInterrupted()) bug!("thread interrupted") else
 
@@ -378,7 +378,7 @@ namespace Channel {
     /// Add a condition to the list of waiting getters.
     /// The channel lock is expected to be held.
     ///
-    def addGetter(l: ReentrantLock, cond: Condition, c: Mpmc): Unit & Impure =
+    def addGetter(l: Concurrent/ReentrantLock.ReentrantLock, cond: Concurrent/Condition.Condition, c: Mpmc): Unit & Impure =
         let pair = (l, cond);
         let Mpmc(_, _, _, _, _, waitingGetters, _) = c;
 
@@ -427,12 +427,12 @@ namespace Channel {
         interrupted()
 
     ///
-    /// Wrapper for `Condition.awaitUninterruptibly(c)` that handles `Err` with
+    /// Wrapper for `Concurrent/Condition.awaitUninterruptibly(c)` that handles `Err` with
     /// `bug!`.
     /// The channel lock is expected to be held.
     ///
-    def awaitCondition(c: Condition): Unit & Impure =
-        match Condition.awaitUninterruptibly(c) {
+    def awaitCondition(c: Concurrent/Condition.Condition): Unit & Impure =
+        match Concurrent/Condition.awaitUninterruptibly(c) {
             case Ok(_) => ()
             case Err(_) =>
                 // Error: await without holding the corresponding lock
@@ -440,11 +440,11 @@ namespace Channel {
         }
 
     ///
-    /// Wrapper for `Condition.signalAll(c)` that handles `Err` with `bug!`.
+    /// Wrapper for `Concurrent/Condition.signalAll(c)` that handles `Err` with `bug!`.
     /// The condition lock is expected to be held.
     ///
-    def signalCondition(c: Condition): Unit & Impure =
-        match Condition.signalAll(c) {
+    def signalCondition(c: Concurrent/Condition.Condition): Unit & Impure =
+        match Concurrent/Condition.signalAll(c) {
             case Ok(_) => ()
             case Err(_) =>
                 // Error: await without holding the corresponding lock
@@ -452,11 +452,11 @@ namespace Channel {
         }
 
     ///
-    /// Wrapper for `ReentrantLock.unlock(l)` that handles `Err` with `bug!`.
+    /// Wrapper for `Concurrent/ReentrantLock.unlock(l)` that handles `Err` with `bug!`.
     /// The lock is expected to be held.
     ///
-    def unlock(l: ReentrantLock): Unit & Impure =
-        match ReentrantLock.unlock(l) {
+    def unlock(l: Concurrent/ReentrantLock.ReentrantLock): Unit & Impure =
+        match Concurrent/ReentrantLock.unlock(l) {
             case Ok(_) => ()
             case Err(_) =>
                 // Error: unlock without holding the lock
@@ -464,9 +464,9 @@ namespace Channel {
         }
 
     ///
-    /// Wrapper for `ReentrantLock.lock(l)`.
+    /// Wrapper for `Concurrent/ReentrantLock.lock(l)`.
     ///
-    def lock(l: ReentrantLock): Unit & Impure =
-        ReentrantLock.lock(l)
+    def lock(l: Concurrent/ReentrantLock.ReentrantLock): Unit & Impure =
+        Concurrent/ReentrantLock.lock(l)
 
 }

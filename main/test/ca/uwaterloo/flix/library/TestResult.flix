@@ -64,16 +64,16 @@ def withDefault04(): Bool = Result.withDefault({default = Err(true)}, Err(false)
 // replace                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def replace01(): Bool = Result.replace(3, 4, Err(false)) == Err(false)
+def replace01(): Bool = Result.replace(from = 3, to = 4, Err(false)) == Err(false)
 
 @test
-def replace02(): Bool = Result.replace(3, 4, Ok(2): Result[_, Unit]) == Ok(2)
+def replace02(): Bool = Result.replace(from = 3, to = 4, Ok(2): Result[_, Unit]) == Ok(2)
 
 @test
-def replace03(): Bool = Result.replace(3, 4, Ok(3)): Result[_, Unit] == Ok(4)
+def replace03(): Bool = Result.replace(from = 3, to = 4, Ok(3)): Result[_, Unit] == Ok(4)
 
 @test
-def replace04(): Bool = Result.replace(3, 4, Ok(4)): Result[_, Unit] == Ok(4)
+def replace04(): Bool = Result.replace(from = 3, to = 4, Ok(4)): Result[_, Unit] == Ok(4)
 
 /////////////////////////////////////////////////////////////////////////////
 // exists                                                                  //
@@ -147,6 +147,63 @@ def count02(): Bool = Result.count(i -> i == 2, Ok(1)) == 0
 @test
 def count03(): Bool = Result.count(i -> i == 2, Ok(2)) == 1
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool = Result.sum(Err(false)) == 0
+
+    @test
+    def sum02(): Bool = Result.sum(Ok(1)) == 1
+
+    @test
+    def sum03(): Bool = Result.sum(Ok(-2)) == -2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool = Result.sumWith(x -> x + 1, Err(false)) == 0
+
+    @test
+    def sumWith02(): Bool = Result.sumWith(x -> x + 1, Ok(1)) == 2
+
+    @test
+    def sumWith03(): Bool = Result.sumWith(x -> x + 1, Ok(-2)) == -1
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool = Result.product(Err(false)) == 0
+
+    @test
+    def product02(): Bool = Result.product(Ok(1)) == 1
+
+    @test
+    def product03(): Bool = Result.product(Ok(-2)) == -2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool = Result.productWith(x -> x + 1, Err(false)) == 0
+
+    @test
+    def productWith02(): Bool = Result.productWith(x -> x + 1, Ok(1)) == 2
+
+    @test
+    def productWith03(): Bool = Result.productWith(x -> x + 1, Ok(-2)) == -1
+
+
 /////////////////////////////////////////////////////////////////////////////
 // find                                                                    //
 /////////////////////////////////////////////////////////////////////////////
@@ -197,22 +254,22 @@ def foldRight05(): Bool = Result.foldRight((i, b) -> if (i == 2 and b) true else
 
 
 /////////////////////////////////////////////////////////////////////////////
-// foldRightL                                                              //
+// foldRightLazy                                                           //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRightL01(): Bool = Result.foldRightL((i, b) -> if (i == 2 and force b) true else false, Err(-1ii), false) == false
+def foldRightLazy01(): Bool = Result.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Err(-1ii), false) == false
 
 @test
-def foldRightL02(): Bool = Result.foldRightL((i, b) -> if (i == 2 and force b) true else false, Ok(1), false) == false
+def foldRightLazy02(): Bool = Result.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Ok(1), false) == false
 
 @test
-def foldRightL03(): Bool = Result.foldRightL((i, b) -> if (i == 2 and force b) true else false, Ok(1), true) == false
+def foldRightLazy03(): Bool = Result.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Ok(1), true) == false
 
 @test
-def foldRightL04(): Bool = Result.foldRightL((i, b) -> if (i == 2 and force b) true else false, Ok(2), false) == false
+def foldRightLazy04(): Bool = Result.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Ok(2), false) == false
 
 @test
-def foldRightL05(): Bool = Result.foldRightL((i, b) -> if (i == 2 and force b) true else false, Ok(2), true) == true
+def foldRightLazy05(): Bool = Result.foldRightLazy((i, b) -> if (i == 2 and force b) true else false, Ok(2), true) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // sequence                                                                //

@@ -635,6 +635,44 @@ namespace RedBlackTree {
     }
 
     ///
+    /// Returns the sum of all keys in the tree `t`.
+    ///
+    pub def sumKeys(t: RedBlackTree[Int32, v]): Int32 =
+        sumWith((k, _) -> k, t)
+
+    ///
+    /// Returns the sum of all values in the tree `t`.
+    ///
+    pub def sumValues(t: RedBlackTree[k, Int32]): Int32 =
+        sumWith((_, v) -> v, t)
+
+    ///
+    /// Returns the sum of all key-value pairs `k => v` in the tree `t` according to the function `f`.
+    ///
+    pub def sumWith(f: (k, v) -> Int32 & ef, t: RedBlackTree[k, v]): Int32 & ef =
+        // TODO: Parallel impl
+        foldLeft((acc, k, v) -> f(k, v) + acc, 0, t)
+
+    ///
+    /// Returns the product of all keys in the tree `t`.
+    ///
+    pub def productKeys(t: RedBlackTree[Int32, v]): Int32 =
+        productWith((k, _) -> k, t)
+
+    ///
+    /// Returns the product of all values in the tree `t`.
+    ///
+    pub def productValues(t: RedBlackTree[k, Int32]): Int32 =
+        productWith((_, v) -> v, t)
+
+    ///
+    /// Returns the product of all key-value pairs `k => v` in the tree `t` according to the function `f`.
+    ///
+    // TODO: Parallel impl
+    pub def productWith(f: (k, v) -> Int32 & ef, t: RedBlackTree[k, v]): Int32 & ef =
+        if (isEmpty(t)) 0 else foldLeft((acc, k, v) -> f(k, v) * acc, 1, t)
+
+    ///
     /// Returns the tree `t` as a list. Elements are ordered from smallest (left) to largest (right).
     ///
     pub def toList(t: RedBlackTree[k, v]): List[(k, v)] =
@@ -749,4 +787,25 @@ namespace RedBlackTree {
                     Some(selector(ks, vs, kr, vr))
             }
     }
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each key `k` in `t` with `sep` inserted between each element.
+    ///
+    pub def joinKeys(sep: String, t: RedBlackTree[k, v]): String with ToString[k] = {
+        let sb = StringBuilder.new();
+        foldLeft((_, k, _) -> StringBuilder.append!(sb, "${k}" + sep), (), t);
+        StringBuilder.toString(sb) |> String.dropRight(1)
+    } as & Pure
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each value `v` in `t` with `sep` inserted between each element.
+    ///
+    pub def joinValues(sep: String, t: RedBlackTree[k, v]): String with ToString[v] = {
+        let sb = StringBuilder.new();
+        foldLeft((_, _, v) -> StringBuilder.append!(sb, "${v}" + sep), (), t);
+        StringBuilder.toString(sb) |> String.dropRight(1)
+    } as & Pure
+
 }

@@ -157,4 +157,25 @@ namespace TestFoldable {
     def toMapWith05(): Bool =
         Foldable.toMapWith(x -> x + "b", List.toChain("aa" :: "a" :: Nil)) == Map#{"a" => "ab", "aa" => "aab"}
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool =
+        Foldable.join(",", Nil: List[Int32]) == ""
+
+    @test
+    def join02(): Bool =
+        Foldable.join(",", 1 :: Nil) == "1"
+
+    @test
+    def join03(): Bool =
+        Foldable.join(",", 1 :: 2 :: 3 :: Nil) == "1,2,3"
+
+    @test
+    def join04(): Bool =
+        Foldable.join(",", "1" :: "2" :: "3" :: Nil) == "1,2,3"
+
 }

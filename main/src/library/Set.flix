@@ -303,6 +303,30 @@ namespace Set {
         }
 
     ///
+    /// Returns the sum of all elements in the set `s`.
+    ///
+    pub def sum(s: Set[Int32]): Int32 =
+        Foldable.sum(s)
+
+    ///
+    /// Returns the sum of all elements in the set `s` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
+        Foldable.sumWith(f, s)
+
+    ///
+    /// Returns the product of all elements in the set `s`.
+    ///
+    pub def product(s: Set[Int32]): Int32 =
+        Foldable.product(s)
+
+    ///
+    /// Returns the product of all elements in the set `s` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
+        Foldable.productWith(f, s)
+
+    ///
     /// Returns the union of the elements in `s`.
     ///
     @Time(size(s) * Int32.log2(size(s))) @Space(size(s) * Int32.log2(size(s)))
@@ -394,13 +418,13 @@ namespace Set {
         foldLeft((acc, x) -> union(acc, f(x)), empty(), s)
 
     ///
-    /// Replaces the element `x` with `y` if `x` is in `s`. Otherwise, returns `s`.
+    /// Replaces the element `from` with `to` if `from` is in `s`. Otherwise, returns `s`.
     ///
     /// Note: The returned set may be smaller than `s`.
     ///
     @Time(Int32.log2(size(s))) @Space(Int32.log2(size(s)))
-    pub def replace(x: a, y: a, s: Set[a]): Set[a] with Order[a] =
-        if (memberOf(x, s)) insert(y, remove(x, s)) else s
+    pub def replace(from: {from :: a}, to: {to :: a}, s: Set[a]): Set[a] with Order[a] =
+        if (memberOf(from.from, s)) insert(to.to, remove(from.from, s)) else s
 
     ///
     /// Returns a pair of sets `(s1, s2)`.
@@ -516,5 +540,12 @@ namespace Set {
     ///
     pub def toIterator(s: Set[a]): Iterator[a] & Impure =
         List.toIterator(Set.toList(s))
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `s` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, s: Set[a]): String with ToString[a] =
+        Foldable.join(sep, s)
 
 }

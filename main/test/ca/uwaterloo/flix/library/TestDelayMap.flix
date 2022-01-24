@@ -1563,41 +1563,258 @@ namespace TestDelayMap {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // sum                                                                     //
+    // sumValues                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sum01(): Bool =
-        DelayMap.empty() |> DelayMap.sum == 0
+    def sumValues01(): Bool =
+        DelayMap.empty() |> DelayMap.sumValues == 0
 
     @test
-    def sum02(): Bool =
+    def sumValues02(): Bool =
         Map#{1 => 1} |> Map.toDelayMap |>
-            DelayMap.sum == 1
+            DelayMap.sumValues == 1
 
     @test
-    def sum03(): Bool =
+    def sumValues03(): Bool =
         Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toDelayMap |>
-            DelayMap.sum == 6
+            DelayMap.sumValues == 6
 
     @test
-    def sum04(): Bool =
+    def sumValues04(): Bool =
         Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |> Map.toDelayMap |>
-            DelayMap.sum == 3
+            DelayMap.sumValues == 3
 
     @test
-    def sum05(): Bool =
+    def sumValues05(): Bool =
         Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4} |> Map.toDelayMap |>
-            DelayMap.sum == -10
+            DelayMap.sumValues == -10
 
     @test
-    def sum06(): Bool =
+    def sumValues06(): Bool =
         Map#{10 => 10, -10 => -10} |> Map.toDelayMap |>
-            DelayMap.sum == 0
+            DelayMap.sumValues == 0
 
     @test
-    def sum07(): Bool =
+    def sumValues07(): Bool =
         List.range(1, 101) |> List.zip(List.range(1, 101)) |> List.toDelayMap |>
-            DelayMap.sum == 5050
+            DelayMap.sumValues == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumKeys                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumKeys01(): Bool =
+        DelayMap.empty() |> DelayMap.sumKeys == 0
+
+    @test
+    def sumKeys02(): Bool =
+        Map#{1 => 1} |> Map.toDelayMap |>
+            DelayMap.sumKeys == 1
+
+    @test
+    def sumKeys03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toDelayMap |>
+            DelayMap.sumKeys == 6
+
+    @test
+    def sumKeys04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |> Map.toDelayMap |>
+            DelayMap.sumKeys == 3
+
+    @test
+    def sumKeys05(): Bool =
+        Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4} |> Map.toDelayMap |>
+            DelayMap.sumKeys == -12
+
+    @test
+    def sumKeys06(): Bool =
+        Map#{10 => 10, -10 => -10} |> Map.toDelayMap |>
+            DelayMap.sumKeys == 0
+
+    @test
+    def sumKeys07(): Bool =
+        List.range(1, 101) |> List.zip(List.range(1, 101)) |> List.toDelayMap |>
+            DelayMap.sumKeys == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        DelayMap.empty() |> DelayMap.sumWith((k, v) -> k + v) == 0
+
+    @test
+    def sumWith02(): Bool =
+        Map#{1 => 1} |> Map.toDelayMap |>
+            DelayMap.sumWith((k, v) -> k + v) == 2
+
+    @test
+    def sumWith03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toDelayMap |>
+            DelayMap.sumWith((k, v) -> k + v) == 12
+
+    @test
+    def sumWith04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |> Map.toDelayMap |>
+            DelayMap.sumWith((k, v) -> k + v) == 6
+
+    @test
+    def sumWith05(): Bool =
+        Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4} |> Map.toDelayMap |>
+            DelayMap.sumWith((k, v) -> k + v) == -20
+
+    @test
+    def sumWith06(): Bool =
+        Map#{10 => 10, -10 => -10} |> Map.toDelayMap |>
+            DelayMap.sumWith((k, v) -> k + v) == 0
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productValues                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productValues01(): Bool =
+        DelayMap.empty() |> DelayMap.productValues == 0
+
+    @test
+    def productValues02(): Bool =
+        Map#{1 => 1} |> Map.toDelayMap |>
+            DelayMap.productValues == 1
+
+    @test
+    def productValues03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toDelayMap |>
+            DelayMap.productValues == 6
+
+    @test
+    def productValues04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |> Map.toDelayMap |>
+            DelayMap.productValues == -18
+
+    @test
+    def productValues05(): Bool =
+        Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4} |> Map.toDelayMap |>
+            DelayMap.productValues == 24
+
+    @test
+    def productValues06(): Bool =
+        Map#{10 => 10, -10 => -10} |> Map.toDelayMap |>
+            DelayMap.productValues == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productKeys                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productKeys01(): Bool =
+        DelayMap.empty() |> DelayMap.productValues == 0
+
+    @test
+    def productKeys02(): Bool =
+        Map#{1 => 1} |> Map.toDelayMap |>
+            DelayMap.productKeys == 1
+
+    @test
+    def productKeys03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toDelayMap |>
+            DelayMap.productKeys == 6
+
+    @test
+    def productKeys04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |> Map.toDelayMap |>
+            DelayMap.productKeys == -18
+
+    @test
+    def productKeys05(): Bool =
+        Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4} |> Map.toDelayMap |>
+            DelayMap.productKeys == 40
+
+    @test
+    def productKeys06(): Bool =
+        Map#{10 => 10, -10 => -10} |> Map.toDelayMap |>
+            DelayMap.productKeys == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool =
+        DelayMap.empty() |> DelayMap.productWith((k, v) -> k + v) == 0
+
+    @test
+    def productWith02(): Bool =
+        Map#{1 => 1} |> Map.toDelayMap |>
+            DelayMap.productWith((k, v) -> k + v) == 2
+
+    @test
+    def productWith03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toDelayMap |>
+            DelayMap.productWith((k, v) -> k + v) == 48
+
+    @test
+    def productWith04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |> Map.toDelayMap |>
+            DelayMap.productWith((k, v) -> k + v) == -288
+
+    @test
+    def productWith05(): Bool =
+        Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4} |> Map.toDelayMap |>
+            DelayMap.productWith((k, v) -> k + v) == 384
+
+    @test
+    def productWith06(): Bool =
+        Map#{10 => 10, -10 => -10} |> Map.toDelayMap |>
+            DelayMap.productWith((k, v) -> k + v) == -400
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinValues                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinValues01(): Bool =
+        DelayMap.empty(): DelayMap[Int32, Int32] |> DelayMap.joinValues(",") == ""
+
+    @test
+    def joinValues02(): Bool =
+        Map#{1 => 1} |> Map.toDelayMap |> DelayMap.joinValues(",") == "1"
+
+    @test
+    def joinValues03(): Bool =
+        Map#{0 => 1, 1 => 2, 2 => 2} |> Map.toDelayMap |> DelayMap.joinValues(",") == "1,2,2"
+
+    @test
+    def joinValues04(): Bool =
+        Map#{0 => "1", 1 => "2", 2 => "2"} |> Map.toDelayMap |> DelayMap.joinValues(",") == "1,2,2"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinKeys                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinKeys01(): Bool =
+        DelayMap.empty(): DelayMap[Int32, Int32] |> DelayMap.joinKeys(",") == ""
+
+    @test
+    def joinKeys02(): Bool =
+        Map#{1 => 1} |> Map.toDelayMap |> DelayMap.joinKeys(",") == "1"
+
+    @test
+    def joinKeys03(): Bool =
+        Map#{0 => 1, 1 => 2, 2 => 2} |> Map.toDelayMap |> DelayMap.joinKeys(",") == "0,1,2"
+
+    @test
+    def joinKeys04(): Bool =
+        Map#{"0" => 1, "1" => 2, "2" => 2} |> Map.toDelayMap |> DelayMap.joinKeys(",") == "0,1,2"
 
 }

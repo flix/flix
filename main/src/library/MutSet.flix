@@ -88,13 +88,13 @@ namespace MutSet {
         ms := Set.filter(f, deref ms)
 
     ///
-    /// Replaces the element `x` with the element `y` if `x` is in the mutable set `s`.
+    /// Replaces the element `from` with the element `to` if `from` is in the mutable set `s`.
     ///
-    /// The mutable set `s` is unchanged if the element `x` is not in it.
+    /// The mutable set `s` is unchanged if the element `from` is not in it.
     ///
-    pub def replace!(x: a, y: a, s: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def replace!(from: {from :: a}, to: {to :: a}, s: mut MutSet[a]): Unit & Impure with Order[a] =
         let MutSet(ms) = s;
-        ms := Set.replace(x, y, deref ms)
+        ms := Set.replace(from = from.from, to = to.to, deref ms)
 
     ///
     /// Applies the function `f` to every element in the mutable set `s`.
@@ -251,6 +251,34 @@ namespace MutSet {
         Set.count(f, deref ms)
 
     ///
+    /// Returns the sum of all elements in the mutable set `s`.
+    ///
+    pub def sum(s: MutSet[Int32]): Int32 & Impure =
+        let MutSet(ss) = s;
+        Set.sum(deref ss)
+
+    ///
+    /// Returns the sum of all elements in the mutable set `s` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, s: MutSet[a]): Int32 & Impure =
+        let MutSet(ss) = s;
+        Set.sumWith(f, deref ss)
+
+    ///
+    /// Returns the product of all elements in the set `s`.
+    ///
+    pub def product(s: MutSet[Int32]): Int32 & Impure =
+        let MutSet(ss) = s;
+        Set.product(deref ss)
+
+    ///
+    /// Returns the product of all elements in the set `s` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, s: MutSet[a]): Int32 & Impure =
+        let MutSet(ss) = s;
+        Set.productWith(f, deref ss)
+
+    ///
     /// Returns `true` if and only if at least one element in the mutable set `s` satisfies the predicate function `f`.
     ///
     /// Returns `false` if `s` is the empty set.
@@ -328,5 +356,13 @@ namespace MutSet {
     ///
     pub def sameElements(a: MutSet[t], b: MutSet[t]): Bool & Impure with Order[t] =
         MutSet.isSubsetOf(a, b) and MutSet.isSubsetOf(b, a)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `s` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, s: MutSet[a]): String & Impure with ToString[a] =
+        let MutSet(ms) = s;
+        Set.join(sep, deref ms)
 
 }

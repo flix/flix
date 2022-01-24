@@ -114,6 +114,36 @@ namespace MutList {
         foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, v)
 
     ///
+    /// Returns the sum of all elements in the MutList `v`.
+    ///
+    pub def sum(v: MutList[Int32]): Int32 & Impure =
+        foldLeft((acc, x) -> acc + x, 0, v)
+
+    ///
+    /// Returns the sum of all elements in the MutList `v` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, v: MutList[a]): Int32 & Impure =
+        foldLeft((acc, x) -> acc + f(x), 0, v)
+
+    ///
+    /// Returns the product of all elements in the mutable list `v`.
+    ///
+    pub def product(v: MutList[Int32]): Int32 & Impure =
+        if (isEmpty(v))
+            0
+        else
+            foldLeft((acc, x) -> acc * x, 1, v)
+
+    ///
+    /// Returns the product of all elements in the mutable list `v` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, v: MutList[a]): Int32 & Impure =
+        if (isEmpty(v))
+            0
+        else
+            foldLeft((acc, x) -> acc * f(x), 1, v)
+
+    ///
     /// Returns `true` if the given predicate `f` holds for at least one element of the given mutable list `v`.
     ///
     /// Returns `false` if the given mutable list `v` is empty.
@@ -539,10 +569,10 @@ namespace MutList {
         l1 := deref l2
 
     ///
-    /// Replaces all occurrences of the `x` with `y` in the given mutable list `v`.
+    /// Replaces all occurrences of the `from` with `to` in the given mutable list `v`.
     ///
-    pub def replace!(x: a, y: a, v: mut MutList[a]): Unit & Impure with Eq[a] =
-        transform!(e -> if (e == x) y else e, v)
+    pub def replace!(from: {from :: a}, to: {to :: a}, v: mut MutList[a]): Unit & Impure with Eq[a] =
+        transform!(e -> if (e == from.from) to.to else e, v)
 
     ///
     /// Reverses the order of the elements in the given mutable list `v`.
@@ -672,6 +702,15 @@ namespace MutList {
             };
         foreachWithIndex(step, v);
         StringBuilder.toString(sb)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `v` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, v: MutList[a]): String & Impure with ToString[a] =
+        let sb = StringBuilder.new();
+        foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), (), v);
+        StringBuilder.toString(sb) |> String.dropRight(1)
 
     ///
     /// Applies `f` to all the elements in `v`.
@@ -806,19 +845,4 @@ namespace MutList {
         let MutList(a, l) = v;
         Array.sortWithin!(cmp, 0, (deref l) - 1, deref a)
 
-    ///
-    /// Returns the sum of all elements in the list `v`.
-    ///
-    pub def sum(v: MutList[Int32]): Int32 & Impure =
-        let MutList(a, l) = v;
-        sumAcc(deref a, deref l, 0, 0)
-
-    ///
-    /// Helper function for `sum`.
-    ///
-    def sumAcc(a: Array[Int32], l: Int32, i: Int32, acc: Int32): Int32 & Impure =
-        if (i < l)
-            sumAcc(a, l, i + 1, a[i] + acc)
-        else
-            acc
 }

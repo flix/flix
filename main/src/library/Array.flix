@@ -530,18 +530,18 @@ namespace Array {
         init(f, length(a))
 
     ///
-    /// Returns a copy of `a` with every occurrence of `x` replaced by `y`.
+    /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def replace(x: a, y: a, a: Array[a]): Array[a] & Impure with Eq[a] =
-        map(e -> if (e == x) y else e, a)
+    pub def replace(from: {from :: a}, to: {to :: a}, a: Array[a]): Array[a] & Impure with Eq[a] =
+        map(e -> if (e == from.from) to.to else e, a)
 
     ///
-    /// Replace every occurrence of `x` by `y` in the array `a`, mutating it in place.
+    /// Replace every occurrence of `from` by `to` in the array `a`, mutating it in place.
     ///
     @Time(length(a)) @Space(1)
-    pub def replace!(x: a, y: a, a: mut Array[a]): Unit & Impure with Eq[a] =
-        transform!(e -> if (e == x) y else e, a)
+    pub def replace!(from: {from :: a}, to: {to :: a}, a: mut Array[a]): Unit & Impure with Eq[a] =
+        transform!(e -> if (e == from.from) to.to else e, a)
 
     ///
     /// Returns `b` with the `n` elements starting at index `i` replaced with the elements of `a`.
@@ -870,6 +870,36 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f))
     pub def count(f: a -> Bool, a: Array[a]): Int32 & Impure =
         foldLeft((b,x) -> if (f(x)) b + 1 else b, 0, a) as & Impure
+
+    ///
+    /// Returns the sum of all elements in the array `a`.
+    ///
+    pub def sum(a: Array[Int32]): Int32 & Impure =
+        foldLeft((acc, x) -> acc + x, 0, a)
+
+    ///
+    /// Returns the sum of all elements in the array `a` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, a: Array[a]): Int32 & Impure =
+        foldLeft((acc, x) -> acc + f(x), 0, a)
+
+    ///
+    /// Returns the product of all elements in the array `a`.
+    ///
+    pub def product(a: Array[Int32]): Int32 & Impure =
+        if (isEmpty(a))
+            0
+        else
+            foldLeft((acc, x) -> acc * x, 1, a)
+
+    ///
+    /// Returns the product of all elements in the array `a` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, a: Array[a]): Int32 & Impure =
+        if (isEmpty(a))
+            0
+        else
+            foldLeft((acc, x) -> acc * f(x), 1, a)
 
     ///
     /// Returns the concatenation of the arrays of in the array `arrs`.
@@ -1580,6 +1610,15 @@ namespace Array {
         StringBuilder.toString(sb)
 
     ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `a` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, a: Array[a]): String & Impure with ToString[a] =
+        let sb = StringBuilder.new();
+        foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), (), a);
+        StringBuilder.toString(sb) |> String.dropRight(1)
+
+    ///
     /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to
     /// their `Order` instance.
     ///
@@ -1701,21 +1740,6 @@ namespace Array {
             let ac1 = f(lo, ac);
             forWithAccum(lo+1, hi, ac1, f)
         }
-
-    ///
-    /// Returns the sum of all elements in the list `a`.
-    ///
-    pub def sum(a: Array[Int32]): Int32 & Impure =
-        sumAcc(a, 0, 0)
-
-    ///
-    /// Helper function for `sum`.
-    ///
-    def sumAcc(a: Array[Int32], i: Int32, acc: Int32): Int32 & Impure =
-        if (i < length(a))
-            sumAcc(a, i + 1, a[i] + acc)
-        else
-            acc
 
     ///
     /// Copies the range between `b` (inclusive) and `e` (exclusive) of a into a new array.

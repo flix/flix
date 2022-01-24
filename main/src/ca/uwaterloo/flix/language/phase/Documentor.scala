@@ -44,7 +44,7 @@ object Documentor {
   /**
     * The directory where to write the ouput.
     */
-  val OutputDirectory: Path = Paths.get("./target/api")
+  val OutputDirectory: Path = Paths.get("./build/api")
 
   /**
     * The audience to use for formatting types and effects.
@@ -331,6 +331,7 @@ object Documentor {
     case Modifier.Scoped => "scoped"
     case Modifier.Sealed => "sealed"
     case Modifier.Synthetic => "synthetic"
+    case Modifier.Unlawful => "unlawful"
   })
 
   /**

@@ -3,21 +3,21 @@ namespace Test/Def/Kinding {
     namespace Implicit {
 
         namespace FormalParams {
-            rel R(i: Int)
+            rel R(i: Int32)
 
-            pub def star(x: a): Int = ???
+            pub def star(x: a): Int32 = ???
 
-            pub def recordRow(x: { l :: Int | a }): Int = ???
+            pub def recordRow(x: { l :: Int32 | a }): Int32 = ???
 
-            pub def schemaRow(x: #{ R | a }): Int = ???
+            pub def schemaRow(x: #{ R | a }): Int32 = ???
 
-            pub def bool(x: Int -> Int & a): Int = ???
+            pub def bool(x: Int32 -> Int32 & a): Int32 = ???
 
-            pub def starToStar(x: a[Int32]): Int = ???
+            pub def starToStar(x: a[Int32]): Int32 = ???
         }
 
         namespace Return {
-            rel R(i: Int)
+            rel R(i: Int32)
 
             pub def star(): a = ???
         }
@@ -26,9 +26,9 @@ namespace Test/Def/Kinding {
             class CStar[a: Type]
             class CStarToStar[a: Type -> Type]
 
-            pub def star(x: a): Int with CStar[a] = ???
+            pub def star(x: a): Int32 with CStar[a] = ???
 
-            pub def starToStar(x: a[Int32]): Int with CStarToStar[a] = ???
+            pub def starToStar(x: a[Int32]): Int32 with CStarToStar[a] = ???
         }
 
         namespace Enum {
@@ -37,52 +37,52 @@ namespace Test/Def/Kinding {
             pub enum ERecordRow[_a: RecordRow]
             pub enum ESchemaRow[_a: SchemaRow]
 
-            pub def star(x: EStar[a]): Int = ???
+            pub def star(x: EStar[a]): Int32 = ???
 
-            pub def bool(x: EBool[a]): Int = ???
+            pub def bool(x: EBool[a]): Int32 = ???
 
-            pub def record(x: ERecordRow[a]): Int = ???
+            pub def record(x: ERecordRow[a]): Int32 = ???
 
-            pub def schema(x: ESchemaRow[a]): Int = ???
+            pub def schema(x: ESchemaRow[a]): Int32 = ???
 
-            pub def starStar(x: a, y: EStar[a]): Int = ???
+            pub def starStar(x: a, y: EStar[a]): Int32 = ???
         }
 
         namespace Effect {
             pub enum EBool[_a: Bool]
 
-            pub def bool(): Int & ef = ??? as & ef
+            pub def bool(): Int32 & ef = ??? as & ef
 
-            pub def func(x: Int -> Int & ef): Int & ef = ??? as & ef
+            pub def func(x: Int32 -> Int32 & ef): Int32 & ef = ??? as & ef
 
-            pub def enum(x: EBool[ef]): Int & ef = ??? as & ef
+            pub def enum(x: EBool[ef]): Int32 & ef = ??? as & ef
         }
 
         namespace Exp {
-            rel R(i: Int)
+            rel R(i: Int32)
 
-            pub def star(x: a): Int = let _: a = ???; ???
+            pub def star(x: a): Int32 = let _: a = ???; ???
         }
     }
 
     namespace Explicit {
 
         namespace FormalParams {
-            rel R(i: Int)
+            rel R(i: Int32)
 
-            pub def star[a: Type](x: a): Int = ???
+            pub def star[a: Type](x: a): Int32 = ???
 
-            pub def recordRow[a: RecordRow](x: { l :: Int | a }): Int = ???
+            pub def recordRow[a: RecordRow](x: { l :: Int32 | a }): Int32 = ???
 
-            pub def schemaRow[a: SchemaRow](x: #{ R | a }): Int = ???
+            pub def schemaRow[a: SchemaRow](x: #{ R | a }): Int32 = ???
 
-            pub def bool[a: Bool](x: Int -> Int & a): Int = ???
+            pub def bool[a: Bool](x: Int32 -> Int32 & a): Int32 = ???
 
-            pub def starToStar[a: Type -> Type](x: a[Int32]): Int = ???
+            pub def starToStar[a: Type -> Type](x: a[Int32]): Int32 = ???
         }
 
         namespace Return {
-            rel R(i: Int)
+            rel R(i: Int32)
 
             pub def star[a: Type](): a = ???
         }
@@ -92,12 +92,12 @@ namespace Test/Def/Kinding {
             class CStarToStar[a: Type -> Type]
             class CBoolToStar[a: Bool -> Type]
 
-            pub def star[a: Type](x: a): Int with CStar[a] = ???
+            pub def star[a: Type](x: a): Int32 with CStar[a] = ???
 
-            pub def starToStar[a: Type -> Type](x: a[Int32]): Int with CStarToStar[a] = ???
+            pub def starToStar[a: Type -> Type](x: a[Int32]): Int32 with CStarToStar[a] = ???
 
             // cannot be inferred
-            pub def boolToStar[a: Bool -> Type, ef: Bool](x: a[ef]): Int & ef with CBoolToStar[a] = ??? as & ef
+            pub def boolToStar[a: Bool -> Type, ef: Bool](x: a[ef]): Int32 & ef with CBoolToStar[a] = ??? as & ef
         }
 
         namespace Enum {
@@ -106,40 +106,40 @@ namespace Test/Def/Kinding {
             pub enum ERecordRow[_a: RecordRow]
             pub enum ESchemaRow[_a: SchemaRow]
 
-            pub def star[a: Type](x: EStar[a]): Int = ???
+            pub def star[a: Type](x: EStar[a]): Int32 = ???
 
-            pub def bool[a: Bool](x: EBool[a]): Int = ???
+            pub def bool[a: Bool](x: EBool[a]): Int32 = ???
 
-            pub def recordRow[a: RecordRow](x: ERecordRow[a]): Int = ???
+            pub def recordRow[a: RecordRow](x: ERecordRow[a]): Int32 = ???
 
-            pub def schemaRow[a: SchemaRow](x: ESchemaRow[a]): Int = ???
+            pub def schemaRow[a: SchemaRow](x: ESchemaRow[a]): Int32 = ???
 
-            pub def starStar[a: Type](x: a, y: EStar[a]): Int = ???
+            pub def starStar[a: Type](x: a, y: EStar[a]): Int32 = ???
         }
 
         namespace Effect {
             pub enum EBool[_a: Bool]
 
-            pub def bool[ef: Bool](): Int & ef = ??? as & ef
+            pub def bool[ef: Bool](): Int32 & ef = ??? as & ef
 
-            pub def func[ef: Bool](x: Int -> Int & ef): Int & ef = ??? as & ef
+            pub def func[ef: Bool](x: Int32 -> Int32 & ef): Int32 & ef = ??? as & ef
 
-            pub def enum[ef: Bool](x: EBool[ef]): Int & ef = ??? as & ef
+            pub def enum[ef: Bool](x: EBool[ef]): Int32 & ef = ??? as & ef
         }
 
         namespace Exp {
-            rel R(i: Int)
+            rel R(i: Int32)
 
-            pub def star[a: Type](x: a): Int = let _: a = ???; ???
+            pub def star[a: Type](x: a): Int32 = let _: a = ???; ???
         }
     }
 
     namespace Regression {
         namespace Test01 {
             pub enum Func[ef : Bool] {
-                case Function(Int -> Int & ef)
+                case Function(Int32 -> Int32 & ef)
             }
-            pub def func(f: Int -> Int & ef, g: Func[ef]): Int = ???
+            pub def func(f: Int32 -> Int32 & ef, g: Func[ef]): Int32 = ???
         }
 
         namespace Test02 {

@@ -828,6 +828,64 @@ namespace TestLazyList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool =
+        List.toLazyList(Nil) |> LazyList.product == 0
+
+    @test
+    def product02(): Bool =
+        List.toLazyList(1 :: Nil) |> LazyList.product == 1
+
+    @test
+    def product03(): Bool =
+        List.toLazyList(1 :: 2 :: 3 :: Nil) |> LazyList.product == 6
+
+    @test
+    def product04(): Bool =
+        List.toLazyList(1 :: 2 :: 3 :: -3 :: Nil) |> LazyList.product == -18
+
+    @test
+    def product05(): Bool =
+        List.toLazyList(-1 :: -2 :: -3 :: -4 :: Nil) |> LazyList.product == 24
+
+    @test
+    def product06(): Bool =
+        List.toLazyList(10 :: -10 :: Nil) |> LazyList.product == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool =
+        List.toLazyList(Nil) |> LazyList.productWith(x -> x + 1) == 0
+
+    @test
+    def productWith02(): Bool =
+        List.toLazyList(1 :: Nil) |> LazyList.productWith(x -> x + 1) == 2
+
+    @test
+    def productWith03(): Bool =
+        List.toLazyList(1 :: 2 :: 3 :: Nil) |> LazyList.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith04(): Bool =
+        List.toLazyList(1 :: 2 :: 3 :: -3 :: Nil) |> LazyList.productWith(x -> x + 1) == -48
+
+    @test
+    def productWith05(): Bool =
+        List.toLazyList(-2 :: -3 :: -4 :: -5 :: Nil) |> LazyList.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith06(): Bool =
+        List.toLazyList(10 :: -10 :: Nil) |> LazyList.productWith(x -> x + 1) == -99
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // drop                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1595,35 +1653,35 @@ namespace TestLazyList {
 
     @test
     def replace01(): Bool =
-        LazyList.replace(3, 4, ENil) == ENil
+        LazyList.replace(from = 3, to = 4, ENil) == ENil
 
     @test
     def replace02(): Bool =
-        LazyList.replace(3, 4, ECons(1, ENil)) == ECons(1, ENil)
+        LazyList.replace(from = 3, to = 4, ECons(1, ENil)) == ECons(1, ENil)
 
     @test
     def replace03(): Bool =
-        LazyList.replace(3, 4, ECons(3, ENil)) == ECons(4, ENil)
+        LazyList.replace(from = 3, to = 4, ECons(3, ENil)) == ECons(4, ENil)
 
     @test
     def replace04(): Bool =
-        LazyList.replace(3, 4, ECons(4, ECons(4, ECons(4, ENil)))) == ECons(4, ECons(4, ECons(4, ENil)))
+        LazyList.replace(from = 3, to = 4, ECons(4, ECons(4, ECons(4, ENil)))) == ECons(4, ECons(4, ECons(4, ENil)))
 
     @test
     def replace05(): Bool =
-        LazyList.replace(3, 4, ECons(2, ECons(2, ECons(2, ENil)))) == ECons(2, ECons(2, ECons(2, ENil)))
+        LazyList.replace(from = 3, to = 4, ECons(2, ECons(2, ECons(2, ENil)))) == ECons(2, ECons(2, ECons(2, ENil)))
 
     @test
     def replace06(): Bool =
-        LazyList.replace(3, 4, ECons(2, ECons(3, ECons(2, ENil)))) == ECons(2, ECons(4, ECons(2, ENil)))
+        LazyList.replace(from = 3, to = 4, ECons(2, ECons(3, ECons(2, ENil)))) == ECons(2, ECons(4, ECons(2, ENil)))
 
     @test
     def replace07(): Bool =
-        LazyList.replace(0, 1, ECons(0, ECons(0, ECons(0, ENil)))) == ECons(1, ECons(1, ECons(1, ENil)))
+        LazyList.replace(from = 0, to = 1, ECons(0, ECons(0, ECons(0, ENil)))) == ECons(1, ECons(1, ECons(1, ENil)))
 
     @test
     def replace08(): Bool =
-        LazyList.replace(3, 4, LList(lazy ECons(3, LList(lazy LCons(3, lazy LList(lazy LCons(3, lazy LList(lazy ENil)))))))) == ECons(4, ECons(4, ECons(4, ENil)))
+        LazyList.replace(from = 3, to = 4, LList(lazy ECons(3, LList(lazy LCons(3, lazy LList(lazy LCons(3, lazy LList(lazy ENil)))))))) == ECons(4, ECons(4, ECons(4, ENil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2506,6 +2564,29 @@ namespace TestLazyList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // span span fusion                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def spanSpanFusion01(): Bool & Impure =
+        let l = ref Nil;
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
+        LazyList.span(x -> { l := "a" :: deref l; x < 3 }) |> fst |>
+        LazyList.span(x -> { l := "b" :: deref l; x < 3 }); // The working list is `1 :: 2 :: Nil`
+        List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: Nil)
+
+    @test
+    def spanSpanFusion02(): Bool & Impure =
+        let l = ref Nil;
+        let _ =
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
+        LazyList.span(x -> { l := "a" :: deref l; x < 3 } as & Pure) |> fst |>
+        LazyList.span(x -> { l := "b" :: deref l; x < 3 } as & Pure) |> fst |>
+        LazyList.toList;
+        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -2539,6 +2620,35 @@ namespace TestLazyList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        List.toLazyList(Nil) |> LazyList.sumWith(x -> x + 1) == 0
+
+    @test
+    def sumWith02(): Bool =
+        List.toLazyList(1 :: Nil) |> LazyList.sumWith(x -> x + 1) == 2
+
+    @test
+    def sumWith03(): Bool =
+        List.toLazyList(1 :: 2 :: 3 :: Nil) |> LazyList.sumWith(x -> x + 1) == 9
+
+    @test
+    def sumWith04(): Bool =
+        List.toLazyList(1 :: 2 :: 3 :: -3 :: Nil) |> LazyList.sumWith(x -> x + 1) == 7
+
+    @test
+    def sumWith05(): Bool =
+        List.toLazyList(-1 :: -2 :: -3 :: -4 :: Nil) |> LazyList.sumWith(x -> x + 1) == -6
+
+    @test
+    def sumWith06(): Bool =
+        List.toLazyList(10 :: -10 :: Nil) |> LazyList.sumWith(x -> x + 1) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // order                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -2569,5 +2679,30 @@ namespace TestLazyList {
     @test
     def order07(): Bool =
         ((1 :: Nil) |> List.toLazyList) <=> ((1 :: 1 :: Nil) |> List.toLazyList) == LessThan
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool =
+        (Nil: List[Int32]) |> List.toLazyList |>
+            LazyList.join(",") == ""
+
+    @test
+    def join02(): Bool =
+        (1 :: Nil) |> List.toLazyList |>
+            LazyList.join(",") == "1"
+
+    @test
+    def join03(): Bool =
+        (1 :: 2 :: 3 :: Nil) |> List.toLazyList |>
+            LazyList.join(",") == "1,2,3"
+
+    @test
+    def join04(): Bool =
+        ("1" :: "2" :: "3" :: Nil) |> List.toLazyList |>
+            LazyList.join(",") == "1,2,3"
 
 }

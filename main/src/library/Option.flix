@@ -107,12 +107,12 @@ namespace Option {
     }
 
     ///
-    /// Returns `Some(y)` if `o` is `Some(x)`. Otherwise returns `o`.
+    /// Returns `Some(to)` if `o` is `Some(from)`. Otherwise returns `o`.
     ///
     @Time(1) @Space(1)
-    pub def replace(x: a, y: a, o: Option[a]): Option[a] with Eq[a] = match o {
+    pub def replace(from: {from :: a}, to: {to :: a}, o: Option[a]): Option[a] with Eq[a] = match o {
         case None => o
-        case Some(v) => Some(if (v == x) y else v)
+        case Some(v) => Some(if (v == from.from) to.to else v)
     }
 
     ///
@@ -197,6 +197,30 @@ namespace Option {
     }
 
     ///
+    /// Returns `v` if `o` is `Some(v)` else `0`.
+    ///
+    pub def sum(o: Option[Int32]): Int32 =
+        Foldable.sum(o)
+
+    ///
+    /// Returns `f(v)` if `o` is `Some(v)` else `0`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, o: Option[a]): Int32 & ef =
+        Foldable.sumWith(f, o)
+
+    ///
+    /// Returns `v` if `o` is `Some(v)` else `0`.
+    ///
+    pub def product(o: Option[Int32]): Int32 =
+        Foldable.product(o)
+
+    ///
+    /// Returns `f(v)` if `o` is `Some(v)` else `0`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, o: Option[a]): Int32 & ef =
+        Foldable.productWith(f, o)
+
+    ///
     /// Returns `o` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.
     ///
     /// The function `f` must be pure.
@@ -242,7 +266,7 @@ namespace Option {
     ///
     /// The function f must be pure.
     ///
-    pub def foldRightL(f: (a, Lazy[b]) -> b, o: Option[a], z: b): b = match o {
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b, o: Option[a], z: b): b = match o {
         case None => z
         case Some(v) => f(v, lazy z)
     }
