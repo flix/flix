@@ -166,6 +166,7 @@ class Flix {
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
     "Traversable.flix" -> LocalResource.get("/src/library/Traversable.flix"),
+    "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
 
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
