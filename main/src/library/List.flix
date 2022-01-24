@@ -449,10 +449,10 @@ namespace List {
     }
 
     ///
-    /// Returns `l` with every occurrence of `a` replaced by `b`.
+    /// Returns `l` with every occurrence of `from` replaced by `to`.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def replace(a: a, b: a, l: List[a]): List[a] with Eq[a] = map(e -> if (e == a) b else e, l)
+    pub def replace(from: {from :: a}, to: {to :: a}, l: List[a]): List[a] with Eq[a] = map(e -> if (e == from.from) to.to else e, l)
 
     ///
     /// Returns `l2` with the `n` elements starting at index `i` replaced with the elements of `l1`.
@@ -1198,6 +1198,14 @@ namespace List {
     ///
     pub def toMapWith(f: a -> b, l: List[a]): Map[a, b] with Order[a] =
             List.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), l)
+
+    ///
+    /// Returns the list `l` as a mutable deque.
+    ///
+    pub def toMutDeque(l: List[a]): MutDeque[a] & Impure =
+        let d = MutDeque.new();
+        List.foldLeft((_, x) -> MutDeque.pushBack(x, d), (), l);
+        d
 
     ///
     /// Applies `f` to every element of `l`.

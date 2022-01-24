@@ -599,28 +599,28 @@ def update07(): Bool = List.update(2, 5, 1 :: 2 :: Nil) == 1 :: 2 :: Nil
 // replace                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def replace01(): Bool = List.replace(3, 4, Nil) == Nil
+def replace01(): Bool = List.replace(from = 3, to = 4, Nil) == Nil
 
 @test
-def replace02(): Bool = List.replace(3, 4, 1 :: Nil) == 1 :: Nil
+def replace02(): Bool = List.replace(from = 3, to = 4, 1 :: Nil) == 1 :: Nil
 
 @test
-def replace03(): Bool = List.replace(3, 4, 3 :: Nil) == 4 :: Nil
+def replace03(): Bool = List.replace(from = 3, to = 4, 3 :: Nil) == 4 :: Nil
 
 @test
-def replace04(): Bool = List.replace(3, 4, 4 :: Nil) == 4 :: Nil
+def replace04(): Bool = List.replace(from = 3, to = 4, 4 :: Nil) == 4 :: Nil
 
 @test
-def replace05(): Bool = List.replace(3, 4, 1 :: 2 :: Nil) == 1 :: 2 :: Nil
+def replace05(): Bool = List.replace(from = 3, to = 4, 1 :: 2 :: Nil) == 1 :: 2 :: Nil
 
 @test
-def replace06(): Bool = List.replace(3, 4, 1 :: 3 :: Nil) == 1 :: 4 :: Nil
+def replace06(): Bool = List.replace(from = 3, to = 4, 1 :: 3 :: Nil) == 1 :: 4 :: Nil
 
 @test
-def replace07(): Bool = List.replace(3, 4, 3 :: 4 :: Nil) == 4 :: 4 :: Nil
+def replace07(): Bool = List.replace(from = 3, to = 4, 3 :: 4 :: Nil) == 4 :: 4 :: Nil
 
 @test
-def replace08(): Bool = List.replace(3, 4, 3 :: 3 :: Nil) == 4 :: 4 :: Nil
+def replace08(): Bool = List.replace(from = 3, to = 4, 3 :: 3 :: Nil) == 4 :: 4 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // patch                                                                   //
@@ -2522,5 +2522,44 @@ def distinctWith09(): Bool =
     @test
     def toIterator03(): Bool & Impure =
         List.range(-100, 100) |> List.toIterator |> Iterator.toList == List.range(-100, 100)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool & Impure =
+        let d0: MutDeque[Int32] = List.toMutDeque(Nil);
+        let d1: MutDeque[Int32] = MutDeque.new();
+        MutDeque.sameElements(d0, d1)
+
+    @test
+    def toMutDeque02(): Bool & Impure =
+        let d0 = List.toMutDeque(1 :: Nil);
+        let d1 = MutDeque.new();
+        MutDeque.pushBack(1, d1);
+        MutDeque.sameElements(d0, d1)
+
+    @test
+    def toMutDeque03(): Bool & Impure =
+        let d0 = List.toMutDeque(1 :: 2 :: Nil);
+        let d1 = MutDeque.new();
+        MutDeque.pushBack(1, d1);
+        MutDeque.pushBack(2, d1);
+        MutDeque.sameElements(d0, d1)
+
+    @test
+    def toMutDeque04(): Bool & Impure =
+        let d0 = List.toMutDeque(1 :: 2 :: 3 :: Nil);
+        let d1 = MutDeque.new();
+        MutDeque.pushFront(2, d1);
+        MutDeque.pushFront(1, d1);
+        MutDeque.pushBack(3, d1);
+        MutDeque.sameElements(d0, d1)
+
+    @test
+    def toMutDeque05(): Bool & Impure =
+        List.toMutDeque(1 :: 2 :: 3 :: Nil) |> MutDeque.toList == 1 :: 2 :: 3 :: Nil
 
 }
