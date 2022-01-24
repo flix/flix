@@ -21,7 +21,7 @@ pub enum Nel[a] {
     case Nel(a, List[a])
 }
 
-instance Boxable[Nel[a]]
+instance Boxable[Nel[a]] with Boxable[a]
 
 instance ToString[Nel[a]] with ToString[a] {
     pub def toString(l: Nel[a]): String = match l {

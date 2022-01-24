@@ -209,30 +209,30 @@ instance Boxable[BigInt]
 
 instance Boxable[String]
 
-instance Boxable[(a, b)]
+instance Boxable[(a, b)] with Boxable[a], Boxable[b]
 
-instance Boxable[(a, b, c)]
+instance Boxable[(a, b, c)] with Boxable[a], Boxable[b], Boxable[c]
 
-instance Boxable[(a, b, c, d)]
+instance Boxable[(a, b, c, d)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d]
 
-instance Boxable[(a, b, c, d, e)]
+instance Boxable[(a, b, c, d, e)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e]
 
-instance Boxable[(a, b, c, d, e, f)]
+instance Boxable[(a, b, c, d, e, f)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f]
 
-instance Boxable[(a, b, c, d, e, f, g)]
+instance Boxable[(a, b, c, d, e, f, g)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g]
 
-instance Boxable[(a, b, c, d, e, f, g, h)]
+instance Boxable[(a, b, c, d, e, f, g, h)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g], Boxable[h]
 
-instance Boxable[(a, b, c, d, e, f, g, h, i)]
+instance Boxable[(a, b, c, d, e, f, g, h, i)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g], Boxable[h], Boxable[i]
 
-instance Boxable[(a, b, c, d, e, f, g, h, i, j)]
+instance Boxable[(a, b, c, d, e, f, g, h, i, j)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g], Boxable[h], Boxable[i], Boxable[j]
 
-instance Boxable[(a, b, c, d, e, f, g, h, i, j, k)]
+instance Boxable[(a, b, c, d, e, f, g, h, i, j, k)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g], Boxable[h], Boxable[i], Boxable[j], Boxable[k]
 
-instance Boxable[(a, b, c, d, e, f, g, h, i, j, k, l)]
+instance Boxable[(a, b, c, d, e, f, g, h, i, j, k, l)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g], Boxable[h], Boxable[i], Boxable[j], Boxable[k], Boxable[l]
 
-instance Boxable[(a, b, c, d, e, f, g, h, i, j, k, l, m)]
+instance Boxable[(a, b, c, d, e, f, g, h, i, j, k, l, m)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g], Boxable[h], Boxable[i], Boxable[j], Boxable[k], Boxable[l], Boxable[m]
 
-instance Boxable[(a, b, c, d, e, f, g, h, i, j, k, l, m, n)]
+instance Boxable[(a, b, c, d, e, f, g, h, i, j, k, l, m, n)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g], Boxable[h], Boxable[i], Boxable[j], Boxable[k], Boxable[l], Boxable[m], Boxable[n]
 
-instance Boxable[(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)]
+instance Boxable[(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)] with Boxable[a], Boxable[b], Boxable[c], Boxable[d], Boxable[e], Boxable[f], Boxable[g], Boxable[h], Boxable[i], Boxable[j], Boxable[k], Boxable[l], Boxable[m], Boxable[n], Boxable[o]

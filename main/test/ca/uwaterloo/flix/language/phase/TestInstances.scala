@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Formatter, Options}
 import org.scalatest.FunSuite
 
 class TestInstances extends FunSuite with TestUtils {
@@ -598,5 +598,48 @@ class TestInstances extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.IllegalTypeAliasInstance](result)
+  }
+
+  test("Test.MissingConstraint.01") {
+    val input =
+      """
+        |class C[a]
+        |class D[a] with C[a]
+        |
+        |instance C[(a, b)] with C[a], C[b]
+        |instance D[(a, b)]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.MissingConstraint](result)
+  }
+
+  test("Test.MissingConstraint.02") {
+    val input =
+      """
+        |class C[a]
+        |class D[a] with C[a]
+        |class E[a] with D[a]
+        |
+        |class F[a]
+        |
+        |instance C[(a, b)] with C[a], C[b]
+        |instance D[(a, b)] with C[a], C[b], F[a], F[b]
+        |instance E[(a, b)] with C[a], C[b]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.MissingConstraint](result)
+  }
+
+  test("Test.MissingConstraint.03") {
+    val input =
+      """
+        |class C[a]
+        |class D[a] with C[a]
+        |
+        |instance C[(a, b)] with C[a], C[b]
+        |instance D[(a, b)] with D[a], D[b]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    rejectError[InstanceError.MissingConstraint](result)
   }
 }
