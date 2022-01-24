@@ -44,10 +44,6 @@ object Stratifier {
     * Returns a stratified version of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Stratifier") {
-    // Check if computation of stratification is disabled.
-    if (flix.options.xnostratifier)
-      return root.toSuccess
-
     // Compute an over-approximation of the dependency graph for all constraints in the program.
     val g = flix.subphase("Compute Dependency Graph") {
       ParOps.parAgg(root.defs, LabelledGraph.empty)({
@@ -55,28 +51,17 @@ object Stratifier {
       }, _ + _)
     }
 
-    // Compute the stratification at every datalog expression in the ast.`
+    // Compute the stratification at every datalog expression in the ast.
     val defsVal = flix.subphase("Compute Stratification") {
-      traverse(root.defs) {
-        case (sym, defn) => visitDef(defn)(g, flix).map(d => sym -> d)
-      }
+      val result = ParOps.parMap(root.defs)(kv => visitDef(kv._2)(g, flix).map(d => kv._1 -> d))
+      Validation.sequence(result)
     }
+
+    // TODO: JLS: Must also visit instances.
 
     mapN(defsVal) {
       case ds => root.copy(defs = ds.toMap)
     }
-  }
-
-  /**
-    * Computes the term types of a `Relation` or `Lattice` type.
-    */
-  private def termTypes(tpe: Type): List[Type] = eraseAliases(tpe) match {
-    case Type.Apply(Type.Cst(TypeConstructor.Relation | TypeConstructor.Lattice, _), element, _) => element.baseType match {
-      case Type.Cst(TypeConstructor.Tuple(_), _) => element.typeArguments // Multi-ary
-      case Type.Cst(TypeConstructor.Unit, _) => Nil
-      case _ => List(element) // Unary
-    }
-    case other => throw InternalCompilerException(s"Unexpected non-relation non-lattice type $other")
   }
 
   /**
@@ -423,6 +408,26 @@ object Stratifier {
   }
 
   /**
+    * Reorders a constraint such that its negated atoms occur last.
+    */
+  private def reorder(c0: Constraint): Constraint = {
+    /**
+      * Returns `true` if the body predicate is negated.
+      */
+    def isNegative(p: Predicate.Body): Boolean = p match {
+      case Predicate.Body.Atom(_, _, Polarity.Negative, _, _, _) => true
+      case _ => false
+    }
+
+    // Collect all the negated and non-negated predicates.
+    val negated = c0.body filter isNegative
+    val nonNegated = c0.body filterNot isNegative
+
+    // Reassemble the constraint.
+    c0.copy(body = nonNegated ::: negated)
+  }
+
+  /**
     * Returns the labelled graph of the given definition `def0`.
     */
   private def labelledGraphOfDef(def0: Def): LabelledGraph =
@@ -661,33 +666,6 @@ object Stratifier {
   }
 
   /**
-    * Returns the labelled graph of the given constraint `c0`.
-    */
-  private def labelledGraphOfConstraint(c: Constraint): LabelledGraph = c match {
-    case Constraint(_, Predicate.Head.Atom(headPred, den, _, headTpe, _), body0, _) =>
-      // We add all body predicates and the head to the labels of each edge
-      val bodyLabels: Vector[Label] = body0.collect {
-        case Body.Atom(bodyPred, den, _, _, bodyTpe, _) =>
-          val terms = termTypes(bodyTpe)
-          Label(bodyPred, den, terms.length, terms)
-      }.toVector
-      val headTerms = termTypes(headTpe)
-      val labels = bodyLabels :+ Label(headPred, den, headTerms.length, headTerms)
-
-      val edges = body0.foldLeft(Set.empty[LabelledEdge]) {
-        case (edges, body) => body match {
-          case Body.Atom(bodyPred, _, p, _, _, bodyLoc) =>
-            edges + LabelledEdge(headPred, p, labels, bodyPred, bodyLoc)
-
-          case Body.Guard(_, _) => edges
-
-          case Body.Loop(_, _, _) => edges
-        }
-      }
-      LabelledGraph(edges)
-  }
-
-  /**
     * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
     */
   private def stratify(g: LabelledGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Stratification, StratificationError] = {
@@ -695,50 +673,10 @@ object Stratifier {
     val key = predicateSymbolsOf(tpe)
 
     // Compute the restricted labelled graph.
-    val rg = g.restrict(key, labelEquality)
+    val rg = g.restrict(key, labelEq)
 
     // Compute the stratification.
     UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc)
-  }
-
-  /**
-    * Compare the labels by field, and used unification for type equality.
-    */
-  private def labelEquality(l1: Label, l2: Label)(implicit flix: Flix): Boolean =
-    l1.pred == l2.pred &&
-      l1.den == l2.den &&
-      l1.arity == l2.arity &&
-      l1.terms.zip(l2.terms).forall { case (t1, t2) => Unification.unifiesWith(t1, t2) }
-
-  /**
-    * Computes the dependency graph from the labelled graph, throwing the labels away.
-    */
-  private def labelledGraphToDependencyGraph(g: LabelledGraph): UllmansAlgorithm.DependencyGraph =
-    g.edges.map {
-      case LabelledEdge(head, Polarity.Positive, _, body, loc) =>
-        UllmansAlgorithm.DependencyEdge.Positive(head, body, loc)
-      case LabelledEdge(head, Polarity.Negative, _, body, loc) =>
-        UllmansAlgorithm.DependencyEdge.Negative(head, body, loc)
-    }
-
-  /**
-    * Reorders a constraint such that its negated atoms occur last.
-    */
-  private def reorder(c0: Constraint): Constraint = {
-    /**
-      * Returns `true` if the body predicate is negated.
-      */
-    def isNegative(p: Predicate.Body): Boolean = p match {
-      case Predicate.Body.Atom(_, _, Polarity.Negative, _, _, _) => true
-      case _ => false
-    }
-
-    // Collect all the negated and non-negated predicates.
-    val negated = c0.body filter isNegative
-    val nonNegated = c0.body filterNot isNegative
-
-    // Reassemble the constraint.
-    c0.copy(body = nonNegated ::: negated)
   }
 
   /**
@@ -766,5 +704,70 @@ object Stratifier {
       case other => throw InternalCompilerException(s"Unexpected non-schema type: '$other'")
     }
   }
+
+  /**
+    * Returns the labelled graph of the given constraint `c0`.
+    */
+  private def labelledGraphOfConstraint(c: Constraint): LabelledGraph = c match {
+    case Constraint(_, Predicate.Head.Atom(headPred, den, _, headTpe, _), body0, _) =>
+      val headTerms = termTypes(headTpe)
+
+      // We add all body predicates and the head to the labels of each edge
+      val bodyLabels: Vector[Label] = body0.collect {
+        case Body.Atom(bodyPred, den, _, _, bodyTpe, _) =>
+          val terms = termTypes(bodyTpe)
+          Label(bodyPred, den, terms.length, terms)
+      }.toVector
+
+      val labels = bodyLabels :+ Label(headPred, den, headTerms.length, headTerms)
+
+      val edges = body0.foldLeft(Vector.empty[LabelledEdge]) {
+        case (edges, body) => body match {
+          case Body.Atom(bodyPred, _, p, _, _, bodyLoc) =>
+            edges :+ LabelledEdge(headPred, p, labels, bodyPred, bodyLoc)
+          case Body.Guard(_, _) => edges
+          case Body.Loop(_, _, _) => edges
+        }
+      }
+
+      LabelledGraph(edges)
+  }
+
+  /**
+    * Returns the term types of the given relational or latticenal type.
+    */
+  private def termTypes(tpe: Type): List[Type] = eraseAliases(tpe) match {
+    case Type.Apply(Type.Cst(TypeConstructor.Relation | TypeConstructor.Lattice, _), t, _) => t.baseType match {
+      case Type.Cst(TypeConstructor.Tuple(_), _) => t.typeArguments // Multi-ary
+      case Type.Cst(TypeConstructor.Unit, _) => Nil
+      case _ => List(t) // Unary
+    }
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe.'")
+  }
+
+  /**
+    * Returns `true` if the two given labels `l1` and `l2` are considered equal.
+    */
+  private def labelEq(l1: Label, l2: Label)(implicit flix: Flix): Boolean = {
+    val isEqPredicate = l1.pred == l2.pred
+    val isEqDenotation = l1.den == l2.den
+    val isEqArity = l1.arity == l2.arity
+    val isEqTermTypes = l1.terms.zip(l2.terms).forall {
+      case (t1, t2) => Unification.unifiesWith(t1, t2)
+    }
+
+    isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes
+  }
+
+  /**
+    * Computes the dependency graph from the labelled graph, throwing the labels away.
+    */
+  private def labelledGraphToDependencyGraph(g: LabelledGraph): UllmansAlgorithm.DependencyGraph =
+    g.edges.map {
+      case LabelledEdge(head, Polarity.Positive, _, body, loc) =>
+        UllmansAlgorithm.DependencyEdge.Positive(head, body, loc)
+      case LabelledEdge(head, Polarity.Negative, _, body, loc) =>
+        UllmansAlgorithm.DependencyEdge.Negative(head, body, loc)
+    }.toSet
 
 }
