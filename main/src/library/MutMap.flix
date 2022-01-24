@@ -542,4 +542,20 @@ namespace MutMap {
     pub def sameElements(a: MutMap[k, v], b: MutMap[k, v]): Bool & Impure with Order[k], Eq[v] =
         MutMap.isSubmapOf(a, b) and MutMap.isSubmapOf(b, a)
 
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each key `k` in `m` with `sep` inserted between each element.
+    ///
+    pub def joinKeys(sep: String, m: MutMap[k, v]): String & Impure with ToString[k] =
+        let MutMap(mm) = m;
+        Map.joinKeys(sep, deref mm)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each value `v` in `m` with `sep` inserted between each element.
+    ///
+    pub def joinValues(sep: String, m: MutMap[k, v]): String & Impure with ToString[v] =
+        let MutMap(mm) = m;
+        Map.joinValues(sep, deref mm)
+
 }

@@ -1153,6 +1153,13 @@ namespace List {
         StringBuilder.toString(sb)
 
     ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `l` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, l: List[a]): String with ToString[a] =
+        Foldable.join(sep, l)
+
+    ///
     /// Returns the elements of `l` as a lazy list.
     ///
     pub def toLazyList(l: List[a]): LazyList[a] = match l {

@@ -702,4 +702,24 @@ namespace DelayMap {
         let DMap(t) = m;
         RedBlackTree.productWith((k, v) -> f(k, force v), t)
 
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each key `k` in `m` with `sep` inserted between each element.
+    ///
+    pub def joinKeys(sep: String, m: DelayMap[k, v]): String with ToString[k] = {
+        let sb = StringBuilder.new();
+        foldLeftWithKey((_, k, _) -> StringBuilder.append!(sb, "${k}" + sep), (), m );
+        StringBuilder.toString(sb) |> String.dropRight(1)
+    } as & Pure
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each value `v` in `m` with `sep` inserted between each element.
+    ///
+    pub def joinValues(sep: String, m: DelayMap[k, v]): String with ToString[v] = {
+        let sb = StringBuilder.new();
+        foldLeftWithKey((_, _, v) -> StringBuilder.append!(sb, "${v}" + sep), (), m);
+        StringBuilder.toString(sb) |> String.dropRight(1)
+    } as & Pure
+
 }

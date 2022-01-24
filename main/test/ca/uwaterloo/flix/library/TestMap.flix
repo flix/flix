@@ -2280,4 +2280,46 @@ def query18(): Bool =
         let l = List.range(0, 100);
         List.zip(l, List.reverse(l)) |> List.toMap |> Map.toIterator |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinValues                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinValues01(): Bool =
+        Map.empty(): Map[Int32, Int32] |> Map.joinValues(",") == ""
+
+    @test
+    def joinValues02(): Bool =
+        Map#{1 => 1} |> Map.joinValues(",") == "1"
+
+    @test
+    def joinValues03(): Bool =
+        Map#{0 => 1, 1 => 2, 2 => 2} |> Map.joinValues(",") == "1,2,2"
+
+    @test
+    def joinValues04(): Bool =
+        Map#{0 => "1", 1 => "2", 2 => "2"} |> Map.joinValues(",") == "1,2,2"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinKeys                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinKeys01(): Bool =
+        Map.empty(): Map[Int32, Int32] |> Map.joinKeys(",") == ""
+
+    @test
+    def joinKeys02(): Bool =
+        Map#{1 => 1} |> Map.joinKeys(",") == "1"
+
+    @test
+    def joinKeys03(): Bool =
+        Map#{0 => 1, 1 => 2, 2 => 2} |> Map.joinKeys(",") == "0,1,2"
+
+    @test
+    def joinKeys04(): Bool =
+        Map#{"0" => 1, "1" => 2, "2" => 2} |> Map.joinKeys(",") == "0,1,2"
+
 }

@@ -289,6 +289,16 @@ pub lawless class Foldable[t : Type -> Type] {
         use Applicative.{point, *>};
         Foldable.foldLeftM((acc, a) -> f(a) *> point(acc), (), t)
 
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `t` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, t: t[a]): String with ToString[a] = {
+        let sb = StringBuilder.new();
+        t |> Foldable.foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), ());
+        StringBuilder.toString(sb) |> String.dropRight(1)
+    } as & Pure
+
 }
 
 namespace Foldable {

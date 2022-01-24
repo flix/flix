@@ -1113,4 +1113,29 @@ namespace TestDemandList {
     def sumWith06(): Bool =
         List.toDemandList(10 :: -10 :: Nil) |> DemandList.sumWith(x -> x + 1) == 2
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool =
+        (Nil: List[Int32]) |> List.toDemandList |>
+            DemandList.join(",") == ""
+
+    @test
+    def join02(): Bool =
+        (1 :: Nil) |> List.toDemandList |>
+            DemandList.join(",") == "1"
+
+    @test
+    def join03(): Bool =
+        (1 :: 2 :: 3 :: Nil) |> List.toDemandList |>
+            DemandList.join(",") == "1,2,3"
+
+    @test
+    def join04(): Bool =
+        ("1" :: "2" :: "3" :: Nil) |> List.toDemandList |>
+            DemandList.join(",") == "1,2,3"
+
 }

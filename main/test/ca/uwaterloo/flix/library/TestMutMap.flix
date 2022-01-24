@@ -297,4 +297,46 @@ namespace TestMutMap {
         Map#{10 => 10, -10 => -10} |> Map.toMutMap |>
             MutMap.productWith((k, v) -> k + v) == -400
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinValues                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinValues01(): Bool & Impure =
+        MutMap.empty(): MutMap[Int32, Int32] |> MutMap.joinValues(",") == ""
+
+    @test
+    def joinValues02(): Bool & Impure =
+        Map#{1 => 1} |> Map.toMutMap |> MutMap.joinValues(",") == "1"
+
+    @test
+    def joinValues03(): Bool & Impure =
+        Map#{0 => 1, 1 => 2, 2 => 2} |> Map.toMutMap |> MutMap.joinValues(",") == "1,2,2"
+
+    @test
+    def joinValues04(): Bool & Impure =
+        Map#{0 => "1", 1 => "2", 2 => "2"} |> Map.toMutMap |> MutMap.joinValues(",") == "1,2,2"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinKeys                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinKeys01(): Bool & Impure =
+        MutMap.empty(): MutMap[Int32, Int32] |> MutMap.joinKeys(",") == ""
+
+    @test
+    def joinKeys02(): Bool & Impure =
+        Map#{1 => 1} |> Map.toMutMap |> MutMap.joinKeys(",") == "1"
+
+    @test
+    def joinKeys03(): Bool & Impure =
+        Map#{0 => 1, 1 => 2, 2 => 2} |> Map.toMutMap |> MutMap.joinKeys(",") == "0,1,2"
+
+    @test
+    def joinKeys04(): Bool & Impure =
+        Map#{"0" => 1, "1" => 2, "2" => 2} |> Map.toMutMap |> MutMap.joinKeys(",") == "0,1,2"
+
 }
