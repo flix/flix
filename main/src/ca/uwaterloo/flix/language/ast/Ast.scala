@@ -379,7 +379,7 @@ object Ast {
   /**
     * Represents a label in the labelled graph.
     */
-  case class Label(pred: Name.Pred, arity: Int)
+  case class Label(pred: Name.Pred, den: Denotation, arity: Int, terms: List[Type])
 
   object LabelledGraph {
     /**
@@ -413,14 +413,14 @@ object Ast {
 
     /**
       * Returns `this` labelled graph including only the edges where all
-      * its labels are in `syms` and the arity matches.
+      * its labels are in `syms` and the labels match according to 'labelEquality'.
       * A rule like
-      * `A(ta) :- B(tb), not C(tc).` is represented by `edge(A, pos, {(A, arity(ta)), (B, arity(tb)), (C, arity(tc))}, (B, arity(tb)))` etc.
-      * and is only included in the output if `syms` contains all of `A, B, C` and `syms(A) == arity(ta)` etc.
+      * `A(ta) :- B(tb), not C(tc).` is represented by `edge(A, pos, {la, lb, lc}, B)` etc.
+      * and is only included in the output if `syms` contains all of `la.pred, lb.pred, lc.pred` and `labelEquality(syms(A), la)` etc.
       */
-    def restrict(syms: Map[Name.Pred, Int]): LabelledGraph = {
+    def restrict(syms: Map[Name.Pred, Label], labelEquality: (Label, Label) => Boolean): LabelledGraph = {
       def check(l: Label): Boolean =
-        syms.get(l.pred).contains(l.arity)
+        syms.get(l.pred).exists(l0 => labelEquality(l0, l))
 
       LabelledGraph(edges.filter {
         case LabelledEdge(_, _, labels, _, _) =>
