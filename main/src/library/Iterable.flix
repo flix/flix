@@ -28,27 +28,33 @@ pub lawless class Iterable[t: Type -> Type] {
 
 instance Iterable[List] {
     pub def iterator(t: List[a]): Iterator[a] & Impure =
-        let list = ref t;
-        let done = () -> List.isEmpty(deref list);
-        let next = () -> match deref list {
-                case Cons(x, xs)  => {
-                    list := xs;
-                    x
-                }
-                case Nil => bug!("Empty Iterator!") as & Impure
-            };
+        let cursor = ref t;
+        let done = () -> match (deref cursor) {
+            case Nil => true
+            case _   => false
+        };
+        let next = () -> match (deref cursor) {
+            case Nil     => bug!("Empty Iterator!")
+            case x :: xs => {
+                cursor := xs;
+                x
+            }
+        };
         Iterator(done, next)
 }
 
-instance Iterable[MutList] {
-    pub def iterator(t: MutList[a]): Iterator[a] & Impure =
-        let i = ref 0;
-        let list = ref t;
-        let done = () -> MutList.isEmpty(deref list);
-        let next = () -> {
-                let elem = MutList.get(deref i, deref list);
-                i := deref i + 1;
-                elem
-            };
+instance Iterable[LazyList] {
+    pub def iterator(t: LazyList[a]): Iterator[a] & Impure =
+        let cursor = ref t;
+        let done = () -> match LazyList.head(deref cursor) {
+            case None    => true
+            case Some(_) => false
+        };
+        let next = () -> match LazyList.head(deref cursor) {
+            case None    => bug!("Empty iterator")
+            case Some(x) =>
+                cursor := LazyList.tail(deref cursor);
+                x
+        };
         Iterator(done, next)
 }
