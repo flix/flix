@@ -16,41 +16,46 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
-import ca.uwaterloo.flix.util.vt.VirtualString._
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * An error raised to indicate that a constraint set is not stratified.
   */
-case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Type, loc: SourceLocation) extends CompilationError {
+case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Type, loc: SourceLocation) extends CompilationMessage {
   private implicit val audience: Audience = Audience.External
+
   def kind: String = "Stratification Error"
+
   def summary: String = "The expression is not stratified. A predicate depends negatively on itself."
-  def message: VirtualTerminal = {
-    val vt = new VirtualTerminal
-    vt << Line(kind, source.format) << NewLine
-    vt << ">> The expression is not stratified. A predicate depends negatively on itself." << NewLine
-    vt << NewLine
-    vt << Code(loc, "the expression is not stratified.")
-    vt << NewLine
-    vt << "The type of the expression is:"
-    vt << Indent << NewLine << NewLine
-    vt << Cyan(FormatType.formatType(tpe))
-    vt << Dedent << NewLine << NewLine
-    vt << "The following predicate symbols are on the negative cycle:" << NewLine
-    vt << Indent << NewLine
-    vt << cycle.map(_._1).mkString(" <- ")
-    vt << Dedent << NewLine
-    vt << NewLine
-    vt << "The following constraints are part of the negative cycle:" << NewLine
-    vt << Indent
-    for ((sym, loc) <- cycle) {
-      vt << NewLine << Cyan(sym.name) << " at " << loc.format << " (which depends on)"
-    }
-    vt << Dedent << NewLine
+
+  def message(formatter: Formatter): String = {
+    import formatter._
+    s"""${line(kind, source.name)}
+       |>> The expression is not stratified. A predicate depends negatively on itself.
+       |
+       |${code(loc, "the expression is not stratified.")}
+       |The type of the expression is:
+       |
+       |  ${cyan(FormatType.formatType(tpe))}
+       |
+       |The following predicate symbols are on the negative cycle:
+       |
+       |  ${cycle.map(_._1).mkString(" <- ")}
+       |
+       |The following constraints are part of the negative cycle:
+       |${constraints(formatter)}
+       |""".stripMargin
   }
 
+  private def constraints(formatter: Formatter): String = {
+    cycle.map(t => "  " + formatter.cyan(t._1.name) + " at " + t._2.format + " (which depends on)" + System.lineSeparator()).mkString
+  }
+
+  /**
+    * Returns a formatted string with helpful suggestions.
+    */
+  def explain(formatter: Formatter): Option[String] = None
 }

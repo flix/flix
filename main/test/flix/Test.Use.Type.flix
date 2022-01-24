@@ -37,12 +37,12 @@ namespace A {
             case USD,
             case CAD
         }
-        pub opaque type Kelvin = Int
-        type alias Meter = Int
+        pub opaque type Kelvin = Int32
+        pub type alias Meter = Int32
     }
 }
 
 namespace B {
-    pub opaque type Kilogram = Int
-    type alias Acre = Int
+    pub opaque type Kilogram = Int32
+    pub type alias Acre = Int32
 }

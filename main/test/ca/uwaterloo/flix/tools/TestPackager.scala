@@ -1,14 +1,11 @@
 package ca.uwaterloo.flix.tools
 
-import java.nio.file.Files
-
 import ca.uwaterloo.flix.util.Options
-import ca.uwaterloo.flix.util.vt.TerminalContext
 import org.scalatest.FunSuite
 
-class TestPackager extends FunSuite {
+import java.nio.file.Files
 
-  private implicit val terminalContext: TerminalContext = TerminalContext.NoTerminal
+class TestPackager extends FunSuite {
 
   private val ProjectPrefix: String = "flix-project-"
 

@@ -40,14 +40,14 @@ namespace BenchmarkSet {
     ///
     @benchmark
     pub def benchmark06(): Bool =
-        Set.size(Set.fold((acc, y) -> Set.delete(y, acc), Set.range(0, 24), Set.range(0, 12))) == 12
+        Set.size(Set.fold((acc, y) -> Set.remove(y, acc), Set.range(0, 24), Set.range(0, 12))) == 12
 
     ///
     /// create a set of `Int32`, delete the upper half of the elements and compute the size.
     ///
     @benchmark
     pub def benchmark07(): Bool =
-        Set.size(Set.fold((acc, y) -> Set.delete(y, acc), Set.range(0, 24), Set.range(12, 24))) == 12
+        Set.size(Set.fold((acc, y) -> Set.remove(y, acc), Set.range(0, 24), Set.range(12, 24))) == 12
 
     ///
     /// create two sets of `Int32`, find their difference and compute the size.
@@ -82,7 +82,7 @@ namespace BenchmarkSet {
     ///
     @benchmark
     pub def benchmark12(): Bool =
-        Set.size(Set.filter(x -> x % 2 == 0, Set.range(0, 24))) == 12
+        Set.size(Set.filter(x -> x rem 2 == 0, Set.range(0, 24))) == 12
 
     ///
     /// create a set of `Int32` and find the first element that satisfies a predicate, searching left to right.
@@ -152,7 +152,7 @@ namespace BenchmarkSet {
     ///
     @benchmark
     pub def benchmark22(): Bool =
-        Set.size(fst(Set.partition(x -> x % 2 == 0, Set.range(0, 24)))) == 12
+        Set.size(fst(Set.partition(x -> x rem 2 == 0, Set.range(0, 24)))) == 12
 
     ///
     /// create a set of `Int32` and compute its sum via reduceLeft.
@@ -173,21 +173,21 @@ namespace BenchmarkSet {
     ///
     @benchmark
     pub def benchmark25(): Bool =
-        Set.memberOf(24, Set.replace(0, 24, Set.range(0, 24)))
+        Set.memberOf(24, Set.replace(from = 0, to = 24, Set.range(0, 24)))
 
     ///
     /// create a set of `Int32` and replace a mid-valued element with a high-valued element.
     ///
     @benchmark
     pub def benchmark26(): Bool =
-        Set.memberOf(24, Set.replace(12, 24, Set.range(0, 24)))
+        Set.memberOf(24, Set.replace(from = 12, to = 24, Set.range(0, 24)))
 
     ///`
     /// create a set of `Int32` and replace a high-valued element with a low valued-element.
     ///
     @benchmark
     pub def benchmark27(): Bool =
-        Set.memberOf(-1, Set.replace(23, -1, Set.range(0, 24)))
+        Set.memberOf(-1, Set.replace(from = 23, to = -1, Set.range(0, 24)))
 
     ///
     /// create a set of 4 `Int32` and compute the size of its subsets.

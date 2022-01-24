@@ -33,13 +33,17 @@ object Ast {
 
     /**
       * A source that is backed by an internal resource.
+      *
+      * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
       */
-    case class Internal(name: String, text: String) extends Input
+    case class Text(name: String, text: String, stable: Boolean) extends Input {
+      override def hashCode(): Int = name.hashCode
 
-    /**
-      * A source that is backed by a regular string.
-      */
-    case class Str(text: String) extends Input
+      override def equals(obj: Any): Boolean = obj match {
+        case that: Text => this.name == that.name
+        case _ => false
+      }
+    }
 
     /**
       * A source that is backed by a regular file.
@@ -55,15 +59,24 @@ object Ast {
 
   /**
     * A source is a name and an array of character data.
+    *
+    * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
     */
-  case class Source(name: String, data: Array[Char]) {
-    def format: String = name
+  case class Source(input: Input, data: Array[Char], stable: Boolean) extends Sourceable {
 
-    override def equals(o: scala.Any): Boolean = o match {
-      case that: Source => this.name == that.name
+    def name: String = input match {
+      case Input.Text(name, _, _) => name
+      case Input.TxtFile(path) => path.toString
+      case Input.PkgFile(path) => path.toString
     }
 
-    override def hashCode(): Int = name.hashCode
+    def src: Source = this
+
+    override def equals(o: scala.Any): Boolean = o match {
+      case that: Source => this.input == that.input
+    }
+
+    override def hashCode(): Int = input.hashCode()
   }
 
   /**
@@ -80,37 +93,9 @@ object Ast {
       *
       * @param loc the source location of the annotation.
       */
+    // NB: Deprecated
     case class Benchmark(loc: SourceLocation) extends Annotation {
       override def toString: String = "@benchmark"
-    }
-
-    /**
-      * An AST node that represents a `@deprecated` annotation.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Deprecated(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@deprecated"
-    }
-
-    /**
-      * An AST node that represents a `@law` annotation.
-      *
-      * A `law` function is a property (theorem) about the behaviour of one or more functions.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Law(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@law"
-    }
-
-    /**
-      * An AST node that represents a `@lint` annotation.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Lint(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@lint"
     }
 
     /**
@@ -120,28 +105,85 @@ object Ast {
       *
       * @param loc the source location of the annotation.
       */
+    // NB: Deprecated
     case class Test(loc: SourceLocation) extends Annotation {
       override def toString: String = "@test"
     }
 
     /**
-      * An AST node that represents an `@unchecked` annotation.
-      *
-      * The properties of a function marked `@unchecked` are not checked by the verifier.
-      *
-      * E.g. if a function is marked @commutative and @unchecked then
-      * no attempt is made to check that the function is actually commutative.
-      * However, the compiler and run-time is still permitted to assume that the
-      * function is commutative.
+      * An annotation that marks a construct as deprecated.
       *
       * @param loc the source location of the annotation.
       */
-    case class Unchecked(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@unchecked"
+    case class Deprecated(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Deprecated"
     }
 
     /**
-      * An AST node that represents a `@Time` annotation.
+      * An annotation that marks a construct as experimental.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Experimental(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Experimental"
+    }
+
+    /**
+      * An annotation that marks a construct as internal.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Internal(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Internal"
+    }
+
+    /**
+      * An annotation that marks a function definition as using parallel evaluation.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Parallel(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Parallel"
+    }
+
+    /**
+      * An annotation that marks a function definition as using parallel evaluation when given a pure function argument.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class ParallelWhenPure(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@ParallelWhenPure"
+    }
+
+    /**
+      * An annotation that marks a function definition as using lazy evaluation.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Lazy(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Lazy"
+    }
+
+    /**
+      * An annotation that marks a function definition as using lazy evaluation when given a pure function argument.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class LazyWhenPure(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@LazyWhenPure"
+    }
+
+    /**
+      * An annotation that indicates the space complexity of a function definition.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Space(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Space"
+    }
+
+    /**
+      * An annotation that indicates the time complexity of a function definition.
       *
       * @param loc the source location of the annotation.
       */
@@ -150,12 +192,12 @@ object Ast {
     }
 
     /**
-      * An AST node that represents a `@Space` annotation.
+      * An annotation that marks a function definition as being inherently unsafe.
       *
       * @param loc the source location of the annotation.
       */
-    case class Space(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@Space"
+    case class Unsafe(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Unsafe"
     }
 
   }
@@ -181,24 +223,10 @@ object Ast {
     def isBenchmark: Boolean = annotations exists (_.isInstanceOf[Annotation.Benchmark])
 
     /**
-      * Returns `true` if `this` sequence contains the `@law` annotation.
-      */
-    def isLaw: Boolean = annotations exists (_.isInstanceOf[Annotation.Law])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@lint` annotation.
-      */
-    def isLint: Boolean = annotations exists (_.isInstanceOf[Annotation.Lint])
-
-    /**
       * Returns `true` if `this` sequence contains the `@test` annotation.
       */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
 
-    /**
-      * Returns `true` if `this` sequence contains the `@unchecked` annotation.
-      */
-    def isUnchecked: Boolean = annotations exists (_.isInstanceOf[Annotation.Unchecked])
   }
 
   /**
@@ -229,11 +257,6 @@ object Ast {
     */
   case class Modifiers(mod: List[Modifier]) {
     /**
-      * Returns `true` if these modifiers contain the inline modifier.
-      */
-    def isInline: Boolean = mod contains Modifier.Inline
-
-    /**
       * Returns `true` if these modifiers contain the lawless modifier.
       */
     def isLawless: Boolean = mod contains Modifier.Lawless
@@ -263,11 +286,6 @@ object Ast {
       */
     def isSynthetic: Boolean = mod contains Modifier.Synthetic
 
-    /**
-      * Returns `true` if these modifiers contain the unlawful modifier.
-      */
-    def isUnlawful: Boolean = mod contains Modifier.Unlawful
-
   }
 
   /**
@@ -276,11 +294,6 @@ object Ast {
   sealed trait Modifier
 
   object Modifier {
-
-    /**
-      * The inline modifier.
-      */
-    case object Inline extends Modifier
 
     /**
       * The lawless modifier.
@@ -358,56 +371,62 @@ object Ast {
   }
 
   /**
-    * Represents a dependency between two predicate symbols.
+    * Represents a positive or negative labelled dependency edge.
+    * The labels represent predicate nodes that must co-occur for the dependency to be relevant.
     */
-  sealed trait DependencyEdge
+  case class LabelledEdge(head: Name.Pred, p: Polarity, labels: Vector[Label], body: Name.Pred, loc: SourceLocation)
 
-  object DependencyEdge {
+  /**
+    * Represents a label in the labelled graph.
+    */
+  case class Label(pred: Name.Pred, arity: Int)
 
+  object LabelledGraph {
     /**
-      * Represents a positive labelled edge.
+      * The empty labelled graph.
       */
-    case class Positive(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
-
-    /**
-      * Represents a negative labelled edge.
-      */
-    case class Negative(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
-
-  }
-
-  object DependencyGraph {
-    /**
-      * The empty dependency graph.
-      */
-    val empty: DependencyGraph = DependencyGraph(Set.empty)
-
+    val empty: LabelledGraph = LabelledGraph(Set.empty)
   }
 
   /**
-    * Represents a dependency graph; a set of dependency edges.
+    * Represents a labelled graph; the dependency graph with additional labels
+    * on the edges allowing more accurate filtering. The rule `A :- not B, C` would
+    * add dependency edges `B -x> A` and `C -> A`. The labelled graph can then
+    * add labels that allow the two edges to be filtered out together. If we
+    * look at a program consisting of A, B, and D. then the rule `C -> A`
+    * cannot be relevant, but by remembering that B occurred together with A,
+    * we can also rule out `B -x> A`. The labelled edges would be `B -[C]-x> A`
+    * and `C -[B]-> A`.
     */
-  case class DependencyGraph(xs: Set[DependencyEdge]) {
+  case class LabelledGraph(edges: Set[LabelledEdge]) {
     /**
-      * Returns a dependency graph with all dependency edges in `this` and `that` dependency graph.
+      * Returns a labelled graph with all labelled edges in `this` and `that` labelled graph.
       */
-    def +(that: DependencyGraph): DependencyGraph = {
-      if (this eq DependencyGraph.empty)
+    def +(that: LabelledGraph): LabelledGraph = {
+      if (this eq LabelledGraph.empty)
         that
-      else if (that eq DependencyGraph.empty)
+      else if (that eq LabelledGraph.empty)
         this
       else
-        DependencyGraph(this.xs ++ that.xs)
+        LabelledGraph(this.edges ++ that.edges)
     }
 
     /**
-      * Returns `this` dependency graph including only the edges where both the source and destination are in `syms`.
+      * Returns `this` labelled graph including only the edges where all
+      * its labels are in `syms` and the arity matches.
+      * A rule like
+      * `A(ta) :- B(tb), not C(tc).` is represented by `edge(A, pos, {(A, arity(ta)), (B, arity(tb)), (C, arity(tc))}, (B, arity(tb)))` etc.
+      * and is only included in the output if `syms` contains all of `A, B, C` and `syms(A) == arity(ta)` etc.
       */
-    def restrict(syms: Set[Name.Pred]): DependencyGraph =
-      DependencyGraph(xs.filter {
-        case DependencyEdge.Positive(x, y, _) => syms.contains(x) && syms.contains(y)
-        case DependencyEdge.Negative(x, y, _) => syms.contains(x) && syms.contains(y)
+    def restrict(syms: Map[Name.Pred, Int]): LabelledGraph = {
+      def check(l: Label): Boolean =
+        syms.get(l.pred).contains(l.arity)
+
+      LabelledGraph(edges.filter {
+        case LabelledEdge(_, _, labels, _, _) =>
+          labels.forall(check)
       })
+    }
   }
 
   object Stratification {
@@ -434,8 +453,8 @@ object Ast {
 
   /**
     * Represents that the annotated element is eliminated by the class `clazz`.
-  */
- case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
+    */
+  case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
 
   /**
     * Represents that the type `arg` must belong to class `sym`.
@@ -464,5 +483,44 @@ object Ast {
     * Represents a derivation on an enum (e.g. `enum E with Eq`).
     */
   case class Derivation(clazz: Symbol.ClassSym, loc: SourceLocation)
+
+  /**
+    * Represents the way a variable is bound.
+    */
+  sealed trait BoundBy
+
+  object BoundBy {
+
+    /**
+      * Represents a variable that is bound by a formal parameter.
+      */
+    case object FormalParam extends BoundBy
+
+    /**
+      * Represents a variable that is bound by a let-binding.
+      */
+    case object Let extends BoundBy
+
+    /**
+      * Represents a variable that is bound by a pattern.
+      */
+    case object Pattern extends BoundBy
+
+    /**
+      * Represents a variable that is bound by a select.
+      */
+    case object SelectRule extends BoundBy
+
+    /**
+      * Represents a variable that is bound by a catch rule.
+      */
+    case object CatchRule extends BoundBy
+
+    /**
+      * Represents a variable that is bound by a constraint.
+      */
+    case object Constraint extends BoundBy
+
+  }
 
 }

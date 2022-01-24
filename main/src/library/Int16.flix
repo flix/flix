@@ -98,12 +98,12 @@ namespace Int16 {
 
     ///
     /// Returns the logical right shift of `x` by `distance`.
-    /// Only the rightmost 5 bits of `distance` are considered (ie. `distance % 32`).
+    /// Only the rightmost 5 bits of `distance` are considered (ie. `distance rem 32`).
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     @Time(1) @Space(1)
     pub def logicalRightShift(x: Int16, distance: Int32): Int16 =
-        if (x < 0i16 and distance % 32 != 0)
+        if (x < 0i16 and distance rem 32 != 0)
             ((x >>> 1) &&& maxValue()) >>> (distance - 1)
         else
             x >>> distance
@@ -115,7 +115,7 @@ namespace Int16 {
     @Time(1) @Space(1)
     pub def bitCount(x: Int16): Int32 = {
         if      (x == 0i16)         0
-        else if (x % 2i16 != 0i16)  bitCount(logicalRightShift(x, 1)) + 1
+        else if (x rem 2i16 != 0i16)  bitCount(logicalRightShift(x, 1)) + 1
         else                        bitCount(logicalRightShift(x, 1))
     }
 
@@ -125,7 +125,7 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def rotateRight(x: Int16, distance: Int32): Int16 =
-        let rem = distance % size();
+        let rem = distance rem size();
         let rot = if (rem >= 0) rem else rem + size();
         (logicalRightShift(x, rot)) ||| (x <<< (size() - rot))
 
@@ -135,7 +135,7 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def rotateLeft(x: Int16, distance: Int32): Int16 =
-        let rem = distance % size();
+        let rem = distance rem size();
         let rot = if (rem >= 0) rem else rem + size();
         (logicalRightShift(x, size() - rot)) ||| (x <<< rot)
 
@@ -201,7 +201,7 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def highestOneBit(x: Int16): Int16 =
-        bitPositionToInt(highestOneBitPosition(x))
+        bitPositionToInt16(highestOneBitPosition(x))
 
     ///
     /// Returns a value with at most a single one-bit, in the position
@@ -210,14 +210,14 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def lowestOneBit(x: Int16): Int16 =
-        bitPositionToInt(lowestOneBitPosition(x))
+        bitPositionToInt16(lowestOneBitPosition(x))
 
     ///
     /// Helper function for highestOneBit and lowestOneBit.
     /// Returns a value with a single one-bit at bit number `position`.
     /// Returns 0 if `position` is outside the range 0-15 inclusive.
     ///
-    def bitPositionToInt(position: Int32): Int16 =
+    def bitPositionToInt16(position: Int32): Int16 =
         if (position < 0 or position > size() - 1) 0i16 else 1i16 <<< position
 
     ///
@@ -245,7 +245,7 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def getBit(x: Int16, position: Int32): Int32 =
-        if ((x >>> position) % 2i16 == 0i16) 0 else 1
+        if ((x >>> position) rem 2i16 == 0i16) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `position` set (to 1).
@@ -284,8 +284,8 @@ namespace Int16 {
     @Time(1) @Space(1)
     pub def fromString(s: String): Result[Int16, String] = try {
         import java.lang.String.strip();
-        import java.lang.Short:parseShort(String);
-        Ok(s.strip().parseShort()) as & Pure
+        import static java.lang.Short.parseShort(String);
+        Ok(s |> strip |> parseShort) as & Pure
     } catch {
         case _: ##java.lang.NumberFormatException => Err("Int16.fromString")
     }
@@ -300,12 +300,12 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt8(x: Int16): Option[Int8] =
-        import java.lang.Short:valueOf(Int16);
+        import static java.lang.Short.valueOf(Int16);
         import java.lang.Short.byteValue();
         if (x < Int8.toInt16(Int8.minValue()) or x > Int8.toInt16(Int8.maxValue()))
             None
         else
-            Some(valueOf(x).byteValue()) as & Pure
+            Some(valueOf(x) |> byteValue) as & Pure
 
     ///
     /// Convert `x` to a Int32.
@@ -314,9 +314,9 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def toInt32(x: Int16): Int32 =
-        import java.lang.Short:valueOf(Int16);
+        import static java.lang.Short.valueOf(Int16);
         import java.lang.Short.intValue();
-        valueOf(x).intValue() as & Pure
+        (valueOf(x) |> intValue) as & Pure
 
     ///
     /// Convert `x` to a Int64.
@@ -325,9 +325,9 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def toInt64(x: Int16): Int64 =
-        import java.lang.Short:valueOf(Int16);
+        import static java.lang.Short.valueOf(Int16);
         import java.lang.Short.longValue();
-        valueOf(x).longValue() as & Pure
+        (valueOf(x) |> longValue) as & Pure
 
     ///
     /// Convert `x` to a BigInt.
@@ -336,10 +336,10 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def toBigInt(x: Int16): BigInt =
-        import java.lang.Short:valueOf(Int16) as i16ValueOf;
+        import static java.lang.Short.valueOf(Int16) as i16ValueOf;
         import java.lang.Short.longValue();
-        import java.math.BigInteger:valueOf(Int64) as asBigInt;
-        i16ValueOf(x).longValue().asBigInt() as & Pure
+        import static java.math.BigInteger.valueOf(Int64) as asBigInt;
+        (i16ValueOf(x) |> longValue |> asBigInt) as & Pure
 
     ///
     /// Convert `x` to a Float32.
@@ -348,9 +348,9 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def toFloat32(x: Int16): Float32 =
-        import java.lang.Short:valueOf(Int16);
+        import static java.lang.Short.valueOf(Int16);
         import java.lang.Short.floatValue();
-        valueOf(x).floatValue() as & Pure
+        (valueOf(x) |> floatValue) as & Pure
 
     ///
     /// Convert `x` to a Float64.
@@ -359,9 +359,9 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def toFloat64(x: Int16): Float64 =
-        import java.lang.Short:valueOf(Int16);
+        import static java.lang.Short.valueOf(Int16);
         import java.lang.Short.doubleValue();
-        valueOf(x).doubleValue() as & Pure
+        (valueOf(x) |> doubleValue) as & Pure
 
     ///
     /// Helper function for the `clamp` conversion function.
@@ -382,10 +382,10 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt8(x: Int16, minimum: Int8, maximum: Int8): Int8 =
-        import java.lang.Short:valueOf(Int16);
+        import static java.lang.Short.valueOf(Int16);
         import java.lang.Short.byteValue();
         let mini16 = Int8.toInt16(minimum);
         let maxi16 = Int8.toInt16(maximum);
-        valueOf(clamp(x, mini16, maxi16)).byteValue() as & Pure
+        (valueOf(clamp(x, mini16, maxi16)) |> byteValue) as & Pure
 
 }

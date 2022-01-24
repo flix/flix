@@ -15,19 +15,90 @@
  */
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.debug.Audience
+import ca.uwaterloo.flix.language.debug.FormatEff
 
 /**
   * A common super-type for code hints.
   */
-trait CodeHint extends CompilationError {
-  def kind: String = "Code Hint"
+trait CodeHint {
+  def summary: String
+
+  def severity: Severity
+
+  def loc: SourceLocation
 }
 
 object CodeHint {
+
+  /**
+    * A code hint that indicates a deprecation.
+    *
+    * @param loc the location of the expression.
+    */
+  case class Deprecated(loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Deprecated."
+
+    def severity: Severity = Severity.Info
+  }
+
+  /**
+    * A code hint that indicates an experimental feature.
+    *
+    * @param loc the location of the expression.
+    */
+  case class Experimental(loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Experimental feature: may be changed or removed without warning!"
+
+    def severity: Severity = Severity.Info
+  }
+
+  /**
+    * A code hint that indicates laziness.
+    *
+    * @param loc the location of the expression.
+    */
+  case class Lazy(loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Uses lazy evaluation."
+
+    def severity: Severity = Severity.Info
+  }
+
+  /**
+    * A code hint that indicates that a purity polymorphic operation is lazy.
+    *
+    * @param sym the symbol of the operation that is lazy.
+    * @param loc the location associated with the code hint.
+    */
+  case class LazyEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Lazy: The operation uses lazy evaluation (due to purity polymorphism)."
+
+    def severity: Severity = Severity.Hint
+  }
+
+  /**
+    * A code hint that indicates parallelism.
+    *
+    * @param loc the location of the expression.
+    */
+  case class Parallel(loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Uses parallel evaluation."
+
+    def severity: Severity = Severity.Info
+  }
+
+  /**
+    * A code hint that indicates that a purity polymorphic operation is parallel.
+    *
+    * @param sym the symbol of the operation that is parallel.
+    * @param loc the location associated with the code hint.
+    */
+  case class ParallelEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Parallel: The operation uses parallel evaluation (due to purity polymorphism)."
+
+    def severity: Severity = Severity.Hint
+  }
 
   /**
     * A code hint that indicates that an operation could be lazy if given a pure function.
@@ -35,18 +106,10 @@ object CodeHint {
     * @param sym the symbol of the operation that could be lazy.
     * @param loc the location associated with the code hint.
     */
-  case class LazyWhenPure(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    override def summary: String = s"Use of impure function prevents lazy evaluation."
+  case class SuggestPurityForLazyEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
+    def summary: String = "Eager: Use a pure function to enable lazy evaluation (see purity polymorphism)."
 
-    override def severity: Severity = Severity.Hint
-
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Use of impure function prevents lazy evaluation." << NewLine
-      vt << NewLine
-      vt << Code(loc, "use of impure function.") << NewLine
-    }
+    def severity: Severity = Severity.Hint
   }
 
   /**
@@ -55,37 +118,44 @@ object CodeHint {
     * @param sym the symbol of the operation that could be parallel.
     * @param loc the location associated with the code hint.
     */
-  case class ParallelWhenPure(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    override def summary: String = s"Use of impure function prevents parallel evaluation."
+  case class SuggestPurityForParallelEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
+    def summary: String = "Sequential: Use a pure function to enable parallel evaluation (see purity polymorphism)."
 
-    override def severity: Severity = Severity.Hint
-
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Use of impure function prevents parallel evaluation." << NewLine
-      vt << NewLine
-      vt << Code(loc, "use of impure function.") << NewLine
-    }
+    def severity: Severity = Severity.Hint
   }
 
   /**
-    * A code hint that indicates an expression has a non-trivial effect.
+    * A code hint that indicates that an expression has a non-trivial effect.
+    *
+    * @param tpe the type of the expression.
+    * @param loc the location of the expression.
+    */
+  case class NonTrivialEffect(tpe: Type, loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Expression has a non-trivial effect: ${FormatEff.formatEff(tpe)(Audience.External)}"
+
+    def severity: Severity = Severity.Info
+  }
+
+  /**
+    * A code hint that indicates unsafeness.
     *
     * @param loc the location of the expression.
     */
-  case class NonTrivialEffect(loc: SourceLocation) extends CodeHint {
-    override def summary: String = s"Expression has a non-trivial effect."
+  case class Unsafe(loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Use of unsafe feature."
 
-    override def severity: Severity = Severity.Info
+    def severity: Severity = Severity.Info
+  }
 
-    override def message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Expression has a non-trivial effect." << NewLine
-      vt << NewLine
-      vt << Code(loc, "non-trivial effect.") << NewLine
-    }
+  /**
+    * A code hint that indicates an unsafe cast to pure.
+    *
+    * @param loc the location of the expression.
+    */
+  case class UnsafePurityCast(loc: SourceLocation) extends CodeHint {
+    def summary: String = s"Unsafe cast to pure."
+
+    def severity: Severity = Severity.Info
   }
 
 }

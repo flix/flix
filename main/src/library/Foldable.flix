@@ -35,7 +35,37 @@ pub lawless class Foldable[t : Type -> Type] {
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
     pub def count(f: a -> Bool, t: t[a]): Int32 =
-      Foldable.foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, t)
+        Foldable.foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, t)
+
+    ///
+    /// Returns the sum of all elements in `t`.
+    ///
+    pub def sum(t: t[Int32]): Int32 =
+        Foldable.foldLeft((acc, x) -> acc + x, 0, t)
+
+    ///
+    /// Returns the sum of all elements in `t` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, t: t[a]): Int32 & ef =
+        Foldable.foldLeft((acc, x) -> acc + f(x), 0, t)
+
+    ///
+    /// Returns the product of all elements in `t`.
+    ///
+    pub def product(t: t[Int32]): Int32 =
+        if (Foldable.isEmpty(t))
+            0
+        else
+            Foldable.foldLeft((acc, x) -> acc * x, 1, t)
+
+    ///
+    /// Returns the product of all elements in `t` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, t: t[a]): Int32 & ef =
+        if (Foldable.isEmpty(t))
+            0
+        else
+            Foldable.foldLeft((acc, x) -> acc * f(x), 1, t)
 
     ///
     /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
@@ -59,7 +89,7 @@ pub lawless class Foldable[t : Type -> Type] {
     /// Returns `None` if `t` is empty.
     ///
     pub def findLeft(f: a -> Bool, t: t[a]): Option[a] =
-        Foldable.foldLeft((acc, x) -> Option.withDefault(acc, if (f(x)) Some(x) else None), None, t)
+        Foldable.foldLeft((acc, x) -> Option.withDefault(default = if (f(x)) Some(x) else None, acc), None, t)
 
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from right to left.
@@ -67,7 +97,7 @@ pub lawless class Foldable[t : Type -> Type] {
     /// Returns `None` if `t` is empty.
     ///
     pub def findRight(f: a -> Bool, t: t[a]): Option[a] =
-        Foldable.foldRight((x, acc) -> Option.withDefault(acc, if (f(x)) Some(x) else None), None, t)
+        Foldable.foldRight((x, acc) -> Option.withDefault(default = if (f(x)) Some(x) else None, acc), None, t)
 
     ///
     /// Returns the result of mapping each element and combining the results.
@@ -150,6 +180,22 @@ pub lawless class Foldable[t : Type -> Type] {
         MutList.toArray(v)
 
     ///
+    /// Returns an iterator over `t`.
+    ///
+    pub def toIterator(t: t[a]): Iterator[a] & Impure =
+        let arr = Foldable.toArray(t);
+        let len = Array.length(arr);
+        let i = ref 0;
+        let done = () -> (deref i) >= len;
+        let next = () -> {
+            let j = deref i;
+            let x = arr[j];
+            i := j + 1;
+            x
+        };
+        Iterator(done, next)
+
+    ///
     /// Returns `t` as a mutable list.
     ///
     pub def toMutList(t: t[a]): MutList[a] & Impure =
@@ -168,6 +214,12 @@ pub lawless class Foldable[t : Type -> Type] {
     ///
     pub def toMap(t: t[(k, v)]): Map[k, v] with Order[k] =
         Foldable.foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc), Map.empty(), t)
+
+    ///
+    /// Returns a map with elements of `s` as keys and `f` applied as values.
+    ///
+    pub def toMapWith(f: a -> b, s: t[a]): Map[a, b] with Order[a] =
+            Foldable.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
 
     ///
     /// Returns `t` without the longest prefix that satisfies the predicate `f`.
@@ -194,13 +246,69 @@ pub lawless class Foldable[t : Type -> Type] {
     ///
     pub def filter(f: a -> Bool, t: t[a]): List[a] =
         Foldable.foldRight((x, acc) -> if (f(x)) x :: acc else acc, Nil, t)
+
+    ///
+    /// Applies `f` to each element in `t`.
+    ///
+    pub def foreach(f: a -> Unit & ef, t: t[a]): Unit & ef =
+        Foldable.foldLeft((_, x) -> f(x), (), t)
+
+
+    // Acknowledgement: `foldLeftM` and `foldRightM` are derived from Haskell's Data.Foldable.
+    // Because they use CPS, the implementations work for both strict and lazy languages.
+    // Counterintuitively `foldLeftM` uses a right-fold and `foldRighM` uses a left-fold
+    // but the "direction of travel" is observably correct.
+
+    ///
+    /// A monadic version of `foldLeft`.
+    ///
+    /// Applies the monadic `f` to a start value `s` and all elements in `t` going
+    /// from left to right.
+    ///
+    pub def foldLeftM(f: (b, a) -> m[b] & ef, s: b, t: t[a]): m[b] & ef with Monad[m] =
+        let f1 = (x, k) -> z -> Monad.flatMap(k, f(z, x));
+        s |> Foldable.foldRight(f1, x1 -> Applicative.point(x1) as & ef, t)
+
+    ///
+    /// A monadic version of `foldRight`.
+    ///
+    /// Applies the monadic `f` to a start value `s` and all elements in `t` going
+    /// from right to left.
+    ///
+    pub def foldRightM(f: (a, b) -> m[b] & ef, s: b, t: t[a]): m[b] & ef with Monad[m] =
+        let f1 = (k, x) -> z -> Monad.flatMap(k, f(x, z));
+        s |> Foldable.foldLeft(f1, x1 -> Applicative.point(x1) as & ef, t)
+
+    ///
+    /// A monadic version of `foreach`.
+    ///
+    /// Apply `f` to every value in `t`. `f` is applied for its monadic effect,
+    /// the answer it produces is discarded.
+    ///
+    pub def foreachM(f: a -> m[b] & ef, t: t[a]): m[Unit] & ef with Monad[m] =
+        use Applicative.{point, *>};
+        Foldable.foldLeftM((acc, a) -> f(a) *> point(acc), (), t)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `t` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, t: t[a]): String with ToString[a] = {
+        let sb = StringBuilder.new();
+        t |> Foldable.foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), ());
+        StringBuilder.toString(sb) |> String.dropRight(1)
+    } as & Pure
+
 }
 
 namespace Foldable {
+
+    use Applicative.{*>};
 
     ///
     /// Returns the result of applying `combine` to all the elements in `t`, using `empty` as the initial value.
     ///
     pub def fold[t: Type -> Type, a: Type](t: t[a]): a with Foldable[t], Monoid[a] =
         Foldable.foldLeft((acc, x) -> Monoid.combine(acc, x), Monoid.empty(), t)
+
 }

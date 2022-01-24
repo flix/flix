@@ -27,7 +27,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
 
   test("Pattern.Literal.Char.01") {
     val input =
-      """def f(x: Char): Int = match x {
+      """def f(x: Char): Int32 = match x {
         |  case 'a' => 1
         |  case 'b' => 2
         |  case 'c' => 3
@@ -39,7 +39,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
 
   test("Pattern.Literal.Int32.01") {
     val input =
-      """def f(x: Int): Int = match x {
+      """def f(x: Int32): Int32 = match x {
         |  case 1 => 1
         |  case 2 => 2
         |  case 3 => 3
@@ -51,7 +51,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
 
   test("Pattern.Literal.Int64.01") {
     val input =
-      """def f(x: Int64): Int = match x {
+      """def f(x: Int64): Int32 = match x {
         |  case 1i64 => 1
         |  case 2i64 => 2
         |  case 3i64 => 3
@@ -63,7 +63,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
 
   test("Pattern.Literal.Str.01") {
     val input =
-      """def f(x: String): Int = match x {
+      """def f(x: String): Int32 = match x {
         |  case "foo" => 1
         |  case "bar" => 2
         |  case "baz" => 3
@@ -80,7 +80,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case Blu
         |}
         |
-        |def f(x: (Color, Color)): Int = match x {
+        |def f(x: (Color, Color)): Int32 = match x {
         |  case (Color.Red() ,_ ) => 1
         |  case (_, Color.Blu) => 2
         |}
@@ -91,7 +91,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
 
   test("Pattern.Literal.Tuples.02") {
     val input =
-      """def f(x: (Int8, (String, String))): Int = match x {
+      """def f(x: (Int8, (String, String))): Int32 = match x {
         |  case (5i8, ("five", _)) => 5
         |  case (6i8, (_, "six")) => 6
         |  case (7i8, (_,_)) => 7
@@ -103,7 +103,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
 
   test("Pattern.Literal.Tuples.03") {
     val input =
-      """def f(x: (Int, Int, Int, Int, Int)): Int = match x {
+      """def f(x: (Int32, Int32, Int32, Int32, Int32)): Int32 = match x {
         |  case (1,2,3,4,5) => 1
         |  case (_,2,3,4,5) => 1
         |  case (1,_,3,4,5) => 1
@@ -203,7 +203,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |    case Some(t)
         |}
         |
-        |def f(): Option[Int] -> Int = match None -> 42
+        |def f(): Option[Int32] -> Int32 = match None -> 42
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -218,7 +218,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |    case Some(t)
         |}
         |
-        |def f(): Option[Int] -> Int = match Some(x) -> x
+        |def f(): Option[Int32] -> Int32 = match Some(x) -> x
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -254,7 +254,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |    case Cons(t, List[t])
         |}
         |
-        |def f(l: List[Int]): Int = let foo = 42 ;
+        |def f(l: List[Int32]): Int32 = let foo = 42 ;
         |     match l {
         |         case Nil => 42
         |     }
@@ -272,11 +272,11 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |}
         |
         |lawless class C[a] {
-        |    pub def f(x: a): Int
+        |    pub def f(x: a): Int32
         |}
         |
         |instance C[E] {
-        |    pub def f(x: E): Int = match x {
+        |    pub def f(x: E): Int32 = match x {
         |        case E1 => 1
         |    }
         |}
@@ -294,7 +294,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |}
         |
         |lawless class C[a] {
-        |    pub def f(_x: a): Int = match E1 {
+        |    pub def f(_x: a): Int32 = match E1 {
         |        case E1 => 1
         |    }
         |}

@@ -98,12 +98,12 @@ namespace Int64 {
 
     ///
     /// Returns the logical right shift of `x` by `distance`.
-    /// Only the rightmost 6 bits of `distance` are considered (ie. `distance % 64`).
+    /// Only the rightmost 6 bits of `distance` are considered (ie. `distance rem 64`).
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     @Time(1) @Space(1)
     pub def logicalRightShift(x: Int64, distance: Int32): Int64 =
-        if (x < 0i64 and distance % size() != 0)
+        if (x < 0i64 and distance rem size() != 0)
             ((x >>> 1) &&& maxValue()) >>> (distance - 1)
         else
             x >>> distance
@@ -115,7 +115,7 @@ namespace Int64 {
     @Time(1) @Space(1)
     pub def bitCount(x: Int64): Int32 = {
         if      (x == 0i64)         0
-        else if (x % 2i64 != 0i64)  bitCount(logicalRightShift(x, 1)) + 1
+        else if (x rem 2i64 != 0i64)  bitCount(logicalRightShift(x, 1)) + 1
         else                        bitCount(logicalRightShift(x, 1))
     }
 
@@ -196,7 +196,7 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def highestOneBit(x: Int64): Int64 =
-        bitPositionToInt(highestOneBitPosition(x))
+        bitPositionToInt64(highestOneBitPosition(x))
 
     ///
     /// Returns a value with at most a single one-bit, in the position
@@ -205,14 +205,14 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def lowestOneBit(x: Int64): Int64 =
-        bitPositionToInt(lowestOneBitPosition(x))
+        bitPositionToInt64(lowestOneBitPosition(x))
 
     ///
     /// Helper function for highestOneBit and lowestOneBit.
     /// Returns a value with a single one-bit at bit number `position`.
     /// Returns 0 if `position` is outside the range 0-63 inclusive.
     ///
-    def bitPositionToInt(position: Int32): Int64 =
+    def bitPositionToInt64(position: Int32): Int64 =
         if (position < 0 or position > size() - 1) 0i64 else 1i64 <<< position
 
     ///
@@ -240,7 +240,7 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def getBit(x: Int64, position: Int32): Int32 =
-        if ((x >>> position) % 2i64 == 0i64) 0 else 1
+        if ((x >>> position) rem 2i64 == 0i64) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `position` set (to 1).
@@ -279,8 +279,8 @@ namespace Int64 {
     @Time(1) @Space(1)
     pub def fromString(s: String): Result[Int64, String] = try {
         import java.lang.String.strip();
-        import java.lang.Long:parseLong(String);
-        Ok(s.strip().parseLong()) as & Pure
+        import static java.lang.Long.parseLong(String);
+        Ok(s |> strip |> parseLong) as & Pure
     } catch {
         case _: ##java.lang.NumberFormatException => Err("Int64.fromString")
     }
@@ -295,12 +295,12 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt8(x: Int64): Option[Int8] =
-        import java.lang.Long:valueOf(Int64);
+        import static java.lang.Long.valueOf(Int64);
         import java.lang.Long.byteValue();
         if (x < Int8.toInt64(Int8.minValue()) or x > Int8.toInt64(Int8.maxValue()))
             None
         else
-            Some(valueOf(x).byteValue()) as & Pure
+            Some(valueOf(x) |> byteValue) as & Pure
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -312,12 +312,12 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt16(x: Int64): Option[Int16] =
-        import java.lang.Long:valueOf(Int64);
+        import static java.lang.Long.valueOf(Int64);
         import java.lang.Long.shortValue();
         if (x < Int16.toInt64(Int16.minValue()) or x > Int16.toInt64(Int16.maxValue()))
             None
         else
-            Some(valueOf(x).shortValue()) as & Pure
+            Some(valueOf(x) |> shortValue) as & Pure
 
     ///
     /// Convert `x` to an `Option[Int32]`.
@@ -329,12 +329,12 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt32(x: Int64): Option[Int32] =
-        import java.lang.Long:valueOf(Int64);
+        import static java.lang.Long.valueOf(Int64);
         import java.lang.Long.intValue();
         if (x < Int32.toInt64(Int32.minValue()) or x > Int32.toInt64(Int32.maxValue()))
             None
         else
-            Some(valueOf(x).intValue()) as & Pure
+            Some(valueOf(x) |> intValue) as & Pure
     ///
     /// Convert `x` to a BigInt.
     ///
@@ -342,10 +342,10 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def toBigInt(x: Int64): BigInt =
-        import java.lang.Long:valueOf(Int64) as i64ValueOf;
+        import static java.lang.Long.valueOf(Int64) as i64ValueOf;
         import java.lang.Long.longValue();
-        import java.math.BigInteger:valueOf(Int64) as asBigInt;
-        i64ValueOf(x).longValue().asBigInt() as & Pure
+        import static java.math.BigInteger.valueOf(Int64) as asBigInt;
+        (i64ValueOf(x) |> longValue |> asBigInt) as & Pure
 
     ///
     /// Convert `x` to a Float32.
@@ -354,9 +354,9 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def toFloat32(x: Int64): Float32 =
-        import java.lang.Long:valueOf(Int64);
+        import static java.lang.Long.valueOf(Int64);
         import java.lang.Long.floatValue();
-        valueOf(x).floatValue() as & Pure
+        (valueOf(x) |> floatValue) as & Pure
 
     ///
     /// Convert `x` to a Float32.
@@ -365,9 +365,9 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def toFloat64(x: Int64): Float64 =
-        import java.lang.Long:valueOf(Int64);
+        import static java.lang.Long.valueOf(Int64);
         import java.lang.Long.doubleValue();
-        valueOf(x).doubleValue() as & Pure
+        (valueOf(x) |> doubleValue) as & Pure
 
     ///
     /// Helper function for the `clamp` conversion functions.
@@ -388,11 +388,11 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt8(x: Int64, minimum: Int8, maximum: Int8): Int8 =
-        import java.lang.Long:valueOf(Int64);
+        import static java.lang.Long.valueOf(Int64);
         import java.lang.Long.byteValue();
         let mini64 = Int8.toInt64(minimum);
         let maxi64 = Int8.toInt64(maximum);
-        valueOf(clamp(x, mini64, maxi64)).byteValue() as & Pure
+        (valueOf(clamp(x, mini64, maxi64)) |> byteValue) as & Pure
 
     ///
     /// Convert `x` to an `Int16`.
@@ -401,11 +401,11 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt16(x: Int64, minimum: Int16, maximum: Int16): Int16 =
-        import java.lang.Long:valueOf(Int64);
+        import static java.lang.Long.valueOf(Int64);
         import java.lang.Long.shortValue();
         let mini64 = Int16.toInt64(minimum);
         let maxi64 = Int16.toInt64(maximum);
-        valueOf(clamp(x, mini64, maxi64)).shortValue() as & Pure
+        (valueOf(clamp(x, mini64, maxi64)) |> shortValue) as & Pure
 
 
     ///
@@ -415,10 +415,10 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt32(x: Int64, minimum: Int32, maximum: Int32): Int32 =
-        import java.lang.Long:valueOf(Int64);
+        import static java.lang.Long.valueOf(Int64);
         import java.lang.Long.intValue();
         let mini64 = Int32.toInt64(minimum);
         let maxi64 = Int32.toInt64(maximum);
-        valueOf(clamp(x, mini64, maxi64)).intValue() as & Pure
+        (valueOf(clamp(x, mini64, maxi64)) |> intValue) as & Pure
 
 }
