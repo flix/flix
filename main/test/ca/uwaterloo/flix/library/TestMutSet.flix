@@ -206,4 +206,25 @@ namespace TestMutSet {
     def productWith06(): Bool & Impure =
         Set#{10, -10} |> Set.toMutSet |> MutSet.productWith(x -> x + 1) == -99
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool & Impure =
+        MutSet.join(",", MutSet.empty(): MutSet[Int32]) == ""
+
+    @test
+    def join02(): Bool & Impure =
+        Set#{1} |> Set.toMutSet |> MutSet.join(",") == "1"
+
+    @test
+    def join03(): Bool & Impure =
+        Set#{1, 2, 3} |> Set.toMutSet |> MutSet.join(",") == "1,2,3"
+
+    @test
+    def join04(): Bool & Impure =
+        Set#{"1", "2", "3"} |> Set.toMutSet |> MutSet.join(",") == "1,2,3"
+
 }

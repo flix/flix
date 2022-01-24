@@ -539,4 +539,17 @@ namespace DemandList {
         case LCons(x, xs) => if (f(x)) dropWhileE(f, force xs) else l
         case LList(xs)    => dropWhileE(f, force xs)
     }
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `v` with `sep` inserted between each element.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    pub def join(sep: String, l: DemandList[a, Forced]): String with ToString[a] = {
+        let sb = StringBuilder.new();
+        foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), (), l);
+        StringBuilder.toString(sb) |> String.dropRight(1)
+    } as & Pure
+
 }

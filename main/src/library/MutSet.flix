@@ -357,4 +357,12 @@ namespace MutSet {
     pub def sameElements(a: MutSet[t], b: MutSet[t]): Bool & Impure with Order[t] =
         MutSet.isSubsetOf(a, b) and MutSet.isSubsetOf(b, a)
 
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `s` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, s: MutSet[a]): String & Impure with ToString[a] =
+        let MutSet(ms) = s;
+        Set.join(sep, deref ms)
+
 }

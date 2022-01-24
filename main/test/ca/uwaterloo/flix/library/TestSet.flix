@@ -1449,4 +1449,25 @@ def unfoldWithIter06(): Bool & Impure =
     def toIterator03(): Bool & Impure =
         Set.range(0, 100) |> Set.toIterator |> Iterator.toSet == Set.range(0, 100)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool =
+        Set.join(",", Set.empty(): Set[Int32]) == ""
+
+    @test
+    def join02(): Bool =
+        Set.join(",", Set#{1}) == "1"
+
+    @test
+    def join03(): Bool =
+        Set.join(",", Set#{1, 2, 3}) == "1,2,3"
+
+    @test
+    def join04(): Bool =
+        Set.join(",", Set#{"1", "2", "3"}) == "1,2,3"
+
 }
