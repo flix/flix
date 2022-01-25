@@ -21,11 +21,11 @@ namespace TestIterable {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toIterator01(): Bool & Impure =
+    def iteratorMutList01(): Bool & Impure =
         MutList.new(): MutList[Int32] |> Iterable.iterator |> Iterator.toList == Nil
 
     @test
-    def toIterator02(): Bool & Impure =
+    def iteratorMutList02(): Bool & Impure =
         let u = MutList.new(): MutList[Int32];
         MutList.push!(1, u);
         MutList.push!(2, u);
@@ -33,7 +33,23 @@ namespace TestIterable {
         u |> Iterable.iterator |> Iterator.toList == 1 :: 2 :: 3 :: Nil
 
     @test
-    def toIterator03(): Bool & Impure =
+    def iteratorMutList03(): Bool & Impure =
         MutList.range(-100, 100) |> Iterable.iterator |> Iterator.toList == List.range(-100, 100)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // MutSet                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def iteratorMutSet01(): Bool & Impure =
+        MutSet.empty(): MutSet[Int32] |> Iterable.iterator |> Iterator.toSet == Set.empty()
+
+    @test
+    def iteratorMutSet02(): Bool & Impure =
+        let u = MutSet.empty(): MutSet[Int32];
+        MutSet.add!(1, u);
+        MutSet.add!(2, u);
+        MutSet.add!(3, u);
+        u |> Iterable.iterator |> Iterator.toSet == Set#{1, 2, 3}
 
 }

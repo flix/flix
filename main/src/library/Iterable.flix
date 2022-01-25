@@ -43,15 +43,7 @@ instance Iterable[LazyList] {
 
 instance Iterable[MutList] {
     pub def iterator(t: MutList[a]): Iterator[a] & Impure =
-        let i = ref 0;
-        let list = ref t;
-        let done = () -> MutList.isEmpty(deref list);
-        let next = () -> {
-                let elem = MutList.get(deref i, deref list);
-                i := deref i + 1;
-                elem
-            };
-        Iterator(done, next)
+        t |> MutList.toList |> List.toIterator
 }
 
 instance Iterable[Nel] {
@@ -67,4 +59,9 @@ instance Iterable[Option] {
 instance Iterable[Set] {
     pub def iterator(t: Set[a]): Iterator[a] & Impure =
         Set.toIterator(t)
+}
+
+instance Iterable[MutSet] {
+    pub def iterator(t: MutSet[a]): Iterator[a] & Impure =
+        t |> MutSet.toSet |> Set.toIterator
 }
