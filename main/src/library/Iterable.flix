@@ -26,6 +26,11 @@ pub lawless class Iterable[t: Type -> Type] {
 
 }
 
+instance Iterable[Array] {
+    pub def iterator(t: Array[a]): Iterator[a] & Impure =
+        Array.toIterator(t)
+}
+
 instance Iterable[List] {
     pub def iterator(t: List[a]): Iterator[a] & Impure =
         List.toIterator(t)
@@ -47,4 +52,19 @@ instance Iterable[MutList] {
                 elem
             };
         Iterator(done, next)
+}
+
+instance Iterable[Nel] {
+    pub def iterator(t: Nel[a]): Iterator[a] & Impure =
+        Nel.toIterator(t)
+}
+
+instance Iterable[Option] {
+    pub def iterator(t: Option[a]): Iterator[a] & Impure =
+        Option.toIterator(t)
+}
+
+instance Iterable[Set] {
+    pub def iterator(t: Set[a]): Iterator[a] & Impure =
+        Set.toIterator(t)
 }
