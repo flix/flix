@@ -1,5 +1,6 @@
 /*
  * Copyright 2021 Jonathan Lindegaard Starup
+ * Copyright 2021 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +22,29 @@ import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 
+import java.util.Objects
 import scala.collection.mutable
 
 object UllmansAlgorithm {
 
-
   /**
     * Represents a dependency between two predicate symbols.
     */
-  sealed trait DependencyEdge
+  sealed trait DependencyEdge {
+    def head: Name.Pred
+
+    def body: Name.Pred
+
+    override def hashCode(): Int = this match {
+      case _: DependencyEdge.Positive => 5 * Objects.hash(head, body)
+      case _: DependencyEdge.Negative => 7 * Objects.hash(head, body)
+    }
+
+    override def equals(obj: Any): Boolean = obj match {
+      case that: DependencyEdge => this.head == that.head && this.body == that.body
+      case _ => false
+    }
+  }
 
   object DependencyEdge {
 
@@ -125,7 +140,7 @@ object UllmansAlgorithm {
   /**
     * Returns a path that forms a cycle with the edge from `src` to `dst` in the given dependency graph `g`.
     */
-  def findNegativeCycle(src: Name.Pred, dst: Name.Pred, g: DependencyGraph, loc: SourceLocation): List[(Name.Pred, SourceLocation)] = {
+  private def findNegativeCycle(src: Name.Pred, dst: Name.Pred, g: DependencyGraph, loc: SourceLocation): List[(Name.Pred, SourceLocation)] = {
     // Computes a map from predicates to their successors.
     val succ = mutable.Map.empty[Name.Pred, Set[(Name.Pred, SourceLocation)]]
     for (edge <- g) {
@@ -173,4 +188,5 @@ object UllmansAlgorithm {
     // Assemble the full path.
     (src, loc) :: unroll(src) ::: (src, loc) :: Nil
   }
+
 }

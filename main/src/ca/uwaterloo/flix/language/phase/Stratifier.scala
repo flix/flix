@@ -24,11 +24,11 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.StratificationError
+import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import scala.annotation.tailrec
-import scala.collection.mutable
 
 /**
   * The stratification phase breaks constraints into strata.
@@ -44,26 +44,20 @@ object Stratifier {
     * Returns a stratified version of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Stratifier") {
-    // A cache of stratifications. Only caches successful stratifications.
-    val cache: Cache = mutable.Map.empty
-
-    // Check if computation of stratification is disabled.
-    if (flix.options.xnostratifier)
-      return root.toSuccess
-
     // Compute an over-approximation of the dependency graph for all constraints in the program.
-    val dg = flix.subphase("Compute Dependency Graph") {
+    val g = flix.subphase("Compute Dependency Graph") {
       ParOps.parAgg(root.defs, LabelledGraph.empty)({
         case (acc, (_, decl)) => acc + labelledGraphOfDef(decl)
       }, _ + _)
     }
 
-    // Compute the stratification at every datalog expression in the ast.`
+    // Compute the stratification at every datalog expression in the ast.
     val defsVal = flix.subphase("Compute Stratification") {
-      traverse(root.defs) {
-        case (sym, defn) => visitDef(defn)(dg, cache).map(d => sym -> d)
-      }
+      val result = ParOps.parMap(root.defs)(kv => visitDef(kv._2)(g, flix).map(d => kv._1 -> d))
+      Validation.sequence(result)
     }
+
+    // TODO: JLS: Must also visit instances.
 
     mapN(defsVal) {
       case ds => root.copy(defs = ds.toMap)
@@ -71,26 +65,9 @@ object Stratifier {
   }
 
   /**
-    * A type alias for the stratification cache.
-    */
-  private type Cache = mutable.Map[Map[Name.Pred, Int], Stratification]
-
-  /**
-    * Computes the arity of a `Relation` or `Lattice` type.
-    */
-  private def arityOf(tpe: Type): Int = eraseAliases(tpe) match {
-    case Type.Apply(Type.Cst(TypeConstructor.Relation | TypeConstructor.Lattice, _), element, _) => element.baseType match {
-      case Type.Cst(TypeConstructor.Tuple(arity), _) => arity // Multi-ary
-      case Type.Cst(TypeConstructor.Unit, _) => 0 // Nullary
-      case _ => 1 // Unary
-    }
-    case other => throw InternalCompilerException(s"Unexpected non-relation non-lattice type $other")
-  }
-
-  /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit g: LabelledGraph, cache: Cache): Validation[Def, CompilationMessage] =
+  private def visitDef(def0: Def)(implicit g: LabelledGraph, flix: Flix): Validation[Def, CompilationMessage] =
     visitExp(def0.impl.exp) map {
       case e => def0.copy(impl = def0.impl.copy(exp = e))
     }
@@ -100,7 +77,7 @@ object Stratifier {
     *
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
-  private def visitExp(exp0: Expression)(implicit g: LabelledGraph, cache: Cache): Validation[Expression, StratificationError] = exp0 match {
+  private def visitExp(exp0: Expression)(implicit g: LabelledGraph, flix: Flix): Validation[Expression, StratificationError] = exp0 match {
     case Expression.Unit(_) => exp0.toSuccess
 
     case Expression.Null(_, _) => exp0.toSuccess
@@ -378,7 +355,7 @@ object Stratifier {
 
     case Expression.FixpointConstraintSet(cs0, _, tpe, loc) =>
       // Compute the stratification.
-      val stf = stratifyWithCache(g, tpe, loc)
+      val stf = stratify(g, tpe, loc)
 
       mapN(stf) {
         case s =>
@@ -388,7 +365,7 @@ object Stratifier {
 
     case Expression.FixpointMerge(exp1, exp2, _, tpe, eff, loc) =>
       // Compute the stratification.
-      val stf = stratifyWithCache(g, tpe, loc)
+      val stf = stratify(g, tpe, loc)
 
       mapN(visitExp(exp1), visitExp(exp2), stf) {
         case (e1, e2, s) => Expression.FixpointMerge(e1, e2, s, tpe, eff, loc)
@@ -396,7 +373,7 @@ object Stratifier {
 
     case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
       // Compute the stratification.
-      val stf = stratifyWithCache(g, tpe, loc)
+      val stf = stratify(g, tpe, loc)
 
       mapN(visitExp(exp), stf) {
         case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
@@ -428,6 +405,26 @@ object Stratifier {
         case (e1, e2, e3) => Expression.ReifyEff(sym, e1, e2, e3, tpe, eff, loc)
       }
 
+  }
+
+  /**
+    * Reorders a constraint such that its negated atoms occur last.
+    */
+  private def reorder(c0: Constraint): Constraint = {
+    /**
+      * Returns `true` if the body predicate is negated.
+      */
+    def isNegative(p: Predicate.Body): Boolean = p match {
+      case Predicate.Body.Atom(_, _, Polarity.Negative, _, _, _) => true
+      case _ => false
+    }
+
+    // Collect all the negated and non-negated predicates.
+    val negated = c0.body filter isNegative
+    val nonNegated = c0.body filterNot isNegative
+
+    // Reassemble the constraint.
+    c0.copy(body = nonNegated ::: negated)
   }
 
   /**
@@ -669,63 +666,97 @@ object Stratifier {
   }
 
   /**
+    * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
+    */
+  private def stratify(g: LabelledGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Stratification, StratificationError] = {
+    // The key is the set of predicates that occur in the row type.
+    val key = predicateSymbolsOf(tpe)
+
+    // Compute the restricted labelled graph.
+    val rg = g.restrict(key, labelEq)
+
+    // Compute the stratification.
+    UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc)
+  }
+
+  /**
+    * Returns the map of predicates that appears in the given Schema `tpe`.
+    * A non-Schema type will result in an `InternalCompilerException`.
+    */
+  private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Label] = {
+    @tailrec
+    def visitType(tpe: Type, acc: Map[Name.Pred, Label]): Map[Name.Pred, Label] = tpe match {
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) =>
+        val terms = termTypes(predType)
+        val Type.Apply(Type.Cst(den, _), _, _) = predType // same partial match as termTypes
+        val labelDen = den match {
+          case TypeConstructor.Relation => Denotation.Relational
+          case TypeConstructor.Lattice => Denotation.Latticenal
+          case other => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$other'")
+        }
+        val label = Label(pred, labelDen, terms.length, terms)
+        visitType(rest, acc + (pred -> label))
+      case _ => acc
+    }
+
+    Type.eraseAliases(tpe) match {
+      case Type.Apply(Type.Cst(TypeConstructor.Schema, _), schemaRow, _) => visitType(schemaRow, Map.empty)
+      case other => throw InternalCompilerException(s"Unexpected non-schema type: '$other'")
+    }
+  }
+
+  /**
     * Returns the labelled graph of the given constraint `c0`.
     */
   private def labelledGraphOfConstraint(c: Constraint): LabelledGraph = c match {
-    case Constraint(_, Predicate.Head.Atom(headPred, _, _, headTpe, _), body0, _) =>
+    case Constraint(_, Predicate.Head.Atom(headPred, den, _, headTpe, _), body0, _) =>
+      val headTerms = termTypes(headTpe)
+
       // We add all body predicates and the head to the labels of each edge
       val bodyLabels: Vector[Label] = body0.collect {
-        case Body.Atom(bodyPred, _, _, _, bodyTpe, _) => Label(bodyPred, arityOf(bodyTpe))
+        case Body.Atom(bodyPred, den, _, _, bodyTpe, _) =>
+          val terms = termTypes(bodyTpe)
+          Label(bodyPred, den, terms.length, terms)
       }.toVector
-      val labels = bodyLabels :+ Label(headPred, arityOf(headTpe))
 
-      val edges = body0.foldLeft(Set.empty[LabelledEdge]) {
+      val labels = bodyLabels :+ Label(headPred, den, headTerms.length, headTerms)
+
+      val edges = body0.foldLeft(Vector.empty[LabelledEdge]) {
         case (edges, body) => body match {
           case Body.Atom(bodyPred, _, p, _, _, bodyLoc) =>
-            edges + LabelledEdge(headPred, p, labels, bodyPred, bodyLoc)
-
+            edges :+ LabelledEdge(headPred, p, labels, bodyPred, bodyLoc)
           case Body.Guard(_, _) => edges
-
           case Body.Loop(_, _, _) => edges
         }
       }
+
       LabelledGraph(edges)
   }
 
   /**
-    * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
-    *
-    * Uses the given cache and updates it if required.
+    * Returns the term types of the given relational or latticenal type.
     */
-  private def stratifyWithCache(g: LabelledGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache): Validation[Stratification, StratificationError] = {
-    // The key is the set of predicates that occur in the row type.
-    val key = predicateSymbolsOf(tpe)
-
-    // Lookup the key in the stratification cache.
-    cache.get(key) match {
-      case Some(stf) =>
-        // Cache hit: Return the stratification.
-        stf.toSuccess
-
-      case None =>
-        // Cache miss: Compute the stratification and possibly cache it.
-
-        // Compute the restricted labelled graph.
-        val rg = g.restrict(key)
-
-        // Compute the stratification.
-        UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc) match {
-          case Validation.Success(stf) =>
-            // Cache the stratification.
-            cache.put(key, stf)
-
-            // And return it.
-            stf.toSuccess
-          case Validation.Failure(errors) =>
-            // Unable to stratify. Do not cache the result.
-            Validation.Failure(errors)
-        }
+  private def termTypes(tpe: Type): List[Type] = eraseAliases(tpe) match {
+    case Type.Apply(Type.Cst(TypeConstructor.Relation | TypeConstructor.Lattice, _), t, _) => t.baseType match {
+      case Type.Cst(TypeConstructor.Tuple(_), _) => t.typeArguments // Multi-ary
+      case Type.Cst(TypeConstructor.Unit, _) => Nil
+      case _ => List(t) // Unary
     }
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe.'")
+  }
+
+  /**
+    * Returns `true` if the two given labels `l1` and `l2` are considered equal.
+    */
+  private def labelEq(l1: Label, l2: Label)(implicit flix: Flix): Boolean = {
+    val isEqPredicate = l1.pred == l2.pred
+    val isEqDenotation = l1.den == l2.den
+    val isEqArity = l1.arity == l2.arity
+    val isEqTermTypes = l1.terms.zip(l2.terms).forall {
+      case (t1, t2) => Unification.unifiesWith(t1, t2)
+    }
+
+    isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes
   }
 
   /**
@@ -737,44 +768,6 @@ object Stratifier {
         UllmansAlgorithm.DependencyEdge.Positive(head, body, loc)
       case LabelledEdge(head, Polarity.Negative, _, body, loc) =>
         UllmansAlgorithm.DependencyEdge.Negative(head, body, loc)
-    }
-
-  /**
-    * Reorders a constraint such that its negated atoms occur last.
-    */
-  private def reorder(c0: Constraint): Constraint = {
-    /**
-      * Returns `true` if the body predicate is negated.
-      */
-    def isNegative(p: Predicate.Body): Boolean = p match {
-      case Predicate.Body.Atom(_, _, Polarity.Negative, _, _, _) => true
-      case _ => false
-    }
-
-    // Collect all the negated and non-negated predicates.
-    val negated = c0.body filter isNegative
-    val nonNegated = c0.body filterNot isNegative
-
-    // Reassemble the constraint.
-    c0.copy(body = nonNegated ::: negated)
-  }
-
-  /**
-    * Returns the map of predicates that appears in the given Schema `tpe`.
-    * A non-Schema type will result in an `InternalCompilerException`.
-    */
-  private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Int] = {
-    @tailrec
-    def visitType(tpe: Type, acc: Map[Name.Pred, Int]): Map[Name.Pred, Int] = tpe match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) =>
-        visitType(rest, acc + (pred -> arityOf(predType)))
-      case _ => acc
-    }
-
-    Type.eraseAliases(tpe) match {
-      case Type.Apply(Type.Cst(TypeConstructor.Schema, _), schemaRow, _) => visitType(schemaRow, Map.empty)
-      case other => throw InternalCompilerException(s"Unexpected non-schema type $other")
-    }
-  }
+    }.toSet
 
 }
