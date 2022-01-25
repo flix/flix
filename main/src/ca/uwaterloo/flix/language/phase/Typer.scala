@@ -1878,20 +1878,20 @@ object Typer {
 
       case KindedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
         val cs = cs0.map(visitConstraint)
-        TypedAst.Expression.FixpointConstraintSet(cs, Stratification.Empty, subst0(tvar), loc)
+        TypedAst.Expression.FixpointConstraintSet(cs, Stratification.empty, subst0(tvar), loc)
 
       case KindedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = e1.tpe
         val eff = Type.mkAnd(e1.eff, e2.eff, loc)
-        TypedAst.Expression.FixpointMerge(e1, e2, Stratification.Empty, tpe, eff, loc)
+        TypedAst.Expression.FixpointMerge(e1, e2, Stratification.empty, tpe, eff, loc)
 
       case KindedAst.Expression.FixpointSolve(exp, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = e.tpe
         val eff = e.eff
-        TypedAst.Expression.FixpointSolve(e, Stratification.Empty, tpe, eff, loc)
+        TypedAst.Expression.FixpointSolve(e, Stratification.empty, tpe, eff, loc)
 
       case KindedAst.Expression.FixpointFilter(pred, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
@@ -1906,7 +1906,7 @@ object Typer {
       case KindedAst.Expression.FixpointProjectOut(pred, exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
-        val stf = Stratification.Empty
+        val stf = Stratification.empty
         val tpe = subst0(tvar)
         val eff = Type.mkAnd(e1.eff, e2.eff, loc)
 

@@ -36,7 +36,6 @@ object Options {
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
     xallowredundancies = false,
-    xnostratifier = false,
     xperf = false,
     xstatistics = false,
     xstrictmono = false
@@ -78,7 +77,6 @@ object Options {
   * @param threads            selects the number of threads to use.
   * @param loadClassFiles     loads the generated class files into the JVM.
   * @param xallowredundancies disables the redundancy checker.
-  * @param xnostratifier      disables computation of stratification.
   * @param xstatistics        enables statistics collection.
   * @param xstrictmono        enables strict monomorphization.
   */
@@ -95,7 +93,6 @@ case class Options(lib: LibLevel,
                    threads: Int,
                    loadClassFiles: Boolean,
                    xallowredundancies: Boolean,
-                   xnostratifier: Boolean,
                    xperf: Boolean,
                    xstatistics: Boolean,
                    xstrictmono: Boolean,
