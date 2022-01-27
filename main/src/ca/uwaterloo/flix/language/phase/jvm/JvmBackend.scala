@@ -1,5 +1,6 @@
 /*
  * Copyright 2017 Magnus Madsen
+ * Copyright 2021 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +17,22 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import java.lang.reflect.InvocationTargetException
-
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.FinalAst._
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
-import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Validation}
 
-object JvmBackend extends Phase[Root, CompilationResult] {
+import java.lang.reflect.InvocationTargetException
+
+object JvmBackend {
 
   /**
     * Emits JVM bytecode for the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationError] = flix.phase("JvmBackend") {
+  def run(root: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationMessage] = flix.phase("JvmBackend") {
 
     //
     // Put the AST root into implicit scope.
@@ -62,35 +62,41 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       val types = JvmOps.typesOf(root)
 
+      val erasedRefTypes: Iterable[BackendObjType.Ref] = JvmOps.getRefsOf(types)
+      val erasedExtendTypes: Iterable[BackendObjType.RecordExtend] = JvmOps.getRecordExtendsOf(types)
+      val erasedContinuations: Iterable[BackendObjType.Continuation] = JvmOps.getContinuationsOf(types)
+
+      // TODO: all the type collection above should maybe have its own subphase
+
       //
       // Generate the main class.
       //
       val mainClass = GenMainClass.gen()
 
       //
-      // Generate the Context class.
-      //
-      val contextClass = GenContext.gen(namespaces)
-
-      //
       // Generate the namespace classes.
       //
-      val namespaceClasses = GenNamespaces.gen(namespaces)
+      val namespaceClasses = GenNamespaceClasses.gen(namespaces)
 
       //
-      // Generate continuation interfaces for each function type in the program.
+      // Generate continuation classes for each function type in the program.
       //
-      val continuationInterfaces = GenContinuationInterfaces.gen(types)
+      val continuationInterfaces = GenContinuationAbstractClasses.gen(erasedContinuations)
 
       //
-      // Generate function interfaces for each function type in the program.
+      // Generate a function abstract class for each function type in the program.
       //
-      val functionInterfaces = GenFunctionInterfaces.gen(types)
+      val functionInterfaces = GenFunctionAbstractClasses.gen(types)
 
       //
       // Generate function classes for each function in the program.
       //
       val functionClasses = GenFunctionClasses.gen(root.defs)
+
+      //
+      // Generate closure abstract classes for each function in the program.
+      //
+      val closureAbstractClasses = GenClosureAbstractClasses.gen(types)
 
       //
       // Generate closure classes for each closure in the program.
@@ -108,11 +114,6 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       val tagClasses = GenTagClasses.gen(tags)
 
       //
-      // Generate tuple interfaces for each tuple type in the program.
-      //
-      val tupleInterfaces = GenTupleInterfaces.gen(types)
-
-      //
       // Generate tuple classes for each tuple type in the program.
       //
       val tupleClasses = GenTupleClasses.gen(types)
@@ -120,22 +121,22 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Generate record interface.
       //
-      val recordInterfaces = GenRecordInterfaces.gen()
+      val recordInterfaces = GenRecordInterface.gen()
 
       //
       // Generate empty record class.
       //
-      val recordEmptyClasses = GenRecordEmpty.gen()
+      val recordEmptyClasses = GenRecordEmptyClass.gen()
 
       //
       // Generate extended record classes for each (different) RecordExtend type in the program
       //
-      val recordExtendClasses = GenRecordExtend.gen(types)
+      val recordExtendClasses = GenRecordExtendClasses.gen(erasedExtendTypes)
 
       //
       // Generate references classes.
       //
-      val refClasses = GenRefClasses.gen()
+      val refClasses = GenRefClasses.gen(erasedRefTypes)
 
       //
       // Generate lazy classes.
@@ -177,15 +178,14 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       List(
         mainClass,
-        contextClass,
         namespaceClasses,
         continuationInterfaces,
         functionInterfaces,
         functionClasses,
+        closureAbstractClasses,
         closureClasses,
         enumInterfaces,
         tagClasses,
-        tupleInterfaces,
         tupleClasses,
         recordInterfaces,
         recordEmptyClasses,
@@ -205,14 +205,16 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     // Write each class (and interface) to disk.
     //
     // NB: In interactive and test mode we skip writing the files to disk.
-    if (flix.options.writeClassFiles && !flix.options.test) {
+    if (flix.options.output.nonEmpty) {
       flix.subphase("WriteClasses") {
         for ((_, jvmClass) <- allClasses) {
           flix.subtask(jvmClass.name.toBinaryName, sample = true)
-          JvmOps.writeClass(flix.options.targetDirectory, jvmClass)
+          JvmOps.writeClass(flix.options.output.get, jvmClass)
         }
       }
     }
+
+    val outputBytes = allClasses.map(_._2.bytecode.length).sum
 
     val loadClasses = flix.options.loadClassFiles
 
@@ -220,7 +222,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Do not load any classes.
       //
-      new CompilationResult(root, None, Map.empty).toSuccess
+      new CompilationResult(root, None, Map.empty, outputBytes).toSuccess
     } else {
       //
       // Loads all the generated classes into the JVM and decorates the AST.
@@ -230,7 +232,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       //
       // Return the compilation result.
       //
-      new CompilationResult(root, getCompiledMain(root), getCompiledDefs(root)).toSuccess
+      new CompilationResult(root, getCompiledMain(root), getCompiledDefs(root), outputBytes).toSuccess
     }
   }
 

@@ -1,16 +1,16 @@
 namespace Test/Exp/ArraySliceNoStartIndex {
 
     @test
-    def testArraySliceNoStartIndex01(): Array[Int] & Impure = let x = [1, 2, 3]; x[..2]
+    def testArraySliceNoStartIndex01(): Array[Int32] & Impure = let x = [1, 2, 3]; x[..2]
 
     @test
-    def testArraySliceNoStartIndex02(): Array[Int] & Impure = let x = [1, 2, 3, 4]; x[..3]
+    def testArraySliceNoStartIndex02(): Array[Int32] & Impure = let x = [1, 2, 3, 4]; x[..3]
 
     @test
-    def testArraySliceNoStartIndex03(): Array[Int] & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]; x[..15]
+    def testArraySliceNoStartIndex03(): Array[Int32] & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]; x[..15]
 
     @test
-    def testArraySliceNoStartIndex04(): Array[Int] & Impure = let x = [1, 2]; x[..2]
+    def testArraySliceNoStartIndex04(): Array[Int32] & Impure = let x = [1, 2]; x[..2]
 
     @test
     def testArraySliceNoStartIndex05(): Array[Bool] & Impure = let x = [true, false]; x[..1]
@@ -67,24 +67,24 @@ namespace Test/Exp/ArraySliceNoStartIndex {
     def testArraySliceNoStartIndex22(): Array[String] & Impure = let x = ["World", "Hello", "World"]; x[..3]
 
     @test
-    def testArraySliceNoStartIndex23(): Array[Array[Int]] & Impure = let x = [[1, 2], [1, 2]]; x[..2]
+    def testArraySliceNoStartIndex23(): Array[Array[Int32]] & Impure = let x = [[1, 2], [1, 2]]; x[..2]
 
     @test
-    def testArraySliceNoStartIndex24(): Array[Array[Int]] & Impure = let x = [[1], [1, 2, 3, 4, 5, 6, 7, 8]]; x[..2]
+    def testArraySliceNoStartIndex24(): Array[Array[Int32]] & Impure = let x = [[1], [1, 2, 3, 4, 5, 6, 7, 8]]; x[..2]
 
     @test
-    def testArraySliceNoStartIndex25(): Array[Array[Int]] & Impure = let x = [[1, 2, 3, 4, 5], [2]]; x[..1]
+    def testArraySliceNoStartIndex25(): Array[Array[Int32]] & Impure = let x = [[1, 2, 3, 4, 5], [2]]; x[..1]
 
     @test
-    def testArraySliceNoStartIndex26(): Array[Array[Int]] & Impure = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[..3]
+    def testArraySliceNoStartIndex26(): Array[Array[Int32]] & Impure = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[..3]
 
     @test
-    def testArraySliceNoStartIndex27(): Array[(List[Int])] & Impure = let x = [(1 :: Nil), (2 :: Nil)]; x[0..]
+    def testArraySliceNoStartIndex27(): Array[(List[Int32])] & Impure = let x = [(1 :: Nil), (2 :: Nil)]; x[0..]
 
     @test
     def testArraySliceNoStartIndex28(): Array[(Bool, Bool)] & Impure = let x = [(true, true), (true, false), (true, true)]; x[0..]
 
     @test
-    def testArraySliceNoStartIndex29(): Array[Option[Int]] & Impure = let x = [None, None, Some(1)]; x[0..]
+    def testArraySliceNoStartIndex29(): Array[Option[Int32]] & Impure = let x = [None, None, Some(1)]; x[0..]
 
 }

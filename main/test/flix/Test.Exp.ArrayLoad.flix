@@ -1,19 +1,19 @@
 namespace Test/Exp/ArrayLoad {
 
     @test
-    def testArrayLoad01(): Int & Impure = let x = [1]; x[0]
+    def testArrayLoad01(): Int32 & Impure = let x = [1]; x[0]
 
     @test
-    def testArrayLoad02(): Int & Impure = let x = [1, 2, 3]; x[2]
+    def testArrayLoad02(): Int32 & Impure = let x = [1, 2, 3]; x[2]
 
     @test
-    def testArrayLoad03(): Int & Impure = let x = [1, 2, 3, 4]; x[2]
+    def testArrayLoad03(): Int32 & Impure = let x = [1, 2, 3, 4]; x[2]
 
     @test
-    def testArrayLoad04(): Int & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]; x[10]
+    def testArrayLoad04(): Int32 & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]; x[10]
 
     @test
-    def testArrayLoad05(): Int & Impure = let x = [1, 2]; x[1]
+    def testArrayLoad05(): Int32 & Impure = let x = [1, 2]; x[1]
 
     @test
     def testArrayLoad06(): Bool & Impure = let x = [true]; x[0]
@@ -97,19 +97,19 @@ namespace Test/Exp/ArrayLoad {
     def testArrayLoad32(): String & Impure = let x = ["World", "Hello", "World"]; x[2]
 
     @test
-    def testArrayLoad33(): Int & Impure = let x = [[1, 2, 3]]; x[0][1]
+    def testArrayLoad33(): Int32 & Impure = let x = [[1, 2, 3]]; x[0][1]
 
     @test
-    def testArrayLoad34(): Int & Impure = let x = [[1, 2], [1, 2]]; x[1][0]
+    def testArrayLoad34(): Int32 & Impure = let x = [[1, 2], [1, 2]]; x[1][0]
 
     @test
-    def testArrayLoad35(): Int & Impure = let x = [[1], [1, 2, 3, 4, 5, 6, 7, 8]]; x[1][5]
+    def testArrayLoad35(): Int32 & Impure = let x = [[1], [1, 2, 3, 4, 5, 6, 7, 8]]; x[1][5]
 
     @test
-    def testArrayLoad36(): Int & Impure = let x = [[1, 2, 3, 4, 5], [2]]; x[0][3]
+    def testArrayLoad36(): Int32 & Impure = let x = [[1, 2, 3, 4, 5], [2]]; x[0][3]
 
     @test
-    def testArrayLoad37(): Int & Impure = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[2][2]
+    def testArrayLoad37(): Int32 & Impure = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[2][2]
 
     @test
     def testArrayLoad38(): Bool & Impure = let x = [[true, false, true]]; x[0] [2]
@@ -226,12 +226,12 @@ namespace Test/Exp/ArrayLoad {
     def testArrayLoad75(): String & Impure = let x = [["World", "World", "World"], ["World", "World", "World"], ["World", "World", "World"]]; x[1][2]
 
     @test
-    def testArrayLoad77(): Option[Int] & Impure = let x = [Some(5), Some(6), Some(7)]; x[1]
+    def testArrayLoad77(): Option[Int32] & Impure = let x = [Some(5), Some(6), Some(7)]; x[1]
 
     @test
-    def testArrayLoad78(): Option[Int] & Impure = let x = [[None, Some(4), Some(999)], [Some(9), Some(5), None, None]]; x[1][2]
+    def testArrayLoad78(): Option[Int32] & Impure = let x = [[None, Some(4), Some(999)], [Some(9), Some(5), None, None]]; x[1][2]
 
     @test
-    def testArrayLoad79(): Array[List[Int]] & Impure = let x = [[1 :: Nil], [3 :: Nil]]; x[0]
+    def testArrayLoad79(): Array[List[Int32]] & Impure = let x = [[1 :: Nil], [3 :: Nil]]; x[0]
 
 }

@@ -17,15 +17,18 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.{DependencyEdge, DependencyGraph, Polarity}
+import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Ast._
+import ca.uwaterloo.flix.language.ast.Type.eraseAliases
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.StratificationError
+import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
-import scala.collection.mutable
+import scala.annotation.tailrec
 
 /**
   * The stratification phase breaks constraints into strata.
@@ -36,37 +39,25 @@ import scala.collection.mutable
   *
   * Reports a [[StratificationError]] if the constraints cannot be stratified.
   */
-object Stratifier extends Phase[Root, Root] {
-
-  /**
-    * A type alias for the stratification cache.
-    */
-  type Cache = mutable.Map[Set[Name.Pred], Ast.Stratification]
-
+object Stratifier {
   /**
     * Returns a stratified version of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Stratifier") {
-    // A cache of stratifications. Only caches successful stratifications.
-    val cache: Cache = mutable.Map.empty
-
-    // Check if computation of stratification is disabled.
-    if (flix.options.xnostratifier)
-      return root.toSuccess
-
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Stratifier") {
     // Compute an over-approximation of the dependency graph for all constraints in the program.
-    val dg = flix.subphase("Compute Dependency Graph") {
-      ParOps.parAgg(root.defs, DependencyGraph.empty)({
-        case (acc, (sym, decl)) => acc + dependencyGraphOfDef(decl)
+    val g = flix.subphase("Compute Dependency Graph") {
+      ParOps.parAgg(root.defs, LabelledGraph.empty)({
+        case (acc, (_, decl)) => acc + labelledGraphOfDef(decl)
       }, _ + _)
     }
 
-    // Compute the stratification at every solve expression in the ast.`
+    // Compute the stratification at every datalog expression in the ast.
     val defsVal = flix.subphase("Compute Stratification") {
-      traverse(root.defs) {
-        case (sym, defn) => visitDef(defn)(dg, cache).map(d => sym -> d)
-      }
+      val result = ParOps.parMap(root.defs)(kv => visitDef(kv._2)(g, flix).map(d => kv._1 -> d))
+      Validation.sequence(result)
     }
+
+    // TODO: JLS: Must also visit instances.
 
     mapN(defsVal) {
       case ds => root.copy(defs = ds.toMap)
@@ -76,7 +67,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit dg: DependencyGraph, cache: Cache): Validation[Def, CompilationError] =
+  private def visitDef(def0: Def)(implicit g: LabelledGraph, flix: Flix): Validation[Def, CompilationMessage] =
     visitExp(def0.impl.exp) map {
       case e => def0.copy(impl = def0.impl.copy(exp = e))
     }
@@ -86,7 +77,7 @@ object Stratifier extends Phase[Root, Root] {
     *
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
-  private def visitExp(exp0: Expression)(implicit dg: DependencyGraph, cache: Cache): Validation[Expression, StratificationError] = exp0 match {
+  private def visitExp(exp0: Expression)(implicit g: LabelledGraph, flix: Flix): Validation[Expression, StratificationError] = exp0 match {
     case Expression.Unit(_) => exp0.toSuccess
 
     case Expression.Null(_, _) => exp0.toSuccess
@@ -123,7 +114,7 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Sig(_, _, _) => exp0.toSuccess
 
-    case Expression.Hole(_, _, _, _) => exp0.toSuccess
+    case Expression.Hole(_, _, _) => exp0.toSuccess
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       mapN(visitExp(exp)) {
@@ -148,6 +139,11 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => Expression.Let(sym, mod, e1, e2, tpe, eff, loc)
+      }
+
+    case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
       }
 
     case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
@@ -258,24 +254,14 @@ object Stratifier extends Phase[Root, Root] {
         case (e1, e2) => Expression.Assign(e1, e2, tpe, eff, loc)
       }
 
-    case Expression.Existential(fparam, exp, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Existential(fparam, e, loc)
-      }
-
-    case Expression.Universal(fparam, exp, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Universal(fparam, e, loc)
-      }
-
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Ascribe(e, tpe, eff, loc)
       }
 
-    case Expression.Cast(exp, tpe, eff, loc) =>
+    case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Cast(e, tpe, eff, loc)
+        case e => Expression.Cast(e, declaredType, declaredEff, tpe, eff, loc)
       }
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
@@ -369,7 +355,7 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.FixpointConstraintSet(cs0, _, tpe, loc) =>
       // Compute the stratification.
-      val stf = stratifyWithCache(dg, tpe, loc)
+      val stf = stratify(g, tpe, loc)
 
       mapN(stf) {
         case s =>
@@ -379,7 +365,7 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.FixpointMerge(exp1, exp2, _, tpe, eff, loc) =>
       // Compute the stratification.
-      val stf = stratifyWithCache(dg, tpe, loc)
+      val stf = stratify(g, tpe, loc)
 
       mapN(visitExp(exp1), visitExp(exp2), stf) {
         case (e1, e2, s) => Expression.FixpointMerge(e1, e2, s, tpe, eff, loc)
@@ -387,7 +373,7 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
       // Compute the stratification.
-      val stf = stratifyWithCache(dg, tpe, loc)
+      val stf = stratify(g, tpe, loc)
 
       mapN(visitExp(exp), stf) {
         case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
@@ -411,433 +397,14 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Reify(t, tpe, eff, loc) =>
       Expression.Reify(t, tpe, eff, loc).toSuccess
 
-  }
+    case Expression.ReifyType(t, k, tpe, eff, loc) =>
+      Expression.ReifyType(t, k, tpe, eff, loc).toSuccess
 
-  /**
-    * Returns the dependency graph of the given definition `def0`.
-    */
-  private def dependencyGraphOfDef(def0: Def): DependencyGraph = dependencyGraphOfExp(def0.impl.exp)
-
-  /**
-    * Returns the dependency graph of the given expression `exp0`.
-    */
-  private def dependencyGraphOfExp(exp0: Expression): DependencyGraph = exp0 match {
-    case Expression.Unit(_) => DependencyGraph.empty
-
-    case Expression.Null(_, _) => DependencyGraph.empty
-
-    case Expression.True(_) => DependencyGraph.empty
-
-    case Expression.False(_) => DependencyGraph.empty
-
-    case Expression.Char(_, _) => DependencyGraph.empty
-
-    case Expression.Float32(_, _) => DependencyGraph.empty
-
-    case Expression.Float64(_, _) => DependencyGraph.empty
-
-    case Expression.Int8(_, _) => DependencyGraph.empty
-
-    case Expression.Int16(_, _) => DependencyGraph.empty
-
-    case Expression.Int32(_, _) => DependencyGraph.empty
-
-    case Expression.Int64(_, _) => DependencyGraph.empty
-
-    case Expression.BigInt(_, _) => DependencyGraph.empty
-
-    case Expression.Str(_, _) => DependencyGraph.empty
-
-    case Expression.Default(_, _) => DependencyGraph.empty
-
-    case Expression.Wild(_, _) => DependencyGraph.empty
-
-    case Expression.Var(_, _, _) => DependencyGraph.empty
-
-    case Expression.Def(_, _, _) => DependencyGraph.empty
-
-    case Expression.Sig(_, _, _) => DependencyGraph.empty
-
-    case Expression.Hole(_, _, _, _) => DependencyGraph.empty
-
-    case Expression.Lambda(_, exp, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.Apply(exp, exps, _, _, _) =>
-      val init = dependencyGraphOfExp(exp)
-      exps.foldLeft(init) {
-        case (acc, exp) => acc + dependencyGraphOfExp(exp)
+    case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
+        case (e1, e2, e3) => Expression.ReifyEff(sym, e1, e2, e3, tpe, eff, loc)
       }
 
-    case Expression.Unary(_, exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.Binary(_, exp1, exp2, _, _, _) =>
-      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
-
-    case Expression.Let(_, _, exp1, exp2, _, _, _) =>
-      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
-
-    case Expression.LetRegion(_, exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2) + dependencyGraphOfExp(exp3)
-
-    case Expression.Stm(exp1, exp2, _, _, _) =>
-      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
-
-    case Expression.Match(exp, rules, _, _, _) =>
-      val dg = dependencyGraphOfExp(exp)
-      rules.foldLeft(dg) {
-        case (acc, MatchRule(_, g, b)) => acc + dependencyGraphOfExp(g) + dependencyGraphOfExp(b)
-      }
-
-    case Expression.Choose(exps, rules, _, _, _) =>
-      val dg1 = exps.foldLeft(DependencyGraph.empty) {
-        case (acc, exp) => acc + dependencyGraphOfExp(exp)
-      }
-      val dg2 = rules.foldLeft(DependencyGraph.empty) {
-        case (acc, ChoiceRule(_, exp)) => acc + dependencyGraphOfExp(exp)
-      }
-      dg1 + dg2
-
-    case Expression.Tag(_, _, exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.Tuple(elms, _, _, _) =>
-      elms.foldLeft(DependencyGraph.empty) {
-        case (acc, e) => acc + dependencyGraphOfExp(e)
-      }
-
-    case Expression.RecordEmpty(_, _) =>
-      DependencyGraph.empty
-
-    case Expression.RecordSelect(base, _, _, _, _) =>
-      dependencyGraphOfExp(base)
-
-    case Expression.RecordExtend(_, value, rest, _, _, _) =>
-      dependencyGraphOfExp(value) + dependencyGraphOfExp(rest)
-
-    case Expression.RecordRestrict(_, rest, _, _, _) =>
-      dependencyGraphOfExp(rest)
-
-    case Expression.ArrayLit(elms, _, _, _) =>
-      elms.foldLeft(DependencyGraph.empty) {
-        case (acc, e) => acc + dependencyGraphOfExp(e)
-      }
-
-    case Expression.ArrayNew(elm, len, _, _, _) =>
-      dependencyGraphOfExp(elm) + dependencyGraphOfExp(len)
-
-    case Expression.ArrayLoad(base, index, _, _, _) =>
-      dependencyGraphOfExp(base) + dependencyGraphOfExp(index)
-
-    case Expression.ArrayLength(base, _, _) =>
-      dependencyGraphOfExp(base)
-
-    case Expression.ArrayStore(base, index, elm, _) =>
-      dependencyGraphOfExp(base) + dependencyGraphOfExp(index) + dependencyGraphOfExp(elm)
-
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
-      dependencyGraphOfExp(base) + dependencyGraphOfExp(beginIndex) + dependencyGraphOfExp(endIndex)
-
-    case Expression.Ref(exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.Deref(exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.Assign(exp1, exp2, _, _, _) =>
-      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
-
-    case Expression.Existential(_, exp, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.Universal(_, exp, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.Ascribe(exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.Cast(exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.TryCatch(exp, rules, _, _, _) =>
-      rules.foldLeft(dependencyGraphOfExp(exp)) {
-        case (acc, CatchRule(_, _, e)) => acc + dependencyGraphOfExp(e)
-      }
-
-    case Expression.InvokeConstructor(_, args, _, _, _) =>
-      args.foldLeft(DependencyGraph.empty) {
-        case (acc, e) => acc + dependencyGraphOfExp(e)
-      }
-
-    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
-      args.foldLeft(dependencyGraphOfExp(exp)) {
-        case (acc, e) => acc + dependencyGraphOfExp(e)
-      }
-
-    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
-      args.foldLeft(DependencyGraph.empty) {
-        case (acc, e) => acc + dependencyGraphOfExp(e)
-      }
-
-    case Expression.GetField(_, exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.PutField(_, exp1, exp2, _, _, _) =>
-      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
-
-    case Expression.GetStaticField(_, _, _, _) =>
-      DependencyGraph.empty
-
-    case Expression.PutStaticField(_, exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.NewChannel(exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.GetChannel(exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.PutChannel(exp1, exp2, _, _, _) =>
-      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
-
-    case Expression.SelectChannel(rules, default, _, _, _) =>
-      val dg = default match {
-        case None => DependencyGraph.empty
-        case Some(d) => dependencyGraphOfExp(d)
-      }
-
-      rules.foldLeft(dg) {
-        case (acc, SelectChannelRule(_, exp1, exp2)) => acc + dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
-      }
-
-    case Expression.Spawn(exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.Lazy(exp, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.Force(exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.FixpointConstraintSet(cs, _, _, _) =>
-      cs.foldLeft(DependencyGraph.empty) {
-        case (dg, c) => dg + dependencyGraphOfConstraint(c)
-      }
-
-    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
-      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
-
-    case Expression.FixpointSolve(exp, _, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.FixpointFilter(_, exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.Reify(_, _, _, _) =>
-      DependencyGraph.empty
-
-  }
-
-  /**
-    * Returns the dependency graph of the given constraint `c0`.
-    */
-  private def dependencyGraphOfConstraint(c0: Constraint): DependencyGraph = c0 match {
-    case Constraint(cparams, head, body, _) =>
-      getPredicate(head) match {
-        case None => DependencyGraph.empty
-        case Some(headSym) =>
-          val dependencies = body flatMap (b => visitDependencyEdge(headSym, b))
-          DependencyGraph(dependencies.toSet)
-      }
-  }
-
-  /**
-    * Optionally returns the predicate of the given head atom `head0`.
-    */
-  private def getPredicate(head0: Predicate.Head): Option[Name.Pred] = head0 match {
-    case Predicate.Head.Atom(pred, den, terms, tpe, loc) => Some(pred)
-  }
-
-  /**
-    * Optionally returns a dependency edge of the right type for the given head predicate `head` and body predicate `body0`.
-    */
-  private def visitDependencyEdge(head: Name.Pred, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
-    case Predicate.Body.Atom(pred, den, polarity, terms, tpe, loc) => polarity match {
-      case Polarity.Positive => Some(DependencyEdge.Positive(head, pred, loc))
-      case Polarity.Negative => Some(DependencyEdge.Negative(head, pred, loc))
-    }
-
-    case Predicate.Body.Guard(exp, loc) => None
-  }
-
-  /**
-    * Computes the stratification of the given dependency graph `dg` for the given row type `tpe` at the given source location `loc`.
-    *
-    * Uses the given cache and updates it if required.
-    */
-  private def stratifyWithCache(dg: DependencyGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache): Validation[Ast.Stratification, StratificationError] = {
-    // The key is the set of predicates that occur in the row type.
-    val key = predicateSymbolsOf(tpe)
-
-    // Lookup the key in the stratification cache.
-    cache.get(key) match {
-      case None =>
-        // Case 1: Cache miss: Compute the stratification and possibly cache it.
-
-        // Compute the restricted dependency graph.
-        val rg = restrict(dg, tpe)
-
-        // Compute the stratification.
-        stratify(rg, tpe, loc) match {
-          case Validation.Success(stf) =>
-            // Cache the stratification.
-            cache.put(key, stf)
-
-            // And return it.
-            stf.toSuccess
-          case Validation.Failure(errors) =>
-            // Unable to stratify. Do not cache the result.
-            Validation.Failure(errors)
-        }
-      case Some(stf) =>
-        // Case 2: Cache hit: Return the stratification.
-        stf.toSuccess
-    }
-  }
-
-  /**
-    * Computes the stratification of the given dependency graph `g` at the given source location `loc`.
-    *
-    * See Database and Knowledge - Base Systems Volume 1 Ullman, Algorithm 3.5 p 133
-    */
-  private def stratify(g: DependencyGraph, tpe: Type, loc: SourceLocation): Validation[Ast.Stratification, StratificationError] = {
-    //
-    // Maintain a mutable map from predicates to their (maximum) stratum number.
-    //
-    // Any predicate not explicitly in the map has a default value of zero.
-    //
-    val stratumOf = mutable.Map.empty[Name.Pred, Int]
-
-    //
-    // Compute the number of dependency edges.
-    //
-    // The number of strata is bounded by the number of predicates which is bounded by the number of edges.
-    //
-    // Hence if we ever compute a stratum higher than this number then there is a negative cycle.
-    //
-    val maxStratum = g.xs.size
-
-    //
-    // Repeatedly examine the dependency edges.
-    //
-    // We always consider two cases:
-    //   1. A positive body predicate requires its head predicate to be in its stratum or any higher stratum.
-    //   2. A negative body predicate requires its head predicate to be in a strictly higher stratum.
-    //
-    // If we ever create more strata than there are dependency edges then there is a negative cycle and we abort.
-    //
-    var changed = true
-    while (changed) {
-      changed = false
-
-      // Examine each dependency edge in turn.
-      for (edge <- g.xs) {
-        edge match {
-          case DependencyEdge.Positive(headSym, bodySym, _) =>
-            // Case 1: The stratum of the head must be in the same or a higher stratum as the body.
-            val headStratum = stratumOf.getOrElseUpdate(headSym, 0)
-            val bodyStratum = stratumOf.getOrElseUpdate(bodySym, 0)
-
-            if (!(headStratum >= bodyStratum)) {
-              // Put the head in the same stratum as the body.
-              stratumOf.put(headSym, bodyStratum)
-              changed = true
-            }
-
-          case DependencyEdge.Negative(headSym, bodySym, edgeLoc) =>
-            // Case 2: The stratum of the head must be in a strictly higher stratum than the body.
-            val headStratum = stratumOf.getOrElseUpdate(headSym, 0)
-            val bodyStratum = stratumOf.getOrElseUpdate(bodySym, 0)
-
-            if (!(headStratum > bodyStratum)) {
-              // Put the head in one stratum above the body stratum.
-              val newHeadStratum = bodyStratum + 1
-              stratumOf.put(headSym, newHeadStratum)
-              changed = true
-
-              // Check if we have found a negative cycle.
-              if (newHeadStratum > maxStratum) {
-                return StratificationError(findNegativeCycle(bodySym, headSym, g, edgeLoc), tpe, loc).toFailure
-              }
-            }
-        }
-      }
-    }
-
-    // We are done. Successfully return the computed stratification.
-    Ast.Stratification(stratumOf.toMap).toSuccess
-  }
-
-  /**
-    * Returns a path that forms a cycle with the edge from `src` to `dst` in the given dependency graph `g`.
-    */
-  private def findNegativeCycle(src: Name.Pred, dst: Name.Pred, g: DependencyGraph, loc: SourceLocation): List[(Name.Pred, SourceLocation)] = {
-    // Computes a map from predicates to their successors.
-    val succ = mutable.Map.empty[Name.Pred, Set[(Name.Pred, SourceLocation)]]
-    for (edge <- g.xs) {
-      edge match {
-        case DependencyEdge.Positive(head, body, loc) =>
-          val s = succ.getOrElse(body, Set.empty)
-          succ.put(body, s + ((head, loc)))
-        case DependencyEdge.Negative(head, body, loc) =>
-          val s = succ.getOrElse(body, Set.empty)
-          succ.put(body, s + ((head, loc)))
-      }
-    }
-
-    // We perform a DFS using recursion to find the cycle.
-
-    // A map from predicates to their immediate predecessor in the DFS.
-    val pred = mutable.Map.empty[Name.Pred, (Name.Pred, SourceLocation)]
-
-    // A set of previously seen predicates.
-    val seen = mutable.Set.empty[Name.Pred]
-
-    // Recursively visit the given predicate.
-    def visit(curr: Name.Pred): Unit = {
-      // Update the set of previously seen nodes.
-      seen.add(curr)
-
-      // Recursively visit each unseen child.
-      for ((succ, loc) <- succ.getOrElse(curr, Set.empty)) {
-        if (!seen.contains(succ)) {
-          pred.update(succ, (curr, loc))
-          visit(succ)
-        }
-      }
-    }
-
-    // Compute the predecessor map.
-    visit(dst)
-
-    // Recursively constructs a path from `src` and backwards through the graph.
-    def unroll(curr: Name.Pred): List[(Name.Pred, SourceLocation)] = pred.get(curr) match {
-      case None => Nil
-      case Some((prev, loc)) => (prev, loc) :: unroll(prev)
-    }
-
-    // Assemble the full path.
-    (src, loc) :: unroll(src) ::: (src, loc) :: Nil
   }
 
   /**
@@ -861,19 +428,346 @@ object Stratifier extends Phase[Root, Root] {
   }
 
   /**
-    * Restricts the given dependency graph `dg` to the predicates that occur in the given type `tpe`.
+    * Returns the labelled graph of the given definition `def0`.
     */
-  private def restrict(dg: DependencyGraph, tpe: Type): DependencyGraph = {
-    val predSyms = predicateSymbolsOf(tpe)
-    dg.restrict(predSyms)
+  private def labelledGraphOfDef(def0: Def): LabelledGraph =
+    LabelledGraphOfExp(def0.impl.exp)
+
+  /**
+    * Returns the labelled graph of the given expression `exp0`.
+    */
+  private def LabelledGraphOfExp(exp0: Expression): LabelledGraph = exp0 match {
+    case Expression.Unit(_) => LabelledGraph.empty
+
+    case Expression.Null(_, _) => LabelledGraph.empty
+
+    case Expression.True(_) => LabelledGraph.empty
+
+    case Expression.False(_) => LabelledGraph.empty
+
+    case Expression.Char(_, _) => LabelledGraph.empty
+
+    case Expression.Float32(_, _) => LabelledGraph.empty
+
+    case Expression.Float64(_, _) => LabelledGraph.empty
+
+    case Expression.Int8(_, _) => LabelledGraph.empty
+
+    case Expression.Int16(_, _) => LabelledGraph.empty
+
+    case Expression.Int32(_, _) => LabelledGraph.empty
+
+    case Expression.Int64(_, _) => LabelledGraph.empty
+
+    case Expression.BigInt(_, _) => LabelledGraph.empty
+
+    case Expression.Str(_, _) => LabelledGraph.empty
+
+    case Expression.Default(_, _) => LabelledGraph.empty
+
+    case Expression.Wild(_, _) => LabelledGraph.empty
+
+    case Expression.Var(_, _, _) => LabelledGraph.empty
+
+    case Expression.Def(_, _, _) => LabelledGraph.empty
+
+    case Expression.Sig(_, _, _) => LabelledGraph.empty
+
+    case Expression.Hole(_, _, _) => LabelledGraph.empty
+
+    case Expression.Lambda(_, exp, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.Apply(exp, exps, _, _, _) =>
+      val init = LabelledGraphOfExp(exp)
+      exps.foldLeft(init) {
+        case (acc, exp) => acc + LabelledGraphOfExp(exp)
+      }
+
+    case Expression.Unary(_, exp, _, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.Binary(_, exp1, exp2, _, _, _) =>
+      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+
+    case Expression.Let(_, _, exp1, exp2, _, _, _) =>
+      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+
+    case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
+      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+
+    case Expression.LetRegion(_, exp, _, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2) + LabelledGraphOfExp(exp3)
+
+    case Expression.Stm(exp1, exp2, _, _, _) =>
+      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+
+    case Expression.Match(exp, rules, _, _, _) =>
+      val dg = LabelledGraphOfExp(exp)
+      rules.foldLeft(dg) {
+        case (acc, MatchRule(_, g, b)) => acc + LabelledGraphOfExp(g) + LabelledGraphOfExp(b)
+      }
+
+    case Expression.Choose(exps, rules, _, _, _) =>
+      val dg1 = exps.foldLeft(LabelledGraph.empty) {
+        case (acc, exp) => acc + LabelledGraphOfExp(exp)
+      }
+      val dg2 = rules.foldLeft(LabelledGraph.empty) {
+        case (acc, ChoiceRule(_, exp)) => acc + LabelledGraphOfExp(exp)
+      }
+      dg1 + dg2
+
+    case Expression.Tag(_, _, exp, _, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.Tuple(elms, _, _, _) =>
+      elms.foldLeft(LabelledGraph.empty) {
+        case (acc, e) => acc + LabelledGraphOfExp(e)
+      }
+
+    case Expression.RecordEmpty(_, _) =>
+      LabelledGraph.empty
+
+    case Expression.RecordSelect(base, _, _, _, _) =>
+      LabelledGraphOfExp(base)
+
+    case Expression.RecordExtend(_, value, rest, _, _, _) =>
+      LabelledGraphOfExp(value) + LabelledGraphOfExp(rest)
+
+    case Expression.RecordRestrict(_, rest, _, _, _) =>
+      LabelledGraphOfExp(rest)
+
+    case Expression.ArrayLit(elms, _, _, _) =>
+      elms.foldLeft(LabelledGraph.empty) {
+        case (acc, e) => acc + LabelledGraphOfExp(e)
+      }
+
+    case Expression.ArrayNew(elm, len, _, _, _) =>
+      LabelledGraphOfExp(elm) + LabelledGraphOfExp(len)
+
+    case Expression.ArrayLoad(base, index, _, _, _) =>
+      LabelledGraphOfExp(base) + LabelledGraphOfExp(index)
+
+    case Expression.ArrayLength(base, _, _) =>
+      LabelledGraphOfExp(base)
+
+    case Expression.ArrayStore(base, index, elm, _) =>
+      LabelledGraphOfExp(base) + LabelledGraphOfExp(index) + LabelledGraphOfExp(elm)
+
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
+      LabelledGraphOfExp(base) + LabelledGraphOfExp(beginIndex) + LabelledGraphOfExp(endIndex)
+
+    case Expression.Ref(exp, _, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.Deref(exp, _, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.Assign(exp1, exp2, _, _, _) =>
+      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+
+    case Expression.Ascribe(exp, _, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.Cast(exp, _, _, _, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.TryCatch(exp, rules, _, _, _) =>
+      rules.foldLeft(LabelledGraphOfExp(exp)) {
+        case (acc, CatchRule(_, _, e)) => acc + LabelledGraphOfExp(e)
+      }
+
+    case Expression.InvokeConstructor(_, args, _, _, _) =>
+      args.foldLeft(LabelledGraph.empty) {
+        case (acc, e) => acc + LabelledGraphOfExp(e)
+      }
+
+    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+      args.foldLeft(LabelledGraphOfExp(exp)) {
+        case (acc, e) => acc + LabelledGraphOfExp(e)
+      }
+
+    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
+      args.foldLeft(LabelledGraph.empty) {
+        case (acc, e) => acc + LabelledGraphOfExp(e)
+      }
+
+    case Expression.GetField(_, exp, _, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.PutField(_, exp1, exp2, _, _, _) =>
+      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+
+    case Expression.GetStaticField(_, _, _, _) =>
+      LabelledGraph.empty
+
+    case Expression.PutStaticField(_, exp, _, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.NewChannel(exp, _, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.GetChannel(exp, _, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.PutChannel(exp1, exp2, _, _, _) =>
+      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+
+    case Expression.SelectChannel(rules, default, _, _, _) =>
+      val dg = default match {
+        case None => LabelledGraph.empty
+        case Some(d) => LabelledGraphOfExp(d)
+      }
+
+      rules.foldLeft(dg) {
+        case (acc, SelectChannelRule(_, exp1, exp2)) => acc + LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+      }
+
+    case Expression.Spawn(exp, _, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.Lazy(exp, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.Force(exp, _, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.FixpointConstraintSet(cs, _, _, _) =>
+      cs.foldLeft(LabelledGraph.empty) {
+        case (dg, c) => dg + labelledGraphOfConstraint(c)
+      }
+
+    case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
+      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+
+    case Expression.FixpointSolve(exp, _, _, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.FixpointFilter(_, exp, _, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.FixpointProjectIn(exp, _, _, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.FixpointProjectOut(_, exp, _, _, _) =>
+      LabelledGraphOfExp(exp)
+
+    case Expression.Reify(_, _, _, _) =>
+      LabelledGraph.empty
+
+    case Expression.ReifyType(_, _, _, _, _) =>
+      LabelledGraph.empty
+
+    case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _) =>
+      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2) + LabelledGraphOfExp(exp3)
   }
 
   /**
-    * Returns the set of predicates that appears in the given row type `tpe`.
+    * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
     */
-  private def predicateSymbolsOf(tpe: Type): Set[Name.Pred] = tpe.typeConstructors.foldLeft(Set.empty[Name.Pred]) {
-    case (acc, TypeConstructor.SchemaRowExtend(pred)) => acc + pred
-    case (acc, _) => acc
+  private def stratify(g: LabelledGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Stratification, StratificationError] = {
+    // The key is the set of predicates that occur in the row type.
+    val key = predicateSymbolsOf(tpe)
+
+    // Compute the restricted labelled graph.
+    val rg = g.restrict(key, labelEq)
+
+    // Compute the stratification.
+    UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc)
   }
+
+  /**
+    * Returns the map of predicates that appears in the given Schema `tpe`.
+    * A non-Schema type will result in an `InternalCompilerException`.
+    */
+  private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Label] = {
+    @tailrec
+    def visitType(tpe: Type, acc: Map[Name.Pred, Label]): Map[Name.Pred, Label] = tpe match {
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), rest, _) =>
+        val terms = termTypes(predType)
+        val Type.Apply(Type.Cst(den, _), _, _) = predType // same partial match as termTypes
+        val labelDen = den match {
+          case TypeConstructor.Relation => Denotation.Relational
+          case TypeConstructor.Lattice => Denotation.Latticenal
+          case other => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$other'")
+        }
+        val label = Label(pred, labelDen, terms.length, terms)
+        visitType(rest, acc + (pred -> label))
+      case _ => acc
+    }
+
+    Type.eraseAliases(tpe) match {
+      case Type.Apply(Type.Cst(TypeConstructor.Schema, _), schemaRow, _) => visitType(schemaRow, Map.empty)
+      case other => throw InternalCompilerException(s"Unexpected non-schema type: '$other'")
+    }
+  }
+
+  /**
+    * Returns the labelled graph of the given constraint `c0`.
+    */
+  private def labelledGraphOfConstraint(c: Constraint): LabelledGraph = c match {
+    case Constraint(_, Predicate.Head.Atom(headPred, den, _, headTpe, _), body0, _) =>
+      val headTerms = termTypes(headTpe)
+
+      // We add all body predicates and the head to the labels of each edge
+      val bodyLabels: Vector[Label] = body0.collect {
+        case Body.Atom(bodyPred, den, _, _, bodyTpe, _) =>
+          val terms = termTypes(bodyTpe)
+          Label(bodyPred, den, terms.length, terms)
+      }.toVector
+
+      val labels = bodyLabels :+ Label(headPred, den, headTerms.length, headTerms)
+
+      val edges = body0.foldLeft(Vector.empty[LabelledEdge]) {
+        case (edges, body) => body match {
+          case Body.Atom(bodyPred, _, p, _, _, bodyLoc) =>
+            edges :+ LabelledEdge(headPred, p, labels, bodyPred, bodyLoc)
+          case Body.Guard(_, _) => edges
+          case Body.Loop(_, _, _) => edges
+        }
+      }
+
+      LabelledGraph(edges)
+  }
+
+  /**
+    * Returns the term types of the given relational or latticenal type.
+    */
+  private def termTypes(tpe: Type): List[Type] = eraseAliases(tpe) match {
+    case Type.Apply(Type.Cst(TypeConstructor.Relation | TypeConstructor.Lattice, _), t, _) => t.baseType match {
+      case Type.Cst(TypeConstructor.Tuple(_), _) => t.typeArguments // Multi-ary
+      case Type.Cst(TypeConstructor.Unit, _) => Nil
+      case _ => List(t) // Unary
+    }
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe.'")
+  }
+
+  /**
+    * Returns `true` if the two given labels `l1` and `l2` are considered equal.
+    */
+  private def labelEq(l1: Label, l2: Label)(implicit flix: Flix): Boolean = {
+    val isEqPredicate = l1.pred == l2.pred
+    val isEqDenotation = l1.den == l2.den
+    val isEqArity = l1.arity == l2.arity
+    val isEqTermTypes = l1.terms.zip(l2.terms).forall {
+      case (t1, t2) => Unification.unifiesWith(t1, t2)
+    }
+
+    isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes
+  }
+
+  /**
+    * Computes the dependency graph from the labelled graph, throwing the labels away.
+    */
+  private def labelledGraphToDependencyGraph(g: LabelledGraph): UllmansAlgorithm.DependencyGraph =
+    g.edges.map {
+      case LabelledEdge(head, Polarity.Positive, _, body, loc) =>
+        UllmansAlgorithm.DependencyEdge.Positive(head, body, loc)
+      case LabelledEdge(head, Polarity.Negative, _, body, loc) =>
+        UllmansAlgorithm.DependencyEdge.Negative(head, body, loc)
+    }.toSet
 
 }

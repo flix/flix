@@ -206,6 +206,25 @@ namespace Nel {
     def mapWithIndex03(): Bool = mapWithIndex((_, i) -> i, Nel(21, 42 :: 84 :: Nil)) == Nel(0, 1 :: 2 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
+    // ap                                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def ap01(): Bool = ap(Nel((x -> x+1), Nil), Nel(5, Nil)) == Nel(6, Nil)
+
+    @test
+    def ap02(): Bool = ap(Nel((x -> x+1), Nil), Nel(0, 5 :: Nil)) == Nel(1, 6 :: Nil)
+
+    @test
+    def ap03(): Bool = ap(Nel((x -> x+1), (x -> x*2) :: Nil), Nel(0, 4 :: Nil)) == Nel(1, 5 :: 0 :: 8 :: Nil)
+
+    @test
+    def ap04(): Bool = ap(Nel((x -> x+1), (x -> x*2) :: Nil), Nel(0, 4 :: 8 :: Nil)) == Nel(1, 5 :: 9 :: 0 :: 8 :: 16 :: Nil)
+
+    @test
+    def ap05(): Bool = ap(Nel((x -> x+1), (x -> x*2) :: Nil), Nel(0, 4 :: 8 :: 16 :: Nil)) == Nel(1, 5 :: 9 :: 17 :: 0 :: 8 :: 16 :: 32 :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
     // flatMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -219,13 +238,13 @@ namespace Nel {
     def flatMap03(): Bool = flatMap(x -> Nel(x + 1, Nil), Nel(1, 2 :: 3 :: Nil)) == Nel(2, 3 :: 4 :: Nil)
 
     @test
-    def flatMap04(): Bool = flatMap(x -> Nel(x, x :: Nil), Nel(1, Nil)) == Nel(1, 1 :: Nil)
+    def flatMap04(): Bool = flatMap(x -> Nel(x, (x+1) :: Nil), Nel(1, Nil)) == Nel(1, 2 :: Nil)
 
     @test
-    def flatMap05(): Bool = flatMap(x -> Nel(x, x :: Nil), Nel(1, 2 :: Nil)) == Nel(1, 1 :: 2 :: 2 :: Nil)
+    def flatMap05(): Bool = flatMap(x -> Nel(x, (x+1) :: Nil), Nel(1, 4 :: Nil)) == Nel(1, 2 :: 4 :: 5 :: Nil)
 
     @test
-    def flatMap06(): Bool = flatMap(x -> Nel(x, x :: Nil), Nel(1, 2 :: 3 :: Nil)) == Nel(1, 1 :: 2 :: 2 :: 3 :: 3 :: Nil)
+    def flatMap06(): Bool = flatMap(x -> Nel(x, (x+1) :: Nil), Nel(1, 3 :: 5 :: Nil)) == Nel(1, 2 :: 3 :: 4 :: 5 :: 6 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //
@@ -245,16 +264,16 @@ namespace Nel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def replace01(): Bool = replace(1, 42, Nel(1, Nil)) == Nel(42, Nil)
+    def replace01(): Bool = replace(from = 1, to = 42, Nel(1, Nil)) == Nel(42, Nil)
 
     @test
-    def replace02(): Bool = replace(7, 42, Nel(1, Nil)) == Nel(1, Nil)
+    def replace02(): Bool = replace(from = 7, to = 42, Nel(1, Nil)) == Nel(1, Nil)
 
     @test
-    def replace03(): Bool = replace(2, 42, Nel(1, 2 :: Nil)) == Nel(1, 42 :: Nil)
+    def replace03(): Bool = replace(from = 2, to = 42, Nel(1, 2 :: Nil)) == Nel(1, 42 :: Nil)
 
     @test
-    def replace04(): Bool = replace(7, 42, Nel(1, 2 :: Nil)) == Nel(1, 2 :: Nil)
+    def replace04(): Bool = replace(from = 7, to = 42, Nel(1, 2 :: Nil)) == Nel(1, 2 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // permutations                                                            //
@@ -350,6 +369,19 @@ namespace Nel {
     def foldRight03(): Bool = foldRight((x, acc) -> acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldRightLazy                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightLazy01(): Bool = foldRightLazy((x, acc) -> force acc - x, 0, Nel(1, Nil)) == -1
+
+    @test
+    def foldRightLazy02(): Bool = foldRightLazy((x, acc) -> force acc - x, 0, Nel(1, 2 :: Nil)) == -3
+
+    @test
+    def foldRightLazy03(): Bool = foldRightLazy((x, acc) -> force acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
+
+    /////////////////////////////////////////////////////////////////////////////
     // reduce                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -403,6 +435,113 @@ namespace Nel {
 
     @test
     def count04(): Bool = count(x -> x == 2, Nel(2, 2 :: 1 :: 2 :: Nil)) == 3
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool =
+        Nel.sum(Nel(1, Nil)) == 1
+
+    @test
+    def sum02(): Bool =
+        Nel.sum(Nel(1, 2 :: 3 :: Nil)) == 6
+
+    @test
+    def sum03(): Bool =
+        Nel.sum(Nel(1, 2 :: 3 :: -3 :: Nil)) == 3
+
+    @test
+    def sum04(): Bool =
+        Nel.sum(Nel(-1, -2 :: -3 :: -4 :: Nil)) == -10
+
+    @test
+    def sum05(): Bool =
+        Nel.sum(Nel(10, -10 :: Nil)) == 0
+
+    @test
+    def sum06(): Bool = match List.range(1, 101) {
+        case x :: xs => Nel.sum(Nel(x, xs)) == 5050
+        case _       => unreachable!()
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        Nel.sumWith(x -> x + 1, Nel(1, Nil)) == 2
+
+    @test
+    def sumWith02(): Bool =
+        Nel.sumWith(x -> x + 1, Nel(1, 2 :: 3 :: Nil)) == 9
+
+    @test
+    def sumWith03(): Bool =
+        Nel.sumWith(x -> x + 1, Nel(1, 2 :: 3 :: -3 :: Nil)) == 7
+
+    @test
+    def sumWith04(): Bool =
+        Nel.sumWith(x -> x + 1, Nel(-1, -2 :: -3 :: -4 :: Nil)) == -6
+
+    @test
+    def sumWith05(): Bool =
+        Nel.sumWith(x -> x + 1, Nel(10, -10 :: Nil)) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool =
+        Nel.product(Nel(1, Nil)) == 1
+
+    @test
+    def product02(): Bool =
+        Nel.product(Nel(1, 2 :: 3 :: Nil)) == 6
+
+    @test
+    def product03(): Bool =
+        Nel.product(Nel(1, 2 :: 3 :: -3 :: Nil)) == -18
+
+    @test
+    def product04(): Bool =
+        Nel.product(Nel(-1, -2 :: -3 :: -4 :: Nil)) == 24
+
+    @test
+    def product05(): Bool =
+        Nel.product(Nel(10, -10 :: Nil)) == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool =
+        Nel.productWith(x -> x + 1, Nel(1, Nil)) == 2
+
+    @test
+    def productWith02(): Bool =
+        Nel.productWith(x -> x + 1, Nel(1, 2 :: 3 :: Nil)) == 24
+
+    @test
+    def productWith03(): Bool =
+        Nel.productWith(x -> x + 1, Nel(1, 2 :: 3 :: -3 :: Nil)) == -48
+
+    @test
+    def productWith04(): Bool =
+        Nel.productWith(x -> x + 1, Nel(-2, -3 :: -4 :: -5 :: Nil)) == 24
+
+    @test
+    def productWith05(): Bool =
+        Nel.productWith(x -> x + 1, Nel(10, -10 :: Nil)) == -99
+
 
     /////////////////////////////////////////////////////////////////////////////
     // flatten                                                                 //
@@ -589,161 +728,177 @@ namespace Nel {
     @test
     def maximumBy05(): Bool = Nel.maximumBy((x, y) -> x <=> y, Nel(3, 5 :: 4 :: 9 :: 7 :: 10 :: Nil)) == 10
 
-/////////////////////////////////////////////////////////////////////////////
-// The following tests for sort functions correspond to those in TestList  //
-/////////////////////////////////////////////////////////////////////////////
-// sortWith                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // The following tests for sort functions correspond to those in TestList  //
+    /////////////////////////////////////////////////////////////////////////////
+    // sortWith                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-def cmp(x: Int32, y: Int32): Comparison =
-    if (x < y) LessThan
-    else if (x == y) EqualTo
-    else GreaterThan
+    def cmp(x: Int32, y: Int32): Comparison =
+        if (x < y) LessThan
+        else if (x == y) EqualTo
+        else GreaterThan
 
-@test
-def sortWith02(): Bool =
-    Nel.sortWith(cmp, Nel(0, Nil)) == Nel(0, Nil)
+    @test
+    def sortWith02(): Bool =
+        Nel.sortWith(cmp, Nel(0, Nil)) == Nel(0, Nil)
 
-@test
-def sortWith03(): Bool =
-    Nel.sortWith(cmp, Nel(0, 1 :: Nil)) == Nel(0, 1 :: Nil)
+    @test
+    def sortWith03(): Bool =
+        Nel.sortWith(cmp, Nel(0, 1 :: Nil)) == Nel(0, 1 :: Nil)
 
-@test
-def sortWith04(): Bool =
-    Nel.sortWith(cmp, Nel(1, 0 :: Nil)) == Nel(0, 1 :: Nil)
+    @test
+    def sortWith04(): Bool =
+        Nel.sortWith(cmp, Nel(1, 0 :: Nil)) == Nel(0, 1 :: Nil)
 
-@test
-def sortWith05(): Bool =
-    Nel.sortWith(cmp, Nel(1, 1 :: Nil)) == Nel(1, 1 :: Nil)
+    @test
+    def sortWith05(): Bool =
+        Nel.sortWith(cmp, Nel(1, 1 :: Nil)) == Nel(1, 1 :: Nil)
 
-@test
-def sortWith06(): Bool =
-    Nel.sortWith(cmp, Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)) == Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+    @test
+    def sortWith06(): Bool =
+        Nel.sortWith(cmp, Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)) == Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
 
-@test
-def sortWith07(): Bool =
-    Nel.sortWith(cmp, Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)) == Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+    @test
+    def sortWith07(): Bool =
+        Nel.sortWith(cmp, Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)) == Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
 
-@test
-def sortWith08(): Bool =
-    Nel.sortWith(cmp, Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+    @test
+    def sortWith08(): Bool =
+        Nel.sortWith(cmp, Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
 
-@test
-def sortWith09(): Bool =
-    Nel.sortWith(cmp, Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Nel(0, 1 :: 2 :: 2 :: 3 :: 4 :: Nil)
+    @test
+    def sortWith09(): Bool =
+        Nel.sortWith(cmp, Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Nel(0, 1 :: 2 :: 2 :: 3 :: 4 :: Nil)
 
-@test
-def sortWith10(): Bool =
-    Nel.sortWith(flip(cmp), Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)) == Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
+    @test
+    def sortWith10(): Bool =
+        Nel.sortWith(flip(cmp), Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)) == Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
 
-@test
-def sortWith11(): Bool =
-    Nel.sortWith(flip(cmp), Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)) == Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
+    @test
+    def sortWith11(): Bool =
+        Nel.sortWith(flip(cmp), Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)) == Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
 
-@test
-def sortWith12(): Bool =
-    Nel.sortWith(flip(cmp), Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
+    @test
+    def sortWith12(): Bool =
+        Nel.sortWith(flip(cmp), Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
 
-@test
-def sortWith13(): Bool =
-    Nel.sortWith(flip(cmp), Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Nel(4, 3 :: 2 :: 2 :: 1 :: 0 :: Nil)
+    @test
+    def sortWith13(): Bool =
+        Nel.sortWith(flip(cmp), Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == Nel(4, 3 :: 2 :: 2 :: 1 :: 0 :: Nil)
 
-/////////////////////////////////////////////////////////////////////////////
-// sort                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // sort                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-def testSortVsSortWith(xs: Nel[Int32]) : Bool =
-    Nel.sort(xs) == Nel.sortWith(cmp, xs)
+    def testSortVsSortWith(xs: Nel[Int32]) : Bool =
+        Nel.sort(xs) == Nel.sortWith(cmp, xs)
 
-@test
-def sort02(): Bool = testSortVsSortWith(Nel(0, Nil))
+    @test
+    def sort02(): Bool = testSortVsSortWith(Nel(0, Nil))
 
-@test
-def sort03(): Bool = testSortVsSortWith(Nel(0, 1 :: Nil))
+    @test
+    def sort03(): Bool = testSortVsSortWith(Nel(0, 1 :: Nil))
 
-@test
-def sort04(): Bool = testSortVsSortWith(Nel(1, 0 :: Nil))
+    @test
+    def sort04(): Bool = testSortVsSortWith(Nel(1, 0 :: Nil))
 
-@test
-def sort05(): Bool = testSortVsSortWith(Nel(1, 1 :: Nil))
+    @test
+    def sort05(): Bool = testSortVsSortWith(Nel(1, 1 :: Nil))
 
-@test
-def sort06(): Bool = testSortVsSortWith(Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
+    @test
+    def sort06(): Bool = testSortVsSortWith(Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
 
-@test
-def sort07(): Bool = testSortVsSortWith(Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
+    @test
+    def sort07(): Bool = testSortVsSortWith(Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
 
-@test
-def sort08(): Bool = testSortVsSortWith(Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
+    @test
+    def sort08(): Bool = testSortVsSortWith(Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
-@test
-def sort09(): Bool = testSortVsSortWith(Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
+    @test
+    def sort09(): Bool = testSortVsSortWith(Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
-/////////////////////////////////////////////////////////////////////////////
-// sortBy                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // sortBy                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-def testSortByVsSort(a: Nel[Int32]) : Bool =
-    (Nel.sortBy(identity, a) == Nel.sort(a)) and
-    (Nel.sortBy(x -> 4*x+7, a) == Nel.sort(a)) and
-    (Nel.sortBy(x -> -x, a) == Nel.sortWith(flip(cmp),a))
+    def testSortByVsSort(a: Nel[Int32]) : Bool =
+        (Nel.sortBy(identity, a) == Nel.sort(a)) and
+        (Nel.sortBy(x -> 4*x+7, a) == Nel.sort(a)) and
+        (Nel.sortBy(x -> -x, a) == Nel.sortWith(flip(cmp),a))
 
-@test
-def sortBy02(): Bool = testSortByVsSort(Nel(0, Nil))
+    @test
+    def sortBy02(): Bool = testSortByVsSort(Nel(0, Nil))
 
-@test
-def sortBy03(): Bool = testSortByVsSort(Nel(0, 1 :: Nil))
+    @test
+    def sortBy03(): Bool = testSortByVsSort(Nel(0, 1 :: Nil))
 
-@test
-def sortBy04(): Bool = testSortByVsSort(Nel(1, 0 :: Nil))
+    @test
+    def sortBy04(): Bool = testSortByVsSort(Nel(1, 0 :: Nil))
 
-@test
-def sortBy05(): Bool = testSortByVsSort(Nel(1, 1 :: Nil))
+    @test
+    def sortBy05(): Bool = testSortByVsSort(Nel(1, 1 :: Nil))
 
-@test
-def sortBy06(): Bool = testSortByVsSort(Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
+    @test
+    def sortBy06(): Bool = testSortByVsSort(Nel(0, 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
 
-@test
-def sortBy07(): Bool = testSortByVsSort(Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
+    @test
+    def sortBy07(): Bool = testSortByVsSort(Nel(5, 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
 
-@test
-def sortBy08(): Bool = testSortByVsSort(Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
+    @test
+    def sortBy08(): Bool = testSortByVsSort(Nel(5, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
-@test
-def sortBy09(): Bool = testSortByVsSort(Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
-
+    @test
+    def sortBy09(): Bool = testSortByVsSort(Nel(2, 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // sum                                                                     //
+    // toIterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sum01(): Bool =
-        Nel.sum(Nel(0, Nil)) == 0
+    def toIterator01(): Bool & Impure =
+        Nel(1, 2 :: 3 :: Nil) |> Nel.toIterator |> Iterator.toNel == Some(Nel(1, 2 :: 3 :: Nil))
 
     @test
-    def sum02(): Bool =
-        Nel.sum(Nel(1, Nil)) == 1
+    def toIterator02(): Bool & Impure =
+        Nel(-100, List.range(-99, 100)) |> Nel.toIterator |> Iterator.toList == List.range(-100, 100)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toMapWith                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sum03(): Bool =
-        Nel.sum(Nel(1, 2 :: 3 :: Nil)) == 6
+    def toMapWith01(): Bool =
+        Nel.toMapWith(x -> 0 * x, Nel(7, 1 :: 3 :: 6 :: Nil)) == Map#{1 => 0, 3 => 0, 6 => 0, 7 => 0}
 
     @test
-    def sum04(): Bool =
-        Nel.sum(Nel(1, 2 :: 3 :: -3 :: Nil)) == 3
+    def toMapWith02(): Bool =
+        Nel.toMapWith(x -> 2 * x, Nel(7, 1 :: 3 :: 6 :: Nil)) == Map#{1 => 2, 3 => 6, 6 => 12, 7 => 14}
 
     @test
-    def sum05(): Bool =
-        Nel.sum(Nel(-1, -2 :: -3 :: -4 :: Nil)) == -10
+    def toMapWith03(): Bool =
+        Nel.toMapWith(x -> x + 10, Nel(7, 1 :: 3 :: 6 :: Nil)) == Map#{1 => 11, 3 => 13, 6 => 16, 7 => 17}
 
     @test
-    def sum06(): Bool =
-        Nel.sum(Nel(10, -10 :: Nil)) == 0
+    def toMapWith04(): Bool =
+        Nel.toMapWith(x -> x + 10, Nel(7, 3 :: 6 :: 1 :: Nil)) == Map#{1 => 11, 3 => 13, 6 => 16, 7 => 17}
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sum07(): Bool =
-        Nel(1, List.range(2, 101)) |> Nel.sum == 5050
+    def join01(): Bool =
+        Nel.join(",", Nel(1, Nil)) == "1"
+
+    @test
+    def join02(): Bool =
+        Nel.join(",", Nel(1, 2 :: 3 :: Nil)) == "1,2,3"
+
+    @test
+    def join03(): Bool =
+        Nel.join(",", Nel("1", "2" :: "3" :: Nil)) == "1,2,3"
 
 }

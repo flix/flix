@@ -96,7 +96,7 @@ namespace Test/Eff/Polymorphism {
         x -> not x
 
     @test
-    def testEffPoly18(): Bool ~> Bool =
+    def testEffPoly18(): Bool -> Bool & Impure =
         x -> {impure(); not x}
 
     @test
@@ -104,21 +104,19 @@ namespace Test/Eff/Polymorphism {
         x -> y -> x and y
 
     @test
-    def testEffPoly20(): Bool -> Bool ~> Bool =
+    def testEffPoly20(): Bool -> (Bool -> Bool & Impure) =
         x -> y -> {impure(); x and y}
 
     @test
-    def testEffPoly21(): Bool ~> Bool -> Bool =
+    def testEffPoly21(): Bool -> (Bool -> Bool) & Impure =
         x -> {impure(); y -> x and y}
 
     @test
-    def testEffPoly22(): Bool ~> Bool ~> Bool =
+    def testEffPoly22(): Bool -> (Bool -> Bool & Impure) & Impure =
         x -> {impure(); y -> {impure(); x and y}}
 
     def impure(): Unit & Impure = () as & Impure
 
     def flip(f: (a, b) -> c & e): (b, a) -> c & e = (x, y) -> f(y, x)
 
-
 }
-

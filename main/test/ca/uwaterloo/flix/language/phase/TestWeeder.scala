@@ -62,18 +62,6 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
-  test("DuplicateFormal.06") {
-    val input = "def f(): Bool = ∀(x: E, x: E). true"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateFormalParam](result)
-  }
-
-  test("DuplicateFormal.07") {
-    val input = "def f(): Bool = ∃(x: E, x: E). true"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateFormalParam](result)
-  }
-
   test("DuplicateTag.01") {
     val input =
       """enum Color {
@@ -119,12 +107,6 @@ class TestWeeder extends FunSuite with TestUtils {
     val input = "def f(): { length :: Int } = { length = 123 | {} }"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalFieldName](result)
-  }
-
-  test("IllegalExistential.01") {
-    val input = "def f(): Bool = ∃(). true"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalExistential](result)
   }
 
   test("IllegalInt8.01") {
@@ -173,12 +155,6 @@ class TestWeeder extends FunSuite with TestUtils {
     val input = "def f(): Int64 = 100000000000000000000i64"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalInt](result)
-  }
-
-  test("IllegalUniversal.01") {
-    val input = "def f(): Prop = ∀(). true"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalUniversal](result)
   }
 
   test("IllegalNullPattern.01") {
@@ -544,5 +520,23 @@ class TestWeeder extends FunSuite with TestUtils {
     val input = "def f(): String = \"${}\""
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.EmptyInterpolatedExpression](result)
+  }
+
+  test("HalfInterpolationEscape.01") {
+    val input = "def f(): String = \"${}\""
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyInterpolatedExpression](result)
+  }
+
+  test("HalfInterpolationEscape.02") {
+    val input = s"""pub def foo(): String = "\\$$ {""""
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InvalidEscapeSequence](result)
+  }
+
+  test("IllegalModifier.01") {
+    val input = "pub instance I[a]"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModifier](result)
   }
 }

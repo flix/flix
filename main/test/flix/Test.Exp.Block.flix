@@ -1,16 +1,16 @@
 namespace Test/Exp/Block {
 
     @test
-    def testBlock01(): Int = {42}
+    def testBlock01(): Int32 = {42}
 
     @test
-    def testBlock02(): Int = {{42}}
+    def testBlock02(): Int32 = {{42}}
 
     @test
-    def testBlock03(): Int = {{{42}}}
+    def testBlock03(): Int32 = {{{42}}}
 
     @test
-    def testBlock04(): Int = {
+    def testBlock04(): Int32 = {
         let x = {
             let y = 42;
                 y
@@ -19,7 +19,7 @@ namespace Test/Exp/Block {
     }
 
     @test
-    def testBlock05(): Int = {
+    def testBlock05(): Int32 = {
         let x = {
             let y = 42;
             let z = 21;
@@ -29,7 +29,7 @@ namespace Test/Exp/Block {
     }
 
     @test
-    def testBlock06(): Int = {
+    def testBlock06(): Int32 = {
         let x = {
             let y = 42;
             let z = 21;
@@ -44,14 +44,14 @@ namespace Test/Exp/Block {
     }
 
     @test
-    def testBlock07(): Int = {
+    def testBlock07(): Int32 = {
         let x = {42};
         let y = {21};
             x + y
     }
 
     @test
-    def testBlock08(): Int = {
+    def testBlock08(): Int32 = {
         let x = {42};
         let y = {
             let z = 21;
@@ -62,7 +62,7 @@ namespace Test/Exp/Block {
     }
 
     @test
-    def testBlock09(): Int = {
+    def testBlock09(): Int32 = {
         let x = {42};
         let y = {
             let z = 21;

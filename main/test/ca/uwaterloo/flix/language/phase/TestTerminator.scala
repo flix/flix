@@ -26,7 +26,7 @@ class TestTerminator extends FunSuite with TestUtils {
   test("UnconditionalRecursion.01") {
     val input =
       s"""
-         |def f(): Int =
+         |def f(): Int32 =
          |    f()
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -36,7 +36,7 @@ class TestTerminator extends FunSuite with TestUtils {
   test("UnconditionalRecursion.02") {
     val input =
       s"""
-         |def foo(x: Int, y: Int): Int =
+         |def foo(x: Int32, y: Int32): Int32 =
          |    foo(x, y)
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -46,7 +46,7 @@ class TestTerminator extends FunSuite with TestUtils {
   test("UnconditionalRecursion.03") {
     val input =
       s"""
-         |def foo(x: Int): Int = match x {
+         |def foo(x: Int32): Int32 = match x {
          |    case 0 => foo(999)
          |    case _ => foo(123)
          |}
@@ -58,7 +58,7 @@ class TestTerminator extends FunSuite with TestUtils {
   test("UnconditionalRecursion.04") {
     val input =
       s"""
-         |def foo(x: Int): Int =
+         |def foo(x: Int32): Int32 =
          |    if (x == 1)
          |        foo(9)
          |    else
@@ -71,10 +71,10 @@ class TestTerminator extends FunSuite with TestUtils {
   test("UnconditionalRecursion.05") {
     val input =
       s"""
-         |def bar(_z: Int -> Int): Int =
+         |def bar(_z: Int32 -> Int32): Int32 =
          |    5
          |
-         |def foo(x: Int, y: Int): Int =
+         |def foo(x: Int32, y: Int32): Int32 =
          |    bar(foo(x + y))
          |
          |""".stripMargin

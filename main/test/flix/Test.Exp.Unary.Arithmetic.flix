@@ -165,7 +165,7 @@ namespace Test/Exp/Unary/Arithmetic {
     def testUnaryMinus01(): Bool = -0 == 0
 
     @test
-    def testUnaryMinus02(): Int = -36000
+    def testUnaryMinus02(): Int32 = -36000
 
     @test
     def testUnaryMinus03(): Bool = -(-36000) == 36000
@@ -174,7 +174,7 @@ namespace Test/Exp/Unary/Arithmetic {
     def testUnaryMinus04(): Bool = --2147483648 == -2147483648
 
     @test
-    def testUnaryMinus05(): Int = -2147483648
+    def testUnaryMinus05(): Int32 = -2147483648
 
     @test
     def testUnaryMinus06(): Int8 = -0i8
@@ -246,10 +246,10 @@ namespace Test/Exp/Unary/Arithmetic {
     def testUnaryMinus28(): Bool = -(4.2) == -4.2
 
     @test
-    def testUnaryMinus29(): Float = -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0
+    def testUnaryMinus29(): Float64 = -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0
 
     @test
-    def testUnaryMinus30(): Float = -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001
+    def testUnaryMinus30(): Float64 = -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001
 
     @test
     def testUnaryMinus31(): Bool = -(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0) ==

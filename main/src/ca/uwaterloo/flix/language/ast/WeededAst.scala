@@ -22,13 +22,11 @@ import scala.collection.immutable.List
 
 object WeededAst {
 
-  case class Program(roots: List[WeededAst.Root], reachable: Set[Symbol.DefnSym])
+  case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], reachable: Set[Symbol.DefnSym])
 
-  case class Root(uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation)
+  case class CompilationUnit(uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation)
 
-  sealed trait Declaration {
-    def loc: SourceLocation
-  }
+  sealed trait Declaration
 
   object Declaration {
 
@@ -121,6 +119,8 @@ object WeededAst {
 
     case class Let(ident: Name.Ident, mod: Ast.Modifiers, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    case class LetRec(ident: Name.Ident, mod: Ast.Modifiers, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class LetRegion(ident: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Match(exp: WeededAst.Expression, rules: List[WeededAst.MatchRule], loc: SourceLocation) extends WeededAst.Expression
@@ -158,10 +158,6 @@ object WeededAst {
     case class Deref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Assign(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Existential(tparams: WeededAst.TypeParams, fparam: WeededAst.FormalParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Universal(tparams: WeededAst.TypeParams, fparam: WeededAst.FormalParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Ascribe(exp: WeededAst.Expression, expectedType: Option[WeededAst.Type], expectedEff: Option[WeededAst.Type], loc: SourceLocation) extends WeededAst.Expression
 
@@ -210,6 +206,10 @@ object WeededAst {
     case class FixpointProjectOut(pred: Name.Pred, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Reify(t: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+
+    case class ReifyType(t: WeededAst.Type, k: Kind, loc: SourceLocation) extends WeededAst.Expression
+
+    case class ReifyEff(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
   }
 
@@ -292,6 +292,8 @@ object WeededAst {
 
       case class Guard(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 
+      case class Loop(idents: List[Name.Ident], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
+
     }
 
   }
@@ -300,7 +302,9 @@ object WeededAst {
 
   object Type {
 
-    case class Var(qname: Name.Ident, loc: SourceLocation) extends WeededAst.Type
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Type
+
+    case class RigidVar(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Type
 
     case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends WeededAst.Type
 
