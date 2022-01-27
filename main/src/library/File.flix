@@ -15,6 +15,51 @@
  */
 namespace File {
 
+    enum FileType with Eq, Order, ToString {
+        case File,
+        case Directory,
+        case SymLink,
+        case Other
+    }
+
+    ///
+    /// Returns the access time of the given file `f` in milliseconds.
+    ///
+    pub def accessTime(f: String): Result[Int64, String] = ???
+
+    ///
+    /// Returns the creation time of the given file `f` in milliseconds.
+    ///
+    pub def creationTime(f: String): Result[Int64, String] = ???
+
+    ///
+    /// Returns the last-modified timestamp of the given file `f` in milliseconds
+    ///
+    pub def modificationTime(f: String): Result[Int64, String] = ???
+
+    ///
+    /// Returns the size of the given file `f` in bytes.
+    ///
+    pub def size(f: String): Result[Int64, String] = ???
+
+    ///
+    /// Returns the type of the given file `f`.
+    ///
+    pub def fileType(f: String): Result[FileType, String] = ???
+
+    type alias StatInfo = {
+        accessTime :: Int64,
+        creationTime :: Int64,
+        modificationTime :: Int64,
+        size :: Int64,
+        fileType :: FileType
+    }
+
+    ///
+    /// Returns the statistics of the given file `f`.
+    ///
+    pub def stat(f: String): Result[StatInfo, String] = ???
+
     ///
     /// Returns `true` if the given file `f` is readable.
     ///
