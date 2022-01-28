@@ -75,6 +75,11 @@ instance Foldable[LazyList] {
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef = LazyList.foldRight(f, s, l)
 }
 
+instance Iterable[LazyList] {
+    pub def iterator(t: LazyList[a]): Iterator[a] & Impure =
+        LazyList.toIterator(t)
+}
+
 namespace LazyList {
 
     ///

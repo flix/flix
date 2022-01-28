@@ -19,6 +19,11 @@
 ///
 opaque type MutSet[t] = Ref[Set[t]]
 
+instance Iterable[MutSet] {
+    pub def iterator(t: MutSet[a]): Iterator[a] & Impure =
+        t |> MutSet.toSet |> Set.toIterator
+}
+
 namespace MutSet {
 
     ///

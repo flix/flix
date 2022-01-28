@@ -77,6 +77,11 @@ instance Traversable[Option] {
 
 }
 
+instance Iterable[Option] {
+    pub def iterator(t: Option[a]): Iterator[a] & Impure =
+        Option.toIterator(t)
+}
+
 namespace Option {
 
     ///

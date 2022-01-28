@@ -83,6 +83,11 @@ instance Traversable[List] {
     pub override def sequence(t: List[m[a]]): m[List[a]] with Applicative[m] = List.sequence(t)
 }
 
+instance Iterable[List] {
+    pub def iterator(t: List[a]): Iterator[a] & Impure =
+        List.toIterator(t)
+}
+
 namespace List {
 
     ///
