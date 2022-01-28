@@ -696,8 +696,9 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def joinWith(f: a -> String & ef, sep: String, iter: Iterator[a]): String & Impure =
+        let lastSep = String.length(sep);
         let sb = StringBuilder.new();
         foldLeft((_, x) -> StringBuilder.append!(sb, "${f(x)}" + sep), (), iter);
-        StringBuilder.toString(sb) |> String.dropRight(1)
+        StringBuilder.toString(sb) |> String.dropRight(lastSep)
 
 }

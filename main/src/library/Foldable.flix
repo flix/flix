@@ -294,7 +294,7 @@ pub lawless class Foldable[t : Type -> Type] {
     /// of each element in `t` with `sep` inserted between each element.
     ///
     pub def join(sep: String, t: t[a]): String with ToString[a] = {
-        let lastSep = 1;
+        let lastSep = String.length(sep);
         let sb = StringBuilder.new();
         t |> Foldable.foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), ());
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
@@ -305,7 +305,7 @@ pub lawless class Foldable[t : Type -> Type] {
     /// of each element in `t` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: a -> String & ef, sep: String, t: t[a]): String = {
-        let lastSep = 1;
+        let lastSep = String.length(sep);
         let sb = StringBuilder.new();
         t |> Foldable.foldLeft((_, x) -> StringBuilder.append!(sb, "${f(x)}" + sep), ());
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
