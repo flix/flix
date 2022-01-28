@@ -178,4 +178,25 @@ namespace TestFoldable {
     def join04(): Bool =
         Foldable.join(",", "1" :: "2" :: "3" :: Nil) == "1,2,3"
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinWith                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinWith01(): Bool =
+        Foldable.joinWith(x -> "${x + 1}", ",", Nil: List[Int32]) == ""
+
+    @test
+    def joinWith02(): Bool =
+        Foldable.joinWith(x -> "${x + 1}", ",", 1 :: Nil) == "2"
+
+    @test
+    def joinWith03(): Bool =
+        Foldable.joinWith(x -> "${x + 1}", ",", 1 :: 2 :: 3 :: Nil) == "2,3,4"
+
+    @test
+    def joinWith04(): Bool =
+        Foldable.joinWith(x -> x + x, ",", "1" :: "2" :: "3" :: Nil) == "11,22,33"
+
 }
