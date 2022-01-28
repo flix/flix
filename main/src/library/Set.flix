@@ -552,7 +552,7 @@ namespace Set {
     /// Returns the concatenation of the string representation
     /// of each element in `s` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String, sep: String, s: Set[a]): String =
+    pub def joinWith(f: a -> String & ef, sep: String, s: Set[a]): String =
         Foldable.joinWith(f, sep, s)
 
 }
