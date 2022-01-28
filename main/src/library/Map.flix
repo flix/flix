@@ -865,28 +865,32 @@ namespace Map {
     /// in `m` with `sep` inserted between each element.
     ///
     pub def joinKeys(sep: String, m: Map[k, v]): String with ToString[k] =
-        joinWith((k, _) -> ToString.toString(k), sep, m)
+        let Map(t) = m;
+        RedBlackTree.joinKeys(sep, t)
 
     ///
     /// Returns the concatenation of the string representation of each value `v`
     /// in `m` with `sep` inserted between each element.
     ///
     pub def joinValues(sep: String, m: Map[k, v]): String with ToString[v] =
-        joinWith((_, v) -> ToString.toString(v), sep, m)
+        let Map(t) = m;
+        RedBlackTree.joinValues(sep, t)
 
     ///
     /// Returns the concatenation of the string representation of each key `k`
     /// in `m` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWithKeys(f: k -> String & ef, sep: String, m: Map[k, v]): String & ef =
-        joinWith((k, _) -> f(k), sep, m)
+        let Map(t) = m;
+        RedBlackTree.joinWithKeys(f, sep, t)
 
     ///
     /// Returns the concatenation of the string representation of each value `v`
     /// in `m` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWithValues(f: v -> String & ef, sep: String, m: Map[k, v]): String & ef =
-        joinWith((_, v) -> f(v), sep, m)
+        let Map(t) = m;
+        RedBlackTree.joinWithValues(f, sep, t)
 
     ///
     /// Returns the concatenation of the string representation of each key-value pair
