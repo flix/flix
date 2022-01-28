@@ -542,14 +542,25 @@ namespace DemandList {
 
     ///
     /// Returns the concatenation of the string representation
-    /// of each element in `v` with `sep` inserted between each element.
+    /// of each element in `l` with `sep` inserted between each element.
     ///
     /// Forces the entire list `l`.
     ///
-    pub def join(sep: String, l: DemandList[a, Forced]): String with ToString[a] = {
+    pub def join(sep: String, l: DemandList[a, Forced]): String with ToString[a] =
+        joinWith(x -> ToString.toString(x), sep, l)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `l` according to `f` with `sep` inserted between each element.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def joinWith(f: a -> String & ef, sep: String, l: DemandList[a, Forced]): String = {
+        let lastSep = 1;
         let sb = StringBuilder.new();
-        foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), (), l);
-        StringBuilder.toString(sb) |> String.dropRight(1)
+        foldLeft((_, x) -> StringBuilder.append!(sb, "${f(x)}" + sep), (), l);
+        StringBuilder.toString(sb) |> String.dropRight(lastSep)
     } as & Pure
 
 }
