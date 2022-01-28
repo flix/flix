@@ -1202,22 +1202,22 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def joinWith01(): Bool =
+    def joinWith01(): Bool & Impure =
         (Nil: List[Int32]) |> List.toIterator |>
             Iterator.joinWith(x -> "${x + 1}", ",") == ""
 
     @test
-    def joinWith02(): Bool =
+    def joinWith02(): Bool & Impure =
         (1 :: Nil) |> List.toIterator |>
             Iterator.joinWith(x -> "${x + 1}", ",") == "2"
 
     @test
-    def joinWith03(): Bool =
+    def joinWith03(): Bool & Impure =
         (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
             Iterator.joinWith(x -> "${x + 1}", ",") == "2,3,4"
 
     @test
-    def joinWith04(): Bool =
+    def joinWith04(): Bool & Impure =
         ("1" :: "2" :: "3" :: Nil) |> List.toIterator |>
             Iterator.joinWith(x -> x + x, ",") == "11,22,33"
 
