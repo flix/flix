@@ -681,37 +681,6 @@ namespace TestMutDeque {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toArray                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def toArray01(): Bool & Impure =
-        MutDeque.toArray(MutDeque.new(): MutDeque[Int32]) `Array.sameElements` []: Array[Int32]
-
-    @test
-    def toArray02(): Bool & Impure =
-        let d = MutDeque.new();
-        MutDeque.pushBack(1, d);
-        MutDeque.toArray(d) `Array.sameElements` [1]
-
-    @test
-    def toArray03(): Bool & Impure =
-        let d = MutDeque.new();
-        MutDeque.pushBack(1, d);
-        MutDeque.pushBack(2, d);
-        MutDeque.toArray(d) `Array.sameElements` [1, 2]
-
-    @test
-    def toArray04(): Bool & Impure =
-        let d = MutDeque.new();
-        MutDeque.pushBack(1, d);
-        MutDeque.pushBack(2, d);
-        MutDeque.pushBack(3, d);
-        MutDeque.popFront(d);
-        MutDeque.toArray(d) `Array.sameElements` [2, 3]
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 

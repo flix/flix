@@ -33,7 +33,7 @@ pub enum MutDeque[a] {
 
 instance Iterable[MutDeque] {
     pub def iterator(t: MutDeque[a]): Iterator[a] & Impure =
-        t |> MutDeque.toArray |> Array.toIterator
+        t |> MutDeque.toList |> List.toIterator
 }
 
 namespace MutDeque {
@@ -313,13 +313,6 @@ namespace MutDeque {
             Array.sameElements(a1, b1)
         else
             false
-
-    ///
-    /// Returns `d` as an `Array`.
-    ///
-    pub def toArray(d: MutDeque[a]): Array[a] & Impure =
-        let MutDeque(a, f, b) = d;
-        Array.slice(deref f, deref b, deref a)
 
     ///
     /// Returns `d` as a `List`.
