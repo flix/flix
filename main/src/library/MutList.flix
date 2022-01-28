@@ -708,9 +708,17 @@ namespace MutList {
     /// of each element in `v` with `sep` inserted between each element.
     ///
     pub def join(sep: String, v: MutList[a]): String & Impure with ToString[a] =
+        joinWith(x -> ToString.toString(x), sep, v)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `v` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: a -> String & ef, sep: String, v: MutList[a]): String & Impure =
+        let lastSep = 1;
         let sb = StringBuilder.new();
-        foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), (), v);
-        StringBuilder.toString(sb) |> String.dropRight(1)
+        foldLeft((_, x) -> StringBuilder.append!(sb, "${f(x)}" + sep), (), v);
+        StringBuilder.toString(sb) |> String.dropRight(lastSep)
 
     ///
     /// Applies `f` to all the elements in `v`.
