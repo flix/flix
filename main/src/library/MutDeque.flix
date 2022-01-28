@@ -315,6 +315,13 @@ namespace MutDeque {
             false
 
     ///
+    /// Returns `d` as an `Array`.
+    ///
+    pub def toArray(d: MutDeque[a]): Array[a] & Impure =
+        let MutDeque(a, f, b) = d;
+        Array.slice(deref f, deref b, deref a)
+
+    ///
     /// Returns `d` as a `List`.
     ///
     pub def toList(d: MutDeque[a]): List[a] & Impure =
