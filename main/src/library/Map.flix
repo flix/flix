@@ -65,6 +65,11 @@ instance Traversable[Map[k]] {
     pub override def sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
 }
 
+instance Iterable[Map[k]] {
+    pub def iterator(t: Map[k, a]): Iterator[a] & Impure =
+        t |> Map.valuesOf |> List.toIterator
+}
+
 namespace Map {
 
     ///
