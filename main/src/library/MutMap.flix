@@ -543,19 +543,43 @@ namespace MutMap {
         MutMap.isSubmapOf(a, b) and MutMap.isSubmapOf(b, a)
 
     ///
-    /// Returns the concatenation of the string representation
-    /// of each key `k` in `m` with `sep` inserted between each element.
+    /// Returns the concatenation of the string representation of each key `k`
+    /// in `m` with `sep` inserted between each element.
     ///
     pub def joinKeys(sep: String, m: MutMap[k, v]): String & Impure with ToString[k] =
         let MutMap(mm) = m;
         Map.joinKeys(sep, deref mm)
 
     ///
-    /// Returns the concatenation of the string representation
-    /// of each value `v` in `m` with `sep` inserted between each element.
+    /// Returns the concatenation of the string representation of each value `v`
+    /// in `m` with `sep` inserted between each element.
     ///
     pub def joinValues(sep: String, m: MutMap[k, v]): String & Impure with ToString[v] =
         let MutMap(mm) = m;
         Map.joinValues(sep, deref mm)
+
+    ///
+    /// Returns the concatenation of the string representation of each key `k`
+    /// in `m` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWithKeys(f: k -> String & ef, sep: String, m: MutMap[k, v]): String & Impure =
+        let MutMap(mm) = m;
+        Map.joinWithKeys(f, sep, deref mm)
+
+    ///
+    /// Returns the concatenation of the string representation of each value `v`
+    /// in `m` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWithValues(f: v -> String & ef, sep: String, m: MutMap[k, v]): String & Impure =
+        let MutMap(mm) = m;
+        Map.joinWithValues(f, sep, deref mm)
+
+    ///
+    /// Returns the concatenation of the string representation of each key-value pair
+    /// `k => v` in `m` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: (k, v) -> String & ef, sep: String, m: MutMap[k, v]): String & Impure =
+        let MutMap(mm) = m;
+        Map.joinWith(f, sep, deref mm)
 
 }
