@@ -789,23 +789,42 @@ namespace RedBlackTree {
     }
 
     ///
-    /// Returns the concatenation of the string representation
-    /// of each key `k` in `t` with `sep` inserted between each element.
+    /// Returns the concatenation of the string representation of each key `k`
+    /// in `t` with `sep` inserted between each element.
     ///
-    pub def joinKeys(sep: String, t: RedBlackTree[k, v]): String with ToString[k] = {
-        let sb = StringBuilder.new();
-        foldLeft((_, k, _) -> StringBuilder.append!(sb, "${k}" + sep), (), t);
-        StringBuilder.toString(sb) |> String.dropRight(1)
-    } as & Pure
+    pub def joinKeys(sep: String, t: RedBlackTree[k, v]): String with ToString[k] =
+        joinWith((k, _) -> ToString.toString(k), sep, t)
 
     ///
-    /// Returns the concatenation of the string representation
-    /// of each value `v` in `t` with `sep` inserted between each element.
+    /// Returns the concatenation of the string representation of each value `v`
+    /// in `t` with `sep` inserted between each element.
     ///
-    pub def joinValues(sep: String, t: RedBlackTree[k, v]): String with ToString[v] = {
+    pub def joinValues(sep: String, t: RedBlackTree[k, v]): String with ToString[v] =
+        joinWith((_, v) -> ToString.toString(v), sep, t)
+
+    ///
+    /// Returns the concatenation of the string representation of each key `k`
+    /// in `t` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWithKeys(f: k -> String & ef, sep: String, t: RedBlackTree[k, v]): String & ef =
+        joinWith((k, _) -> f(k), sep, t)
+
+    ///
+    /// Returns the concatenation of the string representation of each value `v`
+    /// in `t` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWithValues(f: v -> String & ef, sep: String, t: RedBlackTree[k, v]): String & ef =
+        joinWith((_, v) -> f(v), sep, t)
+
+    ///
+    /// Returns the concatenation of the string representation of each key-value pair
+    /// `k => v` in `t` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: (k, v) -> String & ef, sep: String, t: RedBlackTree[k, v]): String & ef = {
+        let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foldLeft((_, _, v) -> StringBuilder.append!(sb, "${v}" + sep), (), t);
-        StringBuilder.toString(sb) |> String.dropRight(1)
-    } as & Pure
+        foldLeft((_, k, v) -> StringBuilder.append!(sb, "${f(k, v)}" + sep), (), t);
+        StringBuilder.toString(sb) |> String.dropRight(lastSep)
+    } as & ef
 
 }
