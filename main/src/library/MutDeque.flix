@@ -33,7 +33,7 @@ pub enum MutDeque[a] {
 
 instance Iterable[MutDeque] {
     pub def iterator(t: MutDeque[a]): Iterator[a] & Impure =
-        t |> MutDeque.toList |> List.toIterator
+        t |> MutDeque.toArray |> Array.toIterator
 }
 
 namespace MutDeque {
