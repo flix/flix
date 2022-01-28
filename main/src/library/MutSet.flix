@@ -365,4 +365,12 @@ namespace MutSet {
         let MutSet(ms) = s;
         Set.join(sep, deref ms)
 
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `s` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: a -> String & ef, sep: String, s: MutSet[a]): String & Impure =
+        let MutSet(ms) = s;
+        Set.joinWith(f, sep, deref ms)
+
 }
