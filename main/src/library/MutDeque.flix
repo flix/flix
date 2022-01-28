@@ -31,6 +31,11 @@ pub enum MutDeque[a] {
     case MutDeque(Ref[Array[a]], Ref[Int32], Ref[Int32])
 }
 
+instance Iterable[MutDeque] {
+    pub def iterator(t: MutDeque[a]): Iterator[a] & Impure =
+        t |> MutDeque.toList |> List.toIterator
+}
+
 namespace MutDeque {
 
     ///
