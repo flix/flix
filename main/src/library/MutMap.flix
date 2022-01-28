@@ -19,6 +19,11 @@
 ///
 opaque type MutMap[k, v] = Ref[Map[k, v]]
 
+instance Iterable[MutMap[k]] {
+    pub def iterator(t: MutMap[k, a]): Iterator[a] & Impure =
+        t |> MutMap.valuesOf |> List.toIterator
+}
+
 namespace MutMap {
 
     ///
