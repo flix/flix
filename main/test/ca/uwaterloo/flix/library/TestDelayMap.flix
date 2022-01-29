@@ -1817,4 +1817,29 @@ namespace TestDelayMap {
     def joinKeys04(): Bool =
         Map#{"0" => 1, "1" => 2, "2" => 2} |> Map.toDelayMap |> DelayMap.joinKeys(",") == "0,1,2"
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinWith                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinWith01(): Bool =
+        Map.empty(): Map[Int32, Int32] |> Map.toDelayMap |>
+            DelayMap.joinWith((k, v) -> "${k} => ${v}", ",") == ""
+
+    @test
+    def joinWith02(): Bool =
+        Map#{1 => 1} |> Map.toDelayMap |>
+            DelayMap.joinWith((k, v) -> "${k} => ${v}", ", ") == "1 => 1"
+
+    @test
+    def joinWith03(): Bool =
+        Map#{0 => 1, 1 => 2, 2 => 2} |> Map.toDelayMap |>
+            DelayMap.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
+
+    @test
+    def joinWith04(): Bool =
+        Map#{0 => "1", 1 => "2", 2 => "2"} |> Map.toDelayMap |>
+            DelayMap.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
+
 }
