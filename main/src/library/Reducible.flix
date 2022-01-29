@@ -39,24 +39,28 @@ pub lawless class Reducible[t: Type -> Type] {
     pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, t: t[a]): b & (ef1 and ef2)
 
     ///
-    /// Reduce `t` using the derived `SemiGroup` instance.
-    ///
-    pub def reduce(t: t[a]): a with SemiGroup[a] = ???
-
-    ///
     /// Left-associative reduction on `t` using `f`.
     ///
-    pub def reduceLeft(f: (a, a) -> a & ef, t: t[a]): a & ef = ???
+    pub def reduceLeft(f: (a, a) -> a & ef, t: t[a]): a & ef =
+        reduceLeftTo(f, identity, t)
 
     ///
     /// Right-associative reduction on `t` using `f`.
     ///
-    pub def reduceRight(f: (a, a) -> a & ef, t: t[a]): a & ef = ???
+    pub def reduceRight(f: (a, a) -> a & ef, t: t[a]): a & ef =
+        reduceRightTo(f, identity, t)
+
+    ///
+    /// Reduce `t` using the derived `SemiGroup` instance.
+    ///
+    pub def reduce(t: t[a]): a with SemiGroup[a] =
+        reduceLeft((acc, a) -> SemiGroup.combine(acc, a), t)
 
     ///
     /// Applies `f` to each element of `t` and combines them using the derived `SemiGroup` instance.
     ///
-    pub def reduceMap(f: a -> b & ef, t: t[a]): b & ef with SemiGroup[b] = ???
+    pub def reduceMap(f: a -> b & ef, t: t[a]): b & ef with SemiGroup[b] =
+        reduceLeftTo((b, a) -> SemiGroup.combine(b, f(a)), f, t)
 
     ///
     /// Returns `t` as a non-empty list.
@@ -118,5 +122,30 @@ pub lawless class Reducible[t: Type -> Type] {
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from right to left.
     ///
     pub def findRight(f: a -> Bool & ef, t: t[a]): Option[a] & ef = ???
+
+    ///
+    /// Returns `true` if and only if the element `x` is in `t`.
+    ///
+    pub def memberOf(x: a, t: t[a]): Bool with Eq[a] = ???
+
+    ///
+    /// Finds the smallest element of `t` according to the `Order` on `a`.
+    ///
+    pub def minimum(t: t[a]): a with Order[a] = ???
+
+    ///
+    /// Finds the smallest element of `t` according to the given comparator `cmp`.
+    ///
+    pub def minimumBy(cmp: (a, a) -> Comparison & ef, t: t[a]): a & ef = ???
+
+    ///
+    /// Finds the largest element of `t` according to the `Order` on `a`.
+    ///
+    pub def maximum(t: t[a]): a with Order[a] = ???
+
+    ///
+    /// Finds the largest element of `t` according to the given comparator `cmp`.
+    ///
+    pub def maximumBy(cmp: (a, a) -> Comparison & ef, t: t[a]): a & ef = ???
 
 }
