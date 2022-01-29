@@ -17,39 +17,31 @@
 ///
 /// A type class for types that can be reduced to a summary value.
 ///
-/// `Reducible` is like a non-empty `Foldable`.
+/// `Reducible` is like a non-empty `Foldable` and may only be implemented on non-empty data structures.
 ///
 /// This type class is heavily inspired by the Cats implementation of Reducible:
 /// https://github.com/typelevel/cats/blob/main/core/src/main/scala/cats/Reducible.scala
 ///
-pub lawless class Reducible[t: Type -> Type] with Foldable[t] {
+pub lawless class Reducible[t: Type -> Type] {
 
     ///
     /// Left-associative reduction of a structure.
     /// Applies `g` to the initial element of `t` and combines it
     /// with the remainder of `t` using `f` going from left to right.
     ///
-    pub def reduceLeftTo(f: (b, a) -> b & ef, g: a -> b, t: t[a]): b & ef
+    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, t: t[a]): b & (ef1 and ef2)
 
     ///
     /// Right-associative reduction of a structure.
     /// Applies `g` to the initial element of `t` and combines it
     /// with the remainder of `t` using `f` going from right to left.
     ///
-    pub def reduceRightTo(f: (a, b) -> b & ef, g: a -> b, t: t[a]): b & ef
+    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, t: t[a]): b & (ef1 and ef2)
 
-    ///
-    /// Left-associative fold of a structure.
-    /// Applies `f` to a start value `s` and all elements in `t` going from left to right.
-    ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, t: t[a]): b & ef =
-        Foldable.foldLeft(f, s, t)
+    pub def reduceLeft(f: (a, a) -> a & ef, t: t[a]): a & ef = ???
 
-    ///
-    /// Right-associative fold of a structure.
-    /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
-    ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, t: t[a]): b & ef =
-        Foldable.foldRight(f, s, t)
+    pub def reduceRight(f: (a, a) -> a & ef, t: t[a]): a & ef = ???
+
+    pub def reduceMap(f: a -> b & ef, t: t[a]): b & ef with SemiGroup[b] = ???
 
 }
