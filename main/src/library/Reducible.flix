@@ -19,7 +19,24 @@
 ///
 /// `Reducible` is like a non-empty `Foldable`.
 ///
+/// This type class is heavily inspired by the Cats implementation of Reducible:
+/// https://github.com/typelevel/cats/blob/main/core/src/main/scala/cats/Reducible.scala
+///
 pub lawless class Reducible[t: Type -> Type] with Foldable[t] {
+
+    ///
+    /// Left-associative reduction of a structure.
+    /// Applies `g` to the initial element of `t` and combines it
+    /// with the remainder of `t` using `f` going from left to right.
+    ///
+    pub def reduceLeftTo(f: (b, a) -> b & ef, g: a -> b, t: t[a]): b & ef
+
+    ///
+    /// Right-associative reduction of a structure.
+    /// Applies `g` to the initial element of `t` and combines it
+    /// with the remainder of `t` using `f` going from right to left.
+    ///
+    pub def reduceRightTo(f: (a, b) -> b & ef, g: a -> b, t: t[a]): b & ef
 
     ///
     /// Left-associative fold of a structure.
