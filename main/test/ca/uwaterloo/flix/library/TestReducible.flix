@@ -114,7 +114,7 @@ namespace TestReducible {
         Reducible.foldRight((a, acc) -> a + acc, "", Nel("a", "b" :: Nil)) == "ab"
 
     @test
-    def reduceRight03(): Bool =
+    def foldRight03(): Bool =
         Reducible.foldRight((a, acc) -> a + acc, "", Nel("a", "b" :: "c" :: Nil)) == "abc"
 
 }
