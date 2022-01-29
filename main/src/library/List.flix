@@ -44,6 +44,10 @@ instance Eq[List[a]] with Eq[a] {
     }
 }
 
+instance SemiGroup[List[a]] {
+    pub def combine(x: List[a], y: List[a]): List[a] = x ::: y
+}
+
 instance Order[List[a]] with Order[a] {
 
     ///
