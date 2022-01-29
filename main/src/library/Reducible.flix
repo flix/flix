@@ -63,6 +63,20 @@ pub lawless class Reducible[t: Type -> Type] {
         Reducible.reduceLeftTo((b, a) -> SemiGroup.combine(b, f(a)), f, t)
 
     ///
+    /// Left-associative fold of a structure.
+    /// Applies `f` to a start value `s` and all elements in `t` going from left to right.
+    ///
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, t: t[a]): b & ef =
+        Reducible.reduceLeftTo(f, a -> f(s, a), t)
+
+    ///
+    /// Right-associative fold of a structure.
+    /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, t: t[a]): b & ef =
+        Reducible.reduceRightTo(f, a -> f(a, s), t)
+
+    ///
     /// Returns `t` as a non-empty list.
     ///
     pub def toNel(t: t[a]): Nel[a] = ???
