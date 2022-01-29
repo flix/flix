@@ -42,12 +42,6 @@ pub class CommutativeMonoid[a] with Monoid[a] {
 
 instance CommutativeMonoid[Unit]
 
-instance CommutativeMonoid[Set[a]] with Order[a]
-
-instance CommutativeMonoid[Map[k, v]] with Order[k], CommutativeMonoid[v]
-
-instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
-
 instance CommutativeMonoid[(a1, a2)] with CommutativeMonoid[a1], CommutativeMonoid[a2]
 
 instance CommutativeMonoid[(a1, a2, a3)] with CommutativeMonoid[a1], CommutativeMonoid[a2], CommutativeMonoid[a3]

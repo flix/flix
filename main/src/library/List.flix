@@ -48,6 +48,10 @@ instance SemiGroup[List[a]] {
     pub def combine(x: List[a], y: List[a]): List[a] = x ::: y
 }
 
+instance Monoid[List[a]] {
+    pub def empty(): List[a] = Nil
+}
+
 instance Order[List[a]] with Order[a] {
 
     ///

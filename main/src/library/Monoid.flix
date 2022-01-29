@@ -55,10 +55,6 @@ instance Monoid[String] {
     pub def empty(): String = ""
 }
 
-instance Monoid[Option[a]] with Monoid[a] {
-    pub def empty(): Option[a] = None
-}
-
 instance Monoid[(a1, a2)] with Monoid[a1], Monoid[a2] {
     pub def empty(): (a1, a2) = (Monoid.empty(), Monoid.empty())
 }
@@ -93,23 +89,4 @@ instance Monoid[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with Monoid[a1], Monoid[a2
 
 instance Monoid[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with Monoid[a1], Monoid[a2], Monoid[a3], Monoid[a4], Monoid[a5], Monoid[a6], Monoid[a7], Monoid[a8], Monoid[a9], Monoid[a10] {
     pub def empty(): (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) = (Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty())
-}
-
-instance Monoid[Validation[t, e]] with Monoid[t] {
-    pub def empty(): Validation[t, e] = Success(Monoid.empty())
-}
-
-instance Monoid[List[a]] {
-    pub def empty(): List[a] = Nil
-}
-
-///
-/// `combine` is set union.
-///
-instance Monoid[Set[a]] with Order[a] {
-    pub def empty(): Set[a] = Set.empty()
-}
-
-instance Monoid[Map[k, v]] with Order[k], Monoid[v] {
-    pub def empty(): Map[k, v] = Map.empty()
 }
