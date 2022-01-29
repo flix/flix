@@ -158,16 +158,17 @@ class Flix {
 
     "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
 
+    "Applicative.flix" -> LocalResource.get("/src/library/Applicative.flix"),
+    "CommutativeMonoid.flix" -> LocalResource.get("/src/library/CommutativeMonoid.flix"),
+    "CommutativeSemiGroup.flix" -> LocalResource.get("/src/library/CommutativeSemiGroup.flix"),
+    "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
-    "Applicative.flix" -> LocalResource.get("/src/library/Applicative.flix"),
-    "Monad.flix" -> LocalResource.get("/src/library/Monad.flix"),
-    "SemiGroup.flix" -> LocalResource.get("/src/library/SemiGroup.flix"),
-    "CommutativeSemiGroup.flix" -> LocalResource.get("/src/library/CommutativeSemiGroup.flix"),
-    "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
-    "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
-    "Traversable.flix" -> LocalResource.get("/src/library/Traversable.flix"),
     "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
+    "Monad.flix" -> LocalResource.get("/src/library/Monad.flix"),
+    "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
+    "SemiGroup.flix" -> LocalResource.get("/src/library/SemiGroup.flix"),
+    "Traversable.flix" -> LocalResource.get("/src/library/Traversable.flix"),
 
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 

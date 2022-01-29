@@ -87,6 +87,13 @@ instance SemiGroup[Option[a]] with SemiGroup[a] {
 
 instance CommutativeSemiGroup[Option[a]] with CommutativeSemiGroup[a]
 
+
+instance Monoid[Option[a]] with Monoid[a] {
+    pub def empty(): Option[a] = None
+}
+
+instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
+
 namespace Option {
 
     ///

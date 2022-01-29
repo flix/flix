@@ -60,6 +60,12 @@ instance SemiGroup[Set[a]] with Order[a] {
 
 instance CommutativeSemiGroup[Set[a]] with Order[a]
 
+instance Monoid[Set[a]] with Order[a] {
+    pub def empty(): Set[a] = Set.empty()
+}
+
+instance CommutativeMonoid[Set[a]] with Order[a]
+
 namespace Set {
 
     ///

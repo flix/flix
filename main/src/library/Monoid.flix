@@ -18,7 +18,7 @@
 /// A type class for Monoids, objects that support an associative binary
 /// operation `combine` and neutral element `empty`.
 ///
-pub lawless class Monoid[a] with SemiGroup[a] {
+pub class Monoid[a] with SemiGroup[a] {
     ///
     /// Returns a neutral element.
     ///
@@ -29,6 +29,10 @@ pub lawless class Monoid[a] with SemiGroup[a] {
     ///
     pub def combine(x: a, y: a): a =
         SemiGroup.combine(x, y)
+
+    law leftIdentity: forall(x: a) with Eq[a] . Monoid.combine(Monoid.empty(), x) == x
+
+    law rightIdentity: forall(x: a) with Eq[a] . Monoid.combine(x, Monoid.empty()) == x
 
     law associative: forall(x: a, y: a, z: a) with Eq[a] . Monoid.combine(Monoid.combine(x, y), z) == Monoid.combine(x, Monoid.combine(y, z))
 
@@ -47,12 +51,36 @@ instance Monoid[Unit] {
     pub def empty(): Unit = ()
 }
 
-instance Monoid[String] {
-    pub def empty(): String = ""
+instance Monoid[Int8] {
+    pub def empty(): Int8 = 0i8
 }
 
-instance Monoid[Option[a]] with Monoid[a] {
-    pub def empty(): Option[a] = None
+instance Monoid[Int16] {
+    pub def empty(): Int16 = 0i16
+}
+
+instance Monoid[Int32] {
+    pub def empty(): Int32 = 0
+}
+
+instance Monoid[Int64] {
+    pub def empty(): Int64 = 0i64
+}
+
+instance Monoid[BigInt] {
+    pub def empty(): BigInt = 0ii
+}
+
+instance Monoid[Float32] {
+    pub def empty(): Float32 = 0.0f32
+}
+
+instance Monoid[Float64] {
+    pub def empty(): Float64 = 0.0f64
+}
+
+instance Monoid[String] {
+    pub def empty(): String = ""
 }
 
 instance Monoid[(a1, a2)] with Monoid[a1], Monoid[a2] {
@@ -89,23 +117,4 @@ instance Monoid[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with Monoid[a1], Monoid[a2
 
 instance Monoid[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with Monoid[a1], Monoid[a2], Monoid[a3], Monoid[a4], Monoid[a5], Monoid[a6], Monoid[a7], Monoid[a8], Monoid[a9], Monoid[a10] {
     pub def empty(): (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) = (Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty(), Monoid.empty())
-}
-
-instance Monoid[Validation[t, e]] with Monoid[t] {
-    pub def empty(): Validation[t, e] = Success(Monoid.empty())
-}
-
-instance Monoid[List[a]] {
-    pub def empty(): List[a] = Nil
-}
-
-///
-/// `combine` is set union.
-///
-instance Monoid[Set[a]] with Order[a] {
-    pub def empty(): Set[a] = Set.empty()
-}
-
-instance Monoid[Map[k, v]] with Order[k], Monoid[v] {
-    pub def empty(): Map[k, v] = Map.empty()
 }

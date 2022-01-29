@@ -44,10 +44,6 @@ instance Eq[List[a]] with Eq[a] {
     }
 }
 
-instance SemiGroup[List[a]] {
-    pub def combine(x: List[a], y: List[a]): List[a] = x ::: y
-}
-
 instance Order[List[a]] with Order[a] {
 
     ///
@@ -85,6 +81,14 @@ instance Foldable[List] {
 instance Traversable[List] {
     pub def traverse(f: a -> m[b] & ef, t: List[a]): m[List[b]] & ef with Applicative[m] = List.traverse(f, t)
     pub override def sequence(t: List[m[a]]): m[List[a]] with Applicative[m] = List.sequence(t)
+}
+
+instance SemiGroup[List[a]] {
+    pub def combine(x: List[a], y: List[a]): List[a] = x ::: y
+}
+
+instance Monoid[List[a]] {
+    pub def empty(): List[a] = Nil
 }
 
 namespace List {
