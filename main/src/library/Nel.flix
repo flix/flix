@@ -75,6 +75,11 @@ instance Traversable[Nel] {
     pub override def sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
 }
 
+instance Reducible[Nel] {
+    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = Nel.reduceLeftTo(f, g, l)
+    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = Nel.reduceRightTo(f, g, l)
+}
+
 namespace Nel {
 
     ///
@@ -342,6 +347,24 @@ namespace Nel {
     ///
     pub def foldRightLazy(f: (a, Lazy[b]) -> b, s: b, l: Nel[a]): b = match l {
         case Nel(x, xs) => f(x, lazy List.foldRightLazy(f, s, xs))
+    }
+
+    ///
+    /// Left-associative reduction of a structure.
+    /// Applies `g` to the initial element of `l` and combines it
+    /// with the remainder of `l` using `f` going from left to right.
+    ///
+    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = match l {
+        Nel(x, xs) => List.foldLeft(f, g(x), l)
+    }
+
+    ///
+    /// Right-associative reduction of a structure.
+    /// Applies `g` to the initial element of `l` and combines it
+    /// with the remainder of `l` using `f` going from right to left.
+    ///
+    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = match l {
+        Nel(x, xs) => List.foldRight(f, g(x), l)
     }
 
     ///
