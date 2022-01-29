@@ -30,6 +30,10 @@ pub class CommutativeMonoid[a] with Monoid[a] {
     pub def combine(x: a, y: a): a =
         Monoid.combine(x, y)
 
+    law leftIdentity: forall(x: a) with Eq[a] . CommutativeMonoid.combine(CommutativeMonoid.empty(), x) == x
+
+    law rightIdentity: forall(x: a) with Eq[a] . CommutativeMonoid.combine(x, CommutativeMonoid.empty()) == x
+
     law associative: forall(x: a, y: a, z: a) with Eq[a] . CommutativeMonoid.combine(CommutativeMonoid.combine(x, y), z) == CommutativeMonoid.combine(x, CommutativeMonoid.combine(y, z))
 
     law commutative: forall(x: a, y: a) with Eq[a] . CommutativeMonoid.combine(x, y) == CommutativeMonoid.combine(y, x)
