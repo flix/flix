@@ -17,12 +17,46 @@
 namespace TestReducible {
 
     /////////////////////////////////////////////////////////////////////////////
+    // reduceLeft                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def reduceLeft01(): Bool =
+        Reducible.reduceLeft((acc, a) -> acc + a, Nel("a", Nil)) == "a"
+
+    @test
+    def reduceLeft02(): Bool =
+        Reducible.reduceLeft((acc, a) -> acc + a, Nel("a", "b" :: Nil)) == "ab"
+
+    @test
+    def reduceLeft03(): Bool =
+        Reducible.reduceLeft((acc, a) -> acc + a, Nel("a", "b" :: "c" :: Nil)) == "abc"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // reduceRight                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def reduceRight01(): Bool =
+        Reducible.reduceRight((a, acc) -> a + acc, Nel("a", Nil)) == "a"
+
+    @test
+    def reduceRight02(): Bool =
+        Reducible.reduceRight((a, acc) -> a + acc, Nel("a", "b" :: Nil)) == "ab"
+
+    @test
+    def reduceRight03(): Bool =
+        Reducible.reduceRight((a, acc) -> a + acc, Nel("a", "b" :: "c" :: Nil)) == "abc"
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // reduce                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def reduce01(): Bool =
-        Reducible.reduce(Nel("a", Nil)) == ""
+        Reducible.reduce(Nel("a", Nil)) == "a"
 
     @test
     def reduce02(): Bool =

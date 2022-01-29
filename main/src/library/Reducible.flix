@@ -42,25 +42,25 @@ pub lawless class Reducible[t: Type -> Type] {
     /// Left-associative reduction on `t` using `f`.
     ///
     pub def reduceLeft(f: (a, a) -> a & ef, t: t[a]): a & ef =
-        reduceLeftTo(f, identity, t)
+        Reducible.reduceLeftTo(f, identity, t)
 
     ///
     /// Right-associative reduction on `t` using `f`.
     ///
     pub def reduceRight(f: (a, a) -> a & ef, t: t[a]): a & ef =
-        reduceRightTo(f, identity, t)
+        Reducible.reduceRightTo(f, identity, t)
 
     ///
     /// Reduce `t` using the derived `SemiGroup` instance.
     ///
     pub def reduce(t: t[a]): a with SemiGroup[a] =
-        reduceLeft((acc, a) -> SemiGroup.combine(acc, a), t)
+        Reducible.reduceLeft((acc, a) -> SemiGroup.combine(acc, a), t)
 
     ///
     /// Applies `f` to each element of `t` and combines them using the derived `SemiGroup` instance.
     ///
     pub def reduceMap(f: a -> b & ef, t: t[a]): b & ef with SemiGroup[b] =
-        reduceLeftTo((b, a) -> SemiGroup.combine(b, f(a)), f, t)
+        Reducible.reduceLeftTo((b, a) -> SemiGroup.combine(b, f(a)), f, t)
 
     ///
     /// Returns `t` as a non-empty list.
@@ -90,7 +90,7 @@ pub lawless class Reducible[t: Type -> Type] {
     ///
     /// Returns the sum of all elements in `t` according to the function `f`.
     ///
-    pub def sumWith(f: a -> Int32 & ef, t: t[a]): Int32 & ef = ???
+    pub def sumWith(f: a -> Int32 & ef, t: t[a]): Int32 = ???
 
     ///
     /// Returns the product of all elements in `t`.
@@ -100,27 +100,27 @@ pub lawless class Reducible[t: Type -> Type] {
     ///
     /// Returns the product of all elements in `t` according to the function `f`.
     ///
-    pub def productWith(f: a -> Int32 & ef, t: t[a]): Int32 & ef = ???
+    pub def productWith(f: a -> Int32 & ef, t: t[a]): Int32 = ???
 
     ///
     /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
     ///
-    pub def exists(f: a -> Bool & ef, t: t[a]): Bool & ef = ???
+    pub def exists(f: a -> Bool & ef, t: t[a]): Bool = ???
 
     ///
     /// Returns `true` if and only if all elements in `t` satisfy the predicate `f`.
     ///
-    pub def forall(f: a -> Bool & ef, t: t[a]): Bool & ef = ???
+    pub def forall(f: a -> Bool & ef, t: t[a]): Bool = ???
 
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from left to right.
     ///
-    pub def findLeft(f: a -> Bool & ef, t: t[a]): Option[a] & ef = ???
+    pub def findLeft(f: a -> Bool & ef, t: t[a]): Option[a] = ???
 
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from right to left.
     ///
-    pub def findRight(f: a -> Bool & ef, t: t[a]): Option[a] & ef = ???
+    pub def findRight(f: a -> Bool & ef, t: t[a]): Option[a] = ???
 
     ///
     /// Returns `true` if and only if the element `x` is in `t`.
@@ -135,7 +135,7 @@ pub lawless class Reducible[t: Type -> Type] {
     ///
     /// Finds the smallest element of `t` according to the given comparator `cmp`.
     ///
-    pub def minimumBy(cmp: (a, a) -> Comparison & ef, t: t[a]): a & ef = ???
+    pub def minimumBy(cmp: (a, a) -> Comparison & ef, t: t[a]): a = ???
 
     ///
     /// Finds the largest element of `t` according to the `Order` on `a`.
@@ -145,6 +145,6 @@ pub lawless class Reducible[t: Type -> Type] {
     ///
     /// Finds the largest element of `t` according to the given comparator `cmp`.
     ///
-    pub def maximumBy(cmp: (a, a) -> Comparison & ef, t: t[a]): a & ef = ???
+    pub def maximumBy(cmp: (a, a) -> Comparison & ef, t: t[a]): a = ???
 
 }
