@@ -19,6 +19,20 @@
 ///
 /// `Reducible` is like a non-empty `Foldable`.
 ///
-pub lawless class Reducible[t: Type -> Type] {
+pub lawless class Reducible[t: Type -> Type] with Foldable[t] {
+
+    ///
+    /// Left-associative fold of a structure.
+    /// Applies `f` to a start value `s` and all elements in `t` going from left to right.
+    ///
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, t: t[a]): b & ef =
+        Foldable.foldLeft(f, s, t)
+
+    ///
+    /// Right-associative fold of a structure.
+    /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, t: t[a]): b & ef =
+        Foldable.foldRight(f, s, t)
 
 }
