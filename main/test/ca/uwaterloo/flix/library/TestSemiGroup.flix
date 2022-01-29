@@ -26,6 +26,118 @@ namespace TestSemiGroup {
     def combineUnit01(): Bool = combine((), ()) == ()
 
     /////////////////////////////////////////////////////////////////////////////
+    // Int8                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineInt801(): Bool = combine(0i8, 0i8) == 0i8
+
+    @test
+    def combineInt802(): Bool = combine(1i8, 0i8) == 1i8
+
+    @test
+    def combineInt803(): Bool = combine(0i8, 2i8) == 2i8
+
+    @test
+    def combineInt804(): Bool = combine(1i8, 2i8) == 3i8
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Int16                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineInt1601(): Bool = combine(0i16, 0i16) == 0i16
+
+    @test
+    def combineInt1602(): Bool = combine(1i16, 0i16) == 1i16
+
+    @test
+    def combineInt1603(): Bool = combine(0i16, 2i16) == 2i16
+
+    @test
+    def combineInt1604(): Bool = combine(1i16, 2i16) == 3i16
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Int32                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineInt3201(): Bool = combine(0i32, 0i32) == 0i32
+
+    @test
+    def combineInt3202(): Bool = combine(1i32, 0i32) == 1i32
+
+    @test
+    def combineInt3203(): Bool = combine(0i32, 2i32) == 2i32
+
+    @test
+    def combineInt3204(): Bool = combine(1i32, 2i32) == 3i32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Int64                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineInt6401(): Bool = combine(0i64, 0i64) == 0i64
+
+    @test
+    def combineInt6402(): Bool = combine(1i64, 0i64) == 1i64
+
+    @test
+    def combineInt6403(): Bool = combine(0i64, 2i64) == 2i64
+
+    @test
+    def combineInt6404(): Bool = combine(1i64, 2i64) == 3i64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // BigInt                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineBigInt01(): Bool = combine(0ii, 0ii) == 0ii
+
+    @test
+    def combineBigInt02(): Bool = combine(1ii, 0ii) == 1ii
+
+    @test
+    def combineBigInt03(): Bool = combine(0ii, 2ii) == 2ii
+
+    @test
+    def combineBigInt04(): Bool = combine(1ii, 2ii) == 3ii
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Float32                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineFloat3201(): Bool = combine(0.0f32, 0.0f32) == 0.0f32
+
+    @test
+    def combineFloat3202(): Bool = combine(1.0f32, 0.0f32) == 1.0f32
+
+    @test
+    def combineFloat3203(): Bool = combine(0.0f32, 2.0f32) == 2.0f32
+
+    @test
+    def combineFloat3204(): Bool = combine(1.0f32, 2.0f32) == 3.0f32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Float64                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineFloat6401(): Bool = combine(0.0f64, 0.0f64) == 0.0f64
+
+    @test
+    def combineFloat6402(): Bool = combine(1.0f64, 0.0f64) == 1.0f64
+
+    @test
+    def combineFloat6403(): Bool = combine(0.0f64, 2.0f64) == 2.0f64
+
+    @test
+    def combineFloat6404(): Bool = combine(1.0f64, 2.0f64) == 3.0f64
+
+    /////////////////////////////////////////////////////////////////////////////
     // String                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
