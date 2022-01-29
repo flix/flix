@@ -39,3 +39,29 @@ pub class CommutativeMonoid[a] with Monoid[a] {
     law commutative: forall(x: a, y: a) with Eq[a] . CommutativeMonoid.combine(x, y) == CommutativeMonoid.combine(y, x)
 
 }
+
+instance CommutativeMonoid[Unit]
+
+instance CommutativeMonoid[Set[a]] with Order[a]
+
+instance CommutativeMonoid[Map[k, v]] with Order[k], CommutativeMonoid[v]
+
+instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
+
+instance CommutativeMonoid[(a1, a2)] with CommutativeMonoid[a1], CommutativeMonoid[a2]
+
+instance CommutativeMonoid[(a1, a2, a3)] with CommutativeMonoid[a1], CommutativeMonoid[a2], CommutativeMonoid[a3]
+
+instance CommutativeMonoid[(a1, a2, a3, a4)] with CommutativeMonoid[a1], CommutativeMonoid[a2], CommutativeMonoid[a3], CommutativeMonoid[a4]
+
+instance CommutativeMonoid[(a1, a2, a3, a4, a5)] with CommutativeMonoid[a1], CommutativeMonoid[a2], CommutativeMonoid[a3], CommutativeMonoid[a4], CommutativeMonoid[a5]
+
+instance CommutativeMonoid[(a1, a2, a3, a4, a5, a6)] with CommutativeMonoid[a1], CommutativeMonoid[a2], CommutativeMonoid[a3], CommutativeMonoid[a4], CommutativeMonoid[a5], CommutativeMonoid[a6]
+
+instance CommutativeMonoid[(a1, a2, a3, a4, a5, a6, a7)] with CommutativeMonoid[a1], CommutativeMonoid[a2], CommutativeMonoid[a3], CommutativeMonoid[a4], CommutativeMonoid[a5], CommutativeMonoid[a6], CommutativeMonoid[a7]
+
+instance CommutativeMonoid[(a1, a2, a3, a4, a5, a6, a7, a8)] with CommutativeMonoid[a1], CommutativeMonoid[a2], CommutativeMonoid[a3], CommutativeMonoid[a4], CommutativeMonoid[a5], CommutativeMonoid[a6], CommutativeMonoid[a7], CommutativeMonoid[a8]
+
+instance CommutativeMonoid[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with CommutativeMonoid[a1], CommutativeMonoid[a2], CommutativeMonoid[a3], CommutativeMonoid[a4], CommutativeMonoid[a5], CommutativeMonoid[a6], CommutativeMonoid[a7], CommutativeMonoid[a8], CommutativeMonoid[a9]
+
+instance CommutativeMonoid[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with CommutativeMonoid[a1], CommutativeMonoid[a2], CommutativeMonoid[a3], CommutativeMonoid[a4], CommutativeMonoid[a5], CommutativeMonoid[a6], CommutativeMonoid[a7], CommutativeMonoid[a8], CommutativeMonoid[a9], CommutativeMonoid[a10]
