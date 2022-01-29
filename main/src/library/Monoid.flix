@@ -51,6 +51,34 @@ instance Monoid[Unit] {
     pub def empty(): Unit = ()
 }
 
+instance Monoid[Int8] {
+    pub def empty(): Int8 = 0i8
+}
+
+instance Monoid[Int16] {
+    pub def empty(): Int16 = 0i16
+}
+
+instance Monoid[Int32] {
+    pub def empty(): Int32 = 0
+}
+
+instance Monoid[Int64] {
+    pub def empty(): Int64 = 0i64
+}
+
+instance Monoid[BigInt] {
+    pub def empty(): BigInt = 0ii
+}
+
+instance Monoid[Float32] {
+    pub def empty(): Float32 = 0.0f32
+}
+
+instance Monoid[Float64] {
+    pub def empty(): Float64 = 0.0f64
+}
+
 instance Monoid[String] {
     pub def empty(): String = ""
 }

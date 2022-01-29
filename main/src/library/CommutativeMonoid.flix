@@ -39,8 +39,21 @@ pub class CommutativeMonoid[a] with Monoid[a] {
     law commutative: forall(x: a, y: a) with Eq[a] . CommutativeMonoid.combine(x, y) == CommutativeMonoid.combine(y, x)
 
 }
-
 instance CommutativeMonoid[Unit]
+
+instance CommutativeMonoid[Int8]
+
+instance CommutativeMonoid[Int16]
+
+instance CommutativeMonoid[Int32]
+
+instance CommutativeMonoid[Int64]
+
+instance CommutativeMonoid[BigInt]
+
+instance CommutativeMonoid[Float32]
+
+instance CommutativeMonoid[Float64]
 
 instance CommutativeMonoid[(a1, a2)] with CommutativeMonoid[a1], CommutativeMonoid[a2]
 
