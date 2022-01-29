@@ -299,27 +299,6 @@ namespace TestMutMap {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // joinValues                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def joinValues01(): Bool & Impure =
-        MutMap.empty(): MutMap[Int32, Int32] |> MutMap.joinValues(",") == ""
-
-    @test
-    def joinValues02(): Bool & Impure =
-        Map#{1 => 1} |> Map.toMutMap |> MutMap.joinValues(",") == "1"
-
-    @test
-    def joinValues03(): Bool & Impure =
-        Map#{0 => 1, 1 => 2, 2 => 2} |> Map.toMutMap |> MutMap.joinValues(",") == "1,2,2"
-
-    @test
-    def joinValues04(): Bool & Impure =
-        Map#{0 => "1", 1 => "2", 2 => "2"} |> Map.toMutMap |> MutMap.joinValues(",") == "1,2,2"
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // joinKeys                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -338,6 +317,27 @@ namespace TestMutMap {
     @test
     def joinKeys04(): Bool & Impure =
         Map#{"0" => 1, "1" => 2, "2" => 2} |> Map.toMutMap |> MutMap.joinKeys(",") == "0,1,2"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinValues                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinValues01(): Bool & Impure =
+        MutMap.empty(): MutMap[Int32, Int32] |> MutMap.joinValues(",") == ""
+
+    @test
+    def joinValues02(): Bool & Impure =
+        Map#{1 => 1} |> Map.toMutMap |> MutMap.joinValues(",") == "1"
+
+    @test
+    def joinValues03(): Bool & Impure =
+        Map#{0 => 1, 1 => 2, 2 => 2} |> Map.toMutMap |> MutMap.joinValues(",") == "1,2,2"
+
+    @test
+    def joinValues04(): Bool & Impure =
+        Map#{0 => "1", 1 => "2", 2 => "2"} |> Map.toMutMap |> MutMap.joinValues(",") == "1,2,2"
 
 
     /////////////////////////////////////////////////////////////////////////////

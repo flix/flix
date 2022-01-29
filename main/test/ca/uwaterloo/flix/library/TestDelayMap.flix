@@ -1777,27 +1777,6 @@ namespace TestDelayMap {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // joinValues                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def joinValues01(): Bool =
-        DelayMap.empty(): DelayMap[Int32, Int32] |> DelayMap.joinValues(",") == ""
-
-    @test
-    def joinValues02(): Bool =
-        Map#{1 => 1} |> Map.toDelayMap |> DelayMap.joinValues(",") == "1"
-
-    @test
-    def joinValues03(): Bool =
-        Map#{0 => 1, 1 => 2, 2 => 2} |> Map.toDelayMap |> DelayMap.joinValues(",") == "1,2,2"
-
-    @test
-    def joinValues04(): Bool =
-        Map#{0 => "1", 1 => "2", 2 => "2"} |> Map.toDelayMap |> DelayMap.joinValues(",") == "1,2,2"
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // joinKeys                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1816,6 +1795,27 @@ namespace TestDelayMap {
     @test
     def joinKeys04(): Bool =
         Map#{"0" => 1, "1" => 2, "2" => 2} |> Map.toDelayMap |> DelayMap.joinKeys(",") == "0,1,2"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinValues                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinValues01(): Bool =
+        DelayMap.empty(): DelayMap[Int32, Int32] |> DelayMap.joinValues(",") == ""
+
+    @test
+    def joinValues02(): Bool =
+        Map#{1 => 1} |> Map.toDelayMap |> DelayMap.joinValues(",") == "1"
+
+    @test
+    def joinValues03(): Bool =
+        Map#{0 => 1, 1 => 2, 2 => 2} |> Map.toDelayMap |> DelayMap.joinValues(",") == "1,2,2"
+
+    @test
+    def joinValues04(): Bool =
+        Map#{0 => "1", 1 => "2", 2 => "2"} |> Map.toDelayMap |> DelayMap.joinValues(",") == "1,2,2"
 
 
     /////////////////////////////////////////////////////////////////////////////
