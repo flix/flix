@@ -72,4 +72,5 @@ class LibrarySuite extends Suites(
   new FlixTest("TestMonad", "main/test/ca/uwaterloo/flix/library/TestMonad.flix")(Options.TestWithLibAll),
   new FlixTest("TestFoldable", "main/test/ca/uwaterloo/flix/library/TestFoldable.flix")(Options.TestWithLibAll),
   new FlixTest("TestIdentity", "main/test/ca/uwaterloo/flix/library/TestIdentity.flix")(Options.TestWithLibAll),
+  new FlixTest("TestReducible", "main/test/ca/uwaterloo/flix/library/TestReducible.flix")(Options.TestWithLibAll),
 )
