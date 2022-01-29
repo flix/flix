@@ -71,6 +71,12 @@ instance SemiGroup[Map[k,v]] with Order[k], SemiGroup[v] {
 
 instance CommutativeSemiGroup[Map[k,v]] with Order[k], CommutativeSemiGroup[v]
 
+instance Monoid[Map[k, v]] with Order[k], Monoid[v] {
+    pub def empty(): Map[k, v] = Map.empty()
+}
+
+instance CommutativeMonoid[Map[k, v]] with Order[k], CommutativeMonoid[v]
+
 namespace Map {
 
     ///

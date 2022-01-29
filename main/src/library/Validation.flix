@@ -38,6 +38,10 @@ instance SemiGroup[Validation[t, e]] with SemiGroup[t] {
     }
 }
 
+instance Monoid[Validation[t, e]] with Monoid[t] {
+    pub def empty(): Validation[t, e] = Success(Monoid.empty())
+}
+
 namespace Validation {
 
     ///
