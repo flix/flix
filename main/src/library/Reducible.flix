@@ -38,10 +38,22 @@ pub lawless class Reducible[t: Type -> Type] {
     ///
     pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, t: t[a]): b & (ef1 and ef2)
 
+    pub def reduce(t: t[a]): a with SemiGroup[a] = ???
+
+    ///
+    /// Left-associative
+    ///
     pub def reduceLeft(f: (a, a) -> a & ef, t: t[a]): a & ef = ???
 
     pub def reduceRight(f: (a, a) -> a & ef, t: t[a]): a & ef = ???
 
+    ///
+    /// Applies `f` to each element of `t` and combines them using the derived `SemiGroup` instance.
+    ///
     pub def reduceMap(f: a -> b & ef, t: t[a]): b & ef with SemiGroup[b] = ???
+
+    pub def toNel(t: t[a]): Nel[a] = ???
+
+    pub def toList(t: t[a]): List[a] = ???
 
 }
