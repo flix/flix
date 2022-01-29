@@ -41,9 +41,9 @@ instance CommutativeSemiGroup[Int64]
 
 instance CommutativeSemiGroup[BigInt]
 
-instance SemiGroup[Float32]
+instance CommutativeSemiGroup[Float32]
 
-instance SemiGroup[Float64]
+instance CommutativeSemiGroup[Float64]
 
 instance CommutativeSemiGroup[(a1, a2)] with CommutativeSemiGroup[a1], CommutativeSemiGroup[a2]
 
