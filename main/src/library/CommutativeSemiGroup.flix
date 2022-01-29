@@ -30,7 +30,7 @@ pub class CommutativeSemiGroup[a] with SemiGroup[a] {
     ///
     pub def combineN(x: a, n: Int32): a = SemiGroup.combineN(x, n)
 
-    law commutative: forall(x: a, y: a) with Eq[a] . CommutativeSemiGroup.combine(x, y) == CommutativeCommutativeSemiGroup.combine(y, x)
+    law commutative: forall(x: a, y: a) with Eq[a] . CommutativeSemiGroup.combine(x, y) == CommutativeSemiGroup.combine(y, x)
 
 }
 
