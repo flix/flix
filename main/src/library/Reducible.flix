@@ -75,8 +75,7 @@ pub lawless class Reducible[t: Type -> Type] {
     ///
     /// Returns `t` as a set.
     ///
-    pub def toSet(t: t[a]): Set[a] with Order[a] =
-        Foldable.foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), t)
+    pub def toSet(t: t[a]): Set[a] with Order[a] = ???
 
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
