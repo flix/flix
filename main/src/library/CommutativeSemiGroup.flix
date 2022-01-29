@@ -21,7 +21,7 @@
 pub class CommutativeSemiGroup[a] with SemiGroup[a] {
 
     ///
-    /// An associative binary operation on `a`.
+    /// An associative & commutative binary operation on `a`.
     ///
     pub def combine(x: a, y: a): a = SemiGroup.combine(x, y)
 
