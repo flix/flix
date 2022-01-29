@@ -66,4 +66,21 @@ namespace TestReducible {
     def reduce03(): Bool =
         Reducible.reduce(Nel("a", "b" :: "c" :: Nil)) == "abc"
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // reduceMap                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def reduceMap01(): Bool =
+        Reducible.reduceMap(a -> Int16.toInt32(a), Nel(1i16, Nil)) == 1
+
+    @test
+    def reduceMap02(): Bool =
+        Reducible.reduceMap(a -> Int16.toInt32(a), Nel(1i16, 2i16 :: Nil)) == 3
+
+    @test
+    def reduceMap03(): Bool =
+        Reducible.reduceMap(a -> Int16.toInt32(a), Nel(1i16, 2i16 :: 3i16 :: Nil)) == 6
+
 }
