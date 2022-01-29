@@ -83,4 +83,38 @@ namespace TestReducible {
     def reduceMap03(): Bool =
         Reducible.reduceMap(a -> Int16.toInt32(a), Nel(1i16, 2i16 :: 3i16 :: Nil)) == 6
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldLeft01(): Bool =
+        Reducible.foldLeft((acc, a) -> acc + a, "", Nel("a", Nil)) == "a"
+
+    @test
+    def foldLeft02(): Bool =
+        Reducible.foldLeft((acc, a) -> acc + a, "", Nel("a", "b" :: Nil)) == "ab"
+
+    @test
+    def foldLeft03(): Bool =
+        Reducible.foldLeft((acc, a) -> acc + a, "", Nel("a", "b" :: "c" :: Nil)) == "abc"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRight01(): Bool =
+        Reducible.foldRight((a, acc) -> a + acc, "", Nel("a", Nil)) == "a"
+
+    @test
+    def foldRight02(): Bool =
+        Reducible.foldRight((a, acc) -> a + acc, "", Nel("a", "b" :: Nil)) == "ab"
+
+    @test
+    def reduceRight03(): Bool =
+        Reducible.foldRight((a, acc) -> a + acc, "", Nel("a", "b" :: "c" :: Nil)) == "abc"
+
 }
