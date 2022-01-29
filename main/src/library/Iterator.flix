@@ -687,8 +687,19 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def join(sep: String, iter: Iterator[a]): String & Impure with ToString[a] =
+        joinWith(x -> ToString.toString(x), sep, iter)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `iter` according to `f` with `sep` inserted between each element.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def joinWith(f: a -> String & ef, sep: String, iter: Iterator[a]): String & Impure =
+        use StringBuilder.append!;
+        let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), (), iter);
-        StringBuilder.toString(sb) |> String.dropRight(1)
+        foldLeft((_, x) -> { append!(sb, f(x)); append!(sb, sep) }, (), iter);
+        StringBuilder.toString(sb) |> String.dropRight(lastSep)
 
 }

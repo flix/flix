@@ -1614,9 +1614,18 @@ namespace Array {
     /// of each element in `a` with `sep` inserted between each element.
     ///
     pub def join(sep: String, a: Array[a]): String & Impure with ToString[a] =
+        joinWith(x -> ToString.toString(x), sep, a)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `a` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: a -> String & ef, sep: String, a: Array[a]): String & Impure =
+        use StringBuilder.append!;
+        let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), (), a);
-        StringBuilder.toString(sb) |> String.dropRight(1)
+        foldLeft((_, x) -> { append!(sb, f(x)); append!(sb, sep) }, (), a);
+        StringBuilder.toString(sb) |> String.dropRight(lastSep)
 
     ///
     /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to

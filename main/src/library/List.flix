@@ -1164,6 +1164,13 @@ namespace List {
         Foldable.join(sep, l)
 
     ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `l` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: a -> String & ef, sep: String, l: List[a]): String =
+        Foldable.joinWith(f, sep, l)
+
+    ///
     /// Returns the elements of `l` as a lazy list.
     ///
     pub def toLazyList(l: List[a]): LazyList[a] = match l {

@@ -538,6 +538,30 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // joinKeys                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinKeys01(): Bool =
+        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.joinKeys(",") == ""
+
+    @test
+    def joinKeys02(): Bool =
+        let Map(t) = Map#{1 => 1};
+        RedBlackTree.joinKeys(",", t) == "1"
+
+    @test
+    def joinKeys03(): Bool =
+        let Map(t) = Map#{0 => 1, 1 => 2, 2 => 2};
+        RedBlackTree.joinKeys(",", t) == "0,1,2"
+
+    @test
+    def joinKeys04(): Bool =
+        let Map(t) = Map#{"0" => 1, "1" => 2, "2" => 2};
+        RedBlackTree.joinKeys(",", t) == "0,1,2"
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // joinValues                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -562,26 +586,26 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // joinKeys                                                                //
+    // joinWith                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def joinKeys01(): Bool =
-        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.joinKeys(",") == ""
+    def joinWith01(): Bool =
+        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ",") == ""
 
     @test
-    def joinKeys02(): Bool =
+    def joinWith02(): Bool =
         let Map(t) = Map#{1 => 1};
-        RedBlackTree.joinKeys(",", t) == "1"
+        RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ", ", t) == "1 => 1"
 
     @test
-    def joinKeys03(): Bool =
+    def joinWith03(): Bool =
         let Map(t) = Map#{0 => 1, 1 => 2, 2 => 2};
-        RedBlackTree.joinKeys(",", t) == "0,1,2"
+        RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ", ", t) == "0 => 1, 1 => 2, 2 => 2"
 
     @test
-    def joinKeys04(): Bool =
-        let Map(t) = Map#{"0" => 1, "1" => 2, "2" => 2};
-        RedBlackTree.joinKeys(",", t) == "0,1,2"
+    def joinWith04(): Bool =
+        let Map(t) = Map#{0 => "1", 1 => "2", 2 => "2"};
+        RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ", ", t) == "0 => 1, 1 => 2, 2 => 2"
 
 }
