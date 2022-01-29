@@ -31,6 +31,16 @@ pub class CommutativeSemiGroup[a] with SemiGroup[a] {
 
 instance CommutativeSemiGroup[Unit]
 
+instance CommutativeSemiGroup[Int8]
+
+instance CommutativeSemiGroup[Int16]
+
+instance CommutativeSemiGroup[Int32]
+
+instance CommutativeSemiGroup[Int64]
+
+instance CommutativeSemiGroup[BigInt]
+
 instance CommutativeSemiGroup[(a1, a2)] with CommutativeSemiGroup[a1], CommutativeSemiGroup[a2]
 
 instance CommutativeSemiGroup[(a1, a2, a3)] with CommutativeSemiGroup[a1], CommutativeSemiGroup[a2], CommutativeSemiGroup[a3]
