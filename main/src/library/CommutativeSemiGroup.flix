@@ -41,6 +41,10 @@ instance CommutativeSemiGroup[Int64]
 
 instance CommutativeSemiGroup[BigInt]
 
+instance SemiGroup[Float32]
+
+instance SemiGroup[Float64]
+
 instance CommutativeSemiGroup[(a1, a2)] with CommutativeSemiGroup[a1], CommutativeSemiGroup[a2]
 
 instance CommutativeSemiGroup[(a1, a2, a3)] with CommutativeSemiGroup[a1], CommutativeSemiGroup[a2], CommutativeSemiGroup[a3]

@@ -106,6 +106,38 @@ namespace TestSemiGroup {
     def combineBigInt04(): Bool = combine(1ii, 2ii) == 3ii
 
     /////////////////////////////////////////////////////////////////////////////
+    // Float32                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineFloat3201(): Bool = combine(0f32, 0f32) == 0f32
+
+    @test
+    def combineFloat3202(): Bool = combine(1f32, 0f32) == 1f32
+
+    @test
+    def combineFloat3203(): Bool = combine(0f32, 2f32) == 2f32
+
+    @test
+    def combineFloat3204(): Bool = combine(1f32, 2f32) == 3f32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Float64                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineFloat6401(): Bool = combine(0f64, 0f64) == 0f64
+
+    @test
+    def combineFloat6402(): Bool = combine(1f64, 0f64) == 1f64
+
+    @test
+    def combineFloat6403(): Bool = combine(0f64, 2f64) == 2f64
+
+    @test
+    def combineFloat6404(): Bool = combine(1f64, 2f64) == 3f64
+
+    /////////////////////////////////////////////////////////////////////////////
     // String                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
