@@ -18,7 +18,7 @@
 /// A type class for Monoids, objects that support an associative binary
 /// operation `combine` and neutral element `empty`.
 ///
-pub lawless class Monoid[a] with SemiGroup[a] {
+pub class Monoid[a] with SemiGroup[a] {
     ///
     /// Returns a neutral element.
     ///
