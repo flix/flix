@@ -557,9 +557,10 @@ namespace DemandList {
     ///
     @Experimental
     pub def joinWith(f: a -> String & ef, sep: String, l: DemandList[a, Forced]): String = {
+        use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foldLeft((_, x) -> StringBuilder.append!(sb, "${f(x)}" + sep), (), l);
+        foldLeft((_, x) -> { append!(sb, f(x)); append!(sb, sep) }, (), l);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     } as & Pure
 

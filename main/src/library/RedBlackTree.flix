@@ -807,9 +807,10 @@ namespace RedBlackTree {
     /// `k => v` in `t` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: (k, v) -> String & ef, sep: String, t: RedBlackTree[k, v]): String & ef = {
+        use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foldLeft((_, k, v) -> StringBuilder.append!(sb, "${f(k, v)}" + sep), (), t);
+        foldLeft((_, k, v) -> { append!(sb, f(k, v)); append!(sb, sep) }, (), t);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     } as & ef
 

@@ -715,9 +715,10 @@ namespace MutList {
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: a -> String & ef, sep: String, v: MutList[a]): String & Impure =
+        use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foldLeft((_, x) -> StringBuilder.append!(sb, "${f(x)}" + sep), (), v);
+        foldLeft((_, x) -> { append!(sb, f(x)); append!(sb, sep) }, (), v);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
 
     ///

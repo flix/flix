@@ -1621,9 +1621,10 @@ namespace Array {
     /// of each element in `a` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: a -> String & ef, sep: String, a: Array[a]): String & Impure =
+        use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foldLeft((_, x) -> StringBuilder.append!(sb, "${f(x)}" + sep), (), a);
+        foldLeft((_, x) -> { append!(sb, f(x)); append!(sb, sep) }, (), a);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
 
     ///
