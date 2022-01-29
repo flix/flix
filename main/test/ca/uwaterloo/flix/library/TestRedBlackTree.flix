@@ -586,54 +586,6 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // joinWithKeys                                                            //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def joinWithKeys01(): Bool =
-        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.joinWithKeys(x -> "${x + 1}",",") == ""
-
-    @test
-    def joinWithKeys02(): Bool =
-        let Map(t) = Map#{1 => 1};
-        RedBlackTree.joinWithKeys(x -> "${x + 1}",",", t) == "2"
-
-    @test
-    def joinWithKeys03(): Bool =
-        let Map(t) = Map#{0 => 1, 1 => 2, 2 => 2};
-        RedBlackTree.joinWithKeys(x -> "${x + 1}",",", t) == "1,2,3"
-
-    @test
-    def joinWithKeys04(): Bool =
-        let Map(t) = Map#{"0" => 1, "1" => 2, "2" => 2};
-        RedBlackTree.joinWithKeys(x -> x + x, ",", t) == "00,11,22"
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // joinWithValues                                                          //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def joinWithValues01(): Bool =
-        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.joinWithValues(x -> "${x + 1}", ",") == ""
-
-    @test
-    def joinWithValues02(): Bool =
-        let Map(t) = Map#{1 => 1};
-        RedBlackTree.joinWithValues(x -> "${x + 1}", ",", t) == "2"
-
-    @test
-    def joinWithValues03(): Bool =
-        let Map(t) = Map#{0 => 1, 1 => 2, 2 => 2};
-        RedBlackTree.joinWithValues(x -> "${x + 1}", ",", t) == "2,3,3"
-
-    @test
-    def joinWithValues04(): Bool =
-        let Map(t) = Map#{0 => "1", 1 => "2", 2 => "2"};
-        RedBlackTree.joinWithValues(x -> x + x, ",", t) == "11,22,22"
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // joinWith                                                                //
     /////////////////////////////////////////////////////////////////////////////
 

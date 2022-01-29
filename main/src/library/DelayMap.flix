@@ -717,25 +717,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def joinValues(sep: String, m: DelayMap[k, v]): String with ToString[v] =
-        joinWithValues(ToString.toString, sep, m)
-
-    ///
-    /// Returns the concatenation of the string representation of each key `k`
-    /// in `m` according to `f` with `sep` inserted between each element.
-    ///
-    @Experimental
-    pub def joinWithKeys(f: k -> String & ef, sep: String, m: DelayMap[k, v]): String & ef =
-        let DMap(t) = m;
-        RedBlackTree.joinWithKeys(f, sep, t)
-
-    ///
-    /// Returns the concatenation of the string representation of each value `v`
-    /// in `m` according to `f` with `sep` inserted between each element.
-    ///
-    @Experimental
-    pub def joinWithValues(f: v -> String & ef, sep: String, m: DelayMap[k, v]): String & ef =
-        let DMap(t) = m;
-        RedBlackTree.joinWithValues(v -> f(force v), sep, t)
+        joinWith((_, v) -> ToString.toString(v), sep, m)
 
     ///
     /// Returns the concatenation of the string representation of each key-value pair

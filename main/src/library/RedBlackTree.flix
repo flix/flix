@@ -803,20 +803,6 @@ namespace RedBlackTree {
         joinWith((_, v) -> ToString.toString(v), sep, t)
 
     ///
-    /// Returns the concatenation of the string representation of each key `k`
-    /// in `t` according to `f` with `sep` inserted between each element.
-    ///
-    pub def joinWithKeys(f: k -> String & ef, sep: String, t: RedBlackTree[k, v]): String & ef =
-        joinWith((k, _) -> f(k), sep, t)
-
-    ///
-    /// Returns the concatenation of the string representation of each value `v`
-    /// in `t` according to `f` with `sep` inserted between each element.
-    ///
-    pub def joinWithValues(f: v -> String & ef, sep: String, t: RedBlackTree[k, v]): String & ef =
-        joinWith((_, v) -> f(v), sep, t)
-
-    ///
     /// Returns the concatenation of the string representation of each key-value pair
     /// `k => v` in `t` according to `f` with `sep` inserted between each element.
     ///

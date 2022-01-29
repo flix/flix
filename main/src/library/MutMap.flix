@@ -559,22 +559,6 @@ namespace MutMap {
         Map.joinValues(sep, deref mm)
 
     ///
-    /// Returns the concatenation of the string representation of each key `k`
-    /// in `m` according to `f` with `sep` inserted between each element.
-    ///
-    pub def joinWithKeys(f: k -> String & ef, sep: String, m: MutMap[k, v]): String & Impure =
-        let MutMap(mm) = m;
-        Map.joinWithKeys(f, sep, deref mm)
-
-    ///
-    /// Returns the concatenation of the string representation of each value `v`
-    /// in `m` according to `f` with `sep` inserted between each element.
-    ///
-    pub def joinWithValues(f: v -> String & ef, sep: String, m: MutMap[k, v]): String & Impure =
-        let MutMap(mm) = m;
-        Map.joinWithValues(f, sep, deref mm)
-
-    ///
     /// Returns the concatenation of the string representation of each key-value pair
     /// `k => v` in `m` according to `f` with `sep` inserted between each element.
     ///
