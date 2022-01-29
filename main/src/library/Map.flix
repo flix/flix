@@ -867,19 +867,27 @@ namespace Map {
         Functor.map(Map, RedBlackTree.mapAWithKey(f, tree))
 
     ///
-    /// Returns the concatenation of the string representation
-    /// of each key `k` in `m` with `sep` inserted between each element.
+    /// Returns the concatenation of the string representation of each key `k`
+    /// in `m` with `sep` inserted between each element.
     ///
     pub def joinKeys(sep: String, m: Map[k, v]): String with ToString[k] =
         let Map(t) = m;
         RedBlackTree.joinKeys(sep, t)
 
     ///
-    /// Returns the concatenation of the string representation
-    /// of each value `v` in `m` with `sep` inserted between each element.
+    /// Returns the concatenation of the string representation of each value `v`
+    /// in `m` with `sep` inserted between each element.
     ///
     pub def joinValues(sep: String, m: Map[k, v]): String with ToString[v] =
         let Map(t) = m;
         RedBlackTree.joinValues(sep, t)
+
+    ///
+    /// Returns the concatenation of the string representation of each key-value pair
+    /// `k => v` in `m` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: (k, v) -> String & ef, sep: String, m: Map[k, v]): String & ef =
+        let Map(t) = m;
+        RedBlackTree.joinWith(f, sep, t)
 
 }
