@@ -62,4 +62,8 @@ namespace TestReducible {
     def reduce02(): Bool =
         Reducible.reduce(Nel("a", "b" :: Nil)) == "ab"
 
+    @test
+    def reduce03(): Bool =
+        Reducible.reduce(Nel("a", "b" :: "c" :: Nil)) == "abc"
+
 }
