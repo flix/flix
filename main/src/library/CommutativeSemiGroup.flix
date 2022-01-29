@@ -25,11 +25,6 @@ pub class CommutativeSemiGroup[a] with SemiGroup[a] {
     ///
     pub def combine(x: a, y: a): a = SemiGroup.combine(x, y)
 
-    ///
-    /// Returns `x` combined with itself `n` times.
-    ///
-    pub def combineN(x: a, n: Int32): a = SemiGroup.combineN(x, n)
-
     law commutative: forall(x: a, y: a) with Eq[a] . CommutativeSemiGroup.combine(x, y) == CommutativeSemiGroup.combine(y, x)
 
 }
