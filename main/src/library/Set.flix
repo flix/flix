@@ -54,6 +54,8 @@ instance Foldable[Set] {
     pub def foldRight(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRight(f, s, s1)
 }
 
+instance CommutativeSemiGroup[Set[a]] with Order[a]
+
 namespace Set {
 
     ///

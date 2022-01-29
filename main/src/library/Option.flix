@@ -77,6 +77,8 @@ instance Traversable[Option] {
 
 }
 
+instance CommutativeSemiGroup[Option[a]] with CommutativeSemiGroup[a]
+
 namespace Option {
 
     ///

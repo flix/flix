@@ -65,6 +65,8 @@ instance Traversable[Map[k]] {
     pub override def sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
 }
 
+instance CommutativeSemiGroup[Map[k,v]] with Order[k], CommutativeSemiGroup[v]
+
 namespace Map {
 
     ///
