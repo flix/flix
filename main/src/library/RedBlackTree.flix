@@ -808,4 +808,10 @@ namespace RedBlackTree {
         StringBuilder.toString(sb) |> String.dropRight(1)
     } as & Pure
 
+    ///
+    /// Returns an iterator over `t`.
+    ///
+    pub def toIterator(t: RedBlackTree[k, v]): Iterator[(k, v)] & Impure =
+        t |> RedBlackTree.toList |> List.toIterator
+
 }
