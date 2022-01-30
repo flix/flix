@@ -325,8 +325,17 @@ namespace MutDeque {
     /// of each element in `d` with `sep` inserted between each element.
     ///
     pub def join(sep: String, d: MutDeque[a]): String & Impure with ToString[a] =
+        joinWith(x -> ToString.toString(x), sep, d)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `d` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: a -> String & ef, sep: String, d: MutDeque[a]): String & Impure =
+        use StringBuilder.append!;
+        let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foldLeft((_, x) -> StringBuilder.append!(sb, "${x}" + sep), (), d);
-        StringBuilder.toString(sb) |> String.dropRight(1)
+        foldLeft((_, x) -> { append!(sb, f(x)); append!(sb, sep) }, (), d);
+        StringBuilder.toString(sb) |> String.dropRight(lastSep)
 
 }
