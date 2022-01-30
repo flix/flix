@@ -77,6 +77,23 @@ instance Traversable[Option] {
 
 }
 
+instance SemiGroup[Option[a]] with SemiGroup[a] {
+    pub def combine(x: Option[a], y: Option[a]): Option[a] = match (x, y) {
+        case (a, None)              => a
+        case (None, b)              => b
+        case (Some(x1), Some(y1))   => Some(SemiGroup.combine(x1, y1))
+    }
+}
+
+instance CommutativeSemiGroup[Option[a]] with CommutativeSemiGroup[a]
+
+
+instance Monoid[Option[a]] with Monoid[a] {
+    pub def empty(): Option[a] = None
+}
+
+instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
+
 instance Iterable[Option] {
     pub def iterator(t: Option[a]): Iterator[a] & Impure =
         Option.toIterator(t)

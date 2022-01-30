@@ -65,6 +65,18 @@ instance Traversable[Map[k]] {
     pub override def sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
 }
 
+instance SemiGroup[Map[k,v]] with Order[k], SemiGroup[v] {
+    pub def combine(x: Map[k,v], y: Map[k,v]): Map[k,v] = Map.unionWith(SemiGroup.combine, x, y)
+}
+
+instance CommutativeSemiGroup[Map[k,v]] with Order[k], CommutativeSemiGroup[v]
+
+instance Monoid[Map[k, v]] with Order[k], Monoid[v] {
+    pub def empty(): Map[k, v] = Map.empty()
+}
+
+instance CommutativeMonoid[Map[k, v]] with Order[k], CommutativeMonoid[v]
+
 instance Iterable[Map[k]] {
     pub def iterator(t: Map[k, a]): Iterator[a] & Impure =
         t |> Map.valuesOf |> List.toIterator

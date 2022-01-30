@@ -54,6 +54,18 @@ instance Foldable[Set] {
     pub def foldRight(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRight(f, s, s1)
 }
 
+instance SemiGroup[Set[a]] with Order[a] {
+    pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x,y)
+}
+
+instance CommutativeSemiGroup[Set[a]] with Order[a]
+
+instance Monoid[Set[a]] with Order[a] {
+    pub def empty(): Set[a] = Set.empty()
+}
+
+instance CommutativeMonoid[Set[a]] with Order[a]
+
 instance Iterable[Set] {
     pub def iterator(t: Set[a]): Iterator[a] & Impure =
         Set.toIterator(t)
