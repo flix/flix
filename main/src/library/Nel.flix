@@ -585,5 +585,12 @@ namespace Nel {
     pub def join(sep: String, l: Nel[a]): String with ToString[a] =
         Foldable.join(sep, l)
 
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `l` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: a -> String & ef, sep: String, l: Nel[a]): String =
+        Foldable.joinWith(f, sep, l)
+
 }
 
