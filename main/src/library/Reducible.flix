@@ -91,12 +91,14 @@ pub lawless class Reducible[t: Type -> Type] {
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
-    pub def count(f: a -> Bool, t: t[a]): Int32 = ???
+    pub def count(f: a -> Bool, t: t[a]): Int32 =
+        Reducible.reduceMap(a -> if (f(a)) 1 else 0, t)
 
     ///
     /// Returns the number of elements in `t`.
     ///
-    pub def length(t: t[a]): Int32 = ???
+    pub def length(t: t[a]): Int32 =
+        Reducible.reduceMap(_ -> 1, t)
 
     ///
     /// Returns the sum of all elements in `t`.

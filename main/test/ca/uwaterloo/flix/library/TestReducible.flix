@@ -207,4 +207,50 @@ namespace TestReducible {
     def last03(): Bool =
         Reducible.last(Nel(1, 2 :: 3 :: Nil)) == 3
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // count                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def count01(): Bool =
+        Reducible.count(i -> i > 3, Nel(1, Nil)) == 0
+
+    @test
+    def count02(): Bool =
+        Reducible.count(i -> i > 3, Nel(4, Nil)) == 1
+
+    @test
+    def count03(): Bool =
+        Reducible.count(i -> i > 3, Nel(1, 2 :: Nil)) == 0
+
+    @test
+    def count04(): Bool =
+        Reducible.count(i -> i > 3, Nel(1, 8 :: Nil)) == 1
+
+    @test
+    def count05(): Bool =
+        Reducible.count(i -> i > 3, Nel(8, 1 :: Nil)) == 1
+
+    @test
+    def count06(): Bool =
+        Reducible.count(i -> i > 3, Nel(6, 7 :: Nil)) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // length                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def length01(): Bool =
+        Reducible.length(Nel(1, Nil)) == 1
+
+    @test
+    def length02(): Bool =
+        Reducible.length(Nel(1, 2 :: Nil)) == 2
+
+    @test
+    def length03(): Bool =
+        Reducible.length(Nel(1, 2 :: 3 :: Nil)) == 3
+
 }
