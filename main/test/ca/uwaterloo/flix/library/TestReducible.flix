@@ -32,6 +32,22 @@ namespace TestReducible {
     def reduceLeft03(): Bool =
         Reducible.reduceLeft((acc, a) -> acc + a, Nel("a", "b" :: "c" :: Nil)) == "abc"
 
+    @test
+    def reduceLeft04(): Bool =
+        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a rem 2) + 1), Nel(100, Nil)) == 100
+
+    @test
+    def reduceLeft05(): Bool =
+        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a rem 2) + 1), Nel(100, 1 :: Nil)) == 198
+
+    @test
+    def reduceLeft06(): Bool =
+        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a rem 2) + 1), Nel(100, 1 :: 2 :: Nil)) == 196
+
+    @test
+    def reduceLeft07(): Bool =
+        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a rem 2) + 1), Nel(100, 1 :: 2 :: 3 :: Nil)) == 386
+
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceRight                                                             //
@@ -48,6 +64,22 @@ namespace TestReducible {
     @test
     def reduceRight03(): Bool =
         Reducible.reduceRight((a, acc) -> a + acc, Nel("a", "b" :: "c" :: Nil)) == "abc"
+
+    @test
+    def reduceRight04(): Bool =
+        Reducible.reduceRight((a, acc) -> (acc - a) * ((a rem 2) + 1), Nel(100, Nil)) == 100
+
+    @test
+    def reduceRight05(): Bool =
+        Reducible.reduceRight((a, acc) -> (acc - a) * ((a rem 2) + 1), Nel(1, 100 :: Nil)) == 198
+
+    @test
+    def reduceRight06(): Bool =
+        Reducible.reduceRight((a, acc) -> (acc - a) * ((a rem 2) + 1), Nel(1, 2 :: 100 :: Nil)) == 194
+
+    @test
+    def reduceRight07(): Bool =
+        Reducible.reduceRight((a, acc) -> (acc - a) * ((a rem 2) + 1), Nel(1, 2 :: 3 :: 100 :: Nil)) == 382
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -100,6 +132,18 @@ namespace TestReducible {
     def foldLeft03(): Bool =
         Reducible.foldLeft((acc, a) -> acc + a, "", Nel("a", "b" :: "c" :: Nil)) == "abc"
 
+    @test
+    def foldLeft04(): Bool =
+        Reducible.foldLeft((acc, a) -> (acc - a) * ((a rem 2) + 1), 100, Nel(1, Nil)) == 198
+
+    @test
+    def foldLeft05(): Bool =
+        Reducible.foldLeft((acc, a) -> (acc - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: Nil)) == 196
+
+    @test
+    def foldLeft06(): Bool =
+        Reducible.foldLeft((acc, a) -> (acc - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: 3 :: Nil)) == 386
+
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
@@ -116,5 +160,17 @@ namespace TestReducible {
     @test
     def foldRight03(): Bool =
         Reducible.foldRight((a, acc) -> a + acc, "", Nel("a", "b" :: "c" :: Nil)) == "abc"
+
+    @test
+    def foldRight04(): Bool =
+        Reducible.foldRight((a, acc) -> (acc - a) * ((a rem 2) + 1), 100, Nel(1, Nil)) == 198
+
+    @test
+    def foldRight05(): Bool =
+        Reducible.foldRight((a, acc) -> (acc - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: Nil)) == 194
+
+    @test
+    def foldRight06(): Bool =
+        Reducible.foldRight((a, acc) -> (acc - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: 3 :: Nil)) == 382
 
 }
