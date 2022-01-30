@@ -173,4 +173,38 @@ namespace TestReducible {
     def foldRight06(): Bool =
         Reducible.foldRight((a, acc) -> (acc - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: 3 :: Nil)) == 382
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // head                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def head01(): Bool =
+        Reducible.head(Nel(1, Nil)) == 1
+
+    @test
+    def head02(): Bool =
+        Reducible.head(Nel(2, 1 :: Nil)) == 2
+
+    @test
+    def head03(): Bool =
+        Reducible.head(Nel(3, 2 :: 1 :: Nil)) == 3
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // last                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def last01(): Bool =
+        Reducible.last(Nel(1, Nil)) == 1
+
+    @test
+    def last02(): Bool =
+        Reducible.last(Nel(1, 2 :: Nil)) == 2
+
+    @test
+    def last03(): Bool =
+        Reducible.last(Nel(1, 2 :: 3 :: Nil)) == 3
+
 }
