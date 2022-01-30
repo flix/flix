@@ -33,7 +33,26 @@ pub enum MutDeque[a] {
 
 instance Iterable[MutDeque] {
     pub def iterator(t: MutDeque[a]): Iterator[a] & Impure =
-        t |> MutDeque.toList |> List.toIterator
+        let MutDeque(a, f, b) = t;
+        let len = Array.length(deref a);
+        let copy = deref a;
+        let i = f;
+
+        let done = () -> (deref i) == deref b;
+        let next = () -> {
+            if (deref i != deref b) {
+                let j = {
+                    if (deref i == len) 0
+                    else deref i
+                };
+                let x = copy[j];
+                i := j + 1;
+                x
+            } else {
+                bug!("Empty Iterator!")
+            }
+        };
+        Iterator(done, next)
 }
 
 namespace MutDeque {
