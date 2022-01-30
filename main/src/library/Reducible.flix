@@ -77,6 +77,16 @@ pub lawless class Reducible[t: Type -> Type] {
         Reducible.reduceRightTo(f, a -> f(a, s), t)
 
     ///
+    /// Returns the first element of `t`.
+    ///
+    pub def head(t: t[a]): a = ???
+
+    ///
+    /// Returns the last element of `t`.
+    ///
+    pub def last(t: t[a]): a = ???
+
+    ///
     /// Returns `t` as a non-empty list.
     ///
     pub def toNel(t: t[a]): Nel[a] = ???
