@@ -810,6 +810,7 @@ namespace RedBlackTree {
 
     ///
     /// Returns an iterator over `t`.
+    /// TODO : rewrite to not use `toList`.
     ///
     pub def toIterator(t: RedBlackTree[k, v]): Iterator[(k, v)] & Impure =
         t |> RedBlackTree.toList |> List.toIterator
