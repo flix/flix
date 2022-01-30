@@ -89,6 +89,7 @@ instance SemiGroup[List[a]] {
 
 instance Monoid[List[a]] {
     pub def empty(): List[a] = Nil
+}
 
 instance Iterable[List] {
     pub def iterator(t: List[a]): Iterator[a] & Impure =
