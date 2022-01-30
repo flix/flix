@@ -80,6 +80,10 @@ instance Reducible[Nel] {
     pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = Nel.reduceRightTo(f, g, l)
 }
 
+instance SemiGroup[Nel[a]] {
+    pub def combine(x: Nel[a], y: Nel[a]): Nel[a] = Nel.append(x, y)
+}
+
 namespace Nel {
 
     ///
