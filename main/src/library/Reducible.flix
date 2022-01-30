@@ -89,24 +89,14 @@ pub lawless class Reducible[t: Type -> Type] {
         Reducible.reduceRight((_, acc) -> acc, t) // Could use reduceLeft w. lambda (_, a) -> a
 
     ///
-    /// Returns `t` as a non-empty list.
-    ///
-    pub def toNel(t: t[a]): Nel[a] = ???
-
-    ///
-    /// Returns `t` as a list.
-    ///
-    pub def toList(t: t[a]): List[a] = ???
-
-    ///
-    /// Returns `t` as a set.
-    ///
-    pub def toSet(t: t[a]): Set[a] with Order[a] = ???
-
-    ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
     pub def count(f: a -> Bool, t: t[a]): Int32 = ???
+
+    ///
+    /// Returns the number of elements in `t`.
+    ///
+    pub def length(t: t[a]): Int32 = ???
 
     ///
     /// Returns the sum of all elements in `t`.
@@ -172,5 +162,20 @@ pub lawless class Reducible[t: Type -> Type] {
     /// Finds the largest element of `t` according to the given comparator `cmp`.
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison & ef, t: t[a]): a = ???
+
+    ///
+    /// Returns `t` as a non-empty list.
+    ///
+    pub def toNel(t: t[a]): Nel[a] = ???
+
+    ///
+    /// Returns `t` as a list.
+    ///
+    pub def toList(t: t[a]): List[a] = ???
+
+    ///
+    /// Returns `t` as a set.
+    ///
+    pub def toSet(t: t[a]): Set[a] with Order[a] = ???
 
 }
