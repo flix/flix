@@ -83,6 +83,14 @@ instance Traversable[List] {
     pub override def sequence(t: List[m[a]]): m[List[a]] with Applicative[m] = List.sequence(t)
 }
 
+instance SemiGroup[List[a]] {
+    pub def combine(x: List[a], y: List[a]): List[a] = x ::: y
+}
+
+instance Monoid[List[a]] {
+    pub def empty(): List[a] = Nil
+}
+
 namespace List {
 
     ///
@@ -1158,6 +1166,13 @@ namespace List {
     ///
     pub def join(sep: String, l: List[a]): String with ToString[a] =
         Foldable.join(sep, l)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `l` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: a -> String & ef, sep: String, l: List[a]): String =
+        Foldable.joinWith(f, sep, l)
 
     ///
     /// Returns the elements of `l` as a lazy list.

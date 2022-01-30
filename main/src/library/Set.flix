@@ -54,6 +54,18 @@ instance Foldable[Set] {
     pub def foldRight(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRight(f, s, s1)
 }
 
+instance SemiGroup[Set[a]] with Order[a] {
+    pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x,y)
+}
+
+instance CommutativeSemiGroup[Set[a]] with Order[a]
+
+instance Monoid[Set[a]] with Order[a] {
+    pub def empty(): Set[a] = Set.empty()
+}
+
+instance CommutativeMonoid[Set[a]] with Order[a]
+
 namespace Set {
 
     ///
@@ -547,5 +559,12 @@ namespace Set {
     ///
     pub def join(sep: String, s: Set[a]): String with ToString[a] =
         Foldable.join(sep, s)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `s` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: a -> String & ef, sep: String, s: Set[a]): String =
+        Foldable.joinWith(f, sep, s)
 
 }

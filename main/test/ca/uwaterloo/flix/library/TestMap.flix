@@ -2282,6 +2282,27 @@ def query18(): Bool =
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // joinKeys                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinKeys01(): Bool =
+        Map.empty(): Map[Int32, Int32] |> Map.joinKeys(",") == ""
+
+    @test
+    def joinKeys02(): Bool =
+        Map#{1 => 1} |> Map.joinKeys(",") == "1"
+
+    @test
+    def joinKeys03(): Bool =
+        Map#{0 => 1, 1 => 2, 2 => 2} |> Map.joinKeys(",") == "0,1,2"
+
+    @test
+    def joinKeys04(): Bool =
+        Map#{"0" => 1, "1" => 2, "2" => 2} |> Map.joinKeys(",") == "0,1,2"
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // joinValues                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -2303,23 +2324,26 @@ def query18(): Bool =
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // joinKeys                                                                //
+    // joinWith                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def joinKeys01(): Bool =
-        Map.empty(): Map[Int32, Int32] |> Map.joinKeys(",") == ""
+    def joinWith01(): Bool =
+        Map.empty(): Map[Int32, Int32] |> Map.joinWith((k, v) -> "${k} => ${v}", ",") == ""
 
     @test
-    def joinKeys02(): Bool =
-        Map#{1 => 1} |> Map.joinKeys(",") == "1"
+    def joinWith02(): Bool =
+        Map#{1 => 1} |>
+            Map.joinWith((k, v) -> "${k} => ${v}", ", ") == "1 => 1"
 
     @test
-    def joinKeys03(): Bool =
-        Map#{0 => 1, 1 => 2, 2 => 2} |> Map.joinKeys(",") == "0,1,2"
+    def joinWith03(): Bool =
+        Map#{0 => 1, 1 => 2, 2 => 2} |>
+            Map.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
 
     @test
-    def joinKeys04(): Bool =
-        Map#{"0" => 1, "1" => 2, "2" => 2} |> Map.joinKeys(",") == "0,1,2"
+    def joinWith04(): Bool =
+        Map#{0 => "1", 1 => "2", 2 => "2"} |>
+            Map.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
 
 }
