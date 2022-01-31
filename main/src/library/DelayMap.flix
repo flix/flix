@@ -20,11 +20,6 @@ pub enum DelayMap[k, v] {
     case DMap(RedBlackTree[k, Lazy[v]])
 }
 
-instance Iterable[DelayMap[k]] {
-    pub def iterator(t: DelayMap[k, a]): Iterator[a] & Impure =
-        t |> DelayMap.valuesOf |> List.toIterator
-}
-
 namespace DelayMap {
 
     ///

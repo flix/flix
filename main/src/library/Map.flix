@@ -77,11 +77,6 @@ instance Monoid[Map[k, v]] with Order[k], Monoid[v] {
 
 instance CommutativeMonoid[Map[k, v]] with Order[k], CommutativeMonoid[v]
 
-instance Iterable[Map[k]] {
-    pub def iterator(t: Map[k, a]): Iterator[a] & Impure =
-        t |> Map.valuesOf |> List.toIterator
-}
-
 namespace Map {
 
     ///
