@@ -15,6 +15,9 @@
  */
 namespace File {
 
+    ///
+    /// File types.
+    ///
     enum FileType with Eq, Order, ToString {
         case File,
         case Directory,
@@ -47,6 +50,9 @@ namespace File {
     ///
     pub def fileType(f: String): Result[FileType, String] = ???
 
+    ///
+    /// Statistical information for a file.
+    ///
     type alias StatInfo = {
         accessTime :: Int64,
         creationTime :: Int64,
@@ -56,7 +62,7 @@ namespace File {
     }
 
     ///
-    /// Returns the statistics of the given file `f`.
+    /// Returns the file statistics of the given file `f`.
     ///
     pub def stat(f: String): Result[StatInfo, String] = ???
 
