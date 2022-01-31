@@ -66,11 +66,6 @@ instance Monoid[Set[a]] with Order[a] {
 
 instance CommutativeMonoid[Set[a]] with Order[a]
 
-instance Iterable[Set] {
-    pub def iterator(t: Set[a]): Iterator[a] & Impure =
-        Set.toIterator(t)
-}
-
 namespace Set {
 
     ///
@@ -554,6 +549,7 @@ namespace Set {
 
     ///
     /// Returns an iterator over `s`.
+    /// TODO: rewrite to not use `toList`.
     ///
     pub def toIterator(s: Set[a]): Iterator[a] & Impure =
         List.toIterator(Set.toList(s))
