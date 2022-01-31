@@ -75,6 +75,11 @@ instance Traversable[Nel] {
     pub override def sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
 }
 
+instance Iterable[Nel] {
+    pub def iterator(t: Nel[a]): Iterator[a] & Impure =
+        Nel.toIterator(t)
+}
+
 namespace Nel {
 
     ///

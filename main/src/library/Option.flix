@@ -94,6 +94,11 @@ instance Monoid[Option[a]] with Monoid[a] {
 
 instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
 
+instance Iterable[Option] {
+    pub def iterator(t: Option[a]): Iterator[a] & Impure =
+        Option.toIterator(t)
+}
+
 namespace Option {
 
     ///

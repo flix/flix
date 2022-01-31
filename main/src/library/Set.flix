@@ -549,6 +549,7 @@ namespace Set {
 
     ///
     /// Returns an iterator over `s`.
+    /// TODO: rewrite to not use `toList`.
     ///
     pub def toIterator(s: Set[a]): Iterator[a] & Impure =
         List.toIterator(Set.toList(s))
