@@ -13,6 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+instance Iterable[Array] {
+    pub def iterator(t: Array[a]): Iterator[a] & Impure =
+        Array.toIterator(t)
+}
+
 namespace Array {
 
     ///
