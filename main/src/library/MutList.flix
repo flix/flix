@@ -21,10 +21,9 @@ pub enum MutList[a] {
     case MutList(Ref[Array[a]], Ref[Int32])
 }
 
-/// TODO: change implementation.
 instance Iterable[MutList] {
     pub def iterator(t: MutList[a]): Iterator[a] & Impure =
-        t |> MutList.toList |> List.toIterator
+        t |> MutList.toArray |> Array.toIterator
 }
 
 namespace MutList {
