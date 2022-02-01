@@ -21,6 +21,24 @@ pub enum MutList[a] {
     case MutList(Ref[Array[a]], Ref[Int32])
 }
 
+instance Iterable[MutList] {
+    pub def iterator(t: MutList[a]): Iterator[a] & Impure =
+        let MutList(a, l) = t;
+        let i = ref 0;
+        let done = () -> deref i == deref l;
+        let next = () -> {
+                if (deref i != deref l) {
+                    let elem = Array.get(deref i, deref a);
+                    i := deref i + 1;
+                    elem
+                }
+                else {
+                    bug!("Empty Iterator!")
+                }
+            };
+        Iterator(done, next)
+}
+
 namespace MutList {
 
     ///

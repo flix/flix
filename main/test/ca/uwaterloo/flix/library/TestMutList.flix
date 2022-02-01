@@ -1793,4 +1793,56 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,
     def joinWith04(): Bool & Impure =
         List.toMutList("1" :: "2" :: "3" :: Nil) |> MutList.joinWith(x -> x + x, ",") == "11,22,33"
 
+    /////////////////////////////////////////////////////////////////////////////
+    // iterator                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def iterator01(): Bool & Impure =
+        let m = MutList.new();
+        match Iterable.iterator(m) {
+            case Iterator(done, _) => done()
+        }
+
+    @test
+    def iterator02(): Bool & Impure =
+        let m = MutList.new();
+        MutList.push!(1, m);
+        match Iterable.iterator(m) {
+            case Iterator(done, _) => not done()
+        }
+
+    @test
+    def iterator03(): Bool & Impure =
+        let m = MutList.new();
+        MutList.push!(1, m);
+        match Iterable.iterator(m) {
+            case Iterator(_, next) => next() == 1
+        }
+
+    @test
+    def iterator04(): Bool & Impure =
+        let m = MutList.new();
+        MutList.push!(1, m);
+        MutList.push!(2, m);
+        match Iterable.iterator(m) {
+            case Iterator(done, next) => {
+                next();
+                next();
+                done()
+            }
+        }
+
+    @test
+    def iterator05(): Bool & Impure =
+        let m = MutList.new();
+        MutList.push!(1, m);
+        MutList.push!(2, m);
+        match Iterable.iterator(m) {
+            case Iterator(_, next) => {
+                next();
+                next() == 2
+            }
+        }
+
 }
