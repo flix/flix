@@ -84,6 +84,11 @@ pub lawless class Reducible[t: Type -> Type] {
         Reducible.reduceLeft((acc, _) -> acc, t)
 
     ///
+    /// Returns the tail of `t`.
+    ///
+    pub def tail(t: t[a]): a = ???
+
+    ///
     /// Returns the last element of `t`.
     ///
     pub def last(t: t[a]): a =
@@ -99,7 +104,7 @@ pub lawless class Reducible[t: Type -> Type] {
     /// Returns the number of elements in `t`.
     ///
     pub def length(t: t[a]): Int32 =
-        Reducible.reduceMap(_ -> 1, t)
+        Reducible.foldLeft((acc, _) -> 1 + acc, 0, t )
 
     ///
     /// Returns the sum of all elements in `t`.
@@ -132,6 +137,18 @@ pub lawless class Reducible[t: Type -> Type] {
     pub def forall(f: a -> Bool & ef, t: t[a]): Bool = ???
 
     ///
+    /// Applies `f` to each element in `t`.
+    ///
+    pub def foreach(f: a -> Unit & ef, t: t[a]): Unit = ???
+
+    ///
+    /// Alias for `findLeft`.
+    ///
+    /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from left to right.
+    ///
+    pub def find(f: a -> Bool & ef, t: t[a]): Option[a] = ???
+
+    ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from left to right.
     ///
     pub def findLeft(f: a -> Bool & ef, t: t[a]): Option[a] = ???
@@ -144,7 +161,7 @@ pub lawless class Reducible[t: Type -> Type] {
     ///
     /// Returns `true` if and only if the element `x` is in `t`.
     ///
-    pub def memberOf(x: a, t: t[a]): Bool with Eq[a] = ???
+    pub def memberOf(a: a, t: t[a]): Bool with Eq[a] = ???
 
     ///
     /// Finds the smallest element of `t` according to the `Order` on `a`.
@@ -165,6 +182,21 @@ pub lawless class Reducible[t: Type -> Type] {
     /// Finds the largest element of `t` according to the given comparator `cmp`.
     ///
     pub def maximumBy(cmp: (a, a) -> Comparison & ef, t: t[a]): a = ???
+
+    ///
+    /// Returns `t` as a list without the longest prefix that satisfies the predicate `f`.
+    ///
+    pub def dropWhile(f: a -> Bool & ef, t: t[a]): List[a] = ???
+
+    ///
+    /// Returns the longest prefix of `t` as a list that satisfies the predicate `f`.
+    ///
+    pub def takeWhile(f: a -> Bool & ef, t: t[a]): List[a] = ???
+
+    ///
+    /// Returns `t` as a list with `a` inserted between every two adjacent elements.
+    ///
+    pub def intersperse(a: a, t: t[a]): List[a] = ???
 
     ///
     /// Returns `t` as a non-empty list.
