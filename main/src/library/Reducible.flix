@@ -84,7 +84,7 @@ pub lawless class Reducible[t: Type -> Type] {
     ///
     /// Returns the last element of `t`.
     ///
-    pub def last(t: t[a]): a = ???
+    pub def last(t: t[a]): t[a] = ???
 
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
