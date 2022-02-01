@@ -14,9 +14,6 @@
  *  limitations under the License.
  */
 
-// This type class is inspired by the Cats implementation of Reducible:
-// https://github.com/typelevel/cats/blob/main/core/src/main/scala/cats/Reducible.scala
-
 ///
 /// A type class for types that can be reduced to a summary value.
 ///
@@ -79,7 +76,12 @@ pub lawless class Reducible[t: Type -> Type] {
     ///
     /// Returns the tail of `t`.
     ///
-    pub def tail(t: t[a]): t[a] = ???
+    pub def tail(t: t[a]): List[a] = ???
+
+    ///
+    /// Returns the last element of `t`.
+    ///
+    pub def last(t: t[a]): a = ???
 
     ///
     /// Returns the last element of `t`.
