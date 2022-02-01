@@ -55,7 +55,7 @@ pub lawless class Reducible[t: Type -> Type] {
     /// Reduce `t` using the derived `SemiGroup` instance.
     ///
     pub def reduce(t: t[a]): a with SemiGroup[a] =
-        Reducible.reduceLeft((acc, a) -> SemiGroup.combine(acc, a), t)
+        Reducible.reduceLeft(SemiGroup.combine, t)
 
     ///
     /// Applies `f` to each element of `t` and combines them using the derived `SemiGroup` instance.
