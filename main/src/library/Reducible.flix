@@ -42,46 +42,39 @@ pub lawless class Reducible[t: Type -> Type] {
     ///
     /// Left-associative reduction on `t` using `f`.
     ///
-    pub def reduceLeft(f: (a, a) -> a & ef, t: t[a]): a & ef =
-        Reducible.reduceLeftTo(f, identity, t)
+    pub def reduceLeft(f: (a, a) -> a & ef, t: t[a]): a = ???
 
     ///
     /// Right-associative reduction on `t` using `f`.
     ///
-    pub def reduceRight(f: (a, a) -> a & ef, t: t[a]): a & ef =
-        Reducible.reduceRightTo(f, identity, t)
+    pub def reduceRight(f: (a, a) -> a & ef, t: t[a]): a = ???
 
     ///
     /// Reduce `t` using the derived `SemiGroup` instance.
     ///
-    pub def reduce(t: t[a]): a with SemiGroup[a] =
-        Reducible.reduceLeft(SemiGroup.combine, t)
+    pub def reduce(t: t[a]): a with SemiGroup[a] = ???
 
     ///
     /// Applies `f` to each element of `t` and combines them using the derived `SemiGroup` instance.
     ///
-    pub def reduceMap(f: a -> b & ef, t: t[a]): b & ef with SemiGroup[b] =
-        Reducible.reduceLeftTo((b, a) -> SemiGroup.combine(b, f(a)), f, t)
+    pub def reduceMap(f: a -> b & ef, t: t[a]): b with SemiGroup[b] = ???
 
     ///
     /// Left-associative fold of a structure.
     /// Applies `f` to a start value `s` and all elements in `t` going from left to right.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, t: t[a]): b & ef =
-        Reducible.reduceLeftTo(f, a -> f(s, a), t)
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, t: t[a]): b = ???
 
     ///
     /// Right-associative fold of a structure.
     /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, t: t[a]): b & ef =
-        Reducible.reduceRightTo(f, a -> f(a, s), t)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, t: t[a]): b = ???
 
     ///
     /// Returns the first element of `t`.
     ///
-    pub def head(t: t[a]): a =
-        Reducible.reduceLeft((acc, _) -> acc, t)
+    pub def head(t: t[a]): a = ???
 
     ///
     /// Returns the tail of `t`.
@@ -91,20 +84,17 @@ pub lawless class Reducible[t: Type -> Type] {
     ///
     /// Returns the last element of `t`.
     ///
-    pub def last(t: t[a]): a =
-        Reducible.reduceRight((_, acc) -> acc, t) // Could use reduceLeft w. lambda (_, a) -> a
+    pub def last(t: t[a]): a = ???
 
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
-    pub def count(f: a -> Bool, t: t[a]): Int32 =
-        Reducible.reduceMap(a -> if (f(a)) 1 else 0, t)
+    pub def count(f: a -> Bool, t: t[a]): Int32 = ???
 
     ///
     /// Returns the number of elements in `t`.
     ///
-    pub def length(t: t[a]): Int32 =
-        Reducible.foldLeft((acc, _) -> 1 + acc, 0, t )
+    pub def length(t: t[a]): Int32 = ???
 
     ///
     /// Returns the sum of all elements in `t`.

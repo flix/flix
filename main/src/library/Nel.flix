@@ -75,14 +75,6 @@ instance Traversable[Nel] {
     pub override def sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
 }
 
-instance Reducible[Nel] {
-    pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = Nel.reduceLeftTo(f, g, l)
-    pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = Nel.reduceRightTo(f, g, l)
-}
-
-instance SemiGroup[Nel[a]] {
-    pub def combine(x: Nel[a], y: Nel[a]): Nel[a] = Nel.append(x, y)
-
 instance Iterable[Nel] {
     pub def iterator(t: Nel[a]): Iterator[a] & Impure =
         Nel.toIterator(t)
