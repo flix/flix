@@ -82,6 +82,10 @@ instance Reducible[Nel] {
 
 instance SemiGroup[Nel[a]] {
     pub def combine(x: Nel[a], y: Nel[a]): Nel[a] = Nel.append(x, y)
+
+instance Iterable[Nel] {
+    pub def iterator(t: Nel[a]): Iterator[a] & Impure =
+        Nel.toIterator(t)
 }
 
 namespace Nel {
