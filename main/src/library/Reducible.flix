@@ -14,13 +14,14 @@
  *  limitations under the License.
  */
 
+// This type class is inspired by the Cats implementation of Reducible:
+// https://github.com/typelevel/cats/blob/main/core/src/main/scala/cats/Reducible.scala
+
 ///
 /// A type class for types that can be reduced to a summary value.
 ///
 /// `Reducible` is like a non-empty `Foldable` and may only be implemented on non-empty data structures.
 ///
-/// This type class is heavily inspired by the Cats implementation of Reducible:
-/// https://github.com/typelevel/cats/blob/main/core/src/main/scala/cats/Reducible.scala
 ///
 pub lawless class Reducible[t: Type -> Type] {
 
