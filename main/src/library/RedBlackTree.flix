@@ -846,7 +846,7 @@ namespace RedBlackTree {
                         MutDeque.pushBack(b, deref stack);
                         k1
                     }
-                    case _ => bug!("Empty Iterator!")
+                    case _                          => bug!("An error occured.")
                 }
             }
         };
