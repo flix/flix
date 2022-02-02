@@ -608,4 +608,50 @@ namespace TestRedBlackTree {
         let Map(t) = Map#{0 => "1", 1 => "2", 2 => "2"};
         RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ", ", t) == "0 => 1, 1 => 2, 2 => 2"
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toIteratorKeys                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toIteratorKeys01(): Bool & Impure =
+        let tree = RedBlackTree.empty();
+        match RedBlackTree.toIteratorKeys(tree) {
+            case Iterator(done, _) => done()
+        }
+
+    @test
+    def toIteratorKeys02(): Bool & Impure =
+        let tree = RedBlackTree.empty() |> RedBlackTree.insert(1, 2);
+        match RedBlackTree.toIteratorKeys(tree) {
+            case Iterator(done, _) => done() == false
+        }
+
+    @test
+    def toIteratorKeys03(): Bool & Impure =
+        let tree = RedBlackTree.empty() |> RedBlackTree.insert(1, 2);
+        match RedBlackTree.toIteratorKeys(tree) {
+            case Iterator(_, next) => next() == 1
+        }
+
+    @test
+    def toIteratorKeys04(): Bool & Impure =
+        use RedBlackTree.insert;
+        let tree = RedBlackTree.empty() |> insert(1, 2) |> insert(5, 6) |> insert(4, 2) |> insert(7, 1) |> insert(10, 3);
+        match RedBlackTree.toIteratorKeys(tree) {
+            case Iterator(_, next) => next() == 4
+        }
+
+    @test
+    def toIteratorKeys05(): Bool & Impure =
+        use RedBlackTree.insert;
+        let tree = RedBlackTree.empty() |> insert(1, 2) |> insert(5, 6) |> insert(4, 2) |> insert(7, 1) |> insert(10, 3);
+        match RedBlackTree.toIteratorKeys(tree) {
+            case Iterator(_, next) => {
+                next();
+                next();
+                next();
+                next() == 5
+            }
+        }
+
 }
