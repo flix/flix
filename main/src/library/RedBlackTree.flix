@@ -816,6 +816,7 @@ namespace RedBlackTree {
 
     ///
     /// Returns an iterator over the keys in `t`.
+    /// Using preorder tree walk.
     ///
     pub def toIteratorKeys(t: RedBlackTree[k, v]): Iterator[k] & Impure =
         let subTree = ref t;
