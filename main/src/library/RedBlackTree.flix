@@ -818,60 +818,38 @@ namespace RedBlackTree {
     /// Returns an iterator over the keys in `t`.
     ///
     pub def toIteratorKeys(t: RedBlackTree[k, v]): Iterator[k] & Impure =
-        let stack = ref Nil: List[(RedBlackTree[k, v], Bool)];
-        let begun = ref false;
-
-        let done = () -> deref begun and List.isEmpty(deref stack);
+        let subTree = ref t;
+        let stack = ref MutDeque.new();
+        let done = () -> MutDeque.isEmpty(deref stack) and RedBlackTree.isEmpty(deref subTree);
         let next = () -> {
-            if (done()) {
-                bug!("Empty Iterator!")
-            }
+            if (done()) bug!("Empty Iterator!")
             else {
-                begun := true;
-                match deref stack {
-                    case Nil => match toIteratorKeysHelper(t, deref stack) {
-                        case Some((Node(_, _, k1, _, b), _) :: xs) => {
-                            match b {
-                                case Node(_, _, _, _, _) => stack := (b, true) :: xs
-                                case _                   => stack := xs
-                            };
-                            k1
-                        }
-                        case _                                     => bug!("")
+                match deref subTree {
+                    case Leaf                       => bug!("Empty Iterator!")
+                    case Node(_, Leaf, k1, _, Leaf) => {
+                        match MutDeque.popBack(deref stack) {
+                            case Some(tree) => subTree := tree
+                            case None       => subTree := Leaf
+                        };
+                        k1
                     }
-                    case (x, r) :: xs =>
-                        if (r) {
-                            match toIteratorKeysHelper(x, xs) {
-                                case Some((Node(_, _, k1, _, b), _) :: ys) => {
-                                    match b {
-                                        case Node(_, _, _, _, _) => stack := (b, true) :: ys
-                                        case _                   => stack := ys
-                                    };
-                                    k1
-                                }
-                                case _                                     => bug!("")
-                            }
-                        } else {
-                            match x {
-                                case Node(_, _, k1, _, b) =>
-                                    match b {
-                                        case Node(_, _, _, _, _) => stack := (b, true) :: xs
-                                        case _                   => stack := xs
-                                    };
-                                    k1
-                                case _                    => bug!("")
-                            }
-                        }
+                    case Node(_, Leaf, k1, _, b)    => {
+                        subTree := b;
+                        k1
+                    }
+                    case Node(_, a, k1, _, Leaf)    => {
+                        subTree := a;
+                        k1
+                    }
+                    case Node(_, a, k1, _, b)       => {
+                        subTree := a;
+                        MutDeque.pushBack(b, deref stack);
+                        k1
+                    }
+                    case _ => bug!("Empty Iterator!")
                 }
             }
         };
         Iterator(done, next)
-
-        def toIteratorKeysHelper(t: RedBlackTree[k, v], acc: List[(RedBlackTree[k, v], Bool)]): Option[List[(RedBlackTree[k, v], Bool)]] =
-            match t {
-                case Node(_, Leaf, _, _, _) => Some((t, false) :: acc)
-                case Node(_, a,    _, _, _) => toIteratorKeysHelper(a, (t, false) :: acc)
-                case _                      => None
-            }
 
 }
