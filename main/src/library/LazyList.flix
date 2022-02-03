@@ -567,9 +567,9 @@ namespace LazyList {
         map(e -> if (from.from == e) to.to else e, l)
 
     ///
-    /// Returns `xs` with `a` inserted between every two adjacent elements.
+    /// Returns `l` with `x` inserted between every two adjacent elements.
     ///
-    /// Forces the first element of the tail of `l2` unless that tail is an `LList`.
+    /// Forces the first element of the tail of `l` unless that tail is an `LList`.
     ///
     @Experimental @Lazy
     pub def intersperse(x: a, l: LazyList[a]): LazyList[a] = match l {
