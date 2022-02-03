@@ -168,6 +168,17 @@ namespace LazyList {
     }
 
     ///
+    /// Returns a LazyList with the first element of `l`.
+    ///
+    @Experimental
+    pub def init(l: LazyList[a]): LazyList[a] = match l {
+        case ENil        => ENil
+        case ECons(x, _) => ECons(x, ENil)
+        case LCons(x, _) => ECons(x, ENil)
+        case LList(xs)   => LList(lazy init(force xs))
+    }
+
+    ///
     /// Returns `l` without the first element.
     ///
     @Experimental
