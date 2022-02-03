@@ -816,41 +816,34 @@ namespace RedBlackTree {
 
     ///
     /// Returns an iterator over the keys in `t`.
-    /// Using preorder tree walk.
     ///
     pub def toIteratorKeys(t: RedBlackTree[k, v]): Iterator[k] & Impure =
         let subTree = ref t;
-        let stack = ref MutDeque.new();
-        let done = () -> MutDeque.isEmpty(deref stack) and RedBlackTree.isEmpty(deref subTree);
+        let stack = ref Nil;
+        let done = () -> List.isEmpty(deref stack) and RedBlackTree.isEmpty(deref subTree);
         let next = () -> {
             if (done()) bug!("Empty Iterator!")
             else {
-                match deref subTree {
-                    case Leaf                       => bug!("Empty Iterator!")
-                    case Node(_, Leaf, k1, _, Leaf) => {
-                        match MutDeque.popBack(deref stack) {
-                            case Some(tree) => subTree := tree
-                            case None       => subTree := Leaf
-                        };
-                        k1
-                    }
-                    case Node(_, Leaf, k1, _, b)    => {
+                match helper(deref subTree, deref stack) {
+                    case None                => bug!("Empty Iterator!")
+                    case Some(Nil)           => bug!("Empty Iterator!")
+                    case Some((k1, b) :: xs) => {
                         subTree := b;
+                        stack := xs;
                         k1
                     }
-                    case Node(_, a, k1, _, Leaf)    => {
-                        subTree := a;
-                        k1
-                    }
-                    case Node(_, a, k1, _, b)       => {
-                        subTree := a;
-                        MutDeque.pushBack(b, deref stack);
-                        k1
-                    }
-                    case _                          => bug!("An error occured.")
                 }
             }
         };
         Iterator(done, next)
+
+    def helper(t: RedBlackTree[k, v], acc: List[(k, RedBlackTree[k, v])]): Option[List[(k, RedBlackTree[k, v])]] & Impure =
+        match t {
+            case Leaf                       => Some(acc)
+            case Node(_, Leaf, k1, _, b)    => Some((k1, b) :: acc)
+            case Node(_, a, k1, _, b)       => helper(a, (k1, b) :: acc)
+            case _                          => None
+        }
+
 
 }
