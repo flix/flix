@@ -211,7 +211,7 @@ namespace LazyList {
     ///
     /// Returns `l2` appended to `l1`.
     ///
-    /// Does not force the tail of `l`.
+    /// Does not force the tail of `l1`.
     ///
     @Lazy @Experimental
     pub def append(l1: LazyList[a], l2: LazyList[a]): LazyList[a] = match l1 {
