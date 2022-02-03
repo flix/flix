@@ -17,7 +17,6 @@
 
 package ca.uwaterloo.flix.language.debug
 
-import ca.uwaterloo.flix.language.ast.Kind.Bool
 import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -288,7 +287,12 @@ object FormatType {
       }
     }
 
-    visit(tpe)
+    // TODO: Until the new formatter arrives we do this:
+    try {
+      visit(tpe)
+    } catch {
+      case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
+    }
   }
 
   /**
