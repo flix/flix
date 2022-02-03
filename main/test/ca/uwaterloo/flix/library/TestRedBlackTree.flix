@@ -628,30 +628,9 @@ namespace TestRedBlackTree {
 
     @test
     def toIteratorKeys03(): Bool & Impure =
-        let tree = RedBlackTree.empty() |> RedBlackTree.insert(1, 2);
-        match RedBlackTree.toIteratorKeys(tree) {
-            case Iterator(_, next) => next() == 1
-        }
-
-    @test
-    def toIteratorKeys04(): Bool & Impure =
         use RedBlackTree.insert;
-        let tree = RedBlackTree.empty() |> insert(1, 2) |> insert(5, 6) |> insert(4, 2) |> insert(7, 1) |> insert(10, 3);
-        match RedBlackTree.toIteratorKeys(tree) {
-            case Iterator(_, next) => next() == 4
-        }
-
-    @test
-    def toIteratorKeys05(): Bool & Impure =
-        use RedBlackTree.insert;
-        let tree = RedBlackTree.empty() |> insert(1, 2) |> insert(5, 6) |> insert(4, 2) |> insert(7, 1) |> insert(10, 3);
-        match RedBlackTree.toIteratorKeys(tree) {
-            case Iterator(_, next) => {
-                next();
-                next();
-                next();
-                next() == 5
-            }
-        }
+        let tree = RedBlackTree.empty() |> insert(1, 2) |> insert(5, 6)
+                        |> insert(4, 2) |> insert(7, 1) |> insert(10, 3);
+        tree |> RedBlackTree.toIteratorKeys |> Iterator.toList == RedBlackTree.foldRight((k, _, xs) -> k :: xs, Nil, tree)
 
 }
