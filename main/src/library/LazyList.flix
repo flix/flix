@@ -402,7 +402,7 @@ namespace LazyList {
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
     def mapE(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef =
-        mapEAcc(f, l, ks -> ks)
+        mapEAcc(f, l, identity)
 
     ///
     /// Helper function for `mapE`.
@@ -463,7 +463,7 @@ namespace LazyList {
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
     def mapWithIndexE(f: (a, Int32) -> b & ef, l: LazyList[a]): LazyList[b] & ef =
-        mapWithIndexEAcc(f, l, 0, ks -> ks)
+        mapWithIndexEAcc(f, l, 0, identity)
 
     ///
     /// Helper function for `mapWithIndexE`.
@@ -524,7 +524,7 @@ namespace LazyList {
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
     def flatMapE(f: a -> LazyList[b] & ef, l: LazyList[a]): LazyList[b] & ef =
-        flatMapEAcc(f, l, ks -> ks)
+        flatMapEAcc(f, l, identity)
 
     ///
     /// Helper function for `flatMapE`.
@@ -822,7 +822,7 @@ namespace LazyList {
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
     def filterE(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
-        filterEAcc(f, l, ks -> ks)
+        filterEAcc(f, l, identity)
 
     ///
     /// Helper function for `filterE`
@@ -1054,7 +1054,7 @@ namespace LazyList {
     /// Applies `f` eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
     def takeWhileE(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
-        takeWhileEAcc(f, l, ks -> ks)
+        takeWhileEAcc(f, l, identity)
 
     ///
     /// Helper function for `takeWhileE`.
@@ -1167,7 +1167,7 @@ namespace LazyList {
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
     def filterMapE(f: a -> Option[b] & ef, l: LazyList[a]): LazyList[b] & ef =
-        filterMapEAcc(f, l, ks -> ks)
+        filterMapEAcc(f, l, identity)
 
     ///
     /// Helper function for `filterMapE`.
@@ -1245,7 +1245,7 @@ namespace LazyList {
     ///
     @Experimental
     pub def toList(l: LazyList[a]): List[a] =
-        toListAcc(l, ks -> ks)
+        toListAcc(l, identity)
 
     ///
     /// Helper function for `toList`.
