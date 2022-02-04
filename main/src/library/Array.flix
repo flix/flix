@@ -105,35 +105,30 @@ namespace Array {
     /// Returns the array `a` as a lazy list.
     ///
     pub def toLazyList(a: Array[a]): LazyList[a] & Impure =
-        LList(lazy toLazyListHelper(a, 0)) as & Impure
-
-    ///
-    /// Helper function for `toList`.
-    ///
-    def toLazyListHelper(a: Array[a], i: Int32): LazyList[a] =
-        if (i == a.length) {
-            ENil
-        } else {
-            let x = a[i] as & Pure; // TODO: Unsafe cast.
-            LCons(x, lazy toLazyListHelper(a, i + 1))
-        }
+        let cp = Array.copyOfRange(0, a.length, a);
+        def loop(i) = {
+            if (i == cp.length) {
+                ENil
+            } else {
+                let x = cp[i] as & Pure; // Note this cast is safe, since `cp` is a private copy of `a`.
+                LCons(x, lazy loop(i + 1))
+            }
+        };
+        LList(lazy loop(0))
 
     ///
     /// Returns the array `arr` as a chain.
     ///
     pub def toChain(arr: Array[a]): Chain[a] & Impure =
-        toChainHelper(arr, arr.length, Chain.empty())
-
-    ///
-    /// Helper function for `toChain`.
-    ///
-    def toChainHelper(a: Array[a], i: Int32, ac: Chain[a]): Chain[a] & Impure =
-        if (i == 0) {
-            ac
-        } else {
-            let x = a[i - 1];
-            toChainHelper(a, i - 1, Chain.cons(x, ac))
-        }
+        def loop(i, acc) = {
+            if (i == 0) {
+                acc
+            } else {
+                let x = arr[i - 1];
+                loop(i - 1, Chain.cons(x, acc))
+            }
+        };
+        loop(arr.length, Chain.empty())
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `a`.
@@ -159,12 +154,6 @@ namespace Array {
     ///
     @Time(length(a) + length(b)) @Space(length(a) + length(b))
     pub def append(a: Array[a], b: Array[a]): Array[a] & Impure =
-        appendHelper(a, b)
-
-    ///
-    /// Helper function for `append`.
-    ///
-    def appendHelper(a: Array[a], b: Array[a]): Array[a] & Impure =
         let len1 = length(a);
         let len2 = length(b);
         if (len1 == 0)
@@ -222,73 +211,67 @@ namespace Array {
     pub def indexOf(x: a, a: Array[a]): Option[Int32] & Impure with Eq[a] = indexOfLeft(x,a)
 
     ///
-    /// Optionally returns the position of the first occurence of `x` in `a`
+    /// Optionally returns the position of the first occurrence of `a` in `arr`
     /// searching from left to right.
     ///
-    @Time(length(a)) @Space(1)
-    pub def indexOfLeft(x: a, a: Array[a]): Option[Int32] & Impure with Eq[a] =
-        let i = indexOfLeftHelper(x, a, length(a), 0);
+    @Time(length(arr)) @Space(1)
+    pub def indexOfLeft(a: a, arr: Array[a]): Option[Int32] & Impure with Eq[a] =
+        def loop(i) = {
+            if (i >= arr.length) {
+                -1
+            } else {
+                if (arr[i] == a)
+                    i
+                else
+                    loop(i + 1)
+            }
+        };
+        let i = loop(0);
         if (i < 0) None else Some(i)
 
     ///
-    /// Helper function for `indexOfLeft`.
-    ///
-    def indexOfLeftHelper(x: a, a: Array[a], len:Int32, i: Int32): Int32 & Impure with Eq[a] =
-        if (i >= len)
-            -1
-        else
-            if (a[i] == x)
-                i
-            else
-                indexOfLeftHelper(x, a, len, i+1)
-
-    ///
-    /// Optionally returns the position of the first occurence of `x` in `a`
+    /// Optionally returns the position of the first occurence of `a` in `arr`
     /// searching from right to left.
     ///
-    @Time(length(a)) @Space(1)
-    pub def indexOfRight(x: a, a: Array[a]): Option[Int32] & Impure with Eq[a] =
-        let start = length(a) - 1;
-        let i = indexOfRightHelper(x, a, start);
+    @Time(length(arr)) @Space(1)
+    pub def indexOfRight(a: a, arr: Array[a]): Option[Int32] & Impure with Eq[a] =
+        def loop(i) = {
+            if (i < 0)
+                -1
+            else
+                if (arr[i] == a)
+                    i
+                else
+                    loop(i - 1)
+        };
+        let i = loop(length(arr) - 1);
         if (i < 0) None else Some(i)
 
     ///
-    /// Helper function for `indexOfRight`.
+    /// Return the positions of the all the occurences of `a` in `arr`.
     ///
-    def indexOfRightHelper(x: a, a: Array[a], i: Int32): Int32 & Impure with Eq[a] =
-        if (i < 0)
-            -1
-        else
-            if (a[i] == x)
-                i
-            else
-                indexOfRightHelper(x, a, i-1)
-
-    ///
-    /// Return the positions of the all the occurences of `x` in `a`.
-    ///
-    @Time(length(a)) @Space(length(a))
-    pub def indices(x: a, a: Array[a]): Array[Int32] & Impure with Eq[a] =
-        findIndices(y -> x == y, a)
+    @Time(length(arr)) @Space(length(arr))
+    pub def indices(a: a, arr: Array[a]): Array[Int32] & Impure with Eq[a] =
+        findIndices(b -> a == b, arr)
 
     ///
     /// Alias for `findLeft`.
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(xs)) @Space(space(f))
-    pub def find(f: a -> Bool, xs: Array[a]): Option[a] & Impure = findLeft(f, xs)
+    @Time(time(f) * length(arr)) @Space(space(f))
+    pub def find(f: a -> Bool, arr: Array[a]): Option[a] & Impure = findLeft(f, arr)
 
     ///
     /// Optionally returns the first element of `a` that satisfies the predicate `f` when searching from left to right.
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(a)) @Space(space(f))
-    pub def findLeft(f: a -> Bool, a: Array[a]): Option[a] & Impure =
-        match findIndexOfLeft(x -> f(x), a) {
+    @Time(time(f) * length(arr)) @Space(space(f))
+    pub def findLeft(f: a -> Bool, arr: Array[a]): Option[a] & Impure =
+        match findIndexOfLeft(x -> f(x), arr) {
             case None => None
-            case Some(i) => Some(a[i])
+            case Some(i) => Some(arr[i])
         }
 
     ///
@@ -296,11 +279,11 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(a)) @Space(space(f))
-    pub def findRight(f: a -> Bool, a: Array[a]): Option[a] & Impure =
-        match findIndexOfRight(x -> f(x), a) {
+    @Time(time(f) * length(arr)) @Space(space(f))
+    pub def findRight(f: a -> Bool, arr: Array[a]): Option[a] & Impure =
+        match findIndexOfRight(x -> f(x), arr) {
             case None => None
-            case Some(i) => Some(a[i])
+            case Some(i) => Some(arr[i])
         }
 
     ///
