@@ -84,52 +84,62 @@ pub lawless class Reducible[t: Type -> Type] {
     ///
     /// Returns the first element of `t`.
     ///
-    pub def head(t: t[a]): a = ???
+    pub def head(t: t[a]): a =
+        Reducible.reduceLeft((acc, _) -> acc, t)
 
     ///
     /// Returns the last element of `t`.
     ///
-    pub def last(t: t[a]): a = ???
+    pub def last(t: t[a]): a =
+        Reducible.reduceLeft((_, a) -> a, t)
 
     ///
     /// Returns a list with the first element of `t`.
     ///
-    pub def init(t: t[a]): List[a] = ???
+    pub def init(t: t[a]): List[a] =
+        Reducible.reduceLeftTo((acc, _) -> acc, a -> a :: Nil, t)
 
     ///
-    /// Returns a list with the elements of `t` except the first.
+    /// Returns the tail of `t`.
     ///
-    pub def tail(t: t[a]): List[a] = ???
+    pub def tail(t: t[a]): List[a] =
+        Reducible.reduceLeftTo((k, a) -> ks -> k(a :: ks),  _ -> identity, t)(Nil)
 
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
-    pub def count(f: a -> Bool, t: t[a]): Int32 = ???
+    pub def count(f: a -> Bool, t: t[a]): Int32 =
+        Reducible.foldLeft((acc, a) -> if (f(a)) 1 + acc else acc, 0, t)
 
     ///
     /// Returns the number of elements in `t`.
     ///
-    pub def length(t: t[a]): Int32 = ???
+    pub def length(t: t[a]): Int32 =
+        Reducible.foldLeft((acc, _) -> 1 + acc, 0, t )
 
     ///
     /// Returns the sum of all elements in `t`.
     ///
-    pub def sum(t: t[Int32]): Int32 = ???
+    pub def sum(t: t[Int32]): Int32 =
+        Reducible.foldLeft((acc, a) -> a + acc, 0, t)
 
     ///
     /// Returns the sum of all elements in `t` according to the function `f`.
     ///
-    pub def sumWith(f: a -> Int32 & ef, t: t[a]): Int32 = ???
+    pub def sumWith(f: a -> Int32 & ef, t: t[a]): Int32 & ef =
+        Reducible.foldLeft((acc, a) -> f(a) + acc, 0, t)
 
     ///
     /// Returns the product of all elements in `t`.
     ///
-    pub def product(t: t[Int32]): Int32 = ???
+    pub def product(t: t[Int32]): Int32 =
+        Reducible.foldLeft((acc, a) -> a * acc, 1, t)
 
     ///
     /// Returns the product of all elements in `t` according to the function `f`.
     ///
-    pub def productWith(f: a -> Int32 & ef, t: t[a]): Int32 = ???
+    pub def productWith(f: a -> Int32 & ef, t: t[a]): Int32 & ef =
+        Reducible.foldLeft((acc, a) -> f(a) * acc, 1, t)
 
     ///
     /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
