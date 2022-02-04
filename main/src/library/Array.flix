@@ -248,7 +248,7 @@ namespace Array {
         if (i < 0) None else Some(i)
 
     ///
-    /// Return the positions of the all the occurences of `a` in `arr`.
+    /// Return the positions of the all the occurrences of `a` in `arr`.
     ///
     @Time(length(arr)) @Space(length(arr))
     pub def indices(a: a, arr: Array[a]): Array[Int32] & Impure with Eq[a] =
