@@ -38,34 +38,48 @@ pub lawless class Reducible[t: Type -> Type] {
     ///
     /// Left-associative reduction on `t` using `f`.
     ///
-    pub def reduceLeft(f: (a, a) -> a & ef, t: t[a]): a = ???
+    pub def reduceLeft(f: (a, a) -> a & ef, t: t[a]): a & ef =
+        Reducible.reduceLeftTo(f, identity, t)
 
     ///
     /// Right-associative reduction on `t` using `f`.
     ///
-    pub def reduceRight(f: (a, a) -> a & ef, t: t[a]): a = ???
+    pub def reduceRight(f: (a, a) -> a & ef, t: t[a]): a & ef =
+        Reducible.reduceRightTo(f, identity, t)
 
     ///
     /// Reduce `t` using the derived `SemiGroup` instance.
     ///
-    pub def reduce(t: t[a]): a with SemiGroup[a] = ???
+    pub def reduce(t: t[a]): a with SemiGroup[a] =
+        Reducible.reduceLeft(SemiGroup.combine, t)
 
     ///
     /// Applies `f` to each element of `t` and combines them using the derived `SemiGroup` instance.
     ///
-    pub def reduceMap(f: a -> b & ef, t: t[a]): b with SemiGroup[b] = ???
+    pub def reduceMap(f: a -> b & ef, t: t[a]): b & ef with SemiGroup[b] =
+        Reducible.reduceLeftTo((b, a) -> SemiGroup.combine(b, f(a)), f, t)
 
     ///
     /// Left-associative fold of a structure.
     /// Applies `f` to a start value `s` and all elements in `t` going from left to right.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, t: t[a]): b = ???
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, t: t[a]): b & ef =
+        Reducible.reduceLeftTo(f, a -> f(s, a), t)
 
     ///
     /// Right-associative fold of a structure.
     /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, t: t[a]): b = ???
+    pub def foldRight(f: (a, b) -> b & ef, s: b, t: t[a]): b & ef =
+        Reducible.reduceRightTo(f, a -> f(a, s), t)
+
+    ///
+    /// Alias for `reduce`.
+    ///
+    /// Reduce `t` using the derived `SemiGroup` instance.
+    ///
+    pub def fold(t: t[a]): a with SemiGroup[a] =
+        Reducible.reduceLeft(SemiGroup.combine, t)
 
     ///
     /// Returns the first element of `t`.
