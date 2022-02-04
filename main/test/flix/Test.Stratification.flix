@@ -1,142 +1,206 @@
 namespace Test/Stratification {
 
+    //
+    //
+    // Non-recursive tests
+    //
+    //
+
     @test
-    def testStratification01(): #{ A(Int32), B(Int32), R(Int32) } = solve #{
-        A(1). A(2). A(3).
-        B(3).
-        R(x) :- A(x), not B(x).
+    def test0NonRecursiveStratification00(): #{ A000(Int32), B000(Int32), R000(Int32) } = solve #{
+        A000(1). A000(2). A000(3).
+        B000(3).
+        R000(x) :- A000(x), not B000(x).
     }
 
     @test
-    def testStratification02(): #{ A(Int32), B(Int32), R(Int32) } = solve #{
-        A(1). A(2). A(3).
-        B(3).
-        R(x) :- not A(x), B(x).
+    def test0NonRecursiveStratification01(): #{ A001(Int32), B001(Int32), R001(Int32) } = solve #{
+        A001(1). A001(2). A001(3).
+        B001(3).
+        R001(x) :- not A001(x), B001(x).
     }
 
     @test
-    def testStratification03(): #{ A(Int32), B(Int32), C(Int32), R(Int32) } = solve #{
-        A(1). A(2). A(3).
-        B(3).
-        C(3).
-        R(x) :- A(x), not B(x), not C(x).
+    def test0NonRecursiveStratification02(): #{ A002(Int32), B002(Int32), C002(Int32), R002(Int32) } = solve #{
+        A002(1). A002(2). A002(3).
+        B002(3).
+        C002(3).
+        R002(x) :- A002(x), not B002(x), not C002(x).
     }
 
     @test
-    def testStratification04(): #{ A(Int32), B(Int32), C(Int32), R(Int32) } = solve #{
-        A(1). A(2). A(3).
-        B(3).
-        C(3).
-        R(x) :- not A(x), B(x), not C(x).
+    def test0NonRecursiveStratification03(): #{ A003(Int32), B003(Int32), C003(Int32), R003(Int32) } = solve #{
+        A003(1). A003(2). A003(3).
+        B003(3).
+        C003(3).
+        R003(x) :- not A003(x), B003(x), not C003(x).
     }
 
     @test
-    def testStratification05(): #{ A(Int32), B(Int32), C(Int32), R(Int32) } = solve #{
-        A(1). A(2).
-        B(3).
-        C(x) :- A(x).
-        C(x) :- B(x).
-        R(x) :- C(x), not A(x).
+    def test0NonRecursiveStratification04(): #{ A004(Int32), B004(Int32), C004(Int32), R004(Int32) } = solve #{
+        A004(1). A004(2).
+        B004(3).
+        C004(x) :- A004(x).
+        C004(x) :- B004(x).
+        R004(x) :- C004(x), not A004(x).
     }
 
     @test
-    def testStratification06(): #{ A(Int32), B(Int32), C(Int32), D(Int32), R(Int32) } = solve #{
-        A(1). A(2).
-        B(3).
-        C(x) :- A(x).
-        C(x) :- B(x).
-        D(x) :- C(x), not A(x).
-        R(x) :- A(x), not D(x).
+    def test0NonRecursiveStratification05(): #{ A005(Int32), B005(Int32), C005(Int32), D005(Int32), R005(Int32) } = solve #{
+        A005(1). A005(2).
+        B005(3).
+        C005(x) :- A005(x).
+        C005(x) :- B005(x).
+        D005(x) :- C005(x), not A005(x).
+        R005(x) :- A005(x), not D005(x).
     }
 
     @test
-    def testStratification07(): #{ A(Int32), B(Int32), C(Int32), D(Int32), E(Int32), R(Int32) } = solve #{
-        A(1). A(2).
-        B(3).
-        C(x) :- A(x).
-        C(x) :- B(x).
-        D(x) :- C(x), not A(x).
-        E(x) :- B(x), not D(x).
-        R(x) :- E(x).
+    def test0NonRecursiveStratification06(): #{ A006(Int32), B006(Int32), C006(Int32), D006(Int32), E006(Int32), R006(Int32) } = solve #{
+        A006(1). A006(2).
+        B006(3).
+        C006(x) :- A006(x).
+        C006(x) :- B006(x).
+        D006(x) :- C006(x), not A006(x).
+        E006(x) :- B006(x), not D006(x).
+        R006(x) :- E006(x).
     }
 
     @test
-    def testStratification08(): #{ A(Int32), N() } = solve #{
-        A(1).
-        A(2).
-        A(3).
-        N() :- not A(1).
-        N() :- not A(2).
-        N() :- not A(3).
+    def test0NonRecursiveStratification07(): #{ A007(Int32), N007() } = solve #{
+        A007(1).
+        A007(2).
+        A007(3).
+        N007() :- not A007(1).
+        N007() :- not A007(2).
+        N007() :- not A007(3).
     }
 
     @test
-    def testStratification09(): #{ A(Int32), B(Int32), N() } = solve #{
-        A(1). A(2).
-        B(1). B(2).
-        N() :- not A(1), not B(1).
-        N() :- not A(2), not B(2).
+    def test0NonRecursiveStratification08(): #{ A008(Int32), B008(Int32), N008() } = solve #{
+        A008(1). A008(2).
+        B008(1). B008(2).
+        N008() :- not A008(1), not B008(1).
+        N008() :- not A008(2), not B008(2).
     }
 
-    @test
-    def testStratification10(): Unit =
-        // `_a` and `_b` will not be in the same stratification since they do not include
-        // the `Diff_10` of the other.
-        let _a: #{ A10(Int32), B10(Int32), DiffA10(Int32) } = #{
-            A10(x) :- B10(x), DiffA10(_).
-        };
-        let _b: #{ B10(Int32), A10(Int32), DiffB10(Int32) } = #{
-            B10(x) :- not A10(x), DiffB10(x).
-        };
-        ()
+    //
+    //
+    // Rule based filtering
+    //
+    //
 
     @test
-    def testStratification11(): Unit =
-        // `_b` and `_c` will not be in the same stratification since they do not include
-        // the `Diff_11` of the other.
-        let _a: #{ A11(Int32), B11(Int32), C11(Int32) } = #{
-            C11(12).
-            A11(x) :- B11(x).
+    def test1RuleFilteredStratification00(): Bool =
+        let p1 = #{
+            B100(12). DiffA100(12).
+            A100(x) :- B100(x), DiffA100(_).
         };
-        let _b: #{ A11(Int32), B11(Int32), C11(Int32), DiffB11() } = #{
-            B11(x) :- not C11(x), A11(x), DiffB11().
+        let p2 = #{
+            A100(1). DiffB100(1).  DiffB100(2).
+            B100(x) :- not A100(x), DiffB100(x).
         };
-        let _c: #{ A11(Int32), B11(Int32), C11(Int32), DiffC11() } = #{
-            B11(12).
-            C11(x) :- A11(x), DiffC11().
-        };
-        ()
+        (query p1 select x from A100(x) |> Array.length) +
+        (query p2 select x from B100(x) |> Array.length)
+        > 0
+
 
     @test
-    def testStratification12(): Unit =
-        // `_a` and `_b` will not be in the same stratification since they differ on the arity of `B12`.
-        let _a: #{ A12(Int32), B12(Int32), C12(Int32) } = #{
-            A12(x) :- B12(x), C12(x).
+    def test1RuleFilteredStratification01(): Bool =
+        let p1 = #{
+            C101(12). B101(13).
+            A101(x) :- B101(x).
         };
-        let _b: #{ B12(Int32, Int32), A12(Int32), C12(Int32) } = #{
-            B12(x, 2) :- not A12(x), C12(x).
+        let p2 = #{
+            A101(101).
+            B101(x) :- not C101(x), A101(x), DiffB101().
         };
-        ()
+        let p3 = #{
+            B101(12). A101(101).
+            C101(x) :- A101(x), DiffC101().
+        };
+        (query p1 select x from A101(x) |> Array.length) +
+        (query p2 select x from B101(x) |> Array.length) +
+        (query p3 select x from C101(x) |> Array.length)
+        > 0
+
+    //
+    //
+    // Arity based filtering
+    //
+    //
 
     @test
-    def testStratification13(): Unit =
-        // `_a` and `_b` will not be in the same stratification since they differ on the arity of `C13`.
-        let _a: #{ A13(Int32), B13(Int32), C13(Int32) } = #{
-            A13(x) :- B13(x), C13(x).
+    def test2ArityFilteredStratification00(): Bool =
+        let p1 = #{
+            B200(17). C200(17).
+            A200(x) :- B200(x), C200(x).
         };
-        let _b: #{ A13(Int32), B13(Int32), C13(Int32, Int32) }= #{
-            B13(x) :- not A13(x), C13(x, 12).
+        let p2 = #{
+            C200(12).
+            B200(x, 2) :- not A200(x), C200(x).
         };
-        ()
+        (query p1 select x from A200(x) |> Array.length) +
+        (query p2 select x from B200(x, _) |> Array.length)
+        > 0
 
     @test
-    def testStratification14(): Unit =
-        // `_a` and `_b` will not be in the same stratification since they differ on the arity of `C14.
-        let _a: #{ A14(Int32), B14(Int32), C14() } = #{
-            A14(x) :- B14(x), C14().
+    def test2ArityFilteredStratification01(): Bool =
+        let p1 = #{
+            B201(13). C201(13).
+            A201(x) :- B201(x), C201(x).
         };
-        let _b: #{ A14(Int32), B14(Int32), C14(Int32) } = #{
-            B14(x) :- not A14(x), C14(x).
+        let p2 = #{
+            C201(14, 12).
+            B201(x) :- not A201(x), C201(x, 12).
         };
-        ()
+        (query p1 select x from A201(x) |> Array.length) +
+        (query p2 select x from B201(x) |> Array.length)
+        > 0
+
+    @test
+    def test2ArityFilteredStratification02(): Bool =
+        let p1 = #{
+            B202("s").
+            A202(x) :- B202(x), C202().
+        };
+        let p2 = #{
+            C202("a").
+            B202(x) :- not A202(x), C202(x).
+        };
+        (query p1 select x from A202(x) |> Array.length) +
+        (query p2 select x from B202(x) |> Array.length)
+        > 0
+    
+    // combined with rule based filtering
+    @test
+    def test2ArityFilteredStratification99(): Bool =
+        let p1 = #{
+            B203(12). Diff203("string").
+            A203(x) :- B203(x), P1Diff203("string").
+        };
+        let p2 = #{
+            C203(13). P2Diff203(13).
+            B203(x) :- not A203(x), P2Diff203(x).
+        };
+        (query p1 select x from A203(x) |> Array.length) +
+        (query p2 select x from B203(x) |> Array.length)
+        > 0
+
+    //
+    //
+    // Term-type based filtering
+    //
+    //
+
+    // combined with rule based filtering
+
+
+    //
+    //
+    // Denotation based filtering
+    //
+    //
+    
+    // combined with rule based filtering
 }
