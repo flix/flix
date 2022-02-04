@@ -113,11 +113,11 @@ namespace Test/Stratification {
         };
         let p2 = #{
             A101(101).
-            B101(x) :- not C101(x), A101(x), DiffB101().
+            B101(x) :- not C101(x), A101(x), P2Diff101().
         };
         let p3 = #{
             B101(12). A101(101).
-            C101(x) :- A101(x), DiffC101().
+            C101(x) :- A101(x), P3Diff101().
         };
         (query p1 select x from A101(x) |> Array.length) +
         (query p2 select x from B101(x) |> Array.length) +
@@ -176,15 +176,15 @@ namespace Test/Stratification {
     @test
     def test2ArityFilteredStratification99(): Bool =
         let p1 = #{
-            B203(12). Diff203("string").
-            A203(x) :- B203(x), P1Diff203("string").
+            B299(12). Diff299(12, 13).
+            A299(x) :- B299(x), P1Diff299(x, 13).
         };
         let p2 = #{
-            C203(13). P2Diff203(13).
-            B203(x) :- not A203(x), P2Diff203(x).
+            C299(13). Diff299(14).
+            B299(x) :- not A299(x), Diff299(x).
         };
-        (query p1 select x from A203(x) |> Array.length) +
-        (query p2 select x from B203(x) |> Array.length)
+        (query p1 select x from A299(x) |> Array.length) +
+        (query p2 select x from B299(x) |> Array.length)
         > 0
 
     //
@@ -193,7 +193,95 @@ namespace Test/Stratification {
     //
     //
 
+    @test
+    def test3TypeFilteredStratification00(): Bool =
+        // Int32 and String
+        let p1 = #{
+            B300(12).
+            A300(x) :- B300(x).
+        };
+        let p2 = #{
+            A300("hey"). C300("heyy").
+            B300(x) :- not A300(x), C300(x).
+        };
+        (query p1 select x from A300(x) |> Array.length) +
+        (query p2 select x from B300(x) |> Array.length)
+        > 0
+    
+    @test
+    def test3TypeFilteredStratification01(): Bool =
+        // Option[Int32] and Option[String]
+        let p1 = #{
+            B301(Some(12)).
+            A301(x) :- B301(x).
+        };
+        let p2 = #{
+            A301(Some("hey")). C301(Some("heyy")).
+            B301(x) :- not A301(x), C301(x).
+        };
+        (query p1 select x from A301(x) |> Array.length) +
+        (query p2 select x from B301(x) |> Array.length)
+        > 0
+    
+    @test
+    def test3TypeFilteredStratification02(): Bool =
+        // Result[Int32, Int32] and Result[Int32, Int64]
+        let p1 = #{
+            B302(Ok(12)). B302(Err(12)).
+            A302(x) :- B302(x).
+        };
+        let p2 = #{
+            A302(Ok(12)). C302(Err(12i64)).
+            B302(x) :- not A302(x), C302(x).
+        };
+        (query p1 select x from A302(x) |> Array.length) +
+        (query p2 select x from B302(x) |> Array.length)
+        > 0
+    
+    @test
+    def test3TypeFilteredStratification03(): Bool =
+        // List[Int16] and List[Bool]
+        let p1 = #{
+            B303(1i16 :: Nil). 
+            A303(x) :- B303(x).
+        };
+        let p2 = #{
+            A303(false :: Nil). 
+            B303(x) :- not A303(x), C303(x).
+        };
+        (query p1 select x from A303(x) |> Array.length) +
+        (query p2 select x from B303(x) |> Array.length)
+        > 0
+    
+    @test
+    def test3TypeFilteredStratification04(): Bool =
+        // List[Int8] and List[List[Int8]]
+        let p1 = #{
+            B304(1i8 :: Nil). 
+            A304(x) :- B304(x).
+        };
+        let p2 = #{
+            A304((1i8 :: Nil) :: Nil). 
+            B304(x) :- not A304(x), C304(x).
+        };
+        (query p1 select x from A304(x) |> Array.length) +
+        (query p2 select x from B304(x) |> Array.length)
+        > 0
+
     // combined with rule based filtering
+    @test
+    def test3TypeFilteredStratification99(): Bool =
+        let p1 = #{
+            B399(12). Diff399("string").
+            A399(x) :- B399(x), Diff399("string").
+        };
+        let p2 = #{
+            C399(13). Diff399(13).
+            B399(x) :- not A399(x), Diff399(x).
+        };
+        (query p1 select x from A399(x) |> Array.length) +
+        (query p2 select x from B399(x) |> Array.length)
+        > 0
 
 
     //
@@ -201,6 +289,33 @@ namespace Test/Stratification {
     // Denotation based filtering
     //
     //
+
+    @test
+    def test4DenotationFilteredStratification00(): Bool =
+        let p1 = #{
+            B400(12i64).
+            A400(x; x) :- B400(x). 
+        };
+        let p2 = #{
+            A400(12i64, 12i64). C400(12i64).
+            B400(x) :- not A400(x, x), C400(x).
+        };
+        (query p1 select x from A400(x; _) |> Array.length) +
+        (query p2 select x from B400(x) |> Array.length)
+        > 0
     
     // combined with rule based filtering
+    @test
+    def test4DenotationFilteredStratification99(): Bool =
+        let p1 = #{
+            B499(12). Diff499(;12).
+            A499(x) :- B499(x), Diff499(;12).
+        };
+        let p2 = #{
+            C499(13). Diff499(13).
+            B499(x) :- not A499(x), Diff499(x).
+        };
+        (query p1 select x from A499(x) |> Array.length) +
+        (query p2 select x from B499(x) |> Array.length)
+        > 0
 }
