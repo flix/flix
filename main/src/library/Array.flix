@@ -90,18 +90,16 @@ namespace Array {
     /// Returns the array `a` as a list.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toList(a: Array[a]): List[a] & Impure = toListHelper(a, a.length, Nil)
-
-    ///
-    /// Helper function for `toList`.
-    ///
-    def toListHelper(a: Array[a], i: Int32, acc: List[a]): List[a] & Impure =
-        if (i == 0) {
-            acc
-        } else {
-            let x = a[i - 1];
-            toListHelper(a, i - 1, x :: acc)
-        }
+    pub def toList(a: Array[a]): List[a] & Impure =
+        def loop(i, acc) = {
+            if (i == 0) {
+                acc
+            } else {
+                let x = a[i - 1];
+                loop(i - 1, x :: acc)
+            }
+        };
+        loop(a.length, Nil)
 
     ///
     /// Returns the array `a` as a lazy list.
