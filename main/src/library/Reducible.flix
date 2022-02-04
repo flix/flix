@@ -115,7 +115,7 @@ pub lawless class Reducible[t: Type -> Type] {
     /// Returns the number of elements in `t`.
     ///
     pub def length(t: t[a]): Int32 =
-        Reducible.foldLeft((acc, _) -> 1 + acc, 0, t )
+        Reducible.foldLeft((acc, _) -> 1 + acc, 0, t)
 
     ///
     /// Returns the sum of all elements in `t`.
