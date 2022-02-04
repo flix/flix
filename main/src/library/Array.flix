@@ -25,22 +25,22 @@ namespace Array {
     /// Compares `a` and `b` lexicographically.
     ///
     pub def compare(a: Array[v], b: Array[v]): Comparison & Impure with Order[v] =
-        compareHelper(a, b, Int32.min(Array.length(a), Array.length(b)), 0)
-
-    def compareHelper(a: Array[v], b: Array[v], len: Int32, i: Int32): Comparison & Impure with Order[v] =
-        if (i < len) {
-            let cmp = a[i] <=> b[i];
-            if (cmp == EqualTo)
-                compareHelper(a, b, len, i + 1)
-            else
-                cmp
-        } else if (i < Array.length(a)) {
-            GreaterThan
-        } else if (i < Array.length(b)) {
-            LessThan
-        } else {
-            EqualTo
-        }
+        def loop(len, i) = {
+            if (i < len) {
+                let cmp = a[i] <=> b[i];
+                if (cmp == EqualTo)
+                    loop(len, i + 1)
+                else
+                    cmp
+            } else if (i < Array.length(a)) {
+                GreaterThan
+            } else if (i < Array.length(b)) {
+                LessThan
+            } else {
+                EqualTo
+            }
+        };
+        loop(Int32.min(Array.length(a), Array.length(b)), 0)
 
     ///
     /// Returns a fresh array of length `l` filled with the element `x`.
