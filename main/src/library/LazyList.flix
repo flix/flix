@@ -168,15 +168,12 @@ namespace LazyList {
     }
 
     ///
-    /// Returns a LazyList with the first element of `l`.
+    /// Returns `l` without the last element.
     ///
-    @Experimental
-    pub def init(l: LazyList[a]): LazyList[a] = match l {
-        case ENil        => ENil
-        case ECons(x, _) => ECons(x, ENil)
-        case LCons(x, _) => ECons(x, ENil)
-        case LList(xs)   => LList(lazy init(force xs))
-    }
+    /// Does not force the tail of `l`.
+    ///
+    @Experimental @Lazy
+    pub def init(l: LazyList[a]): Option[LazyList[a]] = ???
 
     ///
     /// Returns `l` without the first element.
