@@ -230,7 +230,7 @@ namespace Array {
         if (i < 0) None else Some(i)
 
     ///
-    /// Optionally returns the position of the first occurence of `a` in `arr`
+    /// Optionally returns the position of the first occurrence of `a` in `arr`
     /// searching from right to left.
     ///
     @Time(length(arr)) @Space(1)
@@ -315,30 +315,27 @@ namespace Array {
     ///
     /// Alias for `scanLeft`.
     ///
-    pub def scan(f: (b, a) -> b & ef, s: b, xs: Array[a]): Array[b] & Impure = scanLeft(f, s, xs)
+    pub def scan(f: (b, a) -> b & ef, s: b, arr: Array[a]): Array[b] & Impure = scanLeft(f, s, arr)
 
     ///
-    /// Accumulates the result of applying `f` to `a` going left to right.
+    /// Accumulates the result of applying `f` to `arr` going left to right.
     ///
     /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2),  ...]`.
     ///
-    pub def scanLeft(f: (b, a) -> b & ef, s: b, a: Array[a]): Array[b] & Impure =
-        let len = length(a) + 1;
+    pub def scanLeft(f: (b, a) -> b & ef, s: b, arr: Array[a]): Array[b] & Impure =
+        let len = length(arr) + 1;
         let b = new(s, len);
-        scanLeftHelper(f, s, a, b, len, 1);
+        def loop(i, acc) = {
+            if (i >= len)
+                ()
+            else {
+                let s1 = f(acc, arr[i - 1]);
+                b[i] = s1;
+                loop(i + 1, s1)
+            }
+        };
+        loop(1, s);
         b
-
-    ///
-    /// Helper function for `scanLeft`.
-    ///
-    def scanLeftHelper(f: (b, a) -> b & ef, s: b, a: Array[a], b: Array[b], len: Int32, i: Int32) : Unit & Impure =
-        if (i >= len)
-            ()
-        else {
-            let s1 = f(s, a[i-1]);
-            b[i] = s1;
-            scanLeftHelper(f, s1, a, b, len, i+1)
-        }
 
     ///
     /// Accumulates the result of applying `f` to `xs` going right to left.
@@ -347,21 +344,18 @@ namespace Array {
     ///
     pub def scanRight(f: (a, b) -> b & ef, s: b, a: Array[a]): Array[b] & Impure =
         let len = length(a);
-        let b = new(s, len+1);
-        scanRightHelper(f, s, a, b, len-1);
+        let b = new(s, len + 1);
+        def loop(i, acc) = {
+            if (i < 0)
+                ()
+            else {
+                let s1 = f(a[i], acc);
+                b[i] = s1;
+                loop(i - 1, s1)
+            }
+        };
+        loop(len - 1, s);
         b
-
-    ///
-    /// Helper function for `scanRight`.
-    ///
-    def scanRightHelper(f: (a, b) -> b & ef, s: b, a: Array[a], b: Array[b], i: Int32) : Unit & Impure =
-        if (i < 0)
-            ()
-        else {
-            let s1 = f(a[i], s);
-            b[i] = s1;
-            scanRightHelper(f, s1, a, b, i-1)
-        }
 
     ///
     /// Returns the result of applying `f` to every element in `a`.
@@ -374,22 +368,20 @@ namespace Array {
         init(i -> f(a[i]), len)
 
     ///
-    /// Apply `f` to every element in array `a`. Array `a` is mutated.
+    /// Apply `f` to every element in array `arr`. Array `arr` is mutated.
     ///
-    @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def transform!(f: a -> a, a: mut Array[a]): Unit & Impure =
-        transformHelper!(f, length(a), a, 0)
-
-    ///
-    /// Helper function for `transform!`
-    ///
-    def transformHelper!(f: a -> a, len: Int32, a: mut Array[a], i: Int32): Unit & Impure =
-        if (i >= len)
-            ()
-        else {
-            a[i] = f(a[i]);
-            transformHelper!(f, len, a, i+1)
-        }
+    @Time(time(f) * length(arr)) @Space(space(f) * length(arr))
+    pub def transform!(f: a -> a, arr: mut Array[a]): Unit & Impure =
+        let len = length(arr);
+        def loop(i) = {
+            if (i >= len)
+                ()
+            else {
+                arr[i] = f(arr[i]);
+                loop(i + 1)
+            }
+        };
+        loop(0)
 
     ///
     /// Returns the result of applying `f` to every element in `a` along with that element's index.
@@ -404,20 +396,18 @@ namespace Array {
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
     ///
-    @Time(time(f) * length(a)) @Space(space(f))
-    pub def transformWithIndex!(f: (a, Int32) -> a, a: mut Array[a]): Unit & Impure =
-        transformWithIndexHelper!(f, length(a), a, 0)
-
-    ///
-    /// Helper function for `transformWithIndex!`
-    ///
-    def transformWithIndexHelper!(f: (a, Int32) -> a, len: Int32, a: mut Array[a], i: Int32): Unit & Impure =
-        if (i >= len)
-            ()
-        else {
-            a[i] = f(a[i], i);
-            transformWithIndexHelper!(f, len, a, i+1)
-        }
+    @Time(time(f) * length(arr)) @Space(space(f))
+    pub def transformWithIndex!(f: (a, Int32) -> a, arr: mut Array[a]): Unit & Impure =
+        let len = length(arr);
+        def loop(i) = {
+            if (i >= len)
+                ()
+            else {
+                arr[i] = f(arr[i], i);
+                loop(i + 1)
+            }
+        };
+        loop(0)
 
     ///
     /// Returns the result of applying `f` to every element in `a` and concatenating the results.
