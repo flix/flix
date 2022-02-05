@@ -800,29 +800,24 @@ namespace Array {
             Some(loop(a[0], 1))
 
     ///
-    /// Applies `f` to all elements in `a` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `arr` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
     ///
-    /// Returns `None` if `a` is empty.
+    /// Returns `None` if `arr` is empty.
     ///
-    pub def reduceRight(f: (a, a) -> a & ef, a: Array[a]): Option[a] & Impure =
-        let len = length(a);
+    pub def reduceRight(f: (a, a) -> a & ef, arr: Array[a]): Option[a] & Impure =
+        let len = length(arr);
         if (len == 0)
             None
         else {
-            let end = len - 1;
-            let ac = a[end];
-            Some(reduceRightHelper(f, a, ac, end-1))
-        }
-
-    ///
-    /// Helper function for `reduceRight`.
-    ///
-    def reduceRightHelper(f: (a, a) -> a & ef, a: Array[a], x: a, i:Int32): a & Impure =
-        if (i < 0)
-            x
-        else {
-            let s1 = f(a[i], x) as & Impure;
-            reduceRightHelper(f, a, s1, i-1)
+            def loop(acc, i) = {
+                if (i < 0)
+                    acc
+                else {
+                    let s1 = f(arr[i], acc);
+                    loop(s1, i - 1)
+                }
+            };
+            Some(loop(arr[len - 1], len - 2))
         }
 
     ///
@@ -878,81 +873,72 @@ namespace Array {
         }
 
     ///
-    /// Returns `true` if and only if at least one element in `a` satisfies the predicate `f`.
+    /// Returns `true` if and only if at least one element in `arr` satisfies the predicate `f`.
     ///
-    /// Returns `false` if `a` is empty.
+    /// Returns `false` if `arr` is empty.
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(a)) @Space(space(f))
-    pub def exists(f: a -> Bool, a: Array[a]): Bool & Impure =
-        existsHelper(f, a, length(a), 0)
-
-    ///
-    /// Helper function for `exists`.
-    ///
-    def existsHelper(f: a -> Bool, a: Array[a], len: Int32, i: Int32): Bool & Impure =
-        if (i >= len)
-            false
-        else
-            if (f(a[i]) == true)
-                true
-            else
-                existsHelper(f, a, len, i+1)
-
-    ///
-    /// Returns `true` if and only if all elements in `a` satisfy the predicate `f`.
-    ///
-    /// Returns `true` if `a` is empty.
-    ///
-    @Time(time(f) * length(a)) @Space(space(f))
-    pub def forall(f: a -> Bool, a: Array[a]): Bool & Impure =
-        forallHelper(f, a, length(a), 0)
-
-    ///
-    /// Helper function for `forall`.
-    ///
-    def forallHelper(f: a -> Bool, a: Array[a], len: Int32, i: Int32): Bool & Impure =
-        if (i >= len)
-            true
-        else
-            if (f(a[i]) == false)
+    @Time(time(f) * length(arr)) @Space(space(f))
+    pub def exists(f: a -> Bool, arr: Array[a]): Bool & Impure =
+        let len = length(arr);
+        def loop(i) = {
+            if (i >= len)
                 false
             else
-                forallHelper(f, a, len, i+1)
+                if (f(arr[i]) == true)
+                    true
+                else
+                    loop(i + 1)
+        };
+        loop(0)
 
     ///
-    /// Returns an array of every element in `a` that satisfies the predicate `f`.
+    /// Returns `true` if and only if all elements in `arr` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `arr` is empty.
+    ///
+    @Time(time(f) * length(arr)) @Space(space(f))
+    pub def forall(f: a -> Bool, arr: Array[a]): Bool & Impure =
+        let len = length(arr);
+        def loop(i) = {
+            if (i >= len)
+                true
+            else
+                if (f(arr[i]) == false)
+                    false
+                else
+                    loop(i + 1)
+        };
+        loop(0)
+
+    ///
+    /// Returns an array of every element in `arr` that satisfies the predicate `f`.
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def filter(f: a -> Bool, a: Array[a]): Array[a] & Impure =
-        let len = length(a);
+    @Time(time(f) * length(arr)) @Space(space(f) * length(arr))
+    pub def filter(f: a -> Bool, arr: Array[a]): Array[a] & Impure =
+        let len = length(arr);
         if (len < 1) {
             []
         } else {
-            let out = new(a[0], len);
-            let endPos = filterHelper(f, 0, a, 0, out);
+            let out = new(arr[0], len);
+            def loop(i, j) = {
+                if (i >= len)
+                    j
+                else {
+                    let x = arr[i];
+                    if (f(x)) {
+                        out[j] = x;
+                        loop(i + 1, j + 1)
+                    } else {
+                        loop(i + 1, j)
+                    }
+                }
+            };
+            let endPos = loop(0, 0);
             slice(0, endPos, out)
-        }
-
-    ///
-    /// Helper function for `filter`.
-    /// The array `out` is mutated if successes are found as the initial array `a` is iterated.
-    /// The returned Int32 is the current "write position" and it tells the calling function where to slice `out`.
-    ///
-    def filterHelper(f: a -> Bool, aix: Int32, a: Array[a], oix: Int32, out: Array[a]): Int32 & Impure =
-        if (aix >= length(a))
-            oix
-        else {
-            let x = a[aix];
-            if (f(x)) {
-                out[oix] = x;
-                filterHelper(f, aix + 1, a, oix + 1, out)
-            } else {
-                filterHelper(f, aix + 1, a, oix, out)
-            }
         }
 
     ///
@@ -1025,7 +1011,6 @@ namespace Array {
 
     ///
     /// Alias for `dropWhileLeft`.
-    ///
     ///
     /// The function `f` must be pure.
     ///
@@ -1220,20 +1205,17 @@ namespace Array {
     pub def foldLeft2(f: (c, a, b) ->  c & ef, c: c, a: Array[a], b: Array[b]): c & Impure =
         let lena = length(a);
         let lenb = length(b);
-        foldLeft2Helper(f, c, a, b, lena, lenb, 0)
-
-    ///
-    /// Helper function for `foldLeft2`.
-    ///
-    def foldLeft2Helper(f: (c, a, b) ->  c & ef, s: c, a: Array[a], b: Array[b], lena: Int32, lenb: Int32, i: Int32): c & Impure =
-        if (i >= lena or i >= lenb)
-            s
-        else {
-            let x = a[i];
-            let y = b[i];
-            let s1 = f(s, x, y) as & Impure;
-            foldLeft2Helper(f, s1, a, b, lena, lenb, i+1)
-        }
+        def loop(acc, i) = {
+            if (i >= lena or i >= lenb)
+                acc
+            else {
+                let x = a[i];
+                let y = b[i];
+                let s1 = f(acc, x, y);
+                loop(s1, i + 1)
+            }
+        };
+        loop(c, 0)
 
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `a` and `b`
@@ -1243,20 +1225,17 @@ namespace Array {
     pub def foldRight2(f: (a, b, c) -> c & ef, c: c, a: Array[a], b: Array[b]): c & Impure =
         let starta = length(a) - 1;
         let startb = length(b) - 1;
-        foldRight2Helper(f, c, a, b, starta, startb)
-
-    ///
-    /// Helper function for `foldRight2`.
-    ///
-    def foldRight2Helper(f: (a, b, c) -> c & ef, s: c, a: Array[a], b: Array[b], ia: Int32, ib: Int32): c & Impure =
-        if (ia < 0 or ib < 0)
-            s
-        else {
-            let x = a[ia];
-            let y = b[ib];
-            let s1 = f(x, y, s) as & Impure;
-            foldRight2Helper(f, s1, a, b, ia - 1, ib - 1)
-        }
+        def loop(acc, i, j) = {
+            if (i < 0 or j < 0)
+                acc
+            else {
+                let x = a[i];
+                let y = b[j];
+                let s1 = f(x, y, acc);
+                loop(s1, i - 1, j - 1)
+            }
+        };
+        loop(c, starta, startb)
 
     ///
     /// Collects the results of applying the partial function `f` to every element in `a`.
@@ -1274,21 +1253,18 @@ namespace Array {
     ///
     @Time(time(f) * length(a)) @Space(space(f))
     pub def findMap(f: a -> Option[b] & ef, a: Array[a]): Option[b] & Impure =
-        findMapHelper(f, a, length(a), 0)
-
-    ///
-    /// Helper function for `findMap`.
-    ///
-    def findMapHelper(f: a -> Option[b] & ef, a: Array[a], len: Int32, i: Int32): Option[b] & Impure =
-        if (i >= len)
-            None
-        else {
-            let x = f(a[i]);
-            match x {
-                case Some(v) => Some(v)
-                case None => findMapHelper(f, a, len, i+1)
-            }
-        }
+        let len = length(a);
+        def loop(i) = {
+            if (i >= len)
+                None
+            else
+                let x = f(a[i]);
+                match x {
+                    case Some(v) => Some(v)
+                    case None    => loop(i + 1)
+                }
+        };
+        loop(0)
 
     ///
     /// Returns the array `a` as a set.
