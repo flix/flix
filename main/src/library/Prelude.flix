@@ -107,16 +107,6 @@ pub def |>(x: a, f: a -> b & ef): b & ef = f(x)
 pub def ||>(x: (a, b), f: ((a, b)) -> c & ef): c & ef = f(x)
 
 ///
-/// Alias for `SemiGroup.combine`.
-///
-pub def ++(x: a, y: a): a with SemiGroup[a] = SemiGroup.combine(x, y)
-
-///
-/// Alias for `CommutativeSemiGroup.combine`.
-///
-pub def |+|(x: a, y: a): a with CommutativeSemiGroup[a] = CommutativeSemiGroup.combine(x, y)
-
-///
 /// Returns `true` if `x` implies `y` logically holds.
 ///
 pub def ==>(x: Bool, y: Bool): Bool = not x or y
