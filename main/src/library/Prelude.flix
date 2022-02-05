@@ -107,6 +107,26 @@ pub def |>(x: a, f: a -> b & ef): b & ef = f(x)
 pub def ||>(x: (a, b), f: ((a, b)) -> c & ef): c & ef = f(x)
 
 ///
+/// Alias for `SemiGroup.combine`.
+///
+pub def ++(x: a, y: a): a with SemiGroup[a] = SemiGroup.combine(x, y)
+
+///
+/// Alias for `CommutativeSemiGroup.combine`.
+///
+pub def |+|(x: a, y: a): a with CommutativeSemiGroup[a] = CommutativeSemiGroup.combine(x, y)
+
+///
+/// Returns `true` if `x` implies `y` logically holds.
+///
+pub def ==>(x: Bool, y: Bool): Bool = not x or y
+
+///
+/// Returns true if `x` implies `y` and vise versa.
+///
+pub def <==>(x: Bool, y: Bool): Bool = x == y
+
+///
 /// Converts `x` to a string and prints it to standard out.
 ///
 pub def print(x: a): Unit & Impure with ToString[a] =
@@ -121,16 +141,6 @@ pub def println(x: a): Unit & Impure with ToString[a] =
     import static get java.lang.System.out as getOut;
     import java.io.PrintStream.println(String);
     x |> ToString.toString |> println(getOut())
-
-///
-/// Returns `true` if `x` implies `y` logically holds.
-///
-pub def ==>(x: Bool, y: Bool): Bool = not x or y
-
-///
-/// Returns true if `x` implies `y` and vise versa.
-///
-pub def <==>(x: Bool, y: Bool): Bool = x == y
 
 ///
 /// Crashes the current process with the given message `m`.
