@@ -254,6 +254,12 @@ pub lawless class Reducible[t: Type -> Type] {
         MutList.toArray(v)
 
     ///
+    /// Returns an iterator over `t`.
+    ///
+    pub def toIterator(t: t[a]): Iterator[a] & Impure =
+        Reducible.toArray(t) |> Array.toIterator
+
+    ///
     /// Returns `t` as a list.
     ///
     pub def toList(t: t[a]): List[a] =

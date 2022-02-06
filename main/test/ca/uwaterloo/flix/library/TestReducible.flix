@@ -824,21 +824,32 @@ namespace TestReducible {
 
     @test
     def toArray01(): Bool & Impure =
-        let a = Reducible.toArray(Nel(1, Nil));
-        println(a);
-        Array.sameElements(a, [1])
+        Array.sameElements(Reducible.toArray(Nel(1, Nil)), [1])
 
     @test
     def toArray02(): Bool & Impure =
-        let a = Reducible.toArray(Nel(1, 2 :: 3 :: Nil));
-        println(a);
-        Array.sameElements(a, [1, 2, 3])
+        Array.sameElements(Reducible.toArray(Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
 
     @test
     def toArray03(): Bool & Impure =
-        let a = Reducible.toArray(Nel(1, 1 :: 2 :: 3 :: Nil));
-        println(a);
-        Array.sameElements(a, [1, 1, 2, 3])
+        Array.sameElements(Reducible.toArray(Nel(1, 1 :: 2 :: 3 :: Nil)), [1, 1, 2, 3])
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toIterator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toIterator01(): Bool & Impure =
+        Reducible.toIterator(Nel(1, Nil)) |> Iterator.toList == 1 :: Nil
+
+    @test
+    def toIterator02(): Bool & Impure =
+        Reducible.toIterator(Nel(1, 2 :: 3 :: Nil)) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toIterator03(): Bool & Impure =
+        Reducible.toIterator(Nel(1, 1 :: 2 :: 3 :: Nil)) |> Iterator.toList == 1 :: 1 :: 2 :: 3 :: Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
