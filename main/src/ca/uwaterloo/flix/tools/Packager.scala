@@ -222,13 +222,16 @@ object Packager {
     }
 
     // Add all library packages.
-    for (file <- getAllFiles(getLibraryDirectory(p))) {
-      if (file.getFileName.toString.endsWith(".fpkg")) {
-        // Case 1: It's a Flix package.
-        flix.addSourcePath(file)
-      } else if (file.getFileName.toString.endsWith(".jar")) {
-        // Case 2: It's a JAR.
-        flix.addJar(file)
+    val lib = getLibraryDirectory(p)
+    if (lib.toFile.exists()) {
+      for (file <- getAllFiles(lib)) {
+        if (file.getFileName.toString.endsWith(".fpkg")) {
+          // Case 1: It's a Flix package.
+          flix.addSourcePath(file)
+        } else if (file.getFileName.toString.endsWith(".jar")) {
+          // Case 2: It's a JAR.
+          flix.addJar(file)
+        }
       }
     }
     ().toOk
