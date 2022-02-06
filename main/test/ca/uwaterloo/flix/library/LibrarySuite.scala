@@ -27,6 +27,7 @@ class LibrarySuite extends Suites(
   new FlixTest("TestChain", "main/test/ca/uwaterloo/flix/library/TestChain.flix")(Options.TestWithLibAll),
   new FlixTest("TestChar", "main/test/ca/uwaterloo/flix/library/TestChar.flix")(Options.TestWithLibAll),
   new FlixTest("TestChoice", "main/test/ca/uwaterloo/flix/library/TestChoice.flix")(Options.TestWithLibAll),
+  new FlixTest("TestCommutativeSemiGroup", "main/test/ca/uwaterloo/flix/library/TestCommutativeSemiGroup.flix")(Options.TestWithLibAll),
   new FlixTest("TestChannel", "main/test/ca/uwaterloo/flix/library/TestChannel.flix")(Options.TestWithLibAll),
   new FlixTest("TestDemandList", "main/test/ca/uwaterloo/flix/library/TestDemandList.flix")(Options.TestWithLibAll),
   new FlixTest("TestEnvironment", "main/test/ca/uwaterloo/flix/library/TestEnvironment.flix")(Options.TestWithLibAll),
