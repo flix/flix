@@ -194,51 +194,87 @@ pub lawless class Reducible[t: Type -> Type] {
     ///
     /// Finds the smallest element of `t` according to the `Order` on `a`.
     ///
-    pub def minimum(t: t[a]): a with Order[a] = ???
+    pub def minimum(t: t[a]): a with Order[a] =
+        Reducible.reduceLeft(Order.min, t)
 
     ///
     /// Finds the smallest element of `t` according to the given comparator `cmp`.
     ///
-    pub def minimumBy(cmp: (a, a) -> Comparison & ef, t: t[a]): a = ???
+    pub def minimumBy(cmp: (a, a) -> Comparison, t: t[a]): a =
+        Reducible.reduceLeft(Order.minBy(cmp), t)
 
     ///
     /// Finds the largest element of `t` according to the `Order` on `a`.
     ///
-    pub def maximum(t: t[a]): a with Order[a] = ???
+    pub def maximum(t: t[a]): a with Order[a] =
+        Reducible.reduceLeft(Order.max, t)
 
     ///
     /// Finds the largest element of `t` according to the given comparator `cmp`.
     ///
-    pub def maximumBy(cmp: (a, a) -> Comparison & ef, t: t[a]): a = ???
+    pub def maximumBy(cmp: (a, a) -> Comparison, t: t[a]): a =
+        Reducible.reduceLeft(Order.maxBy(cmp), t)
 
     ///
     /// Returns `t` as a list without the longest prefix that satisfies the predicate `f`.
     ///
-    pub def dropWhile(f: a -> Bool & ef, t: t[a]): List[a] = ???
+    pub def dropWhile(f: a -> Bool & ef, t: t[a]): List[a] & ef =
+        (Reducible.foldLeft((acc, a) -> {
+            let (c, k) = acc;
+            if (c and f(a))
+                (true, k)
+            else
+                (false, ks -> k(a :: ks))
+        }, (true, identity), t) |> snd)(Nil)
 
     ///
     /// Returns the longest prefix of `t` as a list that satisfies the predicate `f`.
     ///
-    pub def takeWhile(f: a -> Bool & ef, t: t[a]): List[a] = ???
+    pub def takeWhile(f: a -> Bool & ef, t: t[a]): List[a] & ef =
+        (Reducible.foldLeft((acc, a) -> {
+            let (c, k) = acc;
+            if (c and f(a))
+                (true, ks -> k(a :: ks))
+            else
+                (false, k)
+        }, (true, identity), t) |> snd)(Nil)
 
     ///
     /// Returns `t` as a list with `a` inserted between every two adjacent elements.
     ///
-    pub def intersperse(a: a, t: t[a]): List[a] = ???
+    pub def intersperse(a: a, t: t[a]): List[a] =
+        Reducible.reduceLeftTo((k, x) -> ks -> k(a :: x :: ks), x -> ks -> x :: ks , t)(Nil)
 
     ///
-    /// Returns `t` as a non-empty list.
+    /// Returns `t` as an array.
     ///
-    pub def toNel(t: t[a]): Nel[a] = ???
+    pub def toArray(t: t[a]): Array[a] & Impure =
+        let v = MutList.new();
+        Reducible.foldLeft((_, a) -> MutList.push!(a, v), (), t);
+        MutList.toArray(v)
 
     ///
     /// Returns `t` as a list.
     ///
-    pub def toList(t: t[a]): List[a] = ???
+    pub def toList(t: t[a]): List[a] =
+        Reducible.foldLeft((k, a) -> ks -> k(a :: ks), identity, t)(Nil) // NB: Builds a continuation function without the first
+                                                                         // element that is immediately invoked to avoid `foldRight`.
+    ///
+    /// Returns `t` as a map.
+    ///
+    pub def toMap(t: t[(k, v)]): Map[k, v] with Order[k] =
+        Reducible.foldLeft((acc, a) -> Map.insert(fst(a), snd(a), acc), Map.empty(), t)
+
+    ///
+    /// Returns `t` as a non-empty list.
+    ///
+    pub def toNel(t: t[a]): Nel[a] =
+        Reducible.reduceLeftTo((acc, a) -> Nel.append(acc, Nel(a, Nil)), a -> Nel(a, Nil), t)
 
     ///
     /// Returns `t` as a set.
     ///
-    pub def toSet(t: t[a]): Set[a] with Order[a] = ???
+    pub def toSet(t: t[a]): Set[a] with Order[a] =
+        Reducible.foldLeft((acc, a) -> Set.insert(a, acc), Set.empty(), t)
 
 }

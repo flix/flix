@@ -632,4 +632,287 @@ namespace TestReducible {
     def memberOf06(): Bool =
         Reducible.memberOf(3, Nel(1, 2 :: 3 :: Nil))
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // minimum                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def minimum01(): Bool =
+        Reducible.minimum(Nel(1, Nil)) == 1
+
+    @test
+    def minimum02(): Bool =
+        Reducible.minimum(Nel(1, 2 :: 3 :: Nil)) == 1
+
+    @test
+    def minimum03(): Bool =
+        Reducible.minimum(Nel(1, 2 :: 0 :: 3 :: Nil)) == 0
+
+    @test
+    def minimum04(): Bool =
+        Reducible.minimum(Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)) == 3
+
+    @test
+    def minimum05(): Bool =
+        Reducible.minimum(Nel(9, 5 :: 4 :: 2 :: 7 :: 10 :: Nil)) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // minimumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def minimumBy01(): Bool =
+        Reducible.minimumBy((x, y) -> x <=> y, Nel(1, Nil)) == 1
+
+    @test
+    def minimumBy02(): Bool =
+        Reducible.minimumBy((x, y) -> x <=> y, Nel(1, 2 :: 3 :: Nil)) == 1
+
+    @test
+    def minimumBy03(): Bool =
+        Reducible.minimumBy((x, y) -> x <=> y, Nel(1, 2 :: 0 :: 3 :: Nil)) == 0
+
+    @test
+    def minimumBy04(): Bool =
+        Reducible.minimumBy((x, y) -> x <=> y, Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)) == 3
+
+    @test
+    def minimumBy05(): Bool =
+        Reducible.minimumBy((x, y) -> x <=> y, Nel(9, 5 :: 4 :: 2 :: 7 :: 10 :: Nil)) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximum                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximum01(): Bool =
+        Reducible.maximum(Nel(1, Nil)) == 1
+
+    @test
+    def maximum02(): Bool =
+        Reducible.maximum(Nel(1, 2 :: 3 :: Nil)) == 3
+
+    @test
+    def maximum03(): Bool =
+        Reducible.maximum(Nel(1, 2 :: 0 :: 3 :: Nil)) == 3
+
+    @test
+    def maximum04(): Bool =
+        Reducible.maximum(Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)) == 9
+
+    @test
+    def maximum05(): Bool =
+        Reducible.maximum(Nel(3, 5 :: 4 :: 9 :: 7 :: 10 :: Nil)) == 10
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximumBy01(): Bool =
+        Reducible.maximumBy((x, y) -> x <=> y, Nel(1, Nil)) == 1
+
+    @test
+    def maximumBy02(): Bool =
+        Reducible.maximumBy((x, y) -> x <=> y, Nel(1, 2 :: 3 :: Nil)) == 3
+
+    @test
+    def maximumBy03(): Bool =
+        Reducible.maximumBy((x, y) -> x <=> y, Nel(1, 2 :: 0 :: 3 :: Nil)) == 3
+
+    @test
+    def maximumBy04(): Bool =
+        Reducible.maximumBy((x, y) -> x <=> y, Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)) == 9
+
+    @test
+    def maximumBy05(): Bool =
+        Reducible.maximumBy((x, y) -> x <=> y, Nel(3, 5 :: 4 :: 9 :: 7 :: 10 :: Nil)) == 10
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhile                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def dropWhile01(): Bool =
+        Reducible.dropWhile(a -> a > 3, Nel(1, Nil)) == 1 :: Nil
+
+    @test
+    def dropWhile02(): Bool =
+        Reducible.dropWhile(a -> a > 3, Nel(4, Nil)) == Nil
+
+    @test
+    def dropWhile03(): Bool =
+        Reducible.dropWhile(a -> a > 3, Nel(1, 2 :: Nil)) == 1 :: 2 :: Nil
+
+    @test
+    def dropWhile04(): Bool =
+        Reducible.dropWhile(a -> a > 3, Nel(1, 5 :: Nil)) == 1 :: 5 :: Nil
+
+    @test
+    def dropWhile05(): Bool =
+        Reducible.dropWhile(a -> a > 3, Nel(5, 1 :: Nil)) == 1 :: Nil
+
+    @test
+    def dropWhile06(): Bool =
+        Reducible.dropWhile(a -> a > 3, Nel(5, 8 :: Nil)) == Nil
+
+    @test
+    def dropWhile07(): Bool =
+        Nel(4, 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) |>
+            Reducible.dropWhile(a -> a > 3) == -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhile                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def takeWhile01(): Bool =
+        Reducible.takeWhile(a -> a > 3, Nel(1, Nil)) == Nil
+
+    @test
+    def takeWhile02(): Bool =
+        Reducible.takeWhile(a -> a > 3, Nel(4, Nil)) == 4 :: Nil
+
+    @test
+    def takeWhile03(): Bool =
+        Reducible.takeWhile(a -> a > 3, Nel(1, 2 :: Nil)) == Nil
+
+    @test
+    def takeWhile04(): Bool =
+        Reducible.takeWhile(a -> a > 3, Nel(1, 5 :: Nil)) == Nil
+
+    @test
+    def takeWhile05(): Bool =
+        Reducible.takeWhile(a -> a > 3, Nel(5, 1 :: Nil)) == 5 :: Nil
+
+    @test
+    def takeWhile06(): Bool =
+        Reducible.takeWhile(a -> a > 3, Nel(5, 8 :: Nil)) == 5 :: 8 :: Nil
+
+    @test
+    def takeWhile07(): Bool =
+        Nel(4, 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) |>
+            Reducible.takeWhile(a -> a > 3) == 4 :: 6 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // intersperse                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def intersperse01(): Bool =
+        Reducible.intersperse(7, Nel(1, Nil)) == 1 :: Nil
+
+    @test
+    def intersperse02(): Bool =
+        Reducible.intersperse(7, Nel(1, 2 :: Nil)) == 1 :: 7 :: 2 :: Nil
+
+    @test
+    def intersperse03(): Bool =
+        Reducible.intersperse(7, Nel(1, 2 :: 3 :: Nil)) == 1 :: 7 :: 2 :: 7 :: 3 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toArray01(): Bool & Impure =
+        let a = Reducible.toArray(Nel(1, Nil));
+        println(a);
+        Array.sameElements(a, [1])
+
+    @test
+    def toArray02(): Bool & Impure =
+        let a = Reducible.toArray(Nel(1, 2 :: 3 :: Nil));
+        println(a);
+        Array.sameElements(a, [1, 2, 3])
+
+    @test
+    def toArray03(): Bool & Impure =
+        let a = Reducible.toArray(Nel(1, 1 :: 2 :: 3 :: Nil));
+        println(a);
+        Array.sameElements(a, [1, 1, 2, 3])
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toList                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toList01(): Bool =
+        Reducible.toList(Nel(1, Nil)) == 1 :: Nil
+
+    @test
+    def toList02(): Bool =
+        Reducible.toList(Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def toList03(): Bool =
+        Reducible.toList(Nel(1, 1 :: 2 :: 3 :: Nil)) == 1 :: 1 :: 2 :: 3 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toMap                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMap01(): Bool =
+        Reducible.toMap(Nel((1, 1), Nil)) == Map#{1 => 1}
+
+    @test
+    def toMap02(): Bool =
+        Reducible.toMap(Nel(("a", 1), ("b", 2) :: ("c", 3) :: Nil)) == Map#{"a" => 1, "b" => 2, "c" => 3}
+
+    @test
+    def toMap03(): Bool =
+        Reducible.toMap(Nel((1, 2), (4, 3) :: (2, 2) :: (3, 3) :: Nil)) == Map#{1 => 2, 2 => 2, 3 => 3, 4 => 3}
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toNel                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNel01(): Bool =
+        Reducible.toNel(Nel(1, Nil)) == Nel(1, Nil)
+
+    @test
+    def toNel02(): Bool =
+        Reducible.toNel(Nel(1, 2 :: 3 :: Nil)) == Nel(1, 2 :: 3 :: Nil)
+
+    @test
+    def toNel03(): Bool =
+        Reducible.toNel(Nel(1, 1 :: 2 :: 3 :: Nil)) == Nel(1, 1 :: 2 :: 3 :: Nil)
+
+    @test
+    def toNel04(): Bool =
+        match List.range(0, 100) {
+            case x :: xs => Reducible.toNel(Nel(x, xs)) |> Nel.toList == List.range(0, 100)
+            case _       => unreachable!()
+        }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toSet                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toSet01(): Bool =
+        Reducible.toSet(Nel(1, Nil)) == Set#{1}
+
+    @test
+    def toSet02(): Bool =
+        Reducible.toSet(Nel(1, 2 :: 3 :: Nil)) == Set#{1, 2, 3}
+
+    @test
+    def toSet03(): Bool =
+        Reducible.toSet(Nel(1, 1 :: 2 :: 3 :: Nil)) == Set#{1, 2, 3}
+
 }
