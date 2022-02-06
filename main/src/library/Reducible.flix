@@ -150,39 +150,46 @@ pub lawless class Reducible[t: Type -> Type] {
     ///
     /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
     ///
-    pub def exists(f: a -> Bool & ef, t: t[a]): Bool = ???
+    pub def exists(f: a -> Bool & ef, t: t[a]): Bool & ef =
+        Reducible.foldLeft((acc, a) -> f(a) or acc, false, t)
 
     ///
     /// Returns `true` if and only if all elements in `t` satisfy the predicate `f`.
     ///
-    pub def forall(f: a -> Bool & ef, t: t[a]): Bool = ???
+    pub def forall(f: a -> Bool & ef, t: t[a]): Bool & ef =
+        Reducible.foldLeft((acc, a) -> f(a) and acc, true, t)
 
     ///
     /// Applies `f` to each element in `t`.
     ///
-    pub def foreach(f: a -> Unit & ef, t: t[a]): Unit = ???
+    pub def foreach(f: a -> Unit & ef, t: t[a]): Unit & ef =
+        Reducible.foldLeft((_, a) -> f(a), (), t)
 
     ///
     /// Alias for `findLeft`.
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from left to right.
     ///
-    pub def find(f: a -> Bool & ef, t: t[a]): Option[a] = ???
+    pub def find(f: a -> Bool & ef, t: t[a]): Option[a] & ef =
+        Reducible.findLeft(f, t)
 
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from left to right.
     ///
-    pub def findLeft(f: a -> Bool & ef, t: t[a]): Option[a] = ???
+    pub def findLeft(f: a -> Bool & ef, t: t[a]): Option[a] & ef =
+        Reducible.foldLeft((acc, a) -> Option.withDefault(default = if (f(a)) Some(a) else None, acc), None, t)
 
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from right to left.
     ///
-    pub def findRight(f: a -> Bool & ef, t: t[a]): Option[a] = ???
+    pub def findRight(f: a -> Bool & ef, t: t[a]): Option[a] & ef =
+        Reducible.foldRight((a, acc) -> Option.withDefault(default = if (f(a)) Some(a) else None, acc), None, t)
 
     ///
-    /// Returns `true` if and only if the element `x` is in `t`.
+    /// Returns `true` if and only if the element `a` is in `t`.
     ///
-    pub def memberOf(a: a, t: t[a]): Bool with Eq[a] = ???
+    pub def memberOf(a: a, t: t[a]): Bool with Eq[a] =
+        Reducible.foldLeft((acc, x) -> a == x or acc, false, t)
 
     ///
     /// Finds the smallest element of `t` according to the `Order` on `a`.
