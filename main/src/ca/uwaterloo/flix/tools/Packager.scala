@@ -223,7 +223,7 @@ object Packager {
 
     // Add all library packages.
     val lib = getLibraryDirectory(p)
-    if (lib.toFile.exists()) {
+    if (lib.toFile.isDirectory) {
       for (file <- getAllFiles(lib)) {
         if (file.getFileName.toString.endsWith(".fpkg")) {
           // Case 1: It's a Flix package.
