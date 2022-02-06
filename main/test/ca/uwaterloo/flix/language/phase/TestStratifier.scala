@@ -121,4 +121,27 @@ class TestStratifier extends FunSuite with TestUtils {
     expectError[StratificationError](result)
   }
 
+  test("Stratification.08") {
+    val input =
+      """
+        |pub def f(): Bool =
+        |    fHelper(12)
+        |
+        |def fHelper(v: v): Bool with Boxable[v] =
+        |    let p1 = #{
+        |        B302(Some(v)).
+        |        A302(x) :- B302(x).
+        |    };
+        |    let p2 = #{
+        |        A302(Some("hey")). C302(Some("heyy")).
+        |        B302(x) :- not A302(x), C302(x).
+        |    };
+        |    (query p1 select x from A302(x) |> Array.length) +
+        |    (query p2 select x from B302(x) |> Array.length)
+        |    > 0
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[StratificationError](result)
+  }
+
 }
