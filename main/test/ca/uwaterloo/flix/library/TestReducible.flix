@@ -48,6 +48,20 @@ namespace TestReducible {
     def reduceLeft07(): Bool =
         Reducible.reduceLeft((acc, a) -> (acc - a) * ((a rem 2) + 1), Nel(100, 1 :: 2 :: 3 :: Nil)) == 386
 
+    @test
+    def reduceLeft08(): Bool & Impure =
+        let l = ref Nil;
+        // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
+        let f = (acc, a) -> {
+            if (acc == 0)
+                l := a :: deref l
+            else
+                l := a :: acc :: deref l;
+            0
+        };
+        Reducible.reduceLeft(f, Nel(3, 2 :: 1 :: Nil));
+        (deref l) == 1 :: 2 :: 3 :: Nil
+
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceRight                                                             //
@@ -80,6 +94,20 @@ namespace TestReducible {
     @test
     def reduceRight07(): Bool =
         Reducible.reduceRight((a, acc) -> (acc - a) * ((a rem 2) + 1), Nel(1, 2 :: 3 :: 100 :: Nil)) == 382
+
+    @test
+    def reduceRight08(): Bool & Impure =
+        let l = ref Nil;
+        // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
+        let f = (a, acc) -> {
+            if (acc == 0)
+                l := a :: deref l
+            else
+                l := a :: acc :: deref l;
+            0
+        };
+        Reducible.reduceRight(f, Nel(1, 2 :: 3 :: Nil));
+        (deref l) == 1 :: 2 :: 3 :: Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -144,6 +172,12 @@ namespace TestReducible {
     def foldLeft06(): Bool =
         Reducible.foldLeft((acc, a) -> (acc - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: 3 :: Nil)) == 386
 
+    @test
+    def foldLeft07(): Bool & Impure =
+        let l = ref Nil;
+        Reducible.foldLeft((_, x) -> { l := x :: deref l; x == 1 }, false, Nel(3, 2 :: 1 :: Nil));
+        (deref l) == 1 :: 2 :: 3 :: Nil
+
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
@@ -172,5 +206,430 @@ namespace TestReducible {
     @test
     def foldRight06(): Bool =
         Reducible.foldRight((a, acc) -> (acc - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: 3 :: Nil)) == 382
+
+    @test
+    def foldRight07(): Bool & Impure =
+        let l = ref Nil;
+        Reducible.foldRight((x, _) -> { l := x :: deref l; x == 1 }, false, Nel(1, 2 :: 3 :: Nil));
+        (deref l) == 1 :: 2 :: 3 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // head                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def head01(): Bool =
+        Reducible.head(Nel(1, Nil)) == 1
+
+    @test
+    def head02(): Bool =
+        Reducible.head(Nel(2, 1 :: Nil)) == 2
+
+    @test
+    def head03(): Bool =
+        Reducible.head(Nel(3, 2 :: 1 :: Nil)) == 3
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // last                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def last01(): Bool =
+        Reducible.last(Nel(1, Nil)) == 1
+
+    @test
+    def last02(): Bool =
+        Reducible.last(Nel(1, 2 :: Nil)) == 2
+
+    @test
+    def last03(): Bool =
+        Reducible.last(Nel(1, 2 :: 3 :: Nil)) == 3
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // init                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def init01(): Bool =
+        Reducible.init(Nel(1, Nil)) == Nil
+
+    @test
+    def init02(): Bool =
+        Reducible.init(Nel(2, Nil)) == Nil
+
+    @test
+    def init03(): Bool =
+        Reducible.init(Nel(1, 2 :: Nil)) == 1 :: Nil
+
+    @test
+    def init04(): Bool =
+        Reducible.init(Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: Nil
+
+    @test
+    def init05(): Bool =
+        Reducible.init(Nel(3, 2 :: 1 :: Nil)) == 3 :: 2 :: Nil
+
+    @test
+    def init06(): Bool =
+        Reducible.init(Nel(1, 2 :: 3 :: 4 :: Nil)) == 1 :: 2 :: 3 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // tail                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def tail01(): Bool =
+        Reducible.tail(Nel(1, Nil)) == Nil
+
+    @test
+    def tail02(): Bool =
+        Reducible.tail(Nel(2, Nil)) == Nil
+
+    @test
+    def tail03(): Bool =
+        Reducible.tail(Nel(1, 2 :: Nil)) == 2 :: Nil
+
+    @test
+    def tail04(): Bool =
+        Reducible.tail(Nel(1, 2 :: 3 :: Nil)) == 2 :: 3 :: Nil
+
+    @test
+    def tail05(): Bool =
+        Reducible.tail(Nel(3, 2 :: 1 :: Nil)) == 2 :: 1 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // reverse                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def reverse01(): Bool =
+        Reducible.reverse(Nel(1, Nil)) == 1 :: Nil
+
+    @test
+    def reverse02(): Bool =
+        Reducible.reverse(Nel(1, 2 :: Nil)) == 2 :: 1 :: Nil
+
+    @test
+    def reverse03(): Bool =
+        Reducible.reverse(Nel(1, 2 :: 3 :: Nil)) == 3 :: 2 :: 1 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // count                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def count01(): Bool =
+        Reducible.count(i -> i > 3, Nel(1, Nil)) == 0
+
+    @test
+    def count02(): Bool =
+        Reducible.count(i -> i > 3, Nel(4, Nil)) == 1
+
+    @test
+    def count03(): Bool =
+        Reducible.count(i -> i > 3, Nel(1, 2 :: Nil)) == 0
+
+    @test
+    def count04(): Bool =
+        Reducible.count(i -> i > 3, Nel(1, 8 :: Nil)) == 1
+
+    @test
+    def count05(): Bool =
+        Reducible.count(i -> i > 3, Nel(8, 1 :: Nil)) == 1
+
+    @test
+    def count06(): Bool =
+        Reducible.count(i -> i > 3, Nel(6, 7 :: Nil)) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // length                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def length01(): Bool =
+        Reducible.length(Nel(1, Nil)) == 1
+
+    @test
+    def length02(): Bool =
+        Reducible.length(Nel(1, 2 :: Nil)) == 2
+
+    @test
+    def length03(): Bool =
+        Reducible.length(Nel(1, 2 :: 3 :: Nil)) == 3
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool =
+        Reducible.sum(Nel(1, Nil)) == 1
+
+    @test
+    def sum02(): Bool =
+        Reducible.sum(Nel(1, 2 :: 3 :: Nil)) == 6
+
+    @test
+    def sum03(): Bool =
+        Reducible.sum(Nel(1, 2 :: 3 :: -3 :: Nil)) == 3
+
+    @test
+    def sum04(): Bool =
+        Reducible.sum(Nel(-1, -2 :: -3 :: -4 :: Nil)) == -10
+
+    @test
+    def sum05(): Bool =
+        Reducible.sum(Nel(10, -10 :: Nil)) == 0
+
+    @test
+    def sum06(): Bool = match List.range(1, 101) {
+        case x :: xs => Reducible.sum(Nel(x, xs)) == 5050
+        case _       => unreachable!()
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        Reducible.sumWith(x -> x + 1, Nel(1, Nil)) == 2
+
+    @test
+    def sumWith02(): Bool =
+        Reducible.sumWith(x -> x + 1, Nel(1, 2 :: 3 :: Nil)) == 9
+
+    @test
+    def sumWith03(): Bool =
+        Reducible.sumWith(x -> x + 1, Nel(1, 2 :: 3 :: -3 :: Nil)) == 7
+
+    @test
+    def sumWith04(): Bool =
+        Reducible.sumWith(x -> x + 1, Nel(-1, -2 :: -3 :: -4 :: Nil)) == -6
+
+    @test
+    def sumWith05(): Bool =
+        Reducible.sumWith(x -> x + 1, Nel(10, -10 :: Nil)) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool =
+        Reducible.product(Nel(1, Nil)) == 1
+
+    @test
+    def product02(): Bool =
+        Reducible.product(Nel(1, 2 :: 3 :: Nil)) == 6
+
+    @test
+    def product03(): Bool =
+        Reducible.product(Nel(1, 2 :: 3 :: -3 :: Nil)) == -18
+
+    @test
+    def product04(): Bool =
+        Reducible.product(Nel(-1, -2 :: -3 :: -4 :: Nil)) == 24
+
+    @test
+    def product05(): Bool =
+        Reducible.product(Nel(10, -10 :: Nil)) == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool =
+        Reducible.productWith(x -> x + 1, Nel(1, Nil)) == 2
+
+    @test
+    def productWith02(): Bool =
+        Reducible.productWith(x -> x + 1, Nel(1, 2 :: 3 :: Nil)) == 24
+
+    @test
+    def productWith03(): Bool =
+        Reducible.productWith(x -> x + 1, Nel(1, 2 :: 3 :: -3 :: Nil)) == -48
+
+    @test
+    def productWith04(): Bool =
+        Reducible.productWith(x -> x + 1, Nel(-2, -3 :: -4 :: -5 :: Nil)) == 24
+
+    @test
+    def productWith05(): Bool =
+        Reducible.productWith(x -> x + 1, Nel(10, -10 :: Nil)) == -99
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def exists01(): Bool =
+        Reducible.exists(x -> x == 1, Nel(1, Nil)) == true
+
+    @test
+    def exists02(): Bool =
+        Reducible.exists(x -> x == 2, Nel(1, Nil)) == false
+
+    @test
+    def exists03(): Bool =
+        Reducible.exists(x -> x == 1, Nel(1, 2 :: Nil)) == true
+
+    @test
+    def exists04(): Bool =
+        Reducible.exists(x -> x == 2, Nel(1, 2 :: Nil)) == true
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forall                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forall01(): Bool =
+        Reducible.forall(x -> x == 1, Nel(1, Nil)) == true
+
+    @test
+    def forall02(): Bool =
+        Reducible.forall(x -> x == 2, Nel(1, Nil)) == false
+
+    @test
+    def forall03(): Bool =
+        Reducible.forall(x -> x == 1, Nel(1, 1 :: Nil)) == true
+
+    @test
+    def forall04(): Bool =
+        Reducible.forall(x -> x == 1, Nel(1, 2 :: Nil)) == false
+
+    @test
+    def forall05(): Bool =
+        Reducible.forall(x -> x == 1, Nel(2, 1 :: Nil)) == false
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foreach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foreach01(): Bool & Impure =
+        let r = ref 21;
+        Reducible.foreach(x -> r := x, Nel(1, Nil));
+        1 == deref r
+
+    @test
+    def foreach02(): Bool & Impure =
+        let r = ref 21;
+        Reducible.foreach(x -> r := x, Nel(1, 2 :: 3 :: Nil));
+        3 == deref r
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def findLeft01(): Bool =
+        Reducible.findLeft(x -> x == 0, Nel(1, Nil)) == None
+
+    @test
+    def findLeft02(): Bool =
+        Reducible.findLeft(x -> x == 0, Nel(1, 2 :: Nil)) == None
+
+    @test
+    def findLeft03(): Bool =
+        Reducible.findLeft(x -> x == 0, Nel(1, 2 :: 3 :: Nil)) == None
+
+    @test
+    def findLeft04(): Bool =
+        Reducible.findLeft(x -> x == 1, Nel(1, 2 :: 3 :: Nil)) == Some(1)
+
+    @test
+    def findLeft05(): Bool =
+        Reducible.findLeft(x -> x == 2, Nel(1, 2 :: 3 :: Nil)) == Some(2)
+
+    @test
+    def findLeft06(): Bool =
+        Reducible.findLeft(x -> x == 3, Nel(1, 2 :: 3 :: Nil)) == Some(3)
+
+    @test
+    def findLeft07(): Bool & Impure =
+        let l = ref Nil;
+        Reducible.findLeft(x -> { l := x :: deref l; x == 1 }, Nel(3, 2 :: 1 :: Nil));
+        (deref l) == 1 :: 2 :: 3 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def findRight01(): Bool =
+        Reducible.findRight(x -> x == 0, Nel(1, Nil)) == None
+
+    @test
+    def findRight02(): Bool =
+        Reducible.findRight(x -> x == 0, Nel(1, 2 :: Nil)) == None
+
+    @test
+    def findRight03(): Bool =
+        Reducible.findRight(x -> x == 0, Nel(1, 2 :: 3 :: Nil)) == None
+
+    @test
+    def findRight04(): Bool =
+        Reducible.findRight(x -> x == 1, Nel(1, 2 :: 3 :: Nil)) == Some(1)
+
+    @test
+    def findRight05(): Bool =
+        Reducible.findRight(x -> x == 2, Nel(1, 2 :: 3 :: Nil)) == Some(2)
+
+    @test
+    def findRight06(): Bool =
+        Reducible.findRight(x -> x == 3, Nel(1, 2 :: 3 :: Nil)) == Some(3)
+
+    @test
+    def findRight07(): Bool & Impure =
+        let l = ref Nil;
+        Reducible.findRight(x -> { l := x :: deref l; x == 1 }, Nel(1, 2 :: 3 :: Nil));
+        (deref l) == 1 :: 2 :: 3 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // memberOf                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def memberOf01(): Bool =
+        Reducible.memberOf(0, Nel(1, Nil)) == false
+
+    @test
+    def memberOf02(): Bool =
+        Reducible.memberOf(0, Nel(1, 2 :: Nil)) == false
+
+    @test
+    def memberOf03(): Bool =
+        Reducible.memberOf(0, Nel(1, 2 :: 3 :: Nil)) == false
+
+    @test
+    def memberOf04(): Bool =
+        Reducible.memberOf(1, Nel(1, 2 :: 3 :: Nil))
+
+    @test
+    def memberOf05(): Bool =
+        Reducible.memberOf(2, Nel(1, 2 :: 3 :: Nil))
+
+    @test
+    def memberOf06(): Bool =
+        Reducible.memberOf(3, Nel(1, 2 :: 3 :: Nil))
 
 }

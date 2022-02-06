@@ -84,89 +84,112 @@ pub lawless class Reducible[t: Type -> Type] {
     ///
     /// Returns the first element of `t`.
     ///
-    pub def head(t: t[a]): a = ???
+    pub def head(t: t[a]): a =
+        Reducible.reduceLeft((acc, _) -> acc, t)
 
     ///
     /// Returns the last element of `t`.
     ///
-    pub def last(t: t[a]): a = ???
+    pub def last(t: t[a]): a =
+        Reducible.reduceLeft((_, a) -> a, t)
 
     ///
-    /// Returns a list with the first element of `t`.
+    /// Returns `t` as a list without the last element.
     ///
-    pub def init(t: t[a]): List[a] = ???
+    pub def init(t: t[a]): List[a] =
+        Reducible.reduceRightTo((a, acc) -> a :: acc, _ -> Nil, t)
 
     ///
-    /// Returns a list with the elements of `t` except the first.
+    /// Returns the tail of `t` as a list.
     ///
-    pub def tail(t: t[a]): List[a] = ???
+    pub def tail(t: t[a]): List[a] =
+        Reducible.reduceLeftTo((k, a) -> ks -> k(a :: ks),  _ -> identity, t)(Nil) // NB: Builds a continuation function without the first
+                                                                                   // element that is immediately invoked to avoid `foldRight`.
+    ///
+    /// Returns the reverse of `t` as a list.
+    ///
+    pub def reverse(t: t[a]): List[a] =
+        Reducible.foldLeft((acc, a) -> a :: acc, Nil, t)
 
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
-    pub def count(f: a -> Bool, t: t[a]): Int32 = ???
+    pub def count(f: a -> Bool, t: t[a]): Int32 =
+        Reducible.foldLeft((acc, a) -> if (f(a)) 1 + acc else acc, 0, t)
 
     ///
     /// Returns the number of elements in `t`.
     ///
-    pub def length(t: t[a]): Int32 = ???
+    pub def length(t: t[a]): Int32 =
+        Reducible.foldLeft((acc, _) -> 1 + acc, 0, t)
 
     ///
     /// Returns the sum of all elements in `t`.
     ///
-    pub def sum(t: t[Int32]): Int32 = ???
+    pub def sum(t: t[Int32]): Int32 =
+        Reducible.foldLeft((acc, a) -> a + acc, 0, t)
 
     ///
     /// Returns the sum of all elements in `t` according to the function `f`.
     ///
-    pub def sumWith(f: a -> Int32 & ef, t: t[a]): Int32 = ???
+    pub def sumWith(f: a -> Int32 & ef, t: t[a]): Int32 & ef =
+        Reducible.foldLeft((acc, a) -> f(a) + acc, 0, t)
 
     ///
     /// Returns the product of all elements in `t`.
     ///
-    pub def product(t: t[Int32]): Int32 = ???
+    pub def product(t: t[Int32]): Int32 =
+        Reducible.foldLeft((acc, a) -> a * acc, 1, t)
 
     ///
     /// Returns the product of all elements in `t` according to the function `f`.
     ///
-    pub def productWith(f: a -> Int32 & ef, t: t[a]): Int32 = ???
+    pub def productWith(f: a -> Int32 & ef, t: t[a]): Int32 & ef =
+        Reducible.foldLeft((acc, a) -> f(a) * acc, 1, t)
 
     ///
     /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
     ///
-    pub def exists(f: a -> Bool & ef, t: t[a]): Bool = ???
+    pub def exists(f: a -> Bool & ef, t: t[a]): Bool & ef =
+        Reducible.foldLeft((acc, a) -> f(a) or acc, false, t)
 
     ///
     /// Returns `true` if and only if all elements in `t` satisfy the predicate `f`.
     ///
-    pub def forall(f: a -> Bool & ef, t: t[a]): Bool = ???
+    pub def forall(f: a -> Bool & ef, t: t[a]): Bool & ef =
+        Reducible.foldLeft((acc, a) -> f(a) and acc, true, t)
 
     ///
     /// Applies `f` to each element in `t`.
     ///
-    pub def foreach(f: a -> Unit & ef, t: t[a]): Unit = ???
+    pub def foreach(f: a -> Unit & ef, t: t[a]): Unit & ef =
+        Reducible.foldLeft((_, a) -> f(a), (), t)
 
     ///
     /// Alias for `findLeft`.
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from left to right.
     ///
-    pub def find(f: a -> Bool & ef, t: t[a]): Option[a] = ???
+    pub def find(f: a -> Bool & ef, t: t[a]): Option[a] & ef =
+        Reducible.findLeft(f, t)
 
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from left to right.
     ///
-    pub def findLeft(f: a -> Bool & ef, t: t[a]): Option[a] = ???
+    pub def findLeft(f: a -> Bool & ef, t: t[a]): Option[a] & ef =
+        Reducible.foldLeft((acc, a) -> Option.withDefault(default = if (f(a)) Some(a) else None, acc), None, t)
 
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from right to left.
     ///
-    pub def findRight(f: a -> Bool & ef, t: t[a]): Option[a] = ???
+    pub def findRight(f: a -> Bool & ef, t: t[a]): Option[a] & ef =
+        Reducible.foldRight((a, acc) -> Option.withDefault(default = if (f(a)) Some(a) else None, acc), None, t)
 
     ///
-    /// Returns `true` if and only if the element `x` is in `t`.
+    /// Returns `true` if and only if the element `a` is in `t`.
     ///
-    pub def memberOf(a: a, t: t[a]): Bool with Eq[a] = ???
+    pub def memberOf(a: a, t: t[a]): Bool with Eq[a] =
+        Reducible.foldLeft((acc, x) -> a == x or acc, false, t)
 
     ///
     /// Finds the smallest element of `t` according to the `Order` on `a`.
