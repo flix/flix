@@ -429,4 +429,17 @@ namespace TestSemiGroup {
     @test
     def associativeTest01(): Bool = combine(combine("a", "b"), "c") == combine("a", combine("b", "c"))
 
+    /////////////////////////////////////////////////////////////////////////////
+    // Syntax                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def operator01(): Bool = (1 ++ 1) == 2
+
+    @test
+    def operator02(): Bool = ("abc" ++ "def") == "abcdef"
+
+    @test
+    def operator03(): Bool = (1 :: 2 :: Nil ++ 3 :: 4 :: Nil) == 1 :: 2 :: 3 :: 4 :: Nil
+
 }
