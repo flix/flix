@@ -48,6 +48,20 @@ namespace TestReducible {
     def reduceLeft07(): Bool =
         Reducible.reduceLeft((acc, a) -> (acc - a) * ((a rem 2) + 1), Nel(100, 1 :: 2 :: 3 :: Nil)) == 386
 
+    @test
+    def reduceLeft08(): Bool & Impure =
+        let l = ref Nil;
+        // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
+        let f = (acc, a) -> {
+            if (acc == 0)
+                l := a :: deref l
+            else
+                l := a :: acc :: deref l;
+            0
+        };
+        Reducible.reduceLeft(f, Nel(3, 2 :: 1 :: Nil));
+        (deref l) == 1 :: 2 :: 3 :: Nil
+
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceRight                                                             //
@@ -80,6 +94,20 @@ namespace TestReducible {
     @test
     def reduceRight07(): Bool =
         Reducible.reduceRight((a, acc) -> (acc - a) * ((a rem 2) + 1), Nel(1, 2 :: 3 :: 100 :: Nil)) == 382
+
+    @test
+    def reduceRight08(): Bool & Impure =
+        let l = ref Nil;
+        // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
+        let f = (a, acc) -> {
+            if (acc == 0)
+                l := a :: deref l
+            else
+                l := a :: acc :: deref l;
+            0
+        };
+        Reducible.reduceRight(f, Nel(1, 2 :: 3 :: Nil));
+        (deref l) == 1 :: 2 :: 3 :: Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -144,6 +172,12 @@ namespace TestReducible {
     def foldLeft06(): Bool =
         Reducible.foldLeft((acc, a) -> (acc - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: 3 :: Nil)) == 386
 
+    @test
+    def foldLeft07(): Bool & Impure =
+        let l = ref Nil;
+        Reducible.foldLeft((_, x) -> { l := x :: deref l; x == 1 }, false, Nel(3, 2 :: 1 :: Nil));
+        (deref l) == 1 :: 2 :: 3 :: Nil
+
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
@@ -172,6 +206,12 @@ namespace TestReducible {
     @test
     def foldRight06(): Bool =
         Reducible.foldRight((a, acc) -> (acc - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: 3 :: Nil)) == 382
+
+    @test
+    def foldRight07(): Bool & Impure =
+        let l = ref Nil;
+        Reducible.foldRight((x, _) -> { l := x :: deref l; x == 1 }, false, Nel(1, 2 :: 3 :: Nil));
+        (deref l) == 1 :: 2 :: 3 :: Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -522,6 +562,12 @@ namespace TestReducible {
     def findLeft06(): Bool =
         Reducible.findLeft(x -> x == 3, Nel(1, 2 :: 3 :: Nil)) == Some(3)
 
+    @test
+    def findLeft07(): Bool & Impure =
+        let l = ref Nil;
+        Reducible.findLeft(x -> { l := x :: deref l; x == 1 }, Nel(3, 2 :: 1 :: Nil));
+        (deref l) == 1 :: 2 :: 3 :: Nil
+
 
     /////////////////////////////////////////////////////////////////////////////
     // findRight                                                               //
@@ -550,6 +596,12 @@ namespace TestReducible {
     @test
     def findRight06(): Bool =
         Reducible.findRight(x -> x == 3, Nel(1, 2 :: 3 :: Nil)) == Some(3)
+
+    @test
+    def findRight07(): Bool & Impure =
+        let l = ref Nil;
+        Reducible.findRight(x -> { l := x :: deref l; x == 1 }, Nel(1, 2 :: 3 :: Nil));
+        (deref l) == 1 :: 2 :: 3 :: Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
