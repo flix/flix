@@ -382,8 +382,7 @@ object Packager {
     * Returns `true` if the given path `p` appears to be a flix project path.
     */
   private def isProjectPath(p: Path): Boolean =
-    Files.exists(getLibraryDirectory(p)) &&
-      Files.exists(getSourceDirectory(p)) &&
+    Files.exists(getSourceDirectory(p)) &&
       Files.exists(getTestDirectory(p)) &&
       Files.exists(getHistoryFile(p)) &&
       Files.exists(getLicenseFile(p)) &&
