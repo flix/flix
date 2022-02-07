@@ -54,11 +54,11 @@ namespace File {
     /// Statistical information for a file.
     ///
     type alias StatInfo = {
-        accessTime :: Int64,
-        creationTime :: Int64,
+        accessTime       :: Int64,
+        creationTime     :: Int64,
         modificationTime :: Int64,
-        size :: Int64,
-        fileType :: FileType
+        size             :: Int64,
+        fileType         :: FileType
     }
 
     ///
