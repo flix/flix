@@ -29,6 +29,7 @@ class TestIncremental extends FunSuite with BeforeAndAfterAll {
 
   private val FileA = "FileA.flix"
   private val FileB = "FileB.flix"
+  private val FileC = "FileC.flix"
   private val Flix = new Flix()
   private val Opts = Options.Default.copy(incremental = true)
 
@@ -45,6 +46,12 @@ class TestIncremental extends FunSuite with BeforeAndAfterAll {
          |    println(f(true));
          |    0
          |""".stripMargin)
+    Flix.addSourceCode(FileC,
+      s"""
+         |pub lawless class C[a] {
+         |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
+         |}
+         |""".stripMargin)
     Flix.compile().get
   }
 
@@ -54,12 +61,18 @@ class TestIncremental extends FunSuite with BeforeAndAfterAll {
          |pub def f(x: Int32): Int32 = x + 1i32
          |
          |""".stripMargin)
-
     Flix.addSourceCode(FileB,
       s"""
          |def main(_args: Array[String]): Int32 & Impure =
          |    println(f(123));
          |    0
+         |""".stripMargin)
+    Flix.addSourceCode(FileC,
+      s"""
+         |pub lawless class C[a] {
+         |    pub def cf(x: Int32, y: a, z: a): a = if (f(x) == x) y else z
+         |    pub def cg(x: a): a
+         |}
          |""".stripMargin)
     Flix.compile().get
   }
@@ -74,6 +87,14 @@ class TestIncremental extends FunSuite with BeforeAndAfterAll {
          |def main(_args: Array[String]): Int32 & Impure =
          |    println(f("Hello World"));
          |    0
+         |""".stripMargin)
+    Flix.addSourceCode(FileC,
+      s"""
+         |pub lawless class C[a] {
+         |    pub def cf(x: String, y: a, z: a): a = if (f(x) == x) y else z
+         |    pub def cg(x: a): a
+         |    pub def ch(x: a): a
+         |}
          |""".stripMargin)
     Flix.compile().get
   }
