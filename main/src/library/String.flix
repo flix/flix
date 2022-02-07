@@ -21,8 +21,8 @@ namespace String {
     ///
     @Time(1) @Space(1)
     pub def charAt(i: Int32, s: String): Char =
-        import java.lang.String.charAt(Int32);
-        charAt(s, i) as & Pure
+        import java.lang.String.charAt(Int32): Char & Pure;
+        charAt(s, i)
 
     ///
     /// Returns the string `s1` followed by the string `s2`.
