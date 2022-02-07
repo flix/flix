@@ -50,7 +50,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
   */
 object Kinder {
 
-  def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, CompilationMessage] = flix.phase("Kinder") {
+  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[KindedAst.Root, CompilationMessage] = flix.phase("Kinder") {
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
     visitTypeAliases(root.taOrder, root) flatMap {
@@ -69,11 +69,7 @@ object Kinder {
             visitClass(clazz, taenv, root).map(sym -> _)
         }))
 
-        val defsVal = Validation.sequence(ParOps.parMap(root.defs)({
-          pair: (Symbol.DefnSym, ResolvedAst.Def) =>
-            val (sym, defn) = pair
-            visitDef(defn, KindEnv.empty, taenv, root).map(sym -> _)
-        }))
+        val defsVal = visitDefs(root, taenv, oldRoot, changeSet)
 
         val instancesVal = Validation.sequence(ParOps.parMap(root.instances)({
           pair: (Symbol.ClassSym, List[ResolvedAst.Instance]) =>
@@ -184,6 +180,21 @@ object Kinder {
         result <- Validation.sequenceT(tpeVal, tconstrsVal, defsVal)
         (tpe, tconstrs, defs) = result
       } yield KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
+  }
+
+  /**
+    * Performs kinding on the all the definitions in the given root.
+    */
+  private def visitDefs(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, KindedAst.Def], KindError] = {
+    val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
+
+    val results = ParOps.parMap(staleDefs.values)(visitDef(_, KindEnv.empty, taenv, root))
+
+    Validation.sequence(results) map {
+      res => res.foldLeft(freshDefs) {
+        case (acc, defn) => acc + (defn.sym -> defn)
+      }
+    }
   }
 
   /**
