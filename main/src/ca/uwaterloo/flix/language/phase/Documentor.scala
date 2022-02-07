@@ -397,14 +397,7 @@ object Documentor {
     */
   private def visitCase(caze: Case): JObject = caze match {
     case Case(_, tag, _, _, _) =>
-      // TODO: FormatType.formatType is broken.
-      val tpe = try {
-        // We try our best.
-        FormatType.formatType(caze.tpeDeprecated)
-      } catch {
-        // And if it crashes we use a placeholder:
-        case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
-      }
+      val tpe = FormatType.formatType(caze.tpeDeprecated)
       ("tag" -> tag.name) ~ ("tpe" -> tpe)
   }
 
@@ -417,7 +410,7 @@ object Documentor {
 
       val sigs = sigs0.sortBy(_.sym.name).map(visitSig)
       val defs = defs0.sortBy(_.sym.name).map(visitSig)
-      val instances = root.instances(sym).sortBy(_.loc).map(inst => visitInstance(sym, inst))
+      val instances = root.instances.getOrElse(sym, Nil).sortBy(_.loc).map(inst => visitInstance(sym, inst))
 
       ("sym" -> visitClassSym(sym)) ~
         ("doc" -> visitDoc(doc)) ~
