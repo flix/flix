@@ -44,7 +44,8 @@ namespace MutList {
     ///
     /// Constant which stores the minimum capacity of a MutList.
     ///
-    def minCapacity(): Int32 = 8
+    @Internal
+    pub def minCapacity(): Int32 = 8
 
     ///
     /// Returns a new empty mutable list with a default capacity.
@@ -678,7 +679,7 @@ namespace MutList {
     ///
     pub def toArray(v: MutList[a]): Array[a] & Impure =
         let MutList(a, l) = v;
-        Array.slice(0, deref l, deref a)
+        Array.copyOfRange(0, deref l, deref a)
 
     ///
     /// Returns the mutable list `xs` as a chain.
