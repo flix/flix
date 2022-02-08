@@ -30,6 +30,7 @@ class FlixSuite extends FunSuite {
     val iter = Files.walk(Paths.get(path), 1)
       .iterator().asScala
       .filter(p => Files.isRegularFile(p) && p.toString.endsWith(".flix"))
+      .toList.sorted
 
     for (p <- iter) {
       mkTest(p.toString)
