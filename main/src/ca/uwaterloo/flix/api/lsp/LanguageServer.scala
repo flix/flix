@@ -313,7 +313,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           val e = System.nanoTime() - t
 
           // Print query time.
-          println(s"lsp/check: ${e / 1_000_000}ms")
+          // println(s"lsp/check: ${e / 1_000_000}ms")
 
           // Compute Code Quality hints.
           val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix)
