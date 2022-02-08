@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Magnus Madsen
+ *  Copyright 2022 Magnus Madsen
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,52 +20,47 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import org.scalatest.FunSuite
+import scala.jdk.CollectionConverters._
 
-// TODO: Deprecated and scheduled for removal.
-class FlixTest(name: String, paths: List[String], options: Options) extends FunSuite {
+import java.nio.file.{Files, Path, Paths}
 
-  def this(name: String, path: String)(implicit options: Options = Options.TestWithLibMin) = this(name, List(path), options)
+class FlixSuite extends FunSuite {
 
-  /**
-    * Returns the name of the test suite.
-    */
-  override def suiteName: String = name
+  def mkTestDir(path: String)(implicit options: Options): Unit = {
+    val iter = Files.walk(Paths.get(path), 1)
+      .iterator().asScala
+      .filter(p => Files.isRegularFile(p) && p.toString.endsWith(".flix"))
+      .toList.sorted
 
-  /**
-    * Attempts to initialize all the tests.
-    */
-  private def init(): Unit = try {
+    for (p <- iter) {
+      mkTest(p.toString)
+    }
+  }
+
+  def mkTest(path: String)(implicit options: Options): Unit = {
+    val p = Paths.get(path)
+    val n = p.getFileName.toString
+    test(n)(compileAndRun(n, p))
+  }
+
+  private def compileAndRun(name: String, path: Path)(implicit options: Options): Unit = {
     // Options and Flix object.
     val flix = new Flix().setOptions(options)
 
     // Add the given path.
-    for (path <- paths)
-      flix.addSourcePath(path)
+    flix.addSourcePath(path)
 
     // Compile and Evaluate the program to obtain the compilationResult.
     flix.compile() match {
-      case Success(compilationResult) => runTests(compilationResult)
+      case Success(compilationResult) =>
+        runTests(name, compilationResult)
       case Failure(errors) =>
-        // Create a single test that always fails.
-        test("Aborted.") {
-          for (e <- errors) {
-            println(e.message(flix.getFormatter))
-          }
-          fail(s"Unable to compile FlixTest for test suite: '$name'. Failed with: ${errors.length} errors.")
-        }
+        val es = errors.map(_.message(flix.getFormatter)).mkString("\n")
+        fail(s"Unable to compile. Failed with: ${errors.length} errors.\n\n$es")
     }
-  } catch {
-    case ex: Throwable =>
-      ex.printStackTrace()
-      test("!!! Compiler Crashed !!!") {
-        fail(s"Unable to load: '$name'.")
-      }
   }
 
-  /**
-    * Runs all tests.
-    */
-  private def runTests(compilationResult: CompilationResult): Unit = {
+  private def runTests(name: String, compilationResult: CompilationResult): Unit = {
     // Group the tests by namespace.
     val testsByNamespace = compilationResult.getTests.groupBy(_._1.namespace)
 
@@ -76,21 +71,17 @@ class FlixTest(name: String, paths: List[String], options: Options) extends FunS
 
       // Evaluate each tests with a clue of its source location.
       for ((sym, defn) <- testsByName) {
-        test(sym.toString) {
-          withClue(sym.loc.format) {
-            // Evaluate the function.
-            val result = defn()
-            // Expect the true value, if boolean.
-            if (result.isInstanceOf[java.lang.Boolean]) {
-              assertResult(true)(result)
+        withClue(sym.loc.format) {
+          // Evaluate the function.
+          val result = defn()
+          // Expect the true value, if boolean.
+          if (result.isInstanceOf[java.lang.Boolean]) {
+            if (result != true) {
+              fail("Expected true, but got false.")
             }
           }
         }
-
       }
     }
   }
-
-  init()
-
 }
