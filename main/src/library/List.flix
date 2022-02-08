@@ -223,18 +223,14 @@ namespace List {
     ///
     /// Alias for `findLeft`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def find(f: a -> Bool, l: List[a]): Option[a] = findLeft(f, l)
+    pub def find(f: a -> Bool & ef, l: List[a]): Option[a] & ef = findLeft(f, l)
 
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def findLeft(f: a -> Bool, l: List[a]): Option[a] = match l {
+    pub def findLeft(f: a -> Bool & ef, l: List[a]): Option[a] & ef = match l {
         case Nil => None
         case x :: xs => if (f(x)) Some(x) else findLeft(f, xs)
     }
@@ -242,12 +238,30 @@ namespace List {
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def findRight(f: a -> Bool, l: List[a]): Option[a] = match l {
+    pub def findRight(f: a -> Bool & ef, l: List[a]): Option[a] & ef =
+        reifyEff(f) {
+            case Pure(g) => findRightP(g, l)
+            case _       => findRightI(f, l)
+        }
+
+    ///
+    /// Helper function for `findRight`.
+    ///
+    def findRightP(f: a -> Bool, l: List[a]): Option[a] = match l {
         case Nil     => None
         case x :: xs => Option.withDefault(default = if (f(x)) Some(x) else None, findRight(f, xs))
+    }
+
+    ///
+    /// Helper function for `findRight`.
+    ///
+    def findRightI(f: a -> Bool & ef, l: List[a]): Option[a] & ef = match l { // Why not just use CPS?
+        case Nil     => None
+        case x :: xs => match findRight(f, xs) {
+            case None    => if (f(x)) Some(x) else None
+            case Some(y) => Some(y)
+        }
     }
 
     ///
@@ -895,10 +909,8 @@ namespace List {
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def dropWhile(f: a -> Bool, l: List[a]): List[a] = match l {
+    pub def dropWhile(f: a -> Bool & ef, l: List[a]): List[a] & ef = match l {
         case Nil     => Nil
         case x :: xs => if (f(x)) dropWhile(f, xs) else l
     }
@@ -925,16 +937,14 @@ namespace List {
     ///
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def takeWhile(f: a -> Bool, l: List[a]): List[a] =
-        takeWhileHelper(f, l, ks -> ks)
+    pub def takeWhile(f: a -> Bool & ef, l: List[a]): List[a] & ef =
+        takeWhileHelper(f, l, ks -> ks as & ef)
 
     ///
     /// Helper function for `takeWhile`.
     ///
-    def takeWhileHelper(f: a -> Bool, l: List[a], k: List[a] -> List[a]): List[a] = match l {
+    def takeWhileHelper(f: a -> Bool & ef, l: List[a], k: List[a] -> List[a] & ef): List[a] & ef = match l {
         case Nil     => k(Nil)
         case x :: xs => if (f(x)) takeWhileHelper(f, xs, ks -> k(x :: ks)) else k(Nil)
     }
