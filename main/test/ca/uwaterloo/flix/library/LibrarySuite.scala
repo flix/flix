@@ -18,6 +18,6 @@ package ca.uwaterloo.flix.library
 
 import ca.uwaterloo.flix.util.{FlixSuite, Options}
 
-class LibrarySuite extends FlixSuite {
+class LibrarySuite extends FlixSuite(incremental = true) {
   mkTestDir("main/test/ca/uwaterloo/flix/library/")(Options.TestWithLibAll)
 }
