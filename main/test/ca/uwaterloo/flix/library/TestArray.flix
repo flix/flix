@@ -4575,4 +4575,47 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def joinWith04(): Bool & Impure =
         Array.joinWith(x -> x + x, ",", ["1", "2", "3"]) == "11,22,33"
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toMutList                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutList01(): Bool & Impure =
+        MutList.sameElements(Array.toMutList([]: Array[Int32]), MutList.new())
+
+    @test
+    def toMutList02(): Bool & Impure =
+        let v = MutList.new();
+        MutList.push!(1, v);
+        MutList.sameElements(Array.toMutList([1]), v)
+
+    @test
+    def toMutList03(): Bool & Impure =
+        let v = MutList.new();
+        MutList.push!(1, v);
+        MutList.push!(2, v);
+        MutList.push!(3, v);
+        MutList.sameElements(Array.toMutList([1, 2, 3]), v)
+
+    @test
+    def toMutList04(): Bool & Impure =
+        MutList.sameElements(Array.range(0, 100) |> Array.toMutList, MutList.range(0, 100))
+
+    @test
+    def toMutList05(): Bool & Impure =
+        let v = Array.toMutList([1, 2, 3]);
+        MutList.push!(4, v);
+        Array.sameElements(MutList.toArray(v), [1, 2, 3, 4])
+
+    @test
+    def toMutList06(): Bool & Impure =
+        let v = Array.toMutList([1, 2, 3]);
+        MutList.push!(4, v);
+        let _ = MutList.pop!(v);
+        let _ = MutList.pop!(v);
+        let _ = MutList.pop!(v);
+        let _ = MutList.pop!(v);
+        Array.sameElements(MutList.toArray(v), [])
+
 }
