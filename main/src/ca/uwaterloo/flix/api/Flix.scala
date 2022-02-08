@@ -443,9 +443,11 @@ class Flix {
       afterSafety <- Safety.run(afterTerminator)
     } yield {
       // Update caches for incremental compilation.
-      this.cachedParsedAst = afterParser
-      this.cachedWeededAst = afterWeeder
-      this.cachedTypedAst = afterTyper
+      if (options.incremental) {
+        this.cachedParsedAst = afterParser
+        this.cachedWeededAst = afterWeeder
+        this.cachedTypedAst = afterTyper
+      }
       afterSafety
     }
 
