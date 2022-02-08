@@ -327,6 +327,21 @@ class Flix {
   }
 
   /**
+    * Removes the given path `p` to the list of paths to be parsed.
+    */
+  def remSourcePath(p: Path): Flix = {
+    if (p.getFileName.toString.endsWith(".flix")) {
+      remInput(p.toString, Input.TxtFile(p))
+    } else if (p.getFileName.toString.endsWith(".fpkg")) {
+      remInput(p.toString, Input.PkgFile(p))
+    } else {
+      throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
+    }
+
+    this
+  }
+
+  /**
     * Adds the given `input` under the given `name`.
     */
   private def addInput(name: String, input: Input): Unit = inputs.get(name) match {
@@ -335,6 +350,18 @@ class Flix {
     case Some(_) =>
       changeSet = changeSet.markChanged(input)
       inputs += name -> input
+  }
+
+  /**
+    * Removes the given `input` under the given `name`.
+    *
+    * Note: Removing an input means to replace it by the empty string.
+    */
+  private def remInput(name: String, input: Input): Unit = inputs.get(name) match {
+    case None => // nop
+    case Some(_) =>
+      changeSet = changeSet.markChanged(input)
+      inputs += name -> Input.Text(name, "", stable = false)
   }
 
   /**

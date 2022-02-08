@@ -26,6 +26,16 @@ import java.nio.file.{Files, Path, Paths}
 
 class FlixSuite extends FunSuite {
 
+  /**
+    * A global Flix instance that is used if incremental compilation is enabled.
+    */
+  var flix = new Flix()
+
+  /**
+    * Toggles incremental compilation.
+    */
+  def incremental: Boolean = false
+
   def mkTestDir(path: String)(implicit options: Options): Unit = {
     val iter = Files.walk(Paths.get(path), 1)
       .iterator().asScala
@@ -45,7 +55,12 @@ class FlixSuite extends FunSuite {
 
   private def compileAndRun(name: String, path: Path)(implicit options: Options): Unit = {
     // Options and Flix object.
-    val flix = new Flix().setOptions(options)
+    if (!incremental) {
+      flix = new Flix()
+    }
+
+    // Set options.
+    flix.setOptions(options)
 
     // Add the given path.
     flix.addSourcePath(path)
@@ -58,6 +73,9 @@ class FlixSuite extends FunSuite {
         val es = errors.map(_.message(flix.getFormatter)).mkString("\n")
         fail(s"Unable to compile. Failed with: ${errors.length} errors.\n\n$es")
     }
+
+    // Remove the source path.
+    flix.remSourcePath(path)
   }
 
   private def runTests(name: String, compilationResult: CompilationResult): Unit = {
