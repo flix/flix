@@ -23,7 +23,7 @@ class TestTutorials extends FlixSuite {
   private val Prefix = "main/src/tutorials/"
   private implicit val Opts: Options = Options.TestWithLibAll
 
-  addTest(Prefix + "introduction.flix")
-  addTest(Prefix + "interpreter.flix")
+  mkTest(Prefix + "introduction.flix")
+  mkTest(Prefix + "interpreter.flix")
 
 }

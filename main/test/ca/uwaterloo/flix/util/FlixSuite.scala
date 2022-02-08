@@ -21,45 +21,34 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import org.scalatest.FunSuite
 
-import java.nio.file.Paths
+import java.nio.file.{Path, Paths}
 
 class FlixSuite extends FunSuite {
 
-  protected def addTest(path: String)(implicit options: Options): Unit = {
+  def mkTest(path: String)(implicit options: Options): Unit = {
     val p = Paths.get(path)
     val n = p.getFileName.toString
-    test(n)(compileAndRun(List(path)))
+    test(n)(compileAndRun(n, p))
   }
 
-  private def compileAndRun(paths: List[String])(implicit options: Options): Unit = try {
+  private def compileAndRun(name: String, path: Path)(implicit options: Options): Unit = {
     // Options and Flix object.
     val flix = new Flix().setOptions(options)
 
     // Add the given path.
-    for (path <- paths)
-      flix.addSourcePath(path)
+    flix.addSourcePath(path)
 
     // Compile and Evaluate the program to obtain the compilationResult.
     flix.compile() match {
-      case Success(compilationResult) => runTests(compilationResult)
+      case Success(compilationResult) =>
+        runTests(name, compilationResult)
       case Failure(errors) =>
-        // Create a single test that always fails.
-        test("Aborted.") {
-          for (e <- errors) {
-            println(e.message(flix.getFormatter))
-          }
-          fail(s"Unable to compile FlixTest. Failed with: ${errors.length} errors.")
-        }
+        val es = errors.map(_.message(flix.getFormatter)).mkString("\n")
+        fail(s"Unable to compile. Failed with: ${errors.length} errors.\n\n$es")
     }
-  } catch {
-    case ex: Throwable =>
-      ex.printStackTrace()
-      test("!!! Compiler Crashed !!!") {
-        fail(s"Unable to load test suite.")
-      }
   }
 
-  private def runTests(compilationResult: CompilationResult): Unit = {
+  private def runTests(name: String, compilationResult: CompilationResult): Unit = {
     // Group the tests by namespace.
     val testsByNamespace = compilationResult.getTests.groupBy(_._1.namespace)
 
@@ -70,13 +59,14 @@ class FlixSuite extends FunSuite {
 
       // Evaluate each tests with a clue of its source location.
       for ((sym, defn) <- testsByName) {
-        info(sym.toString)
         withClue(sym.loc.format) {
           // Evaluate the function.
           val result = defn()
           // Expect the true value, if boolean.
           if (result.isInstanceOf[java.lang.Boolean]) {
-            assertResult(true)(result)
+            if (result != true) {
+              fail("Expected true, but got false.")
+            }
           }
         }
       }
