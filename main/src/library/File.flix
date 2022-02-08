@@ -38,7 +38,24 @@ namespace File {
     ///
     /// Returns the last-modified timestamp of the given file `f` in milliseconds
     ///
-    pub def modificationTime(f: String): Result[Int64, String] = ???
+    pub def modificationTime(f: String): Result[Int64, String] =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import static java.nio.file.Files.getLastModifiedTime(##java.nio.file.Path, Array[##java.nio.file.LinkOption]);
+            import java.nio.file.attribute.FileTime.toMillis();
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let fileTime = getLastModifiedTime(javaPath, []);
+            let resTime = toMillis(fileTime);
+
+            Ok(resTime)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
 
     ///
     /// Returns the size of the given file `f` in bytes.
