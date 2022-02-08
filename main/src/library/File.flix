@@ -159,9 +159,31 @@ namespace File {
     }
 
     ///
-    /// Returns the file statistics of the given file `f`.
+    /// Returns the statistics of the given file `f`.
     ///
-    pub def stat(f: String): Result[StatInfo, String] = ???
+    pub def stat(f: String): Result[StatInfo, String] & Impure =
+        let fileAccessTime = accessTime(f);
+        let fileCreationTime = creationTime(f);
+        let fileModificationTime = modificationTime(f);
+        let fileSize = size(f);
+        let typeOfFile = fileType(f);
+
+        match (fileAccessTime, fileCreationTime, fileModificationTime, fileSize, typeOfFile) {
+            case (Err(v)    , _           , _      , _        , _        ) => Err(v)
+            case (_         , Err(v)      , _      , _        , _        ) => Err(v)
+            case (_         , _           , Err(v) , _        , _        ) => Err(v)
+            case (_         , _           , _      , Err(v)   , _        ) => Err(v)
+            case (_         , _           , _      , _        , Err(v)   ) => Err(v)
+            case (Ok(access), Ok(creation), Ok(mod), Ok(fSize), Ok(fType)) => {
+                Ok({
+                    accessTime = access,
+                    creationTime = creation,
+                    modificationTime = mod,
+                    size = fSize,
+                    fileType = fType
+                })
+            }
+        }
 
     ///
     /// Returns `true` if the given file `f` exists.
