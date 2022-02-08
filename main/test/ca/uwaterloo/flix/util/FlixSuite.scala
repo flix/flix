@@ -20,10 +20,21 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import org.scalatest.FunSuite
+import scala.jdk.CollectionConverters._
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.{Files, Path, Paths}
 
 class FlixSuite extends FunSuite {
+
+  def mkTestDir(path: String)(implicit options: Options): Unit = {
+    val iter = Files.walk(Paths.get(path), 1)
+      .iterator().asScala
+      .filter(p => Files.isRegularFile(p) && p.toString.endsWith(".flix"))
+
+    for (p <- iter) {
+      mkTest(p.toString)
+    }
+  }
 
   def mkTest(path: String)(implicit options: Options): Unit = {
     val p = Paths.get(path)
