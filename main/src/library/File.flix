@@ -34,6 +34,27 @@ namespace File {
     /// Returns the creation time of the given file `f` in milliseconds.
     ///
     pub def creationTime(f: String): Result[Int64, String] = ???
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption]);
+            import static java.lang.Class.forName(String);
+            import java.nio.file.attribute.BasicFileAttributes.creationTime();
+            import java.nio.file.attribute.FileTime.toMillis();
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let classOfAttributes = forName("java.nio.file.attribute.BasicFileAttributes");
+            let fileAttributes = readAttributes(javaPath, classOfAttributes, []);
+            let timeCreated = creationTime(fileAttributes);
+            let inMilliSec = toMillis(timeCreated);
+
+            Ok(inMilliSec)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
 
     ///
     /// Returns the last-modified timestamp of the given file `f` in milliseconds
