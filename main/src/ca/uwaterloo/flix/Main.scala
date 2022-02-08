@@ -80,12 +80,10 @@ object Main {
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
       explain = cmdOpts.explain,
-      incremental = cmdOpts.xincremental,
       json = cmdOpts.json,
       output = cmdOpts.output.map(s => Paths.get(s)),
       progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
-      xperf = cmdOpts.xperf,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono
     )
@@ -261,8 +259,6 @@ object Main {
                      xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
-                     xincremental: Boolean = false,
-                     xperf: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
                      files: Seq[File] = Seq())
@@ -411,17 +407,9 @@ object Main {
       opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
         text("[experimental] enables compiler debugging output.")
 
-      // Xincremental.
-      opt[Unit]("Xincremental").action((_, c) => c.copy(xincremental = true)).
-        text("[experimental] enables incremental compilation.")
-
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
-
-      // Xperf
-      opt[Unit]("Xperf").action((_, c) => c.copy(xperf = true)).
-        text("[experimental] print performance information.")
 
       // Xstatistics
       opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).

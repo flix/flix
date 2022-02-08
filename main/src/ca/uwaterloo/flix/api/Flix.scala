@@ -442,8 +442,8 @@ class Flix {
       afterTerminator <- Terminator.run(afterRedundancy)
       afterSafety <- Safety.run(afterTerminator)
     } yield {
+      // Update caches for incremental compilation.
       if (options.incremental) {
-        // We update the caches, but only if incremental compilation is enabled.
         this.cachedParsedAst = afterParser
         this.cachedWeededAst = afterWeeder
         this.cachedTypedAst = afterTyper

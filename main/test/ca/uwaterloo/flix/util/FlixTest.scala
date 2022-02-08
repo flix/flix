@@ -36,7 +36,7 @@ class FlixTest(name: String, paths: List[String], options: Options) extends FunS
     */
   private def init(): Unit = try {
     // Options and Flix object.
-    val flix = new Flix().setOptions(options)
+    val flix = new Flix().setOptions(options.copy(incremental = false)) /* incremental compilation disabled */
 
     // Add the given path.
     for (path <- paths)
