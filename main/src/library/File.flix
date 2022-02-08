@@ -106,7 +106,26 @@ namespace File {
     ///
     /// Returns the size of the given file `f` in bytes.
     ///
-    pub def size(f: String): Result[Int64, String] = ???
+    pub def size(f: String): Result[Int64, String] & Impure =
+       try {
+           import new java.io.File(String) as newFile;
+           import java.io.File.toPath();
+           import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption]);
+           import static java.lang.Class.forName(String);
+           import java.nio.file.attribute.BasicFileAttributes.size();
+
+           let javaFile = newFile(f);
+           let javaPath = toPath(javaFile);
+           let classOfAttributes = forName("java.nio.file.attribute.BasicFileAttributes");
+           let fileAttributes = readAttributes(javaPath, classOfAttributes, []);
+           let fileSize = size(fileAttributes);
+
+           Ok(fileSize)
+       } catch {
+           case ex: ##java.io.IOException =>
+               import java.lang.Throwable.getMessage();
+               Err(getMessage(ex))
+       }
 
     ///
     /// Returns the type of the given file `f`.
