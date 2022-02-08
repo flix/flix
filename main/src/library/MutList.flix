@@ -17,6 +17,10 @@
 ///
 /// Represents a mutable list.
 ///
+/// Invariant
+///   - The length is always higher than the total capacity of the array.
+///   - The capacity of the array is always 8 or more.
+///
 pub enum MutList[a] {
     case MutList(Ref[Array[a]], Ref[Int32])
 }
