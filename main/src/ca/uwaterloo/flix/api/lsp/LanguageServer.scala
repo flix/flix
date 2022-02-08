@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.debug._
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
+import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util._
@@ -68,9 +69,14 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
   /**
+    * The Flix instance (the same instance is used for incremental compilation).
+    */
+  private val flix: Flix = new Flix().setFormatter(NoFormatter)
+
+  /**
     * The audience used for formatting.
     */
-  implicit val DefaultAudience: Audience = Audience.External
+  val DefaultAudience: Audience = Audience.External
 
   /**
     * The default compiler options.
@@ -286,9 +292,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Processes a validate request.
     */
   private def processCheck(requestId: String)(implicit ws: WebSocket): JValue = {
-    // Configure the Flix compiler.
-    val flix = new Flix()
-
     // Add sources.
     for ((uri, source) <- sources) {
       flix.addSourceCode(uri, source)
