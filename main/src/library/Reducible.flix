@@ -243,7 +243,7 @@ pub lawless class Reducible[t: Type -> Type] {
     /// Returns `t` as a list with `a` inserted between every two adjacent elements.
     ///
     pub def intersperse(a: a, t: t[a]): List[a] =
-        Reducible.reduceLeftTo((k, x) -> ks -> k(a :: x :: ks), x -> ks -> x :: ks , t)(Nil)
+        Reducible.reduceRightTo((x, acc) -> x :: a :: acc, x -> x :: Nil, t)
 
     ///
     /// Returns `t` as an array.
