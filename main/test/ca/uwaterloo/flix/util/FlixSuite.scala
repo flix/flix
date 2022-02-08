@@ -24,17 +24,12 @@ import scala.jdk.CollectionConverters._
 
 import java.nio.file.{Files, Path, Paths}
 
-class FlixSuite extends FunSuite {
+class FlixSuite(incremental: Boolean) extends FunSuite {
 
   /**
     * A global Flix instance that is used if incremental compilation is enabled.
     */
   var flix = new Flix()
-
-  /**
-    * Toggles incremental compilation.
-    */
-  def incremental: Boolean = false
 
   def mkTestDir(path: String)(implicit options: Options): Unit = {
     val iter = Files.walk(Paths.get(path), 1)
@@ -54,7 +49,7 @@ class FlixSuite extends FunSuite {
   }
 
   private def compileAndRun(name: String, path: Path)(implicit options: Options): Unit = {
-    // Options and Flix object.
+    // Construct a new fresh Flix object if incremental compilation is disabled.
     if (!incremental) {
       flix = new Flix()
     }

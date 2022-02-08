@@ -13,17 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.util.{FlixSuite, Options}
 
-class TestTutorials extends FlixSuite {
-
-  private val Prefix = "main/src/tutorials/"
-  private implicit val Opts: Options = Options.TestWithLibAll
-
-  mkTest(Prefix + "introduction.flix")
-  mkTest(Prefix + "interpreter.flix")
-
+class TestTutorials extends FlixSuite(incremental = true) {
+  mkTestDir("main/src/tutorials/")(Options.TestWithLibAll)
 }
