@@ -21,20 +21,17 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import org.scalatest.FunSuite
 
-// TODO: Deprecated and scheduled for removal.
-class FlixTest(name: String, paths: List[String], options: Options) extends FunSuite {
+import java.nio.file.Paths
 
-  def this(name: String, path: String)(implicit options: Options = Options.TestWithLibMin) = this(name, List(path), options)
+class FlixSuite extends FunSuite {
 
-  /**
-    * Returns the name of the test suite.
-    */
-  override def suiteName: String = name
+  protected def addTest(path: String)(implicit options: Options): Unit = {
+    val p = Paths.get(path)
+    val n = p.getFileName.toString
+    test(n)(compileAndRun(List(path)))
+  }
 
-  /**
-    * Attempts to initialize all the tests.
-    */
-  private def init(): Unit = try {
+  private def compileAndRun(paths: List[String])(implicit options: Options): Unit = try {
     // Options and Flix object.
     val flix = new Flix().setOptions(options)
 
@@ -51,20 +48,17 @@ class FlixTest(name: String, paths: List[String], options: Options) extends FunS
           for (e <- errors) {
             println(e.message(flix.getFormatter))
           }
-          fail(s"Unable to compile FlixTest for test suite: '$name'. Failed with: ${errors.length} errors.")
+          fail(s"Unable to compile FlixTest. Failed with: ${errors.length} errors.")
         }
     }
   } catch {
     case ex: Throwable =>
       ex.printStackTrace()
       test("!!! Compiler Crashed !!!") {
-        fail(s"Unable to load: '$name'.")
+        fail(s"Unable to load test suite.")
       }
   }
 
-  /**
-    * Runs all tests.
-    */
   private def runTests(compilationResult: CompilationResult): Unit = {
     // Group the tests by namespace.
     val testsByNamespace = compilationResult.getTests.groupBy(_._1.namespace)
@@ -76,21 +70,16 @@ class FlixTest(name: String, paths: List[String], options: Options) extends FunS
 
       // Evaluate each tests with a clue of its source location.
       for ((sym, defn) <- testsByName) {
-        test(sym.toString) {
-          withClue(sym.loc.format) {
-            // Evaluate the function.
-            val result = defn()
-            // Expect the true value, if boolean.
-            if (result.isInstanceOf[java.lang.Boolean]) {
-              assertResult(true)(result)
-            }
+        info(sym.toString)
+        withClue(sym.loc.format) {
+          // Evaluate the function.
+          val result = defn()
+          // Expect the true value, if boolean.
+          if (result.isInstanceOf[java.lang.Boolean]) {
+            assertResult(true)(result)
           }
         }
-
       }
     }
   }
-
-  init()
-
 }

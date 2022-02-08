@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2022 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,14 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.util.{FlixTest, Ignore, Options}
-import org.scalatest.Suites
+import ca.uwaterloo.flix.util.{FlixSuite, Options}
 
-class TestTutorials extends Suites(
-  new FlixTest("TestIntroduction", "main/src/tutorials/introduction.flix")(Options.TestWithLibAll),
-  new FlixTest("TestInterpreter", "main/src/tutorials/interpreter.flix")(Options.TestWithLibAll)
-)
+class TestTutorials extends FlixSuite {
+
+  private val Prefix = "main/src/tutorials/"
+  private implicit val Opts: Options = Options.TestWithLibAll
+
+  addTest(Prefix + "introduction.flix")
+  addTest(Prefix + "interpreter.flix")
+
+}
