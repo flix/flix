@@ -222,13 +222,16 @@ object Packager {
     }
 
     // Add all library packages.
-    for (file <- getAllFiles(getLibraryDirectory(p))) {
-      if (file.getFileName.toString.endsWith(".fpkg")) {
-        // Case 1: It's a Flix package.
-        flix.addSourcePath(file)
-      } else if (file.getFileName.toString.endsWith(".jar")) {
-        // Case 2: It's a JAR.
-        flix.addJar(file)
+    val lib = getLibraryDirectory(p)
+    if (lib.toFile.isDirectory) {
+      for (file <- getAllFiles(lib)) {
+        if (file.getFileName.toString.endsWith(".fpkg")) {
+          // Case 1: It's a Flix package.
+          flix.addSourcePath(file)
+        } else if (file.getFileName.toString.endsWith(".jar")) {
+          // Case 2: It's a JAR.
+          flix.addJar(file)
+        }
       }
     }
     ().toOk
@@ -382,8 +385,7 @@ object Packager {
     * Returns `true` if the given path `p` appears to be a flix project path.
     */
   private def isProjectPath(p: Path): Boolean =
-    Files.exists(getLibraryDirectory(p)) &&
-      Files.exists(getSourceDirectory(p)) &&
+    Files.exists(getSourceDirectory(p)) &&
       Files.exists(getTestDirectory(p)) &&
       Files.exists(getHistoryFile(p)) &&
       Files.exists(getLicenseFile(p)) &&

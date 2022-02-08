@@ -199,4 +199,21 @@ namespace TestFoldable {
     def joinWith04(): Bool =
         Foldable.joinWith(x -> x + x, ",", "1" :: "2" :: "3" :: Nil) == "11,22,33"
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toArray01(): Bool & Impure =
+        Array.sameElements(Foldable.toArray(Nel(1, Nil)), [1])
+
+    @test
+    def toArray02(): Bool & Impure =
+        Array.sameElements(Foldable.toArray(Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
+
+    @test
+    def toArray03(): Bool & Impure =
+        Array.sameElements(Foldable.toArray(Nel(1, 1 :: 2 :: 3 :: Nil)), [1, 1, 2, 3])
+
 }

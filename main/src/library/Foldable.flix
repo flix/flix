@@ -176,7 +176,7 @@ pub lawless class Foldable[t : Type -> Type] {
     ///
     pub def toArray(t: t[a]): Array[a] & Impure =
         let v = MutList.new();
-        Foldable.foldRight((x, _) -> MutList.push!(x, v), (), t);
+        Foldable.foldLeft((_, a) -> MutList.push!(a, v), (), t);
         MutList.toArray(v)
 
     ///
