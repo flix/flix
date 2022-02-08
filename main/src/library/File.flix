@@ -130,7 +130,22 @@ namespace File {
     ///
     /// Returns the type of the given file `f`.
     ///
-    pub def fileType(f: String): Result[FileType, String] = ???
+    pub def fileType(f: String): Result[FileType, String] & Impure =
+        let isFile = File.isRegularFile(f);
+        let isDirec = File.isDirectory(f);
+        let isSymLink = File.isSymbolicLink(f);
+
+        let seq = (isFile :: isDirec :: isSymLink :: Nil) |> Result.sequence;
+
+        match seq {
+            case Err(v) => Err(v)
+            case Ok(_)  => {
+                if      (isFile    == Ok(true)) Ok(FileType.File)
+                else if (isDirec   == Ok(true)) Ok(FileType.Directory)
+                else if (isSymLink == Ok(true)) Ok(FileType.SymLink)
+                else                            Ok(FileType.Other)
+            }
+        }
 
     ///
     /// Statistical information for a file.
