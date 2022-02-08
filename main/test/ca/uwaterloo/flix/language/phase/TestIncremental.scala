@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.Options
 import org.scalatest.{BeforeAndAfter, FunSuite}
 
 class TestIncremental extends FunSuite with BeforeAndAfter {
@@ -24,14 +23,12 @@ class TestIncremental extends FunSuite with BeforeAndAfter {
   private val FileA = "FileA.flix"
   private val FileB = "FileB.flix"
   private val FileC = "FileC.flix"
-  private val Opts = Options.Default.copy(incremental = true)
 
   private var flix: Flix = _
 
   // A new Flix instance is created and initialized with some source code for each test.
   before {
     flix = new Flix()
-    flix.setOptions(Opts)
     flix.addSourceCode(FileA,
       s"""
          |pub def f(x: Bool): Bool = not x
