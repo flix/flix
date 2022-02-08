@@ -28,12 +28,33 @@ namespace File {
     ///
     /// Returns the access time of the given file `f` in milliseconds.
     ///
-    pub def accessTime(f: String): Result[Int64, String] = ???
+    pub def accessTime(f: String): Result[Int64, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption]);
+            import static java.lang.Class.forName(String);
+            import java.nio.file.attribute.BasicFileAttributes.lastAccessTime();
+            import java.nio.file.attribute.FileTime.toMillis();
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let classOfAttributes = forName("java.nio.file.attribute.BasicFileAttributes");
+            let fileAttributes = readAttributes(javaPath, classOfAttributes, []);
+            let timeLastAccess = lastAccessTime(fileAttributes);
+            let inMilliSec = toMillis(timeLastAccess);
+
+            Ok(inMilliSec)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
 
     ///
     /// Returns the creation time of the given file `f` in milliseconds.
     ///
-    pub def creationTime(f: String): Result[Int64, String] = ???
+    pub def creationTime(f: String): Result[Int64, String] & Impure =
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
@@ -59,19 +80,23 @@ namespace File {
     ///
     /// Returns the last-modified timestamp of the given file `f` in milliseconds
     ///
-    pub def modificationTime(f: String): Result[Int64, String] =
+    pub def modificationTime(f: String): Result[Int64, String] & Impure =
         try {
             import new java.io.File(String) as newFile;
             import java.io.File.toPath();
-            import static java.nio.file.Files.getLastModifiedTime(##java.nio.file.Path, Array[##java.nio.file.LinkOption]);
+            import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption]);
+            import static java.lang.Class.forName(String);
+            import java.nio.file.attribute.BasicFileAttributes.lastModifiedTime();
             import java.nio.file.attribute.FileTime.toMillis();
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
-            let fileTime = getLastModifiedTime(javaPath, []);
-            let resTime = toMillis(fileTime);
+            let classOfAttributes = forName("java.nio.file.attribute.BasicFileAttributes");
+            let fileAttributes = readAttributes(javaPath, classOfAttributes, []);
+            let timeLastModified = lastModifiedTime(fileAttributes);
+            let inMilliSec = toMillis(timeLastModified);
 
-            Ok(resTime)
+            Ok(inMilliSec)
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
