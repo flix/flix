@@ -27,7 +27,6 @@ object Options {
     debug = false,
     documentor = false,
     explain = false,
-    incremental = false,
     json = false,
     output = None,
     progress = false,
@@ -36,7 +35,6 @@ object Options {
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
     xallowredundancies = false,
-    xperf = false,
     xstatistics = false,
     xstrictmono = false
   )
@@ -68,7 +66,6 @@ object Options {
   * @param lib                selects the level of libraries to include.
   * @param debug              enables the emission of debugging information.
   * @param documentor         enables generation of flixdoc.
-  * @param incremental        enables incremental compilation.
   * @param json               enable json output.
   * @param output             the optional output directory where to place JVM bytecode.
   * @param progress           print progress during compilation.
@@ -84,7 +81,6 @@ case class Options(lib: LibLevel,
                    debug: Boolean,
                    documentor: Boolean,
                    explain: Boolean,
-                   incremental: Boolean,
                    json: Boolean,
                    progress: Boolean,
                    output: Option[Path],
@@ -93,7 +89,6 @@ case class Options(lib: LibLevel,
                    threads: Int,
                    loadClassFiles: Boolean,
                    xallowredundancies: Boolean,
-                   xperf: Boolean,
                    xstatistics: Boolean,
                    xstrictmono: Boolean,
                   )
