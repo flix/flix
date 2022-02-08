@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.api.lsp.provider._
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.debug._
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -72,16 +71,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * The Flix instance (the same instance is used for incremental compilation).
     */
   private val flix: Flix = new Flix().setFormatter(NoFormatter)
-
-  /**
-    * The audience used for formatting.
-    */
-  val DefaultAudience: Audience = Audience.External
-
-  /**
-    * The default compiler options.
-    */
-  val DefaultOptions: Options = Options.Default
 
   /**
     * A map from source URIs to source code.
@@ -323,9 +312,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           // Compute elapsed time.
           val e = System.nanoTime() - t
 
-          if (flix.options.xperf) {
-            println(s"lsp/check: ${e / 1_000_000}ms")
-          }
+          // Print query time.
+          println(s"lsp/check: ${e / 1_000_000}ms")
 
           // Compute Code Quality hints.
           val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix)
