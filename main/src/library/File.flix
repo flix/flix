@@ -131,19 +131,23 @@ namespace File {
     /// Returns the type of the given file `f`.
     ///
     pub def fileType(f: String): Result[FileType, String] & Impure =
-        let isFile = File.isRegularFile(f);
-        let isDirec = File.isDirectory(f);
-        let isSymLink = File.isSymbolicLink(f);
+        use Result.flatMap;
 
-        match    (isFile  , isDirec  , isSymLink) {
-            case (Err(v)  , _        , _        ) => Err(v)
-            case (_       , Err(v)   , _        ) => Err(v)
-            case (_       , _        , Err(v)   ) => Err(v)
-            case (Ok(file), Ok(direc), Ok(sym)  ) => {
-                if      (file)  Ok(FileType.File)
-                else if (direc) Ok(FileType.Directory)
-                else if (sym)   Ok(FileType.SymLink)
-                else            Ok(FileType.Other)
+        let* isFile = File.isRegularFile(f);
+        let* isDirec = File.isDirectory(f);
+        let* isSymLink = File.isSymbolicLink(f);
+
+        if(isFile) {
+            Ok(FileType.File)
+        } else {
+            if(isDirec) {
+                Ok(FileType.Directory)
+            } else {
+                if(isSymLink) {
+                    Ok(FileType.SymLink)
+                } else {
+                    Ok(Other)
+                }
             }
         }
 
