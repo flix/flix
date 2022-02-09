@@ -36,10 +36,10 @@ namespace Time {
         ///
         @Experimental
         pub def before(x: Time.Instant, y: Time.Instant): Bool =
-            import java.time.Instant.isBefore(##java.time.Instant);
+            import java.time.Instant.isBefore(##java.time.Instant): Bool & Pure;
             let Time/Instant.Instant(t1) = x;
             let Time/Instant.Instant(t2) = y;
-            (t1 `isBefore` t2) as & Pure
+            (t1 `isBefore` t2)
 
         ///
         /// Returns `true` if `x` is after `y`.
