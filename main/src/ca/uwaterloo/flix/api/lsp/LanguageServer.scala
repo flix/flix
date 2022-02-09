@@ -19,8 +19,8 @@ import ca.uwaterloo.flix.api.lsp.provider._
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.debug._
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
+import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util._
@@ -68,14 +68,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
   val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
   /**
-    * The audience used for formatting.
+    * The Flix instance (the same instance is used for incremental compilation).
     */
-  implicit val DefaultAudience: Audience = Audience.External
-
-  /**
-    * The default compiler options.
-    */
-  val DefaultOptions: Options = Options.Default
+  private val flix: Flix = new Flix().setFormatter(NoFormatter)
 
   /**
     * A map from source URIs to source code.
@@ -286,9 +281,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
     * Processes a validate request.
     */
   private def processCheck(requestId: String)(implicit ws: WebSocket): JValue = {
-    // Configure the Flix compiler.
-    val flix = new Flix()
-
     // Add sources.
     for ((uri, source) <- sources) {
       flix.addSourceCode(uri, source)
@@ -320,9 +312,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           // Compute elapsed time.
           val e = System.nanoTime() - t
 
-          if (flix.options.xperf) {
-            println(s"lsp/check: ${e / 1_000_000}ms")
-          }
+          // Print query time.
+          // println(s"lsp/check: ${e / 1_000_000}ms")
 
           // Compute Code Quality hints.
           val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix)
