@@ -1286,7 +1286,12 @@ namespace Array {
     /// Returns the array `a` as a MutList.
     ///
     pub def toMutList(a: Array[a]): MutList[a] & Impure =
-        MutList(ref a, ref length(a))
+        let minCap = MutList.minCapacity();
+        let len = length(a);
+        if (len < minCap)
+            MutList(ref copyOfRange(0, minCap, a), ref len)
+        else
+            MutList(ref a, ref length(a))
 
     ///
     /// Alias for `findIndexOfLeft`.

@@ -44,7 +44,7 @@ object Typer {
     */
   def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Typer") {
     val classEnv = mkClassEnv(root.classes, root.instances)
-    val classesVal = visitClasses(root, classEnv)
+    val classesVal = visitClasses(root, classEnv, oldRoot, changeSet)
     val instancesVal = visitInstances(root, classEnv)
     val defsVal = visitDefs(root, classEnv, oldRoot, changeSet)
     val enumsVal = visitEnums(root)
@@ -79,11 +79,20 @@ object Typer {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitClasses(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Map[Symbol.ClassSym, TypedAst.Class], TypeError] =
+  private def visitClasses(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, TypedAst.Class], TypeError] =
     flix.subphase("Classes") {
-      // visit each class
-      val result = root.classes.values.map(visitClass(_, root, classEnv))
-      Validation.sequence(result).map(_.toMap)
+      // Compute the stale and fresh classes.
+      val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
+
+      // Process the stale classes in parallel.
+      val results = ParOps.parMap(staleClasses.values)(visitClass(_, root, classEnv))
+
+      // Sequence the results using the freshClasses as the initial value.
+      Validation.sequence(results) map {
+        case xs => xs.foldLeft(freshClasses) {
+          case (acc, clazzPair) => acc + clazzPair
+        }
+      }
     }
 
   private def visitClass(clazz: KindedAst.Class, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {

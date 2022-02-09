@@ -17,6 +17,10 @@
 ///
 /// Represents a mutable list.
 ///
+/// Invariant
+///   - The length is always higher than the total capacity of the array.
+///   - The capacity of the array is always 8 or more.
+///
 pub enum MutList[a] {
     case MutList(Ref[Array[a]], Ref[Int32])
 }
@@ -44,7 +48,8 @@ namespace MutList {
     ///
     /// Constant which stores the minimum capacity of a MutList.
     ///
-    def minCapacity(): Int32 = 8
+    @Internal
+    pub def minCapacity(): Int32 = 8
 
     ///
     /// Returns a new empty mutable list with a default capacity.
@@ -678,7 +683,7 @@ namespace MutList {
     ///
     pub def toArray(v: MutList[a]): Array[a] & Impure =
         let MutList(a, l) = v;
-        Array.slice(0, deref l, deref a)
+        Array.copyOfRange(0, deref l, deref a)
 
     ///
     /// Returns the mutable list `xs` as a chain.
