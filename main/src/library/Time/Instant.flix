@@ -59,7 +59,7 @@ namespace Time {
             // TODO: refactor import.
             import java.time.Instant.plusNanos(Int64);
             let Time/Instant.Instant(t) = x;
-            Time/Instant.Instant(t `plusNanos` d): as & Pure
+            Time/Instant.Instant(t `plusNanos` d) as & Pure
 
         ///
         /// Returns the given instant `x` minus `d` number of nano seconds.
@@ -69,7 +69,7 @@ namespace Time {
             // TODO: refactor import.
             import java.time.Instant.minusNanos(Int64);
             let Time/Instant.Instant(t) = x;
-            Time/Instant.Instant(t `minusNanos` d): as & Pure
+            Time/Instant.Instant(t `minusNanos` d) as & Pure
 
     }
 
