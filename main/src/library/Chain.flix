@@ -928,7 +928,7 @@ namespace Chain {
     /// Returns the concatenation of the string representation
     /// of each element in `c` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, c: Chain[a]): String =
+    pub def joinWith(f: a -> String & ef, sep: String, c: Chain[a]): String & ef =
         Foldable.joinWith(f, sep, c)
 
 }
