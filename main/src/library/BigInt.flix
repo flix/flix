@@ -82,8 +82,8 @@ namespace BigInt {
     /// Returns the integer binary logarithm of `x`.
     ///
     pub def log2(x: BigInt): Int32 =
-        import java.math.BigInteger.bitLength();
-        bitLength(x) as & Pure
+        import java.math.BigInteger.bitLength(): Int32 & Pure;
+        bitLength(x)
 
     ///
     /// Return a string representation of `x`.
@@ -95,9 +95,9 @@ namespace BigInt {
     /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
     ///
     pub def fromString(s: String): Result[BigInt, String] = try {
-        import java.lang.String.strip();
-        import new java.math.BigInteger(String) as parseBigInt;
-        Ok(s |> strip |> parseBigInt) as & Pure
+        import java.lang.String.strip(): String & Pure;
+        import new java.math.BigInteger(String) as parseBigInt: BigInt & Pure;
+        Ok(s |> strip |> parseBigInt)
     } catch {
         case _: ##java.lang.NumberFormatException => Err("BigInt.fromString")
     }
