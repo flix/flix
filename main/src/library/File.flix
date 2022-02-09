@@ -26,7 +26,7 @@ namespace File {
     }
 
     ///
-    /// Returns the access time of the given file `f` in milliseconds.
+    /// Returns the last access time of the given file `f` in milliseconds.
     ///
     pub def accessTime(f: String): Result[Int64, String] & Impure =
         try {
