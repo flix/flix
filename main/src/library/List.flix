@@ -240,29 +240,11 @@ namespace List {
     ///
     @Time(time(f) * length(l)) @Space(space(f))
     pub def findRight(f: a -> Bool & ef, l: List[a]): Option[a] & ef =
-        reifyEff(f) {
-            case Pure(g) => findRightP(g, l)
-            case _       => findRightI(f, l)
-        }
-
-    ///
-    /// Helper function for `findRight`.
-    ///
-    def findRightP(f: a -> Bool, l: List[a]): Option[a] = match l {
-        case Nil     => None
-        case x :: xs => Option.withDefault(default = if (f(x)) Some(x) else None, findRight(f, xs))
-    }
-
-    ///
-    /// Helper function for `findRight`.
-    ///
-    def findRightI(f: a -> Bool & ef, l: List[a]): Option[a] & ef = match l { // Why not just use CPS?
-        case Nil     => None
-        case x :: xs => match findRight(f, xs) {
-            case None    => if (f(x)) Some(x) else None
-            case Some(y) => Some(y)
-        }
-    }
+        def loop(ll, k) = match ll {
+            case Nil     => k()
+            case x :: xs => loop(xs, () -> if (f(x)) Some(x) else k())
+        };
+        loop(l, () -> None as & ef)
 
     ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
