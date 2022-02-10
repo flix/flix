@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import org.scalatest.FunSuite
 
+// TODO: Deprecated and scheduled for removal.
 class FlixTest(name: String, paths: List[String], options: Options) extends FunSuite {
 
   def this(name: String, path: String)(implicit options: Options = Options.TestWithLibMin) = this(name, List(path), options)
@@ -35,7 +36,7 @@ class FlixTest(name: String, paths: List[String], options: Options) extends FunS
     */
   private def init(): Unit = try {
     // Options and Flix object.
-    val flix = new Flix().setOptions(options)
+    val flix = new Flix().setOptions(options.copy(incremental = false)) /* incremental compilation disabled */
 
     // Add the given path.
     for (path <- paths)
