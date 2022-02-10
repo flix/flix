@@ -77,7 +77,7 @@ object BenchmarkCompiler {
     val lines = results.head.getTotalLines.toLong
 
     // Find the timings of each run.
-    val timings = results.map(_.getTotalTime)
+    val timings = results.map(_.totalTime)
 
     // Compute the total time in seconds.
     val totalTime = (timings.sum / 1_000_000_000L).toInt
@@ -126,7 +126,7 @@ object BenchmarkCompiler {
     val lines = results.head.getTotalLines.toLong
 
     // Find the timings of each run.
-    val timings = results.map(_.getTotalTime).toList
+    val timings = results.map(_.totalTime).toList
 
     // Compute the total time in seconds.
     val totalTime = (timings.sum / 1_000_000_000L).toInt
@@ -186,7 +186,7 @@ object BenchmarkCompiler {
   private def newFlix(o: Options): Flix = {
     val flix = new Flix()
 
-    flix.setOptions(opts = o.copy(loadClassFiles = false))
+    flix.setOptions(opts = o.copy(incremental = false, loadClassFiles = false))
 
     // NB: We only use unit tests from the standard library because we want to test real code.
 
