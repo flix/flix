@@ -18,7 +18,23 @@ namespace TestFile {
 
     use File.{exists, isDirectory, isRegularFile, isReadable, isSymbolicLink,
         isWritable, isExecutable, readLines, readLinesWith, read, readWith,
-        readLinesIter, readLinesIterWith, readBytes, readBytesWith, readChunks};
+        readLinesIter, readLinesIterWith, readBytes, readBytesWith, readChunks,
+        stat};
+
+    /////////////////////////////////////////////////////////////////////////////
+    // stat                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testStat01(): Bool & Impure =
+        Result.isOk(stat("README.md"))
+
+    @test
+    def testStat02(): Bool & Impure =
+        match stat("README.md") {
+            case Ok(v) => v.fileType == File/FileType.File
+            case _ => false
+        }
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //

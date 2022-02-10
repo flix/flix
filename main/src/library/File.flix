@@ -18,7 +18,7 @@ namespace File {
     ///
     /// File types.
     ///
-    enum FileType with Eq, Order, ToString {
+    pub enum FileType with Eq, Order, ToString {
         case File,
         case Directory,
         case SymLink,
