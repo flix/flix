@@ -63,11 +63,7 @@ object Kinder {
             visitEnum(enum, taenv, root).map(sym -> _)
         }))
 
-        val classesVal = Validation.sequence(ParOps.parMap(root.classes)({
-          pair: (Symbol.ClassSym, ResolvedAst.Class) =>
-            val (sym, clazz) = pair
-            visitClass(clazz, taenv, root).map(sym -> _)
-        }))
+        val classesVal = visitClasses(root, taenv, oldRoot, changeSet)
 
         val defsVal = visitDefs(root, taenv, oldRoot, changeSet)
 
@@ -145,6 +141,21 @@ object Kinder {
         tpeDeprecated <- visitType(tpeDeprecated0, Kind.Star, kenv, taenv, root)
         sc <- visitScheme(sc0, kenv, taenv, root)
       } yield KindedAst.Case(enum, tag, tpeDeprecated, sc)
+  }
+
+  /**
+    * Performs kinding on the all the classes in the given root.
+    */
+  private def visitClasses(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, KindedAst.Class], KindError] = {
+    val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
+
+    val results = ParOps.parMap(staleClasses.values)(visitClass(_, taenv, root))
+
+    Validation.sequence(results) map {
+      res => res.foldLeft(freshClasses) {
+        case (acc, defn) => acc + (defn.sym -> defn)
+      }
+    }
   }
 
   /**
