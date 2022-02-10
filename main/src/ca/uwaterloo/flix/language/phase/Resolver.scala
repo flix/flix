@@ -18,11 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation}
+import ca.uwaterloo.flix.language.ast.NamedAst.DefOrSig
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, ParOps, Validation}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import scala.collection.mutable
@@ -51,7 +52,7 @@ object Resolver {
   /**
     * Performs name resolution on the given program `root`.
     */
-  def run(root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
+  def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
     resolveTypeAliases(root.typealiases, root) flatMap {
@@ -73,14 +74,7 @@ object Resolver {
           }
         }
 
-        val definitionsVal = root.defsAndSigs.flatMap {
-          case (ns0, defsAndSigs) => defsAndSigs.collect {
-            case (_, NamedAst.DefOrSig.Def(defn)) => resolveDef(defn, taenv, ns0, root) map {
-              case d => d.sym -> d
-            }
-            // Skip Sigs as they are handled under classes.
-          }
-        }
+        val definitionsVal = visitDefs(root, taenv, oldRoot, changeSet)
 
         val enumsVal = root.enums.flatMap {
           case (ns0, enums) => enums.map {
@@ -93,11 +87,11 @@ object Resolver {
         for {
           classes <- sequence(classesVal)
           instances <- sequence(instancesVal)
-          definitions <- sequence(definitionsVal)
+          definitions <- definitionsVal
           enums <- sequence(enumsVal)
           _ <- checkSuperClassDag(classes.toMap)
         } yield ResolvedAst.Root(
-          classes.toMap, combine(instances), definitions.toMap, enums.toMap, taenv, taOrder, root.reachable, root.sources
+          classes.toMap, combine(instances), definitions, enums.toMap, taenv, taOrder, root.reachable, root.sources
         )
     }
 
@@ -305,6 +299,35 @@ object Resolver {
         exp <- traverse(exp0)(Expressions.resolve(_, Map(fparam.sym -> fparamType), taenv, ns0, root))
         spec <- resolveSpec(spec0, taenv, ns0, root)
       } yield ResolvedAst.Sig(sym, spec, exp.headOption)
+  }
+
+  /**
+    * Performs kinding on the all the definitions in the given root.
+    */
+  private def visitDefs(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, ResolvedAst.Def], ResolutionError] = {
+    def getDef(defOrSig: NamedAst.DefOrSig): Option[NamedAst.Def] = defOrSig match {
+      case DefOrSig.Def(d) => Some(d)
+      case DefOrSig.Sig(_) => None
+    }
+
+    val rootDefs = for {
+      (ns, defsAndSigs) <- root.defsAndSigs
+      (_, defOrSig) <- defsAndSigs
+      defn <- getDef(defOrSig)
+    } yield defn.sym -> (defn, ns)
+
+    val (staleDefs, freshDefs) = changeSet.partition(rootDefs, oldRoot.defs)
+
+    val results = ParOps.parMap(staleDefs.values) {
+      case (defn, ns) => resolveDef(defn, taenv, ns, root)
+    }
+
+    Validation.sequence(results) map {
+      res =>
+        res.foldLeft(freshDefs) {
+          case (acc, defn) => acc + (defn.sym -> defn)
+        }
+    }
   }
 
   /**
