@@ -595,6 +595,13 @@ class Flix {
   }
 
   /**
+    * Returns the total compilation time in nanoseconds.
+    */
+  def getTotalTime: Long = phaseTimers.foldLeft(0L) {
+    case (acc, phase) => acc + phase.time
+  }
+
+  /**
     * A callback to indicate that work has started on the given subtask.
     */
   def subtask(subtask: String, sample: Boolean = false): Unit = {
