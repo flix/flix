@@ -19,7 +19,39 @@ namespace TestFile {
     use File.{exists, isDirectory, isRegularFile, isReadable, isSymbolicLink,
         isWritable, isExecutable, readLines, readLinesWith, read, readWith,
         readLinesIter, readLinesIterWith, readBytes, readBytesWith, readChunks,
-        stat};
+        stat, accessTime, creationTime, modificationTime, size};
+
+    /////////////////////////////////////////////////////////////////////////////
+    // accessTime                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testAccessTime01(): Bool & Impure =
+        Result.isOk(accessTime("README.md"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // creationTime                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testCreationTime01(): Bool & Impure =
+        Result.isOk(creationTime("README.md"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // modificationTime                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testModificationTime01(): Bool & Impure =
+        Result.isOk(modificationTime("README.md"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testSize01(): Bool & Impure =
+        Result.isOk(size("README.md"))
 
     /////////////////////////////////////////////////////////////////////////////
     // stat                                                                    //
