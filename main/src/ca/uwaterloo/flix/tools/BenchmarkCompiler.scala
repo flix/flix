@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils}
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods
@@ -53,6 +54,31 @@ object BenchmarkCompiler {
       (compilationResult, flix.phaseTimers.toList)
     }
 
+    processPhasesResults(o, r)
+  }
+
+  def benchmarkIncremental(o: Options): Unit = {
+    // Get an initial Flix object and precompile it once.
+    val flix = newFlix(o)
+    flix.setOptions(flix.options.copy(incremental = true))
+    flix.compile()
+
+    //
+    // Collect data from N iterations, using the same Flix object.
+    //
+    val r = (0 until N).map { _ =>
+      flix.resetTimers()
+      val compilationResult = flix.compile().get
+      (compilationResult, flix.phaseTimers.toList)
+    }
+
+    processPhasesResults(o, r)
+  }
+
+  /**
+    * Processes and prints the results of the phase benchmarking.
+    */
+  private def processPhasesResults(o: Options, r: IndexedSeq[(CompilationResult, List[Flix.PhaseTime])]): Unit = {
     //
     // Split into compilation results and phase results.
     //
@@ -106,7 +132,6 @@ object BenchmarkCompiler {
       println(f"Finished $N iterations on $lines%,6d lines of code in $totalTime seconds.")
     }
   }
-
   /**
     * Computes the throughput of the compiler.
     */

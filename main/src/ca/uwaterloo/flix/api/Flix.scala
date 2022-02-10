@@ -36,6 +36,12 @@ object Flix {
     * The reserved Flix delimiter.
     */
   val Delimiter: String = "%"
+
+
+  /**
+    * A case class to track the compile time spent in a phase and its sub-phases.
+    */
+  case class PhaseTime(phase: String, time: Long, subphases: List[(String, Long)])
 }
 
 /**
@@ -220,19 +226,14 @@ class Flix {
   )
 
   /**
-    * A case class to track the compile time spent in a phase and its sub-phases.
-    */
-  case class PhaseTime(phase: String, time: Long, subphases: List[(String, Long)])
-
-  /**
     * A map to track the time spent in each phase and sub-phase.
     */
-  var phaseTimers: ListBuffer[PhaseTime] = ListBuffer.empty
+  var phaseTimers: ListBuffer[Flix.PhaseTime] = ListBuffer.empty
 
   /**
     * The current phase we are in. Initially null.
     */
-  var currentPhase: PhaseTime = _
+  var currentPhase: Flix.PhaseTime = _
 
   /**
     * The progress bar.
@@ -538,7 +539,7 @@ class Flix {
     */
   def phase[A](phase: String)(f: => A): A = {
     // Initialize the phase time object.
-    currentPhase = PhaseTime(phase, 0, Nil)
+    currentPhase = Flix.PhaseTime(phase, 0, Nil)
 
     if (options.progress) {
       progressBar.observe(currentPhase.phase, "", sample = false)
@@ -609,6 +610,10 @@ class Flix {
     if (options.progress) {
       progressBar.observe(currentPhase.phase, subtask, sample)
     }
+  }
+
+  def resetTimers(): Unit = {
+    phaseTimers = ListBuffer.empty
   }
 
   /**
