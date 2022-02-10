@@ -79,10 +79,24 @@ instance Iterable[Nel] {
     pub def iterator(t: Nel[a]): Iterator[a] & Impure =
         Nel.toIterator(t)
 }
-
 instance Reducible[Nel] {
     pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = Nel.reduceLeftTo(f, g, l)
     pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) = Nel.reduceRightTo(f, g, l)
+    override pub def head(l: Nel[a]): a = Nel.head(l)
+    override pub def last(l: Nel[a]): a = Nel.last(l)
+    override pub def init(l: Nel[a]): List[a] = Nel.init(l)
+    override pub def tail(l: Nel[a]): List[a] = Nel.tail(l)
+    override pub def exists(f: a -> Bool & ef, l: Nel[a]): Bool & ef = Nel.exists(f, l)
+    override pub def forall(f: a -> Bool & ef, l: Nel[a]): Bool & ef = Nel.forall(f, l)
+    override pub def find(f: a -> Bool & ef, l: Nel[a]): Option[a] & ef = Nel.find(f, l)
+    override pub def findLeft(f: a -> Bool & ef, l: Nel[a]): Option[a] & ef = Nel.findLeft(f, l)
+    override pub def findRight(f: a -> Bool & ef, l: Nel[a]): Option[a] & ef = Nel.findRight(f, l)
+    override pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
+    override pub def dropWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.dropWhile(f, l)
+    override pub def takeWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.takeWhile(f, l)
+    override pub def toArray(l: Nel[a]): Array[a] & Impure = Nel.toArray(l)
+    override pub def toIterator(l: Nel[a]): Iterator[a] & Impure = Nel.toIterator(l)
+    override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
 
 instance SemiGroup[Nel[a]] {
@@ -193,13 +207,13 @@ namespace Nel {
     /// Alias for `findLeft`.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def find(f: a -> Bool, l: Nel[a]): Option[a] = findLeft(f, l)
+    pub def find(f: a -> Bool & ef, l: Nel[a]): Option[a] & ef = findLeft(f, l)
 
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def findLeft(f: a -> Bool, l: Nel[a]): Option[a] = match l {
+    pub def findLeft(f: a -> Bool & ef, l: Nel[a]): Option[a] & ef = match l {
         case Nel(x, xs) => if (f(x)) Some(x) else List.findLeft(f, xs)
     }
 
@@ -207,7 +221,7 @@ namespace Nel {
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def findRight(f: a -> Bool, l: Nel[a]): Option[a] = match l {
+    pub def findRight(f: a -> Bool & ef, l: Nel[a]): Option[a] & ef = match l {
         case Nel(x, xs) => match List.findRight(f, xs) {
             case None    => if (f(x)) Some(x) else None
             case Some(y) => Some(y)
@@ -453,7 +467,7 @@ namespace Nel {
     /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def exists(f: a -> Bool, l: Nel[a]): Bool = match l {
+    pub def exists(f: a -> Bool & ef, l: Nel[a]): Bool & ef = match l {
         case Nel(x, xs) => f(x) or List.exists(f, xs)
     }
 
@@ -461,7 +475,7 @@ namespace Nel {
     /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def forall(f: a -> Bool, l: Nel[a]): Bool = match l {
+    pub def forall(f: a -> Bool & ef, l: Nel[a]): Bool & ef = match l {
         case Nel(x, xs) => f(x) and List.forall(f, xs)
     }
 
@@ -621,8 +635,22 @@ namespace Nel {
     /// Returns the concatenation of the string representation
     /// of each element in `l` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, l: Nel[a]): String =
+    pub def joinWith(f: a -> String & ef, sep: String, l: Nel[a]): String & ef =
         Foldable.joinWith(f, sep, l)
+
+    ///
+    /// Returns `l` without the longest prefix that satisfies the predicate `f`.
+    ///
+    pub def dropWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef =
+        let Nel(x, xs) = l;
+        List.dropWhile(f, x :: xs)
+
+    ///
+    /// Returns the longest prefix of `l` that satisfies the predicate `f`.
+    ///
+    pub def takeWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef =
+        let Nel(x, xs) = l;
+        List.takeWhile(f, x :: xs)
 
 }
 
