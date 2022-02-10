@@ -58,13 +58,7 @@ object Resolver {
     resolveTypeAliases(root.typealiases, root) flatMap {
       case (taenv, taOrder) =>
 
-        val classesVal = root.classes.flatMap {
-          case (ns0, classes) => classes.map {
-            case (_, clazz) => resolveClass(clazz, taenv, ns0, root) map {
-              case s => s.sym -> s
-            }
-          }
-        }
+        val classesVal = resolveClasses(root, taenv, oldRoot, changeSet)
 
         val instancesVal = root.instances.flatMap {
           case (ns0, instances0) => instances0.map {
@@ -74,7 +68,7 @@ object Resolver {
           }
         }
 
-        val definitionsVal = visitDefs(root, taenv, oldRoot, changeSet)
+        val definitionsVal = resolveDefs(root, taenv, oldRoot, changeSet)
 
         val enumsVal = root.enums.flatMap {
           case (ns0, enums) => enums.map {
@@ -85,13 +79,13 @@ object Resolver {
         }
 
         for {
-          classes <- sequence(classesVal)
+          classes <- classesVal
           instances <- sequence(instancesVal)
           definitions <- definitionsVal
           enums <- sequence(enumsVal)
-          _ <- checkSuperClassDag(classes.toMap)
+          _ <- checkSuperClassDag(classes)
         } yield ResolvedAst.Root(
-          classes.toMap, combine(instances), definitions, enums.toMap, taenv, taOrder, root.reachable, root.sources
+          classes, combine(instances), definitions, enums.toMap, taenv, taOrder, root.reachable, root.sources
         )
     }
 
@@ -259,6 +253,29 @@ object Resolver {
   }
 
   /**
+    * Performs kinding on the all the definitions in the given root.
+    */
+  private def resolveClasses(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, ResolvedAst.Class], ResolutionError] = {
+
+    val rootClasses = for {
+      (ns, classes) <- root.classes
+      (_, clazz) <- classes
+    } yield clazz.sym -> (clazz, ns)
+
+    val (staleClasses, freshClasses) = changeSet.partition(rootClasses, oldRoot.classes)
+
+    val results = ParOps.parMap(staleClasses.values) {
+      case (clazz, ns) => resolveClass(clazz, taenv, ns, root)
+    }
+
+    Validation.sequence(results) map {
+      res =>
+        res.foldLeft(freshClasses) {
+          case (acc, clazz) => acc + (clazz.sym -> clazz)
+        }
+    }
+  }
+  /**
     * Performs name resolution on the given typeclass `c0` in the given namespace `ns0`.
     */
   def resolveClass(c0: NamedAst.Class, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
@@ -304,7 +321,7 @@ object Resolver {
   /**
     * Performs kinding on the all the definitions in the given root.
     */
-  private def visitDefs(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, ResolvedAst.Def], ResolutionError] = {
+  private def resolveDefs(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, ResolvedAst.Def], ResolutionError] = {
     def getDef(defOrSig: NamedAst.DefOrSig): Option[NamedAst.Def] = defOrSig match {
       case DefOrSig.Def(d) => Some(d)
       case DefOrSig.Sig(_) => None
