@@ -19,23 +19,23 @@ namespace Environment {
     /// Returns an map of the current system environment.
     ///
     pub def getEnv(): Map[String, String] =
-        import static java.lang.System.getenv();
-        import java.util.Map.entrySet();
-        import java.util.Set.iterator();
+        import static java.lang.System.getenv(): ##java.util.Map & Pure;
+        import java.util.Map.entrySet(): ##java.util.Set & Pure;
+        import java.util.Set.iterator(): ##java.util.Iterator & Pure;
         try {
             let iter = getenv() |> entrySet |> iterator;
             getEnvHelper(iter, Map.empty())
         } catch {
             case _:##java.lang.Exception => Map.empty()
-        } as & Pure
+        }
 
     ///
     /// Returns the value of the specified environment variable.
     ///
     pub def getVar(name: String): Option[String] =
-        import static java.lang.System.getenv(String);
+        import static java.lang.System.getenv(String): String & Pure;
         try {
-            let result = getenv(name) as & Pure;
+            let result = getenv(name);
             Object.toOption(result)
         } catch {
             case _:##java.lang.Exception => None
@@ -45,9 +45,9 @@ namespace Environment {
     /// Returns the system property by name.
     ///
     pub def getProp(name: String): Option[String] =
-        import static java.lang.System.getProperty(String);
+        import static java.lang.System.getProperty(String): String & Pure;
         try {
-            let result = getProperty(name) as & Pure;
+            let result = getProperty(name);
             Object.toOption(result)
         } catch {
             case _:##java.lang.Exception => None
@@ -115,9 +115,9 @@ namespace Environment {
     /// The returned value is never less than one.
     ///
     pub def getVirtualProcessors(): Int32 =
-        import static java.lang.Runtime.getRuntime();
-        import java.lang.Runtime.availableProcessors();
-        (getRuntime() |> availableProcessors) as & Pure
+        import static java.lang.Runtime.getRuntime(): ##java.lang.Runtime & Pure;
+        import java.lang.Runtime.availableProcessors(): Int32 & Pure;
+        (getRuntime() |> availableProcessors)
 
     def getEnvHelper(iter: ##java.util.Iterator, m: Map[String, String]): Map[String, String] & Impure =
         import java.util.Iterator.hasNext();
