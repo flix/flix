@@ -56,20 +56,18 @@ namespace Time {
         ///
         @Experimental
         pub def plus(x: Time.Instant, d: Int64): Time.Instant =
-            // TODO: refactor import.
-            import java.time.Instant.plusNanos(Int64);
+            import java.time.Instant.plusNanos(Int64): ##java.time.Instant & Pure;
             let Time/Instant.Instant(t) = x;
-            Time/Instant.Instant(t `plusNanos` d) as & Pure
+            Time/Instant.Instant(t `plusNanos` d)
 
         ///
         /// Returns the given instant `x` minus `d` number of nano seconds.
         ///
         @Experimental
         pub def minus(x: Time.Instant, d: Int64): Time.Instant =
-            // TODO: refactor import.
-            import java.time.Instant.minusNanos(Int64);
+            import java.time.Instant.minusNanos(Int64): ##java.time.Instant & Pure;
             let Time/Instant.Instant(t) = x;
-            Time/Instant.Instant(t `minusNanos` d) as & Pure
+            Time/Instant.Instant(t `minusNanos` d)
 
     }
 
