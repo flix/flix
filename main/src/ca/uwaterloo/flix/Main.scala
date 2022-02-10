@@ -405,6 +405,7 @@ object Main {
       // Xbenchmark-incremental
       opt[Unit]("Xbenchmark-incremental").action((_, c) => c.copy(xbenchmarkIncremental=true)).
         text("[experimental] benchmarks the performance of each compiler phase in incremental mode.")
+
       // Xbenchmark-phases
       opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
         text("[experimental] benchmarks the performance of each compiler phase.")
