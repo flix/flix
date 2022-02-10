@@ -19,15 +19,15 @@ namespace Environment {
     /// Returns an map of the current system environment.
     ///
     pub def getEnv(): Map[String, String] =
-        import static java.lang.System.getenv(): ##java.util.Map & Pure;
-        import java.util.Map.entrySet(): ##java.util.Set & Pure;
-        import java.util.Set.iterator(): ##java.util.Iterator & Pure;
+        import static java.lang.System.getenv();
+        import java.util.Map.entrySet();
+        import java.util.Set.iterator();
         try {
             let iter = getenv() |> entrySet |> iterator;
             getEnvHelper(iter, Map.empty())
         } catch {
             case _:##java.lang.Exception => Map.empty()
-        }
+        } as & Pure
 
     ///
     /// Returns the value of the specified environment variable.
