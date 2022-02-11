@@ -2,7 +2,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.Polarity
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
@@ -255,6 +256,8 @@ object Safety {
     //
     val posVars = positivelyDefinedVariables(c0)
 
+    val latVars = forcedLatticeVariables(c0)
+
     //
     // Compute the quantified variables in the constraint.
     //
@@ -265,7 +268,11 @@ object Safety {
     //
     // Check that all negative atoms only use positively defined variable symbols.
     //
-    c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars))
+    val err1 = c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars))
+
+    val err2 = checkHeadPredicate(c0.head, latVars)
+
+    err1 concat err2
   }
 
   /**
@@ -309,7 +316,8 @@ object Safety {
   /**
     * Returns all the positively defined variable symbols in the given constraint `c0`.
     */
-  private def positivelyDefinedVariables(c0: Constraint): Set[Symbol.VarSym] = c0.body.flatMap(positivelyDefinedVariables).toSet
+  private def positivelyDefinedVariables(c0: Constraint): Set[Symbol.VarSym] =
+    c0.body.flatMap(positivelyDefinedVariables).toSet
 
   /**
     * Returns all positively defined variable symbols in the given body predicate `p0`.
@@ -328,6 +336,32 @@ object Safety {
 
     case Predicate.Body.Loop(_, _, _) => Set.empty
   }
+
+  /**
+    * Variables that are bound in lattice position without `fix`.
+    */
+  private def forcedLatticeVariables(c0: TypedAst.Constraint): Set[Symbol.VarSym] =
+    c0.body.flatMap(forcedLatticeVariables).toSet
+
+  private def forcedLatticeVariables(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
+    case Predicate.Body.Atom(_, Denotation.Latticenal, _, Fixity.Loose, terms, _, _) =>
+      terms.lastOption.map(freeVarsOf).getOrElse(Set.empty)
+    case _ => Set.empty
+  }
+
+  private def checkHeadPredicate(head: TypedAst.Predicate.Head, latVars: Set[Symbol.VarSym]): List[CompilationMessage] = head match {
+    case Head.Atom(_, Denotation.Latticenal, terms, _, loc) =>
+      checkTerms(terms.dropRight(1), latVars, loc)
+    case Head.Atom(_, Denotation.Relational, terms, _, loc) =>
+      checkTerms(terms, latVars, loc)
+  }
+
+  private def checkTerms(terms: List[Expression], latVars: Set[Symbol.VarSym], loc: SourceLocation): List[CompilationMessage] =
+    terms.flatMap(freeVars(_).keys).flatMap { sym =>
+      if (latVars.contains(sym))
+        List(IllegalUseOfLatticeVariable(sym, loc))
+      else Nil
+    }
 
   /**
     * Returns an error for each occurrence of wildcards in each term.
