@@ -371,6 +371,25 @@ object Ast {
   }
 
   /**
+    * A common super-type for the fixity of an atom.
+    */
+  sealed trait Fixity
+
+  object Fixity {
+
+    /**
+      * The atom is flexible (it does not have to be fully materialized before it can be evaluated).
+      */
+    case object Flex extends Fixity
+
+    /**
+      * The atom is fixed (it must be fully materialized before it can be evaluated).
+      */
+    case object Fixed extends Fixity
+
+  }
+
+  /**
     * Represents a positive or negative labelled dependency edge.
     *
     * The labels represent predicate nodes that must co-occur for the dependency to be relevant.

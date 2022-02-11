@@ -415,7 +415,7 @@ object Stratifier {
       * Returns `true` if the body predicate is negated.
       */
     def isNegative(p: Predicate.Body): Boolean = p match {
-      case Predicate.Body.Atom(_, _, Polarity.Negative, _, _, _) => true
+      case Predicate.Body.Atom(_, _, Polarity.Negative, _, _, _, _) => true
       case _ => false
     }
 
