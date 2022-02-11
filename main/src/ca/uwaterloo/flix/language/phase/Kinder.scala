@@ -696,10 +696,10 @@ object Kinder {
     * Performs kinding on the given body predicate under the given kind environment.
     */
   private def visitBodyPredicate(pred: ResolvedAst.Predicate.Body, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Predicate.Body, KindError] = pred match {
-    case ResolvedAst.Predicate.Body.Atom(pred, den, polarity, terms0, loc) =>
+    case ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms0, loc) =>
       for {
         terms <- Validation.traverse(terms0)(visitPattern(_, kenv, root))
-      } yield KindedAst.Predicate.Body.Atom(pred, den, polarity, terms, Type.freshVar(Kind.Predicate, loc), loc)
+      } yield KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, Type.freshVar(Kind.Predicate, loc), loc)
 
     case ResolvedAst.Predicate.Body.Guard(exp0, loc) =>
       for {
