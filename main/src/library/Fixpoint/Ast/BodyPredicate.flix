@@ -16,7 +16,7 @@
 
 namespace Fixpoint/Ast {
     pub enum BodyPredicate[v] {
-        case BodyAtom(PredSym, Denotation[v], Polarity, Array[BodyTerm[v]])
+        case BodyAtom(PredSym, Denotation[v], Polarity, Fixity, Array[BodyTerm[v]])
         case Guard0(Unit -> Bool)
         case Guard1(v -> Bool, VarSym)
         case Guard2(v -> v -> Bool, VarSym, VarSym)
@@ -29,17 +29,22 @@ namespace Fixpoint/Ast {
     instance ToString[BodyPredicate[v]] with ToString[v] {
         pub def toString(body: BodyPredicate[v]): String =
             use Fixpoint.commaSeparate;
+            def polarityPrefix(p) = match p {
+                case Negative => "not "
+                case Positive => ""
+            };
+            def fixityPrefix(f) = match f {
+                case Fixed => "fix "
+                case Loose => ""
+            };
             match body {
-                case BodyAtom(predSym, Relational, Positive, terms) => "${predSym}(${commaSeparate(terms)})"
-                case BodyAtom(predSym, Relational, Negative, terms) => "not ${predSym}(${commaSeparate(terms)})"
-                case BodyAtom(predSym, Latticenal(_), polarity, terms) =>
+                case BodyAtom(predSym, Relational, p, f, terms) =>
+                    "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${commaSeparate(terms)})"
+                case BodyAtom(predSym, Latticenal(_), p, f, terms) =>
                     let len = Array.length(terms);
                     let k = terms[0..len-1];
                     let l = terms[len-1];
-                    match polarity {
-                        case Positive => "${predSym}(${commaSeparate(k)}; ${l})"
-                        case Negative => "not ${predSym}(${commaSeparate(k)}; ${l})"
-                    }
+                    "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${commaSeparate(k)}; ${l})"
                 case Guard0(_) => "<clo>()"
                 case Guard1(_, v) => "<clo>(${v})"
                 case Guard2(_, v1, v2) => "<clo>(${v1}, ${v2})"

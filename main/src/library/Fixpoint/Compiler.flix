@@ -129,7 +129,7 @@ namespace Fixpoint {
             let loopBody = RelOp.If(join, projection);
             let insert =
                 Array.foldRight(match (atom, rowVar) -> acc -> match atom {
-                    case BodyAtom(PredSym(pred), den, Polarity.Positive, terms) =>
+                    case BodyAtom(PredSym(pred), den, Polarity.Positive, _, terms) =>
                         let arity = Array.length(terms);
                         RelOp.Search(rowVar, RamSym.Full(pred, arity, den), acc)
                     case _ => acc
@@ -182,7 +182,7 @@ namespace Fixpoint {
             let compile = delta -> { // `delta` designates the focused atom.
                 let insert =
                     Array.foldRight(match (atom, rowVar) -> acc -> match atom {
-                        case BodyAtom(PredSym(pred), den, Polarity.Positive, terms) =>
+                        case BodyAtom(PredSym(pred), den, Polarity.Positive, _, terms) =>
                             let arity = Array.length(terms);
                             let ramSym = if (rowVar == delta) {
                                 RamSym.Delta(pred, arity, den)
@@ -197,7 +197,7 @@ namespace Fixpoint {
             };
 
             let positiveAtoms = Array.filter(match (atom, _) -> match atom {
-                case BodyAtom(_, _, Polarity.Positive, _) => true
+                case BodyAtom(_, _, Polarity.Positive, _, _) => true
                 case _ => false
             }, augBody);
             if (enableDebugging()) {
@@ -251,7 +251,7 @@ namespace Fixpoint {
     ///
     def augmentBody(body: Array[BodyPredicate[v]]): Array[(BodyPredicate[v], RowVar)] & Impure =
         Array.mapWithIndex(atom -> i -> match atom {
-            case BodyAtom(predSym, _, Polarity.Positive, _) => (atom, RowVar.Named("${predSym}$${i}"))
+            case BodyAtom(predSym, _, Polarity.Positive, _, _) => (atom, RowVar.Named("${predSym}$${i}"))
             case _ => (atom, RowVar.Named("IfYouSeeThisYouFoundABug"))
         }, body)
 
@@ -266,7 +266,7 @@ namespace Fixpoint {
     ///
     def unifyVars(body: Array[(BodyPredicate[v], RowVar)]): Map[VarSym, RamTerm[v]] & Impure =
         Array.foldLeft(acc -> match (atom, rowVar) -> match atom {
-            case BodyAtom(_, denotation, Polarity.Positive, terms) =>
+            case BodyAtom(_, denotation, Polarity.Positive, _, terms) =>
                 Array.mapWithIndex(term -> i -> (term, i), terms) |>
                 Array.foldRight(match (term, i) -> match term {
                     case BodyTerm.Var(var) => match denotation {
@@ -308,7 +308,7 @@ namespace Fixpoint {
                 case BodyTerm.Lit(v)    => RamTerm.Lit(v)
             };
             match atom {
-                case BodyAtom(_, denotation, Polarity.Positive, terms) =>
+                case BodyAtom(_, denotation, Polarity.Positive, _, terms) =>
                     Array.mapWithIndex(compileBodyTerm, terms) |>
                     Array.mapWithIndex(t -> i -> match denotation {
                         case Denotation.Relational => BoolExp.Eq(RamTerm.RowLoad(rowVar, i), t)
@@ -319,7 +319,7 @@ namespace Fixpoint {
                                 BoolExp.Leq(leq, t, RamTerm.LoadLatVar(rowVar))
                     }) |>
                     Array.foldRight(x -> xs -> x :: xs, acc)
-                case BodyAtom(PredSym(pred), denotation, Polarity.Negative, terms) =>
+                case BodyAtom(PredSym(pred), denotation, Polarity.Negative, _, terms) =>
                     let ramTerms = Array.mapWithIndex(compileBodyTerm, terms);
                     let arity = Array.length(ramTerms);
                     BoolExp.NotMemberOf(ramTerms, RamSym.Full(pred, arity, denotation)) :: acc

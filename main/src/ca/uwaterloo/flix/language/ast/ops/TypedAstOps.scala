@@ -264,7 +264,7 @@ object TypedAstOps {
       * Finds the holes and hole contexts in the given body predicate `b0`.
       */
     def visitBody(b0: Predicate.Body, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = b0 match {
-      case Predicate.Body.Atom(_, _, _, _, _, _) => Map.empty
+      case Predicate.Body.Atom(_, _, _, _, _, _, _) => Map.empty
       case Predicate.Body.Guard(exp, _) => visitExp(exp, env0)
       case Predicate.Body.Loop(_, exp, _) => visitExp(exp, env0)
     }
@@ -719,7 +719,7 @@ object TypedAstOps {
     * Returns the free variables in the given body predicate `body0`.
     */
   private def freeVars(body0: Predicate.Body): Map[Symbol.VarSym, Type] = body0 match {
-    case Body.Atom(_, _, _, terms, _, _) =>
+    case Body.Atom(_, _, _, _, terms, _, _) =>
       terms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, term) => acc ++ freeVars(term)
       }

@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
 import ca.uwaterloo.flix.language.ast.ParsedAst.RecordFieldType
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
@@ -1450,10 +1450,14 @@ object Weeder {
           val head = WeededAst.Predicate.Head.Atom(pred, den, selects, loc)
 
           // The body of the pseudo-rule.
-          val body = where match {
-            case Nil => from
-            case g :: Nil => WeededAst.Predicate.Body.Guard(g, loc) :: from
-            case _ => throw InternalCompilerException("Impossible. The list must have 0 or 1 elements.")
+          val guard = where.map(g => WeededAst.Predicate.Body.Guard(g, loc))
+
+          // Fix all lattice atoms (could limit this to those referenced in the result)
+          // this allows `query ... select (x, y) from A(x; y)`
+          val body = guard ::: from.map {
+            case WeededAst.Predicate.Body.Atom(pred, Denotation.Latticenal, polarity, Fixity.Loose, terms, loc) =>
+              WeededAst.Predicate.Body.Atom(pred, Denotation.Latticenal, polarity, Fixity.Fixed, terms, loc)
+            case pred => pred
           }
 
           // Construct the pseudo-query.
@@ -1914,20 +1918,27 @@ object Weeder {
     * Weeds the given body predicate.
     */
   private def visitPredicateBody(b: ParsedAst.Predicate.Body)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = b match {
-    case ParsedAst.Predicate.Body.Atom(sp1, polarity, ident, terms, None, sp2) =>
+    case ParsedAst.Predicate.Body.Atom(sp1, polarity, fixity, ident, terms, None, sp2) =>
+      //
+      // Check for `[[IllegalFixedAtom]]`.
+      //
+      if (polarity == Ast.Polarity.Negative && fixity == Ast.Fixity.Fixed) {
+        return WeederError.IllegalFixedAtom(mkSL(sp1, sp2)).toFailure
+      }
+
       // Case 1: the atom has a relational denotation (because of the absence of the optional lattice term).
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitPattern)) {
         case ts =>
-          WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, ts, loc)
+          WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, ts, loc)
       }
 
-    case ParsedAst.Predicate.Body.Atom(sp1, polarity, ident, terms, Some(term), sp2) =>
+    case ParsedAst.Predicate.Body.Atom(sp1, polarity, fixity, ident, terms, Some(term), sp2) =>
       // Case 2: the atom has a latticenal denotation (because of the presence of the optional lattice term).
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitPattern), visitPattern(term)) {
         case (ts, t) =>
-          WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, ts ::: t :: Nil, loc)
+          WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, ts ::: t :: Nil, loc)
       }
 
     case ParsedAst.Predicate.Body.Guard(sp1, exp, sp2) =>
