@@ -1012,6 +1012,9 @@ object Lowering {
       mkTag(Enums.Polarity, "Negative", innerExp, Types.Polarity, loc)
   }
 
+  /**
+    * Constructs a `Fixpoint/Ast.Fixity` from the given fixity `f`.
+    */
   private def mkFixity(f: Ast.Fixity, loc: SourceLocation): Expression = f match {
     case Fixity.Loose =>
       val innerExp = Expression.Unit(loc)

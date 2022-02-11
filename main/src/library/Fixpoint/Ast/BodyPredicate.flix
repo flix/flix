@@ -29,21 +29,22 @@ namespace Fixpoint/Ast {
     instance ToString[BodyPredicate[v]] with ToString[v] {
         pub def toString(body: BodyPredicate[v]): String =
             use Fixpoint.commaSeparate;
+            def polarityPrefix(p) = match p {
+                case Negative => "not "
+                case Positive => ""
+            };
+            def fixityPrefix(f) = match f {
+                case Fixed => "fix "
+                case Loose => ""
+            };
             match body {
-                case BodyAtom(predSym, Relational, Positive, Loose, terms) => "${predSym}(${commaSeparate(terms)})"
-                case BodyAtom(predSym, Relational, Positive, Fixed, terms) => "fix ${predSym}(${commaSeparate(terms)})"
-                case BodyAtom(predSym, Relational, Negative, Loose, terms) => "not ${predSym}(${commaSeparate(terms)})"
-                case BodyAtom(predSym, Relational, Negative, Fixed, terms) => "not fix ${predSym}(${commaSeparate(terms)})"
-                case BodyAtom(predSym, Latticenal(_), polarity, fixity, terms) =>
+                case BodyAtom(predSym, Relational, p, f, terms) =>
+                    "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${commaSeparate(terms)})"
+                case BodyAtom(predSym, Latticenal(_), p, f, terms) =>
                     let len = Array.length(terms);
                     let k = terms[0..len-1];
                     let l = terms[len-1];
-                    match (polarity, fixity) {
-                        case (Positive, Loose) => "${predSym}(${commaSeparate(k)}; ${l})"
-                        case (Positive, Fixed) => "fix ${predSym}(${commaSeparate(k)}; ${l})"
-                        case (Negative, Loose) => "not ${predSym}(${commaSeparate(k)}; ${l})"
-                        case (Negative, Fixed) => "not fix ${predSym}(${commaSeparate(k)}; ${l})"
-                    }
+                    "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${commaSeparate(k)}; ${l})"
                 case Guard0(_) => "<clo>()"
                 case Guard1(_, v) => "<clo>(${v})"
                 case Guard2(_, v1, v2) => "<clo>(${v1}, ${v2})"

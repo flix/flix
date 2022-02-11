@@ -86,6 +86,12 @@ namespace Fixpoint {
         case Constraint(head, body) => Array.fold(Array.map(mkDepEdge(head), body))
     }
 
+    ///
+    /// Creates a singleton set with a strict or non-strict edge. Negatively bound atoms and
+    /// fixed atoms create strict edges because the body predicate has to be in a strictly
+    /// lower strata than the head. Positive, loose atoms create non-strict edges where the body
+    /// has to be in the same strata as the head or lower.
+    ///
     def mkDepEdge(dst: HeadPredicate[v], src: BodyPredicate[v]): PrecedenceGraph = match (dst, src) {
         case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, Polarity.Positive, Fixity.Loose, _)) =>
             PrecedenceGraph(Set#{NonStrictEdge(bodySym, headSym)})
