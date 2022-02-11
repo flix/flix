@@ -49,6 +49,26 @@ instance Order[Set[a]] with Order[a] {
 
 }
 
+instance PartialOrder[Set[a]] with Order[a] {
+    pub def lessEqual(s1: Set[a], s2: Set[a]): Bool =
+        s1 `Set.isSubsetOf` s2
+}
+
+instance LowerBound[Set[a]] {
+    pub def minValue(): Set[a] =
+        Set.empty()
+}
+
+instance JoinLattice[Set[a]] with Order[a] {
+    pub def leastUpperBound(s1: Set[a], s2: Set[a]): Set[a] =
+        s1 `Set.union` s2
+}
+
+instance MeetLattice[Set[a]] with Order[a] {
+    pub def greatestLowerBound(s1: Set[a], s2: Set[a]): Set[a] =
+        s1 `Set.intersection` s2
+}
+
 instance Foldable[Set] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldLeft(f, s, s1)
     pub def foldRight(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRight(f, s, s1)
