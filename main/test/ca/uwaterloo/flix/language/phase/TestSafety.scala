@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildVariable, IllegalNegativelyBoundWildcard, IllegalNonPositivelyBoundVariable}
+import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildVariable, IllegalNegativelyBoundWildcard, IllegalNonPositivelyBoundVariable, IllegalUseOfLatticeVariable}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
@@ -123,6 +123,17 @@ class TestSafety extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[IllegalNegativelyBoundWildcard](result)
+  }
+
+  test("UseOfLatticeVariable.01") {
+    val input =
+      """
+        |pub def f(): #{ A(Int32), B(Int32; Int32) } = #{
+        |    A(x: Int32) :- B(12; x).
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[IllegalUseOfLatticeVariable](result)
   }
 
 }

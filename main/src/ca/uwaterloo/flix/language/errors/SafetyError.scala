@@ -86,4 +86,33 @@ object SafetyError {
       */
     def explain(formatter: Formatter): Option[String] = None
   }
+
+  /**
+    * An error raised to indicate an illegal use of a lattice variable `sym` as a non-lattice value.
+    *
+    * @param sym the lattice symbol used in a relational context.
+    * @param loc the position of the head atom containing the illegal variable.
+    */
+  case class IllegalUseOfLatticeVariable(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Illegal relational use of lattice variable '$sym'"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal relational use of lattice variable '${red(sym.text)}'.
+         |
+         |${code(loc, "the lattice variable occurs here.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"""
+         |${underline("Tip:")} Lattice variables can be used as non-lattice values with the `fix` keyword.
+         |""".stripMargin
+    })
+  }
 }
