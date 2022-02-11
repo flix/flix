@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
@@ -45,24 +45,38 @@ object Stratifier {
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Stratifier") {
     // Compute an over-approximation of the dependency graph for all constraints in the program.
-    val g = flix.subphase("Compute Dependency Graph") {
-      ParOps.parAgg(root.defs, LabelledGraph.empty)({
-        case (acc, (_, decl)) => acc + labelledGraphOfDef(decl)
+    val g = flix.subphase("Compute Global Dependency Graph") {
+      val defs = root.defs.values.toList
+      val instanceDefs = root.instances.values.flatten.flatMap(_.defs)
+      ParOps.parAgg(defs ++ instanceDefs, LabelledGraph.empty)({
+        case (acc, d) => acc + labelledGraphOfDef(d)
       }, _ + _)
     }
 
     // Compute the stratification at every datalog expression in the ast.
-    val defsVal = flix.subphase("Compute Stratification") {
+    val newDefs = flix.subphase("Stratify Defs") {
       val result = ParOps.parMap(root.defs)(kv => visitDef(kv._2)(g, flix).map(d => kv._1 -> d))
       Validation.sequence(result)
     }
+    val newInstances = flix.subphase("Stratify Instance Defs") {
+      val result = ParOps.parMap(root.instances) {
+        case (sym, is) =>
+          val x = traverse(is)(i => visitInstance(i)(g, flix))
+          x.map(d => sym -> d)
+      }
+      Validation.sequence(result)
+    }
 
-    // TODO: JLS: Must also visit instances.
-
-    mapN(defsVal) {
-      case ds => root.copy(defs = ds.toMap)
+    mapN(newDefs, newInstances) {
+      case (ds, is) => root.copy(defs = ds.toMap, instances = is.toMap)
     }
   }
+
+  /**
+    * Performs Stratification of the given instance `i0`.
+    */
+  private def visitInstance(i0: TypedAst.Instance)(implicit g: LabelledGraph, flix: Flix):Validation[TypedAst.Instance, CompilationMessage] =
+    traverse(i0.defs)(d => visitDef(d)).map(ds => i0.copy(defs = ds))
 
   /**
     * Performs stratification of the given definition `def0`.
