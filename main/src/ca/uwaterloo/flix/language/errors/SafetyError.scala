@@ -108,6 +108,11 @@ object SafetyError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    def explain(formatter: Formatter): Option[String] = None
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"""
+         |${underline("Tip:")} Lattice variables can be used as non-lattice values with the `fix` keyword.
+         |""".stripMargin
+    })
   }
 }
