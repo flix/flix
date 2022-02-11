@@ -200,7 +200,7 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an negative atom is marked as fixed.
+    * An error raised to indicate that a negative atom is marked as fixed.
     *
     * @param loc the location where the illegal fixed atom occurs.
     */
