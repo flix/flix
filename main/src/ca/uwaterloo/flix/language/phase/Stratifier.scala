@@ -765,9 +765,9 @@ object Stratifier {
   private def labelledGraphToDependencyGraph(g: LabelledGraph): UllmansAlgorithm.DependencyGraph =
     g.edges.map {
       case LabelledEdge(head, Polarity.Positive, _, body, loc) =>
-        UllmansAlgorithm.DependencyEdge.Positive(head, body, loc)
+        UllmansAlgorithm.DependencyEdge.NonStrict(head, body, loc)
       case LabelledEdge(head, Polarity.Negative, _, body, loc) =>
-        UllmansAlgorithm.DependencyEdge.Negative(head, body, loc)
+        UllmansAlgorithm.DependencyEdge.Strict(head, body, loc)
     }.toSet
 
 }
