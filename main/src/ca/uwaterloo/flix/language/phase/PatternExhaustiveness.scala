@@ -396,7 +396,7 @@ object PatternExhaustiveness {
     }
 
     def visitBodyPred(b0: TypedAst.Predicate.Body, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Predicate.Body, CompilationMessage] = b0 match {
-      case TypedAst.Predicate.Body.Atom(_, _, polarity, terms, tpe, loc) => b0.toSuccess
+      case TypedAst.Predicate.Body.Atom(_, _, _, _, terms, _, _) => b0.toSuccess
 
       case TypedAst.Predicate.Body.Guard(exp, loc) =>
         for {

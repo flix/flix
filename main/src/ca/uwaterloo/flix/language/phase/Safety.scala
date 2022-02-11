@@ -273,7 +273,7 @@ object Safety {
     * with the given positively defined variable symbols `posVars`.
     */
   private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym]): List[CompilationMessage] = p0 match {
-    case Predicate.Body.Atom(_, _, polarity, terms, _, loc) =>
+    case Predicate.Body.Atom(_, _, polarity, _, terms, _, loc) =>
       checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
 
     case Predicate.Body.Guard(exp, _) => visitExp(exp)
@@ -315,7 +315,7 @@ object Safety {
     * Returns all positively defined variable symbols in the given body predicate `p0`.
     */
   private def positivelyDefinedVariables(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
-    case Predicate.Body.Atom(_, _, polarity, terms, _, _) => polarity match {
+    case Predicate.Body.Atom(_, _, polarity, _, terms, _, _) => polarity match {
       case Polarity.Positive =>
         // Case 1: A positive atom positively defines all its free variables.
         terms.flatMap(freeVarsOf).toSet
