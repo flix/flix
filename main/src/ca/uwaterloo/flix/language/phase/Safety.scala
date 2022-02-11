@@ -256,7 +256,7 @@ object Safety {
     //
     val posVars = positivelyDefinedVariables(c0)
 
-    val latVars = forcedLatticeVariables(c0)
+    val latVars = nonFixedLatticeVariablesOf(c0)
 
     //
     // Compute the quantified variables in the constraint.
@@ -270,6 +270,9 @@ object Safety {
     //
     val err1 = c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars))
 
+    //
+    // Check that the free relational variables in the head atom are not lattice variables.
+    //
     val err2 = checkHeadPredicate(c0.head, latVars)
 
     err1 concat err2
@@ -338,15 +341,25 @@ object Safety {
   }
 
   /**
-    * Variables that are bound in lattice position without `fix`.
+    * Computes the free variables that occur in a lattice position in
+    * atoms that are not marked with fix.
     */
-  private def forcedLatticeVariables(c0: TypedAst.Constraint): Set[Symbol.VarSym] =
-    c0.body.flatMap(forcedLatticeVariables).toSet
+  private def nonFixedLatticeVariablesOf(c0: TypedAst.Constraint): Set[Symbol.VarSym] =
+    c0.body.flatMap(nonFixedLatticeVariablesOf).toSet
 
-  private def forcedLatticeVariables(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
+  /**
+    * Computes the lattice variables of `p0` if it is not a fixed atom.
+    */
+  private def nonFixedLatticeVariablesOf(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
     case Predicate.Body.Atom(_, Denotation.Latticenal, _, Fixity.Loose, terms, _, _) =>
+      // This atom is not fixed so the last term is latticenal - all its
+      // free variables are returned
       terms.lastOption.map(freeVarsOf).getOrElse(Set.empty)
-    case _ => Set.empty
+    case _ =>
+      // This case includes lattice atoms that are fixed among other things.
+      // The fix enforces stratification which means that the lattice variables
+      // can be used freely.
+      Set.empty
   }
 
   private def checkHeadPredicate(head: TypedAst.Predicate.Head, latVars: Set[Symbol.VarSym]): List[CompilationMessage] = head match {
@@ -356,12 +369,19 @@ object Safety {
       checkTerms(terms, latVars, loc)
   }
 
-  private def checkTerms(terms: List[Expression], latVars: Set[Symbol.VarSym], loc: SourceLocation): List[CompilationMessage] =
-    terms.flatMap(freeVars(_).keys).flatMap { sym =>
+  /**
+    * Checks that the free variables of the terms does not contain any of the variables
+    * in `latVars`. If they do contain a lattice variable then a `IllegalUseOfLatticeVariable`
+    * is created.
+    */
+  private def checkTerms(terms: List[Expression], latVars: Set[Symbol.VarSym], loc: SourceLocation): List[CompilationMessage] = {
+    val allFreeVars = terms.flatMap(freeVars(_).keys)
+    allFreeVars.flatMap { sym =>
       if (latVars.contains(sym))
-        List(IllegalUseOfLatticeVariable(sym, loc))
-      else Nil
+        Some(IllegalUseOfLatticeVariable(sym, loc))
+      else None
     }
+  }
 
   /**
     * Returns an error for each occurrence of wildcards in each term.
