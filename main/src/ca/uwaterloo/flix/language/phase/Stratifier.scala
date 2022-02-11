@@ -737,8 +737,8 @@ object Stratifier {
 
       val edges = body0.foldLeft(Vector.empty[LabelledEdge]) {
         case (edges, body) => body match {
-          case Body.Atom(bodyPred, _, p, _, _, _, bodyLoc) =>
-            edges :+ LabelledEdge(headPred, p, labels, bodyPred, bodyLoc)
+          case Body.Atom(bodyPred, _, p, f, _, _, bodyLoc) =>
+            edges :+ LabelledEdge(headPred, p, f, labels, bodyPred, bodyLoc)
           case Body.Guard(_, _) => edges
           case Body.Loop(_, _, _) => edges
         }
@@ -778,9 +778,13 @@ object Stratifier {
     */
   private def labelledGraphToDependencyGraph(g: LabelledGraph): UllmansAlgorithm.DependencyGraph =
     g.edges.map {
-      case LabelledEdge(head, Polarity.Positive, _, body, loc) =>
+      case LabelledEdge(head, Polarity.Positive, Fixity.Loose, _, body, loc) =>
+        // Positive, loose edges require that the strata of the head is equal to,
+        // or below, the strata of the body.
         UllmansAlgorithm.DependencyEdge.NonStrict(head, body, loc)
-      case LabelledEdge(head, Polarity.Negative, _, body, loc) =>
+      case LabelledEdge(head, _, _, _, body, loc) =>
+        // Edges that are either negatively bound or fixed are strict since they require
+        // that the strata of the head is strictly higher than the strata of the body.
         UllmansAlgorithm.DependencyEdge.Strict(head, body, loc)
     }.toSet
 

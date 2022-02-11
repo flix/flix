@@ -394,7 +394,7 @@ object Ast {
     *
     * The labels represent predicate nodes that must co-occur for the dependency to be relevant.
     */
-  case class LabelledEdge(head: Name.Pred, polarity: Polarity, labels: Vector[Label], body: Name.Pred, loc: SourceLocation)
+  case class LabelledEdge(head: Name.Pred, polarity: Polarity, fixity: Fixity, labels: Vector[Label], body: Name.Pred, loc: SourceLocation)
 
   /**
     * Represents a label in the labelled graph.
@@ -442,7 +442,7 @@ object Ast {
       def include(l: Label): Boolean = syms.get(l.pred).exists(l2 => labelEq(l, l2))
 
       LabelledGraph(edges.filter {
-        case LabelledEdge(_, _, labels, _, _) => labels.forall(include)
+        case LabelledEdge(_, _, _, labels, _, _) => labels.forall(include)
       })
     }
   }
