@@ -253,7 +253,7 @@ object Resolver {
   }
 
   /**
-    * Performs kinding on the all the definitions in the given root.
+    * Resolves all the classes in the given root.
     */
   private def resolveClasses(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, ResolvedAst.Class], ResolutionError] = {
 
@@ -275,8 +275,9 @@ object Resolver {
         }
     }
   }
+
   /**
-    * Performs name resolution on the given typeclass `c0` in the given namespace `ns0`.
+    * Resolves all the classes in the given root.
     */
   def resolveClass(c0: NamedAst.Class, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
     case NamedAst.Class(doc, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
