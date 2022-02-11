@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ast.{Datalog, Constraint, HeadPredicate, BodyPredicate, Polarity, PrecedenceGraph, PredSym};
+use Fixpoint/Ast.{Datalog, Constraint, HeadPredicate, BodyPredicate, Polarity, Fixity, PrecedenceGraph, PredSym};
 use Fixpoint/Ast.Datalog.{Datalog, Model, Join};
 use Fixpoint/Ast.PrecedenceGraph.PrecedenceGraph;
-use Fixpoint/Ast.PrecedenceEdge.{PositiveEdge, NegativeEdge};
+use Fixpoint/Ast.PrecedenceEdge.{NonStrictEdge, StrictEdge};
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.BodyPredicate.BodyAtom;
@@ -48,14 +48,14 @@ namespace Fixpoint {
             // 2. If (body, head) is a negative edge, then body belongs to a strictly lower stratum
             // than head.
             let (newStf, changed) = Set.foldLeft(match (acc, changed) -> edge -> match edge {
-                case PositiveEdge(bodySym, headSym) =>
+                case NonStrictEdge(bodySym, headSym) =>
                     let bodyStratum = Map.getWithDefault(bodySym, 0, acc);
                     let headStratum = Map.getWithDefault(headSym, 0, acc);
                     if (bodyStratum > headStratum)
                         (Map.insert(headSym, bodyStratum, acc), true)
                     else
                         (acc, changed)
-                case NegativeEdge(bodySym, headSym) =>
+                case StrictEdge(bodySym, headSym) =>
                     let bodyStratum = Map.getWithDefault(bodySym, 0, acc);
                     let headStratum = Map.getWithDefault(headSym, 0, acc);
                     if (bodyStratum >= headStratum)
@@ -87,10 +87,10 @@ namespace Fixpoint {
     }
 
     def mkDepEdge(dst: HeadPredicate[v], src: BodyPredicate[v]): PrecedenceGraph = match (dst, src) {
-        case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, Polarity.Positive, _)) =>
-            PrecedenceGraph(Set#{PositiveEdge(bodySym, headSym)})
-        case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, Polarity.Negative, _)) =>
-            PrecedenceGraph(Set#{NegativeEdge(bodySym, headSym)})
+        case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, Polarity.Positive, Fixity.Loose, _)) =>
+            PrecedenceGraph(Set#{NonStrictEdge(bodySym, headSym)})
+        case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, _, _, _)) =>
+            PrecedenceGraph(Set#{StrictEdge(bodySym, headSym)})
         case _ => PrecedenceGraph(Set#{})
     }
 }
