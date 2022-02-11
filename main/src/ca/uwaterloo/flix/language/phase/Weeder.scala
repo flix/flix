@@ -1450,21 +1450,14 @@ object Weeder {
           val head = WeededAst.Predicate.Head.Atom(pred, den, selects, loc)
 
           // The body of the pseudo-rule.
-          val bodyGuard = where match {
-            case Nil => None
-            case g :: Nil => Some(WeededAst.Predicate.Body.Guard(g, loc))
-            case _ => throw InternalCompilerException("Impossible. The list must have 0 or 1 elements.")
-          }
-          // Insert fix to all lattice atoms (could limit this to those referenced in the result)
-          val fixedFrom = from.map{
-            case lat @ WeededAst.Predicate.Body.Atom(_, Denotation.Latticenal, _, Fixity.Loose, _, _) =>
-              lat.copy(fixity = Fixity.Fixed)
-            case b => b
-          }
-          // Concat the complete body
-          val body = bodyGuard match {
-            case Some(g) => g :: fixedFrom
-            case None => fixedFrom
+          val guard = where.map(g => WeededAst.Predicate.Body.Guard(g, loc))
+
+          // Fix all lattice atoms (could limit this to those referenced in the result)
+          // this allows `query ... select (x, y) from A(x; y)`
+          val body = guard ::: from.map {
+            case WeededAst.Predicate.Body.Atom(pred, Denotation.Latticenal, polarity, Fixity.Loose, terms, loc) =>
+              WeededAst.Predicate.Body.Atom(pred, Denotation.Latticenal, polarity, Fixity.Fixed, terms, loc)
+            case pred => pred
           }
 
           // Construct the pseudo-query.
