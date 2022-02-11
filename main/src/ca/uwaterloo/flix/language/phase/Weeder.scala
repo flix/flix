@@ -1915,6 +1915,13 @@ object Weeder {
     */
   private def visitPredicateBody(b: ParsedAst.Predicate.Body)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = b match {
     case ParsedAst.Predicate.Body.Atom(sp1, polarity, fixity, ident, terms, None, sp2) =>
+      //
+      // Check for `[[IllegalFixedAtom]]`.
+      //
+      if (polarity == Ast.Polarity.Negative && fixity == Ast.Fixity.Fixed) {
+        return WeederError.IllegalFixedAtom(mkSL(sp1, sp2)).toFailure
+      }
+
       // Case 1: the atom has a relational denotation (because of the absence of the optional lattice term).
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitPattern)) {
