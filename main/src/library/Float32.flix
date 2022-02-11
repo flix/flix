@@ -120,9 +120,9 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def fromString(s: String): Result[Float32, String] = try {
-        import java.lang.String.strip();
-        import static java.lang.Float.parseFloat(String);
-        Ok(s |> strip |> parseFloat) as & Pure
+        import java.lang.String.strip(): String & Pure;
+        import static java.lang.Float.parseFloat(String): Float32 & Pure;
+        Ok(s |> strip |> parseFloat)
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Float32.fromString")
      }
