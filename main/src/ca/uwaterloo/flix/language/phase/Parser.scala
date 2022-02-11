@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Polarity, Source}
+import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -1049,7 +1049,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def FromPart: Rule1[Seq[ParsedAst.Predicate.Body.Atom]] = rule {
-        WS ~ keyword("from") ~ WS ~ oneOrMore(Predicates.Body.Positive | Predicates.Body.Negative).separatedBy(optWS ~ "," ~ optWS)
+        WS ~ keyword("from") ~ WS ~ oneOrMore(Predicates.Body.Atom).separatedBy(optWS ~ "," ~ optWS)
       }
 
       def WherePart: Rule1[Option[ParsedAst.Expression]] = rule {
@@ -1142,7 +1142,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
-    Predicates.Body.Positive | Predicates.Body.Negative | Predicates.Body.Guard | Predicates.Body.Loop
+    Predicates.Body.Atom | Predicates.Body.Guard | Predicates.Body.Loop
   }
 
   object Predicates {
@@ -1157,17 +1157,17 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     object Body {
 
-      def Positive: Rule1[ParsedAst.Predicate.Body.Atom] = rule {
-        SP ~ push(Polarity.Positive) ~ Names.Predicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
-      }
+      def Atom: Rule1[ParsedAst.Predicate.Body.Atom] = {
+        def Polarity: Rule1[Ast.Polarity] = rule {
+          (keyword("not") ~ WS ~ push(Ast.Polarity.Negative)) | push(Ast.Polarity.Positive)
+        }
 
-      def Negative: Rule1[ParsedAst.Predicate.Body.Atom] = {
-        def Not: Rule0 = rule {
-          (keyword("not") ~ WS)
+        def Fixity: Rule1[Ast.Fixity] = rule {
+          (keyword("fix") ~ WS ~ push(Ast.Fixity.Fixed)) | push(Ast.Fixity.Loose)
         }
 
         rule {
-          SP ~ push(Polarity.Negative) ~ Not ~ optWS ~ Names.Predicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
+          SP ~ Polarity ~ Fixity ~ Names.Predicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
         }
       }
 
