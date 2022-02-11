@@ -67,7 +67,9 @@ object BenchmarkCompiler {
     // Collect data from N iterations, using the same Flix object.
     //
     val r = (0 until N).map { _ =>
-      flix.resetTimers()
+      // Re-add all the inputs to mark them all as changed.
+      addInputs(flix)
+
       val compilationResult = flix.compile().get
       (compilationResult, flix.phaseTimers.toList)
     }
@@ -213,6 +215,15 @@ object BenchmarkCompiler {
 
     flix.setOptions(opts = o.copy(incremental = false, loadClassFiles = false))
 
+    addInputs(flix)
+
+    flix
+  }
+
+  /**
+    * Adds test code to the benchmarking suite.
+    */
+  private def addInputs(flix: Flix): Unit = {
     // NB: We only use unit tests from the standard library because we want to test real code.
 
     flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
@@ -229,8 +240,6 @@ object BenchmarkCompiler {
     flix.addSourceCode("TestResult.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestResult.flix"))
     flix.addSourceCode("TestSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"))
     flix.addSourceCode("TestValidation.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"))
-
-    flix
   }
 
 }

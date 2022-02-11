@@ -612,10 +612,6 @@ class Flix {
     }
   }
 
-  def resetTimers(): Unit = {
-    phaseTimers = ListBuffer.empty
-  }
-
   /**
     * Returns a list of inputs constructed from the strings and paths passed to Flix.
     */
