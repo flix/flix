@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
 import ca.uwaterloo.flix.language.ast.ParsedAst.RecordFieldType
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
@@ -1450,10 +1450,21 @@ object Weeder {
           val head = WeededAst.Predicate.Head.Atom(pred, den, selects, loc)
 
           // The body of the pseudo-rule.
-          val body = where match {
-            case Nil => from
-            case g :: Nil => WeededAst.Predicate.Body.Guard(g, loc) :: from
+          val bodyGuard = where match {
+            case Nil => None
+            case g :: Nil => Some(WeededAst.Predicate.Body.Guard(g, loc))
             case _ => throw InternalCompilerException("Impossible. The list must have 0 or 1 elements.")
+          }
+          // Insert fix to all lattice atoms (could limit this to those referenced in the result)
+          val fixedFrom = from.map{
+            case lat @ WeededAst.Predicate.Body.Atom(_, Denotation.Latticenal, _, Fixity.Loose, _, _) =>
+              lat.copy(fixity = Fixity.Fixed)
+            case b => b
+          }
+          // Concat the complete body
+          val body = bodyGuard match {
+            case Some(g) => g :: fixedFrom
+            case None => fixedFrom
           }
 
           // Construct the pseudo-query.
