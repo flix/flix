@@ -339,13 +339,13 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def floor(x: Float32): Float32 =
-        import static java.lang.Float.valueOf(Float32) as valueOfF32;
-        import static java.lang.Double.valueOf(Float64) as valueOfF64;
-        import static java.lang.Math.floor(Float64);
-        import java.lang.Double.floatValue();
-        import java.lang.Float.doubleValue();
-        let x1 = floor(doubleValue(valueOfF32(x))) as & Pure;
-        floatValue(valueOfF64(x1)) as & Pure
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure as valueOfF32;
+        import static java.lang.Double.valueOf(Float64): ##java.lang.Double & Pure as valueOfF64;
+        import static java.lang.Math.floor(Float64): Float64 & Pure;
+        import java.lang.Double.floatValue(): Float32 & Pure;
+        import java.lang.Float.doubleValue(): Float64 & Pure;
+        let x1 = floor(doubleValue(valueOfF32(x)));
+        floatValue(valueOfF64(x1))
 
     ///
     /// Returns `x` rounded to a Float32 representing the nearest integer value.
@@ -355,12 +355,12 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def round(x: Float32): Float32 =
-        import static java.lang.Float.valueOf(Float32) as valueOfF32;
-        import static java.lang.Double.valueOf(Float64) as valueOfF64;
-        import static java.lang.Math.rint(Float64);
-        import java.lang.Double.floatValue();
-        import java.lang.Float.doubleValue();
-        let x1 = rint(doubleValue(valueOfF32(x))) as & Pure;
-        floatValue(valueOfF64(x1)) as & Pure
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure as valueOfF32;
+        import static java.lang.Double.valueOf(Float64): ##java.lang.Double & Pure as valueOfF64;
+        import static java.lang.Math.rint(Float64): Float64 & Pure;
+        import java.lang.Double.floatValue(): Float32 & Pure;
+        import java.lang.Float.doubleValue(): Float64 & Pure;
+        let x1 = rint(doubleValue(valueOfF32(x)));
+        floatValue(valueOfF64(x1))
 
 }
