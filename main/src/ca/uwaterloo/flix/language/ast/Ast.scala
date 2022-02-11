@@ -378,12 +378,12 @@ object Ast {
   object Fixity {
 
     /**
-      * The atom is flexible (it does not have to be fully materialized before it can be evaluated).
+      * The atom is loose (it does not have to be fully materialized before it can be used).
       */
-    case object Flex extends Fixity
+    case object Loose extends Fixity
 
     /**
-      * The atom is fixed (it must be fully materialized before it can be evaluated).
+      * The atom is fixed (it must be fully materialized before it can be used).
       */
     case object Fixed extends Fixity
 
