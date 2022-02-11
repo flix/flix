@@ -429,7 +429,7 @@ object Stratifier {
       * Returns `true` if the body predicate is negated.
       */
     def isNegative(p: Predicate.Body): Boolean = p match {
-      case Predicate.Body.Atom(_, _, Polarity.Negative, _, _, _) => true
+      case Predicate.Body.Atom(_, _, Polarity.Negative, _, _, _, _) => true
       case _ => false
     }
 
@@ -728,7 +728,7 @@ object Stratifier {
 
       // We add all body predicates and the head to the labels of each edge
       val bodyLabels: Vector[Label] = body0.collect {
-        case Body.Atom(bodyPred, den, _, _, bodyTpe, _) =>
+        case Body.Atom(bodyPred, den, _, _, _, bodyTpe, _) =>
           val terms = termTypes(bodyTpe)
           Label(bodyPred, den, terms.length, terms)
       }.toVector
@@ -737,7 +737,7 @@ object Stratifier {
 
       val edges = body0.foldLeft(Vector.empty[LabelledEdge]) {
         case (edges, body) => body match {
-          case Body.Atom(bodyPred, _, p, _, _, bodyLoc) =>
+          case Body.Atom(bodyPred, _, p, _, _, _, bodyLoc) =>
             edges :+ LabelledEdge(headPred, p, labels, bodyPred, bodyLoc)
           case Body.Guard(_, _) => edges
           case Body.Loop(_, _, _) => edges
@@ -779,9 +779,9 @@ object Stratifier {
   private def labelledGraphToDependencyGraph(g: LabelledGraph): UllmansAlgorithm.DependencyGraph =
     g.edges.map {
       case LabelledEdge(head, Polarity.Positive, _, body, loc) =>
-        UllmansAlgorithm.DependencyEdge.Positive(head, body, loc)
+        UllmansAlgorithm.DependencyEdge.NonStrict(head, body, loc)
       case LabelledEdge(head, Polarity.Negative, _, body, loc) =>
-        UllmansAlgorithm.DependencyEdge.Negative(head, body, loc)
+        UllmansAlgorithm.DependencyEdge.Strict(head, body, loc)
     }.toSet
 
 }

@@ -811,7 +811,7 @@ object Lowering {
     * Lowers the given body predicate `p0`.
     */
   private def visitBodyPred(cparams0: List[ConstraintParam], p0: Predicate.Body)(implicit root: Root, flix: Flix): Expression = p0 match {
-    case Body.Atom(pred, den, polarity, terms, _, loc) =>
+    case Body.Atom(pred, den, polarity, fixity, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val polarityExp = mkPolarity(polarity, loc)
