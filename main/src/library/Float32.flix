@@ -138,12 +138,12 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt8(x: Float32): Option[Int8] =
-        import static java.lang.Float.valueOf(Float32);
-        import java.lang.Float.byteValue();
+        import static java.lang.Float.valueOf(Float32): Float32 & Pure;
+        import java.lang.Float.byteValue(): Int8 & Pure;
         if (x < Int8.toFloat32(Int8.minValue()) or x > Int8.toFloat32(Int8.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(valueOf(x) |> byteValue) as & Pure
+            Some(valueOf(x) |> byteValue)
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -156,12 +156,12 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt16(x: Float32): Option[Int16] =
-        import static java.lang.Float.valueOf(Float32);
-        import java.lang.Float.shortValue();
+        import static java.lang.Float.valueOf(Float32): Float32 & Pure;
+        import java.lang.Float.shortValue(): Int16 & Pure;
         if (x < Int16.toFloat32(Int16.minValue()) or x > Int16.toFloat32(Int16.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(valueOf(x) |> shortValue) as & Pure
+            Some(valueOf(x) |> shortValue)
 
     ///
     /// Convert `x` to an `Option[Int32]`.
@@ -177,12 +177,12 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt32(x: Float32): Option[Int32] =
-        import static java.lang.Float.valueOf(Float32);
-        import java.lang.Float.intValue();
+        import static java.lang.Float.valueOf(Float32): Float32 & Pure;
+        import java.lang.Float.intValue(): Int32 & Pure;
         if (x < Int32.toFloat32(Int32.minValue()) or x > Int32.toFloat32(Int32.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(valueOf(x) |> intValue) as & Pure
+            Some(valueOf(x) |> intValue)
 
     ///
     /// Convert `x` to an `Option[Int64]`.
@@ -198,12 +198,12 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt64(x: Float32): Option[Int64] =
-        import static java.lang.Float.valueOf(Float32);
-        import java.lang.Float.longValue();
+        import static java.lang.Float.valueOf(Float32): Float32 & Pure;
+        import java.lang.Float.longValue(): Int64 & Pure;
         if (x < Int64.toFloat32(Int64.minValue()) or x > Int64.toFloat32(Int64.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(valueOf(x) |> longValue) as & Pure
+            Some(valueOf(x) |> longValue)
 
     ///
     /// Convert `x` to an `Option[BigInt]`.
@@ -221,9 +221,9 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def toFloat64(x: Float32): Float64 =
-        import static java.lang.Float.valueOf(Float32);
-        import java.lang.Float.doubleValue();
-        (valueOf(x) |> doubleValue) as & Pure
+        import static java.lang.Float.valueOf(Float32): Float32 & Pure;
+        import java.lang.Float.doubleValue(): Float64 & Pure;
+        (valueOf(x) |> doubleValue)
 
     ///
     /// Helper function for the `clamp` conversion functions.
