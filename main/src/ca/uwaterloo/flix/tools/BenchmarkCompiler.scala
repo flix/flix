@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils}
 import org.json4s.JsonDSL._
@@ -80,7 +80,7 @@ object BenchmarkCompiler {
   /**
     * Processes and prints the results of the phase benchmarking.
     */
-  private def processPhasesResults(o: Options, r: IndexedSeq[(CompilationResult, List[Flix.PhaseTime])]): Unit = {
+  private def processPhasesResults(o: Options, r: IndexedSeq[(CompilationResult, List[PhaseTime])]): Unit = {
     //
     // Split into compilation results and phase results.
     //
