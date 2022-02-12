@@ -15,7 +15,7 @@
  */
 namespace Fixpoint/Ast {
     pub enum Fixity {
-        case Loose,
+        case NotFixed,
         case Fixed
     }
 }

@@ -782,8 +782,8 @@ object Stratifier {
     */
   private def labelledGraphToDependencyGraph(g: LabelledGraph): UllmansAlgorithm.DependencyGraph =
     g.edges.map {
-      case LabelledEdge(head, Polarity.Positive, Fixity.Loose, _, body, loc) =>
-        // Positive, loose edges require that the strata of the head is equal to,
+      case LabelledEdge(head, Polarity.Positive, Fixity.NotFixed, _, body, loc) =>
+        // Positive, non-fixed edges require that the strata of the head is equal to,
         // or below, the strata of the body hence a weak edge.
         UllmansAlgorithm.DependencyEdge.Weak(head, body, loc)
       case LabelledEdge(head, _, _, _, body, loc) =>

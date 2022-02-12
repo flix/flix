@@ -35,7 +35,7 @@ namespace Fixpoint/Ast {
             };
             def fixityPrefix(f) = match f {
                 case Fixed => "fix "
-                case Loose => ""
+                case NotFixed => ""
             };
             match body {
                 case BodyAtom(predSym, Relational, p, f, terms) =>

@@ -378,9 +378,9 @@ object Ast {
   object Fixity {
 
     /**
-      * The atom is loose (it does not have to be fully materialized before it can be used).
+      * The atom is not fixed (it does not have to be fully materialized before it can be used).
       */
-    case object Loose extends Fixity
+    case object NotFixed extends Fixity
 
     /**
       * The atom is fixed (it must be fully materialized before it can be used).
