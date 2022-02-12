@@ -67,13 +67,21 @@ instance Functor[LazyList] {
 }
 
 instance Foldable[LazyList] {
-    pub def foldLeft( f: (b, a) -> b & ef, s: b, l: LazyList[a]): b & ef = LazyList.foldLeft( f, s, l)
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: LazyList[a]): b & ef = LazyList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef = LazyList.foldRight(f, s, l)
 }
 
 instance Iterable[LazyList] {
-    pub def iterator(t: LazyList[a]): Iterator[a] & Impure =
-        LazyList.toIterator(t)
+    pub def iterator(l: LazyList[a]): Iterator[a] & Impure =
+        LazyList.toIterator(l)
+}
+
+instance SemiGroup[LazyList[a]] {
+    pub def combine(l1: LazyList[a], l2: LazyList[a]): LazyList[a] = LazyList.append(l1, l2)
+}
+
+instance Monoid[LazyList[a]] {
+    pub def empty(): LazyList[a] = ENil
 }
 
 namespace LazyList {
@@ -548,7 +556,8 @@ namespace LazyList {
     }
 
     ///
-    /// Returns the concatenation of the elements in `l2` with the elements of `l1` inserted between every two adjacent elements.
+    /// Returns the concatenation of the elements in `l2` with the elements
+    /// of `l1` inserted between every two adjacent elements of `l2`.
     ///
     /// That is, returns `l2.1 :: l1.1 ... l1.n :: l2.2 :: ... :: l2.n-1 :: l1.1 :: ... :: l1.n :: l2.n :: ENil`.
     ///
