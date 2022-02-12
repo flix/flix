@@ -283,9 +283,9 @@ namespace Int8 {
     ///
     @Time(1) @Space(1)
     pub def fromString(s: String): Result[Int8, String] = try {
-        import java.lang.String.strip();
-        import static java.lang.Byte.parseByte(String);
-        Ok(s |> strip |> parseByte) as & Pure
+        import java.lang.String.strip(): String & Pure;
+        import static java.lang.Byte.parseByte(String): Int8 & Pure;
+        Ok(s |> strip |> parseByte)
     } catch {
         case _: ##java.lang.NumberFormatException => Err("Int8.fromString")
     }
