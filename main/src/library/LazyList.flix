@@ -334,8 +334,8 @@ namespace LazyList {
     @Experimental @LazyWhenPure
     pub def map(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef =
         reifyEff(f) {
-            case Pure(g) => mapLazy(g, l)
-            case _       => mapEager(f, l)
+            case Pure(g) => mapL(g, l)
+            case _       => mapE(f, l)
         }
 
     ///
@@ -344,11 +344,11 @@ namespace LazyList {
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
     @Lazy
-    def mapLazy(f: a -> b, l: LazyList[a]): LazyList[b] = match l {
+    def mapL(f: a -> b, l: LazyList[a]): LazyList[b] = match l {
         case ENil         => ENil
-        case ECons(x, xs) => LList(lazy LCons(f(x), lazy mapLazy1(f,       xs)))
-        case LCons(x, xs) => LList(lazy LCons(f(x), lazy mapLazy1(f, force xs)))
-        case LList(xs)    => LList(                 lazy mapLazy1(f, force xs))
+        case ECons(x, xs) => LList(lazy LCons(f(x), lazy mapL1(f,       xs)))
+        case LCons(x, xs) => LList(lazy LCons(f(x), lazy mapL1(f, force xs)))
+        case LList(xs)    => LList(                 lazy mapL1(f, force xs))
     }
 
     ///
@@ -357,11 +357,11 @@ namespace LazyList {
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
     @Lazy
-    def mapLazy1(f: a -> b, l: LazyList[a]): LazyList[b] = match l {
+    def mapL1(f: a -> b, l: LazyList[a]): LazyList[b] = match l {
         case ENil         => ENil
-        case ECons(x, xs) => LCons(f(x), lazy mapLazy1(f,       xs))
-        case LCons(x, xs) => LCons(f(x), lazy mapLazy1(f, force xs))
-        case LList(xs)    => LList(      lazy mapLazy1(f, force xs))
+        case ECons(x, xs) => LCons(f(x), lazy mapL1(f,       xs))
+        case LCons(x, xs) => LCons(f(x), lazy mapL1(f, force xs))
+        case LList(xs)    => LList(      lazy mapL1(f, force xs))
     }
 
     ///
@@ -369,22 +369,22 @@ namespace LazyList {
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def mapEager(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef =
-        mapEagerAcc(f, l, identity)
+    def mapE(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef =
+        mapEAcc(f, l, identity)
 
     ///
     /// Helper function for `mapE`.
     ///
-    def mapEagerAcc(f: a -> b & ef, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & ef = match l {
+    def mapEAcc(f: a -> b & ef, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & ef = match l {
         case ENil         => k(ENil)
         case ECons(x, xs) =>
             let x1 = f(x);
-            mapEagerAcc(f, xs, ks -> k(ECons(x1, ks)))
+            mapEAcc(f, xs, ks -> k(ECons(x1, ks)))
         case LCons(x, xs) =>
             let x1 = f(x);
-            mapEagerAcc(f, force xs, ks -> k(ECons(x1, ks)))
+            mapEAcc(f, force xs, ks -> k(ECons(x1, ks)))
         case LList(xs)    =>
-            mapEagerAcc(f, force xs, k)
+            mapEAcc(f, force xs, k)
     }
 
     ///
