@@ -283,9 +283,9 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def fromString(s: String): Result[Int16, String] = try {
-        import java.lang.String.strip();
-        import static java.lang.Short.parseShort(String);
-        Ok(s |> strip |> parseShort) as & Pure
+        import java.lang.String.strip(): String & Pure;
+        import static java.lang.Short.parseShort(String): Int16 & Pure;
+        Ok(s |> strip |> parseShort)
     } catch {
         case _: ##java.lang.NumberFormatException => Err("Int16.fromString")
     }
@@ -300,12 +300,12 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt8(x: Int16): Option[Int8] =
-        import static java.lang.Short.valueOf(Int16);
-        import java.lang.Short.byteValue();
+        import static java.lang.Short.valueOf(Int16): ##java.lang.Short & Pure;
+        import java.lang.Short.byteValue(): Int8 & Pure;
         if (x < Int8.toInt16(Int8.minValue()) or x > Int8.toInt16(Int8.maxValue()))
             None
         else
-            Some(valueOf(x) |> byteValue) as & Pure
+            Some(valueOf(x) |> byteValue)
 
     ///
     /// Convert `x` to a Int32.
@@ -314,9 +314,9 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def toInt32(x: Int16): Int32 =
-        import static java.lang.Short.valueOf(Int16);
-        import java.lang.Short.intValue();
-        (valueOf(x) |> intValue) as & Pure
+        import static java.lang.Short.valueOf(Int16): ##java.lang.Short & Pure;
+        import java.lang.Short.intValue(): Int16 & Pure;
+        (valueOf(x) |> intValue)
 
     ///
     /// Convert `x` to a Int64.
