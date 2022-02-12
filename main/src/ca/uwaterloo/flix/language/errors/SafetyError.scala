@@ -93,7 +93,7 @@ object SafetyError {
     * @param sym the variable symbol.
     * @param loc the source location of the atom where the illegal use occurs.
     */
-  case class IllegalUseOfLatticeVariable(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
+  case class IllegalRelationalUseOfLatticeVariable(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     def summary: String = s"Illegal relational use of the lattice variable '$sym'."
 
     def message(formatter: Formatter): String = {
