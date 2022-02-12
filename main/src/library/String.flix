@@ -21,46 +21,46 @@ namespace String {
     ///
     @Time(1) @Space(1)
     pub def charAt(i: Int32, s: String): Char =
-        import java.lang.String.charAt(Int32);
-        charAt(s, i) as & Pure
+        import java.lang.String.charAt(Int32): Char & Pure;
+        charAt(s, i)
 
     ///
     /// Returns the string `s1` followed by the string `s2`.
     ///
     @Time(length(s1) + length(s2)) @Space(length(s1) + length(s2))
     pub def concat(s1: String, s2: String): String =
-        import java.lang.String.concat(String);
-        (s1 `concat` s2) as & Pure
+        import java.lang.String.concat(String): String & Pure;
+        (s1 `concat` s2)
 
     ///
     /// Returns `true` if the string `s` is the empty string.
     ///
     @Time(1) @Space(1)
     pub def isEmpty(s: String): Bool =
-        import java.lang.String.isEmpty();
-        isEmpty(s) as & Pure
+        import java.lang.String.isEmpty(): Bool & Pure;
+        isEmpty(s)
 
     ///
     /// Returns the length of the string `s`.
     ///
     @Time(1) @Space(1)
     pub def length(s: String): Int32 =
-        import java.lang.String.length();
-        length(s) as & Pure
+        import java.lang.String.length(): Int32 & Pure;
+        length(s)
 
     ///
     /// Returns `true` if the string `s` starts with the string `prefix`.
     ///
     pub def startsWith(prefix: {prefix :: String}, s: String): Bool =
-        import java.lang.String.startsWith(String);
-        (s `startsWith` prefix.prefix) as & Pure
+        import java.lang.String.startsWith(String): Bool & Pure;
+        (s `startsWith` prefix.prefix)
 
     ///
     /// Returns `true` if the string `s` ends with the string `suffix`.
     ///
     pub def endsWith(suffix: {suffix :: String}, s: String): Bool =
-        import java.lang.String.endsWith(String);
-        (s `endsWith` suffix.suffix) as & Pure
+        import java.lang.String.endsWith(String): Bool & Pure;
+        (s `endsWith` suffix.suffix)
 
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
@@ -74,16 +74,16 @@ namespace String {
     ///
     @Time(length(s)) @Space(length(s))
     pub def toLowerCase(s: String): String =
-        import java.lang.String.toLowerCase();
-        toLowerCase(s) as & Pure
+        import java.lang.String.toLowerCase(): String & Pure;
+        toLowerCase(s)
 
     ///
     /// Returns the upper case version of the string `s`.
     ///
     @Time(length(s)) @Space(length(s))
     pub def toUpperCase(s: String): String =
-        import java.lang.String.toUpperCase();
-        toUpperCase(s) as & Pure
+        import java.lang.String.toUpperCase(): String & Pure;
+        toUpperCase(s)
 
     ///
     /// Returns the given string `s` as a list of characters.
@@ -98,16 +98,16 @@ namespace String {
     ///
     @Time(length(s)) @Space(length(s))
     pub def trim(s: String): String =
-        import java.lang.String.trim();
-        trim(s) as & Pure
+        import java.lang.String.trim(): String & Pure;
+        trim(s)
 
     ///
     /// Get the system line separator.
     ///
     @Time(1) @Space(1)
     pub def lineSeparator(): String =
-        import static java.lang.System.lineSeparator();
-        lineSeparator() as & Pure
+        import static java.lang.System.lineSeparator(): String & Pure;
+        lineSeparator()
 
     ///
     /// Returns the given string `s` as an array of characters.
@@ -274,8 +274,8 @@ namespace String {
     ///
     pub def isMatch(regex: {regex :: String}, s: String): Bool =
         try {
-            import java.lang.String.matches(String);
-            matches(s, regex.regex) as & Pure
+            import java.lang.String.matches(String): Bool & Pure;
+            matches(s, regex.regex)
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
         }
@@ -308,8 +308,8 @@ namespace String {
     /// If `b` or `e` are out-of-bounds, return the empty string.
     ///
     pub def slice(b: Int32, e: Int32, s: String): String  = try {
-        import java.lang.String.substring(Int32, Int32);
-        substring(s, b, e) as & Pure
+        import java.lang.String.substring(Int32, Int32): String & Pure;
+        substring(s, b, e)
     } catch {
         case _: ##java.lang.IndexOutOfBoundsException => ""
     }
@@ -793,11 +793,11 @@ namespace String {
     ///
     @Time(length(s) * n) @Space(length(s) * n)
     pub def repeat(n: Int32, s: String): String =
-        import java.lang.String.repeat(Int32);
+        import java.lang.String.repeat(Int32): String & Pure;
         if (n < 0)
             ""
         else
-            repeat(s, n) as & Pure
+            repeat(s, n)
 
     ///
     /// Pad the string `s` at the left with the supplied char `c` to fit the width `w`.
@@ -825,31 +825,31 @@ namespace String {
     /// Returns `s` with every match of the substring `from` replaced by the string `to`.
     ///
     pub def replace(from: {from :: String}, to: {to :: String}, s: String): String =
-        import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence);
+        import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String & Pure;
         let t = from.from as ##java.lang.CharSequence;
         let r = to.to as ##java.lang.CharSequence;
-        replace(s, t, r) as & Pure
+        replace(s, t, r)
 
     ///
     /// Returns `s` with every match of the character `target` replaced by the character `rep`.
     ///
     pub def replaceChar(from: {from :: Char}, to: {to :: Char}, s: String): String =
-        import java.lang.String.replace(Char, Char);
-        replace(s, from.from, to.to) as & Pure
+        import java.lang.String.replace(Char, Char): String & Pure;
+        replace(s, from.from, to.to)
 
     ///
     /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
     ///
     pub def replaceMatches(regex: {regex :: String}, to: {to :: String}, s: String): String =
-        import java.lang.String.replaceAll(String, String);
-        replaceAll(s, regex.regex, to.to) as & Pure
+        import java.lang.String.replaceAll(String, String): String & Pure;
+        replaceAll(s, regex.regex, to.to)
 
     ///
     /// Returns `s` with the first match of the regular expression `regex` replaced by the string `to`.
     ///
     pub def replaceFirstMatch(regex: {regex :: String}, to: {to :: String}, s: String): String =
-        import java.lang.String.replaceFirst(String, String);
-        replaceFirst(s, regex.regex, to.to) as & Pure
+        import java.lang.String.replaceFirst(String, String): String & Pure;
+        replaceFirst(s, regex.regex, to.to)
 
     ///
     /// Returns `s` with the element at index `i` replaced by `a`.
@@ -1028,11 +1028,11 @@ namespace String {
     /// If `substr` is the empty string return None.
     ///
     pub def indexOfLeft(substr: {substr :: String}, s: String): Option[Int32] =
-        import java.lang.String.indexOf(String);
+        import java.lang.String.indexOf(String): Int32 & Pure;
         if (isEmpty(substr.substr))
             None
         else {
-            let i = indexOf(s, substr.substr) as & Pure;
+            let i = indexOf(s, substr.substr);
             if (i < 0) None else Some(i)
         }
 
@@ -1044,11 +1044,11 @@ namespace String {
     /// If `substr` is the empty string return None.
     ///
     pub def indexOfRight(substr: {substr :: String}, s: String): Option[Int32] =
-        import java.lang.String.lastIndexOf(String);
+        import java.lang.String.lastIndexOf(String): Int32 & Pure;
         if (isEmpty(substr.substr))
             None
         else {
-            let i = lastIndexOf(s, substr.substr) as & Pure;
+            let i = lastIndexOf(s, substr.substr);
             if (i < 0) None else Some(i)
         }
 
@@ -1251,11 +1251,11 @@ namespace String {
     /// Returns `None` if `substr` is the empty string.
     ///
     pub def indexOfLeftWithOffset(substr: {substr :: String}, offset: {offset :: Int32}, s: String): Option[Int32] =
-        import java.lang.String.indexOf(String, Int32);
+        import java.lang.String.indexOf(String, Int32): Int32 & Pure;
         if (isEmpty(substr.substr))
             None
         else {
-            let ix = indexOf(s, substr.substr, offset.offset) as & Pure;
+            let ix = indexOf(s, substr.substr, offset.offset);
             if (ix < 0) None else Some(ix)
         }
 
@@ -1265,11 +1265,11 @@ namespace String {
     /// Returns `None` if `substr` is the empty string.
     ///
     pub def indexOfRightWithOffset(substr: {substr :: String}, offset: {offset :: Int32}, s: String): Option[Int32] =
-        import java.lang.String.lastIndexOf(String, Int32);
+        import java.lang.String.lastIndexOf(String, Int32): Int32 & Pure;
         if (isEmpty(substr.substr))
             None
         else {
-            let ix = lastIndexOf(s, substr.substr, offset.offset) as & Pure;
+            let ix = lastIndexOf(s, substr.substr, offset.offset);
             if (ix < 0) None else Some(ix)
         }
 

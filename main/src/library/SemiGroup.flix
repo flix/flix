@@ -34,6 +34,11 @@ pub lawless class SemiGroup[a] {
 
 }
 
+///
+/// Alias for `SemiGroup.combine`.
+///
+pub def ++(x: a, y: a): a with SemiGroup[a] = SemiGroup.combine(x, y)
+
 instance SemiGroup[Unit] {
     pub def combine(_: Unit, _: Unit): Unit = ()
 }

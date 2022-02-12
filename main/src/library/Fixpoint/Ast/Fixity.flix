@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Magnus Madsen
+ * Copyright 2022 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix
-
-import ca.uwaterloo.flix.util.{FlixSuite, Options}
-
-class TestTutorials extends FlixSuite(incremental = true) {
-  mkTestDir("main/src/tutorials/")(Options.TestWithLibAll)
+namespace Fixpoint/Ast {
+    pub enum Fixity {
+        case Loose,
+        case Fixed
+    }
 }

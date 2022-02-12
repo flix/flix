@@ -116,7 +116,7 @@ namespace LazyList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def joinWith(f: a -> String & ef, sep: String, l: LazyList[a]): String =
+    pub def joinWith(f: a -> String & ef, sep: String, l: LazyList[a]): String & ef =
         Foldable.joinWith(f, sep, l)
 
     ///

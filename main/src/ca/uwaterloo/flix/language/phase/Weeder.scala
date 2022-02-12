@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
 import ca.uwaterloo.flix.language.ast.ParsedAst.RecordFieldType
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
@@ -1420,12 +1420,8 @@ object Weeder {
 
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, exps0, selects0, from0, whereExp0, sp2) =>
       val loc = mkSL(sp1, sp2).asSynthetic
-      val selects1 = selects0 match {
-        case ParsedAst.SelectFragment(exps, None) => exps
-        case ParsedAst.SelectFragment(exps, Some(exp)) => exps.toList ::: exp :: Nil
-      }
 
-      mapN(traverse(exps0)(visitExp), traverse(selects1)(visitExp), traverse(from0)(visitPredicateBody), traverse(whereExp0)(visitExp)) {
+      mapN(traverse(exps0)(visitExp), traverse(selects0)(visitExp), traverse(from0)(visitPredicateBody), traverse(whereExp0)(visitExp)) {
         case (exps, selects, from, where) =>
           //
           // Performs the following rewrite:
@@ -1443,17 +1439,17 @@ object Weeder {
           val pred = Name.Pred(Flix.Delimiter + "Result", loc)
 
           // The head of the pseudo-rule.
-          val den = selects0 match {
-            case ParsedAst.SelectFragment(_, None) => Denotation.Relational
-            case ParsedAst.SelectFragment(_, Some(_)) => Denotation.Latticenal
-          }
+          val den = Denotation.Relational
           val head = WeededAst.Predicate.Head.Atom(pred, den, selects, loc)
 
           // The body of the pseudo-rule.
-          val body = where match {
-            case Nil => from
-            case g :: Nil => WeededAst.Predicate.Body.Guard(g, loc) :: from
-            case _ => throw InternalCompilerException("Impossible. The list must have 0 or 1 elements.")
+          val guard = where.map(g => WeededAst.Predicate.Body.Guard(g, loc))
+
+          // Automatically fix all lattices atoms.
+          val body = guard ::: from.map {
+            case WeededAst.Predicate.Body.Atom(pred, Denotation.Latticenal, polarity, _, terms, loc) =>
+              WeededAst.Predicate.Body.Atom(pred, Denotation.Latticenal, polarity, Fixity.Fixed, terms, loc)
+            case pred => pred
           }
 
           // Construct the pseudo-query.
@@ -1914,20 +1910,27 @@ object Weeder {
     * Weeds the given body predicate.
     */
   private def visitPredicateBody(b: ParsedAst.Predicate.Body)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = b match {
-    case ParsedAst.Predicate.Body.Atom(sp1, polarity, ident, terms, None, sp2) =>
+    case ParsedAst.Predicate.Body.Atom(sp1, polarity, fixity, ident, terms, None, sp2) =>
+      //
+      // Check for `[[IllegalFixedAtom]]`.
+      //
+      if (polarity == Ast.Polarity.Negative && fixity == Ast.Fixity.Fixed) {
+        return WeederError.IllegalFixedAtom(mkSL(sp1, sp2)).toFailure
+      }
+
       // Case 1: the atom has a relational denotation (because of the absence of the optional lattice term).
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitPattern)) {
         case ts =>
-          WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, ts, loc)
+          WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, ts, loc)
       }
 
-    case ParsedAst.Predicate.Body.Atom(sp1, polarity, ident, terms, Some(term), sp2) =>
+    case ParsedAst.Predicate.Body.Atom(sp1, polarity, fixity, ident, terms, Some(term), sp2) =>
       // Case 2: the atom has a latticenal denotation (because of the presence of the optional lattice term).
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitPattern), visitPattern(term)) {
         case (ts, t) =>
-          WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, ts ::: t :: Nil, loc)
+          WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, ts ::: t :: Nil, loc)
       }
 
     case ParsedAst.Predicate.Body.Guard(sp1, exp, sp2) =>

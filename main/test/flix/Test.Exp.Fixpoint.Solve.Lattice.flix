@@ -79,93 +79,102 @@ namespace Test/Exp/Fixpoint/Solve/Lattice {
         case _                  => Top
     }
 
-    // TODO: How to extract lattice facts?
-
     @test
-    def testFixpointLattice01(): Bool =
-        let _m = solve #{
+    def testFixpointLattice01(): Bool & Impure =
+        let m = solve #{
             LocalVar((); Top). LocalVar((); Top). LocalVar((); Top). LocalVar((); Top).
         };
-        true // TODO
+        let ans = query m select t from LocalVar(_; t);
+        ans.length == 1 and ans[0] == Top
 
     @test
-    def testFixpointLattice02(): Bool =
-        let _m = solve #{
-            LocalVar((); Top). LocalVar((); Top). LocalVar((); Top). LocalVar((); Top).
+    def testFixpointLattice02(): Bool & Impure =
+        let m = solve #{
+            LocalVar((); Bot). LocalVar((); Top). LocalVar((); Bot). LocalVar((); Top).
         };
-        true // TODO
+        let ans = query m select t from LocalVar(_; t);
+        ans.length == 1 and ans[0] == Top
 
     @test
-    def testFixpointLattice03(): Bool =
-        let _m = solve #{
+    def testFixpointLattice03(): Bool & Impure =
+        let m = solve #{
             LocalVar((); Cst(39)).
         };
-        true // TODO
+        let ans = query m select t from LocalVar(_; t);
+        ans.length == 1 and ans[0] == Cst(39)
 
     @test
-    def testFixpointLattice04(): Bool =
-        let _m = solve #{
-            LocalVar((); Cst(39)).
+    def testFixpointLattice04(): Bool & Impure =
+        let m = solve #{
+            LocalVar((); Cst(39)). LocalVar((); Bot).
         };
-        true // TODO
+        let ans = query m select t from LocalVar(_; t);
+        ans.length == 1 and ans[0] == Cst(39)
 
     @test
-    def testFixpointLattice05(): Bool =
-        let _m = solve #{
+    def testFixpointLattice05(): Bool & Impure =
+        let m = solve #{
             LocalVar((); Cst(39)). LocalVar((); Cst(39)).
         };
-        true // TODO
+        let ans = query m select t from LocalVar(_; t);
+        ans.length == 1 and ans[0] == Cst(39)
 
     @test
-    def testFixpointLattice06(): Bool =
-        let _m = solve #{
+    def testFixpointLattice06(): Bool & Impure =
+        let m = solve #{
             LocalVar((); Cst(39)). LocalVar((); Cst(12)).
         };
-        true // TODO
+        let ans = query m select t from LocalVar(_; t);
+        ans.length == 1 and ans[0] == Top
 
     @test
-    def testFixpointLattice07(): Bool =
-        let _m = solve #{
-            LocalVar((); Cst(39)). LocalVar((); Cst(12)).
+    def testFixpointLattice07(): Bool & Impure =
+        let m = solve #{
+            LocalVar((); Cst(39)). LocalVar((); Cst(12)). LocalVar((); Bot).
         };
-        true // TODO
+        let ans = query m select t from LocalVar(_; t);
+        ans.length == 1 and ans[0] == Top
 
     @test
-    def testFixpointLattice08(): Bool =
-        let _m = solve #{
+    def testFixpointLattice08(): Bool & Impure =
+        let m = solve #{
             LitStm("a", 39).
             LocalVar(x; Cst(c)) :- LitStm(x, c).
         };
-        true // TODO
+        let ans = query m select t from LocalVar(_; t);
+        ans.length == 1 and ans[0] == Cst(39)
 
     @test
-    def testFixpointLattice09(): Bool =
-        let _m = solve #{
-            LitStm("a", 39).
+    def testFixpointLattice09(): Bool & Impure =
+        let m = solve #{
+            LitStm("a", 39). LitStm("a", 345).
             LocalVar(x; Cst(c)) :- LitStm(x, c).
         };
-        true // TODO
+        let ans = query m select t from LocalVar(_; t);
+        ans.length == 1 and ans[0] == Top
 
     @test
-    def testFixpointLattice10(): Bool =
-        let _m = solve #{
+    def testFixpointLattice10(): Bool & Impure =
+        let m = solve #{
             LitStm("a", 39).
             AddStm("r", "a", "a").
             LocalVar(x; Cst(c)) :- LitStm(x, c).
             LocalVar(r; sum(v1, v2)) :- AddStm(r, x, y), LocalVar(x; v1), LocalVar(y; v2).
 
         };
-        true // TODO
+        let ans = query m select t from LocalVar("r"; t);
+        ans.length == 1 and ans[0] == Cst(39+39)
 
     @test
-    def testFixpointLattice11(): Bool =
-        let _m = solve #{
+    def testFixpointLattice11(): Bool & Impure =
+        let m = solve #{
             LitStm("a", 39).
+            LitStm("b", 12).
             AddStm("r", "a", "b").
             LocalVar(x; Cst(c)) :- LitStm(x, c).
             LocalVar(r; sum(v1, v2)) :- AddStm(r, x, y), LocalVar(x; v1), LocalVar(y; v2).
-
         };
-        true // TODO
+        let ans = query m select t from LocalVar("r"; t);
+        ans.length == 1 and ans[0] == Cst(39+12)
 
 }

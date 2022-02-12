@@ -121,4 +121,90 @@ class TestStratifier extends FunSuite with TestUtils {
     expectError[StratificationError](result)
   }
 
+  test("Stratification.08") {
+    // stratification error:
+    // ... <- A <- B <-x A <- ...
+    val input =
+      """
+        |pub opaque type A = Int32
+        |
+        |instance Eq[A] {
+        |  pub def eq(_a1: A, _a2: A): Bool =
+        |    let p1 = #{
+        |        B301(12).
+        |        A301(x) :- B301(x).
+        |    };
+        |    let p2 = #{
+        |        A301(15). C301(15).
+        |        B301(x) :- not A301(x), C301(x).
+        |    };
+        |    (query p1 select x from A301(x) |> Array.length) +
+        |    (query p2 select x from B301(x) |> Array.length)
+        |    > 0
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[StratificationError](result)
+  }
+
+  test("Stratification.09") {
+    val input =
+      """
+        |pub def f(): Bool =
+        |    fHelper(12)
+        |
+        |def fHelper(v: v): Bool with Boxable[v] =
+        |    let p1 = #{
+        |        B302(Some(v)).
+        |        A302(x) :- B302(x).
+        |    };
+        |    let p2 = #{
+        |        A302(Some("hey")). C302(Some("heyy")).
+        |        B302(x) :- not A302(x), C302(x).
+        |    };
+        |    (query p1 select x from A302(x) |> Array.length) +
+        |    (query p2 select x from B302(x) |> Array.length)
+        |    > 0
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[StratificationError](result)
+  }
+
+  test("Stratification.10") {
+    val input =
+      """
+        |pub def f(): #{A(String), X(String)} = #{
+        |  A(c: String) :- X(c), fix A(c).
+        |}
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[StratificationError](result)
+  }
+
+  test("Stratification.11") {
+    val input =
+      """
+        |pub def f(): #{A(String), B(String), X(String)} = #{
+        |  A(c: String) :- X(c), B(c).
+        |  B(c: String) :- X(c), fix A(c).
+        |}
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[StratificationError](result)
+  }
+
+  test("Stratification.12") {
+    val input =
+      """
+        |pub def f(): #{A(String), B(String), C(String), T(String)} = #{
+        |  T("heu").
+        |  A(c: String) :- not B(c), T(c).
+        |  B(c: String) :- fix C(c).
+        |  C(c: String) :- A(c).
+        |}
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[StratificationError](result)
+  }
+
 }
