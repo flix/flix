@@ -284,7 +284,7 @@ object CodeHinter {
     * Computes code quality hints for the given body predicate `p`.
     */
   private def visitBodyPredicate(p: TypedAst.Predicate.Body)(implicit root: Root): List[CodeHint] = p match {
-    case Body.Atom(_, _, _, _, _, _) => Nil
+    case Body.Atom(_, _, _, _, _, _, _) => Nil
     case Body.Guard(exp, _) => visitExp(exp)
     case Body.Loop(_, exp, _) => visitExp(exp)
   }

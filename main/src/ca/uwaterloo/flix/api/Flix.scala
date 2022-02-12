@@ -63,6 +63,7 @@ class Flix {
     */
   private var cachedParsedAst: ParsedAst.Root = ParsedAst.Root(Map.empty)
   private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, Set.empty)
+  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, Map.empty)
   private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, Map.empty, Map.empty)
 
   /**
@@ -203,6 +204,7 @@ class Flix {
     "Fixpoint/Ast/Constraint.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Constraint.flix"),
     "Fixpoint/Ast/Datalog.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Datalog.flix"),
     "Fixpoint/Ast/Denotation.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Denotation.flix"),
+    "Fixpoint/Ast/Fixity.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Fixity.flix"),
     "Fixpoint/Ast/HeadPredicate.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/HeadPredicate.flix"),
     "Fixpoint/Ast/HeadTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/HeadTerm.flix"),
     "Fixpoint/Ast/Polarity.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Polarity.flix"),
@@ -217,11 +219,6 @@ class Flix {
     "Fixpoint/Ram/RelOp.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RelOp.flix"),
     "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
   )
-
-  /**
-    * A case class to track the compile time spent in a phase and its sub-phases.
-    */
-  case class PhaseTime(phase: String, time: Long, subphases: List[(String, Long)])
 
   /**
     * A map to track the time spent in each phase and sub-phase.
@@ -458,7 +455,7 @@ class Flix {
       afterWeeder <- Weeder.run(afterParser, cachedWeededAst, changeSet)
       afterNamer <- Namer.run(afterWeeder)
       afterResolver <- Resolver.run(afterNamer)
-      afterKinder <- Kinder.run(afterResolver)
+      afterKinder <- Kinder.run(afterResolver, cachedKindedAst, changeSet)
       afterDeriver <- Deriver.run(afterKinder)
       afterTyper <- Typer.run(afterDeriver, cachedTypedAst, changeSet)
       afterStatistics <- Statistics.run(afterTyper)
@@ -473,6 +470,7 @@ class Flix {
       if (options.incremental) {
         this.cachedParsedAst = afterParser
         this.cachedWeededAst = afterWeeder
+        this.cachedKindedAst = afterKinder
         this.cachedTypedAst = afterTyper
       }
       afterSafety

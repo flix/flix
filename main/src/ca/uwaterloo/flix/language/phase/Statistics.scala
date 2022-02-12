@@ -202,7 +202,7 @@ object Statistics {
     * Counts AST nodes in the given predicate.
     */
   private def visitBodyPredicate(body: Predicate.Body): Counter = body match {
-    case Body.Atom(pred, den, polarity, terms, tpe, loc) => Counter.empty
+    case Body.Atom(_, _, _, _, _, _, _) => Counter.empty
     case Body.Guard(exp, loc) => visitExp(exp)
     case Body.Loop(varSyms, exp, loc) => visitExp(exp)
   }
