@@ -299,9 +299,9 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def fromString(s: String): Result[Int32, String] = try {
-        import java.lang.String.strip();
-        import static java.lang.Integer.parseInt(String);
-        Ok(s |> strip |> parseInt) as & Pure
+        import java.lang.String.strip(): String & Pure;
+        import static java.lang.Integer.parseInt(String): Int32 & Pure;
+        Ok(s |> strip |> parseInt)
     } catch {
         case _: ##java.lang.NumberFormatException => Err("Int32.fromString")
     }
@@ -316,12 +316,12 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt8(x: Int32): Option[Int8] =
-        import static java.lang.Integer.valueOf(Int32);
-        import java.lang.Integer.byteValue();
+        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer & Pure;
+        import java.lang.Integer.byteValue(): Int8 & Pure;
         if (x < Int8.toInt32(Int8.minValue()) or x > Int8.toInt32(Int8.maxValue()))
             None
         else
-            Some(valueOf(x) |> byteValue) as & Pure
+            Some(valueOf(x) |> byteValue)
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -333,12 +333,12 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt16(x: Int32): Option[Int16] =
-        import static java.lang.Integer.valueOf(Int32);
-        import java.lang.Integer.shortValue();
+        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer & Pure;
+        import java.lang.Integer.shortValue(): Int16 & Pure;
         if (x < Int16.toInt32(Int16.minValue()) or x > Int16.toInt32(Int16.maxValue()))
             None
         else
-            Some(valueOf(x) |> shortValue) as & Pure
+            Some(valueOf(x) |> shortValue)
 
     ///
     /// Convert `x` to a Int64.
@@ -347,9 +347,9 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def toInt64(x: Int32): Int64 =
-        import static java.lang.Integer.valueOf(Int32);
-        import java.lang.Integer.longValue();
-        (valueOf(x) |> longValue) as & Pure
+        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer & Pure;
+        import java.lang.Integer.longValue(): Int64 & Pure;
+        (valueOf(x) |> longValue)
 
     ///
     /// Convert `x` to a BigInt.
@@ -358,10 +358,10 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def toBigInt(x: Int32): BigInt =
-        import static java.lang.Integer.valueOf(Int32) as i16ValueOf;
-        import java.lang.Integer.longValue();
-        import static java.math.BigInteger.valueOf(Int64) as asBigInt;
-        (i16ValueOf(x) |> longValue |> asBigInt) as & Pure
+        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer & Pure as i16ValueOf;
+        import java.lang.Integer.longValue(): Int64 & Pure;
+        import static java.math.BigInteger.valueOf(Int64): BigInt & Pure as asBigInt;
+        (i16ValueOf(x) |> longValue |> asBigInt)
 
     ///
     /// Convert `x` to an Float32.
@@ -370,9 +370,9 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def toFloat32(x: Int32): Float32 =
-        import static java.lang.Integer.valueOf(Int32);
-        import java.lang.Integer.floatValue();
-        (valueOf(x) |> floatValue) as & Pure
+        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer & Pure;
+        import java.lang.Integer.floatValue(): Float32 & Pure;
+        (valueOf(x) |> floatValue)
 
     ///
     /// Convert `x` to a Float64.
@@ -381,9 +381,9 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def toFloat64(x: Int32): Float64 =
-        import static java.lang.Integer.valueOf(Int32);
-        import java.lang.Integer.doubleValue();
-        (valueOf(x) |> doubleValue) as & Pure
+        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer & Pure;
+        import java.lang.Integer.doubleValue(): Float64 & Pure;
+        (valueOf(x) |> doubleValue)
 
     ///
     /// Helper function for the `clamp` conversion functions.
@@ -404,11 +404,11 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt8(x: Int32, minimum: Int8, maximum: Int8): Int8 =
-        import static java.lang.Integer.valueOf(Int32);
-        import java.lang.Integer.byteValue();
+        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer & Pure;
+        import java.lang.Integer.byteValue(): Int8 & Pure;
         let mini32 = Int8.toInt32(minimum);
         let maxi32 = Int8.toInt32(maximum);
-        (valueOf(clamp(x, mini32, maxi32)) |> byteValue) as & Pure
+        (valueOf(clamp(x, mini32, maxi32)) |> byteValue)
 
 
     ///
@@ -418,10 +418,10 @@ namespace Int32 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt16(x: Int32, minimum: Int16, maximum: Int16): Int16 =
-        import static java.lang.Integer.valueOf(Int32);
-        import java.lang.Integer.shortValue();
+        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer & Pure;
+        import java.lang.Integer.shortValue(): Int16 & Pure;
         let mini32 = Int16.toInt32(minimum);
         let maxi32 = Int16.toInt32(maximum);
-        (valueOf(clamp(x, mini32, maxi32)) |> shortValue) as & Pure
+        (valueOf(clamp(x, mini32, maxi32)) |> shortValue)
 
 }
