@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.util.Validation
 import org.scalatest.{BeforeAndAfter, FunSuite}
 
 class TestIncremental extends FunSuite with BeforeAndAfter {
@@ -23,6 +24,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter {
   private val FileA = "FileA.flix"
   private val FileB = "FileB.flix"
   private val FileC = "FileC.flix"
+  private val FileD = "FileD.flix"
 
   private var flix: Flix = _
 
@@ -93,4 +95,58 @@ class TestIncremental extends FunSuite with BeforeAndAfter {
     flix.compile().get
   }
 
+  test("Incremental.03") {
+    flix.addSourceCode(FileA,
+      s"""
+         |pub lawless class C[a] {
+         |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
+         |}
+         |""".stripMargin)
+    flix.addSourceCode(FileB,
+      s"""
+         |def main(_args: Array[String]): Int32 & Impure =
+         |    println(f(true));
+         |    0
+         |""".stripMargin)
+    flix.addSourceCode(FileC,
+      s"""
+         |pub def f(x: Bool): Bool = not x
+         |
+         |""".stripMargin)
+    flix.compile().get
+  }
+
+  test("Incremental.04") {
+    flix.addSourceCode(FileA,
+      s"""
+         |pub def f(x: Int32): Bool = x == 0
+         |
+         |""".stripMargin)
+    flix.addSourceCode(FileB,
+      s"""
+         |def main(_args: Array[String]): Int32 & Impure =
+         |    println(f(true));
+         |    0
+         |""".stripMargin)
+    flix.addSourceCode(FileC,
+      s"""
+         |pub lawless class C[a] {
+         |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
+         |}
+         |""".stripMargin)
+
+    expectFailure(flix.compile())
+  }
+
+  /**
+    * Helper function that handles compilation errors.
+    *
+    * @param res compilation result.
+    * @tparam T type of success value.
+    * @tparam E type of failure value.
+    */
+  private def expectFailure[T, E](res: => Validation[T, E]): Unit = res match {
+    case Validation.Success(_) => throw new RuntimeException("Expected compilation, but compilation was successful")
+    case Validation.Failure(_) => ()
+  }
 }
