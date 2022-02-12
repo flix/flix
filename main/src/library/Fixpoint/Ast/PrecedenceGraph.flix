@@ -17,8 +17,8 @@ namespace Fixpoint/Ast {
     pub opaque type PrecedenceGraph = Set[PrecedenceEdge]
 
     pub enum PrecedenceEdge with Eq, Order {
-        case StrictEdge(PredSym, PredSym)
-        case NonStrictEdge(PredSym, PredSym)
+        case StrongEdge(PredSym, PredSym)
+        case WeakEdge(PredSym, PredSym)
     }
 
     instance Monoid[PrecedenceGraph] {
