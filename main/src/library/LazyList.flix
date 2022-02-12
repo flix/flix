@@ -1039,33 +1039,23 @@ namespace LazyList {
     /// Does not force the tail of either `l1` or `l2`.
     ///
     @Experimental @Lazy
-    pub def zip(l1: LazyList[a], l2: LazyList[b]): LazyList[(a, b)] = match (l1, l2) {
-        case (ENil, _)                    => ENil
-        case (_, ENil)                    => ENil
-        case (ECons(x, xs), ECons(y, ys)) => LList(lazy LCons((x, y), lazy zipHelper(      xs,       ys)))
-        case (ECons(x, xs), LCons(y, ys)) => LList(lazy LCons((x, y), lazy zipHelper(      xs, force ys)))
-        case (LCons(x, xs), ECons(y, ys)) => LList(lazy LCons((x, y), lazy zipHelper(force xs,       ys)))
-        case (LCons(x, xs), LCons(y, ys)) => LList(lazy LCons((x, y), lazy zipHelper(force xs, force ys)))
-        case (LList(xs), LList(ys))       => LList(                   lazy zipHelper(force xs, force ys))
-        case (xs, LList(ys))              => LList(                   lazy zipHelper(      xs, force ys))
-        case (LList(xs), ys)              => LList(                   lazy zipHelper(force xs,       ys))
-    }
-
-    ///
-    /// Helper function for `zip`.
-    ///
-    @Lazy
-    def zipHelper(l1: LazyList[a], l2: LazyList[b]): LazyList[(a, b)] = match (l1, l2) {
-        case (ENil, _)                    => ENil
-        case (_, ENil)                    => ENil
-        case (ECons(x, xs), ECons(y, ys)) => LCons((x, y), lazy zipHelper(      xs,       ys))
-        case (ECons(x, xs), LCons(y, ys)) => LCons((x, y), lazy zipHelper(      xs, force ys))
-        case (LCons(x, xs), ECons(y, ys)) => LCons((x, y), lazy zipHelper(force xs,       ys))
-        case (LCons(x, xs), LCons(y, ys)) => LCons((x, y), lazy zipHelper(force xs, force ys))
-        case (LList(xs), LList(ys))       => LList(        lazy zipHelper(force xs, force ys))
-        case (xs, LList(ys))              => LList(        lazy zipHelper(      xs, force ys))
-        case (LList(xs), ys)              => LList(        lazy zipHelper(force xs,       ys))
-    }
+    pub def zip(l1: LazyList[a], l2: LazyList[b]): LazyList[(a, b)] =
+        def loop(ll1, ll2) = match (ll1, ll2) {
+            case (ENil, _) => ENil
+            case (_, ENil) => ENil
+            case (ECons(x, xs), ECons(y, ys)) => LCons((x, y), lazy loop(      xs,       ys))
+            case (ECons(x, xs), LCons(y, ys)) => LCons((x, y), lazy loop(      xs, force ys))
+            case (LCons(x, xs), ECons(y, ys)) => LCons((x, y), lazy loop(force xs,       ys))
+            case (LCons(x, xs), LCons(y, ys)) => LCons((x, y), lazy loop(force xs, force ys))
+            case (LList(xs), LList(ys))       => LList(        lazy loop(force xs, force ys))
+            case (xs, LList(ys))              => LList(        lazy loop(      xs, force ys))
+            case (LList(xs), ys)              => LList(        lazy loop(force xs,       ys))
+        };
+        match (l1, l2) {
+            case (ENil, _) => ENil
+            case (_, ENil) => ENil
+            case _         => LList(lazy loop(l1, l2))
+        }
 
     ///
     /// Returns a list where the element at index `i` is `f(a, b)` where
