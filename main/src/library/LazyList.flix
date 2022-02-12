@@ -168,14 +168,6 @@ namespace LazyList {
     }
 
     ///
-    /// Returns `l` without the last element.
-    ///
-    /// Does not force the tail of `l`.
-    ///
-    @Experimental @Lazy
-    pub def init(l: LazyList[a]): Option[LazyList[a]] = ???
-
-    ///
     /// Returns `l` without the first element.
     ///
     @Experimental

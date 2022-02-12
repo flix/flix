@@ -216,59 +216,6 @@ namespace TestLazyList {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // init                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def init01(): Bool =
-        LazyList.init(ENil: LazyList[Unit]) == None
-
-    @test
-    def init02(): Bool =
-        LazyList.init(LList(lazy ENil): LazyList[Unit]) == None
-
-    @test
-    def init03(): Bool =
-        LazyList.range(0, 1) |> LazyList.init == Some(ENil)
-
-    @test
-    def init04(): Bool =
-    	LCons(1, lazy ENil) |> LazyList.init == Some(ENil)
-
-    @test
-    def init05(): Bool =
-    	LList(lazy ECons(1, LList(lazy ENil))) |> LazyList.init == Some(ENil)
-
-    @test
-    def init06(): Bool =
-    	ECons(1, LList(lazy ENil)) |> LazyList.init == Some(ENil)
-
-    @test
-    def init07(): Bool =
-    	LCons(1, lazy LList(lazy ENil)) |> LazyList.init == Some(ENil)
-
-    @test
-    def init08(): Bool =
-    	LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil)))) |> LazyList.init == Some(ECons(1, ECons(2, ENil)))
-
-    @test
-    def init09(): Bool =
-    	LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil)))) |> LazyList.init == Some(ECons(1, ECons(2, ENil)))
-
-    @test
-    def init10(): Bool =
-    	LCons(3, lazy ECons(2, LList(lazy LCons(1, lazy LList(lazy ENil))))) |> LazyList.init == Some(ECons(3, ECons(2, ENil)))
-
-    @test
-    def init11(): Bool =
-    	LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))) |> LazyList.init == Some(ECons(1, ECons(2, ENil)))
-
-    @test
-    def init12(): Bool =
-    	LazyList.range(0, 100) |> LazyList.init == Some(LazyList.range(0, 99))
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // tail                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
