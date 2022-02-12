@@ -315,7 +315,7 @@ namespace Int16 {
     @Time(1) @Space(1)
     pub def toInt32(x: Int16): Int32 =
         import static java.lang.Short.valueOf(Int16): ##java.lang.Short & Pure;
-        import java.lang.Short.intValue(): Int16 & Pure;
+        import java.lang.Short.intValue(): Int32 & Pure;
         (valueOf(x) |> intValue)
 
     ///
@@ -325,9 +325,9 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def toInt64(x: Int16): Int64 =
-        import static java.lang.Short.valueOf(Int16);
-        import java.lang.Short.longValue();
-        (valueOf(x) |> longValue) as & Pure
+        import static java.lang.Short.valueOf(Int16): ##java.lang.Short & Pure;
+        import java.lang.Short.longValue(): Int64 & Pure;
+        (valueOf(x) |> longValue)
 
     ///
     /// Convert `x` to a BigInt.
@@ -336,10 +336,10 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def toBigInt(x: Int16): BigInt =
-        import static java.lang.Short.valueOf(Int16) as i16ValueOf;
-        import java.lang.Short.longValue();
-        import static java.math.BigInteger.valueOf(Int64) as asBigInt;
-        (i16ValueOf(x) |> longValue |> asBigInt) as & Pure
+        import static java.lang.Short.valueOf(Int16): ##java.lang.Short & Pure as i16ValueOf;
+        import java.lang.Short.longValue(): Int64 & Pure;
+        import static java.math.BigInteger.valueOf(Int64): BigInt & Pure as asBigInt;
+        (i16ValueOf(x) |> longValue |> asBigInt)
 
     ///
     /// Convert `x` to a Float32.
@@ -348,9 +348,9 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def toFloat32(x: Int16): Float32 =
-        import static java.lang.Short.valueOf(Int16);
-        import java.lang.Short.floatValue();
-        (valueOf(x) |> floatValue) as & Pure
+        import static java.lang.Short.valueOf(Int16): ##java.lang.Short & Pure;
+        import java.lang.Short.floatValue(): Float32 & Pure;
+        (valueOf(x) |> floatValue)
 
     ///
     /// Convert `x` to a Float64.
@@ -359,9 +359,9 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def toFloat64(x: Int16): Float64 =
-        import static java.lang.Short.valueOf(Int16);
-        import java.lang.Short.doubleValue();
-        (valueOf(x) |> doubleValue) as & Pure
+        import static java.lang.Short.valueOf(Int16): ##java.lang.Short & Pure;
+        import java.lang.Short.doubleValue(): Float64 & Pure;
+        (valueOf(x) |> doubleValue)
 
     ///
     /// Helper function for the `clamp` conversion function.
@@ -382,10 +382,10 @@ namespace Int16 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt8(x: Int16, minimum: Int8, maximum: Int8): Int8 =
-        import static java.lang.Short.valueOf(Int16);
-        import java.lang.Short.byteValue();
+        import static java.lang.Short.valueOf(Int16): ##java.lang.Short & Pure;
+        import java.lang.Short.byteValue(): Int8 & Pure;
         let mini16 = Int8.toInt16(minimum);
         let maxi16 = Int8.toInt16(maximum);
-        (valueOf(clamp(x, mini16, maxi16)) |> byteValue) as & Pure
+        (valueOf(clamp(x, mini16, maxi16)) |> byteValue)
 
 }
