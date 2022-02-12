@@ -50,7 +50,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
   */
 object Kinder {
 
-  def run(root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, CompilationMessage] = flix.phase("Kinder") {
+  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[KindedAst.Root, CompilationMessage] = flix.phase("Kinder") {
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
     visitTypeAliases(root.taOrder, root) flatMap {
@@ -63,17 +63,9 @@ object Kinder {
             visitEnum(enum, taenv, root).map(sym -> _)
         }))
 
-        val classesVal = Validation.sequence(ParOps.parMap(root.classes)({
-          pair: (Symbol.ClassSym, ResolvedAst.Class) =>
-            val (sym, clazz) = pair
-            visitClass(clazz, taenv, root).map(sym -> _)
-        }))
+        val classesVal = visitClasses(root, taenv, oldRoot, changeSet)
 
-        val defsVal = Validation.sequence(ParOps.parMap(root.defs)({
-          pair: (Symbol.DefnSym, ResolvedAst.Def) =>
-            val (sym, defn) = pair
-            visitDef(defn, KindEnv.empty, taenv, root).map(sym -> _)
-        }))
+        val defsVal = visitDefs(root, taenv, oldRoot, changeSet)
 
         val instancesVal = Validation.sequence(ParOps.parMap(root.instances)({
           pair: (Symbol.ClassSym, List[ResolvedAst.Instance]) =>
@@ -152,6 +144,21 @@ object Kinder {
   }
 
   /**
+    * Performs kinding on the all the classes in the given root.
+    */
+  private def visitClasses(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, KindedAst.Class], KindError] = {
+    val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
+
+    val results = ParOps.parMap(staleClasses.values)(visitClass(_, taenv, root))
+
+    Validation.sequence(results) map {
+      res => res.foldLeft(freshClasses) {
+        case (acc, defn) => acc + (defn.sym -> defn)
+      }
+    }
+  }
+
+  /**
     * Performs kinding on the given type class.
     */
   private def visitClass(clazz: ResolvedAst.Class, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, KindError] = clazz match {
@@ -184,6 +191,21 @@ object Kinder {
         result <- Validation.sequenceT(tpeVal, tconstrsVal, defsVal)
         (tpe, tconstrs, defs) = result
       } yield KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
+  }
+
+  /**
+    * Performs kinding on the all the definitions in the given root.
+    */
+  private def visitDefs(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, KindedAst.Def], KindError] = {
+    val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
+
+    val results = ParOps.parMap(staleDefs.values)(visitDef(_, KindEnv.empty, taenv, root))
+
+    Validation.sequence(results) map {
+      res => res.foldLeft(freshDefs) {
+        case (acc, defn) => acc + (defn.sym -> defn)
+      }
+    }
   }
 
   /**
@@ -696,10 +718,10 @@ object Kinder {
     * Performs kinding on the given body predicate under the given kind environment.
     */
   private def visitBodyPredicate(pred: ResolvedAst.Predicate.Body, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Predicate.Body, KindError] = pred match {
-    case ResolvedAst.Predicate.Body.Atom(pred, den, polarity, terms0, loc) =>
+    case ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms0, loc) =>
       for {
         terms <- Validation.traverse(terms0)(visitPattern(_, kenv, root))
-      } yield KindedAst.Predicate.Body.Atom(pred, den, polarity, terms, Type.freshVar(Kind.Predicate, loc), loc)
+      } yield KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, Type.freshVar(Kind.Predicate, loc), loc)
 
     case ResolvedAst.Predicate.Body.Guard(exp0, loc) =>
       for {

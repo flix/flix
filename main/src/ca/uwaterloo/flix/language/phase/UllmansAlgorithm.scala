@@ -36,8 +36,8 @@ object UllmansAlgorithm {
     def body: Name.Pred
 
     override def hashCode(): Int = this match {
-      case _: DependencyEdge.Positive => 5 * Objects.hash(head, body)
-      case _: DependencyEdge.Negative => 7 * Objects.hash(head, body)
+      case _: DependencyEdge.NonStrict => 5 * Objects.hash(head, body)
+      case _: DependencyEdge.Strict => 7 * Objects.hash(head, body)
     }
 
     override def equals(obj: Any): Boolean = obj match {
@@ -49,14 +49,16 @@ object UllmansAlgorithm {
   object DependencyEdge {
 
     /**
-      * Represents a positive labelled edge.
+      * Represents an edge between `body` and `head` which means that the strata
+      * of `head` must be higher than or equal to the strata of `body`.
       */
-    case class Positive(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
+    case class NonStrict(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
 
     /**
-      * Represents a negative labelled edge.
+      * Represents an edge between `body` and `head` which means that the strata
+      * of `head` must be strictly higher than the strata of `body`.
       */
-    case class Negative(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
+    case class Strict(head: Name.Pred, body: Name.Pred, loc: SourceLocation) extends DependencyEdge
   }
 
   /**
@@ -82,7 +84,8 @@ object UllmansAlgorithm {
     //
     // The number of strata is bounded by the number of predicates which is bounded by the number of edges.
     //
-    // Hence if we ever compute a stratum higher than this number then there is a negative cycle.
+    // Hence if we ever compute a stratum higher than this number then there is a strict cycle, i.e a cycle
+    // with at least one strict edge.
     //
     val maxStratum = g.size
 
@@ -90,10 +93,10 @@ object UllmansAlgorithm {
     // Repeatedly examine the dependency edges.
     //
     // We always consider two cases:
-    //   1. A positive body predicate requires its head predicate to be in its stratum or any higher stratum.
-    //   2. A negative body predicate requires its head predicate to be in a strictly higher stratum.
+    //   1. A non-strict body predicate requires its head predicate to be in its stratum or any higher stratum.
+    //   2. A strict body predicate requires its head predicate to be in a strictly higher stratum.
     //
-    // If we ever create more strata than there are dependency edges then there is a negative cycle and we abort.
+    // If we ever create more strata than there are dependency edges then there is a strict cycle and we abort.
     //
     var changed = true
     while (changed) {
@@ -102,7 +105,7 @@ object UllmansAlgorithm {
       // Examine each dependency edge in turn.
       for (edge <- g) {
         edge match {
-          case DependencyEdge.Positive(headSym, bodySym, _) =>
+          case DependencyEdge.NonStrict(headSym, bodySym, _) =>
             // Case 1: The stratum of the head must be in the same or a higher stratum as the body.
             val headStratum = stratumOf.getOrElseUpdate(headSym, 0)
             val bodyStratum = stratumOf.getOrElseUpdate(bodySym, 0)
@@ -113,7 +116,7 @@ object UllmansAlgorithm {
               changed = true
             }
 
-          case DependencyEdge.Negative(headSym, bodySym, edgeLoc) =>
+          case DependencyEdge.Strict(headSym, bodySym, edgeLoc) =>
             // Case 2: The stratum of the head must be in a strictly higher stratum than the body.
             val headStratum = stratumOf.getOrElseUpdate(headSym, 0)
             val bodyStratum = stratumOf.getOrElseUpdate(bodySym, 0)
@@ -124,9 +127,9 @@ object UllmansAlgorithm {
               stratumOf.put(headSym, newHeadStratum)
               changed = true
 
-              // Check if we have found a negative cycle.
+              // Check if we have found a strict cycle.
               if (newHeadStratum > maxStratum) {
-                return StratificationError(findNegativeCycle(bodySym, headSym, g, edgeLoc), tpe, loc).toFailure
+                return StratificationError(findStrictCycle(bodySym, headSym, g, edgeLoc), tpe, loc).toFailure
               }
             }
         }
@@ -140,15 +143,15 @@ object UllmansAlgorithm {
   /**
     * Returns a path that forms a cycle with the edge from `src` to `dst` in the given dependency graph `g`.
     */
-  private def findNegativeCycle(src: Name.Pred, dst: Name.Pred, g: DependencyGraph, loc: SourceLocation): List[(Name.Pred, SourceLocation)] = {
+  private def findStrictCycle(src: Name.Pred, dst: Name.Pred, g: DependencyGraph, loc: SourceLocation): List[(Name.Pred, SourceLocation)] = {
     // Computes a map from predicates to their successors.
     val succ = mutable.Map.empty[Name.Pred, Set[(Name.Pred, SourceLocation)]]
     for (edge <- g) {
       edge match {
-        case DependencyEdge.Positive(head, body, loc) =>
+        case DependencyEdge.NonStrict(head, body, loc) =>
           val s = succ.getOrElse(body, Set.empty)
           succ.put(body, s + ((head, loc)))
-        case DependencyEdge.Negative(head, body, loc) =>
+        case DependencyEdge.Strict(head, body, loc) =>
           val s = succ.getOrElse(body, Set.empty)
           succ.put(body, s + ((head, loc)))
       }
