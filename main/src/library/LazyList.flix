@@ -84,6 +84,7 @@ namespace LazyList {
     ///
     /// Forces the entire list `l`.
     ///
+    @Experimental
     pub def join(sep: String, l: LazyList[a]): String with ToString[a] =
         Foldable.join(sep, l)
 
