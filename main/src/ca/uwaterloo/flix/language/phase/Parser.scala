@@ -1032,7 +1032,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         def MultiSelect: Rule1[Seq[ParsedAst.Expression]] = rule {
           "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
         }
-
+        
         rule {
           WS ~ keyword("select") ~ WS ~ (MultiSelect | SingleSelect)
         }
@@ -1153,7 +1153,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         def Fixity: Rule1[Ast.Fixity] = rule {
-          (keyword("fix") ~ WS ~ push(Ast.Fixity.Fixed)) | push(Ast.Fixity.NotFixed)
+          (keyword("fix") ~ WS ~ push(Ast.Fixity.Fixed)) | push(Ast.Fixity.Loose)
         }
 
         rule {

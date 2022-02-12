@@ -1203,7 +1203,7 @@ object ParsedAst {
         *
         * @param sp1      the position of the first character in the predicate.
         * @param polarity the polarity of the predicate (positive/negative).
-        * @param fixity   the fixity of the predicate (not fixed/fixed).
+        * @param fixity   the fixity of the predicate (loose/fixed).
         * @param ident    the name of the predicate.
         * @param terms    the terms of the predicate.
         * @param term     the optional lattice term (if applicable).

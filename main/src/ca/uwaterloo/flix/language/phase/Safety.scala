@@ -350,7 +350,7 @@ object Safety {
     * Computes the lattice variables of `p0` if it is not a fixed atom.
     */
   private def nonFixedLatticeVariablesOf(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
-    case Predicate.Body.Atom(_, Denotation.Latticenal, _, Fixity.NotFixed, terms, _, _) =>
+    case Predicate.Body.Atom(_, Denotation.Latticenal, _, Fixity.Loose, terms, _, _) =>
       // This atom is not fixed so the last term is latticenal - all its
       // free variables are returned
       terms.lastOption.map(freeVarsOf).getOrElse(Set.empty)
