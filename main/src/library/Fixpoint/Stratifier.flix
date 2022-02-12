@@ -89,11 +89,11 @@ namespace Fixpoint {
     ///
     /// Creates a singleton set with a strong or weak edge. Negatively bound atoms and
     /// fixed atoms create strong edges because the body predicate has to be in a strictly
-    /// lower strata than the head. Positive, non-fixed atoms create weak edges where the body
+    /// lower strata than the head. Positive, unfixed atoms create weak edges where the body
     /// has to be in the same strata as the head or lower.
     ///
     def mkDepEdge(dst: HeadPredicate[v], src: BodyPredicate[v]): PrecedenceGraph = match (dst, src) {
-        case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, Polarity.Positive, Fixity.NotFixed, _)) =>
+        case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, Polarity.Positive, Fixity.Unfixed, _)) =>
             PrecedenceGraph(Set#{WeakEdge(bodySym, headSym)})
         case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, _, _, _)) =>
             PrecedenceGraph(Set#{StrongEdge(bodySym, headSym)})

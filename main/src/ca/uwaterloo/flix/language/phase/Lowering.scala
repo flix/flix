@@ -1016,9 +1016,9 @@ object Lowering {
     * Constructs a `Fixpoint/Ast.Fixity` from the given fixity `f`.
     */
   private def mkFixity(f: Ast.Fixity, loc: SourceLocation): Expression = f match {
-    case Fixity.NotFixed =>
+    case Fixity.Unfixed =>
       val innerExp = Expression.Unit(loc)
-      mkTag(Enums.Fixity, "NotFixed", innerExp, Types.Fixity, loc)
+      mkTag(Enums.Fixity, "Unfixed", innerExp, Types.Fixity, loc)
 
     case Fixity.Fixed =>
       val innerExp = Expression.Unit(loc)

@@ -1153,7 +1153,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         def Fixity: Rule1[Ast.Fixity] = rule {
-          (keyword("fix") ~ WS ~ push(Ast.Fixity.Fixed)) | push(Ast.Fixity.NotFixed)
+          (keyword("fix") ~ WS ~ push(Ast.Fixity.Fixed)) | push(Ast.Fixity.Unfixed)
         }
 
         rule {
