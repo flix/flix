@@ -220,11 +220,6 @@ class Flix {
   )
 
   /**
-    * A case class to track the compile time spent in a phase and its sub-phases.
-    */
-  case class PhaseTime(phase: String, time: Long, subphases: List[(String, Long)])
-
-  /**
     * A map to track the time spent in each phase and sub-phase.
     */
   var phaseTimers: ListBuffer[PhaseTime] = ListBuffer.empty
