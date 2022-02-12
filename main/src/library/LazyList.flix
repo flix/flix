@@ -597,18 +597,14 @@ namespace LazyList {
     ///
     @Experimental
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: LazyList[a]): b & ef =
-        foldRightAcc(f, s, l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
-                                                // but the intermediate continuations are effect polymorphic
-
-    ///
-    /// Helper function for `foldRight`.
-    ///
-    def foldRightAcc(f: (a, b) -> b & ef, s: b, l: LazyList[a], k: b -> b & ef): b & ef = match l {
-        case ENil         => k(s)
-        case ECons(x, xs) => foldRightAcc(f, s,       xs, ks -> k(f(x, ks)))
-        case LCons(x, xs) => foldRightAcc(f, s, force xs, ks -> k(f(x, ks)))
-        case LList(xs)    => foldRightAcc(f, s, force xs, k)
-    }
+        def loop(ll, k) = match ll {
+            case ENil         => k(s)
+            case ECons(x, xs) => loop(      xs, ks -> k(f(x, ks)))
+            case LCons(x, xs) => loop(force xs, ks -> k(f(x, ks)))
+            case LList(xs)    => loop(force xs, k)
+        };
+        loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
+                                  // but the intermediate continuations are effect polymorphic
 
     ///
     /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
