@@ -1420,12 +1420,8 @@ object Weeder {
 
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, exps0, selects0, from0, whereExp0, sp2) =>
       val loc = mkSL(sp1, sp2).asSynthetic
-      val selects1 = selects0 match {
-        case ParsedAst.SelectFragment(exps, None) => exps
-        case ParsedAst.SelectFragment(exps, Some(exp)) => exps.toList ::: exp :: Nil
-      }
 
-      mapN(traverse(exps0)(visitExp), traverse(selects1)(visitExp), traverse(from0)(visitPredicateBody), traverse(whereExp0)(visitExp)) {
+      mapN(traverse(exps0)(visitExp), traverse(selects0)(visitExp), traverse(from0)(visitPredicateBody), traverse(whereExp0)(visitExp)) {
         case (exps, selects, from, where) =>
           //
           // Performs the following rewrite:
@@ -1443,19 +1439,15 @@ object Weeder {
           val pred = Name.Pred(Flix.Delimiter + "Result", loc)
 
           // The head of the pseudo-rule.
-          val den = selects0 match {
-            case ParsedAst.SelectFragment(_, None) => Denotation.Relational
-            case ParsedAst.SelectFragment(_, Some(_)) => Denotation.Latticenal
-          }
+          val den = Denotation.Relational
           val head = WeededAst.Predicate.Head.Atom(pred, den, selects, loc)
 
           // The body of the pseudo-rule.
           val guard = where.map(g => WeededAst.Predicate.Body.Guard(g, loc))
 
-          // Fix all lattice atoms (could limit this to those referenced in the result)
-          // this allows `query ... select (x, y) from A(x; y)`
+          // Automatically fix all lattices atoms.
           val body = guard ::: from.map {
-            case WeededAst.Predicate.Body.Atom(pred, Denotation.Latticenal, polarity, Fixity.Loose, terms, loc) =>
+            case WeededAst.Predicate.Body.Atom(pred, Denotation.Latticenal, polarity, _, terms, loc) =>
               WeededAst.Predicate.Body.Atom(pred, Denotation.Latticenal, polarity, Fixity.Fixed, terms, loc)
             case pred => pred
           }

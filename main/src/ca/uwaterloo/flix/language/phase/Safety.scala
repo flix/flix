@@ -3,10 +3,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.util.Validation
@@ -42,7 +41,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
-  private def visitDef(def0: TypedAst.Def): List[CompilationMessage] = visitExp(def0.impl.exp)
+  private def visitDef(def0: Def): List[CompilationMessage] = visitExp(def0.impl.exp)
 
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
@@ -302,7 +301,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on an atom with the given polarity, terms, and positive variables.
     */
-  private def checkBodyAtomPredicate(polarity: Polarity, terms: List[TypedAst.Pattern], posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], loc: SourceLocation): List[CompilationMessage] = {
+  private def checkBodyAtomPredicate(polarity: Polarity, terms: List[Pattern], posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], loc: SourceLocation): List[CompilationMessage] = {
     polarity match {
       case Polarity.Positive => Nil
       case Polarity.Negative =>
@@ -344,7 +343,7 @@ object Safety {
     * Computes the free variables that occur in a lattice position in
     * atoms that are not marked with fix.
     */
-  private def nonFixedLatticeVariablesOf(c0: TypedAst.Constraint): Set[Symbol.VarSym] =
+  private def nonFixedLatticeVariablesOf(c0: Constraint): Set[Symbol.VarSym] =
     c0.body.flatMap(nonFixedLatticeVariablesOf).toSet
 
   /**
@@ -362,25 +361,30 @@ object Safety {
       Set.empty
   }
 
-  private def checkHeadPredicate(head: TypedAst.Predicate.Head, latVars: Set[Symbol.VarSym]): List[CompilationMessage] = head match {
-    case Head.Atom(_, Denotation.Latticenal, terms, _, loc) =>
+  /**
+    * Checks for `IllegalRelationalUseOfLatticeVariable` in the given `head` predicate.
+    */
+  private def checkHeadPredicate(head: Predicate.Head, latVars: Set[Symbol.VarSym]): List[CompilationMessage] = head match {
+    case Predicate.Head.Atom(_, Denotation.Latticenal, terms, _, loc) =>
+      // Check the relational terms ("the keys").
       checkTerms(terms.dropRight(1), latVars, loc)
-    case Head.Atom(_, Denotation.Relational, terms, _, loc) =>
+    case Predicate.Head.Atom(_, Denotation.Relational, terms, _, loc) =>
+      // Check every term.
       checkTerms(terms, latVars, loc)
   }
 
   /**
-    * Checks that the free variables of the terms does not contain any of the variables
-    * in `latVars`. If they do contain a lattice variable then a `IllegalUseOfLatticeVariable`
-    * is created.
+    * Checks that the free variables of the terms does not contain any of the variables in `latVars`.
+    * If they do contain a lattice variable then a `IllegalRelationalUseOfLatticeVariable` is created.
     */
   private def checkTerms(terms: List[Expression], latVars: Set[Symbol.VarSym], loc: SourceLocation): List[CompilationMessage] = {
-    val allFreeVars = terms.flatMap(freeVars(_).keys)
-    allFreeVars.flatMap { sym =>
-      if (latVars.contains(sym))
-        Some(IllegalUseOfLatticeVariable(sym, loc))
-      else None
-    }
+    // Compute the free variables in all terms.
+    val allVars = terms.foldLeft(Set.empty[Symbol.VarSym])({
+      case (acc, term) => acc ++ freeVars(term).keys
+    })
+
+    // Compute the lattice variables that are illegally used in the terms.
+    allVars.intersect(latVars).toList.map(sym => IllegalRelationalUseOfLatticeVariable(sym, loc))
   }
 
   /**
@@ -388,7 +392,7 @@ object Safety {
     *
     * @param loc the location of the atom containing the terms.
     */
-  private def visitPats(terms: List[TypedAst.Pattern], loc: SourceLocation): List[CompilationMessage] = {
+  private def visitPats(terms: List[Pattern], loc: SourceLocation): List[CompilationMessage] = {
     terms.flatMap(visitPat(_, loc))
   }
 
@@ -398,7 +402,7 @@ object Safety {
     * @param loc the location of the atom containing the term.
     */
   @tailrec
-  private def visitPat(term: TypedAst.Pattern, loc: SourceLocation): List[CompilationMessage] = term match {
+  private def visitPat(term: Pattern, loc: SourceLocation): List[CompilationMessage] = term match {
     case Pattern.Wild(_, _) => List(IllegalNegativelyBoundWildcard(loc))
     case Pattern.Var(_, _, _) => Nil
     case Pattern.Unit(_) => Nil
