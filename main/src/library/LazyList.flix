@@ -157,11 +157,13 @@ namespace LazyList {
     ///
     /// Returns `l` without the first element.
     ///
+    /// Does not force the tail of `l`.
+    ///
     @Experimental
     pub def tail(l: LazyList[a]): LazyList[a] = match l {
         case ENil         => ENil
         case ECons(_, xs) => xs
-        case LCons(_, xs) => LList(                xs )
+        case LCons(_, xs) => LList(xs)
         case LList(xs)    => LList(lazy tail(force xs))
     }
 
@@ -172,17 +174,13 @@ namespace LazyList {
     ///
     @Experimental
     pub def length(l: LazyList[a]): Int32 =
-        lengthAcc(l, 0)
-
-    ///
-    /// Helper function for `length`.
-    ///
-    def lengthAcc(l: LazyList[a], acc: Int32): Int32 = match l {
-        case ENil         => acc
-        case ECons(_, xs) => lengthAcc(      xs, acc + 1)
-        case LCons(_, xs) => lengthAcc(force xs, acc + 1)
-        case LList(xs)    => lengthAcc(force xs, acc)
-    }
+        def loop(ll, acc) = match ll {
+            case ENil         => acc
+            case ECons(_, xs) => loop(      xs, acc + 1)
+            case LCons(_, xs) => loop(force xs, acc + 1)
+            case LList(xs)    => loop(force xs, acc)
+        };
+        loop(l, 0)
 
     ///
     /// Returns `l2` appended to `l1`.
@@ -270,20 +268,18 @@ namespace LazyList {
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
+    /// Forces the entire list `l`.
+    ///
     @Experimental
     pub def findRight(f: a -> Bool & ef, l: LazyList[a]): Option[a] & ef =
-        findRightAcc(x -> if (f(x)) Some(x) else None, l, (o, _) -> o as & ef) // NB: Cast required because the identity continuation is pure,
-                                                                               // but the intermediate continuations are effect polymorphic
-
-    ///
-    /// Helper function for `findRight`.
-    ///
-    def findRightAcc(f: a -> Option[a] & ef, l: LazyList[a], k: (Option[a], LazyList[a]) -> Option[a] & ef): Option[a] & ef = match l {
-        case ENil         => k(None, ENil)
-        case ECons(x, xs) => findRightAcc(f,       xs, (o, ks) -> if (Option.isEmpty(o)) k(f(x), ECons(x, ks)) else o)
-        case LCons(x, xs) => findRightAcc(f, force xs, (o, ks) -> if (Option.isEmpty(o)) k(f(x), ECons(x, ks)) else o)
-        case LList(xs)    => findRightAcc(f, force xs, k)
-    }
+        def loop(ll, k) = match ll {
+            case ENil         => k()
+            case ECons(x, xs) => loop(      xs, () -> if (f(x)) Some(x) else k())
+            case LCons(x, xs) => loop(force xs, () -> if (f(x)) Some(x) else k())
+            case LList(xs)    => loop(force xs, k)
+        };
+        loop(l, () -> None as & ef) // NB: Cast required because the identity continuation is pure,
+                                    // but the intermediate continuations are effect polymorphic.
 
     ///
     /// Returns a lazy list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -613,7 +609,7 @@ namespace LazyList {
             case LList(xs)    => loop(force xs, k)
         };
         loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
-                                  // but the intermediate continuations are effect polymorphic
+                                  // but the intermediate continuations are effect polymorphic.
 
     ///
     /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -646,7 +642,7 @@ namespace LazyList {
         case ENil      => None
         case LList(xs) => reduceRight(f, force xs)
         case _         => Some(reduceRightAcc(f, l, ks -> ks as & ef)) // NB: Cast required because the identity continuation is pure,
-                                                                       // but the intermediate continuations are effect polymorphic
+                                                                       // but the intermediate continuations are effect polymorphic.
     }
 
     ///
