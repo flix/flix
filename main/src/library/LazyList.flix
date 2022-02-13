@@ -530,12 +530,14 @@ namespace LazyList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: LazyList[a]): b & ef = match l {
-        case ENil         => s
-        case ECons(x, xs) => foldLeft(f, f(s, x),       xs)
-        case LCons(x, xs) => foldLeft(f, f(s, x), force xs)
-        case LList(xs)    => foldLeft(f, s,       force xs)
-    }
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, l: LazyList[a]): b & ef =
+        def loop(ll, acc) = match ll {
+            case ENil         => acc
+            case ECons(x, xs) => loop(xs,       f(acc, x))
+            case LCons(x, xs) => loop(force xs, f(acc, x))
+            case LList(xs)    => loop(force xs, acc)
+        };
+        loop(l, s)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
@@ -565,12 +567,14 @@ namespace LazyList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def reduceLeft(f: (a, a) -> a & ef, l: LazyList[a]): Option[a] & ef = match l {
-        case ENil         => None
-        case ECons(x, xs) => Some(foldLeft(f, x,       xs))
-        case LCons(x, xs) => Some(foldLeft(f, x, force xs))
-        case LList(xs)    => reduceLeft(f, force xs)
-    }
+    pub def reduceLeft(f: (a, a) -> a & ef, l: LazyList[a]): Option[a] & ef =
+        def loop(ll) = match ll {
+            case ENil         => None
+            case ECons(x, xs) => Some(foldLeft(f, x,       xs))
+            case LCons(x, xs) => Some(foldLeft(f, x, force xs))
+            case LList(xs)    => loop(force xs)
+        };
+        loop(l)
 
     ///
     /// Applies `f` to all elements in `l` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
