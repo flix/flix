@@ -339,10 +339,7 @@ namespace LazyList {
             case LCons(x, xs) => LCons(f(x), lazy loop(force xs))
             case LList(xs)    => LList(      lazy loop(force xs))
         };
-        match l {
-            case ENil => ENil // Avoid returning `LList` if `l` is empty.
-            case _    => LList(lazy loop(l))
-        }
+        if (isEmpty(l)) ENil else LList(lazy loop(l)) // Avoid returning `LList` if `l` is empty.
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -442,10 +439,7 @@ namespace LazyList {
             case LCons(x, xs) => append(f(x), LList(lazy loop(force xs)))
             case LList(xs)    => LList(lazy loop(force xs))
         };
-        match l {
-            case ENil => ENil // Avoid returning `LList` if `l` is empty.
-            case _    => LList(lazy loop(l))
-        }
+        if (isEmpty(l)) ENil else LList(lazy loop(l)) // Avoid returning `LList` if `l` is empty.
 
     ///
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
@@ -518,10 +512,7 @@ namespace LazyList {
             case LCons(x, xs)   => if (isEmpty(force xs)) x else append(append(x, l1), loop(force xs))
             case LList(xs)      => LList(lazy loop(force xs))
         };
-        match l2 {
-            case ENil => ENil // Avoid returning `LList` if `l` is empty.
-            case _    => LList(lazy loop(l2))
-        }
+        if (isEmpty(l2)) ENil else LList(lazy loop(l2)) // Avoid returning `LList` if `l` is empty.
 
     ///
     /// Applies `f` to a start value `s` and all elements in `l` going from left to right.
@@ -643,23 +634,14 @@ namespace LazyList {
     /// Does not force the tail of `l`.
     ///
     @Experimental @Lazy
-    pub def flatten(l: LazyList[LazyList[a]]): LazyList[a] = match l {
-        case ENil         => ENil
-        case ECons(x, xs) => LList(lazy append(x, flattenHelper(      xs)))
-        case LCons(x, xs) => LList(lazy append(x, flattenHelper(force xs)))
-        case LList(xs)    => LList(lazy flattenHelper(force xs))
-    }
-
-    ///
-    /// Helper function for `flatten`.
-    ///
-    @Lazy
-    def flattenHelper(l: LazyList[LazyList[a]]): LazyList[a] = match l {
-        case ENil         => ENil
-        case ECons(x, xs) => append(x,  LList(lazy flattenHelper(      xs)))
-        case LCons(x, xs) => append(x,  LList(lazy flattenHelper(force xs)))
-        case LList(xs)    => LList(lazy flattenHelper(force xs))
-    }
+    pub def flatten(l: LazyList[LazyList[a]]): LazyList[a] =
+        def loop(ll) = match ll {
+            case ENil         => ENil
+            case ECons(x, xs) => append(x,  LList(lazy loop(      xs)))
+            case LCons(x, xs) => append(x,  LList(lazy loop(force xs)))
+            case LList(xs)    => LList(lazy loop(force xs))
+        };
+        if (isEmpty(l)) ENil else LList(lazy loop(l)) // Avoid returning `LList` if `l` is empty.
 
     ///
     /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
