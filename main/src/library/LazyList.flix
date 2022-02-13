@@ -201,12 +201,14 @@ namespace LazyList {
     /// Forces elements until `x` is found.
     ///
     @Experimental
-    pub def memberOf(x: a, l: LazyList[a]): Bool with Eq[a] = match l {
-        case ENil          => false
-        case ECons(x1, xs) => x1 == x or memberOf(x,       xs)
-        case LCons(x1, xs) => x1 == x or memberOf(x, force xs)
-        case LList(xs)     =>            memberOf(x, force xs)
-    }
+    pub def memberOf(x: a, l: LazyList[a]): Bool with Eq[a] =
+        def loop(ll) = match ll {
+            case ENil          => false
+            case ECons(x1, xs) => x1 == x or loop(      xs)
+            case LCons(x1, xs) => x1 == x or loop(force xs)
+            case LList(xs)     =>            loop(force xs)
+        };
+        loop(l)
 
     ///
     /// Optionally finds the smallest element of `l` according to the `Order` on `a`.
@@ -258,12 +260,14 @@ namespace LazyList {
     /// Forces elements of `l` until the predicate `f` is satisfied.
     ///
     @Experimental
-    pub def findLeft(f: a -> Bool & ef, l: LazyList[a]): Option[a] & ef = match l {
-        case ENil         => None
-        case ECons(x, xs) => if (f(x)) Some(x) else findLeft(f,       xs)
-        case LCons(x, xs) => if (f(x)) Some(x) else findLeft(f, force xs)
-        case LList(xs)    => findLeft(f, force xs)
-    }
+    pub def findLeft(f: a -> Bool & ef, l: LazyList[a]): Option[a] & ef =
+        def loop(ll) = match ll {
+            case ENil         => None
+            case ECons(x, xs) => if (f(x)) Some(x) else loop(      xs)
+            case LCons(x, xs) => if (f(x)) Some(x) else loop(force xs)
+            case LList(xs)    => loop(force xs)
+        };
+        loop(l)
 
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
@@ -651,12 +655,14 @@ namespace LazyList {
     /// Forces elements of `l` until the predicate `f` is satisfied.
     ///
     @Experimental
-    pub def exists(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
-        case ENil         => false
-        case ECons(x, xs) => if (f(x)) true else exists(f,       xs)
-        case LCons(x, xs) => if (f(x)) true else exists(f, force xs)
-        case LList(xs)    => exists(f, force xs)
-   }
+    pub def exists(f: a -> Bool & ef, l: LazyList[a]): Bool & ef =
+        def loop(ll) = match ll {
+            case ENil         => false
+            case ECons(x, xs) => if (f(x)) true else loop(      xs)
+            case LCons(x, xs) => if (f(x)) true else loop(force xs)
+            case LList(xs)    => loop(force xs)
+        };
+        loop(l)
 
     ///
     /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
@@ -666,12 +672,14 @@ namespace LazyList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def forall(f: a -> Bool & ef, l: LazyList[a]): Bool & ef = match l {
-        case ENil         => true
-        case ECons(x, xs) => if (f(x)) forall(f,       xs) else false
-        case LCons(x, xs) => if (f(x)) forall(f, force xs) else false
-        case LList(xs)    => forall(f, force xs)
-    }
+    pub def forall(f: a -> Bool & ef, l: LazyList[a]): Bool & ef =
+        def loop(ll) = match ll {
+            case ENil         => true
+            case ECons(x, xs) => if (f(x)) loop(      xs) else false
+            case LCons(x, xs) => if (f(x)) loop(force xs) else false
+            case LList(xs)    => loop(force xs)
+        };
+        loop(l)
 
     ///
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
