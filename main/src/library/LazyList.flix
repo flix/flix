@@ -280,7 +280,6 @@ namespace LazyList {
         };
         loop(l, () -> None as & ef) // NB: Cast required because the identity continuation is pure,
                                     // but the intermediate continuations are effect polymorphic.
-
     ///
     /// Returns a lazy list of all integers between `b` (inclusive) and `e` (exclusive).
     ///
@@ -288,44 +287,29 @@ namespace LazyList {
     ///
     @Experimental @Lazy
     pub def range(b: Int32, e: Int32): LazyList[Int32] =
-        LList(lazy rangeHelper(b, e))
-
-    ///
-    /// Helper function for `range`.
-    ///
-    def rangeHelper(b: Int32, e:Int32): LazyList[Int32] =
-        if (b >= e)
-            ENil
-        else
-            LCons(b, lazy rangeHelper(b + 1, e))
+        def loop(i) = {
+            if (i >= e)
+                ENil
+            else
+                LCons(i, lazy loop(i + 1))
+        };
+        LList(lazy loop(b))
 
     ///
     /// Returns an infinite LazyList of repeating `x`s.
     ///
     @Experimental @Lazy
     pub def repeat(x: a): LazyList[a] =
-        LList(lazy repeatHelper(x))
-
-    ///
-    /// Helper function for `repeat`.
-    ///
-    @Lazy
-    def repeatHelper(x: a): LazyList[a] =
-        LCons(x, lazy repeatHelper(x))
+        def loop() = LCons(x, lazy loop());
+        LList(lazy loop())
 
     ///
     /// Returns an infinite sequence of integers starting from and including `n`.
     ///
     @Experimental @Lazy
     pub def from(n: Int32): LazyList[Int32] =
-        LList(lazy fromHelper(n))
-
-    ///
-    /// Helper function for `from`.
-    ///
-    @Lazy
-    def fromHelper(n: Int32): LazyList[Int32] =
-        LCons(n, lazy fromHelper(n + 1))
+        def loop(i) = LCons(i, lazy loop(i + 1));
+        LList(lazy loop(n))
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
