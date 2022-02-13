@@ -390,7 +390,7 @@ object TypedAst {
 
     object Body {
 
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Body
 
       case class Guard(exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Predicate.Body
 

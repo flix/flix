@@ -120,9 +120,9 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def fromString(s: String): Result[Float32, String] = try {
-        import java.lang.String.strip();
-        import static java.lang.Float.parseFloat(String);
-        Ok(s |> strip |> parseFloat) as & Pure
+        import java.lang.String.strip(): String & Pure;
+        import static java.lang.Float.parseFloat(String): Float32 & Pure;
+        Ok(s |> strip |> parseFloat)
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Float32.fromString")
      }
@@ -138,12 +138,12 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt8(x: Float32): Option[Int8] =
-        import static java.lang.Float.valueOf(Float32);
-        import java.lang.Float.byteValue();
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
+        import java.lang.Float.byteValue(): Int8 & Pure;
         if (x < Int8.toFloat32(Int8.minValue()) or x > Int8.toFloat32(Int8.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(valueOf(x) |> byteValue) as & Pure
+            Some(valueOf(x) |> byteValue)
 
     ///
     /// Convert `x` to an `Option[Int16]`.
@@ -156,12 +156,12 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt16(x: Float32): Option[Int16] =
-        import static java.lang.Float.valueOf(Float32);
-        import java.lang.Float.shortValue();
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
+        import java.lang.Float.shortValue(): Int16 & Pure;
         if (x < Int16.toFloat32(Int16.minValue()) or x > Int16.toFloat32(Int16.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(valueOf(x) |> shortValue) as & Pure
+            Some(valueOf(x) |> shortValue)
 
     ///
     /// Convert `x` to an `Option[Int32]`.
@@ -177,12 +177,12 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt32(x: Float32): Option[Int32] =
-        import static java.lang.Float.valueOf(Float32);
-        import java.lang.Float.intValue();
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
+        import java.lang.Float.intValue(): Int32 & Pure;
         if (x < Int32.toFloat32(Int32.minValue()) or x > Int32.toFloat32(Int32.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(valueOf(x) |> intValue) as & Pure
+            Some(valueOf(x) |> intValue)
 
     ///
     /// Convert `x` to an `Option[Int64]`.
@@ -198,12 +198,12 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def tryToInt64(x: Float32): Option[Int64] =
-        import static java.lang.Float.valueOf(Float32);
-        import java.lang.Float.longValue();
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
+        import java.lang.Float.longValue(): Int64 & Pure;
         if (x < Int64.toFloat32(Int64.minValue()) or x > Int64.toFloat32(Int64.maxValue()) or isNan(x) or isInfinite(x))
             None
         else
-            Some(valueOf(x) |> longValue) as & Pure
+            Some(valueOf(x) |> longValue)
 
     ///
     /// Convert `x` to an `Option[BigInt]`.
@@ -221,9 +221,9 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def toFloat64(x: Float32): Float64 =
-        import static java.lang.Float.valueOf(Float32);
-        import java.lang.Float.doubleValue();
-        (valueOf(x) |> doubleValue) as & Pure
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
+        import java.lang.Float.doubleValue(): Float64 & Pure;
+        (valueOf(x) |> doubleValue)
 
     ///
     /// Helper function for the `clamp` conversion functions.
@@ -247,14 +247,14 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt8(x: Float32, minimum: Int8, maximum: Int8, nanValue: Int8): Int8 =
-        import static java.lang.Float.valueOf(Float32);
-        import java.lang.Float.byteValue();
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
+        import java.lang.Float.byteValue(): Int8 & Pure;
         let minf32 = Int8.toFloat32(minimum);
         let maxf32 = Int8.toFloat32(maximum);
         if (isNan(x))
             nanValue
         else
-            (valueOf(clamp(x, minf32, maxf32)) |> byteValue) as & Pure
+            (valueOf(clamp(x, minf32, maxf32)) |> byteValue)
 
     ///
     /// Convert `x` to an `Int16`.
@@ -266,14 +266,14 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt16(x: Float32, minimum: Int16, maximum: Int16, nanValue: Int16): Int16 =
-        import static java.lang.Float.valueOf(Float32);
-        import java.lang.Float.shortValue();
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
+        import java.lang.Float.shortValue(): Int16 & Pure;
         let minf32 = Int16.toFloat32(minimum);
         let maxf32 = Int16.toFloat32(maximum);
         if (isNan(x))
             nanValue
         else
-            (valueOf(clamp(x, minf32, maxf32)) |> shortValue) as & Pure
+            (valueOf(clamp(x, minf32, maxf32)) |> shortValue)
 
     ///
     /// Convert `x` to an `Int32`.
@@ -285,14 +285,14 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt32(x: Float32, minimum: Int32, maximum: Int32, nanValue: Int32): Int32 =
-        import static java.lang.Float.valueOf(Float32);
-        import java.lang.Float.intValue();
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
+        import java.lang.Float.intValue(): Int32 & Pure;
         let minf32 = Int32.toFloat32(minimum);
         let maxf32 = Int32.toFloat32(maximum);
         if (isNan(x))
             nanValue
         else
-            (valueOf(clamp(x, minf32, maxf32)) |> intValue) as & Pure
+            (valueOf(clamp(x, minf32, maxf32)) |> intValue)
 
     ///
     /// Convert `x` to an `Int64`.
@@ -304,48 +304,48 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def clampToInt64(x: Float32, minimum: Int64, maximum: Int64, nanValue: Int64): Int64 =
-        import static java.lang.Float.valueOf(Float32);
-        import java.lang.Float.longValue();
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure;
+        import java.lang.Float.longValue(): Int64 & Pure;
         let minf32 = Int64.toFloat32(minimum);
         let maxf32 = Int64.toFloat32(maximum);
         if (isNan(x))
             nanValue
         else
-            (valueOf(clamp(x, minf32, maxf32)) |> longValue) as & Pure
+            (valueOf(clamp(x, minf32, maxf32)) |> longValue)
 
     ///
     /// Returns the absolute value of `x`.
     ///
     @Time(1) @Space(1)
     pub def abs(x: Float32): Float32 =
-        import static java.lang.Math.abs(Float32);
-        abs(x) as & Pure
+        import static java.lang.Math.abs(Float32): Float32 & Pure;
+        abs(x)
 
     ///
     /// Returns `x` rounded up to a Float32 representing the nearest larger integer value.
     ///
     @Time(1) @Space(1)
     pub def ceil(x: Float32): Float32 =
-        import static java.lang.Float.valueOf(Float32) as valueOfF32;
-        import static java.lang.Double.valueOf(Float64) as valueOfF64;
-        import static java.lang.Math.ceil(Float64);
-        import java.lang.Double.floatValue();
-        import java.lang.Float.doubleValue();
-        let x1 = ceil(doubleValue(valueOfF32(x))) as & Pure;
-        floatValue(valueOfF64(x1)) as & Pure
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure as valueOfF32;
+        import static java.lang.Double.valueOf(Float64): ##java.lang.Double & Pure as valueOfF64;
+        import static java.lang.Math.ceil(Float64): Float64 & Pure;
+        import java.lang.Double.floatValue(): Float32 & Pure;
+        import java.lang.Float.doubleValue(): Float64 & Pure;
+        let x1 = ceil(doubleValue(valueOfF32(x)));
+        floatValue(valueOfF64(x1))
 
     ///
     /// Returns `x` rounded down to a Float32 representing the nearest smaller integer value.
     ///
     @Time(1) @Space(1)
     pub def floor(x: Float32): Float32 =
-        import static java.lang.Float.valueOf(Float32) as valueOfF32;
-        import static java.lang.Double.valueOf(Float64) as valueOfF64;
-        import static java.lang.Math.floor(Float64);
-        import java.lang.Double.floatValue();
-        import java.lang.Float.doubleValue();
-        let x1 = floor(doubleValue(valueOfF32(x))) as & Pure;
-        floatValue(valueOfF64(x1)) as & Pure
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure as valueOfF32;
+        import static java.lang.Double.valueOf(Float64): ##java.lang.Double & Pure as valueOfF64;
+        import static java.lang.Math.floor(Float64): Float64 & Pure;
+        import java.lang.Double.floatValue(): Float32 & Pure;
+        import java.lang.Float.doubleValue(): Float64 & Pure;
+        let x1 = floor(doubleValue(valueOfF32(x)));
+        floatValue(valueOfF64(x1))
 
     ///
     /// Returns `x` rounded to a Float32 representing the nearest integer value.
@@ -355,12 +355,12 @@ namespace Float32 {
     ///
     @Time(1) @Space(1)
     pub def round(x: Float32): Float32 =
-        import static java.lang.Float.valueOf(Float32) as valueOfF32;
-        import static java.lang.Double.valueOf(Float64) as valueOfF64;
-        import static java.lang.Math.rint(Float64);
-        import java.lang.Double.floatValue();
-        import java.lang.Float.doubleValue();
-        let x1 = rint(doubleValue(valueOfF32(x))) as & Pure;
-        floatValue(valueOfF64(x1)) as & Pure
+        import static java.lang.Float.valueOf(Float32): ##java.lang.Float & Pure as valueOfF32;
+        import static java.lang.Double.valueOf(Float64): ##java.lang.Double & Pure as valueOfF64;
+        import static java.lang.Math.rint(Float64): Float64 & Pure;
+        import java.lang.Double.floatValue(): Float32 & Pure;
+        import java.lang.Float.doubleValue(): Float64 & Pure;
+        let x1 = rint(doubleValue(valueOfF32(x)));
+        floatValue(valueOfF64(x1))
 
 }

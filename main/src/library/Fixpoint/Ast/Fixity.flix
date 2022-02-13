@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Benjamin Dahse
+ * Copyright 2022 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,8 @@
  * limitations under the License.
  */
 namespace Fixpoint/Ast {
-    pub opaque type PrecedenceGraph = Set[PrecedenceEdge]
-
-    pub enum PrecedenceEdge with Eq, Order {
-        case StrongEdge(PredSym, PredSym)
-        case WeakEdge(PredSym, PredSym)
-    }
-
-    instance Monoid[PrecedenceGraph] {
-        pub def empty(): PrecedenceGraph = PrecedenceGraph(Set.empty())
-    }
-
-    instance SemiGroup[PrecedenceGraph] {
-        pub def combine(x: PrecedenceGraph, y: PrecedenceGraph): PrecedenceGraph = match (x, y) {
-            case (PrecedenceGraph(xs), PrecedenceGraph(ys)) => PrecedenceGraph(Set.union(xs, ys))
-        }
+    pub enum Fixity {
+        case Loose,
+        case Fixed
     }
 }

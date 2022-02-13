@@ -109,6 +109,18 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalFieldName](result)
   }
 
+  test("IllegalFixedAtom.01") {
+    val input =
+      """def f(): Unit =
+        |    let _p = #{
+        |        R(x) :- A(x), not fix B(x).
+        |    };
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalFixedAtom](result)
+  }
+
   test("IllegalInt8.01") {
     val input = "def f(): Int8 = -1000i8"
     val result = compile(input, Options.TestWithLibNix)
@@ -399,11 +411,11 @@ class TestWeeder extends FunSuite with TestUtils {
   test("MalformedUnicodeEscape.Patten.String.01") {
     val input =
       """
-         |def f(x: String): Bool = match x {
-         |  case "BSuINVALID" => true
-         |  case _ => false
-         |}
-         |""".stripMargin.replace("BS", "\\")
+        |def f(x: String): Bool = match x {
+        |  case "BSuINVALID" => true
+        |  case _ => false
+        |}
+        |""".stripMargin.replace("BS", "\\")
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
