@@ -37,6 +37,9 @@ import scala.annotation.tailrec
   * head predicate p and a negated subgoal with predicate q, there is
   * no path in the dependency graph from p to q" -- Ullman 132
   *
+  * A negated subgoal is generalized here to a subgoal that is negated
+  * or fixed, collectively called a strong dependency.
+  *
   * Reports a [[StratificationError]] if the constraints cannot be stratified.
   */
 object Stratifier {
@@ -775,17 +778,18 @@ object Stratifier {
 
   /**
     * Computes the dependency graph from the labelled graph, throwing the labels away.
+    * If a labelled edge is either negative or fixed it is transformed to a strong edge.
     */
   private def labelledGraphToDependencyGraph(g: LabelledGraph): UllmansAlgorithm.DependencyGraph =
     g.edges.map {
       case LabelledEdge(head, Polarity.Positive, Fixity.Loose, _, body, loc) =>
         // Positive, loose edges require that the strata of the head is equal to,
-        // or below, the strata of the body.
-        UllmansAlgorithm.DependencyEdge.NonStrict(head, body, loc)
+        // or below, the strata of the body hence a weak edge.
+        UllmansAlgorithm.DependencyEdge.Weak(head, body, loc)
       case LabelledEdge(head, _, _, _, body, loc) =>
-        // Edges that are either negatively bound or fixed are strict since they require
+        // Edges that are either negatively bound or fixed are strong since they require
         // that the strata of the head is strictly higher than the strata of the body.
-        UllmansAlgorithm.DependencyEdge.Strict(head, body, loc)
+        UllmansAlgorithm.DependencyEdge.Strong(head, body, loc)
     }.toSet
 
 }
