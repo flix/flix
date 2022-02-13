@@ -332,25 +332,17 @@ namespace LazyList {
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
     @Lazy
-    def mapL(f: a -> b, l: LazyList[a]): LazyList[b] = match l {
-        case ENil         => ENil
-        case ECons(x, xs) => LList(lazy LCons(f(x), lazy mapL1(f,       xs)))
-        case LCons(x, xs) => LList(lazy LCons(f(x), lazy mapL1(f, force xs)))
-        case LList(xs)    => LList(                 lazy mapL1(f, force xs))
-    }
-
-    ///
-    /// Returns the result of applying `f` to every element in `l`.
-    ///
-    /// Applies `f` lazily (i.e. the tail is not forced).
-    ///
-    @Lazy
-    def mapL1(f: a -> b, l: LazyList[a]): LazyList[b] = match l {
-        case ENil         => ENil
-        case ECons(x, xs) => LCons(f(x), lazy mapL1(f,       xs))
-        case LCons(x, xs) => LCons(f(x), lazy mapL1(f, force xs))
-        case LList(xs)    => LList(      lazy mapL1(f, force xs))
-    }
+    def mapL(f: a -> b, l: LazyList[a]): LazyList[b] =
+        def loop(ll) = match ll {
+            case ENil         => ENil
+            case ECons(x, xs) => LCons(f(x), lazy loop(      xs))
+            case LCons(x, xs) => LCons(f(x), lazy loop(force xs))
+            case LList(xs)    => LList(      lazy loop(force xs))
+        };
+        match l {
+            case ENil => ENil // Avoid returning `LList` if `l` is empty.
+            case _    => LList(lazy loop(l))
+        }
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -358,22 +350,18 @@ namespace LazyList {
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
     def mapE(f: a -> b & ef, l: LazyList[a]): LazyList[b] & ef =
-        mapEAcc(f, l, identity)
-
-    ///
-    /// Helper function for `mapE`.
-    ///
-    def mapEAcc(f: a -> b & ef, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & ef = match l {
-        case ENil         => k(ENil)
-        case ECons(x, xs) =>
-            let x1 = f(x);
-            mapEAcc(f, xs, ks -> k(ECons(x1, ks)))
-        case LCons(x, xs) =>
-            let x1 = f(x);
-            mapEAcc(f, force xs, ks -> k(ECons(x1, ks)))
-        case LList(xs)    =>
-            mapEAcc(f, force xs, k)
-    }
+        def loop(ll, k) = match ll {
+            case ENil => k(ENil)
+            case ECons(x, xs) =>
+                let x1 = f(x);
+                loop(xs, ks -> k(ECons(x1, ks)))
+            case LCons(x, xs) =>
+                let x1 = f(x);
+                loop(force xs, ks -> k(ECons(x1, ks)))
+            case LList(xs) =>
+                loop(force xs, k)
+        };
+        loop(l, identity)
 
     ///
     /// Returns the result of applying `f` to every element in `l` along with that element's index.
@@ -400,18 +388,13 @@ namespace LazyList {
     ///
     @Lazy
     def mapWithIndexL(f: (a, Int32) -> b, l: LazyList[a]): LazyList[b] =
-        LList(lazy mapWithIndexLHelper(f, l, 0))
-
-    ///
-    /// Helper function for `mapWithIndexL`.
-    ///
-    @Lazy
-    def mapWithIndexLHelper(f: (a, Int32) -> b, l: LazyList[a], i: Int32): LazyList[b] = match l {
-        case ENil         => ENil
-        case ECons(x, xs) => LCons(f(x, i), lazy mapWithIndexLHelper(f,       xs, i + 1))
-        case LCons(x, xs) => LCons(f(x, i), lazy mapWithIndexLHelper(f, force xs, i + 1))
-        case LList(xs)    => LList(         lazy mapWithIndexLHelper(f, force xs, i    ))
-    }
+        def loop(ll, i) = match ll {
+            case ENil         => ENil
+            case ECons(x, xs) => LCons(f(x, i), lazy loop(      xs, i + 1))
+            case LCons(x, xs) => LCons(f(x, i), lazy loop(force xs, i + 1))
+            case LList(xs)    => LList(         lazy loop(force xs, i    ))
+        };
+        LList(lazy loop(l, 0))
 
     ///
     /// Returns the result of applying `f` to every element in `l` along with the element's index.
@@ -419,21 +402,17 @@ namespace LazyList {
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
     def mapWithIndexE(f: (a, Int32) -> b & ef, l: LazyList[a]): LazyList[b] & ef =
-        mapWithIndexEAcc(f, l, 0, identity)
-
-    ///
-    /// Helper function for `mapWithIndexE`.
-    ///
-    def mapWithIndexEAcc(f: (a, Int32) -> b & ef, l: LazyList[a], i: Int32, k: LazyList[b] -> LazyList[b]): LazyList[b] & ef = match l {
-        case ENil         => k(ENil)
-        case ECons(x, xs) =>
-            let x1 = f(x, i);
-            mapWithIndexEAcc(f,       xs, i + 1, ks -> k(ECons(x1, ks)))
-        case LCons(x, xs) =>
-            let x1 = f(x, i);
-            mapWithIndexEAcc(f, force xs, i + 1, ks -> k(ECons(x1, ks)))
-        case LList(xs)    => mapWithIndexEAcc(f, force xs, i, k)
-    }
+        def loop(ll, i, k) = match ll {
+            case ENil => k(ENil)
+            case ECons(x, xs) =>
+                let x1 = f(x, i);
+                loop(xs, i + 1, ks -> k(ECons(x1, ks)))
+            case LCons(x, xs) =>
+                let x1 = f(x, i);
+                loop(force xs, i + 1, ks -> k(ECons(x1, ks)))
+            case LList(xs) => loop(force xs, i, k)
+        };
+        loop(l, 0, identity)
 
     ///
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
