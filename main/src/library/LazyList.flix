@@ -188,12 +188,14 @@ namespace LazyList {
     /// Does not force the tail of `l1`.
     ///
     @Lazy @Experimental
-    pub def append(l1: LazyList[a], l2: LazyList[a]): LazyList[a] = match l1 {
-        case ENil         => l2
-        case ECons(x, xs) => LCons(x, lazy append(      xs, l2))
-        case LCons(x, xs) => LCons(x, lazy append(force xs, l2))
-        case LList(xs)    => LList(   lazy append(force xs, l2))
-    }
+    pub def append(l1: LazyList[a], l2: LazyList[a]): LazyList[a] =
+        def loop(ll) = match ll {
+            case ENil         => l2
+            case ECons(x, xs) => LCons(x, lazy loop(      xs))
+            case LCons(x, xs) => LCons(x, lazy loop(force xs))
+            case LList(xs)    => LList(   lazy loop(force xs))
+        };
+        loop(l1)
 
     ///
     /// Returns `true` if and only if `l` contains the element `x`.
@@ -493,12 +495,14 @@ namespace LazyList {
     /// Forces the immediate tail of `l` unless it is a case of `LList`.
     ///
     @Experimental @Lazy
-    pub def intersperse(x: a, l: LazyList[a]): LazyList[a] = match l {
-        case ENil           => ENil
-        case ECons(x1, xs)  => if (isEmpty(      xs)) l else LCons(x1, lazy LCons(x, lazy intersperse(x,       xs)))
-        case LCons(x1, xs)  => if (isEmpty(force xs)) l else LCons(x1, lazy LCons(x, lazy intersperse(x, force xs)))
-        case LList(xs)      => LList(lazy intersperse(x, force xs))
-    }
+    pub def intersperse(x: a, l: LazyList[a]): LazyList[a] =
+        def loop(ll) = match ll {
+            case ENil           => ENil
+            case ECons(x1, xs)  => if (isEmpty(      xs)) ll else LCons(x1, lazy LCons(x, lazy loop(      xs)))
+            case LCons(x1, xs)  => if (isEmpty(force xs)) ll else LCons(x1, lazy LCons(x, lazy loop(force xs)))
+            case LList(xs)      => LList(lazy loop(force xs))
+        };
+        loop(l)
 
     ///
     /// Returns the concatenation of the elements in `l2` with the elements
