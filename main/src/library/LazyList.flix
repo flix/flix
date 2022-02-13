@@ -710,12 +710,14 @@ namespace LazyList {
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
     @Lazy
-    def filterL(f: a -> Bool, l: LazyList[a]): LazyList[a] = match l {
-        case ENil         => ENil
-        case ECons(x, xs) => if (f(x)) LCons(x, lazy filterL(f,       xs)) else LList(lazy filterL(f,       xs))
-        case LCons(x, xs) => if (f(x)) LCons(x, lazy filterL(f, force xs)) else LList(lazy filterL(f, force xs))
-        case LList(xs)    => LList(   lazy filterL(f, force xs))
-    }
+    def filterL(f: a -> Bool, l: LazyList[a]): LazyList[a] =
+        def loop(ll) = match ll {
+            case ENil         => ENil
+            case ECons(x, xs) => if (f(x)) LCons(x, lazy loop(      xs)) else LList(lazy loop(      xs))
+            case LCons(x, xs) => if (f(x)) LCons(x, lazy loop(force xs)) else LList(lazy loop(force xs))
+            case LList(xs)    => LList(lazy loop(force xs))
+        };
+        loop(l)
 
     ///
     /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
@@ -723,17 +725,13 @@ namespace LazyList {
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
     def filterE(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
-        filterEAcc(f, l, identity)
-
-    ///
-    /// Helper function for `filterE`
-    ///
-    def filterEAcc(f: a -> Bool & ef, l: LazyList[a], k: LazyList[a] -> LazyList[a]): LazyList[a] & ef = match l {
-        case ENil         => k(ENil)
-        case ECons(x, xs) => if (f(x)) filterEAcc(f,       xs, ks -> k(ECons(x, ks))) else filterEAcc(f,       xs, k)
-        case LCons(x, xs) => if (f(x)) filterEAcc(f, force xs, ks -> k(ECons(x, ks))) else filterEAcc(f, force xs, k)
-        case LList(xs)    => filterEAcc(f, force xs, k)
-    }
+        def loop(ll, k) = match ll {
+            case ENil         => k(ENil)
+            case ECons(x, xs) => if (f(x)) loop(      xs, ks -> k(ECons(x, ks))) else loop(      xs, k)
+            case LCons(x, xs) => if (f(x)) loop(force xs, ks -> k(ECons(x, ks))) else loop(force xs, k)
+            case LList(xs)    => loop(force xs, k)
+        };
+        loop(l, identity)
 
     ///
     /// Returns a pair of lists `(l1, l2)`.
