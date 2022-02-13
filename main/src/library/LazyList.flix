@@ -443,7 +443,7 @@ namespace LazyList {
             case LList(xs)    => LList(lazy loop(force xs))
         };
         match l {
-            case ENil => ENil
+            case ENil => ENil // Avoid returning `LList` if `l` is empty.
             case _    => LList(lazy loop(l))
         }
 
@@ -492,7 +492,7 @@ namespace LazyList {
     ///
     /// Returns `l` with `x` inserted between every two adjacent elements.
     ///
-    /// Forces the first element of the tail of `l` unless that tail is an `LList`.
+    /// Forces the immediate tail of `l` unless it is a case of `LList`.
     ///
     @Experimental @Lazy
     pub def intersperse(x: a, l: LazyList[a]): LazyList[a] = match l {
@@ -508,26 +508,20 @@ namespace LazyList {
     ///
     /// That is, returns `l2.1 :: l1.1 ... l1.n :: l2.2 :: ... :: l2.n-1 :: l1.1 :: ... :: l1.n :: l2.n :: ENil`.
     ///
-    /// Forces the first element of the tail of `l2` unless that tail is an `LList`.
+    /// Forces the immediate tail of `l2` unless it is a case of `LList`.
     ///
     @Experimental @Lazy
-    pub def intercalate(l1: LazyList[a], l2: LazyList[LazyList[a]]): LazyList[a] = match l2 {
-        case ENil           => ENil
-        case ECons(x, xs)   => if (isEmpty(      xs)) x else LList(lazy append(append(x, l1), intercalateHelper(l1,       xs)))
-        case LCons(x, xs)   => if (isEmpty(force xs)) x else LList(lazy append(append(x, l1), intercalateHelper(l1, force xs)))
-        case LList(xs)      => LList(lazy intercalateHelper(l1, force xs))
-    }
-
-    ///
-    /// Helper function for `intercalate`.
-    ///
-    @Lazy
-    def intercalateHelper(l1: LazyList[a], l2: LazyList[LazyList[a]]): LazyList[a] = match l2 {
-        case ENil           => ENil
-        case ECons(x, xs)   => if (isEmpty(      xs)) x else append(append(x, l1), intercalateHelper(l1,       xs))
-        case LCons(x, xs)   => if (isEmpty(force xs)) x else append(append(x, l1), intercalateHelper(l1, force xs))
-        case LList(xs)      => LList(lazy intercalateHelper(l1, force xs))
-    }
+    pub def intercalate(l1: LazyList[a], l2: LazyList[LazyList[a]]): LazyList[a] =
+        def loop(ll) = match ll {
+            case ENil           => ENil
+            case ECons(x, xs)   => if (isEmpty(      xs)) x else append(append(x, l1), loop(      xs))
+            case LCons(x, xs)   => if (isEmpty(force xs)) x else append(append(x, l1), loop(force xs))
+            case LList(xs)      => LList(lazy loop(force xs))
+        };
+        match l2 {
+            case ENil => ENil // Avoid returning `LList` if `l` is empty.
+            case _    => LList(lazy loop(l2))
+        }
 
     ///
     /// Applies `f` to a start value `s` and all elements in `l` going from left to right.
@@ -589,26 +583,15 @@ namespace LazyList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def reduceRight(f: (a, a) -> a & ef, l: LazyList[a]): Option[a] & ef = match l {
-        case ENil      => None
-        case LList(xs) => reduceRight(f, force xs)
-        case _         => Some(reduceRightAcc(f, l, ks -> ks as & ef)) // NB: Cast required because the identity continuation is pure,
-                                                                       // but the intermediate continuations are effect polymorphic.
-    }
-
-    ///
-    /// Helper function for `reduceRight`.
-    ///
-    /// `l` must be non-empty.
-    ///
-    @Experimental
-    def reduceRightAcc(f: (a, a) -> a & ef, l: LazyList[a], k: a -> a & ef): a & ef = match l {
-        case ECons(x, xs) => if (isEmpty(      xs)) k(x) else reduceRightAcc(f,       xs, ks -> k(f(x, ks)))
-        case LCons(x, xs) => if (isEmpty(force xs)) k(x) else reduceRightAcc(f, force xs, ks -> k(f(x, ks)))
-        case LList(xs)    => reduceRightAcc(f, force xs, k)
-        case _            => bug!("Unreachable code!")
-    }
-
+    pub def reduceRight(f: (a, a) -> a & ef, l: LazyList[a]): Option[a] & ef =
+        def loop(ll, k) = match ll {
+            case ECons(x, xs) => if (isEmpty(      xs)) k(x) else loop(      xs, ks -> k(f(x, ks)))
+            case LCons(x, xs) => if (isEmpty(force xs)) k(x) else loop(force xs, ks -> k(f(x, ks)))
+            case LList(xs)    => loop(force xs, k)
+            case _            => unreachable!()
+        };
+        if (isEmpty(l)) None else Some(loop(l, ks -> ks as & ef)) // NB: Cast required because the identity continuation is pure,
+                                                                  // but the intermediate continuations are effect polymorphic.
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
     ///
