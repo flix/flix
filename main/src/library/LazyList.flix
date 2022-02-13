@@ -435,23 +435,17 @@ namespace LazyList {
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
     @Lazy
-    def flatMapL(f: a -> LazyList[b], l: LazyList[a]): LazyList[b] = match l {
-        case ENil         => ENil
-        case ECons(x, xs) => LList(lazy append(f(x), LList(lazy flatMapLHelper(f,       xs))))
-        case LCons(x, xs) => LList(lazy append(f(x), LList(lazy flatMapLHelper(f, force xs))))
-        case LList(xs)    => LList(lazy flatMapLHelper(f, force xs))
-    }
-
-    ///
-    /// Helper function for `flatMapL`.
-    ///
-    @Lazy
-    def flatMapLHelper(f: a -> LazyList[b], l: LazyList[a]): LazyList[b] = match l {
-        case ENil         => ENil
-        case ECons(x, xs) => append(f(x), LList(lazy flatMapLHelper(f,       xs)))
-        case LCons(x, xs) => append(f(x), LList(lazy flatMapLHelper(f, force xs)))
-        case LList(xs)    => LList(lazy flatMapLHelper(f, force xs))
-    }
+    def flatMapL(f: a -> LazyList[b], l: LazyList[a]): LazyList[b] =
+        def loop(ll) = match ll {
+            case ENil         => ENil
+            case ECons(x, xs) => append(f(x), LList(lazy loop(xs)))
+            case LCons(x, xs) => append(f(x), LList(lazy loop(force xs)))
+            case LList(xs)    => LList(lazy loop(force xs))
+        };
+        match l {
+            case ENil => ENil
+            case _    => LList(lazy loop(l))
+        }
 
     ///
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
@@ -459,38 +453,32 @@ namespace LazyList {
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
     def flatMapE(f: a -> LazyList[b] & ef, l: LazyList[a]): LazyList[b] & ef =
-        flatMapEAcc(f, l, identity)
-
-    ///
-    /// Helper function for `flatMapE`.
-    ///
-    def flatMapEAcc(f: a -> LazyList[b] & ef, l: LazyList[a], k: LazyList[b] -> LazyList[b]): LazyList[b] & ef = match l {
-        case ENil         => k(ENil)
-        case ECons(x, xs) =>
-            let xs1 = f(x);
-            flatMapEAcc(f,       xs, ks -> k(append(xs1, ks)))
-        case LCons(x, xs) =>
-            let xs1 = f(x);
-            flatMapEAcc(f, force xs, ks -> k(append(xs1, ks)))
-        case LList(xs)    => flatMapEAcc(f, force xs, k)
-    }
+        def loop(ll, k) = match ll {
+            case ENil => k(ENil)
+            case ECons(x, xs) =>
+                let xs1 = f(x);
+                loop(xs, ks -> k(append(xs1, ks)))
+            case LCons(x, xs) =>
+                let xs1 = f(x);
+                loop(force xs, ks -> k(append(xs1, ks)))
+            case LList(xs) => loop(force xs, k)
+        };
+        loop(l, identity)
 
     ///
     /// Reverses the list `l`.
     ///
+    /// Does not force the tail of `l`.
+    ///
     @Experimental @Lazy
     pub def reverse(l: LazyList[a]): LazyList[a] =
-        LList(lazy reverseAcc(l, ENil))
-
-    ///
-    /// Helper function for `reverse`.
-    ///
-    def reverseAcc(l: LazyList[a], acc: LazyList[a]): LazyList[a] = match l {
-        case ENil         => acc
-        case ECons(x, xs) => reverseAcc(      xs, ECons(x, acc))
-        case LCons(x, xs) => reverseAcc(force xs, ECons(x, acc))
-        case LList(xs)    => reverseAcc(force xs,          acc)
-    }
+        def loop(ll, acc) = match ll {
+            case ENil         => acc
+            case ECons(x, xs) => loop(      xs, ECons(x, acc))
+            case LCons(x, xs) => loop(force xs, ECons(x, acc))
+            case LList(xs)    => loop(force xs,          acc)
+        };
+        LList(lazy loop(l, ENil))
 
     ///
     /// Returns `l` with every occurrence of `from` replaced by `to`.
