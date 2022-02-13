@@ -743,17 +743,23 @@ namespace LazyList {
     ///
     @Experimental
     pub def partition(f: a -> Bool & ef, l: LazyList[a]): (LazyList[a], LazyList[a]) & ef =
-        partitionAcc(f, l, (ks, ls) -> (ks, ls))
-
-    ///
-    /// Helper function for `partition`.
-    ///
-    def partitionAcc(f: a -> Bool & ef, l: LazyList[a], k: (LazyList[a], LazyList[a]) -> (LazyList[a], LazyList[a])): (LazyList[a], LazyList[a]) & ef = match l {
-        case ENil         => k(ENil, ENil)
-        case ECons(x, xs) => if (f(x)) partitionAcc(f,       xs, (ks, ls) -> k(ECons(x, ks), ls)) else partitionAcc(f,       xs, (ks, ls) -> k(ks, ECons(x, ls)))
-        case LCons(x, xs) => if (f(x)) partitionAcc(f, force xs, (ks, ls) -> k(ECons(x, ks), ls)) else partitionAcc(f, force xs, (ks, ls) -> k(ks, ECons(x, ls)))
-        case LList(xs)    => partitionAcc(f, force xs, k)
-    }
+        def loop(ll, k) = match ll {
+            case ENil         =>
+                let r = k({ left = ENil, right = ENil });
+                (r.left, r.right)
+            case ECons(x, xs) =>
+                if (f(x))
+                    loop(xs, ks -> k({ left = ECons(x, ks.left), right = ks.right }))
+                else
+                    loop(xs, ks -> k({ left = ks.left, right = ECons(x, ks.right) }))
+            case LCons(x, xs) =>
+                if (f(x))
+                    loop(force xs, ks -> k({ left = ECons(x, ks.left), right = ks.right }))
+                else
+                    loop(force xs, ks -> k({ left = ks.left, right = ECons(x, ks.right) }))
+            case LList(xs)    => loop(force xs, k)
+        };
+        loop(l, identity)
 
     ///
     /// `l1` is the longest prefix of `l` that satisfies the predicate `f`.
