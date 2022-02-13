@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Magnus Madsen
+ * Copyright 2018 Magnus Madsen, Anna Krogh, Patrick Lundvig, Christian Bonde
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst.{Expression, Root}
-import ca.uwaterloo.flix.language.ast.Symbol.LabelSym
 import ca.uwaterloo.flix.language.ast.{LiftedAst, Symbol}
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
 import ca.uwaterloo.flix.util.Validation._
@@ -35,7 +34,21 @@ object Inliner {
    */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Inliner") {
     // TODO: Implement inliner.
+    // Visit every definition in the program.
+    val defs = root.defs.map {
+      case (sym, defn) => sym -> defn.copy(exp = visitExp(defn.exp, Map.empty))
+    }
 
+    // Reassemble the ast root.
+    val result = root.copy(defs = defs)
+
+    // Print the ast if debugging is enabled.
+    if (flix.options.debug) {
+      println(PrettyPrinter.Lifted.fmtRoot(result, Formatter.AnsiTerminalFormatter))
+    }
+
+    return result.toSuccess
+  }
     def visitExp(exp0: Expression, subst0: Map[Symbol.VarSym, Int]): Expression = exp0 match {
       case Expression.Unit(_) => exp0
 
@@ -72,24 +85,24 @@ object Inliner {
 
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         val e = visitExp(exp, subst0)
-        val as = args map (visitExp(_, subst0))
+        val as = args.map(visitExp(_, subst0))
         Expression.ApplyClo(e, as, tpe, loc)
 
       case Expression.ApplyDef(sym, args, tpe, loc) =>
-        val as = args map (visitExp(_, subst0))
+        val as = args.map(visitExp(_, subst0))
         Expression.ApplyDef(sym, as, tpe, loc)
 
       case Expression.ApplyCloTail(exp, args, tpe, loc) =>
         val e = visitExp(exp, subst0)
-        val as = args map (visitExp(_, subst0))
+        val as = args.map(visitExp(_, subst0))
         Expression.ApplyCloTail(e, as, tpe, loc)
 
       case Expression.ApplyDefTail(sym, args, tpe, loc) =>
-        val as = args map (visitExp(_, subst0))
+        val as = args.map(visitExp(_, subst0))
         Expression.ApplyDefTail(sym, as, tpe, loc)
 
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
-        val as = actuals map (visitExp(_, subst0))
+        val as = actuals.map(visitExp(_, subst0))
         Expression.ApplySelfTail(sym, formals, as, tpe, loc)
 
       case Expression.Unary(sop, op, exp, tpe, loc) =>
@@ -109,7 +122,7 @@ object Inliner {
 
       case Expression.Branch(exp, branches, tpe, loc) =>
         val e = visitExp(exp, subst0)
-        val bs = branches map {
+        val bs = branches.map{
           case (sym, br) => sym -> visitExp(br, subst0)
         }
         Expression.Branch(e, bs, tpe, loc)
@@ -148,7 +161,7 @@ object Inliner {
         Expression.Index(b, offset, tpe, loc)
 
       case Expression.Tuple(elms, tpe, loc) =>
-        val es = elms map (visitExp(_, subst0))
+        val es = elms.map(visitExp(_, subst0))
         Expression.Tuple(es, tpe, loc)
 
       case Expression.RecordEmpty(_, _) => exp0
@@ -167,7 +180,7 @@ object Inliner {
         Expression.RecordRestrict(field, r, tpe, loc)
 
       case Expression.ArrayLit(elms, tpe, loc) =>
-        val es = elms map (visitExp(_, subst0))
+        val es = elms.map(visitExp(_, subst0))
         Expression.ArrayLit(es, tpe, loc)
 
       case Expression.ArrayNew(elm, len, tpe, loc) =>
@@ -214,23 +227,24 @@ object Inliner {
 
       case Expression.TryCatch(exp, rules, tpe, loc) =>
         val e = visitExp(exp, subst0)
-        val rs = rules map {
-          case LiftedAst.CatchRule(sym, clazz, exp) => val e = visitExp(exp, subst0)
+        val rs = rules.map{
+          case LiftedAst.CatchRule(sym, clazz, exp) =>
+            val e = visitExp(exp, subst0)
             LiftedAst.CatchRule(sym, clazz, e)
         }
         Expression.TryCatch(e, rs, tpe, loc)
 
       case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
-        val as = args map (visitExp(_, subst0))
+        val as = args.map(visitExp(_, subst0))
         Expression.InvokeConstructor(constructor, as, tpe, loc)
 
       case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
         val e = visitExp(exp, subst0)
-        val as = args map (visitExp(_, subst0))
+        val as = args.map(visitExp(_, subst0))
         Expression.InvokeMethod(method, e, as, tpe, loc)
 
       case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
-        val as = args map (visitExp(_, subst0))
+        val as = args.map(visitExp(_, subst0))
         Expression.InvokeStaticMethod(method, as, tpe, loc)
 
       case Expression.GetField(field, exp, tpe, loc) =>
@@ -262,13 +276,13 @@ object Inliner {
         Expression.PutChannel(e1, e2, tpe, loc)
 
       case Expression.SelectChannel(rules, default, tpe, loc) =>
-        val rs = rules map {
+        val rs = rules.map{
           case LiftedAst.SelectChannelRule(sym, chan, exp) =>
             val c = visitExp(chan, subst0)
             val e = visitExp(exp, subst0)
             LiftedAst.SelectChannelRule(sym, c, e)
         }
-        val d = default map (visitExp(_, subst0))
+        val d = default.map(visitExp(_, subst0))
         Expression.SelectChannel(rs, d, tpe, loc)
 
       case Expression.Spawn(exp, tpe, loc) =>
@@ -287,20 +301,4 @@ object Inliner {
 
       case Expression.MatchError(_, _) => exp0
     }
-
-    // Visit every definition in the program.
-    val defs = root.defs.map {
-      case (sym, defn) => sym -> defn.copy(exp = visitExp(defn.exp, Map.empty))
-    }
-
-    // Reassemble the ast root.
-    val result = root.copy(defs = defs)
-
-    // Print the ast if debugging is enabled.
-    if (flix.options.debug) {
-      println(PrettyPrinter.Lifted.fmtRoot(result, Formatter.AnsiTerminalFormatter))
-    }
-
-    return result.toSuccess
-  }
 }
