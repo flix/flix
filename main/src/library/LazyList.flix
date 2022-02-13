@@ -198,16 +198,16 @@ namespace LazyList {
     }
 
     ///
-    /// Returns `true` if and only if `l` contains the element `a`.
+    /// Returns `true` if and only if `l` contains the element `x`.
     ///
-    /// Forces elements until `a` is found.
+    /// Forces elements until `x` is found.
     ///
     @Experimental
-    pub def memberOf(a: a, l: LazyList[a]): Bool with Eq[a] = match l {
-        case ENil         => false
-        case ECons(x, xs) => x == a or memberOf(a,       xs)
-        case LCons(x, xs) => x == a or memberOf(a, force xs)
-        case LList(xs)    =>           memberOf(a, force xs)
+    pub def memberOf(x: a, l: LazyList[a]): Bool with Eq[a] = match l {
+        case ENil          => false
+        case ECons(x1, xs) => x1 == x or memberOf(x,       xs)
+        case LCons(x1, xs) => x1 == x or memberOf(x, force xs)
+        case LList(xs)     =>            memberOf(x, force xs)
     }
 
     ///
@@ -304,18 +304,18 @@ namespace LazyList {
             LCons(b, lazy rangeHelper(b + 1, e))
 
     ///
-    /// Returns an infinite LazyList of repeating `a`s.
+    /// Returns an infinite LazyList of repeating `x`s.
     ///
     @Experimental @Lazy
-    pub def repeat(a: a): LazyList[a] =
-        LList(lazy repeatHelper(a))
+    pub def repeat(x: a): LazyList[a] =
+        LList(lazy repeatHelper(x))
 
     ///
     /// Helper function for `repeat`.
     ///
     @Lazy
-    def repeatHelper(a: a): LazyList[a] =
-        LCons(a, lazy repeatHelper(a))
+    def repeatHelper(x: a): LazyList[a] =
+        LCons(x, lazy repeatHelper(x))
 
     ///
     /// Returns an infinite sequence of integers starting from and including `n`.
@@ -543,16 +543,16 @@ namespace LazyList {
         map(e -> if (from.from == e) to.to else e, l)
 
     ///
-    /// Returns `l` with `a` inserted between every two adjacent elements.
+    /// Returns `l` with `x` inserted between every two adjacent elements.
     ///
     /// Forces the first element of the tail of `l` unless that tail is an `LList`.
     ///
     @Experimental @Lazy
-    pub def intersperse(a: a, l: LazyList[a]): LazyList[a] = match l {
-        case ENil          => ENil
-        case ECons(x, xs)  => if (isEmpty(      xs)) l else LCons(x, lazy LCons(a, lazy intersperse(a,       xs)))
-        case LCons(x, xs)  => if (isEmpty(force xs)) l else LCons(x, lazy LCons(a, lazy intersperse(a, force xs)))
-        case LList(xs)     => LList(lazy intersperse(a, force xs))
+    pub def intersperse(x: a, l: LazyList[a]): LazyList[a] = match l {
+        case ENil           => ENil
+        case ECons(x1, xs)  => if (isEmpty(      xs)) l else LCons(x1, lazy LCons(x, lazy intersperse(x,       xs)))
+        case LCons(x1, xs)  => if (isEmpty(force xs)) l else LCons(x1, lazy LCons(x, lazy intersperse(x, force xs)))
+        case LList(xs)      => LList(lazy intersperse(x, force xs))
     }
 
     ///
