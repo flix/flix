@@ -556,12 +556,12 @@ namespace DemandList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def joinWith(f: a -> String & ef, sep: String, l: DemandList[a, Forced]): String = {
+    pub def joinWith(f: a -> String & ef, sep: String, l: DemandList[a, Forced]): String & ef = {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
         foldLeft((_, x) -> { append!(sb, f(x)); append!(sb, sep) }, (), l);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
-    } as & Pure
+    } as & ef
 
 }

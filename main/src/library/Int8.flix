@@ -283,9 +283,9 @@ namespace Int8 {
     ///
     @Time(1) @Space(1)
     pub def fromString(s: String): Result[Int8, String] = try {
-        import java.lang.String.strip();
-        import static java.lang.Byte.parseByte(String);
-        Ok(s |> strip |> parseByte) as & Pure
+        import java.lang.String.strip(): String & Pure;
+        import static java.lang.Byte.parseByte(String): Int8 & Pure;
+        Ok(s |> strip |> parseByte)
     } catch {
         case _: ##java.lang.NumberFormatException => Err("Int8.fromString")
     }
@@ -297,9 +297,9 @@ namespace Int8 {
     ///
     @Time(1) @Space(1)
     pub def toInt16(x: Int8): Int16 =
-        import static java.lang.Byte.valueOf(Int8);
-        import java.lang.Byte.shortValue();
-        (valueOf(x) |> shortValue) as & Pure
+        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte & Pure;
+        import java.lang.Byte.shortValue(): Int16 & Pure;
+        (valueOf(x) |> shortValue)
 
     ///
     /// Convert `x` to an Int32.
@@ -308,9 +308,9 @@ namespace Int8 {
     ///
     @Time(1) @Space(1)
     pub def toInt32(x: Int8): Int32 =
-        import static java.lang.Byte.valueOf(Int8);
-        import java.lang.Byte.intValue();
-        (valueOf(x) |> intValue) as & Pure
+        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte & Pure;
+        import java.lang.Byte.intValue(): Int32 & Pure;
+        (valueOf(x) |> intValue)
 
     ///
     /// Convert `x` to an Int64.
@@ -319,9 +319,9 @@ namespace Int8 {
     ///
     @Time(1) @Space(1)
     pub def toInt64(x: Int8): Int64 =
-        import static java.lang.Byte.valueOf(Int8);
-        import java.lang.Byte.longValue();
-        (valueOf(x) |> longValue) as & Pure
+        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte & Pure;
+        import java.lang.Byte.longValue(): Int64 & Pure;
+        (valueOf(x) |> longValue)
 
     ///
     /// Convert `x` to a BigInt.
@@ -330,10 +330,10 @@ namespace Int8 {
     ///
     @Time(1) @Space(1)
     pub def toBigInt(x: Int8): BigInt =
-        import static java.lang.Byte.valueOf(Int8) as i8ValueOf;
-        import java.lang.Byte.longValue();
-        import static java.math.BigInteger.valueOf(Int64) as asBigInt;
-        (i8ValueOf(x) |> longValue |> asBigInt) as & Pure
+        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte & Pure as i8ValueOf;
+        import java.lang.Byte.longValue(): Int64 & Pure;
+        import static java.math.BigInteger.valueOf(Int64): BigInt & Pure as asBigInt;
+        (i8ValueOf(x) |> longValue |> asBigInt)
 
     ///
     /// Convert `x` to a Float32.
@@ -342,9 +342,9 @@ namespace Int8 {
     ///
     @Time(1) @Space(1)
     pub def toFloat32(x: Int8): Float32 =
-        import static java.lang.Byte.valueOf(Int8);
-        import java.lang.Byte.floatValue();
-        (valueOf(x) |> floatValue) as & Pure
+        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte & Pure;
+        import java.lang.Byte.floatValue(): Float32 & Pure;
+        (valueOf(x) |> floatValue)
 
     ///
     /// Convert `x` to a Float64.
@@ -353,8 +353,8 @@ namespace Int8 {
     ///
     @Time(1) @Space(1)
     pub def toFloat64(x: Int8): Float64 =
-        import static java.lang.Byte.valueOf(Int8);
-        import java.lang.Byte.doubleValue();
-        (valueOf(x) |> doubleValue) as & Pure
+        import static java.lang.Byte.valueOf(Int8): ##java.lang.Byte & Pure;
+        import java.lang.Byte.doubleValue(): Float64 & Pure;
+        (valueOf(x) |> doubleValue)
 
 }

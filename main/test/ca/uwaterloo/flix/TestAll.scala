@@ -25,11 +25,11 @@ import org.scalatest.Suites
 
 class TestAll extends Suites(
   new LangSuite,
+  new ExampleSuite,
   new LanguageSuite,
   new LibrarySuite,
   new ToolsSuite,
   new UtilSuite,
   new TestMain,
-  new TestExamples,
   new TestTutorials
 )

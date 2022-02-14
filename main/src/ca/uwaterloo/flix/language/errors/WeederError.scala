@@ -200,6 +200,30 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that a negative atom is marked as fixed.
+    *
+    * @param loc the location where the illegal fixed atom occurs.
+    */
+  case class IllegalFixedAtom(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal fixed atom"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |
+         |>> Illegal fixed atom. A negative atom is implicitly fixed.
+         |
+         |${code(loc, "Illegal fixed atom.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate that the formal parameter lacks a type declaration.
     *
     * @param name the name of the parameter.
@@ -678,8 +702,8 @@ object WeederError {
     * An error raised to indicate that a newly defined type (or alias) has a
     * pre-defined name.
     *
-    * @param ident  the name that conflicts.
-    * @param loc    the location where the error occurred.
+    * @param ident the name that conflicts.
+    * @param loc   the location where the error occurred.
     */
   case class ReservedTypeName(ident: Name.Ident, loc: SourceLocation) extends WeederError {
     def summary: String = "Re-definition of a pre-defined type name."

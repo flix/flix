@@ -116,9 +116,9 @@ namespace Console {
     /// Returns `hexNo` as a hex number.
     ///
     def stringToHex(hexNo: String): Option[Int32] & Pure =
-        import static java.lang.Integer.parseInt(String, Int32);
+        import static java.lang.Integer.parseInt(String, Int32): Int32 & Pure;
         try {
-            Some(parseInt(hexNo, 16)) as & Pure
+            Some(parseInt(hexNo, 16))
         } catch {
             case _: ##java.lang.NumberFormatException =>
                 None as Option[Int32]

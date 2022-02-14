@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.Polarity
-
 import scala.collection.immutable.Seq
 
 object ParsedAst {
@@ -999,7 +997,7 @@ object ParsedAst {
       * @param whereExp the optional guard of the pseudo-rule.
       * @param sp2      the position of the last character in the expression.
       */
-    case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: ParsedAst.SelectFragment, from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: Seq[ParsedAst.Expression], from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Reify Expression.
@@ -1205,12 +1203,13 @@ object ParsedAst {
         *
         * @param sp1      the position of the first character in the predicate.
         * @param polarity the polarity of the predicate (positive/negative).
+        * @param fixity   the fixity of the predicate (loose/fixed).
         * @param ident    the name of the predicate.
         * @param terms    the terms of the predicate.
         * @param term     the optional lattice term (if applicable).
         * @param sp2      the position of the last character in the predicate.
         */
-      case class Atom(sp1: SourcePosition, polarity: Polarity, ident: Name.Ident, terms: Seq[ParsedAst.Pattern], term: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Atom(sp1: SourcePosition, polarity: Ast.Polarity, fixity: Ast.Fixity, ident: Name.Ident, terms: Seq[ParsedAst.Pattern], term: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Guard Predicate.
@@ -1234,14 +1233,6 @@ object ParsedAst {
     }
 
   }
-
-  /**
-    * Represents a select fragment in a query expression.
-    *
-    * @param exps the list of terms.
-    * @param exp  the optional lattice term.
-    */
-  case class SelectFragment(exps: Seq[Expression], exp: Option[Expression])
 
   /**
     * Types.

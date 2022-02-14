@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
@@ -37,6 +37,9 @@ import scala.annotation.tailrec
   * head predicate p and a negated subgoal with predicate q, there is
   * no path in the dependency graph from p to q" -- Ullman 132
   *
+  * A negated subgoal is generalized here to a subgoal that is negated
+  * or fixed, collectively called a strong dependency.
+  *
   * Reports a [[StratificationError]] if the constraints cannot be stratified.
   */
 object Stratifier {
@@ -45,24 +48,38 @@ object Stratifier {
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Stratifier") {
     // Compute an over-approximation of the dependency graph for all constraints in the program.
-    val g = flix.subphase("Compute Dependency Graph") {
-      ParOps.parAgg(root.defs, LabelledGraph.empty)({
-        case (acc, (_, decl)) => acc + labelledGraphOfDef(decl)
+    val g = flix.subphase("Compute Global Dependency Graph") {
+      val defs = root.defs.values.toList
+      val instanceDefs = root.instances.values.flatten.flatMap(_.defs)
+      ParOps.parAgg(defs ++ instanceDefs, LabelledGraph.empty)({
+        case (acc, d) => acc + labelledGraphOfDef(d)
       }, _ + _)
     }
 
     // Compute the stratification at every datalog expression in the ast.
-    val defsVal = flix.subphase("Compute Stratification") {
+    val newDefs = flix.subphase("Stratify Defs") {
       val result = ParOps.parMap(root.defs)(kv => visitDef(kv._2)(g, flix).map(d => kv._1 -> d))
       Validation.sequence(result)
     }
+    val newInstances = flix.subphase("Stratify Instance Defs") {
+      val result = ParOps.parMap(root.instances) {
+        case (sym, is) =>
+          val x = traverse(is)(i => visitInstance(i)(g, flix))
+          x.map(d => sym -> d)
+      }
+      Validation.sequence(result)
+    }
 
-    // TODO: JLS: Must also visit instances.
-
-    mapN(defsVal) {
-      case ds => root.copy(defs = ds.toMap)
+    mapN(newDefs, newInstances) {
+      case (ds, is) => root.copy(defs = ds.toMap, instances = is.toMap)
     }
   }
+
+  /**
+    * Performs Stratification of the given instance `i0`.
+    */
+  private def visitInstance(i0: TypedAst.Instance)(implicit g: LabelledGraph, flix: Flix):Validation[TypedAst.Instance, CompilationMessage] =
+    traverse(i0.defs)(d => visitDef(d)).map(ds => i0.copy(defs = ds))
 
   /**
     * Performs stratification of the given definition `def0`.
@@ -415,7 +432,7 @@ object Stratifier {
       * Returns `true` if the body predicate is negated.
       */
     def isNegative(p: Predicate.Body): Boolean = p match {
-      case Predicate.Body.Atom(_, _, Polarity.Negative, _, _, _) => true
+      case Predicate.Body.Atom(_, _, Polarity.Negative, _, _, _, _) => true
       case _ => false
     }
 
@@ -714,7 +731,7 @@ object Stratifier {
 
       // We add all body predicates and the head to the labels of each edge
       val bodyLabels: Vector[Label] = body0.collect {
-        case Body.Atom(bodyPred, den, _, _, bodyTpe, _) =>
+        case Body.Atom(bodyPred, den, _, _, _, bodyTpe, _) =>
           val terms = termTypes(bodyTpe)
           Label(bodyPred, den, terms.length, terms)
       }.toVector
@@ -723,8 +740,8 @@ object Stratifier {
 
       val edges = body0.foldLeft(Vector.empty[LabelledEdge]) {
         case (edges, body) => body match {
-          case Body.Atom(bodyPred, _, p, _, _, bodyLoc) =>
-            edges :+ LabelledEdge(headPred, p, labels, bodyPred, bodyLoc)
+          case Body.Atom(bodyPred, _, p, f, _, _, bodyLoc) =>
+            edges :+ LabelledEdge(headPred, p, f, labels, bodyPred, bodyLoc)
           case Body.Guard(_, _) => edges
           case Body.Loop(_, _, _) => edges
         }
@@ -761,13 +778,18 @@ object Stratifier {
 
   /**
     * Computes the dependency graph from the labelled graph, throwing the labels away.
+    * If a labelled edge is either negative or fixed it is transformed to a strong edge.
     */
   private def labelledGraphToDependencyGraph(g: LabelledGraph): UllmansAlgorithm.DependencyGraph =
     g.edges.map {
-      case LabelledEdge(head, Polarity.Positive, _, body, loc) =>
-        UllmansAlgorithm.DependencyEdge.Positive(head, body, loc)
-      case LabelledEdge(head, Polarity.Negative, _, body, loc) =>
-        UllmansAlgorithm.DependencyEdge.Negative(head, body, loc)
+      case LabelledEdge(head, Polarity.Positive, Fixity.Loose, _, body, loc) =>
+        // Positive, loose edges require that the strata of the head is equal to,
+        // or below, the strata of the body hence a weak edge.
+        UllmansAlgorithm.DependencyEdge.Weak(head, body, loc)
+      case LabelledEdge(head, _, _, _, body, loc) =>
+        // Edges that are either negatively bound or fixed are strong since they require
+        // that the strata of the head is strictly higher than the strata of the body.
+        UllmansAlgorithm.DependencyEdge.Strong(head, body, loc)
     }.toSet
 
 }

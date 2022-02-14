@@ -1089,10 +1089,10 @@ object Resolver {
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
       def resolve(b0: NamedAst.Predicate.Body, tenv0: Map[Symbol.VarSym, Type], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Atom(pred, den, polarity, terms, loc) =>
+        case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
           for {
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, root))
-          } yield ResolvedAst.Predicate.Body.Atom(pred, den, polarity, ts, loc)
+          } yield ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
 
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
           for {

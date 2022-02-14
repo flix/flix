@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Magnus Madsen
+ * Copyright 2022 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix
+package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.util.{FlixSuite, Options}
-
-class TestTutorials extends FlixSuite(incremental = true) {
-  mkTestDir("main/src/tutorials/")(Options.TestWithLibAll)
-}
+/**
+  * A case class to track the compile time spent in a phase and its sub-phases.
+  */
+case class PhaseTime(phase: String, time: Long, subphases: List[(String, Long)])
