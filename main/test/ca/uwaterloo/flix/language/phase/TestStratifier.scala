@@ -197,13 +197,41 @@ class TestStratifier extends FunSuite with TestUtils {
     val input =
       """
         |pub def f(): #{A(String), B(String), C(String), T(String)} = #{
-        |  T("heu").
+        |  T("hey").
         |  A(c: String) :- not B(c), T(c).
         |  B(c: String) :- fix C(c).
         |  C(c: String) :- A(c).
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
+    expectError[StratificationError](result)
+  }
+
+  test("Stratification.13") {
+    val input =
+      """
+        |pub def f(): #{A(String), B(String), C(String; Int32), T(String)} = #{
+        |  T("hey").
+        |  A(c: String) :- fix B(c), T(c).
+        |  B(c: String) :- fix C(c; 12).
+        |  C(c: String; 12) :- A(c).
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[StratificationError](result)
+  }
+
+  test("Stratification.14") {
+    val input =
+      """
+        |pub def f(): #{A(String, Int32), B(String; Int32), C(String, Int32), D(String; Int32)} = #{
+        |  A(c: String, x: Int32) :- fix B(c; x).
+        |  B(c; x) :- C(c, x).
+        |  C(c, x) :- fix D(c; x).
+        |  D(c; x) :- B(c; x).
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
     expectError[StratificationError](result)
   }
 
