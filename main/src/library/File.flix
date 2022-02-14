@@ -30,17 +30,11 @@ namespace File {
     ///
     pub def accessTime(f: String): Result[Int64, String] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.toPath();
-            import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption]);
-            import static java.lang.Class.forName(String);
+            use Result.flatMap;
             import java.nio.file.attribute.BasicFileAttributes.lastAccessTime();
             import java.nio.file.attribute.FileTime.toMillis();
 
-            let javaFile = newFile(f);
-            let javaPath = toPath(javaFile);
-            let classOfAttributes = forName("java.nio.file.attribute.BasicFileAttributes");
-            let fileAttributes = readAttributes(javaPath, classOfAttributes, []);
+            let* fileAttributes = getAttributes(f);
             let timeLastAccess = lastAccessTime(fileAttributes);
             let inMilliSec = toMillis(timeLastAccess);
 
@@ -56,17 +50,11 @@ namespace File {
     ///
     pub def creationTime(f: String): Result[Int64, String] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.toPath();
-            import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption]);
-            import static java.lang.Class.forName(String);
+            use Result.flatMap;
             import java.nio.file.attribute.BasicFileAttributes.creationTime();
             import java.nio.file.attribute.FileTime.toMillis();
 
-            let javaFile = newFile(f);
-            let javaPath = toPath(javaFile);
-            let classOfAttributes = forName("java.nio.file.attribute.BasicFileAttributes");
-            let fileAttributes = readAttributes(javaPath, classOfAttributes, []);
+            let* fileAttributes = getAttributes(f);
             let timeCreated = creationTime(fileAttributes);
             let inMilliSec = toMillis(timeCreated);
 
@@ -82,17 +70,11 @@ namespace File {
     ///
     pub def modificationTime(f: String): Result[Int64, String] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.toPath();
-            import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption]);
-            import static java.lang.Class.forName(String);
+            use Result.flatMap;
             import java.nio.file.attribute.BasicFileAttributes.lastModifiedTime();
             import java.nio.file.attribute.FileTime.toMillis();
 
-            let javaFile = newFile(f);
-            let javaPath = toPath(javaFile);
-            let classOfAttributes = forName("java.nio.file.attribute.BasicFileAttributes");
-            let fileAttributes = readAttributes(javaPath, classOfAttributes, []);
+            let* fileAttributes = getAttributes(f);
             let timeLastModified = lastModifiedTime(fileAttributes);
             let inMilliSec = toMillis(timeLastModified);
 
@@ -107,25 +89,40 @@ namespace File {
     /// Returns the size of the given file `f` in bytes.
     ///
     pub def size(f: String): Result[Int64, String] & Impure =
-       try {
-           import new java.io.File(String) as newFile;
-           import java.io.File.toPath();
-           import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption]);
-           import static java.lang.Class.forName(String);
-           import java.nio.file.attribute.BasicFileAttributes.size();
+        try {
+            use Result.flatMap;
+            import java.nio.file.attribute.BasicFileAttributes.size();
 
-           let javaFile = newFile(f);
-           let javaPath = toPath(javaFile);
-           let classOfAttributes = forName("java.nio.file.attribute.BasicFileAttributes");
-           let fileAttributes = readAttributes(javaPath, classOfAttributes, []);
-           let fileSize = size(fileAttributes);
+            let* fileAttributes = getAttributes(f);
+            let fileSize = size(fileAttributes);
 
-           Ok(fileSize)
-       } catch {
-           case ex: ##java.io.IOException =>
-               import java.lang.Throwable.getMessage();
-               Err(getMessage(ex))
-       }
+            Ok(fileSize)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns the BacisFileAttributes of the file `f`.
+    ///
+    def getAttributes(f: String): Result[##java.nio.file.attribute.BasicFileAttributes, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption]);
+            import static java.lang.Class.forName(String);
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let classOfAttributes = forName("java.nio.file.attribute.BasicFileAttributes");
+
+            Ok(readAttributes(javaPath, classOfAttributes, []))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
 
     ///
     /// Returns the type of the given file `f`.
