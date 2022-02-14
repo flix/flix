@@ -145,7 +145,7 @@ namespace File {
     ///
     /// Statistical information for a file.
     ///
-    type alias StatInfo = {
+    pub type alias StatInfo = {
         accessTime       :: Int64,
         creationTime     :: Int64,
         modificationTime :: Int64,
