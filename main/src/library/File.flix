@@ -137,19 +137,10 @@ namespace File {
         let* isDirec = File.isDirectory(f);
         let* isSymLink = File.isSymbolicLink(f);
 
-        if(isFile) {
-            Ok(FileType.File)
-        } else {
-            if(isDirec) {
-                Ok(FileType.Directory)
-            } else {
-                if(isSymLink) {
-                    Ok(FileType.SymLink)
-                } else {
-                    Ok(Other)
-                }
-            }
-        }
+        if (isFile)         Ok(FileType.File)
+        else if (isDirec)   Ok(FileType.Directory)
+        else if (isSymLink) Ok(FileType.SymLink)
+        else                Ok(FileType.Other)
 
     ///
     /// Statistical information for a file.
