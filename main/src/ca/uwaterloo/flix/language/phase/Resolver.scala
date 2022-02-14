@@ -320,7 +320,7 @@ object Resolver {
   }
 
   /**
-    * Performs kinding on the all the definitions in the given root.
+    * Resolves all the definitions in the given root.
     */
   private def resolveDefs(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, ResolvedAst.Def], ResolutionError] = {
     def getDef(defOrSig: NamedAst.DefOrSig): Option[NamedAst.Def] = defOrSig match {
