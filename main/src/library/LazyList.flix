@@ -1114,17 +1114,13 @@ namespace LazyList {
     ///
     @Experimental
     pub def toList(l: LazyList[a]): List[a] =
-        toListAcc(l, identity)
-
-    ///
-    /// Helper function for `toList`.
-    ///
-    def toListAcc(l: LazyList[a], k: List[a] -> List[a]): List[a] = match l {
-        case ENil         => k(Nil)
-        case ECons(x, xs) => toListAcc(      xs, ks -> k(x :: ks))
-        case LCons(x, xs) => toListAcc(force xs, ks -> k(x :: ks))
-        case LList(xs)    => toListAcc(force xs,       k)
-    }
+        def loop(ll, k) = match ll {
+            case ENil         => k(Nil)
+            case ECons(x, xs) => loop(      xs, ks -> k(x :: ks))
+            case LCons(x, xs) => loop(force xs, ks -> k(x :: ks))
+            case LList(xs)    => loop(force xs, k)
+        };
+        loop(l, identity)
 
     ///
     /// Returns the association list `l` as a map.
@@ -1136,17 +1132,13 @@ namespace LazyList {
     ///
     @Experimental
     pub def toMap(l: LazyList[(a, b)]): Map[a, b] with Order[a] =
-        toMapAcc(l, Map.empty())
-
-    ///
-    /// Helper functions for `toMap`.
-    ///
-    def toMapAcc(l: LazyList[(a, b)], acc: Map[a, b]): Map[a, b] with Order[a] = match l {
-        case ENil              => acc
-        case ECons((k, v), xs) => toMapAcc(      xs, Map.insert(k, v, acc))
-        case LCons((k, v), xs) => toMapAcc(force xs, Map.insert(k, v, acc))
-        case LList(xs)         => toMapAcc(force xs, acc)
-    }
+        def loop(ll, acc) = match ll {
+            case ENil              => acc
+            case ECons((k, v), xs) => loop(      xs, Map.insert(k, v, acc))
+            case LCons((k, v), xs) => loop(force xs, Map.insert(k, v, acc))
+            case LList(xs)         => loop(force xs, acc)
+        };
+        loop(l, Map.empty())
 
     ///
     /// Returns `l` as a `Set`.
@@ -1155,15 +1147,12 @@ namespace LazyList {
     ///
     @Experimental
     pub def toSet(l: LazyList[a]): Set[a] with Order[a] =
-        toSetAcc(l, Set.empty())
+        def loop(ll, acc) = match ll {
+            case ENil         => acc
+            case ECons(x, xs) => loop(      xs, Set.insert(x, acc))
+            case LCons(x, xs) => loop(force xs, Set.insert(x, acc))
+            case LList(xs)    => loop(force xs, acc)
+        };
+        loop(l, Set.empty())
 
-    ///
-    /// Helper functions for `toSet`.
-    ///
-    def toSetAcc(l: LazyList[a], acc: Set[a]): Set[a] with Order[a] = match l {
-        case ENil         => acc
-        case ECons(x, xs) => toSetAcc(      xs, Set.insert(x, acc))
-        case LCons(x, xs) => toSetAcc(force xs, Set.insert(x, acc))
-        case LList(xs)    => toSetAcc(force xs, acc)
-    }
 }
