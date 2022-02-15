@@ -132,7 +132,7 @@ object Monomorph {
     *
     * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
     */
-  private type DefQueue = mutable.Queue[(Symbol.DefnSym, Def, StrictSubstitution)]
+  private type DefQueue = mutable.Set[(Symbol.DefnSym, Def, StrictSubstitution)]
 
   /**
     * A function-local map from a symbol and a concrete type to the fresh symbol for the specialized version of that function.
@@ -154,7 +154,7 @@ object Monomorph {
 
     implicit val r: Root = root
 
-    val defQueue: DefQueue = mutable.Queue.empty
+    val defQueue: DefQueue = mutable.Set.empty
 
     val def2def: Def2Def = mutable.Map.empty
 
@@ -194,7 +194,9 @@ object Monomorph {
        */
       while (defQueue.nonEmpty) {
         // Extract a function from the queue and specializes it w.r.t. its substitution.
-        val (freshSym, defn, subst) = defQueue.dequeue()
+        val elm = defQueue.head
+        defQueue -= elm
+        val (freshSym, defn, subst) = elm
 
         flix.subtask(freshSym.toString, sample = true)
 
@@ -731,7 +733,7 @@ object Monomorph {
         def2def.put((defn.sym, tpe), freshSym)
 
         // Enqueue the fresh symbol with the definition and substitution.
-        defQueue.enqueue((freshSym, defn, subst))
+        defQueue += ((freshSym, defn, subst))
 
         // Now simply refer to the freshly generated symbol.
         freshSym
