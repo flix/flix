@@ -199,32 +199,28 @@ object UllmansAlgorithm {
       unrollHelper(from, Nil).reverse
     }
 
+    // For each strong edge, `x -> y`, in `edges` it is checked if `y` can
+    // reach `x`. The first such cycle is returned. If none are found, an
+    // `InternalCompilerException` is thrown.
+    @tailrec
+    def checkCycles(edges: List[DependencyEdge]): List[(Name.Pred, SourceLocation)] = edges match {
+      case edge :: next => edge match {
+        case DependencyEdge.Weak(_, _, _) => checkCycles(next)
+        case DependencyEdge.Strong(head, body, loc) =>
+          bfs(head, body) match {
+            case None => checkCycles(next)
+            case Some(pred) =>
+              // we found a cycle and can report it
+              (body, loc) :: unroll(body, head, pred) ::: (body, loc) :: Nil
+          }
+      }
+      case Nil => throw InternalCompilerException("Stratification error without a strong cycle")
+    }
+
     // We do not know where the cycle is but often it includes the edge
     // `firstCheck` since that edge brought ullman over the limit so
     // we try to find that cycle first and then check every other strong edge.
-    bfs(firstCheck.head, firstCheck.body) match {
-      case Some(pred) =>
-        // we found a cycle and can report it
-        val DependencyEdge.Strong(head, body, loc) = firstCheck
-        (body, loc) :: unroll(body, head, pred) ::: (body, loc) :: Nil
-      case None =>
-        // `firstCheck` is not a part of a cycle to we check the same
-        // for all strong edges.
-        // TODO: The strong cycle can reach `firstcheck.head` so we could
-        //       only check edges that are reachable from `src` in the
-        //       transposed graph.
-        for (edge <- g) edge match {
-          case DependencyEdge.Weak(_, _, _) => ()
-          case DependencyEdge.Strong(head, body, loc) =>
-            bfs(head, body) match {
-              case Some(pred) =>
-                return (body, loc) :: unroll(body, head, pred) ::: (body, loc) :: Nil
-              case None => ()
-            }
-        }
-        throw InternalCompilerException("Stratification error without a strong cycle")
-
-    }
+    checkCycles(firstCheck :: g.toList)
   }
 
 }
