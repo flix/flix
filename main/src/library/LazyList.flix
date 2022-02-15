@@ -1023,7 +1023,7 @@ namespace LazyList {
                     case None    => loop(xs)
                     case Some(v) => LCons(v, lazy loop(xs))
                 }
-            case LCons(x, xs) =>
+            case LCons(x, xs) => // Same as above except `xs` is forced.
                 match f(x) {
                     case None    => loop(force xs)
                     case Some(v) => LCons(v, lazy loop(force xs))
@@ -1044,7 +1044,7 @@ namespace LazyList {
                 case None    => loop(xs, k)
                 case Some(v) => loop(xs, ks -> k(ECons(v, ks)))
             }
-            case LCons(x, xs) => match f(x) {
+            case LCons(x, xs) => match f(x) { // Same as above except `xs` is forced.
                 case None    => loop(force xs, k)
                 case Some(v) => loop(force xs, ks -> k(ECons(v, ks)))
             }
@@ -1060,18 +1060,20 @@ namespace LazyList {
     /// Forces elements of `l` until `f(x)` returns `Some(v)`.
     ///
     @Experimental
-    pub def findMap(f: a -> Option[b] & ef, l: LazyList[a]): Option[b] & ef = match l {
-        case ENil         => None
-        case ECons(x, xs) => match f(x) {
-            case None    => findMap(f, xs)
-            case Some(v) => Some(v)
-        }
-        case LCons(x, xs) => match f(x) {
-            case None    => findMap(f, force xs)
-            case Some(v) => Some(v)
-        }
-        case LList(xs)    => findMap(f, force xs)
-    }
+    pub def findMap(f: a -> Option[b] & ef, l: LazyList[a]): Option[b] & ef =
+        def loop(ll) = match ll {
+            case ENil         => None
+            case ECons(x, xs) => match f(x) {
+                case None    => loop(xs)
+                case Some(v) => Some(v)
+            }
+            case LCons(x, xs) => match f(x) { // Same as above except `xs` is forced.
+                case None    => loop(force xs)
+                case Some(v) => Some(v)
+            }
+            case LList(xs) => loop(force xs)
+        };
+        loop(l)
 
     ///
     /// Returns `l` as an `Array`.
