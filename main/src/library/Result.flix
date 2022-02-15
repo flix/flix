@@ -468,8 +468,8 @@ namespace Result {
             Ok(f())
         } catch {
             case e: ##java.lang.RuntimeException =>
-                import java.lang.Throwable.getMessage();
-                Err(getMessage(e)) as & Pure
+                import java.lang.Throwable.getMessage(): String & Pure;
+                Err(getMessage(e))
         }
 
 }
