@@ -137,9 +137,9 @@ pub def println(x: a): Unit & Impure with ToString[a] =
 ///
 pub def bug!(m: String): a =
     let f = () -> {
-        import static get java.lang.System.err as getErr;
-        import java.io.PrintStream.println(String);
-        import java.lang.String.repeat(Int32);
+        import static get java.lang.System.err: ##java.io.PrintStream & Pure as getErr;
+        import java.io.PrintStream.println(String): Unit & Impure;
+        import java.lang.String.repeat(Int32): ##java.lang.String & Pure;
         let prt = println(getErr());
         prt(repeat("*", 80));
         prt("**") ;
