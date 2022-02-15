@@ -744,20 +744,18 @@ namespace LazyList {
     @Experimental
     pub def partition(f: a -> Bool & ef, l: LazyList[a]): (LazyList[a], LazyList[a]) & ef =
         def loop(ll, k) = match ll {
-            case ENil         =>
-                let r = k({ left = ENil, right = ENil });
-                (r.left, r.right)
+            case ENil         => k((ENil, ENil))
             case ECons(x, xs) =>
                 if (f(x))
-                    loop(xs, ks -> k({ left = ECons(x, ks.left), right = ks.right }))
+                    loop(xs, match (ks, ls) -> k((ECons(x, ks), ls)))
                 else
-                    loop(xs, ks -> k({ left = ks.left, right = ECons(x, ks.right) }))
-            case LCons(x, xs) =>
+                    loop(xs, match (ks, ls) -> k((ks, ECons(x, ls))))
+            case LCons(x, xs) => // Same as above except `xs` is forced.
                 if (f(x))
-                    loop(force xs, ks -> k({ left = ECons(x, ks.left), right = ks.right }))
+                    loop(force xs, match (ks, ls) -> k((ECons(x, ks), ls)))
                 else
-                    loop(force xs, ks -> k({ left = ks.left, right = ECons(x, ks.right) }))
-            case LList(xs)    => loop(force xs, k)
+                    loop(force xs, match (ks, ls) -> k((ks, ECons(x, ls))))
+            case LList(xs) => loop(force xs, k)
         };
         loop(l, identity)
 
