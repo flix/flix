@@ -831,22 +831,18 @@ namespace LazyList {
     ///
     @Experimental @Lazy
     pub def drop(n: Int32, l: LazyList[a]): LazyList[a] =
-        LList(lazy dropHelper(n, l))
-
-    ///
-    /// Helper function for `drop`.
-    ///
-    @Lazy
-    def dropHelper(n: Int32, l: LazyList[a]): LazyList[a] =
-        if (n < 1)
-            l
-        else
-            match l {
-                case ENil         => l
-                case ECons(_, xs) => LList(lazy dropHelper(n - 1,       xs))
-                case LCons(_, xs) => LList(lazy dropHelper(n - 1, force xs))
-                case LList(xs)    => LList(lazy dropHelper(n,     force xs))
-            }
+        def loop(i, ll) = {
+            if (i < 1)
+                ll
+            else
+                match ll {
+                    case ENil         => ll
+                    case ECons(_, xs) => loop(i - 1,       xs)
+                    case LCons(_, xs) => loop(i - 1, force xs)
+                    case LList(xs)    => loop(i,     force xs)
+                }
+        };
+        LList(lazy loop(n, l))
 
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
