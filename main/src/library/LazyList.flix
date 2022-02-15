@@ -992,7 +992,7 @@ namespace LazyList {
     ///
     @Experimental @LazyWhenPure
     pub def zipWith(f: (a, b) -> c & ef, l1: LazyList[a], l2: LazyList[b]): LazyList[c] & ef =
-        map((x) -> f(fst(x), snd(x)), zip(l1, l2))
+        map(x -> f(fst(x), snd(x)), zip(l1, l2))
 
     ///
     /// Collects the results of applying the partial function `f` to every element in `l`.
