@@ -148,6 +148,20 @@ object Monomorph {
   private type Def2Def = mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym]
 
   /**
+    * Enqueues the element `x` in `xs`.
+    */
+  private def enqueue[A](x: A, xs: mutable.Set[A]): Unit = xs += x
+
+  /**
+    * Dequeues an element from a non-empty `xs`.
+    */
+  private def dequeue[A](xs: mutable.Set[A]): A = {
+    val elm = xs.head
+    xs -= elm
+    elm
+  }
+
+  /**
     * Performs monomorphization of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Monomorph") {
@@ -194,9 +208,7 @@ object Monomorph {
        */
       while (defQueue.nonEmpty) {
         // Extract a function from the queue and specializes it w.r.t. its substitution.
-        val elm = defQueue.head
-        defQueue -= elm
-        val (freshSym, defn, subst) = elm
+        val (freshSym, defn, subst) = dequeue(defQueue)
 
         flix.subtask(freshSym.toString, sample = true)
 
@@ -733,7 +745,7 @@ object Monomorph {
         def2def.put((defn.sym, tpe), freshSym)
 
         // Enqueue the fresh symbol with the definition and substitution.
-        defQueue += ((freshSym, defn, subst))
+        enqueue((freshSym, defn, subst), defQueue)
 
         // Now simply refer to the freshly generated symbol.
         freshSym
