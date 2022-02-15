@@ -800,4 +800,15 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+    ///
+    /// Returns `true` if the directory `d` was created.
+    ///
+    pub def mkdir(d: String): Result[Bool, String] = ???
+
+    ///
+    /// Returns `true` if the directory was created, along with all necessary parent directories.
+    ///
+    pub def mkdirs(d: String): Result[Bool, String] = ???
+
+
 }
