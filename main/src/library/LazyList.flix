@@ -866,30 +866,27 @@ namespace LazyList {
     ///
     @Lazy
     def dropWhileL(f: a -> Bool, l: LazyList[a]): LazyList[a] =
-        LList(lazy dropWhileLHelper(f, l))
-
-    ///
-    /// Helper function for `dropWhileL`.
-    ///
-    @Lazy
-    def dropWhileLHelper(f: a -> Bool, l: LazyList[a]): LazyList[a] = match l {
-        case ENil         => ENil
-        case ECons(x, xs) => if (f(x)) LList(lazy dropWhileLHelper(f,       xs)) else l
-        case LCons(x, xs) => if (f(x)) LList(lazy dropWhileLHelper(f, force xs)) else l
-        case LList(xs)    => LList(lazy dropWhileLHelper(f, force xs))
-    }
+        def loop(ll) = match ll {
+            case ENil         => ENil
+            case ECons(x, xs) => if (f(x)) loop(      xs) else ll
+            case LCons(x, xs) => if (f(x)) loop(force xs) else ll
+            case LList(xs)    => loop(force xs)
+        };
+        LList(lazy loop(l))
 
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///
     /// Applies `f` eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
-    def dropWhileE(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef = match l {
-        case ENil         => ENil
-        case ECons(x, xs) => if (f(x)) dropWhileE(f,       xs) else l
-        case LCons(x, xs) => if (f(x)) dropWhileE(f, force xs) else l
-        case LList(xs)    => dropWhileE(f, force xs)
-    }
+    def dropWhileE(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
+        def loop(ll) = match ll {
+            case ENil         => ENil
+            case ECons(x, xs) => if (f(x)) loop(      xs) else ll
+            case LCons(x, xs) => if (f(x)) loop(force xs) else ll
+            case LList(xs)    => loop(force xs)
+        };
+        loop(l)
 
     ///
     /// Returns the first `n` elements of `l`.
@@ -898,22 +895,18 @@ namespace LazyList {
     ///
     @Experimental @Lazy
     pub def take(n: Int32, l: LazyList[a]): LazyList[a] =
-        LList(lazy takeHelper(n, l))
-
-    ///
-    /// Helper function for `take`.
-    ///
-    @Lazy
-    def takeHelper(n: Int32, l: LazyList[a]): LazyList[a] =
-        if (n <= 0)
-            ENil
-        else
-            match l {
-                case ENil         => ENil
-                case ECons(x, xs) => LCons(x, lazy takeHelper(n - 1,       xs))
-                case LCons(x, xs) => LCons(x, lazy takeHelper(n - 1, force xs))
-                case LList(xs)    => LList(   lazy takeHelper(n,     force xs))
-            }
+        def loop(i, ll) = {
+            if (i <= 0)
+                ENil
+            else
+                match ll {
+                    case ENil         => ENil
+                    case ECons(x, xs) => LCons(x, lazy loop(i - 1,       xs))
+                    case LCons(x, xs) => LCons(x, lazy loop(i - 1, force xs))
+                    case LList(xs)    => loop(i, force xs)
+                }
+        };
+        LList(lazy loop(n, l))
 
     ///
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
@@ -937,18 +930,13 @@ namespace LazyList {
     ///
     @Lazy
     def takeWhileL(f: a -> Bool, l: LazyList[a]): LazyList[a] =
-        LList(lazy takeWhileLHelper(f, l))
-
-    ///
-    /// Helper function for `takeWhileL`.
-    ///
-    @Lazy
-    def takeWhileLHelper(f: a -> Bool, l: LazyList[a]): LazyList[a] = match l {
-        case ENil         => ENil
-        case ECons(x, xs) => if (f(x)) LCons(x, lazy takeWhileL(f,       xs)) else ENil
-        case LCons(x, xs) => if (f(x)) LCons(x, lazy takeWhileL(f, force xs)) else ENil
-        case LList(xs)    => LList(lazy takeWhileL(f, force xs))
-    }
+        def loop(ll) = match ll {
+            case ENil         => ENil
+            case ECons(x, xs) => if (f(x)) LCons(x, lazy loop(      xs)) else ENil
+            case LCons(x, xs) => if (f(x)) LCons(x, lazy loop(force xs)) else ENil
+            case LList(xs)    => loop(force xs)
+        };
+        LList(lazy loop(l))
 
     ///
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
@@ -956,17 +944,13 @@ namespace LazyList {
     /// Applies `f` eagerly (i.e. the tail is forced until the first element that satisfies `f`).
     ///
     def takeWhileE(f: a -> Bool & ef, l: LazyList[a]): LazyList[a] & ef =
-        takeWhileEAcc(f, l, identity)
-
-    ///
-    /// Helper function for `takeWhileE`.
-    ///
-    def takeWhileEAcc(f: a -> Bool & ef, l: LazyList[a], k: LazyList[a] -> LazyList[a]): LazyList[a] & ef = match l {
-        case ENil         => k(ENil)
-        case ECons(x, xs) => if (f(x)) takeWhileEAcc(f,       xs, ks -> k(ECons(x, ks))) else k(ENil)
-        case LCons(x, xs) => if (f(x)) takeWhileEAcc(f, force xs, ks -> k(ECons(x, ks))) else k(ENil)
-        case LList(xs)    => takeWhileEAcc(f, force xs, k)
-    }
+        def loop(ll, k) = match ll {
+            case ENil         => k(ENil)
+            case ECons(x, xs) => if (f(x)) loop(      xs, ks -> k(ECons(x, ks))) else k(ENil)
+            case LCons(x, xs) => if (f(x)) loop(force xs, ks -> k(ECons(x, ks))) else k(ENil)
+            case LList(xs)    => loop(force xs, k)
+        };
+        loop(l, identity)
 
     ///
     /// Returns a list where the element at index `i` is `(a, b)` where
