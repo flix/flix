@@ -771,9 +771,8 @@ namespace LazyList {
     @Experimental @LazyWhenPure
     pub def span(f: a -> Bool & ef, l: LazyList[a]): (LazyList[a], LazyList[a]) & ef =
         reifyEff(f) {
-            case Pure(g) =>
-                spanLAcc(g, l)
-            case _       => spanEAcc(f, l, (ks, ls) -> (ks, ls))
+            case Pure(g) => spanL(g, l)
+            case _       => spanE(f, l)
         }
 
     ///
@@ -781,42 +780,46 @@ namespace LazyList {
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
-    def spanLAcc(f: a -> Bool, l: LazyList[a]): (LazyList[a], LazyList[a]) = match l {
-        case ENil         => (ENil, ENil)
-        case ECons(x, xs) =>
-            if (f(x))
-                let t = lazy spanLAcc(f, xs);
-                (LCons(x, lazy fst(force t)), LList(lazy snd(force t)))
-            else
-                (ENil, l)
-        case LCons(x, xs) =>
-            if (f(x))
-                let t = lazy spanLAcc(f, force xs);
-                (LCons(x, lazy fst(force t)), LList(lazy snd(force t)))
-            else
-                (ENil, l)
-        case LList(xs)    => spanLAcc(f, force xs)
-    }
+    def spanL(f: a -> Bool, l: LazyList[a]): (LazyList[a], LazyList[a]) =
+        def loop(ll) = match ll {
+            case ENil         => (ENil, ENil)
+            case ECons(x, xs) =>
+                if (f(x))
+                    let t = lazy loop(xs);
+                    (LCons(x, lazy fst(force t)), LList(lazy snd(force t)))
+                else
+                    (ENil, ll)
+            case LCons(x, xs) => // Same as above except `xs` is forced.
+                if (f(x))
+                    let t = lazy loop(force xs);
+                    (LCons(x, lazy fst(force t)), LList(lazy snd(force t)))
+                else
+                    (ENil, ll)
+            case LList(xs) => loop(force xs)
+        };
+        loop(l)
 
     ///
     /// Helper function for `span`.
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
-    def spanEAcc(f: a -> Bool & ef, l: LazyList[a], k: (LazyList[a], LazyList[a]) -> (LazyList[a], LazyList[a])): (LazyList[a], LazyList[a]) & ef = match l {
-        case ENil         => k(ENil, ENil)
-        case ECons(x, xs) =>
-            if (f(x))
-                spanEAcc(f, xs, (ks, ls) -> k(ECons(x, ks), ls))
-            else
-                k(ENil, l)
-        case LCons(x, xs) =>
-            if (f(x))
-                spanEAcc(f, force xs, (ks, ls) -> k(ECons(x, ks), ls))
-            else
-                k(ENil, l)
-        case LList(xs)    => spanEAcc(f, force xs, k)
-    }
+    def spanE(f: a -> Bool & ef, l: LazyList[a]): (LazyList[a], LazyList[a]) & ef =
+        def loop(ll, k) = match ll {
+            case ENil         => k((ENil, ENil))
+            case ECons(x, xs) =>
+                if (f(x))
+                    loop(xs, match (ks, ls) -> k((ECons(x, ks), ls)))
+                else
+                    k((ENil, l))
+            case LCons(x, xs) => // Same as above except `xs` is forced.
+                if (f(x))
+                    loop(force xs, match (ks, ls) -> k((ECons(x, ks), ls)))
+                else
+                    k((ENil, l))
+            case LList(xs) => loop(force xs, k)
+        };
+        loop(l, identity)
 
     ///
     /// Returns `l` without the first `n` elements.
