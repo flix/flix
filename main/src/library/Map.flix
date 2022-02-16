@@ -764,9 +764,9 @@ namespace Map {
         foldLeftWithKey((acc, k, v) -> Set.insert((k, v), acc), Set.empty(), m)
 
     ///
-    /// Returns the map `m` as a `LazyList` of key-value pairs.
+    /// Returns the map `m` as a `DelayList` of key-value pairs.
     ///
-    pub def toLazyList(m: Map[k, v]): LazyList[(k, v)] =
+    pub def toDelayList(m: Map[k, v]): DelayList[(k, v)] =
         foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
 
     ///
