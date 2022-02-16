@@ -64,6 +64,7 @@ class Flix {
   private var cachedParsedAst: ParsedAst.Root = ParsedAst.Root(Map.empty)
   private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, Set.empty)
   private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, Map.empty)
+  private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, Set.empty, Map.empty)
   private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, Map.empty, Map.empty)
 
   /**
@@ -454,7 +455,7 @@ class Flix {
       afterParser <- Parser.run(afterReader, cachedParsedAst, changeSet)
       afterWeeder <- Weeder.run(afterParser, cachedWeededAst, changeSet)
       afterNamer <- Namer.run(afterWeeder)
-      afterResolver <- Resolver.run(afterNamer)
+      afterResolver <- Resolver.run(afterNamer, cachedResolvedAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKindedAst, changeSet)
       afterDeriver <- Deriver.run(afterKinder)
       afterTyper <- Typer.run(afterDeriver, cachedTypedAst, changeSet)
@@ -471,6 +472,7 @@ class Flix {
         this.cachedParsedAst = afterParser
         this.cachedWeededAst = afterWeeder
         this.cachedKindedAst = afterKinder
+        this.cachedResolvedAst = afterResolver
         this.cachedTypedAst = afterTyper
       }
       afterSafety

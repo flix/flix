@@ -16,6 +16,161 @@
 namespace File {
 
     ///
+    /// File types.
+    ///
+    pub enum FileType with Eq, Order, ToString {
+        case File,
+        case Directory,
+        case SymLink,
+        case Other
+    }
+
+    ///
+    /// Returns the last access time of the given file `f` in milliseconds.
+    ///
+    pub def accessTime(f: String): Result[Int64, String] & Impure =
+        try {
+            use Result.flatMap;
+            import java.nio.file.attribute.BasicFileAttributes.lastAccessTime();
+            import java.nio.file.attribute.FileTime.toMillis();
+
+            let* fileAttributes = getAttributes(f);
+            let timeLastAccess = lastAccessTime(fileAttributes);
+            let inMilliSec = toMillis(timeLastAccess);
+
+            Ok(inMilliSec)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns the creation time of the given file `f` in milliseconds.
+    ///
+    pub def creationTime(f: String): Result[Int64, String] & Impure =
+        try {
+            use Result.flatMap;
+            import java.nio.file.attribute.BasicFileAttributes.creationTime();
+            import java.nio.file.attribute.FileTime.toMillis();
+
+            let* fileAttributes = getAttributes(f);
+            let timeCreated = creationTime(fileAttributes);
+            let inMilliSec = toMillis(timeCreated);
+
+            Ok(inMilliSec)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns the last-modified timestamp of the given file `f` in milliseconds
+    ///
+    pub def modificationTime(f: String): Result[Int64, String] & Impure =
+        try {
+            use Result.flatMap;
+            import java.nio.file.attribute.BasicFileAttributes.lastModifiedTime();
+            import java.nio.file.attribute.FileTime.toMillis();
+
+            let* fileAttributes = getAttributes(f);
+            let timeLastModified = lastModifiedTime(fileAttributes);
+            let inMilliSec = toMillis(timeLastModified);
+
+            Ok(inMilliSec)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns the size of the given file `f` in bytes.
+    ///
+    pub def size(f: String): Result[Int64, String] & Impure =
+        try {
+            use Result.flatMap;
+            import java.nio.file.attribute.BasicFileAttributes.size();
+
+            let* fileAttributes = getAttributes(f);
+            let fileSize = size(fileAttributes);
+
+            Ok(fileSize)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns the BacisFileAttributes of the file `f`.
+    ///
+    def getAttributes(f: String): Result[##java.nio.file.attribute.BasicFileAttributes, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.toPath();
+            import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption]);
+            import static java.lang.Class.forName(String);
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let classOfAttributes = forName("java.nio.file.attribute.BasicFileAttributes");
+
+            Ok(readAttributes(javaPath, classOfAttributes, []))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns the type of the given file `f`.
+    ///
+    pub def fileType(f: String): Result[FileType, String] & Impure =
+        use Result.flatMap;
+
+        let* isFile = File.isRegularFile(f);
+        let* isDirec = File.isDirectory(f);
+        let* isSymLink = File.isSymbolicLink(f);
+
+        if (isFile)         Ok(FileType.File)
+        else if (isDirec)   Ok(FileType.Directory)
+        else if (isSymLink) Ok(FileType.SymLink)
+        else                Ok(FileType.Other)
+
+    ///
+    /// Statistical information for a file.
+    ///
+    pub type alias StatInfo = {
+        accessTime       :: Int64,
+        creationTime     :: Int64,
+        modificationTime :: Int64,
+        size             :: Int64,
+        fileType         :: FileType
+    }
+
+    ///
+    /// Returns the statistics of the given file `f`.
+    ///
+    pub def stat(f: String): Result[StatInfo, String] & Impure =
+        use Result.flatMap;
+
+        let* fileAccessTime = accessTime(f);
+        let* fileCreationTime = creationTime(f);
+        let* fileModificationTime = modificationTime(f);
+        let* fileSize = size(f);
+        let* typeOfFile = fileType(f);
+
+        Ok({
+            accessTime = fileAccessTime,
+            creationTime = fileCreationTime,
+            modificationTime = fileModificationTime,
+            size = fileSize,
+            fileType = typeOfFile
+        })
+
+    ///
     /// Returns `true` if the given file `f` exists.
     ///
     pub def exists(f: String): Result[Bool, String] & Impure =
