@@ -101,6 +101,24 @@ namespace DelayMap {
         Option.getWithDefault(d, get(k, m))
 
     ///
+    /// Returns the number of mappings `k => v` in `m` that satisfy the predicate `f`.
+    ///
+    @Experimental @ParallelWhenPure
+    pub def count(f: (k, v) -> Bool & ef, m: DelayMap[k, v]): Int32 & ef =
+        let f1 = match (k, v) -> f(k, v);
+        def c() = foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m);
+        reifyEff(f1) {
+            case Pure(g) =>
+                if (useParallelEvaluation(m))
+                    let h = (k, v) -> g((k, force v));
+                    let DMap(t) = m;
+                    RedBlackTree.parCount(threads() - 1, h, t) as & Pure
+                else
+                    c()
+            case _  => c()
+        }
+
+    ///
     /// Returns `true` if and only if `m` contains the key `k`.
     ///
     @Experimental
@@ -128,7 +146,7 @@ namespace DelayMap {
     ///
     /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
     ///
-    @ParallelWhenPure @Experimental
+    @Experimental @ParallelWhenPure
     pub def minimumKeyBy(cmp: (k, k) -> Comparison & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), m);
         let f = r -> cmp(r.kl, r.kr);
@@ -162,7 +180,7 @@ namespace DelayMap {
     ///
     /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
     ///
-    @ParallelWhenPure @Experimental
+    @Experimental @ParallelWhenPure
     pub def minimumValueBy(cmp: (v, v) -> Comparison & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == LessThan) (kl, vl) else (kr, vr), m);
         let f = r -> cmp(r.vl, r.vr);
@@ -201,7 +219,7 @@ namespace DelayMap {
     ///
     /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
     ///
-    @ParallelWhenPure @Experimental
+     @Experimental @ParallelWhenPure
     pub def maximumKeyBy(cmp: (k, k) -> Comparison & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == GreaterThan) (kl, vl) else (kr, vr), m);
         let f = r -> cmp(r.kl, r.kr);
@@ -225,7 +243,7 @@ namespace DelayMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    @Parallel @Experimental
+    @Experimental @Parallel
     pub def maximumValue(m: DelayMap[k, v]): Option[(k, v)] with Order[v] =
         maximumValueBy((x, y) -> x <=> y, m)
 
@@ -236,7 +254,7 @@ namespace DelayMap {
     ///
     /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
     ///
-    @ParallelWhenPure @Experimental
+    @Experimental @ParallelWhenPure
     pub def maximumValueBy(cmp: (v, v) -> Comparison & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == GreaterThan) (kl, vl) else (kr, vr), m);
         let f = r -> cmp(r.vl, r.vr);
@@ -329,6 +347,10 @@ namespace DelayMap {
     ///
     /// Returns a map with mappings `k => f(k, v)` for every `k => v` in `m`.
     ///
+    /// The `f` is pure then `f` is applied lazily.
+    ///
+    /// If `m` is large then `m` is traversed in parallel (and `f` is still applied lazily).
+    ///
     @Experimental @LazyWhenPure @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef =
         let f1 = (args) -> f(fst(args), snd(args));
@@ -390,7 +412,7 @@ namespace DelayMap {
     ///
     /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
-    @Experimental
+    @Experimental @LazyWhenPure
     pub def unionWithKey(f: (k, v, v) -> v & ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         let f1 = (args) -> f(args.k, args.v1, args.v2);
         reifyEff(f1) {
@@ -431,6 +453,7 @@ namespace DelayMap {
     ///
     /// Returns the map `m` as a list of key-value pairs.
     ///
+    @Experimental
     pub def toList(m: DelayMap[k, v]): List[(k, v)] =
         foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
 
@@ -608,7 +631,7 @@ namespace DelayMap {
     ///
     /// Returns `m` as a mutable set.
     ///
-    @Experimental
+    @Experimental @Parallel
     pub def toMutMap(m: DelayMap[k, v]): MutMap[k, v] & Impure =
         MutMap(ref toMap(m))
 
@@ -677,7 +700,7 @@ namespace DelayMap {
     @Experimental
     pub def sumWith(f: (k, v) -> Int32 & ef, m: DelayMap[k, v]): Int32 & ef =
         let DMap(t) = m;
-        RedBlackTree.foldLeft((acc, k, v) -> acc + f(k, force v), 0, t)
+        RedBlackTree.sumWith((k, v) -> f(k, force v), t)
 
     ///
     /// Returns the product of all keys in the DelayMap `m`.

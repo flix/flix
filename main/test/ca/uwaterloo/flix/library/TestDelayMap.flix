@@ -116,6 +116,54 @@ namespace TestDelayMap {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // count                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def count01(): Bool =
+        let m = Map#{}: Map[Unit, Unit] |> Map.toDelayMap;
+        DelayMap.count((k, v) -> k == v, m) == 0
+
+    @test
+    def count02(): Bool =
+        let m = Map#{1 => 2} |> Map.toDelayMap;
+        DelayMap.count((k, v) -> k == v, m) == 0
+
+    @test
+    def count03(): Bool =
+        let m = Map#{1 => 1} |> Map.toDelayMap;
+        DelayMap.count((k, v) -> k == v, m) == 1
+
+    @test
+    def count04(): Bool =
+        let m = Map#{1 => 2, 2 => 3} |> Map.toDelayMap;
+        DelayMap.count((k, v) -> k == v, m) == 0
+
+    @test
+    def count05(): Bool =
+        let m = Map#{1 => 1, 2 => 3} |> Map.toDelayMap;
+        DelayMap.count((k, v) -> k == v, m) == 1
+
+    @test
+    def count06(): Bool =
+        let m = Map#{1 => 2, 2 => 2} |> Map.toDelayMap;
+        DelayMap.count((k, v) -> k == v, m) == 1
+
+    @test
+    def count07(): Bool =
+        let m = Map#{1 => 1, 2 => 2} |> Map.toDelayMap;
+        DelayMap.count((k, v) -> k == v, m) == 2
+
+    @test
+    def count08(): Bool & Impure =
+    let range = List.range(0, 2000);
+    let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
+    let a = MutList.new();
+    DelayMap.count((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); true }, m);
+    MutList.toList(a) == range
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // map (pure)                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
