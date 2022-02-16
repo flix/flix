@@ -31,7 +31,7 @@ namespace System {
         /// See also `Console.readLine` for reading from the console.
         ///
         pub def readLines(): Iterator[String] & Impure =
-            import static get java.lang.System.in as getSystemIn;
+            import static get java.lang.System.in: ##java.io.InputStream & Impure as getSystemIn;
             import new java.io.InputStreamReader(##java.io.InputStream) as newInputStream;
             import new java.io.BufferedReader(##java.io.Reader) as newBufferedReader;
             // note: BufferedReader.readLine can block
