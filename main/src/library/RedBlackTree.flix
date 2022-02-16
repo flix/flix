@@ -651,7 +651,11 @@ namespace RedBlackTree {
         def loop(tt) = match tt {
             case Leaf                => 0
             case DoubleBlackLeaf     => 0
-            case Node(_, a, k, v, b) => f(k, v) + loop(a) + loop(b)
+            case Node(_, a, k, v, b) =>
+                let x = loop(a);
+                let y = f(k, v);
+                let z = loop(b);
+                x + y + z
         };
         loop(t)
 
@@ -694,7 +698,11 @@ namespace RedBlackTree {
         def loop(tt) = match tt {
             case Leaf                => 0
             case DoubleBlackLeaf     => 0
-            case Node(_, a, k, v, b) => f(k, v) + loop(a) + loop(b)
+            case Node(_, a, k, v, b) =>
+                let x = loop(a);
+                let y = f(k, v);
+                let z = loop(b);
+                x + y + z
         };
         loop(t)
 
@@ -718,7 +726,11 @@ namespace RedBlackTree {
         def loop(tt) = match tt {
             case Leaf                => 1
             case DoubleBlackLeaf     => 1
-            case Node(_, a, k, v, b) => f(k, v) * loop(a) * loop(b)
+            case Node(_, a, k, v, b) =>
+                let x = loop(a);
+                let y = f(k, v);
+                let z = loop(b);
+                x * y * z
         };
         match t {
             case Leaf            => 0
@@ -765,7 +777,11 @@ namespace RedBlackTree {
         def loop(tt) = match tt {
             case Leaf                => 1
             case DoubleBlackLeaf     => 1
-            case Node(_, a, k, v, b) => f(k, v) * loop(a) * loop(b)
+            case Node(_, a, k, v, b) =>
+                let x = loop(a);
+                let y = f(k, v);
+                let z = loop(b);
+                x * y * z
         };
         match t {
             case Leaf            => 0

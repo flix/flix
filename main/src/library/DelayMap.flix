@@ -695,12 +695,23 @@ namespace DelayMap {
         sumWith((_, v) -> v, m)
 
     ///
-    /// Returns the sum of all key-value pairs `k => v` in `m` according to the function `f`.
+    /// Returns the sum of all key-value pairs `k => v` in `m`
+    /// according to the function `f`.
     ///
-    @Experimental
+    @Experimental @ParallelWhenPure
     pub def sumWith(f: (k, v) -> Int32 & ef, m: DelayMap[k, v]): Int32 & ef =
+        let f1 = match (k, v) -> f(k, v);
         let DMap(t) = m;
-        RedBlackTree.sumWith((k, v) -> f(k, force v), t)
+        def sw() = RedBlackTree.sumWith((k, v) -> f(k, force v), t);
+        reifyEff(f1) {
+            case Pure(g) =>
+                if (useParallelEvaluation(m))
+                    let h = (k, v) -> g((k, force v));
+                    RedBlackTree.parSumWith(threads() - 1, h, t) as & Pure
+                else
+                    sw()
+            case _ => sw()
+        }
 
     ///
     /// Returns the product of all keys in the DelayMap `m`.
@@ -718,12 +729,23 @@ namespace DelayMap {
         productWith((_, v) -> v, m)
 
     ///
-    /// Returns the product of all key-value pairs `k => v` in the DelayMap `m` according to the function `f`.
+    /// Returns the product of all key-value pairs `k => v` in the DelayMap `m`
+    /// according to the function `f`.
     ///
-    @Experimental
+    @Experimental @ParallelWhenPure
     pub def productWith(f: (k, v) -> Int32 & ef, m: DelayMap[k, v]): Int32 & ef =
+        let f1 = match (k, v) -> f(k, v);
         let DMap(t) = m;
-        RedBlackTree.productWith((k, v) -> f(k, force v), t)
+        def pw() = RedBlackTree.productWith((k, v) -> f(k, force v), t);
+        reifyEff(f1) {
+            case Pure(g) =>
+                if (useParallelEvaluation(m))
+                    let h = (k, v) -> g((k, force v));
+                    RedBlackTree.parProductWith(threads() - 1, h, t) as & Pure
+                else
+                    pw()
+            case _ => pw()
+        }
 
     ///
     /// Returns the concatenation of the string representation of each key `k`
