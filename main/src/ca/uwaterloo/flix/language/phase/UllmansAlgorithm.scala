@@ -19,10 +19,11 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.StratificationError
-import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import java.util.Objects
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 object UllmansAlgorithm {
@@ -116,7 +117,7 @@ object UllmansAlgorithm {
               changed = true
             }
 
-          case DependencyEdge.Strong(headSym, bodySym, edgeLoc) =>
+          case currentEdge@DependencyEdge.Strong(headSym, bodySym, _) =>
             // Case 2: The stratum of the head must be in a strictly higher stratum than the body.
             val headStratum = stratumOf.getOrElseUpdate(headSym, 0)
             val bodyStratum = stratumOf.getOrElseUpdate(bodySym, 0)
@@ -128,9 +129,8 @@ object UllmansAlgorithm {
               changed = true
 
               // Check if we have found a strong cycle.
-              // TODO: neither bodySym or HeadSym are necessarily in a cycle, merely reachable from the cycle.
               if (newHeadStratum > maxStratum) {
-                return StratificationError(findStrongCycle(bodySym, headSym, g, edgeLoc), tpe, loc).toFailure
+                return StratificationError(findStrongCycle(currentEdge, g), tpe, loc).toFailure
               }
             }
         }
@@ -142,9 +142,10 @@ object UllmansAlgorithm {
   }
 
   /**
-    * Returns a path that forms a cycle with the edge from `src` to `dst` in the given dependency graph `g`.
+    * Returns a path that forms a strong cycle, initially attempting to find
+    * a cycle around the `firstCheck` edge.
     */
-  private def findStrongCycle(src: Name.Pred, dst: Name.Pred, g: DependencyGraph, loc: SourceLocation): List[(Name.Pred, SourceLocation)] = {
+  private def findStrongCycle(firstCheck: DependencyEdge.Strong, g: DependencyGraph): List[(Name.Pred, SourceLocation)] = {
     // Computes a map from predicates to their successors.
     val succ = mutable.Map.empty[Name.Pred, Set[(Name.Pred, SourceLocation)]]
     for (edge <- g) {
@@ -158,39 +159,68 @@ object UllmansAlgorithm {
       }
     }
 
-    // We perform a DFS using recursion to find the cycle.
+    // Find one of the shortest paths from `start` to `goal`
+    def bfs(src: Name.Pred, dst: Name.Pred): Option[mutable.Map[Name.Pred, (Name.Pred, SourceLocation)]] = {
+      // A map from predicates to one of their immediate
+      // predecessors in the BFS.
+      val pred = mutable.Map.empty[Name.Pred, (Name.Pred, SourceLocation)]
+      // A set of previously seen predicates.
+      val seen = mutable.Set.empty[Name.Pred]
+      // the tasklist for bfs
+      val tasklist = mutable.Queue.empty[Name.Pred]
+      seen.add(src)
+      tasklist.enqueue(src)
 
-    // A map from predicates to their immediate predecessor in the DFS.
-    val pred = mutable.Map.empty[Name.Pred, (Name.Pred, SourceLocation)]
-
-    // A set of previously seen predicates.
-    val seen = mutable.Set.empty[Name.Pred]
-
-    // Recursively visit the given predicate.
-    def visit(curr: Name.Pred): Unit = {
-      // Update the set of previously seen nodes.
-      seen.add(curr)
-
-      // Recursively visit each unseen child.
-      for ((succ, loc) <- succ.getOrElse(curr, Set.empty)) {
-        if (!seen.contains(succ)) {
-          pred.update(succ, (curr, loc))
-          visit(succ)
+      while (tasklist.nonEmpty) {
+        val current = tasklist.dequeue()
+        if (current == dst) return Some(pred)
+        succ.getOrElse(current, Set.empty).foreach {
+          case (next, ruleLoc) =>
+            if (!seen.contains(next)) {
+              pred.update(next, (current, ruleLoc))
+              seen.add(next)
+              tasklist.enqueue(next)
+            }
         }
       }
+      None
     }
 
-    // Compute the predecessor map.
-    visit(dst)
+    // Recursively constructs a path from `endPoint` and backwards through the graph.
+    def unroll(from: Name.Pred, to: Name.Pred, pred: mutable.Map[Name.Pred, (Name.Pred, SourceLocation)]): List[(Name.Pred, SourceLocation)] = {
+      @tailrec
+      def unrollHelper(s: Name.Pred, acc: List[(Name.Pred, SourceLocation)]): List[(Name.Pred, SourceLocation)] = {
+        if (s == to) return acc
+        pred.getOrElse(s, throw InternalCompilerException("Stratification cycle malformed")) match {
+          case (prev, loc) => unrollHelper(prev, (prev, loc) :: acc)
+        }
+      }
 
-    // Recursively constructs a path from `src` and backwards through the graph.
-    def unroll(curr: Name.Pred): List[(Name.Pred, SourceLocation)] = pred.get(curr) match {
-      case None => Nil
-      case Some((prev, loc)) => (prev, loc) :: unroll(prev)
+      unrollHelper(from, Nil).reverse
     }
 
-    // Assemble the full path.
-    (src, loc) :: unroll(src) ::: (src, loc) :: Nil
+    // For each strong edge, `x -> y`, in `edges` it is checked if `y` can
+    // reach `x`. The first such cycle is returned. If none are found, an
+    // `InternalCompilerException` is thrown.
+    @tailrec
+    def checkCycles(edges: List[DependencyEdge]): List[(Name.Pred, SourceLocation)] = edges match {
+      case edge :: next => edge match {
+        case DependencyEdge.Weak(_, _, _) => checkCycles(next)
+        case DependencyEdge.Strong(head, body, loc) =>
+          bfs(head, body) match {
+            case None => checkCycles(next)
+            case Some(pred) =>
+              // we found a cycle and can report it
+              (body, loc) :: unroll(body, head, pred) ::: (body, loc) :: Nil
+          }
+      }
+      case Nil => throw InternalCompilerException("Stratification error without a strong cycle")
+    }
+
+    // We do not know where the cycle is but often it includes the edge
+    // `firstCheck` since that edge brought ullman over the limit so
+    // we try to find that cycle first and then check every other strong edge.
+    checkCycles(firstCheck :: g.toList)
   }
 
 }
