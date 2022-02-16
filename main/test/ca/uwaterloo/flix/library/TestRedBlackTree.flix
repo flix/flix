@@ -269,7 +269,7 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // seqCount                                                                //
+    // parCount                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -284,7 +284,7 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // seqMinimumBy                                                            //
+    // parMinimumBy                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -433,6 +433,21 @@ namespace TestRedBlackTree {
     def sumWith06(): Bool =
         let Map(t) = Map#{10 => 10, -10 => -10};
         RedBlackTree.sumWith((k, v) -> k + v, t) == 0
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parSumWith                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def parSumWith01(): Bool & Impure =
+        let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
+        RedBlackTree.parSumWith(threads() - 1, (k, v) -> k + v, t) == 3998000
+
+    @test
+    def parSumWith02(): Bool & Impure =
+        let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
+        RedBlackTree.parSumWith(threads() - 1, (k, v) -> k + v, t) == 1998000
 
 
     /////////////////////////////////////////////////////////////////////////////
