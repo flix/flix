@@ -33,7 +33,7 @@ namespace Concurrent/Condition {
     /// Causes the current thread to wait until it is signalled or interrupted.
     ///
     pub def await(condition: Concurrent/Condition.Condition): Result[Unit, ConditionError] & Impure =
-        import java.util.concurrent.locks.Condition.await();
+        import java.util.concurrent.locks.Condition.await(): Unit & Impure;
         let Condition(c) = condition;
         try {
             Ok(await(c))

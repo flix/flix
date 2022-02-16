@@ -120,7 +120,7 @@ pub def <==>(x: Bool, y: Bool): Bool = x == y
 /// Converts `x` to a string and prints it to standard out.
 ///
 pub def print(x: a): Unit & Impure with ToString[a] =
-    import static get java.lang.System.out as getOut;
+    import static get java.lang.System.out: ##java.io.PrintStream & Impure as getOut;
     import java.io.PrintStream.print(String);
     x |> ToString.toString |> print(getOut())
 
