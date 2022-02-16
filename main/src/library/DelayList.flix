@@ -287,9 +287,9 @@ namespace DelayList {
         loop(l, () -> None as & ef) // NB: Cast required because the identity continuation is pure,
                                     // but the intermediate continuations are effect polymorphic.
     ///
-    /// Returns a lazy list of all integers between `b` (inclusive) and `e` (exclusive).
+    /// Returns a `DelayList` of all integers between `b` (inclusive) and `e` (exclusive).
     ///
-    /// Returns an empty lazy list if `b >= e`.
+    /// Returns an empty `DelayList` if `b >= e`.
     ///
     @Experimental @Lazy
     pub def range(b: Int32, e: Int32): DelayList[Int32] =
@@ -690,7 +690,7 @@ namespace DelayList {
         loop(l)
 
     ///
-    /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
+    /// Returns a `DelayList` of every element in `l` that satisfies the predicate `f`.
     ///
     /// Whether `f` is applied eagerly or lazily depends on its purity:
     ///
@@ -705,7 +705,7 @@ namespace DelayList {
         }
 
     ///
-    /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
+    /// Returns a `DelayList` of every element in `l` that satisfies the predicate `f`.
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
@@ -720,7 +720,7 @@ namespace DelayList {
         loop(l)
 
     ///
-    /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
+    /// Returns a `DelayList` of every element in `l` that satisfies the predicate `f`.
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///

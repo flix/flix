@@ -103,7 +103,7 @@ namespace Array {
         loop(a.length, Nil)
 
     ///
-    /// Returns the array `a` as a lazy list.
+    /// Returns the array `a` as a `DelayList`.
     ///
     pub def toDelayList(a: Array[a]): DelayList[a] & Impure =
         let cp = Array.copyOfRange(0, a.length, a);
