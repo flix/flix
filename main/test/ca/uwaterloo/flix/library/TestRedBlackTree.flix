@@ -553,6 +553,24 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // parProductWith                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def parProductWith01(): Bool & Impure =
+        let l = List.range(1, 2001);
+        let Map(t) = List.zip(l, l) |> List.toMap;
+        RedBlackTree.parProductWith(threads() - 1, (k, v) -> k * v, t) == List.product(l) * List.product(l)
+
+    @test
+    def parProductWith02(): Bool & Impure =
+        let l1 = List.range(1, 2001);
+        let l2 = List.range(-2000, 0);
+        let Map(t) = List.zip(l1, l2) |> List.toMap;
+        RedBlackTree.parProductWith(threads() - 1, (k, v) -> k * v, t) == List.product(l1) * List.product(l2)
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // joinKeys                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
