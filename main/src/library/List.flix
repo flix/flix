@@ -1172,11 +1172,11 @@ namespace List {
         Foldable.joinWith(f, sep, l)
 
     ///
-    /// Returns the elements of `l` as a lazy list.
+    /// Returns the elements of `l` as a `DelayList`.
     ///
-    pub def toLazyList(l: List[a]): LazyList[a] = match l {
+    pub def toDelayList(l: List[a]): DelayList[a] = match l {
         case Nil     => ENil
-        case x :: xs => LCons(x, lazy toLazyList(xs))
+        case x :: xs => LCons(x, lazy toDelayList(xs))
     }
 
     ///
