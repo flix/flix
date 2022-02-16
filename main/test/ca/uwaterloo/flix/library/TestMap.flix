@@ -2227,20 +2227,20 @@ def query18(): Bool =
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toLazyList                                                              //
+    // toDelayList                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toLazyList01(): Bool =
-        Map.empty(): Map[Unit, Unit] |> Map.toLazyList == LazyList.empty()
+    def toDelayList01(): Bool =
+        Map.empty(): Map[Unit, Unit] |> Map.toDelayList == DelayList.empty()
 
     @test
-    def toLazyList02(): Bool =
-        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toLazyList == LazyList.repeat("a") |> LazyList.zip(LazyList.range(0, 1000))
+    def toDelayList02(): Bool =
+        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toDelayList == DelayList.repeat("a") |> DelayList.zip(DelayList.range(0, 1000))
 
     @test
-    def toLazyList03(): Bool =
-        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toLazyList |> LazyList.toMap == Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0)
+    def toDelayList03(): Bool =
+        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toDelayList |> DelayList.toMap == Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0)
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //

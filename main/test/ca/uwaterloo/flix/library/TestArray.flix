@@ -4320,24 +4320,24 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toLazyList                                                              //
+    // toDelayList                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toLazyList01(): Bool & Impure =
-        []: Array[Unit] |> Array.toLazyList == LazyList.empty()
+    def toDelayList01(): Bool & Impure =
+        []: Array[Unit] |> Array.toDelayList == DelayList.empty()
 
     @test
-    def toLazyList02(): Bool & Impure =
-        Array.new(0, 0) |> Array.toLazyList == LazyList.empty()
+    def toDelayList02(): Bool & Impure =
+        Array.new(0, 0) |> Array.toDelayList == DelayList.empty()
 
     @test
-    def toLazyList03(): Bool & Impure =
-        Array.range(-1000, 1000) |> Array.toLazyList == LazyList.range(-1000, 1000)
+    def toDelayList03(): Bool & Impure =
+        Array.range(-1000, 1000) |> Array.toDelayList == DelayList.range(-1000, 1000)
 
     @test
-    def toLazyList04(): Bool & Impure =
-        Array.range(-1000, 1000) |> Array.toLazyList |> LazyList.toArray `sameElements` Array.range(-1000, 1000)
+    def toDelayList04(): Bool & Impure =
+        Array.range(-1000, 1000) |> Array.toDelayList |> DelayList.toArray `sameElements` Array.range(-1000, 1000)
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //

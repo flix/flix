@@ -173,7 +173,7 @@ namespace DemandList {
     }
 
     ///
-    /// Returns true if and only if `l` is the empty LazyList, i.e. `ENil`.
+    /// Returns true if and only if `l` is the empty DelayList, i.e. `ENil`.
     ///
     /// Does not force the tail of `l`.
     ///

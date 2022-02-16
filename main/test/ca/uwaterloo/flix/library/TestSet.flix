@@ -1417,20 +1417,20 @@ def unfoldWithIter06(): Bool & Impure =
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toLazyList                                                              //
+    // toDelayList                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toLazyList01(): Bool =
-        Set.empty(): Set[Unit] |> Set.toLazyList == LazyList.empty()
+    def toDelayList01(): Bool =
+        Set.empty(): Set[Unit] |> Set.toDelayList == DelayList.empty()
 
     @test
-    def toLazyList02(): Bool =
-        Set.range(-1000, 1000) |> Set.toLazyList == LazyList.range(-1000, 1000)
+    def toDelayList02(): Bool =
+        Set.range(-1000, 1000) |> Set.toDelayList == DelayList.range(-1000, 1000)
 
     @test
-    def toLazyList03(): Bool =
-        Set.range(-1000, 1000) |> Set.toLazyList |> LazyList.toSet == Set.range(-1000, 1000)
+    def toDelayList03(): Bool =
+        Set.range(-1000, 1000) |> Set.toDelayList |> DelayList.toSet == Set.range(-1000, 1000)
 
 
     /////////////////////////////////////////////////////////////////////////////
