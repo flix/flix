@@ -93,20 +93,3 @@ pub def main(_args: Array[String]): Int32 & Impure =
         Array.map(match (c1, c2) -> "${pad(c1)} <--> ${c2}") |>
         Array.foreach(println);
     0
-
-@test
-def test0(): Bool & Impure =
-    let graph = {
-        nodes = Set.range(0, 8),
-        edges = Set#{(0, 4), (0, 7), (2, 3), (1, 6), (5, 6)}
-    };
-    let connectedGraph = connectGraph(graph);
-    let result = query connectedGraph select (c1, c2) from Edge(c1, c2);
-
-    let expected = Set#{
-        Set#{Set#{2, 3}, Set#{1, 5, 6}},
-        Set#{Set#{0, 4, 7}, Set#{2, 3}},
-        Set#{Set#{1, 5, 6}, Set#{0, 4, 7}}
-    };
-
-    result |> Array.toSet |> Set.map(match (c1, c2) -> Set#{c1, c2}) |> Eq.eq(expected)

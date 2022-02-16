@@ -78,34 +78,3 @@ pub def main(_args: Array[String]): Int32 & Impure =
         Array.map(match (i, l, c, r) -> "${i}: ..., ${l}, ${c}, ${r}, ...") |>
         Array.foreach(println);
     0
-
-@test
-def test0(): Bool & Impure =
-    let values = (1, 13) :: (2, 21) :: (5, 55) :: Nil;
-    let length = 7;
-    let default = -1;
-
-    let neighbourhood =
-        query arrayNeighbourhood(default, values, length)
-        select (i, l, c, r)
-        from Neighbourhood(i, l, c, r);
-
-    let expected = Map#{
-        -1 => default,
-        0 => default,
-        1 => 13,
-        2 => 21,
-        3 => default,
-        4 => default,
-        5 => 55,
-        6 => default,
-        7 => default
-    };
-    def check(i, v) =
-        Map.get(i, expected) |>
-            Option.map(Eq.eq(v)) |>
-            Option.getWithDefault(false);
-
-    neighbourhood |> Array.forall(
-        match (i, l, c, r) -> check(i-1, l) and check(i, c) and check(i+1, r)
-    )
