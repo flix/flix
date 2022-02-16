@@ -25,7 +25,7 @@ namespace StringBuilder {
     /// Returns a new mutable StringBuilder.
     ///
     pub def new(): StringBuilder & Impure =
-        import new java.lang.StringBuilder() as newStringBuilder;
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
         StringBuilder(newStringBuilder())
 
     ///
