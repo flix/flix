@@ -2449,19 +2449,6 @@ namespace TestLazyList {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toString                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def toString01(): Bool =
-        LazyList.toString(ECons(1, ECons(2, ECons(3, ENil)))) == "1 :: 2 :: 3 :: ENil"
-
-    @test
-    def toString04(): Bool =
-        LazyList.toString(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == "1 :: 2 :: 3 :: ENil"
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // partition                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
