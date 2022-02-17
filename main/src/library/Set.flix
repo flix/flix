@@ -340,7 +340,15 @@ namespace Set {
     /// Returns the sum of all elements in the set `s` according to the function `f`.
     ///
     pub def sumWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
-        Foldable.sumWith(f, s)
+        reifyEff(f) {
+            case Pure(g) =>
+                let Set(t) = s;
+                if (useParallelEvaluation(s))
+                    RedBlackTree.parSumWith(threads() - 1, (k, _) -> g(k), t) as & Pure
+                else
+                    Foldable.sumWith(f, s)
+            case _ => Foldable.sumWith(f, s)
+        }
 
     ///
     /// Returns the product of all elements in the set `s`.
@@ -352,7 +360,15 @@ namespace Set {
     /// Returns the product of all elements in the set `s` according to the function `f`.
     ///
     pub def productWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
-        Foldable.productWith(f, s)
+        reifyEff(f) {
+            case Pure(g) =>
+                let Set(t) = s;
+                if (useParallelEvaluation(s))
+                    RedBlackTree.parProductWith(threads() - 1, (k, _) -> g(k), t) as & Pure
+                else
+                    Foldable.productWith(f, s)
+            case _ => Foldable.productWith(f, s)
+        }
 
     ///
     /// Returns the union of the elements in `s`.
