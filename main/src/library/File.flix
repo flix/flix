@@ -801,12 +801,16 @@ namespace File {
         }
 
     ///
-    /// Returns `true` if the directory `d` was created.
+    /// Creates the directory `d`.
+    ///
+    /// Returns `true` if the directory `d` was created and did not already exist.
     ///
     pub def mkdir(d: String): Result[Bool, String] = ???
 
     ///
-    /// Returns `true` if the directory was created, along with all necessary parent directories.
+    /// Creates the directory along with all necessary parent directories in `d`.
+    ///
+    /// Returns `true` if the last directory of `d` was created and did not already exist.
     ///
     pub def mkdirs(d: String): Result[Bool, String] = ???
 
