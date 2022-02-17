@@ -24,7 +24,7 @@
 namespace DemandList {
 
     ///
-    /// Represents a lazy list.
+    /// Represents a `DemandList`.
     ///
     /// If the Boolean type `f` is equiv. to true then all elements are forced.
     ///
@@ -59,9 +59,9 @@ namespace DemandList {
     }
 
     ///
-    /// Returns a lazy list of all integers between `b` (inclusive) and `e` (exclusive).
+    /// Returns a `DemandList` of all integers between `b` (inclusive) and `e` (exclusive).
     ///
-    /// Returns an empty lazy list if `b >= e`.
+    /// Returns an empty `DemandList` if `b >= e`.
     ///
     @Experimental
     pub def range(b: Int32, e: Int32): DemandList[Int32, _] =
@@ -114,7 +114,7 @@ namespace DemandList {
         foldLeft((acc, x) -> acc + f(x), 0, l)
 
     ///
-    /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
+    /// Returns a `DemandList` of every element in `l` that satisfies the predicate `f`.
     ///
     @Experimental
     pub def filter(f: a -> Bool & ef, l: DemandList[a, not ef or d]): DemandList[a, not ef or d] & ef =
@@ -124,7 +124,7 @@ namespace DemandList {
         }
 
     ///
-    /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
+    /// Returns a `DemandList` of every element in `l` that satisfies the predicate `f`.
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
@@ -138,7 +138,7 @@ namespace DemandList {
     }
 
     ///
-    /// Returns a lazy list of every element in `l` that satisfies the predicate `f`.
+    /// Returns a `DemandList` of every element in `l` that satisfies the predicate `f`.
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
@@ -173,7 +173,7 @@ namespace DemandList {
     }
 
     ///
-    /// Returns true if and only if `l` is the empty LazyList, i.e. `ENil`.
+    /// Returns true if and only if `l` is the empty DelayList, i.e. `ENil`.
     ///
     /// Does not force the tail of `l`.
     ///
