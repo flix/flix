@@ -64,7 +64,7 @@ namespace Benchmark {
             println("No benchmarks");
             1
         } else {
-            import static java.lang.System.nanoTime(): ##java.lang.Long & Impure;
+            import static java.lang.System.nanoTime(): Int64 & Impure;
             let t = nanoTime();
             printHeader();
             println("");
@@ -106,7 +106,7 @@ namespace Benchmark {
     /// Runs the given benchmark `b` exactly `n` times.
     ///
     def runBenchmark(b: Benchmark, n: Int32): BenchmarkResult & Impure =
-        import static java.lang.System.nanoTime(): ##java.lang.Long & Impure;
+        import static java.lang.System.nanoTime(): Int64 & Impure;
         let Benchmark(r) = b;
         let t = nanoTime();
         let _ = loop(r.f, n);
@@ -121,7 +121,7 @@ namespace Benchmark {
     ///
     def runBenchmarkOnce(b: Benchmark): Int64 & Impure =
         let Benchmark(r) = b;
-        import static java.lang.System.nanoTime(): ##java.lang.Long & Impure;
+        import static java.lang.System.nanoTime(): Int64 & Impure;
         let t = nanoTime();
         let _ = (r.f)();
         (nanoTime() - t) / scaleFactor()
