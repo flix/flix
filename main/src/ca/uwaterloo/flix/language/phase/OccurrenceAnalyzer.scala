@@ -60,7 +60,7 @@ object OccurrenceAnalyzer {
 
     case Expression.Str(lit, loc) => (OccurrenceAst.Expression.Str(lit, loc), Map.empty)
 
-    case Expression.Var(sym, tpe, loc) => ???
+    case Expression.Var(sym, tpe, loc) => (OccurrenceAst.Expression.Var(sym, tpe, loc), Map(sym -> Once))
 
     case Expression.Closure(sym, freeVars, tpe, loc) =>
       val freeVars1 = freeVars.map {
@@ -340,24 +340,14 @@ object OccurrenceAnalyzer {
     def combine(o1: Occur, o2: Occur): Occur = (o1, o2) match {
       case (Dead, _) => o2
       case (_, Dead) => o1
-      case (Once, _) => Many
-      case (_, Once) => Many
-      case (Many, _) => Many
-      case (_, Many) => Many
-      case (ManyBranch, OnceInLam) => Many
-      case (OnceInLam, ManyBranch) => Many
-      case (OnceInLam, OnceInLam) => Many
-      case (ManyBranch, ManyBranch) => ManyBranch
+      case _ => Many
     }
 
     m2.foreach {
       case (sym, o) => if (!m1.contains(sym)) m3 += (sym -> o)
     }
     m3
-
   }
-
-
 }
 
 
