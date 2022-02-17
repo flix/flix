@@ -121,9 +121,9 @@ namespace Environment {
 
     def getEnvHelper(iter: ##java.util.Iterator, m: Map[String, String]): Map[String, String] & Impure =
         import java.util.Iterator.hasNext(): Bool & Impure;
-        import java.util.Iterator.next(): String & Impure;
-        import java.util.Map$Entry.getKey(): String & Impure;
-        import java.util.Map$Entry.getValue(): String & Impure;
+        import java.util.Iterator.next(): ##java.lang.Object & Impure;
+        import java.util.Map$Entry.getKey(): ##java.lang.Object & Impure;
+        import java.util.Map$Entry.getValue(): ##java.lang.Object & Impure;
         if (hasNext(iter))
             let entry = next(iter) as ##java.util.Map$Entry;
             let key = getKey(entry) as String;
