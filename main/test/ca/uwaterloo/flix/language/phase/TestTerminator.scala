@@ -87,12 +87,12 @@ class TestTerminator extends FunSuite with TestUtils {
       """
         |namespace LL {
         |
-        |    pub enum LazyList[t] {
+        |    pub enum DelayList[t] {
         |        case Empty,
-        |        case Cons(t, Lazy[LazyList[t]])
+        |        case Cons(t, Lazy[DelayList[t]])
         |    }
         |
-        |    pub def constant(x: a): LazyList[a] =
+        |    pub def constant(x: a): DelayList[a] =
         |        Cons(x, lazy constant(x))
         |
         |}
