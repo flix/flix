@@ -341,14 +341,15 @@ namespace Set {
     ///
     @ParallelWhenPure
     pub def sumWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
+        let Set(t) = s;
+        def sw() = RedBlackTree.sumWith((k, _) -> f(k), t);
         reifyEff(f) {
             case Pure(g) =>
-                let Set(t) = s;
                 if (useParallelEvaluation(s))
                     RedBlackTree.parSumWith(threads() - 1, (k, _) -> g(k), t) as & Pure
                 else
-                    Foldable.sumWith(f, s)
-            case _ => Foldable.sumWith(f, s)
+                    sw()
+            case _ => sw()
         }
 
     ///
@@ -362,14 +363,15 @@ namespace Set {
     ///
     @ParallelWhenPure
     pub def productWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
+        let Set(t) = s;
+        def pw() = RedBlackTree.productWith((k, _) -> f(k), t);
         reifyEff(f) {
             case Pure(g) =>
-                let Set(t) = s;
                 if (useParallelEvaluation(s))
                     RedBlackTree.parProductWith(threads() - 1, (k, _) -> g(k), t) as & Pure
                 else
-                    Foldable.productWith(f, s)
-            case _ => Foldable.productWith(f, s)
+                    pw()
+            case _ => pw()
         }
 
     ///
