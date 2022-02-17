@@ -328,6 +328,13 @@ object OccurrenceAnalyzer {
   }
 
   def merge(m1: Map[Symbol.VarSym, Occur], m2: Map[Symbol.VarSym, Occur]): Map[Symbol.VarSym, Occur] = {
+
+    def combine(o1: Occur, o2: Occur): Occur = (o1, o2) match {
+      case (Dead, _) => o2
+      case (_, Dead) => o1
+      case _ => Many
+    }
+
     var m3 = m1.map {
       case (sym, o1) =>
         val opt = m2.get(sym)
@@ -335,12 +342,6 @@ object OccurrenceAnalyzer {
           case Some(o2) => (sym, combine(o1, o2))
           case None => (sym, o1)
         }
-    }
-
-    def combine(o1: Occur, o2: Occur): Occur = (o1, o2) match {
-      case (Dead, _) => o2
-      case (_, Dead) => o1
-      case _ => Many
     }
 
     m2.foreach {
