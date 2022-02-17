@@ -376,6 +376,7 @@ object GenExpression {
         Symbol.mkEnumSym("RedBlackTree.Color"),
       )
       if (exp.tpe == MonoType.Unit && whitelistedEnums.contains(enum)) {
+        // TODO: This is could introduce errors by if exp has side effects
         // Read the "unitInstance" field of the appropriate class.
         val declaration = classType.name.toInternalName
         val descriptor = classType.toDescriptor
@@ -389,12 +390,8 @@ object GenExpression {
         // Creating a new instance of the class
         visitor.visitTypeInsn(NEW, classType.name.toInternalName)
         visitor.visitInsn(DUP)
-        if (JvmOps.isUnitTag(tagInfo)) {
-          visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
-        } else {
-          // Evaluating the single argument of the class constructor
-          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-        }
+        // Evaluating the single argument of the class constructor
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         // Descriptor of the constructor
         val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
         // Calling the constructor of the class
