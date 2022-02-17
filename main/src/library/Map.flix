@@ -462,7 +462,6 @@ namespace Map {
     ///
     /// Returns a map with mappings `k => f(k, v)` for every `k => v` in `m`.
     ///
-    ///
     /// Purity polymorphic: Runs in parallel when given a pure function `f`.
     ///
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
