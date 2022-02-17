@@ -339,6 +339,8 @@ namespace Set {
     ///
     /// Returns the sum of all elements in the set `s` according to the function `f`.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
     @ParallelWhenPure
     pub def sumWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
         let Set(t) = s;
@@ -360,6 +362,8 @@ namespace Set {
 
     ///
     /// Returns the product of all elements in the set `s` according to the function `f`.
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def productWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
