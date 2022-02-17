@@ -32,10 +32,10 @@ namespace System {
         ///
         pub def readLines(): Iterator[String] & Impure =
             import static get java.lang.System.in: ##java.io.InputStream & Impure as getSystemIn;
-            import new java.io.InputStreamReader(##java.io.InputStream) as newInputStream;
-            import new java.io.BufferedReader(##java.io.Reader) as newBufferedReader;
+            import new java.io.InputStreamReader(##java.io.InputStream): ##java.io.InputStreamReader & Impure as newInputStream;
+            import new java.io.BufferedReader(##java.io.Reader): ##java.io.BufferedReader & Impure as newBufferedReader;
             // note: BufferedReader.readLine can block
-            import java.io.BufferedReader.readLine() as brReadLine;
+            import java.io.BufferedReader.readLine(): String & Impure as brReadLine;
 
             let br = newBufferedReader(newInputStream(getSystemIn()) as ##java.io.Reader); // up-cast to superclass
             let nextLine = ref None;
@@ -69,35 +69,35 @@ namespace System {
         /// Prints the given string `s` to the standard output stream.
         ///
         pub def print(s: String): Unit & Impure =
-            import java.io.PrintStream.print(String);
+            import java.io.PrintStream.print(String): Unit & Impure;
             s |> print(getOutputStream())
 
         ///
         /// Prints the given string `s` and a newline to the standard output stream.
         ///
         pub def println(s: String): Unit & Impure =
-            import java.io.PrintStream.println(String);
+            import java.io.PrintStream.println(String): Unit & Impure;
             s |> println(getOutputStream())
 
         ///
         /// Prints a newline to the standard output stream.
         ///
         pub def newLine(): Unit & Impure =
-            import java.io.PrintStream.println();
+            import java.io.PrintStream.println(): Unit & Impure;
             getOutputStream() |> println
 
         ///
         /// Flushes the standard output stream.
         ///
         pub def flush(): Unit & Impure =
-            import java.io.PrintStream.flush();
+            import java.io.PrintStream.flush(): Unit & Impure;
             getOutputStream() |> flush
 
         ///
         /// Returns the standard output stream.
         ///
         def getOutputStream(): ##java.io.PrintStream & Impure =
-            import static get java.lang.System.out as getOut;
+            import static get java.lang.System.out: ##java.io.PrintStream & Impure as getOut;
             getOut()
 
     }
@@ -111,35 +111,35 @@ namespace System {
         /// Prints the given string `s` to the standard error stream.
         ///
         pub def print(s: String): Unit & Impure =
-            import java.io.PrintStream.print(String);
+            import java.io.PrintStream.print(String): Unit & Impure;
             s |> print(getErrorStream())
 
         ///
         /// Prints the given string `s` and a newline to the standard error stream.
         ///
         pub def println(s: String): Unit & Impure =
-            import java.io.PrintStream.println(String);
+            import java.io.PrintStream.println(String): Unit & Impure;
             s |> println(getErrorStream())
 
         ///
         /// Prints a newline to the standard error stream.
         ///
         pub def newLine(): Unit & Impure =
-            import java.io.PrintStream.println();
+            import java.io.PrintStream.println(): Unit & Impure;
             getErrorStream() |> println
 
         ///
         /// Flushes the standard error stream.
         ///
         pub def flush(): Unit & Impure =
-            import java.io.PrintStream.flush();
+            import java.io.PrintStream.flush(): Unit & Impure;
             getErrorStream() |> flush
 
         ///
         /// Returns the standard error stream.
         ///
         def getErrorStream(): ##java.io.PrintStream & Impure =
-            import static get java.lang.System.err as getErr;
+            import static get java.lang.System.err: ##java.io.PrintStream & Impure as getErr;
             getErr()
 
     }
