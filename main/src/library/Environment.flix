@@ -19,9 +19,9 @@ namespace Environment {
     /// Returns an map of the current system environment.
     ///
     pub def getEnv(): Map[String, String] =
-        import static java.lang.System.getenv();
-        import java.util.Map.entrySet();
-        import java.util.Set.iterator();
+        import static java.lang.System.getenv(): Map[String, String] & Impure;
+        import java.util.Map.entrySet(): Set[String];
+        import java.util.Set.iterator() Iterator[Set[String]];
         try {
             let iter = getenv() |> entrySet |> iterator;
             getEnvHelper(iter, Map.empty())
@@ -72,22 +72,22 @@ namespace Environment {
     ///  Returns the file separator
     ///
     pub def getFileSeparator(): String =
-        import static get java.io.File.separator as sep;
-        sep() as String & Pure
+        import static get java.io.File.separator: String & Pure as sep;
+        sep()
 
     ///
     /// Returns the path separator
     ///
     pub def getPathSeparator(): String =
-        import static get java.io.File.pathSeparator as pathSep;
-        pathSep() as String & Pure
+        import static get java.io.File.pathSeparator: String & Pure as pathSep;
+        pathSep()
 
     ///
     /// Returns the system line separator
     ///
     pub def getLineSeparator(): String =
-        import static java.lang.System.lineSeparator();
-        lineSeparator() as String & Pure
+        import static java.lang.System.lineSeparator(): String & Pure;
+        lineSeparator()
 
     ///
     /// Returns the user's current working directory
@@ -120,10 +120,10 @@ namespace Environment {
         (getRuntime() |> availableProcessors)
 
     def getEnvHelper(iter: ##java.util.Iterator, m: Map[String, String]): Map[String, String] & Impure =
-        import java.util.Iterator.hasNext();
-        import java.util.Iterator.next();
-        import java.util.Map$Entry.getKey();
-        import java.util.Map$Entry.getValue();
+        import java.util.Iterator.hasNext(): Bool & Impure;
+        import java.util.Iterator.next(): String & Impure;
+        import java.util.Map$Entry.getKey(): String & Impure;
+        import java.util.Map$Entry.getValue(): String & Impure;
         if (hasNext(iter))
             let entry = next(iter) as ##java.util.Map$Entry;
             let key = getKey(entry) as String;
