@@ -554,6 +554,8 @@ namespace Map {
     ///
     /// Returns the number of mappings `k => v` in `m` that satisfy the predicate `f`.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
     @ParallelWhenPure
     pub def count(f: (k, v) -> Bool & ef, m: Map[k, v]): Int32 & ef =
         let f1 = r -> f(r.k, r.v);
@@ -582,6 +584,8 @@ namespace Map {
 
     ///
     /// Returns the sum of all key-value pairs `k => v` in the map `m` according to the function `f`.
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def sumWith(f: (k, v) -> Int32 & ef, m: Map[k, v]): Int32 & ef =
@@ -613,6 +617,8 @@ namespace Map {
 
     ///
     /// Returns the product of all key-value pairs `k => v` in the map `m` according to the function `f`.
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def productWith(f: (k, v) -> Int32 & ef, m: Map[k, v]): Int32 & ef =
