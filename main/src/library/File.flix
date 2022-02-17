@@ -808,9 +808,9 @@ namespace File {
     pub def mkdir(d: String): Result[Bool, String] = ???
 
     ///
-    /// Creates the directory along with all necessary parent directories in `d`.
+    /// Creates the directory `d` along with all necessary parent directories.
     ///
-    /// Returns `true` if the last directory of `d` was created and did not already exist.
+    /// Returns `true` if the directory `d` was created and did not already exist.
     ///
     pub def mkdirs(d: String): Result[Bool, String] = ???
 
