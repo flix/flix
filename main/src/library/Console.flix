@@ -20,7 +20,7 @@ namespace Console {
     ///
     pub def hasConsole(): Bool & Impure =
         import static java.lang.System.console();
-        Object.toOption(console()) |> Option.exists(_ -> true)
+        not Object.isNull(console())
 
     ///
     /// Reads a single line from the console.
