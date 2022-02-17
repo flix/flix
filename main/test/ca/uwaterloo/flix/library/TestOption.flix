@@ -94,10 +94,10 @@ def map02(): Bool = Option.map(i -> 2*i, Some(1)) == Some(2)
 def map03(): Bool = Option.map(i -> 2*i, Some(2)) == Some(4)
 
 @test
-def map04(): Bool =
+def map04(): Bool & Impure =
     let n = ref 2;
     Option.map(i -> n := i, Some(4));
-    Some(4) == deref n
+    4 == deref n
 
 /////////////////////////////////////////////////////////////////////////////
 // toList                                                                  //
