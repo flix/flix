@@ -93,6 +93,12 @@ def map02(): Bool = Option.map(i -> 2*i, Some(1)) == Some(2)
 @test
 def map03(): Bool = Option.map(i -> 2*i, Some(2)) == Some(4)
 
+@test
+def map03(): Bool =
+    let n = ref 2;
+    Option.map(i -> n := i, Some(4));
+    Some(4) == deref n
+
 /////////////////////////////////////////////////////////////////////////////
 // toList                                                                  //
 /////////////////////////////////////////////////////////////////////////////
