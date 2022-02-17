@@ -19,9 +19,9 @@ namespace Environment {
     /// Returns an map of the current system environment.
     ///
     pub def getEnv(): Map[String, String] =
-        import static java.lang.System.getenv(): Map[String, String] & Impure;
-        import java.util.Map.entrySet(): Set[String];
-        import java.util.Set.iterator() Iterator[Set[String]];
+        import static java.lang.System.getenv(): ##java.util.Map & Impure;
+        import java.util.Map.entrySet(): ##java.util.Set & Impure;
+        import java.util.Set.iterator(): ##java.util.Iterator & Impure;
         try {
             let iter = getenv() |> entrySet |> iterator;
             getEnvHelper(iter, Map.empty())
