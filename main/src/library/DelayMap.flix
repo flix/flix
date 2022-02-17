@@ -219,7 +219,7 @@ namespace DelayMap {
     ///
     /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
     ///
-     @Experimental @ParallelWhenPure
+    @Experimental @ParallelWhenPure
     pub def maximumKeyBy(cmp: (k, k) -> Comparison & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == GreaterThan) (kl, vl) else (kr, vr), m);
         let f = r -> cmp(r.kl, r.kr);

@@ -584,9 +584,19 @@ namespace Map {
     ///
     /// Returns the sum of all key-value pairs `k => v` in the map `m` according to the function `f`.
     ///
+    @ParallelWhenPure
     pub def sumWith(f: (k, v) -> Int32 & ef, m: Map[k, v]): Int32 & ef =
-        // TODO: Purity polymorphic / Parallel when pure
-        foldLeftWithKey((acc, k, v) -> f(k, v) + acc, 0, m)
+        let f1 = match (k, v) -> f(k, v);
+        let Map(t) = m;
+        def sw() = RedBlackTree.sumWith(f, t);
+        reifyEff(f1) {
+            case Pure(g) =>
+                if (useParallelEvaluation(m))
+                    RedBlackTree.parSumWith(threads() - 1, (k, v) -> g((k, v)), t) as & Pure
+                else
+                    sw()
+            case _ => sw()
+        }
 
     ///
     /// Returns the product of all keys in the map `m`.
@@ -605,9 +615,19 @@ namespace Map {
     ///
     /// Returns the product of all key-value pairs `k => v` in the map `m` according to the function `f`.
     ///
+    @ParallelWhenPure
     pub def productWith(f: (k, v) -> Int32 & ef, m: Map[k, v]): Int32 & ef =
+        let f1 = match (k, v) -> f(k, v);
         let Map(t) = m;
-        RedBlackTree.productWith(f, t)
+        def pw() = RedBlackTree.productWith(f, t);
+        reifyEff(f1) {
+            case Pure(g) =>
+                if (useParallelEvaluation(m))
+                    RedBlackTree.parProductWith(threads() - 1, (k, v) -> g((k, v)), t) as & Pure
+                else
+                    pw()
+            case _ => pw()
+        }
 
     ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.
