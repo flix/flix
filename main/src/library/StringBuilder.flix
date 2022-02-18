@@ -25,7 +25,7 @@ namespace StringBuilder {
     /// Returns a new mutable StringBuilder.
     ///
     pub def new(): StringBuilder & Impure =
-        import new java.lang.StringBuilder() as newStringBuilder;
+        import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
         StringBuilder(newStringBuilder())
 
     ///
@@ -40,7 +40,7 @@ namespace StringBuilder {
     /// Append the String `s` to the StringBuilder `sb`.
     ///
     pub def appendString!(sb: StringBuilder, s: String): Unit & Impure =
-        import java.lang.StringBuilder.append(String);
+        import java.lang.StringBuilder.append(String): ##java.lang.StringBuilder & Impure;
         let StringBuilder(msb) = sb;
         msb `append` s;
         ()
@@ -94,7 +94,7 @@ namespace StringBuilder {
     /// Return the length of the StringBuilder `sb`.
     ///
     pub def length(sb: StringBuilder): Int32 & Impure =
-        import java.lang.StringBuilder.length();
+        import java.lang.StringBuilder.length(): Int32 & Impure;
         let StringBuilder(msb) = sb;
         length(msb)
 
@@ -102,7 +102,7 @@ namespace StringBuilder {
     /// Convert the StringBuilder `sb` to a string.
     ///
     pub def toString(sb: StringBuilder): String & Impure =
-        import java.lang.StringBuilder.toString();
+        import java.lang.StringBuilder.toString(): String & Impure;
         let StringBuilder(msb) = sb;
         toString(msb)
 
