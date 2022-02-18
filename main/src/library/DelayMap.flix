@@ -372,12 +372,46 @@ namespace DelayMap {
     /// Helper function for `mapWithKey`. Applies `f` eagerly.
     ///
     def mapWithKeyE(f: (k, v1) -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef =
-        let DMap(t) = m;
         let g = (k, v) -> {
                 let x1 = f(k, force v);
                 lazy x1
             };
+        let DMap(t) = forceAll(m);
         DMap(RedBlackTree.mapWithKey(g, t))
+
+    ///
+    /// Forces **all values** in `m`.
+    ///
+    @Parallel
+    pub def forceAll(m: DelayMap[k, v]): DelayMap[k, v] =
+        use RedBlackTree.RedBlackTree.Node;
+        def seqLoop(tt) = match tt {
+            case Node(_, a, _, v, b) =>
+                let _ = seqLoop(a);
+                let _ = force v;
+                let _ = seqLoop(b);
+                tt
+            case _ => tt
+        };
+        def parLoop(n, tt) = {
+            if (n <= 1)
+                seqLoop(tt)
+            else
+                match tt {
+                    case Node(_, a, _, v, b) =>
+                        let chanL = chan RedBlackTree[k, Lazy[v]] 1;
+                        let chanR = chan RedBlackTree[k, Lazy[v]] 1;
+                        spawn (chanL <- parLoop((n - 2) / 2, a)); // We divide the rest of the threads as follows:
+                        spawn (chanR <- parLoop((n - 2) / 2, b)); // We spawn two new threads leaving us with n - 2
+                        let _ = force v;                          // that we distribute over the two spanned threads.
+                        let _ = <- chanL;
+                        let _ = <- chanR;
+                        tt
+                    case _ => tt
+                }
+        };
+        let DMap(t) = m;
+        DMap(parLoop(threads() - 1, t)) as & Pure
 
     ///
     /// Returns a map of all mappings `k => v` in `m` where `v` satisfies the predicate `f`.
