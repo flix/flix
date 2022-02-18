@@ -104,6 +104,9 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
     pub def maximumKeyBy(cmp: (k, k) -> Comparison & ef, m: MutMap[k, v]): Option[(k, v)] & Impure =
         let MutMap(mm) = m;
         Map.maximumKeyBy(cmp, deref mm)
@@ -326,6 +329,26 @@ namespace MutMap {
         Map.findRight(f, deref mm)
 
     ///
+    /// Returns a map with mappings `k => f(v)` for every `k => v` in `m`.
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def map(f: v1 -> v2 & ef, m: MutMap[k, v1]): MutMap[k, v2] & Impure = mapWithKey((_, v) -> f(v), m)
+
+    ///
+    /// Returns a map with mappings `k => f(k, v)` for every `k => v` in `m`.
+    ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def mapWithKey(f: (k, v1) -> v2 & ef, m: MutMap[k, v1]): MutMap[k, v2] & Impure =
+        let MutMap(mm) = m;
+        let mms = Map.mapWithKey(f, deref mm);
+        MutMap(ref mms)
+
+
+    ///
     /// Alias for `foldLeftWithKey`.
     ///
     pub def foldWithKey(f: (b, k, v) -> b & ef, i: b, m: MutMap[k, v]): b & Impure  =
@@ -413,9 +436,10 @@ namespace MutMap {
     ///
     /// Returns the number of mappings in the mutable map `m` that satisfy the predicate function `f`.
     ///
-    /// The function `f` must be pure.
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
     ///
-    pub def count(f: (k, v) -> Bool, m: MutMap[k, v]): Int32 & Impure =
+    @ParallelWhenPure
+    pub def count(f: (k, v) -> Bool & ef, m: MutMap[k, v]): Int32 & Impure =
         let MutMap(mm) = m;
         Map.count(f, deref mm)
 
@@ -436,6 +460,9 @@ namespace MutMap {
     ///
     /// Returns the sum of all key-value pairs `k => v` in the map `m` according to the function `f`.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
     pub def sumWith(f: (k, v) -> Int32 & ef, m: MutMap[k, v]): Int32 & Impure =
         let MutMap(mm) = m;
         Map.sumWith(f, deref mm)
@@ -457,6 +484,9 @@ namespace MutMap {
     ///
     /// Returns the product of all key-value pairs `k => v` in the mutable map `m` according to the function `f`.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
     pub def productWith(f: (k, v) -> Int32 & ef, m: MutMap[k, v]): Int32 & Impure =
         let MutMap(mm) = m;
         Map.productWith(f, deref mm)
