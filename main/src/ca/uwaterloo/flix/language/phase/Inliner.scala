@@ -33,7 +33,6 @@ object Inliner {
    * Performs inlining on the given AST `root`.
    */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Inliner") {
-    // TODO: Implement inliner.
     // Visit every definition in the program.
     val defs = root.defs.map {
       case (sym, defn) => sym -> defn.copy(exp = visitExp(defn.exp, Map.empty))
@@ -47,10 +46,14 @@ object Inliner {
       println(PrettyPrinter.Lifted.fmtRoot(result, Formatter.AnsiTerminalFormatter))
     }
 
-    return result.toSuccess
+    result.toSuccess
   }
 
-  def visitExp(exp0: Expression, subst0: Map[Symbol.VarSym, Int]): Expression = exp0 match {
+  /**
+   * Performs inlining operations on the expression `exp0` of type OccurrenceAst.Expression.
+   * Returns an expression of type LiftedAst.Expression
+   */
+  private def visitExp(exp0: Expression, subst0: Map[Symbol.VarSym, Int]): Expression = exp0 match {
     case Expression.Unit(_) => exp0
 
     case Expression.Null(_, _) => exp0
