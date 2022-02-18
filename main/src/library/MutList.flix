@@ -572,7 +572,6 @@ namespace MutList {
         let iter = Iterable.iterator(t);
         def loop(a, b) = {
             let Iterator(done, next) = b;
-
             if (not done()) {
                 MutList.push!(next(), a);
                 loop(a, b)
