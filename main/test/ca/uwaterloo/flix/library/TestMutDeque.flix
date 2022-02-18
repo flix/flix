@@ -317,6 +317,21 @@ namespace TestMutDeque {
         MutDeque.popFront(d) == None
 
     /////////////////////////////////////////////////////////////////////////////
+    // pushAllFront                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def pushAllFront01(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(4, d);
+        MutDeque.pushBack(5, d);
+
+        let l = 3 :: 2 :: 1 :: Nil;
+        MutDeque.pushAllFront(l, d);
+
+        MutDeque.toList(d) == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
     // sameElements                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
