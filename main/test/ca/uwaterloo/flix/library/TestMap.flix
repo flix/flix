@@ -977,6 +977,14 @@ def count08(): Bool & Impure =
         Map#{10 => 10, -10 => -10} |>
             Map.sumWith((k, v) -> k + v) == 0
 
+    @test
+    def sumWith07(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, range) |> List.toMap;
+        let a = MutList.new();
+        Map.sumWith((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); 1 }, m);
+        MutList.toList(a) == range
+
 
     /////////////////////////////////////////////////////////////////////////////
     // productValues                                                           //
@@ -1078,6 +1086,14 @@ def count08(): Bool & Impure =
     def productWith06(): Bool =
         Map#{10 => 10, -10 => -10} |>
             Map.productWith((k, v) -> k + v) == -400
+
+    @test
+    def productWith07(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, range) |> List.toMap;
+        let a = MutList.new();
+        Map.productWith((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); 1 }, m);
+        MutList.toList(a) == range
 
 
 /////////////////////////////////////////////////////////////////////////////
