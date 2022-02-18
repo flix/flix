@@ -568,17 +568,19 @@ namespace MutList {
     ///
     /// Inserts all the elements in the given mutable list `v2` into the mutable list `v1`.
     ///
-    pub def append!(v1: MutList[a], v2: MutList[a]): Unit & Impure =
-        let MutList(a1, l1) = v1;
-        let MutList(a2, l2) = v2;
-        let len1 = deref l1;
-        let len2 = deref l2;
-        if (len2 > Array.length(deref a1) - len1)
-            reserve!(len2, v1)
-        else
-            ();
-        Array.updateSequence!(len1, deref a2, deref a1);
-        l1 := len1 + len2
+    pub def append!(v1: MutList[a], t: t[a]): Unit & Impure with Iterable[t] =
+        let iter = Iterable.iterator(t);
+        def loop(a, b) = {
+            let Iterator(done, next) = b;
+
+            if (not done()) {
+                MutList.push!(next(), a);
+                loop(a, b)
+            } else {
+                ()
+            }
+        };
+        loop(v1, iter)
 
     ///
     /// Removes all elements from the given mutable list `v` that do not satisfy the given predicate `f`.
