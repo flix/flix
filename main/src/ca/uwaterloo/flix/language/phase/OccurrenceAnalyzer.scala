@@ -3,11 +3,11 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation.ToSuccess
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur
 
 object OccurrenceAnalyzer {
 
@@ -33,7 +33,10 @@ object OccurrenceAnalyzer {
     return result.toSuccess
   }
 
-  def visitExp(exp0: LiftedAst.Expression): (OccurrenceAst.Expression, Map[Symbol.VarSym, OccurrenceAst.Occur]) = exp0 match {
+  /**
+    * Performs occurrence analysis on the given expression `exp0`
+   */
+  private def visitExp(exp0: LiftedAst.Expression): (OccurrenceAst.Expression, Map[Symbol.VarSym, OccurrenceAst.Occur]) = exp0 match {
     case Expression.Unit(loc) => (OccurrenceAst.Expression.Unit(loc), Map.empty)
 
     case Expression.Null(tpe, loc) => (OccurrenceAst.Expression.Null(tpe, loc), Map.empty)
@@ -71,8 +74,8 @@ object OccurrenceAnalyzer {
     case Expression.ApplyClo(exp, args, tpe, loc) =>
       val (e, o1) = visitExp(exp)
       val (as, o2) = visitExps(args)
-      val m = merge(o1, o2)
-      (OccurrenceAst.Expression.ApplyClo(e, as, tpe, loc), m)
+      val o3 = combineAll(o1, o2)
+      (OccurrenceAst.Expression.ApplyClo(e, as, tpe, loc), o3)
 
     case Expression.ApplyDef(sym, args, tpe, loc) =>
       val (as, o1) = visitExps(args)
@@ -81,7 +84,7 @@ object OccurrenceAnalyzer {
     case Expression.ApplyCloTail(exp, args, tpe, loc) =>
       val (e, o1) = visitExp(exp)
       val (as, o2) = visitExps(args)
-      val o3 = merge(o1, o2)
+      val o3 = combineAll(o1, o2)
       (OccurrenceAst.Expression.ApplyCloTail(e, as, tpe, loc), o3)
 
     case Expression.ApplyDefTail(sym, args, tpe, loc) =>
@@ -102,14 +105,14 @@ object OccurrenceAnalyzer {
     case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
       val (e1, o1) = visitExp(exp1)
       val (e2, o2) = visitExp(exp2)
-      val o3 = merge(o1, o2)
+      val o3 = combineAll(o1, o2)
       (OccurrenceAst.Expression.Binary(sop, op, e1, e2, tpe, loc), o3)
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       val (e1, o1) = visitExp(exp1)
       val (e2, o2) = visitExp(exp2)
       val (e3, o3) = visitExp(exp3)
-      val o4 = merge(o1, merge(o2, o3))
+      val o4 = combineAll(o1, combineAll(o2, o3))
       (OccurrenceAst.Expression.IfThenElse(e1, e2, e3, tpe, loc), o4)
 
     case Expression.Branch(exp, branches, tpe, loc) =>
@@ -117,7 +120,7 @@ object OccurrenceAnalyzer {
       var bs = Map[Symbol.LabelSym, OccurrenceAst.Expression]()
       for ((sym, exp1) <- branches) {
         val (e2, o2) = visitExp(exp1)
-        o1 = merge(o1, o2)
+        o1 = combineAll(o1, o2)
         bs += (sym -> e2)
       }
       (OccurrenceAst.Expression.Branch(e1, bs, tpe, loc), o1)
@@ -127,17 +130,14 @@ object OccurrenceAnalyzer {
     case Expression.Let(sym, exp1, exp2, tpe, loc) =>
       val (e1, o1) = visitExp(exp1)
       val (e2, o2) = visitExp(exp2)
-      val o3 = merge(o1, o2)
-      val occur = o3.get(sym) match {
-        case Some(occ) => occ
-        case None => Dead
-      }
+      val o3 = combineAll(o1, o2)
+      val occur = o3.getOrElse(sym, Dead)
       (OccurrenceAst.Expression.Let(sym, e1, e2, occur, tpe, loc), o3)
 
     case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
       val (e1, o1) = visitExp(exp1)
       val (e2, o2) = visitExp(exp2)
-      val o3 = merge(o1, o2)
+      val o3 = combineAll(o1, o2)
       (OccurrenceAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, loc), o3)
 
     case Expression.Is(sym, tag, exp, loc) =>
@@ -169,7 +169,7 @@ object OccurrenceAnalyzer {
     case Expression.RecordExtend(field, value, rest, tpe, loc) =>
       val (v, o1) = visitExp(value)
       val (r, o2) = visitExp(rest)
-      val o3 = merge(o1, o2)
+      val o3 = combineAll(o1, o2)
       (OccurrenceAst.Expression.RecordExtend(field, v, r, tpe, loc), o3)
 
     case Expression.RecordRestrict(field, rest, tpe, loc) =>
@@ -183,20 +183,20 @@ object OccurrenceAnalyzer {
     case Expression.ArrayNew(elm, len, tpe, loc) =>
       val (e, o1) = visitExp(elm)
       val (l, o2) = visitExp(len)
-      val o3 = merge(o1, o2)
+      val o3 = combineAll(o1, o2)
       (OccurrenceAst.Expression.ArrayNew(e, l, tpe, loc), o3)
 
     case Expression.ArrayLoad(base, index, tpe, loc) =>
       val (b, o1) = visitExp(base)
-      val (i, o2) = visitExp(base)
-      val o3 = merge(o1, o2)
+      val (i, o2) = visitExp(index)
+      val o3 = combineAll(o1, o2)
       (OccurrenceAst.Expression.ArrayLoad(b, i, tpe, loc), o3)
 
     case Expression.ArrayStore(base, index, elm, tpe, loc) =>
       val (b, o1) = visitExp(base)
-      val (i, o2) = visitExp(base)
+      val (i, o2) = visitExp(index)
       val (e, o3) = visitExp(elm)
-      val o4 = merge(o1, merge(o2, o3))
+      val o4 = combineAll(o1, combineAll(o2, o3))
       (OccurrenceAst.Expression.ArrayStore(b, i, e, tpe, loc), o4)
 
     case Expression.ArrayLength(base, tpe, loc) =>
@@ -207,7 +207,7 @@ object OccurrenceAnalyzer {
       val (b, o1) = visitExp(base)
       val (i1, o2) = visitExp(beginIndex)
       val (i2, o3) = visitExp(endIndex)
-      val o4 = merge(o1, merge(o2, o3))
+      val o4 = combineAll(o1, combineAll(o2, o3))
       (OccurrenceAst.Expression.ArraySlice(b, i1, i2, tpe, loc), o4)
 
     case Expression.Ref(exp, tpe, loc) =>
@@ -221,7 +221,7 @@ object OccurrenceAnalyzer {
     case Expression.Assign(exp1, exp2, tpe, loc) =>
       val (e1, o1) = visitExp(exp1)
       val (e2, o2) = visitExp(exp2)
-      val o3 = merge(o1, o2)
+      val o3 = combineAll(o1, o2)
       (OccurrenceAst.Expression.Assign(e1, e2, tpe, loc), o3)
 
     case Expression.Cast(exp, tpe, loc) =>
@@ -234,7 +234,7 @@ object OccurrenceAnalyzer {
       for (r <- rules) {
         val (e, o2) = visitExp(r.exp)
         rs = rs :+ OccurrenceAst.CatchRule(r.sym, r.clazz, e)
-        o1 = merge(o1, o2)
+        o1 = combineAll(o1, o2)
       }
       (OccurrenceAst.Expression.TryCatch(e, rs, tpe, loc), o1)
 
@@ -245,7 +245,7 @@ object OccurrenceAnalyzer {
     case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
       val (e, o1) = visitExp(exp)
       val (as, o2) = visitExps(args)
-      val o3 = merge(o1, o2)
+      val o3 = combineAll(o1, o2)
       (OccurrenceAst.Expression.InvokeMethod(method, e, as, tpe, loc), o3)
 
     case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
@@ -259,7 +259,7 @@ object OccurrenceAnalyzer {
     case Expression.PutField(field, exp1, exp2, tpe, loc) =>
       val (e1, o1) = visitExp(exp1)
       val (e2, o2) = visitExp(exp2)
-      val o3 = merge(o1, o2)
+      val o3 = combineAll(o1, o2)
       (OccurrenceAst.Expression.PutField(field, e1, e2, tpe, loc), o3)
 
     case Expression.GetStaticField(field, tpe, loc) =>
@@ -280,7 +280,7 @@ object OccurrenceAnalyzer {
     case Expression.PutChannel(exp1, exp2, tpe, loc) =>
       val (e1, o1) = visitExp(exp1)
       val (e2, o2) = visitExp(exp2)
-      val o3 = merge(o1, o2)
+      val o3 = combineAll(o1, o2)
       (OccurrenceAst.Expression.PutChannel(e1, e2, tpe, loc), o3)
 
     case Expression.SelectChannel(rules, default, tpe, loc) =>
@@ -290,14 +290,13 @@ object OccurrenceAnalyzer {
         val (c, o2) = visitExp(r.chan)
         val (e, o3) = visitExp(r.exp)
         rs = rs :+ OccurrenceAst.SelectChannelRule(r.sym, c, e)
-        o1 = merge(o1, merge(o2, o3))
+        o1 = combineAll(o1, combineAll(o2, o3))
       }
-      val (d, o4) = default match {
-        case Some(exp) =>
-          val (d, o5) = visitExp(exp)
-          (Some(d), merge(o5, o1))
-        case None => (None, o1)
-      }
+
+      val (d, o4) = resolveOption(default, (None, o1), (x:LiftedAst.Expression) => {
+        val (d, o5) = visitExp(x)
+        (Some(d), combineAll(o5, o1))
+      })
       (OccurrenceAst.Expression.SelectChannel(rs, d, tpe, loc), o4)
 
     case Expression.Spawn(exp, tpe, loc) =>
@@ -319,35 +318,52 @@ object OccurrenceAnalyzer {
       (OccurrenceAst.Expression.MatchError(tpe, loc), Map.empty)
   }
 
-  def visitExps(args: List[LiftedAst.Expression]): (List[OccurrenceAst.Expression], Map[Symbol.VarSym, Occur]) = {
+  /**
+   * Performs occurrence analysis on a list of expressions 'args' and merges occurrences
+   */
+  private def visitExps(args: List[LiftedAst.Expression]): (List[OccurrenceAst.Expression], Map[Symbol.VarSym, Occur]) = {
     args.foldLeft((List[OccurrenceAst.Expression](), Map[Symbol.VarSym, OccurrenceAst.Occur]()))((acc, arg) => {
-      val (e, o) = visitExp(arg)
-      val m = merge(o, acc._2)
-      (acc._1 :+ e, m)
+      val (e, o1) = visitExp(arg)
+      val o2 = combineAll(o1, acc._2)
+      (acc._1 :+ e, o2)
     })
   }
 
-  def merge(m1: Map[Symbol.VarSym, Occur], m2: Map[Symbol.VarSym, Occur]): Map[Symbol.VarSym, Occur] = {
-
-    def combine(o1: Occur, o2: Occur): Occur = (o1, o2) match {
-      case (Dead, _) => o2
-      case (_, Dead) => o1
-      case _ => Many
-    }
-
+  /**
+   * Combines the 2 maps `m1` and `m2` of the type (Symbol -> Occur) into a single map of same type using the function `combine`.
+   */
+  private def combineAll(m1: Map[Symbol.VarSym, Occur], m2: Map[Symbol.VarSym, Occur]): Map[Symbol.VarSym, Occur]
+  =
+  {
     var m3 = m1.map {
       case (sym, o1) =>
-        val opt = m2.get(sym)
-        opt match {
-          case Some(o2) => (sym, combine(o1, o2))
-          case None => (sym, o1)
-        }
+        val o3 = resolveOption(m2.get(sym), o1, combine(o1, _))
+        (sym, o3)
     }
 
     m2.foreach {
       case (sym, o) => if (!m1.contains(sym)) m3 += (sym -> o)
     }
     m3
+  }
+
+  /**
+   * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence.
+   */
+  private def combine(o1: Occur, o2: Occur): Occur = (o1, o2) match {
+    case (Dead, _) => o2
+    case (_, Dead) => o1
+    case _ => Many
+  }
+
+  /**
+   * Matches on `opt`. If None returns `default`, else apply `f` on value in Some(B)
+   */
+  private def resolveOption[A, B](opt: Option[B], default: A, f: B => A): A = {
+    opt match {
+      case None => default
+      case Some(x) => f(x)
+    }
   }
 }
 
