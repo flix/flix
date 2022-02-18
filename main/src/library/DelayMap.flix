@@ -739,8 +739,8 @@ namespace DelayMap {
         let f1 = match (k, v) -> f(k, v);
         let DMap(t) = m;
         def sw() = {
-            let _ = forceAll(m)
-            RedBlackTree.sumWith((k, v) -> f(k, force v), t);
+            let _ = forceAll(m);
+            RedBlackTree.sumWith((k, v) -> f(k, force v), t)
         };
         reifyEff(f1) {
             case Pure(g) =>
@@ -776,8 +776,8 @@ namespace DelayMap {
         let f1 = match (k, v) -> f(k, v);
         let DMap(t) = m;
         def pw() = {
-            let _ = forceAll(m)
-            RedBlackTree.productWith((k, v) -> f(k, force v), t);
+            let _ = forceAll(m);
+            RedBlackTree.productWith((k, v) -> f(k, force v), t)
         };
         reifyEff(f1) {
             case Pure(g) =>
