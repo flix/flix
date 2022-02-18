@@ -26,14 +26,14 @@ namespace Concurrent/ReentrantLock {
     /// `fair = False` is the default for Java.
     ///
     pub def new(fair: Bool): Concurrent/ReentrantLock.ReentrantLock & Impure =
-        import new java.util.concurrent.locks.ReentrantLock(Bool): ##java.util.concurrent.locks.ReentrantLock & Pure as reentrantLock;
+        import new java.util.concurrent.locks.ReentrantLock(Bool): ##java.util.concurrent.locks.ReentrantLock & Impure as reentrantLock;
         ReentrantLock(reentrantLock(fair))
 
     ///
     /// Returns true if this lock has fairness set true.
     ///
-    pub def isFair(lock: Concurrent/ReentrantLock.ReentrantLock): Bool & Impure =
-        import java.util.concurrent.locks.ReentrantLock.isFair(): Bool & Impure;
+    pub def isFair(lock: Concurrent/ReentrantLock.ReentrantLock): Bool & Pure =
+        import java.util.concurrent.locks.ReentrantLock.isFair(): Bool & Pure;
         let ReentrantLock(l) = lock;
         isFair(l)
 
