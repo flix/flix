@@ -66,10 +66,10 @@ object OccurrenceAnalyzer {
     case Expression.Var(sym, tpe, loc) => (OccurrenceAst.Expression.Var(sym, tpe, loc), Map(sym -> Once))
 
     case Expression.Closure(sym, freeVars, tpe, loc) =>
-      val freeVars1 = freeVars.map {
+      val fv = freeVars.map {
         case LiftedAst.FreeVar(sym, tpe) => OccurrenceAst.FreeVar(sym, tpe)
       }
-      (OccurrenceAst.Expression.Closure(sym, freeVars1, tpe, loc), Map.empty)
+      (OccurrenceAst.Expression.Closure(sym, fv, tpe, loc), Map.empty)
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
       val (e, o1) = visitExp(exp)
