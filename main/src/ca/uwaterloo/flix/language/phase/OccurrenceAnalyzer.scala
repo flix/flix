@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Magnus Madsen, Anna Krogh, Patrick Lundvig, Christian Bonde
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
@@ -9,17 +25,25 @@ import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 
+/**
+ * The occurrence analyzer collects information on variable usage
+ */
 object OccurrenceAnalyzer {
 
-
+  /**
+   * Performs occurrence analysis on the given AST `root`.
+   */
   def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[OccurrenceAst.Root, CompilationMessage] = flix.phase("OccurrenceAnalyzer") {
-    // TODO: Implement occurrence analysis.
+
+    // Visit every definition in the program and transform to type 'OccurrenceAst.Def'
     val defs = root.defs.map {
       case (sym, defn) =>
         val fparams = defn.fparams.map { case LiftedAst.FormalParam(sym, mod, tpe, loc) => OccurrenceAst.FormalParam(sym, mod, tpe, loc) }
         val (e, _) = visitExp(defn.exp)
         sym -> OccurrenceAst.Def(defn.ann, defn.mod, defn.sym, fparams, e, defn.tpe, defn.loc)
     }
+
+    // Visit every enum in the program and transform to type 'OccurrenceAst.Enum'
     val enums = root.enums.map {
       case (sym, enum) =>
         val cases = enum.cases.map {
@@ -28,9 +52,11 @@ object OccurrenceAnalyzer {
         }
         sym -> OccurrenceAst.Enum(enum.mod, enum.sym, cases, enum.tpeDeprecated, enum.loc)
     }
+
     // Reassemble the ast root.
     val result = OccurrenceAst.Root(defs, enums, root.reachable, root.sources)
-    return result.toSuccess
+
+    result.toSuccess
   }
 
   /**
@@ -319,10 +345,10 @@ object OccurrenceAnalyzer {
   }
 
   /**
-   * Performs occurrence analysis on a list of expressions 'args' and merges occurrences
+   * Performs occurrence analysis on a list of expressions 'exps' and merges occurrences
    */
-  private def visitExps(args: List[LiftedAst.Expression]): (List[OccurrenceAst.Expression], Map[Symbol.VarSym, Occur]) = {
-    args.foldLeft((List[OccurrenceAst.Expression](), Map[Symbol.VarSym, OccurrenceAst.Occur]()))((acc, arg) => {
+  private def visitExps(exps: List[LiftedAst.Expression]): (List[OccurrenceAst.Expression], Map[Symbol.VarSym, Occur]) = {
+    exps.foldLeft((List[OccurrenceAst.Expression](), Map[Symbol.VarSym, OccurrenceAst.Occur]()))((acc, arg) => {
       val (e, o1) = visitExp(arg)
       val o2 = combineAll(o1, acc._2)
       (acc._1 :+ e, o2)
