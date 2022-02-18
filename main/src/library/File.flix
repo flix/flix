@@ -91,7 +91,7 @@ namespace File {
     pub def size(f: String): Result[Int64, String] & Impure =
         try {
             use Result.flatMap;
-            import java.nio.file.attribute.BasicFileAttributes.size(): ##java.nio.file.attribute.FileTime & Impure;
+            import java.nio.file.attribute.BasicFileAttributes.size(): Int64 & Impure;
 
             let* fileAttributes = getAttributes(f);
             let fileSize = size(fileAttributes);
@@ -176,7 +176,7 @@ namespace File {
     pub def exists(f: String): Result[Bool, String] & Impure =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
-            import java.io.File.exists();
+            import java.io.File.exists(): Bool & Impure;
             Ok(exists(newFile(f)))
         } catch {
             case ex: ##java.io.IOException =>
@@ -190,7 +190,7 @@ namespace File {
     pub def isDirectory(f: String): Result[Bool, String] & Impure =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
-            import java.io.File.isDirectory();
+            import java.io.File.isDirectory(): Bool & Impure;
             Ok(isDirectory(newFile(f)))
         } catch {
             case ex: ##java.io.IOException =>
@@ -205,7 +205,7 @@ namespace File {
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
-            import static java.nio.file.Files.isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption]);
+            import static java.nio.file.Files.isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption]): Bool & Impure;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let isRegular = isRegularFile(javaPath, []);
@@ -222,7 +222,7 @@ namespace File {
     pub def isReadable(f: String): Result[Bool, String] & Impure =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
-            import java.io.File.canRead();
+            import java.io.File.canRead(): Bool & Impure;
             Ok(canRead(newFile(f)))
         } catch {
             case _: ##java.io.IOException => Err("I/O Error")
@@ -235,7 +235,7 @@ namespace File {
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
-            import static java.nio.file.Files.isSymbolicLink(##java.nio.file.Path);
+            import static java.nio.file.Files.isSymbolicLink(##java.nio.file.Path): Bool & Impure;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let isSymbolic = isSymbolicLink(javaPath);
@@ -252,7 +252,7 @@ namespace File {
     pub def isWritable(f: String): Result[Bool, String] & Impure =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
-            import java.io.File.canWrite();
+            import java.io.File.canWrite(): Bool & Impure;
             Ok(canWrite(newFile(f)))
         } catch {
             case ex: ##java.io.IOException =>
@@ -266,7 +266,7 @@ namespace File {
     pub def isExecutable(f: String): Result[Bool, String] & Impure =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
-            import java.io.File.canExecute();
+            import java.io.File.canExecute(): Bool & Impure;
             Ok(canExecute(newFile(f)))
         } catch {
             case ex: ##java.io.IOException =>
@@ -281,7 +281,7 @@ namespace File {
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
-            import static java.nio.file.Files.readString(##java.nio.file.Path);
+            import static java.nio.file.Files.readString(##java.nio.file.Path): String & Impure;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let result = readString(javaPath);
@@ -302,11 +302,11 @@ namespace File {
     pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, f : String): Result[String, String] & Impure = {
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
-            import new java.io.FileInputStream(##java.io.File) as newInputStream;
-            import java.io.FileInputStream.skip(Int64);
-            import java.io.FileInputStream.read(Array[Int8], Int32, Int32);
-            import static java.nio.charset.Charset.forName(String);
-            import new java.lang.String(Array[Int8], ##java.nio.charset.Charset) as newString;
+            import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
+            import java.io.FileInputStream.skip(Int64): Int64 & Impure;
+            import java.io.FileInputStream.read(Array[Int8], Int32, Int32): Int32 & Impure;
+            import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset & Impure;
+            import new java.lang.String(Array[Int8], ##java.nio.charset.Charset): String & Impure as newString;
 
             let javaFile = newFile(f);
             let stream = newInputStream(javaFile);
@@ -329,7 +329,7 @@ namespace File {
     pub def readLines(f: String): Result[List[String], String] & Impure = try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
-            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path);
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader & Impure;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
@@ -344,7 +344,7 @@ namespace File {
     /// Reads all lines from the given buffered reader `r` until it is empty.
     ///
     def readAll(r: ##java.io.BufferedReader): List[String] & Impure =
-        import java.io.BufferedReader.readLine();
+        import java.io.BufferedReader.readLine(): String & Impure;
         def loop(k) = {
             let l = readLine(r);
             if (Object.isNull(l))
@@ -363,8 +363,8 @@ namespace File {
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
-            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
-            import static java.nio.charset.Charset.forName(String);
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader & Impure;
+            import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset & Impure;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -383,8 +383,8 @@ namespace File {
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
-            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path);
-            import java.io.BufferedReader.readLine();
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader & Impure;
+            import java.io.BufferedReader.readLine(): String & Impure;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -421,9 +421,9 @@ namespace File {
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
-            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
-            import static java.nio.charset.Charset.forName(String);
-            import java.io.BufferedReader.readLine();
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader & Impure;
+            import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset & Impure;
+            import java.io.BufferedReader.readLine(): String & Impure;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -458,7 +458,7 @@ namespace File {
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
-            import static java.nio.file.Files.readAllBytes(##java.nio.file.Path);
+            import static java.nio.file.Files.readAllBytes(##java.nio.file.Path): Array[Int8] & Impure;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -480,9 +480,9 @@ namespace File {
     pub def readBytesWith(opts: {offset :: Int64, count :: Int32}, f: String): Result[Array[Int8], String] & Impure =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
-            import new java.io.FileInputStream(##java.io.File) as newInputStream;
-            import java.io.FileInputStream.skip(Int64);
-            import java.io.FileInputStream.read(Array[Int8], Int32, Int32);
+            import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
+            import java.io.FileInputStream.skip(Int64): Int64 & Impure;
+            import java.io.FileInputStream.read(Array[Int8], Int32, Int32): Int32 & Impure;
 
             let javaFile = newFile(f);
             let stream = newInputStream(javaFile);
@@ -522,8 +522,8 @@ namespace File {
     pub def readChunks(f: String, chunkSize: Int32): Iterator[Result[Array[Int8], String]] & Impure =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
-            import new java.io.FileInputStream(##java.io.File) as newInputStream;
-            import java.io.FileInputStream.read(Array[Int8]);
+            import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
+            import java.io.FileInputStream.read(Array[Int8]): Int32 & Impure;
 
             let javaFile = newFile(f);
             let stream = newInputStream(javaFile);
@@ -563,10 +563,10 @@ namespace File {
     pub def write(f: String, data: t): Result[Bool, String] & Impure with ToString[t] =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
-            import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
-            import java.io.PrintWriter.println(String);
-            import java.io.PrintWriter.close();
-            import java.io.PrintWriter.checkError();
+            import new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter & Impure as newPrintWriter;
+            import java.io.PrintWriter.println(String): Unit & Impure;
+            import java.io.PrintWriter.close(): Unit & Impure;
+            import java.io.PrintWriter.checkError(): Bool & Impure;
 
             let alreadyExists = File.exists(f);
 
@@ -598,10 +598,10 @@ namespace File {
     pub def writeLines(f: String, data: f[String]): Result[Bool, String] & Impure with Foldable[f] =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
-            import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
-            import java.io.PrintWriter.println(String);
-            import java.io.PrintWriter.close();
-            import java.io.PrintWriter.checkError();
+            import new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter & Impure as newPrintWriter;
+            import java.io.PrintWriter.println(String): Unit & Impure;
+            import java.io.PrintWriter.close(): Unit & Impure;
+            import java.io.PrintWriter.checkError(): Bool & Impure;
 
             let alreadyExists = File.exists(f);
 
@@ -631,11 +631,11 @@ namespace File {
     pub def append(f: String, data: t): Result[Bool, String] & Impure with ToString[t] =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
-            import new java.io.FileWriter(##java.io.File, Bool) as newFileWriter;
-            import new java.io.PrintWriter(##java.io.Writer) as newPrintWriter;
-            import java.io.PrintWriter.println(String);
-            import java.io.PrintWriter.close();
-            import java.io.PrintWriter.checkError();
+            import new java.io.FileWriter(##java.io.File, Bool): ##java.io.FileWriter & Impure as newFileWriter;
+            import new java.io.PrintWriter(##java.io.Writer): ##java.io.PrintWriter & Impure as newPrintWriter;
+            import java.io.PrintWriter.println(String): Unit & Impure;
+            import java.io.PrintWriter.close(): Unit & Impure;
+            import java.io.PrintWriter.checkError(): Bool & Impure;
 
             let alreadyExists = File.exists(f);
 
@@ -667,11 +667,11 @@ namespace File {
     pub def appendLines(f: String, data: f[String]): Result[Bool, String] & Impure with Foldable[f] =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
-            import new java.io.FileWriter(##java.io.File, Bool) as newFileWriter;
-            import new java.io.PrintWriter(##java.io.Writer) as newPrintWriter;
-            import java.io.PrintWriter.println(String);
-            import java.io.PrintWriter.close();
-            import java.io.PrintWriter.checkError();
+            import new java.io.FileWriter(##java.io.File, Bool): ##java.io.FileWriter & Impure as newFileWriter;
+            import new java.io.PrintWriter(##java.io.Writer): ##java.io.PrintWriter & Impure as newPrintWriter;
+            import java.io.PrintWriter.println(String): Unit & Impure;
+            import java.io.PrintWriter.close(): Unit & Impure;
+            import java.io.PrintWriter.checkError(): Bool & Impure;
 
             let alreadyExists = File.exists(f);
 
@@ -705,11 +705,11 @@ namespace File {
     pub def writeBytes(f: String, data: f[Int8]): Result[Bool, String] & Impure with Foldable[f] =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
-            import new java.io.FileOutputStream(##java.io.File) as newFileStream;
-            import new java.io.PrintWriter(##java.io.OutputStream) as newPrintWriter;
-            import java.io.FileOutputStream.write(Array[Int8]);
-            import java.io.PrintWriter.close();
-            import java.io.PrintWriter.checkError();
+            import new java.io.FileOutputStream(##java.io.File): ##java.io.FileOutputStream & Impure as newFileStream;
+            import new java.io.PrintWriter(##java.io.OutputStream): ##java.io.PrintWriter & Impure as newPrintWriter;
+            import java.io.FileOutputStream.write(Array[Int8]): Unit & Impure;
+            import java.io.PrintWriter.close(): Unit & Impure;
+            import java.io.PrintWriter.checkError(): Bool & Impure;
 
             let alreadyExists = File.exists(f);
 
@@ -741,11 +741,11 @@ namespace File {
     pub def appendBytes(f: String, data: f[Int8]): Result[Bool, String] & Impure with Foldable[f] =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
-            import new java.io.FileOutputStream(##java.io.File, Bool) as newFileStream;
-            import new java.io.PrintWriter(##java.io.OutputStream) as newPrintWriter;
-            import java.io.FileOutputStream.write(Array[Int8]);
-            import java.io.PrintWriter.close();
-            import java.io.PrintWriter.checkError();
+            import new java.io.FileOutputStream(##java.io.File, Bool): ##java.io.FileOutputStream & Impure as newFileStream;
+            import new java.io.PrintWriter(##java.io.OutputStream): ##java.io.PrintWriter & Impure as newPrintWriter;
+            import java.io.FileOutputStream.write(Array[Int8]): Unit & Impure;
+            import java.io.PrintWriter.close(): Unit & Impure;
+            import java.io.PrintWriter.checkError(): Bool & Impure;
 
             let alreadyExists = File.exists(f);
 
@@ -777,9 +777,9 @@ namespace File {
     pub def truncate(f: String): Result[Bool, String] & Impure =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
-            import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
-            import java.io.PrintWriter.close();
-            import java.io.PrintWriter.checkError();
+            import new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter & Impure as newPrintWriter;
+            import java.io.PrintWriter.close(): Unit & Impure;
+            import java.io.PrintWriter.checkError(): Bool & Impure;
 
             let alreadyExists = File.exists(f);
 
