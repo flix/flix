@@ -434,7 +434,6 @@ namespace Set {
     ///
     /// Note: The returned set may be smaller than `s`.
     ///
-    @ParallelWhenPure // TODO
     pub def map(f: a -> b & ef, s: Set[a]): Set[b] & ef with Order[b] =
         foldLeft((acc, x) -> insert(f(x), acc), empty(), s)
 
@@ -558,9 +557,9 @@ namespace Set {
         if (n < b) acc else rangeHelper(b, n - 1, insert(n, acc))
 
     ///
-    /// Returns the set `s` as a `LazyList`.
+    /// Returns the set `s` as a `DelayList`.
     ///
-    pub def toLazyList(s: Set[a]): LazyList[a] =
+    pub def toDelayList(s: Set[a]): DelayList[a] =
         foldRight((x, acc) -> ECons(x, acc), ENil, s)
 
     ///
