@@ -55,7 +55,7 @@ namespace DelayMap {
         insert(k, v, empty())
 
     ///
-    /// Returns the size of `m`.
+    /// Returns the number of keys in `m`.
     ///
     @Experimental
     pub def size(m: DelayMap[k, v]): Int32 =
@@ -71,7 +71,7 @@ namespace DelayMap {
         RedBlackTree.isEmpty(t)
 
     ///
-    /// Returns an updated map with `k => v`.
+    /// Returns an `m` with `k => v`.
     ///
     @Experimental
     pub def insert(k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
@@ -480,8 +480,10 @@ namespace DelayMap {
                 lazy x
             };
         if (blackHeight(xs) < blackHeight(ys))
+            let _ = forceAll(m1);
             DMap(foldRight((k, v) -> insertWith(f1, k, v), ys, xs))
         else
+            let _ = forceAll(m2);
             DMap(foldRight((k, v) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v), xs, ys))
 
     ///
@@ -507,7 +509,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def foldLeftWithKey(f: (b, k, v) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
-        let DMap(t) = m;
+        let DMap(t) = forceAll(m);
         let f1 = (b, k, v) -> f(b, k, force v);
         RedBlackTree.foldLeft(f1, s, t)
 
@@ -527,7 +529,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def foldRightWithKey(f: (k, v, b) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
-        let DMap(t) = m;
+        let DMap(t) = forceAll(m);
         let f1 = (k1, v1, b1) -> f(k1, force v1, b1);
         RedBlackTree.foldRight(f1, s, t)
 
@@ -551,7 +553,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
-        let DMap(t) = m;
+        let DMap(t) = forceAll(m);
         let f1 = (k1, v1, k2, v2) -> {
             let (k, v) = f(k1, force v1, k2, force v2);
             (k, lazy v)
@@ -581,7 +583,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
-        let DMap(t) = m;
+        let DMap(t) = forceAll(m);
         let f1 = (k1, v1, k2, v2) -> {
             let (k, v) = f(k1, force v1, k2, force v2);
             (k, lazy v)
@@ -596,7 +598,7 @@ namespace DelayMap {
     ///
     @Experimental @Parallel
     pub def toMap(m: DelayMap[k, v]): Map[k, v] =
-        let DMap(t) = m;
+        let DMap(t) = forceAll(m);
         Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
 
     ///
@@ -710,7 +712,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def foreach(f: (k, v) -> Unit & ef, m: DelayMap[k, v]): Unit & ef =
-        let DMap(t) = m;
+        let DMap(t) = forceAll(m);
         let f1 = (k, v) -> f(k, force v);
         RedBlackTree.foreach(f1 as & Impure, t) as & ef
 
@@ -736,7 +738,10 @@ namespace DelayMap {
     pub def sumWith(f: (k, v) -> Int32 & ef, m: DelayMap[k, v]): Int32 & ef =
         let f1 = match (k, v) -> f(k, v);
         let DMap(t) = m;
-        def sw() = RedBlackTree.sumWith((k, v) -> f(k, force v), t);
+        def sw() = {
+            let _ = forceAll(m)
+            RedBlackTree.sumWith((k, v) -> f(k, force v), t);
+        };
         reifyEff(f1) {
             case Pure(g) =>
                 if (useParallelEvaluation(m))
@@ -770,7 +775,10 @@ namespace DelayMap {
     pub def productWith(f: (k, v) -> Int32 & ef, m: DelayMap[k, v]): Int32 & ef =
         let f1 = match (k, v) -> f(k, v);
         let DMap(t) = m;
-        def pw() = RedBlackTree.productWith((k, v) -> f(k, force v), t);
+        def pw() = {
+            let _ = forceAll(m)
+            RedBlackTree.productWith((k, v) -> f(k, force v), t);
+        };
         reifyEff(f1) {
             case Pure(g) =>
                 if (useParallelEvaluation(m))
@@ -804,7 +812,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def joinWith(f: (k, v) -> String & ef, sep: String, m: DelayMap[k, v]): String & ef =
-        let DMap(t) = m;
+        let DMap(t) = forceAll(m);
         RedBlackTree.joinWith((k, v) -> f(k, force v), sep, t)
 
 }
