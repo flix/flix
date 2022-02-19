@@ -570,16 +570,7 @@ namespace MutList {
     ///
     pub def append!(v: MutList[a], t: t[a]): Unit & Impure with Iterable[t] =
         let iter = Iterable.iterator(t);
-        def loop(a, b) = {
-            let Iterator(done, next) = b;
-            if (not done()) {
-                MutList.push!(next(), a);
-                loop(a, b)
-            } else {
-                ()
-            }
-        };
-        loop(v, iter)
+        Iterator.foreach((x) -> MutList.push!(x, v1), iter)
 
     ///
     /// Removes all elements from the given mutable list `v` that do not satisfy the given predicate `f`.
