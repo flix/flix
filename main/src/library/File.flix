@@ -809,8 +809,8 @@ namespace File {
     ///
     pub def mkdir(d: String): Result[Bool, String] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.mkdir();
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.mkdir(): Bool & Impure;
 
             let javaFile = newFile(d);
             Ok(mkdir(javaFile))
@@ -827,7 +827,18 @@ namespace File {
     /// Returns `Ok(false)` if the directory `d` already existed and is a directory.
     /// Returns `Err(msg)` if the directory could not be created.
     ///
-    pub def mkdirs(d: String): Result[Bool, String] = ???
+    pub def mkdirs(d: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.mkdirs(): Bool & Impure;
+
+            let javaFile = newFile(d);
+            Ok(mkdirs(javaFile))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
 
 
 }
