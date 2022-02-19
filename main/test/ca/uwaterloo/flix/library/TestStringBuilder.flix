@@ -395,37 +395,37 @@ def appendLinesWith04!(): Bool & Impure =
 @test
 def intercalate01!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.intercalate!(sb, "", []);
+    StringBuilder.intercalate!("", [], sb);
     StringBuilder.toString(sb) == ""
 
 @test
 def intercalate02!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.intercalate!(sb, "::", []);
+    StringBuilder.intercalate!("::", [], sb);
     StringBuilder.toString(sb) == ""
 
 @test
 def intercalate03!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.intercalate!(sb, "", ["abc", "def"]);
+    StringBuilder.intercalate!("", ["abc", "def"], sb);
     StringBuilder.toString(sb) == "abcdef"
 
 @test
 def intercalate04!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.intercalate!(sb, "::", ["abc"]);
+    StringBuilder.intercalate!("::", ["abc"], sb);
     StringBuilder.toString(sb) == "abc"
 
 @test
 def intercalate05!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.intercalate!(sb, "::", ["abc", "def"]);
+    StringBuilder.intercalate!("::", ["abc", "def"], sb);
     StringBuilder.toString(sb) == "abc::def"
 
 @test
 def intercalate06!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.intercalate!(sb, "::", ["abc", "def", "ghi"]);
+    StringBuilder.intercalate!("::", ["abc", "def", "ghi"], sb);
     StringBuilder.toString(sb) == "abc::def::ghi"
 
 /////////////////////////////////////////////////////////////////////////////

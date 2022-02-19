@@ -174,7 +174,7 @@ namespace String {
     def intercalateHelper(sep: String, xs: List[String]): String & Impure =
         let sb = StringBuilder.new();
         let arr = List.toArray(xs);
-        StringBuilder.intercalate!(sb, sep, arr);
+        StringBuilder.intercalate!(sep, arr, sb);
         StringBuilder.toString(sb)
 
     ///
