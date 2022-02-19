@@ -199,10 +199,10 @@ namespace Nec {
     ///
     /// Deconstruct a Nec from left-to-right.
     ///
-    /// Returns `ViewLeft(x, rs)` if the Nec is non-empty, where `x` is the leftmost
+    /// Returns `SomeLeft(x, rs)` if the Nec has at least two elements, where `x` is the leftmost
     /// element of the Nec `c`, and `rs` is the rest of the Nec.
     ///
-    /// Returns `NoneLeft` if the Nec is empty.
+    /// Returns `OneLeft` if the Nec has a single element.
     ///
     pub def viewLeft(c: Nec[a]): ViewLeft[a] =
         def loop(c1: Nec[a], rs: Option[Nec[a]], k: ViewLeft[a] -> ViewLeft[a]) = match (c1, rs) {
@@ -217,10 +217,10 @@ namespace Nec {
     ///
     /// Deconstruct a Nec from right-to-left.
     ///
-    /// Returns `ViewRight(rs, x)` if the Nec is non-empty, where `x` is the rightmost
-    /// element of the Nec `c``, and `rs` is the front of the Nec.
+    /// Returns `SomeRight(rs, x)` if the Nec has at least two elements, where `x` is the rightmost
+    /// element of the Nec `c`, and `rs` is the front of the Nec.
     ///
-    /// Returns `NoneRight` if the Nec is empty.
+    /// Returns `OneRight` if the Nec has a single element.
     ///
     pub def viewRight(c: Nec[a]): ViewRight[a] =
         def loop(c1: Nec[a], rs: Option[Nec[a]], k: ViewRight[a] -> ViewRight[a]) = match (c1, rs) {
@@ -589,7 +589,7 @@ namespace Nec {
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `c`.
     ///
-    /// Returns `None` if every element of `c` is `None`.
+    /// Returns `None` if f(c) for every element of c is `None`.
     ///
     pub def findMap(f: a -> Option[b] & ef, c: Nec[a]): Option[b] & ef = match viewLeft(c) {
         case OneLeft(x)      => f(x)
@@ -854,7 +854,7 @@ namespace Nec {
     /// Returns the concatenation of the string representation
     /// of each element in `c` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, c: Nec[a]): String =
+    pub def joinWith(f: a -> String & ef, sep: String, c: Nec[a]): String & ef =
         Foldable.joinWith(f, sep, c)
 
 
