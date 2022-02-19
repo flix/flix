@@ -28,7 +28,7 @@ namespace Time {
         ///
         @Experimental
         pub def now(): Time.Instant & Impure =
-            import static java.time.Instant.now();
+            import static java.time.Instant.now(): ##java.time.Instant & Impure;
             Time/Instant.Instant(now())
 
         ///
