@@ -237,7 +237,7 @@ namespace MutDeque {
     ///
     pub def pushAllFront(t: t[a], d: MutDeque[a]): Unit & Impure with Iterable[t] =
         let iter = Iterable.iterator(t);
-        Iterator.foreach(x -> MutDeque.pushBack(x, d), iter)
+        Iterator.foreach(x -> MutDeque.pushFront(x, d), iter)
 
     ///
     /// Pushes all the elements in the collection `t` to the back of `d`.
