@@ -237,17 +237,14 @@ namespace MutDeque {
     ///
     pub def pushAllFront(t: t[a], d: MutDeque[a]): Unit & Impure with Iterable[t] =
         let iter = Iterable.iterator(t);
-        def loop(a, b) = {
-            let Iterator(done, next) = a;
+        Iterator.foreach(x -> MutDeque.pushBack(x, d), iter)
 
-            if (not done()) {
-                MutDeque.pushFront(next(), b);
-                loop(a, b)
-            } else {
-                ()
-            }
-        };
-        loop(iter, d)
+    ///
+    /// Pushes all the elements in the collection `t` to the back of `d`.
+    ///
+    pub def pushAllBack(t: t[a], d: MutDeque[a]): Unit & Impure with Iterable[t] =
+        let iter = Iterable.iterator(t);
+        Iterator.foreach(x -> MutDeque.pushBack(x, d), iter)
 
     ///
     /// Doubles the capacity of `d` if the load factor is greater than or equal to `maxLoadFactor`.
