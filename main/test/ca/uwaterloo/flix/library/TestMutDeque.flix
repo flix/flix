@@ -332,6 +332,33 @@ namespace TestMutDeque {
         MutDeque.toList(d) == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
+    // pushAllBack                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def pushAllBack01(): Bool & Impure =
+        let d = MutDeque.new();
+        let list = Nil;
+        MutDeque.pushAllBack(list, d);
+        MutDeque.isEmpty(d)
+
+    @test
+    def pushAllBack02(): Bool & Impure =
+        let d = MutDeque.new();
+        let list = 1 :: 2 :: 3 :: Nil;
+        MutDeque.pushAllBack(list, d);
+        MutDeque.toList(d) == 1 :: 2 :: 3 :: Nil
+
+    @test
+    def pushAllBack03(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(4, d);
+
+        let list = 1 :: 2 :: 3 :: Nil;
+        MutDeque.pushAllBack(list, d);
+        MutDeque.toList(d) == 4 :: 1 :: 2 :: 3 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
     // sameElements                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
