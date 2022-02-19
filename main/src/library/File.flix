@@ -803,14 +803,18 @@ namespace File {
     ///
     /// Creates the directory `d`.
     ///
-    /// Returns `true` if the directory `d` was created and did not already exist.
+    /// Returns `Ok(true)` if the directory `d` was created and did not already exist.
+    /// Returns `Ok(false)` if the directory `d` already existed and is a directory.
+    /// Returns `Err(msg)` if the directory could not be created.
     ///
     pub def mkdir(d: String): Result[Bool, String] = ???
 
     ///
     /// Creates the directory `d` along with all necessary parent directories.
     ///
-    /// Returns `true` if the directory `d` was created and did not already exist.
+    /// Returns `Ok(true)` if the directory `d` was created and did not already exist.
+    /// Returns `Ok(false)` if the directory `d` already existed and is a directory.
+    /// Returns `Err(msg)` if the directory could not be created.
     ///
     pub def mkdirs(d: String): Result[Bool, String] = ???
 
