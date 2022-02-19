@@ -157,7 +157,7 @@ namespace String {
     ///
     def flattenHelper(xs: List[String]): String & Impure =
         let sb = StringBuilder.new();
-        List.foreach(StringBuilder.appendString!(sb), xs);
+        List.foreach(x -> StringBuilder.appendString!(x, sb), xs);
         StringBuilder.toString(sb)
 
     ///
@@ -978,7 +978,7 @@ namespace String {
     ///
     def unlinesHelper(a: List[String]): String & Impure =
         let sb = StringBuilder.new();
-        List.foreach(StringBuilder.appendLine!(sb), a);
+        List.foreach(x -> StringBuilder.appendLine!(x, sb), a);
         StringBuilder.toString(sb)
 
     ///
