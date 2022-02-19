@@ -800,4 +800,44 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+    ///
+    /// Creates the directory `d`.
+    ///
+    /// Returns `Ok(true)` if the directory `d` was created and did not already exist.
+    /// Returns `Ok(false)` if the directory `d` already existed and is a directory.
+    /// Returns `Err(msg)` if the directory could not be created.
+    ///
+    pub def mkdir(d: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.mkdir(): Bool & Impure;
+
+            let javaFile = newFile(d);
+            Ok(mkdir(javaFile))
+        } catch {
+            case ex: ##java.io.IOException =>
+            import java.lang.Throwable.getMessage();
+            Err(getMessage(ex))
+        }
+
+    ///
+    /// Creates the directory `d` along with all necessary parent directories.
+    ///
+    /// Returns `Ok(true)` if the directory `d` was created and did not already exist.
+    /// Returns `Ok(false)` if the directory `d` already existed and is a directory.
+    /// Returns `Err(msg)` if the directory could not be created.
+    ///
+    pub def mkdirs(d: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.mkdirs(): Bool & Impure;
+
+            let javaFile = newFile(d);
+            Ok(mkdirs(javaFile))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage();
+                Err(getMessage(ex))
+        }
+
 }
