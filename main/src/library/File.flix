@@ -807,7 +807,18 @@ namespace File {
     /// Returns `Ok(false)` if the directory `d` already existed and is a directory.
     /// Returns `Err(msg)` if the directory could not be created.
     ///
-    pub def mkdir(d: String): Result[Bool, String] = ???
+    pub def mkdir(d: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String) as newFile;
+            import java.io.File.mkdir();
+
+            let javaFile = newFile(d);
+            Ok(mkdir(javaFile))
+        } catch {
+            case ex: ##java.io.IOException =>
+            import java.lang.Throwable.getMessage();
+            Err(getMessage(ex))
+        }
 
     ///
     /// Creates the directory `d` along with all necessary parent directories.
