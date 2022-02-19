@@ -191,8 +191,8 @@ namespace String {
         case Nil => ""
         case x :: rs => {
             let sb = StringBuilder.new();
-            StringBuilder.appendString!(sb, x);
-            let appendStep = s -> { StringBuilder.append!(sep, sb); StringBuilder.appendString!(sb, s) };
+            StringBuilder.appendString!(x, sb);
+            let appendStep = s -> { StringBuilder.append!(sep, sb); StringBuilder.appendString!(s, sb) };
             List.foreach(appendStep, rs);
             StringBuilder.toString(sb)
         }
@@ -706,7 +706,7 @@ namespace String {
         match a {
             case None => StringBuilder.toString(sb)
             case Some(s, st1) => {
-                StringBuilder.appendString!(sb, s);
+                StringBuilder.appendString!(s, sb);
                 unfoldStringHelper(f, sb, st1)
             }
         }
@@ -729,7 +729,7 @@ namespace String {
     def unfoldStringWithIterHelper(next: Unit -> Option[String] & ef, sb: StringBuilder): String & Impure = match next() {
         case None => StringBuilder.toString(sb)
         case Some(s) => {
-            StringBuilder.appendString!(sb, s);
+            StringBuilder.appendString!(s, sb);
             unfoldStringWithIterHelper(next, sb)
         }
     }
@@ -902,7 +902,7 @@ namespace String {
         let sb = StringBuilder.new();
         let prefix = repeat(n, " ");
         let step = x -> {
-            StringBuilder.appendString!(sb, prefix);
+            StringBuilder.appendString!(prefix, sb);
             StringBuilder.appendLine!(sb, x)
         };
         List.foreach(step, lines(s));
@@ -1007,10 +1007,10 @@ namespace String {
         let step = s ->
             if (deref first == true) {
                 first := false;
-                StringBuilder.appendString!(sb, s)
+                StringBuilder.appendString!(s, sb)
             } else {
                 StringBuilder.append!(' ', sb);
-                StringBuilder.appendString!(sb, s)
+                StringBuilder.appendString!(s, sb)
             };
         List.foreach(step, xs);
         StringBuilder.toString(sb)

@@ -83,10 +83,10 @@ namespace StringBuilder {
     pub def intercalate!(sep: String, a: Array[String], sb: StringBuilder): Unit & Impure =
         let append1! = (s,i) ->
             if (i > 0) {
-                appendString!(sb, sep);
-                appendString!(sb, s)
+                appendString!(sep, sb);
+                appendString!(s, sb)
             } else {
-                appendString!(sb, s)
+                appendString!(s, sb)
             };
        Array.foreachWithIndex(append1!, a)
 

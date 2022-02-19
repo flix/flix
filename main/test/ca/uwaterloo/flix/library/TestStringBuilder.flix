@@ -28,22 +28,22 @@ def new01(): StringBuilder & Impure = StringBuilder.new()
 @test
 def appendString01!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendString!(sb, "hello");
+    StringBuilder.appendString!("hello", sb);
     StringBuilder.toString(sb) == "hello"
 
 @test
 def appendString02!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendString!(sb, "hello");
-    StringBuilder.appendString!(sb, "!");
+    StringBuilder.appendString!("hello", sb);
+    StringBuilder.appendString!("!", sb);
     StringBuilder.toString(sb) == "hello!"
 
 @test
 def appendString03!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendString!(sb, "hello");
-    StringBuilder.appendString!(sb, " ");
-    StringBuilder.appendString!(sb, "world!");
+    StringBuilder.appendString!("hello", sb);
+    StringBuilder.appendString!(" ", sb);
+    StringBuilder.appendString!("world!", sb);
     StringBuilder.toString(sb) == "hello world!"
 
 /////////////////////////////////////////////////////////////////////////////
@@ -452,16 +452,16 @@ def length03(): Bool & Impure =
 @test
 def length04(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendString!(sb, "A");
-    StringBuilder.appendString!(sb, "B");
+    StringBuilder.appendString!("A", sb);
+    StringBuilder.appendString!("B", sb);
     StringBuilder.length(sb) == 2
 
 @test
 def length05(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendString!(sb, "Hello");
+    StringBuilder.appendString!("Hello", sb);
     StringBuilder.append!(' ', sb);
-    StringBuilder.appendString!(sb, "World");
+    StringBuilder.appendString!("World", sb);
     StringBuilder.append!('!', sb);
     StringBuilder.length(sb) == 12
 
@@ -476,13 +476,13 @@ def toString01(): Bool & Impure =
 @test
 def toString02(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendString!(sb, "");
+    StringBuilder.appendString!("", sb);
     StringBuilder.toString(sb) == ""
 
 @test
 def toString03(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendString!(sb, "abcdefghijklmnopqrstuvwxyz");
+    StringBuilder.appendString!("abcdefghijklmnopqrstuvwxyz", sb);
     StringBuilder.toString(sb) == "abcdefghijklmnopqrstuvwxyz"
 
 }
