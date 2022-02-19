@@ -1517,7 +1517,7 @@ namespace Array {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foldLeft((_, x) -> { append!(sb, f(x)); append!(sb, sep) }, (), a);
+        foldLeft((_, x) -> { append!(f(x), sb); append!(sep, sb) }, (), a);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
 
     ///

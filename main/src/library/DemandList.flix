@@ -560,7 +560,7 @@ namespace DemandList {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foldLeft((_, x) -> { append!(sb, f(x)); append!(sb, sep) }, (), l);
+        foldLeft((_, x) -> { append!(f(x), sb); append!(sep, sb) }, (), l);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     } as & ef
 

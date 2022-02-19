@@ -297,7 +297,7 @@ pub lawless class Foldable[t : Type -> Type] {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        t |> Foldable.foldLeft((_, x) -> { append!(sb, ToString.toString(x)); append!(sb, sep) }, ());
+        t |> Foldable.foldLeft((_, x) -> { append!(ToString.toString(x), sb); append!(sep, sb) }, ());
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     } as & Pure
 
@@ -309,7 +309,7 @@ pub lawless class Foldable[t : Type -> Type] {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        t |> Foldable.foldLeft((_, x) -> { append!(sb, f(x)); append!(sb, sep) }, ());
+        t |> Foldable.foldLeft((_, x) -> { append!(f(x), sb); append!(sep, sb) }, ());
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     } as & ef
 
