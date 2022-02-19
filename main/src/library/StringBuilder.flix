@@ -31,7 +31,7 @@ namespace StringBuilder {
     ///
     /// Append `x` to the StringBuilder `sb`.
     ///
-    pub def append!(sb: StringBuilder, x: a): Unit & Impure with ToString[a] =
+    pub def append!(x: a, sb: StringBuilder): Unit & Impure with ToString[a] =
         let s = ToString.toString(x);
         sb `appendString!` s;
         ()
