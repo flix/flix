@@ -371,11 +371,30 @@ object Ast {
   }
 
   /**
+    * A common super-type for the fixity of an atom.
+    */
+  sealed trait Fixity
+
+  object Fixity {
+
+    /**
+      * The atom is loose (it does not have to be fully materialized before it can be used).
+      */
+    case object Loose extends Fixity
+
+    /**
+      * The atom is fixed (it must be fully materialized before it can be used).
+      */
+    case object Fixed extends Fixity
+
+  }
+
+  /**
     * Represents a positive or negative labelled dependency edge.
     *
     * The labels represent predicate nodes that must co-occur for the dependency to be relevant.
     */
-  case class LabelledEdge(head: Name.Pred, polarity: Polarity, labels: Vector[Label], body: Name.Pred, loc: SourceLocation)
+  case class LabelledEdge(head: Name.Pred, polarity: Polarity, fixity: Fixity, labels: Vector[Label], body: Name.Pred, loc: SourceLocation)
 
   /**
     * Represents a label in the labelled graph.
@@ -423,7 +442,7 @@ object Ast {
       def include(l: Label): Boolean = syms.get(l.pred).exists(l2 => labelEq(l, l2))
 
       LabelledGraph(edges.filter {
-        case LabelledEdge(_, _, labels, _, _) => labels.forall(include)
+        case LabelledEdge(_, _, _, labels, _, _) => labels.forall(include)
       })
     }
   }

@@ -977,6 +977,14 @@ def count08(): Bool & Impure =
         Map#{10 => 10, -10 => -10} |>
             Map.sumWith((k, v) -> k + v) == 0
 
+    @test
+    def sumWith07(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, range) |> List.toMap;
+        let a = MutList.new();
+        Map.sumWith((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); 1 }, m);
+        MutList.toList(a) == range
+
 
     /////////////////////////////////////////////////////////////////////////////
     // productValues                                                           //
@@ -1078,6 +1086,14 @@ def count08(): Bool & Impure =
     def productWith06(): Bool =
         Map#{10 => 10, -10 => -10} |>
             Map.productWith((k, v) -> k + v) == -400
+
+    @test
+    def productWith07(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, range) |> List.toMap;
+        let a = MutList.new();
+        Map.productWith((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); 1 }, m);
+        MutList.toList(a) == range
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2227,20 +2243,20 @@ def query18(): Bool =
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toLazyList                                                              //
+    // toDelayList                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toLazyList01(): Bool =
-        Map.empty(): Map[Unit, Unit] |> Map.toLazyList == LazyList.empty()
+    def toDelayList01(): Bool =
+        Map.empty(): Map[Unit, Unit] |> Map.toDelayList == DelayList.empty()
 
     @test
-    def toLazyList02(): Bool =
-        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toLazyList == LazyList.repeat("a") |> LazyList.zip(LazyList.range(0, 1000))
+    def toDelayList02(): Bool =
+        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toDelayList == DelayList.repeat("a") |> DelayList.zip(DelayList.range(0, 1000))
 
     @test
-    def toLazyList03(): Bool =
-        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toLazyList |> LazyList.toMap == Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0)
+    def toDelayList03(): Bool =
+        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toDelayList |> DelayList.toMap == Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0)
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //

@@ -462,7 +462,6 @@ namespace Map {
     ///
     /// Returns a map with mappings `k => f(k, v)` for every `k => v` in `m`.
     ///
-    ///
     /// Purity polymorphic: Runs in parallel when given a pure function `f`.
     ///
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
@@ -555,6 +554,8 @@ namespace Map {
     ///
     /// Returns the number of mappings `k => v` in `m` that satisfy the predicate `f`.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
     @ParallelWhenPure
     pub def count(f: (k, v) -> Bool & ef, m: Map[k, v]): Int32 & ef =
         let f1 = r -> f(r.k, r.v);
@@ -584,9 +585,21 @@ namespace Map {
     ///
     /// Returns the sum of all key-value pairs `k => v` in the map `m` according to the function `f`.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
     pub def sumWith(f: (k, v) -> Int32 & ef, m: Map[k, v]): Int32 & ef =
-        // TODO: Purity polymorphic / Parallel when pure
-        foldLeftWithKey((acc, k, v) -> f(k, v) + acc, 0, m)
+        let f1 = match (k, v) -> f(k, v);
+        let Map(t) = m;
+        def sw() = RedBlackTree.sumWith(f, t);
+        reifyEff(f1) {
+            case Pure(g) =>
+                if (useParallelEvaluation(m))
+                    RedBlackTree.parSumWith(threads() - 1, (k, v) -> g((k, v)), t) as & Pure
+                else
+                    sw()
+            case _ => sw()
+        }
 
     ///
     /// Returns the product of all keys in the map `m`.
@@ -605,9 +618,21 @@ namespace Map {
     ///
     /// Returns the product of all key-value pairs `k => v` in the map `m` according to the function `f`.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
     pub def productWith(f: (k, v) -> Int32 & ef, m: Map[k, v]): Int32 & ef =
+        let f1 = match (k, v) -> f(k, v);
         let Map(t) = m;
-        RedBlackTree.productWith(f, t)
+        def pw() = RedBlackTree.productWith(f, t);
+        reifyEff(f1) {
+            case Pure(g) =>
+                if (useParallelEvaluation(m))
+                    RedBlackTree.parProductWith(threads() - 1, (k, v) -> g((k, v)), t) as & Pure
+                else
+                    pw()
+            case _ => pw()
+        }
 
     ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.
@@ -764,9 +789,9 @@ namespace Map {
         foldLeftWithKey((acc, k, v) -> Set.insert((k, v), acc), Set.empty(), m)
 
     ///
-    /// Returns the map `m` as a `LazyList` of key-value pairs.
+    /// Returns the map `m` as a `DelayList` of key-value pairs.
     ///
-    pub def toLazyList(m: Map[k, v]): LazyList[(k, v)] =
+    pub def toDelayList(m: Map[k, v]): DelayList[(k, v)] =
         foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
 
     ///

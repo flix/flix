@@ -17,6 +17,13 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.util.{FlixSuite, Options}
 
-class TestTutorials extends FlixSuite(incremental = true) {
-  mkTestDir("main/src/tutorials/")(Options.TestWithLibAll)
+class ExampleSuite extends FlixSuite(incremental = true) {
+
+  private implicit val TestOptions: Options = Options.TestWithLibAll.copy(xallowredundancies = true)
+
+  mkTestDir("examples")
+  mkTestDir("examples/analysis")
+  mkTestDir("examples/datalog")
+  mkTestDir("examples/koans")
+
 }

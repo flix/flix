@@ -223,18 +223,14 @@ namespace List {
     ///
     /// Alias for `findLeft`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def find(f: a -> Bool, l: List[a]): Option[a] = findLeft(f, l)
+    pub def find(f: a -> Bool & ef, l: List[a]): Option[a] & ef = findLeft(f, l)
 
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def findLeft(f: a -> Bool, l: List[a]): Option[a] = match l {
+    pub def findLeft(f: a -> Bool & ef, l: List[a]): Option[a] & ef = match l {
         case Nil => None
         case x :: xs => if (f(x)) Some(x) else findLeft(f, xs)
     }
@@ -242,13 +238,13 @@ namespace List {
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def findRight(f: a -> Bool, l: List[a]): Option[a] = match l {
-        case Nil     => None
-        case x :: xs => Option.withDefault(default = if (f(x)) Some(x) else None, findRight(f, xs))
-    }
+    pub def findRight(f: a -> Bool & ef, l: List[a]): Option[a] & ef =
+        def loop(ll, k) = match ll {
+            case Nil     => k()
+            case x :: xs => loop(xs, () -> if (f(x)) Some(x) else k())
+        };
+        loop(l, () -> None as & ef)
 
     ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -895,10 +891,8 @@ namespace List {
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def dropWhile(f: a -> Bool, l: List[a]): List[a] = match l {
+    pub def dropWhile(f: a -> Bool & ef, l: List[a]): List[a] & ef = match l {
         case Nil     => Nil
         case x :: xs => if (f(x)) dropWhile(f, xs) else l
     }
@@ -925,16 +919,14 @@ namespace List {
     ///
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def takeWhile(f: a -> Bool, l: List[a]): List[a] =
-        takeWhileHelper(f, l, ks -> ks)
+    pub def takeWhile(f: a -> Bool & ef, l: List[a]): List[a] & ef =
+        takeWhileHelper(f, l, ks -> ks as & ef)
 
     ///
     /// Helper function for `takeWhile`.
     ///
-    def takeWhileHelper(f: a -> Bool, l: List[a], k: List[a] -> List[a]): List[a] = match l {
+    def takeWhileHelper(f: a -> Bool & ef, l: List[a], k: List[a] -> List[a] & ef): List[a] & ef = match l {
         case Nil     => k(Nil)
         case x :: xs => if (f(x)) takeWhileHelper(f, xs, ks -> k(x :: ks)) else k(Nil)
     }
@@ -948,19 +940,24 @@ namespace List {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def groupBy(f: (a, a) -> Bool, l: List[a]): List[List[a]] = match l {
-        case Nil => Nil
-        case x :: xs =>
-            let (r1, r2) = extractHelper(f, xs, x :: Nil, Nil);
-            r1 :: groupBy(f, r2)
-    }
+    pub def groupBy(f: (a, a) -> Bool, l: List[a]): List[List[a]] =
+        def loop(l1, k) = match l1 {
+            case Nil => k(Nil)
+            case x :: xs =>
+                let (r1, r2) = extractHelper(f, xs, x :: Nil, ks -> ks);
+                loop(r2, ks -> k(r1 :: ks))
+        };
+        loop(l, ks -> ks)
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def extractHelper(f: (a, a) -> Bool, l1: List[a], l2: List[a], l3: List[a]): (List[a], List[a]) = match l1 {
-        case Nil     => (reverse(l2), reverse(l3))
-        case x :: xs => if (agreeHelper(f, x, l2)) extractHelper(f, xs, x :: l2, l3) else extractHelper(f, xs, l2, x :: l3)
+    /// The list `l2` is needed by `agreeHelper` so it must be materialized (rather than a continuation).
+    /// We have no choice but to reverse it.
+    ///
+    def extractHelper(f: (a, a) -> Bool, l1: List[a], l2: List[a], k: List[a] -> List[a]): (List[a], List[a]) = match l1 {
+        case Nil     => (reverse(l2), k(Nil))
+        case x :: xs => if (agreeHelper(f, x, l2)) extractHelper(f, xs, x :: l2, k) else extractHelper(f, xs, l2, ks -> k(x :: ks))
     }
 
     ///
@@ -1176,15 +1173,15 @@ namespace List {
     /// Returns the concatenation of the string representation
     /// of each element in `l` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, l: List[a]): String =
+    pub def joinWith(f: a -> String & ef, sep: String, l: List[a]): String & ef =
         Foldable.joinWith(f, sep, l)
 
     ///
-    /// Returns the elements of `l` as a lazy list.
+    /// Returns the elements of `l` as a `DelayList`.
     ///
-    pub def toLazyList(l: List[a]): LazyList[a] = match l {
+    pub def toDelayList(l: List[a]): DelayList[a] = match l {
         case Nil     => ENil
-        case x :: xs => LCons(x, lazy toLazyList(xs))
+        case x :: xs => LCons(x, lazy toDelayList(xs))
     }
 
     ///

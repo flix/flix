@@ -15,7 +15,7 @@ object Finish {
     // Print throughput.
     if (flix.options.debug) {
       val totalLines = result.getTotalLines
-      val totalTime = result.getTotalTime
+      val totalTime = result.totalTime
       val timeInSeconds = new Duration(totalTime).seconds
       val linesPerSecond = totalLines.toDouble / timeInSeconds
       Console.println(f"Compiled $totalLines%,d lines in $timeInSeconds%.1f sec. ($linesPerSecond%,.0f lines/sec).")

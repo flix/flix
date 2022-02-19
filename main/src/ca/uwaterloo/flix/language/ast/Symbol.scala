@@ -291,7 +291,7 @@ object Symbol {
   /**
     * Class Symbol.
     */
-  final class ClassSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
+  final class ClassSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -309,6 +309,11 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+
+    /**
+      * Returns the source of `this`.
+      */
+    override def src: Ast.Source = loc.source
   }
 
   /**

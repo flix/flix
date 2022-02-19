@@ -39,56 +39,56 @@ instance Hash[Bool] {
 
 instance Hash[Char] {
     pub def hash(x: Char): Int32 =
-        import static java.lang.Character.hashCode(Char);
-        hashCode(x) as & Pure
+        import static java.lang.Character.hashCode(Char): Int32 & Pure;
+        hashCode(x)
 }
 
 instance Hash[Float32] {
     pub def hash(x: Float32): Int32 =
-        import static java.lang.Float.hashCode(Float32);
-        hashCode(x) as & Pure
+        import static java.lang.Float.hashCode(Float32): Int32 & Pure;
+        hashCode(x)
 }
 
 instance Hash[Float64] {
     pub def hash(x: Float64): Int32 =
-        import static java.lang.Double.hashCode(Float64);
-        hashCode(x) as & Pure
+        import static java.lang.Double.hashCode(Float64): Int32 & Pure;
+        hashCode(x)
 }
 
 instance Hash[Int8] {
     pub def hash(x: Int8): Int32 =
-        import static java.lang.Byte.hashCode(Int8);
-        hashCode(x) as & Pure
+        import static java.lang.Byte.hashCode(Int8): Int32 & Pure;
+        hashCode(x)
 }
 
 instance Hash[Int16] {
     pub def hash(x: Int16): Int32 =
-        import static java.lang.Short.hashCode(Int16);
-        hashCode(x) as & Pure
+        import static java.lang.Short.hashCode(Int16): Int32 & Pure;
+        hashCode(x)
 }
 
 instance Hash[Int32] {
     pub def hash(x: Int32): Int32 =
-        import static java.lang.Integer.hashCode(Int32);
-        hashCode(x) as & Pure
+        import static java.lang.Integer.hashCode(Int32): Int32 & Pure;
+        hashCode(x)
 }
 
 instance Hash[Int64] {
     pub def hash(x: Int64): Int32 =
-        import static java.lang.Long.hashCode(Int64);
-        hashCode(x) as & Pure
+        import static java.lang.Long.hashCode(Int64): Int32 & Pure;
+        hashCode(x)
 }
 
 instance Hash[String] {
     pub def hash(x: String): Int32 =
-        import java.lang.String.hashCode();
-        hashCode(x) as & Pure
+        import java.lang.String.hashCode(): Int32 & Pure;
+        hashCode(x)
 }
 
 instance Hash[BigInt] {
     pub def hash(x: BigInt): Int32 =
-        import java.math.BigInteger.hashCode();
-        hashCode(x) as & Pure
+        import java.math.BigInteger.hashCode(): Int32 & Pure;
+        hashCode(x)
 }
 
 instance Hash[(a1, a2)] with Hash[a1], Hash[a2] {

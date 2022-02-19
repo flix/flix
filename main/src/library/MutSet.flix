@@ -131,7 +131,10 @@ namespace MutSet {
     ///
     /// Returns `None` if `s` is empty.
     ///
-    pub def minimumBy(cmp: (a, a) -> Comparison, s: MutSet[a]): Option[a] & Impure =
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def minimumBy(cmp: (a, a) -> Comparison & ef, s: MutSet[a]): Option[a] & Impure =
         let MutSet(ms) = s;
         Set.minimumBy(cmp, deref ms)
 
@@ -149,7 +152,10 @@ namespace MutSet {
     ///
     /// Returns `None` if `s` is empty.
     ///
-    pub def maximumBy(cmp: (a, a) -> Comparison, s: MutSet[a]): Option[a] & Impure =
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def maximumBy(cmp: (a, a) -> Comparison & ef, s: MutSet[a]): Option[a] & Impure =
         let MutSet(ms) = s;
         Set.maximumBy(cmp, deref ms)
 
@@ -244,9 +250,10 @@ namespace MutSet {
     ///
     /// Returns the number of elements in the mutable set `s` that satisfy the predicate function `f`.
     ///
-    /// The function `f` must be pure.
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
     ///
-    pub def count(f: a -> Bool, s: MutSet[a]): Int32 & Impure =
+    @ParallelWhenPure
+    pub def count(f: a -> Bool & ef, s: MutSet[a]): Int32 & Impure =
         let MutSet(ms) = s;
         Set.count(f, deref ms)
 
@@ -260,6 +267,9 @@ namespace MutSet {
     ///
     /// Returns the sum of all elements in the mutable set `s` according to the function `f`.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
     pub def sumWith(f: a -> Int32 & ef, s: MutSet[a]): Int32 & Impure =
         let MutSet(ss) = s;
         Set.sumWith(f, deref ss)
@@ -274,6 +284,9 @@ namespace MutSet {
     ///
     /// Returns the product of all elements in the set `s` according to the function `f`.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
     pub def productWith(f: a -> Int32 & ef, s: MutSet[a]): Int32 & Impure =
         let MutSet(ss) = s;
         Set.productWith(f, deref ss)

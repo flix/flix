@@ -534,6 +534,14 @@ def count08(): Bool & Impure =
     def sumWith06(): Bool =
         Set#{10, -10} |> Set.sumWith(x -> x + 1) == 2
 
+    @test
+    def sumWith08(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = range |> List.toSet;
+        let a = MutList.new();
+        Set.sumWith(k -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); 1 }, m);
+        MutList.toList(a) == range
+
 
     /////////////////////////////////////////////////////////////////////////////
     // product                                                                 //
@@ -591,6 +599,14 @@ def count08(): Bool & Impure =
     @test
     def productWith06(): Bool =
         Set#{10, -10} |> Set.productWith(x -> x + 1) == -99
+
+    @test
+    def productWith08(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = range |> List.toSet;
+        let a = MutList.new();
+        Set.productWith(k -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); 1 }, m);
+        MutList.toList(a) == range
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1417,20 +1433,20 @@ def unfoldWithIter06(): Bool & Impure =
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toLazyList                                                              //
+    // toDelayList                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toLazyList01(): Bool =
-        Set.empty(): Set[Unit] |> Set.toLazyList == LazyList.empty()
+    def toDelayList01(): Bool =
+        Set.empty(): Set[Unit] |> Set.toDelayList == DelayList.empty()
 
     @test
-    def toLazyList02(): Bool =
-        Set.range(-1000, 1000) |> Set.toLazyList == LazyList.range(-1000, 1000)
+    def toDelayList02(): Bool =
+        Set.range(-1000, 1000) |> Set.toDelayList == DelayList.range(-1000, 1000)
 
     @test
-    def toLazyList03(): Bool =
-        Set.range(-1000, 1000) |> Set.toLazyList |> LazyList.toSet == Set.range(-1000, 1000)
+    def toDelayList03(): Bool =
+        Set.range(-1000, 1000) |> Set.toDelayList |> DelayList.toSet == Set.range(-1000, 1000)
 
 
     /////////////////////////////////////////////////////////////////////////////

@@ -18,11 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation}
+import ca.uwaterloo.flix.language.ast.NamedAst.DefOrSig
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, ParOps, Validation}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import scala.collection.mutable
@@ -51,19 +52,13 @@ object Resolver {
   /**
     * Performs name resolution on the given program `root`.
     */
-  def run(root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
+  def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
     resolveTypeAliases(root.typealiases, root) flatMap {
       case (taenv, taOrder) =>
 
-        val classesVal = root.classes.flatMap {
-          case (ns0, classes) => classes.map {
-            case (_, clazz) => resolveClass(clazz, taenv, ns0, root) map {
-              case s => s.sym -> s
-            }
-          }
-        }
+        val classesVal = resolveClasses(root, taenv, oldRoot, changeSet)
 
         val instancesVal = root.instances.flatMap {
           case (ns0, instances0) => instances0.map {
@@ -73,14 +68,7 @@ object Resolver {
           }
         }
 
-        val definitionsVal = root.defsAndSigs.flatMap {
-          case (ns0, defsAndSigs) => defsAndSigs.collect {
-            case (_, NamedAst.DefOrSig.Def(defn)) => resolveDef(defn, taenv, ns0, root) map {
-              case d => d.sym -> d
-            }
-            // Skip Sigs as they are handled under classes.
-          }
-        }
+        val definitionsVal = resolveDefs(root, taenv, oldRoot, changeSet)
 
         val enumsVal = root.enums.flatMap {
           case (ns0, enums) => enums.map {
@@ -91,13 +79,13 @@ object Resolver {
         }
 
         for {
-          classes <- sequence(classesVal)
+          classes <- classesVal
           instances <- sequence(instancesVal)
-          definitions <- sequence(definitionsVal)
+          definitions <- definitionsVal
           enums <- sequence(enumsVal)
-          _ <- checkSuperClassDag(classes.toMap)
+          _ <- checkSuperClassDag(classes)
         } yield ResolvedAst.Root(
-          classes.toMap, combine(instances), definitions.toMap, enums.toMap, taenv, taOrder, root.reachable, root.sources
+          classes, combine(instances), definitions, enums.toMap, taenv, taOrder, root.reachable, root.sources
         )
     }
 
@@ -265,7 +253,31 @@ object Resolver {
   }
 
   /**
-    * Performs name resolution on the given typeclass `c0` in the given namespace `ns0`.
+    * Resolves all the classes in the given root.
+    */
+  private def resolveClasses(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, ResolvedAst.Class], ResolutionError] = {
+
+    val rootClasses = for {
+      (ns, classes) <- root.classes
+      (_, clazz) <- classes
+    } yield clazz.sym -> (clazz, ns)
+
+    val (staleClasses, freshClasses) = changeSet.partition(rootClasses, oldRoot.classes)
+
+    val results = ParOps.parMap(staleClasses.values) {
+      case (clazz, ns) => resolveClass(clazz, taenv, ns, root)
+    }
+
+    Validation.sequence(results) map {
+      res =>
+        res.foldLeft(freshClasses) {
+          case (acc, clazz) => acc + (clazz.sym -> clazz)
+        }
+    }
+  }
+
+  /**
+    * Resolves all the classes in the given root.
     */
   def resolveClass(c0: NamedAst.Class, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
     case NamedAst.Class(doc, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
@@ -305,6 +317,35 @@ object Resolver {
         exp <- traverse(exp0)(Expressions.resolve(_, Map(fparam.sym -> fparamType), taenv, ns0, root))
         spec <- resolveSpec(spec0, taenv, ns0, root)
       } yield ResolvedAst.Sig(sym, spec, exp.headOption)
+  }
+
+  /**
+    * Resolves all the definitions in the given root.
+    */
+  private def resolveDefs(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, ResolvedAst.Def], ResolutionError] = {
+    def getDef(defOrSig: NamedAst.DefOrSig): Option[NamedAst.Def] = defOrSig match {
+      case DefOrSig.Def(d) => Some(d)
+      case DefOrSig.Sig(_) => None
+    }
+
+    val rootDefs = for {
+      (ns, defsAndSigs) <- root.defsAndSigs
+      (_, defOrSig) <- defsAndSigs
+      defn <- getDef(defOrSig)
+    } yield defn.sym -> (defn, ns)
+
+    val (staleDefs, freshDefs) = changeSet.partition(rootDefs, oldRoot.defs)
+
+    val results = ParOps.parMap(staleDefs.values) {
+      case (defn, ns) => resolveDef(defn, taenv, ns, root)
+    }
+
+    Validation.sequence(results) map {
+      res =>
+        res.foldLeft(freshDefs) {
+          case (acc, defn) => acc + (defn.sym -> defn)
+        }
+    }
   }
 
   /**
@@ -1089,10 +1130,10 @@ object Resolver {
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
       def resolve(b0: NamedAst.Predicate.Body, tenv0: Map[Symbol.VarSym, Type], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Atom(pred, den, polarity, terms, loc) =>
+        case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
           for {
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, root))
-          } yield ResolvedAst.Predicate.Body.Atom(pred, den, polarity, ts, loc)
+          } yield ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
 
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
           for {

@@ -23,8 +23,8 @@ namespace Console {
     /// See also `System/StdIn.readLines`.
     ///
     pub def readLine(): Option[String] & Impure =
-        import static java.lang.System.console();
-        import java.io.Console.readLine() as consoleReadLine;
+        import static java.lang.System.console(): ##java.io.Console & Impure;
+        import java.io.Console.readLine(): String & Impure as consoleReadLine;
         Object.toOption(console()) |> Option.map(consoleReadLine)
 
     ///
@@ -39,9 +39,9 @@ namespace Console {
     /// See also `System/StdOut.print`.
     ///
     pub def print(s: String): Unit & Impure =
-        import static java.lang.System.console();
-        import java.io.Console.writer();
-        import java.io.PrintWriter.print(String) as printWriterPrint;
+        import static java.lang.System.console(): ##java.io.Console & Impure;
+        import java.io.Console.writer(): ##java.io.PrintWriter & Impure;
+        import java.io.PrintWriter.print(String): Unit & Impure as printWriterPrint;
         Object.toOption(console()) |> Option.map(c -> printWriterPrint(writer(c), s));
         ()
 
@@ -57,9 +57,9 @@ namespace Console {
     /// See also `System/StdOut.println`.
     ///
     pub def printLine(s: String): Unit & Impure =
-        import static java.lang.System.console();
-        import java.io.Console.writer();
-        import java.io.PrintWriter.println(String) as printWriterPrintln;
+        import static java.lang.System.console(): ##java.io.Console & Impure;
+        import java.io.Console.writer(): ##java.io.PrintWriter & Impure;
+        import java.io.PrintWriter.println(String): Unit & Impure as printWriterPrintln;
         Object.toOption(console()) |> Option.map(c -> printWriterPrintln(writer(c), s));
         ()
 
@@ -73,8 +73,8 @@ namespace Console {
     /// See also `System/StdOut.flush`.
     ///
     pub def flush(): Unit & Impure =
-        import static java.lang.System.console();
-        import java.io.Console.flush() as consoleFlush;
+        import static java.lang.System.console(): ##java.io.Console & Impure;
+        import java.io.Console.flush(): Unit & Impure as consoleFlush;
         Object.toOption(console()) |> Option.map(consoleFlush);
         ()
 
@@ -116,9 +116,9 @@ namespace Console {
     /// Returns `hexNo` as a hex number.
     ///
     def stringToHex(hexNo: String): Option[Int32] & Pure =
-        import static java.lang.Integer.parseInt(String, Int32);
+        import static java.lang.Integer.parseInt(String, Int32): Int32 & Pure;
         try {
-            Some(parseInt(hexNo, 16)) as & Pure
+            Some(parseInt(hexNo, 16))
         } catch {
             case _: ##java.lang.NumberFormatException =>
                 None as Option[Int32]
