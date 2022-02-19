@@ -534,6 +534,14 @@ def count08(): Bool & Impure =
     def sumWith06(): Bool =
         Set#{10, -10} |> Set.sumWith(x -> x + 1) == 2
 
+    @test
+    def sumWith08(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = range |> List.toSet;
+        let a = MutList.new();
+        Set.sumWith(k -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); 1 }, m);
+        MutList.toList(a) == range
+
 
     /////////////////////////////////////////////////////////////////////////////
     // product                                                                 //
@@ -591,6 +599,14 @@ def count08(): Bool & Impure =
     @test
     def productWith06(): Bool =
         Set#{10, -10} |> Set.productWith(x -> x + 1) == -99
+
+    @test
+    def productWith08(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = range |> List.toSet;
+        let a = MutList.new();
+        Set.productWith(k -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); 1 }, m);
+        MutList.toList(a) == range
 
 
 /////////////////////////////////////////////////////////////////////////////

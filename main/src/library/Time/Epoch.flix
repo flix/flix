@@ -23,7 +23,7 @@ namespace Time {
         ///
         @Experimental
         pub def nanoseconds(): Int64 & Impure =
-            import static java.lang.System.nanoTime();
+            import static java.lang.System.nanoTime(): Int64 & Impure;
             nanoTime()
 
         ///
