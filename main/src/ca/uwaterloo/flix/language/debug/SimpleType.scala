@@ -25,6 +25,8 @@ sealed trait SimpleType
 
 object SimpleType {
 
+  private val IllKindedException = InternalCompilerException("Unexpected ill-kinded type")
+
   // MATT add examples for anything nontrivial
 
   // Primitives
@@ -154,11 +156,13 @@ object SimpleType {
   case class Tuple(length: Int, fields: List[SimpleType]) extends SimpleType
 
 
-  // MATT docs
+  /**
+    * Creates a simple type from the well-kinded type `t`.
+   */
   def fromWellKindedType(t: Type): SimpleType = t.baseType match {
     case Type.KindedVar(id, kind, loc, rigidity, text) => Var(id) // MATT ignoring name
-    case _: Type.UnkindedVar => throw InternalCompilerException("") // MATT
-    case _: Type.Ascribe => throw InternalCompilerException("") // MATT
+    case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
+    case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
     case Type.Alias(cst, args, tpe, loc) => Apply(Name(cst.sym.name), args.map(fromWellKindedType))
     case Type.Cst(tc, loc) => tc match {
       case TypeConstructor.Unit => Unit
@@ -191,7 +195,7 @@ object SimpleType {
           case Nil => RecordRowConstructor(field.name)
           case tpe :: Nil => RecordRowHead(field.name, tpe)
           case _ :: _ :: Nil => fromRecordRow(t)
-          case _ => ??? // MATT ICE
+          case _ => throw IllKindedException
         }
       case TypeConstructor.Record =>
         val args = t.typeArguments.map(fromWellKindedType)
@@ -201,9 +205,9 @@ object SimpleType {
             case RecordRowEmpty => RecordEmpty
             case RecordRow(fields, rest) => Record(fields, rest)
             case tvar: Var => Record(Nil, Some(tvar))
-            case _ => ??? // MATT ICE
+            case _ => throw IllKindedException
           }
-          case _ => ??? // MATT ICE
+          case _ => throw IllKindedException
         }
       case TypeConstructor.SchemaRowEmpty => SchemaRowEmpty
       case TypeConstructor.SchemaRowExtend(pred) =>
@@ -212,7 +216,7 @@ object SimpleType {
           case Nil => SchemaRowConstructor(pred.name)
           case tpe :: Nil => SchemaRowHead(pred.name, tpe)
           case _ :: _ :: Nil => fromSchemaRow(t)
-          case _ => ??? // MATT ICE
+          case _ => throw IllKindedException
         }
       case TypeConstructor.Schema =>
         val args = t.typeArguments.map(fromWellKindedType)
@@ -222,9 +226,9 @@ object SimpleType {
             case SchemaRowEmpty => SchemaEmpty
             case SchemaRow(fields, rest) => Schema(fields, rest)
             case tvar: Var => Schema(Nil, Some(tvar))
-            case _ => ??? // MATT ICE
+            case _ => throw IllKindedException
           }
-          case _ => ??? // MATT ICE
+          case _ => throw IllKindedException
         }
       case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(fromWellKindedType))
@@ -235,10 +239,10 @@ object SimpleType {
           case Nil => TagConstructor(tag.name)
           case tpe :: Nil => PartialTag(tag.name, destructTuple(tpe))
           case tpe :: ret :: Nil => Tag(tag.name, destructTuple(tpe), ret)
-          case _ => ??? // MATT ICE
+          case _ => throw IllKindedException
         }
       case TypeConstructor.KindedEnum(sym, kind) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.UnkindedEnum(sym) => ??? // MATT ICE
+      case TypeConstructor.UnkindedEnum(sym) => throw InternalCompilerException("Unexpected unkinded type.")
       case TypeConstructor.Native(clazz) => Name(clazz.getSimpleName) // MATT do we need generics?
       case TypeConstructor.ScopedRef => mkApply(ScopedRef, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tuple(l) => Tuple(l, t.typeArguments.map(fromWellKindedType))
@@ -247,14 +251,14 @@ object SimpleType {
         args match {
           case Nil => RelationConstructor
           case tpe :: Nil => Relation(destructTuple(tpe))
-          case _ => ??? // MATT ICE
+          case _ => throw IllKindedException
         }
       case TypeConstructor.Lattice =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
           case Nil => LatticeConstructor
           case tpe :: Nil => Lattice(destructTuple(tpe))
-          case _ => ??? // MATT ICE
+          case _ => throw IllKindedException
         }
       case TypeConstructor.True => True
       case TypeConstructor.False => False
@@ -262,7 +266,7 @@ object SimpleType {
       case TypeConstructor.And => And(t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Or => Or(t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Region => mkApply(Region, t.typeArguments.map(fromWellKindedType))
-      case _: TypeConstructor.UnappliedAlias => ??? // MATT ICE
+      case _: TypeConstructor.UnappliedAlias => throw InternalCompilerException("Unexpected unapplied alias.")
     }
   }
 
