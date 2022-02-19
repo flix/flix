@@ -33,7 +33,7 @@ namespace StringBuilder {
     ///
     pub def append!(x: a, sb: StringBuilder): Unit & Impure with ToString[a] =
         let s = ToString.toString(x);
-        sb `appendString!` s;
+        s `appendString!` sb;
         ()
 
     ///
@@ -49,20 +49,20 @@ namespace StringBuilder {
     /// Append the system line separator to the StringBuilder `sb`.
     ///
     pub def appendLineSeparator!(sb: StringBuilder): Unit & Impure =
-        sb `appendString!` String.lineSeparator()
+        String.lineSeparator() `appendString!` sb
 
     ///
     /// Append the String `s` followed by the system line separator to the StringBuilder `sb`.
     ///
     pub def appendLine!(sb: StringBuilder, s: String): Unit & Impure =
-        sb `appendString!` s;
+        s `appendString!` sb;
         appendLineSeparator!(sb)
 
     ///
     /// Appends `f(x)` to the string builder `sb`.
     ///
     pub def appendLineWith!(sb: StringBuilder, f: a -> String, x: a): Unit & Impure =
-        sb `appendString!` f(x);
+        f(x) `appendString!` sb;
         appendLineSeparator!(sb)
 
     ///
