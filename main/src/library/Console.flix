@@ -17,6 +17,13 @@
 namespace Console {
 
     ///
+    /// Returns true if there is a `Console` object associated with the current JVM.
+    ///
+    pub def hasConsole(): Bool & Impure =
+        import static java.lang.System.console(): ##java.io.Console & Impure;
+        not Object.isNull(console())
+
+    ///
     /// Reads a single line from the console.
     ///
     /// Returns `None` if nothing was entered or if no console is presented.
