@@ -66,6 +66,21 @@ instance Traversable[Nec] {
 instance Reducible[Nec] {
     pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, l: Nec[a]): b & (ef1 and ef2) = Nec.reduceLeftTo(f, g, l)
     pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nec[a]): b & (ef1 and ef2) = Nec.reduceRightTo(f, g, l)
+    override pub def head(l: Nec[a]): a = Nec.head(l)
+    override pub def last(l: Nec[a]): a = Nec.last(l)
+    override pub def init(l: Nec[a]): List[a] = Nec.init(l)
+    override pub def tail(l: Nec[a]): List[a] = Nec.tail(l)
+    override pub def exists(f: a -> Bool & ef, l: Nec[a]): Bool & ef = Nec.exists(f, l)
+    override pub def forall(f: a -> Bool & ef, l: Nec[a]): Bool & ef = Nec.forall(f, l)
+    override pub def find(f: a -> Bool & ef, l: Nec[a]): Option[a] & ef = Nec.find(f, l)
+    override pub def findLeft(f: a -> Bool & ef, l: Nec[a]): Option[a] & ef = Nec.findLeft(f, l)
+    override pub def findRight(f: a -> Bool & ef, l: Nec[a]): Option[a] & ef = Nec.findRight(f, l)
+    override pub def memberOf(a: a, l: Nec[a]): Bool with Eq[a] = Nec.memberOf(a, l)
+    override pub def dropWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.dropWhileLeft(f, l)
+    override pub def takeWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.takeWhileLeft(f, l)
+    override pub def toArray(l: Nec[a]): Array[a] & Impure = Nec.toArray(l)
+    override pub def toIterator(l: Nec[a]): Iterator[a] & Impure = Nec.toIterator(l)
+    override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
 
 instance Iterable[Nec] {
@@ -281,16 +296,12 @@ namespace Nec {
     ///
     /// Alias for `findLeft`.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def find(f: a -> Bool, c: Nec[a]): Option[a] = findLeft(f, c)
+    pub def find(f: a -> Bool & ef, c: Nec[a]): Option[a] & ef = findLeft(f, c)
 
     ///
     /// Optionally returns the first element of `c` that satisfies the predicate `f` when searching from left to right.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def findLeft(f: a -> Bool, c: Nec[a]): Option[a] = match viewLeft(c) {
+    pub def findLeft(f: a -> Bool & ef, c: Nec[a]): Option[a] & ef = match viewLeft(c) {
         case OneLeft(x)      => if (f(x)) Some(x) else None
         case SomeLeft(x, rs) => if (f(x)) Some(x) else findLeft(f, rs)
     }
@@ -298,9 +309,7 @@ namespace Nec {
     ///
     /// Optionally returns the first element of `c` that satisfies the predicate `f` when searching from right to left.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def findRight(f: a -> Bool, c: Nec[a]): Option[a] = match viewRight(c) {
+    pub def findRight(f: a -> Bool & ef, c: Nec[a]): Option[a] & ef = match viewRight(c) {
         case OneRight(x)      => if (f(x)) Some(x) else None
         case SomeRight(rs, x) => if (f(x)) Some(x) else findRight(f, rs)
     }
@@ -492,9 +501,7 @@ namespace Nec {
     ///
     /// Returns `false` if `c` is empty.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def exists(f: a -> Bool, c: Nec[a]): Bool = match viewLeft(c) {
+    pub def exists(f: a -> Bool & ef, c: Nec[a]): Bool & ef = match viewLeft(c) {
         case OneLeft(x)      => f(x)
         case SomeLeft(x, rs) => if (f(x)) true else exists(f, rs)
     }
@@ -504,17 +511,13 @@ namespace Nec {
     ///
     /// Returns `true` if `c` is empty.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def forall(f: a -> Bool, c: Nec[a]): Bool = match viewLeft(c) {
+    pub def forall(f: a -> Bool & ef, c: Nec[a]): Bool & ef = match viewLeft(c) {
         case OneLeft(x)      => f(x)
         case SomeLeft(x, rs) => if (not f(x)) false else forall(f, rs)
     }
 
     ///
     /// Returns a list of every element in `c` that satisfies the predicate `f`.
-    ///
-    /// The function `f` must be pure.
     ///
     pub def filter(f: a -> Bool & ef, c: Nec[a]): List[a] & ef =
         def loop(c1: Nec[a], k: List[a] -> List[a] & ef) = match viewLeft(c1) {
@@ -888,8 +891,8 @@ namespace Nec {
 
     ///
     /// Left-associative reduction of a structure.
-    /// Applies `g` to the initial element of `l` and combines it
-    /// with the remainder of `l` using `f` going from left to right.
+    /// Applies `g` to the initial element of `c` and combines it
+    /// with the remainder of `c` using `f` going from left to right.
     ///
     pub def reduceLeftTo(f: (b, a) -> b & ef1, g: a -> b & ef2, c: Nec[a]): b & (ef1 and ef2) = match viewLeft(c) {
         case OneLeft(x)      => g(x)
@@ -898,12 +901,53 @@ namespace Nec {
 
     ///
     /// Right-associative reduction of a structure.
-    /// Applies `g` to the initial element of `l` and combines it
-    /// with the remainder of `l` using `f` going from right to left.
+    /// Applies `g` to the initial element of `c` and combines it
+    /// with the remainder of `c` using `f` going from right to left.
     ///
     pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, c: Nec[a]): b & (ef1 and ef2) = match viewRight(c) {
         case OneRight(x)      => g(x)
         case SomeRight(xs, x) => foldRight(f, g(x), xs)
     }
+
+    ///
+    /// Returns `c` without the longest prefix that satisfies the predicate `f`.
+    ///
+    pub def dropWhileLeft(f: a -> Bool & ef, c: Nec[a]): List[a] & ef =
+        def loop(c1) = match viewLeft(c1) {
+            case OneLeft(x)      => if (f(x)) Nil else (x :: Nil)
+            case SomeLeft(x, rs) => if (f(x)) loop(rs) else toList(rs)
+        };
+        loop(c)
+
+    ///
+    /// Returns `c` without the longest sufffix that satisfies the predicate `f`.
+    ///
+    pub def dropWhileRight(f: a -> Bool & ef, c: Nec[a]): List[a] & ef =
+        def loop(c1) = match viewRight(c1) {
+            case OneRight(x)      => if (f(x)) Nil else (x :: Nil)
+            case SomeRight(rs, x) => if (f(x)) loop(rs) else toList(rs)
+        };
+        loop(c)
+
+    ///
+    /// Returns the longest prefix of `c` that satisfies the predicate `f`.
+    ///
+    pub def takeWhileLeft(f: a -> Bool & ef, c: Nec[a]): List[a] & ef =
+        def loop(c1, k) = match viewLeft(c1) {
+            case OneLeft(x)      => if (f(x)) k(x :: Nil) else k(Nil)
+            case SomeLeft(x, rs) => if (f(x)) loop(rs, ks -> k(x :: ks)) else k(Nil)
+        };
+        loop(c, ks -> ks as & ef)
+
+
+    ///
+    /// Returns the longest prefix of `c` that satisfies the predicate `f`.
+    ///
+    pub def takeWhileRight(f: a -> Bool & ef, c: Nec[a]): List[a] & ef =
+        def loop(c1, k) = match viewRight(c1) {
+            case OneRight(x)      => if (f(x)) k(x :: Nil) else k(Nil)
+            case SomeRight(rs, x) => if (f(x)) loop(rs, ks -> k(x :: ks)) else k(Nil)
+        };
+        loop(c, ks -> ks as & ef)
 
 }
