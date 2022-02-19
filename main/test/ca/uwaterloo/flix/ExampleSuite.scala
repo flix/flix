@@ -25,5 +25,6 @@ class ExampleSuite extends FlixSuite(incremental = true) {
   mkTestDir("examples/analysis")
   mkTestDir("examples/datalog")
   mkTestDir("examples/koans")
+  mkTestDir("examples/misc")
 
 }
