@@ -339,8 +339,20 @@ namespace Set {
     ///
     /// Returns the sum of all elements in the set `s` according to the function `f`.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
     pub def sumWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
-        Foldable.sumWith(f, s)
+        let Set(t) = s;
+        def sw() = RedBlackTree.sumWith((k, _) -> f(k), t);
+        reifyEff(f) {
+            case Pure(g) =>
+                if (useParallelEvaluation(s))
+                    RedBlackTree.parSumWith(threads() - 1, (k, _) -> g(k), t) as & Pure
+                else
+                    sw()
+            case _ => sw()
+        }
 
     ///
     /// Returns the product of all elements in the set `s`.
@@ -351,8 +363,20 @@ namespace Set {
     ///
     /// Returns the product of all elements in the set `s` according to the function `f`.
     ///
+    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
     pub def productWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
-        Foldable.productWith(f, s)
+        let Set(t) = s;
+        def pw() = RedBlackTree.productWith((k, _) -> f(k), t);
+        reifyEff(f) {
+            case Pure(g) =>
+                if (useParallelEvaluation(s))
+                    RedBlackTree.parProductWith(threads() - 1, (k, _) -> g(k), t) as & Pure
+                else
+                    pw()
+            case _ => pw()
+        }
 
     ///
     /// Returns the union of the elements in `s`.
@@ -434,7 +458,6 @@ namespace Set {
     ///
     /// Note: The returned set may be smaller than `s`.
     ///
-    @ParallelWhenPure // TODO
     pub def map(f: a -> b & ef, s: Set[a]): Set[b] & ef with Order[b] =
         foldLeft((acc, x) -> insert(f(x), acc), empty(), s)
 

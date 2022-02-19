@@ -940,19 +940,24 @@ namespace List {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def groupBy(f: (a, a) -> Bool, l: List[a]): List[List[a]] = match l {
-        case Nil => Nil
-        case x :: xs =>
-            let (r1, r2) = extractHelper(f, xs, x :: Nil, Nil);
-            r1 :: groupBy(f, r2)
-    }
+    pub def groupBy(f: (a, a) -> Bool, l: List[a]): List[List[a]] =
+        def loop(l1, k) = match l1 {
+            case Nil => k(Nil)
+            case x :: xs =>
+                let (r1, r2) = extractHelper(f, xs, x :: Nil, ks -> ks);
+                loop(r2, ks -> k(r1 :: ks))
+        };
+        loop(l, ks -> ks)
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def extractHelper(f: (a, a) -> Bool, l1: List[a], l2: List[a], l3: List[a]): (List[a], List[a]) = match l1 {
-        case Nil     => (reverse(l2), reverse(l3))
-        case x :: xs => if (agreeHelper(f, x, l2)) extractHelper(f, xs, x :: l2, l3) else extractHelper(f, xs, l2, x :: l3)
+    /// The list `l2` is needed by `agreeHelper` so it must be materialized (rather than a continuation).
+    /// We have no choice but to reverse it.
+    ///
+    def extractHelper(f: (a, a) -> Bool, l1: List[a], l2: List[a], k: List[a] -> List[a]): (List[a], List[a]) = match l1 {
+        case Nil     => (reverse(l2), k(Nil))
+        case x :: xs => if (agreeHelper(f, x, l2)) extractHelper(f, xs, x :: l2, k) else extractHelper(f, xs, l2, ks -> k(x :: ks))
     }
 
     ///

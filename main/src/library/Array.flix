@@ -1656,43 +1656,43 @@ namespace Array {
         match (reifyType a) {
             case ErasedType =>
                 let arr = a as Array[##java.lang.Object];
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32): Array[##java.lang.Object] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedBool =>
                 let arr = a as Array[Bool];
-                import static java.util.Arrays.copyOfRange(Array[Bool], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Bool], Int32, Int32): Array[Bool] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedChar =>
                 let arr = a as Array[Char];
-                import static java.util.Arrays.copyOfRange(Array[Char], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Char], Int32, Int32): Array[Char] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedFloat32 =>
                 let arr = a as Array[Float32];
-                import static java.util.Arrays.copyOfRange(Array[Float32], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Float32], Int32, Int32): Array[Float32] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedFloat64 =>
                 let arr = a as Array[Float64];
-                import static java.util.Arrays.copyOfRange(Array[Float64], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Float64], Int32, Int32): Array[Float64] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedInt8 =>
                 let arr = a as Array[Int8];
-                import static java.util.Arrays.copyOfRange(Array[Int8], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Int8], Int32, Int32): Array[Int8] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedInt16 =>
                 let arr = a as Array[Int16];
-                import static java.util.Arrays.copyOfRange(Array[Int16], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Int16], Int32, Int32): Array[Int16] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedInt32 =>
                 let arr = a as Array[Int32];
-                import static java.util.Arrays.copyOfRange(Array[Int32], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Int32], Int32, Int32): Array[Int32] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedInt64 =>
                 let arr = a as Array[Int64];
-                import static java.util.Arrays.copyOfRange(Array[Int64], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Int64], Int32, Int32): Array[Int64] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedArray(_) =>
                 let arr = a as Array[##java.lang.Object];
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32): Array[##java.lang.Object] & Impure as copy;
                 copy(arr, b, e) as Array[a]
         }
 
