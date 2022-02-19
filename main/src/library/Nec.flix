@@ -130,14 +130,7 @@ namespace Nec {
     ///
     /// Returns `true` if and only if `c1` and `c2` and equal.
     ///
-    pub def equals(c1: Nec[a], c2: Nec[a]): Bool with Eq[a] =
-        def loop(nec1, nec2) =
-            match (viewLeft(nec1), viewLeft(nec2)) {
-                case (OneLeft(x), OneLeft(y))                       => x == y
-                case (SomeLeft(x, xs), SomeLeft(y, ys)) if (x == y) => loop(xs, ys)
-                case _                                              => false
-            };
-        loop(c1, c2)
+    pub def equals(c1: Nec[a], c2: Nec[a]): Bool with Eq[a] = viewLeft(c1) == viewLeft(c2)
 
     //
     // Implementation Note: Necs are considered equal if their (ordered) list of elements are equal.

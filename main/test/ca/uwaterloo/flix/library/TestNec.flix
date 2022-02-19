@@ -21,7 +21,7 @@ namespace TestNec {
     use Nec.ViewLeft.{OneLeft, SomeLeft};
     use Nec.ViewRight.{OneRight, SomeRight};
 
-    use Nec.{cons, singleton};
+    use Nec.{cons, singleton, snoc};
 
     def necOf2(x: a, y: a): Nec[a] = cons(x, singleton(y))
 
@@ -36,6 +36,44 @@ namespace TestNec {
     def necOf7(s: a, t: a, u: a, v: a, w: a, x: a, y: a): Nec[a] = cons(s, cons(t, cons(u, cons(v, cons(w, cons(x, singleton(y)))))))
 
     def necOf8(r: a, s: a, t: a, u: a, v: a, w: a, x: a, y: a): Nec[a] = cons(r, cons(s, cons(t, cons(u, cons(v, cons(w, cons(x, singleton(y))))))))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // equals (==)                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def equals01(): Bool = singleton(1) == singleton(1)
+
+    @test
+    def equals02(): Bool = necOf2(1, 2) == cons(1, singleton(2))
+
+    @test
+    def equals03(): Bool = necOf3(1, 2, 3) == snoc(cons(1, singleton(2)), 3)
+
+    @test
+    def equals04(): Bool = necOf4(1, 2, 3, 4) == snoc(cons(1, cons(2, singleton(3))), 4)
+
+    @test
+    def equals05(): Bool = necOf5(1, 2, 3, 4, 5) == snoc(snoc(cons(1, cons(2, singleton(3))), 4), 5)
+
+    @test
+    def equals06(): Bool = cons(1, necOf5(2, 3, 4, 5, 6)) == snoc(necOf5(1, 2, 3, 4, 5), 6)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // not equals (!=)                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def notEquals01(): Bool = singleton(1) != singleton(2)
+
+    @test
+    def notEquals02(): Bool = necOf2(1, 1) != necOf2(1, 2)
+
+    @test
+    def notEquals03(): Bool = necOf3(1, 2, 3) != necOf2(1, 2)
+
+    @test
+    def notEquals04(): Bool = necOf3(1, 2, 3) != necOf3(1, 2, 2)
 
     /////////////////////////////////////////////////////////////////////////////
     // singleton                                                               //
