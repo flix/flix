@@ -1333,4 +1333,106 @@ namespace TestNec {
     @test
     def hash05(): Bool = hash(necOf3("c", "b", "a")) != hash(necOf3("c", "a", "b"))
 
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhileLeft                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def dropWhileLeft01(): Bool = Nec.dropWhileLeft(i -> i > 3, singleton(1)) == 1 :: Nil
+
+    @test
+    def dropWhileLeft02(): Bool = Nec.dropWhileLeft(i -> i > 3, singleton(4)) == Nil
+
+    @test
+    def dropWhileLeft03(): Bool = Nec.dropWhileLeft(i -> i > 3, necOf2(1, 2)) == 1 :: 2 :: Nil
+
+    @test
+    def dropWhileLeft04(): Bool = Nec.dropWhileLeft(i -> i > 3, necOf2(1, 5)) == 1 :: 5 :: Nil
+
+    @test
+    def dropWhileLeft05(): Bool = Nec.dropWhileLeft(i -> i > 3, necOf2(5, 1)) == 1 :: Nil
+
+    @test
+    def dropWhileLeft06(): Bool = Nec.dropWhileLeft(i -> i > 3, necOf2(5, 8)) == Nil
+
+    @test
+    def dropWhileLeft07(): Bool = Nec.dropWhileLeft(i -> i > 3, necOf8(4, 6, -3, 11, -5, 1, 2, 16)) ==
+                            -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhileRight                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def dropWhileRight01(): Bool = Nec.dropWhileRight(i -> i > 3, singleton(1)) == 1 :: Nil
+
+    @test
+    def dropWhileRight02(): Bool = Nec.dropWhileRight(i -> i > 3, singleton(4)) == Nil
+
+    @test
+    def dropWhileRight03(): Bool = Nec.dropWhileRight(i -> i > 3, necOf2(1, 2)) == 1 :: 2 :: Nil
+
+    @test
+    def dropWhileRight04(): Bool = Nec.dropWhileRight(i -> i > 3, necOf2(1, 5)) == 1 :: Nil
+
+    @test
+    def dropWhileRight05(): Bool = Nec.dropWhileRight(i -> i > 3, necOf2(5, 1)) == 5 :: 1 :: Nil
+
+    @test
+    def dropWhileRight06(): Bool = Nec.dropWhileRight(i -> i > 3, necOf2(5, 8)) == Nil
+
+    @test
+    def dropWhileRight07(): Bool = Nec.dropWhileRight(i -> i > 3, necOf8(4, 6, -3, 11, -5, 1, 2, 16)) ==
+                            4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhileLeft                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def takeWhileLeft01(): Bool = Nec.takeWhileLeft(i -> i > 3, singleton(1)) == Nil
+
+    @test
+    def takeWhileLeft02(): Bool = Nec.takeWhileLeft(i -> i > 3, singleton(4)) == 4 :: Nil
+
+    @test
+    def takeWhileLeft03(): Bool = Nec.takeWhileLeft(i -> i > 3, necOf2(1, 2)) == Nil
+
+    @test
+    def takeWhileLeft04(): Bool = Nec.takeWhileLeft(i -> i > 3, necOf2(1, 5)) == Nil
+
+    @test
+    def takeWhileLeft05(): Bool = Nec.takeWhileLeft(i -> i > 3, necOf2(5, 1)) == 5 :: Nil
+
+    @test
+    def takeWhileLeft06(): Bool = Nec.takeWhileLeft(i -> i > 3, necOf2(5, 8)) == 5 :: 8 :: Nil
+
+    @test
+    def takeWhileLeft08(): Bool = Nec.takeWhileLeft(i -> i > 3, necOf8(4, 6, -3, 11, -5, 1, 2, 16)) == 4 :: 6 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhileRight                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def takeWhileRight01(): Bool = Nec.takeWhileRight(i -> i > 3, singleton(1)) == Nil
+
+    @test
+    def takeWhileRight02(): Bool = Nec.takeWhileRight(i -> i > 3, singleton(4)) == 4 :: Nil
+
+    @test
+    def takeWhileRight03(): Bool = Nec.takeWhileRight(i -> i > 3, necOf2(1, 2)) == Nil
+
+    @test
+    def takeWhileRight04(): Bool = Nec.takeWhileRight(i -> i > 3, necOf2(1, 5)) == 5 :: Nil
+
+    @test
+    def takeWhileRight05(): Bool = Nec.takeWhileRight(i -> i > 3, necOf2(5, 1)) == Nil
+
+    @test
+    def takeWhileRight06(): Bool = Nec.takeWhileRight(i -> i > 3, necOf2(5, 8)) == 5 :: 8 :: Nil
+
+    @test
+    def takeWhileRight07(): Bool = Nec.takeWhileRight(i -> i > 3, necOf8(4, 6, -3, 11, -5, 1, 2, 16)) == 16 :: Nil
+
 }

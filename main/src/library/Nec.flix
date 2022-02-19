@@ -915,7 +915,7 @@ namespace Nec {
     pub def dropWhileLeft(f: a -> Bool & ef, c: Nec[a]): List[a] & ef =
         def loop(c1) = match viewLeft(c1) {
             case OneLeft(x)      => if (f(x)) Nil else (x :: Nil)
-            case SomeLeft(x, rs) => if (f(x)) loop(rs) else toList(rs)
+            case SomeLeft(x, rs) => if (f(x)) loop(rs) else x :: toList(rs)
         };
         loop(c)
 
@@ -925,7 +925,7 @@ namespace Nec {
     pub def dropWhileRight(f: a -> Bool & ef, c: Nec[a]): List[a] & ef =
         def loop(c1) = match viewRight(c1) {
             case OneRight(x)      => if (f(x)) Nil else (x :: Nil)
-            case SomeRight(rs, x) => if (f(x)) loop(rs) else toList(rs)
+            case SomeRight(rs, x) => if (f(x)) loop(rs) else toList(rs `snoc` x)
         };
         loop(c)
 
@@ -944,10 +944,10 @@ namespace Nec {
     /// Returns the longest prefix of `c` that satisfies the predicate `f`.
     ///
     pub def takeWhileRight(f: a -> Bool & ef, c: Nec[a]): List[a] & ef =
-        def loop(c1, k) = match viewRight(c1) {
-            case OneRight(x)      => if (f(x)) k(x :: Nil) else k(Nil)
-            case SomeRight(rs, x) => if (f(x)) loop(rs, ks -> k(x :: ks)) else k(Nil)
+        def loop(c1, ac) = match viewRight(c1) {
+            case OneRight(x)      => if (f(x)) (x :: ac) else ac
+            case SomeRight(rs, x) => if (f(x)) loop(rs, x :: ac) else ac
         };
-        loop(c, ks -> ks as & ef)
+        loop(c, Nil)
 
 }
