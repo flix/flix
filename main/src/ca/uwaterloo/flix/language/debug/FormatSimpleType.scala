@@ -28,7 +28,7 @@ object FormatSimpleType {
 
   // MATT docs
   // MATT private?
-  def format(tpe: SimpleType, nc0: Map[Int, String]): String = {
+  def format(tpe00: SimpleType, nc0: Map[Int, String]): String = {
 
     // generates the names a, b, ..., z, a1, b1, ...., z1, a2, b2, ...
     val nameGenerator = Iterator.iterate(('a', 0)) {
@@ -44,6 +44,17 @@ object FormatSimpleType {
 
     def nextAvailableName(): String = {
       nameGenerator.find(!names.contains(_)).get // safe to get since nameGenerator is infinite
+    }
+
+    /**
+      * Wrap the given type with parentheses if it isn't already wrapped.
+      */
+    def withParens(tpe: String): String = {
+      if (tpe.startsWith("(") && tpe.endsWith(")")) {
+        tpe
+      } else {
+        s"($tpe)"
+      }
     }
 
     def visit(tpe0: SimpleType): String = tpe0 match {
@@ -83,8 +94,18 @@ object FormatSimpleType {
       case SimpleType.RecordConstructor => "{ ? }"
       case SimpleType.RecordRowConstructor(field) => s"( $field :: ? | ? )"
       case SimpleType.RecordRowHead(name, tpe) => s"( $name :: ${visit(tpe)} | ? )"
-      case SimpleType.Schema(fields, rest) => ??? // MATT need special formatting for schema fields
-      case SimpleType.SchemaRow(fields, rest) => ??? // MATT see above
+      case SimpleType.Schema(fields, rest) =>
+        val fieldString = fields.map {
+          case SimpleType.FieldType(name, tpe) => s"$name${withParens(visit(tpe))}"
+        }.mkString(", ")
+        val restString = rest.map(r => s" | ${visit(r)}").getOrElse("")
+        s"#{$fieldString$restString}"
+      case SimpleType.SchemaRow(fields, rest) =>
+        val fieldString = fields.map {
+          case SimpleType.FieldType(name, tpe) => s"$name${withParens(visit(tpe))}"
+        }.mkString(", ")
+        val restString = rest.map(r => s" | ${visit(r)}").getOrElse("")
+        s"#($fieldString$restString)"
       case SimpleType.SchemaRowEmpty => "#()"
       case SimpleType.SchemaEmpty => "#{}"
       case SimpleType.SchemaConstructor => "#{ ? }"
@@ -149,7 +170,7 @@ object FormatSimpleType {
         strings.mkString("(", ", ", ")")
     }
 
-    visit(tpe)
+    visit(tpe00)
   }
 
 }
