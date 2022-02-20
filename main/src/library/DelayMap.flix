@@ -342,7 +342,7 @@ namespace DelayMap {
     ///
     /// Returns a map with mappings `k => f(v)` for every `k => v` in `m`.
     ///
-    @Experimental @LazyWhenPure
+    @Experimental @ParallelWhenPure @LazyWhenPure
     pub def map(f: v1 -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef with Order[k] =
         mapWithKey((_, v) -> f(v), m)
 
