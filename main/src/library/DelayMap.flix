@@ -71,7 +71,7 @@ namespace DelayMap {
         RedBlackTree.isEmpty(t)
 
     ///
-    /// Returns an `m` with `k => v`.
+    /// Returns `m` with `k => v`.
     ///
     @Experimental
     pub def insert(k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
