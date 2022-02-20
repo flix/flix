@@ -382,32 +382,32 @@ namespace DelayMap {
                 let x1 = f(k, force v);
                 lazy x1
             };
-        let DMap(t) = parallelForce(m);
+        let _ = parallelForce(m);
+        let DMap(t) = m;
         DMap(RedBlackTree.mapWithKey(g, t))
 
     ///
     /// Forces `m` in parallel if it is big, otherwise returns `m`.
     ///
     @Parallel
-    def parallelForce(m: DelayMap[k, v]): DelayMap[k, v] =
+    def parallelForce(m: DelayMap[k, v]): Unit =
         if (useParallelEvaluation(m))
             forceAll(m)
         else
-            m
+            ()
 
     ///
     /// Forces **all values** in `m`.
     ///
     @Parallel
-    pub def forceAll(m: DelayMap[k, v]): DelayMap[k, v] =
+    pub def forceAll(m: DelayMap[k, v]): Unit =
         use RedBlackTree.RedBlackTree.Node;
         def seqLoop(tt) = match tt {
             case Node(_, a, _, v, b) =>
                 let _ = seqLoop(a);
                 let _ = force v;
-                let _ = seqLoop(b);
-                tt
-            case _ => tt
+                seqLoop(b)
+            case _ => ()
         };
         def parLoop(n, tt) = {
             if (n <= 1)
@@ -415,22 +415,21 @@ namespace DelayMap {
             else
                 match tt {
                     case Node(_, a, _, v, b) =>
-                        let chanL = chan RedBlackTree[k, Lazy[v]] 1;
-                        let chanR = chan RedBlackTree[k, Lazy[v]] 1;
+                        let chanL = chan Unit 1;
+                        let chanR = chan Unit 1;
                         spawn (chanL <- parLoop((n - 2) / 2, a)); // We divide the rest of the threads as follows:
                         spawn (chanR <- parLoop((n - 2) / 2, b)); // We spawn two new threads leaving us with n - 2
                         let _ = force v;                          // that we distribute over the two spanned threads.
                         let _ = <- chanL;
-                        let _ = <- chanR;
-                        tt
-                    case _ => tt
+                        <- chanR
+                    case _ => ()
                 }
         };
         let DMap(t) = m;
         if (useParallelEvaluation(m))
-            DMap(parLoop(threads() - 1, t)) as & Pure
+            parLoop(threads() - 1, t) as & Pure
         else
-            DMap(seqLoop(t))
+            seqLoop(t)
 
     ///
     /// Returns a map of all mappings `k => v` in `m` where `v` satisfies the predicate `f`.
@@ -528,7 +527,8 @@ namespace DelayMap {
     ///
     @Experimental
     pub def foldLeftWithKey(f: (b, k, v) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
-        let DMap(t) = parallelForce(m);
+        let _ = parallelForce(m);
+        let DMap(t) = m;
         let f1 = (b, k, v) -> f(b, k, force v);
         RedBlackTree.foldLeft(f1, s, t)
 
@@ -548,7 +548,8 @@ namespace DelayMap {
     ///
     @Experimental
     pub def foldRightWithKey(f: (k, v, b) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
-        let DMap(t) = parallelForce(m);
+        let _ = parallelForce(m);
+        let DMap(t) = m;
         let f1 = (k1, v1, b1) -> f(k1, force v1, b1);
         RedBlackTree.foldRight(f1, s, t)
 
@@ -572,7 +573,8 @@ namespace DelayMap {
     ///
     @Experimental
     pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
-        let DMap(t) = parallelForce(m);
+        let _ = parallelForce(m);
+        let DMap(t) = m;
         let f1 = (k1, v1, k2, v2) -> {
             let (k, v) = f(k1, force v1, k2, force v2);
             (k, lazy v)
@@ -602,7 +604,8 @@ namespace DelayMap {
     ///
     @Experimental
     pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & ef, m: DelayMap[k, v]): Option[(k, v)] & ef =
-        let DMap(t) = parallelForce(m);
+        let _ = parallelForce(m);
+        let DMap(t) = m;
         let f1 = (k1, v1, k2, v2) -> {
             let (k, v) = f(k1, force v1, k2, force v2);
             (k, lazy v)
@@ -617,7 +620,8 @@ namespace DelayMap {
     ///
     @Experimental @Parallel
     pub def toMap(m: DelayMap[k, v]): Map[k, v] =
-        let DMap(t) = parallelForce(m);
+        let _ = parallelForce(m);
+        let DMap(t) = m;
         Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
 
     ///
@@ -731,7 +735,8 @@ namespace DelayMap {
     ///
     @Experimental
     pub def foreach(f: (k, v) -> Unit & ef, m: DelayMap[k, v]): Unit & ef =
-        let DMap(t) = parallelForce(m);
+        let _ = parallelForce(m);
+        let DMap(t) = m;
         let f1 = (k, v) -> f(k, force v);
         RedBlackTree.foreach(f1 as & Impure, t) as & ef
 
@@ -835,7 +840,8 @@ namespace DelayMap {
     ///
     @Experimental
     pub def joinWith(f: (k, v) -> String & ef, sep: String, m: DelayMap[k, v]): String & ef =
-        let DMap(t) = parallelForce(m);
+        let _ = parallelForce(m);
+        let DMap(t) = m;
         RedBlackTree.joinWith((k, v) -> f(k, force v), sep, t)
 
 }
