@@ -388,6 +388,7 @@ namespace DelayMap {
     ///
     /// Forces `m` in parallel if it is big, otherwise returns `m`.
     ///
+    @Parallel
     def parallelForce(m: DelayMap[k, v]): DelayMap[k, v] =
         if (useParallelEvaluation(m))
             forceAll(m)
