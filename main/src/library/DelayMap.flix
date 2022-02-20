@@ -171,7 +171,7 @@ namespace DelayMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    @Parallel @Experimental
+    @Experimental @Parallel
     pub def minimumValue(m: DelayMap[k, v]): Option[(k, v)] with Order[v] =
         minimumValueBy((x, y) -> x <=> y, m)
 
@@ -355,7 +355,7 @@ namespace DelayMap {
     ///
     /// Purity polymorphic: Runs in parallel when given a pure function `f`.
     ///
-    @Experimental @LazyWhenPure @ParallelWhenPure
+    @Experimental @ParallelWhenPure @LazyWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef =
         let f1 = (args) -> f(fst(args), snd(args));
         reifyEff(f1) {
@@ -368,7 +368,7 @@ namespace DelayMap {
     ///
     /// Purity polymorphic: Runs in parallel when given a pure function `f`.
     ///
-    @Lazy @ParallelWhenPure
+    @ParallelWhenPure @Lazy
     def mapWithKeyL(f: (k, v1) -> v2, m: DelayMap[k, v1]): DelayMap[k, v2] =
         let DMap(t) = m;
         let g = (k, v) -> lazy f(k, force v);
@@ -399,7 +399,7 @@ namespace DelayMap {
     ///
     /// Forces **all values** in `m`.
     ///
-    @Parallel
+    @Experimental @Parallel
     pub def forceAll(m: DelayMap[k, v]): Unit =
         use RedBlackTree.RedBlackTree.Node;
         def seqLoop(tt) = match tt {
@@ -743,14 +743,14 @@ namespace DelayMap {
     ///
     /// Returns the sum of all values in `m`.
     ///
-    @Experimental
+    @Experimental @Parallel
     pub def sumKeys(m: DelayMap[Int32, v]): Int32 =
         sumWith((k, _) -> k, m)
 
     ///
     /// Returns the sum of all values in `m`.
     ///
-    @Experimental
+    @Experimental @Parallel
     pub def sumValues(m: DelayMap[k, Int32]): Int32 =
         sumWith((_, v) -> v, m)
 
@@ -781,15 +781,14 @@ namespace DelayMap {
     ///
     /// Returns the product of all keys in the DelayMap `m`.
     ///
-    @Experimental
+    @Experimental @Parallel
     pub def productKeys(m: DelayMap[Int32, v]): Int32 =
-        let DMap(t) = m;
-        RedBlackTree.productKeys(t)
+        productWith((k, _) -> k, m)
 
     ///
     /// Returns the product of all values in the DelayMap `m`.
     ///
-    @Experimental
+    @Experimental @Parallel
     pub def productValues(m: DelayMap[k, Int32]): Int32 =
         productWith((_, v) -> v, m)
 
