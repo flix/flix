@@ -46,7 +46,7 @@ object FormatSimpleType {
       nameGenerator.find(!names.contains(_)).get // safe to get since nameGenerator is infinite
     }
 
-    def visit(tpe: SimpleType): String = tpe match {
+    def visit(tpe0: SimpleType): String = tpe0 match {
       case SimpleType.Unit => "Unit"
       case SimpleType.Null => "Null"
       case SimpleType.Bool => "Bool"
