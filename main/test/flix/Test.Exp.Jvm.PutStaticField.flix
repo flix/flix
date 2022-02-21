@@ -2,15 +2,15 @@ namespace Test/Exp/Jvm/PutStaticField {
 
     @test
     def testPutStaticBoolField01(): Bool & Impure =
-        import static get flix.test.TestClass.BOOL_FIELD as getField;
-        import static set flix.test.TestClass.BOOL_FIELD as setField;
+        import static get flix.test.TestClass.BOOL_FIELD: Bool & Impure as getField;
+        import static set flix.test.TestClass.BOOL_FIELD: Bool & Impure as setField;
         setField(true);
         getField() == true
 
     @test
     def testPutStaticBoolField02(): Bool & Impure =
-        import static get flix.test.TestClass.BOOL_FIELD as getField;
-        import static set flix.test.TestClass.BOOL_FIELD as setField;
+        import static get flix.test.TestClass.BOOL_FIELD: Bool & Impure as getField;
+        import static set flix.test.TestClass.BOOL_FIELD: Bool & Impure as setField;
         setField(false);
         getField() == false
 

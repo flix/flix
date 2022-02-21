@@ -45,7 +45,7 @@ namespace Test/Exp/Jvm/GetStaticField {
 
     @test
     def testGetStaticBoolField01(): Bool & Impure =
-        import static get flix.test.TestClass.BOOL_FIELD as getField;
+        import static get flix.test.TestClass.BOOL_FIELD: Bool & Impure as getField;
         getField() == true
 
     @test
