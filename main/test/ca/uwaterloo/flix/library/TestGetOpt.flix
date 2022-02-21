@@ -68,7 +68,7 @@ namespace TestGetOpt {
         case Failure(_) => false
     }
 
-    def assertFailureWith(x: Validation[a, e], test: Nel[e] -> Bool): Bool  = match x {
+    def assertFailureWith(x: Validation[a, e], test: Nec[e] -> Bool): Bool  = match x {
         case Success(_) => false
         case Failure(es) => test(es)
     }
@@ -158,21 +158,21 @@ namespace TestGetOpt {
         /// "-m" not defined
         let args = ["-m"];
         getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nel.length(x) == 1
+            Nec.length(x) == 1
 
     @test
     def testCharArgs10(): Bool & Impure =
         /// "-m" not defined
         let args = ["-Xm"];
         getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nel.length(x) == 1
+            Nec.length(x) == 1
 
     @test
     def testCharArgs11(): Bool & Impure =
         /// "-m" not defined
         let args = ["-X", "-m"];
         getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nel.length(x) == 1
+            Nec.length(x) == 1
 
     /////////////////////////////////////////////////////////////////////////////
     // String / name options                                                   //
@@ -235,21 +235,21 @@ namespace TestGetOpt {
         /// "--multiple" not defined
         let args = ["--multiple"];
         getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nel.length(x) == 1
+            Nec.length(x) == 1
 
     @test
     def testStringArgs10(): Bool & Impure =
         /// "--multiple" not defined
         let args = ["--hires", "--multiple"];
         getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nel.length(x) == 1
+            Nec.length(x) == 1
 
     @test
     def testStringArgs11(): Bool & Impure =
         /// "--multiple" not defined
         let args = ["--hires", "--multiple", "test_option1"];
         getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nel.length(x) == 1
+            Nec.length(x) == 1
 
     /////////////////////////////////////////////////////////////////////////////
     // Mixed short and name options                                            //
@@ -312,21 +312,21 @@ namespace TestGetOpt {
         /// "-m" not defined
         let args = ["--hires", "-m"];
         getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nel.length(x) == 1
+            Nec.length(x) == 1
 
     @test
     def testMixedArgs10(): Bool & Impure =
         /// "--multiple" not defined
         let args = ["-X", "--multiple"];
         getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nel.length(x) == 1
+            Nec.length(x) == 1
 
     @test
     def testMixedArgs11(): Bool & Impure =
         /// "--multiple" not defined
         let args = ["-X", "--multiple", "test_option1"];
         getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nel.length(x) == 1
+            Nec.length(x) == 1
 
     /////////////////////////////////////////////////////////////////////////////
     // Prefix of long option                                                   //
@@ -337,7 +337,7 @@ namespace TestGetOpt {
         /// Fail: Could be "hires" or "height"
         let args = ["--h=1000"];
         getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nel.length(x) == 1
+            Nec.length(x) == 1
 
     @test
     def testPrefixArgs02(): Bool & Impure =
@@ -374,7 +374,7 @@ namespace TestGetOpt {
     def testDecodeArgs02(): Bool & Impure =
         let args = ["--width=fourteen_thousand"];
         getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nel.length(x) == 1
+            Nec.length(x) == 1
 
     @test
     def testDecodeArgs03(): Bool & Impure =
@@ -386,19 +386,19 @@ namespace TestGetOpt {
     def testDecodeArgs04(): Bool & Impure =
         let args = ["--width=fourteen_hundred", "--height=1000"];
         getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nel.length(x) == 1
+            Nec.length(x) == 1
 
     @test
     def testDecodeArgs05(): Bool & Impure =
         let args = ["--width=1400", "--height=one_thousand"];
         getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nel.length(x) == 1
+            Nec.length(x) == 1
 
     @test
     def testDecodeArgs06(): Bool & Impure =
         let args = ["--width=fourteen_hundred", "--height=one_thousand"];
         getOpt(Permute, options(), args) `assertFailureWith` x ->
-            Nel.length(x) == 2
+            Nec.length(x) == 2
 
     /////////////////////////////////////////////////////////////////////////////
     // Preprocess                                                              //
