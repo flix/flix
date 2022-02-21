@@ -76,6 +76,6 @@ namespace Concurrent/Channel/Timer {
     /// Sleeps for `s` nanoseconds and then sends the Unit value to the given channel `c`.
     ///
     def sleepAndSend(ns: Int64, c: Channel[Unit]): Unit & Impure =
-        import static java.lang.Thread.sleep(Int64);
+        import static java.lang.Thread.sleep(Int64): Unit & Impure;
         sleep(ns / 1000000i64); c <- (); ()
 }

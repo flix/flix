@@ -120,16 +120,16 @@ pub def <==>(x: Bool, y: Bool): Bool = x == y
 /// Converts `x` to a string and prints it to standard out.
 ///
 pub def print(x: a): Unit & Impure with ToString[a] =
-    import static get java.lang.System.out as getOut;
-    import java.io.PrintStream.print(String);
+    import static get java.lang.System.out: ##java.io.PrintStream & Impure as getOut;
+    import java.io.PrintStream.print(String): Unit & Impure;
     x |> ToString.toString |> print(getOut())
 
 ///
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
 pub def println(x: a): Unit & Impure with ToString[a] =
-    import static get java.lang.System.out as getOut;
-    import java.io.PrintStream.println(String);
+    import static get java.lang.System.out: ##java.io.PrintStream & Impure as getOut;
+    import java.io.PrintStream.println(String): Unit & Impure;
     x |> ToString.toString |> println(getOut())
 
 ///
