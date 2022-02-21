@@ -6,7 +6,7 @@ namespace Test/Exp/Jvm/GetStaticField {
 
     @test
     def testGetStaticField01(): Bool & Impure =
-        import static get java.lang.Integer.MIN_VALUE as getMinValue;
+        import static get java.lang.Integer.MIN_VALUE: Int32 & Impure as getMinValue;
         getMinValue() == Int32.minValue()
 
     @test

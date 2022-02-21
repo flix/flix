@@ -2,7 +2,7 @@ namespace Test/Exp/Jvm/InvokeMethod {
 
     @test
     def testInvokeMethod01(): Bool & Impure =
-        import java.lang.String.toLowerCase();
+        import java.lang.String.toLowerCase(): String & Impure;
         toLowerCase("HELLO WORLD") == "hello world"
 
     @test

@@ -2,7 +2,7 @@ namespace Test/Exp/Jvm/InvokeConstructor {
 
     @test
     def testInvokeConstructor01(): ##java.lang.Boolean & Impure =
-        import new java.lang.Boolean(Bool) as newBoolean;
+        import new java.lang.Boolean(Bool): ##java.lang.Boolean & Impure as newBoolean;
         newBoolean(true)
 
     @test

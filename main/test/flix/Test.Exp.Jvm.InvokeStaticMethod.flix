@@ -2,7 +2,7 @@ namespace Test/Exp/Jvm/InvokeStaticMethod {
 
     @test
     def testInvokeStaticMethod01(): Bool & Impure =
-        import static java.lang.String.valueOf(Bool);
+        import static java.lang.String.valueOf(Bool): String & Impure;
         valueOf(true) == "true"
 
     @test
