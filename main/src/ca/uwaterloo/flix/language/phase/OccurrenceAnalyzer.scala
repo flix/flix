@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Symbol}
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 
 /**
@@ -369,8 +369,9 @@ object OccurrenceAnalyzer {
   /*
   * Combines `o1` and `o2` if both contain a value, else return the option containing a value.
    */
-  def combineOpt(o1: Option[Occur], o2: Option[Occur]): Occur = {
+  private def combineOpt(o1: Option[Occur], o2: Option[Occur]): Occur = {
     (o1, o2) match {
+      case (None, None) => throw InternalCompilerException(s"Unexpected options.")
       case (None, Some(o2)) => o2
       case (Some(o1), None) => o1
       case (Some(o1), Some(o2)) => combine(o1, o2)
