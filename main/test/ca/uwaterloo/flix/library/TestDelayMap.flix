@@ -1722,7 +1722,7 @@ namespace TestDelayMap {
             DelayMap.sumWith((k, v) -> k + v) == 0
 
     @test
-    def sumWith08(): Bool & Impure =
+    def sumWith07(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
         let a = MutList.new();
@@ -1832,12 +1832,11 @@ namespace TestDelayMap {
             DelayMap.productWith((k, v) -> k + v) == -400
 
     @test
-    def productWith08(): Bool & Impure =
+    def productWith07(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
         let a = MutList.new();
         DelayMap.productWith((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); 1 }, m);
-        println(MutList.toList(a));
         MutList.toList(a) == range
 
 

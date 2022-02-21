@@ -26,14 +26,14 @@ namespace Concurrent/ReentrantLock {
     /// `fair = False` is the default for Java.
     ///
     pub def new(fair: Bool): Concurrent/ReentrantLock.ReentrantLock & Impure =
-        import new java.util.concurrent.locks.ReentrantLock(Bool) as reentrantLock;
+        import new java.util.concurrent.locks.ReentrantLock(Bool): ##java.util.concurrent.locks.ReentrantLock & Impure as reentrantLock;
         ReentrantLock(reentrantLock(fair))
 
     ///
     /// Returns true if this lock has fairness set true.
     ///
-    pub def isFair(lock: Concurrent/ReentrantLock.ReentrantLock): Bool & Impure =
-        import java.util.concurrent.locks.ReentrantLock.isFair();
+    pub def isFair(lock: Concurrent/ReentrantLock.ReentrantLock): Bool & Pure =
+        import java.util.concurrent.locks.ReentrantLock.isFair(): Bool & Pure;
         let ReentrantLock(l) = lock;
         isFair(l)
 
@@ -41,7 +41,7 @@ namespace Concurrent/ReentrantLock {
     /// Acquires the lock.
     ///
     pub def lock(lock: Concurrent/ReentrantLock.ReentrantLock): Unit & Impure =
-        import java.util.concurrent.locks.ReentrantLock.lock() as lockIt;
+        import java.util.concurrent.locks.ReentrantLock.lock(): Unit & Impure as lockIt;
         let ReentrantLock(l) = lock;
         lockIt(l)
 
@@ -49,7 +49,7 @@ namespace Concurrent/ReentrantLock {
     /// Acquires the lock unless the current thread is interrupted.
     ///
     pub def lockInterruptibly(lock: Concurrent/ReentrantLock.ReentrantLock): Result[Unit, ##java.lang.InterruptedException] & Impure =
-        import java.util.concurrent.locks.ReentrantLock.lockInterruptibly();
+        import java.util.concurrent.locks.ReentrantLock.lockInterruptibly(): Unit & Impure;
         let ReentrantLock(l) = lock;
         try {
             Ok(lockInterruptibly(l))
@@ -61,7 +61,7 @@ namespace Concurrent/ReentrantLock {
     /// Returns a Condition instance for use with this Lock instance.
     ///
     pub def newCondition(lock: Concurrent/ReentrantLock.ReentrantLock): Concurrent/Condition.Condition & Impure =
-        import java.util.concurrent.locks.ReentrantLock.newCondition();
+        import java.util.concurrent.locks.ReentrantLock.newCondition(): ##java.util.concurrent.locks.Condition & Impure;
         let ReentrantLock(l) = lock;
         use Concurrent/Condition.Condition;
         Condition.Condition(newCondition(l))
@@ -70,7 +70,7 @@ namespace Concurrent/ReentrantLock {
     /// Acquires the lock only if it is not held by another thread at the time of invocation.
     ///
     pub def tryLock(lock: Concurrent/ReentrantLock.ReentrantLock): Bool & Impure =
-        import java.util.concurrent.locks.ReentrantLock.tryLock();
+        import java.util.concurrent.locks.ReentrantLock.tryLock(): Bool & Impure;
         let ReentrantLock(l) = lock;
         tryLock(l)
 
@@ -78,8 +78,8 @@ namespace Concurrent/ReentrantLock {
     /// Acquires the lock if it is not held by another thread within the given waiting time (nanos) and the current thread has not been interrupted.
     ///
     pub def tryLockNanos(lock: Concurrent/ReentrantLock.ReentrantLock, nanosTimeout: Int64): Result[Bool, ##java.lang.InterruptedException] & Impure =
-        import java.util.concurrent.locks.ReentrantLock.tryLock(Int64, ##java.util.concurrent.TimeUnit);
-        import static get java.util.concurrent.TimeUnit.NANOSECONDS as nano;
+        import java.util.concurrent.locks.ReentrantLock.tryLock(Int64, ##java.util.concurrent.TimeUnit): Bool & Impure;
+        import static get java.util.concurrent.TimeUnit.NANOSECONDS: ##java.util.concurrent.TimeUnit & Impure as nano;
         let ReentrantLock(l) = lock;
         try {
             Ok(tryLock(l, nanosTimeout, nano()))
@@ -91,7 +91,7 @@ namespace Concurrent/ReentrantLock {
     /// Attempts to release this lock.
     ///
     pub def unlock(lock: Concurrent/ReentrantLock.ReentrantLock): Result[Unit, ##java.lang.IllegalMonitorStateException] & Impure =
-        import java.util.concurrent.locks.ReentrantLock.unlock();
+        import java.util.concurrent.locks.ReentrantLock.unlock(): Unit & Impure;
         let ReentrantLock(l) = lock;
         try {
             Ok(unlock(l))

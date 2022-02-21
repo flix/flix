@@ -31,8 +31,8 @@ namespace File {
     pub def accessTime(f: String): Result[Int64, String] & Impure =
         try {
             use Result.flatMap;
-            import java.nio.file.attribute.BasicFileAttributes.lastAccessTime();
-            import java.nio.file.attribute.FileTime.toMillis();
+            import java.nio.file.attribute.BasicFileAttributes.lastAccessTime(): ##java.nio.file.attribute.FileTime & Impure;
+            import java.nio.file.attribute.FileTime.toMillis(): Int64 & Impure;
 
             let* fileAttributes = getAttributes(f);
             let timeLastAccess = lastAccessTime(fileAttributes);
@@ -41,7 +41,7 @@ namespace File {
             Ok(inMilliSec)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -51,8 +51,8 @@ namespace File {
     pub def creationTime(f: String): Result[Int64, String] & Impure =
         try {
             use Result.flatMap;
-            import java.nio.file.attribute.BasicFileAttributes.creationTime();
-            import java.nio.file.attribute.FileTime.toMillis();
+            import java.nio.file.attribute.BasicFileAttributes.creationTime(): ##java.nio.file.attribute.FileTime & Impure;
+            import java.nio.file.attribute.FileTime.toMillis(): Int64 & Impure;
 
             let* fileAttributes = getAttributes(f);
             let timeCreated = creationTime(fileAttributes);
@@ -61,7 +61,7 @@ namespace File {
             Ok(inMilliSec)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -71,8 +71,8 @@ namespace File {
     pub def modificationTime(f: String): Result[Int64, String] & Impure =
         try {
             use Result.flatMap;
-            import java.nio.file.attribute.BasicFileAttributes.lastModifiedTime();
-            import java.nio.file.attribute.FileTime.toMillis();
+            import java.nio.file.attribute.BasicFileAttributes.lastModifiedTime(): ##java.nio.file.attribute.FileTime & Impure;
+            import java.nio.file.attribute.FileTime.toMillis(): Int64 & Impure;
 
             let* fileAttributes = getAttributes(f);
             let timeLastModified = lastModifiedTime(fileAttributes);
@@ -81,7 +81,7 @@ namespace File {
             Ok(inMilliSec)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -91,7 +91,7 @@ namespace File {
     pub def size(f: String): Result[Int64, String] & Impure =
         try {
             use Result.flatMap;
-            import java.nio.file.attribute.BasicFileAttributes.size();
+            import java.nio.file.attribute.BasicFileAttributes.size(): Int64 & Impure;
 
             let* fileAttributes = getAttributes(f);
             let fileSize = size(fileAttributes);
@@ -99,7 +99,7 @@ namespace File {
             Ok(fileSize)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -108,10 +108,10 @@ namespace File {
     ///
     def getAttributes(f: String): Result[##java.nio.file.attribute.BasicFileAttributes, String] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.toPath();
-            import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption]);
-            import static java.lang.Class.forName(String);
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption]): ##java.nio.file.attribute.BasicFileAttributes & Impure;
+            import static java.lang.Class.forName(String): ##java.lang.Class & Impure;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -120,7 +120,7 @@ namespace File {
             Ok(readAttributes(javaPath, classOfAttributes, []))
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -175,12 +175,12 @@ namespace File {
     ///
     pub def exists(f: String): Result[Bool, String] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.exists();
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.exists(): Bool & Impure;
             Ok(exists(newFile(f)))
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -189,12 +189,12 @@ namespace File {
     ///
     pub def isDirectory(f: String): Result[Bool, String] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.isDirectory();
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.isDirectory(): Bool & Impure;
             Ok(isDirectory(newFile(f)))
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -203,16 +203,16 @@ namespace File {
     ///
     pub def isRegularFile(f: String): Result[Bool, String] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.toPath();
-            import static java.nio.file.Files.isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption]);
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption]): Bool & Impure;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let isRegular = isRegularFile(javaPath, []);
             Ok(isRegular)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -221,8 +221,8 @@ namespace File {
     ///
     pub def isReadable(f: String): Result[Bool, String] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.canRead();
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.canRead(): Bool & Impure;
             Ok(canRead(newFile(f)))
         } catch {
             case _: ##java.io.IOException => Err("I/O Error")
@@ -233,16 +233,16 @@ namespace File {
     ///
     pub def isSymbolicLink(f: String): Result[Bool, String] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.toPath();
-            import static java.nio.file.Files.isSymbolicLink(##java.nio.file.Path);
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.isSymbolicLink(##java.nio.file.Path): Bool & Impure;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let isSymbolic = isSymbolicLink(javaPath);
             Ok(isSymbolic)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -251,12 +251,12 @@ namespace File {
     ///
     pub def isWritable(f: String): Result[Bool, String] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.canWrite();
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.canWrite(): Bool & Impure;
             Ok(canWrite(newFile(f)))
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -265,12 +265,12 @@ namespace File {
     ///
     pub def isExecutable(f: String): Result[Bool, String] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.canExecute();
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.canExecute(): Bool & Impure;
             Ok(canExecute(newFile(f)))
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -279,16 +279,16 @@ namespace File {
     ///
     pub def read(f: String): Result[String, String] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.toPath();
-            import static java.nio.file.Files.readString(##java.nio.file.Path);
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.readString(##java.nio.file.Path): String & Impure;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let result = readString(javaPath);
             Ok(result)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -301,12 +301,12 @@ namespace File {
     ///
     pub def readWith(opts: {offset :: Int64, count :: Int32, charSet :: String}, f : String): Result[String, String] & Impure = {
         try {
-            import new java.io.File(String) as newFile;
-            import new java.io.FileInputStream(##java.io.File) as newInputStream;
-            import java.io.FileInputStream.skip(Int64);
-            import java.io.FileInputStream.read(Array[Int8], Int32, Int32);
-            import static java.nio.charset.Charset.forName(String);
-            import new java.lang.String(Array[Int8], ##java.nio.charset.Charset) as newString;
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
+            import java.io.FileInputStream.skip(Int64): Int64 & Impure;
+            import java.io.FileInputStream.read(Array[Int8], Int32, Int32): Int32 & Impure;
+            import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset & Impure;
+            import new java.lang.String(Array[Int8], ##java.nio.charset.Charset): String & Impure as newString;
 
             let javaFile = newFile(f);
             let stream = newInputStream(javaFile);
@@ -318,7 +318,7 @@ namespace File {
             Ok(returnString)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
     }
@@ -327,16 +327,16 @@ namespace File {
     /// Returns a list of all the lines in the given file `f`.
     ///
     pub def readLines(f: String): Result[List[String], String] & Impure = try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.toPath();
-            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path);
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader & Impure;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
             Ok(readAll(reader))
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -344,7 +344,7 @@ namespace File {
     /// Reads all lines from the given buffered reader `r` until it is empty.
     ///
     def readAll(r: ##java.io.BufferedReader): List[String] & Impure =
-        import java.io.BufferedReader.readLine();
+        import java.io.BufferedReader.readLine(): String & Impure;
         def loop(k) = {
             let l = readLine(r);
             if (Object.isNull(l))
@@ -361,10 +361,10 @@ namespace File {
     ///
     pub def readLinesWith(opts: {charSet :: String}, f: String): Result[List[String], String] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.toPath();
-            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
-            import static java.nio.charset.Charset.forName(String);
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader & Impure;
+            import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset & Impure;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -372,7 +372,7 @@ namespace File {
             Ok(readAll(reader))
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -381,10 +381,10 @@ namespace File {
     ///
     pub def readLinesIter(f: String): Iterator[Result[String, String]] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.toPath();
-            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path);
-            import java.io.BufferedReader.readLine();
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader & Impure;
+            import java.io.BufferedReader.readLine(): String & Impure;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -400,7 +400,7 @@ namespace File {
                 } catch {
                     case ex: ##java.io.IOException => {
                         line := null as String;
-                        import java.lang.Throwable.getMessage();
+                        import java.lang.Throwable.getMessage(): String & Impure;
                         Err(getMessage(ex))
                     }
                 }
@@ -408,7 +408,7 @@ namespace File {
             Iterator(done, next)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Iterator.singleton(Err(getMessage(ex)))
         }
 
@@ -419,11 +419,11 @@ namespace File {
     ///
     pub def readLinesIterWith(opts: {charSet :: String}, f: String): Iterator[Result[String, String]] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.toPath();
-            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset);
-            import static java.nio.charset.Charset.forName(String);
-            import java.io.BufferedReader.readLine();
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader & Impure;
+            import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset & Impure;
+            import java.io.BufferedReader.readLine(): String & Impure;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -439,7 +439,7 @@ namespace File {
                 } catch {
                     case ex: ##java.io.IOException => {
                         line := null as String;
-                        import java.lang.Throwable.getMessage();
+                        import java.lang.Throwable.getMessage(): String & Impure;
                         Err(getMessage(ex))
                     }
                 }
@@ -447,7 +447,7 @@ namespace File {
             Iterator(done, next)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Iterator.singleton(Err(getMessage(ex)))
         }
 
@@ -456,9 +456,9 @@ namespace File {
     ///
     pub def readBytes(f: String): Result[Array[Int8], String] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import java.io.File.toPath();
-            import static java.nio.file.Files.readAllBytes(##java.nio.file.Path);
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.readAllBytes(##java.nio.file.Path): Array[Int8] & Impure;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -467,7 +467,7 @@ namespace File {
             Ok(bytes)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -479,10 +479,10 @@ namespace File {
     ///
     pub def readBytesWith(opts: {offset :: Int64, count :: Int32}, f: String): Result[Array[Int8], String] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import new java.io.FileInputStream(##java.io.File) as newInputStream;
-            import java.io.FileInputStream.skip(Int64);
-            import java.io.FileInputStream.read(Array[Int8], Int32, Int32);
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
+            import java.io.FileInputStream.skip(Int64): Int64 & Impure;
+            import java.io.FileInputStream.read(Array[Int8], Int32, Int32): Int32 & Impure;
 
             let javaFile = newFile(f);
             let stream = newInputStream(javaFile);
@@ -495,7 +495,7 @@ namespace File {
             Ok(res)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -521,9 +521,9 @@ namespace File {
     ///
     pub def readChunks(f: String, chunkSize: Int32): Iterator[Result[Array[Int8], String]] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import new java.io.FileInputStream(##java.io.File) as newInputStream;
-            import java.io.FileInputStream.read(Array[Int8]);
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream & Impure as newInputStream;
+            import java.io.FileInputStream.read(Array[Int8]): Int32 & Impure;
 
             let javaFile = newFile(f);
             let stream = newInputStream(javaFile);
@@ -541,7 +541,7 @@ namespace File {
                 } catch {
                     case ex: ##java.io.IOException => {
                         numberRead := -1;
-                        import java.lang.Throwable.getMessage();
+                        import java.lang.Throwable.getMessage(): String & Impure;
                         Err(getMessage(ex))
                     }
                 }
@@ -549,7 +549,7 @@ namespace File {
             Iterator(done, next)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Iterator.singleton(Err(getMessage(ex)))
         }
 
@@ -562,11 +562,11 @@ namespace File {
     ///
     pub def write(f: String, data: t): Result[Bool, String] & Impure with ToString[t] =
         try {
-            import new java.io.File(String) as newFile;
-            import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
-            import java.io.PrintWriter.println(String);
-            import java.io.PrintWriter.close();
-            import java.io.PrintWriter.checkError();
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter & Impure as newPrintWriter;
+            import java.io.PrintWriter.println(String): Unit & Impure;
+            import java.io.PrintWriter.close(): Unit & Impure;
+            import java.io.PrintWriter.checkError(): Bool & Impure;
 
             let alreadyExists = File.exists(f);
 
@@ -584,7 +584,7 @@ namespace File {
             }
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -597,11 +597,11 @@ namespace File {
     ///
     pub def writeLines(f: String, data: f[String]): Result[Bool, String] & Impure with Foldable[f] =
         try {
-            import new java.io.File(String) as newFile;
-            import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
-            import java.io.PrintWriter.println(String);
-            import java.io.PrintWriter.close();
-            import java.io.PrintWriter.checkError();
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter & Impure as newPrintWriter;
+            import java.io.PrintWriter.println(String): Unit & Impure;
+            import java.io.PrintWriter.close(): Unit & Impure;
+            import java.io.PrintWriter.checkError(): Bool & Impure;
 
             let alreadyExists = File.exists(f);
 
@@ -619,7 +619,7 @@ namespace File {
             }
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -630,12 +630,12 @@ namespace File {
     ///
     pub def append(f: String, data: t): Result[Bool, String] & Impure with ToString[t] =
         try {
-            import new java.io.File(String) as newFile;
-            import new java.io.FileWriter(##java.io.File, Bool) as newFileWriter;
-            import new java.io.PrintWriter(##java.io.Writer) as newPrintWriter;
-            import java.io.PrintWriter.println(String);
-            import java.io.PrintWriter.close();
-            import java.io.PrintWriter.checkError();
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import new java.io.FileWriter(##java.io.File, Bool): ##java.io.FileWriter & Impure as newFileWriter;
+            import new java.io.PrintWriter(##java.io.Writer): ##java.io.PrintWriter & Impure as newPrintWriter;
+            import java.io.PrintWriter.println(String): Unit & Impure;
+            import java.io.PrintWriter.close(): Unit & Impure;
+            import java.io.PrintWriter.checkError(): Bool & Impure;
 
             let alreadyExists = File.exists(f);
 
@@ -655,7 +655,7 @@ namespace File {
             }
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -666,12 +666,12 @@ namespace File {
     ///
     pub def appendLines(f: String, data: f[String]): Result[Bool, String] & Impure with Foldable[f] =
         try {
-            import new java.io.File(String) as newFile;
-            import new java.io.FileWriter(##java.io.File, Bool) as newFileWriter;
-            import new java.io.PrintWriter(##java.io.Writer) as newPrintWriter;
-            import java.io.PrintWriter.println(String);
-            import java.io.PrintWriter.close();
-            import java.io.PrintWriter.checkError();
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import new java.io.FileWriter(##java.io.File, Bool): ##java.io.FileWriter & Impure as newFileWriter;
+            import new java.io.PrintWriter(##java.io.Writer): ##java.io.PrintWriter & Impure as newPrintWriter;
+            import java.io.PrintWriter.println(String): Unit & Impure;
+            import java.io.PrintWriter.close(): Unit & Impure;
+            import java.io.PrintWriter.checkError(): Bool & Impure;
 
             let alreadyExists = File.exists(f);
 
@@ -691,7 +691,7 @@ namespace File {
             }
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -704,12 +704,12 @@ namespace File {
     ///
     pub def writeBytes(f: String, data: f[Int8]): Result[Bool, String] & Impure with Foldable[f] =
         try {
-            import new java.io.File(String) as newFile;
-            import new java.io.FileOutputStream(##java.io.File) as newFileStream;
-            import new java.io.PrintWriter(##java.io.OutputStream) as newPrintWriter;
-            import java.io.FileOutputStream.write(Array[Int8]);
-            import java.io.PrintWriter.close();
-            import java.io.PrintWriter.checkError();
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import new java.io.FileOutputStream(##java.io.File): ##java.io.FileOutputStream & Impure as newFileStream;
+            import new java.io.PrintWriter(##java.io.OutputStream): ##java.io.PrintWriter & Impure as newPrintWriter;
+            import java.io.FileOutputStream.write(Array[Int8]): Unit & Impure;
+            import java.io.PrintWriter.close(): Unit & Impure;
+            import java.io.PrintWriter.checkError(): Bool & Impure;
 
             let alreadyExists = File.exists(f);
 
@@ -729,7 +729,7 @@ namespace File {
             }
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -740,12 +740,12 @@ namespace File {
     ///
     pub def appendBytes(f: String, data: f[Int8]): Result[Bool, String] & Impure with Foldable[f] =
         try {
-            import new java.io.File(String) as newFile;
-            import new java.io.FileOutputStream(##java.io.File, Bool) as newFileStream;
-            import new java.io.PrintWriter(##java.io.OutputStream) as newPrintWriter;
-            import java.io.FileOutputStream.write(Array[Int8]);
-            import java.io.PrintWriter.close();
-            import java.io.PrintWriter.checkError();
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import new java.io.FileOutputStream(##java.io.File, Bool): ##java.io.FileOutputStream & Impure as newFileStream;
+            import new java.io.PrintWriter(##java.io.OutputStream): ##java.io.PrintWriter & Impure as newPrintWriter;
+            import java.io.FileOutputStream.write(Array[Int8]): Unit & Impure;
+            import java.io.PrintWriter.close(): Unit & Impure;
+            import java.io.PrintWriter.checkError(): Bool & Impure;
 
             let alreadyExists = File.exists(f);
 
@@ -767,7 +767,7 @@ namespace File {
             }
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage();
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
@@ -776,10 +776,10 @@ namespace File {
     ///
     pub def truncate(f: String): Result[Bool, String] & Impure =
         try {
-            import new java.io.File(String) as newFile;
-            import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
-            import java.io.PrintWriter.close();
-            import java.io.PrintWriter.checkError();
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter & Impure as newPrintWriter;
+            import java.io.PrintWriter.close(): Unit & Impure;
+            import java.io.PrintWriter.checkError(): Bool & Impure;
 
             let alreadyExists = File.exists(f);
 
@@ -794,6 +794,46 @@ namespace File {
             else {
                 Result.flatMap(exists -> Ok(not exists), alreadyExists)
             }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Creates the directory `d`.
+    ///
+    /// Returns `Ok(true)` if the directory `d` was created and did not already exist.
+    /// Returns `Ok(false)` if the directory `d` already existed and is a directory.
+    /// Returns `Err(msg)` if the directory could not be created.
+    ///
+    pub def mkdir(d: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.mkdir(): Bool & Impure;
+
+            let javaFile = newFile(d);
+            Ok(mkdir(javaFile))
+        } catch {
+            case ex: ##java.io.IOException =>
+            import java.lang.Throwable.getMessage();
+            Err(getMessage(ex))
+        }
+
+    ///
+    /// Creates the directory `d` along with all necessary parent directories.
+    ///
+    /// Returns `Ok(true)` if the directory `d` was created and did not already exist.
+    /// Returns `Ok(false)` if the directory `d` already existed and is a directory.
+    /// Returns `Err(msg)` if the directory could not be created.
+    ///
+    pub def mkdirs(d: String): Result[Bool, String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.mkdirs(): Bool & Impure;
+
+            let javaFile = newFile(d);
+            Ok(mkdirs(javaFile))
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage();
