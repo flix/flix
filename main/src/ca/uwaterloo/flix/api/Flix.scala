@@ -142,6 +142,7 @@ class Flix {
     "DelayList.flix" -> LocalResource.get("/src/library/DelayList.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),
     "Map.flix" -> LocalResource.get("/src/library/Map.flix"),
+    "Nec.flix" -> LocalResource.get("/src/library/Nec.flix"),
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
