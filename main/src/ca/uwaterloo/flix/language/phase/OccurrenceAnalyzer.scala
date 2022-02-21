@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Magnus Madsen, Anna Krogh, Patrick Lundvig, Christian Bonde
+ * Copyright 2022 Anna Krogh, Patrick Lundvig, Christian Bonde
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.util.Validation.ToSuccess
 
 /**
  * The occurrence analyzer collects information on variable usage
+ * Marks a variable as Dead if it is not used, Once if it is used exactly once and Many otherwise
  */
 object OccurrenceAnalyzer {
 
@@ -60,7 +61,7 @@ object OccurrenceAnalyzer {
   }
 
   /**
-    * Performs occurrence analysis on the given expression `exp0`
+   * Performs occurrence analysis on the given expression `exp0`
    */
   private def visitExp(exp0: LiftedAst.Expression): (OccurrenceAst.Expression, Map[Symbol.VarSym, OccurrenceAst.Occur]) = exp0 match {
     case Expression.Unit(loc) => (OccurrenceAst.Expression.Unit(loc), Map.empty)
@@ -319,11 +320,12 @@ object OccurrenceAnalyzer {
         o1 = combineAll(o1, combineAll(o2, o3))
       }
 
-      val (d, o4) = resolveOption(default, (None, o1), (x:LiftedAst.Expression) => {
-        val (d, o5) = visitExp(x)
-        (Some(d), combineAll(o5, o1))
+      val (d1, o4) = default.fold[(Option[OccurrenceAst.Expression], Map[Symbol.VarSym, Occur])](None, o1)(x => {
+        val (d2, o5) = visitExp(x)
+        (Some(d2), combineAll(o5, o1))
       })
-      (OccurrenceAst.Expression.SelectChannel(rs, d, tpe, loc), o4)
+
+      (OccurrenceAst.Expression.SelectChannel(rs, d1, tpe, loc), o4)
 
     case Expression.Spawn(exp, tpe, loc) =>
       val (e, o1) = visitExp(exp)
@@ -358,19 +360,21 @@ object OccurrenceAnalyzer {
   /**
    * Combines the 2 maps `m1` and `m2` of the type (Symbol -> Occur) into a single map of same type using the function `combine`.
    */
-  private def combineAll(m1: Map[Symbol.VarSym, Occur], m2: Map[Symbol.VarSym, Occur]): Map[Symbol.VarSym, Occur]
-  =
-  {
-    var m3 = m1.map {
-      case (sym, o1) =>
-        val o3 = resolveOption(m2.get(sym), o1, combine(o1, _))
-        (sym, o3)
+  private def combineAll(m1: Map[Symbol.VarSym, Occur], m2: Map[Symbol.VarSym, Occur]): Map[Symbol.VarSym, Occur] = {
+    (m1.keys ++ m2.keys).foldLeft[Map[Symbol.VarSym, Occur]](Map.empty) {
+      case (acc, k) => acc + (k -> combineOpt(m1.get(k), m2.get(k)))
     }
+  }
 
-    m2.foreach {
-      case (sym, o) => if (!m1.contains(sym)) m3 += (sym -> o)
+  /*
+  * Combines `o1` and `o2` if both contain a value, else return the option containing a value.
+   */
+  def combineOpt(o1: Option[Occur], o2: Option[Occur]): Occur = {
+    (o1, o2) match {
+      case (None, Some(o2)) => o2
+      case (Some(o1), None) => o1
+      case (Some(o1), Some(o2)) => combine(o1, o2)
     }
-    m3
   }
 
   /**
@@ -380,16 +384,6 @@ object OccurrenceAnalyzer {
     case (Dead, _) => o2
     case (_, Dead) => o1
     case _ => Many
-  }
-
-  /**
-   * Matches on `opt`. If None returns `default`, else apply `f` on value in Some(B)
-   */
-  private def resolveOption[A, B](opt: Option[B], default: A, f: B => A): A = {
-    opt match {
-      case None => default
-      case Some(x) => f(x)
-    }
   }
 }
 
