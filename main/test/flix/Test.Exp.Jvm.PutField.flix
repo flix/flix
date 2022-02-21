@@ -2,7 +2,7 @@ namespace Test/Exp/Jvm/PutField {
 
     @test
     def testPutBoolField01(): Bool & Impure =
-        import new flix.test.TestClass() as newObject;
+        import new flix.test.TestClass(): ##flix.test.TestClass & Impure as newObject;
         import get flix.test.TestClass.boolField as getField;
         import set flix.test.TestClass.boolField as setField;
         let o = newObject();
