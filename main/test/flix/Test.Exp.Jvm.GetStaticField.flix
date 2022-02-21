@@ -11,7 +11,7 @@ namespace Test/Exp/Jvm/GetStaticField {
 
     @test
     def testGetStaticField02(): Bool & Impure =
-        import static get java.lang.Integer.MAX_VALUE as getMinValue;
+        import static get java.lang.Integer.MAX_VALUE: Int32 & Impure as getMinValue;
         getMinValue() == Int32.maxValue()
 
     @test

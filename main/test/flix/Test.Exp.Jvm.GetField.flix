@@ -3,7 +3,7 @@ namespace Test/Exp/Jvm/GetField {
     @test
     def testGetBoolField01(): Bool & Impure =
         import new flix.test.TestClass(): ##flix.test.TestClass & Impure as newObject;
-        import new flix.test.TestClass(): Bool & Impure as newObject;
+        import get flix.test.TestClass.boolField: Bool & Impure as getField;
         let o = newObject();
         getField(o) == true
 
