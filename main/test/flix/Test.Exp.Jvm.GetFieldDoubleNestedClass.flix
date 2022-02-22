@@ -31,7 +31,7 @@ namespace Test/Exp/Jvm/GetFieldDoubleNestedClass {
     @test
     def testGetInt8Field01(): Bool & Impure =
         import new flix.test.TestClass$_StaticNestedClass$DoubleNestedClass(): ##flix.test.TestClass$_StaticNestedClass$DoubleNestedClass & Impure as newObject;
-        import get flix.test.TestClass$_StaticNestedClass$DoubleNestedClass.int8Field; Int8 & Impure as getField;
+        import get flix.test.TestClass$_StaticNestedClass$DoubleNestedClass.int8Field: Int8 & Impure as getField;
         let o: ##flix.test.TestClass$_StaticNestedClass$DoubleNestedClass = newObject();
         getField(o) == 127i8
 
