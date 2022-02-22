@@ -181,7 +181,7 @@ namespace Set {
     ///
     /// Returns `None` if `s` is empty.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def minimumBy(cmp: (a, a) -> Comparison & ef, s: Set[a]): Option[a] & ef =
@@ -213,7 +213,7 @@ namespace Set {
     ///
     /// Returns `None` if `s` is empty.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def maximumBy(cmp: (a, a) -> Comparison & ef, s: Set[a]): Option[a] & ef =
@@ -315,7 +315,7 @@ namespace Set {
     ///
     /// Returns the number of elements in `s` that satisfy the predicate `f`.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def count(f: a -> Bool & ef, s: Set[a]): Int32 & ef =
@@ -339,7 +339,7 @@ namespace Set {
     ///
     /// Returns the sum of all elements in the set `s` according to the function `f`.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def sumWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
@@ -363,7 +363,7 @@ namespace Set {
     ///
     /// Returns the product of all elements in the set `s` according to the function `f`.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def productWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
