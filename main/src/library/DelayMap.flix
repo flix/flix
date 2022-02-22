@@ -624,15 +624,6 @@ namespace DelayMap {
         }
 
     ///
-    /// Returns `m` as a Map, i.e. every value is forced.
-    ///
-    @Experimental @Parallel
-    pub def toMap(m: DelayMap[k, v]): Map[k, v] =
-        let _ = parallelForce(m);
-        let DMap(t) = m;
-        Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
-
-    ///
     /// Updates `m` with `k => f(v)` if `k => v` is in `m`. Otherwise, returns `m`.
     ///
     /// Purity polymorphic: Applies `f` lazily if `f` is pure.
@@ -700,6 +691,15 @@ namespace DelayMap {
             }
         };
         DMap(RedBlackTree.updateWith(f1, k, t))
+
+    ///
+    /// Returns `m` as a Map, i.e. every value is forced.
+    ///
+    @Experimental @Parallel
+    pub def toMap(m: DelayMap[k, v]): Map[k, v] =
+        let _ = parallelForce(m);
+        let DMap(t) = m;
+        Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
 
     ///
     /// Returns `m` as a mutable set.
