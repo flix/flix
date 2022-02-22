@@ -60,8 +60,8 @@ namespace Test/Exp/Jvm/TestTryCatch {
 
     @test
     def testBinding01(): Bool & Impure =
-        import java.lang.Object.toString();
-        import java.lang.String.isEmpty();
+        import java.lang.Object.toString(): ##java.lang.String & Impure;
+        import java.lang.String.isEmpty(): Bool & Impure;
         try {
             exception();
             false
@@ -72,8 +72,8 @@ namespace Test/Exp/Jvm/TestTryCatch {
 
     @test
     def testBinding02(): Bool & Impure =
-        import java.lang.String.isEmpty();
-        import java.lang.Throwable.getMessage();
+        import java.lang.String.isEmpty(): Bool & Impure;
+        import java.lang.Throwable.getMessage(): String & Impure;
         try {
             exception();
             false
