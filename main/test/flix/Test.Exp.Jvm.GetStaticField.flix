@@ -16,12 +16,12 @@ namespace Test/Exp/Jvm/GetStaticField {
 
     @test
     def testGetStaticField03(): ##java.nio.file.StandardOpenOption & Impure =
-        import static get java.nio.file.StandardOpenOption.APPEND: ##java.nio.file.StandardOpenOption as getAppendValue;
+        import static get java.nio.file.StandardOpenOption.APPEND: ##java.nio.file.StandardOpenOption & Impure as getAppendValue;
         getAppendValue()
 
     @test
     def testGetStaticField04(): ##java.nio.file.StandardOpenOption & Impure =
-        import static get java.nio.file.StandardOpenOption.READ: ##java.nio.file.StandardOpenOption as getReadValue;
+        import static get java.nio.file.StandardOpenOption.READ: ##java.nio.file.StandardOpenOption & Impure as getReadValue;
         getReadValue()
 
     @test
