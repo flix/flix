@@ -95,7 +95,7 @@ namespace Test/Exp/Jvm/GetStaticField {
 
     @test
     def testGetStaticObjectField01(): ##java.lang.Object & Impure =
-        import static get flix.test.TestClass.STRING_FIELD: ##java.lang.Object as getField;
+        import static get flix.test.TestClass.STRING_FIELD: ##java.lang.Object & Impure as getField;
         getField()
 
 }
