@@ -12,12 +12,12 @@ namespace Test/Exp/Jvm/InvokeMethod {
 
     @test
     def testInvokeMethod03(): Bool & Impure =
-        import java.lang.String.length(): String & Impure;
+        import java.lang.String.length(): Int32 & Impure;
         length("hello world") == 11
 
     @test
     def testInvokeMethod04(): Bool & Impure =
-        import java.lang.String.indexOf(String): String & Impure;
+        import java.lang.String.indexOf(String): Int32 & Impure;
         indexOf("hello world", "world") == 6
 
     @test
