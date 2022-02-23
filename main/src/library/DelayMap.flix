@@ -342,7 +342,7 @@ namespace DelayMap {
     ///
     /// Returns a map with mappings `k => f(v)` for every `k => v` in `m`.
     ///
-    /// Purity polymorphic:
+    /// Purity reflective:
     ///  - Runs in parallel when given a pure function `f`.
     ///  - Applies `f` lazily if `f` is pure.
     ///
@@ -459,7 +459,7 @@ namespace DelayMap {
     ///
     /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`.
     ///
-    /// Purity polymorphic: Applies `f` lazily if `f` is pure.
+    /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
     pub def unionWith(f: (v, v) -> v & ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
@@ -468,7 +468,7 @@ namespace DelayMap {
     ///
     /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
-    /// Purity polymorphic: Applies `f` lazily if `f` is pure.
+    /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
     pub def unionWithKey(f: (k, v, v) -> v & ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
@@ -624,7 +624,7 @@ namespace DelayMap {
     ///
     /// Updates `m` with `k => f(v)` if `k => v` is in `m`. Otherwise, returns `m`.
     ///
-    /// Purity polymorphic: Applies `f` lazily if `f` is pure.
+    /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
     pub def adjust(f: v -> v & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
@@ -633,7 +633,7 @@ namespace DelayMap {
     ///
     /// Updates `m` with `k => f(k, v)` if `k => v` is in `m`. Otherwise, returns `m`.
     ///
-    /// Purity polymorphic: Applies `f` lazily if `f` is pure.
+    /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
     pub def adjustWithKey(f: (k, v) -> v & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
@@ -642,7 +642,7 @@ namespace DelayMap {
     ///
     /// Updates `m` with `k => v1` if `k => v` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
     ///
-    /// Purity polymorphic: Applies `f` lazily if `f` is pure.
+    /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
     pub def update(f: v -> Option[v] & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
@@ -651,7 +651,7 @@ namespace DelayMap {
     ///
     /// Updates `m` with `k => v1` if `k => v` is in `m` and `f(k, v) = Some(v1)`. Otherwise, returns `m`.
     ///
-    /// Purity polymorphic: Applies `f` lazily if `f` is pure.
+    /// Purity reflective: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
     pub def updateWithKey(f: (k, v) -> Option[v] & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
