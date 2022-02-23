@@ -342,6 +342,10 @@ namespace DelayMap {
     ///
     /// Returns a map with mappings `k => f(v)` for every `k => v` in `m`.
     ///
+    /// Purity polymorphic:
+    ///  - Runs in parallel when given a pure function `f`.
+    ///  - Applies `f` lazily if `f` is pure.
+    ///
     @Experimental @ParallelWhenPure @LazyWhenPure
     pub def map(f: v1 -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef with Order[k] =
         mapWithKey((_, v) -> f(v), m)
@@ -349,11 +353,9 @@ namespace DelayMap {
     ///
     /// Returns a map with mappings `k => f(k, v)` for every `k => v` in `m`.
     ///
-    /// The `f` is pure then `f` is applied lazily.
-    ///
-    /// If `m` is large then `m` is traversed in parallel (and `f` is still applied lazily).
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    /// Purity reflective:
+    ///  - Runs in parallel when given a pure function `f`.
+    ///  - Applies `f` lazily if `f` is pure.
     ///
     @Experimental @ParallelWhenPure @LazyWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 & ef, m: DelayMap[k, v1]): DelayMap[k, v2] & ef =
@@ -450,12 +452,14 @@ namespace DelayMap {
     ///
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
-    @Experimental @LazyWhenPure
+    @Experimental @Lazy
     pub def union(m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
         unionWithKey((_, v1, _) -> v1, m1, m2)
 
     ///
     /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`.
+    ///
+    /// Purity polymorphic: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
     pub def unionWith(f: (v, v) -> v & ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
@@ -463,6 +467,8 @@ namespace DelayMap {
 
     ///
     /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
+    ///
+    /// Purity polymorphic: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
     pub def unionWithKey(f: (k, v, v) -> v & ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
@@ -616,18 +622,9 @@ namespace DelayMap {
         }
 
     ///
-    /// Returns `m` as a Map, i.e. every value is forced.
+    /// Updates `m` with `k => f(v)` if `k => v` is in `m`. Otherwise, returns `m`.
     ///
-    @Experimental @Parallel
-    pub def toMap(m: DelayMap[k, v]): Map[k, v] =
-        let _ = parallelForce(m);
-        let DMap(t) = m;
-        Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
-
-    ///
-    /// Updates `m` with `k => f(v)` if `k => v` is in `m`.
-    ///
-    /// Otherwise, returns `m`.
+    /// Purity polymorphic: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
     pub def adjust(f: v -> v & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
@@ -636,6 +633,8 @@ namespace DelayMap {
     ///
     /// Updates `m` with `k => f(k, v)` if `k => v` is in `m`. Otherwise, returns `m`.
     ///
+    /// Purity polymorphic: Applies `f` lazily if `f` is pure.
+    ///
     @Experimental @LazyWhenPure
     pub def adjustWithKey(f: (k, v) -> v & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         updateWithKey((k1, v) -> Some(f(k1, v)), k, m)
@@ -643,12 +642,16 @@ namespace DelayMap {
     ///
     /// Updates `m` with `k => v1` if `k => v` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
     ///
+    /// Purity polymorphic: Applies `f` lazily if `f` is pure.
+    ///
     @Experimental @LazyWhenPure
     pub def update(f: v -> Option[v] & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
         updateWithKey((_, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k => v1` if `k => v` is in `m` and `f(k, v) = Some(v1)`. Otherwise, returns `m`.
+    ///
+    /// Purity polymorphic: Applies `f` lazily if `f` is pure.
     ///
     @Experimental @LazyWhenPure
     pub def updateWithKey(f: (k, v) -> Option[v] & ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
@@ -686,6 +689,15 @@ namespace DelayMap {
             }
         };
         DMap(RedBlackTree.updateWith(f1, k, t))
+
+    ///
+    /// Returns `m` as a Map, i.e. every value is forced.
+    ///
+    @Experimental @Parallel
+    pub def toMap(m: DelayMap[k, v]): Map[k, v] =
+        let _ = parallelForce(m);
+        let DMap(t) = m;
+        Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
 
     ///
     /// Returns `m` as a mutable set.
