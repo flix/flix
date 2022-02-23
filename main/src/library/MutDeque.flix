@@ -357,4 +357,26 @@ namespace MutDeque {
         foldLeft((_, x) -> { append!(sb, f(x)); append!(sb, sep) }, (), d);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
 
+    ///
+    /// Apply the effectful function `f` to all the elements in the MutDeque `d`.
+    ///
+    pub def foreach(f: a -> Unit & ef, d: MutDeque[a]): Unit & Impure =
+        let MutDeque(a, front, back) = d;
+
+        def loop(i) = {
+            let iUpdate = if (i >= MutDeque.capacity(d)) 0 else i;
+            if (iUpdate >= deref back) {
+                ()
+            } else {
+                f(Array.get(iUpdate, deref a));
+                loop(iUpdate + 1)
+            }
+        };
+
+        if(MutDeque.isEmpty(d)) {
+            ()
+        } else {
+            loop(deref front)
+        }
+
 }

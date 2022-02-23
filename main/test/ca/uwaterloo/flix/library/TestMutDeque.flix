@@ -807,4 +807,45 @@ namespace TestMutDeque {
                 next() == 2
         }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // foreach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foreach01(): Bool & Impure =
+        let d = MutDeque.new();
+        let sb = StringBuilder.new();
+        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        MutDeque.foreach(fn, d);
+        StringBuilder.toString(sb) == ""
+
+    @test
+    def foreach02(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(0, d);
+
+        let sb = StringBuilder.new();
+        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        MutDeque.foreach(fn, d);
+        StringBuilder.toString(sb) == "F"
+
+    @test
+    def foreach03(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        let sb = StringBuilder.new();
+        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        MutDeque.foreach(fn, d);
+        StringBuilder.toString(sb) == "T"
+
+    @test
+    def foreach04(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(0, d);
+        MutDeque.pushBack(1, d);
+        let sb = StringBuilder.new();
+        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        MutDeque.foreach(fn, d);
+        StringBuilder.toString(sb) == "FT"
+
 }
