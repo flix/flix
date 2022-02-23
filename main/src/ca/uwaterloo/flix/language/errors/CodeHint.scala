@@ -65,7 +65,7 @@ object CodeHint {
   }
 
   /**
-    * A code hint that indicates that a Purity reflective operation is lazy.
+    * A code hint that indicates that a purity reflective operation is lazy.
     *
     * @param sym the symbol of the operation that is lazy.
     * @param loc the location associated with the code hint.
@@ -88,7 +88,7 @@ object CodeHint {
   }
 
   /**
-    * A code hint that indicates that a Purity reflective operation is parallel.
+    * A code hint that indicates that a purity reflective operation is parallel.
     *
     * @param sym the symbol of the operation that is parallel.
     * @param loc the location associated with the code hint.
