@@ -816,7 +816,7 @@ namespace File {
             Ok(mkdir(javaFile))
         } catch {
             case ex: ##java.io.IOException =>
-            import java.lang.Throwable.getMessage(): String & Impure;;
+            import java.lang.Throwable.getMessage(): String & Impure;
             Err(getMessage(ex))
         }
 
@@ -836,7 +836,7 @@ namespace File {
             Ok(mkdirs(javaFile))
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String & Impure;;
+                import java.lang.Throwable.getMessage(): String & Impure;
                 Err(getMessage(ex))
         }
 
