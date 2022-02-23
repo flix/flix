@@ -848,4 +848,14 @@ namespace TestMutDeque {
         MutDeque.foreach(fn, d);
         StringBuilder.toString(sb) == "FT"
 
+    @test
+    def foreach05(): Bool & Impure =
+        let d = MutDeque.new();
+        MutDeque.pushBack(1, d);
+        MutDeque.pushFront(0, d);
+        let sb = StringBuilder.new();
+        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        MutDeque.foreach(fn, d);
+        StringBuilder.toString(sb) == "FT"
+
 }
