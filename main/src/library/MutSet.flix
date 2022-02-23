@@ -131,7 +131,7 @@ namespace MutSet {
     ///
     /// Returns `None` if `s` is empty.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def minimumBy(cmp: (a, a) -> Comparison & ef, s: MutSet[a]): Option[a] & Impure =
@@ -152,7 +152,7 @@ namespace MutSet {
     ///
     /// Returns `None` if `s` is empty.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def maximumBy(cmp: (a, a) -> Comparison & ef, s: MutSet[a]): Option[a] & Impure =
@@ -250,7 +250,7 @@ namespace MutSet {
     ///
     /// Returns the number of elements in the mutable set `s` that satisfy the predicate function `f`.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def count(f: a -> Bool & ef, s: MutSet[a]): Int32 & Impure =
@@ -267,7 +267,7 @@ namespace MutSet {
     ///
     /// Returns the sum of all elements in the mutable set `s` according to the function `f`.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def sumWith(f: a -> Int32 & ef, s: MutSet[a]): Int32 & Impure =
@@ -284,7 +284,7 @@ namespace MutSet {
     ///
     /// Returns the product of all elements in the set `s` according to the function `f`.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def productWith(f: a -> Int32 & ef, s: MutSet[a]): Int32 & Impure =

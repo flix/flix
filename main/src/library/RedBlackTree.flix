@@ -516,7 +516,7 @@ namespace RedBlackTree {
     ///
     /// Returns a RedBlackTree with mappings `k => f(k, v)` for every `k => v` in `t`.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 & ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & ef =
