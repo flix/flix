@@ -71,7 +71,7 @@ object CodeHint {
     * @param loc the location associated with the code hint.
     */
   case class LazyEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    def summary: String = s"Lazy: The operation uses lazy evaluation (due to Purity reflection)."
+    def summary: String = s"Lazy: The operation uses lazy evaluation (due to purity reflection)."
 
     def severity: Severity = Severity.Hint
   }
@@ -94,7 +94,7 @@ object CodeHint {
     * @param loc the location associated with the code hint.
     */
   case class ParallelEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    def summary: String = s"Parallel: The operation uses parallel evaluation (due to Purity reflection)."
+    def summary: String = s"Parallel: The operation uses parallel evaluation (due to purity reflection)."
 
     def severity: Severity = Severity.Hint
   }
@@ -106,7 +106,7 @@ object CodeHint {
     * @param loc the location associated with the code hint.
     */
   case class SuggestPurityForLazyEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    def summary: String = "Eager: Use a pure function to enable lazy evaluation (see Purity reflection)."
+    def summary: String = "Eager: Use a pure function to enable lazy evaluation (see purity reflection)."
 
     def severity: Severity = Severity.Hint
   }
@@ -118,7 +118,7 @@ object CodeHint {
     * @param loc the location associated with the code hint.
     */
   case class SuggestPurityForParallelEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    def summary: String = "Sequential: Use a pure function to enable parallel evaluation (see Purity reflection)."
+    def summary: String = "Sequential: Use a pure function to enable parallel evaluation (see purity reflection)."
 
     def severity: Severity = Severity.Hint
   }
