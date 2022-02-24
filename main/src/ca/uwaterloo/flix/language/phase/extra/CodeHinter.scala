@@ -309,7 +309,7 @@ object CodeHinter {
   }
 
   /**
-    * Returns `true` if the the given `sym` is marked being purity polymorphic
+    * Returns `true` if the the given `sym` is marked being purity reflective
     * and uses lazy evaluation when given a pure function argument.
     */
   private def lazyWhenPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
@@ -318,7 +318,7 @@ object CodeHinter {
   }
 
   /**
-    * Returns `true` if the given `sym` is marked being purity polymorphic
+    * Returns `true` if the given `sym` is marked being purity reflective
     * and uses parallel evaluation when given a pure function argument.
     */
   private def parallelWhenPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {

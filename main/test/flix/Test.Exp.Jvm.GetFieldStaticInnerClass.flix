@@ -73,7 +73,7 @@ namespace Test/Exp/Jvm/GetFieldStaticInnerClass {
     @test
     def testGetObjectField01(): ##java.lang.Object & Impure =
         import new flix.test.TestClass$_StaticNestedClass(): ##flix.test.TestClass$_StaticNestedClass & Impure as newObject;
-        import get flix.test.TestClass$_StaticNestedClass.stringField: ##java.lang.Object as getField;
+        import get flix.test.TestClass$_StaticNestedClass.stringField: ##java.lang.Object & Impure as getField;
         let o: ##flix.test.TestClass$_StaticNestedClass = newObject();
         getField(o)
 }
