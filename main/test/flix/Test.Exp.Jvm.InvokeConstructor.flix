@@ -52,6 +52,6 @@ namespace Test/Exp/Jvm/InvokeConstructor {
 
     @test
     def testInvokeObjectConstructor01(): ##java.lang.Object & Impure =
-        import new java.lang.String(String): ##java.lang.Object as newString;
+        import new java.lang.String(String): ##java.lang.Object & Impure as newString;
         newString("Hello World")
 }
