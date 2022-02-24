@@ -117,15 +117,11 @@ namespace Chain {
     /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
     ///
     pub def ap(f: Chain[a -> b & ef], x: Chain[a]) : Chain[b] & ef =
-        apHelper(viewLeft(f), x, empty())
-
-    ///
-    /// Helper function for `ap`.
-    ///
-    def apHelper(f: ViewLeft[a -> b & ef], c: Chain[a], acc: Chain[b]): Chain[b] & ef = match f {
-        case NoneLeft         => acc
-        case SomeLeft(f1, rs) => apHelper(viewLeft(rs), c, acc `append` map(f1, c))
-    }
+        def loop(g, acc) = match g {
+            case NoneLeft        => acc
+            case SomeLeft(h, xs) => loop(viewLeft(xs), acc `append` map(h, x))
+        };
+        loop(viewLeft(f), empty())
 
     ///
     /// Returns true if and only if `c` is the empty chain.
