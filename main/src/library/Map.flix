@@ -179,7 +179,7 @@ namespace Map {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
+    /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
     @ParallelWhenPure
     pub def minimumKeyBy(cmp: (k, k) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
@@ -210,7 +210,7 @@ namespace Map {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
+    /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
     @ParallelWhenPure
     pub def minimumValueBy(cmp: (v, v) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
@@ -241,7 +241,7 @@ namespace Map {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
+    /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
     @ParallelWhenPure
     pub def maximumKeyBy(cmp: (k, k) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
@@ -272,7 +272,7 @@ namespace Map {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `cmp`.
+    /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
     @ParallelWhenPure
     pub def maximumValueBy(cmp: (v, v) -> Comparison & ef, m: Map[k, v]): Option[(k, v)] & ef =
@@ -453,7 +453,7 @@ namespace Map {
     ///
     /// Returns a map with mappings `k => f(v)` for every `k => v` in `m`.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
     @ParallelWhenPure
@@ -462,7 +462,7 @@ namespace Map {
     ///
     /// Returns a map with mappings `k => f(k, v)` for every `k => v` in `m`.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
     @ParallelWhenPure
@@ -554,7 +554,7 @@ namespace Map {
     ///
     /// Returns the number of mappings `k => v` in `m` that satisfy the predicate `f`.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def count(f: (k, v) -> Bool & ef, m: Map[k, v]): Int32 & ef =
@@ -585,7 +585,7 @@ namespace Map {
     ///
     /// Returns the sum of all key-value pairs `k => v` in the map `m` according to the function `f`.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def sumWith(f: (k, v) -> Int32 & ef, m: Map[k, v]): Int32 & ef =
@@ -618,7 +618,7 @@ namespace Map {
     ///
     /// Returns the product of all key-value pairs `k => v` in the map `m` according to the function `f`.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def productWith(f: (k, v) -> Int32 & ef, m: Map[k, v]): Int32 & ef =
