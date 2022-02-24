@@ -132,7 +132,7 @@ namespace Chain {
     }
 
     ///
-    /// Add element `x` to the left end of Chain `c`.
+    /// Add element `x` to the left end of chain `c`.
     ///
     pub def cons(x: a, c: Chain[a]): Chain[a] = match c {
         case Empty => One(x)
@@ -198,24 +198,13 @@ namespace Chain {
     ///
     /// Returns `NoneLeft` if the chain is empty.
     ///
-    pub def viewLeft(c: Chain[a]): ViewLeft[a] = viewLeftHelper(c, Empty, x -> x)
-
-    ///
-    /// Helper function for `viewLeft`.
-    ///
-    /// This traverses the chain from left-to-right, because the chain is represented
-    /// by a binary tree, the function may have recursively descend the tree to find
-    /// the leftmost node.
-    ///
-    /// Precondition: `c` has been properly formed with no internal `Empty` nodes.
-    /// This means that `Empty` can only be encountered on the first match and it
-    /// can ignore the accumulator which is also `Empty` the first time this is called.
-    ///
-    def viewLeftHelper(c: Chain[a], acc: Chain[a], k: ViewLeft[a] -> ViewLeft[a]): ViewLeft[a] = match c {
-        case Empty       => k(NoneLeft)
-        case One(x)      => k(SomeLeft(x, acc))
-        case Chain(l, r) => viewLeftHelper(l, append(r, acc),  k)
-    }
+    pub def viewLeft(c: Chain[a]): ViewLeft[a] =
+        def loop(cc, acc, k) = match cc {
+            case Empty       => k(NoneLeft)
+            case One(x)      => k(SomeLeft(x, acc))
+            case Chain(l, r) => loop(l, append(r, acc), k)
+        };
+        loop(c, Empty, identity)
 
     ///
     /// Deconstruct a Chain from right-to-left.
@@ -225,53 +214,36 @@ namespace Chain {
     ///
     /// Returns `NoneRight` if the chain is empty.
     ///
-    pub def viewRight(c: Chain[a]): ViewRight[a] = viewRightHelper(c, Empty, x -> x)
-
-    ///
-    /// Helper function for `viewRight`.
-    ///
-    /// This traverses the chain from right-to-left, because the chain is represented
-    /// by a binary tree, the function may have recursively descend the tree to find
-    /// the rightmost node.
-    ///
-    /// Precondition: `c` has been properly formed with no internal `Empty` nodes.
-    /// This means that `Empty` can only be encountered on the first match and it
-    /// can ignore the accumulator which is also `Empty` the first time this is called.
-    ///
-    def viewRightHelper(c: Chain[a], acc: Chain[a], k: ViewRight[a] -> ViewRight[a]): ViewRight[a] = match c {
-        case Empty       => k(NoneRight)
-        case One(x)      => k(SomeRight(acc, x))
-        case Chain(l, r) => viewRightHelper(r, append(acc, l),  k)
-    }
+    pub def viewRight(c: Chain[a]): ViewRight[a] =
+        def loop(cc, acc, k) = match cc {
+            case Empty       => k(NoneRight)
+            case One(x)      => k(SomeRight(acc, x))
+            case Chain(l, r) => loop(r, append(acc, l),  k)
+        };
+        loop(c, Empty, identity)
 
     ///
     /// Returns `true` if and only if `c` contains the element `a`.
     ///
-    pub def memberOf(a: a, c: Chain[a]): Bool with Eq[a] = memberOfHelper(a, viewLeft(c))
-
-    ///
-    /// Helper function for `memberOf`.
-    ///
-    def memberOfHelper(a: a, v: ViewLeft[a]): Bool with Eq[a] = match v {
-        case NoneLeft                 => false
-        case SomeLeft(x, _) if x == a => true
-        case SomeLeft(_, c)           => memberOfHelper(a, viewLeft(c))
-    }
+    pub def memberOf(a: a, c: Chain[a]): Bool with Eq[a] =
+        def loop(v) = match v {
+            case NoneLeft                 => false
+            case SomeLeft(x, _) if x == a => true
+            case SomeLeft(_, xs)          => loop(viewLeft(xs))
+        };
+        loop(viewLeft(c))
 
     ///
     /// Returns the position of `a` in `c`.
     ///
     /// Returns `-1` if `a` does not exist in `c`.
     ///
-    pub def indexOf(a: a, c: Chain[a]): Int32 with Eq[a] = indexOfHelper(a, 0, viewLeft(c))
-
-    ///
-    /// Helper function for `indexOf`.
-    ///
-    def indexOfHelper(a: a, acc: Int32, v: ViewLeft[a]): Int32 with Eq[a] = match v {
-        case NoneLeft       => -1
-        case SomeLeft(x, c) => if (x == a) acc else indexOfHelper(a, acc + 1, viewLeft(c))
-    }
+    pub def indexOf(a: a, c: Chain[a]): Int32 with Eq[a] =
+        def loop(v, acc) = match v {
+            case NoneLeft       => -1
+            case SomeLeft(x, xs) => if (x == a) acc else loop(viewLeft(xs), acc + 1)
+        };
+        loop(viewLeft(c), 0)
 
     ///
     /// Alias for `findLeft`.
@@ -305,31 +277,23 @@ namespace Chain {
     ///
     /// Returns `Nil` if `b >= e`.
     ///
-    pub def range(b: Int32, e: Int32): Chain[Int32] = rangeHelper(b, e, Chain.empty())
-
-    ///
-    /// Helper function for `range`.
-    ///
-    def rangeHelper(b: Int32, e: Int32, acc: Chain[Int32]): Chain[Int32] =
-        if (b >= e) acc else rangeHelper(b + 1, e, snoc(acc, b))
+    pub def range(b: Int32, e: Int32): Chain[Int32] =
+        def loop(i, acc) = if (i >= e) acc else loop(i + 1, snoc(acc, i));
+        loop(b, Chain.empty())
 
     ///
     /// Returns a list with the element `a` repeated `n` times.
     ///
     /// Returns `Nil` if `n < 0`.
     ///
-    pub def repeat(n: Int32, a: a): Chain[a] = repeatHelper(n, a, Empty)
-
-    ///
-    /// Helper function for `repeat`.
-    ///
-    def repeatHelper(n: Int32, a: a, acc: Chain[a]): Chain[a] =
-        if (n <= 0)
-            acc
-        else {
-            let ac1 = cons(a, acc);
-            repeatHelper(n-1, a, ac1)
-        }
+    pub def repeat(n: Int32, a: a): Chain[a] =
+        def loop(i, acc) = {
+            if (i <= 0)
+                acc
+            else
+                loop(i - 1, cons(a, acc))
+        };
+        loop(n, Empty)
 
     ///
     /// Alias for `scanLeft`.
@@ -341,30 +305,28 @@ namespace Chain {
     ///
     /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2)  ...`.
     ///
-    pub def scanLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): Chain[b] & ef = scanLeftHelper(f, s, c, singleton(s))
-
-    ///
-    /// Helper function for `scanLeft`.
-    ///
-    def scanLeftHelper(f: (b, a) -> b & ef, s: b, c: Chain[a], acc: Chain[b]): Chain[b] & ef = match viewLeft(c) {
-        case NoneLeft        => acc
-        case SomeLeft(x, rs) => {let a = f(s, x); scanLeftHelper(f, a, rs, snoc(acc, a))}
-    }
+    pub def scanLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): Chain[b] & ef =
+        def loop(a, cc, acc) = match viewLeft(cc) {
+            case NoneLeft        => acc
+            case SomeLeft(x, xs) =>
+                let aa = f(a, x);
+                loop(aa, xs, snoc(acc, aa))
+        };
+        loop(s, c, singleton(s))
 
     ///
     /// Accumulates the result of applying `f` to `c` going right to left.
     ///
     /// That is, the result is of the form: `... f(xn-1, f(xn, s)) :: f(xn, s) :: s`.
     ///
-    pub def scanRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): Chain[b] & ef = scanRightHelper(f, s, c, singleton(s))
-
-    ///
-    /// Helper function for `scanRight`.
-    ///
-    def scanRightHelper(f: (a, b) -> b & ef, s: b, c: Chain[a], acc: Chain[b]): Chain[b] & ef = match viewRight(c) {
-        case NoneRight        => acc
-        case SomeRight(rs, x) => {let a = f(x, s); scanRightHelper(f, a, rs, cons(a, acc))}
-    }
+    pub def scanRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): Chain[b] & ef =
+        def loop(a, cc, acc) = match viewRight(cc) {
+            case NoneRight        => acc
+            case SomeRight(xs, x) =>
+                let aa = f(x, a);
+                loop(aa, xs, cons(aa, acc))
+        };
+        loop(s, c, singleton(s))
 
     ///
     /// Returns the result of applying `f` to every element in `c`.
