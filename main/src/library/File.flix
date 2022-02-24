@@ -841,14 +841,14 @@ namespace File {
         }
 
     ///
-    /// Returns a List naming the files and directories in the directory `f`.
+    /// Returns a list naming the files and directories in the directory `f`.
     ///
     /// Function is non-recursive.
     ///
     pub def list(f: String): Result[List[String], String] = ???
 
     ///
-    /// Returns an Iterator naming the files and directories in the directory `f`.
+    /// Returns an iterator naming the files and directories in the directory `f`.
     ///
     /// Function is non-recursive.
     ///
@@ -856,7 +856,7 @@ namespace File {
 
 
     ///
-    /// Returns an Iterator naming the files and directories in the directory `f`.
+    /// Returns an iterator naming the files and directories in the directory `f`.
     ///
     /// Function is recursive.
     ///
