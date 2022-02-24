@@ -362,14 +362,14 @@ namespace MutDeque {
     ///
     pub def foreach(f: a -> Unit & ef, d: MutDeque[a]): Unit & Impure =
         let MutDeque(a, front, back) = d;
+        let len = Array.length(deref a);
 
         def loop(i) = {
-            let iUpdate = if (i >= MutDeque.capacity(d)) 0 else i;
-            if (iUpdate >= deref back) {
+            if (i == deref back) {
                 ()
             } else {
-                f(Array.get(iUpdate, deref a));
-                loop(iUpdate + 1)
+                f(Array.get(i, deref a));
+                loop((i + 1) &&& (len - 1))
             }
         };
 
