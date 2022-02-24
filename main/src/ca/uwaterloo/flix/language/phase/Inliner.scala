@@ -56,6 +56,8 @@ object Inliner {
       println(PrettyPrinter.Lifted.fmtRoot(result, Formatter.AnsiTerminalFormatter))
     }
 
+    // test
+
     result.toSuccess
   }
 
