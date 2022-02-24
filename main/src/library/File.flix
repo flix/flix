@@ -840,4 +840,26 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+    ///
+    /// Returns a List naming the files and directories in the directory `f`.
+    ///
+    /// Function is non-recursive.
+    ///
+    pub def list(f: String): Result[List[String], String] = ???
+
+    ///
+    /// Returns an Iterator naming the files and directories in the directory `f`.
+    ///
+    /// Function is non-recursive.
+    ///
+    pub def listWithIter(f: String): Result[Iterator[String], String] = ???
+
+
+    ///
+    /// Returns an Iterator naming the files and directories in the directory `f`.
+    ///
+    /// Function is recursive.
+    ///
+    pub def walk(f: String): Result[Iterator[String], String] = ???
+
 }
