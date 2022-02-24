@@ -38,9 +38,10 @@ object Optimizer {
     for (_ <- 1 to 2) {
       val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(result)
       val afterInliner = Inliner.run(afterOccurrenceAnalyzer.get)
-      result = afterInliner.get
+      val afterReducer = Reducer.run(afterInliner.get)
+      result = afterReducer.get
     }
-    
+
     // Print the ast if debugging is enabled.
     if (flix.options.debug) {
       println(PrettyPrinter.Lifted.fmtRoot(result, Formatter.AnsiTerminalFormatter))
