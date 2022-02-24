@@ -18,11 +18,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Case, CatchRule, Def, Enum, Expression, FormalParam, FreeVar, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.OccurrenceAst._
 import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Symbol}
-import ca.uwaterloo.flix.language.debug.PrettyPrinter
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{Formatter, Validation}
 
 /**
  * The inliner replaces closures and functions by their code to improve performance.
@@ -52,29 +51,29 @@ object Inliner {
   private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Int]): Expression = exp0 match {
     case Expression.Unit(loc) => Expression.Unit(loc)
 
-    case Expression.Null(tpe, loc) => Expression.Null(tpe, loc)
+    case Expression.Null(_,_) => exp0
 
-    case Expression.True(loc) => Expression.True(loc)
+    case Expression.True(_) => exp0
 
-    case Expression.False(loc) => Expression.False(loc)
+    case Expression.False(_) => exp0
 
-    case Expression.Char(lit, loc) => Expression.Char(lit, loc)
+    case Expression.Char(_,_) => exp0
 
-    case Expression.Float32(lit, loc) => Expression.Float32(lit, loc)
+    case Expression.Float32(_,_) => exp0
 
-    case Expression.Float64(lit, loc) => Expression.Float64(lit, loc)
+    case Expression.Float64(_,_) => exp0
 
-    case Expression.Int8(lit, loc) => Expression.Int8(lit, loc)
+    case Expression.Int8(_,_) => exp0
 
-    case Expression.Int16(lit, loc) => Expression.Int16(lit, loc)
+    case Expression.Int16(_,_) => exp0
 
-    case Expression.Int32(lit, loc) => Expression.Int32(lit, loc)
+    case Expression.Int32(_,_) => exp0
 
-    case Expression.Int64(lit, loc) => Expression.Int64(lit, loc)
+    case Expression.Int64(_,_) => exp0
 
-    case Expression.BigInt(lit, loc) => Expression.BigInt(lit, loc)
+    case Expression.BigInt(_,_) => exp0
 
-    case Expression.Str(lit, loc) => Expression.Str(lit, loc)
+    case Expression.Str(_,_) => exp0
 
     case Expression.Var(sym, tpe, loc) => subst0.get(sym) match {
       case Some(lit) => Expression.Int32(lit, loc)
@@ -134,7 +133,7 @@ object Inliner {
       }
       Expression.Branch(e, bs, tpe, loc)
 
-    case Expression.JumpTo(sym, tpe, loc) => Expression.JumpTo(sym, tpe, loc)
+    case Expression.JumpTo(_,_,_) => exp0
 
     case Expression.Let(sym, exp1, exp2, occur, tpe, loc) =>
       val e1 = visitExp(exp1, subst0)
@@ -171,7 +170,7 @@ object Inliner {
       val es = elms.map(visitExp(_, subst0))
       Expression.Tuple(es, tpe, loc)
 
-    case Expression.RecordEmpty(tpe, loc) => Expression.RecordEmpty(tpe, loc)
+    case Expression.RecordEmpty(_,_) => exp0
 
     case Expression.RecordSelect(exp, field, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -264,7 +263,7 @@ object Inliner {
       val e2 = visitExp(exp2, subst0)
       Expression.PutField(field, e1, e2, tpe, loc)
 
-    case Expression.GetStaticField(field, tpe, loc) => Expression.GetStaticField(field, tpe, loc)
+    case Expression.GetStaticField(_,_,_) => exp0
 
     case Expression.PutStaticField(field, exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -305,8 +304,8 @@ object Inliner {
       val e = visitExp(exp, subst0)
       Expression.Force(e, tpe, loc)
 
-    case Expression.HoleError(sym, tpe, loc) => Expression.HoleError(sym, tpe, loc)
+    case Expression.HoleError(_,_,_) => exp0
 
-    case Expression.MatchError(tpe, loc) =>  Expression.MatchError(tpe, loc)
+    case Expression.MatchError(_,_) =>  exp0
   }
 }
