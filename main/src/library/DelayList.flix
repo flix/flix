@@ -490,7 +490,7 @@ namespace DelayList {
     ///
     /// That is, returns `l2.1 :: l1.1 ... l1.n :: l2.2 :: ... :: l2.n-1 :: l1.1 :: ... :: l1.n :: l2.n :: ENil`.
     ///
-    /// Forces the immediate tail of `l2` unless it is a case of `LList`.
+    /// Does not force the tail of `l2`.
     ///
     @Experimental @Lazy
     pub def intercalate(l1: DelayList[a], l2: DelayList[DelayList[a]]): DelayList[a] =
@@ -670,7 +670,7 @@ namespace DelayList {
         loop(l)
 
     ///
-    /// Returns a `DelayList` of every element in `l` that satisfies the predicate `f`.
+    /// Returns a `DelayList` with every element in `l` that satisfies the predicate `f`.
     ///
     /// Whether `f` is applied eagerly or lazily depends on its purity:
     ///
@@ -685,7 +685,7 @@ namespace DelayList {
         }
 
     ///
-    /// Returns a `DelayList` of every element in `l` that satisfies the predicate `f`.
+    /// Returns a `DelayList` with every element in `l` that satisfies the predicate `f`.
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
@@ -700,7 +700,7 @@ namespace DelayList {
         loop(l)
 
     ///
-    /// Returns a `DelayList` of every element in `l` that satisfies the predicate `f`.
+    /// Returns a `DelayList` with every element in `l` that satisfies the predicate `f`.
     ///
     /// Applies `f` eagerly (i.e. the entire list `l` is forced).
     ///
@@ -714,10 +714,9 @@ namespace DelayList {
         loop(l, identity)
 
     ///
-    /// Returns a pair of lists `(l1, l2)`.
-    ///
-    /// `l1` contains all elements of `l` that satisfy the predicate `f`.
-    /// `l2` contains all elements of `l` that DO NOT satisfy the predicate `f`.
+    /// Returns a pair of lists `(l1, l2)` where:
+    /// - `l1` contains all elements of `l` that satisfy the predicate `f`.
+    /// - `l2` contains all elements of `l` that DO NOT satisfy the predicate `f`.
     ///
     /// Forces the entire list `l`.
     ///
@@ -740,8 +739,9 @@ namespace DelayList {
         loop(l, identity)
 
     ///
-    /// `l1` is the longest prefix of `l` that satisfies the predicate `f`.
-    /// `l2` is the remainder of `l`.
+    /// Returns a pair of lists `(l1, l2)` where:
+    /// - `l1` is the longest prefix of `l` that satisfies the predicate `f`.
+    /// - `l2` is the remainder of `l`.
     ///
     /// Whether `f` is applied eagerly or lazily depends on its purity:
     ///
@@ -840,6 +840,8 @@ namespace DelayList {
         }
 
     ///
+    /// Helper function for `dropWhile`.
+    ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
@@ -854,6 +856,8 @@ namespace DelayList {
         };
         LList(lazy loop(l))
 
+    ///
+    /// Helper function for `dropWhile`.
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///
@@ -904,6 +908,8 @@ namespace DelayList {
         }
 
     ///
+    /// Helper function for `takeWhile`.
+    ///
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
@@ -918,6 +924,8 @@ namespace DelayList {
         };
         LList(lazy loop(l))
 
+    ///
+    /// Helper function for `takeWhile`.
     ///
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
     ///
@@ -936,7 +944,7 @@ namespace DelayList {
     /// Returns a list where the element at index `i` is `(a, b)` where
     /// `a` is the element at index `i` in `l1` and `b` is the element at index `i` in `l2`.
     ///
-    /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
+    /// If either `l1` or `l2` is depleted, then no further elements are added to the resulting list.
     ///
     /// Does not force the tail of either `l1` or `l2`.
     ///
@@ -963,7 +971,7 @@ namespace DelayList {
     /// Returns a list where the element at index `i` is `f(a, b)` where
     /// `a` is the element at index `i` in `l1` and `b` is the element at index `i` in `l2`.
     ///
-    /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
+    /// If either `l1` or `l2` is depleted, then no further elements are added to the resulting list.
     ///
     /// Whether `f` is applied eagerly or lazily depends on its purity:
     ///
@@ -990,6 +998,8 @@ namespace DelayList {
         }
 
     ///
+    /// Helper function for `filterMap`.
+    ///
     /// Collects the results of applying the partial function `f` to every element in `l`.
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
@@ -1012,6 +1022,8 @@ namespace DelayList {
         };
         LList(lazy loop(l))
 
+    ///
+    /// Helper function for `filterMap`.
     ///
     /// Collects the results of applying the partial function `f` to every element in `l`.
     ///
