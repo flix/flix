@@ -178,6 +178,100 @@ namespace DelayList {
         loop(l1)
 
     ///
+    /// Returns the number of elements in `l` that satisfy the predicate `f`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def count(f: a -> Bool & ef, l: DelayList[a]): Int32 & ef =
+        foldLeft((i, x) -> if (f(x)) i + 1 else i, 0, l)
+
+    ///
+    /// Returns the sum of all elements in the DelayList `l`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def sum(l: DelayList[Int32]): Int32 =
+        Foldable.sum(l)
+
+    ///
+    /// Returns the sum of all elements in the DelayList `l` according to the function `f`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def sumWith(f: a -> Int32 & ef, l: DelayList[a]): Int32 & ef =
+        Foldable.sumWith(f ,l)
+
+    ///
+    /// Returns the product of all elements in the DelayList `l`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def product(l: DelayList[Int32]): Int32 =
+        Foldable.product(l)
+
+    ///
+    /// Returns the product of all elements in the DelayList `l` according to the function `f`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def productWith(f: a -> Int32 & ef, l: DelayList[a]): Int32 & ef =
+        Foldable.productWith(f, l)
+
+    ///
+    /// Returns the concatenation of the elements in `l`.
+    ///
+    /// Does not force the tail of `l`.
+    ///
+    @Experimental @Lazy
+    pub def flatten(l: DelayList[DelayList[a]]): DelayList[a] =
+        def loop(ll) = match ll {
+            case ENil         => ENil
+            case ECons(x, xs) => append(x,  LList(lazy loop(      xs)))
+            case LCons(x, xs) => append(x,  LList(lazy loop(force xs)))
+            case LList(xs)    => LList(lazy loop(force xs))
+        };
+        if (isEmpty(l)) ENil else LList(lazy loop(l)) // Avoid returning `LList` if `l` is empty.
+
+    ///
+    /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `l` is empty.
+    ///
+    /// Forces elements of `l` until the predicate `f` is satisfied.
+    ///
+    @Experimental
+    pub def exists(f: a -> Bool & ef, l: DelayList[a]): Bool & ef =
+        def loop(ll) = match ll {
+            case ENil         => false
+            case ECons(x, xs) => if (f(x)) true else loop(      xs)
+            case LCons(x, xs) => if (f(x)) true else loop(force xs)
+            case LList(xs)    => loop(force xs)
+        };
+        loop(l)
+
+    ///
+    /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `l` is empty.
+    ///
+    /// Forces elements in `l` until the first element that does not satisfy the predicate `f` (inclusive).
+    ///
+    @Experimental
+    pub def forall(f: a -> Bool & ef, l: DelayList[a]): Bool & ef =
+        def loop(ll) = match ll {
+            case ENil         => true
+            case ECons(x, xs) => if (f(x)) loop(      xs) else false
+            case LCons(x, xs) => if (f(x)) loop(force xs) else false
+            case LList(xs)    => loop(force xs)
+        };
+        loop(l)
+
+    ///
     /// Returns `true` if and only if `l` contains the element `x`.
     ///
     /// Forces elements until `x` is found.
@@ -236,36 +330,6 @@ namespace DelayList {
     pub def maximumBy(cmp: (a, a) -> Comparison, l: DelayList[a]): Option[a] =
         reduceLeft(Order.maxBy(cmp), l)
 
-    ///
-    /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
-    ///
-    /// Forces elements of `l` until the predicate `f` is satisfied.
-    ///
-    @Experimental
-    pub def findLeft(f: a -> Bool & ef, l: DelayList[a]): Option[a] & ef =
-        def loop(ll) = match ll {
-            case ENil         => None
-            case ECons(x, xs) => if (f(x)) Some(x) else loop(      xs)
-            case LCons(x, xs) => if (f(x)) Some(x) else loop(force xs)
-            case LList(xs)    => loop(force xs)
-        };
-        loop(l)
-
-    ///
-    /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def findRight(f: a -> Bool & ef, l: DelayList[a]): Option[a] & ef =
-        def loop(ll, k) = match ll {
-            case ENil         => k()
-            case ECons(x, xs) => loop(      xs, () -> if (f(x)) Some(x) else k())
-            case LCons(x, xs) => loop(force xs, () -> if (f(x)) Some(x) else k())
-            case LList(xs)    => loop(force xs, k)
-        };
-        loop(l, () -> None as & ef) // NB: Cast required because the identity continuation is pure,
-                                    // but the intermediate continuations are effect polymorphic.
     ///
     /// Returns a `DelayList` of all integers between `b` (inclusive) and `e` (exclusive).
     ///
@@ -470,39 +534,6 @@ namespace DelayList {
         map(e -> if (from.from == e) to.to else e, l)
 
     ///
-    /// Returns `l` with `x` inserted between every two adjacent elements.
-    ///
-    /// Does not force the tail of `l`.
-    ///
-    @Experimental @Lazy
-    pub def intersperse(x: a, l: DelayList[a]): DelayList[a] =
-        def loop(ll) = match ll {
-            case ENil           => ENil
-            case ECons(x1, xs)  => if (isEmpty(      xs)) ll else LCons(x1, lazy LCons(x, lazy loop(      xs)))
-            case LCons(x1, xs)  => if (isEmpty(force xs)) ll else LCons(x1, lazy LCons(x, lazy loop(force xs)))
-            case LList(xs)      => LList(lazy loop(force xs))
-        };
-        loop(l)
-
-    ///
-    /// Returns the concatenation of the elements in `l2` with the elements
-    /// of `l1` inserted between every two adjacent elements of `l2`.
-    ///
-    /// That is, returns `l2.1 :: l1.1 ... l1.n :: l2.2 :: ... :: l2.n-1 :: l1.1 :: ... :: l1.n :: l2.n :: ENil`.
-    ///
-    /// Does not force the tail of `l2`.
-    ///
-    @Experimental @Lazy
-    pub def intercalate(l1: DelayList[a], l2: DelayList[DelayList[a]]): DelayList[a] =
-        def loop(ll) = match ll {
-            case ENil           => ENil
-            case ECons(x, xs)   => if (isEmpty(      xs)) x else append(append(x, l1), loop(      xs))
-            case LCons(x, xs)   => if (isEmpty(force xs)) x else append(append(x, l1), loop(force xs))
-            case LList(xs)      => LList(lazy loop(force xs))
-        };
-        if (isEmpty(l2)) ENil else LList(lazy loop(l2)) // Avoid returning `LList` if `l` is empty.
-
-    ///
     /// Applies `f` to a start value `s` and all elements in `l` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
@@ -536,7 +567,6 @@ namespace DelayList {
         };
         loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
                                   // but the intermediate continuations are effect polymorphic.
-
     ///
     /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     ///
@@ -575,100 +605,6 @@ namespace DelayList {
         };
         if (isEmpty(l)) None else Some(loop(l, ks -> ks as & ef)) // NB: Cast required because the identity continuation is pure,
                                                                   // but the intermediate continuations are effect polymorphic.
-    ///
-    /// Returns the number of elements in `l` that satisfy the predicate `f`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def count(f: a -> Bool & ef, l: DelayList[a]): Int32 & ef =
-        foldLeft((i, x) -> if (f(x)) i + 1 else i, 0, l)
-
-    ///
-    /// Returns the sum of all elements in the DelayList `l`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def sum(l: DelayList[Int32]): Int32 =
-        Foldable.sum(l)
-
-    ///
-    /// Returns the sum of all elements in the DelayList `l` according to the function `f`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def sumWith(f: a -> Int32 & ef, l: DelayList[a]): Int32 & ef =
-        Foldable.sumWith(f ,l)
-
-    ///
-    /// Returns the product of all elements in the DelayList `l`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def product(l: DelayList[Int32]): Int32 =
-        Foldable.product(l)
-
-    ///
-    /// Returns the product of all elements in the DelayList `l` according to the function `f`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def productWith(f: a -> Int32 & ef, l: DelayList[a]): Int32 & ef =
-        Foldable.productWith(f, l)
-
-    ///
-    /// Returns the concatenation of the elements in `l`.
-    ///
-    /// Does not force the tail of `l`.
-    ///
-    @Experimental @Lazy
-    pub def flatten(l: DelayList[DelayList[a]]): DelayList[a] =
-        def loop(ll) = match ll {
-            case ENil         => ENil
-            case ECons(x, xs) => append(x,  LList(lazy loop(      xs)))
-            case LCons(x, xs) => append(x,  LList(lazy loop(force xs)))
-            case LList(xs)    => LList(lazy loop(force xs))
-        };
-        if (isEmpty(l)) ENil else LList(lazy loop(l)) // Avoid returning `LList` if `l` is empty.
-
-    ///
-    /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
-    ///
-    /// Returns `false` if `l` is empty.
-    ///
-    /// Forces elements of `l` until the predicate `f` is satisfied.
-    ///
-    @Experimental
-    pub def exists(f: a -> Bool & ef, l: DelayList[a]): Bool & ef =
-        def loop(ll) = match ll {
-            case ENil         => false
-            case ECons(x, xs) => if (f(x)) true else loop(      xs)
-            case LCons(x, xs) => if (f(x)) true else loop(force xs)
-            case LList(xs)    => loop(force xs)
-        };
-        loop(l)
-
-    ///
-    /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
-    ///
-    /// Returns `true` if `l` is empty.
-    ///
-    /// Forces elements in `l` until the first element that does not satisfy the predicate `f` (inclusive).
-    ///
-    @Experimental
-    pub def forall(f: a -> Bool & ef, l: DelayList[a]): Bool & ef =
-        def loop(ll) = match ll {
-            case ENil         => true
-            case ECons(x, xs) => if (f(x)) loop(      xs) else false
-            case LCons(x, xs) => if (f(x)) loop(force xs) else false
-            case LList(xs)    => loop(force xs)
-        };
-        loop(l)
-
     ///
     /// Returns a `DelayList` with every element in `l` that satisfies the predicate `f`.
     ///
@@ -712,6 +648,154 @@ namespace DelayList {
             case LList(xs)    => loop(force xs, k)
         };
         loop(l, identity)
+
+    ///
+    /// Collects the results of applying the partial function `f` to every element in `l`.
+    ///
+    /// Whether `f` is applied eagerly or lazily depends on its purity:
+    ///
+    /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
+    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
+    ///
+    @Experimental @LazyWhenPure
+    pub def filterMap(f: a -> Option[b] & ef, l: DelayList[a]): DelayList[b] & ef =
+        reifyEff(f) {
+            case Pure(g) => filterMapL(g, l)
+            case _       => filterMapE(f, l)
+        }
+
+    ///
+    /// Helper function for `filterMap`.
+    ///
+    /// Collects the results of applying the partial function `f` to every element in `l`.
+    ///
+    /// Applies `f` lazily (i.e. the tail is not forced).
+    ///
+    @Lazy
+    def filterMapL(f: a -> Option[b], l: DelayList[a]): DelayList[b] =
+        def loop(ll) = match ll {
+            case ENil         => ENil
+            case ECons(x, xs) =>
+                match f(x) {
+                    case None    => loop(xs)
+                    case Some(v) => LCons(v, lazy loop(xs))
+                }
+            case LCons(x, xs) => // Same as above except `xs` is forced.
+                match f(x) {
+                    case None    => loop(force xs)
+                    case Some(v) => LCons(v, lazy loop(force xs))
+                }
+            case LList(xs) => LList(lazy loop(force xs))
+        };
+        LList(lazy loop(l))
+
+    ///
+    /// Helper function for `filterMap`.
+    ///
+    /// Collects the results of applying the partial function `f` to every element in `l`.
+    ///
+    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
+    ///
+    def filterMapE(f: a -> Option[b] & ef, l: DelayList[a]): DelayList[b] & ef =
+        def loop(ll, k) = match ll {
+            case ENil         => k(ENil)
+            case ECons(x, xs) => match f(x) {
+                case None    => loop(xs, k)
+                case Some(v) => loop(xs, ks -> k(ECons(v, ks)))
+            }
+            case LCons(x, xs) => match f(x) { // Same as above except `xs` is forced.
+                case None    => loop(force xs, k)
+                case Some(v) => loop(force xs, ks -> k(ECons(v, ks)))
+            }
+            case LList(xs) => loop(force xs, k)
+        };
+        loop(l, identity)
+
+    ///
+    /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
+    ///
+    /// Forces elements of `l` until the predicate `f` is satisfied.
+    ///
+    @Experimental
+    pub def findLeft(f: a -> Bool & ef, l: DelayList[a]): Option[a] & ef =
+        def loop(ll) = match ll {
+            case ENil         => None
+            case ECons(x, xs) => if (f(x)) Some(x) else loop(      xs)
+            case LCons(x, xs) => if (f(x)) Some(x) else loop(force xs)
+            case LList(xs)    => loop(force xs)
+        };
+        loop(l)
+
+    ///
+    /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def findRight(f: a -> Bool & ef, l: DelayList[a]): Option[a] & ef =
+        def loop(ll, k) = match ll {
+            case ENil         => k()
+            case ECons(x, xs) => loop(      xs, () -> if (f(x)) Some(x) else k())
+            case LCons(x, xs) => loop(force xs, () -> if (f(x)) Some(x) else k())
+            case LList(xs)    => loop(force xs, k)
+        };
+        loop(l, () -> None as & ef) // NB: Cast required because the identity continuation is pure,
+                                    // but the intermediate continuations are effect polymorphic.
+    ///
+    /// Returns the first non-None result of applying the partial function `f` to each element of `l`.
+    ///
+    /// Returns `None` if every element `f(x)` of `l` is `None`.
+    ///
+    /// Forces elements of `l` until `f(x)` returns `Some(v)`.
+    ///
+    @Experimental
+    pub def findMap(f: a -> Option[b] & ef, l: DelayList[a]): Option[b] & ef =
+        def loop(ll) = match ll {
+            case ENil         => None
+            case ECons(x, xs) => match f(x) {
+                case None    => loop(xs)
+                case Some(v) => Some(v)
+            }
+            case LCons(x, xs) => match f(x) { // Same as above except `xs` is forced.
+                case None    => loop(force xs)
+                case Some(v) => Some(v)
+            }
+            case LList(xs) => loop(force xs)
+        };
+        loop(l)
+
+    ///
+    /// Returns `l` with `x` inserted between every two adjacent elements.
+    ///
+    /// Does not force the tail of `l`.
+    ///
+    @Experimental @Lazy
+    pub def intersperse(x: a, l: DelayList[a]): DelayList[a] =
+        def loop(ll) = match ll {
+            case ENil           => ENil
+            case ECons(x1, xs)  => if (isEmpty(      xs)) ll else LCons(x1, lazy LCons(x, lazy loop(      xs)))
+            case LCons(x1, xs)  => if (isEmpty(force xs)) ll else LCons(x1, lazy LCons(x, lazy loop(force xs)))
+            case LList(xs)      => LList(lazy loop(force xs))
+        };
+        loop(l)
+
+    ///
+    /// Returns the concatenation of the elements in `l2` with the elements
+    /// of `l1` inserted between every two adjacent elements of `l2`.
+    ///
+    /// That is, returns `l2.1 :: l1.1 ... l1.n :: l2.2 :: ... :: l2.n-1 :: l1.1 :: ... :: l1.n :: l2.n :: ENil`.
+    ///
+    /// Does not force the tail of `l2`.
+    ///
+    @Experimental @Lazy
+    pub def intercalate(l1: DelayList[a], l2: DelayList[DelayList[a]]): DelayList[a] =
+        def loop(ll) = match ll {
+            case ENil           => ENil
+            case ECons(x, xs)   => if (isEmpty(      xs)) x else append(append(x, l1), loop(      xs))
+            case LCons(x, xs)   => if (isEmpty(force xs)) x else append(append(x, l1), loop(force xs))
+            case LList(xs)      => LList(lazy loop(force xs))
+        };
+        if (isEmpty(l2)) ENil else LList(lazy loop(l2)) // Avoid returning `LList` if `l` is empty.
 
     ///
     /// Returns a pair of lists `(l1, l2)` where:
@@ -982,91 +1066,6 @@ namespace DelayList {
     @Experimental @LazyWhenPure
     pub def zipWith(f: (a, b) -> c & ef, l1: DelayList[a], l2: DelayList[b]): DelayList[c] & ef =
         map(x -> f(fst(x), snd(x)), zip(l1, l2))
-
-    ///
-    /// Collects the results of applying the partial function `f` to every element in `l`.
-    ///
-    /// Whether `f` is applied eagerly or lazily depends on its purity:
-    ///
-    /// - If `f` is pure then it is applied lazily (i.e. the tail is not forced).
-    /// - If `f` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
-    ///
-    @Experimental @LazyWhenPure
-    pub def filterMap(f: a -> Option[b] & ef, l: DelayList[a]): DelayList[b] & ef =
-        reifyEff(f) {
-            case Pure(g) => filterMapL(g, l)
-            case _       => filterMapE(f, l)
-        }
-
-    ///
-    /// Helper function for `filterMap`.
-    ///
-    /// Collects the results of applying the partial function `f` to every element in `l`.
-    ///
-    /// Applies `f` lazily (i.e. the tail is not forced).
-    ///
-    @Lazy
-    def filterMapL(f: a -> Option[b], l: DelayList[a]): DelayList[b] =
-        def loop(ll) = match ll {
-            case ENil         => ENil
-            case ECons(x, xs) =>
-                match f(x) {
-                    case None    => loop(xs)
-                    case Some(v) => LCons(v, lazy loop(xs))
-                }
-            case LCons(x, xs) => // Same as above except `xs` is forced.
-                match f(x) {
-                    case None    => loop(force xs)
-                    case Some(v) => LCons(v, lazy loop(force xs))
-                }
-            case LList(xs) => LList(lazy loop(force xs))
-        };
-        LList(lazy loop(l))
-
-    ///
-    /// Helper function for `filterMap`.
-    ///
-    /// Collects the results of applying the partial function `f` to every element in `l`.
-    ///
-    /// Applies `f` eagerly (i.e. the entire list `l` is forced).
-    ///
-    def filterMapE(f: a -> Option[b] & ef, l: DelayList[a]): DelayList[b] & ef =
-        def loop(ll, k) = match ll {
-            case ENil         => k(ENil)
-            case ECons(x, xs) => match f(x) {
-                case None    => loop(xs, k)
-                case Some(v) => loop(xs, ks -> k(ECons(v, ks)))
-            }
-            case LCons(x, xs) => match f(x) { // Same as above except `xs` is forced.
-                case None    => loop(force xs, k)
-                case Some(v) => loop(force xs, ks -> k(ECons(v, ks)))
-            }
-            case LList(xs) => loop(force xs, k)
-        };
-        loop(l, identity)
-
-    ///
-    /// Returns the first non-None result of applying the partial function `f` to each element of `l`.
-    ///
-    /// Returns `None` if every element `f(x)` of `l` is `None`.
-    ///
-    /// Forces elements of `l` until `f(x)` returns `Some(v)`.
-    ///
-    @Experimental
-    pub def findMap(f: a -> Option[b] & ef, l: DelayList[a]): Option[b] & ef =
-        def loop(ll) = match ll {
-            case ENil         => None
-            case ECons(x, xs) => match f(x) {
-                case None    => loop(xs)
-                case Some(v) => Some(v)
-            }
-            case LCons(x, xs) => match f(x) { // Same as above except `xs` is forced.
-                case None    => loop(force xs)
-                case Some(v) => Some(v)
-            }
-            case LList(xs) => loop(force xs)
-        };
-        loop(l)
 
     ///
     /// Returns `l` as an `Array`.
