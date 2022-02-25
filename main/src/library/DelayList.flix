@@ -87,26 +87,6 @@ instance Monoid[DelayList[a]] {
 namespace DelayList {
 
     ///
-    /// Returns the concatenation of the string representation
-    /// of each element in `l` with `sep` inserted between each element.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def join(sep: String, l: DelayList[a]): String with ToString[a] =
-        Foldable.join(sep, l)
-
-    ///
-    /// Returns the concatenation of the string representation
-    /// of each element in `l` according to `f` with `sep` inserted between each element.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def joinWith(f: a -> String & ef, sep: String, l: DelayList[a]): String & ef =
-        Foldable.joinWith(f, sep, l)
-
-    ///
     /// Returns an empty DelayList.
     ///
     @Experimental
@@ -1154,5 +1134,25 @@ namespace DelayList {
             case LList(xs)    => loop(force xs, acc)
         };
         loop(l, Set.empty())
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `l` with `sep` inserted between each element.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def join(sep: String, l: DelayList[a]): String with ToString[a] =
+        Foldable.join(sep, l)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `l` according to `f` with `sep` inserted between each element.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def joinWith(f: a -> String & ef, sep: String, l: DelayList[a]): String & ef =
+        Foldable.joinWith(f, sep, l)
 
 }
