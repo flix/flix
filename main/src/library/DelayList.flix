@@ -1115,6 +1115,15 @@ namespace DelayList {
         loop(l, identity)
 
     ///
+    /// Returns `l` as a `List`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def toMutList(l: DelayList[a]): MutList[a] & Impure =
+        toArray(l) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`.
+
+    ///
     /// Returns the association list `l` as a map.
     ///
     /// If `l` contains multiple mappings with the same key, `toMap` does not
