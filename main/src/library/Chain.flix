@@ -676,46 +676,38 @@ namespace Chain {
     /// step in a left-to-right traversal.
     ///
     pub def mapAccumLeft(f: (s, a) -> (s, b) & ef, start: s, c: Chain[a]): (s, Chain[b]) & ef =
-        mapAccumLeftHelper(f, start, c, (s1, ks) -> (s1, ks))
-
-    ///
-    /// Helper function for `mapAccumLeft`.
-    ///
-    def mapAccumLeftHelper(f: (s, a) -> (s, b) & ef, s1: s, c: Chain[a], k: (s, Chain[b]) -> (s, Chain[b])): (s, Chain[b]) & ef =
-        match viewLeft(c) {
-            case NoneLeft        => k(s1, empty())
-            case SomeLeft(x, rs) => {
-                let (s2, x1) = f(s1, x);
-                mapAccumLeftHelper(f, s2, rs, (s3, ks) -> k(s3, cons(x1, ks)))
+        def loop(s1, cc, k) = match viewLeft(cc) {
+            case NoneLeft        => k((s1, empty()))
+            case SomeLeft(a, rs) => {
+                let (s2, b) = f(s1, a);
+                loop(s2, rs, match (s3, ks) -> k((s3, cons(b, ks))))
             }
-        }
+        };
+        loop(start, c, identity)
 
     ///
     /// `mapAccumRight` is a stateful version of `map`. The accumulating parameter `s` is updated at each
     /// step in a right-to-left traversal.
     ///
     pub def mapAccumRight(f: (s, a) -> (s, b) & ef, start: s, c: Chain[a]): (s, Chain[b]) & ef =
-        mapAccumRightHelper(f, start, c, (s1, ks) -> (s1, ks))
-
-    ///
-    /// Helper function for `mapAccumRight`.
-    ///
-    def mapAccumRightHelper(f: (s, a) -> (s, b) & ef, s1: s, c: Chain[a], k: (s, Chain[b]) -> (s, Chain[b])): (s, Chain[b]) & ef =
-        match viewRight(c) {
-            case NoneRight        => k(s1, empty())
-            case SomeRight(rs, x) => {
-                let (s2, x1) = f(s1, x);
-                mapAccumRightHelper(f, s2, rs, (s3, ks) -> k(s3, snoc(ks, x1)))
+        def loop(s1, cc, k) = match viewRight(cc) {
+            case NoneRight        => k((s1, empty()))
+            case SomeRight(rs, a) => {
+                let (s2, b) = f(s1, a);
+                loop(s2, rs, match (s3, ks) -> k((s3, snoc(ks, b))))
            }
-        }
+        };
+        loop(start, c, identity)
 
     ///
     /// Applies `f` to every element of `c`.
     ///
-    pub def foreach(f: a -> Unit & ef, c: Chain[a]): Unit & ef = match viewLeft(c) {
-        case NoneLeft        => ()
-        case SomeLeft(x, rs) => f(x); foreach(f, rs)
-    }
+    pub def foreach(f: a -> Unit & ef, c: Chain[a]): Unit & ef =
+        def loop(cc) = match viewLeft(cc) {
+            case NoneLeft        => ()
+            case SomeLeft(a, rs) => f(a); loop(rs)
+        };
+        loop(c)
 
     ///
     /// Returns `c` as a list.
@@ -727,12 +719,13 @@ namespace Chain {
     /// Returns `c` as a mutable list.
     ///
     pub def toMutList(c: Chain[a]): MutList[a] & Impure =
-        MutList(ref toArray(c), ref length(c))
+        toArray(c) |> Array.toMutList    // `Array.toMutList` respects the invariant of `MutList`
 
     ///
     /// Returns the list `c` as a set.
     ///
-    pub def toSet(c: Chain[a]): Set[a] with Order[a] = foldRight(Set.insert, Set.empty(), c)
+    pub def toSet(c: Chain[a]): Set[a] with Order[a] =
+        foldRight(Set.insert, Set.empty(), c)
 
 
     ///
@@ -741,7 +734,8 @@ namespace Chain {
     /// If `c` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
-    pub def toMap(c: Chain[(a, b)]): Map[a, b] with Order[a] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), c)
+    pub def toMap(c: Chain[(a, b)]): Map[a, b] with Order[a] =
+        foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), c)
 
 
     ///
@@ -759,21 +753,16 @@ namespace Chain {
     ///
     /// Returns `true` if and only if `c1` and `c2` and equal.
     ///
-    pub def equals(c1: Chain[a], c2: Chain[a]): Bool with Eq[a] = equalsHelper(viewLeft(c1), viewLeft(c2))
-
-    ///
-    /// Helper function for `equals`.
-    ///
-    /// Note: Chains are considered equal if their (ordered) list of elements are equal.
-    ///
-    /// Because they may have different shapes due to construction we use a view to
-    /// decide equality which imposes an order on the Chain.
-    ///
-    def equalsHelper(v1: ViewLeft[a], v2: ViewLeft[a]): Bool with Eq[a] = match (v1, v2) {
-        case (NoneLeft, NoneLeft)                           => true
-        case (SomeLeft(x, cx), SomeLeft(y, cy)) if (x == y) => equalsHelper(viewLeft(cx), viewLeft(cy))
-        case _                                              => false
-    }
+    pub def equals(c1: Chain[a], c2: Chain[a]): Bool with Eq[a] =
+        // Note: Chains are considered equal if their (ordered) list of elements are equal.
+        // Because they may have different shapes due to construction we use a view to
+        // decide equality which imposes an order on the Chain.
+        def loop(cc1, cc2) = match (cc1, cc2) {
+            case (NoneLeft, NoneLeft)                           => true
+            case (SomeLeft(x, cx), SomeLeft(y, cy)) if (x == y) => loop(viewLeft(cx), viewLeft(cy))
+            case _                                              => false
+        };
+        loop(viewLeft(c1), viewLeft(c2))
 
     ///
     /// Sort chain `c` so that elements are ordered from low to high according to their `Order` instance.
