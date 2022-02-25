@@ -139,7 +139,7 @@ namespace DelayList {
     ///
     /// Does not force the tail of `l`.
     ///
-    @Experimental
+    @Experimental @Lazy
     pub def tail(l: DelayList[a]): DelayList[a] = match l {
         case ENil         => ENil
         case ECons(_, xs) => xs
@@ -167,7 +167,7 @@ namespace DelayList {
     ///
     /// Does not force the tail of `l1`.
     ///
-    @Lazy @Experimental
+    @Experimental @Lazy
     pub def append(l1: DelayList[a], l2: DelayList[a]): DelayList[a] =
         def loop(ll) = match ll {
             case ENil         => l2
@@ -472,7 +472,7 @@ namespace DelayList {
     ///
     /// Returns `l` with `x` inserted between every two adjacent elements.
     ///
-    /// Forces the immediate tail of `l` unless it is a case of `LList`.
+    /// Does not force the tail of `l`.
     ///
     @Experimental @Lazy
     pub def intersperse(x: a, l: DelayList[a]): DelayList[a] =
@@ -657,7 +657,7 @@ namespace DelayList {
     ///
     /// Returns `true` if `l` is empty.
     ///
-    /// Forces the entire list `l`.
+    /// Forces elements in `l` until the first element that does not satisfy the predicate `f` (inclusive).
     ///
     @Experimental
     pub def forall(f: a -> Bool & ef, l: DelayList[a]): Bool & ef =
@@ -760,6 +760,7 @@ namespace DelayList {
     ///
     /// Applies `f` lazily (i.e. the tail is not forced).
     ///
+    @Lazy
     def spanL(f: a -> Bool, l: DelayList[a]): (DelayList[a], DelayList[a]) =
         def loop(ll) = match ll {
             case ENil         => (ENil, ENil)
