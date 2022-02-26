@@ -978,7 +978,7 @@ namespace String {
     ///
     def unlinesHelper(a: List[String]): String & Impure =
         let sb = StringBuilder.new();
-        List.foreach(StringBuilder.appendLine!(sb), a);
+        List.foreach(StringBuilder.x -> appendLine!(x, sb), a);
         StringBuilder.toString(sb)
 
     ///
