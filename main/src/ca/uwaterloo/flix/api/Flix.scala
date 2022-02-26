@@ -142,6 +142,7 @@ class Flix {
     "DelayList.flix" -> LocalResource.get("/src/library/DelayList.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),
     "Map.flix" -> LocalResource.get("/src/library/Map.flix"),
+    "Nec.flix" -> LocalResource.get("/src/library/Nec.flix"),
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
@@ -506,7 +507,8 @@ class Flix {
       afterClosureConv <- ClosureConv.run(afterSimplifier)
       afterLambdaLift <- LambdaLift.run(afterClosureConv)
       afterTailrec <- Tailrec.run(afterLambdaLift)
-      afterInliner <- Inliner.run(afterTailrec)
+      afterOccurrenceAnalyzer <- OccurrenceAnalyzer.run(afterTailrec)
+      afterInliner <- Inliner.run(afterOccurrenceAnalyzer)
       afterOptimizer <- Optimizer.run(afterInliner)
       afterTreeShaker <- TreeShaker.run(afterOptimizer)
       afterVarNumbering <- VarNumbering.run(afterTreeShaker)

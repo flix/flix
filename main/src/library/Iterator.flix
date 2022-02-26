@@ -227,6 +227,28 @@ namespace Iterator {
     }
 
     ///
+    /// Returns the contents of `iter` as a nec. Consumes the entire iterator.
+    ///
+    pub def toNec(iter: Iterator[a]): Option[Nec[a]] & Impure =
+        let Iterator(done, next) = iter;
+        toNecAcc(done, next, ks -> ks)
+
+    ///
+    /// Helper function for `toNec`.
+    ///
+    def toNecAcc(done: Done, next: Next[a], k: Option[Nec[a]] -> Option[Nec[a]]): Option[Nec[a]] & Impure =
+        if (done()) {
+            k(None)
+        }
+        else {
+            let x = next();
+            toNecAcc(done, next, k1 -> match k1 {
+                case None      => k(Some(Nec.singleton(x)))
+                case Some(nec) => k(Some(Nec.cons(x, nec)))
+            })
+        }
+
+    ///
     /// Returns the contents of `iter` as a set. Consumes the entire iterator.
     ///
     pub def toSet(iter: Iterator[a]): Set[a] & Impure with Order[a] =
