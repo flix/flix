@@ -521,7 +521,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved2: Rule1[String] = rule {
-        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->" | "<-" | "|=" | "or")
+        capture("**" | "<=" | ">=" | "==" | "!=" | "=>" | "->" | "<-" | "|=" | "or")
       }
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
@@ -1032,7 +1032,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         def MultiSelect: Rule1[Seq[ParsedAst.Expression]] = rule {
           "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
         }
-        
+
         rule {
           WS ~ keyword("select") ~ WS ~ (MultiSelect | SingleSelect)
         }
