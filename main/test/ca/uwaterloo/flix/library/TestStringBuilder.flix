@@ -265,30 +265,30 @@ def appendLineSeparator02!(): Bool & Impure =
 @test
 def appendLine01!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLine!(sb, "");
+    StringBuilder.appendLine!("", sb);
     StringBuilder.toString(sb) == String.lineSeparator()
 
 @test
 def appendLine02!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLine!(sb, "A");
+    StringBuilder.appendLine!("A", sb);
     let s1 = "A" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLine03!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLine!(sb, "A");
-    StringBuilder.appendLine!(sb, "B");
+    StringBuilder.appendLine!("A", sb);
+    StringBuilder.appendLine!("B", sb);
     let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLine04!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLine!(sb, "A");
-    StringBuilder.appendLine!(sb, "B");
-    StringBuilder.appendLine!(sb, "C");
+    StringBuilder.appendLine!("A", sb);
+    StringBuilder.appendLine!("B", sb);
+    StringBuilder.appendLine!("C", sb);
     let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator() + "C" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 

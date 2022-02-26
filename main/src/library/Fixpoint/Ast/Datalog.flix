@@ -38,17 +38,17 @@ namespace Fixpoint/Ast {
                 let sb = StringBuilder.new();
                 Map.foreach(ramSym -> rel -> match toDenotation(ramSym) {
                     case Relational => Map.foreach(match Tuple(tuple) -> _ -> {
-                        StringBuilder.appendLine!(sb, "${ramSym}(${commaSeparate(tuple)}).")
+                        StringBuilder.appendLine!("${ramSym}(${commaSeparate(tuple)}).", sb)
                     }, rel)
                     case Latticenal(_) => Map.foreach(match Tuple(tuple) -> lat -> {
-                        StringBuilder.appendLine!(sb, "${ramSym}(${commaSeparate(tuple)}; ${lat}).")
+                        StringBuilder.appendLine!("${ramSym}(${commaSeparate(tuple)}; ${lat}).", sb)
                     }, rel)
                 }, db);
                 StringBuilder.toString(sb)
             case Join(d1, d2) =>
                 let sb = StringBuilder.new();
-                StringBuilder.appendLine!(sb, ToString.toString(d1));
-                StringBuilder.appendLine!(sb, ToString.toString(d2));
+                StringBuilder.appendLine!(ToString.toString(d1), sb);
+                StringBuilder.appendLine!(ToString.toString(d2), sb);
                 StringBuilder.toString(sb)
         } as & Pure
     }

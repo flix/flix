@@ -54,7 +54,7 @@ namespace StringBuilder {
     ///
     /// Append the String `s` followed by the system line separator to the StringBuilder `sb`.
     ///
-    pub def appendLine!(sb: StringBuilder, s: String): Unit & Impure =
+    pub def appendLine!(s: String, sb: StringBuilder): Unit & Impure =
         sb `appendString!` s;
         appendLineSeparator!(sb)
 
