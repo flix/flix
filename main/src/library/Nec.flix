@@ -95,11 +95,11 @@ instance ToString[Nec[a]] with ToString[a] {
             StringBuilder.appendString!("Nec#{", sb);
             Nec.foldLeft((acc, x) -> {
                 if (acc < 1)
-                    StringBuilder.appendString!(sb, "${x}")
+                    StringBuilder.appendString!("${x}", sb)
                 else
-                    StringBuilder.appendString!(sb, ", ${x}");
+                    StringBuilder.appendString!(", ${x}", sb);
                 acc + 1}, 0, c);
-            StringBuilder.appendString!(sb, "}");
+            StringBuilder.appendString!("}", sb);
             StringBuilder.toString(sb)
         };
         fn() as & Pure
