@@ -521,9 +521,16 @@ namespace DelayList {
     pub def point(x: a): DelayList[a] = ECons(x, ENil)
 
     ///
-    /// Apply every function from `f` to every argument from `x` and return a list with all results.
-    /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
+    /// Apply every function from `f` to every argument from `l` and return a list with all results.
+    /// For `f = f1, f2, ...` and `l = x1, x2, ...` the results appear in the order
     /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
+    ///
+    /// Whether the i-th function in `f` (`fi`) is applied eagerly or lazily depends on its purity:
+    ///
+    /// - If `fi` is pure then it is applied lazily (i.e. the tail of `l` is not forced).
+    /// - If `fi` is impure then it is applied eagerly (i.e. the entire list `l` is forced).
+    ///
+    /// Note that this implies that ALL functions in `f` must be pure to avoid forcing `l`.
     ///
     @Experimental @LazyWhenPure
     pub def ap(f: DelayList[a -> b & ef], l: DelayList[a]): DelayList[b] & ef =
