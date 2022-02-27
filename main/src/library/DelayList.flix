@@ -66,6 +66,11 @@ instance Functor[DelayList] {
     pub def map(f: a -> b & ef, l: DelayList[a]): DelayList[b] & ef = DelayList.map(f, l)
 }
 
+instance Applicative[DelayList] {
+    pub def point(a: a): DelayList[a] = DelayList.point(a)
+    pub def ap(f: DelayList[a -> b & e], x: DelayList[a]): DelayList[b] & e = DelayList.ap(f, x)
+}
+
 instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRight(f, s, l)
@@ -508,6 +513,21 @@ namespace DelayList {
             case LList(xs) => loop(force xs, k)
         };
         loop(l, identity)
+
+    ///
+    /// Return the singleton list with element `x`.
+    ///
+    @Experimental
+    pub def point(x: a): DelayList[a] = ECons(x, ENil)
+
+    ///
+    /// Apply every function from `f` to every argument from `x` and return a list with all results.
+    /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
+    /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
+    ///
+    @Experimental @LazyWhenPure
+    pub def ap(f: DelayList[a -> b & ef], l: DelayList[a]): DelayList[b] & ef =
+        flatMap(g -> map(g, l), f)
 
     ///
     /// Reverses the list `l`.
