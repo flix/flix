@@ -16,8 +16,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.debug.Audience
-import ca.uwaterloo.flix.language.debug.FormatEff
+import ca.uwaterloo.flix.language.debug.{Audience, FormatEff}
 
 /**
   * A common super-type for code hints.
@@ -66,13 +65,13 @@ object CodeHint {
   }
 
   /**
-    * A code hint that indicates that a purity polymorphic operation is lazy.
+    * A code hint that indicates that a purity reflective operation is lazy.
     *
     * @param sym the symbol of the operation that is lazy.
     * @param loc the location associated with the code hint.
     */
   case class LazyEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    def summary: String = s"Lazy: The operation uses lazy evaluation (due to purity polymorphism)."
+    def summary: String = s"Lazy: The operation uses lazy evaluation (due to purity reflection)."
 
     def severity: Severity = Severity.Hint
   }
@@ -89,13 +88,13 @@ object CodeHint {
   }
 
   /**
-    * A code hint that indicates that a purity polymorphic operation is parallel.
+    * A code hint that indicates that a purity reflective operation is parallel.
     *
     * @param sym the symbol of the operation that is parallel.
     * @param loc the location associated with the code hint.
     */
   case class ParallelEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    def summary: String = s"Parallel: The operation uses parallel evaluation (due to purity polymorphism)."
+    def summary: String = s"Parallel: The operation uses parallel evaluation (due to purity reflection)."
 
     def severity: Severity = Severity.Hint
   }
@@ -107,7 +106,7 @@ object CodeHint {
     * @param loc the location associated with the code hint.
     */
   case class SuggestPurityForLazyEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    def summary: String = "Eager: Use a pure function to enable lazy evaluation (see purity polymorphism)."
+    def summary: String = "Eager: Use a pure function to enable lazy evaluation (see purity reflection)."
 
     def severity: Severity = Severity.Hint
   }
@@ -119,7 +118,7 @@ object CodeHint {
     * @param loc the location associated with the code hint.
     */
   case class SuggestPurityForParallelEvaluation(sym: Symbol.DefnSym, loc: SourceLocation) extends CodeHint {
-    def summary: String = "Sequential: Use a pure function to enable parallel evaluation (see purity polymorphism)."
+    def summary: String = "Sequential: Use a pure function to enable parallel evaluation (see purity reflection)."
 
     def severity: Severity = Severity.Hint
   }
