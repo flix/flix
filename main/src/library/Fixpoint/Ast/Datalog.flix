@@ -29,8 +29,8 @@ namespace Fixpoint/Ast {
         pub def toString(cs: Datalog[v]): String = match cs {
             case Datalog(facts, rules) =>
                 let sb = StringBuilder.new();
-                StringBuilder.appendLinesWith!(sb, ToString.toString, facts);
-                StringBuilder.appendLinesWith!(sb, ToString.toString, rules);
+                StringBuilder.appendLinesWith!(ToString.toString, facts, sb);
+                StringBuilder.appendLinesWith!(ToString.toString, rules, sb);
                 StringBuilder.toString(sb)
             case Model(db) =>
                 use Fixpoint/Ram.toDenotation;

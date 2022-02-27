@@ -365,27 +365,27 @@ def appendLines04!(): Bool & Impure =
 @test
 def appendLinesWith01!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLinesWith!(sb, Int32.toString, []: Array[Int32]);
+    StringBuilder.appendLinesWith!(Int32.toString, []: Array[Int32], sb);
     StringBuilder.toString(sb) == ""
 
 @test
 def appendLinesWith02!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLinesWith!(sb, Int32.toString, [1]);
+    StringBuilder.appendLinesWith!(Int32.toString, [1], sb);
     let s1 = "1" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLinesWith03!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLinesWith!(sb, Int32.toString, [1, 2]);
+    StringBuilder.appendLinesWith!(Int32.toString, [1, 2], sb);
     let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLinesWith04!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLinesWith!(sb, Int32.toString, [1, 2, 3]);
+    StringBuilder.appendLinesWith!(Int32.toString, [1, 2, 3], sb);
     let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator() + "3" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
