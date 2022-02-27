@@ -73,7 +73,7 @@ namespace Test/Exp/Jvm/GetField {
     @test
     def testGetObjectField01(): ##java.lang.Object & Impure =
         import new flix.test.TestClass(): ##flix.test.TestClass & Impure as newObject;
-        import get flix.test.TestClass.stringField: ##java.lang.Object as getField;
+        import get flix.test.TestClass.stringField: ##java.lang.Object & Impure as getField;
         let o = newObject();
         getField(o)
 
