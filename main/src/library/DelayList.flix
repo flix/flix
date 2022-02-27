@@ -77,6 +77,11 @@ instance Monad[DelayList] {
     pub def flatMap(f: a -> DelayList[b] & ef, l: DelayList[a]): DelayList[b] & ef = DelayList.flatMap(f, l)
 }
 
+instance Traversable[DelayList] {
+    pub def traverse(f: a -> m[b] & ef, l: DelayList[a]): m[DelayList[b]] & ef with Applicative[m] = DelayList.traverse(f, l)
+    pub override def sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
+}
+
 instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRight(f, s, l)
@@ -1208,5 +1213,43 @@ namespace DelayList {
     @Experimental
     pub def joinWith(f: a -> String & ef, sep: String, l: DelayList[a]): String & ef =
         Foldable.joinWith(f, sep, l)
+
+    ///
+    /// Helper function for `traverse` and `sequence`.
+    ///
+    /// Builds an "applicative DelayList" from a head of one applicative action and an
+    /// applicative DelayList of the tail.
+    ///
+    @Experimental
+    def consA(mx: f[a], ml: f[DelayList[a]]): f[DelayList[a]] with Applicative[f] =
+        (((x, xs) -> ECons(x, xs)) `Functor.map` mx) `Applicative.ap` ml
+
+    ///
+    /// Returns the result of running all the actions in the DelayList `l`.
+    ///
+    @Experimental
+    pub def sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] =
+        def loop(ll, k) = match ll {
+            case ENil          => k(Applicative.point(ENil))
+            case ECons(mx, xs) => loop(      xs, ks -> k(consA(mx, ks)))
+            case LCons(mx, xs) => loop(force xs, ks -> k(consA(mx, ks)))
+            case LList(xs)     => loop(force xs, k)
+        };
+        loop(l, identity)
+
+    ///
+    /// Returns the result of applying the applicative mapping function `f` to all the elements of the
+    /// DelayList `l`.
+    ///
+    @Experimental
+    pub def traverse(f: a -> m[b] & ef, l: DelayList[a]): m[DelayList[b]] & ef with Applicative[m] =
+        def loop(ll, k) = match ll {
+            case ENil         => k(Applicative.point(ENil))
+            case ECons(x, xs) => loop(xs, ks -> k(consA(f(x), ks)))
+            case LCons(x, xs) => loop(force xs, ks -> k(consA(f(x), ks)))
+            case LList(xs)    => loop(force xs, k)
+        };
+        loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
+                                  // but the intermediate continuations are effect polymorphic.
 
 }
