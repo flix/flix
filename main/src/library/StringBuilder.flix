@@ -68,7 +68,7 @@ namespace StringBuilder {
     ///
     /// Appends each string in the array `a` to the string builder `sb`.
     ///
-    pub def appendLines!(sb: StringBuilder, a: Array[String]): Unit & Impure =
+    pub def appendLines!(a: Array[String], sb: StringBuilder): Unit & Impure =
         Array.foreach(x -> appendLine!(x, sb), a)
 
     ///

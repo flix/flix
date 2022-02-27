@@ -335,27 +335,27 @@ def appendLineWith04!(): Bool & Impure =
 @test
 def appendLines01!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLines!(sb, []);
+    StringBuilder.appendLines!([], sb);
     StringBuilder.toString(sb) == ""
 
 @test
 def appendLines02!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLines!(sb, ["A"]);
+    StringBuilder.appendLines!(["A"], sb);
     let s1 = "A" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLines03!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLines!(sb, ["A", "B"]);
+    StringBuilder.appendLines!(["A", "B"], sb);
     let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLines04!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLines!(sb, ["A", "B", "C"]);
+    StringBuilder.appendLines!(["A", "B", "C"], sb);
     let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator() + "C" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
