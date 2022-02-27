@@ -298,34 +298,34 @@ def appendLine04!(): Bool & Impure =
 @test
 def appendLineWith01!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLineWith!(sb, Int32.toString, 1);
+    StringBuilder.appendLineWith!(Int32.toString, 1, sb);
     let s1 = "1" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLineWith02!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLineWith!(sb, Int32.toString, 1);
-    StringBuilder.appendLineWith!(sb, Int32.toString, 2);
+    StringBuilder.appendLineWith!(Int32.toString, 1, sb);
+    StringBuilder.appendLineWith!(Int32.toString, 2, sb);
     let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLineWith03!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLineWith!(sb, Int32.toString, 1);
-    StringBuilder.appendLineWith!(sb, Int32.toString, 2);
-    StringBuilder.appendLineWith!(sb, Int32.toString, 3);
+    StringBuilder.appendLineWith!(Int32.toString, 1, sb);
+    StringBuilder.appendLineWith!(Int32.toString, 2, sb);
+    StringBuilder.appendLineWith!(Int32.toString, 3, sb);
     let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator() + "3" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLineWith04!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLineWith!(sb, Int32.toString, 1);
-    StringBuilder.appendLineWith!(sb, Int32.toString, 2);
-    StringBuilder.appendLineWith!(sb, Int32.toString, 3);
-    StringBuilder.appendLineWith!(sb, Int32.toString, 4);
+    StringBuilder.appendLineWith!(Int32.toString, 1, sb);
+    StringBuilder.appendLineWith!(Int32.toString, 2, sb);
+    StringBuilder.appendLineWith!(Int32.toString, 3, sb);
+    StringBuilder.appendLineWith!(Int32.toString, 4, sb);
     let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator() + "3" + String.lineSeparator() + "4" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 

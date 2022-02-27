@@ -61,7 +61,7 @@ namespace StringBuilder {
     ///
     /// Appends `f(x)` to the string builder `sb`.
     ///
-    pub def appendLineWith!(sb: StringBuilder, f: a -> String, x: a): Unit & Impure =
+    pub def appendLineWith!(f: a -> String, x: a, sb: StringBuilder): Unit & Impure =
         sb `appendString!` f(x);
         appendLineSeparator!(sb)
 
@@ -75,7 +75,7 @@ namespace StringBuilder {
     /// Appends `f(x)` for each x in array `a` to the string builder `sb`.
     ///
     pub def appendLinesWith!(sb: StringBuilder, f: a -> String, a: Array[a]): Unit & Impure =
-        Array.foreach(appendLineWith!(sb, f), a)
+        Array.foreach(x -> appendLineWith!(f, x, sb), a)
 
     ///
     /// Append the array of strings `a` separating each pair of string with `sep` to the StringBuilder `sb`.
