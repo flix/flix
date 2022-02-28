@@ -335,7 +335,7 @@ namespace TestMutList {
     def indexOfRight04(): Bool & Impure =
         let v1 = MutList.range(0, 4);
         let v2 = MutList.range(0, 4);
-        MutList.append!(v1, v2);
+        MutList.append!(v2, v1);
         MutList.indexOfRight(2, v1) == Some(6)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -850,28 +850,28 @@ namespace TestMutList {
     def append!01(): Bool & Impure =
         let v1 = MutList.range(0, 4);
         let v2 = MutList.range(4, 8);
-        MutList.append!(v1, v2);
+        MutList.append!(v2, v1);
         MutList.sameElements(v1, MutList.range(0, 8))
 
     @test
     def append!02(): Bool & Impure =
         let v1 = MutList.new();
         let v2 = MutList.range(1, 4);
-        MutList.append!(v1, v2);
+        MutList.append!(v2, v1);
         MutList.sameElements(v1, MutList.range(1, 4))
 
     @test
     def append!03(): Bool & Impure =
         let v1 = MutList.range(9, 24);
         let v2 = MutList.new();
-        MutList.append!(v1, v2);
+        MutList.append!(v2, v1);
         MutList.sameElements(v1, MutList.range(9, 24))
 
     @test
     def append!04(): Bool & Impure =
         let v1: MutList[Unit] = MutList.new();
         let v2: MutList[Unit] = MutList.new();
-        MutList.append!(v1, v2);
+        MutList.append!(v2, v1);
         MutList.sameElements(v1, MutList.new())
 
     @test
@@ -879,8 +879,8 @@ namespace TestMutList {
         let v1 = MutList.range(1, 3);
         let v2 = MutList.range(3, 5);
         let v3 = MutList.range(5, 99);
-        MutList.append!(v1, v2);
-        MutList.append!(v1, v3);
+        MutList.append!(v2, v1);
+        MutList.append!(v3, v1);
         MutList.sameElements(v1, MutList.range(1, 99))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1015,7 +1015,7 @@ namespace TestMutList {
     def shrink!04(): Bool & Impure =
         let v = MutList.new();
         MutList.push!(4, v);
-        MutList.append!(v, MutList.range(0, 4));
+        MutList.append!(MutList.range(0, 4), v);
         MutList.push!(5, v);
         MutList.shrink!(v);
         MutList.length(v) == 6

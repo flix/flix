@@ -568,7 +568,7 @@ namespace MutList {
     ///
     /// Inserts all the elements in the collection `t` into the mutable list `v`.
     ///
-    pub def append!(v: MutList[a], t: t[a]): Unit & Impure with Iterable[t] =
+    pub def append!(t: t[a], v: MutList[a]): Unit & Impure with Iterable[t] =
         let iter = Iterable.iterator(t);
         Iterator.foreach(x -> MutList.push!(x, v), iter)
 

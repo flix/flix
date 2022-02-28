@@ -1254,6 +1254,26 @@ namespace List {
         }
 
     ///
+    /// Returns the list `l` as `Option[Nel[a]]`.
+    ///
+    /// If `l` is empty return `None`, otherwise return the Nel wrapped in `Some`.
+    ///
+    pub def toNel(l: List[a]): Option[Nel[a]] = match l {
+        case Nil     => None
+        case x :: xs => Some(Nel(x, xs))
+    }
+
+    ///
+    /// Returns the list `l` as `Option[Nec[a]]`.
+    ///
+    /// If `l` is empty return `None`, otherwise return the Nec wrapped in `Some`.
+    ///
+    pub def toNec(l: List[a]): Option[Nec[a]] = match l {
+        case Nil     => None
+        case x :: xs => Some(foldLeft(Nec.snoc, Nec.singleton(x), xs))
+    }
+
+    ///
     /// Sort list `l` so that elements are ordered from low to high according to their `Order` instance.
     ///
     /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `l`.
