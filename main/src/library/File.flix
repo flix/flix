@@ -843,22 +843,67 @@ namespace File {
     ///
     /// Returns a list naming the files and directories in the directory `f`.
     ///
-    /// Function is non-recursive.
+    /// Does not recursively traverse the directory.
     ///
-    pub def list(f: String): Result[List[String], String] = ???
+    pub def list(f: String): Result[List[String], String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.list(): Array[String] & Impure;
+
+            let javaFile = newFile(f);
+            let javaList = list(javaFile);
+
+            Ok(Array.toList(javaList))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
 
     ///
     /// Returns an iterator naming the files and directories in the directory `f`.
     ///
-    /// Function is non-recursive.
+    /// Does not recursively traverse the directory.
     ///
-    pub def listWithIter(f: String): Result[Iterator[String], String] = ???
+    pub def listWithIter(f: String): Result[Iterator[String], String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.newDirectoryStream(##java.nio.file.Path): ##java.nio.file.DirectoryStream & Impure;
+            import java.nio.file.DirectoryStream.iterator(): ##java.util.Iterator & Impure;
 
+            import java.util.Iterator.hasNext(): Bool & Impure;
+            import java.util.Iterator.next(): ##java.nio.file.Path & Impure as getNext;
+
+            import java.nio.file.Path.getFileName(): ##java.nio.file.Path & Impure;
+            import java.nio.file.Path.toString(): String & Impure;
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let javaStream = newDirectoryStream(javaPath);
+            let javaIter = iterator(javaStream);
+
+            let done = () -> not hasNext(javaIter);
+            let next = () -> {
+                if(hasNext(javaIter)) {
+                    let name = getFileName(getNext(javaIter));
+                    toString(name)
+                } else {
+                    bug!("Empty iterator.")
+                }
+            };
+
+            Ok(Iterator(done, next))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
 
     ///
     /// Returns an iterator naming the files and directories in the directory `f`.
     ///
-    /// Function is recursive.
+    /// Recursively traverses the directory.
     ///
     pub def walk(f: String): Result[Iterator[String], String] = ???
 
