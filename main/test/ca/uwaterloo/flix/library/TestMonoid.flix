@@ -411,13 +411,13 @@ namespace TestMonoid {
     def validationEmpty01(): Bool = empty(): Validation[String, String] == Success("")
 
     @test
-    def validationCombine01(): Bool = combine(Failure(Nel.singleton("e1")), Failure(Nel.singleton("e2"))): Validation[String, String] == Failure(Nel.append(Nel.singleton("e1"), Nel.singleton("e2")))
+    def validationCombine01(): Bool = combine(Failure(Nec.singleton("e1")), Failure(Nec.singleton("e2"))): Validation[String, String] == Failure(Nec.append(Nec.singleton("e1"), Nec.singleton("e2")))
 
     @test
-    def validationCombine02(): Bool = combine(Success("a"), Failure(Nel.singleton("e1"))): Validation[String, String] == Failure(Nel.singleton("e1"))
+    def validationCombine02(): Bool = combine(Success("a"), Failure(Nec.singleton("e1"))): Validation[String, String] == Failure(Nec.singleton("e1"))
 
     @test
-    def validationCombine03(): Bool = combine(Failure(Nel.singleton("e1")), Success("1")): Validation[String, String] == Failure(Nel.singleton("e1"))
+    def validationCombine03(): Bool = combine(Failure(Nec.singleton("e1")), Success("1")): Validation[String, String] == Failure(Nec.singleton("e1"))
 
     @test
     def validationCombine04(): Bool = combine(Success("a"), Success("1")): Validation[String, String] == Success("a1")
