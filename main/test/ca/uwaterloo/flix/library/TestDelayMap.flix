@@ -159,7 +159,7 @@ namespace TestDelayMap {
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
     let a = MutList.new();
-    DelayMap.count((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); true }, m);
+    DelayMap.count((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); true }, m);
     MutList.toList(a) == range
 
 
@@ -1726,7 +1726,7 @@ namespace TestDelayMap {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
         let a = MutList.new();
-        DelayMap.sumWith((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); 0 }, m);
+        DelayMap.sumWith((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); 0 }, m);
         MutList.toList(a) == range
 
 
@@ -1836,7 +1836,7 @@ namespace TestDelayMap {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
         let a = MutList.new();
-        DelayMap.productWith((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); 1 }, m);
+        DelayMap.productWith((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
         MutList.toList(a) == range
 
 
