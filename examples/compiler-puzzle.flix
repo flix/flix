@@ -29,5 +29,5 @@ def main(_args: Array[String]): Int32 & Impure =
             Interpreter(lang).
     };
     query facts, rules
-        select (src, dst) from Compiler(src, _, dst) |> println;
+        select (src, dst) from Compiler(src, _, dst) |> Array.toString |> println;
     0 // exit code

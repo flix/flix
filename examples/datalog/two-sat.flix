@@ -45,6 +45,6 @@ def main(_args: Array[String]): Int32 & Impure =
 
     };
 
-    query lp <+> clauses select x from Satisfiable(x) |> println;
+    query lp <+> clauses select x from Satisfiable(x) |> Array.toString |> println;
 
     0
