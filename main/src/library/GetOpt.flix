@@ -155,7 +155,10 @@ namespace GetOpt {
         let answers = getOpt1(ordering, optDescriptors, sourceArgs);
         match answers.errors ::: List.map(errUnrec, answers.unknowns) {
             case Nil => Success({options = answers.options, nonOptions = answers.nonOptions})
-            case e :: es => Failure(Nel(e, es))
+            case e :: es => match List.toNec(es) {
+                case None    => Failure(Nec.singleton(e))
+                case Some(c) => Failure(Nec.cons(e, c))
+            }
         }
 
     ///

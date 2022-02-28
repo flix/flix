@@ -699,8 +699,8 @@ object Weeder {
               // Compute the class name.
               val className = fqn.mkString(".")
 
-              val tpe = tpe0.map(visitType)
-              val eff = eff0.map(visitType)
+              val tpe = visitType(tpe0)
+              val eff = visitType(eff0)
 
               //
               // Case 1: No arguments.
@@ -708,7 +708,7 @@ object Weeder {
               if (sig.isEmpty) {
                 val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
                 val call = WeededAst.Expression.InvokeConstructor(className, Nil, Nil, loc)
-                val lambdaBody = WeededAst.Expression.Cast(call, tpe, eff, loc)
+                val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
                 val e1 = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
                 return WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc).toSuccess
               }
@@ -732,7 +732,7 @@ object Weeder {
 
               // Assemble the lambda expression.
               val call = WeededAst.Expression.InvokeConstructor(className, as, ts, loc)
-              val lambdaBody = WeededAst.Expression.Cast(call, tpe, eff, loc)
+              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
@@ -748,8 +748,8 @@ object Weeder {
 
               val receiverType = WeededAst.Type.Native(className, loc)
 
-              val tpe = tpe0.map(visitType)
-              val eff = eff0.map(visitType)
+              val tpe = visitType(tpe0)
+              val eff = visitType(eff0)
 
               // Compute the types of declared parameters.
               val ts = sig.map(visitType).toList
@@ -775,7 +775,7 @@ object Weeder {
 
               // Assemble the lambda expression.
               val call = WeededAst.Expression.InvokeMethod(className, methodName, as.head, as.tail, ts, loc)
-              val lambdaBody = WeededAst.Expression.Cast(call, tpe, eff, loc)
+              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
@@ -790,8 +790,8 @@ object Weeder {
               // Compute the name of the let-bound variable.
               val ident = identOpt.getOrElse(Name.Ident(sp1, methodName, sp2))
 
-              val tpe = tpe0.map(visitType)
-              val eff = eff0.map(visitType)
+              val tpe = visitType(tpe0)
+              val eff = visitType(eff0)
 
               //
               // Case 1: No arguments.
@@ -799,7 +799,7 @@ object Weeder {
               if (sig.isEmpty) {
                 val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
                 val call = WeededAst.Expression.InvokeStaticMethod(className, methodName, Nil, Nil, loc)
-                val lambdaBody = WeededAst.Expression.Cast(call, tpe, eff, loc)
+                val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
                 val e1 = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
                 return WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc).toSuccess
               }
@@ -823,7 +823,7 @@ object Weeder {
 
               // Assemble the lambda expression.
               val call = WeededAst.Expression.InvokeStaticMethod(className, methodName, as, ts, loc)
-              val lambdaBody = WeededAst.Expression.Cast(call, tpe, eff, loc)
+              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
@@ -835,14 +835,14 @@ object Weeder {
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
 
             case ((className, fieldName), e2) =>
-              val tpe = tpe0.map(visitType)
-              val eff = eff0.map(visitType)
+              val tpe = visitType(tpe0)
+              val eff = visitType(eff0)
 
               val objectId = Name.Ident(sp1, "o" + Flix.Delimiter, sp2)
               val objectExp = WeededAst.Expression.VarOrDefOrSig(objectId, loc)
               val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
               val call = WeededAst.Expression.GetField(className, fieldName, objectExp, loc)
-              val lambdaBody = WeededAst.Expression.Cast(call, tpe, eff, loc)
+              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
               val e1 = WeededAst.Expression.Lambda(objectParam, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
@@ -853,8 +853,8 @@ object Weeder {
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
-              val tpe = tpe0.map(visitType)
-              val eff = eff0.map(visitType)
+              val tpe = visitType(tpe0)
+              val eff = visitType(eff0)
 
               val objectId = Name.Ident(sp1, "o" + Flix.Delimiter, sp2)
               val valueId = Name.Ident(sp1, "v" + Flix.Delimiter, sp2)
@@ -863,7 +863,7 @@ object Weeder {
               val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
               val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
               val call = WeededAst.Expression.PutField(className, fieldName, objectExp, valueExp, loc)
-              val lambdaBody = WeededAst.Expression.Cast(call, tpe, eff, loc)
+              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
               val e1 = mkCurried(objectParam :: valueParam :: Nil, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
@@ -874,13 +874,13 @@ object Weeder {
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
-              val tpe = tpe0.map(visitType)
-              val eff = eff0.map(visitType)
+              val tpe = visitType(tpe0)
+              val eff = visitType(eff0)
 
               val unitId = Name.Ident(sp1, "_", sp2)
               val unitParam = WeededAst.FormalParam(unitId, Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
               val call = WeededAst.Expression.GetStaticField(className, fieldName, loc)
-              val lambdaBody = WeededAst.Expression.Cast(call, tpe, eff, loc)
+              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
               val e1 = WeededAst.Expression.Lambda(unitParam, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
@@ -891,14 +891,14 @@ object Weeder {
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
-              val tpe = tpe0.map(visitType)
-              val eff = eff0.map(visitType)
+              val tpe = visitType(tpe0)
+              val eff = visitType(eff0)
 
               val valueId = Name.Ident(sp1, "v" + Flix.Delimiter, sp2)
               val valueExp = WeededAst.Expression.VarOrDefOrSig(valueId, loc)
               val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
               val call = WeededAst.Expression.PutStaticField(className, fieldName, valueExp, loc)
-              val lambdaBody = WeededAst.Expression.Cast(call, tpe, eff, loc)
+              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
               val e1 = WeededAst.Expression.Lambda(valueParam, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
