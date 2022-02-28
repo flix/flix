@@ -32,6 +32,28 @@ instance Eq[Nec[a]] with Eq[a] {
     pub def eq(c1: Nec[a], c2: Nec[a]): Bool = Nec.equals(c1, c2)
 }
 
+instance Order[Nec[a]] with Order[a] {
+    ///
+    /// Compares `c1` and `c2` lexicographically.
+    ///
+    pub def compare(c1: Nec[a], c2: Nec[a]): Comparison =
+        use Nec.ViewLeft.{OneLeft, SomeLeft};
+        match (Nec.viewLeft(c1), Nec.viewLeft(c2)) {
+            case (OneLeft(x), OneLeft(y))           => x <=> y
+            case (OneLeft(x), SomeLeft(y, _))       => match (x <=> y) {
+                case EqualTo => LessThan
+                case cmp     => cmp
+            }
+            case (SomeLeft(x, _), OneLeft(y))       => match (x <=> y) {
+                case EqualTo => GreaterThan
+                case cmp     => cmp
+            }
+            case (SomeLeft(x, xs), SomeLeft(y, ys)) =>
+                let cmp = x <=> y;
+                if (cmp == EqualTo) xs <=> ys else cmp
+        }
+}
+
 instance Hash[Nec[a]] with Hash[a] {
     pub def hash(c: Nec[a]): Int32 = 39119 + Hash.hash(Nec.toList(c))
 }

@@ -439,7 +439,7 @@ namespace Option {
     ///
     @Time(1) @Space(1)
     pub def toSuccess(o: Option[t], e: e): Validation[t, e] = match o {
-        case None       => Failure(Nel(e, Nil))
+        case None       => Failure(Nec.singleton(e))
         case Some(a)    => Success(a)
     }
 
@@ -449,7 +449,7 @@ namespace Option {
     @Time(1) @Space(1)
     pub def toFailure(o: Option[e], d: t): Validation[t, e] = match o {
         case None       => Success(d)
-        case Some(e)    => Failure(Nel(e, Nil))
+        case Some(e)    => Failure(Nec.singleton(e))
     }
 
     ///

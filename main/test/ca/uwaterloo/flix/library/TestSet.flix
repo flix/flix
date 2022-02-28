@@ -469,7 +469,7 @@ def count08(): Bool & Impure =
     let range = List.range(0, 2000);
     let s = range |> List.toSet;
     let a = MutList.new();
-    Set.count(x -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(a, b); true }, s);
+    Set.count(x -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(b, a); true }, s);
     MutList.toList(a) == range
 
 
@@ -539,7 +539,7 @@ def count08(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = range |> List.toSet;
         let a = MutList.new();
-        Set.sumWith(k -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); 1 }, m);
+        Set.sumWith(k -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
         MutList.toList(a) == range
 
 
@@ -605,7 +605,7 @@ def count08(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = range |> List.toSet;
         let a = MutList.new();
-        Set.productWith(k -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); 1 }, m);
+        Set.productWith(k -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
         MutList.toList(a) == range
 
 
@@ -959,7 +959,7 @@ def map16(): Bool & Impure =
     let range = List.range(0, 2000);
     let s = List.toSet(range);
     let a = MutList.new();
-    Set.map(x -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(a, b); x }, s);
+    Set.map(x -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(b, a); x }, s);
     MutList.toList(a) == range
 
 
@@ -1395,7 +1395,7 @@ def unfoldWithIter06(): Bool & Impure =
     def minimumBy05(): Bool & Impure =
         let s = List.range(0, 2000) |> List.toSet;
         let a = MutList.new();
-        Set.minimumBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(a, b); x <=> y }, s);
+        Set.minimumBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, s);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
