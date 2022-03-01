@@ -241,6 +241,9 @@ object Indexer {
     case Expression.Ref(exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
+    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+
     case Expression.Deref(exp1, _, _, _) =>
       visitExp(exp1) ++ Index.occurrenceOf(exp0)
 

@@ -172,6 +172,9 @@ object CodeHinter {
     case Expression.Ref(exp, _, _, _) =>
       visitExp(exp)
 
+    case Expression.RefWithRegion(exp1, exp2,_, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
     case Expression.Deref(exp, _, _, _) =>
       visitExp(exp)
 
