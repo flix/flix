@@ -724,4 +724,30 @@ object WeederError {
     })
 
   }
+
+  /**
+    * An error raised to indicate that a newly defined function or variable is reserved.
+    *
+    * @param ident the reserved name that conflicts.
+    * @param loc   the location where the error occurred.
+    */
+  case class ReservedName(ident: Name.Ident, loc: SourceLocation) extends WeederError {
+    def summary: String = "Re-definition of a reserved name."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Re-definition of reserved name '${red(ident.name)}'.
+         |
+         |${code(loc, "re-definition of a reserved name")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Try to find a new name that doesn't match one that is reserved."
+    })
+
+  }
 }
