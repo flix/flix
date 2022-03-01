@@ -1522,9 +1522,9 @@ object Resolver {
       case "Int64" => Type.mkInt64(loc).toSuccess
       case "BigInt" => Type.mkBigInt(loc).toSuccess
       case "String" => Type.mkString(loc).toSuccess
-      case "Array" => Type.mkArray(loc).toSuccess
       case "Channel" => Type.mkChannel(loc).toSuccess
       case "Lazy" => Type.mkLazy(loc).toSuccess
+      case "ScopedArray" => Type.Cst(TypeConstructor.ScopedArray, loc).toSuccess
       case "ScopedRef" => Type.Cst(TypeConstructor.ScopedRef, loc).toSuccess
       case "Region" => Type.Cst(TypeConstructor.Region, loc).toSuccess
 
@@ -2092,7 +2092,7 @@ object Resolver {
     *
     * An array type is mapped to the corresponding array type.
     */
-  private def getJVMType(tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], ResolutionError] = tpe.typeConstructor match {
+  private def getJVMType(tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], ResolutionError] = Type.eraseAliases(tpe).typeConstructor match {
     case None =>
       ResolutionError.IllegalType(tpe, loc).toFailure
 
@@ -2129,15 +2129,16 @@ object Resolver {
 
       case TypeConstructor.Tuple(_) => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.Array =>
-        tpe.typeArguments match {
-          case elmTyp :: Nil =>
+      case TypeConstructor.ScopedArray =>
+        Type.eraseAliases(tpe).typeArguments match {
+          case elmTyp :: region :: Nil =>
             mapN(getJVMType(elmTyp, loc)) {
               case elmClass =>
                 // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
                 java.lang.reflect.Array.newInstance(elmClass, 0).getClass
             }
-          case _ => ResolutionError.IllegalType(tpe, loc).toFailure
+          case _ =>
+            ResolutionError.IllegalType(tpe, loc).toFailure
         }
 
       case TypeConstructor.Native(clazz) => clazz.toSuccess
@@ -2145,7 +2146,6 @@ object Resolver {
       case TypeConstructor.Record => Class.forName("java.lang.Object").toSuccess
 
       case TypeConstructor.Schema => Class.forName("java.lang.Object").toSuccess
-
 
       case _ => ResolutionError.IllegalType(tpe, loc).toFailure
     }

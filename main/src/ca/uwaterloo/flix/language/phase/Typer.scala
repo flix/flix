@@ -1751,11 +1751,12 @@ object Typer {
         val eff = Type.Impure
         TypedAst.Expression.Ref(e, tpe, eff, loc)
 
-      case KindedAst.Expression.RefWithRegion(exp, _, tvar, evar, loc) =>
-        val e = visitExp(exp, subst0)
+      case KindedAst.Expression.RefWithRegion(exp1, exp2, tvar, evar, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
         val tpe = subst0(tvar)
         val eff = subst0(evar)
-        TypedAst.Expression.Ref(e, tpe, eff, loc)
+        TypedAst.Expression.RefWithRegion(e1, e2, tpe, eff, loc)
 
       case KindedAst.Expression.Deref(exp, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
