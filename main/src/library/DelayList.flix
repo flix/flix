@@ -562,10 +562,10 @@ namespace DelayList {
     ///
     @Experimental
     pub def foreach(f: a -> Unit & ef, l: DelayList[a]): Unit & ef = match l {
-        case ENil => ()
+        case ENil         => ()
         case ECons(x, xs) => f(x); foreach(f, xs)
         case LCons(x, xs) => f(x); foreach(f, force xs)
-        case LList(xs) => foreach(f, force xs)
+        case LList(xs)    => foreach(f, force xs)
     }
 
     ///
