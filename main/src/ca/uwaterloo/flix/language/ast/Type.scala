@@ -258,13 +258,6 @@ object Type {
   val Str: Type = Type.Cst(TypeConstructor.Str, SourceLocation.Unknown)
 
   /**
-    * Represents the Array type constructor.
-    *
-    * NB: This type has kind: * -> *.
-    */
-  val Array: Type = Type.Cst(TypeConstructor.ScopedArray, SourceLocation.Unknown)
-
-  /**
     * Represents the Channel type constructor.
     *
     * NB: This type has kind: * -> *.

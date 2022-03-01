@@ -153,8 +153,6 @@ object FormatType {
 
           case TypeConstructor.False => formatApply("false", args)
 
-          case TypeConstructor.ScopedArray => formatApply("Array", args)
-
           case TypeConstructor.Channel => formatApply("Channel", args)
 
           case TypeConstructor.KindedEnum(sym, _) => formatApply(sym.toString, args)
@@ -168,6 +166,8 @@ object FormatType {
           case TypeConstructor.Relation => formatApply("Relation", args)
 
           case TypeConstructor.Lazy => formatApply("Lazy", args)
+
+          case TypeConstructor.ScopedArray => formatApply("ScopedArray", args)
 
           case TypeConstructor.ScopedRef => formatApply("ScopedRef", args)
 
