@@ -885,7 +885,7 @@ object Monomorph {
           val tag = Name.Tag("ReifiedInt64", loc)
           Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
 
-        case TypeConstructor.Array =>
+        case TypeConstructor.ScopedArray =>
           val tag = Name.Tag("ReifiedArray", loc)
           val innerTpe = Type.eraseAliases(t0).typeArguments.head
           val innerExp = visit(innerTpe)

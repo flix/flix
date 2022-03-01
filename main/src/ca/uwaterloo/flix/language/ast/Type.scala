@@ -262,7 +262,7 @@ object Type {
     *
     * NB: This type has kind: * -> *.
     */
-  val Array: Type = Type.Cst(TypeConstructor.Array, SourceLocation.Unknown)
+  val Array: Type = Type.Cst(TypeConstructor.ScopedArray, SourceLocation.Unknown)
 
   /**
     * Represents the Channel type constructor.
@@ -595,7 +595,7 @@ object Type {
     * Returns the type `Array[tpe]` with the given optional source location `loc`.
     */
   def mkArray(elmType: Type, loc: SourceLocation): Type =
-    Apply(Apply(Type.Cst(TypeConstructor.Array, loc), elmType, loc), Type.False, loc)
+    Apply(Apply(Type.Cst(TypeConstructor.ScopedArray, loc), elmType, loc), Type.False, loc)
 
   /**
     * Returns the Channel type with the given source location `loc`.

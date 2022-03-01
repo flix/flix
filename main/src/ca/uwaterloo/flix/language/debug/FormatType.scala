@@ -153,7 +153,7 @@ object FormatType {
 
           case TypeConstructor.False => formatApply("false", args)
 
-          case TypeConstructor.Array => formatApply("Array", args)
+          case TypeConstructor.ScopedArray => formatApply("Array", args)
 
           case TypeConstructor.Channel => formatApply("Channel", args)
 

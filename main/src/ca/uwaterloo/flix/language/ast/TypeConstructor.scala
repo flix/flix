@@ -159,16 +159,6 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of arrays.
-    */
-  case object Array extends TypeConstructor {
-    /**
-      * The shape of a reference is `ScopedArray[t, l]`.
-      */
-    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
-  }
-
-  /**
     * A type constructor that represent the type of channels.
     */
   case object Channel extends TypeConstructor {
@@ -227,6 +217,16 @@ object TypeConstructor {
     */
   case class Native(clazz: Class[_]) extends TypeConstructor {
     def kind: Kind = Kind.Star
+  }
+
+  /**
+    * A type constructor that represent the type of scoped arrays.
+    */
+  case object ScopedArray extends TypeConstructor {
+    /**
+      * The shape of a reference is `ScopedArray[t, l]`.
+      */
+    def kind: Kind = Kind.Star ->: Kind.Bool ->: Kind.Star
   }
 
   /**

@@ -567,7 +567,7 @@ object SemanticTokensProvider {
     case TypeConstructor.SchemaRowEmpty => false
     case TypeConstructor.SchemaRowExtend(_) => false
     case TypeConstructor.Schema => false
-    case TypeConstructor.Array => true
+    case TypeConstructor.ScopedArray => true
     case TypeConstructor.Channel => true
     case TypeConstructor.Lazy => true
     case TypeConstructor.Tag(_, _) => false

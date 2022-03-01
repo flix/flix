@@ -440,7 +440,7 @@ object Finalize {
 
             case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
 
-            case TypeConstructor.Array => MonoType.Array(args.head)
+            case TypeConstructor.ScopedArray => MonoType.Array(args.head)
 
             case TypeConstructor.Channel => MonoType.Channel(args.head)
 
