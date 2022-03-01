@@ -73,5 +73,5 @@ def main(_args: Array[String]): Int32 & Impure =
         Read(x,y) :- DebugStr(s), StrLetterAt(s,x,y).
 
     };
-    query lp <+> numLetters select (x, y) from Read(x, y) |> Array.toString |> println;
+    query lp <+> numLetters select (x, y) from Read(x, y) |> println;
     0

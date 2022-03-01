@@ -58,6 +58,6 @@ def main(_args: Array[String]): Int32 & Impure =
             not IndicesPlusOne(x, i).
     };
 
-    query lp <+> edges select (x, i) from Index(x, i) |> Array.toString |> println;
+    query lp <+> edges select (x, i) from Index(x, i) |> println;
 
     0
