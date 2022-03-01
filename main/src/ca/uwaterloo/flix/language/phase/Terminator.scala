@@ -99,6 +99,7 @@ object Terminator {
       case Expression.ArrayStore(base, index, elm, _) => visit(base) || visit(index) || visit(elm)
       case Expression.ArraySlice(base, beginIndex, endIndex, _, _) => visit(base) || visit(beginIndex) || visit(endIndex)
       case Expression.Ref(exp, _, _, _) => visit(exp)
+      case Expression.RefWithRegion(exp1, exp2, _, _, _) => visit(exp1) || visit(exp2)
       case Expression.Deref(exp, _, _, _) => visit(exp)
       case Expression.Assign(exp1, exp2, _, _, _) => visit(exp1) || visit(exp2)
       case Expression.Ascribe(exp, _, _, _) => visit(exp)

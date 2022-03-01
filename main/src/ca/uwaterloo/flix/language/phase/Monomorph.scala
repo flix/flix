@@ -257,7 +257,8 @@ object Monomorph {
     def visitExp(e0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym]): Expression = e0 match {
       case Expression.Wild(tpe, loc) => Expression.Wild(subst0(tpe), loc)
 
-      case Expression.Var(sym, tpe, loc) => Expression.Var(env0(sym), subst0(tpe), loc)
+      case Expression.Var(sym, tpe, loc) =>
+        Expression.Var(env0(sym), subst0(tpe), loc)
 
       case Expression.Def(sym, tpe, loc) =>
         /*
@@ -457,6 +458,11 @@ object Monomorph {
         Expression.ArraySlice(b, i1, i2, subst0(tpe), loc)
 
       case Expression.Ref(exp, tpe, eff, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.Ref(e, subst0(tpe), eff, loc)
+
+      case Expression.RefWithRegion(exp, _, tpe, eff, loc) =>
+        // Note: Regions are erased.
         val e = visitExp(exp, env0)
         Expression.Ref(e, subst0(tpe), eff, loc)
 

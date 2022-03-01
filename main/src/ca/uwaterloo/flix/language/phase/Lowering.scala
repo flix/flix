@@ -422,6 +422,12 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Ref(e, t, eff, loc)
 
+    case Expression.RefWithRegion(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      Expression.RefWithRegion(e1, e2, t, eff, loc)
+
     case Expression.Deref(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
@@ -1415,6 +1421,11 @@ object Lowering {
     case Expression.Ref(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.Ref(e, tpe, eff, loc)
+
+    case Expression.RefWithRegion(exp1, exp2, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.RefWithRegion(e1, e2, tpe, eff, loc)
 
     case Expression.Deref(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
