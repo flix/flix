@@ -558,6 +558,17 @@ namespace DelayList {
                                   // but the intermediate continuations are effect polymorphic.
 
     ///
+    /// Applies `f` to every element of `l`.
+    ///
+    @Experimental
+    pub def foreach(f: a -> Unit & ef, l: DelayList[a]): Unit & ef = match l {
+        case ENil => ()
+        case ECons(x, xs) => f(x); foreach(f, xs)
+        case LCons(x, xs) => f(x); foreach(f, force xs)
+        case LList(xs) => foreach(f, force xs)
+    }
+
+    ///
     /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
