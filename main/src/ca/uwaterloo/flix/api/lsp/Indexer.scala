@@ -182,8 +182,9 @@ object Indexer {
     case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expression.LetRegion(sym, exp, _, _, _) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
+    case Expression.LetRegion(sym, exp, _, _, loc) =>
+      val tpe = Type.mkRegion(sym.tvar.ascribedWith(Kind.Bool), loc)
+      Index.occurrenceOf(sym, tpe) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
