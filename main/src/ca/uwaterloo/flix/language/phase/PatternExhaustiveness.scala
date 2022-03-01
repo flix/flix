@@ -716,7 +716,6 @@ object PatternExhaustiveness {
       case Some(TypeConstructor.Int64) => 0
       case Some(TypeConstructor.BigInt) => 0
       case Some(TypeConstructor.Str) => 0
-      case Some(TypeConstructor.ScopedRef) => 0
       case Some(TypeConstructor.Relation) => 0
       case Some(TypeConstructor.Lattice) => 0
       case Some(TypeConstructor.RecordRowEmpty) => 0
@@ -724,7 +723,8 @@ object PatternExhaustiveness {
       case Some(TypeConstructor.Record) => 0
       case Some(TypeConstructor.Schema) => 0
       case Some(TypeConstructor.Arrow(length)) => length
-      case Some(TypeConstructor.Array) => 1
+      case Some(TypeConstructor.ScopedArray) => 1
+      case Some(TypeConstructor.ScopedRef) => 0
       case Some(TypeConstructor.Channel) => 1
       case Some(TypeConstructor.Lazy) => 1
       case Some(TypeConstructor.KindedEnum(sym, kind)) => 0 // TODO: Correct?

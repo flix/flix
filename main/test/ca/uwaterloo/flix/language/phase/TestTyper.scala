@@ -1150,7 +1150,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def main(blah: Array[String]): Int32 = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.IllegalMain](result)
   }
 
@@ -1159,7 +1159,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def main(blah: Array[Char]): Int32 & Impure = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.IllegalMain](result)
   }
 
@@ -1168,7 +1168,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def main(blah: Array[String]): Int64 & Impure = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.IllegalMain](result)
   }
 
@@ -1177,7 +1177,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def main(blah: Array[a]): Int32 & Impure = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.IllegalMain](result)
   }
 
@@ -1188,7 +1188,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |def main(blah: Array[a]): Int32 & Impure with C[a] = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.IllegalMain](result)
   }
 
@@ -1197,7 +1197,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def main(blah: Array[String]): a & Impure = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.IllegalMain](result)
   }
 
@@ -1206,7 +1206,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def main(blah: Array[String]): Int32 & ef = ???
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.IllegalMain](result)
   }
 
