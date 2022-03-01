@@ -724,8 +724,8 @@ object Typer {
       case KindedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
-          (constrs2, tpe2, eff2) <- visitExp(exp2)
           boundVar <- unifyTypeM(sym.tvar.ascribedWith(Kind.Star), tpe1, loc)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
           resultTyp = tpe2
           resultEff = Type.mkAnd(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
