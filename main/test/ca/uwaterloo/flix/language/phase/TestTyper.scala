@@ -1270,4 +1270,24 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.EffectGeneralizationError](result)
   }
 
+  test("Test.RegionVarEscapes.01") {
+    val input =
+      """
+        |@test
+        |def testScopedAssign01(): Bool =
+        |    let _foo = {
+        |        let region r;
+        |        let x = ref 'a' @ r;
+        |        let f = _w -> {
+        |            x := 'b'
+        |        };
+        |        f
+        |    };
+        |    true
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.RegionVarEscapes](result)
+  }
+
 }

@@ -443,10 +443,10 @@ object Unification {
       val t = s(tpe)
 
       // Compute the type and effect variables that occur in `t`.
-      val tvars = t.typeVars
+      val fvs = t.typeVars
 
-      // Ensure that `rvar` does not occur in `tpe` (e.g. as an effect on an arrow).
-      if (tvars.contains(rvar)) {
+      // Ensure that `rvar` does not occur in `t` (e.g. being returned or as an effect).
+      if (fvs.contains(rvar)) {
         Err(TypeError.RegionVarEscapes(rvar, t, rvar.loc))
       } else
         Ok((s, ()))
