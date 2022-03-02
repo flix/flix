@@ -37,14 +37,18 @@ import scala.collection.mutable
 object Weeder {
 
   /**
-    * Operators that the Flix compiler reserves for type classes or special expressions.
+    * Words that the Flix compiler reserves for special expressions.
     * Users must not define fields or variables with these names.
     */
-  private val ReservedOps = Set(
-    "*", "+", "-", "/", "<", ">",
-    "!=", "**", "<=", "==", ">=", "or", "=>", "->", "<-",
-    "&&&", "<<<", "<=>", ">>>", "^^^", "and", "mod", "not", "rem", "|||", "~~~", "<+>"
-  )
+  private val ReservedWords = Set(
+    "!=", "$DEFAULT$", "&&&", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<<<", "<=",
+    "<=>", "==", "=>", ">", ">=", ">>>", "???", "@", "Absent", "Bool", "Impure", "Nil", "Predicate", "Present", "Pure",
+    "RecordRow", "SchemaRow", "Type", "^^^", "alias", "and", "as", "case", "catch", "chan", "choose", "choose*",
+    "class", "def", "deref", "else", "enum", "false", "fix", "forall", "force", "from", "get", "if", "import",
+    "inline", "instance", "into", "lat", "law", "lawless", "lazy", "let", "let*", "match", "mod", "mut", "namespace",
+    "new", "not", "null", "opaque", "or", "override", "project", "pub", "query", "ref", "reify", "reifyBool",
+    "reifyEff", "reifyType", "rel", "rem", "rigid", "scoped", "sealed", "select", "set", "solve", "spawn",
+    "static", "true", "try", "type", "unlawful", "use", "where", "with", "|||", "~~~")
 
 
   /**
@@ -2375,7 +2379,7 @@ object Weeder {
     * Performs weeding on the given name `ident`.
     */
   private def visitName(ident: Name.Ident): Validation[Unit, WeederError] = {
-    if (ReservedOps.contains(ident.name)) {
+    if (ReservedWords.contains(ident.name)) {
       WeederError.ReservedName(ident, ident.loc).toFailure
     } else {
       ().toSuccess
