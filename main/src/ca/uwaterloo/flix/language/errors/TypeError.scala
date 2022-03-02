@@ -637,7 +637,7 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class RegionVarEscapes(rvar: Type.KindedVar, tpe: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Region variable '${FormatType.formatType(tpe)}' escapes its scope."
+    def summary: String = s"Region variable '${FormatType.formatType(rvar)}' escapes its scope."
 
     def message(formatter: Formatter): String = {
       import formatter._
