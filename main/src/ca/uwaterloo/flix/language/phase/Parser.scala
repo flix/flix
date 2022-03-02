@@ -450,11 +450,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
-      PutChannel ~ optional(optWS ~ atomic(":=") ~ optWS ~ PutChannel ~ SP ~> ParsedAst.Expression.Assign)
+      PutChannel ~ optional(optWS ~ operatorX(":=") ~ optWS ~ PutChannel ~ SP ~> ParsedAst.Expression.Assign)
     }
 
     def PutChannel: Rule1[ParsedAst.Expression] = rule {
-      LogicalOr ~ zeroOrMore(optWS ~ atomic("<-") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.PutChannel)
+      LogicalOr ~ zeroOrMore(optWS ~ operatorX("<-") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.PutChannel)
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = {
@@ -510,7 +510,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Compose: Rule1[ParsedAst.Expression] = rule {
-      Infix ~ zeroOrMore(optWS ~ atomic("<+>") ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.FixpointCompose)
+      Infix ~ zeroOrMore(optWS ~ operatorX("<+>") ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.FixpointCompose)
     }
 
     def Infix: Rule1[ParsedAst.Expression] = rule {
@@ -817,7 +817,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def GetChannel: Rule1[ParsedAst.Expression.GetChannel] = rule {
-      SP ~ atomic("<-") ~ WS ~ RecordSelect ~ SP ~> ParsedAst.Expression.GetChannel
+      SP ~ operatorX("<-") ~ WS ~ RecordSelect ~ SP ~> ParsedAst.Expression.GetChannel
     }
 
     def SelectChannel: Rule1[ParsedAst.Expression.SelectChannel] = {
@@ -851,7 +851,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ArraySlice: Rule1[ParsedAst.Expression] = rule {
-      ArrayLoad ~ optional(optWS ~ "[" ~ optWS ~ optional(Expression) ~ optWS ~ atomic("..") ~ optWS ~ optional(Expression) ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArraySlice)
+      ArrayLoad ~ optional(optWS ~ "[" ~ optWS ~ optional(Expression) ~ optWS ~ operatorX("..") ~ optWS ~ optional(Expression) ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArraySlice)
     }
 
     def ArrayLoad: Rule1[ParsedAst.Expression] = rule {
@@ -927,11 +927,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def FAppend: Rule1[ParsedAst.Expression] = rule {
-      FList ~ optional(optWS ~ SP ~ atomic(":::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FAppend)
+      FList ~ optional(optWS ~ SP ~ operatorX(":::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FAppend)
     }
 
     def FList: Rule1[ParsedAst.Expression] = rule {
-      RecordSelect ~ optional(optWS ~ SP ~ atomic("::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FCons)
+      RecordSelect ~ optional(optWS ~ SP ~ operatorX("::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FCons)
     }
 
     def FSet: Rule1[ParsedAst.Expression.FSet] = rule {
@@ -940,7 +940,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def FMap: Rule1[ParsedAst.Expression.FMap] = {
       def KeyValue: Rule1[(ParsedAst.Expression, ParsedAst.Expression)] = rule {
-        Expression ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~> ((e1: ParsedAst.Expression, e2: ParsedAst.Expression) => (e1, e2))
+        Expression ~ optWS ~ operatorX("=>") ~ optWS ~ Expression ~> ((e1: ParsedAst.Expression, e2: ParsedAst.Expression) => (e1, e2))
       }
 
       rule {
@@ -962,7 +962,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Hole: Rule1[ParsedAst.Expression.Hole] = {
       def AnonymousHole: Rule1[ParsedAst.Expression.Hole] = rule {
-        SP ~ atomic("???") ~ SP ~> ((sp1: SourcePosition, sp2: SourcePosition) => ParsedAst.Expression.Hole(sp1, None, sp2))
+        SP ~ operatorX("???") ~ SP ~> ((sp1: SourcePosition, sp2: SourcePosition) => ParsedAst.Expression.Hole(sp1, None, sp2))
       }
 
       def NamedHole: Rule1[ParsedAst.Expression.Hole] = rule {
@@ -1106,7 +1106,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def FList: Rule1[ParsedAst.Pattern] = rule {
-      Simple ~ optional(optWS ~ SP ~ atomic("::") ~ SP ~ optWS ~ Pattern ~> ParsedAst.Pattern.FCons)
+      Simple ~ optional(optWS ~ SP ~ operatorX("::") ~ SP ~ optWS ~ Pattern ~> ParsedAst.Pattern.FCons)
     }
 
   }
@@ -1619,6 +1619,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     */
   def operator(symbol: String): Rule1[ParsedAst.Operator] = namedRule(symbol) {
     SP ~ capture(atomic(symbol)) ~ SP ~> ParsedAst.Operator
+  }
+
+
+  /**
+    * Reads the symbol but does not capture it.
+    * Used for operators that are not converted to binary expressions.
+    *
+    * This function is exactly the same as using [[atomic]].
+    * However, it is useful for identifying symbols that should be reserved.
+    */
+  def operatorX(symbol: String): Rule0 = namedRule(symbol) {
+    atomic(symbol)
   }
 
   /////////////////////////////////////////////////////////////////////////////
