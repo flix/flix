@@ -1289,17 +1289,13 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.RegionVarEscapes.02") {
     val input =
       """
-        |@test
-        |def testScopedAssign01(): Bool =
-        |    let _foo = {
+        |pub def f(): Int32 =
+        |    let _ = {
         |        let region r;
-        |        let x = ref 'a' @ r;
-        |        let f = _w -> {
-        |            x := 'b'
-        |        };
-        |        f
+        |        let x = ref 123 @ r;
+        |        (123, x)
         |    };
-        |    true
+        |    42
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1309,17 +1305,13 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.RegionVarEscapes.03") {
     val input =
       """
-        |@test
-        |def testScopedAssign01(): Bool =
-        |    let _foo = {
+        |pub def f(): Int32 =
+        |    let _ = {
         |        let region r;
-        |        let x = ref 'a' @ r;
-        |        let f = _w -> {
-        |            x := 'b'
-        |        };
-        |        f
+        |        let x = ref 123 @ r;
+        |        _w -> x
         |    };
-        |    true
+        |    42
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1329,17 +1321,32 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.RegionVarEscapes.04") {
     val input =
       """
-        |@test
-        |def testScopedAssign01(): Bool =
-        |    let _foo = {
+        |pub def f(): Int32 =
+        |    let _ = {
         |        let region r;
-        |        let x = ref 'a' @ r;
-        |        let f = _w -> {
-        |            x := 'b'
-        |        };
-        |        f
+        |        let x = ref 123 @ r;
+        |        w -> {
+        |            let y = deref x;
+        |            w + y
+        |        }
         |    };
-        |    true
+        |    42
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.RegionVarEscapes](result)
+  }
+
+  test("Test.RegionVarEscapes.05") {
+    val input =
+      """
+        |pub def f(): Int32 =
+        |    let _ = {
+        |        let region r;
+        |        let x = ref 123 @ r;
+        |        identity >> (_w -> x)
+        |    };
+        |    42
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
