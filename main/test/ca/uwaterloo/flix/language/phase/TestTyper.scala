@@ -1273,6 +1273,62 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.RegionVarEscapes.01") {
     val input =
       """
+        |pub def f(): Int32 =
+        |    let _ = {
+        |        let region r;
+        |        let x = ref 123 @ r;
+        |        x
+        |    };
+        |    42
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.RegionVarEscapes](result)
+  }
+
+  test("Test.RegionVarEscapes.02") {
+    val input =
+      """
+        |@test
+        |def testScopedAssign01(): Bool =
+        |    let _foo = {
+        |        let region r;
+        |        let x = ref 'a' @ r;
+        |        let f = _w -> {
+        |            x := 'b'
+        |        };
+        |        f
+        |    };
+        |    true
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.RegionVarEscapes](result)
+  }
+
+  test("Test.RegionVarEscapes.03") {
+    val input =
+      """
+        |@test
+        |def testScopedAssign01(): Bool =
+        |    let _foo = {
+        |        let region r;
+        |        let x = ref 'a' @ r;
+        |        let f = _w -> {
+        |            x := 'b'
+        |        };
+        |        f
+        |    };
+        |    true
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.RegionVarEscapes](result)
+  }
+
+  test("Test.RegionVarEscapes.04") {
+    val input =
+      """
         |@test
         |def testScopedAssign01(): Bool =
         |    let _foo = {
