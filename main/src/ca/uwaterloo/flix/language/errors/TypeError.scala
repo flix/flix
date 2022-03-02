@@ -628,4 +628,33 @@ object TypeError {
          |""".stripMargin
     })
   }
+
+  /**
+    * An error indicating that a region variable escapes its scope.
+    *
+    * @param rvar the region variable.
+    * @param tpe  the type wherein the region variable escapes.
+    * @param loc  the location where the error occurred.
+    */
+  case class RegionVarEscapes(rvar: Type.KindedVar, tpe: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Region variable '${FormatType.formatType(tpe)}' escapes its scope."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> The region variable '${red(FormatType.formatType(rvar))}' escapes its scope.
+         |
+         |${code(loc, "region variable escapes.")}
+         |
+         |The escaping expression has type:
+         |
+         |  ${red(FormatType.formatType(tpe))}
+         |
+         |which contains the region variable.
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
 }
