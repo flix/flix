@@ -1326,25 +1326,9 @@ class TestTyper extends FunSuite with TestUtils {
         |        let region r;
         |        let x = ref 123 @ r;
         |        w -> {
-        |            let y = deref x;
-        |            w + y
+        |            let _ = deref x;
+        |            w
         |        }
-        |    };
-        |    42
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.RegionVarEscapes](result)
-  }
-
-  test("Test.RegionVarEscapes.05") {
-    val input =
-      """
-        |pub def f(): Int32 =
-        |    let _ = {
-        |        let region r;
-        |        let x = ref 123 @ r;
-        |        identity >> (_w -> x)
         |    };
         |    42
         |
