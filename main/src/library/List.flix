@@ -436,16 +436,13 @@ namespace List {
     /// Returns `l` if `i < 0` or `i > length(l)-1`.
     ///
     @Time(i) @Space(i)
-    pub def update(i: Int32, a: a, l: List[a]): List[a] = updateHelper(i, a, l, ks -> ks)
-
-    ///
-    /// Helper function for `update`.
-    ///
-    def updateHelper(i: Int32, a: a, l: List[a], k: List[a] -> List[a]): List[a] = match (i, l) {
-        case (_, Nil)     => k(l)
-        case (0, _ :: xs) => k(a :: xs)
-        case (p, x :: xs) => updateHelper(p - 1, a, xs, ks -> k(x :: ks))
-    }
+    pub def update(i: Int32, a: a, l: List[a]): List[a] =
+        def loop(ll, j, k) = match (j, ll) {
+            case (_, Nil)     => k(Nil)
+            case (0, _ :: xs) => k(a :: xs)
+            case (_, x :: xs) => loop(xs, j - 1, ks -> k(x :: ks))
+        };
+        loop(l, i, identity)
 
     ///
     /// Returns `l` with every occurrence of `from` replaced by `to`.
@@ -461,20 +458,17 @@ namespace List {
     /// If patching occurs at index `i+j` in `l2`, then the element at index `j` in `l1` is used.
     ///
     @Time(n) @Space(length(l2))
-    pub def patch(i: Int32, n: Int32, l1: List[a], l2: List[a]): List[a] = patchHelper(i, n, drop(-i, l1), l2, 0, ks -> ks)
-
-    ///
-    /// Helper function for `patch`.
-    ///
-    def patchHelper(i: Int32, n: Int32, l1: List[a], l2: List[a], c: Int32, k: List[a] -> List[a]): List[a] = match (l1, l2) {
-        case (x :: xs, y :: ys) => {
-            if (c >= i and c < i + n)
-                patchHelper(i, n, xs, ys, c + 1, ks -> k(x :: ks))
-            else
-                patchHelper(i, n, l1, ys, c + 1, ks -> k(y :: ks))
-        }
-        case _ => k(l2)
-    }
+    pub def patch(i: Int32, n: Int32, l1: List[a], l2: List[a]): List[a] =
+        def loop(ll1, ll2, c, k) = match (ll1, ll2) {
+            case (x :: xs, y :: ys) => {
+                if (c >= i and c < i + n)
+                    loop(xs, ys, c + 1, ks -> k(x :: ks))
+                else
+                    loop(l1, ys, c + 1, ks -> k(y :: ks))
+            }
+            case _ => k(ll2)
+        };
+        loop(drop(-i, l1), l2, 0, identity)
 
     ///
     /// Returns all permutations of `l` in lexicographical order by element indices in `l`.
@@ -532,24 +526,23 @@ namespace List {
     /// Helper function for `permutations` and `subsequences`.
     /// Returns `l` with `x` added to the beginning of each element in `l`.
     ///
-    def applyHelper(a: a, l: List[List[a]]): List[List[a]] = match l {
-        case Nil     => Nil
-        case x :: xs => (a :: x) :: applyHelper(a, xs)
-    }
+    def applyHelper(a: a, l: List[List[a]]): List[List[a]] =
+        def loop(ll, k) = match ll {
+            case Nil     => k(Nil)
+            case x :: xs => loop(xs, ks -> k((a :: x) :: ks))
+        };
+        loop(l, identity)
 
     ///
     /// Returns `l` with `x` inserted between every two adjacent elements.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def intersperse(a: a, l: List[a]): List[a] = intersperseHelper(a, l, ks -> ks)
-
-    ///
-    /// Helper function for `intersperse`.
-    ///
-    def intersperseHelper(a: a, l: List[a], k: List[a] -> List[a]): List[a] = match l {
-        case x1 :: x2 :: xs => intersperseHelper(a, x2 :: xs, ks -> k(x1 :: a :: ks))
-        case _              => k(l)
-    }
+    pub def intersperse(a: a, l: List[a]): List[a] =
+        def loop(ll, k) = match ll {
+            case x1 :: x2 :: xs => loop(x2 :: xs, ks -> k(x1 :: a :: ks))
+            case _              => k(ll)
+        };
+        loop(l, identity)
 
     ///
     /// Returns the concatenation of the elements in `l2` with the elements of `l1` inserted between every two adjacent elements.
@@ -557,16 +550,13 @@ namespace List {
     /// That is, returns `y1 :: x1 ... xn :: y2 :: ... yn-1 :: x1 :: ... :: xn :: yn :: Nil`.
     ///
     @Time(length(l2) * length(l1)) @Space(length(l2) * length(l1))
-    pub def intercalate(l1: List[a], l2: List[List[a]]): List[a] = intercalateHelper(l1, l2, ks -> ks)
-
-    ///
-    /// Helper function for `intercalate`.
-    ///
-    def intercalateHelper(l1: List[a], l2: List[List[a]], k: List[a] -> List[a]): List[a] = match l2 {
-        case Nil            => k(Nil)
-        case y :: Nil       => k(y)
-        case y1 :: y2 :: ys => intercalateHelper(l1, y2 :: ys, ks -> k(y1 ::: l1 ::: ks))
-    }
+    pub def intercalate(l1: List[a], l2: List[List[a]]): List[a] =
+        def loop(ll, k) = match ll {
+            case Nil            => k(Nil)
+            case y :: Nil       => k(y)
+            case y1 :: y2 :: ys => loop(y2 :: ys, ks -> k(y1 ::: l1 ::: ks))
+        };
+        loop(l2, identity)
 
     ///
     /// Returns the transpose of `l`.
@@ -610,11 +600,13 @@ namespace List {
     /// Returns `true` if and only if `l1` is a prefix of `l2`.
     ///
     @Time(length(l1)) @Space(1)
-    pub def isPrefixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = match (l1, l2) {
-        case (Nil, _)           => true
-        case (_, Nil)           => false
-        case (x :: xs, y :: ys) => if (x == y) isPrefixOf(xs, ys) else false
-    }
+    pub def isPrefixOf(l1: List[a], l2: List[a]): Bool with Eq[a] =
+        def loop(ll1, ll2) = match (ll1, ll2) {
+            case (Nil, _)           => true
+            case (_, Nil)           => false
+            case (x :: xs, y :: ys) => if (x == y) loop(xs, ys) else false
+        };
+        loop(l1, l2)
 
     ///
     /// Returns `true` if and only if `l1` is an infix of `l2`.
@@ -643,11 +635,11 @@ namespace List {
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: List[a]): b & ef =
-         def loop(t, l2) = match l2 {
-            case Nil     => t
-            case x :: xs => loop(f(t, x), xs)
+         def loop(ll, acc) = match ll {
+            case Nil     => acc
+            case x :: xs => loop(xs, f(acc, x))
          };
-         loop(s, l)
+         loop(l, s)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
@@ -655,7 +647,7 @@ namespace List {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef =
-        def loop(l2, k) = match l2 {
+        def loop(ll, k) = match ll {
             case Nil     => k(s)
             case x :: xs => loop(xs, ks -> k(f(x, ks)))
         };
@@ -670,7 +662,7 @@ namespace List {
     /// The foldRightLazy function exists to allow early termination of a fold.
     ///
     pub def foldRightLazy(f: (a, Lazy[b]) -> b, s: b, l: List[a]): b =
-        def loop(l2) = match l2 {
+        def loop(ll) = match ll {
             case Nil     => s
             case y :: ys => f(y, lazy loop(ys))
         };
@@ -695,13 +687,15 @@ namespace List {
     ///
     /// Returns `None` if `l` is empty.
     ///
-    pub def reduceRight(f: (a, a) -> a & ef, l: List[a]): Option[a] & ef = match l {
-        case Nil     => None
-        case x :: xs => match reduceRight(f, xs) {
-            case None    => Some(x)
-            case Some(v) => Some(f(x, v))
-        }
-    }
+    pub def reduceRight(f: (a, a) -> a & ef, l: List[a]): Option[a] & ef =
+        def loop(ll, k) = match ll {
+            case Nil     => k(None)
+            case x :: xs => loop(xs, ks -> k(match ks {
+                case None    => Some(x)
+                case Some(v) => Some(f(x, v))
+            }))
+        };
+        loop(l, ks -> ks as & ef)
 
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
