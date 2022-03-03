@@ -566,9 +566,9 @@ namespace DelayList {
     pub def foreach(f: a -> Unit & ef, l: DelayList[a]): Unit & ef =
         def loop(ll) = match ll {
             case ENil         => ()
-            case ECons(x, xs) => f(x); loop(f,       xs)
-            case LCons(x, xs) => f(x); loop(f, force xs)
-            case LList(xs)    =>       loop(f, force xs)
+            case ECons(x, xs) => f(x); loop(      xs)
+            case LCons(x, xs) => f(x); loop(force xs)
+            case LList(xs)    =>       loop(force xs)
         };
         loop(l)
 
