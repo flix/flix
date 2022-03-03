@@ -141,14 +141,15 @@ object Weeder {
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
+      val identVal = visitName(ident)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt, ident.loc)
       val expVal = Validation.traverse(exp0)(visitExp)
 
       for {
-        res <- sequenceT(annVal, modVal, tparamsVal, formalsVal, effVal, expVal)
-        (as, mod, tparams, fparams, eff, exp) = res
+        res <- sequenceT(annVal, modVal, identVal, tparamsVal, formalsVal, effVal, expVal)
+        (as, mod, _, tparams, fparams, eff, exp) = res
         _ <- requirePublic(mod, ident)
         ts = fparams.map(_.tpe.get)
         retTpe = visitType(tpe0)
