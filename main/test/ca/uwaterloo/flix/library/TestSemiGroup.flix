@@ -212,13 +212,13 @@ namespace TestSemiGroup {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def combineValidation01(): Bool = combine(Failure(Nel.singleton("e1")), Failure(Nel.singleton("e2"))): Validation[String, String] == Failure(Nel.append(Nel.singleton("e1"), Nel.singleton("e2")))
+    def combineValidation01(): Bool = combine(Failure(Nec.singleton("e1")), Failure(Nec.singleton("e2"))): Validation[String, String] == Failure(Nec.append(Nec.singleton("e1"), Nec.singleton("e2")))
 
     @test
-    def combineValidation02(): Bool = combine(Success("a"), Failure(Nel.singleton("e1"))): Validation[String, String] == Failure(Nel.singleton("e1"))
+    def combineValidation02(): Bool = combine(Success("a"), Failure(Nec.singleton("e1"))): Validation[String, String] == Failure(Nec.singleton("e1"))
 
     @test
-    def combineValidation03(): Bool = combine(Failure(Nel.singleton("e1")), Success("1")): Validation[String, String] == Failure(Nel.singleton("e1"))
+    def combineValidation03(): Bool = combine(Failure(Nec.singleton("e1")), Success("1")): Validation[String, String] == Failure(Nec.singleton("e1"))
 
     @test
     def combineValidation04(): Bool = combine(Success("a"), Success("1")): Validation[String, String] == Success("a1")

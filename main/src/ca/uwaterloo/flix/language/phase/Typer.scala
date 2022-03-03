@@ -747,12 +747,13 @@ object Typer {
 
       case KindedAst.Expression.LetRegion(sym, exp, evar, loc) =>
         // Introduce a rigid variable for the region of `exp`.
-        val regionVar = Type.freshVar(Kind.Bool, loc, Rigidity.Rigid, Some(sym.text))
+        val regionVar = Type.freshVar(Kind.Bool, sym.loc, Rigidity.Rigid, Some(sym.text))
         for {
           _ <- unifyTypeM(sym.tvar.ascribedWith(Kind.Star), Type.mkRegion(regionVar, loc), loc)
           (constrs, tpe, eff) <- visitExp(exp)
           purifiedEff <- purifyEffM(regionVar, eff)
           resultEff <- unifyTypeM(evar, purifiedEff, loc)
+          _ <- noEscapeM(regionVar, tpe)
           resultTyp = tpe
         } yield (constrs, resultTyp, resultEff)
 
@@ -1751,11 +1752,12 @@ object Typer {
         val eff = Type.Impure
         TypedAst.Expression.Ref(e, tpe, eff, loc)
 
-      case KindedAst.Expression.RefWithRegion(exp, _, tvar, evar, loc) =>
-        val e = visitExp(exp, subst0)
+      case KindedAst.Expression.RefWithRegion(exp1, exp2, tvar, evar, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
         val tpe = subst0(tvar)
         val eff = subst0(evar)
-        TypedAst.Expression.Ref(e, tpe, eff, loc)
+        TypedAst.Expression.RefWithRegion(e1, e2, tpe, eff, loc)
 
       case KindedAst.Expression.Deref(exp, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
