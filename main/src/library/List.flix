@@ -1437,16 +1437,6 @@ namespace List {
         Foldable.sumWith(f, l)
 
     ///
-    /// Returns the elements of `l` as a `DemandList`.
-    ///
-    pub def toDemandList(l: List[a]): DemandList.DemandList[a, d] =
-        use DemandList.{DemandList};
-        match l {
-            case Nil     => DemandList.ENil
-            case x :: xs => DemandList.LList(lazy DemandList.LCons(x, lazy toDemandList(xs)))
-        }
-
-    ///
     /// Returns an iterator over `l`.
     ///
     pub def toIterator(l: List[a]): Iterator[a] & Impure =
