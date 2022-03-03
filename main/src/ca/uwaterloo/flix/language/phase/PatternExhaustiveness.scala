@@ -246,6 +246,11 @@ object PatternExhaustiveness {
         } yield tast
         case Expression.Ref(exp, _, _, _) =>
           checkPats(exp, root).map(const(tast))
+        case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+          for {
+            _ <- checkPats(exp1, root)
+            _ <- checkPats(exp2, root)
+          } yield tast
         case Expression.Deref(exp, _, _, _) =>
           checkPats(exp, root).map(const(tast))
         case Expression.Assign(exp1, exp2, _, _, _) =>
@@ -716,7 +721,6 @@ object PatternExhaustiveness {
       case Some(TypeConstructor.Int64) => 0
       case Some(TypeConstructor.BigInt) => 0
       case Some(TypeConstructor.Str) => 0
-      case Some(TypeConstructor.ScopedRef) => 0
       case Some(TypeConstructor.Relation) => 0
       case Some(TypeConstructor.Lattice) => 0
       case Some(TypeConstructor.RecordRowEmpty) => 0
@@ -724,7 +728,8 @@ object PatternExhaustiveness {
       case Some(TypeConstructor.Record) => 0
       case Some(TypeConstructor.Schema) => 0
       case Some(TypeConstructor.Arrow(length)) => length
-      case Some(TypeConstructor.Array) => 1
+      case Some(TypeConstructor.ScopedArray) => 1
+      case Some(TypeConstructor.ScopedRef) => 0
       case Some(TypeConstructor.Channel) => 1
       case Some(TypeConstructor.Lazy) => 1
       case Some(TypeConstructor.KindedEnum(sym, kind)) => 0 // TODO: Correct?

@@ -435,6 +435,24 @@ object Unification {
   }
 
   /**
+    * Ensures that the region variable `rvar` does not escape in the type `tpe` nor from the context.
+    */
+  def noEscapeM(rvar: Type.KindedVar, tpe: Type): InferMonad[Unit] =
+    InferMonad(s => {
+      // Apply the current substitution to `tpe`.
+      val t = s(tpe)
+
+      // Compute the type and effect variables that occur in `t`.
+      val fvs = t.typeVars
+
+      // Ensure that `rvar` does not occur in `t` (e.g. being returned or as an effect).
+      if (fvs.contains(rvar)) {
+        Err(TypeError.RegionVarEscapes(rvar, t, rvar.loc))
+      } else
+        Ok((s, ()))
+    })
+
+  /**
     * Returns true iff `tpe1` unifies with `tpe2`.
     */
   def unifiesWith(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = {
