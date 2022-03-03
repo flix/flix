@@ -48,7 +48,8 @@ object Weeder {
     "inline", "instance", "into", "lat", "law", "lawless", "lazy", "let", "let*", "match", "mut", "namespace",
     "null", "opaque", "override", "pub", "ref", "reify", "reifyBool",
     "reifyEff", "reifyType", "rel", "rigid", "sealed", "set", "spawn",
-    "static", "true", "type", "unlawful", "use", "where", "with", "|||", "~~~"
+    "static", "true", "type", "unlawful", "use", "where", "with", "|||", "~~~",
+    "Unit", "Null", "Char", "Float32", "Float64", "Int8", "Int16", "Int32", "Int64", "BigInt", "String", "Lazy", "Channel", "Ref"
   )
 
   // NB: The following words should be reserved, but are currently allowed because of their presence in the standard library:
@@ -251,9 +252,9 @@ object Weeder {
       val annVal = visitAnnotations(ann)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
       val tparamsVal = visitTypeParams(tparams0)
-
-      flatMapN(annVal, modVal, tparamsVal) {
-        case (ann, mod, tparams) =>
+      val identVal = visitName(ident)
+      flatMapN(annVal, identVal, modVal, tparamsVal) {
+        case (ann, _, mod, tparams) =>
           /*
            * Check for `DuplicateTag`.
            */

@@ -1530,6 +1530,17 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     /**
+      * A builtin type, marked with keyword so that we can easily extract them to report errors in the Weeder.
+      */
+    def BuiltinType: Rule1[Name.Ident] = rule {
+      builtin("Unit") | builtin("Null") | builtin("Bool") |
+        builtin("Char") | builtin("Float32") | builtin("Float64") |
+        builtin("Int8") | builtin("Int16") | builtin("Int32") |
+        builtin("Int64") | builtin("BigInt") | builtin("String") |
+        builtin("Lazy") | builtin("Channel") | builtin("Ref")
+    }
+
+    /**
       * A lowercase qualified name is a namespace followed by a lowercase name.
       */
     def LowerCaseQName: Rule1[Name.QName] = rule {
@@ -1661,6 +1672,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     */
   def keyword(word: String): Rule0 = namedRule(s"${'"'}$word${'"'}") {
     atomic(word) ~ !Names.LegalLetter
+  }
+
+  /**
+    * A list of reverved builtin identifiers.
+    */
+  def builtin(word: String): Rule1[Name.Ident] = namedRule(s"${'"'}$word${'"'}") {
+    SP ~ capture(word) ~ !Names.LegalLetter ~ SP ~> Name.Ident
   }
 
   /////////////////////////////////////////////////////////////////////////////
