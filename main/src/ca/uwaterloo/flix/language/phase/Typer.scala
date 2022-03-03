@@ -747,12 +747,13 @@ object Typer {
 
       case KindedAst.Expression.LetRegion(sym, exp, evar, loc) =>
         // Introduce a rigid variable for the region of `exp`.
-        val regionVar = Type.freshVar(Kind.Bool, loc, Rigidity.Rigid, Some(sym.text))
+        val regionVar = Type.freshVar(Kind.Bool, sym.loc, Rigidity.Rigid, Some(sym.text))
         for {
           _ <- unifyTypeM(sym.tvar.ascribedWith(Kind.Star), Type.mkRegion(regionVar, loc), loc)
           (constrs, tpe, eff) <- visitExp(exp)
           purifiedEff <- purifyEffM(regionVar, eff)
           resultEff <- unifyTypeM(evar, purifiedEff, loc)
+          _ <- noEscapeM(regionVar, tpe)
           resultTyp = tpe
         } yield (constrs, resultTyp, resultEff)
 
