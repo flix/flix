@@ -663,6 +663,51 @@ namespace TestDelayList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // foreach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foreach01(): Bool & Impure =
+        let l = ENil;
+        let sb = StringBuilder.new();
+        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        DelayList.foreach(fn, l);
+        StringBuilder.toString(sb) == ""
+
+    @test
+    def foreach02(): Bool & Impure =
+        let l = LList(lazy ENil);
+        let sb = StringBuilder.new();
+        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        DelayList.foreach(fn, l);
+        StringBuilder.toString(sb) == ""
+
+    @test
+    def foreach03(): Bool & Impure =
+        let l = LCons(1, lazy LList(lazy ENil));
+        let sb = StringBuilder.new();
+        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        DelayList.foreach(fn, l);
+        StringBuilder.toString(sb) == "T"
+
+    @test
+    def foreach04(): Bool & Impure =
+        let l = LCons(-1, lazy LList(lazy ENil));
+        let sb = StringBuilder.new();
+        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        DelayList.foreach(fn, l);
+        StringBuilder.toString(sb) == "F"
+
+    @test
+    def foreach05(): Bool & Impure =
+        let l = ECons(1, LCons(-1, lazy ENil));
+        let sb = StringBuilder.new();
+        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        DelayList.foreach(fn, l);
+        StringBuilder.toString(sb) == "TF"
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
