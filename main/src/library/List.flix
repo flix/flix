@@ -118,7 +118,7 @@ namespace List {
     @Time(1) @Space(1)
     pub def isEmpty(l: List[a]): Bool = match l {
         case Nil => true
-        case _ => false
+        case _   => false
     }
 
     ///
@@ -128,7 +128,7 @@ namespace List {
     ///
     @Time(1) @Space(1)
     pub def head(l: List[a]): Option[a] = match l {
-        case Nil => None
+        case Nil    => None
         case x :: _ => Some(x)
     }
 
@@ -139,9 +139,9 @@ namespace List {
     ///
     @Time(length(l)) @Space(1)
     pub def last(l: List[a]): Option[a] = match l {
-        case Nil => None
+        case Nil      => None
         case x :: Nil => Some(x)
-        case _ :: rs => last(rs)
+        case _ :: rs  => last(rs)
     }
 
     ///
@@ -149,9 +149,9 @@ namespace List {
     ///
     @Time(length(l)) @Space(1)
     pub def length(l: List[a]): Int32 =
-        def loop(l2, acc) = match l2 {
+        def loop(ll, acc) = match ll {
             case Nil     => acc
-            case _ :: rs => loop(rs, acc + 1)
+            case _ :: xs => loop(xs, acc + 1)
         };
         loop(l, 0)
 
@@ -161,16 +161,15 @@ namespace List {
     /// The infix operator `:::` is an alias for `append` (`l1 ::: l2 = append(l1, l2)`).
     ///
     @Time(length(l1)) @Space(length(l1))
-    pub def append(l1: List[a], l2: List[a]): List[a] = {
+    pub def append(l1: List[a], l2: List[a]): List[a] =
         foldRight((x, acc) -> x :: acc, l2, l1)
-    }
 
     ///
     /// Returns `true` if and only if `l` contains the element `x`.
     ///
     @Time(length(l)) @Space(1)
     pub def memberOf(a: a, l: List[a]): Bool with Eq[a] =
-        def loop(l2) = match l2 {
+        def loop(ll) = match ll {
             case Nil     => false
             case x :: xs => if (a == x) true else loop(xs)
         };
@@ -214,7 +213,7 @@ namespace List {
     /// Returns `-1` if `a` does not exist in `l`.
     ///
     pub def indexOf(a: a, l: List[a]): Int32 with Eq[a] =
-        def loop(l2, acc) = match l2 {
+        def loop(ll, acc) = match ll {
             case Nil     => -1
             case x :: xs => if (a == x) acc else loop(xs, acc + 1)
         };
@@ -230,10 +229,12 @@ namespace List {
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def findLeft(f: a -> Bool & ef, l: List[a]): Option[a] & ef = match l {
-        case Nil => None
-        case x :: xs => if (f(x)) Some(x) else findLeft(f, xs)
-    }
+    pub def findLeft(f: a -> Bool & ef, l: List[a]): Option[a] & ef =
+        def loop(ll) = match ll {
+            case Nil     => None
+            case x :: xs => if (f(x)) Some(x) else loop(xs)
+        };
+        loop(l)
 
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
@@ -253,12 +254,12 @@ namespace List {
     ///
     @Time(e - b) @Space(e - b)
     pub def range(b: Int32, e: Int32): List[Int32] =
-        def loop(n, k) =
-            if (n >= e)
-                k(Nil)
+        def loop(i, acc) =
+            if (i < b)
+                acc
             else
-                loop(n + 1, ks -> k(n :: ks));
-        loop(b, ks -> ks)
+                loop(i - 1, i :: acc);
+        loop(e - 1, Nil)
 
     ///
     /// Returns a list with the element `x` repeated `n` times.
@@ -266,7 +267,13 @@ namespace List {
     /// Returns `Nil` if `n < 0`.
     ///
     @Time(n) @Space(n)
-    pub def repeat(n: Int32, a: a): List[a] = repeatHelper(a, n, ks -> ks)
+    pub def repeat(n: Int32, a: a): List[a] =
+        def loop(i, acc) =
+            if (i >= n)
+                acc
+            else
+                loop(i + 1, a :: acc);
+        loop(0, Nil)
 
     ///
     /// Helper function for `repeat`.
