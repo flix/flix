@@ -2762,4 +2762,37 @@ namespace TestDelayList {
         ("1" :: "2" :: "3" :: Nil) |> List.toDelayList |>
             DelayList.joinWith(x -> x + x, ",") == "11,22,33"
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // ap                                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def ap01(): Bool =
+        DelayList.ap(ENil, ENil) == ENil: DelayList[Int32]
+
+    @test
+    def ap02(): Bool =
+        DelayList.ap(ECons((x -> x + 1), ENil), ENil) == ENil
+
+    @test
+    def ap03(): Bool =
+        DelayList.ap(ENil, ECons(5, ENil)) == ENil: DelayList[Int32]
+
+    @test
+    def ap04(): Bool =
+        DelayList.ap(ECons((x -> x + 1), ENil), ECons(5, ENil)) |> DelayList.toList == 6 :: Nil
+
+    @test
+    def ap05(): Bool =
+        let f = List.toDelayList((x -> x + 1) :: Nil);
+        let l = List.toDelayList(0 :: 5 :: Nil);
+        DelayList.ap(f, l) |> DelayList.toList == 1 :: 6 :: Nil
+
+    @test
+    def ap06(): Bool =
+        let f = List.toDelayList((x -> x + 1) :: (x -> x * 2) :: Nil);
+        let l = List.toDelayList(0 :: 4 :: Nil);
+        DelayList.ap(f, l) |> DelayList.toList == 1 :: 5 :: 0 :: 8 :: Nil
+
 }
