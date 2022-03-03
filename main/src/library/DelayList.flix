@@ -68,12 +68,10 @@ instance Functor[DelayList] {
 
 instance Applicative[DelayList] {
     pub def point(x: a): DelayList[a] = DelayList.point(x)
-    @LazyWhenPure
     pub def ap(f: DelayList[a -> b & ef], l: DelayList[a]): DelayList[b] & ef = DelayList.ap(f, l)
 }
 
 instance Monad[DelayList] {
-    @LazyWhenPure
     pub def flatMap(f: a -> DelayList[b] & ef, l: DelayList[a]): DelayList[b] & ef = DelayList.flatMap(f, l)
 }
 
