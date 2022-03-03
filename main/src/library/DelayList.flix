@@ -560,13 +560,17 @@ namespace DelayList {
     ///
     /// Applies `f` to every element of `l`.
     ///
+    /// Forces the entire list `l`.
+    ///
     @Experimental
-    pub def foreach(f: a -> Unit & ef, l: DelayList[a]): Unit & ef = match l {
-        case ENil         => ()
-        case ECons(x, xs) => f(x); foreach(f,       xs)
-        case LCons(x, xs) => f(x); foreach(f, force xs)
-        case LList(xs)    =>       foreach(f, force xs)
-    }
+    pub def foreach(f: a -> Unit & ef, l: DelayList[a]): Unit & ef =
+        def loop(ll) = match ll {
+            case ENil         => ()
+            case ECons(x, xs) => f(x); loop(f,       xs)
+            case LCons(x, xs) => f(x); loop(f, force xs)
+            case LList(xs)    =>       loop(f, force xs)
+        };
+        loop(l)
 
     ///
     /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
