@@ -450,7 +450,7 @@ namespace MutList {
             foldRightHelper(f, s1, v, i - 1)
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
+    /// Applies `f` to a start value `s` and all elements in `v` going from left to right.
     ///
     /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
     /// The foldRightLazy function exists to allow early termination of a fold.

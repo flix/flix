@@ -381,7 +381,7 @@ namespace MutMap {
         foldRightWithKey((_, v, b) -> f(v, b), i, m)
 
     ///
-    /// Lazily applies `f` to a start value `s` and all elements in `xs` going from right to left.
+    /// Lazily applies `f` to a start value `s` and all elements in `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
     /// The foldRightLazy function exists to allow early termination of a fold.

@@ -501,7 +501,7 @@ namespace Map {
         foldRightWithKey((_, v, acc) -> f(v, acc), s, m)
 
     ///
-    /// Lazily applies `f` to a start value `s` and all elements in `xs` going from right to left.
+    /// Lazily applies `f` to a start value `s` and all elements in `m` going from right to left.
     /// The function f must be pure.
     ///
     /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
