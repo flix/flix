@@ -603,6 +603,24 @@ namespace DelayList {
         };
         loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
                                   // but the intermediate continuations are effect polymorphic.
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
+    ///
+    /// Forces elements from the list only as needed by `f`.
+    ///
+    @Experimental
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b, s: b, l: DelayList[a]): b =
+        def loop(ll) = match ll {
+           case ENil         => s
+           case ECons(x, xs) => f(x, lazy loop(xs))
+           case LCons(x, xs) => f(x, lazy loop(force xs))
+           case LList(xs)    => loop(force xs)
+        };
+        loop(l)
+
     ///
     /// Applies `f` to every element of `l`.
     ///
