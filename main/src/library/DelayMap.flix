@@ -548,16 +548,6 @@ namespace DelayMap {
         foldRightWithKey((_, v, acc) -> f(v, acc), s, m)
 
     ///
-    /// Applies `f` to a start value `s` and all values in `m` going from right to left.
-    /// The function f must be pure.
-    ///
-    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
-    ///
-    @Experimental
-    pub def foldRightLazy(f: (v, Lazy[b]) -> b, s: b, m: DelayMap[k, v]): b =
-        foldRightWithKey((_, v, acc) -> f(v, lazy acc), s, m)
-
-    ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
@@ -568,6 +558,27 @@ namespace DelayMap {
         let DMap(t) = m;
         let f1 = (k1, v1, b1) -> f(k1, force v1, b1);
         RedBlackTree.foldRight(f1, s, t)
+
+    ///
+    /// Applies `f` to a start value `s` and all values in `m` going from right to left.
+    /// The function f must be pure.
+    ///
+    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
+    ///
+    @Experimental
+    pub def foldRightLazy(f: (v, Lazy[b]) -> b, s: b, m: DelayMap[k, v]): b =
+        foldRightLazyWithKey((_, v, acc) -> f(v, acc), s, m)
+
+    ///
+    /// Lazily applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(k1, v1, ... lazy f(kn-1, vn-1, lazy f(kn, vn, s)))`.
+    ///
+    pub def foldRightLazyWithKey(f: (k, v, Lazy[b]) -> b, s: b, m: DelayMap[k, v]): b =
+        let _ = parallelForce(m);
+        let DMap(xs) = m;
+        let f1 = (k1, v1, b1) -> f(k1, force v1, b1);
+        RedBlackTree.foldRightLazy(f1, s, xs)
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.

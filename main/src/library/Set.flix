@@ -303,7 +303,7 @@ namespace Set {
     ///
     pub def foldRightLazy(f: (a, Lazy[b]) -> b, i: b, s: Set[a]): b =
         let Set(es) = s;
-        RedBlackTree.foldRight((k, _, acc) -> f(k, lazy acc), i, es)
+        RedBlackTree.foldRightLazy((k, _, acc) -> f(k, acc), i, es)
 
     ///
     /// Applies `f` to all elements in `s` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.

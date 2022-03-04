@@ -501,16 +501,6 @@ namespace Map {
         foldRightWithKey((_, v, acc) -> f(v, acc), s, m)
 
     ///
-    /// Lazily applies `f` to a start value `s` and all elements in `m` going from right to left.
-    /// The function f must be pure.
-    ///
-    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
-    /// The foldRightLazy function exists to allow early termination of a fold.
-    ///
-    pub def foldRightLazy(f: (v, Lazy[b]) -> b, s: b, m: Map[k, v]): b =
-        foldRightWithKey((_, v, acc) -> f(v, lazy acc), s, m)
-
-    ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
@@ -518,6 +508,25 @@ namespace Map {
     pub def foldRightWithKey(f: (k, v, b) -> b & ef, s: b, m: Map[k, v]): b & ef =
         let Map(xs) = m;
         RedBlackTree.foldRight(f, s, xs)
+
+    ///
+    /// Lazily applies `f` to a start value `s` and all elements in `m` going from right to left.
+    /// The function f must be pure.
+    ///
+    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
+    /// The foldRightLazy function exists to allow early termination of a fold.
+    ///
+    pub def foldRightLazy(f: (v, Lazy[b]) -> b, s: b, m: Map[k, v]): b =
+        foldRightLazyWithKey((_, v, acc) -> f(v, acc), s, m)
+
+   ///
+   /// Lazily applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
+   ///
+   /// That is, the result is of the form: `f(k1, v1, ... lazy f(kn-1, vn-1, lazy f(kn, vn, s)))`.
+   ///
+   pub def foldRightLazyWithKey(f: (k, v, Lazy[b]) -> b, s: b, m: Map[k, v]): b =
+       let Map(xs) = m;
+       RedBlackTree.foldRightLazy(f, s, xs)
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
