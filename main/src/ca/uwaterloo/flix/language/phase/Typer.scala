@@ -1100,64 +1100,49 @@ object Typer {
           resultEff = Type.Impure
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
-        //
-        //  exp1 : Array[t] @ _   exp2: Int @ _
-        //  -----------------------------------
-        //  exp1[exp2] : t @ Impure
-        //
-        for {
-          (constrs1, tpe1, _) <- visitExp(exp1)
-          (constrs2, tpe2, _) <- visitExp(exp2)
-          arrayType <- unifyTypeM(tpe1, Type.mkArray(tvar, loc), loc)
-          indexType <- unifyTypeM(tpe2, Type.Int32, loc)
-          resultEff = Type.Impure
-        } yield (constrs1 ++ constrs2, tvar, resultEff)
-
       case KindedAst.Expression.ArrayLength(exp, loc) =>
-        //
-        //  exp : Array[t] @ e
-        //  --------------------
-        //  exp.length : Int @ e
-        //
-        val elmTypeVar = Type.freshVar(Kind.Star, loc)
+        val elmVar = Type.freshVar(Kind.Star, loc)
+        val regionVar = Type.freshVar(Kind.Bool, loc)
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          arrayType <- unifyTypeM(tpe, Type.mkArray(elmTypeVar, loc), loc)
-          resultEff = eff
-          _ <- unbindVar(elmTypeVar)
+          _ <- unifyTypeM(tpe, Type.mkScopedArray(elmVar, regionVar, loc), loc)
+          resultEff = Type.Pure
+          _ <- unbindVar(elmVar)
+          _ <- unbindVar(regionVar)
         } yield (constrs, Type.Int32, resultEff)
 
-      case KindedAst.Expression.ArrayStore(exp1, exp2, exp3, loc) =>
-        //
-        //  exp1 : Array[t] @ _   exp2 : Int @ _   exp3 : t @ _
-        //  ---------------------------------------------------
-        //  exp1[exp2] = exp3 : Unit @ Impure
-        //
+      case KindedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc)
         for {
-          (constrs1, tpe1, _) <- visitExp(exp1)
-          (constrs2, tpe2, _) <- visitExp(exp2)
-          (constrs3, tpe3, _) <- visitExp(exp3)
-          arrayType <- unifyTypeM(tpe1, Type.mkArray(tpe3, loc), loc)
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          arrayType <- unifyTypeM(tpe1, Type.mkScopedArray(tvar, regionVar, loc), loc)
           indexType <- unifyTypeM(tpe2, Type.Int32, loc)
-          resultEff = Type.Impure
+          resultEff = Type.mkAnd(regionVar, eff1, eff2, loc)
+        } yield (constrs1 ++ constrs2, tvar, resultEff)
+
+      case KindedAst.Expression.ArrayStore(exp1, exp2, exp3, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc)
+        for {
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          (constrs3, tpe3, eff3) <- visitExp(exp3)
+          arrayType <- unifyTypeM(tpe1, Type.mkScopedArray(tpe3, regionVar, loc), loc)
+          indexType <- unifyTypeM(tpe2, Type.Int32, loc)
+          resultEff = Type.mkAnd(List(regionVar, eff1, eff2, eff3), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, Type.Unit, resultEff)
 
       case KindedAst.Expression.ArraySlice(exp1, exp2, exp3, loc) =>
-        //
-        //  exp1 : Array[t] @ _   exp2 : Int @ _   exp3 : Int @ _
-        //  -----------------------------------------------------
-        //  exp1[exp2..exp3] : Array[t] @ Impure
-        //
-        val elementType = Type.freshVar(Kind.Star, loc)
+        val elmVar = Type.freshVar(Kind.Star, loc)
+        val regionVar = Type.freshVar(Kind.Bool, loc)
         for {
-          (constrs1, tpe1, _) <- visitExp(exp1)
-          (constrs2, tpe2, _) <- visitExp(exp2)
-          (constrs3, tpe3, _) <- visitExp(exp3)
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          (constrs3, tpe3, eff3) <- visitExp(exp3)
           fstIndexType <- unifyTypeM(tpe2, Type.Int32, loc)
           lstIndexType <- unifyTypeM(tpe3, Type.Int32, loc)
-          resultTyp <- unifyTypeM(tpe1, Type.mkArray(elementType, loc), loc)
-          resultEff = Type.Impure
+          resultTyp <- unifyTypeM(tpe1, Type.mkScopedArray(elmVar, regionVar, loc), loc)
+          resultEff = Type.mkAnd(List(regionVar, eff1, eff2, eff3), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
       case KindedAst.Expression.Ref(exp, tvar, loc) =>
