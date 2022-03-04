@@ -722,15 +722,12 @@ namespace List {
     /// Returns the concatenation of the elements in `l`.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def flatten(l: List[List[a]]): List[a] = flattenHelper(l, ks -> ks)
-
-    ///
-    /// Helper function for `flatten`.
-    ///
-    def flattenHelper(l: List[List[a]], k: List[a] -> List[a]): List[a] = match l {
-        case Nil     => k(Nil)
-        case x :: xs => flattenHelper(xs, ks -> k(x ::: ks))
-    }
+    pub def flatten(l: List[List[a]]): List[a] =
+        def loop(ll, k) = match ll {
+            case Nil => k(Nil)
+            case x :: xs => loop(xs, ks -> k(x ::: ks))
+        };
+        loop(l, identity)
 
     ///
     /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
@@ -739,7 +736,7 @@ namespace List {
     ///
     @Time(time(f) * length(l)) @Space(space(f))
     pub def exists(f: a -> Bool & ef, l: List[a]): Bool & ef =
-        def loop(l2) = match l2 {
+        def loop(ll) = match ll {
             case Nil     => false
             case x :: xs => if (f(x)) true else loop(xs)
         };
@@ -752,7 +749,7 @@ namespace List {
     ///
     @Time(time(f) * length(l)) @Space(space(f))
     pub def forall(f: a -> Bool & ef, l: List[a]): Bool & ef =
-        def loop(l2) = match l2 {
+        def loop(ll) = match ll {
             case Nil     => true
             case x :: xs => if (not f(x)) false else loop(xs)
         };
@@ -763,28 +760,24 @@ namespace List {
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def filter(f: a -> Bool & ef, l: List[a]): List[a] & ef =
-        def loop(l2, k) = match l2 {
+        def loop(ll, k) = match ll {
             case Nil     => k(Nil)
             case x :: xs => if (f(x)) loop(xs, ks -> k(x :: ks)) else loop(xs, k)
         };
         loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
                                   // but the intermediate continuations are effect polymorphic
-
     ///
     /// Returns the sublist of `l` without the last element.
     /// Returns `None` if the list `l` is `Nil`.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def init(l: List[a]): Option[List[a]] = initHelper(l, Nil)
-
-    ///
-    /// Helper function for `init`.
-    ///
-    def initHelper(l: List[a], acc: List[a]): Option[List[a]] = match l {
-        case Nil      => None
-        case _ :: Nil => Some(reverse(acc))
-        case x :: xs  => initHelper(xs, x :: acc)
-    }
+    pub def init(l: List[a]): Option[List[a]] =
+        def loop(ll, k) = match ll {
+            case Nil      => None
+            case _ :: Nil => Some(k(Nil))
+            case x :: xs  => loop(xs, ks -> k(x :: ks))
+        };
+        loop(l, identity)
 
     ///
     /// Returns the sublist of `l` from index `b` (inclusive) to index `e` (exclusive).
@@ -794,21 +787,17 @@ namespace List {
     ///
     @Time(e - b) @Space(e - b)
     pub def slice(b: Int32, e: Int32, l: List[a]): List[a] =
-        if (b < e) sliceHelper(b, e, l, 0, ks -> ks) else Nil
-
-    ///
-    /// Helper function for `slice`.
-    ///
-    /// Precondition:  b < e
-    ///
-    def sliceHelper(b: Int32, e: Int32, l: List[a], i: Int32, k: List[a] -> List[a]): List[a] = match l {
-        case Nil     => k(Nil)
-        case x :: xs => match i {
-            case pos if (pos < b)  => sliceHelper(b, e, xs, i + 1, k)
-            case pos if (pos >= e) => k(Nil)
-            case _                 => sliceHelper(b, e, xs, i + 1, ks -> k(x :: ks))
-        }
-    }
+        def loop(ll, i, k) = match ll {
+            case Nil     => k(Nil)
+            case x :: xs =>
+                if (i < b)
+                    loop(xs, i + 1, k)
+                else if (i >= e)
+                    k(Nil)
+                else
+                    loop(xs, i + 1, ks -> k(x :: ks))
+        };
+        if (b < e) loop(l, 0, identity) else Nil
 
     ///
     /// Returns a pair of lists `(l1, l2)`.
@@ -817,19 +806,16 @@ namespace List {
     /// `l2` contains all elements of `l` that do not satisfy the predicate `f`.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def partition(f: a -> Bool & ef, l: List[a]): (List[a], List[a]) & ef = partitionHelper(f, l, (ks, ls) -> (ks, ls))
-
-    ///
-    /// Helper function for `partition`.
-    ///
-    def partitionHelper(f: a -> Bool & ef, l: List[a], k: (List[a], List[a]) -> (List[a], List[a])): (List[a], List[a]) & ef = match l {
-        case Nil     => k(Nil, Nil)
-        case x :: xs =>
-            if (f(x))
-                partitionHelper(f, xs, (ks, ls) -> k(x :: ks, ls))
-            else
-                partitionHelper(f, xs, (ks, ls) -> k(ks, x :: ls))
-    }
+    pub def partition(f: a -> Bool & ef, l: List[a]): (List[a], List[a]) & ef =
+        def loop(ll, k) = match ll {
+            case Nil     => k((Nil, Nil))
+            case x :: xs =>
+                if (f(x))
+                    loop(xs, match (ks, ls) -> k((x :: ks, ls)))
+                else
+                    loop(xs, match (ks, ls) -> k((ks, x :: ls)))
+        };
+        loop(l, identity)
 
     ///
     /// Returns a pair of lists `(l1, l2)`.
@@ -840,19 +826,16 @@ namespace List {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def span(f: a -> Bool, l: List[a]): (List[a], List[a]) = spanHelper(f, l, (ks, ls) -> (ks, ls))
-
-    ///
-    /// Helper function for `span`.
-    ///
-    def spanHelper(f: a -> Bool, l: List[a], k: (List[a], List[a]) -> (List[a], List[a])): (List[a], List[a]) = match l {
-        case Nil     => k(Nil, Nil)
-        case x :: xs =>
-            if (f(x))
-                spanHelper(f, xs, (ks, ls) -> k(x :: ks, ls))
-            else
-                k(Nil, l)
-    }
+    pub def span(f: a -> Bool, l: List[a]): (List[a], List[a]) =
+        def loop(ll, k) = match ll {
+            case Nil     => k((Nil, Nil))
+            case x :: xs =>
+                if (f(x))
+                    loop(xs, match (ks, ls) -> k((x :: ks, ls)))
+                else
+                    k((Nil, ll))
+        };
+        loop(l, identity)
 
     ///
     /// Returns `l` without the first `n` elements.
@@ -862,24 +845,26 @@ namespace List {
     ///
     @Time(n) @Space(length(l) - n)
     pub def drop(n: Int32, l: List[a]): List[a] =
-        def loop(m, l2) =
-            if (m <= 0)
-                l2
+        def loop(ll, i) =
+            if (i <= 0)
+                ll
             else
-                match (m, l2) {
-                    case (_, Nil)     => Nil
-                    case (i, _ :: xs) => loop(i - 1, xs)
+                match ll {
+                    case Nil     => Nil
+                    case _ :: xs => loop(xs, i - 1)
                 };
-        loop(n, l)
+        loop(l, n)
 
     ///
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def dropWhile(f: a -> Bool & ef, l: List[a]): List[a] & ef = match l {
-        case Nil     => Nil
-        case x :: xs => if (f(x)) dropWhile(f, xs) else l
-    }
+    pub def dropWhile(f: a -> Bool & ef, l: List[a]): List[a] & ef =
+        def loop(ll) = match ll{
+            case Nil     => Nil
+            case x :: xs => if (f(x)) loop(xs) else ll
+        };
+        loop(l)
 
     ///
     /// Returns the first `n` elements of `l`.
