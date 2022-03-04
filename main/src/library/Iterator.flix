@@ -250,18 +250,14 @@ namespace Iterator {
     ///
     pub def filter(f: a -> Bool & ef, iter: Iterator[a]): List[a] & Impure =
         let Iterator(done, next) = iter;
-        filterAcc(f, done, next, ks -> ks)
-
-    ///
-    /// Helper function for `filter`.
-    ///
-    def filterAcc(f: a -> Bool & ef, done: Done, next: Next[a], k: List[a] -> List[a]): List[a] & Impure =
-        if (done())
-            k(Nil)
-        else
-            let x = next();
-            let include = f(x);
-            if (include) filterAcc(f, done, next, ks -> k(x :: ks)) else filterAcc(f, done, next, k)
+        def loop(k) = {
+            if (done())
+                k(Nil)
+            else
+                let x = next();
+                if (f(x)) loop(ks -> k(x :: ks)) else loop(k)
+        };
+        loop(identity)
 
     ///
     /// Returns a list with `f` applied to every element in `iter`.
@@ -272,17 +268,14 @@ namespace Iterator {
     ///
     pub def map(f: a -> b & ef, iter: Iterator[a]): List[b] & Impure =
         let Iterator(done, next) = iter;
-        mapAcc(f, done, next, ks -> ks)
-
-    ///
-    /// Helper function for `map`.
-    ///
-    def mapAcc(f: a -> b & ef, done: Done, next: Next[a], k: List[b] -> List[b]): List[b] & Impure =
-        if (done())
-            k(Nil)
-        else
-            let x = f(next());
-            mapAcc(f, done, next, ks -> k(x :: ks))
+        def loop(k) = {
+            if (done())
+                k(Nil)
+            else
+                let x = f(next());
+                loop(ks -> k(x :: ks))
+        };
+        loop(identity)
 
     ///
     /// Applies `f` to every element of `iter`.
@@ -291,17 +284,15 @@ namespace Iterator {
     ///
     pub def foreach(f: a -> Unit & ef, iter: Iterator[a]): Unit & Impure =
         let Iterator(done, next) = iter;
-        foreachHelper(f, done, next)
+        def loop() = {
+            if (done())
+                ()
+            else
+                let _ = f(next());
+                loop()
+        };
+        loop()
 
-    ///
-    /// Helper function for `foreach`.
-    ///
-    def foreachHelper(f: a -> Unit & ef, done: Done, next: Next[a]): Unit & Impure =
-        if (done())
-            ()
-        else
-            let _ = f(next());
-            foreachHelper(f, done, next)
     ///
     /// Returns an iterator with every element of the iterator `iter` that
     /// satisfies the predicate `f`.
@@ -310,6 +301,7 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should not be reused.
     ///
+    @Lazy
     pub def filterL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
 
@@ -353,6 +345,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
+    @Lazy
     pub def mapL(f: a -> b, iter: Iterator[a]): Iterator[b] =
         let Iterator(done, next) = iter;
         let next1 = () -> f(next());
@@ -363,6 +356,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
+    @Lazy
     pub def replace(from: {from :: a}, to: {to :: a}, iter: Iterator[a]): Iterator[a] with Eq[a] =
         let Iterator(done, next) = iter;
         let next1 = () -> {
@@ -378,6 +372,7 @@ namespace Iterator {
     ///
     /// The original iterators `iterA` and `iterB` should not be reused.
     ///
+    @Lazy
     pub def append(iterA: Iterator[a], iterB: Iterator[a]): Iterator[a] =
         let Iterator(doneA, nextA) = iterA;
         let Iterator(doneB, nextB) = iterB;
@@ -397,6 +392,7 @@ namespace Iterator {
     ///
     /// An iterator should never be zipped with itself.
     ///
+    @Lazy
     pub def zip(iterA: Iterator[a], iterB: Iterator[b]): Iterator[(a, b)] =
         let Iterator(doneA, nextA) = iterA;
         let Iterator(doneB, nextB) = iterB;
@@ -416,6 +412,7 @@ namespace Iterator {
     ///
     /// An iterator should never be zipped with itself.
     ///
+    @Lazy
     pub def zipWithL(f: (a, b) -> c, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] =
         let Iterator(done, next) = zip(iterA, iterB);
         let next1 = () -> {
@@ -437,7 +434,7 @@ namespace Iterator {
     /// An iterator should never be zipped with itself.
     ///
     pub def zipWith(f: (a, b) -> c & ef, iterA: Iterator[a], iterB: Iterator[b]): List[c] & Impure =
-        zip(iterA, iterB) |> map(xy -> f(fst(xy), snd(xy)))
+        zip(iterA, iterB) |> map(match (x, y) -> f(x, y))
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
