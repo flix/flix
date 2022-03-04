@@ -168,55 +168,42 @@ namespace Iterator {
     ///
     pub def toArray(iter: Iterator[a]): Array[a] & Impure =
         let Iterator(done, next) = iter;
-        toArrayAcc(done, next, MutList.new())
-
-    ///
-    /// Helper function for `toArray`.
-    ///
-    def toArrayAcc(done: Done, next: Next[a], v: MutList[a]): Array[a] & Impure =
-        if (done()) {
-            MutList.toArray(v)
-        }
-        else {
-            MutList.push!(next(), v);
-            toArrayAcc(done, next, v)
-        }
+        def loop(m) = {
+            if (done())
+                MutList.toArray(m)
+            else
+                let _ = MutList.push!(next(), m);
+                loop(m)
+        };
+        loop(MutList.new())
 
     ///
     /// Returns the contents of `iter` as a list. Consumes the entire iterator.
     ///
     pub def toList(iter: Iterator[a]): List[a] & Impure =
         let Iterator(done, next) = iter;
-        toListAcc(done, next, ks -> ks)
-
-    ///
-    /// Helper function for `toList`.
-    ///
-    def toListAcc(done: Done, next: Next[a], k: List[a] -> List[a]): List[a] & Impure =
-        if (done()) {
-            k(Nil)
-        }
-        else {
-            let x = next();
-            toListAcc(done, next, ks -> k(x :: ks))
-        }
+        def loop(k) = {
+            if (done())
+                k(Nil)
+            else
+                let x = next();
+                loop(ks -> k(x :: ks))
+        };
+        loop(identity)
 
     ///
     /// Returns the contents of `iter` as a map. Consumes the entire iterator.
     ///
     pub def toMap(iter: Iterator[(a, b)]): Map[a, b] & Impure with Order[a] =
         let Iterator(done, next) = iter;
-        toMapAcc(done, next, Map.empty())
-
-    ///
-    /// Helper function for `toMap`.
-    ///
-    def toMapAcc(done: Done, next: Next[(a, b)], m: Map[a, b]): Map[a, b] & Impure with Order[a] =
-        if (done())
-            m
-        else
-            let (k, v) = next();
-            toMapAcc(done, next, Map.insert(k, v, m))
+        def loop(m) = {
+            if (done())
+                m
+            else
+                let (k, v) = next();
+                loop(Map.insert(k, v, m))
+        };
+        loop(Map.empty())
 
     ///
     /// Returns the contents of `iter` as a `Some(Nel)` if `iter` is not empty. Returns None otherwise.
@@ -231,38 +218,30 @@ namespace Iterator {
     ///
     pub def toNec(iter: Iterator[a]): Option[Nec[a]] & Impure =
         let Iterator(done, next) = iter;
-        toNecAcc(done, next, ks -> ks)
-
-    ///
-    /// Helper function for `toNec`.
-    ///
-    def toNecAcc(done: Done, next: Next[a], k: Option[Nec[a]] -> Option[Nec[a]]): Option[Nec[a]] & Impure =
-        if (done()) {
-            k(None)
-        }
-        else {
-            let x = next();
-            toNecAcc(done, next, k1 -> match k1 {
-                case None      => k(Some(Nec.singleton(x)))
-                case Some(nec) => k(Some(Nec.cons(x, nec)))
-            })
-        }
+        def loop(k) = {
+            if (done())
+                k(None)
+            else
+                let x = next();
+                loop(ks -> match ks {
+                    case None      => k(Some(Nec.singleton(x)))
+                    case Some(nec) => k(Some(Nec.cons(x, nec)))
+                })
+        };
+        loop(identity)
 
     ///
     /// Returns the contents of `iter` as a set. Consumes the entire iterator.
     ///
     pub def toSet(iter: Iterator[a]): Set[a] & Impure with Order[a] =
         let Iterator(done, next) = iter;
-        toSetAcc(done, next, Set.empty())
-
-    ///
-    /// Helper function for `toSet`.
-    ///
-    def toSetAcc(done: Done, next: Next[a], s: Set[a]): Set[a] & Impure with Order[a] =
-        if (done())
-            s
-        else
-            toSetAcc(done, next, Set.insert(next(), s))
+        def loop(s) = {
+            if (done())
+                s
+            else
+                loop(Set.insert(next(), s))
+        };
+        loop(Set.empty())
 
     ///
     /// Returns a list of every element in `iter` that satisfies the predicate `f`.
