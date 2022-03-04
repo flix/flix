@@ -1027,10 +1027,12 @@ namespace List {
     /// starting with the initial value `c` and going from left to right.
     ///
     @Time(time(f) * Int32.min(length(l1), length(l2))) @Space(space(f) * Int32.min(length(l1), length(l2)))
-    pub def foldLeft2(f: (c, a, b) -> c & ef, c: c, l1: List[a], l2: List[b]): c & ef = match (l1, l2) {
-        case (x :: xs, y :: ys) => foldLeft2(f, f(c, x, y), xs, ys)
-        case _ => c
-    }
+    pub def foldLeft2(f: (c, a, b) -> c & ef, c: c, l1: List[a], l2: List[b]): c & ef =
+        def loop(ll1, ll2, cc) = match (ll1, ll2) {
+            case (x :: xs, y :: ys) => loop(xs, ys, f(cc, x, y))
+            case _                  => cc
+        };
+        loop(l1, l2, c)
 
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `l1` and `l2`
@@ -1038,48 +1040,43 @@ namespace List {
     ///
     @Time(time(f) * Int32.min(length(l1), length(l2))) @Space(space(f) * Int32.min(length(l1), length(l2)))
     pub def foldRight2(f: (a, b, c) -> c & ef, c: c, l1: List[a], l2: List[b]): c & ef =
+        def loop(ll1, ll2, k) = match (ll1, ll2) {
+            case (x :: xs, y :: ys) => loop(xs, ys, ks -> k(f(x, y, ks)))
+            case _                  => k(c)
+        };
         let len1 = length(l1);
         let len2 = length(l2);
-            foldRight2Helper(f, c, drop(len1 - len2, l1), drop(len2 - len1, l2))
-
-    ///
-    /// Helper function for `foldRight2`.
-    ///
-    def foldRight2Helper(f: (a, b, c) -> c & ef, c: c, l1: List[a], l2: List[b]): c & ef = match (l1, l2) {
-        case (x :: xs, y :: ys) => f(x, y, foldRight2(f, c, xs, ys))
-        case _ => c
-    }
+        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), ks -> ks as & ef)
 
     ///
     /// Collects the results of applying the partial function `f` to every element in `l`.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def filterMap(f: a -> Option[b] & ef, l: List[a]): List[b] & ef =
-        filterMapHelper(f, l, ks -> ks)
+        def loop(ll, k) = match ll {
+            case Nil     => k(Nil)
+            case x :: xs => match f(x) {
+                case None    => loop(xs, k)
+                case Some(v) => loop(xs, ks -> k(v :: ks))
+            }
+        };
+        loop(l, identity)
 
-    ///
-    /// Helper function for `filterMap`.
-    ///
-    def filterMapHelper(f: a -> Option[b] & ef, l: List[a], k: List[b] -> List[b]): List[b] & ef = match l {
-        case Nil     => k(Nil)
-        case x :: xs => match f(x) {
-            case None    => filterMapHelper(f, xs, k)
-            case Some(v) => filterMapHelper(f, xs, vs -> k(v :: vs))
-        }
-    }
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `l`.
     ///
     /// Returns `None` if every element of `l` is `None`.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def findMap(f: a -> Option[b] & ef, l: List[a]): Option[b] & ef = match l {
-        case Nil     => None
-        case x :: xs => match f(x) {
-            case None    => findMap(f, xs)
-            case Some(v) => Some(v)
-        }
-    }
+    pub def findMap(f: a -> Option[b] & ef, l: List[a]): Option[b] & ef =
+        def loop(ll) = match ll {
+            case Nil     => None
+            case x :: xs => match f(x) {
+                case None    => loop(xs)
+                case Some(v) => Some(v)
+            }
+        };
+        loop(l)
 
     ///
     /// Render the list `l` as a String. Elements are rendered with the
@@ -1134,11 +1131,10 @@ namespace List {
     ///
     /// Returns `l` as a mutable list.
     ///
-    pub def toMutList(l: List[a]): MutList[a] & Impure = {
+    pub def toMutList(l: List[a]): MutList[a] & Impure =
         let v = MutList.new();
         foreach(x -> MutList.push!(x, v), l);
         v
-    }
 
     ///
     /// Returns the list `l` as a set.
@@ -1176,10 +1172,12 @@ namespace List {
     /// Applies `f` to every element of `l`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foreach(f: a -> Unit & ef, l: List[a]): Unit & ef = match l {
-        case Nil     => ()
-        case x :: xs => f(x); foreach(f, xs)
-    }
+    pub def foreach(f: a -> Unit & ef, l: List[a]): Unit & ef =
+        def loop(ll) = match ll {
+            case Nil     => ()
+            case x :: xs => f(x); loop(xs)
+        };
+        loop(l)
 
     ///
     /// Returns the list `l` as an array.
@@ -1251,15 +1249,12 @@ namespace List {
     ///
     /// `f` should return `None` to signal the end of building the list.
     ///
-    pub def unfold(f: s -> Option[(a, s)] & ef, st: s): List[a] & ef = unfoldHelper(f, st, ks -> ks)
-
-    ///
-    /// Helper function for `unfold`.
-    ///
-    def unfoldHelper(f: s -> Option[(a, s)] & ef, st: s, k: List[a] -> List[a]): List[a] & ef = match f(st) {
-        case None         => k(Nil)
-        case Some(a, st1) => unfoldHelper(f, st1, ks -> k(a :: ks))
-    }
+    pub def unfold(f: s -> Option[(a, s)] & ef, st: s): List[a] & ef =
+        def loop(sst, k) = match f(sst) {
+            case None         => k(Nil)
+            case Some(a, st1) => loop(st1, ks -> k(a :: ks))
+        };
+        loop(st, identity)
 
     ///
     /// Build a list by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -1269,16 +1264,12 @@ namespace List {
     ///
     /// `next` should return `None` to signal the end of building the list.
     ///
-    pub def unfoldWithIter(next: Unit -> Option[a] & ef): List[a] & ef = unfoldWithIterHelper(next, ks -> ks)
-
-    ///
-    /// Helper function for `unfoldWithIter`.
-    ///
-    def unfoldWithIterHelper(next: Unit -> Option[a] & ef, k: List[a] -> List[a]): List[a] & ef = match next() {
-        case None    => k(Nil)
-        case Some(a) => unfoldWithIterHelper(next, ks -> k(a :: ks))
-    }
-
+    pub def unfoldWithIter(next: Unit -> Option[a] & ef): List[a] & ef =
+        def loop(k) = match next() {
+            case None    => k(Nil)
+            case Some(x) => loop(ks -> k(x :: ks))
+        };
+        loop(identity)
 
     ///
     /// Build a list by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -1290,16 +1281,13 @@ namespace List {
     ///
     /// `next` should return `Err(e)` to signal that an error occurred. The function returns `Err(e)`.
     ///
-    pub def unfoldWithOkIter(next: Unit -> Result[Option[a], e] & ef): Result[List[a], e] & ef = unfoldWithOkIterHelper(next, ks -> ks)
-
-    ///
-    /// Helper function for `unfoldWithOkIter`.
-    ///
-    def unfoldWithOkIterHelper(next: Unit -> Result[Option[a], e] & ef, k: Result[List[a], e] -> Result[List[a], e]): Result[List[a], e] & ef = match next() {
-        case Ok(None)    => k(Ok(Nil))
-        case Err(e)      => k(Err(e))
-        case Ok(Some(a)) => unfoldWithOkIterHelper(next, Result.flatMap(ks -> k(Ok(a :: ks))))
-    }
+    pub def unfoldWithOkIter(next: Unit -> Result[Option[a], e] & ef): Result[List[a], e] & ef =
+        def loop(k) = match next() {
+            case Ok(None)    => k(Ok(Nil))
+            case Err(e)      => k(Err(e))
+            case Ok(Some(x)) => loop(Result.flatMap(ks -> k(Ok(x :: ks))))
+        };
+        loop(identity)
 
     ///
     /// Returns the list `l` with duplicates removed. The first occurence of
@@ -1310,19 +1298,15 @@ namespace List {
     /// need a custom equality test.
     ///
     pub def distinct(l: List[a]): List[a] with Eq[a] =
-        distinctHelper(l, Nil, ks -> ks)
-
-    ///
-    /// Helper function for `distinct`.
-    ///
-    def distinctHelper(l1: List[a], l2: List[a], k: List[a] -> List[a]): List[a] with Eq[a] = match l1 {
-        case Nil     => k(Nil)
-        case x :: xs =>
-            if (memberOf(x, l2))
-                distinctHelper(xs, l2, k)
-            else
-                distinctHelper(xs, (x :: l2), ks -> k(x :: ks))
-    }
+        def loop(ll1, ll2, k) = match ll1 {
+            case Nil     => k(Nil)
+            case x :: xs =>
+                if (memberOf(x, ll2))
+                    loop(xs, ll2, k)
+                else
+                    loop(xs, x :: ll2, ks -> k(x :: ks))
+        };
+        loop(l, Nil, identity)
 
     ///
     /// Returns the list `l` with duplicates removed using the supplied function
@@ -1330,33 +1314,27 @@ namespace List {
     /// for the removal of subsequent duplicates the order of `l` is preserved.
     ///
     pub def distinctWith(f: (a, a) -> Bool, l: List[a]): List[a] =
-        distinctWithHelper(f, l, Nil, ks -> ks)
-
-    ///
-    /// Helper function for `distinctWith`.
-    ///
-    def distinctWithHelper(f: (a, a) -> Bool, l1: List[a], l2: List[a], k: List[a] -> List[a]): List[a] = match l1 {
-        case Nil     => k(Nil)
-        case x :: xs =>
-            if (memberOfWith(f, x, l2))
-                distinctWithHelper(f, xs, l2, k)
-            else
-                distinctWithHelper(f, xs, (x :: l2), ks -> k(x :: ks))
-    }
+        def loop(ll1, ll2, k) = match ll1 {
+            case Nil     => k(Nil)
+            case x :: xs =>
+                if (memberOfWith(f, x, ll2))
+                    loop(xs, ll2, k)
+                else
+                    loop(xs, x :: ll2, ks -> k(x :: ks))
+        };
+        loop(l, Nil, identity)
 
     ///
     /// Helper function for `distinctWith`.
     ///
     /// This is a generalization of `memberOf` that uses the function `f` for comparison.
     ///
-    def memberOfWith(f: (a, a) -> Bool, a: a, l: List[a]): Bool = match l {
-        case Nil     => false
-        case x :: xs =>
-            if (f(a, x))
-                true
-            else
-                memberOfWith(f, a, xs)
-    }
+    def memberOfWith(f: (a, a) -> Bool, a: a, l: List[a]): Bool =
+        def loop(ll) = match ll {
+            case Nil     => false
+            case x :: xs => if (f(a, x)) true else loop(xs)
+        };
+        loop(l)
 
     ///
     /// Returns the sum of all elements in the list `l`.
@@ -1410,18 +1388,18 @@ namespace List {
     /// Returns the result of running all the actions in the list `l`.
     ///
     pub def sequence(l: List[m[a]]): m[List[a]] with Applicative[m] =
-        def loop(l2, k) = match l2 {
+        def loop(ll, k) = match ll {
             case Nil      => k(Applicative.point(Nil))
             case mx :: rs => loop(rs, ks -> k(consA(mx, ks)))
         };
-        loop(l, ks -> ks)
+        loop(l, identity)
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
     /// list `l`.
     ///
     pub def traverse(f: a -> m[b] & ef, l: List[a]): m[List[b]] & ef with Applicative[m] =
-        def loop(l2, k) = match l2 {
+        def loop(ll, k) = match ll {
             case Nil     => k(Applicative.point(Nil))
             case x :: xs => loop(xs, ks -> k(consA(f(x), ks)))
         };
