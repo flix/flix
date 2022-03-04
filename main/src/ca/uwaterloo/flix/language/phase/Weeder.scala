@@ -43,12 +43,16 @@ object Weeder {
   private val ReservedWords = Set(
     "!=", "$DEFAULT$", "&&&", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<<<", "<=",
     "<=>", "==", "=>", ">", ">=", ">>>", "???", "@", "Absent", "Bool", "Impure", "Nil", "Predicate", "Present", "Pure",
-    "RecordRow", "SchemaRow", "Type", "^^^", "alias", "and", "as", "case", "catch", "chan", "choose", "choose*",
-    "class", "def", "deref", "else", "enum", "false", "fix", "forall", "force", "from", "get", "if", "import",
-    "inline", "instance", "into", "lat", "law", "lawless", "lazy", "let", "let*", "match", "mod", "mut", "namespace",
-    "new", "not", "null", "opaque", "or", "override", "project", "pub", "query", "ref", "reify", "reifyBool",
-    "reifyEff", "reifyType", "rel", "rem", "rigid", "scoped", "sealed", "select", "set", "solve", "spawn",
-    "static", "true", "try", "type", "unlawful", "use", "where", "with", "|||", "~~~")
+    "RecordRow", "SchemaRow", "Type", "^^^", "alias", "case", "catch", "chan",
+    "class", "def", "deref", "else", "enum", "false", "fix", "force", "if", "import",
+    "inline", "instance", "into", "lat", "law", "lawless", "lazy", "let", "let*", "match", "mut", "namespace",
+    "null", "opaque", "override", "pub", "ref", "reify", "reifyBool",
+    "reifyEff", "reifyType", "rel", "rigid", "scoped", "sealed", "set", "spawn",
+    "static", "true", "type", "unlawful", "use", "where", "with", "|||", "~~~"
+  )
+
+  // NB: The following words should be reserved, but are currently allowed because of their presence in the standard library:
+  // as, and, choose, choose*, forall, from, get, mod, new, not, or, project, query, rem, select, solve, try
 
 
   /**
