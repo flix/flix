@@ -1017,17 +1017,6 @@ namespace List {
         loop(l, identity)
 
     ///
-    /// Helper function for `flatMap2`.
-    ///
-    def flatMap2Helper(f: (a, b) -> List[c] & ef, l1: List[a], l2: List[b], k: List[c] -> List[c]): List[c] & ef = match (l1, l2) {
-        case (x :: xs, y :: ys) => {
-            let z = f(x, y);
-            flatMap2Helper(f, xs, ys, ks -> k(z ::: ks))
-        }
-        case _ => k(Nil)
-    }
-
-    ///
     /// Alias for `foldLeft2`.
     ///
     @Time(time(f) * Int32.min(length(l1), length(l2))) @Space(space(f) * Int32.min(length(l1), length(l2)))
