@@ -241,6 +241,19 @@ namespace RedBlackTree {
         case _ => s
     }
 
+
+    ///
+    /// Lazily applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(k1, v1, ... lazy f(kn-1, vn-1, lazy f(kn, vn, s)))`.
+    /// The foldRightLazy function exists to allow early termination of a fold.
+    ///
+    pub def foldRightLazy(f: (k, v, Lazy[b]) -> b & ef, s: b, tree: RedBlackTree[k, v]): b & ef = match tree {
+        case Node(_, a, k, v, b) => foldRight(f, f(k, v, lazy foldRight(f, s, b)), a)
+        case _ => s
+    }
+
+
     /// Applies `f` to all key-value pairs in `tree` going from left to right until a single pair `(k, v)` is obtained.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(k1, v1, k2, v2), k3, v3)..., kn, vn))`
