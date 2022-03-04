@@ -874,31 +874,26 @@ namespace List {
     ///
     @Time(n) @Space(n)
     pub def take(n: Int32, l: List[a]): List[a] =
-        def loop(m, l2, k) =
-            if (m < 0)
+        def loop(ll, i, k) =
+            if (i <= 0)
                 k(Nil)
             else
-                match (m, l2) {
-                    case (_, Nil)     => k(Nil)
-                    case (0, _)       => k(Nil)
-                    case (i, x :: xs) => loop(i - 1, xs, ks -> k(x :: ks))
+                match ll {
+                    case Nil     => k(Nil)
+                    case x :: xs => loop(xs, i - 1, ks -> k(x :: ks))
                 };
-        loop(n, l, ks -> ks)
+        loop(l, n, identity)
 
     ///
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def takeWhile(f: a -> Bool & ef, l: List[a]): List[a] & ef =
-        takeWhileHelper(f, l, ks -> ks as & ef)
-
-    ///
-    /// Helper function for `takeWhile`.
-    ///
-    def takeWhileHelper(f: a -> Bool & ef, l: List[a], k: List[a] -> List[a] & ef): List[a] & ef = match l {
-        case Nil     => k(Nil)
-        case x :: xs => if (f(x)) takeWhileHelper(f, xs, ks -> k(x :: ks)) else k(Nil)
-    }
+        def loop(ll, k) = match ll {
+            case Nil     => k(Nil)
+            case x :: xs => if (f(x)) loop(xs, ks -> k(x :: ks)) else k(Nil)
+        };
+        loop(l, identity)
 
     ///
     /// Partitions `l` into sublists such that for any two elements `x` and `y` in a sublist, `f(x, y)` is true.
@@ -910,13 +905,13 @@ namespace List {
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
     pub def groupBy(f: (a, a) -> Bool, l: List[a]): List[List[a]] =
-        def loop(l1, k) = match l1 {
-            case Nil => k(Nil)
+        def loop(ll, k) = match ll {
+            case Nil     => k(Nil)
             case x :: xs =>
-                let (r1, r2) = extractHelper(f, xs, x :: Nil, ks -> ks);
+                let (r1, r2) = extractHelper(f, xs, x :: Nil);
                 loop(r2, ks -> k(r1 :: ks))
         };
-        loop(l, ks -> ks)
+        loop(l, identity)
 
     ///
     /// Helper function for `groupBy`.
@@ -924,18 +919,22 @@ namespace List {
     /// The list `l2` is needed by `agreeHelper` so it must be materialized (rather than a continuation).
     /// We have no choice but to reverse it.
     ///
-    def extractHelper(f: (a, a) -> Bool, l1: List[a], l2: List[a], k: List[a] -> List[a]): (List[a], List[a]) = match l1 {
-        case Nil     => (reverse(l2), k(Nil))
-        case x :: xs => if (agreeHelper(f, x, l2)) extractHelper(f, xs, x :: l2, k) else extractHelper(f, xs, l2, ks -> k(x :: ks))
-    }
+    def extractHelper(f: (a, a) -> Bool, l1: List[a], l2: List[a]): (List[a], List[a]) =
+        def loop(ll, ll2, k) = match ll {
+            case Nil     => (reverse(ll2), k(Nil))
+            case x :: xs => if (agreeHelper(f, x, ll2)) loop(xs, x :: ll2, k) else loop(xs, ll2, ks -> k(x :: ks))
+        };
+        loop(l1, l2, identity)
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def agreeHelper(f: (a, a) -> Bool, a: a, l: List[a]): Bool = match l {
-        case Nil     => true
-        case x :: xs => if (f(x, a) and f(a, x)) agreeHelper(f, a, xs) else false
-    }
+    def agreeHelper(f: (a, a) -> Bool, a: a, l: List[a]): Bool =
+        def loop(ll) = match ll {
+            case Nil     => true
+            case x :: xs => if (f(x, a) and f(a, x)) loop(xs) else false
+        };
+        loop(l)
 
     ///
     /// Returns a list where the element at index `i` is `(a, b)` where
@@ -944,15 +943,12 @@ namespace List {
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
     @Time(Int32.min(length(l1), length(l2))) @Space(Int32.min(length(l1), length(l2)))
-    pub def zip(l1: List[a], l2: List[b]): List[(a, b)] = zipHelper(l1, l2, ks -> ks)
-
-    ///
-    /// Helper function for `zip`.
-    ///
-    def zipHelper(l1: List[a], l2: List[b], k: List[(a,b)] -> List[(a, b)]): List[(a, b)] = match (l1, l2) {
-            case (x :: xs, y :: ys) => zipHelper(xs, ys, ks -> k((x, y) :: ks))
+    pub def zip(l1: List[a], l2: List[b]): List[(a, b)] =
+        def loop(ll1, ll2, k) = match (ll1, ll2) {
+            case (x :: xs, y :: ys) => loop(xs, ys, ks -> k((x, y) :: ks))
             case _                  => k(Nil)
-        }
+        };
+        loop(l1, l2, identity)
 
     ///
     /// Returns a list where the element at index `i` is `f(a, b)` where
@@ -961,18 +957,14 @@ namespace List {
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
     @Time(time(f) * Int32.min(length(l1), length(l2))) @Space(space(f) * Int32.min(length(l1), length(l2)))
-    pub def zipWith(f: (a, b) -> c & ef, l1: List[a], l2: List[b]): List[c] & ef = zipWithHelper(f, l1, l2, ks -> ks)
-
-    ///
-    /// Helper function for `zipWith`.
-    ///
-    def zipWithHelper(f: (a, b) -> c & ef, l1: List[a], l2: List[b], k: List[c] -> List[c]): List[c] & ef = match (l1, l2) {
-        case (x :: xs, y :: ys) => {
-            let z = f(x, y);
-            zipWithHelper(f, xs, ys, ks -> k(z :: ks))
-        }
-        case _ => k(Nil)
-    }
+    pub def zipWith(f: (a, b) -> c & ef, l1: List[a], l2: List[b]): List[c] & ef =
+        def loop(ll1, ll2, k) = match (ll1, ll2) {
+            case (x :: xs, y :: ys) =>
+                let z = f(x, y);
+                loop(xs, ys, ks -> k(z :: ks))
+            case _ => k(Nil)
+        };
+        loop(l1, l2, identity)
 
     ///
     /// Returns a pair of lists, the first containing all first components in `l`
@@ -980,11 +972,11 @@ namespace List {
     ///
     @Time(length(l)) @Space(length(l))
     pub def unzip(l: List[(a, b)]): (List[a], List[b]) =
-        def loop(l2, k) = match l2 {
-            case Nil            => k(Nil, Nil)
-            case (x1, x2) :: xs => loop(xs, (ks1, ks2) -> k(x1 :: ks1, x2 :: ks2))
+        def loop(ll, k) = match ll {
+            case Nil            => k((Nil, Nil))
+            case (x1, x2) :: xs => loop(xs, match (ks, ls) -> k((x1 :: ks, x2 :: ls)))
         };
-        loop(l, (ks1, ks2) -> (ks1, ks2))
+        loop(l, identity)
 
     ///
     /// Returns a list where the element at index `i` is `(a, b, c)` where
@@ -1004,34 +996,25 @@ namespace List {
     /// If any one of `l1`, `l2` or `l3` become depleted, then no further elements are added to the resulting list.
     ///
     pub def zipWith3(f: (a, b, c) -> d & ef, l1: List[a], l2: List[b], l3: List[c]): List[d] & ef =
-        zipWith3Helper(f, l1, l2, l3, ks -> ks)
-
-    ///
-    /// Helper function for `zipWith3`.
-    ///
-    def zipWith3Helper(f: (a, b, c) -> d & ef, l1: List[a], l2: List[b], l3: List[c], k: List[d] -> List[d]): List[d] & ef =
-        match (l1, l2, l3) {
-            case (x :: xs, y :: ys, z :: zs) => {
+        def loop(ll1, ll2, ll3, k) = match (ll1, ll2, ll3) {
+            case (x :: xs, y :: ys, z :: zs) =>
                 let r = f(x, y, z);
-                zipWith3Helper(f, xs, ys, zs, ks -> k(r :: ks))
-            }
+                loop(xs, ys, zs, ks -> k(r :: ks))
             case _ => k(Nil)
-        }
+        };
+        loop(l1, l2, l3, identity)
 
     ///
     /// Returns a triple of lists, the first containing all first components in `l`
     /// the second containing all second components in `l` and the third containing all
     /// third components in `l`.
     ///
-    pub def unzip3(l: List[(a, b, c)]): (List[a], List[b], List[c]) = unzip3Helper(l, (ks1, ks2, ks3) -> (ks1, ks2, ks3))
-
-    ///
-    /// Helper function for `unzip3`.
-    ///
-    def unzip3Helper(l: List[(a, b, c)], k: (List[a], List[b], List[c]) -> (List[a], List[b], List[c])): (List[a], List[b], List[c]) = match l {
-        case Nil                => k(Nil, Nil, Nil)
-        case (x1, x2, x3) :: xs => unzip3Helper(xs, (ks1, ks2, ks3) -> k(x1 :: ks1, x2 :: ks2, x3 :: ks3))
-    }
+    pub def unzip3(l: List[(a, b, c)]): (List[a], List[b], List[c]) =
+        def loop(ll, k) = match ll {
+            case Nil             => k((Nil, Nil, Nil))
+            case (x, y, z) :: xs => loop(xs, match (ks, ls, ms) -> k((x :: ks, y :: ls, z :: ms)))
+        };
+        loop(l, identity)
 
     ///
     /// Helper function for `flatMap2`.
