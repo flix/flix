@@ -126,8 +126,8 @@ namespace Map {
     ///
     @Time(1) @Space(1)
     pub def isEmpty(m: Map[k, v]): Bool =
-        let Map(xs) = m;
-        RedBlackTree.isEmpty(xs)
+        let Map(t) = m;
+        RedBlackTree.isEmpty(t)
 
     ///
     /// Returns `Some(v)` if `k => v` is in `m`.
@@ -136,8 +136,8 @@ namespace Map {
     ///
     @Time(Int32.log2(size(m))) @Space(1)
     pub def get(k: k, m: Map[k, v]): Option[v] with Order[k] =
-        let Map(xs) = m;
-        RedBlackTree.get(k, xs)
+        let Map(t) = m;
+        RedBlackTree.get(k, t)
 
     ///
     /// Returns `v` if `k => v` is in `m`.
@@ -152,8 +152,8 @@ namespace Map {
     ///
     @Time(Int32.log2(size(m))) @Space(1)
     pub def memberOf(k: k, m: Map[k, v]): Bool with Order[k] =
-        let Map(xs) = m;
-        RedBlackTree.memberOf(k, xs)
+        let Map(t) = m;
+        RedBlackTree.memberOf(k, t)
 
     ///
     /// Optionally finds `k => v` where `k` is the smallest key according to the `Order` instance of `k`.
