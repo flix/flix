@@ -612,6 +612,7 @@ namespace DelayList {
     /// Forces elements from the list only as needed by `f`.
     ///
     @Experimental
+    @Lazy
     pub def foldRightLazy(f: (a, Lazy[b]) -> b, s: b, l: DelayList[a]): b =
         def loop(ll) = match ll {
            case ENil         => s

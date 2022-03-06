@@ -248,10 +248,14 @@ namespace RedBlackTree {
     /// That is, the result is of the form: `f(k1, v1, ... lazy f(kn-1, vn-1, lazy f(kn, vn, s)))`.
     /// The foldRightLazy function exists to allow early termination of a fold.
     ///
-    pub def foldRightLazy(f: (k, v, Lazy[b]) -> b, s: b, tree: RedBlackTree[k, v]): b = match tree {
-        case Node(_, a, k, v, b) => foldRightLazy(f, f(k, v, lazy foldRightLazy(f, s, b)), a)
-        case _ => s
-    }
+    @Experimental
+    @Lazy
+    pub def foldRightLazy(f: (k, v, Lazy[b]) -> b, s: b, tree: RedBlackTree[k, v]): b =
+        def loop(s2: b, tree2: RedBlackTree[k, v]) = match tree2 {
+            case Node(_, a, k, v, b) => loop(f(k, v, lazy loop(s2, b)), a)
+            case _ => s2
+        };
+        loop(s, tree)
 
 
     /// Applies `f` to all key-value pairs in `tree` going from left to right until a single pair `(k, v)` is obtained.
