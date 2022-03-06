@@ -254,27 +254,23 @@ object Packager {
     }
 
     // Construct a new zip file.
-    val zip = new ZipOutputStream(Files.newOutputStream(jarFile))
+    Using(new ZipOutputStream(Files.newOutputStream(jarFile))) { zip =>
+      // META-INF/MANIFEST.MF
+      val manifest =
+        """Manifest-Version: 1.0
+          |Main-Class: Main
+          |""".stripMargin
 
-    // META-INF/MANIFEST.MF
-    val manifest =
-      """Manifest-Version: 1.0
-        |Main-Class: Main
-        |""".stripMargin
+      // Add manifest file.
+      addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
 
-    // Add manifest file.
-    addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
-
-    // Add all class files.
-    for (buildFile <- getAllFiles(getBuildDirectory(p))) {
-      val fileName = getBuildDirectory(p).relativize(buildFile).toString
-      val fileNameWithSlashes = fileName.replace('\\', '/')
-      addToZip(zip, fileNameWithSlashes, buildFile)
-    }
-
-    // Close the zip file.
-    zip.finish()
-    ().toOk
+      // Add all class files.
+      for (buildFile <- getAllFiles(getBuildDirectory(p))) {
+        val fileName = getBuildDirectory(p).relativize(buildFile).toString
+        val fileNameWithSlashes = fileName.replace('\\', '/')
+        addToZip(zip, fileNameWithSlashes, buildFile)
+      }
+    }.get.toOk
   }
 
   /**
@@ -294,22 +290,18 @@ object Packager {
     }
 
     // Construct a new zip file.
-    val zip = new ZipOutputStream(Files.newOutputStream(pkgFile))
+    Using(new ZipOutputStream(Files.newOutputStream(pkgFile))) { zip =>
+      // Add required resources.
+      addToZip(zip, "HISTORY.md", getHistoryFile(p))
+      addToZip(zip, "LICENSE.md", getLicenseFile(p))
+      addToZip(zip, "README.md", getReadmeFile(p))
 
-    // Add required resources.
-    addToZip(zip, "HISTORY.md", getHistoryFile(p))
-    addToZip(zip, "LICENSE.md", getLicenseFile(p))
-    addToZip(zip, "README.md", getReadmeFile(p))
-
-    // Add all source files.
-    for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
-      val name = p.relativize(sourceFile).toString
-      addToZip(zip, name, sourceFile)
-    }
-
-    // Close the zip file.
-    zip.finish()
-    ().toOk
+      // Add all source files.
+      for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
+        val name = p.relativize(sourceFile).toString
+        addToZip(zip, name, sourceFile)
+      }
+    }.get.toOk
   }
 
   /**
@@ -362,23 +354,22 @@ object Packager {
       throw new RuntimeException(s"The path '$p' is not a flix package.")
 
     // Open the zip file.
-    val zip = new ZipFile(p.toFile)
-
-    // Collect all source and test files.
-    val result = mutable.ListBuffer.empty[Source]
-    val iterator = zip.entries()
-    while (iterator.hasMoreElements) {
-      val entry = iterator.nextElement()
-      val name = entry.getName
-      if (name.endsWith(".flix")) {
-        val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
-        val str = new String(bytes, flix.defaultCharset)
-        val arr = str.toCharArray
-        result += Source(Ast.Input.Text(name, str, stable = false), arr, stable = false)
+    Using(new ZipFile(p.toFile)) { zip =>
+      // Collect all source and test files.
+      val result = mutable.ListBuffer.empty[Source]
+      val iterator = zip.entries()
+      while (iterator.hasMoreElements) {
+        val entry = iterator.nextElement()
+        val name = entry.getName
+        if (name.endsWith(".flix")) {
+          val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
+          val str = new String(bytes, flix.defaultCharset)
+          val arr = str.toCharArray
+          result += Source(Ast.Input.Text(name, str, stable = false), arr, stable = false)
+        }
       }
-    }
-
-    result.toList
+      result.toList
+    }.get
   }
 
   /**
@@ -470,9 +461,7 @@ object Packager {
   private def newFile(p: Path)(s: String): Unit = {
     if (Files.exists(p)) throw InternalCompilerException(s"Path '$p' already exists.")
 
-    val writer = Files.newBufferedWriter(p)
-    writer.write(s)
-    writer.close()
+    Files.writeString(p, s, StandardOpenOption.CREATE_NEW)
   }
 
   /**
@@ -528,15 +517,14 @@ object Packager {
   private def isZipArchive(p: Path): Boolean = {
     if (Files.exists(p) && Files.isReadable(p) && Files.isRegularFile(p)) {
       // Read the first four bytes of the file.
-      val is = Files.newInputStream(p)
-      val b1 = is.read()
-      val b2 = is.read()
-      val b3 = is.read()
-      val b4 = is.read()
-      is.close()
-
-      // Check if the four first bytes match 0x50, 0x4b, 0x03, 0x04
-      return b1 == 0x50 && b2 == 0x4b && b3 == 0x03 && b4 == 0x04
+      return Using(Files.newInputStream(p)) { is =>
+        val b1 = is.read()
+        val b2 = is.read()
+        val b3 = is.read()
+        val b4 = is.read()
+        // Check if the four first bytes match 0x50, 0x4b, 0x03, 0x04
+        return b1 == 0x50 && b2 == 0x4b && b3 == 0x03 && b4 == 0x04
+      }.get
     }
     false
   }
