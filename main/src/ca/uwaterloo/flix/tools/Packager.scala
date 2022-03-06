@@ -394,7 +394,7 @@ object Packager {
   /**
     * Returns the package name based on the given path `p`.
     */
-  private def getPackageName(p: Path): String = p.toAbsolutePath.getParent.getFileName.toString
+  private def getPackageName(p: Path): String = p.toAbsolutePath.normalize().getFileName.toString
 
   /**
     * Returns the path to the pkg file based on the given path `p`.
