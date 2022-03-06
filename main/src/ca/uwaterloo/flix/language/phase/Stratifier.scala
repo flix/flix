@@ -261,6 +261,11 @@ object Stratifier {
         case e => Expression.Ref(e, tpe, eff, loc)
       }
 
+    case Expression.RefWithRegion(exp1, exp2, tpe, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.RefWithRegion(e1, e2, tpe, eff, loc)
+      }
+
     case Expression.Deref(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Deref(e, tpe, eff, loc)
@@ -579,6 +584,9 @@ object Stratifier {
 
     case Expression.Ref(exp, _, _, _) =>
       LabelledGraphOfExp(exp)
+
+    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
 
     case Expression.Deref(exp, _, _, _) =>
       LabelledGraphOfExp(exp)

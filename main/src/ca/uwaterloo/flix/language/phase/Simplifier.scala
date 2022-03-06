@@ -184,6 +184,11 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.Ref(e, tpe, loc)
 
+      case TypedAst.Expression.RefWithRegion(exp, _, tpe, eff, loc) =>
+        // Note: The region parameter is erased.
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Ref(e, tpe, loc)
+
       case TypedAst.Expression.Deref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Deref(e, tpe, loc)
