@@ -834,24 +834,24 @@ namespace Map {
     /// Returns the result of running all the actions in the map `m`.
     ///
     pub def sequence(m: Map[k, m[v]]): m[Map[k, v]] with Applicative[m] =
-        let Map(tree) = m;
-        Functor.map(Map, Traversable.sequence(tree))
+        let Map(t) = m;
+        Functor.map(Map, Traversable.sequence(t))
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the values of the
     /// map `m`.
     ///
     pub def traverse(f: v1 -> m[v2] & ef, m: Map[k, v1]): m[Map[k, v2]] & ef with Applicative[m] =
-        let Map(tree) = m;
-        Functor.map(Map, Traversable.traverse(f, tree))
+        let Map(t) = m;
+        Functor.map(Map, Traversable.traverse(f, t))
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the key-value pairs
     /// of the map `m`.
     ///
     pub def traverseWithKey(f: (k, v1) -> m[v2] & ef, m: Map[k, v1]): m[Map[k, v2]] & ef with Applicative[m] =
-        let Map(tree) = m;
-        Functor.map(Map, RedBlackTree.mapAWithKey(f, tree))
+        let Map(t) = m;
+        Functor.map(Map, RedBlackTree.mapAWithKey(f, t))
 
     ///
     /// Returns the concatenation of the string representation of each key `k`
