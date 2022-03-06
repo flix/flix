@@ -185,7 +185,7 @@ class TestWeeder extends FunSuite with TestUtils {
     val input =
       s"""
          |def f(): Unit =
-         |    import foo() as bar;
+         |    import foo(): Unit & Impure as bar;
          |    ()
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

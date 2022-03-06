@@ -89,7 +89,7 @@ object Main {
     )
 
     // Don't use progress bar if benchmarking.
-    if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
+    if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkIncremental || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
       options = options.copy(progress = false)
     }
 
@@ -154,6 +154,12 @@ object Main {
     // check if the --Xbenchmark-code-size flag was passed.
     if (cmdOpts.xbenchmarkCodeSize) {
       BenchmarkCompiler.benchmarkCodeSize(options)
+      System.exit(0)
+    }
+
+    // check if the --Xbenchmark-incremental flag was passed.
+    if (cmdOpts.xbenchmarkIncremental) {
+      BenchmarkCompiler.benchmarkIncremental(options)
       System.exit(0)
     }
 
@@ -255,6 +261,7 @@ object Main {
                      test: Boolean = false,
                      threads: Option[Int] = None,
                      xbenchmarkCodeSize: Boolean = false,
+                     xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
@@ -391,9 +398,13 @@ object Main {
       note("")
       note("The following options are experimental:")
 
-      // xbenchmark-code-size
+      // Xbenchmark-code-size
       opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).
         text("[experimental] benchmarks the size of the generated JVM files.")
+
+      // Xbenchmark-incremental
+      opt[Unit]("Xbenchmark-incremental").action((_, c) => c.copy(xbenchmarkIncremental=true)).
+        text("[experimental] benchmarks the performance of each compiler phase in incremental mode.")
 
       // Xbenchmark-phases
       opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).

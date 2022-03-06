@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Magnus Madsen
+ * Copyright 2022 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix
+package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.util.{FlixSuite, Options}
-
-class ExampleSuite extends FlixSuite(incremental = true) {
-
-  private implicit val TestOptions: Options = Options.TestWithLibAll.copy(xallowredundancies = true)
-
-  mkTestDir("examples")
-  mkTestDir("examples/analysis")
-  mkTestDir("examples/datalog")
-  mkTestDir("examples/koans")
-  mkTestDir("examples/misc")
-
-}
+/**
+  * A case class to track the compile time spent in a phase and its sub-phases.
+  */
+case class PhaseTime(phase: String, time: Long, subphases: List[(String, Long)])

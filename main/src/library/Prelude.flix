@@ -4,6 +4,11 @@
 pub type alias Ref[t] = ScopedRef[t, false]
 
 ///
+/// Array[t] is a type alias for a scoped array with a global lifetime.
+///
+pub type alias Array[t] = ScopedArray[t, false]
+
+///
 /// The Reified Flix Bools.
 ///
 pub enum ReifiedBool with Eq, Order, ToString {
@@ -120,16 +125,16 @@ pub def <==>(x: Bool, y: Bool): Bool = x == y
 /// Converts `x` to a string and prints it to standard out.
 ///
 pub def print(x: a): Unit & Impure with ToString[a] =
-    import static get java.lang.System.out as getOut;
-    import java.io.PrintStream.print(String);
+    import static get java.lang.System.out: ##java.io.PrintStream & Impure as getOut;
+    import java.io.PrintStream.print(String): Unit & Impure;
     x |> ToString.toString |> print(getOut())
 
 ///
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
 pub def println(x: a): Unit & Impure with ToString[a] =
-    import static get java.lang.System.out as getOut;
-    import java.io.PrintStream.println(String);
+    import static get java.lang.System.out: ##java.io.PrintStream & Impure as getOut;
+    import java.io.PrintStream.println(String): Unit & Impure;
     x |> ToString.toString |> println(getOut())
 
 ///
@@ -137,9 +142,9 @@ pub def println(x: a): Unit & Impure with ToString[a] =
 ///
 pub def bug!(m: String): a =
     let f = () -> {
-        import static get java.lang.System.err as getErr;
-        import java.io.PrintStream.println(String);
-        import java.lang.String.repeat(Int32);
+        import static get java.lang.System.err: ##java.io.PrintStream & Pure as getErr;
+        import java.io.PrintStream.println(String): Unit & Impure;
+        import java.lang.String.repeat(Int32): ##java.lang.String & Pure;
         let prt = println(getErr());
         prt(repeat("*", 80));
         prt("**") ;

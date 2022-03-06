@@ -181,7 +181,7 @@ namespace Set {
     ///
     /// Returns `None` if `s` is empty.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def minimumBy(cmp: (a, a) -> Comparison & ef, s: Set[a]): Option[a] & ef =
@@ -213,7 +213,7 @@ namespace Set {
     ///
     /// Returns `None` if `s` is empty.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def maximumBy(cmp: (a, a) -> Comparison & ef, s: Set[a]): Option[a] & ef =
@@ -315,7 +315,7 @@ namespace Set {
     ///
     /// Returns the number of elements in `s` that satisfy the predicate `f`.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def count(f: a -> Bool & ef, s: Set[a]): Int32 & ef =
@@ -339,8 +339,20 @@ namespace Set {
     ///
     /// Returns the sum of all elements in the set `s` according to the function `f`.
     ///
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
     pub def sumWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
-        Foldable.sumWith(f, s)
+        let Set(t) = s;
+        def sw() = RedBlackTree.sumWith((k, _) -> f(k), t);
+        reifyEff(f) {
+            case Pure(g) =>
+                if (useParallelEvaluation(s))
+                    RedBlackTree.parSumWith(threads() - 1, (k, _) -> g(k), t) as & Pure
+                else
+                    sw()
+            case _ => sw()
+        }
 
     ///
     /// Returns the product of all elements in the set `s`.
@@ -351,8 +363,20 @@ namespace Set {
     ///
     /// Returns the product of all elements in the set `s` according to the function `f`.
     ///
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
     pub def productWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
-        Foldable.productWith(f, s)
+        let Set(t) = s;
+        def pw() = RedBlackTree.productWith((k, _) -> f(k), t);
+        reifyEff(f) {
+            case Pure(g) =>
+                if (useParallelEvaluation(s))
+                    RedBlackTree.parProductWith(threads() - 1, (k, _) -> g(k), t) as & Pure
+                else
+                    pw()
+            case _ => pw()
+        }
 
     ///
     /// Returns the union of the elements in `s`.
@@ -434,7 +458,6 @@ namespace Set {
     ///
     /// Note: The returned set may be smaller than `s`.
     ///
-    @ParallelWhenPure // TODO
     pub def map(f: a -> b & ef, s: Set[a]): Set[b] & ef with Order[b] =
         foldLeft((acc, x) -> insert(f(x), acc), empty(), s)
 
@@ -558,9 +581,9 @@ namespace Set {
         if (n < b) acc else rangeHelper(b, n - 1, insert(n, acc))
 
     ///
-    /// Returns the set `s` as a `LazyList`.
+    /// Returns the set `s` as a `DelayList`.
     ///
-    pub def toLazyList(s: Set[a]): LazyList[a] =
+    pub def toDelayList(s: Set[a]): DelayList[a] =
         foldRight((x, acc) -> ECons(x, acc), ENil, s)
 
     ///

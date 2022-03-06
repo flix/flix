@@ -37,6 +37,9 @@ import scala.annotation.tailrec
   * head predicate p and a negated subgoal with predicate q, there is
   * no path in the dependency graph from p to q" -- Ullman 132
   *
+  * A negated subgoal is generalized here to a subgoal that is negated
+  * or fixed, collectively called a strong dependency.
+  *
   * Reports a [[StratificationError]] if the constraints cannot be stratified.
   */
 object Stratifier {
@@ -256,6 +259,11 @@ object Stratifier {
     case Expression.Ref(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Ref(e, tpe, eff, loc)
+      }
+
+    case Expression.RefWithRegion(exp1, exp2, tpe, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.RefWithRegion(e1, e2, tpe, eff, loc)
       }
 
     case Expression.Deref(exp, tpe, eff, loc) =>
@@ -577,6 +585,9 @@ object Stratifier {
     case Expression.Ref(exp, _, _, _) =>
       LabelledGraphOfExp(exp)
 
+    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+
     case Expression.Deref(exp, _, _, _) =>
       LabelledGraphOfExp(exp)
 
@@ -775,17 +786,18 @@ object Stratifier {
 
   /**
     * Computes the dependency graph from the labelled graph, throwing the labels away.
+    * If a labelled edge is either negative or fixed it is transformed to a strong edge.
     */
   private def labelledGraphToDependencyGraph(g: LabelledGraph): UllmansAlgorithm.DependencyGraph =
     g.edges.map {
       case LabelledEdge(head, Polarity.Positive, Fixity.Loose, _, body, loc) =>
         // Positive, loose edges require that the strata of the head is equal to,
-        // or below, the strata of the body.
-        UllmansAlgorithm.DependencyEdge.NonStrict(head, body, loc)
+        // or below, the strata of the body hence a weak edge.
+        UllmansAlgorithm.DependencyEdge.Weak(head, body, loc)
       case LabelledEdge(head, _, _, _, body, loc) =>
-        // Edges that are either negatively bound or fixed are strict since they require
+        // Edges that are either negatively bound or fixed are strong since they require
         // that the strata of the head is strictly higher than the strata of the body.
-        UllmansAlgorithm.DependencyEdge.Strict(head, body, loc)
+        UllmansAlgorithm.DependencyEdge.Strong(head, body, loc)
     }.toSet
 
 }

@@ -63,6 +63,8 @@ class Flix {
     */
   private var cachedParsedAst: ParsedAst.Root = ParsedAst.Root(Map.empty)
   private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, Set.empty)
+  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, Map.empty)
+  private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, Set.empty, Map.empty)
   private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, Map.empty, Map.empty)
 
   /**
@@ -127,8 +129,8 @@ class Flix {
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
     "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
+    "DelayList.flix" -> LocalResource.get("/src/library/DelayList.flix"),
     "DelayMap.flix" -> LocalResource.get("/src/library/DelayMap.flix"),
-    "DemandList.flix" -> LocalResource.get("/src/library/DemandList.flix"),
     "Float32.flix" -> LocalResource.get("/src/library/Float32.flix"),
     "Float64.flix" -> LocalResource.get("/src/library/Float64.flix"),
     "Int8.flix" -> LocalResource.get("/src/library/Int8.flix"),
@@ -137,9 +139,9 @@ class Flix {
     "Int64.flix" -> LocalResource.get("/src/library/Int64.flix"),
     "Iterable.flix" -> LocalResource.get("/src/library/Iterable.flix"),
     "Iterator.flix" -> LocalResource.get("/src/library/Iterator.flix"),
-    "LazyList.flix" -> LocalResource.get("/src/library/LazyList.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),
     "Map.flix" -> LocalResource.get("/src/library/Map.flix"),
+    "Nec.flix" -> LocalResource.get("/src/library/Nec.flix"),
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
@@ -218,11 +220,6 @@ class Flix {
     "Fixpoint/Ram/RelOp.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RelOp.flix"),
     "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
   )
-
-  /**
-    * A case class to track the compile time spent in a phase and its sub-phases.
-    */
-  case class PhaseTime(phase: String, time: Long, subphases: List[(String, Long)])
 
   /**
     * A map to track the time spent in each phase and sub-phase.
@@ -458,8 +455,8 @@ class Flix {
       afterParser <- Parser.run(afterReader, cachedParsedAst, changeSet)
       afterWeeder <- Weeder.run(afterParser, cachedWeededAst, changeSet)
       afterNamer <- Namer.run(afterWeeder)
-      afterResolver <- Resolver.run(afterNamer)
-      afterKinder <- Kinder.run(afterResolver)
+      afterResolver <- Resolver.run(afterNamer, cachedResolvedAst, changeSet)
+      afterKinder <- Kinder.run(afterResolver, cachedKindedAst, changeSet)
       afterDeriver <- Deriver.run(afterKinder)
       afterTyper <- Typer.run(afterDeriver, cachedTypedAst, changeSet)
       afterStatistics <- Statistics.run(afterTyper)
@@ -474,6 +471,8 @@ class Flix {
       if (options.incremental) {
         this.cachedParsedAst = afterParser
         this.cachedWeededAst = afterWeeder
+        this.cachedKindedAst = afterKinder
+        this.cachedResolvedAst = afterResolver
         this.cachedTypedAst = afterTyper
       }
       afterSafety
@@ -507,7 +506,8 @@ class Flix {
       afterClosureConv <- ClosureConv.run(afterSimplifier)
       afterLambdaLift <- LambdaLift.run(afterClosureConv)
       afterTailrec <- Tailrec.run(afterLambdaLift)
-      afterInliner <- Inliner.run(afterTailrec)
+      afterOccurrenceAnalyzer <- OccurrenceAnalyzer.run(afterTailrec)
+      afterInliner <- Inliner.run(afterOccurrenceAnalyzer)
       afterOptimizer <- Optimizer.run(afterInliner)
       afterTreeShaker <- TreeShaker.run(afterOptimizer)
       afterVarNumbering <- VarNumbering.run(afterTreeShaker)
