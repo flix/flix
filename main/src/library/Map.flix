@@ -121,11 +121,6 @@ namespace Map {
     @Time(1) @Space(1)
     pub def singleton(k: k, v: v): Map[k, v] with Order[k] = insert(k, v, empty())
 
-
-
-
-
-
     ///
     /// Returns `true` if and only if `m` is the empty map, i.e. `Map(Nil)`.
     ///
