@@ -105,11 +105,6 @@ namespace Map {
         let Map(xs) = m;
         RedBlackTree.size(xs)
 
-
-
-
-
-
     ///
     /// Returns the empty map.
     ///
