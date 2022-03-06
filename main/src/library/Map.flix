@@ -647,12 +647,12 @@ namespace Map {
     @Time(time(f) * size(m1) * Int32.log2(size(m2))) @Space(space(f) * size(m1) *  Int32.log2(size(m2)))
     pub def unionWithKey(f: (k, v, v) -> v & ef, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & ef with Order[k] =
         use RedBlackTree.{blackHeight, foldRight, insertWith};
-        let Map(xs) = m1;
-        let Map(ys) = m2;
-        if (blackHeight(xs) < blackHeight(ys))
-            Map(foldRight((k, v) -> insertWith(f, k, v), ys, xs))
+        let Map(t1) = m1;
+        let Map(t2) = m2;
+        if (blackHeight(t1) < blackHeight(t2))
+            Map(foldRight((k, v) -> insertWith(f, k, v), t2, t1))
         else
-            Map(foldRight((k, v) -> insertWith((_, v1, v2) -> f(k, v2, v1), k, v), xs, ys))
+            Map(foldRight((k, v) -> insertWith((_, v1, v2) -> f(k, v2, v1), k, v), t1, t2))
 
     ///
     /// Returns the left-biased intersection of `m1` and `m2`.
@@ -727,7 +727,7 @@ namespace Map {
     ///
     pub def invert(m: Map[k, v]): Map[v, Set[k]] with Order[k], Order[v] =
         let f = (acc, k, v) -> Map.insertWith(Set.union, v, Set#{k}, acc);
-        Map.foldLeftWithKey(f, Map#{}, m)
+        Map.foldLeftWithKey(f, empty(), m)
 
     ///
     /// Returns `m` as a mutable set.
@@ -767,8 +767,8 @@ namespace Map {
     ///
     @Time(size(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
     pub def foreach(f: (k, v) -> Unit & ef, m: Map[k, v]): Unit & ef =
-        let Map(xs) = m;
-        RedBlackTree.foreach(f, xs)
+        let Map(t) = m;
+        RedBlackTree.foreach(f, t)
 
     ///
     /// Build a map by applying `f` to the seed value `st`.
@@ -777,15 +777,12 @@ namespace Map {
     ///
     /// `f` should return `None` to signal the end of building the map.
     ///
-    pub def unfold(f: s -> Option[(k, v, s)] & ef, st: s): Map[k,v] & ef with Order[k] = unfoldHelper(f, st, empty())
-
-    ///
-    /// Helper function for `unfold`.
-    ///
-    def unfoldHelper(f: s -> Option[(k, v, s)] & ef, st: s, ac: Map[k,v]): Map[k,v] & ef with Order[k] = match f(st) {
-        case None => ac
-        case Some((k, v, st1)) => unfoldHelper(f, st1, insert(k, v, ac))
-    }
+    pub def unfold(f: s -> Option[(k, v, s)] & ef, st: s): Map[k,v] & ef with Order[k] =
+        def loop(sst, m) = match f(sst) {
+            case None            => m
+            case Some(k, v, st1) => loop(st1, insert(k, v, m))
+        };
+        loop(st, empty())
 
     ///
     /// Build a map by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -795,15 +792,12 @@ namespace Map {
     ///
     /// `next` should return `None` to signal the end of building the map.
     ///
-    pub def unfoldWithIter(next: Unit -> Option[(k, v)] & ef): Map[k, v] & ef with Order[k] = unfoldWithIterHelper(next, empty())
-
-    ///
-    /// Helper function for `unfoldWithIter`.
-    ///
-    def unfoldWithIterHelper(next: Unit -> Option[(k, v)] & ef, ac: Map[k, v]): Map[k, v] & ef with Order[k] = match next() {
-        case None => ac
-        case Some(k, v) => unfoldWithIterHelper(next, insert(k, v, ac))
-    }
+    pub def unfoldWithIter(next: Unit -> Option[(k, v)] & ef): Map[k, v] & ef with Order[k] =
+        def loop(m) = match next() {
+            case None       => m
+            case Some(k, v) => loop(insert(k, v, m))
+        };
+        loop(empty())
 
     ///
     /// Extracts a range of key-value pairs from the map `m`.
@@ -811,15 +805,15 @@ namespace Map {
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
     pub def query(p: k -> Comparison, m: Map[k, v]): List[(k, v)] =
-        let Map(xs) = m;
-        RedBlackTree.query(p, (k, v) -> (k, v), xs)
+        let Map(t) = m;
+        RedBlackTree.query(p, (k, v) -> (k, v), t)
 
     ///
     /// Applies `f` to all key-value pairs `(k, v)` from the map `m` where `p(k)` returns `EqualTo`.
     ///
     pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, m: Map[k, v]): Unit & ef =
-        let Map(xs) = m;
-        RedBlackTree.queryWith(p, f, xs)
+        let Map(t) = m;
+        RedBlackTree.queryWith(p, f, t)
 
     ///
     /// Returns an iterator over all key-value pairs in `m`.
