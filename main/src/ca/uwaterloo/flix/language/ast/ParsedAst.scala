@@ -1268,6 +1268,15 @@ object ParsedAst {
     case class RigidVar(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+      * Region.
+      *
+      * @param sp1   the position of the first character in the type.
+      * @param ident the variable name.
+      * @param sp2   the position of the last character in the type.
+      */
+    case class Region(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
       * Primitive or Named type.
       *
       * @param sp1   the position of the first character in the type.
