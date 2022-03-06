@@ -105,11 +105,6 @@ namespace Map {
         let Map(xs) = m;
         RedBlackTree.size(xs)
 
-
-
-
-
-
     ///
     /// Returns the empty map.
     ///
@@ -126,18 +121,13 @@ namespace Map {
     @Time(1) @Space(1)
     pub def singleton(k: k, v: v): Map[k, v] with Order[k] = insert(k, v, empty())
 
-
-
-
-
-
     ///
     /// Returns `true` if and only if `m` is the empty map, i.e. `Map(Nil)`.
     ///
     @Time(1) @Space(1)
     pub def isEmpty(m: Map[k, v]): Bool =
-        let Map(xs) = m;
-        RedBlackTree.isEmpty(xs)
+        let Map(t) = m;
+        RedBlackTree.isEmpty(t)
 
     ///
     /// Returns `Some(v)` if `k => v` is in `m`.
@@ -146,8 +136,8 @@ namespace Map {
     ///
     @Time(Int32.log2(size(m))) @Space(1)
     pub def get(k: k, m: Map[k, v]): Option[v] with Order[k] =
-        let Map(xs) = m;
-        RedBlackTree.get(k, xs)
+        let Map(t) = m;
+        RedBlackTree.get(k, t)
 
     ///
     /// Returns `v` if `k => v` is in `m`.
@@ -162,8 +152,8 @@ namespace Map {
     ///
     @Time(Int32.log2(size(m))) @Space(1)
     pub def memberOf(k: k, m: Map[k, v]): Bool with Order[k] =
-        let Map(xs) = m;
-        RedBlackTree.memberOf(k, xs)
+        let Map(t) = m;
+        RedBlackTree.memberOf(k, t)
 
     ///
     /// Optionally finds `k => v` where `k` is the smallest key according to the `Order` instance of `k`.
@@ -303,18 +293,13 @@ namespace Map {
     pub def valuesOf(m: Map[k, v]): List[v] =
         foldRight((v, acc) -> v :: acc, Nil, m)
 
-
-
-
-
-
     ///
     /// Updates `m` with `k => v`.
     ///
     @Time(Int32.log2(size(m))) @Space(Int32.log2(size(m)))
     pub def insert(k: k, v: v, m: Map[k, v]): Map[k, v] with Order[k] =
-        let Map(xs) = m;
-        Map(RedBlackTree.insert(k, v, xs))
+        let Map(t) = m;
+        Map(RedBlackTree.insert(k, v, t))
 
     ///
     /// Updates `m` with `k => f(v, v1)` if `k => v1` is in `m`.
@@ -332,12 +317,8 @@ namespace Map {
     ///
     @Time(time(f) + Int32.log2(size(m))) @Space(space(f) + Int32.log2(size(m)))
     pub def insertWithKey(f: (k, v, v) -> v & ef, k: k, v: v, m: Map[k, v]): Map[k, v] & ef with Order[k] =
-        let Map(xs) = m;
-        Map(RedBlackTree.insertWith(f, k, v, xs))
-
-
-
-
+        let Map(t) = m;
+        Map(RedBlackTree.insertWith(f, k, v, t))
 
     ///
     /// Updates `m` with `k => f(v)` if `k => v` is in `m`.
@@ -367,25 +348,16 @@ namespace Map {
     ///
     @Time(time(f) + Int32.log2(size(m))) @Space(space(f) + Int32.log2(size(m)))
     pub def updateWithKey(f: (k, v) -> Option[v] & ef, k: k, m: Map[k, v]): Map[k, v] & ef with Order[k] =
-        let Map(xs) = m;
-        Map(RedBlackTree.updateWith(f, k, xs))
-
-
-
-
+        let Map(t) = m;
+        Map(RedBlackTree.updateWith(f, k, t))
 
     ///
     /// Removes the mapping `k` from the map `m`.
     ///
     @Time(Int32.log2(size(m))) @Space(Int32.log2(size(m)))
     pub def remove(k: k, m: Map[k, v]): Map[k, v] with Order[k] =
-        let Map(xs) = m;
-        Map(RedBlackTree.remove(k, xs))
-
-
-
-
-
+        let Map(t) = m;
+        Map(RedBlackTree.remove(k, t))
 
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2`.
@@ -415,8 +387,8 @@ namespace Map {
     ///
     @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
     pub def findLeft(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] =
-        let Map(xs) = m;
-        RedBlackTree.findLeft(f, xs)
+        let Map(t) = m;
+        RedBlackTree.findLeft(f, t)
 
     ///
     /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from right to left.
@@ -425,14 +397,8 @@ namespace Map {
     ///
     @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
     pub def findRight(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] =
-        let Map(xs) = m;
-        RedBlackTree.findRight(f, xs)
-
-
-
-
-
-
+        let Map(t) = m;
+        RedBlackTree.findRight(f, t)
     ///
     /// Returns a map of all mappings `k => v` in `m` where `v` satisfies the predicate `f`.
     ///
@@ -506,8 +472,8 @@ namespace Map {
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
     pub def foldRightWithKey(f: (k, v, b) -> b & ef, s: b, m: Map[k, v]): b & ef =
-        let Map(xs) = m;
-        RedBlackTree.foldRight(f, s, xs)
+        let Map(t) = m;
+        RedBlackTree.foldRight(f, s, t)
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -527,8 +493,8 @@ namespace Map {
     /// Returns `None` if `m` is the empty map.
     ///
     pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & ef, m: Map[k, v]): Option[(k, v)] & ef =
-        let Map(xs) = m;
-        RedBlackTree.reduceLeft(f, xs)
+        let Map(t) = m;
+        RedBlackTree.reduceLeft(f, t)
 
     ///
     /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
@@ -548,8 +514,8 @@ namespace Map {
     /// Returns `None` if `m` is the empty map.
     ///
     pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & ef, m: Map[k, v]): Option[(k, v)] & ef =
-        let Map(xs) = m;
-        RedBlackTree.reduceRight(f, xs)
+        let Map(t) = m;
+        RedBlackTree.reduceRight(f, t)
 
     ///
     /// Returns the number of mappings `k => v` in `m` that satisfy the predicate `f`.
@@ -558,6 +524,7 @@ namespace Map {
     ///
     @ParallelWhenPure
     pub def count(f: (k, v) -> Bool & ef, m: Map[k, v]): Int32 & ef =
+        def c() = foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m);
         let f1 = r -> f(r.k, r.v);
         reifyEff(f1) {
             case Pure(g) =>
@@ -566,8 +533,8 @@ namespace Map {
                     let Map(t) = m;
                     RedBlackTree.parCount(threads() - 1, h, t) as & Pure
                 else
-                    foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m)
-            case _  => foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m)
+                    c()
+            case _  => c()
         }
 
     ///
@@ -643,8 +610,8 @@ namespace Map {
     ///
     @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
     pub def exists(f: (k, v) -> Bool, m: Map[k, v]): Bool =
-        let Map(xs) = m;
-        RedBlackTree.exists(f, xs)
+        let Map(t) = m;
+        RedBlackTree.exists(f, t)
 
     ///
     /// Returns `true` if and only if all mappings in `m` satisfy the predicate `f`.
@@ -655,13 +622,8 @@ namespace Map {
     ///
     @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
     pub def forall(f: (k, v) -> Bool, m: Map[k, v]): Bool =
-        let Map(xs) = m;
-        RedBlackTree.forall(f, xs)
-
-
-
-
-
+        let Map(t) = m;
+        RedBlackTree.forall(f, t)
 
     ///
     /// Returns the left-biased union of `m1` and `m2`.
@@ -685,12 +647,12 @@ namespace Map {
     @Time(time(f) * size(m1) * Int32.log2(size(m2))) @Space(space(f) * size(m1) *  Int32.log2(size(m2)))
     pub def unionWithKey(f: (k, v, v) -> v & ef, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & ef with Order[k] =
         use RedBlackTree.{blackHeight, foldRight, insertWith};
-        let Map(xs) = m1;
-        let Map(ys) = m2;
-        if (blackHeight(xs) < blackHeight(ys))
-            Map(foldRight((k, v) -> insertWith(f, k, v), ys, xs))
+        let Map(t1) = m1;
+        let Map(t2) = m2;
+        if (blackHeight(t1) < blackHeight(t2))
+            Map(foldRight((k, v) -> insertWith(f, k, v), t2, t1))
         else
-            Map(foldRight((k, v) -> insertWith((_, v1, v2) -> f(k, v2, v1), k, v), xs, ys))
+            Map(foldRight((k, v) -> insertWith((_, v1, v2) -> f(k, v2, v1), k, v), t1, t2))
 
     ///
     /// Returns the left-biased intersection of `m1` and `m2`.
@@ -765,7 +727,7 @@ namespace Map {
     ///
     pub def invert(m: Map[k, v]): Map[v, Set[k]] with Order[k], Order[v] =
         let f = (acc, k, v) -> Map.insertWith(Set.union, v, Set#{k}, acc);
-        Map.foldLeftWithKey(f, Map#{}, m)
+        Map.foldLeftWithKey(f, empty(), m)
 
     ///
     /// Returns `m` as a mutable set.
@@ -805,8 +767,8 @@ namespace Map {
     ///
     @Time(size(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
     pub def foreach(f: (k, v) -> Unit & ef, m: Map[k, v]): Unit & ef =
-        let Map(xs) = m;
-        RedBlackTree.foreach(f, xs)
+        let Map(t) = m;
+        RedBlackTree.foreach(f, t)
 
     ///
     /// Build a map by applying `f` to the seed value `st`.
@@ -815,15 +777,12 @@ namespace Map {
     ///
     /// `f` should return `None` to signal the end of building the map.
     ///
-    pub def unfold(f: s -> Option[(k, v, s)] & ef, st: s): Map[k,v] & ef with Order[k] = unfoldHelper(f, st, empty())
-
-    ///
-    /// Helper function for `unfold`.
-    ///
-    def unfoldHelper(f: s -> Option[(k, v, s)] & ef, st: s, ac: Map[k,v]): Map[k,v] & ef with Order[k] = match f(st) {
-        case None => ac
-        case Some((k, v, st1)) => unfoldHelper(f, st1, insert(k, v, ac))
-    }
+    pub def unfold(f: s -> Option[(k, v, s)] & ef, st: s): Map[k,v] & ef with Order[k] =
+        def loop(sst, m) = match f(sst) {
+            case None            => m
+            case Some(k, v, st1) => loop(st1, insert(k, v, m))
+        };
+        loop(st, empty())
 
     ///
     /// Build a map by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -833,15 +792,12 @@ namespace Map {
     ///
     /// `next` should return `None` to signal the end of building the map.
     ///
-    pub def unfoldWithIter(next: Unit -> Option[(k, v)] & ef): Map[k, v] & ef with Order[k] = unfoldWithIterHelper(next, empty())
-
-    ///
-    /// Helper function for `unfoldWithIter`.
-    ///
-    def unfoldWithIterHelper(next: Unit -> Option[(k, v)] & ef, ac: Map[k, v]): Map[k, v] & ef with Order[k] = match next() {
-        case None => ac
-        case Some(k, v) => unfoldWithIterHelper(next, insert(k, v, ac))
-    }
+    pub def unfoldWithIter(next: Unit -> Option[(k, v)] & ef): Map[k, v] & ef with Order[k] =
+        def loop(m) = match next() {
+            case None       => m
+            case Some(k, v) => loop(insert(k, v, m))
+        };
+        loop(empty())
 
     ///
     /// Extracts a range of key-value pairs from the map `m`.
@@ -849,15 +805,15 @@ namespace Map {
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
     pub def query(p: k -> Comparison, m: Map[k, v]): List[(k, v)] =
-        let Map(xs) = m;
-        RedBlackTree.query(p, (k, v) -> (k, v), xs)
+        let Map(t) = m;
+        RedBlackTree.query(p, (k, v) -> (k, v), t)
 
     ///
     /// Applies `f` to all key-value pairs `(k, v)` from the map `m` where `p(k)` returns `EqualTo`.
     ///
     pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, m: Map[k, v]): Unit & ef =
-        let Map(xs) = m;
-        RedBlackTree.queryWith(p, f, xs)
+        let Map(t) = m;
+        RedBlackTree.queryWith(p, f, t)
 
     ///
     /// Returns an iterator over all key-value pairs in `m`.
@@ -878,24 +834,24 @@ namespace Map {
     /// Returns the result of running all the actions in the map `m`.
     ///
     pub def sequence(m: Map[k, m[v]]): m[Map[k, v]] with Applicative[m] =
-        let Map(tree) = m;
-        Functor.map(Map, Traversable.sequence(tree))
+        let Map(t) = m;
+        Functor.map(Map, Traversable.sequence(t))
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the values of the
     /// map `m`.
     ///
     pub def traverse(f: v1 -> m[v2] & ef, m: Map[k, v1]): m[Map[k, v2]] & ef with Applicative[m] =
-        let Map(tree) = m;
-        Functor.map(Map, Traversable.traverse(f, tree))
+        let Map(t) = m;
+        Functor.map(Map, Traversable.traverse(f, t))
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the key-value pairs
     /// of the map `m`.
     ///
     pub def traverseWithKey(f: (k, v1) -> m[v2] & ef, m: Map[k, v1]): m[Map[k, v2]] & ef with Applicative[m] =
-        let Map(tree) = m;
-        Functor.map(Map, RedBlackTree.mapAWithKey(f, tree))
+        let Map(t) = m;
+        Functor.map(Map, RedBlackTree.mapAWithKey(f, t))
 
     ///
     /// Returns the concatenation of the string representation of each key `k`
