@@ -19,12 +19,15 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.Validation
 import org.scalatest.{BeforeAndAfter, FunSuite}
 
+import java.nio.file.Path
+
 class TestIncremental extends FunSuite with BeforeAndAfter {
 
   private val FileA = "FileA.flix"
   private val FileB = "FileB.flix"
   private val FileC = "FileC.flix"
   private val FileD = "FileD.flix"
+  private val FileE = "FileE.flix"
 
   // A new Flix instance is created and initialized with some source code for each test.
 
@@ -41,6 +44,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter {
       s"""
          |def main(_args: Array[String]): Int32 & Impure =
          |    println(f(true));
+         |    println(C.cd(1) |> C.cda);
          |    0
          |""".stripMargin)
     flix.addSourceCode(FileC,
@@ -58,6 +62,10 @@ class TestIncremental extends FunSuite with BeforeAndAfter {
          |pub enum D[a] {
          |    case DA(a)
          |}
+         |""".stripMargin)
+    flix.addSourceCode(FileE,
+      s"""
+         |instance C[Int32] {}
          |""".stripMargin)
     flix.compile().get
   }
@@ -81,6 +89,9 @@ class TestIncremental extends FunSuite with BeforeAndAfter {
          |    pub def cg(x: a): a
          |}
          |""".stripMargin)
+    flix.remSourcePath(Path.of(FileE))
+    flix.remSourcePath(Path.of(FileD))
+
     flix.compile().get
   }
 
@@ -99,8 +110,6 @@ class TestIncremental extends FunSuite with BeforeAndAfter {
       s"""
          |pub lawless class C[a] {
          |    pub def cf(x: String, y: a, z: a): a = if (f(x) == x) y else z
-         |    pub def cg(x: a): a
-         |    pub def ch(x: a): a
          |}
          |""".stripMargin)
     flix.compile().get
@@ -111,6 +120,10 @@ class TestIncremental extends FunSuite with BeforeAndAfter {
       s"""
          |pub lawless class C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
+         |    pub def cd(x: a): D[a] = DA(x)
+         |    pub def cda(d: D[a]): a = match d {
+         |        case DA(x) => x
+         |    }
          |}
          |""".stripMargin)
     flix.addSourceCode(FileC,
@@ -129,6 +142,52 @@ class TestIncremental extends FunSuite with BeforeAndAfter {
          |""".stripMargin)
     expectFailure(flix.compile())
   }
+
+  test("Incremental.05") {
+    flix.addSourceCode(FileA,
+      s"""
+         |pub def f(x: Int64, y: Int64): Bool = x == y
+         |
+         |""".stripMargin)
+    flix.addSourceCode(FileB,
+      s"""
+         |def main(_args: Array[String]): Int32 & Impure =
+         |    println(f(1i64, 2i64));
+         |    println(C.cd(1i64) |> C.cda);
+         |    0
+         |""".stripMargin)
+    flix.addSourceCode(FileC,
+      s"""
+         |pub lawless class C[a] {
+         |    pub def cf(x: Int64, b: Int64, y: a, z: a): a = if (f(x, b)) y else z
+         |    pub def cd(x: a): D[a]
+         |    pub def cda(d: D[a]): a = match d {
+         |        case DA(x, _)    => x
+         |        case DB(x, _, _) => x
+         |    }
+         |    pub def cdaf(x: a, y: a, d: D[a]): Bool
+         |}
+         |""".stripMargin)
+    flix.addSourceCode(FileD,
+      s"""
+         |pub enum D[a] {
+         |    case DA(a, a)
+         |    case DB(a, a, a)
+         |}
+         |""".stripMargin)
+    flix.addSourceCode(FileE,
+      s"""
+         |instance C[Int64] {
+         |    pub def cd(x: Int64): D[Int64] = DB(x, x, x)
+         |    pub def cdaf(x: Int64, y: Int64, d: D[Int64]): Bool = match d {
+         |        case DA(a, b)    => f(x, a) and f(y, b)
+         |        case DB(_, _, _) => false
+         |    }
+         |}
+         |""".stripMargin)
+    flix.compile().get
+  }
+
 
   /**
     * Helper function that handles compilation errors.
