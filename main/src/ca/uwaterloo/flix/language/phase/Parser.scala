@@ -1632,7 +1632,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     * This function is exactly the same as using [[atomic]].
     * However, it is useful for identifying symbols that should be reserved.
     */
-  def operatorX(symbol: String): Rule0 = namedRule(symbol) {
+  private def operatorX(symbol: String): Rule0 = namedRule(symbol) {
     atomic(symbol)
   }
 
