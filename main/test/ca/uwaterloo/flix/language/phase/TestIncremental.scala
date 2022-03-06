@@ -67,6 +67,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter {
       s"""
          |instance C[Int32] {}
          |""".stripMargin)
+
     flix.compile().get
   }
 
@@ -185,6 +186,50 @@ class TestIncremental extends FunSuite with BeforeAndAfter {
          |    }
          |}
          |""".stripMargin)
+    flix.compile().get
+  }
+
+  test("Incremental.06") {
+    flix.addSourceCode(FileA,
+      s"""
+         |namespace F {
+         |    pub def f(x: Bool): Bool = not x
+         |}
+         |""".stripMargin)
+    flix.addSourceCode(FileB,
+      s"""
+         |def main(_args: Array[String]): Int32 & Impure =
+         |    println(F.f(true));
+         |    println(C.cd(1i8) |> C.cda);
+         |    0
+         |""".stripMargin)
+    flix.addSourceCode(FileC,
+      s"""
+         |pub lawless class C[a] {
+         |    pub def cf(x: Bool, y: a, z: a): a = if (F.f(x) == x) y else z
+         |    pub def cd(x: a): DDD.D[a] =
+         |        use DDD.D;
+         |        D.DA(x)
+         |    pub def cda(d: DDD.D[a]): a =
+         |        use DDD.D;
+         |        match d {
+         |          case D.DA(x) => x
+         |        }
+         |}
+         |""".stripMargin)
+    flix.addSourceCode(FileD,
+      s"""
+         |namespace DDD {
+         |    pub enum D[a] {
+         |        case DA(a)
+         |    }
+         |}
+         |""".stripMargin)
+    flix.addSourceCode(FileE,
+      s"""
+         |instance C[Int8] {}
+         |""".stripMargin)
+
     flix.compile().get
   }
 
