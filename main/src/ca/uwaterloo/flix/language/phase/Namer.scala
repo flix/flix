@@ -577,8 +577,7 @@ object Namer {
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       mapN(visitExp(exp, env0 + (ident.name -> sym), uenv0, tenv0)) {
-        case e =>
-          NamedAst.Expression.LetRegion(sym, e, loc)
+        case e => NamedAst.Expression.LetRegion(sym, e, loc)
       }
 
     case WeededAst.Expression.Match(exp, rules, loc) =>

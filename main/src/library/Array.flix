@@ -14,11 +14,6 @@
  * limitations under the License.
  */
 
-instance Iterable[Array] {
-    pub def iterator(t: Array[a]): Iterator[a] & Impure =
-        Array.toIterator(t)
-}
-
 namespace Array {
 
     ///
@@ -42,6 +37,19 @@ namespace Array {
             }
         };
         loop(0)
+
+    ///
+    /// Returns a string representation of the given array `a`.
+    ///
+    pub def toString(a: Array[a]): String with ToString[a] =
+        def loop(i, acc) =
+            if (i < a.length) {
+                if (i == 0) loop(i + 1, "${a[i]}") as & Pure
+                else loop(i + 1, "${acc}, ${a[i]}") as & Pure
+            } else {
+                "[${acc}]"
+            };
+        loop(0, "")
 
     ///
     /// Returns a fresh array of length `l` filled with the element `x`.
