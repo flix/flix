@@ -293,18 +293,13 @@ namespace Map {
     pub def valuesOf(m: Map[k, v]): List[v] =
         foldRight((v, acc) -> v :: acc, Nil, m)
 
-
-
-
-
-
     ///
     /// Updates `m` with `k => v`.
     ///
     @Time(Int32.log2(size(m))) @Space(Int32.log2(size(m)))
     pub def insert(k: k, v: v, m: Map[k, v]): Map[k, v] with Order[k] =
-        let Map(xs) = m;
-        Map(RedBlackTree.insert(k, v, xs))
+        let Map(t) = m;
+        Map(RedBlackTree.insert(k, v, t))
 
     ///
     /// Updates `m` with `k => f(v, v1)` if `k => v1` is in `m`.
@@ -322,12 +317,8 @@ namespace Map {
     ///
     @Time(time(f) + Int32.log2(size(m))) @Space(space(f) + Int32.log2(size(m)))
     pub def insertWithKey(f: (k, v, v) -> v & ef, k: k, v: v, m: Map[k, v]): Map[k, v] & ef with Order[k] =
-        let Map(xs) = m;
-        Map(RedBlackTree.insertWith(f, k, v, xs))
-
-
-
-
+        let Map(t) = m;
+        Map(RedBlackTree.insertWith(f, k, v, t))
 
     ///
     /// Updates `m` with `k => f(v)` if `k => v` is in `m`.
@@ -357,25 +348,16 @@ namespace Map {
     ///
     @Time(time(f) + Int32.log2(size(m))) @Space(space(f) + Int32.log2(size(m)))
     pub def updateWithKey(f: (k, v) -> Option[v] & ef, k: k, m: Map[k, v]): Map[k, v] & ef with Order[k] =
-        let Map(xs) = m;
-        Map(RedBlackTree.updateWith(f, k, xs))
-
-
-
-
+        let Map(t) = m;
+        Map(RedBlackTree.updateWith(f, k, t))
 
     ///
     /// Removes the mapping `k` from the map `m`.
     ///
     @Time(Int32.log2(size(m))) @Space(Int32.log2(size(m)))
     pub def remove(k: k, m: Map[k, v]): Map[k, v] with Order[k] =
-        let Map(xs) = m;
-        Map(RedBlackTree.remove(k, xs))
-
-
-
-
-
+        let Map(t) = m;
+        Map(RedBlackTree.remove(k, t))
 
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2`.
@@ -405,8 +387,8 @@ namespace Map {
     ///
     @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
     pub def findLeft(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] =
-        let Map(xs) = m;
-        RedBlackTree.findLeft(f, xs)
+        let Map(t) = m;
+        RedBlackTree.findLeft(f, t)
 
     ///
     /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from right to left.
@@ -415,14 +397,8 @@ namespace Map {
     ///
     @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
     pub def findRight(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] =
-        let Map(xs) = m;
-        RedBlackTree.findRight(f, xs)
-
-
-
-
-
-
+        let Map(t) = m;
+        RedBlackTree.findRight(f, t)
     ///
     /// Returns a map of all mappings `k => v` in `m` where `v` satisfies the predicate `f`.
     ///
@@ -496,8 +472,8 @@ namespace Map {
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
     pub def foldRightWithKey(f: (k, v, b) -> b & ef, s: b, m: Map[k, v]): b & ef =
-        let Map(xs) = m;
-        RedBlackTree.foldRight(f, s, xs)
+        let Map(t) = m;
+        RedBlackTree.foldRight(f, s, t)
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -517,8 +493,8 @@ namespace Map {
     /// Returns `None` if `m` is the empty map.
     ///
     pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & ef, m: Map[k, v]): Option[(k, v)] & ef =
-        let Map(xs) = m;
-        RedBlackTree.reduceLeft(f, xs)
+        let Map(t) = m;
+        RedBlackTree.reduceLeft(f, t)
 
     ///
     /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
@@ -538,8 +514,8 @@ namespace Map {
     /// Returns `None` if `m` is the empty map.
     ///
     pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & ef, m: Map[k, v]): Option[(k, v)] & ef =
-        let Map(xs) = m;
-        RedBlackTree.reduceRight(f, xs)
+        let Map(t) = m;
+        RedBlackTree.reduceRight(f, t)
 
     ///
     /// Returns the number of mappings `k => v` in `m` that satisfy the predicate `f`.
@@ -548,6 +524,7 @@ namespace Map {
     ///
     @ParallelWhenPure
     pub def count(f: (k, v) -> Bool & ef, m: Map[k, v]): Int32 & ef =
+        def c() = foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m);
         let f1 = r -> f(r.k, r.v);
         reifyEff(f1) {
             case Pure(g) =>
@@ -556,8 +533,8 @@ namespace Map {
                     let Map(t) = m;
                     RedBlackTree.parCount(threads() - 1, h, t) as & Pure
                 else
-                    foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m)
-            case _  => foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m)
+                    c()
+            case _  => c()
         }
 
     ///
@@ -633,8 +610,8 @@ namespace Map {
     ///
     @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
     pub def exists(f: (k, v) -> Bool, m: Map[k, v]): Bool =
-        let Map(xs) = m;
-        RedBlackTree.exists(f, xs)
+        let Map(t) = m;
+        RedBlackTree.exists(f, t)
 
     ///
     /// Returns `true` if and only if all mappings in `m` satisfy the predicate `f`.
@@ -645,13 +622,8 @@ namespace Map {
     ///
     @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
     pub def forall(f: (k, v) -> Bool, m: Map[k, v]): Bool =
-        let Map(xs) = m;
-        RedBlackTree.forall(f, xs)
-
-
-
-
-
+        let Map(t) = m;
+        RedBlackTree.forall(f, t)
 
     ///
     /// Returns the left-biased union of `m1` and `m2`.
