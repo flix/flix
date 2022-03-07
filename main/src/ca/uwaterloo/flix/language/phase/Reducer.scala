@@ -37,12 +37,12 @@ object Reducer {
    * Returns an optimized version of the given AST `root`.
    */
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): Validation[LiftedAst.Root, CompilationMessage] = flix.phase("Reducer") {
+
+    // Visit every definition in the AST
     val defs = root.defs.map {
-      case (sym, defn) =>
-        val fparams = defn.fparams.map { case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc) }
-        val e = visitExp(defn.exp, Map.empty)
-        sym -> LiftedAst.Def(defn.ann, defn.mod, defn.sym, fparams, e, defn.tpe, defn.loc)
+      case (sym, defn) => sym -> visitDef(defn)
     }
+
     val enums = root.enums.map {
       case (sym, enum) =>
         val cases = enum.cases.map {
@@ -51,10 +51,23 @@ object Reducer {
         }
         sym -> LiftedAst.Enum(enum.mod, enum.sym, cases, enum.tpeDeprecated, enum.loc)
     }
+
     // Reassemble the ast root.
     val result = LiftedAst.Root(defs, enums, root.reachable, root.sources)
 
     result.toSuccess
+  }
+
+  /**
+   * Performs expression reduction on the given definition `def0`.
+   * Converts definition from OccurrenceAst to LiftedAst.
+   */
+  private def visitDef(def0: OccurrenceAst.Def)(implicit flix: Flix): LiftedAst.Def = {
+    val convertedExp = visitExp(def0.exp, Map.empty)
+    val fparams = def0.fparams.map {
+      case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
+    }
+    LiftedAst.Def(def0.ann, def0.mod, def0.sym, fparams, convertedExp, def0.tpe, def0.loc)
   }
 
   /**
