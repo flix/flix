@@ -2715,31 +2715,31 @@ namespace TestDelayList {
 
     @test
     def order01(): Bool =
-        ENil: DelayList[Unit] <=> ENil: DelayList[Unit] == EqualTo
+        (ENil: DelayList[Unit] <=> ENil: DelayList[Unit]) == EqualTo
 
     @test
     def order02(): Bool =
-        ((1 :: Nil) |> List.toDelayList) <=> ENil: DelayList[Int32] == GreaterThan
+        (((1 :: Nil) |> List.toDelayList) <=> ENil: DelayList[Int32]) == GreaterThan
 
     @test
     def order03(): Bool =
-        ENil: DelayList[Int32] <=> ((1 :: Nil) |> List.toDelayList) == LessThan
+        (ENil: DelayList[Int32] <=> ((1 :: Nil) |> List.toDelayList)) == LessThan
 
     @test
     def order04(): Bool =
-        ((1 :: Nil) |> List.toDelayList) <=> ((1 :: Nil) |> List.toDelayList) == EqualTo
+        (((1 :: Nil) |> List.toDelayList) <=> ((1 :: Nil) |> List.toDelayList)) == EqualTo
 
     @test
     def order05(): Bool =
-        ((2 :: 1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList) == GreaterThan
+        (((2 :: 1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList)) == GreaterThan
 
     @test
     def order06(): Bool =
-        ((1 :: 1 :: Nil) |> List.toDelayList) <=> ((2 :: 1 :: Nil) |> List.toDelayList) == LessThan
+        (((1 :: 1 :: Nil) |> List.toDelayList) <=> ((2 :: 1 :: Nil) |> List.toDelayList)) == LessThan
 
     @test
     def order07(): Bool =
-        ((1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList) == LessThan
+        (((1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList)) == LessThan
 
 
     /////////////////////////////////////////////////////////////////////////////
