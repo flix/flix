@@ -42,7 +42,7 @@ case class DocumentSymbol(name: String,
                           children: List[DocumentSymbol]) {
   def toJSON: JValue =
     ("name" -> name) ~
-      ("kind" -> detail) ~
+      ("detail" -> detail) ~
       ("kind" -> JInt(kind.toInt)) ~
       ("range" -> range.toJSON) ~
       ("selectionRange" -> selectionRange.toJSON) ~

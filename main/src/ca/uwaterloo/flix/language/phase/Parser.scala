@@ -618,7 +618,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRegion | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
+      Region | LetRegion | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
         ReifyType | ReifyEff | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
@@ -693,6 +693,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def LetUse: Rule1[ParsedAst.Expression.Use] = rule {
       SP ~ Use ~ optWS ~ ";" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Expression.Use
+    }
+
+    def Region: Rule1[ParsedAst.Expression.LetRegion] = rule {
+      SP ~ keyword("region") ~ WS ~ Names.Variable ~ optWS ~ Expressions.Block ~ SP ~> ParsedAst.Expression.LetRegion
     }
 
     def LetRegion: Rule1[ParsedAst.Expression.LetRegion] = rule {
@@ -1222,7 +1226,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | Native | True | False | Pure | Impure | Not | RigidVar | Var | Ambiguous
+      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | Native | True | False | Pure | Impure | Not | RigidVar | Region | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1312,6 +1316,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def RigidVar: Rule1[ParsedAst.Type] = rule {
       SP ~ keyword("rigid") ~ WS ~ Names.Variable ~ SP ~> ParsedAst.Type.RigidVar
+    }
+
+    def Region: Rule1[ParsedAst.Type] = rule {
+      SP ~ keyword("reg") ~ optWS ~ "(" ~ optWS ~ Names.Variable ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.Region
     }
 
     def Ambiguous: Rule1[ParsedAst.Type] = rule {
