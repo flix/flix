@@ -29,7 +29,7 @@ import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
 import scala.collection.mutable
-import scala.util.Using
+import scala.util.{Using, Success, Failure}
 
 /**
   * An interface to manage flix packages.
@@ -270,7 +270,13 @@ object Packager {
         val fileNameWithSlashes = fileName.replace('\\', '/')
         addToZip(zip, fileNameWithSlashes, buildFile)
       }
-    }.get.toOk
+    } match {
+      case Success(()) => ().toOk
+      case Failure(e) => {
+        e.printStackTrace()
+        1.toErr
+      }
+    }
   }
 
   /**
@@ -301,7 +307,13 @@ object Packager {
         val name = p.relativize(sourceFile).toString
         addToZip(zip, name, sourceFile)
       }
-    }.get.toOk
+    } match {
+      case Success(()) => ().toOk
+      case Failure(e) => {
+        e.printStackTrace()
+        1.toErr
+      }
+    }
   }
 
   /**
