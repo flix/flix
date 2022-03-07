@@ -30,6 +30,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
   private val FileD = "FileD.flix"
   private val FileE = "FileE.flix"
   private val FileF = "FileF.flix"
+  private val FileG = "FileG.flix"
 
   // A new Flix instance is created and initialized with some source code for each test.
 
@@ -54,7 +55,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |pub lawless class C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
          |    pub def cd(x: a): L[a] = DA(x)
-         |    pub def cda(d: L[a]): a = match d {
+         |    pub def cda(l: L[a]): a = match l {
          |        case DA(x) => x
          |    }
          |}
@@ -72,6 +73,12 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
     flix.addSourceCode(FileF,
       s"""
          |pub type alias L[a] = D[a]
+         |""".stripMargin)
+    flix.addSourceCode(FileG,
+      s"""
+         |pub lawless class G[a] with C[a] {
+         |    pub def cf(x: Bool, y: a, z: a): a = C.cf(x, y, z)
+         |}
          |""".stripMargin)
 
     flix.compile().get
@@ -99,6 +106,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
     flix.remSourcePath(Path.of(FileE))
     flix.remSourcePath(Path.of(FileD))
     flix.remSourcePath(Path.of(FileF))
+    flix.remSourcePath(Path.of(FileG))
 
     flix.compile().get
   }
@@ -118,6 +126,12 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
       s"""
          |pub lawless class C[a] {
          |    pub def cf(x: String, y: a, z: a): a = if (f(x) == x) y else z
+         |}
+         |""".stripMargin)
+    flix.addSourceCode(FileG,
+      s"""
+         |pub lawless class G[a] with C[a] {
+         |    pub def cf(x: String, y: a, z: a): a = C.cf(x, y, z)
          |}
          |""".stripMargin)
     flix.compile().get
@@ -191,6 +205,12 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |        case DA(a, b)    => f(x, a) and f(y, b)
          |        case DB(_, _, _) => false
          |    }
+         |}
+         |""".stripMargin)
+    flix.addSourceCode(FileG,
+      s"""
+         |pub lawless class G[a] with C[a] {
+         |    pub def cf(x: Int64, b: Int64, y: a, z: a): a = C.cf(x, b, y, z)
          |}
          |""".stripMargin)
     flix.compile().get
