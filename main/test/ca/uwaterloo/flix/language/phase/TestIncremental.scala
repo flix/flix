@@ -31,6 +31,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
   private val FileE = "FileE.flix"
   private val FileF = "FileF.flix"
   private val FileG = "FileG.flix"
+  private val FileH = "FileH.flix"
 
   // A new Flix instance is created and initialized with some source code for each test.
 
@@ -58,6 +59,9 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |    pub def cda(l: L[a]): a = match l {
          |        case DA(x) => x
          |    }
+         |    pub def cga(g: G[a]): a =
+         |        let G(r) = g;
+         |        r.el
          |}
          |""".stripMargin)
     flix.addSourceCode(FileD,
@@ -76,7 +80,11 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileG,
       s"""
-         |pub lawless class G[a] with C[a] {
+         |pub opaque type G[a] = { el :: a }
+         |""".stripMargin)
+    flix.addSourceCode(FileH,
+      s"""
+         |pub lawless class H[a] with C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = C.cf(x, y, z)
          |}
          |""".stripMargin)
@@ -107,6 +115,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
     flix.remSourcePath(Path.of(FileD))
     flix.remSourcePath(Path.of(FileF))
     flix.remSourcePath(Path.of(FileG))
+    flix.remSourcePath(Path.of(FileH))
 
     flix.compile().get
   }
@@ -128,9 +137,9 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |    pub def cf(x: String, y: a, z: a): a = if (f(x) == x) y else z
          |}
          |""".stripMargin)
-    flix.addSourceCode(FileG,
+    flix.addSourceCode(FileH,
       s"""
-         |pub lawless class G[a] with C[a] {
+         |pub lawless class H[a] with C[a] {
          |    pub def cf(x: String, y: a, z: a): a = C.cf(x, y, z)
          |}
          |""".stripMargin)
@@ -207,9 +216,9 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |    }
          |}
          |""".stripMargin)
-    flix.addSourceCode(FileG,
+    flix.addSourceCode(FileH,
       s"""
-         |pub lawless class G[a] with C[a] {
+         |pub lawless class H[a] with C[a] {
          |    pub def cf(x: Int64, b: Int64, y: a, z: a): a = C.cf(x, b, y, z)
          |}
          |""".stripMargin)
@@ -276,6 +285,29 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
     flix.addSourceCode(FileF,
       s"""
          |pub type alias L[a] = { x :: a }
+         |""".stripMargin)
+
+    flix.compile().get
+  }
+  test("Incremental.08") {
+    flix.addSourceCode(FileC,
+      s"""
+         |pub lawless class C[a] {
+         |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
+         |    pub def cd(x: a): L[a] = DA(x)
+         |    pub def cda(l: L[a]): a = match l {
+         |        case DA(x) => x
+         |    }
+         |    pub def cga(g: G[a]): a =
+         |        let G(d) = g;
+         |        match d {
+                      case DA(x) => x
+         |        }
+         |}
+         |""".stripMargin)
+    flix.addSourceCode(FileG,
+      s"""
+         |pub opaque type G[a] = D[a]
          |""".stripMargin)
 
     flix.compile().get
