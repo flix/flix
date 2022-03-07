@@ -15,13 +15,14 @@
  */
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.language.errors.TypeError.MismatchedTypes
 import org.scalatest.{BeforeAndAfter, FunSuite}
 
 import java.nio.file.Path
 
-class TestIncremental extends FunSuite with BeforeAndAfter {
+class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
 
   private val FileA = "FileA.flix"
   private val FileB = "FileB.flix"
@@ -141,7 +142,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter {
          |pub def f(x: Int32): Bool = x == 0
          |
          |""".stripMargin)
-    expectFailure(flix.compile())
+    expectError[MismatchedTypes](flix.compile())
   }
 
   test("Incremental.05") {
@@ -231,18 +232,5 @@ class TestIncremental extends FunSuite with BeforeAndAfter {
          |""".stripMargin)
 
     flix.compile().get
-  }
-
-
-  /**
-    * Helper function that handles compilation errors.
-    *
-    * @param res compilation result.
-    * @tparam T type of success value.
-    * @tparam E type of failure value.
-    */
-  private def expectFailure[T, E](res: => Validation[T, E]): Unit = res match {
-    case Validation.Success(_) => throw new RuntimeException("Expected compilation, but compilation was successful")
-    case Validation.Failure(_) => ()
   }
 }
