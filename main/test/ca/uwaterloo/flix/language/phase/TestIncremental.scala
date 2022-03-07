@@ -289,6 +289,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
 
     flix.compile().get
   }
+
   test("Incremental.08") {
     flix.addSourceCode(FileC,
       s"""
