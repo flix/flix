@@ -232,34 +232,32 @@ namespace MutList {
     /// searching from left to right.
     ///
     pub def indexOfLeft(x: a, v: MutList[a]): Option[Int32] & Impure with Eq[a] =
-        let MutList(a, l) = v;
-        indexOfLeftHelper(x, deref a, deref l, 0)
-
-    ///
-    /// Helper function for `indexOfLeft`.
-    ///
-    def indexOfLeftHelper(x: a, a: Array[a], len: Int32, i: Int32): Option[Int32] & Impure with Eq[a] =
-        if (i >= len)
-            None
-        else
-            if (x == a[i]) Some(i) else indexOfLeftHelper(x, a, len, i + 1)
+        let MutList(ra, rl) = v;
+        let a = deref ra;
+        let l = deref rl;
+        def loop(i) = {
+            if (i >= l)
+                None
+            else
+                if (x == a[i]) Some(i) else loop(i + 1)
+        };
+        loop(0)
 
     ///
     /// Optionally returns the position of the first occurrence of `x` in `v`
     /// searching from right to left.
     ///
     pub def indexOfRight(x: a, v: MutList[a]): Option[Int32] & Impure with Eq[a] =
-        let MutList(a, l) = v;
-        indexOfRightHelper(x, deref a, (deref l) - 1)
-
-    ///
-    /// Helper function for `indexOfRight`.
-    ///
-    def indexOfRightHelper(x: a, a: Array[a], i: Int32): Option[Int32] & Impure with Eq[a] =
-        if (i < 0)
-            None
-        else
-            if (x == a[i]) Some(i) else indexOfRightHelper(x, a, i - 1)
+        let MutList(ra, rl) = v;
+        let a = deref ra;
+        let l = deref rl;
+        def loop(i) = {
+            if (i < 0)
+                None
+            else
+                if (x == a[i]) Some(i) else loop(i - 1)
+        };
+        loop(l - 1)
 
     ///
     /// Alias for `findLeft`.
@@ -273,17 +271,17 @@ namespace MutList {
     /// Returns `None` if the given mutable list `v` is empty.
     ///
     pub def findLeft(f: a -> Bool, v: MutList[a]): Option[a] & Impure =
-        let MutList(a, l) = v;
-        findLeftHelper(f, deref a, deref l, 0)
+        let MutList(ra, rl) = v;
+        let a = deref ra;
+        let l = deref rl;
+        def loop(i) = {
+            if (i >= l)
+                None
+            else
+                if (f(a[i])) Some(a[i]) else loop(i + 1)
 
-    ///
-    /// Helper function for `findLeft`.
-    ///
-    def findLeftHelper(f: a -> Bool, a: Array[a], len: Int32, i: Int32): Option[a] & Impure =
-        if (i >= len)
-            None
-        else
-            if (f(a[i])) Some(a[i]) else findLeftHelper(f, a, len, i + 1)
+        };
+        loop(0)
 
     ///
     /// Optionally returns the right-most element in the given mutable list `v` that satisfies the given predicate `f`.
@@ -292,17 +290,17 @@ namespace MutList {
     /// Returns `None` if the given mutable list `v` is empty.
     ///
     pub def findRight(f: a -> Bool, v: MutList[a]): Option[a] & Impure =
-        let MutList(a, l) = v;
-        findRightHelper(f, deref a, (deref l) - 1)
+        let MutList(ra, rl) = v;
+        let a = deref ra;
+        let l = deref rl;
+        def loop(i) = {
+            if (i < 0)
+                None
+            else
+                if (f(a[i])) Some(a[i]) else loop(i - 1)
 
-    ///
-    /// Helper function for `findRight`.
-    ///
-    def findRightHelper(f: a -> Bool, a: Array[a], i: Int32): Option[a] & Impure =
-        if (i < 0)
-            None
-        else
-            if (f(a[i])) Some(a[i]) else findRightHelper(f, a, i - 1)
+        };
+        loop(l - 1)
 
     ///
     /// Alias for `scanLeft`.
