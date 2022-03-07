@@ -699,7 +699,7 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that a newly defined name reserved.
+    * An error raised to indicate that a newly defined name is reserved.
     *
     * @param ident the reserved name that conflicts.
     * @param loc   the location where the error occurred.
