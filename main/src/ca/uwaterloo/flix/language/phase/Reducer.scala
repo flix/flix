@@ -49,7 +49,7 @@ object Reducer {
           case (tag, caze) =>
             tag -> LiftedAst.Case(caze.sym, tag, caze.tpeDeprecated, caze.loc)
         }
-        sym -> LiftedAst.Enum(enum.mod, enum.sym, cases, enum.tpeDeprecated, enum.loc)
+        sym -> LiftedAst.Enum(enum.ann, enum.mod, enum.sym, cases, enum.tpeDeprecated, enum.loc)
     }
 
     // Reassemble the ast root.

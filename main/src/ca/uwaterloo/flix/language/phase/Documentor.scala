@@ -382,8 +382,9 @@ object Documentor {
     * Returns the given Enum `enum` as a JSON value.
     */
   private def visitEnum(enum0: Enum, instances: Map[Symbol.EnumSym, List[Instance]]): JObject = enum0 match {
-    case Enum(doc, _, sym, tparams, derives, cases, _, _, loc) =>
+    case Enum(doc, ann, _, sym, tparams, derives, cases, _, _, loc) =>
       ("doc" -> visitDoc(doc)) ~
+        ("ann" -> visitAnnotations(ann))
         ("sym" -> visitEnumSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
         ("cases" -> cases.values.toList.sortBy(_.loc).map(visitCase)) ~

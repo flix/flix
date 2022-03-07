@@ -69,11 +69,11 @@ object LambdaLift {
     * Translates the given simplified enum declaration `enum0` into a lifted enum declaration.
     */
   private def visitEnum(enum0: SimplifiedAst.Enum): LiftedAst.Enum = enum0 match {
-    case SimplifiedAst.Enum(mod, sym, cases, tpeDeprecated, loc) =>
+    case SimplifiedAst.Enum(ann, mod, sym, cases, tpeDeprecated, loc) =>
       val cs = cases.map {
         case (tag, SimplifiedAst.Case(_, _, tpeDeprecated, loc)) => tag -> LiftedAst.Case(sym, tag, tpeDeprecated, loc)
       }
-      LiftedAst.Enum(mod, sym, cs, tpeDeprecated, loc)
+      LiftedAst.Enum(ann, mod, sym, cs, tpeDeprecated, loc)
   }
 
   /**
