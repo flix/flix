@@ -710,10 +710,10 @@ namespace MutList {
         let sb = StringBuilder.new();
         let step = (x,i) ->
             if (i == 0)
-                StringBuilder.appendString!(sb, f(x))
+                StringBuilder.appendString!(f(x), sb)
             else {
-                StringBuilder.appendString!(sb, sep);
-                StringBuilder.appendString!(sb, f(x))
+                StringBuilder.appendString!(sep, sb);
+                StringBuilder.appendString!(f(x), sb)
             };
         foreachWithIndex(step, v);
         StringBuilder.toString(sb)
@@ -733,7 +733,7 @@ namespace MutList {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foldLeft((_, x) -> { append!(sb, f(x)); append!(sb, sep) }, (), v);
+        foldLeft((_, x) -> { append!(f(x), sb); append!(sep, sb) }, (), v);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
 
     ///
