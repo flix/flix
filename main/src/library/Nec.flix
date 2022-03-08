@@ -114,14 +114,14 @@ instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String =
         let fn = () -> {
             let sb = StringBuilder.new();
-            StringBuilder.appendString!(sb, "Nec#{");
+            StringBuilder.appendString!("Nec#{", sb);
             Nec.foldLeft((acc, x) -> {
                 if (acc < 1)
-                    StringBuilder.appendString!(sb, "${x}")
+                    StringBuilder.appendString!("${x}", sb)
                 else
-                    StringBuilder.appendString!(sb, ", ${x}");
+                    StringBuilder.appendString!(", ${x}", sb);
                 acc + 1}, 0, c);
-            StringBuilder.appendString!(sb, "}");
+            StringBuilder.appendString!("}", sb);
             StringBuilder.toString(sb)
         };
         fn() as & Pure
