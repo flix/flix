@@ -815,7 +815,7 @@ namespace TestMutDeque {
     def foreach01(): Bool & Impure =
         let d = MutDeque.new();
         let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutDeque.foreach(fn, d);
         StringBuilder.toString(sb) == ""
 
@@ -825,7 +825,7 @@ namespace TestMutDeque {
         MutDeque.pushBack(0, d);
 
         let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutDeque.foreach(fn, d);
         StringBuilder.toString(sb) == "F"
 
@@ -834,7 +834,7 @@ namespace TestMutDeque {
         let d = MutDeque.new();
         MutDeque.pushBack(1, d);
         let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutDeque.foreach(fn, d);
         StringBuilder.toString(sb) == "T"
 
@@ -844,7 +844,7 @@ namespace TestMutDeque {
         MutDeque.pushBack(0, d);
         MutDeque.pushBack(1, d);
         let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutDeque.foreach(fn, d);
         StringBuilder.toString(sb) == "FT"
 
@@ -854,7 +854,7 @@ namespace TestMutDeque {
         MutDeque.pushBack(1, d);
         MutDeque.pushFront(0, d);
         let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutDeque.foreach(fn, d);
         StringBuilder.toString(sb) == "FT"
 
