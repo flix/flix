@@ -57,9 +57,9 @@ object Tailrec {
        * Let: The body expression is in tail position.
        * (The value expression is *not* in tail position).
        */
-      case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+      case Expression.Let(sym, exp1, exp2, purity, tpe, loc) =>
         val e2 = visit(exp2)
-        Expression.Let(sym, exp1, e2, tpe, loc)
+        Expression.Let(sym, exp1, e2, purity, tpe, loc)
 
       /*
        * If-Then-Else: Consequent and alternative are both in tail position.

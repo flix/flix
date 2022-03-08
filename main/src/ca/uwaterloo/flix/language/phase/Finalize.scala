@@ -171,7 +171,7 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.JumpTo(sym, t, loc)
 
-      case LiftedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
+      case LiftedAst.Expression.Let(sym, exp1, exp2, _, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         val t = visitType(tpe)

@@ -135,7 +135,7 @@ object Inliner {
 
     case Expression.JumpTo(_,_,_) => exp0
 
-    case Expression.Let(sym, exp1, exp2, occur, tpe, loc) =>
+    case Expression.Let(sym, exp1, exp2, occur, purity, tpe, loc) =>
       val e1 = visitExp(exp1, subst0)
       val wantToInline: Boolean = e1 match {
         case Expression.Int32(lit, _) if lit == 42 => true
@@ -143,7 +143,7 @@ object Inliner {
       }
       val subst1 = if (wantToInline) subst0 + (sym -> 42) else subst0
       val e2 = visitExp(exp2, subst1)
-      Expression.Let(sym, e1, e2, occur, tpe, loc)
+      Expression.Let(sym, e1, e2, occur, purity, tpe, loc)
 
     case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1, subst0)
