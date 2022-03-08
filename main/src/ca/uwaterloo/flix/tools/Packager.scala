@@ -273,7 +273,7 @@ object Packager {
     } match {
       case Success(()) => ().toOk
       case Failure(e) => {
-        e.printStackTrace()
+        println(e.getMessage)
         1.toErr
       }
     }
@@ -310,7 +310,7 @@ object Packager {
     } match {
       case Success(()) => ().toOk
       case Failure(e) => {
-        e.printStackTrace()
+        println(e.getMessage)
         1.toErr
       }
     }
