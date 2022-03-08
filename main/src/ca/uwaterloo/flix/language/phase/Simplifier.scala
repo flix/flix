@@ -653,16 +653,16 @@ object Simplifier {
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
 
         /**
-         * Matching an array with a HeadSpread may succeed or fail
-         *
-         * We generate an if clause checking that array length is at least the length of
-         * each pattern, and generate a fresh variable and let-binding for each variable
-         * in the array, which we load with ArrayLoad.
-         * We then check whether the Spread is a variable, creating a let-binding for the
-         * appropriate ArraySlice to the spread, if it is.
-         * We then recurse over the freshly generated variables as the true case of the previously
-         * created if clause
-         */
+          * Matching an array with a HeadSpread may succeed or fail
+          *
+          * We generate an if clause checking that array length is at least the length of
+          * each pattern, and generate a fresh variable and let-binding for each variable
+          * in the array, which we load with ArrayLoad.
+          * We then check whether the Spread is a variable, creating a let-binding for the
+          * appropriate ArraySlice to the spread, if it is.
+          * We then recurse over the freshly generated variables as the true case of the previously
+          * created if clause
+          */
         case (TypedAst.Pattern.ArrayHeadSpread(sym, elms, tpe, loc) :: ps, v :: vs) =>
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
