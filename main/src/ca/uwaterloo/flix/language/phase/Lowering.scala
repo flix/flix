@@ -1220,7 +1220,7 @@ object Lowering {
     * Returns a pure array expression constructed from the given list of expressions `exps`.
     */
   private def mkArray(exps: List[Expression], elmType: Type, loc: SourceLocation): Expression = {
-    val tpe = Type.mkArray(elmType, loc)
+    val tpe = Type.mkScopedArray(elmType, Type.Pure, loc)
     val eff = Type.Pure
     Expression.ArrayLit(exps, tpe, eff, loc)
   }
