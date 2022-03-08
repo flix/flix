@@ -190,7 +190,7 @@ object PrettyPrinter {
 
         case Expression.JumpTo(sym, tpe, loc) => s"jumpto ${fmtSym(sym, formatter)}"
 
-        case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+        case Expression.Let(sym, exp1, exp2, _, tpe, loc) =>
           val sb = new StringBuilder()
           sb.append(formatter.bold("let "))
             .append(fmtSym(sym, formatter))
