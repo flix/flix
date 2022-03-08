@@ -163,18 +163,18 @@ object Kinder {
     * Performs kinding on the given type class.
     */
   private def visitClass(clazz: ResolvedAst.Class, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, KindError] = clazz match {
-    case ResolvedAst.Class(doc, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
+    case ResolvedAst.Class(doc, ann0, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
       val kenv = getKindEnvFromTypeParamDefaultStar(tparam0)
 
+      val annVal = traverse(ann0)(visitAnnotation(_, kenv, taenv, root))
       val tparamVal = visitTypeParam(tparam0, kenv)
       val superClassesVal = Validation.traverse(superClasses0)(visitTypeConstraint(_, kenv, taenv, root))
       val sigsVal = Validation.traverse(sigs0) {
         case (sigSym, sig0) => visitSig(sig0, kenv, taenv, root).map(sig => sigSym -> sig)
       }
       val lawsVal = traverse(laws0)(visitDef(_, kenv, taenv, root))
-
-      mapN(tparamVal, superClassesVal, sigsVal, lawsVal) {
-        case (tparam, superClasses, sigs, laws) => KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs.toMap, laws, loc)
+      mapN(annVal, tparamVal, superClassesVal, sigsVal, lawsVal) {
+        case (ann, tparam, superClasses, sigs, laws) => KindedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs.toMap, laws, loc)
       }
   }
 

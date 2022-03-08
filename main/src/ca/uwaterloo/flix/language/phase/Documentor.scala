@@ -411,7 +411,7 @@ object Documentor {
     * Return the given class `clazz` as a JSON value.
     */
   private def visitClass(cla: Class)(implicit root: Root): JObject = cla match {
-    case Class(doc, mod, sym, tparam, superClasses, signatures0, _, loc) =>
+    case Class(doc, ann, mod, sym, tparam, superClasses, signatures0, _, loc) =>
       val (sigs0, defs0) = signatures0.partition(_.impl.isEmpty)
 
       val sigs = sigs0.sortBy(_.sym.name).map(visitSig)
@@ -420,6 +420,7 @@ object Documentor {
 
       ("sym" -> visitClassSym(sym)) ~
         ("doc" -> visitDoc(doc)) ~
+        ("ann" -> visitAnnotations(ann)) ~
         ("mod" -> visitModifier(mod)) ~
         ("tparam" -> visitTypeParam(tparam)) ~
         ("superClasses" -> superClasses.map(visitTypeConstraint)) ~
