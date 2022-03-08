@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Magnus Madsen
+ * Copyright 2022 Anna Krogh, Patrick Lundvig, Christian Bonde
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,311 +19,28 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst._
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{LiftedAst, Symbol}
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Formatter, Validation}
 
 /**
-  * The Optimization phase performs intra-procedural optimizations.
-  *
-  * Specifically,
-  *
-  * - Elimination of dead branches (e.g. if (true) e1 else e2).
-  * - Copy propagation (e.g. let z = w; let y = z; let x = y; x -> w)
-  */
+ * Iterative runs of the optimizer pipeline: OccurrenceAnalyzer -> Inliner -> Reducer.
+ */
 object Optimizer {
 
   /**
-    * Returns an optimized version of the given AST `root`.
-    */
+   * Returns an optimized version of the given AST `root`.
+   */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Optimizer") {
-
-    /**
-      * Performs intra-procedural optimization on the given expression `exp0` and substitution map `env0`.
-      */
-    def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym]): Expression = exp0 match {
-      case Expression.Unit(_) => exp0
-
-      case Expression.Null(_, _) => exp0
-
-      case Expression.True(_) => exp0
-
-      case Expression.False(_) => exp0
-
-      case Expression.Char(_, _) => exp0
-
-      case Expression.Float32(_, _) => exp0
-
-      case Expression.Float64(_, _) => exp0
-
-      case Expression.Int8(_, _) => exp0
-
-      case Expression.Int16(_, _) => exp0
-
-      case Expression.Int32(_, _) => exp0
-
-      case Expression.Int64(_, _) => exp0
-
-      case Expression.BigInt(_, _) => exp0
-
-      case Expression.Str(_, _) => exp0
-
-      case Expression.Var(sym, tpe, loc) =>
-        // Lookup to see if the variable should be replaced by a copy.
-        env0.get(sym) match {
-          case None => Expression.Var(sym, tpe, loc)
-          case Some(srcSym) => Expression.Var(srcSym, tpe, loc)
-        }
-
-      case Expression.Closure(sym, freeVars, tpe, loc) =>
-        val fvs = freeVars map {
-          case FreeVar(s, varType) => FreeVar(env0.getOrElse(s, s), varType)
-        }
-        Expression.Closure(sym, fvs, tpe, loc)
-
-      case Expression.ApplyClo(exp, args, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        val as = args map (visitExp(_, env0))
-        Expression.ApplyClo(e, as, tpe, loc)
-
-      case Expression.ApplyDef(sym, args, tpe, loc) =>
-        val as = args map (visitExp(_, env0))
-        Expression.ApplyDef(sym, as, tpe, loc)
-
-      case Expression.ApplyCloTail(exp, args, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        val as = args map (visitExp(_, env0))
-        Expression.ApplyCloTail(e, as, tpe, loc)
-
-      case Expression.ApplyDefTail(sym, args, tpe, loc) =>
-        val as = args map (visitExp(_, env0))
-        Expression.ApplyDefTail(sym, as, tpe, loc)
-
-      case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
-        val as = actuals map (visitExp(_, env0))
-        Expression.ApplySelfTail(sym, formals, as, tpe, loc)
-
-      case Expression.Unary(sop, op, exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Unary(sop, op, e, tpe, loc)
-
-      case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1, env0)
-        val e2 = visitExp(exp2, env0)
-        Expression.Binary(sop, op, e1, e2, tpe, loc)
-
-      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-        // Eliminate dead branches, if possible.
-        val cond = visitExp(exp1, env0)
-        val consequent = visitExp(exp2, env0)
-        val alternative = visitExp(exp3, env0)
-        cond match {
-          case Expression.True(_) => consequent
-          case Expression.False(_) => alternative
-          case _ => Expression.IfThenElse(cond, consequent, alternative, tpe, loc)
-        }
-
-      case Expression.Branch(exp, branches, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        val bs = branches map {
-          case (sym, br) => sym -> visitExp(br, env0)
-        }
-        Expression.Branch(e, bs, tpe, loc)
-
-      case Expression.JumpTo(sym, tpe, loc) =>
-        Expression.JumpTo(sym, tpe, loc)
-
-      case Expression.Let(sym, exp1, exp2, tpe, loc) =>
-        // Visit the value expression.
-        val e1 = visitExp(exp1, env0)
-
-        // Check for copy propagation: let x = y; e ~~> e[x -> y]
-        e1 match {
-          case Expression.Var(srcSym, _, _) =>
-            // The srcSym might itself originate from some other symbol.
-            val originalSym = env0.getOrElse(srcSym, srcSym)
-            visitExp(exp2, env0 + (sym -> originalSym))
-          case _ =>
-            val e2 = visitExp(exp2, env0)
-            Expression.Let(sym, e1, e2, tpe, loc)
-        }
-
-      case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1, env0)
-        val e2 = visitExp(exp2, env0)
-        Expression.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
-
-      case Expression.Is(sym, tag, exp, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Is(sym, tag, e, loc)
-
-      case Expression.Tag(sym, tag, exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Tag(sym, tag, e, tpe, loc)
-
-      case Expression.Untag(sym, tag, exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Untag(sym, tag, e, tpe, loc)
-
-      case Expression.Index(base, offset, tpe, loc) =>
-        val b = visitExp(base, env0)
-        Expression.Index(b, offset, tpe, loc)
-
-      case Expression.Tuple(elms, tpe, loc) =>
-        val es = elms map (visitExp(_, env0))
-        Expression.Tuple(es, tpe, loc)
-
-      case Expression.RecordEmpty(tpe, loc) =>
-        Expression.RecordEmpty(tpe, loc)
-
-      case Expression.RecordSelect(exp, field, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.RecordSelect(e, field, tpe, loc)
-
-      case Expression.RecordExtend(field, value, rest, tpe, loc) =>
-        val v = visitExp(value, env0)
-        val r = visitExp(rest, env0)
-        Expression.RecordExtend(field, v, r, tpe, loc)
-
-      case Expression.RecordRestrict(field, rest, tpe, loc) =>
-        val r = visitExp(rest, env0)
-        Expression.RecordRestrict(field, r, tpe, loc)
-
-      case Expression.ArrayLit(elms, tpe, loc) =>
-        val es = elms map (visitExp(_, env0))
-        Expression.ArrayLit(es, tpe, loc)
-
-      case Expression.ArrayNew(elm, len, tpe, loc) =>
-        val e = visitExp(elm, env0)
-        val ln = visitExp(len, env0)
-        Expression.ArrayNew(e, ln, tpe, loc)
-
-      case Expression.ArrayLoad(base, index, tpe, loc) =>
-        val b = visitExp(base, env0)
-        val i = visitExp(index, env0)
-        Expression.ArrayLoad(b, i, tpe, loc)
-
-      case Expression.ArrayStore(base, index, elm, tpe, loc) =>
-        val b = visitExp(base, env0)
-        val i = visitExp(index, env0)
-        val e = visitExp(elm, env0)
-        Expression.ArrayStore(b, i, e, tpe, loc)
-
-      case Expression.ArrayLength(base, tpe, loc) =>
-        val b = visitExp(base, env0)
-        Expression.ArrayLength(b, tpe, loc)
-
-      case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
-        val b = visitExp(base, env0)
-        val i1 = visitExp(startIndex, env0)
-        val i2 = visitExp(endIndex, env0)
-        Expression.ArraySlice(b, i1, i2, tpe, loc)
-
-      case Expression.Ref(exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Ref(e, tpe, loc)
-
-      case Expression.Deref(exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Deref(e, tpe, loc)
-
-      case Expression.Assign(exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1, env0)
-        val e2 = visitExp(exp2, env0)
-        Expression.Assign(e1, e2, tpe, loc)
-
-      case Expression.Cast(exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Cast(e, tpe, loc)
-
-      case Expression.TryCatch(exp, rules, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        val rs = rules map {
-          case CatchRule(sym, clazz, body) =>
-            val b = visitExp(body, env0)
-            CatchRule(sym, clazz, b)
-        }
-        Expression.TryCatch(e, rs, tpe, loc)
-
-      case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
-        val as = args map (visitExp(_, env0))
-        Expression.InvokeConstructor(constructor, as, tpe, loc)
-
-      case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        val as = args.map(visitExp(_, env0))
-        Expression.InvokeMethod(method, e, as, tpe, loc)
-
-      case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
-        val as = args.map(visitExp(_, env0))
-        Expression.InvokeStaticMethod(method, as, tpe, loc)
-
-      case Expression.GetField(field, exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.GetField(field, e, tpe, loc)
-
-      case Expression.PutField(field, exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1, env0)
-        val e2 = visitExp(exp2, env0)
-        Expression.PutField(field, e1, e2, tpe, loc)
-
-      case Expression.GetStaticField(field, tpe, loc) =>
-        Expression.GetStaticField(field, tpe, loc)
-
-      case Expression.PutStaticField(field, exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.PutStaticField(field, e, tpe, loc)
-
-      case Expression.NewChannel(exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.NewChannel(e, tpe, loc)
-
-      case Expression.GetChannel(exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.GetChannel(e, tpe, loc)
-
-      case Expression.PutChannel(exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1, env0)
-        val e2 = visitExp(exp2, env0)
-        Expression.PutChannel(e1, e2, tpe, loc)
-
-      case Expression.SelectChannel(rules, default, tpe, loc) =>
-        val rs = rules map {
-          case SelectChannelRule(sym, chan, exp) =>
-            val c = visitExp(chan, env0)
-            val e = visitExp(exp, env0)
-            SelectChannelRule(sym, c, e)
-        }
-
-        val d = default.map(visitExp(_, env0))
-
-        Expression.SelectChannel(rs, d, tpe, loc)
-
-      case Expression.Spawn(exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Spawn(e, tpe, loc)
-
-      case Expression.Lazy(exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Lazy(e, tpe, loc)
-
-      case Expression.Force(exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Force(e, tpe, loc)
-
-      case Expression.HoleError(sym, tpe, loc) => Expression.HoleError(sym, tpe, loc)
-
-      case Expression.MatchError(tpe, loc) => Expression.MatchError(tpe, loc)
+    var result = root
+
+    for (_ <- 1 to 2) {
+      val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(result)
+      val afterInliner = Inliner.run(afterOccurrenceAnalyzer.get)
+      val afterReducer = Reducer.run(afterInliner.get)
+      result = afterReducer.get
     }
-
-    // Visit every definition in the program.
-    val defs = root.defs.map {
-      case (sym, defn) => sym -> defn.copy(exp = visitExp(defn.exp, Map.empty))
-    }
-
-    // Reassemble the ast root.
-    val result = root.copy(defs = defs)
 
     // Print the ast if debugging is enabled.
     if (flix.options.debug) {
@@ -332,5 +49,4 @@ object Optimizer {
 
     result.toSuccess
   }
-
 }
