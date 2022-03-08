@@ -905,6 +905,38 @@ namespace File {
     ///
     /// Recursively traverses the directory.
     ///
-    pub def walk(f: String): Result[Iterator[String], String] = ???
+    pub def walk(f: String): Result[Iterator[String], String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.walk(##java.nio.file.Path, Array[##java.nio.file.FileVisitOption]): ##java.util.stream.Stream & Impure;
+            import java.util.stream.BaseStream.iterator(): ##java.util.Iterator & Impure;
+
+            import java.util.Iterator.hasNext(): Bool & Impure;
+            import java.util.Iterator.next(): ##java.nio.file.Path & Impure as getNext;
+
+            import java.nio.file.Path.toString(): String & Impure as pathToString;
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let javaStream = walk(javaPath, []);
+            let javaIter = iterator(javaStream as ##java.util.stream.BaseStream);
+
+            let done = () -> not hasNext(javaIter);
+            let next = () -> {
+                if(hasNext(javaIter)) {
+                    let nextPath = getNext(javaIter);
+                    pathToString(nextPath)
+                } else {
+                    bug!("Empty iterator.")
+                }
+            };
+
+            Ok(Iterator(done, next))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
 
 }
