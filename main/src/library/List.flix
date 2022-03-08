@@ -1228,7 +1228,7 @@ namespace List {
     ///
     pub def toMutDeque(l: List[a]): MutDeque[a] & Impure =
         let d = MutDeque.new();
-        List.foldLeft((_, x) -> MutDeque.pushBack(x, d), (), l);
+        List.foreach(x -> MutDeque.pushBack(x, d), l);
         d
 
     ///
