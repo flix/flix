@@ -108,8 +108,8 @@ namespace List {
     ///
     def toStringHelper(l: List[a]): String & Impure with ToString[a] =
         let sb = StringBuilder.new();
-        List.foreach(x -> StringBuilder.appendString!(sb, "${x} :: "), l);
-        StringBuilder.appendString!(sb, "Nil");
+        List.foreach(x -> StringBuilder.appendString!("${x} :: ", sb), l);
+        StringBuilder.appendString!("Nil", sb);
         StringBuilder.toString(sb)
 
     ///
@@ -1094,8 +1094,8 @@ namespace List {
         match l {
             case Nil     => ()
             case x :: xs => {
-                StringBuilder.appendString!(sb, f(x));
-                foreach(x1 -> {StringBuilder.appendString!(sb, sep); StringBuilder.appendString!(sb, f(x1))}, xs)
+                StringBuilder.appendString!(f(x), sb);
+                foreach(x1 -> {StringBuilder.appendString!(sep, sb); StringBuilder.appendString!(f(x1), sb)}, xs)
             }
         };
         StringBuilder.toString(sb)
