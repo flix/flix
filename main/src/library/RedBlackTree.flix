@@ -944,7 +944,7 @@ namespace RedBlackTree {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foldLeft((_, k, v) -> { append!(sb, f(k, v)); append!(sb, sep) }, (), t);
+        foldLeft((_, k, v) -> { append!(f(k, v), sb); append!(sep, sb) }, (), t);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     } as & ef
 
