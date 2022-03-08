@@ -69,14 +69,14 @@ instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String =
         let fn = () -> {
             let sb = StringBuilder.new();
-            StringBuilder.appendString!(sb, "Chain#{");
+            StringBuilder.appendString!("Chain#{", sb);
             Chain.foldLeft((acc, x) -> {
                 if (acc < 1)
-                    StringBuilder.appendString!(sb, "${x}")
+                    StringBuilder.appendString!("${x}", sb)
                 else
-                    StringBuilder.appendString!(sb, ", ${x}");
+                    StringBuilder.appendString!(", ${x}", sb);
                 acc + 1}, 0, c);
-            StringBuilder.appendString!(sb, "}");
+            StringBuilder.appendString!("}", sb);
             StringBuilder.toString(sb)
         };
         fn() as & Pure

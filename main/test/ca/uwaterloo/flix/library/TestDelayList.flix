@@ -670,7 +670,7 @@ namespace TestDelayList {
     def foreach01(): Bool & Impure =
         let l = ENil;
         let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == ""
 
@@ -678,7 +678,7 @@ namespace TestDelayList {
     def foreach02(): Bool & Impure =
         let l = LList(lazy ENil);
         let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == ""
 
@@ -686,7 +686,7 @@ namespace TestDelayList {
     def foreach03(): Bool & Impure =
         let l = LCons(1, lazy LList(lazy ENil));
         let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == "T"
 
@@ -694,7 +694,7 @@ namespace TestDelayList {
     def foreach04(): Bool & Impure =
         let l = LCons(-1, lazy LList(lazy ENil));
         let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == "F"
 
@@ -702,7 +702,7 @@ namespace TestDelayList {
     def foreach05(): Bool & Impure =
         let l = ECons(1, LCons(-1, lazy ENil));
         let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == "TF"
 
