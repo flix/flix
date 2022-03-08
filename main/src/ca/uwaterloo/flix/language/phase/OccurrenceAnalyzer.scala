@@ -34,7 +34,7 @@ object OccurrenceAnalyzer {
   /**
    * Performs occurrence analysis on the given AST `root`.
    */
-  def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[OccurrenceAst.Root, CompilationMessage] = flix.phase("OccurrenceAnalyzer") {
+  def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[OccurrenceAst.Root, CompilationMessage] = flix.subphase("OccurrenceAnalyzer") {
 
     // Visit every definition in the program in parallel and transform to type 'OccurrenceAst.Def'
     val defs = ParOps.parMap(root.defs.values)((d: LiftedAst.Def) => visitDef(d))
