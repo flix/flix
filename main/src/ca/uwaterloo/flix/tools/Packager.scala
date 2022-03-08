@@ -381,7 +381,7 @@ object Packager {
         }
       }
       result.toList
-    }.get
+    }.get // TODO Return a Result instead, see https://github.com/flix/flix/issues/3132
   }
 
   /**
