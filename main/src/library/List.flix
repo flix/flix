@@ -679,6 +679,8 @@ namespace List {
     /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
     /// The foldRightLazy function exists to allow early termination of a fold.
     ///
+    @Experimental
+    @Lazy
     pub def foldRightLazy(f: (a, Lazy[b]) -> b, s: b, l: List[a]): b =
         def loop(l2) = match l2 {
             case Nil     => s
@@ -1228,7 +1230,7 @@ namespace List {
     ///
     pub def toMutDeque(l: List[a]): MutDeque[a] & Impure =
         let d = MutDeque.new();
-        List.foldLeft((_, x) -> MutDeque.pushBack(x, d), (), l);
+        List.foreach(x -> MutDeque.pushBack(x, d), l);
         d
 
     ///
