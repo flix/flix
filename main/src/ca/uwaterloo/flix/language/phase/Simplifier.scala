@@ -1037,7 +1037,6 @@ object Simplifier {
 
   /**
    * Returns the purity (or impurity) of an expression.
-   * Throws an exception if 'eff' is not pure or impure.
    */
   private def isPure(eff: Type): Purity = {
     if (eff == Type.Pure)
