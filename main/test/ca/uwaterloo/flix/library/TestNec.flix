@@ -76,6 +76,40 @@ namespace TestNec {
     def notEquals04(): Bool = necOf3(1, 2, 3) != necOf3(1, 2, 2)
 
     /////////////////////////////////////////////////////////////////////////////
+    // compare                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testCompare01(): Bool = Order.compare(singleton(1), singleton(1)) == EqualTo
+
+    @test
+    def testCompare02(): Bool = Order.compare(singleton(1), singleton(2)) == LessThan
+
+    @test
+    def testCompare03(): Bool = Order.compare(singleton(2), singleton(1)) == GreaterThan
+
+    @test
+    def testCompare04(): Bool = Order.compare(singleton(1), necOf2(1, 2)) == LessThan
+
+    @test
+    def testCompare05(): Bool = Order.compare(necOf2(1, 2), singleton(1)) == GreaterThan
+
+    @test
+    def testCompare06(): Bool = Order.compare(singleton(1), necOf2(0,0)) == GreaterThan
+
+    @test
+    def testCompare07(): Bool = Order.compare(necOf2(0, 0), singleton(1)) == LessThan
+
+    @test
+    def testCompare08(): Bool = Order.compare(necOf2(1, 2), necOf2(1, 1)) == GreaterThan
+
+    @test
+    def testCompare09(): Bool = Order.compare(necOf2(1, 2), necOf2(1, 3)) == LessThan
+
+    @test
+    def testCompare10(): Bool = Order.compare(necOf4(1, 2, 3, 4), necOf4(1, 2, 3, 4)) == EqualTo
+
+    /////////////////////////////////////////////////////////////////////////////
     // singleton                                                               //
     /////////////////////////////////////////////////////////////////////////////
 

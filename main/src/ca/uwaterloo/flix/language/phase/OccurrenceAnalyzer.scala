@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.Symbol.VarSym
 import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Symbol}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 
 /**
@@ -35,15 +35,11 @@ object OccurrenceAnalyzer {
   /**
    * Performs occurrence analysis on the given AST `root`.
    */
-  def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[OccurrenceAst.Root, CompilationMessage] = flix.phase("OccurrenceAnalyzer") {
+  def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[OccurrenceAst.Root, CompilationMessage] = flix.subphase("OccurrenceAnalyzer") {
 
-    // Visit every definition in the program and transform to type 'OccurrenceAst.Def'
-    val defs = root.defs.map {
-      case (sym, defn) =>
-        val fparams = defn.fparams.map { case LiftedAst.FormalParam(sym, mod, tpe, loc) => OccurrenceAst.FormalParam(sym, mod, tpe, loc) }
-        val (e, _) = visitExp(defn.exp)
-        sym -> OccurrenceAst.Def(defn.ann, defn.mod, defn.sym, fparams, e, defn.tpe, defn.loc)
-    }
+    // Visit every definition in the program in parallel and transform to type 'OccurrenceAst.Def'
+    val defs = ParOps.parMap(root.defs.values)((d: LiftedAst.Def) => visitDef(d))
+    val newDefs = defs.map(kv => kv.sym -> kv).toMap
 
     // Visit every enum in the program and transform to type 'OccurrenceAst.Enum'
     val enums = root.enums.map {
@@ -56,9 +52,18 @@ object OccurrenceAnalyzer {
     }
 
     // Reassemble the ast root.
-    val result = OccurrenceAst.Root(defs, enums, root.reachable, root.sources)
+    val result = OccurrenceAst.Root(newDefs, enums, root.reachable, root.sources)
 
     result.toSuccess
+  }
+
+  /**
+   * Visits a definition in the program and performs occurrence analysis
+   */
+  private def visitDef(defn: LiftedAst.Def): OccurrenceAst.Def = {
+    val fparams = defn.fparams.map { case LiftedAst.FormalParam(sym, mod, tpe, loc) => OccurrenceAst.FormalParam(sym, mod, tpe, loc) }
+    val (e, _) = visitExp(defn.exp)
+    OccurrenceAst.Def(defn.ann, defn.mod, defn.sym, fparams, e, defn.tpe, defn.loc)
   }
 
   /**
@@ -162,7 +167,8 @@ object OccurrenceAnalyzer {
       val (e2, o2) = visitExp(exp2)
       val o3 = combineAllNonBranch(o1, o2)
       val occur = o3.getOrElse(sym, Dead)
-      (OccurrenceAst.Expression.Let(sym, e1, e2, occur, tpe, loc), o3)
+      val o4 = o3 - sym
+      (OccurrenceAst.Expression.Let(sym, e1, e2, occur, tpe, loc), o4)
 
     case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
       val (e1, o1) = visitExp(exp1)
@@ -355,10 +361,10 @@ object OccurrenceAnalyzer {
    * Performs occurrence analysis on a list of expressions 'exps' and merges occurrences
    */
   private def visitExps(exps: List[LiftedAst.Expression]): (List[OccurrenceAst.Expression], Map[Symbol.VarSym, Occur]) = {
-    exps.foldLeft((List[OccurrenceAst.Expression](), Map[Symbol.VarSym, OccurrenceAst.Occur]()))((acc, arg) => {
-      val (e, o1) = visitExp(arg)
+    exps.foldRight((List[OccurrenceAst.Expression](), Map[Symbol.VarSym, OccurrenceAst.Occur]()))((exp, acc) => {
+      val (e, o1) = visitExp(exp)
       val o2 = combineAllNonBranch(o1, acc._2)
-      (acc._1 :+ e, o2)
+      (e :: acc._1, o2)
     })
   }
 

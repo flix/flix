@@ -521,7 +521,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved2: Rule1[String] = rule {
-        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->" | "<-" | "|=" | "or")
+        capture("**" | "<=" | ">=" | "==" | "!=" | "=>" | "->" | "<-" | "or")
       }
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
@@ -618,7 +618,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRegion | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
+      Region | LetRegion | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
         ReifyType | ReifyEff | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
@@ -695,6 +695,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ Use ~ optWS ~ ";" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Expression.Use
     }
 
+    def Region: Rule1[ParsedAst.Expression.LetRegion] = rule {
+      SP ~ keyword("region") ~ WS ~ Names.Variable ~ optWS ~ Expressions.Block ~ SP ~> ParsedAst.Expression.LetRegion
+    }
+
     def LetRegion: Rule1[ParsedAst.Expression.LetRegion] = rule {
       SP ~ keyword("let region") ~ WS ~ Names.Variable ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetRegion
     }
@@ -702,39 +706,39 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def LetImport: Rule1[ParsedAst.Expression] = {
 
       def Constructor: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("new") ~ WS ~ Names.JavaName ~ optWS ~ Signature ~ optWS ~ OptAscription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.Constructor
+        keyword("new") ~ WS ~ Names.JavaName ~ optWS ~ Signature ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.Constructor
       }
 
       def Method: Rule1[ParsedAst.JvmOp] = rule {
-        Names.JavaName ~ optWS ~ Signature ~ optWS ~ OptAscription ~ optional(optWS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.Method
+        Names.JavaName ~ optWS ~ Signature ~ optWS ~ Ascription ~ optional(optWS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.Method
       }
 
       def StaticMethod: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("static") ~ WS ~ Names.JavaName ~ optWS ~ Signature ~ optWS ~ OptAscription ~ optional(optWS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.StaticMethod
+        keyword("static") ~ WS ~ Names.JavaName ~ optWS ~ Signature ~ optWS ~ Ascription ~ optional(optWS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.StaticMethod
       }
 
       def GetField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("get") ~ WS ~ Names.JavaName ~ optWS ~ OptAscription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetField
+        keyword("get") ~ WS ~ Names.JavaName ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetField
       }
 
       def PutField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("set") ~ WS ~ Names.JavaName ~ optWS ~ OptAscription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutField
+        keyword("set") ~ WS ~ Names.JavaName ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutField
       }
 
       def GetStaticField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("static") ~ WS ~ keyword("get") ~ WS ~ Names.JavaName ~ optWS ~ OptAscription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetStaticField
+        keyword("static") ~ WS ~ keyword("get") ~ WS ~ Names.JavaName ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetStaticField
       }
 
       def PutStaticField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("static") ~ WS ~ keyword("set") ~ WS ~ Names.JavaName ~ optWS ~ OptAscription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutStaticField
+        keyword("static") ~ WS ~ keyword("set") ~ WS ~ Names.JavaName ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutStaticField
       }
 
       def Signature: Rule1[Seq[ParsedAst.Type]] = rule {
         "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
       }
 
-      def OptAscription: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = rule {
-        (":" ~ optWS ~ TypAndEffFragment) | (push(None: Option[ParsedAst.Type]) ~ push(None: Option[ParsedAst.Type]))
+      def Ascription: Rule2[ParsedAst.Type, ParsedAst.Type] = rule {
+        (":" ~ optWS ~ Type ~ optWS ~ "&" ~ optWS ~ Type)
       }
 
       def Import: Rule1[ParsedAst.JvmOp] = rule {
@@ -1032,7 +1036,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         def MultiSelect: Rule1[Seq[ParsedAst.Expression]] = rule {
           "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
         }
-        
+
         rule {
           WS ~ keyword("select") ~ WS ~ (MultiSelect | SingleSelect)
         }
@@ -1222,7 +1226,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | Native | True | False | Pure | Impure | Not | RigidVar | Var | Ambiguous
+      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | Native | True | False | Pure | Impure | Not | RigidVar | Region | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1312,6 +1316,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def RigidVar: Rule1[ParsedAst.Type] = rule {
       SP ~ keyword("rigid") ~ WS ~ Names.Variable ~ SP ~> ParsedAst.Type.RigidVar
+    }
+
+    def Region: Rule1[ParsedAst.Type] = rule {
+      SP ~ keyword("reg") ~ optWS ~ "(" ~ optWS ~ Names.Variable ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.Region
     }
 
     def Ambiguous: Rule1[ParsedAst.Type] = rule {

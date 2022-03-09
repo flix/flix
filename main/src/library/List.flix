@@ -108,8 +108,8 @@ namespace List {
     ///
     def toStringHelper(l: List[a]): String & Impure with ToString[a] =
         let sb = StringBuilder.new();
-        List.foreach(x -> StringBuilder.appendString!(sb, "${x} :: "), l);
-        StringBuilder.appendString!(sb, "Nil");
+        List.foreach(x -> StringBuilder.appendString!("${x} :: ", sb), l);
+        StringBuilder.appendString!("Nil", sb);
         StringBuilder.toString(sb)
 
     ///
@@ -1156,8 +1156,8 @@ namespace List {
         match l {
             case Nil     => ()
             case x :: xs => {
-                StringBuilder.appendString!(sb, f(x));
-                foreach(x1 -> {StringBuilder.appendString!(sb, sep); StringBuilder.appendString!(sb, f(x1))}, xs)
+                StringBuilder.appendString!(f(x), sb);
+                foreach(x1 -> {StringBuilder.appendString!(sep, sb); StringBuilder.appendString!(f(x1), sb)}, xs)
             }
         };
         StringBuilder.toString(sb)
@@ -1228,7 +1228,7 @@ namespace List {
     ///
     pub def toMutDeque(l: List[a]): MutDeque[a] & Impure =
         let d = MutDeque.new();
-        List.foldLeft((_, x) -> MutDeque.pushBack(x, d), (), l);
+        List.foreach(x -> MutDeque.pushBack(x, d), l);
         d
 
     ///
@@ -1252,6 +1252,26 @@ namespace List {
             foldLeft(f, 0, l);
             a
         }
+
+    ///
+    /// Returns the list `l` as `Option[Nel[a]]`.
+    ///
+    /// If `l` is empty return `None`, otherwise return the Nel wrapped in `Some`.
+    ///
+    pub def toNel(l: List[a]): Option[Nel[a]] = match l {
+        case Nil     => None
+        case x :: xs => Some(Nel(x, xs))
+    }
+
+    ///
+    /// Returns the list `l` as `Option[Nec[a]]`.
+    ///
+    /// If `l` is empty return `None`, otherwise return the Nec wrapped in `Some`.
+    ///
+    pub def toNec(l: List[a]): Option[Nec[a]] = match l {
+        case Nil     => None
+        case x :: xs => Some(foldLeft(Nec.snoc, Nec.singleton(x), xs))
+    }
 
     ///
     /// Sort list `l` so that elements are ordered from low to high according to their `Order` instance.
@@ -1408,16 +1428,6 @@ namespace List {
     ///
     pub def sumWith(f: a -> Int32 & ef, l: List[a]): Int32 & ef =
         Foldable.sumWith(f, l)
-
-    ///
-    /// Returns the elements of `l` as a `DemandList`.
-    ///
-    pub def toDemandList(l: List[a]): DemandList.DemandList[a, d] =
-        use DemandList.{DemandList};
-        match l {
-            case Nil     => DemandList.ENil
-            case x :: xs => DemandList.LList(lazy DemandList.LCons(x, lazy toDemandList(xs)))
-        }
 
     ///
     /// Returns an iterator over `l`.
