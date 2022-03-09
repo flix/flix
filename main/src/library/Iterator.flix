@@ -171,9 +171,10 @@ namespace Iterator {
         def loop(m) = {
             if (done())
                 MutList.toArray(m)
-            else
-                let _ = MutList.push!(next(), m);
+            else {
+                MutList.push!(next(), m);
                 loop(m)
+            }
         };
         loop(MutList.new())
 
@@ -287,9 +288,10 @@ namespace Iterator {
         def loop() = {
             if (done())
                 ()
-            else
-                let _ = f(next());
+            else {
+                f(next());
                 loop()
+            }
         };
         loop()
 
