@@ -753,7 +753,7 @@ namespace MutList {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foldLeft((_, x) -> { append!(f(x), sb); append!(sep, sb) }, (), v);
+        foreach(x -> { append!(f(x), sb); append!(sep, sb) }, v);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
 
     ///
