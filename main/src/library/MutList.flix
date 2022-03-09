@@ -315,11 +315,11 @@ namespace MutList {
         let l = deref rl;
         let n = l + 1;
         let b = [s; n];
-        def loop(i, ss) = {
+        def loop(i, acc) = {
             if (i >= n)
                 ()
             else {
-                let s1 = f(ss, a[i - 1]);
+                let s1 = f(acc, a[i - 1]);
                 b[i] = s1;
                 loop(i + 1, s1)
             }
@@ -336,11 +336,11 @@ namespace MutList {
         let l = deref rl;
         let n = l + 1;
         let b = [s; n];
-        def loop(i, ss) = {
+        def loop(i, acc) = {
             if (i < 0)
                 ()
             else {
-                let s1 = f(a[i], ss);
+                let s1 = f(a[i], acc);
                 b[i] = s1;
                 loop(i - 1, s1)
             }
@@ -354,53 +354,83 @@ namespace MutList {
     /// The result is a new mutable list.
     ///
     pub def map(f: a -> b & ef, v: MutList[a]): MutList[b] & Impure =
-        let MutList(a, l) = v;
-        let len = deref l;
-        MutList(ref Array.init(i -> f((deref a)[i]), len), ref len)
+        if (isEmpty(v))
+            new()
+        else {
+            let MutList(ra, rl) = v;
+            let a = deref ra;
+            let l = deref rl;
+            let x = f(a[0]);
+            let b = [x; Array.length(a)];
+            def loop(i) = {
+                if (i >= l)
+                    ()
+                else {
+                    b[i] = f(a[i]);
+                    loop(i + 1)
+                }
+            };
+            loop(1);
+            MutList(ref b, ref l)
+        }
 
     ///
     /// Apply `f` to every element in `v`.
     ///
     pub def transform!(f: a -> a, v: mut MutList[a]): Unit & Impure =
-        let MutList(a, l) = v;
-        transformHelper!(f, deref a, 0, deref l)
-
-    ///
-    /// Helper function for `transform!`
-    ///
-    def transformHelper!(f: a -> a, a: Array[a], i: Int32, n: Int32): Unit & Impure =
-        if (i >= n)
-            ()
-        else {
-            a[i] = f(a[i]);
-            transformHelper!(f, a, i + 1, n)
-        }
+        let MutList(ra, rl) = v;
+        let a = deref ra;
+        let l = deref rl;
+        def loop(i) = {
+            if (i >= l)
+                ()
+            else {
+                a[i] = f(a[i]);
+                loop(i + 1)
+            }
+        };
+        loop(0)
 
     ///
     /// Returns the result of applying `f` to every element in `v` along with that element's index.
     ///
     pub def mapWithIndex(f: (a, Int32) -> b & ef, v: MutList[a]): MutList[b] & Impure =
-        let MutList(a, l) = v;
-        let len = deref l;
-        MutList(ref Array.init(i -> f((deref a)[i], i), len), ref len)
+        if (isEmpty(v))
+            new()
+        else {
+            let MutList(ra, rl) = v;
+            let a = deref ra;
+            let l = deref rl;
+            let x = f(a[0], 0);
+            let b = [x; Array.length(a)];
+            def loop(i) = {
+                if (i >= l)
+                    ()
+                else {
+                    b[i] = f(a[i], i);
+                    loop(i + 1)
+                }
+            };
+            loop(1);
+            MutList(ref b, ref l)
+        }
 
     ///
     /// Apply `f` to every element in `v` along with that element's index.
     ///
     pub def transformWithIndex!(f: (a, Int32) -> a, v: mut MutList[a]): Unit & Impure =
-        let MutList(a, l) = v;
-        transformWithIndexHelper!(f, deref a, 0, deref l)
-
-    ///
-    /// Helper function for `transformWithIndex!`
-    ///
-    def transformWithIndexHelper!(f: (a, Int32) -> a, a: Array[a], i: Int32, n: Int32): Unit & Impure =
-        if (i >= n)
-            ()
-        else {
-            a[i] = f(a[i], i);
-            transformWithIndexHelper!(f, a, i + 1, n)
-        }
+        let MutList(ra, rl) = v;
+        let a = deref ra;
+        let l = deref rl;
+        def loop(i) = {
+            if (i >= l)
+                ()
+            else {
+                a[i] = f(a[i], i);
+                loop(i + 1)
+            }
+        };
+        loop(0)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
@@ -408,18 +438,18 @@ namespace MutList {
     /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
     ///
     pub def foldLeft(f: (b, a) -> b & ef, s: b, v: MutList[a]): b & Impure =
-        let len = length(v);
-        foldLeftHelper(f, s, v, len, 0)
-
-    ///
-    /// Helper function for `foldLeft`.
-    ///
-    def foldLeftHelper(f: (b, a) -> b & ef, s: b, v: MutList[a], len: Int32, i: Int32): b & Impure =
-        if (i < len)
-            let s1 = f(s, get(i, v)) as & Impure;
-            foldLeftHelper(f, s1, v, len, i + 1)
-        else
-            s
+        let MutList(ra, rl) = v;
+        let a = deref ra;
+        let l = deref rl;
+        def loop(i, acc) = {
+            if (i >= l)
+                acc
+            else {
+                let s1 = f(acc, a[i]);
+                loop(i + 1, s1)
+            }
+        };
+        loop(0, s)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
@@ -429,18 +459,18 @@ namespace MutList {
     /// The implementation is tail recursive.
     ///
     pub def foldRight(f: (a, b) -> b & ef, s: b, v: MutList[a]): b & Impure =
-        let len = length(v);
-        foldRightHelper(f, s, v, len - 1)
-
-    ///
-    /// Helper function for `foldRight`.
-    ///
-    def foldRightHelper(f: (a, b) -> b & ef, s: b, v: MutList[a], i: Int32): b & Impure =
-        if (i < 0)
-            s
-        else
-            let s1 = f(get(i, v), s) as & Impure;
-            foldRightHelper(f, s1, v, i - 1)
+        let MutList(ra, rl) = v;
+        let a = deref ra;
+        let l = deref rl;
+        def loop(i, acc) = {
+            if (i < 0)
+                acc
+            else {
+                let s1 = f(a[i], acc);
+                loop(i - 1, s1)
+            }
+        };
+        loop(l - 1, s)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `v` going from left to right.
@@ -449,18 +479,18 @@ namespace MutList {
     /// The foldRightLazy function exists to allow early termination of a fold.
     ///
     pub def foldRightLazy(f: (a, Lazy[b]) -> b & ef, s: b, v: MutList[a]): b & Impure =
-        let len = length(v);
-        foldRightLazyHelper(f, s, v, len - 1)
-
-    ///
-    /// Helper function for `foldRightLazy`.
-    ///
-    def foldRightLazyHelper(f: (a, Lazy[b]) -> b & ef, s: b, v: MutList[a], i: Int32): b & Impure =
-        if (i < 0)
-            s
-        else
-            let s1 = f(get(i, v), lazy s) as & Impure;
-            foldRightLazyHelper(f, s1, v, i - 1)
+        let MutList(ra, rl) = v;
+        let a = deref ra;
+        let l = deref rl;
+        def loop(i, acc) = {
+            if (i < 0)
+                acc
+            else {
+                let s1 = f(a[i], lazy acc);
+                loop(i - 1, s1)
+            }
+        };
+        loop(l - 1, s)
 
     ///
     /// Applies `f` to all elements in `v` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
@@ -498,9 +528,9 @@ namespace MutList {
         let MutList(a, l) = v;
         let len = deref l;
         if (len > minCapacity())
-            MutList(ref Array.slice(0, len, deref a), ref len)
+            MutList(ref Array.copyOfRange(0, len, deref a), ref len)
         else
-            MutList(ref Array.slice(0, capacity(v), deref a), ref len)
+            MutList(ref Array.copyOfRange(0, capacity(v), deref a), ref len)
 
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
@@ -542,7 +572,7 @@ namespace MutList {
         if (capacity(v) - len == 0)
             reserve!(len, v)
         else ();
-        let sub = Array.slice(i, len, deref a);
+        let sub = Array.copyOfRange(i, len, deref a);
         Array.updateSequence!(i + 1, sub, deref a);
         (deref a)[i] = x;
         l := len + 1
@@ -555,26 +585,26 @@ namespace MutList {
     /// If the given index `i` exceeds the length of the mutable list, no element is removed.
     ///
     pub def remove!(i: Int32, v: mut MutList[a]): Unit & Impure =
-        let MutList(a, l) = v;
-        let len = deref l;
-        if (i < len) {
-            removeHelper!(i, len, deref a);
-            l := len - 1;
+        let MutList(ra, rl) = v;
+        let a = deref ra;
+        let l = deref rl;
+        let n = l - 1;
+        def loop(i) = {
+            if (i < n) {
+                a[i] = a[i + 1];
+                loop(i + 1)
+            }
+            else if (i == n) {
+                a[i] = $DEFAULT$
+            }
+            else
+                ()
+        };
+        if (i < l) {
+            loop(i);
+            rl := n;
             compress!(v)
         }
-        else
-            ()
-
-    ///
-    /// Helper function for `remove!`.
-    ///
-    def removeHelper!(i: Int32, n: Int32, a: Array[a]): Unit & Impure =
-        if (i < n - 1) {
-            a[i] = a[i + 1];
-            removeHelper!(i + 1, n, a)
-        }
-        else if (i == n - 1)
-            a[i] = $DEFAULT$
         else
             ()
 
