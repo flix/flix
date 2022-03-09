@@ -100,7 +100,7 @@ object Main {
 
     // check if command was passed.
     try {
-      val cwd = Paths.get(".")
+      val cwd = Paths.get(".").toAbsolutePath.normalize()
 
       cmdOpts.command match {
         case Command.None =>
