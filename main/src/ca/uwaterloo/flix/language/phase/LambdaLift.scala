@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.Purity.Impure
+import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, Purity, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -176,12 +177,12 @@ object LambdaLift {
       case SimplifiedAst.Expression.JumpTo(sym, tpe, loc) =>
         LiftedAst.Expression.JumpTo(sym, tpe, loc)
 
-      case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
+      case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        LiftedAst.Expression.Let(sym, e1, e2, tpe, loc)
+        LiftedAst.Expression.Let(sym, e1, e2, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.LetRec(varSym, exp1, exp2, tpe, loc) =>
+      case SimplifiedAst.Expression.LetRec(varSym, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         e1 match {
@@ -189,7 +190,7 @@ object LambdaLift {
             val index = freeVars.indexWhere(freeVar => varSym == freeVar.sym)
             if (index == -1) {
               // function never calls itself
-              LiftedAst.Expression.Let(varSym, e1, e2, tpe, loc)
+              LiftedAst.Expression.Let(varSym, e1, e2,tpe, purity, loc)
             } else
               LiftedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
 
