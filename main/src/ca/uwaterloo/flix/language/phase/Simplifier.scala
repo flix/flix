@@ -114,14 +114,15 @@ object Simplifier {
       case TypedAst.Expression.Stm(e1, e2, tpe, eff, loc) =>
         val purity = isPure(e1.eff)
         val sym = Symbol.freshVarSym("_", BoundBy.Let, loc)
-        SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), purity, tpe, loc)
+        SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
 
       case TypedAst.Expression.Let(sym, mod, e1, e2, tpe, eff, loc) =>
         val purity = isPure(e1.eff)
-        SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), purity, tpe, loc)
+        SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
 
       case TypedAst.Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc) =>
-        SimplifiedAst.Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, loc)
+        val purity = isPure(e1.eff)
+        SimplifiedAst.Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
 
       case TypedAst.Expression.LetRegion(_, exp, _, _, _) =>
         visitExp(exp)
@@ -496,7 +497,7 @@ object Simplifier {
       val purity = isPure(exp0.eff)
 
       // Wrap the branches inside a let-binding for the match variable.
-      SimplifiedAst.Expression.Let(matchVar, matchExp, branch, purity, tpe, loc)
+      SimplifiedAst.Expression.Let(matchVar, matchExp, branch, tpe, purity, loc)
     }
 
     /**
@@ -535,7 +536,8 @@ object Simplifier {
           */
         case (TypedAst.Pattern.Var(sym, tpe, loc) :: ps, v :: vs) =>
           val exp = patternMatchList(ps, vs, guard, succ, fail)
-          SimplifiedAst.Expression.Let(sym, SimplifiedAst.Expression.Var(v, tpe, loc), exp, Pure, succ.tpe, loc)
+          val purity = Pure
+          SimplifiedAst.Expression.Let(sym, SimplifiedAst.Expression.Var(v, tpe, loc), exp, succ.tpe, purity, loc)
 
         /**
           * Matching a literal may succeed or fail.
@@ -565,7 +567,8 @@ object Simplifier {
           val cond = SimplifiedAst.Expression.Is(sym, tag, SimplifiedAst.Expression.Var(v, tpe, loc), loc)
           val freshVar = Symbol.freshVarSym("innerTag" + Flix.Delimiter, BoundBy.Let, loc)
           val inner = patternMatchList(pat :: ps, freshVar :: vs, guard, succ, fail)
-          val consequent = SimplifiedAst.Expression.Let(freshVar, SimplifiedAst.Expression.Untag(sym, tag, SimplifiedAst.Expression.Var(v, tpe, loc), pat.tpe, loc), inner, Pure, succ.tpe, loc)
+          val purity = Pure
+          val consequent = SimplifiedAst.Expression.Let(freshVar, SimplifiedAst.Expression.Untag(sym, tag, SimplifiedAst.Expression.Var(v, tpe, loc), pat.tpe, loc), inner, succ.tpe, purity, loc)
           SimplifiedAst.Expression.IfThenElse(cond, consequent, fail, succ.tpe, loc)
 
         /**
@@ -580,7 +583,8 @@ object Simplifier {
           val zero = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
           elms.zip(freshVars).zipWithIndex.foldRight(zero) {
             case (((pat, name), idx), exp) =>
-              SimplifiedAst.Expression.Let(name, SimplifiedAst.Expression.Index(SimplifiedAst.Expression.Var(v, tpe, loc), idx, pat.tpe, loc), exp, Pure, succ.tpe, loc)
+              val purity = Pure
+              SimplifiedAst.Expression.Let(name, SimplifiedAst.Expression.Index(SimplifiedAst.Expression.Var(v, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, purity, loc)
           }
 
         /**
@@ -602,7 +606,7 @@ object Simplifier {
                 val purity = Impure
                 SimplifiedAst.Expression.Let(name,
                   SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
-                  , exp, purity, succ.tpe, loc)
+                  , exp, succ.tpe, purity, loc)
             }
           }
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
@@ -611,16 +615,16 @@ object Simplifier {
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
 
         /**
-          * Matching an array with a TailSpread may succeed or fail
-          *
-          * We generate an if clause checking that array length is at least the length of
-          * each pattern, and generate a fresh variable and let-binding for each variable
-          * in the array, which we load with ArrayLoad.
-          * We then check whether the Spread is a variable, creating a let-binding for the
-          * appropriate ArraySlice to the spread, if it is.
-          * We then recurse over the freshly generated variables as the true case of the previously
-          * created if clause
-          */
+         * Matching an array with a TailSpread may succeed or fail
+         *
+         * We generate an if clause checking that array length is at least the length of
+         * each pattern, and generate a fresh variable and let-binding for each variable
+         * in the array, which we load with ArrayLoad.
+         * We then check whether the Spread is a variable, creating a let-binding for the
+         * appropriate ArraySlice to the spread, if it is.
+         * We then recurse over the freshly generated variables as the true case of the previously
+         * created if clause
+         */
         case (TypedAst.Pattern.ArrayTailSpread(elms, sym, tpe, loc) :: ps, v :: vs) =>
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
@@ -636,7 +640,7 @@ object Simplifier {
                     SimplifiedAst.Expression.Var(v, tpe, loc),
                     expectedArrayLengthExp,
                     actualArrayLengthExp, tpe, loc),
-                  inner, purity, tpe, loc)
+                  inner, tpe, purity, loc)
             }
             elms.zip(freshVars).zipWithIndex.foldRight(zero) {
               case (((pat, name), idx), exp) =>
@@ -645,7 +649,7 @@ object Simplifier {
                 val purity = Impure
                 SimplifiedAst.Expression.Let(name,
                   SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
-                  , exp, purity, succ.tpe, loc)
+                  , exp, succ.tpe, purity, loc)
             }
           }
           val op = SemanticOperator.Int32Op.Ge
@@ -653,16 +657,16 @@ object Simplifier {
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
 
         /**
-          * Matching an array with a HeadSpread may succeed or fail
-          *
-          * We generate an if clause checking that array length is at least the length of
-          * each pattern, and generate a fresh variable and let-binding for each variable
-          * in the array, which we load with ArrayLoad.
-          * We then check whether the Spread is a variable, creating a let-binding for the
-          * appropriate ArraySlice to the spread, if it is.
-          * We then recurse over the freshly generated variables as the true case of the previously
-          * created if clause
-          */
+         * Matching an array with a HeadSpread may succeed or fail
+         *
+         * We generate an if clause checking that array length is at least the length of
+         * each pattern, and generate a fresh variable and let-binding for each variable
+         * in the array, which we load with ArrayLoad.
+         * We then check whether the Spread is a variable, creating a let-binding for the
+         * appropriate ArraySlice to the spread, if it is.
+         * We then recurse over the freshly generated variables as the true case of the previously
+         * created if clause
+         */
         case (TypedAst.Pattern.ArrayHeadSpread(sym, elms, tpe, loc) :: ps, v :: vs) =>
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
@@ -679,7 +683,7 @@ object Simplifier {
                     SimplifiedAst.Expression.Var(v, tpe, loc),
                     SimplifiedAst.Expression.Int32(0, loc),
                     expectedArrayLengthExp, tpe, loc),
-                  inner, purity, tpe, loc)
+                  inner, tpe, purity, loc)
             }
             elms.zip(freshVars).zipWithIndex.foldRight(zero) {
               case (((pat, name), idx), exp) =>
@@ -688,7 +692,7 @@ object Simplifier {
                 val purity = Impure
                 SimplifiedAst.Expression.Let(name,
                   SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
-                  , exp, purity, succ.tpe, loc)
+                  , exp, succ.tpe, purity, loc)
             }
           }
           val ge = SemanticOperator.Int32Op.Ge
@@ -783,7 +787,7 @@ object Simplifier {
               val tag = Name.Tag("Present", loc)
               val untagExp = SimplifiedAst.Expression.Untag(sym, tag, varExp, tpe, loc)
               val purity = Pure
-              SimplifiedAst.Expression.Let(matchVar, untagExp, acc, purity, acc.tpe, loc)
+              SimplifiedAst.Expression.Let(matchVar, untagExp, acc, acc.tpe, purity, loc)
           }
           val elseExp = acc
           SimplifiedAst.Expression.IfThenElse(condExp, thenExp, elseExp, tpe, loc)
@@ -795,7 +799,7 @@ object Simplifier {
       freshMatchVars.zip(exps).foldRight(branches: SimplifiedAst.Expression) {
         case ((sym, (matchExp, eff)), acc) =>
           val purity = isPure(eff)
-          SimplifiedAst.Expression.Let(sym, matchExp, acc, purity, tpe, loc)
+          SimplifiedAst.Expression.Let(sym, matchExp, acc, tpe, purity, loc)
       }
     }
 
@@ -882,8 +886,8 @@ object Simplifier {
       case SimplifiedAst.Expression.Let(sym, exp1, exp2, purity, tpe, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(exp1), visitExp(exp2), purity, tpe, loc)
 
-      case SimplifiedAst.Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
-        SimplifiedAst.Expression.LetRec(sym, visitExp(exp1), visitExp(exp2), tpe, loc)
+      case SimplifiedAst.Expression.LetRec(sym, exp1, exp2, tpe, purity, loc) =>
+        SimplifiedAst.Expression.LetRec(sym, visitExp(exp1), visitExp(exp2), tpe, purity, loc)
 
       case SimplifiedAst.Expression.Is(sym, tag, exp, loc) =>
         SimplifiedAst.Expression.Is(sym, tag, visitExp(exp), loc)
