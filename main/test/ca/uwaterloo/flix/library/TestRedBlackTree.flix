@@ -152,7 +152,7 @@ namespace TestRedBlackTree {
     ///
     def checkBinarySearchTreeInvariant(tree: RedBlackTree[k, v]): Bool with Order[k] = match tree {
         case Node(_, a, xK, _, b) =>
-            if (RedBlackTree.exists((yK, _) -> yK <=> xK == GreaterThan, a) or RedBlackTree.exists((zK, _) -> zK <=> xK == LessThan, b))
+            if (RedBlackTree.exists((yK, _) -> (yK <=> xK) == GreaterThan, a) or RedBlackTree.exists((zK, _) -> (zK <=> xK) == LessThan, b))
                 false
             else
                 checkBinarySearchTreeInvariant(a) and checkBinarySearchTreeInvariant(b)
