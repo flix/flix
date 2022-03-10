@@ -177,21 +177,20 @@ object LambdaLift {
       case SimplifiedAst.Expression.JumpTo(sym, tpe, loc) =>
         LiftedAst.Expression.JumpTo(sym, tpe, loc)
 
-      case SimplifiedAst.Expression.Let(sym, exp1, exp2, purity, tpe, loc) =>
+      case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        LiftedAst.Expression.Let(sym, e1, e2, purity, tpe, loc)
+        LiftedAst.Expression.Let(sym, e1, e2, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.LetRec(varSym, exp1, exp2, tpe, loc) =>
+      case SimplifiedAst.Expression.LetRec(varSym, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         e1 match {
           case LiftedAst.Expression.Closure(defSym, freeVars, _, _) =>
             val index = freeVars.indexWhere(freeVar => varSym == freeVar.sym)
             if (index == -1) {
-              val purity = Impure
               // function never calls itself
-              LiftedAst.Expression.Let(varSym, e1, e2, purity,tpe, loc)
+              LiftedAst.Expression.Let(varSym, e1, e2,tpe, purity, loc)
             } else
               LiftedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
 
