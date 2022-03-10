@@ -203,31 +203,17 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toNec(iter: Iterator[a]): Option[Nec[a]] & Impure =
-        let Iterator(done, next) = iter;
-        def loop(k) = {
-            if (done())
-                k(None)
-            else
-                let x = next();
-                loop(ks -> match ks {
-                    case None      => k(Some(Nec.singleton(x)))
-                    case Some(nec) => k(Some(Nec.cons(x, nec)))
-                })
+        let f = (x, acc) -> match acc {
+            case None      => Some(Nec.singleton(x))
+            case Some(nec) => Some(Nec.cons(x, nec))
         };
-        loop(identity)
+        foldRight(f, None, iter)
 
     ///
     /// Returns the contents of `iter` as a set. Consumes the entire iterator.
     ///
     pub def toSet(iter: Iterator[a]): Set[a] & Impure with Order[a] =
-        let Iterator(done, next) = iter;
-        def loop(s) = {
-            if (done())
-                s
-            else
-                loop(Set.insert(next(), s))
-        };
-        loop(Set.empty())
+        foldLeft((acc, a) -> Set.insert(a, acc), Set.empty(), iter)
 
     ///
     /// Returns a list of every element in `iter` that satisfies the predicate `f`.
