@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst._
-import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Purity, Symbol}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.Validation._
  * The inliner replaces closures and functions by their code to improve performance.
  */
 object Inliner {
-
+  var counter = 0
   /**
    * Performs inlining on the given AST `root`.
    */
@@ -36,7 +36,7 @@ object Inliner {
     val defs = root.defs.map {
       case (sym, defn) => sym -> defn.copy(exp = visitExp(defn.exp, Map.empty))
     }
-
+    println(counter)
     // Reassemble the ast root.
     val result = root.copy(defs = defs)
 
@@ -48,42 +48,42 @@ object Inliner {
    * Performs inlining operations on the expression `exp0` of type OccurrenceAst.Expression.
    * Returns an expression of type Expression
    */
-  private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Int]): Expression = exp0 match {
+  private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Expression]): Expression = exp0 match {
     case Expression.Unit(loc) => Expression.Unit(loc)
 
-    case Expression.Null(_,_) => exp0
+    case Expression.Null(_, _) => exp0
 
     case Expression.True(_) => exp0
 
     case Expression.False(_) => exp0
 
-    case Expression.Char(_,_) => exp0
+    case Expression.Char(_, _) => exp0
 
-    case Expression.Float32(_,_) => exp0
+    case Expression.Float32(_, _) => exp0
 
-    case Expression.Float64(_,_) => exp0
+    case Expression.Float64(_, _) => exp0
 
-    case Expression.Int8(_,_) => exp0
+    case Expression.Int8(_, _) => exp0
 
-    case Expression.Int16(_,_) => exp0
+    case Expression.Int16(_, _) => exp0
 
-    case Expression.Int32(_,_) => exp0
+    case Expression.Int32(_, _) => exp0
 
-    case Expression.Int64(_,_) => exp0
+    case Expression.Int64(_, _) => exp0
 
-    case Expression.BigInt(_,_) => exp0
+    case Expression.BigInt(_, _) => exp0
 
-    case Expression.Str(_,_) => exp0
+    case Expression.Str(_, _) => exp0
 
     case Expression.Var(sym, tpe, loc) => subst0.get(sym) match {
-      case Some(lit) => Expression.Int32(lit, loc)
-      case None => Expression.Var(sym, tpe, loc)
+      case Some(exp) => exp // TODO location?
+      case None => exp0
     }
 
     case Expression.Closure(sym, freeVars, tpe, loc) =>
       val fv = freeVars.map {
-      case OccurrenceAst.FreeVar(sym, tpe) => FreeVar(sym, tpe)
-    }
+        case OccurrenceAst.FreeVar(sym, tpe) => FreeVar(sym, tpe)
+      }
       Expression.Closure(sym, fv, tpe, loc)
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
@@ -133,17 +133,17 @@ object Inliner {
       }
       Expression.Branch(e, bs, tpe, loc)
 
-    case Expression.JumpTo(_,_,_) => exp0
+    case Expression.JumpTo(_, _, _) => exp0
 
     case Expression.Let(sym, exp1, exp2, occur, purity, tpe, loc) =>
-      val e1 = visitExp(exp1, subst0)
-      val wantToInline: Boolean = e1 match {
-        case Expression.Int32(lit, _) if lit == 42 => true
-        case _ => false
+      if (wantToPreInline(occur, purity)) {
+        counter += 1
+        preInline(sym, exp1, exp2, subst0)
+      } else {
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        Expression.Let(sym, e1, e2, occur, purity, tpe, loc)
       }
-      val subst1 = if (wantToInline) subst0 + (sym -> 42) else subst0
-      val e2 = visitExp(exp2, subst1)
-      Expression.Let(sym, e1, e2, occur, purity, tpe, loc)
 
     case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1, subst0)
@@ -170,7 +170,7 @@ object Inliner {
       val es = elms.map(visitExp(_, subst0))
       Expression.Tuple(es, tpe, loc)
 
-    case Expression.RecordEmpty(_,_) => exp0
+    case Expression.RecordEmpty(_, _) => exp0
 
     case Expression.RecordSelect(exp, field, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -263,7 +263,7 @@ object Inliner {
       val e2 = visitExp(exp2, subst0)
       Expression.PutField(field, e1, e2, tpe, loc)
 
-    case Expression.GetStaticField(_,_,_) => exp0
+    case Expression.GetStaticField(_, _, _) => exp0
 
     case Expression.PutStaticField(field, exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -304,8 +304,20 @@ object Inliner {
       val e = visitExp(exp, subst0)
       Expression.Force(e, tpe, loc)
 
-    case Expression.HoleError(_,_,_) => exp0
+    case Expression.HoleError(_, _, _) => exp0
 
-    case Expression.MatchError(_,_) =>  exp0
+    case Expression.MatchError(_, _) => exp0
+  }
+
+  private def preInline(sym: Symbol.VarSym, exp1: Expression, exp2: Expression, subst0: Map[Symbol.VarSym, Expression]): Expression = {
+    val subst1 = subst0 + (sym -> exp1)
+    visitExp(exp2, subst1)
+  }
+
+  private def wantToPreInline(occur: Occur, purity: Purity): Boolean = {
+    (occur, purity) match {
+      case (Occur.Once, Purity.Pure) => true
+      case _ => false
+    }
   }
 }
