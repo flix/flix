@@ -175,8 +175,10 @@ object Weeder {
     * Performs weeding on the given def declaration `d0`.
     */
   private def visitDef(d0: ParsedAst.Declaration.Def, legalModifiers: Set[Ast.Modifier], requiresPublic: Boolean)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = d0 match {
-    case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOpt, tconstrs0, exp0, sp2) =>
+    case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpeAndEff0, tconstrs0, exp0, sp2) =>
       flix.subtask(ident.name, sample = true)
+
+      val (tpe0, effOpt) = tpeAndEff0.get // MATT WeederError.MissingReturnType
 
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann)

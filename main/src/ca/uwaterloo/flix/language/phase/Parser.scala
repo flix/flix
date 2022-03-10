@@ -129,7 +129,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ OptTypeConstraintList ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ optional(TypeAndEffect) ~ OptTypeConstraintList ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
     }
 
     def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
@@ -689,6 +689,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def LetRecDef: Rule1[ParsedAst.Expression.LetRecDef] = rule {
       SP ~ keyword("def") ~ WS ~ Names.Variable ~ optWS ~ FormalParamList ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetRecDef
+    }
+
+    def LocalDef: Rule1[ParsedAst.Expression.LocalDef] = rule {
+      Declarations.Def ~ optWS ~ ";" ~ Stm ~ SP ~> ParsedAst.Expression.LocalDef
     }
 
     def LetUse: Rule1[ParsedAst.Expression.Use] = rule {
