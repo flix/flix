@@ -226,6 +226,16 @@ namespace MutSet {
         Set.foldRight(f, i, deref ms)
 
     ///
+    /// Lazily applies `f` to a start value `s` and all elements in `s` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
+    /// The foldRightLazy function exists to allow early termination of a fold.
+    ///
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b, i: b, s: MutSet[a]): b & Impure =
+        let MutSet(ms) = s;
+        Set.foldRightLazy(f, i, deref ms)
+
+    ///
     /// Applies `f` to all elements in the mutable set `s` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`

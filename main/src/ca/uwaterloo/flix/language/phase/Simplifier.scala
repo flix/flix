@@ -492,7 +492,7 @@ object Simplifier {
       // Assemble all the branches together.
       val branch = SimplifiedAst.Expression.Branch(entry, branches.toMap + errorBranch, tpe, loc)
 
-      //The purity of the match exp
+      // The purity of the match exp
       val purity = isPure(exp0.eff)
 
       // Wrap the branches inside a let-binding for the match variable.
@@ -599,7 +599,7 @@ object Simplifier {
               case (((pat, name), idx), exp) =>
                 val base = SimplifiedAst.Expression.Var(v, tpe, loc)
                 val index = SimplifiedAst.Expression.Int32(idx, loc)
-                val purity = Pure
+                val purity = Impure
                 SimplifiedAst.Expression.Let(name,
                   SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
                   , exp, purity, succ.tpe, loc)
@@ -630,7 +630,7 @@ object Simplifier {
             val zero = sym.text match {
               case "_" => inner
               case _ =>
-                val purity = Pure
+                val purity = Impure
                 SimplifiedAst.Expression.Let(sym,
                   SimplifiedAst.Expression.ArraySlice(
                     SimplifiedAst.Expression.Var(v, tpe, loc),
@@ -642,7 +642,7 @@ object Simplifier {
               case (((pat, name), idx), exp) =>
                 val base = SimplifiedAst.Expression.Var(v, tpe, loc)
                 val index = SimplifiedAst.Expression.Int32(idx, loc)
-                val purity = Pure
+                val purity = Impure
                 SimplifiedAst.Expression.Let(name,
                   SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
                   , exp, purity, succ.tpe, loc)
@@ -673,7 +673,7 @@ object Simplifier {
             val zero = sym.text match {
               case "_" => inner
               case _ =>
-                val purity = Pure
+                val purity = Impure
                 SimplifiedAst.Expression.Let(sym,
                   SimplifiedAst.Expression.ArraySlice(
                     SimplifiedAst.Expression.Var(v, tpe, loc),
@@ -685,7 +685,7 @@ object Simplifier {
               case (((pat, name), idx), exp) =>
                 val base = SimplifiedAst.Expression.Var(v, tpe, loc)
                 val index = mkAdd(SimplifiedAst.Expression.Int32(idx, loc), offset, loc)
-                val purity = Pure
+                val purity = Impure
                 SimplifiedAst.Expression.Let(name,
                   SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
                   , exp, purity, succ.tpe, loc)
@@ -743,7 +743,7 @@ object Simplifier {
       //
       // Translate the match expressions.
       //
-      val exps = exps0.map(visitExp)
+      val exps = exps0.map(e => (visitExp(e), e.eff))
 
       //
       // Introduce a fresh variable for each match expression.
@@ -763,12 +763,12 @@ object Simplifier {
           val init = SimplifiedAst.Expression.True(loc): SimplifiedAst.Expression
           val condExp = freshMatchVars.zip(pat).zip(exps).foldRight(init) {
             case (((freshMatchVar, TypedAst.ChoicePattern.Wild(_)), matchExp), acc) => acc
-            case (((freshMatchVar, TypedAst.ChoicePattern.Absent(_)), matchExp), acc) =>
+            case (((freshMatchVar, TypedAst.ChoicePattern.Absent(_)), (matchExp, _)), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
               val tag = Name.Tag("Absent", loc)
               val isAbsent = SimplifiedAst.Expression.Is(sym, tag, varExp, loc)
               SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isAbsent, acc, Type.Bool, loc)
-            case (((freshMatchVar, TypedAst.ChoicePattern.Present(matchVar, _, _)), matchExp), acc) =>
+            case (((freshMatchVar, TypedAst.ChoicePattern.Present(matchVar, _, _)), (matchExp, _)), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
               val tag = Name.Tag("Present", loc)
               val isPresent = SimplifiedAst.Expression.Is(sym, tag, varExp, loc)
@@ -778,7 +778,7 @@ object Simplifier {
           val thenExp = freshMatchVars.zip(pat).zip(exps).foldRight(bodyExp) {
             case (((freshMatchVar, TypedAst.ChoicePattern.Wild(_)), matchExp), acc) => acc
             case (((freshMatchVar, TypedAst.ChoicePattern.Absent(_)), matchExp), acc) => acc
-            case (((freshMatchVar, TypedAst.ChoicePattern.Present(matchVar, tpe, _)), matchExp), acc) =>
+            case (((freshMatchVar, TypedAst.ChoicePattern.Present(matchVar, tpe, _)), (matchExp, _)), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
               val tag = Name.Tag("Present", loc)
               val untagExp = SimplifiedAst.Expression.Untag(sym, tag, varExp, tpe, loc)
@@ -793,8 +793,8 @@ object Simplifier {
       // Let bind the match variables.
       //
       freshMatchVars.zip(exps).foldRight(branches: SimplifiedAst.Expression) {
-        case ((sym, matchExp), acc) =>
-          val purity = Impure
+        case ((sym, (matchExp, eff)), acc) =>
+          val purity = isPure(eff)
           SimplifiedAst.Expression.Let(sym, matchExp, acc, purity, tpe, loc)
       }
     }
@@ -1035,6 +1035,9 @@ object Simplifier {
     visitExp(exp0)
   }
 
+  /**
+   * Returns the purity (or impurity) of an expression.
+   */
   private def isPure(eff: Type): Purity = {
     if (eff == Type.Pure)
       Pure

@@ -18,19 +18,18 @@ package ca.uwaterloo.flix.language.ast
 
 sealed trait Purity
 
-
 /**
- * Purity of an AST.Expression denotes whether an expression has side effects.
+ * Represents the purity (or impurity) of an expression.
  */
 object Purity {
 
   /**
-   * Pure indicates that an expression has no side effects.
+   * Represents a pure expression (i.e. an expression that cannot have side-effects).
    */
   case object Pure extends Purity
 
   /**
-   * Impure indicates that an expression has side effects.
+   * Represents an impure expression (i.e. an expression that could potentially have side-effects).
    */
   case object Impure extends Purity
 }

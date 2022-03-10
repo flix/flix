@@ -36,7 +36,7 @@ object Reducer {
   /**
    * Returns an optimized version of the given AST `root`.
    */
-  def run(root: OccurrenceAst.Root)(implicit flix: Flix): Validation[LiftedAst.Root, CompilationMessage] = flix.phase("Reducer") {
+  def run(root: OccurrenceAst.Root)(implicit flix: Flix): Validation[LiftedAst.Root, CompilationMessage] = flix.subphase("Reducer") {
 
     // Visit every definition in the AST
     val defs = root.defs.map {

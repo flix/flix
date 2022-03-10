@@ -31,7 +31,7 @@ object Inliner {
   /**
    * Performs inlining on the given AST `root`.
    */
-  def run(root: OccurrenceAst.Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Inliner") {
+  def run(root: OccurrenceAst.Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.subphase("Inliner") {
     // Visit every definition in the program.
     val defs = root.defs.map {
       case (sym, defn) => sym -> defn.copy(exp = visitExp(defn.exp, Map.empty))
