@@ -27,7 +27,6 @@ import ca.uwaterloo.flix.util.Validation._
  * The inliner replaces closures and functions by their code to improve performance.
  */
 object Inliner {
-  var counter = 0
   /**
    * Performs inlining on the given AST `root`.
    */
@@ -36,7 +35,6 @@ object Inliner {
     val defs = root.defs.map {
       case (sym, defn) => sym -> defn.copy(exp = visitExp(defn.exp, Map.empty))
     }
-    println(counter)
     // Reassemble the ast root.
     val result = root.copy(defs = defs)
 
@@ -75,8 +73,8 @@ object Inliner {
 
     case Expression.Str(_, _) => exp0
 
-    case Expression.Var(sym, tpe, loc) => subst0.get(sym) match {
-      case Some(exp) => exp // TODO location?
+    case Expression.Var(sym, _, _) => subst0.get(sym) match {
+      case Some(exp) => visitExp(exp, subst0) // TODO location?
       case None => exp0
     }
 
@@ -138,8 +136,8 @@ object Inliner {
 
     case Expression.Let(sym, exp1, exp2, occur, purity, tpe, loc) =>
       if (wantToPreInline(occur, purity)) {
-        counter += 1
-        preInline(sym, exp1, exp2, subst0)
+        val e2 = preInline(sym, exp1, exp2, subst0)
+        e2
       } else {
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
