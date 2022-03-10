@@ -162,7 +162,7 @@ namespace Iterator {
             foldLeft((acc, x) -> acc * f(x), 1, iter)
 
     ///
-    /// Returns an array with the elements of `iter`.
+    /// Returns the contents of `iter` as an array.
     ///
     /// Consumes the entire iterator.
     ///
@@ -172,24 +172,20 @@ namespace Iterator {
         MutList.toArray(m)
 
     ///
-    /// Returns the contents of `iter` as a list. Consumes the entire iterator.
+    /// Returns the contents of `iter` as a list.
+    ///
+    /// Consumes the entire iterator.
     ///
     pub def toList(iter: Iterator[a]): List[a] & Impure =
         foldRight((a, acc) -> a :: acc, Nil, iter)
 
     ///
-    /// Returns the contents of `iter` as a map. Consumes the entire iterator.
+    /// Returns the contents of `iter` as a map.
+    ///
+    /// Consumes the entire iterator.
     ///
     pub def toMap(iter: Iterator[(a, b)]): Map[a, b] & Impure with Order[a] =
-        let Iterator(done, next) = iter;
-        def loop(m) = {
-            if (done())
-                m
-            else
-                let (k, v) = next();
-                loop(Map.insert(k, v, m))
-        };
-        loop(Map.empty())
+        foldLeft((acc, ab) -> Map.insert(fst(ab), snd(ab), acc), Map.empty(), iter)
 
     ///
     /// Returns the contents of `iter` as a `Some(Nel)` if `iter` is not empty. Returns None otherwise.
