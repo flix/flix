@@ -73,10 +73,7 @@ object Inliner {
 
     case Expression.Str(_, _) => exp0
 
-    case Expression.Var(sym, _, _) => subst0.get(sym) match {
-      case Some(exp) => visitExp(exp, subst0) // TODO location?
-      case None => exp0
-    }
+    case Expression.Var(sym, _, _) => subst0.get(sym).fold(exp0)(visitExp(_, subst0))
 
     case Expression.Closure(sym, freeVars, tpe, loc) =>
       val fv = freeVars.foldLeft(List[FreeVar]())((acc, fv) => fv match {
