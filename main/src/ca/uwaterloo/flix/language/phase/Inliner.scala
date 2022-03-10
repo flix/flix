@@ -81,9 +81,10 @@ object Inliner {
     }
 
     case Expression.Closure(sym, freeVars, tpe, loc) =>
-      val fv = freeVars.map {
-        case OccurrenceAst.FreeVar(sym, tpe) => FreeVar(sym, tpe)
-      }
+      val fv = freeVars.foldLeft(List[FreeVar]())((acc, fv) => fv match {
+        case OccurrenceAst.FreeVar(sym, tpe) => subst0.get(sym).fold[List[FreeVar]](FreeVar(sym, tpe) :: acc)(_ => acc)
+      })
+
       Expression.Closure(sym, fv, tpe, loc)
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
