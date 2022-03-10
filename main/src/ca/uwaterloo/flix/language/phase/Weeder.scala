@@ -675,6 +675,35 @@ object Weeder {
           WeededAst.Expression.Apply(inner, List(value), loc)
       }
 
+    case ParsedAst.Expression.LocalDef(ParsedAst.Declaration.Def(doc0, ann0, mod0, sp1, ident, tparams0, fparamsOpt0, tpeAndEff0, tconstrs, exp1, defSp2), exp2, sp2) =>
+      val doc = visitDoc(doc0)
+      val ann = visitAnnotations(ann0)
+
+      // MATT what to do with doc and ann?
+
+      val modVal = visitModifiers(mod0, legalModifiers = Set.empty)
+      val fparamsVal = visitFormalParams(fparamsOpt0, typeRequired = false)
+      val exp1Val = visitExp(exp1)
+      val exp2Val = visitExp(exp2)
+      val defLoc = mkSL(sp1, defSp2)
+      val loc = mkSL(sp1, sp2)
+
+      // MATT check that tparams is elided
+      // MATT check tconstrs empty
+      val (tpe0, eff0) = tpeAndEff0 match {
+        case None => (None, None)
+        case Some((t, e)) => (Some(t), e)
+      }
+      val tpe = tpe0.map(visitType)
+      val eff = eff0.map(visitType)
+      mapN(modVal, fparamsVal, exp1Val, exp2Val) {
+        case (mod, fp, e1, e2) =>
+          val body = WeededAst.Expression.Ascribe(e1, tpe, eff, defLoc)
+          val lambda = mkCurried(fp, body, defLoc)
+          WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
+      }
+
+
     case ParsedAst.Expression.LetRecDef(sp1, ident, fparams, exp1, exp2, sp2) =>
       val mod = Ast.Modifiers.Empty
       val loc = mkSL(sp1, sp2)
