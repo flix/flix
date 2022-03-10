@@ -636,23 +636,22 @@ namespace MutList {
     /// Reverses the order of the elements in the given mutable list `v`.
     ///
     pub def reverse!(v: mut MutList[a]): Unit & Impure =
-        let MutList(a, l) = v;
-        let len = deref l;
-        reverseHelper!(deref a, len / 2, 0, len - 1)
-
-    ///
-    /// Helper function for `reverse!`.
-    ///
-    def reverseHelper!(a: mut Array[a], halflen: Int32, i: Int32, j: Int32): Unit & Impure =
-        if (i >= halflen)
-            ()
-        else {
-            let x = a[i];
-            let y = a[j];
-            Array.put(y, i, a);
-            Array.put(x, j, a);
-            reverseHelper!(a, halflen, i + 1, j - 1)
-        }
+        let MutList(ra, rl) = v;
+        let a = deref ra;
+        let l = deref rl;
+        let halflen = l / 2;
+        def loop(i, j) = {
+            if (i >= halflen)
+                ()
+            else {
+                let x = a[i];
+                let y = a[j];
+                Array.put(y, i, a);
+                Array.put(x, j, a);
+                loop(i + 1, j - 1)
+            }
+        };
+        loop(0, l - 1)
 
     ///
     /// Shrinks the given mutable list `v` down to a capacity of `n` elements but no less than 8.
@@ -666,7 +665,7 @@ namespace MutList {
         if (n < capv and capv != minCap) {
             let len = deref l;
             let newCap = Order.max(n, minCap);
-            a := Array.slice(0, newCap, deref a);
+            a := Array.copyOfRange(0, newCap, deref a);
             l := Order.min(len, newCap)
         }
         else ()
@@ -730,20 +729,21 @@ namespace MutList {
     /// Returns `true` if the mutable lists `v1` and `v2` have the same elements, i.e. are structurally equal.
     ///
     pub def sameElements(v1: MutList[a], v2: MutList[a]): Bool & Impure with Eq[a] =
-        let MutList(a1, l1) = v1;
-        let MutList(a2, l2) = v2;
-        let len1 = deref l1;
-        let len2 = deref l2;
-        len1 == len2 and sameElementsHelper(deref a1, deref a2, 0, len1)
-
-    ///
-    /// Helper function for `sameElements`.
-    ///
-    def sameElementsHelper(a1: Array[a], a2: Array[a], i: Int32, n: Int32): Bool & Impure with Eq[a] =
-        if (i >= n)
-            true
-        else
-            a1[i] == a2[i] and sameElementsHelper(a1, a2, i + 1, n)
+        let MutList(ra1, rl1) = v1;
+        let MutList(ra2, rl2) = v2;
+        let a1 = deref ra1;
+        let a2 = deref ra2;
+        let l1 = deref rl1;
+        let l2 = deref rl2;
+        def loop(i) = {
+            if (i >= l1)
+                true
+            else if (a1[i] == a2[i])
+                loop(i + 1)
+            else
+                false
+        };
+        if (l1 == l2) loop(0) else false
 
     ///
     /// Render `v` as a String. Elements are rendered with the
@@ -783,45 +783,35 @@ namespace MutList {
     /// Applies `f` to all the elements in `v`.
     ///
     pub def foreach(f: a -> Unit & ef, v: MutList[a]): Unit & Impure =
-        let MutList(a, l) = v;
-        let len = deref l;
-        if (len < 1)
-            ()
-        else
-            foreachHelper(f, deref a, 0, len)
-
-    ///
-    /// Helper function for `foreach`.
-    ///
-    def foreachHelper(f: a -> Unit & ef, a: Array[a], i: Int32, n: Int32): Unit & Impure =
-        if (i >= n)
-            ()
-        else {
-            f(a[i]);
-            foreachHelper(f, a, i + 1, n)
-        }
+        let MutList(ra, rl) = v;
+        let a = deref ra;
+        let l = deref rl;
+        def loop(i) = {
+            if (i >= l)
+                ()
+            else {
+                f(a[i]);
+                loop(i + 1)
+            }
+        };
+        loop(0)
 
     ///
     /// Applies `f` to all the elements in `v`.
     ///
     pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, v: MutList[a]): Unit & Impure =
-        let MutList(a, l) = v;
-        let len = deref l;
-        if (len < 1)
-            ()
-        else
-            foreachWithIndexHelper(f, deref a, 0, len)
-
-    ///
-    /// Helper function for `foreachWithIndex`.
-    ///
-    def foreachWithIndexHelper(f: (a, Int32) -> Unit & ef, a: Array[a], i: Int32, n: Int32): Unit & Impure =
-        if (i >= n)
-            ()
-        else {
-            f(a[i], i);
-            foreachWithIndexHelper(f, a, i + 1, n)
-        }
+        let MutList(ra, rl) = v;
+        let a = deref ra;
+        let l = deref rl;
+        def loop(i) = {
+            if (i >= l)
+                ()
+            else {
+                f(a[i], i);
+                loop(i + 1)
+            }
+        };
+        loop(0)
 
     ///
     /// Compresses the given mutable list `v` if needed.
