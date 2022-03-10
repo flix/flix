@@ -852,12 +852,13 @@ namespace File {
     /// Moves a file or directory from path `src` to directory `dst`.
     ///
     /// Returns `Ok(true)` if `src` was moved, and `dst` is a directory.
-    /// Returns `Err(msg)` if `src` was not moved, because `dst` is not a directory or is a subset of `src`.
+    /// Returns `Ok(false)` if `dst` is not a directory.
+    /// Returns `Err(msg)` if `src` was not moved, or `dst` is a subset of `src`.
     ///
     pub def moveInto(src: {src :: String} , dst: String): Result[Bool, String] = ???
 
     ///
-    /// Moves a file or directory from path `src` to path `dst`. Overwrites if `dst` already exists.
+    /// Moves a file or directory from path `src` to path `dst`. Overwrites `dst` if it already exists.
     ///
     /// Returns `Ok(true)` if `src` was moved.
     /// Returns `Err(msg)` if `src` was not moved.
