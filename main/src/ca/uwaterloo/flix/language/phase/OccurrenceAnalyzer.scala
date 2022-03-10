@@ -34,7 +34,7 @@ object OccurrenceAnalyzer {
   /**
    * Performs occurrence analysis on the given AST `root`.
    */
-  def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[OccurrenceAst.Root, CompilationMessage] = flix.phase("OccurrenceAnalyzer") {
+  def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[OccurrenceAst.Root, CompilationMessage] = flix.subphase("OccurrenceAnalyzer") {
 
     // Visit every definition in the program in parallel and transform to type 'OccurrenceAst.Def'
     val defs = ParOps.parMap(root.defs.values)((d: LiftedAst.Def) => visitDef(d))
@@ -159,13 +159,13 @@ object OccurrenceAnalyzer {
 
     case Expression.JumpTo(sym, tpe, loc) => (OccurrenceAst.Expression.JumpTo(sym, tpe, loc), Map.empty)
 
-    case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+    case Expression.Let(sym, exp1, exp2, tpe, purity, loc) =>
       val (e1, o1) = visitExp(exp1)
       val (e2, o2) = visitExp(exp2)
       val o3 = combineAll(o1, o2)
       val occur = o3.getOrElse(sym, Dead)
       val o4 = o3 - sym
-      (OccurrenceAst.Expression.Let(sym, e1, e2, occur, tpe, loc), o4)
+      (OccurrenceAst.Expression.Let(sym, e1, e2, occur, tpe, purity, loc), o4)
 
     case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
       val (e1, o1) = visitExp(exp1)

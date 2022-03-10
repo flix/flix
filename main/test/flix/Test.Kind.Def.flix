@@ -55,7 +55,7 @@ namespace Test/Def/Kinding {
 
             pub def func(x: Int32 -> Int32 & ef): Int32 & ef = ??? as & ef
 
-            pub def enum(x: EBool[ef]): Int32 & ef = ??? as & ef
+            pub def enum_(x: EBool[ef]): Int32 & ef = ??? as & ef
         }
 
         namespace Exp {
@@ -124,7 +124,7 @@ namespace Test/Def/Kinding {
 
             pub def func[ef: Bool](x: Int32 -> Int32 & ef): Int32 & ef = ??? as & ef
 
-            pub def enum[ef: Bool](x: EBool[ef]): Int32 & ef = ??? as & ef
+            pub def enum_[ef: Bool](x: EBool[ef]): Int32 & ef = ??? as & ef
         }
 
         namespace Exp {

@@ -142,7 +142,7 @@ namespace String {
             ()
         else {
             let c = f(i);
-            StringBuilder.append!(sb, c);
+            StringBuilder.append!(c, sb);
             initWorker(sb, f, len, i+1)
         }
 
@@ -157,7 +157,7 @@ namespace String {
     ///
     def flattenHelper(xs: List[String]): String & Impure =
         let sb = StringBuilder.new();
-        List.foreach(StringBuilder.appendString!(sb), xs);
+        List.foreach(x -> StringBuilder.appendString!(x, sb), xs);
         StringBuilder.toString(sb)
 
     ///
@@ -174,7 +174,7 @@ namespace String {
     def intercalateHelper(sep: String, xs: List[String]): String & Impure =
         let sb = StringBuilder.new();
         let arr = List.toArray(xs);
-        StringBuilder.intercalate!(sb, sep, arr);
+        StringBuilder.intercalate!(sep, arr, sb);
         StringBuilder.toString(sb)
 
     ///
@@ -191,8 +191,8 @@ namespace String {
         case Nil => ""
         case x :: rs => {
             let sb = StringBuilder.new();
-            StringBuilder.appendString!(sb, x);
-            let appendStep = s -> { StringBuilder.append!(sb, sep); StringBuilder.appendString!(sb, s) };
+            StringBuilder.appendString!(x, sb);
+            let appendStep = s -> { StringBuilder.append!(sep, sb); StringBuilder.appendString!(s, sb) };
             List.foreach(appendStep, rs);
             StringBuilder.toString(sb)
         }
@@ -661,7 +661,7 @@ namespace String {
         match a1 {
             case None => StringBuilder.toString(sb)
             case Some(c, st1) => {
-                StringBuilder.append!(sb, c);
+                StringBuilder.append!(c, sb);
                 unfoldHelper(f, sb, st1)
             }
         }
@@ -684,7 +684,7 @@ namespace String {
     def unfoldWithIterHelper(next: Unit -> Option[Char] & ef, sb: StringBuilder): String & Impure = match next() {
         case None => StringBuilder.toString(sb)
         case Some(c) => {
-            StringBuilder.append!(sb, c);
+            StringBuilder.append!(c, sb);
             unfoldWithIterHelper(next, sb)
         }
     }
@@ -706,7 +706,7 @@ namespace String {
         match a {
             case None => StringBuilder.toString(sb)
             case Some(s, st1) => {
-                StringBuilder.appendString!(sb, s);
+                StringBuilder.appendString!(s, sb);
                 unfoldStringHelper(f, sb, st1)
             }
         }
@@ -729,7 +729,7 @@ namespace String {
     def unfoldStringWithIterHelper(next: Unit -> Option[String] & ef, sb: StringBuilder): String & Impure = match next() {
         case None => StringBuilder.toString(sb)
         case Some(s) => {
-            StringBuilder.appendString!(sb, s);
+            StringBuilder.appendString!(s, sb);
             unfoldStringWithIterHelper(next, sb)
         }
     }
@@ -902,7 +902,7 @@ namespace String {
         let sb = StringBuilder.new();
         let prefix = repeat(n, " ");
         let step = x -> {
-            StringBuilder.appendString!(sb, prefix);
+            StringBuilder.appendString!(prefix, sb);
             StringBuilder.appendLine!(x, sb)
         };
         List.foreach(step, lines(s));
@@ -1007,10 +1007,10 @@ namespace String {
         let step = s ->
             if (deref first == true) {
                 first := false;
-                StringBuilder.appendString!(sb, s)
+                StringBuilder.appendString!(s, sb)
             } else {
-                StringBuilder.append!(sb, ' ');
-                StringBuilder.appendString!(sb, s)
+                StringBuilder.append!(' ', sb);
+                StringBuilder.appendString!(s, sb)
             };
         List.foreach(step, xs);
         StringBuilder.toString(sb)

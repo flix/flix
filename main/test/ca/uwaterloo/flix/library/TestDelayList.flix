@@ -663,6 +663,35 @@ namespace TestDelayList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldRightLazy                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightLazy01(): Bool =
+    	DelayList.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, ENil) == 100
+
+    @test
+    def foldRightLazy02(): Bool =
+    	DelayList.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, LList(lazy ENil)) == 100
+
+    @test
+    def foldRightLazy03(): Bool =
+    	DelayList.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
+
+    @test
+    def foldRightLazy04(): Bool =
+    	DelayList.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
+
+    @test
+    def foldRightLazy05(): Bool =
+    	DelayList.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
+
+    @test
+    def foldRightLazy06(): Bool =
+    	DelayList.foldRightLazy((x, acc) -> x :: force acc, Nil, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == 1 :: 2 :: 3 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // foreach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -670,7 +699,7 @@ namespace TestDelayList {
     def foreach01(): Bool & Impure =
         let l = ENil;
         let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == ""
 
@@ -678,7 +707,7 @@ namespace TestDelayList {
     def foreach02(): Bool & Impure =
         let l = LList(lazy ENil);
         let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == ""
 
@@ -686,7 +715,7 @@ namespace TestDelayList {
     def foreach03(): Bool & Impure =
         let l = LCons(1, lazy LList(lazy ENil));
         let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == "T"
 
@@ -694,7 +723,7 @@ namespace TestDelayList {
     def foreach04(): Bool & Impure =
         let l = LCons(-1, lazy LList(lazy ENil));
         let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == "F"
 
@@ -702,7 +731,7 @@ namespace TestDelayList {
     def foreach05(): Bool & Impure =
         let l = ECons(1, LCons(-1, lazy ENil));
         let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.foreach(fn, l);
         StringBuilder.toString(sb) == "TF"
 
@@ -2686,31 +2715,31 @@ namespace TestDelayList {
 
     @test
     def order01(): Bool =
-        ENil: DelayList[Unit] <=> ENil: DelayList[Unit] == EqualTo
+        (ENil: DelayList[Unit] <=> ENil: DelayList[Unit]) == EqualTo
 
     @test
     def order02(): Bool =
-        ((1 :: Nil) |> List.toDelayList) <=> ENil: DelayList[Int32] == GreaterThan
+        (((1 :: Nil) |> List.toDelayList) <=> ENil: DelayList[Int32]) == GreaterThan
 
     @test
     def order03(): Bool =
-        ENil: DelayList[Int32] <=> ((1 :: Nil) |> List.toDelayList) == LessThan
+        (ENil: DelayList[Int32] <=> ((1 :: Nil) |> List.toDelayList)) == LessThan
 
     @test
     def order04(): Bool =
-        ((1 :: Nil) |> List.toDelayList) <=> ((1 :: Nil) |> List.toDelayList) == EqualTo
+        (((1 :: Nil) |> List.toDelayList) <=> ((1 :: Nil) |> List.toDelayList)) == EqualTo
 
     @test
     def order05(): Bool =
-        ((2 :: 1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList) == GreaterThan
+        (((2 :: 1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList)) == GreaterThan
 
     @test
     def order06(): Bool =
-        ((1 :: 1 :: Nil) |> List.toDelayList) <=> ((2 :: 1 :: Nil) |> List.toDelayList) == LessThan
+        (((1 :: 1 :: Nil) |> List.toDelayList) <=> ((2 :: 1 :: Nil) |> List.toDelayList)) == LessThan
 
     @test
     def order07(): Bool =
-        ((1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList) == LessThan
+        (((1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList)) == LessThan
 
 
     /////////////////////////////////////////////////////////////////////////////
