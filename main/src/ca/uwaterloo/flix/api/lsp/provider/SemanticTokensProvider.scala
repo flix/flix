@@ -354,6 +354,9 @@ object SemanticTokensProvider {
     case Expression.Ref(exp, _, _, _) =>
       visitExp(exp)
 
+    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
     case Expression.Deref(exp, _, _, _) =>
       visitExp(exp)
 
@@ -567,12 +570,12 @@ object SemanticTokensProvider {
     case TypeConstructor.SchemaRowEmpty => false
     case TypeConstructor.SchemaRowExtend(_) => false
     case TypeConstructor.Schema => false
-    case TypeConstructor.Array => true
     case TypeConstructor.Channel => true
     case TypeConstructor.Lazy => true
     case TypeConstructor.Tag(_, _) => false
     case TypeConstructor.KindedEnum(_, _) => true
     case TypeConstructor.Native(_) => true
+    case TypeConstructor.ScopedArray => true
     case TypeConstructor.ScopedRef => true
     case TypeConstructor.Tuple(_) => false
     case TypeConstructor.Relation => false

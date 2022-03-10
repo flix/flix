@@ -258,13 +258,6 @@ object Type {
   val Str: Type = Type.Cst(TypeConstructor.Str, SourceLocation.Unknown)
 
   /**
-    * Represents the Array type constructor.
-    *
-    * NB: This type has kind: * -> *.
-    */
-  val Array: Type = Type.Cst(TypeConstructor.Array, SourceLocation.Unknown)
-
-  /**
     * Represents the Channel type constructor.
     *
     * NB: This type has kind: * -> *.
@@ -592,14 +585,10 @@ object Type {
   def mkFalse(loc: SourceLocation): Type = Type.Cst(TypeConstructor.False, loc)
 
   /**
-    * Returns the Array type with the given source location `loc`.
-    */
-  def mkArray(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Array, loc)
-
-  /**
     * Returns the type `Array[tpe]` with the given optional source location `loc`.
     */
-  def mkArray(elmType: Type, loc: SourceLocation): Type = Apply(Type.Cst(TypeConstructor.Array, loc), elmType, loc)
+  def mkArray(elmType: Type, loc: SourceLocation): Type =
+    Apply(Apply(Type.Cst(TypeConstructor.ScopedArray, loc), elmType, loc), Type.False, loc)
 
   /**
     * Returns the Channel type with the given source location `loc`.
@@ -622,10 +611,16 @@ object Type {
   def mkLazy(tpe: Type, loc: SourceLocation): Type = Type.Apply(Type.Cst(TypeConstructor.Lazy, loc), tpe, loc)
 
   /**
-    * Returns the type `ScopedRef[tpe, lifetime]` with the given optional source location `loc`.
+    * Returns the type `ScopedArray[tpe, reg]` with the given source location `loc`.
     */
-  def mkScopedRef(tpe1: Type, tpe2: Type, loc: SourceLocation): Type =
-    Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedRef, loc), tpe1, loc), tpe2, loc)
+  def mkScopedArray(tpe: Type, reg: Type, loc: SourceLocation): Type =
+    Apply(Apply(Type.Cst(TypeConstructor.ScopedArray, loc), tpe, loc), reg, loc)
+
+  /**
+    * Returns the type `ScopedRef[tpe, reg]` with the given source location `loc`.
+    */
+  def mkScopedRef(tpe1: Type, reg: Type, loc: SourceLocation): Type =
+    Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedRef, loc), tpe1, loc), reg, loc)
 
   /**
     * Constructs the pure arrow type A -> B.

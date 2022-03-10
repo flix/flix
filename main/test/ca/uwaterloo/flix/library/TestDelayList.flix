@@ -663,6 +663,80 @@ namespace TestDelayList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldRightLazy                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightLazy01(): Bool =
+    	DelayList.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, ENil) == 100
+
+    @test
+    def foldRightLazy02(): Bool =
+    	DelayList.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, LList(lazy ENil)) == 100
+
+    @test
+    def foldRightLazy03(): Bool =
+    	DelayList.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
+
+    @test
+    def foldRightLazy04(): Bool =
+    	DelayList.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
+
+    @test
+    def foldRightLazy05(): Bool =
+    	DelayList.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
+
+    @test
+    def foldRightLazy06(): Bool =
+    	DelayList.foldRightLazy((x, acc) -> x :: force acc, Nil, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == 1 :: 2 :: 3 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foreach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foreach01(): Bool & Impure =
+        let l = ENil;
+        let sb = StringBuilder.new();
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        DelayList.foreach(fn, l);
+        StringBuilder.toString(sb) == ""
+
+    @test
+    def foreach02(): Bool & Impure =
+        let l = LList(lazy ENil);
+        let sb = StringBuilder.new();
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        DelayList.foreach(fn, l);
+        StringBuilder.toString(sb) == ""
+
+    @test
+    def foreach03(): Bool & Impure =
+        let l = LCons(1, lazy LList(lazy ENil));
+        let sb = StringBuilder.new();
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        DelayList.foreach(fn, l);
+        StringBuilder.toString(sb) == "T"
+
+    @test
+    def foreach04(): Bool & Impure =
+        let l = LCons(-1, lazy LList(lazy ENil));
+        let sb = StringBuilder.new();
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        DelayList.foreach(fn, l);
+        StringBuilder.toString(sb) == "F"
+
+    @test
+    def foreach05(): Bool & Impure =
+        let l = ECons(1, LCons(-1, lazy ENil));
+        let sb = StringBuilder.new();
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        DelayList.foreach(fn, l);
+        StringBuilder.toString(sb) == "TF"
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -2716,5 +2790,38 @@ namespace TestDelayList {
     def joinWith04(): Bool =
         ("1" :: "2" :: "3" :: Nil) |> List.toDelayList |>
             DelayList.joinWith(x -> x + x, ",") == "11,22,33"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // ap                                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def ap01(): Bool =
+        DelayList.ap(ENil, ENil) == ENil: DelayList[Int32]
+
+    @test
+    def ap02(): Bool =
+        DelayList.ap(ECons((x -> x + 1), ENil), ENil) == ENil
+
+    @test
+    def ap03(): Bool =
+        DelayList.ap(ENil, ECons(5, ENil)) == ENil: DelayList[Int32]
+
+    @test
+    def ap04(): Bool =
+        DelayList.ap(ECons((x -> x + 1), ENil), ECons(5, ENil)) |> DelayList.toList == 6 :: Nil
+
+    @test
+    def ap05(): Bool =
+        let f = List.toDelayList((x -> x + 1) :: Nil);
+        let l = List.toDelayList(0 :: 5 :: Nil);
+        DelayList.ap(f, l) |> DelayList.toList == 1 :: 6 :: Nil
+
+    @test
+    def ap06(): Bool =
+        let f = List.toDelayList((x -> x + 1) :: (x -> x * 2) :: Nil);
+        let l = List.toDelayList(0 :: 4 :: Nil);
+        DelayList.ap(f, l) |> DelayList.toList == 1 :: 5 :: 0 :: 8 :: Nil
 
 }

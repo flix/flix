@@ -390,6 +390,16 @@ namespace MutMap {
         Map.foldRightWithKey(f, i, deref mm)
 
     ///
+    /// Lazily applies `f` to a start value `s` and all elements in `m` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
+    /// The foldRightLazy function exists to allow early termination of a fold.
+    ///
+    pub def foldRightLazy(f: (v, Lazy[b]) -> b, i: b, m: MutMap[k, v]): b & Impure =
+        let MutMap(mm) = m;
+        Map.foldRightLazy(f, i, deref mm)
+
+    ///
     /// Applies `f` to all values in the mutable map `m` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(v1, v2), v3)..., vn))`

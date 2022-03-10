@@ -241,6 +241,23 @@ namespace RedBlackTree {
         case _ => s
     }
 
+
+    ///
+    /// Lazily applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(k1, v1, ... lazy f(kn-1, vn-1, lazy f(kn, vn, s)))`.
+    /// The foldRightLazy function exists to allow early termination of a fold.
+    ///
+    @Experimental
+    @Lazy
+    pub def foldRightLazy(f: (k, v, Lazy[b]) -> b, s: b, tree: RedBlackTree[k, v]): b =
+        def loop(s2: b, tree2: RedBlackTree[k, v]) = match tree2 {
+            case Node(_, a, k, v, b) => loop(f(k, v, lazy loop(s2, b)), a)
+            case _ => s2
+        };
+        loop(s, tree)
+
+
     /// Applies `f` to all key-value pairs in `tree` going from left to right until a single pair `(k, v)` is obtained.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(k1, v1, k2, v2), k3, v3)..., kn, vn))`
@@ -927,7 +944,7 @@ namespace RedBlackTree {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foldLeft((_, k, v) -> { append!(sb, f(k, v)); append!(sb, sep) }, (), t);
+        foreach((k, v) -> { append!(f(k, v), sb); append!(sep, sb) }, t);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     } as & ef
 
