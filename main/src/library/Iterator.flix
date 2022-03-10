@@ -167,30 +167,15 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toArray(iter: Iterator[a]): Array[a] & Impure =
-        let Iterator(done, next) = iter;
-        def loop(m) = {
-            if (done())
-                MutList.toArray(m)
-            else {
-                MutList.push!(next(), m);
-                loop(m)
-            }
-        };
-        loop(MutList.new())
+        let m = MutList.new();
+        foreach(a -> MutList.push!(a, m), iter);
+        MutList.toArray(m)
 
     ///
     /// Returns the contents of `iter` as a list. Consumes the entire iterator.
     ///
     pub def toList(iter: Iterator[a]): List[a] & Impure =
-        let Iterator(done, next) = iter;
-        def loop(k) = {
-            if (done())
-                k(Nil)
-            else
-                let x = next();
-                loop(ks -> k(x :: ks))
-        };
-        loop(identity)
+        foldRight((a, acc) -> a :: acc, Nil, iter)
 
     ///
     /// Returns the contents of `iter` as a map. Consumes the entire iterator.
@@ -457,6 +442,25 @@ namespace Iterator {
         };
         loop(s)
 
+    ///
+    /// Applies `f` to a start value `s` and all elements in `iter` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, iter: Iterator[a]): b & Impure =
+        let Iterator(done, next) = iter;
+        def loop(k) = {
+            if (done())
+                k(s)
+            else {
+                let x = next();
+                loop(ks -> k(f(x, ks)))
+            }
+        };
+        loop(ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
+                               // but the intermediate continuations are effect polymorphic
     ///
     /// Applies `f` to all elements in `iter` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     ///
