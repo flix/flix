@@ -76,10 +76,8 @@ object Inliner {
     case Expression.Var(sym, _, _) => subst0.get(sym).fold(exp0)(visitExp(_, subst0))
 
     case Expression.Closure(sym, freeVars, tpe, loc) =>
-      val fv = freeVars.foldLeft(List[FreeVar]())((acc, fv) => fv match {
-        case OccurrenceAst.FreeVar(sym, tpe) => subst0.get(sym).fold[List[FreeVar]](FreeVar(sym, tpe) :: acc)(_ => acc)
-      })
-
+      // Removes freeVars that have been marked for inlining
+      val fv = freeVars.filter(f => subst0.get(f.sym).fold(true)(_ => false))
       Expression.Closure(sym, fv, tpe, loc)
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
