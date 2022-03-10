@@ -452,8 +452,8 @@ namespace RedBlackTree {
     /// Helper function for `delete`.
     ///
     def removeHelper(k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] = match tree {
-        case Node(Red, Leaf, k1, _, Leaf) => if (k <=> k1 == EqualTo) Leaf else tree
-        case Node(Black, Leaf, k1, _, Leaf) => if (k <=> k1 == EqualTo) DoubleBlackLeaf else tree
+        case Node(Red, Leaf, k1, _, Leaf) => if ((k <=> k1) == EqualTo) Leaf else tree
+        case Node(Black, Leaf, k1, _, Leaf) => if ((k <=> k1) == EqualTo) DoubleBlackLeaf else tree
         case Node(Black, Node(Red, Leaf, k1, v1, Leaf), k2, v2, Leaf) =>
             match k <=> k2 {
                 case LessThan => Node(Black, removeHelper(k, Node(Red, Leaf, k1, v1, Leaf)), k2, v2, Leaf)
