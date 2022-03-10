@@ -190,13 +190,17 @@ namespace Iterator {
     ///
     /// Returns the contents of `iter` as a `Some(Nel)` if `iter` is not empty. Returns None otherwise.
     ///
+    /// Consumes the entire iterator.
+    ///
     pub def toNel(iter: Iterator[a]): Option[Nel[a]] & Impure = match toList(iter) {
         case Nil     => None
         case x :: xs => Some(Nel(x, xs))
     }
 
     ///
-    /// Returns the contents of `iter` as a nec. Consumes the entire iterator.
+    /// Returns the contents of `iter` as a nec.
+    ///
+    /// Consumes the entire iterator.
     ///
     pub def toNec(iter: Iterator[a]): Option[Nec[a]] & Impure =
         let Iterator(done, next) = iter;
