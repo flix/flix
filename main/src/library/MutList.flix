@@ -450,6 +450,26 @@ namespace MutList {
             foldRightHelper(f, s1, v, i - 1)
 
     ///
+    /// Applies `f` to a start value `s` and all elements in `v` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
+    /// The foldRightLazy function exists to allow early termination of a fold.
+    ///
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b & ef, s: b, v: MutList[a]): b & Impure =
+        let len = length(v);
+        foldRightLazyHelper(f, s, v, len - 1)
+
+    ///
+    /// Helper function for `foldRightLazy`.
+    ///
+    def foldRightLazyHelper(f: (a, Lazy[b]) -> b & ef, s: b, v: MutList[a], i: Int32): b & Impure =
+        if (i < 0)
+            s
+        else
+            let s1 = f(get(i, v), lazy s) as & Impure;
+            foldRightLazyHelper(f, s1, v, i - 1)
+
+    ///
     /// Applies `f` to all elements in `v` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// Returns `None` if `v` is empty.
@@ -733,7 +753,7 @@ namespace MutList {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foldLeft((_, x) -> { append!(f(x), sb); append!(sep, sb) }, (), v);
+        foreach(x -> { append!(f(x), sb); append!(sep, sb) }, v);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
 
     ///
