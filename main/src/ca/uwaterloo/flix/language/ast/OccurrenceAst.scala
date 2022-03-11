@@ -113,7 +113,7 @@ object OccurrenceAst {
 
     case class JumpTo(sym: Symbol.LabelSym, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class Let(sym: Symbol.VarSym, exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, occur: Occur, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class Let(sym: Symbol.VarSym, exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, occur: Occur, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression
 

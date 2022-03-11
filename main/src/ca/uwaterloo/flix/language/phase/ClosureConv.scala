@@ -143,11 +143,11 @@ object ClosureConv {
     case Expression.JumpTo(sym, tpe, loc) =>
       Expression.JumpTo(sym, tpe, loc)
 
-    case Expression.Let(sym, e1, e2, purity, tpe, loc) =>
-      Expression.Let(sym, visitExp(e1), visitExp(e2), purity, tpe, loc)
+    case Expression.Let(sym, e1, e2, tpe, purity, loc) =>
+      Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
 
-    case Expression.LetRec(sym, e1, e2, tpe, loc) =>
-      Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, loc)
+    case Expression.LetRec(sym, e1, e2, tpe, purity, loc) =>
+      Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
 
     case Expression.Is(sym, tag, e, loc) =>
       Expression.Is(sym, tag, visitExp(e), loc)
@@ -351,7 +351,7 @@ object ClosureConv {
       val bound = sym
       freeVars(exp1) ++ freeVars(exp2).filterNot { v => bound == v._1 }
 
-    case Expression.LetRec(sym, exp1, exp2, _, _) =>
+    case Expression.LetRec(sym, exp1, exp2, _, _, _) =>
       val bound = sym
       (freeVars(exp1) ++ freeVars(exp2)).filterNot { v => bound == v._1 }
 
@@ -511,17 +511,17 @@ object ClosureConv {
       case Expression.JumpTo(sym, tpe, loc) =>
         Expression.JumpTo(sym, tpe, loc)
 
-      case Expression.Let(sym, exp1, exp2, purity, tpe, loc) =>
+      case Expression.Let(sym, exp1, exp2, tpe, purity, loc) =>
         val newSym = subst.getOrElse(sym, sym)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        Expression.Let(newSym, e1, e2, purity, tpe, loc)
+        Expression.Let(newSym, e1, e2, tpe, purity, loc)
 
-      case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+      case Expression.LetRec(sym, exp1, exp2, tpe, purity, loc) =>
         val newSym = subst.getOrElse(sym, sym)
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        Expression.LetRec(newSym, e1, e2, tpe, loc)
+        Expression.LetRec(newSym, e1, e2, tpe, purity, loc)
 
       case Expression.Is(sym, tag, exp, loc) =>
         val e = visitExp(exp)

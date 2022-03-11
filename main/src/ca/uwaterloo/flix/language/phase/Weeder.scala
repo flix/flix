@@ -37,6 +37,25 @@ import scala.collection.mutable
 object Weeder {
 
   /**
+    * Words that the Flix compiler reserves for special expressions.
+    * Users must not define fields or variables with these names.
+    */
+  private val ReservedWords = Set(
+    "!=", "$DEFAULT$", "&&&", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<<<", "<=",
+    "<=>", "==", "=>", ">", ">=", ">>>", "???", "@", "Absent", "Bool", "Impure", "Nil", "Predicate", "Present", "Pure",
+    "RecordRow", "SchemaRow", "Type", "^^^", "alias", "case", "catch", "chan",
+    "class", "def", "deref", "else", "enum", "false", "fix", "force", "if", "import",
+    "inline", "instance", "into", "lat", "law", "lawless", "lazy", "let", "let*", "match", "mut", "namespace",
+    "null", "opaque", "override", "pub", "ref", "reify", "reifyBool",
+    "reifyEff", "reifyType", "rel", "rigid", "scoped", "sealed", "set", "spawn",
+    "static", "true", "type", "unlawful", "use", "where", "with", "|||", "~~~"
+  )
+
+  // NB: The following words should be reserved, but are currently allowed because of their presence in the standard library:
+  // as, and, choose, choose*, forall, from, get, mod, new, not, or, project, query, rem, select, solve, try
+
+
+  /**
     * Weeds the whole program.
     */
   def run(root: ParsedAst.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] =
@@ -126,14 +145,15 @@ object Weeder {
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
+      val identVal = visitName(ident)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt, ident.loc)
       val expVal = Validation.traverse(exp0)(visitExp)
 
       for {
-        res <- sequenceT(annVal, modVal, tparamsVal, formalsVal, effVal, expVal)
-        (as, mod, tparams, fparams, eff, exp) = res
+        res <- sequenceT(annVal, modVal, identVal, tparamsVal, formalsVal, effVal, expVal)
+        (as, mod, _, tparams, fparams, eff, exp) = res
         _ <- requirePublic(mod, ident)
         ts = fparams.map(_.tpe.get)
         retTpe = visitType(tpe0)
@@ -181,14 +201,15 @@ object Weeder {
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann)
       val modVal = visitModifiers(mods, legalModifiers)
+      val identVal = visitName(ident)
       val expVal = visitExp(exp0)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt, ident.loc)
 
       for {
-        res <- sequenceT(annVal, modVal, tparamsVal, formalsVal, expVal, effVal)
-        (as, mod, tparams, fparams, exp, eff) = res
+        res <- sequenceT(annVal, modVal, identVal, tparamsVal, formalsVal, expVal, effVal)
+        (as, mod, _, tparams, fparams, exp, eff) = res
         _ <- if (requiresPublic) requirePublic(mod, ident) else ().toSuccess // conditionally require a public modifier
         ts = fparams.map(_.tpe.get)
         retTpe = visitType(tpe0)
@@ -205,13 +226,14 @@ object Weeder {
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann0)
       val modVal = visitModifiers(mod0, legalModifiers = Set.empty)
+      val identVal = visitName(ident)
       val expVal = visitExp(exp0)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val tconstrsVal = Validation.traverse(tconstrs0)(visitTypeConstraint)
 
-      mapN(annVal, modVal, tparamsVal, formalsVal, expVal, tconstrsVal) {
-        case (ann, mod, tparams, fs, exp, tconstrs) =>
+      mapN(annVal, modVal, identVal, tparamsVal, formalsVal, expVal, tconstrsVal) {
+        case (ann, mod, _, tparams, fs, exp, tconstrs) =>
           val ts = fs.map(_.tpe.get)
           val retTpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
           val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(ident.loc), retTpe, ident.loc)
@@ -2339,6 +2361,7 @@ object Weeder {
   private def visitKind(kind: ParsedAst.Kind): Kind = kind match {
     case ParsedAst.Kind.Star(_, _) => Kind.Star
     case ParsedAst.Kind.Bool(_, _) => Kind.Bool
+    case ParsedAst.Kind.Region(_, _) => Kind.Bool
     case ParsedAst.Kind.RecordRow(_, _) => Kind.RecordRow
     case ParsedAst.Kind.SchemaRow(_, _) => Kind.SchemaRow
     case ParsedAst.Kind.Predicate(_, _) => Kind.Predicate
@@ -2356,6 +2379,17 @@ object Weeder {
       } else {
         WeederError.IllegalTypeConstraintParameter(mkSL(sp1, sp2)).toFailure
       }
+  }
+
+  /**
+    * Performs weeding on the given name `ident`.
+    */
+  private def visitName(ident: Name.Ident): Validation[Unit, WeederError] = {
+    if (ReservedWords.contains(ident.name)) {
+      WeederError.ReservedName(ident, ident.loc).toFailure
+    } else {
+      ().toSuccess
+    }
   }
 
   /**
@@ -2594,6 +2628,7 @@ object Weeder {
   private def leftMostSourcePosition(kind: ParsedAst.Kind): SourcePosition = kind match {
     case ParsedAst.Kind.Star(sp1, _) => sp1
     case ParsedAst.Kind.Bool(sp1, _) => sp1
+    case ParsedAst.Kind.Region(sp1, _) => sp1
     case ParsedAst.Kind.RecordRow(sp1, _) => sp1
     case ParsedAst.Kind.SchemaRow(sp1, _) => sp1
     case ParsedAst.Kind.Predicate(sp1, _) => sp1
