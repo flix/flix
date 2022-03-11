@@ -861,7 +861,7 @@ namespace File {
         }
 
     ///
-    /// Returns an iterator naming the files and directories in the directory `f`.
+    /// Returns an Iterator naming the files and directories in the directory `f`.
     ///
     /// Does not recursively traverse the directory.
     ///
@@ -872,28 +872,12 @@ namespace File {
             import static java.nio.file.Files.newDirectoryStream(##java.nio.file.Path): ##java.nio.file.DirectoryStream & Impure;
             import java.nio.file.DirectoryStream.iterator(): ##java.util.Iterator & Impure;
 
-            import java.util.Iterator.hasNext(): Bool & Impure;
-            import java.util.Iterator.next(): ##java.nio.file.Path & Impure as getNext;
-
-            import java.nio.file.Path.getFileName(): ##java.nio.file.Path & Impure;
-            import java.nio.file.Path.toString(): String & Impure;
-
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let javaStream = newDirectoryStream(javaPath);
             let javaIter = iterator(javaStream);
 
-            let done = () -> not hasNext(javaIter);
-            let next = () -> {
-                if(hasNext(javaIter)) {
-                    let name = getFileName(getNext(javaIter));
-                    toString(name)
-                } else {
-                    bug!("Empty iterator.")
-                }
-            };
-
-            Ok(Iterator(done, next))
+            convertPathIter(javaIter, fullPath = false)
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String & Impure;
@@ -901,7 +885,7 @@ namespace File {
         }
 
     ///
-    /// Returns an iterator naming the files and directories in the directory `f`.
+    /// Returns an Iterator naming the files and directories in the directory `f`.
     ///
     /// Recursively traverses the directory.
     ///
@@ -912,26 +896,40 @@ namespace File {
             import static java.nio.file.Files.walk(##java.nio.file.Path, Array[##java.nio.file.FileVisitOption]): ##java.util.stream.Stream & Impure;
             import java.util.stream.BaseStream.iterator(): ##java.util.Iterator & Impure;
 
-            import java.util.Iterator.hasNext(): Bool & Impure;
-            import java.util.Iterator.next(): ##java.nio.file.Path & Impure as getNext;
-
-            import java.nio.file.Path.toString(): String & Impure as pathToString;
-
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let javaStream = walk(javaPath, []);
             let javaIter = iterator(javaStream as ##java.util.stream.BaseStream);
+            convertPathIter(javaIter, fullPath = true)
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
 
-            let done = () -> not hasNext(javaIter);
+    ///
+    /// Converts a java iterator of Paths to a Flix Iterator of Strings.
+    ///
+    /// If `opt.fullPath` is `true`, then the whole path is specified. Otherwise only the name.
+    ///
+    def convertPathIter(iter: ##java.util.Iterator, opt: {fullPath :: Bool}): Result[Iterator[String], String] & Impure =
+        try {
+            import java.util.Iterator.hasNext(): Bool & Impure;
+            import java.util.Iterator.next(): ##java.nio.file.Path & Impure as getNext;
+            import java.nio.file.Path.getFileName(): ##java.nio.file.Path & Impure;
+            import java.nio.file.Path.toString(): String & Impure as pathToString;
+
+            let done = () -> not hasNext(iter);
             let next = () -> {
-                if(hasNext(javaIter)) {
-                    let nextPath = getNext(javaIter);
-                    pathToString(nextPath)
+                if(hasNext(iter)) {
+                    let nextPath = getNext(iter);
+                    let name = if (not opt.fullPath) getFileName(nextPath)
+                               else nextPath;
+                    pathToString(name)
                 } else {
                     bug!("Empty iterator.")
                 }
             };
-
             Ok(Iterator(done, next))
         } catch {
             case ex: ##java.io.IOException =>
