@@ -876,7 +876,6 @@ namespace File {
             let javaPath = toPath(javaFile);
             let javaStream = newDirectoryStream(javaPath);
             let javaIter = iterator(javaStream);
-
             convertPathIter(javaIter, fullPath = false)
         } catch {
             case ex: ##java.io.IOException =>
