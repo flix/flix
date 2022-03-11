@@ -49,7 +49,7 @@ object Inliner {
    * Returns an expression of type Expression
    */
   private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Expression]): Expression = exp0 match {
-    case Expression.Unit(loc) => exp0
+    case Expression.Unit(_) => exp0
 
     case Expression.Null(_, _) => exp0
 
@@ -77,7 +77,7 @@ object Inliner {
 
     case Expression.Var(sym, _, _) => subst0.get(sym).fold(exp0)(visitExp(_, subst0))
 
-    case Expression.Closure(sym, freeVars, tpe, loc) => exp0
+    case Expression.Closure(_, _, _, _) => exp0
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -128,14 +128,14 @@ object Inliner {
 
     case Expression.JumpTo(_, _, _) => exp0
 
-    case Expression.Let(sym, exp1, exp2, occur, purity, tpe, loc) =>
+    case Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
       if (wantToPreInline(occur, purity)) {
         val e2 = preInline(sym, exp1, exp2, subst0)
         e2
       } else {
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
-        Expression.Let(sym, e1, e2, occur, purity, tpe, loc)
+        Expression.Let(sym, e1, e2, occur, tpe, purity, loc)
       }
 
     case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
