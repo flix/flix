@@ -843,26 +843,25 @@ namespace File {
     ///
     /// Moves a file or directory from path `src` to path `dst`.
     ///
-    /// Returns `Ok(true)` if `src` was moved, and `dst` did not already exist.
-    /// Returns `Err(msg)` if `src` was not moved, because `dst` already exists or is a subset of `src`.
+    /// Returns `Ok(())` if `src` was moved, and `dst` did not already exist.
+    /// Returns `Err(msg)` if `src` was not moved, because `dst` already exists or is a subpath of `src`.
     ///
-    pub def move(src: {src :: String} , dst: String): Result[Bool, String] = ???
+    pub def move(src: {src :: String} , dst: String): Result[Unit, String] = ???
 
     ///
     /// Moves a file or directory from path `src` to directory `dst`.
     ///
-    /// Returns `Ok(true)` if `src` was moved, and `dst` is a directory.
-    /// Returns `Ok(false)` if `dst` is not a directory.
-    /// Returns `Err(msg)` if `src` was not moved, or `dst` is a subset of `src`.
+    /// Returns `Ok(())` if `src` was moved, and `dst` is a directory.
+    /// Returns `Err(msg)` if `src` was not moved, or `dst` is a subpath of `src` or `dst` is not a directory.
     ///
-    pub def moveInto(src: {src :: String} , dst: String): Result[Bool, String] = ???
+    pub def moveInto(src: {src :: String} , dst: String): Result[Unit, String] = ???
 
     ///
-    /// Moves a file or directory from path `src` to path `dst`. Overwrites `dst` if it already exists.
+    /// Moves a file or directory from path `src` to path `dst`. Overwrites if `dst` already exists.
     ///
-    /// Returns `Ok(true)` if `src` was moved.
+    /// Returns `Ok(())` if `src` was moved.
     /// Returns `Err(msg)` if `src` was not moved.
     ///
-    pub def moveOver(src: {src :: String}, dst: String): Result[Bool, String] = ???
+    pub def moveOver(src: {src :: String}, dst: String): Result[Unit, String] = ???
 
 }
