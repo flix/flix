@@ -263,8 +263,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     SP ~ Names.Attribute ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Attribute
   }
 
-  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = rule {
-    Type ~ optional(WS ~ "&" ~ WS ~ Type)
+  def TypeAndEffect: Rule1[ParsedAst.TypeAndEffect] = rule {
+    Type ~ optional(WS ~ "&" ~ WS ~ Type) ~> ParsedAst.TypeAndEffect
   }
 
   /////////////////////////////////////////////////////////////////////////////

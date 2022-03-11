@@ -122,21 +122,20 @@ object Weeder {
     * Performs weeding on the given sig declaration `s0`.
     */
   private def visitSig(s0: ParsedAst.Declaration.Sig)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Sig], WeederError] = s0 match {
-    case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOpt, tconstrs0, exp0, sp2) =>
+    case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpeAndEffOpt, tconstrs0, exp0, sp2) =>
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
-      val effVal = visitEff(effOpt, ident.loc)
+      val tpeAndEffVal = visitRequiredTypeAndEff(tpeAndEffOpt, ident.loc)
       val expVal = Validation.traverse(exp0)(visitExp)
 
       for {
-        res <- sequenceT(annVal, modVal, tparamsVal, formalsVal, effVal, expVal)
-        (as, mod, tparams, fparams, eff, exp) = res
+        res <- sequenceT(annVal, modVal, tparamsVal, formalsVal, tpeAndEffVal, expVal)
+        (as, mod, tparams, fparams, (retTpe, eff), exp) = res
         _ <- requirePublic(mod, ident)
         ts = fparams.map(_.tpe.get)
-        retTpe = visitType(tpe0)
         tpe = WeededAst.Type.Arrow(ts, eff, retTpe, ident.loc)
         tconstrs <- traverse(tconstrs0)(visitTypeConstraint)
       } yield List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, retTpe, eff, tconstrs, mkSL(sp1, sp2)))
@@ -178,7 +177,7 @@ object Weeder {
     case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpeAndEff0, tconstrs0, exp0, sp2) =>
       flix.subtask(ident.name, sample = true)
 
-      val (tpe0, effOpt) = tpeAndEff0.get // MATT WeederError.MissingReturnType
+      val ParsedAst.TypeAndEffect(tpe0, effOpt) = tpeAndEff0.get // MATT WeederError.MissingReturnType
 
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann)
@@ -692,7 +691,7 @@ object Weeder {
       // MATT check tconstrs empty
       val (tpe0, eff0) = tpeAndEff0 match {
         case None => (None, None)
-        case Some((t, e)) => (Some(t), e)
+        case Some(ParsedAst.TypeAndEffect(t, e)) => (Some(t), e)
       }
       val tpe = tpe0.map(visitType)
       val eff = eff0.map(visitType)
@@ -2249,6 +2248,34 @@ object Weeder {
   private def visitEff(effOpt: Option[ParsedAst.Type], loc: SourceLocation)(implicit flix: Flix): Validation[WeededAst.Type, WeederError] = effOpt match {
     case None => WeededAst.Type.True(loc).toSuccess
     case Some(tpe) => visitType(tpe).toSuccess
+  }
+
+  /**
+    * Weeds the given parsed TypeAndEffect, raising an error if it is not present.
+    * If the effect is not present, associates with it the True/Pure type.
+    */
+  private def visitRequiredTypeAndEff(tpeAndEffOpt: Option[ParsedAst.TypeAndEffect], loc: SourceLocation)(implicit flix: Flix): Validation[(WeededAst.Type, WeededAst.Type), WeederError] = tpeAndEffOpt match {
+    case None => ??? // MATT error missing type and eff
+    case Some(ParsedAst.TypeAndEffect(tpe0, eff0)) =>
+      visitEff(eff0, loc) map {
+        eff => (visitType(tpe0), eff)
+      }
+  }
+
+  // MATT docs
+  private def visitInferredTypeAndEff(tpeAndEffOpt: Option[ParsedAst.TypeAndEffect]): (Option[WeededAst.Type], Option[WeededAst.Type]) = tpeAndEffOpt match {
+    case None => (None, None)
+    case Some(ParsedAst.TypeAndEffect(tpe, effOpt)) => (Some(visitType(tpe)), effOpt.map(visitType))
+  }
+
+  /**
+    * Weeds the given parsed TypeAndEffect.
+    */
+  private def visitTypeAndEff(tpeAndEff: ParsedAst.TypeAndEffect): (WeededAst.Type, Option[WeededAst.Type]) = tpeAndEff match {
+    case ParsedAst.TypeAndEffect(tpe0, eff0) =>
+      val tpe = visitType(tpe0)
+      val eff = eff0.map(visitType)
+      (tpe, eff)
   }
 
   /**
