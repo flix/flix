@@ -54,28 +54,28 @@ namespace StringBuilder {
     ///
     /// Append the String `s` followed by the system line separator to the StringBuilder `sb`.
     ///
-    pub def appendLine!(sb: StringBuilder, s: String): Unit & Impure =
+    pub def appendLine!(s: String, sb: StringBuilder): Unit & Impure =
         s `appendString!` sb;
         appendLineSeparator!(sb)
 
     ///
     /// Appends `f(x)` to the string builder `sb`.
     ///
-    pub def appendLineWith!(sb: StringBuilder, f: a -> String, x: a): Unit & Impure =
+    pub def appendLineWith!(f: a -> String, x: a, sb: StringBuilder): Unit & Impure =
         f(x) `appendString!` sb;
         appendLineSeparator!(sb)
 
     ///
     /// Appends each string in the array `a` to the string builder `sb`.
     ///
-    pub def appendLines!(sb: StringBuilder, a: Array[String]): Unit & Impure =
-        Array.foreach(appendLine!(sb), a)
+    pub def appendLines!(a: Array[String], sb: StringBuilder): Unit & Impure =
+        Array.foreach(x -> appendLine!(x, sb), a)
 
     ///
     /// Appends `f(x)` for each x in array `a` to the string builder `sb`.
     ///
-    pub def appendLinesWith!(sb: StringBuilder, f: a -> String, a: Array[a]): Unit & Impure =
-        Array.foreach(appendLineWith!(sb, f), a)
+    pub def appendLinesWith!(f: a -> String, a: Array[a], sb: StringBuilder): Unit & Impure =
+        Array.foreach(x -> appendLineWith!(f, x, sb), a)
 
     ///
     /// Append the array of strings `a` separating each pair of string with `sep` to the StringBuilder `sb`.

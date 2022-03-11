@@ -332,6 +332,36 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toNec                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNec01(): Bool & Impure =
+        let iter = List.toIterator(Nil: List[Unit]);
+        Iterator.toNec(iter) == None
+
+    @test
+    def toNec02(): Bool & Impure =
+        let iter = List.toIterator(1 :: Nil);
+        Iterator.toNec(iter) == Some(Nec.singleton(1))
+
+    @test
+    def toNec03(): Bool & Impure =
+        let iter = List.toIterator(1 :: 2 :: Nil);
+        Iterator.toNec(iter) == Some(Nec.cons(1, Nec.singleton(2)))
+
+    @test
+    def toNec04(): Bool & Impure =
+        let iter = List.toIterator(1 :: 1 :: Nil);
+        Iterator.toNec(iter) == Some(Nec.cons(1, Nec.singleton(1)))
+
+    @test
+    def toNec05(): Bool & Impure =
+        let iter = List.toIterator(2 :: 1 :: Nil);
+        Iterator.toNec(iter) == Some(Nec.cons(2, Nec.singleton(1)))
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // filter (pure)                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -818,6 +848,31 @@ namespace TestIterator {
     def foldLeft04(): Bool & Impure =
         let iter = List.toIterator(1 :: 2 :: 3 :: Nil);
         Iterator.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 386
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRight01(): Bool & Impure =
+        let iter = List.toIterator(Nil);
+        Iterator.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, iter) == 100
+
+    @test
+    def foldRight02(): Bool & Impure =
+        let iter = List.toIterator(1 :: Nil);
+        Iterator.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, iter) == 198
+
+    @test
+    def foldRight03(): Bool & Impure =
+        let iter = List.toIterator(1 :: 2 :: Nil);
+        Iterator.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, iter) == 194
+
+    @test
+    def foldRight04(): Bool & Impure =
+        let iter = List.toIterator(1 :: 2 :: 3 :: Nil);
+        Iterator.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, iter) == 382
 
 
     /////////////////////////////////////////////////////////////////////////////
