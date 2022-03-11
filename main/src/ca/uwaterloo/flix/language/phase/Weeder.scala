@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
-import ca.uwaterloo.flix.language.ast.ParsedAst.RecordFieldType
+import ca.uwaterloo.flix.language.ast.ParsedAst.{RecordFieldType, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -674,22 +674,31 @@ object Weeder {
 
     case ParsedAst.Expression.LocalDef(ParsedAst.Declaration.Def(doc0, ann0, mod0, sp1, ident, tparams0, fparamsOpt0, tpeAndEff0, tconstrs, exp1, defSp2), exp2, sp2) =>
       val doc = visitDoc(doc0)
-      val ann = visitAnnotations(ann0)
-
       // MATT what to do with doc and ann?
 
-      val modVal = visitModifiers(mod0, legalModifiers = Set.empty)
-      val fparamsVal = visitFormalParams(fparamsOpt0, typeRequired = false)
-      val exp1Val = visitExp(exp1)
-      val exp2Val = visitExp(exp2)
       val defLoc = mkSL(sp1, defSp2)
       val loc = mkSL(sp1, sp2)
 
-      // MATT check that tparams is elided
-      // MATT check tconstrs empty
+
+      val annVal = visitAnnotations(ann0)
+      val modVal = visitModifiers(mod0, legalModifiers = Set.empty)
+      val fparamsVal = visitFormalParams(fparamsOpt0, typeRequired = false)
+      val tparamsVal = tparams0 match {
+        case ParsedAst.TypeParams.Elided => ().toSuccess
+        case ParsedAst.TypeParams.Explicit(_) => ??? // MATT illegal tparams
+      }
+      val tconstrsVal = if (tconstrs.isEmpty) {
+        ().toSuccess
+      } else {
+        ??? // MATT illegal type constraints
+      }
+
+      val exp1Val = visitExp(exp1)
+      val exp2Val = visitExp(exp2)
+
       val (tpe, eff) = visitInferredTypeAndEff(tpeAndEff0)
-      mapN(modVal, fparamsVal, exp1Val, exp2Val) {
-        case (mod, fp, e1, e2) =>
+      mapN(annVal, modVal, fparamsVal, exp1Val, exp2Val, tparamsVal, tconstrsVal) {
+        case (_, mod, fp, e1, e2, _, _) =>
           val body = WeededAst.Expression.Ascribe(e1, tpe, eff, defLoc)
           val lambda = mkCurried(fp, body, defLoc)
           WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
