@@ -699,28 +699,27 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that a newly defined type (or alias) has a
-    * pre-defined name.
+    * An error raised to indicate that a newly defined name is reserved.
     *
-    * @param ident the name that conflicts.
+    * @param ident the reserved name that conflicts.
     * @param loc   the location where the error occurred.
     */
-  case class ReservedTypeName(ident: Name.Ident, loc: SourceLocation) extends WeederError {
-    def summary: String = "Re-definition of a pre-defined type name."
+  case class ReservedName(ident: Name.Ident, loc: SourceLocation) extends WeederError {
+    def summary: String = "Re-definition of a reserved name."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Re-definition of pre-defined type name '${red(ident.name)}'.
+         |>> Re-definition of reserved name '${red(ident.name)}'.
          |
-         |${code(loc, "re-definition of a pre-defined type name")}
+         |${code(loc, "re-definition of a reserved name")}
          |
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
-      s"${underline("Tip:")} Try to find a new type name that doesn't match one that is pre-defined."
+      s"${underline("Tip:")} Try to find a new name that doesn't match one that is reserved."
     })
 
   }

@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.util.Validation._
  * The inliner replaces closures and functions by their code to improve performance.
  */
 object Inliner {
+
   /**
    * Performs inlining on the given AST `root`.
    */
@@ -35,6 +36,7 @@ object Inliner {
     val defs = root.defs.map {
       case (sym, defn) => sym -> defn.copy(exp = visitExp(defn.exp, Map.empty))
     }
+
     // Reassemble the ast root.
     val result = root.copy(defs = defs)
 
@@ -161,7 +163,7 @@ object Inliner {
       val es = elms.map(visitExp(_, subst0))
       Expression.Tuple(es, tpe, loc)
 
-    case Expression.RecordEmpty(_, _) => exp0
+    case Expression.RecordEmpty(_,_) => exp0
 
     case Expression.RecordSelect(exp, field, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -254,7 +256,7 @@ object Inliner {
       val e2 = visitExp(exp2, subst0)
       Expression.PutField(field, e1, e2, tpe, loc)
 
-    case Expression.GetStaticField(_, _, _) => exp0
+    case Expression.GetStaticField(_,_,_) => exp0
 
     case Expression.PutStaticField(field, exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
