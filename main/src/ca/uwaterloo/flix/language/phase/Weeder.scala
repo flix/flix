@@ -177,7 +177,6 @@ object Weeder {
     case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpeAndEff0, tconstrs0, exp0, sp2) =>
       flix.subtask(ident.name, sample = true)
 
-      val ParsedAst.TypeAndEffect(tpe0, effOpt) = tpeAndEff0.get // MATT WeederError.MissingReturnType
 
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann)
@@ -185,14 +184,13 @@ object Weeder {
       val expVal = visitExp(exp0)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
-      val effVal = visitEff(effOpt, ident.loc)
+      val tpeAndEffVal = visitRequiredTypeAndEff(tpeAndEff0, ident.loc)
 
       for {
-        res <- sequenceT(annVal, modVal, tparamsVal, formalsVal, expVal, effVal)
-        (as, mod, tparams, fparams, exp, eff) = res
+        res <- sequenceT(annVal, modVal, tparamsVal, formalsVal, expVal, tpeAndEffVal)
+        (as, mod, tparams, fparams, exp, (retTpe, eff)) = res
         _ <- if (requiresPublic) requirePublic(mod, ident) else ().toSuccess // conditionally require a public modifier
         ts = fparams.map(_.tpe.get)
-        retTpe = visitType(tpe0)
         tpe = WeededAst.Type.Arrow(ts, eff, retTpe, ident.loc)
         tconstrs <- traverse(tconstrs0)(visitTypeConstraint)
       } yield List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, retTpe, eff, tconstrs, mkSL(sp1, sp2)))
@@ -689,12 +687,7 @@ object Weeder {
 
       // MATT check that tparams is elided
       // MATT check tconstrs empty
-      val (tpe0, eff0) = tpeAndEff0 match {
-        case None => (None, None)
-        case Some(ParsedAst.TypeAndEffect(t, e)) => (Some(t), e)
-      }
-      val tpe = tpe0.map(visitType)
-      val eff = eff0.map(visitType)
+      val (tpe, eff) = visitInferredTypeAndEff(tpeAndEff0)
       mapN(modVal, fparamsVal, exp1Val, exp2Val) {
         case (mod, fp, e1, e2) =>
           val body = WeededAst.Expression.Ascribe(e1, tpe, eff, defLoc)
