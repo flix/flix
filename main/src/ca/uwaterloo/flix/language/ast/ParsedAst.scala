@@ -1445,6 +1445,11 @@ object ParsedAst {
     case class Bool(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
 
     /**
+      * The Region kind.
+      */
+    case class Region(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+
+    /**
       * The Record Row kind.
       */
     case class RecordRow(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
