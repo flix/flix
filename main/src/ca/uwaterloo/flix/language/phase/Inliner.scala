@@ -126,7 +126,7 @@ object Inliner {
       }
       Expression.Branch(e, bs, tpe, loc)
 
-    case Expression.JumpTo(_, _, _) => exp0
+    case Expression.JumpTo(_,_,_) => exp0
 
     case Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
       if (wantToPreInline(occur, purity)) {
