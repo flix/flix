@@ -320,16 +320,13 @@ object OccurrenceAnalyzer {
       (OccurrenceAst.Expression.PutChannel(e1, e2, tpe, loc), o3)
 
     case Expression.SelectChannel(rules, default, tpe, loc) =>
-      var rs: List[OccurrenceAst.SelectChannelRule] = List.empty
-      var o1: Map[Symbol.VarSym, Occur] = Map.empty
-      var o2: Map[Symbol.VarSym, Occur] = Map.empty
-      for (r <- rules) {
+      val (rs, o1, o2) = rules.foldRight((List[OccurrenceAst.SelectChannelRule](), Map[VarSym, Occur](), Map[VarSym, Occur]()))((r, acc) => {
         val (c, o3) = visitExp(r.chan)
         val (e, o4) = visitExp(r.exp)
-        rs = rs :+ OccurrenceAst.SelectChannelRule(r.sym, c, e)
-        o1 = combineAllSeq(o1,o3)
-        o2 = combineAllBranch(o2, o4)
-      }
+        val o5 = combineAllSeq(acc._2, o3)
+        val o6 = combineAllBranch(acc._3, o4)
+        (OccurrenceAst.SelectChannelRule(r.sym, c, e) :: acc._1, o5, o6)
+      })
 
       val (d1, o5) = default.fold[(Option[OccurrenceAst.Expression], Map[Symbol.VarSym, Occur])](None, o1)(x => {
         val (d2, o6) = visitExp(x)
