@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
-import ca.uwaterloo.flix.language.ast.Symbol.VarSym
+import ca.uwaterloo.flix.language.ast.Symbol.{LabelSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
@@ -150,13 +150,13 @@ object OccurrenceAnalyzer {
 
     case Expression.Branch(exp, branches, tpe, loc) =>
       val (e1, o1) = visitExp(exp)
-      var o2: Map[Symbol.VarSym, Occur] = Map.empty
-      var bs = Map[Symbol.LabelSym, OccurrenceAst.Expression]()
-      for ((sym, exp1) <- branches) {
-        val (e2, o3) = visitExp(exp1)
-        o2 = combineAllBranch(o2, o3)
-        bs += (sym -> e2)
-      }
+      var (o2, bs) = branches.foldLeft(Map[VarSym, Occur](), Map[LabelSym, OccurrenceAst.Expression]())((acc, b) => b match {
+        case (sym, exp1) =>
+          val (e2, o3) = visitExp(exp1)
+          val o4 = combineAllBranch(acc._1, o3)
+          val bs = acc._2 + (sym -> e2)
+          (o4, bs)
+      })
       o2 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.Branch(e1, bs, tpe, loc), o2)
 
@@ -265,14 +265,14 @@ object OccurrenceAnalyzer {
       (OccurrenceAst.Expression.Cast(e, tpe, loc), o)
 
     case Expression.TryCatch(exp, rules, tpe, loc) =>
-      var (e, o1) = visitExp(exp)
-      var rs: List[OccurrenceAst.CatchRule] = List.empty
-      for (r <- rules) {
-        val (e, o2) = visitExp(r.exp)
-        rs = rs :+ OccurrenceAst.CatchRule(r.sym, r.clazz, e)
-        o1 = combineAllSeq(o1, o2)
-      }
-      (OccurrenceAst.Expression.TryCatch(e, rs, tpe, loc), o1)
+      val (e, o1) = visitExp(exp)
+      val (rs, o2) = rules.foldRight(List[OccurrenceAst.CatchRule](), o1)((r, acc) => {
+        val (e, o3) = visitExp(r.exp)
+        val o4 = combineAllSeq(acc._2, o3)
+        val rs = OccurrenceAst.CatchRule(r.sym, r.clazz, e) :: acc._1
+        (rs, o4)
+      })
+      (OccurrenceAst.Expression.TryCatch(e, rs, tpe, loc), o2)
 
     case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
       val (as, o) = visitExps(args)
@@ -387,19 +387,14 @@ object OccurrenceAnalyzer {
    */
   private def combineAll(m1: Map[VarSym, Occur], m2: Map[VarSym, Occur], combine: (Occur, Occur) => Occur): Map[VarSym, Occur] = {
     (m1.keys ++ m2.keys).foldLeft[Map[VarSym, Occur]](Map.empty) {
-      case (acc, k) => acc + (k -> combineOpt(m1.get(k), m2.get(k), combine))
-    }
-  }
-
-  /*
-  * Combines `o1` and `o2` if both contain a value, else return the option containing a value.
-   */
-  private def combineOpt(o1: Option[Occur], o2: Option[Occur], combine: (Occur, Occur) => Occur): Occur = {
-    (o1, o2) match {
-      case (None, None) => throw InternalCompilerException(s"Unexpected options.")
-      case (None, Some(o2)) => o2
-      case (Some(o1), None) => o1
-      case (Some(o1), Some(o2)) => combine(o1, o2)
+      case (acc, k) =>
+        val occur = (m1.get(k), m2.get(k)) match {
+          case (None, None) => throw InternalCompilerException(s"Unexpected options.")
+          case (None, Some(o2)) => o2
+          case (Some(o1), None) => o1
+          case (Some(o1), Some(o2)) => combine(o1, o2)
+        }
+        acc + (k -> occur)
     }
   }
 
