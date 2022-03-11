@@ -1345,7 +1345,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Kinds {
 
     def SimpleKind: Rule1[ParsedAst.Kind] = rule {
-      Kinds.Star | Kinds.Bool | Kinds.Record | Kinds.Schema | Kinds.Parens
+      Kinds.Star | Kinds.Bool | Kinds.Region | Kinds.Record | Kinds.Schema | Kinds.Parens
     }
 
     def Arrow: Rule1[ParsedAst.Kind] = rule {
@@ -1358,6 +1358,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Bool: Rule1[ParsedAst.Kind.Bool] = rule {
       SP ~ keyword("Bool") ~ SP ~> ParsedAst.Kind.Bool
+    }
+
+    def Region: Rule1[ParsedAst.Kind.Region] = rule {
+      SP ~ keyword("Region") ~ SP ~> ParsedAst.Kind.Region
     }
 
     def Record: Rule1[ParsedAst.Kind.RecordRow] = rule {

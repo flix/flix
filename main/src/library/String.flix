@@ -903,7 +903,7 @@ namespace String {
         let prefix = repeat(n, " ");
         let step = x -> {
             StringBuilder.appendString!(prefix, sb);
-            StringBuilder.appendLine!(sb, x)
+            StringBuilder.appendLine!(x, sb)
         };
         List.foreach(step, lines(s));
         StringBuilder.toString(sb)
@@ -934,7 +934,7 @@ namespace String {
         let limit = Int32.min(n, length(s));
         let step = s1 -> {
             let line = stripIndentDropWhiteSpace(s1, limit, 0);
-            StringBuilder.appendLine!(sb, line)
+            StringBuilder.appendLine!(line, sb)
         };
         List.foreach(step, lines(s));
         StringBuilder.toString(sb)
@@ -978,7 +978,7 @@ namespace String {
     ///
     def unlinesHelper(a: List[String]): String & Impure =
         let sb = StringBuilder.new();
-        List.foreach(StringBuilder.appendLine!(sb), a);
+        List.foreach(x -> StringBuilder.appendLine!(x, sb), a);
         StringBuilder.toString(sb)
 
     ///
