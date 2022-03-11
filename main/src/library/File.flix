@@ -846,7 +846,23 @@ namespace File {
     /// Returns `Ok(())` if `src` was moved, and `dst` did not already exist.
     /// Returns `Err(msg)` if `src` was not moved, because `dst` already exists or is a subpath of `src`.
     ///
-    pub def move(src: {src :: String} , dst: String): Result[Unit, String] = ???
+    pub def move(src: {src :: String} , dst: String): Result[Unit, String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.move(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption]): ##java.nio.file.Path & Impure;
+
+            let srcFile = newFile(src.src);
+            let srcPath = toPath(srcFile);
+            let dstFile = newFile(dst);
+            let dstPath = toPath(dstFile);
+            move(srcPath, dstPath, []);
+            Ok()
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
 
     ///
     /// Moves a file or directory from path `src` to directory `dst`.
