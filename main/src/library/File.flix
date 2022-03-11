@@ -870,7 +870,30 @@ namespace File {
     /// Returns `Ok(())` if `src` was moved, and `dst` is a directory.
     /// Returns `Err(msg)` if `src` was not moved, or `dst` is a subpath of `src` or `dst` is not a directory.
     ///
-    pub def moveInto(src: {src :: String} , dst: String): Result[Unit, String] = ???
+    pub def moveInto(src: {src :: String} , dst: String): Result[Unit, String] & Impure =
+        try {
+            match File.isDirectory(dst) {
+                case Ok(true)  => {
+                    import new java.io.File(String): ##java.io.File & Impure as newFile;
+                    import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+                    import java.nio.file.Path.getFileName(): ##java.nio.file.Path & Impure;
+                    import java.nio.file.Path.toString(): String & Impure as pathToString;
+
+                    let javaFile = newFile(src.src);
+                    let javaPath = toPath(javaFile);
+                    let name = pathToString(getFileName(javaPath));
+                    let newDst = dst + "/" + name;
+
+                    move(src = src.src, newDst)
+                }
+                case Ok(false) => Err("dst is not a directory.")
+                case Err(msg)  => Err(msg)
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
 
     ///
     /// Moves a file or directory from path `src` to path `dst`. Overwrites if `dst` already exists.
