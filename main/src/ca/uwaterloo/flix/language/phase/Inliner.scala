@@ -47,7 +47,7 @@ object Inliner {
    * Returns an expression of type Expression
    */
   private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Expression]): Expression = exp0 match {
-    case Expression.Unit(loc) => Expression.Unit(loc)
+    case Expression.Unit(loc) => exp0
 
     case Expression.Null(_, _) => exp0
 
@@ -75,10 +75,7 @@ object Inliner {
 
     case Expression.Var(sym, _, _) => subst0.get(sym).fold(exp0)(visitExp(_, subst0))
 
-    case Expression.Closure(sym, freeVars, tpe, loc) =>
-      // Removes freeVars that have been marked for inlining
-      val fv = freeVars.filter(f => subst0.get(f.sym).fold(true)(_ => false))
-      Expression.Closure(sym, fv, tpe, loc)
+    case Expression.Closure(sym, freeVars, tpe, loc) => exp0
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -303,11 +300,19 @@ object Inliner {
     case Expression.MatchError(_, _) => exp0
   }
 
+  /**
+   * Inlines `exp1` in `exp2` based on the PreInline phase.
+   * Adds symbol `sym` and its substitution `exp1` to the substitution map `subst1`.
+   */
   private def preInline(sym: Symbol.VarSym, exp1: Expression, exp2: Expression, subst0: Map[Symbol.VarSym, Expression]): Expression = {
     val subst1 = subst0 + (sym -> exp1)
     visitExp(exp2, subst1)
   }
 
+  /**
+   * Predicate that determines if an expression should be inlined in the PreInline phase.
+   * In this phase, an expression is to be inlined if it is both pure and occurs precisely once.
+   */
   private def wantToPreInline(occur: Occur, purity: Purity): Boolean = {
     (occur, purity) match {
       case (Occur.Once, Purity.Pure) => true
