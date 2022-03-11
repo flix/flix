@@ -162,64 +162,35 @@ namespace Iterator {
             foldLeft((acc, x) -> acc * f(x), 1, iter)
 
     ///
-    /// Returns an array with the elements of `iter`.
+    /// Returns the contents of `iter` as an array.
     ///
     /// Consumes the entire iterator.
     ///
     pub def toArray(iter: Iterator[a]): Array[a] & Impure =
-        let Iterator(done, next) = iter;
-        toArrayAcc(done, next, MutList.new())
+        let m = MutList.new();
+        foreach(a -> MutList.push!(a, m), iter);
+        MutList.toArray(m)
 
     ///
-    /// Helper function for `toArray`.
+    /// Returns the contents of `iter` as a list.
     ///
-    def toArrayAcc(done: Done, next: Next[a], v: MutList[a]): Array[a] & Impure =
-        if (done()) {
-            MutList.toArray(v)
-        }
-        else {
-            MutList.push!(next(), v);
-            toArrayAcc(done, next, v)
-        }
-
-    ///
-    /// Returns the contents of `iter` as a list. Consumes the entire iterator.
+    /// Consumes the entire iterator.
     ///
     pub def toList(iter: Iterator[a]): List[a] & Impure =
-        let Iterator(done, next) = iter;
-        toListAcc(done, next, ks -> ks)
+        foldRight((a, acc) -> a :: acc, Nil, iter)
 
     ///
-    /// Helper function for `toList`.
+    /// Returns the contents of `iter` as a map.
     ///
-    def toListAcc(done: Done, next: Next[a], k: List[a] -> List[a]): List[a] & Impure =
-        if (done()) {
-            k(Nil)
-        }
-        else {
-            let x = next();
-            toListAcc(done, next, ks -> k(x :: ks))
-        }
-
-    ///
-    /// Returns the contents of `iter` as a map. Consumes the entire iterator.
+    /// Consumes the entire iterator.
     ///
     pub def toMap(iter: Iterator[(a, b)]): Map[a, b] & Impure with Order[a] =
-        let Iterator(done, next) = iter;
-        toMapAcc(done, next, Map.empty())
-
-    ///
-    /// Helper function for `toMap`.
-    ///
-    def toMapAcc(done: Done, next: Next[(a, b)], m: Map[a, b]): Map[a, b] & Impure with Order[a] =
-        if (done())
-            m
-        else
-            let (k, v) = next();
-            toMapAcc(done, next, Map.insert(k, v, m))
+        foldLeft((acc, ab) -> Map.insert(fst(ab), snd(ab), acc), Map.empty(), iter)
 
     ///
     /// Returns the contents of `iter` as a `Some(Nel)` if `iter` is not empty. Returns None otherwise.
+    ///
+    /// Consumes the entire iterator.
     ///
     pub def toNel(iter: Iterator[a]): Option[Nel[a]] & Impure = match toList(iter) {
         case Nil     => None
@@ -227,42 +198,22 @@ namespace Iterator {
     }
 
     ///
-    /// Returns the contents of `iter` as a nec. Consumes the entire iterator.
+    /// Returns the contents of `iter` as a nec.
+    ///
+    /// Consumes the entire iterator.
     ///
     pub def toNec(iter: Iterator[a]): Option[Nec[a]] & Impure =
-        let Iterator(done, next) = iter;
-        toNecAcc(done, next, ks -> ks)
-
-    ///
-    /// Helper function for `toNec`.
-    ///
-    def toNecAcc(done: Done, next: Next[a], k: Option[Nec[a]] -> Option[Nec[a]]): Option[Nec[a]] & Impure =
-        if (done()) {
-            k(None)
-        }
-        else {
-            let x = next();
-            toNecAcc(done, next, k1 -> match k1 {
-                case None      => k(Some(Nec.singleton(x)))
-                case Some(nec) => k(Some(Nec.cons(x, nec)))
-            })
-        }
+        let f = (x, acc) -> match acc {
+            case None      => Some(Nec.singleton(x))
+            case Some(nec) => Some(Nec.cons(x, nec))
+        };
+        foldRight(f, None, iter)
 
     ///
     /// Returns the contents of `iter` as a set. Consumes the entire iterator.
     ///
     pub def toSet(iter: Iterator[a]): Set[a] & Impure with Order[a] =
-        let Iterator(done, next) = iter;
-        toSetAcc(done, next, Set.empty())
-
-    ///
-    /// Helper function for `toSet`.
-    ///
-    def toSetAcc(done: Done, next: Next[a], s: Set[a]): Set[a] & Impure with Order[a] =
-        if (done())
-            s
-        else
-            toSetAcc(done, next, Set.insert(next(), s))
+        foldLeft((acc, a) -> Set.insert(a, acc), Set.empty(), iter)
 
     ///
     /// Returns a list of every element in `iter` that satisfies the predicate `f`.
@@ -271,18 +222,14 @@ namespace Iterator {
     ///
     pub def filter(f: a -> Bool & ef, iter: Iterator[a]): List[a] & Impure =
         let Iterator(done, next) = iter;
-        filterAcc(f, done, next, ks -> ks)
-
-    ///
-    /// Helper function for `filter`.
-    ///
-    def filterAcc(f: a -> Bool & ef, done: Done, next: Next[a], k: List[a] -> List[a]): List[a] & Impure =
-        if (done())
-            k(Nil)
-        else
-            let x = next();
-            let include = f(x);
-            if (include) filterAcc(f, done, next, ks -> k(x :: ks)) else filterAcc(f, done, next, k)
+        def loop(k) = {
+            if (done())
+                k(Nil)
+            else
+                let x = next();
+                if (f(x)) loop(ks -> k(x :: ks)) else loop(k)
+        };
+        loop(identity)
 
     ///
     /// Returns a list with `f` applied to every element in `iter`.
@@ -293,17 +240,14 @@ namespace Iterator {
     ///
     pub def map(f: a -> b & ef, iter: Iterator[a]): List[b] & Impure =
         let Iterator(done, next) = iter;
-        mapAcc(f, done, next, ks -> ks)
-
-    ///
-    /// Helper function for `map`.
-    ///
-    def mapAcc(f: a -> b & ef, done: Done, next: Next[a], k: List[b] -> List[b]): List[b] & Impure =
-        if (done())
-            k(Nil)
-        else
-            let x = f(next());
-            mapAcc(f, done, next, ks -> k(x :: ks))
+        def loop(k) = {
+            if (done())
+                k(Nil)
+            else
+                let x = f(next());
+                loop(ks -> k(x :: ks))
+        };
+        loop(identity)
 
     ///
     /// Applies `f` to every element of `iter`.
@@ -312,17 +256,16 @@ namespace Iterator {
     ///
     pub def foreach(f: a -> Unit & ef, iter: Iterator[a]): Unit & Impure =
         let Iterator(done, next) = iter;
-        foreachHelper(f, done, next)
+        def loop() = {
+            if (done())
+                ()
+            else {
+                f(next());
+                loop()
+            }
+        };
+        loop()
 
-    ///
-    /// Helper function for `foreach`.
-    ///
-    def foreachHelper(f: a -> Unit & ef, done: Done, next: Next[a]): Unit & Impure =
-        if (done())
-            ()
-        else
-            let _ = f(next());
-            foreachHelper(f, done, next)
     ///
     /// Returns an iterator with every element of the iterator `iter` that
     /// satisfies the predicate `f`.
@@ -331,6 +274,7 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should not be reused.
     ///
+    @Lazy
     pub def filterL(f: a -> Bool, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
 
@@ -362,18 +306,21 @@ namespace Iterator {
     /// the given predicate `f`. Returns it (if it exists).
     ///
     def forward(f: a -> Bool & ef, done: Done, next: Next[a]): Option[a] & Impure =
-        if (done())
-            None
-        else {
-            let e = next();
-            if (f(e)) Some(e) else forward(f, done, next)
-        }
+        def loop() = {
+            if (done())
+                None
+            else
+                let e = next();
+                if (f(e)) Some(e) else loop()
+        };
+        loop()
 
     ///
     /// Returns an iterator with every `f` lazily applied to each element in `iter`.
     ///
     /// Does *not* consume any elements from the iterator.
     ///
+    @Lazy
     pub def mapL(f: a -> b, iter: Iterator[a]): Iterator[b] =
         let Iterator(done, next) = iter;
         let next1 = () -> f(next());
@@ -384,6 +331,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
+    @Lazy
     pub def replace(from: {from :: a}, to: {to :: a}, iter: Iterator[a]): Iterator[a] with Eq[a] =
         let Iterator(done, next) = iter;
         let next1 = () -> {
@@ -399,6 +347,7 @@ namespace Iterator {
     ///
     /// The original iterators `iterA` and `iterB` should not be reused.
     ///
+    @Lazy
     pub def append(iterA: Iterator[a], iterB: Iterator[a]): Iterator[a] =
         let Iterator(doneA, nextA) = iterA;
         let Iterator(doneB, nextB) = iterB;
@@ -418,6 +367,7 @@ namespace Iterator {
     ///
     /// An iterator should never be zipped with itself.
     ///
+    @Lazy
     pub def zip(iterA: Iterator[a], iterB: Iterator[b]): Iterator[(a, b)] =
         let Iterator(doneA, nextA) = iterA;
         let Iterator(doneB, nextB) = iterB;
@@ -437,6 +387,7 @@ namespace Iterator {
     ///
     /// An iterator should never be zipped with itself.
     ///
+    @Lazy
     pub def zipWithL(f: (a, b) -> c, iterA: Iterator[a], iterB: Iterator[b]): Iterator[c] =
         let Iterator(done, next) = zip(iterA, iterB);
         let next1 = () -> {
@@ -458,7 +409,7 @@ namespace Iterator {
     /// An iterator should never be zipped with itself.
     ///
     pub def zipWith(f: (a, b) -> c & ef, iterA: Iterator[a], iterB: Iterator[b]): List[c] & Impure =
-        zip(iterA, iterB) |> map(xy -> f(fst(xy), snd(xy)))
+        zip(iterA, iterB) |> map(match (x, y) -> f(x, y))
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
@@ -469,17 +420,33 @@ namespace Iterator {
     ///
     pub def foldLeft(f: (b, a) -> b & ef, s: b, iter: Iterator[a]): b & Impure =
         let Iterator(done, next) = iter;
-        foldLeftHelper(f, s, done, next)
+        def loop(acc) = {
+            if (done())
+                acc
+            else
+                loop(f(acc, next()))
+        };
+        loop(s)
 
     ///
-    /// Helper function for `foldLeft`.
+    /// Applies `f` to a start value `s` and all elements in `iter` going from right to left.
     ///
-    def foldLeftHelper(f: (b, a) -> b & ef, s: b, done: Done, next: Next[a]): b & Impure =
-        if (done())
-            s
-        else
-            foldLeftHelper(f, f(s, next()), done, next)
-
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, iter: Iterator[a]): b & Impure =
+        let Iterator(done, next) = iter;
+        def loop(k) = {
+            if (done())
+                k(s)
+            else {
+                let x = next();
+                loop(ks -> k(f(x, ks)))
+            }
+        };
+        loop(ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
+                               // but the intermediate continuations are effect polymorphic
     ///
     /// Applies `f` to all elements in `iter` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     ///
@@ -503,6 +470,7 @@ namespace Iterator {
     ///
     /// If `f` returns `Err(e)`, then the iterator is depleted.
     ///
+    @Lazy
     pub def unfoldWithOk(f: Unit -> Result[a, b] & ef): Iterator[a] & Impure =
         let cursor = ref None;
         let done = () -> match deref cursor {
@@ -529,21 +497,14 @@ namespace Iterator {
     ///
     pub def takeWhile(f: a -> Bool & ef, iter: Iterator[a]): List[a] & Impure =
         let Iterator(done, next) = iter;
-        takeWhileAcc(f, done, next, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
-                                                      // but the intermediate continuations are effect polymorphic
-
-    ///
-    /// Helper function for `takeWhile`.
-    ///
-    def takeWhileAcc(f: a -> Bool & ef, done: Done, next: Next[a], k: List[a] -> List[a] & ef): List[a] & Impure =
-        if (done())
-            k(Nil)
-        else
-            let x = next();
-            if (f(x))
-                takeWhileAcc(f, done, next, ks -> k(x :: ks))
-            else
+        def loop(k) = {
+            if (done())
                 k(Nil)
+            else
+                let x = next();
+                if (f(x)) loop(ks -> k(x :: ks)) else k(Nil)
+        };
+        loop(identity)
 
     ///
     /// Returns `iter` without the longest prefix that satisfies the predicate `f`.
@@ -562,6 +523,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
+    @Lazy
     pub def flatMap(f: a -> Iterator[b] & ef, iter: Iterator[a]): Iterator[b] & Impure =
         let Iterator(done, next) = iter;
         let cursor = ref None;
@@ -596,17 +558,21 @@ namespace Iterator {
     /// Forwards the given iterator to the first non-empty iterator produced by `f`.
     ///
     def flatMapForward(f: a -> Iterator[b] & ef, done: Done, next: Next[a]): Option[Iterator[b]] & Impure =
-        if (done())
-            None
-        else
-            let Iterator(d, n) = f(next());
-            if (d()) flatMapForward(f, done, next) else Some(Iterator(d, n))
+        def loop() = {
+            if (done())
+                None
+            else
+                let Iterator(d, n) = f(next());
+                if (d()) loop() else Some(Iterator(d, n))
+        };
+        loop()
 
     ///
     /// Returns an iterator with `a` inserted between every of `iter`.
     ///
     /// Does *not* consume any elements from the iterator.
     ///
+    @Lazy
     pub def intersperse(x: a, iter: Iterator[a]): Iterator[a] & Impure =
         let Iterator(done, next) = iter;
         let returnX = ref false;
@@ -629,6 +595,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from either iterator.
     ///
+    @Lazy
     pub def intercalate(iterA: Iterator[a], iterB: Iterator[Iterator[a]]): Iterator[a] & Impure =
         let Iterator(doneA, nextA) = iterA;
         let Iterator(doneB, nextB) = iterB;
@@ -696,11 +663,14 @@ namespace Iterator {
     /// Forwards the iterator the first non-empty iterator produced by `next`.
     ///
     def intercalateForward(done: Done, next: Next[Iterator[a]]): Option[Iterator[a]] & Impure =
-        if (done())
-            None
-        else
-            let Iterator(d, n) = next();
-            if (d()) intercalateForward(done, next) else Some(Iterator(d, n))
+        def loop() = {
+            if (done())
+                None
+            else
+                let Iterator(d, n) = next();
+                if (d()) loop() else Some(Iterator(d, n))
+        };
+        loop()
 
     ///
     /// Returns the concatenation of the string representation
