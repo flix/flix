@@ -871,12 +871,17 @@ namespace File {
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
             import static java.nio.file.Files.newDirectoryStream(##java.nio.file.Path): ##java.nio.file.DirectoryStream & Impure;
             import java.nio.file.DirectoryStream.iterator(): ##java.util.Iterator & Impure;
+            import java.nio.file.Path.toString(): String & Impure as pathToString;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let javaStream = newDirectoryStream(javaPath);
             let javaIter = iterator(javaStream);
-            convertPathIter(javaIter, fullPath = false)
+
+            use Result.flatMap;
+            let* Iterator(done, next) = fromJavaIter(javaIter);
+            let next1 = () -> pathToString(next());
+            Ok(Iterator(done, next1))
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String & Impure;
@@ -894,12 +899,18 @@ namespace File {
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
             import static java.nio.file.Files.walk(##java.nio.file.Path, Array[##java.nio.file.FileVisitOption]): ##java.util.stream.Stream & Impure;
             import java.util.stream.BaseStream.iterator(): ##java.util.Iterator & Impure;
+            import java.nio.file.Path.getFileName(): ##java.nio.file.Path & Impure;
+            import java.nio.file.Path.toString(): String & Impure as pathToString;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let javaStream = walk(javaPath, []);
             let javaIter = iterator(javaStream as ##java.util.stream.BaseStream);
-            convertPathIter(javaIter, fullPath = true)
+
+            use Result.flatMap;
+            let* Iterator(done, next) = fromJavaIter(javaIter);
+            let next1 = () -> pathToString(getFileName(next()));
+            Ok(Iterator(done, next1))
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String & Impure;
@@ -907,24 +918,17 @@ namespace File {
         }
 
     ///
-    /// Converts a java iterator of Paths to a Flix Iterator of Strings.
+    /// Converts a java iterator to an Iterator.
     ///
-    /// If `opt.fullPath` is `true`, then the whole path is specified. Otherwise only the name.
-    ///
-    def convertPathIter(iter: ##java.util.Iterator, opt: {fullPath :: Bool}): Result[Iterator[String], String] & Impure =
+    pub def fromJavaIter(iter: ##java.util.Iterator): Result[Iterator[a], String] & Impure =
         try {
             import java.util.Iterator.hasNext(): Bool & Impure;
-            import java.util.Iterator.next(): ##java.nio.file.Path & Impure as getNext;
-            import java.nio.file.Path.getFileName(): ##java.nio.file.Path & Impure;
-            import java.nio.file.Path.toString(): String & Impure as pathToString;
+            import java.util.Iterator.next(): a & Impure as getNext;
 
             let done = () -> not hasNext(iter);
             let next = () -> {
                 if(hasNext(iter)) {
-                    let nextPath = getNext(iter);
-                    let name = if (not opt.fullPath) getFileName(nextPath)
-                               else nextPath;
-                    pathToString(name)
+                    getNext(iter)
                 } else {
                     bug!("Empty iterator.")
                 }
