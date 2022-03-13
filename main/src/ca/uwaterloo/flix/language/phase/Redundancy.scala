@@ -968,15 +968,26 @@ object Redundancy {
     def toValidation[A](a: A): Validation[A, RedundancyError] = if (errors.isEmpty) Success(a) else Failure(errors.to(LazyList))
   }
 
-  // MATT docs
+  /**
+    * Tracks the context of the explored expression, recalling the definition, signature,
+    * or recursive variable under which it is defined.
+    */
   private case class RecursionContext(defn: Option[Symbol.DefnSym], sig: Option[Symbol.SigSym], vars: Set[Symbol.VarSym]) {
+    /**
+      * Adds the given variable to the context.
+      */
     def withVar(v: Symbol.VarSym): RecursionContext = this.copy(vars = this.vars + v)
   }
 
-  // MATT docs
   private object RecursionContext {
+    /**
+      * Initializes a context under the given definition.
+      */
     def ofDef(defn: Symbol.DefnSym): RecursionContext = RecursionContext(defn = Some(defn), sig = None, vars = Set.empty)
 
+    /**
+      * Initializes a context under the given signature.
+      */
     def ofSig(sig: Symbol.SigSym): RecursionContext = RecursionContext(defn = None, sig = Some(sig), vars = Set.empty)
   }
 }
