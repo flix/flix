@@ -476,7 +476,8 @@ namespace Nel {
     ///
     @Time(time(f) * length(l)) @Space(space(f))
     pub def forall(f: a -> Bool & ef, l: Nel[a]): Bool & ef = match l {
-        case Nel(x, xs) => if (f(x)) List.forall(f, xs) else false
+        case Nel(x, Nil) => f(x)
+        case Nel(x, xs)  => if (f(x)) List.forall(f, xs) else false
     }
 
     ///
