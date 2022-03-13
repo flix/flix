@@ -17,33 +17,39 @@
 ///
 /// The Mutable Set type.
 ///
-opaque type MutSet[t] = Ref[Set[t]]
+opaque type MutSet[t: Type, r: Region] = ScopedRef[Set[t], r]
 
 namespace MutSet {
 
     ///
     /// Returns a fresh empty set.
     ///
-    pub def empty(): MutSet[a] & Impure =
+    pub def empty(): MutSet[a, Impure] & Impure =
         MutSet(ref Set.empty())
+
+    ///
+    /// Returns a fresh empty set.
+    ///
+    pub def emptyWithRegion(r: Region[r]): MutSet[a, r] & reg(r) =
+        MutSet(ref Set.empty() @ r)
 
     ///
     /// Returns the singleton set containing `x`.
     ///
-    pub def singleton(x: a): MutSet[a] & Impure with Order[a] =
+    pub def singleton(x: a): MutSet[a, Impure] & Impure with Order[a] =
         MutSet(ref Set.singleton(x))
 
     ///
     /// Adds the element `x` to the mutable set `s`.
     ///
-    pub def add!(x: a, s: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def add!(x: a, s: mut MutSet[a, r]): Unit & reg(r) with Order[a] =
         let MutSet(ms) = s;
         ms := Set.insert(x, deref ms)
 
     ///
     /// Adds all elements in the mutable set `s1` to the mutable set `s2`.
     ///
-    pub def addAll!(s1: MutSet[a], s2: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def addAll!(s1: mut MutSet[a, r], s2: mut MutSet[a, r]): Unit & reg(r) with Order[a] =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         ms2 := Set.union(deref ms1, deref ms2)
@@ -51,21 +57,21 @@ namespace MutSet {
     ///
     /// Removes all elements from the mutable set `s`.
     ///
-    pub def clear!(s: mut MutSet[a]): Unit & Impure =
+    pub def clear!(s: mut MutSet[a, r]): Unit & reg(r) =
         let MutSet(ms) = s;
         ms := Set.empty()
 
     ///
     /// Removes the element `x` from the mutable set `s`.
     ///
-    pub def remove!(x: a, s: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def remove!(x: a, s: mut MutSet[a, r]): Unit & reg(r) with Order[a] =
         let MutSet(ms) = s;
         ms := Set.remove(x, deref ms)
 
     ///
     /// Removes all elements in the mutable set `s1` from the mutable set `s2`.
     ///
-    pub def removeAll!(s1: MutSet[a], s2: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def removeAll!(s1: mut MutSet[a, r], s2: mut MutSet[a, r]): Unit & reg(r) with Order[a] =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         ms2 := Set.difference(deref ms2, deref ms1)
@@ -73,7 +79,7 @@ namespace MutSet {
     ///
     /// Removes all elements from the mutable set `s2` that are not in the mutable set `s1`.
     ///
-    pub def retainAll!(s1: MutSet[a], s2: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def retainAll!(s1: mut MutSet[a, r], s2: mut MutSet[a, r]): Unit & reg(r) with Order[a] =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         ms2 := Set.intersection(deref ms1, deref ms2)
@@ -83,7 +89,7 @@ namespace MutSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def refine!(f: a -> Bool, s: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def refine!(f: a -> Bool, s: mut MutSet[a, r]): Unit & reg(r) with Order[a] =
         let MutSet(ms) = s;
         ms := Set.filter(f, deref ms)
 
@@ -92,28 +98,28 @@ namespace MutSet {
     ///
     /// The mutable set `s` is unchanged if the element `from` is not in it.
     ///
-    pub def replace!(from: {from :: a}, to: {to :: a}, s: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def replace!(from: {from :: a}, to: {to :: a}, s: mut MutSet[a, r]): Unit & reg(r) with Order[a] =
         let MutSet(ms) = s;
         ms := Set.replace(from = from.from, to = to.to, deref ms)
 
     ///
     /// Applies the function `f` to every element in the mutable set `s`.
     ///
-    pub def transform!(f: a -> a & ef, s: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def transform!(f: a -> a & ef, s: mut MutSet[a, r]): Unit & reg(r) with Order[a] =
         let MutSet(ms) = s;
         ms := Set.map(f, deref ms)
 
     ///
     /// Returns true if and only if `s` is the empty set.
     ///
-    pub def isEmpty(s: MutSet[a]): Bool & Impure =
+    pub def isEmpty(s: mut MutSet[a, r]): Bool & reg(r) =
         let MutSet(ms) = s;
         Set.isEmpty(deref ms)
 
     ///
     /// Returns true if and only if `x` is a member of the mutable set `s`.
     ///
-    pub def memberOf(x: a, s: MutSet[a]): Bool & Impure with Order[a] =
+    pub def memberOf(x: a, s: mut MutSet[a, r]): Bool & reg(r) with Order[a] =
         let MutSet(ms) = s;
         Set.memberOf(x, deref ms)
 
@@ -122,7 +128,7 @@ namespace MutSet {
     ///
     /// Returns `None` if `s` is empty.
     ///
-    pub def minimum(s: MutSet[a]): Option[a] & Impure =
+    pub def minimum(s: mut MutSet[a, r]): Option[a] & reg(r) =
         let MutSet(ms) = s;
         Set.minimum(deref ms)
 
@@ -134,7 +140,7 @@ namespace MutSet {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def minimumBy(cmp: (a, a) -> Comparison & ef, s: MutSet[a]): Option[a] & Impure =
+    pub def minimumBy(cmp: (a, a) -> Comparison & ef, s: mut MutSet[a, r]): Option[a] & reg(r) =
         let MutSet(ms) = s;
         Set.minimumBy(cmp, deref ms)
 
@@ -143,7 +149,7 @@ namespace MutSet {
     ///
     /// Returns `None` if `s` is empty.
     ///
-    pub def maximum(s: MutSet[a]): Option[a] & Impure =
+    pub def maximum(s: mut MutSet[a, r]): Option[a] & reg(r) =
         let MutSet(ms) = s;
         Set.maximum(deref ms)
 
@@ -155,21 +161,21 @@ namespace MutSet {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def maximumBy(cmp: (a, a) -> Comparison & ef, s: MutSet[a]): Option[a] & Impure =
+    pub def maximumBy(cmp: (a, a) -> Comparison & ef, s: mut MutSet[a, r]): Option[a] & reg(r) =
         let MutSet(ms) = s;
         Set.maximumBy(cmp, deref ms)
 
     ///
     /// Returns the size of the mutable set `s`.
     ///
-    pub def size(s: MutSet[a]): Int32 & Impure =
+    pub def size(s: mut MutSet[a, r]): Int32 & reg(r) =
         let MutSet(ms) = s;
         Set.size(deref ms)
 
     ///
     /// Returns true if and only if every element in the mutable set `s1` appears in the mutable set `s2`.
     ///
-    pub def isSubsetOf(s1: MutSet[a], s2: MutSet[a]): Bool & Impure with Order[a] =
+    pub def isSubsetOf(s1: mut MutSet[a, r], s2: mut MutSet[a, r]): Bool & reg(r) with Order[a] =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         Set.isSubsetOf(deref ms1, deref ms2)
@@ -177,7 +183,7 @@ namespace MutSet {
     ///
     /// Returns true if and only if every element in the mutable set `s1` appears in the mutable set `s2` and `s1 != s2`.
     ///
-    pub def isProperSubsetOf(s1: MutSet[a], s2: MutSet[a]): Bool & Impure with Order[a] =
+    pub def isProperSubsetOf(s1: mut MutSet[a, r], s2: mut MutSet[a, r]): Bool & reg(r) with Order[a] =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         Set.isProperSubsetOf(deref ms1, deref ms2)
@@ -187,14 +193,14 @@ namespace MutSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def find(f: a -> Bool, s: MutSet[a]): Option[a] & Impure = findLeft(f, s)
+    pub def find(f: a -> Bool, s: mut MutSet[a, r]): Option[a] & reg(r) = findLeft(f, s)
 
     ///
     /// Optionally returns the first element of the mutable set `s` that satisfies the predicate function `f` when searching from left to right.
     ///
     /// The function `f` must be pure.
     ///
-    pub def findLeft(f: a -> Bool, s: MutSet[a]): Option[a] & Impure =
+    pub def findLeft(f: a -> Bool, s: mut MutSet[a, r]): Option[a] & reg(r) =
         let MutSet(ms) = s;
             Set.findLeft(f, deref ms)
 
@@ -203,7 +209,7 @@ namespace MutSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def findRight(f: a -> Bool, s: MutSet[a]): Option[a] & Impure =
+    pub def findRight(f: a -> Bool, s: mut MutSet[a, r]): Option[a] & reg(r) =
         let MutSet(ms) = s;
             Set.findRight(f, deref ms)
 
@@ -212,7 +218,7 @@ namespace MutSet {
     ///
     /// That is, the result is of the form: `f(...f(f(i, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, i: b, s: MutSet[a]): b & Impure =
+    pub def foldLeft(f: (b, a) -> b & ef, i: b, s: mut MutSet[a, r]): b & reg(r) =
         let MutSet(ms) = s;
         Set.foldLeft(f, i, deref ms)
 
@@ -221,7 +227,7 @@ namespace MutSet {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, i))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, i: b, s: MutSet[a]): b & Impure =
+    pub def foldRight(f: (a, b) -> b & ef, i: b, s: mut MutSet[a, r]): b & reg(r) =
         let MutSet(ms) = s;
         Set.foldRight(f, i, deref ms)
 
@@ -231,7 +237,7 @@ namespace MutSet {
     /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
     /// The foldRightLazy function exists to allow early termination of a fold.
     ///
-    pub def foldRightLazy(f: (a, Lazy[b]) -> b, i: b, s: MutSet[a]): b & Impure =
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b, i: b, s: mut MutSet[a, r]): b & reg(r) =
         let MutSet(ms) = s;
         Set.foldRightLazy(f, i, deref ms)
 
@@ -242,7 +248,7 @@ namespace MutSet {
     ///
     /// Returns `None` if `s` is the empty set.
     ///
-    pub def reduceLeft(f: (a, a) -> a & ef, s: MutSet[a]): Option[a] & Impure =
+    pub def reduceLeft(f: (a, a) -> a & ef, s: mut MutSet[a, r]): Option[a] & reg(r) =
         let MutSet(ms) = s;
         Set.reduceLeft(f, deref ms)
 
@@ -253,7 +259,7 @@ namespace MutSet {
     ///
     /// Returns `None` if `s` is the empty set.
     ///
-    pub def reduceRight(f: (a, a) -> a & ef, s: MutSet[a]): Option[a] & Impure =
+    pub def reduceRight(f: (a, a) -> a & ef, s: mut MutSet[a, r]): Option[a] & reg(r) =
         let MutSet(ms) = s;
         Set.reduceRight(f, deref ms)
 
@@ -263,14 +269,14 @@ namespace MutSet {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def count(f: a -> Bool & ef, s: MutSet[a]): Int32 & Impure =
+    pub def count(f: a -> Bool & ef, s: mut MutSet[a, r]): Int32 & reg(r) =
         let MutSet(ms) = s;
         Set.count(f, deref ms)
 
     ///
     /// Returns the sum of all elements in the mutable set `s`.
     ///
-    pub def sum(s: MutSet[Int32]): Int32 & Impure =
+    pub def sum(s: mut MutSet[Int32, r]): Int32 & reg(r) =
         let MutSet(ss) = s;
         Set.sum(deref ss)
 
@@ -280,14 +286,14 @@ namespace MutSet {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def sumWith(f: a -> Int32 & ef, s: MutSet[a]): Int32 & Impure =
+    pub def sumWith(f: a -> Int32 & ef, s: mut MutSet[a, r]): Int32 & reg(r) =
         let MutSet(ss) = s;
         Set.sumWith(f, deref ss)
 
     ///
     /// Returns the product of all elements in the set `s`.
     ///
-    pub def product(s: MutSet[Int32]): Int32 & Impure =
+    pub def product(s: mut MutSet[Int32, r]): Int32 & reg(r) =
         let MutSet(ss) = s;
         Set.product(deref ss)
 
@@ -297,7 +303,7 @@ namespace MutSet {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def productWith(f: a -> Int32 & ef, s: MutSet[a]): Int32 & Impure =
+    pub def productWith(f: a -> Int32 & ef, s: mut MutSet[a, r]): Int32 & reg(r) =
         let MutSet(ss) = s;
         Set.productWith(f, deref ss)
 
@@ -308,7 +314,7 @@ namespace MutSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def exists(f: a -> Bool, s: MutSet[a]): Bool & Impure =
+    pub def exists(f: a -> Bool, s: mut MutSet[a, r]): Bool & reg(r) =
         let MutSet(ms) = s;
             Set.exists(f, deref ms)
 
@@ -319,14 +325,14 @@ namespace MutSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def forall(f: a -> Bool, s: MutSet[a]): Bool & Impure =
+    pub def forall(f: a -> Bool, s: mut MutSet[a, r]): Bool & reg(r) =
         let MutSet(ms) = s;
             Set.forall(f, deref ms)
 
     ///
     /// Returns a shallow copy of the mutable set `s`.
     ///
-    pub def copy(s: MutSet[a]): MutSet[a] & Impure =
+    pub def copy(s: mut MutSet[a, r]): MutSet[a, r] & reg(r) =
         let MutSet(ms) = s;
         MutSet(ref (deref ms))
 
@@ -338,7 +344,7 @@ namespace MutSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def partition(f: a -> Bool, s: MutSet[a]): (MutSet[a], MutSet[a]) & Impure with Order[a] =
+    pub def partition(f: a -> Bool, s: mut MutSet[a, r]): (MutSet[a, r], MutSet[a, r]) & reg(r) with Order[a] =
         let MutSet(ms) = s;
         let (ys, zs) = Set.partition(f, deref ms);
             (MutSet(ref ys), MutSet(ref zs))
@@ -346,14 +352,14 @@ namespace MutSet {
     ///
     /// Returns the mutable set `s` as an immutable set.
     ///
-    pub def toSet(s: MutSet[a]): Set[a] & Impure =
+    pub def toSet(s: mut MutSet[a, r]): Set[a] & reg(r) =
         let MutSet(ms) = s;
         deref ms
 
     ///
     /// Returns the mutable set `s` as a list.
     ///
-    pub def toList(s: MutSet[a]): List[a] & Impure =
+    pub def toList(s: mut MutSet[a, r]): List[a] & reg(r) =
         let MutSet(ms) = s;
         Set.toList(deref ms)
 
@@ -363,28 +369,28 @@ namespace MutSet {
     /// If `s` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
-    pub def toMap(s: MutSet[(a, b)]): Map[a, b] & Impure with Order[a] =
+    pub def toMap(s: mut MutSet[(a, b), r]): Map[a, b] & reg(r) with Order[a] =
         let MutSet(ms) = s;
         Set.toMap(deref ms)
 
     ///
     /// Applies `f` to every element of the mutable set `s`.
     ///
-    pub def foreach(f: a -> Unit & ef, s: MutSet[a]): Unit & Impure =
+    pub def foreach(f: a -> Unit & ef, s: mut MutSet[a, r]): Unit & reg(r) =
         let MutSet(ms) = s;
         Set.foreach(f, deref ms)
 
     ///
     /// Returns `true` if MutSets `a` and `b` have the same elements, i.e. are structurally equal.
     ///
-    pub def sameElements(a: MutSet[t], b: MutSet[t]): Bool & Impure with Order[t] =
+    pub def sameElements(a: mut MutSet[t, r1], b: mut MutSet[t, r2]): Bool & reg(r) with Order[t] =
         MutSet.isSubsetOf(a, b) and MutSet.isSubsetOf(b, a)
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `s` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, s: MutSet[a]): String & Impure with ToString[a] =
+    pub def join(sep: String, s: mut MutSet[a, r]): String & reg(r) with ToString[a] =
         let MutSet(ms) = s;
         Set.join(sep, deref ms)
 
@@ -392,7 +398,7 @@ namespace MutSet {
     /// Returns the concatenation of the string representation
     /// of each element in `s` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, s: MutSet[a]): String & Impure =
+    pub def joinWith(f: a -> String & ef, sep: String, s: mut MutSet[a, r]): String & reg(r) =
         let MutSet(ms) = s;
         Set.joinWith(f, sep, deref ms)
 
