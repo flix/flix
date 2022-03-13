@@ -106,7 +106,7 @@ namespace Option {
     ///
     @Time(1) @Space(1)
     pub def isEmpty(o: Option[a]): Bool = match o {
-        case None => true
+        case None    => true
         case Some(_) => false
     }
 
@@ -115,7 +115,7 @@ namespace Option {
     ///
     @Time(1) @Space(1)
     pub def getWithDefault(d: a, o: Option[a]): a = match o {
-        case None => d
+        case None    => d
         case Some(v) => v
     }
 
@@ -124,7 +124,7 @@ namespace Option {
     ///
     @Time(1) @Space(1)
     pub def withDefault(default: {default :: Option[a]}, o: Option[a]): Option[a] = match o {
-        case None => default.default
+        case None    => default.default
         case Some(_) => o
     }
 
@@ -133,7 +133,7 @@ namespace Option {
     ///
     @Time(1) @Space(1)
     pub def replace(from: {from :: a}, to: {to :: a}, o: Option[a]): Option[a] with Eq[a] = match o {
-        case None => o
+        case None    => o
         case Some(v) => Some(if (v == from.from) to.to else v)
     }
 
@@ -168,7 +168,7 @@ namespace Option {
     ///
     @Time(time(f)) @Space(space(f))
     pub def filter(f: a -> Bool, o: Option[a]): Option[a] = match o {
-        case None => None
+        case None    => None
         case Some(v) => if (f(v)) o else None
     }
 
@@ -177,7 +177,7 @@ namespace Option {
     ///
     @Time(time(f)) @Space(space(f))
     pub def map(f: a -> b & ef, o: Option[a]): Option[b] & ef = match o {
-        case None => None
+        case None    => None
         case Some(v) => Some(f(v))
     }
 
@@ -192,9 +192,9 @@ namespace Option {
     ///
     pub def ap(f: Option[a -> b & e], x: Option[a]) : Option[b] & e =
         match f {
-            case None => None
+            case None    => None
             case Some(g) => match x {
-                case None => None
+                case None    => None
                 case Some(y) => Some(g(y))
             }
         }
@@ -203,7 +203,7 @@ namespace Option {
     /// Returns `f(v)` if `o` is `Some(v)`. Otherwise returns `None`.
     ///
     pub def flatMap(f: a -> Option[b] & ef, o: Option[a]): Option[b] & ef = match o {
-        case None => None
+        case None    => None
         case Some(v) => f(v)
     }
 
@@ -214,7 +214,7 @@ namespace Option {
     ///
     @Time(time(f)) @Space(space(f))
     pub def count(f: a -> Bool, o: Option[a]): Int32 = match o {
-        case None => 0
+        case None    => 0
         case Some(v) => if (f(v)) 1 else 0
     }
 
@@ -249,7 +249,7 @@ namespace Option {
     ///
     @Time(time(f)) @Space(space(f))
     pub def find(f: a -> Bool, o: Option[a]): Option[a] = match o {
-        case None => None
+        case None    => None
         case Some(v) => if (f(v)) o else None
     }
 
@@ -258,7 +258,7 @@ namespace Option {
     ///
     @Time(1) @Space(1)
     pub def flatten(o: Option[Option[a]]): Option[a] = match o {
-        case None => None
+        case None    => None
         case Some(v) => v
     }
 
@@ -271,7 +271,7 @@ namespace Option {
     /// Returns `f(z, v)` if `o` is `Some(v)`. Otherwise returns `z`.
     ///
     pub def foldLeft(f: (b, a) -> b & ef, z: b, o: Option[a]): b & ef = match o {
-        case None => z
+        case None    => z
         case Some(v) => f(z, v)
     }
 
@@ -279,7 +279,7 @@ namespace Option {
     /// Returns `f(v, z)` if `o` is `Some(v)`. Otherwise returns `z`.
     ///
     pub def foldRight(f: (a, b) -> b & ef, o: Option[a], z: b): b & ef = match o {
-        case None => z
+        case None    => z
         case Some(v) => f(v, z)
     }
 
@@ -289,7 +289,7 @@ namespace Option {
     /// The function f must be pure.
     ///
     pub def foldRightLazy(f: (a, Lazy[b]) -> b, o: Option[a], z: b): b = match o {
-        case None => z
+        case None    => z
         case Some(v) => f(v, lazy z)
     }
 
@@ -298,16 +298,12 @@ namespace Option {
     ///
     @Time(List.length(xs)) @Space(List.length(xs))
     pub def sequence(xs: List[Option[a]]): Option[List[a]] =
-        sequenceHelper(xs, _ -> None, ys -> Some(ys))
-
-    ///
-    /// Helper function for `sequence`.
-    ///
-    def sequenceHelper(xs: List[Option[a]], fk: Unit -> Option[List[a]], sk: List[a] -> Option[List[a]]): Option[List[a]] = match xs {
-        case Nil            => sk(Nil)
-        case None :: _      => fk()
-        case Some(y) :: rs  => sequenceHelper(rs, fk, ys -> sk(y :: ys))
-    }
+        def loop(ll, sk) = match ll {
+            case Nil            => sk(Nil)
+            case None :: _      => None
+            case Some(y) :: rs  => loop(rs, ys -> sk(y :: ys))
+        };
+        loop(xs, ys -> Some(ys))
 
     ///
     /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(xs_i)` is `Some(v_i)`. Otherwise returns `None`.
