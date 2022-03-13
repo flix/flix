@@ -267,15 +267,34 @@ object Redundancy {
 
     case Expression.Wild(_, _) => Used.empty
 
-    case Expression.Var(sym, _, loc) =>
+    case Expression.Var(sym, _, loc) => (sym.isWild, rc.vars.contains(sym)) match {
+      // Case 1: Non-wild, non-recursive use of sym.
+      case (false, false) => Used.of(sym)
+      // Case 2: Non-wild, recursive use of sym. Does not count as a use.
+      case (false, true) => Used.empty
+      // Case 3: Wild, non-recursive use of sym.
+      case (true, false) => Used.empty + HiddenVarSym(sym, loc)
+      // Case 4: Wild, recursive use of sym.
+      case (true, true) => Used.empty + HiddenVarSym(sym, loc)
+    }
       if (!sym.isWild)
         Used.of(sym)
       else
         Used.empty + HiddenVarSym(sym, loc)
 
-    case Expression.Def(sym, _, _) => Used.of(sym)
+    case Expression.Def(sym, _, _) =>
+      // Recursive calls do not count as uses.
+      if (!rc.defn.contains(sym))
+        Used.of(sym)
+      else
+        Used.empty
 
-    case Expression.Sig(sym, _, _) => Used.of(sym)
+    case Expression.Sig(sym, _, _) =>
+      // Recursive calls do not count as uses.
+      if (!rc.sig.contains(sym))
+        Used.of(sym)
+      else
+        Used.empty
 
     case Expression.Hole(sym, _, _) => Used.of(sym)
 
