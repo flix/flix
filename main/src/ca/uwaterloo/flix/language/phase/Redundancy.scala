@@ -277,10 +277,6 @@ object Redundancy {
       // Case 4: Wild, recursive use of sym.
       case (true, true) => Used.empty + HiddenVarSym(sym, loc)
     }
-      if (!sym.isWild)
-        Used.of(sym)
-      else
-        Used.empty + HiddenVarSym(sym, loc)
 
     case Expression.Def(sym, _, _) =>
       // Recursive calls do not count as uses.
@@ -981,6 +977,6 @@ object Redundancy {
   private object RecursionContext {
     def ofDef(defn: Symbol.DefnSym): RecursionContext = RecursionContext(defn = Some(defn), sig = None, vars = Set.empty)
 
-    def ofSig(sig: Symbol.SigSym): RecursionContext = RecursionContext(defn = None, sig = Option[Symbol.SigSym], vars = Set.empty)
+    def ofSig(sig: Symbol.SigSym): RecursionContext = RecursionContext(defn = None, sig = Some(sig), vars = Set.empty)
   }
 }
