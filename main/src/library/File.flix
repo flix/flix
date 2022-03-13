@@ -843,6 +843,7 @@ namespace File {
     ///
     /// Returns a list naming the files and directories in the directory `f`.
     ///
+    /// Only the names are specified.
     /// Does not recursively traverse the directory.
     ///
     pub def list(f: String): Result[List[String], String] & Impure =
@@ -863,6 +864,7 @@ namespace File {
     ///
     /// Returns an Iterator naming the files and directories in the directory `f`.
     ///
+    /// Only the names are specified.
     /// Does not recursively traverse the directory.
     ///
     pub def listWithIter(f: String): Result[Iterator[String], String] & Impure =
@@ -891,6 +893,7 @@ namespace File {
     ///
     /// Returns an Iterator naming the files and directories in the directory `f`.
     ///
+    /// The full paths are specified.
     /// Recursively traverses the directory.
     ///
     pub def walk(f: String): Result[Iterator[String], String] & Impure =
