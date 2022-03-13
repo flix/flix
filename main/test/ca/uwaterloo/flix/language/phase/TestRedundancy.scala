@@ -613,6 +613,22 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
+  test("UnusedVarSym.LetRec.02") {
+    val input =
+      """
+        |pub def f(): Bool =
+        |    def g() = {
+        |        def h() = {
+        |            if (true) g() else h()
+        |        };
+        |        if (true) g() else h()
+        |    };
+        |    true
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
   test("UnusedVarSym.Pattern.01") {
     val input =
       s"""
