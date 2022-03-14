@@ -362,21 +362,18 @@ namespace String {
     ///
     @Time(time(f) * length(s)) @Space(space(f))
     pub def findIndexOfRight(f: Char -> Bool, s: String): Option[Int32] =
-        let end = length(s) - 1;
-        let i = findIndexOfRightHelper(f, s, end);
-        if (i < 0) None else Some(i)
-
-    ///
-    /// Helper function for `findIndexOfRight`.
-    ///
-    def findIndexOfRightHelper(f: Char -> Bool, s: String, i: Int32): Int32 =
-        if (i < 0)
-            -1
-        else
-            if (f(charAt(i, s)))
-                i
+        def loop(i) = {
+            if (i < 0)
+                -1
             else
-                findIndexOfRightHelper(f, s, i-1)
+                if (f(charAt(i, s)))
+                    i
+                else
+                    loop(i-1)
+        };
+        let end = length(s) - 1;
+        let i = loop(end);
+        if (i < 0) None else Some(i)
 
     ///
     /// Returns the positions of the all the elements in `s` satisfying `f`.
