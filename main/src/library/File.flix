@@ -901,6 +901,25 @@ namespace File {
     /// Returns `Ok(())` if `src` was moved.
     /// Returns `Err(msg)` if `src` was not moved.
     ///
-    pub def moveOver(src: {src :: String}, dst: String): Result[Unit, String] = ???
+    pub def moveOver(src: {src :: String}, dst: String): Result[Unit, String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.move(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption]): ##java.nio.file.Path & Impure;
+            import static java.nio.file.StandardCopyOption.valueOf(String): ##java.nio.file.StandardCopyOption & Impure;
+
+            let dstFile = newFile(dst);
+            let dstPath = toPath(dstFile);
+
+            let srcFile = newFile(src.src);
+            let srcPath = toPath(srcFile);
+            move(srcPath, dstPath, [valueOf("REPLACE_EXISTING")] as Array[##java.nio.file.CopyOption]);
+
+            Ok()
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
 
 }
