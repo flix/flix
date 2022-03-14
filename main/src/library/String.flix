@@ -382,18 +382,16 @@ namespace String {
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def findIndices(f: Char -> Bool, s: String): List[Int32] =
-        findIndicesHelper(f, s, length(s), 0)
-
-    ///
-    /// Helper function for `findIndices`.
-    ///
-    def findIndicesHelper(f: Char -> Bool, s: String, len: Int32, i: Int32): List[Int32] =
-        if (i >= len)
-            Nil
-        else {
-            let r = findIndicesHelper(f, s, len, i+1);
-            if (f(charAt(i, s))) i :: r else r
-        }
+        let len = length(s);
+        def loop(i) = {
+            if (i >= len)
+                Nil
+            else {
+                let r = loop(i+1);
+                if (f(charAt(i, s))) i :: r else r
+            }
+        };
+        loop(0)
 
     ///
     /// Returns the positions of the all the occurences of `substr` in `s`.
