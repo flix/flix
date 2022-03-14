@@ -229,8 +229,8 @@ object Weeder {
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
       val tparamsVal = visitTypeParams(tparams0)
 
-      flatMapN(modVal, annVal, tparamsVal) {
-        case (mod, ann, tparams) =>
+      flatMapN(annVal, modVal, tparamsVal) {
+        case (ann, mod, tparams) =>
           /*
            * Check for `DuplicateTag`.
            */
