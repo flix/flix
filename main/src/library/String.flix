@@ -580,19 +580,16 @@ namespace String {
     /// Applies `f` to a start value `x and all elements in `s` going from right to left.
     ///
     pub def foldRight(f: (Char, b) -> b & ef, x: b, s: String): b &  ef =
+        def loop(acc, i) = {
+            if (i < 0)
+                x
+            else {
+                let acc1 = f(charAt(i, s), acc);
+                loop(acc1, i-1)
+            }
+        };
         let end = length(s) - 1;
-        foldRightHelper(f, x, s, end)
-
-    ///
-    /// Helper function for `foldRight`.
-    ///
-    def foldRightHelper(f: (Char, b) -> b & ef, x: b, s: String, i: Int32): b & ef =
-        if (i < 0)
-            x
-        else {
-            let x1 = f(charAt(i, s), x);
-            foldRightHelper(f, x1, s, i-1)
-        }
+        loop(x, end)
 
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `s` and `t`
