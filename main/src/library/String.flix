@@ -16,7 +16,7 @@
 
 namespace String {
 
-    ///
+    /// test
     /// Returns the character at position `i` in the string `s`.
     ///
     @Time(1) @Space(1)
