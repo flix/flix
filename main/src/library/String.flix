@@ -597,18 +597,15 @@ namespace String {
     ///
     pub def foldLeft2(f: (b, Char, Char) -> b & ef, x: b, s: String, t: String): b & ef =
         let len = Int32.min(length(s), length(t));
-        foldLeft2Helper(f, x, len, s, t, 0)
-
-    ///
-    /// Helper function for `foldLeft2`.
-    ///
-    def foldLeft2Helper(f: (b, Char, Char) -> b & ef, x: b, len: Int32, s: String, t: String, i: Int32): b & ef =
-        if (i >= len)
-            x
-        else {
-            let x1 = f(x, charAt(i, s), charAt(i, t));
-            foldLeft2Helper(f, x1, len, s, t, i+1)
-        }
+        def loop(acc, i) = {
+            if (i >= len)
+                x
+            else {
+                let acc1 = f(acc, charAt(i, s), charAt(i, t));
+                loop(acc1, i+1)
+            }
+        };
+        loop(x, 0)
 
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `s` and `t`
