@@ -893,6 +893,7 @@ namespace File {
     ///
     /// Returns an Iterator naming the files and directories in the directory `f`.
     /// The full paths of the files and directories are specified.
+    /// The first `next` is always `f`. Even if `f` is not a directory or empty.
     ///
     /// Recursively traverses the directory.
     ///
