@@ -120,24 +120,28 @@ namespace String {
     /// Build a string of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init(f: Int32 -> Char & ef, len: Int32): String & ef =
-        def loop(sb1, g, len1, j) = {
-            if (j >= len1)
+    pub def init(f: Int32 -> Char & ef, len: Int32): String & ef = initHelper(f, len) as & ef
+
+    ///
+    /// Helper function for `init`.
+    ///
+    def initHelper(f: Int32 -> Char & ef, len: Int32): String & Impure =
+        def loop(sb, i) = {
+            if (i >= len)
                 ()
             else {
-                let c = g(j);
-                StringBuilder.append!(c, sb1);
-                loop(sb1, g, len1, j+1)
+                let c = f(i);
+                StringBuilder.append!(c, sb);
+                loop(sb, i+1)
             }
         };
-
         if (len <= 0)
             ""
         else {
             let sb = StringBuilder.new();
-            loop(sb, f, len, 0);
+            loop(sb, 0);
             StringBuilder.toString(sb)
-        } as & ef
+        }
 
     ///
     /// Concatenate a list of strings into a single string.
