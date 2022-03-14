@@ -582,7 +582,7 @@ namespace String {
     pub def foldRight(f: (Char, b) -> b & ef, x: b, s: String): b &  ef =
         def loop(acc, i) = {
             if (i < 0)
-                x
+                acc
             else {
                 let acc1 = f(charAt(i, s), acc);
                 loop(acc1, i-1)
@@ -599,7 +599,7 @@ namespace String {
         let len = Int32.min(length(s), length(t));
         def loop(acc, i) = {
             if (i >= len)
-                x
+                acc
             else {
                 let acc1 = f(acc, charAt(i, s), charAt(i, t));
                 loop(acc1, i+1)
