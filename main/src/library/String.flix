@@ -568,7 +568,7 @@ namespace String {
         let len = length(s);
         def loop(acc, i) = {
             if (i >= len)
-                x
+                acc
             else {
                 let acc1 = f(acc, charAt(i, s));
                 loop(acc1, i+1)
