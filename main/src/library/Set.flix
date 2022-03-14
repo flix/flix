@@ -133,7 +133,13 @@ namespace Set {
     ///
     @Time(e - b) @Space(e - b)
     pub def range(b: Int32, e: Int32): Set[Int32] =
-        if (b >= e) empty() else rangeHelper(b, e - 1, empty())
+        def loop(i, s) = {
+            if (i >= e)
+                s
+            else
+                loop(i + 1, insert(i, s))
+        };
+        loop(b, empty())
 
     ///
     /// Adds `x` to `s`.
@@ -588,12 +594,6 @@ namespace Set {
     }
 
     ///
-    /// Helper function for `range`.
-    ///
-    def rangeHelper(b: Int32, n: Int32, acc: Set[Int32]): Set[Int32] =
-        if (n < b) acc else rangeHelper(b, n - 1, insert(n, acc))
-
-    ///
     /// Returns the set `s` as a `DelayList`.
     ///
     pub def toDelayList(s: Set[a]): DelayList[a] =
@@ -601,7 +601,6 @@ namespace Set {
 
     ///
     /// Returns an iterator over `s`.
-    /// TODO: rewrite to not use `toList`.
     ///
     pub def toIterator(s: Set[a]): Iterator[a] & Impure =
         List.toIterator(Set.toList(s))
