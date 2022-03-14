@@ -379,7 +379,7 @@ namespace Option {
     ///
     @Time(1) @Space(1)
     pub def toList(o: Option[a]): List[a] = match o {
-        case None => Nil
+        case None    => Nil
         case Some(v) => v :: Nil
     }
 
@@ -388,8 +388,8 @@ namespace Option {
     ///
     @Time(1) @Space(1)
     pub def toSet(o: Option[a]): Set[a] with Order[a] = match o {
-        case None       => Set.empty()
-        case Some(v)    => Set.singleton(v)
+        case None    => Set.empty()
+        case Some(v) => Set.singleton(v)
     }
 
     ///
@@ -397,23 +397,23 @@ namespace Option {
     ///
     @Time(1) @Space(1)
     pub def toMap(o: Option[(k, v)]): Map[k, v] with Order[k] = match o {
-        case None           => Map.empty()
-        case Some((k, v))   => Map.singleton(k, v)
+        case None         => Map.empty()
+        case Some((k, v)) => Map.singleton(k, v)
     }
 
     ///
     /// Returns a map with elements of `s` as keys and `f` applied as values.
     ///
     pub def toMapWith(f: a -> b, s: Option[a]): Map[a, b] with Order[a] =
-            Option.foldRight((x, m) -> Map.insert(x, f(x), m), s, Map.empty())
+        Option.foldRight((x, m) -> Map.insert(x, f(x), m), s, Map.empty())
 
     ///
     /// Returns the Option value `Ok(v)` if `o` is `Some(v)`. Otherwise returns `Err(e)`.
     ///
     @Time(1) @Space(1)
     pub def toOk(o: Option[t], e: e): Result[t, e] = match o {
-        case None       => Err(e)
-        case Some(a)    => Ok(a)
+        case None    => Err(e)
+        case Some(a) => Ok(a)
     }
 
     ///
@@ -421,8 +421,8 @@ namespace Option {
     ///
     @Time(1) @Space(1)
     pub def toErr(o: Option[e], d: t): Result[t, e] = match o {
-        case None       => Ok(d)
-        case Some(e)    => Err(e)
+        case None    => Ok(d)
+        case Some(e) => Err(e)
     }
 
     ///
@@ -430,8 +430,8 @@ namespace Option {
     ///
     @Time(1) @Space(1)
     pub def toSuccess(o: Option[t], e: e): Validation[t, e] = match o {
-        case None       => Failure(Nec.singleton(e))
-        case Some(a)    => Success(a)
+        case None    => Failure(Nec.singleton(e))
+        case Some(a) => Success(a)
     }
 
     ///
@@ -439,8 +439,8 @@ namespace Option {
     ///
     @Time(1) @Space(1)
     pub def toFailure(o: Option[e], d: t): Validation[t, e] = match o {
-        case None       => Success(d)
-        case Some(e)    => Failure(Nec.singleton(e))
+        case None    => Success(d)
+        case Some(e) => Failure(Nec.singleton(e))
     }
 
     ///
@@ -448,8 +448,8 @@ namespace Option {
     ///
     @Time(1) @Space(1)
     pub def zip(o1: Option[a], o2: Option[b]): Option[(a, b)] = match (o1, o2) {
-        case (None, _) => None
-        case (_, None) => None
+        case (None, _)            => None
+        case (_, None)            => None
         case (Some(v1), Some(v2)) => Some((v1, v2))
     }
 
@@ -458,7 +458,7 @@ namespace Option {
     ///
     @Time(1) @Space(1)
     pub def unzip(o: Option[(a, b)]): (Option[a], Option[b]) = match o {
-        case None => (None, None)
+        case None           => (None, None)
         case Some((v1, v2)) => (Some(v1), Some(v2))
     }
 
