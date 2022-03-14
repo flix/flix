@@ -16,7 +16,7 @@
 
 namespace String {
 
-    /// test
+    ///
     /// Returns the character at position `i` in the string `s`.
     ///
     @Time(1) @Space(1)
@@ -120,31 +120,24 @@ namespace String {
     /// Build a string of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init(f: Int32 -> Char & ef, len: Int32): String & ef = initHelper(f, len) as & ef
+    pub def init(f: Int32 -> Char & ef, len: Int32): String & ef =
+        def loop(sb1, g, len1, j) = {
+            if (j >= len1)
+                ()
+            else {
+                let c = g(j);
+                StringBuilder.append!(c, sb1);
+                loop(sb1, g, len1, j+1)
+            }
+        };
 
-    ///
-    /// Helper function for `init`.
-    ///
-    def initHelper(f: Int32 -> Char & ef, len: Int32): String & Impure =
         if (len <= 0)
             ""
         else {
             let sb = StringBuilder.new();
-            initWorker(sb, f, len, 0);
+            loop(sb, f, len, 0);
             StringBuilder.toString(sb)
-        }
-
-    ///
-    /// Helper function for `init`.
-    ///
-    def initWorker(sb: StringBuilder, f: Int32 -> Char & ef, len: Int32, i: Int32): Unit & Impure =
-        if (i >= len)
-            ()
-        else {
-            let c = f(i);
-            StringBuilder.append!(c, sb);
-            initWorker(sb, f, len, i+1)
-        }
+        } as & ef
 
     ///
     /// Concatenate a list of strings into a single string.
