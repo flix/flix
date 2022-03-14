@@ -342,20 +342,18 @@ namespace String {
     ///
     @Time(time(f) * length(s)) @Space(space(f))
     pub def findIndexOfLeft(f: Char -> Bool, s: String): Option[Int32] =
-        let i = findIndexOfLeftHelper(f, s, length(s), 0);
-        if (i < 0) None else Some(i)
-
-    ///
-    /// Helper function for `findIndexOfLeft`.
-    ///
-    def findIndexOfLeftHelper(f: Char -> Bool, s: String, len: Int32, i: Int32): Int32 =
-        if (i >= len)
-            -1
-        else
-            if (f(charAt(i, s)))
-                i
+        let len = length(s);
+        def loop(i) = {
+            if (i >= len)
+                -1
             else
-                findIndexOfLeftHelper(f, s, len, i+1)
+                if (f(charAt(i, s)))
+                    i
+                else
+                    loop(i+1)
+        };
+        let i = loop(0);
+        if (i < 0) None else Some(i)
 
     ///
     /// Optionally return the position of the first character in `s` satisfying `f`, reading right to left.
