@@ -880,8 +880,7 @@ namespace File {
             let javaStream = newDirectoryStream(javaPath);
             let javaIter = iterator(javaStream);
 
-            use Result.flatMap;
-            let* Iterator(done, next) = fromJavaIter(javaIter);
+            let Iterator(done, next) = fromJavaIter(javaIter);
             let next1 = () -> pathToString(next());
             Ok(Iterator(done, next1))
         } catch {
@@ -911,8 +910,7 @@ namespace File {
             let javaStream = walk(javaPath, []);
             let javaIter = iterator(javaStream as ##java.util.stream.BaseStream);
 
-            use Result.flatMap;
-            let* Iterator(done, next) = fromJavaIter(javaIter);
+            let Iterator(done, next) = fromJavaIter(javaIter);
             let next1 = () -> pathToString(getFileName(next()));
             Ok(Iterator(done, next1))
         } catch {
@@ -924,24 +922,18 @@ namespace File {
     ///
     /// Converts a java iterator to an Iterator.
     ///
-    pub def fromJavaIter(iter: ##java.util.Iterator): Result[Iterator[a], String] & Impure =
-        try {
-            import java.util.Iterator.hasNext(): Bool & Impure;
-            import java.util.Iterator.next(): a & Impure as getNext;
+    pub def fromJavaIter(iter: ##java.util.Iterator): Iterator[a] =
+        import java.util.Iterator.hasNext(): Bool & Impure;
+        import java.util.Iterator.next(): a & Impure as getNext;
 
-            let done = () -> not hasNext(iter);
-            let next = () -> {
-                if(hasNext(iter)) {
-                    getNext(iter)
-                } else {
-                    bug!("Empty iterator.")
-                }
-            };
-            Ok(Iterator(done, next))
-        } catch {
-            case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String & Impure;
-                Err(getMessage(ex))
-        }
+        let done = () -> not hasNext(iter);
+        let next = () -> {
+            if(hasNext(iter)) {
+                getNext(iter)
+            } else {
+                bug!("Empty iterator.")
+            }
+        };
+        Iterator(done, next)
 
 }
