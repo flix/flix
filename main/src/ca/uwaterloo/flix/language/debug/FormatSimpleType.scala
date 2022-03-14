@@ -58,6 +58,17 @@ object FormatSimpleType {
     }
 
     val Delimited = 0
+    val And = 1
+    val Or = 2
+    val Not = 3
+    val Arrow = 4
+    /*
+      a and b and c
+
+      (a or b) and c
+      a or (b and c)
+      (not a) or b and (c)
+     */
 
     def precedence(tpe0: SimpleType): Int = tpe0 match {
       case SimpleType.Unit => Delimited
@@ -93,20 +104,20 @@ object FormatSimpleType {
       case SimpleType.SchemaConstructor => Delimited
       case SimpleType.SchemaRowConstructor(field) => Delimited
       case SimpleType.SchemaRowHead(name, tpe) => Delimited
-      case SimpleType.Not(tpe) => ???
-      case SimpleType.And(tpes) => ???
-      case SimpleType.Or(tpes) => ???
+      case SimpleType.Not(tpe) => Not
+      case SimpleType.And(tpes) => And
+      case SimpleType.Or(tpes) => Or
       case SimpleType.RelationConstructor => Delimited
       case SimpleType.Relation(tpes) => Delimited
       case SimpleType.LatticeConstructor => Delimited
       case SimpleType.Lattice(tpes) => Delimited
-      case SimpleType.ArrowConstructor(arity) => ???
-      case SimpleType.PartialPureArrow(arity, tpes) => ???
-      case SimpleType.PartialImpureArrow(arity, tpes) => ???
-      case SimpleType.PartialPolyArrow(arity, tpes, eff) => ???
-      case SimpleType.PureArrow(args, ret) => ???
-      case SimpleType.ImpureArrow(args, ret) => ???
-      case SimpleType.PolyArrow(args, ret, eff) => ???
+      case SimpleType.ArrowConstructor(arity) => Arrow
+      case SimpleType.PartialPureArrow(arity, tpes) => Arrow
+      case SimpleType.PartialImpureArrow(arity, tpes) => Arrow
+      case SimpleType.PartialPolyArrow(arity, tpes, eff) => Arrow
+      case SimpleType.PureArrow(args, ret) => Arrow
+      case SimpleType.ImpureArrow(args, ret) => Arrow
+      case SimpleType.PolyArrow(args, ret, eff) => Arrow
       case SimpleType.TagConstructor(name) => ???
       case SimpleType.PartialTag(name, args) => ???
       case SimpleType.Tag(name, args, ret) => ???
