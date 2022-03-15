@@ -49,7 +49,7 @@ namespace MutSet {
     ///
     /// Adds all elements in the mutable set `s1` to the mutable set `s2`.
     ///
-    pub def addAll!(s1: MutSet[a, r], s2: MutSet[a, r]): Unit & reg(r) with Order[a] =
+    pub def addAll!(s1: MutSet[a, r1], s2: MutSet[a, r2]): Unit & reg(r1) and reg(r2) with Order[a] =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         ms2 := Set.union(deref ms1, deref ms2)
@@ -71,7 +71,7 @@ namespace MutSet {
     ///
     /// Removes all elements in the mutable set `s1` from the mutable set `s2`.
     ///
-    pub def removeAll!(s1: MutSet[a, r], s2: MutSet[a, r]): Unit & reg(r) with Order[a] =
+    pub def removeAll!(s1: MutSet[a, r1], s2: MutSet[a, r2]): Unit & reg(r1) and reg(r2) with Order[a] =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         ms2 := Set.difference(deref ms2, deref ms1)
@@ -79,7 +79,7 @@ namespace MutSet {
     ///
     /// Removes all elements from the mutable set `s2` that are not in the mutable set `s1`.
     ///
-    pub def retainAll!(s1: MutSet[a, r], s2: MutSet[a, r]): Unit & reg(r) with Order[a] =
+    pub def retainAll!(s1: MutSet[a, r1], s2: MutSet[a, r2]): Unit & reg(r1) and reg(r2) with Order[a] =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         ms2 := Set.intersection(deref ms1, deref ms2)
@@ -175,7 +175,7 @@ namespace MutSet {
     ///
     /// Returns true if and only if every element in the mutable set `s1` appears in the mutable set `s2`.
     ///
-    pub def isSubsetOf(s1: MutSet[a, r], s2: MutSet[a, r]): Bool & reg(r) with Order[a] =
+    pub def isSubsetOf(s1: MutSet[a, r1], s2: MutSet[a, r2]): Bool & reg(r1) and reg(r2) with Order[a] =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         Set.isSubsetOf(deref ms1, deref ms2)
@@ -183,7 +183,7 @@ namespace MutSet {
     ///
     /// Returns true if and only if every element in the mutable set `s1` appears in the mutable set `s2` and `s1 != s2`.
     ///
-    pub def isProperSubsetOf(s1: MutSet[a, r], s2: MutSet[a, r]): Bool & reg(r) with Order[a] =
+    pub def isProperSubsetOf(s1: MutSet[a, r1], s2: MutSet[a, r2]): Bool & reg(r1) and reg(r2) with Order[a] =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         Set.isProperSubsetOf(deref ms1, deref ms2)
