@@ -1056,26 +1056,23 @@ namespace String {
     ///
     @Time(Int32.min(length(s1), length(s2))) @Space(Int32.min(length(s1), length(s2)))
     pub def commonSuffix(s1: String, s2: String): String =
-        let start1 = length(s1) - 1;
-        let start2 = length(s2) - 1;
-        commonSuffixHelper(s1, s2, start1, start2, 0)
-
-    ///
-    /// Helper function for `commonSuffix`.
-    ///
-    def commonSuffixHelper(s1: String, s2: String, ix1: Int32, ix2: Int32, ac: Int32): String =
-        if (ix1 < 0)
-            s1
-        else if (ix2 < 0)
-            s2
-        else {
-            let c1 = charAt(ix1, s1);
-            let c2 = charAt(ix2, s2);
-            if (c1 != c2)
-                takeRight(ac, s1)
-            else
-                commonSuffixHelper(s1, s2, ix1-1, ix2-1, ac+1)
-       }
+            def loop(i, j, acc) = {
+                if (i < 0)
+                    s1
+                else if (j < 0)
+                    s2
+                else {
+                    let c1 = charAt(i, s1);
+                    let c2 = charAt(j, s2);
+                    if (c1 != c2)
+                        takeRight(acc, s1)
+                    else
+                        loop(i-1, j-1, acc+1)
+                }
+            };
+            let start1 = length(s1) - 1;
+            let start2 = length(s2) - 1;
+            loop(start1, start2, 0)
 
     ///
     /// Abbreviate the string `s` if it exceeds the width `w`.
