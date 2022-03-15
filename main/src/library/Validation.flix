@@ -103,35 +103,22 @@ namespace Validation {
     }
 
     ///
-    /// Returns `Success(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Success(v_i)`.
+    /// Returns `Success(v1 :: v2 :: ... :: vn)` if each of `l_i` is `Success(v_i)`.
     ///
     /// Otherwise returns `Failure(e1 :: ... :: en)` with all of the failures concatenated.
     ///
-    pub def sequence(xs: List[Validation[t, e]]): Validation[List[t], e] =
-        sequenceHelperSuccess(xs, ys -> Success(ys))
-
-    ///
-    /// Helper function for `sequence`.
-    ///
-    /// Precondition: no Failure has been encountered.
-    ///
-    def sequenceHelperSuccess(xs: List[Validation[a, e]], sk: List[a] -> Validation[List[a], e]): Validation[List[a], e] = match xs {
-        case Nil              => sk(Nil)
-        case Success(x) :: vs => sequenceHelperSuccess(vs, xs -> sk(x :: xs))
-        case Failure(e) :: vs => sequenceHelperFailure(vs, e)
-    }
-
-    ///
-    /// Helper function for `sequence`.
-    ///
-    /// Precondition: at least one Failure has been encountered.
-    ///
-    def sequenceHelperFailure(xs: List[Validation[a, e]], ac: Nec[e]): Validation[List[a], e] = match xs {
-        case Nil              => Failure(ac)
-        case Success(_) :: vs => sequenceHelperFailure(vs, ac)
-        case Failure(e) :: vs => sequenceHelperFailure(vs, Nec.append(ac, e))
-    }
-
+    pub def sequence(l: List[Validation[t, e]]): Validation[List[t], e] =
+        def loopFailure(ll, acc) = match ll {
+            case Nil              => Failure(acc)
+            case Success(_) :: xs => loopFailure(xs, acc)
+            case Failure(e) :: xs => loopFailure(xs, Nec.append(acc, e))
+        };
+        def loop(ll, k) = match ll {
+            case Nil              => k(Nil)
+            case Success(x) :: xs => loop(xs, ks -> k(x :: ks))
+            case Failure(e) :: xs => loopFailure(xs, e)
+        };
+        loop(l, ks -> Success(ks))
 
     ///
     /// Returns `Success(v1 :: v2 :: ... v :: vn)` if each of `f(xs_i)` is `Success(v_i)`.
