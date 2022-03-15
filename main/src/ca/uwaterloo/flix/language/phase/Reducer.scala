@@ -168,7 +168,7 @@ object Reducer {
     case Expression.JumpTo(sym, tpe, loc) =>
       LiftedAst.Expression.JumpTo(sym, tpe, loc)
 
-    case Expression.Let(sym, exp1, exp2, occur, tpe, loc) =>
+    case Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
       // Visit the value expression.
       val e1 = visitExp(exp1, env0)
 
@@ -180,7 +180,7 @@ object Reducer {
           visitExp(exp2, env0 + (sym -> originalSym))
         case _ =>
           val e2 = visitExp(exp2, env0)
-          LiftedAst.Expression.Let(sym, e1, e2, tpe, loc)
+          LiftedAst.Expression.Let(sym, e1, e2, tpe, purity, loc)
       }
 
     case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
