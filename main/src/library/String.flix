@@ -126,20 +126,20 @@ namespace String {
     /// Helper function for `init`.
     ///
     def initHelper(f: Int32 -> Char & ef, len: Int32): String & Impure =
-        def loop(sb, i) = {
-            if (i >= len)
-                ()
-            else {
-                let c = f(i);
-                StringBuilder.append!(c, sb);
-                loop(sb, i+1)
-            }
-        };
         if (len <= 0)
             ""
         else {
             let sb = StringBuilder.new();
-            loop(sb, 0);
+            def loop(i) = {
+                if (i >= len)
+                    ()
+                else {
+                    let c = f(i);
+                    StringBuilder.append!(c, sb);
+                    loop(i+1)
+                }
+            };
+            loop(0);
             StringBuilder.toString(sb)
         }
 
