@@ -1284,19 +1284,16 @@ namespace String {
     ///
     pub def countSubstring(substr: {substr :: String}, s: String): Int32 =
         let sublen = length(substr.substr);
+        def loop(offset, count) = {
+            match indexOfLeftWithOffset({substr = substr.substr}, {offset = offset}, s) {
+            case None => count
+            case Some(i) => loop(i + sublen, count + 1)
+        }
+        };
         if (sublen <= 0)
             0
         else
-            countSubstringHelper(substr.substr, sublen, s, 0, 0)
-
-    ///
-    /// Helper function for `count``.
-    ///
-    def countSubstringHelper(sub: String, sublen: Int32, s: String, offset: Int32, count: Int32): Int32 =
-        match indexOfLeftWithOffset({substr = sub}, {offset = offset}, s) {
-            case None => count
-            case Some(i) => countSubstringHelper(sub, sublen, s, i + sublen, count + 1)
-        }
+            loop(0, 0)
 
     ///
     /// Returns `Some(suffix)` of string `s` if its prefix matches `substr`.
