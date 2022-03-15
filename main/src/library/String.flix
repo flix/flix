@@ -651,18 +651,16 @@ namespace String {
     ///
     pub def unfoldWithIter(f: Unit -> Option[Char] & ef): String =
         let sb = StringBuilder.new() as & Pure;
-        unfoldWithIterHelper(f, sb) as & Pure
-
-    ///
-    /// Helper function for `unfoldWithIter`.
-    ///
-    def unfoldWithIterHelper(next: Unit -> Option[Char] & ef, sb: StringBuilder): String & Impure = match next() {
-        case None => StringBuilder.toString(sb)
-        case Some(c) => {
-            StringBuilder.append!(c, sb);
-            unfoldWithIterHelper(next, sb)
-        }
-    }
+        def loop() = {
+            match f() {
+                case None => StringBuilder.toString(sb)
+                case Some(c) => {
+                    StringBuilder.append!(c, sb);
+                    loop()
+                }
+            }
+        };
+        loop() as & Pure
 
     ///
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
