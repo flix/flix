@@ -854,7 +854,11 @@ namespace File {
             let javaFile = newFile(f);
             let javaList = list(javaFile);
 
-            Ok(Array.toList(javaList))
+            if (not Object.isNull(javaList)) {
+                Ok(Array.toList(javaList))
+            } else {
+                Err("An error occurred when trying to list the file: '${f}'.")
+            }
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String & Impure;
