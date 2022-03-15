@@ -753,7 +753,7 @@ namespace List {
     pub def forall(f: a -> Bool & ef, l: List[a]): Bool & ef =
         def loop(ll) = match ll {
             case Nil     => true
-            case x :: xs => if (not f(x)) false else loop(xs)
+            case x :: xs => if (f(x)) loop(xs) else false
         };
         loop(l)
 
