@@ -387,8 +387,8 @@ namespace String {
             if (i >= len)
                 Nil
             else {
-                let r = loop(i+1);
-                if (f(charAt(i, s))) i :: r else r
+                if (f(charAt(i, s))) i :: loop(i+1)
+                else                      loop(i+1)
             }
         };
         loop(0)
