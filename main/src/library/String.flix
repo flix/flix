@@ -669,20 +669,17 @@ namespace String {
     ///
     pub def unfoldString(f: b -> Option[(String, b)] & ef, x: b) : String & ef =
         let sb = StringBuilder.new() as & ef;
-        unfoldStringHelper(f, sb, x) as & ef
-
-    ///
-    /// Helper function for `unfoldString`.
-    ///
-    def unfoldStringHelper(f: b -> Option[(String, b)] & ef, sb: StringBuilder, x: b) : String & Impure =
-        let a = f(x) as & Impure;
-        match a {
-            case None => StringBuilder.toString(sb)
-            case Some(s, st1) => {
-                StringBuilder.appendString!(s, sb);
-                unfoldStringHelper(f, sb, st1)
+        def loop(a) = {
+            let a1 = f(a) as & Impure;
+            match a1 {
+                case None => StringBuilder.toString(sb)
+                case Some(s, st1) => {
+                    StringBuilder.appendString!(s, sb);
+                    loop(st1)
+                }
             }
-        }
+        };
+        loop(x) as & ef
 
     ///
     /// Build a string by applying the function `next` to `()`. `next` is expected to encapsulate
