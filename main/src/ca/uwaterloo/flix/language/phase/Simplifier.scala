@@ -43,7 +43,7 @@ object Simplifier {
       * Translates the given definition `def0` to the SimplifiedAst.
       */
     def visitDef(def0: TypedAst.Def): SimplifiedAst.Def = {
-      val ann = if (def0.spec.ann.isEmpty) Ast.Annotations.Empty else Ast.Annotations(def0.spec.ann.map(a => a.name))
+      val ann = Ast.Annotations(def0.spec.ann.map(a => a.name))
       val fs = def0.spec.fparams.map(visitFormalParam)
       val exp = visitExp(def0.impl.exp)
       SimplifiedAst.Def(ann, def0.spec.mod, def0.sym, fs, exp, def0.impl.inferredScheme.base, def0.sym.loc)
@@ -808,11 +808,12 @@ object Simplifier {
     //
     val defns = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map {
-      case (k, TypedAst.Enum(_, mod, sym, _, _, cases0, enumType, _, loc)) =>
+      case (k, TypedAst.Enum(_, ann, mod, sym, _, _, cases0, enumType, _, loc)) =>
         val cases = cases0 map {
           case (tag, TypedAst.Case(enumSym, tagName, tagType, _, tagLoc)) => tag -> SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)
         }
-        k -> SimplifiedAst.Enum(mod, sym, cases, enumType, loc)
+        val sAnn = Ast.Annotations(ann.map(a => a.name))
+        k -> SimplifiedAst.Enum(sAnn, mod, sym, cases, enumType, loc)
     }
     val reachable = root.reachable
 

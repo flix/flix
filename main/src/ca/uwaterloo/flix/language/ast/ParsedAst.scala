@@ -115,6 +115,7 @@ object ParsedAst {
       * Enum Declaration.
       *
       * @param doc     the optional comment associated with the declaration.
+      * @param ann     the associated annotations.
       * @param mod     the associated modifiers.
       * @param sp1     the position of the first character in the declaration.
       * @param ident   the name of the enum.
@@ -123,7 +124,7 @@ object ParsedAst {
       * @param cases   the cases of the enum.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Enum(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, derives: Seq[Name.QName], cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Enum(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, derives: Seq[Name.QName], cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Opaque Type Declaration.

@@ -37,7 +37,7 @@ object Eraser {
     */
   private def visitEnum(enum0: FinalAst.Enum): ErasedAst.Enum = {
     val cases = enum0.cases map { case (t, c) => t -> visitCase(c) }
-    ErasedAst.Enum(enum0.mod, enum0.sym, cases, enum0.tpeDeprecated, enum0.loc)
+    ErasedAst.Enum(enum0.ann, enum0.mod, enum0.sym, cases, enum0.tpeDeprecated, enum0.loc)
   }
 
   /**
