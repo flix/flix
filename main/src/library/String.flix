@@ -388,7 +388,7 @@ namespace String {
                 Nil
             else {
                 if (f(charAt(i, s))) i :: loop(i+1)
-                else                      loop(i+1)
+                else loop(i+1)
             }
         };
         loop(0)
