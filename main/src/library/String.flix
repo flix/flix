@@ -691,18 +691,16 @@ namespace String {
     ///
     pub def unfoldStringWithIter(f: Unit -> Option[String] & ef): String & ef =
         let sb = StringBuilder.new() as & Pure;
-        unfoldStringWithIterHelper(f, sb) as & ef
-
-    ///
-    /// Helper function for `unfoldStringWithIter`.
-    ///
-    def unfoldStringWithIterHelper(next: Unit -> Option[String] & ef, sb: StringBuilder): String & Impure = match next() {
-        case None => StringBuilder.toString(sb)
-        case Some(s) => {
-            StringBuilder.appendString!(s, sb);
-            unfoldStringWithIterHelper(next, sb)
-        }
-    }
+        def loop() = {
+            match f() {
+                case None => StringBuilder.toString(sb)
+                case Some(s) => {
+                    StringBuilder.appendString!(s, sb);
+                    loop()
+                }
+            }
+        };
+        loop() as & ef
 
     ///
     /// Returns `true` if and only if at least one char in `s` satisfies the predicate `f`.
