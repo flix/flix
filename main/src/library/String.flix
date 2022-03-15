@@ -899,27 +899,22 @@ namespace String {
     ///
     def stripIndentHelper(n: Int32, s: String): String & Impure =
         let sb = StringBuilder.new();
-        let limit = Int32.min(n, length(s));
+        let limit = Int32.min(n, String.length(s));
+        def loop(s1, ix) = {
+            if (ix >= limit)
+                String.sliceRight(ix, s1)
+            else
+                if (not Char.isWhiteSpace(String.charAt(ix, s1)))
+                    String.sliceRight(ix, s1)
+                else
+                    loop(s1, ix+1)
+        };
         let step = s1 -> {
-            let line = stripIndentDropWhiteSpace(s1, limit, 0);
+            let line = loop(s1, 0);
             StringBuilder.appendLine!(line, sb)
         };
-        List.foreach(step, lines(s));
+        List.foreach(step, String.lines(s));
         StringBuilder.toString(sb)
-
-    ///
-    /// Helper function for `stripIndent`.
-    ///
-    /// Tab is counted as a single space like Java's `strip`.
-    ///
-    def stripIndentDropWhiteSpace(s: String, limit: Int32, ix: Int32): String =
-        if (ix >= limit)
-            sliceRight(ix, s)
-        else
-            if (not Char.isWhiteSpace(charAt(ix, s)))
-                sliceRight(ix, s)
-            else
-                stripIndentDropWhiteSpace(s, limit, ix+1)
 
     ///
     /// Split the string `s` into an array of lines, breaking on newline.
