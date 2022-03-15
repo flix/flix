@@ -612,20 +612,17 @@ namespace String {
     /// starting with the initial value `x` and going from right to left.
     ///
     pub def foldRight2(f: (Char, Char, b) -> b & ef, x: b, s: String, t: String): b &  ef =
-        let sn = length(s) - 1;
-        let tn = length(t) - 1;
-        foldRight2Helper(f, x, s, t, sn, tn)
-
-    ///
-    /// Helper function for `foldRight2`.
-    ///
-    def foldRight2Helper(f: (Char, Char, b) -> b & ef, x: b, s: String, t: String, i: Int32, j: Int32) : b & ef =
-        if (i < 0 or j < 0 )
-            x
-        else {
-            let x1 = f(charAt(i, s), charAt(j, t), x);
-            foldRight2Helper(f, x1, s, t, i-1, j-1)
-        }
+        let sn = String.length(s) - 1;
+        let tn = String.length(t) - 1;
+        def loop(acc, i, j) = {
+            if (i < 0 or j < 0 )
+                acc
+            else {
+                let acc1 = f(String.charAt(i, s), String.charAt(j, t), acc);
+                loop(acc1, i-1, j-1)
+            }
+        };
+        loop(x, sn, tn)
 
     ///
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
