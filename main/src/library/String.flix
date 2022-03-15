@@ -612,13 +612,13 @@ namespace String {
     /// starting with the initial value `x` and going from right to left.
     ///
     pub def foldRight2(f: (Char, Char, b) -> b & ef, x: b, s: String, t: String): b &  ef =
-        let sn = String.length(s) - 1;
-        let tn = String.length(t) - 1;
+        let sn = length(s) - 1;
+        let tn = length(t) - 1;
         def loop(acc, i, j) = {
             if (i < 0 or j < 0 )
                 acc
             else {
-                let acc1 = f(String.charAt(i, s), String.charAt(j, t), acc);
+                let acc1 = f(charAt(i, s), charAt(j, t), acc);
                 loop(acc1, i-1, j-1)
             }
         };
@@ -899,13 +899,13 @@ namespace String {
     ///
     def stripIndentHelper(n: Int32, s: String): String & Impure =
         let sb = StringBuilder.new();
-        let limit = Int32.min(n, String.length(s));
+        let limit = Int32.min(n, length(s));
         def loop(s1, ix) = {
             if (ix >= limit)
-                String.sliceRight(ix, s1)
+                sliceRight(ix, s1)
             else
-                if (not Char.isWhiteSpace(String.charAt(ix, s1)))
-                    String.sliceRight(ix, s1)
+                if (not Char.isWhiteSpace(charAt(ix, s1)))
+                    sliceRight(ix, s1)
                 else
                     loop(s1, ix+1)
         };
@@ -913,7 +913,7 @@ namespace String {
             let line = loop(s1, 0);
             StringBuilder.appendLine!(line, sb)
         };
-        List.foreach(step, String.lines(s));
+        List.foreach(step, lines(s));
         StringBuilder.toString(sb)
 
     ///
@@ -1033,22 +1033,21 @@ namespace String {
     ///
     @Time(Int32.min(length(s1), length(s2))) @Space(Int32.min(length(s1), length(s2)))
     pub def commonPrefix(s1: String, s2: String): String =
-        commonPrefixHelper(s1, s2, length(s1), length(s2), 0)
-
-    ///
-    /// Helper function for `commonPrefix`.
-    ///
-    def commonPrefixHelper(s1: String, s2: String, len1: Int32, len2: Int32, ix: Int32): String =
-        if (ix >= len1 or ix >= len2)
-            takeLeft(ix, s1)
-        else {
-            let c1 = charAt(ix, s1);
-            let c2 = charAt(ix, s2);
-            if (c1 != c2)
+        let len1 = length(s1);
+        let len2 = length(s2);
+        def loop(ix) = {
+            if (ix >= len1 or ix >= len2)
                 takeLeft(ix, s1)
-            else
-                commonPrefixHelper(s1, s2, len1, len2, ix+1)
-        }
+            else {
+                let c1 = charAt(ix, s1);
+                let c2 = charAt(ix, s2);
+                if (c1 != c2)
+                    takeLeft(ix, s1)
+                else
+                    loop(ix+1)
+            }
+        };
+        loop(0)
 
     ///
     /// Return the common suffix of strings `s1` and `s2`.
