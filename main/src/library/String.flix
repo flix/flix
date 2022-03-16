@@ -387,8 +387,10 @@ namespace String {
             if (i >= len)
                 k(Nil)
             else {
-                if (f(charAt(i, s))) loop(i+1, ks -> k(i :: ks))
-                else loop(i+1, k)
+                if (f(charAt(i, s)))
+                    loop(i+1, ks -> k(i :: ks))
+                else
+                    loop(i+1, k)
             }
         };
         loop(0, identity)
