@@ -574,8 +574,10 @@ object GenExpression {
       compileExpression(len, visitor, currentClass, lenv0, entryPoint)
       // Instantiating a new array of type jvmType
       jvmType match {
-        case JvmType.Reference(r) => visitor.visitTypeInsn(ANEWARRAY, r.toInternalName)
-        case _ => visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
+        case ref: JvmType.Reference => // Happens if the inner type is an object type
+          visitor.visitTypeInsn(ANEWARRAY, ref.name.toInternalName)
+        case _ => // Happens if the inner type is a primitive type
+          visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
       }
       if (jvmType == JvmType.PrimLong || jvmType == JvmType.PrimDouble) { // Happens if the inner type is Int64 or Float64
         // Duplicates the 'array reference' three places down the stack
