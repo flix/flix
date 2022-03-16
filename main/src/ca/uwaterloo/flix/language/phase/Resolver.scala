@@ -390,6 +390,7 @@ object Resolver {
     val tparams = resolveTypeParams(e0.tparams, ns0, root)
     val tconstrs = Nil
     val derivesVal = resolveDerivations(e0.derives, ns0, root)
+    val annVal = traverse(e0.ann)(visitAnnotation(_, taenv, ns0, root))
     val casesVal = traverse(e0.cases) {
       case (name, NamedAst.Case(enum, tag, tpe)) =>
         for {
@@ -404,12 +405,13 @@ object Resolver {
         }
     }
     for {
+      ann <- annVal
       cases <- casesVal
       tpe <- resolveType(e0.tpe, taenv, ns0, root)
       derives <- derivesVal
     } yield {
       val sc = ResolvedAst.Scheme(tparams.tparams.map(_.tpe), tconstrs, tpe)
-      ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, derives, cases.toMap, tpe, sc, e0.loc)
+      ResolvedAst.Enum(e0.doc, ann, e0.mod, e0.sym, tparams, derives, cases.toMap, tpe, sc, e0.loc)
     }
   }
 
