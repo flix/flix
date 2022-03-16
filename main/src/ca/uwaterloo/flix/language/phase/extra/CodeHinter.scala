@@ -27,8 +27,9 @@ object CodeHinter {
     * Returns a collection of code quality hints for the given AST `root`.
     */
   def run(root: TypedAst.Root, sources: Set[String])(implicit flix: Flix): List[CodeHint] = {
-    val codeHints = root.defs.values.flatMap(visitDef(_)(root)).toList
-    codeHints.filter(include(_, sources))
+    val defsHints = root.defs.values.flatMap(visitDef(_)(root)).toList
+    val enumsHints = root.enums.values.flatMap(visitEnum(_)(root)).toList
+    (defsHints ++ enumsHints).filter(include(_, sources))
   }
 
   /**
@@ -36,6 +37,17 @@ object CodeHinter {
     */
   private def include(hint: CodeHint, sources: Set[String]): Boolean =
     sources.contains(hint.loc.source.name)
+
+  /**
+    * Computes code quality hints for the given enum `enum`.
+    */
+  private def visitEnum(enum: TypedAst.Enum)(implicit root: Root): List[CodeHint] = {
+    val isDeprecated = enum.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
+    val deprecated = if (isDeprecated) CodeHint.Deprecated(enum.loc) :: Nil else Nil
+    val isExperimental = enum.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Experimental])
+    val experimental = if (isExperimental) CodeHint.Experimental(enum.loc) :: Nil else Nil
+    deprecated ++ experimental
+  }
 
   /**
     * Computes code quality hints for the given definition `def0`.

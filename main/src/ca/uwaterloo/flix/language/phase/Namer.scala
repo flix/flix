@@ -165,7 +165,7 @@ object Namer {
       /*
      * Enum.
      */
-      case WeededAst.Declaration.Enum(doc, mod, ident, tparams0, derives, cases, loc) =>
+      case WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams0, derives, cases, loc) =>
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
         lookupTypeOrClass(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
@@ -185,10 +185,10 @@ object Namer {
                 case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, tvar.loc)
               }
             }
-
-            mapN(casesOf(cases, uenv0, tenv)) {
-              case cases =>
-                val enum = NamedAst.Enum(doc, mod, sym, tparams, derives, cases, enumType, loc)
+            val annVal = traverse(ann)(visitAnnotation(_, Map.empty, uenv0, tenv))
+            mapN(annVal, casesOf(cases, uenv0, tenv)) {
+              case (ann, cases) =>
+                val enum = NamedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, enumType, loc)
                 val enums = enums0 + (ident.name -> enum)
                 prog0.copy(enums = prog0.enums + (ns0 -> enums))
             }
