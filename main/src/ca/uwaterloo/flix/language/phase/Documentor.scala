@@ -64,7 +64,12 @@ object Documentor {
     //
     val classesByNS = root.classes.values.groupBy(getNameSpace).flatMap {
       case (ns, decls) =>
-        val filtered = decls.filter(_.mod.isPublic).toList
+        def isInternal(clazz: TypedAst.Class): Boolean =
+          clazz.ann.exists(a => a.name match {
+            case Ast.Annotation.Internal(_) => true
+            case _ => false
+          })
+        val filtered = decls.filter(clazz => clazz.mod.isPublic && !isInternal(clazz)).toList
         val sorted = filtered.sortBy(_.sym.name)
         if (sorted.isEmpty)
           None
