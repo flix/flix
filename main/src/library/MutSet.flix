@@ -131,7 +131,10 @@ namespace MutSet {
     ///
     /// Returns `None` if `s` is empty.
     ///
-    pub def minimumBy(cmp: (a, a) -> Comparison, s: MutSet[a]): Option[a] & Impure =
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def minimumBy(cmp: (a, a) -> Comparison & ef, s: MutSet[a]): Option[a] & Impure =
         let MutSet(ms) = s;
         Set.minimumBy(cmp, deref ms)
 
@@ -149,7 +152,10 @@ namespace MutSet {
     ///
     /// Returns `None` if `s` is empty.
     ///
-    pub def maximumBy(cmp: (a, a) -> Comparison, s: MutSet[a]): Option[a] & Impure =
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def maximumBy(cmp: (a, a) -> Comparison & ef, s: MutSet[a]): Option[a] & Impure =
         let MutSet(ms) = s;
         Set.maximumBy(cmp, deref ms)
 
@@ -220,6 +226,16 @@ namespace MutSet {
         Set.foldRight(f, i, deref ms)
 
     ///
+    /// Lazily applies `f` to a start value `s` and all elements in `s` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
+    /// The foldRightLazy function exists to allow early termination of a fold.
+    ///
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b, i: b, s: MutSet[a]): b & Impure =
+        let MutSet(ms) = s;
+        Set.foldRightLazy(f, i, deref ms)
+
+    ///
     /// Applies `f` to all elements in the mutable set `s` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
@@ -244,9 +260,10 @@ namespace MutSet {
     ///
     /// Returns the number of elements in the mutable set `s` that satisfy the predicate function `f`.
     ///
-    /// The function `f` must be pure.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    pub def count(f: a -> Bool, s: MutSet[a]): Int32 & Impure =
+    @ParallelWhenPure
+    pub def count(f: a -> Bool & ef, s: MutSet[a]): Int32 & Impure =
         let MutSet(ms) = s;
         Set.count(f, deref ms)
 
@@ -260,6 +277,9 @@ namespace MutSet {
     ///
     /// Returns the sum of all elements in the mutable set `s` according to the function `f`.
     ///
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
     pub def sumWith(f: a -> Int32 & ef, s: MutSet[a]): Int32 & Impure =
         let MutSet(ss) = s;
         Set.sumWith(f, deref ss)
@@ -274,6 +294,9 @@ namespace MutSet {
     ///
     /// Returns the product of all elements in the set `s` according to the function `f`.
     ///
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
     pub def productWith(f: a -> Int32 & ef, s: MutSet[a]): Int32 & Impure =
         let MutSet(ss) = s;
         Set.productWith(f, deref ss)

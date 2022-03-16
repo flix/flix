@@ -37,7 +37,7 @@ enum EvaluationContext {
 /// Returns `true` if the given expression `e0` is a value.
 ///
 def isValue(e0: Expression): Bool = match e0 {
-    case Abs(x, e) => true
+    case Abs(_, _) => true
     case _         => false
 }
 
@@ -142,17 +142,17 @@ def eval(e0: Expression): Expression =
 //
 // We can now test our lambda interpreter!
 //
-def testEval1(): Expression = eval(Abs(0, Var(0)))                                // λx. x
-def testEval2(): Expression = eval(Abs(0, Abs(1, Var(0))))                        // λx. λy. x
-def testEval3(): Expression = eval(App(Abs(0, Var(0)), Abs(1, Var(1))))           // (λx. x) (λy. y)
-def testEval4(): Expression = eval(App(Abs(0, Abs(1, Var(0))), Abs(2, Var(2))))   // (λx. λy. x) (λz. z)
+def _testEval1(): Expression = eval(Abs(0, Var(0)))                                // λx. x
+def _testEval2(): Expression = eval(Abs(0, Abs(1, Var(0))))                        // λx. λy. x
+def _testEval3(): Expression = eval(App(Abs(0, Var(0)), Abs(1, Var(1))))           // (λx. x) (λy. y)
+def _testEval4(): Expression = eval(App(Abs(0, Abs(1, Var(0))), Abs(2, Var(2))))   // (λx. λy. x) (λz. z)
 
 //
 // Here is the omega-combinator: (λx. x x) (λx. x x)
 //
 // If you run this, Flix will loop forever.
 //
-def testOmega(): Expression = eval(
+def _testOmega(): Expression = eval(
     App(
         Abs(0, App(Var(0), Var(0))),
         Abs(0, App(Var(0), Var(0)))))

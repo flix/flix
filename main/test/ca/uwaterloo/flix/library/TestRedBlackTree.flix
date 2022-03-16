@@ -152,7 +152,7 @@ namespace TestRedBlackTree {
     ///
     def checkBinarySearchTreeInvariant(tree: RedBlackTree[k, v]): Bool with Order[k] = match tree {
         case Node(_, a, xK, _, b) =>
-            if (RedBlackTree.exists((yK, _) -> yK <=> xK == GreaterThan, a) or RedBlackTree.exists((zK, _) -> zK <=> xK == LessThan, b))
+            if (RedBlackTree.exists((yK, _) -> (yK <=> xK) == GreaterThan, a) or RedBlackTree.exists((zK, _) -> (zK <=> xK) == LessThan, b))
                 false
             else
                 checkBinarySearchTreeInvariant(a) and checkBinarySearchTreeInvariant(b)
@@ -252,7 +252,7 @@ namespace TestRedBlackTree {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = MutList.new();
-        Map.mapWithKey((k, v) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); v }, m);
+        Map.mapWithKey((k, v) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); v }, m);
         MutList.toList(a) == range
 
     @test
@@ -269,7 +269,7 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // seqCount                                                                //
+    // parCount                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -284,7 +284,7 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // seqMinimumBy                                                            //
+    // parMinimumBy                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -436,6 +436,21 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // parSumWith                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def parSumWith01(): Bool & Impure =
+        let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
+        RedBlackTree.parSumWith(threads() - 1, (k, v) -> k + v, t) == 3998000
+
+    @test
+    def parSumWith02(): Bool & Impure =
+        let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
+        RedBlackTree.parSumWith(threads() - 1, (k, v) -> k + v, t) == 1998000
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // productValues                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -535,6 +550,24 @@ namespace TestRedBlackTree {
     def productWith06(): Bool =
         let Map(t) = Map#{10 => 10, -10 => -10};
         RedBlackTree.productWith((k, v) -> k + v, t) == -400
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parProductWith                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def parProductWith01(): Bool & Impure =
+        let l = List.range(1, 2001);
+        let Map(t) = List.zip(l, l) |> List.toMap;
+        RedBlackTree.parProductWith(threads() - 1, (k, v) -> k * v, t) == List.product(l) * List.product(l)
+
+    @test
+    def parProductWith02(): Bool & Impure =
+        let l1 = List.range(1, 2001);
+        let l2 = List.range(-2000, 0);
+        let Map(t) = List.zip(l1, l2) |> List.toMap;
+        RedBlackTree.parProductWith(threads() - 1, (k, v) -> k * v, t) == List.product(l1) * List.product(l2)
 
 
     /////////////////////////////////////////////////////////////////////////////

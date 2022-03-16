@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.Polarity
-
 import scala.collection.immutable.Seq
 
 object ParsedAst {
@@ -117,6 +115,7 @@ object ParsedAst {
       * Enum Declaration.
       *
       * @param doc     the optional comment associated with the declaration.
+      * @param ann     the associated annotations.
       * @param mod     the associated modifiers.
       * @param sp1     the position of the first character in the declaration.
       * @param ident   the name of the enum.
@@ -125,7 +124,7 @@ object ParsedAst {
       * @param cases   the cases of the enum.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Enum(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, derives: Seq[Name.QName], cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Enum(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, derives: Seq[Name.QName], cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Opaque Type Declaration.
@@ -999,7 +998,7 @@ object ParsedAst {
       * @param whereExp the optional guard of the pseudo-rule.
       * @param sp2      the position of the last character in the expression.
       */
-    case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: ParsedAst.SelectFragment, from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: Seq[ParsedAst.Expression], from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Reify Expression.
@@ -1205,12 +1204,13 @@ object ParsedAst {
         *
         * @param sp1      the position of the first character in the predicate.
         * @param polarity the polarity of the predicate (positive/negative).
+        * @param fixity   the fixity of the predicate (loose/fixed).
         * @param ident    the name of the predicate.
         * @param terms    the terms of the predicate.
         * @param term     the optional lattice term (if applicable).
         * @param sp2      the position of the last character in the predicate.
         */
-      case class Atom(sp1: SourcePosition, polarity: Polarity, ident: Name.Ident, terms: Seq[ParsedAst.Pattern], term: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Atom(sp1: SourcePosition, polarity: Ast.Polarity, fixity: Ast.Fixity, ident: Name.Ident, terms: Seq[ParsedAst.Pattern], term: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Guard Predicate.
@@ -1234,14 +1234,6 @@ object ParsedAst {
     }
 
   }
-
-  /**
-    * Represents a select fragment in a query expression.
-    *
-    * @param exps the list of terms.
-    * @param exp  the optional lattice term.
-    */
-  case class SelectFragment(exps: Seq[Expression], exp: Option[Expression])
 
   /**
     * Types.
@@ -1275,6 +1267,15 @@ object ParsedAst {
       * @param sp2   the position of the last character in the type.
       */
     case class RigidVar(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Region.
+      *
+      * @param sp1   the position of the first character in the type.
+      * @param ident the variable name.
+      * @param sp2   the position of the last character in the type.
+      */
+    case class Region(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Primitive or Named type.
@@ -1443,6 +1444,11 @@ object ParsedAst {
       * The Bool kind.
       */
     case class Bool(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+
+    /**
+      * The Region kind.
+      */
+    case class Region(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
 
     /**
       * The Record Row kind.
@@ -1675,7 +1681,7 @@ object ParsedAst {
       * @param sig   the types of the formal parameters.
       * @param ident the name given to the imported constructor.
       */
-    case class Constructor(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Option[Type], eff: Option[Type], ident: Name.Ident) extends JvmOp
+    case class Constructor(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, eff: Type, ident: Name.Ident) extends JvmOp
 
     /**
       * Method Invocation.
@@ -1684,7 +1690,7 @@ object ParsedAst {
       * @param sig   the types of the formal parameters.
       * @param ident the optional name given to the imported method.
       */
-    case class Method(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Option[Type], eff: Option[Type], ident: Option[Name.Ident]) extends JvmOp
+    case class Method(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, eff: Type, ident: Option[Name.Ident]) extends JvmOp
 
     /**
       * Static Method Invocation.
@@ -1693,7 +1699,7 @@ object ParsedAst {
       * @param sig   the declared types of the formal parameters.
       * @param ident the optional name given to the imported method.
       */
-    case class StaticMethod(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Option[Type], eff: Option[Type], ident: Option[Name.Ident]) extends JvmOp
+    case class StaticMethod(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, eff: Type, ident: Option[Name.Ident]) extends JvmOp
 
     /**
       * Get Object Field.
@@ -1701,7 +1707,7 @@ object ParsedAst {
       * @param fqn   the fully-qualified name of the field.
       * @param ident the name given to the imported field.
       */
-    case class GetField(fqn: Seq[String], tpe: Option[Type], eff: Option[Type], ident: Name.Ident) extends JvmOp
+    case class GetField(fqn: Seq[String], tpe: Type, eff: Type, ident: Name.Ident) extends JvmOp
 
     /**
       * Put ObjectField.
@@ -1709,7 +1715,7 @@ object ParsedAst {
       * @param fqn   the fully-qualified name of the field.
       * @param ident the name given to the imported field.
       */
-    case class PutField(fqn: Seq[String], tpe: Option[Type], eff: Option[Type], ident: Name.Ident) extends JvmOp
+    case class PutField(fqn: Seq[String], tpe: Type, eff: Type, ident: Name.Ident) extends JvmOp
 
     /**
       * Get Static Field.
@@ -1717,7 +1723,7 @@ object ParsedAst {
       * @param fqn   the fully-qualified name of the field.
       * @param ident the name given to the imported field.
       */
-    case class GetStaticField(fqn: Seq[String], tpe: Option[Type], eff: Option[Type], ident: Name.Ident) extends JvmOp
+    case class GetStaticField(fqn: Seq[String], tpe: Type, eff: Type, ident: Name.Ident) extends JvmOp
 
     /**
       * Put Static Field.
@@ -1725,7 +1731,7 @@ object ParsedAst {
       * @param fqn   the fully-qualified name of the field.
       * @param ident the name given to the imported field.
       */
-    case class PutStaticField(fqn: Seq[String], tpe: Option[Type], eff: Option[Type], ident: Name.Ident) extends JvmOp
+    case class PutStaticField(fqn: Seq[String], tpe: Type, eff: Type, ident: Name.Ident) extends JvmOp
 
   }
 

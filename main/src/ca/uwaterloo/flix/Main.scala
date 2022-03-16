@@ -80,18 +80,16 @@ object Main {
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
       explain = cmdOpts.explain,
-      incremental = cmdOpts.xincremental,
       json = cmdOpts.json,
       output = cmdOpts.output.map(s => Paths.get(s)),
       progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
-      xperf = cmdOpts.xperf,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono
     )
 
     // Don't use progress bar if benchmarking.
-    if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
+    if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkIncremental || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
       options = options.copy(progress = false)
     }
 
@@ -102,7 +100,7 @@ object Main {
 
     // check if command was passed.
     try {
-      val cwd = Paths.get(".")
+      val cwd = Paths.get(".").toAbsolutePath.normalize()
 
       cmdOpts.command match {
         case Command.None =>
@@ -156,6 +154,12 @@ object Main {
     // check if the --Xbenchmark-code-size flag was passed.
     if (cmdOpts.xbenchmarkCodeSize) {
       BenchmarkCompiler.benchmarkCodeSize(options)
+      System.exit(0)
+    }
+
+    // check if the --Xbenchmark-incremental flag was passed.
+    if (cmdOpts.xbenchmarkIncremental) {
+      BenchmarkCompiler.benchmarkIncremental(options)
       System.exit(0)
     }
 
@@ -257,12 +261,11 @@ object Main {
                      test: Boolean = false,
                      threads: Option[Int] = None,
                      xbenchmarkCodeSize: Boolean = false,
+                     xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
-                     xincremental: Boolean = false,
-                     xperf: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
                      files: Seq[File] = Seq())
@@ -395,9 +398,13 @@ object Main {
       note("")
       note("The following options are experimental:")
 
-      // xbenchmark-code-size
+      // Xbenchmark-code-size
       opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).
         text("[experimental] benchmarks the size of the generated JVM files.")
+
+      // Xbenchmark-incremental
+      opt[Unit]("Xbenchmark-incremental").action((_, c) => c.copy(xbenchmarkIncremental=true)).
+        text("[experimental] benchmarks the performance of each compiler phase in incremental mode.")
 
       // Xbenchmark-phases
       opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
@@ -411,17 +418,9 @@ object Main {
       opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
         text("[experimental] enables compiler debugging output.")
 
-      // Xincremental.
-      opt[Unit]("Xincremental").action((_, c) => c.copy(xincremental = true)).
-        text("[experimental] enables incremental compilation.")
-
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
-
-      // Xperf
-      opt[Unit]("Xperf").action((_, c) => c.copy(xperf = true)).
-        text("[experimental] print performance information.")
 
       // Xstatistics
       opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).

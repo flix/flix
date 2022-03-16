@@ -694,7 +694,7 @@ def mapWithKey06(): Bool & Impure =
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap;
     let a = MutList.new();
-    Map.mapWithKey((k, v) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); v }, m);
+    Map.mapWithKey((k, v) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); v }, m);
     MutList.toList(a) == range
 
 
@@ -757,6 +757,21 @@ def foldRight03(): Bool = Map.foldRight((v, s) -> s + v, 0, Map#{1 => 2, 3 => 4}
 
 @test
 def foldRight04(): Bool = Map.foldRight((v, s) -> s + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}) == 12
+
+/////////////////////////////////////////////////////////////////////////////
+// foldRightLazy                                                           //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldRightLazy01(): Bool = Map.foldRightLazy((v, s) -> force s + v, 0, Map#{}) == 0
+
+@test
+def foldRightLazy02(): Bool = Map.foldRightLazy((v, s) -> force s + v, 0, Map#{1 => 2}) == 2
+
+@test
+def foldRightLazy03(): Bool = Map.foldRightLazy((v, s) -> force s + v, 0, Map#{1 => 2, 3 => 4}) == 6
+
+@test
+def foldRightLazy04(): Bool = Map.foldRightLazy((v, s) -> force s + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}) == 12
 
 /////////////////////////////////////////////////////////////////////////////
 // foldRightWithKey                                                        //
@@ -862,7 +877,7 @@ def count08(): Bool & Impure =
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap;
     let a = MutList.new();
-    Map.count((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(a, b); true }, m);
+    Map.count((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); true }, m);
     MutList.toList(a) == range
 
 
@@ -977,6 +992,14 @@ def count08(): Bool & Impure =
         Map#{10 => 10, -10 => -10} |>
             Map.sumWith((k, v) -> k + v) == 0
 
+    @test
+    def sumWith07(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, range) |> List.toMap;
+        let a = MutList.new();
+        Map.sumWith((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
+        MutList.toList(a) == range
+
 
     /////////////////////////////////////////////////////////////////////////////
     // productValues                                                           //
@@ -1078,6 +1101,14 @@ def count08(): Bool & Impure =
     def productWith06(): Bool =
         Map#{10 => 10, -10 => -10} |>
             Map.productWith((k, v) -> k + v) == -400
+
+    @test
+    def productWith07(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, range) |> List.toMap;
+        let a = MutList.new();
+        Map.productWith((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
+        MutList.toList(a) == range
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2086,7 +2117,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = MutList.new();
-        Map.minimumKeyBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(a, b); x <=> y }, m);
+        Map.minimumKeyBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -2138,7 +2169,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, List.reverse(range)) |> List.toMap;
         let a = MutList.new();
-        Map.minimumValueBy((x, y) -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(a, b); x <=> y }, m);
+        Map.minimumValueBy((x, y) -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(b, a); x <=> y }, m);
         MutList.toList(a) == List.reverse(List.range(1, 2000)) // The first / left most value is ignored
 
 
@@ -2180,7 +2211,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = MutList.new();
-        Map.maximumKeyBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(a, b); x <=> y }, m);
+        Map.maximumKeyBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -2222,25 +2253,25 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = MutList.new();
-        Map.maximumValueBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(a, b); x <=> y }, m);
+        Map.maximumValueBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toLazyList                                                              //
+    // toDelayList                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toLazyList01(): Bool =
-        Map.empty(): Map[Unit, Unit] |> Map.toLazyList == LazyList.empty()
+    def toDelayList01(): Bool =
+        Map.empty(): Map[Unit, Unit] |> Map.toDelayList == DelayList.empty()
 
     @test
-    def toLazyList02(): Bool =
-        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toLazyList == LazyList.repeat("a") |> LazyList.zip(LazyList.range(0, 1000))
+    def toDelayList02(): Bool =
+        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toDelayList == DelayList.repeat("a") |> DelayList.zip(DelayList.range(0, 1000))
 
     @test
-    def toLazyList03(): Bool =
-        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toLazyList |> LazyList.toMap == Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0)
+    def toDelayList03(): Bool =
+        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toDelayList |> DelayList.toMap == Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0)
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //

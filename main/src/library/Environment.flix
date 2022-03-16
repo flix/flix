@@ -19,9 +19,9 @@ namespace Environment {
     /// Returns an map of the current system environment.
     ///
     pub def getEnv(): Map[String, String] =
-        import static java.lang.System.getenv();
-        import java.util.Map.entrySet();
-        import java.util.Set.iterator();
+        import static java.lang.System.getenv(): ##java.util.Map & Impure;
+        import java.util.Map.entrySet(): ##java.util.Set & Impure;
+        import java.util.Set.iterator(): ##java.util.Iterator & Impure;
         try {
             let iter = getenv() |> entrySet |> iterator;
             getEnvHelper(iter, Map.empty())
@@ -33,9 +33,9 @@ namespace Environment {
     /// Returns the value of the specified environment variable.
     ///
     pub def getVar(name: String): Option[String] =
-        import static java.lang.System.getenv(String);
+        import static java.lang.System.getenv(String): String & Pure;
         try {
-            let result = getenv(name) as & Pure;
+            let result = getenv(name);
             Object.toOption(result)
         } catch {
             case _:##java.lang.Exception => None
@@ -45,9 +45,9 @@ namespace Environment {
     /// Returns the system property by name.
     ///
     pub def getProp(name: String): Option[String] =
-        import static java.lang.System.getProperty(String);
+        import static java.lang.System.getProperty(String): String & Pure;
         try {
-            let result = getProperty(name) as & Pure;
+            let result = getProperty(name);
             Object.toOption(result)
         } catch {
             case _:##java.lang.Exception => None
@@ -72,22 +72,22 @@ namespace Environment {
     ///  Returns the file separator
     ///
     pub def getFileSeparator(): String =
-        import static get java.io.File.separator as sep;
-        sep() as String & Pure
+        import static get java.io.File.separator: String & Pure as sep;
+        sep()
 
     ///
     /// Returns the path separator
     ///
     pub def getPathSeparator(): String =
-        import static get java.io.File.pathSeparator as pathSep;
-        pathSep() as String & Pure
+        import static get java.io.File.pathSeparator: String & Pure as pathSep;
+        pathSep()
 
     ///
     /// Returns the system line separator
     ///
     pub def getLineSeparator(): String =
-        import static java.lang.System.lineSeparator();
-        lineSeparator() as String & Pure
+        import static java.lang.System.lineSeparator(): String & Pure;
+        lineSeparator()
 
     ///
     /// Returns the user's current working directory
@@ -115,15 +115,15 @@ namespace Environment {
     /// The returned value is never less than one.
     ///
     pub def getVirtualProcessors(): Int32 =
-        import static java.lang.Runtime.getRuntime();
-        import java.lang.Runtime.availableProcessors();
-        (getRuntime() |> availableProcessors) as & Pure
+        import static java.lang.Runtime.getRuntime(): ##java.lang.Runtime & Pure;
+        import java.lang.Runtime.availableProcessors(): Int32 & Pure;
+        (getRuntime() |> availableProcessors)
 
     def getEnvHelper(iter: ##java.util.Iterator, m: Map[String, String]): Map[String, String] & Impure =
-        import java.util.Iterator.hasNext();
-        import java.util.Iterator.next();
-        import java.util.Map$Entry.getKey();
-        import java.util.Map$Entry.getValue();
+        import java.util.Iterator.hasNext(): Bool & Impure;
+        import java.util.Iterator.next(): ##java.lang.Object & Impure;
+        import java.util.Map$Entry.getKey(): ##java.lang.Object & Impure;
+        import java.util.Map$Entry.getValue(): ##java.lang.Object & Impure;
         if (hasNext(iter))
             let entry = next(iter) as ##java.util.Map$Entry;
             let key = getKey(entry) as String;

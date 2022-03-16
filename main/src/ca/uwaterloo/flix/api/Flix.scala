@@ -63,6 +63,8 @@ class Flix {
     */
   private var cachedParsedAst: ParsedAst.Root = ParsedAst.Root(Map.empty)
   private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, Set.empty)
+  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, Map.empty)
+  private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, Set.empty, Map.empty)
   private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, Map.empty, Map.empty)
 
   /**
@@ -127,8 +129,8 @@ class Flix {
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
     "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
+    "DelayList.flix" -> LocalResource.get("/src/library/DelayList.flix"),
     "DelayMap.flix" -> LocalResource.get("/src/library/DelayMap.flix"),
-    "DemandList.flix" -> LocalResource.get("/src/library/DemandList.flix"),
     "Float32.flix" -> LocalResource.get("/src/library/Float32.flix"),
     "Float64.flix" -> LocalResource.get("/src/library/Float64.flix"),
     "Int8.flix" -> LocalResource.get("/src/library/Int8.flix"),
@@ -137,9 +139,9 @@ class Flix {
     "Int64.flix" -> LocalResource.get("/src/library/Int64.flix"),
     "Iterable.flix" -> LocalResource.get("/src/library/Iterable.flix"),
     "Iterator.flix" -> LocalResource.get("/src/library/Iterator.flix"),
-    "LazyList.flix" -> LocalResource.get("/src/library/LazyList.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),
     "Map.flix" -> LocalResource.get("/src/library/Map.flix"),
+    "Nec.flix" -> LocalResource.get("/src/library/Nec.flix"),
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
@@ -203,6 +205,7 @@ class Flix {
     "Fixpoint/Ast/Constraint.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Constraint.flix"),
     "Fixpoint/Ast/Datalog.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Datalog.flix"),
     "Fixpoint/Ast/Denotation.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Denotation.flix"),
+    "Fixpoint/Ast/Fixity.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Fixity.flix"),
     "Fixpoint/Ast/HeadPredicate.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/HeadPredicate.flix"),
     "Fixpoint/Ast/HeadTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/HeadTerm.flix"),
     "Fixpoint/Ast/Polarity.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Polarity.flix"),
@@ -217,11 +220,6 @@ class Flix {
     "Fixpoint/Ram/RelOp.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RelOp.flix"),
     "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
   )
-
-  /**
-    * A case class to track the compile time spent in a phase and its sub-phases.
-    */
-  case class PhaseTime(phase: String, time: Long, subphases: List[(String, Long)])
 
   /**
     * A map to track the time spent in each phase and sub-phase.
@@ -327,6 +325,21 @@ class Flix {
   }
 
   /**
+    * Removes the given path `p` to the list of paths to be parsed.
+    */
+  def remSourcePath(p: Path): Flix = {
+    if (p.getFileName.toString.endsWith(".flix")) {
+      remInput(p.toString, Input.TxtFile(p))
+    } else if (p.getFileName.toString.endsWith(".fpkg")) {
+      remInput(p.toString, Input.PkgFile(p))
+    } else {
+      throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
+    }
+
+    this
+  }
+
+  /**
     * Adds the given `input` under the given `name`.
     */
   private def addInput(name: String, input: Input): Unit = inputs.get(name) match {
@@ -335,6 +348,18 @@ class Flix {
     case Some(_) =>
       changeSet = changeSet.markChanged(input)
       inputs += name -> input
+  }
+
+  /**
+    * Removes the given `input` under the given `name`.
+    *
+    * Note: Removing an input means to replace it by the empty string.
+    */
+  private def remInput(name: String, input: Input): Unit = inputs.get(name) match {
+    case None => // nop
+    case Some(_) =>
+      changeSet = changeSet.markChanged(input)
+      inputs += name -> Input.Text(name, "", stable = false)
   }
 
   /**
@@ -430,8 +455,8 @@ class Flix {
       afterParser <- Parser.run(afterReader, cachedParsedAst, changeSet)
       afterWeeder <- Weeder.run(afterParser, cachedWeededAst, changeSet)
       afterNamer <- Namer.run(afterWeeder)
-      afterResolver <- Resolver.run(afterNamer)
-      afterKinder <- Kinder.run(afterResolver)
+      afterResolver <- Resolver.run(afterNamer, cachedResolvedAst, changeSet)
+      afterKinder <- Kinder.run(afterResolver, cachedKindedAst, changeSet)
       afterDeriver <- Deriver.run(afterKinder)
       afterTyper <- Typer.run(afterDeriver, cachedTypedAst, changeSet)
       afterStatistics <- Statistics.run(afterTyper)
@@ -439,13 +464,14 @@ class Flix {
       afterStratifier <- Stratifier.run(afterInstances)
       afterPatternExhaustiveness <- PatternExhaustiveness.run(afterStratifier)
       afterRedundancy <- Redundancy.run(afterPatternExhaustiveness)
-      afterTerminator <- Terminator.run(afterRedundancy)
-      afterSafety <- Safety.run(afterTerminator)
+      afterSafety <- Safety.run(afterRedundancy)
     } yield {
+      // Update caches for incremental compilation.
       if (options.incremental) {
-        // We update the caches, but only if incremental compilation is enabled.
         this.cachedParsedAst = afterParser
         this.cachedWeededAst = afterWeeder
+        this.cachedKindedAst = afterKinder
+        this.cachedResolvedAst = afterResolver
         this.cachedTypedAst = afterTyper
       }
       afterSafety
@@ -479,8 +505,7 @@ class Flix {
       afterClosureConv <- ClosureConv.run(afterSimplifier)
       afterLambdaLift <- LambdaLift.run(afterClosureConv)
       afterTailrec <- Tailrec.run(afterLambdaLift)
-      afterInliner <- Inliner.run(afterTailrec)
-      afterOptimizer <- Optimizer.run(afterInliner)
+      afterOptimizer <- Optimizer.run(afterTailrec)
       afterTreeShaker <- TreeShaker.run(afterOptimizer)
       afterVarNumbering <- VarNumbering.run(afterTreeShaker)
       afterFinalize <- Finalize.run(afterVarNumbering)
@@ -565,6 +590,13 @@ class Flix {
 
     // Return the result computed by the subphase.
     r
+  }
+
+  /**
+    * Returns the total compilation time in nanoseconds.
+    */
+  def getTotalTime: Long = phaseTimers.foldLeft(0L) {
+    case (acc, phase) => acc + phase.time
   }
 
   /**

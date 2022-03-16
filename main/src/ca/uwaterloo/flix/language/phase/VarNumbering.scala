@@ -126,7 +126,7 @@ object VarNumbering {
       case Expression.JumpTo(_, _, _) =>
         i0
 
-      case Expression.Let(sym, exp1, exp2, _, _) =>
+      case Expression.Let(sym, exp1, exp2, _, _, _) =>
         val i1 = visitSymbolAssignment(sym, exp1.tpe, i0)
         val i2 = visitExp(exp1, i1)
         visitExp(exp2, i2)

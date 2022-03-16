@@ -246,6 +246,11 @@ object PatternExhaustiveness {
         } yield tast
         case Expression.Ref(exp, _, _, _) =>
           checkPats(exp, root).map(const(tast))
+        case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+          for {
+            _ <- checkPats(exp1, root)
+            _ <- checkPats(exp2, root)
+          } yield tast
         case Expression.Deref(exp, _, _, _) =>
           checkPats(exp, root).map(const(tast))
         case Expression.Assign(exp1, exp2, _, _, _) =>
@@ -396,7 +401,7 @@ object PatternExhaustiveness {
     }
 
     def visitBodyPred(b0: TypedAst.Predicate.Body, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Predicate.Body, CompilationMessage] = b0 match {
-      case TypedAst.Predicate.Body.Atom(_, _, polarity, terms, tpe, loc) => b0.toSuccess
+      case TypedAst.Predicate.Body.Atom(_, _, _, _, terms, _, _) => b0.toSuccess
 
       case TypedAst.Predicate.Body.Guard(exp, loc) =>
         for {
@@ -716,7 +721,6 @@ object PatternExhaustiveness {
       case Some(TypeConstructor.Int64) => 0
       case Some(TypeConstructor.BigInt) => 0
       case Some(TypeConstructor.Str) => 0
-      case Some(TypeConstructor.ScopedRef) => 0
       case Some(TypeConstructor.Relation) => 0
       case Some(TypeConstructor.Lattice) => 0
       case Some(TypeConstructor.RecordRowEmpty) => 0
@@ -724,7 +728,8 @@ object PatternExhaustiveness {
       case Some(TypeConstructor.Record) => 0
       case Some(TypeConstructor.Schema) => 0
       case Some(TypeConstructor.Arrow(length)) => length
-      case Some(TypeConstructor.Array) => 1
+      case Some(TypeConstructor.ScopedArray) => 1
+      case Some(TypeConstructor.ScopedRef) => 0
       case Some(TypeConstructor.Channel) => 1
       case Some(TypeConstructor.Lazy) => 1
       case Some(TypeConstructor.KindedEnum(sym, kind)) => 0 // TODO: Correct?

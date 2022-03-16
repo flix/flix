@@ -176,7 +176,7 @@ pub lawless class Foldable[t : Type -> Type] {
     ///
     pub def toArray(t: t[a]): Array[a] & Impure =
         let v = MutList.new();
-        Foldable.foldRight((x, _) -> MutList.push!(x, v), (), t);
+        Foldable.foreach(a -> MutList.push!(a, v), t);
         MutList.toArray(v)
 
     ///
@@ -297,7 +297,7 @@ pub lawless class Foldable[t : Type -> Type] {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        t |> Foldable.foldLeft((_, x) -> { append!(sb, ToString.toString(x)); append!(sb, sep) }, ());
+        t |> Foldable.foreach(x -> { append!(ToString.toString(x), sb); append!(sep, sb) });
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     } as & Pure
 
@@ -305,13 +305,13 @@ pub lawless class Foldable[t : Type -> Type] {
     /// Returns the concatenation of the string representation
     /// of each element in `t` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, t: t[a]): String = {
+    pub def joinWith(f: a -> String & ef, sep: String, t: t[a]): String & ef = {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        t |> Foldable.foldLeft((_, x) -> { append!(sb, f(x)); append!(sb, sep) }, ());
+        t |> Foldable.foreach(x -> { append!(f(x), sb); append!(sep, sb) });
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
-    } as & Pure
+    } as & ef
 
 }
 

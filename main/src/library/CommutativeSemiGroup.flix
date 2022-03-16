@@ -14,7 +14,6 @@
  *  limitations under the License.
  */
 
-
 ///
 /// A type class for types that form a commutative semigroup.
 ///
@@ -30,6 +29,11 @@ pub class CommutativeSemiGroup[a] with SemiGroup[a] {
     law commutative: forall(x: a, y: a) with Eq[a] . CommutativeSemiGroup.combine(x, y) == CommutativeSemiGroup.combine(y, x)
 
 }
+
+///
+/// Alias for `CommutativeSemiGroup.combine`.
+///
+pub def |+|(x: a, y: a): a with CommutativeSemiGroup[a] = CommutativeSemiGroup.combine(x, y)
 
 instance CommutativeSemiGroup[Unit]
 

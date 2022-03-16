@@ -93,6 +93,12 @@ def map02(): Bool = Option.map(i -> 2*i, Some(1)) == Some(2)
 @test
 def map03(): Bool = Option.map(i -> 2*i, Some(2)) == Some(4)
 
+@test
+def map04(): Bool & Impure =
+    let n = ref 2;
+    Option.map(i -> n := i, Some(4));
+    4 == deref n
+
 /////////////////////////////////////////////////////////////////////////////
 // toList                                                                  //
 /////////////////////////////////////////////////////////////////////////////
@@ -166,7 +172,7 @@ def toErr02(): Bool = Option.toErr(Some("err"), "default") == Err("err")
 // toSuccess                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toSuccess01(): Bool = Option.toSuccess(None: Option[Unit], "err") == Failure(Nel("err", Nil))
+def toSuccess01(): Bool = Option.toSuccess(None: Option[Unit], "err") == Failure(Nec.singleton("err"))
 
 @test
 def toSuccess02(): Bool = Option.toSuccess(Some(1), "err") == Success(1)
@@ -178,7 +184,7 @@ def toSuccess02(): Bool = Option.toSuccess(Some(1), "err") == Success(1)
 def toFailure01(): Bool = Option.toFailure(None: Option[Unit], "default") == Success("default")
 
 @test
-def toFailure02(): Bool = Option.toFailure(Some("err"), "default") == Failure(Nel("err", Nil))
+def toFailure02(): Bool = Option.toFailure(Some("err"), "default") == Failure(Nec.singleton("err"))
 
 /////////////////////////////////////////////////////////////////////////////
 // withDefault                                                             //

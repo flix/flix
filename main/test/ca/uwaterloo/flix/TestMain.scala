@@ -141,12 +141,6 @@ class TestMain extends FunSuite {
     assert(opts.xdebug)
   }
 
-  test("--Xincremental") {
-    val args = Array("--Xincremental", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xincremental)
-  }
-
   test("--Xlib nix") {
     val args = Array("--Xlib", "nix", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -163,12 +157,6 @@ class TestMain extends FunSuite {
     val args = Array("--Xlib", "all", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xlib == LibLevel.All)
-  }
-
-  test("--Xperf") {
-    val args = Array("--Xperf", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xperf)
   }
 
   test("--Xstrictmono") {

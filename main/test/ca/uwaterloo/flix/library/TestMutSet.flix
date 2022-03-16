@@ -227,4 +227,24 @@ namespace TestMutSet {
     def join04(): Bool & Impure =
         Set#{"1", "2", "3"} |> Set.toMutSet |> MutSet.join(",") == "1,2,3"
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightLazy                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def foldRightLazy01(): Bool & Impure = MutSet.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, MutSet.empty()) == 100
+
+    @test
+    def foldRightLazy02(): Bool & Impure = MutSet.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, MutSet.singleton(1)) == 198
+
+    @test
+    def foldRightLazy03(): Bool & Impure =
+        let s = MutSet(ref Set#{2, 1});
+        MutSet.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, s) == 194
+
+    @test
+    def foldRightLazy04(): Bool & Impure =
+        let s = MutSet(ref Set#{3, 2, 1});
+        MutSet.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, s) == 382
+
 }

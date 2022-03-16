@@ -14,33 +14,42 @@
  * limitations under the License.
  */
 
-instance Iterable[Array] {
-    pub def iterator(t: Array[a]): Iterator[a] & Impure =
-        Array.toIterator(t)
-}
-
 namespace Array {
 
     ///
     /// Compares `a` and `b` lexicographically.
     ///
     pub def compare(a: Array[v], b: Array[v]): Comparison & Impure with Order[v] =
-        compareHelper(a, b, Int32.min(Array.length(a), Array.length(b)), 0)
+        let len = Int32.min(Array.length(a), Array.length(b));
+        def loop(i) = {
+            if (i < len) {
+                let cmp = a[i] <=> b[i];
+                if (cmp == EqualTo)
+                    loop(i + 1)
+                else
+                    cmp
+            } else if (i < Array.length(a)) {
+                GreaterThan
+            } else if (i < Array.length(b)) {
+                LessThan
+            } else {
+                EqualTo
+            }
+        };
+        loop(0)
 
-    def compareHelper(a: Array[v], b: Array[v], len: Int32, i: Int32): Comparison & Impure with Order[v] =
-        if (i < len) {
-            let cmp = a[i] <=> b[i];
-            if (cmp == EqualTo)
-                compareHelper(a, b, len, i + 1)
-            else
-                cmp
-        } else if (i < Array.length(a)) {
-            GreaterThan
-        } else if (i < Array.length(b)) {
-            LessThan
-        } else {
-            EqualTo
-        }
+    ///
+    /// Returns a string representation of the given array `a`.
+    ///
+    pub def toString(a: Array[a]): String with ToString[a] =
+        def loop(i, acc) =
+            if (i < a.length) {
+                if (i == 0) loop(i + 1, "${a[i]}") as & Pure
+                else loop(i + 1, "${acc}, ${a[i]}") as & Pure
+            } else {
+                "[${acc}]"
+            };
+        loop(0, "")
 
     ///
     /// Returns a fresh array of length `l` filled with the element `x`.
@@ -90,52 +99,45 @@ namespace Array {
     /// Returns the array `a` as a list.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toList(a: Array[a]): List[a] & Impure = toListHelper(a, a.length, Nil)
+    pub def toList(a: Array[a]): List[a] & Impure =
+        def loop(i, acc) = {
+            if (i == 0) {
+                acc
+            } else {
+                let x = a[i - 1];
+                loop(i - 1, x :: acc)
+            }
+        };
+        loop(a.length, Nil)
 
     ///
-    /// Helper function for `toList`.
+    /// Returns the array `a` as a `DelayList`.
     ///
-    def toListHelper(a: Array[a], i: Int32, acc: List[a]): List[a] & Impure =
-        if (i == 0) {
-            acc
-        } else {
-            let x = a[i - 1];
-            toListHelper(a, i - 1, x :: acc)
-        }
-
-    ///
-    /// Returns the array `a` as a lazy list.
-    ///
-    pub def toLazyList(a: Array[a]): LazyList[a] & Impure =
-        LList(lazy toLazyListHelper(a, 0)) as & Impure
-
-    ///
-    /// Helper function for `toList`.
-    ///
-    def toLazyListHelper(a: Array[a], i: Int32): LazyList[a] =
-        if (i == a.length) {
-            ENil
-        } else {
-            let x = a[i] as & Pure; // TODO: Unsafe cast.
-            LCons(x, lazy toLazyListHelper(a, i + 1))
-        }
+    pub def toDelayList(a: Array[a]): DelayList[a] & Impure =
+        let cp = Array.copyOfRange(0, a.length, a);
+        def loop(i) = {
+            if (i == cp.length) {
+                ENil
+            } else {
+                let x = cp[i] as & Pure; // Note this cast is safe, since `cp` is a private copy of `a`.
+                LCons(x, lazy loop(i + 1))
+            }
+        };
+        LList(lazy loop(0))
 
     ///
     /// Returns the array `arr` as a chain.
     ///
     pub def toChain(arr: Array[a]): Chain[a] & Impure =
-        toChainHelper(arr, arr.length, Chain.empty())
-
-    ///
-    /// Helper function for `toChain`.
-    ///
-    def toChainHelper(a: Array[a], i: Int32, ac: Chain[a]): Chain[a] & Impure =
-        if (i == 0) {
-            ac
-        } else {
-            let x = a[i - 1];
-            toChainHelper(a, i - 1, Chain.cons(x, ac))
-        }
+        def loop(i, acc) = {
+            if (i == 0) {
+                acc
+            } else {
+                let x = arr[i - 1];
+                loop(i - 1, Chain.cons(x, acc))
+            }
+        };
+        loop(arr.length, Chain.empty())
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `a`.
@@ -161,12 +163,6 @@ namespace Array {
     ///
     @Time(length(a) + length(b)) @Space(length(a) + length(b))
     pub def append(a: Array[a], b: Array[a]): Array[a] & Impure =
-        appendHelper(a, b)
-
-    ///
-    /// Helper function for `append`.
-    ///
-    def appendHelper(a: Array[a], b: Array[a]): Array[a] & Impure =
         let len1 = length(a);
         let len2 = length(b);
         if (len1 == 0)
@@ -224,73 +220,67 @@ namespace Array {
     pub def indexOf(x: a, a: Array[a]): Option[Int32] & Impure with Eq[a] = indexOfLeft(x,a)
 
     ///
-    /// Optionally returns the position of the first occurence of `x` in `a`
+    /// Optionally returns the position of the first occurrence of `a` in `arr`
     /// searching from left to right.
     ///
-    @Time(length(a)) @Space(1)
-    pub def indexOfLeft(x: a, a: Array[a]): Option[Int32] & Impure with Eq[a] =
-        let i = indexOfLeftHelper(x, a, length(a), 0);
+    @Time(length(arr)) @Space(1)
+    pub def indexOfLeft(a: a, arr: Array[a]): Option[Int32] & Impure with Eq[a] =
+        def loop(i) = {
+            if (i >= arr.length) {
+                -1
+            } else {
+                if (arr[i] == a)
+                    i
+                else
+                    loop(i + 1)
+            }
+        };
+        let i = loop(0);
         if (i < 0) None else Some(i)
 
     ///
-    /// Helper function for `indexOfLeft`.
-    ///
-    def indexOfLeftHelper(x: a, a: Array[a], len:Int32, i: Int32): Int32 & Impure with Eq[a] =
-        if (i >= len)
-            -1
-        else
-            if (a[i] == x)
-                i
-            else
-                indexOfLeftHelper(x, a, len, i+1)
-
-    ///
-    /// Optionally returns the position of the first occurence of `x` in `a`
+    /// Optionally returns the position of the first occurrence of `a` in `arr`
     /// searching from right to left.
     ///
-    @Time(length(a)) @Space(1)
-    pub def indexOfRight(x: a, a: Array[a]): Option[Int32] & Impure with Eq[a] =
-        let start = length(a) - 1;
-        let i = indexOfRightHelper(x, a, start);
+    @Time(length(arr)) @Space(1)
+    pub def indexOfRight(a: a, arr: Array[a]): Option[Int32] & Impure with Eq[a] =
+        def loop(i) = {
+            if (i < 0)
+                -1
+            else
+                if (arr[i] == a)
+                    i
+                else
+                    loop(i - 1)
+        };
+        let i = loop(length(arr) - 1);
         if (i < 0) None else Some(i)
 
     ///
-    /// Helper function for `indexOfRight`.
+    /// Return the positions of the all the occurrences of `a` in `arr`.
     ///
-    def indexOfRightHelper(x: a, a: Array[a], i: Int32): Int32 & Impure with Eq[a] =
-        if (i < 0)
-            -1
-        else
-            if (a[i] == x)
-                i
-            else
-                indexOfRightHelper(x, a, i-1)
-
-    ///
-    /// Return the positions of the all the occurences of `x` in `a`.
-    ///
-    @Time(length(a)) @Space(length(a))
-    pub def indices(x: a, a: Array[a]): Array[Int32] & Impure with Eq[a] =
-        findIndices(y -> x == y, a)
+    @Time(length(arr)) @Space(length(arr))
+    pub def indices(a: a, arr: Array[a]): Array[Int32] & Impure with Eq[a] =
+        findIndices(b -> a == b, arr)
 
     ///
     /// Alias for `findLeft`.
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(xs)) @Space(space(f))
-    pub def find(f: a -> Bool, xs: Array[a]): Option[a] & Impure = findLeft(f, xs)
+    @Time(time(f) * length(arr)) @Space(space(f))
+    pub def find(f: a -> Bool, arr: Array[a]): Option[a] & Impure = findLeft(f, arr)
 
     ///
     /// Optionally returns the first element of `a` that satisfies the predicate `f` when searching from left to right.
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(a)) @Space(space(f))
-    pub def findLeft(f: a -> Bool, a: Array[a]): Option[a] & Impure =
-        match findIndexOfLeft(x -> f(x), a) {
+    @Time(time(f) * length(arr)) @Space(space(f))
+    pub def findLeft(f: a -> Bool, arr: Array[a]): Option[a] & Impure =
+        match findIndexOfLeft(x -> f(x), arr) {
             case None => None
-            case Some(i) => Some(a[i])
+            case Some(i) => Some(arr[i])
         }
 
     ///
@@ -298,11 +288,11 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(a)) @Space(space(f))
-    pub def findRight(f: a -> Bool, a: Array[a]): Option[a] & Impure =
-        match findIndexOfRight(x -> f(x), a) {
+    @Time(time(f) * length(arr)) @Space(space(f))
+    pub def findRight(f: a -> Bool, arr: Array[a]): Option[a] & Impure =
+        match findIndexOfRight(x -> f(x), arr) {
             case None => None
-            case Some(i) => Some(a[i])
+            case Some(i) => Some(arr[i])
         }
 
     ///
@@ -334,30 +324,27 @@ namespace Array {
     ///
     /// Alias for `scanLeft`.
     ///
-    pub def scan(f: (b, a) -> b & ef, s: b, xs: Array[a]): Array[b] & Impure = scanLeft(f, s, xs)
+    pub def scan(f: (b, a) -> b & ef, s: b, arr: Array[a]): Array[b] & Impure = scanLeft(f, s, arr)
 
     ///
-    /// Accumulates the result of applying `f` to `a` going left to right.
+    /// Accumulates the result of applying `f` to `arr` going left to right.
     ///
     /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2),  ...]`.
     ///
-    pub def scanLeft(f: (b, a) -> b & ef, s: b, a: Array[a]): Array[b] & Impure =
-        let len = length(a) + 1;
+    pub def scanLeft(f: (b, a) -> b & ef, s: b, arr: Array[a]): Array[b] & Impure =
+        let len = length(arr) + 1;
         let b = new(s, len);
-        scanLeftHelper(f, s, a, b, len, 1);
+        def loop(i, acc) = {
+            if (i >= len)
+                ()
+            else {
+                let s1 = f(acc, arr[i - 1]);
+                b[i] = s1;
+                loop(i + 1, s1)
+            }
+        };
+        loop(1, s);
         b
-
-    ///
-    /// Helper function for `scanLeft`.
-    ///
-    def scanLeftHelper(f: (b, a) -> b & ef, s: b, a: Array[a], b: Array[b], len: Int32, i: Int32) : Unit & Impure =
-        if (i >= len)
-            ()
-        else {
-            let s1 = f(s, a[i-1]);
-            b[i] = s1;
-            scanLeftHelper(f, s1, a, b, len, i+1)
-        }
 
     ///
     /// Accumulates the result of applying `f` to `xs` going right to left.
@@ -366,21 +353,18 @@ namespace Array {
     ///
     pub def scanRight(f: (a, b) -> b & ef, s: b, a: Array[a]): Array[b] & Impure =
         let len = length(a);
-        let b = new(s, len+1);
-        scanRightHelper(f, s, a, b, len-1);
+        let b = new(s, len + 1);
+        def loop(i, acc) = {
+            if (i < 0)
+                ()
+            else {
+                let s1 = f(a[i], acc);
+                b[i] = s1;
+                loop(i - 1, s1)
+            }
+        };
+        loop(len - 1, s);
         b
-
-    ///
-    /// Helper function for `scanRight`.
-    ///
-    def scanRightHelper(f: (a, b) -> b & ef, s: b, a: Array[a], b: Array[b], i: Int32) : Unit & Impure =
-        if (i < 0)
-            ()
-        else {
-            let s1 = f(a[i], s);
-            b[i] = s1;
-            scanRightHelper(f, s1, a, b, i-1)
-        }
 
     ///
     /// Returns the result of applying `f` to every element in `a`.
@@ -393,22 +377,20 @@ namespace Array {
         init(i -> f(a[i]), len)
 
     ///
-    /// Apply `f` to every element in array `a`. Array `a` is mutated.
+    /// Apply `f` to every element in array `arr`. Array `arr` is mutated.
     ///
-    @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def transform!(f: a -> a, a: mut Array[a]): Unit & Impure =
-        transformHelper!(f, length(a), a, 0)
-
-    ///
-    /// Helper function for `transform!`
-    ///
-    def transformHelper!(f: a -> a, len: Int32, a: mut Array[a], i: Int32): Unit & Impure =
-        if (i >= len)
-            ()
-        else {
-            a[i] = f(a[i]);
-            transformHelper!(f, len, a, i+1)
-        }
+    @Time(time(f) * length(arr)) @Space(space(f) * length(arr))
+    pub def transform!(f: a -> a, arr: mut Array[a]): Unit & Impure =
+        let len = length(arr);
+        def loop(i) = {
+            if (i >= len)
+                ()
+            else {
+                arr[i] = f(arr[i]);
+                loop(i + 1)
+            }
+        };
+        loop(0)
 
     ///
     /// Returns the result of applying `f` to every element in `a` along with that element's index.
@@ -423,20 +405,18 @@ namespace Array {
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
     ///
-    @Time(time(f) * length(a)) @Space(space(f))
-    pub def transformWithIndex!(f: (a, Int32) -> a, a: mut Array[a]): Unit & Impure =
-        transformWithIndexHelper!(f, length(a), a, 0)
-
-    ///
-    /// Helper function for `transformWithIndex!`
-    ///
-    def transformWithIndexHelper!(f: (a, Int32) -> a, len: Int32, a: mut Array[a], i: Int32): Unit & Impure =
-        if (i >= len)
-            ()
-        else {
-            a[i] = f(a[i], i);
-            transformWithIndexHelper!(f, len, a, i+1)
-        }
+    @Time(time(f) * length(arr)) @Space(space(f))
+    pub def transformWithIndex!(f: (a, Int32) -> a, arr: mut Array[a]): Unit & Impure =
+        let len = length(arr);
+        def loop(i) = {
+            if (i >= len)
+                ()
+            else {
+                arr[i] = f(arr[i], i);
+                loop(i + 1)
+            }
+        };
+        loop(0)
 
     ///
     /// Returns the result of applying `f` to every element in `a` and concatenating the results.
@@ -456,67 +436,70 @@ namespace Array {
         init(i -> a[end - i], len)
 
     ///
-    /// Reverse the array `a`, mutating it in place.
+    /// Reverse the array `arr`, mutating it in place.
     ///
-    @Time(length(a)) @Space(1)
-    pub def reverse!(a: mut Array[a]): Unit & Impure =
-        let len = length(a);
-        reverseHelper!(a, len / 2, 0, len - 1)
+    @Time(length(arr)) @Space(1)
+    pub def reverse!(arr: mut Array[a]): Unit & Impure =
+        let len = length(arr);
+        let halflen = len / 2;
+        def loop(i, j) = {
+            if (i >= halflen)
+                ()
+            else {
+                let x = arr[i];
+                let y = arr[j];
+                put(y, i, arr);
+                put(x, j, arr);
+                loop(i + 1, j - 1)
+            }
+        };
+        loop(0, len - 1)
 
     ///
-    /// Helper function for `reverse!`.
+    /// Rotate the contents of array `arr` by `n` steps to the left.
     ///
-    def reverseHelper!(a: mut Array[a], halflen: Int32, i: Int32, j: Int32): Unit & Impure =
-        if (i >= halflen)
-            ()
-        else {
-            let x = a[i];
-            let y = a[j];
-            put(y, i, a);
-            put(x, j, a);
-            reverseHelper!(a, halflen, i+1, j-1)
-        }
-
-    ///
-    /// Rotate the contents of array `a` by `n` steps to the left.
-    ///
-    @Time(n) @Space(length(a))
-    pub def rotateLeft(n: Int32, a: Array[a]): Array[a] & Impure =
-        if (length(a) < 1)
+    @Time(n) @Space(length(arr))
+    pub def rotateLeft(n: Int32, arr: Array[a]): Array[a] & Impure =
+        let len = length(arr);
+        if (len < 1)
             []
         else
             if (n < 0)
-                rotateRightHelper(Int32.abs(n), a)
+                rotateRightHelper(Int32.abs(n), arr)
             else
-                rotateLeftHelper(n, a)
+                rotateLeftHelper(n, arr)
 
     ///
-    /// Helper function for `rotateLeft`.
+    /// Helper function for `rotateLeft` and `rotateRight`.
     ///
     /// Precondition: `n` must be positive.
     ///
-    def rotateLeftHelper(n: Int32, a: Array[a]): Array[a] & Impure =
-        let len = length(a);
-        let f = i -> { let i1 = n + i; a[i1 rem len] };
+    /// This is an explicit helper to avoid code duplication.
+    ///
+    def rotateLeftHelper(n: Int32, arr: Array[a]): Array[a] & Impure =
+        let len = length(arr);
+        let f = i -> { let i1 = n + i; arr[i1 rem len] };
         init(f, len)
 
     ///
-    /// Rotate the contents of array `a` by `n` steps to the right.
+    /// Rotate the contents of array `arr` by `n` steps to the right.
     ///
-    @Time(n) @Space(length(a))
-    pub def rotateRight(n: Int32, a: Array[a]): Array[a] & Impure =
-        if (length(a) < 1)
+    @Time(n) @Space(length(arr))
+    pub def rotateRight(n: Int32, arr: Array[a]): Array[a] & Impure =
+        if (length(arr) < 1)
             []
         else
             if (n < 0)
-                rotateLeftHelper(Int32.abs(n), a)
+                rotateLeftHelper(Int32.abs(n), arr)
             else
-                rotateRightHelper(n, a)
+                rotateRightHelper(n, arr)
 
     ///
-    /// Helper function for `rotateRight`.
+    /// Helper function for `rotateRight` and `rotateLeft`.
     ///
     /// Precondition: `n` must be positive.
+    ///
+    /// This is an explicit helper to avoid code duplication.
     ///
     def rotateRightHelper(n: Int32, a: Array[a]): Array[a] & Impure =
         let len = length(a);
@@ -645,19 +628,17 @@ namespace Array {
     /// Helper function for `intercalate` and `flatten`.
     ///
     def headArrays(arrs: Array[Array[a]]): Option[a] & Impure =
-        headArraysHelper(arrs, length(arrs), 0)
-
-    ///
-    /// Helper function for `headArrays`.
-    ///
-    def headArraysHelper(arrs: Array[Array[a]], len: Int32, i: Int32): Option[a] & Impure =
-        if (i >= len)
-            None
-        else
-            match head(arrs[i]) {
-                case Some(x) => Some(x)
-                case None => headArraysHelper(arrs, len, i+1)
-            }
+        let len = length(arrs);
+        def loop(i) = {
+            if (i >= len)
+                None
+            else
+                match head(arrs[i]) {
+                    case Some(x) => Some(x)
+                    case None    => loop(i + 1)
+                }
+        };
+        loop(0)
 
     ///
     /// Returns the transpose of `a`.
@@ -692,19 +673,16 @@ namespace Array {
         if (len1 > length(a2))
             false
         else
-            isPrefixOfHelper(a1, a2, len1, 0)
-
-    ///
-    /// Helper function for `isPrefixOf`.
-    ///
-    def isPrefixOfHelper(a1: Array[a], a2: Array[a], len: Int32, i: Int32): Bool & Impure with Eq[a] =
-        if (i >= len)
-            true
-        else
-            if (a1[i] != a2[i])
-                false
-            else
-                isPrefixOfHelper(a1, a2, len, i+1)
+            def loop(i) = {
+                if (i >= len1)
+                    true
+                else
+                    if (a1[i] != a2[i])
+                        false
+                    else
+                        loop(i + 1)
+            };
+            loop(0)
 
     ///
     /// Returns `true` if and only if `a1` is a infix of `a2`.
@@ -762,64 +740,50 @@ namespace Array {
         if (len1 > len2)
             false
         else
-            isSuffixOfHelper(a1, a2, len1-1, len2-1)
-
-    ///
-    /// Helper function for `isSuffixOf`.
-    ///
-    /// Precondition: i <= j
-    ///
-    def isSuffixOfHelper(a1: Array[a], a2: Array[a], i: Int32, j: Int32): Bool & Impure with Eq[a] =
-        if (i < 0)
-            true
-        else
-            if (a1[i] != a2[j])
-                false
-            else
-                isSuffixOfHelper(a1, a2, i-1, j-1)
+            def loop(i, j) = {
+                if (i < 0)
+                    true
+                else
+                    if (a1[i] != a2[j])
+                        false
+                    else
+                        loop(i - 1, j - 1)
+            };
+            loop(len1 - 1, len2 - 1)
 
     ///
     /// Returns the result of applying `combine` to all the elements in `a`, using `empty` as the initial value.
     ///
-    pub def fold(a: Array[a]): a & Impure with Monoid[a] = foldLeft(Monoid.combine, Monoid.empty(), a)
+    pub def fold(arr: Array[a]): a & Impure with Monoid[a] = foldLeft(Monoid.combine, Monoid.empty(), arr)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, a: Array[a]): b & Impure =
-        foldLeftHelper(f, s, a, length(a), 0)
-
-    ///
-    /// Helper function for `foldLeft`.
-    ///
-    def foldLeftHelper(f: (b, a) -> b & ef, s: b, a: Array[a], len: Int32, i: Int32): b & Impure =
-        if (i >= len)
-            s
-        else {
-            let s1 = f(s, a[i]) as & Impure;
-            foldLeftHelper(f, s1, a, len, i + 1)
-        }
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, arr: Array[a]): b & Impure =
+        let len = length(arr);
+        def loop(i, acc) = {
+            if (i >= len)
+                acc
+            else
+                loop(i + 1, f(acc, arr[i]))
+        };
+        loop(0, s)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from right to left.
     ///
     /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, a: Array[a]): b & Impure =
-        foldRightHelper(f, s, a, length(a) - 1)
-
-    ///
-    /// Helper function for `foldRight`.
-    ///
-    def foldRightHelper(f: (a, b) -> b & ef, s: b, a: Array[a], i: Int32): b & Impure =
-        if (i < 0)
-            s
-        else {
-            let s1 = f(a[i], s) as & Impure;
-            foldRightHelper(f, s1, a, i - 1)
-        }
+    pub def foldRight(f: (a, b) -> b & ef, s: b, arr: Array[a]): b & Impure =
+        def loop(i, acc) = {
+            if (i < 0)
+                acc
+            else
+                loop(i - 1, f(arr[i], acc))
+        };
+        loop(length(arr) - 1, s)
 
     ///
     /// Applies `f` to all elements in `a` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -828,47 +792,34 @@ namespace Array {
     ///
     pub def reduceLeft(f: (a, a) ->  a & ef, a: Array[a]): Option[a] & Impure =
         let len = length(a);
+        def loop(i, acc) = {
+            if (i >= len)
+                acc
+            else
+                loop(i + 1, f(acc, a[i]))
+        };
         if (len == 0)
             None
         else
-            Some(reduceLeftHelper(f, a, a[0], len, 1))
+            Some(loop(1, a[0]))
 
     ///
-    /// Helper function for `reduceLeft`.
+    /// Applies `f` to all elements in `arr` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
     ///
-    def reduceLeftHelper(f: (a, a) ->  a & ef, a: Array[a], x: a, len: Int32, i:Int32): a & Impure =
-        if (i >= len)
-            x
-        else {
-            let s1 = f(x, a[i]) as & Impure;
-            reduceLeftHelper(f, a, s1, len, i+1)
-        }
-
+    /// Returns `None` if `arr` is empty.
     ///
-    /// Applies `f` to all elements in `a` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
-    ///
-    /// Returns `None` if `a` is empty.
-    ///
-    pub def reduceRight(f: (a, a) -> a & ef, a: Array[a]): Option[a] & Impure =
-        let len = length(a);
+    pub def reduceRight(f: (a, a) -> a & ef, arr: Array[a]): Option[a] & Impure =
+        let len = length(arr);
+        def loop(i, acc) = {
+            if (i < 0)
+                acc
+            else
+                loop(i - 1, f(arr[i], acc))
+        };
         if (len == 0)
             None
-        else {
-            let end = len - 1;
-            let ac = a[end];
-            Some(reduceRightHelper(f, a, ac, end-1))
-        }
-
-    ///
-    /// Helper function for `reduceRight`.
-    ///
-    def reduceRightHelper(f: (a, a) -> a & ef, a: Array[a], x: a, i:Int32): a & Impure =
-        if (i < 0)
-            x
-        else {
-            let s1 = f(a[i], x) as & Impure;
-            reduceRightHelper(f, a, s1, i-1)
-        }
+        else
+            Some(loop(len - 2, arr[len - 1]))
 
     ///
     /// Returns the number of elements in `a` that satisfy the predicate `f`.
@@ -923,81 +874,72 @@ namespace Array {
         }
 
     ///
-    /// Returns `true` if and only if at least one element in `a` satisfies the predicate `f`.
+    /// Returns `true` if and only if at least one element in `arr` satisfies the predicate `f`.
     ///
-    /// Returns `false` if `a` is empty.
+    /// Returns `false` if `arr` is empty.
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(a)) @Space(space(f))
-    pub def exists(f: a -> Bool, a: Array[a]): Bool & Impure =
-        existsHelper(f, a, length(a), 0)
-
-    ///
-    /// Helper function for `exists`.
-    ///
-    def existsHelper(f: a -> Bool, a: Array[a], len: Int32, i: Int32): Bool & Impure =
-        if (i >= len)
-            false
-        else
-            if (f(a[i]) == true)
-                true
-            else
-                existsHelper(f, a, len, i+1)
-
-    ///
-    /// Returns `true` if and only if all elements in `a` satisfy the predicate `f`.
-    ///
-    /// Returns `true` if `a` is empty.
-    ///
-    @Time(time(f) * length(a)) @Space(space(f))
-    pub def forall(f: a -> Bool, a: Array[a]): Bool & Impure =
-        forallHelper(f, a, length(a), 0)
-
-    ///
-    /// Helper function for `forall`.
-    ///
-    def forallHelper(f: a -> Bool, a: Array[a], len: Int32, i: Int32): Bool & Impure =
-        if (i >= len)
-            true
-        else
-            if (f(a[i]) == false)
+    @Time(time(f) * length(arr)) @Space(space(f))
+    pub def exists(f: a -> Bool, arr: Array[a]): Bool & Impure =
+        let len = length(arr);
+        def loop(i) = {
+            if (i >= len)
                 false
             else
-                forallHelper(f, a, len, i+1)
+                if (f(arr[i]) == true)
+                    true
+                else
+                    loop(i + 1)
+        };
+        loop(0)
 
     ///
-    /// Returns an array of every element in `a` that satisfies the predicate `f`.
+    /// Returns `true` if and only if all elements in `arr` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `arr` is empty.
+    ///
+    @Time(time(f) * length(arr)) @Space(space(f))
+    pub def forall(f: a -> Bool, arr: Array[a]): Bool & Impure =
+        let len = length(arr);
+        def loop(i) = {
+            if (i >= len)
+                true
+            else
+                if (f(arr[i]) == false)
+                    false
+                else
+                    loop(i + 1)
+        };
+        loop(0)
+
+    ///
+    /// Returns an array of every element in `arr` that satisfies the predicate `f`.
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def filter(f: a -> Bool, a: Array[a]): Array[a] & Impure =
-        let len = length(a);
+    @Time(time(f) * length(arr)) @Space(space(f) * length(arr))
+    pub def filter(f: a -> Bool, arr: Array[a]): Array[a] & Impure =
+        let len = length(arr);
         if (len < 1) {
             []
         } else {
-            let out = new(a[0], len);
-            let endPos = filterHelper(f, 0, a, 0, out);
+            let out = new(arr[0], len);
+            def loop(i, j) = {
+                if (i >= len)
+                    j
+                else {
+                    let x = arr[i];
+                    if (f(x)) {
+                        out[j] = x;
+                        loop(i + 1, j + 1)
+                    } else {
+                        loop(i + 1, j)
+                    }
+                }
+            };
+            let endPos = loop(0, 0);
             slice(0, endPos, out)
-        }
-
-    ///
-    /// Helper function for `filter`.
-    /// The array `out` is mutated if successes are found as the initial array `a` is iterated.
-    /// The returned Int32 is the current "write position" and it tells the calling function where to slice `out`.
-    ///
-    def filterHelper(f: a -> Bool, aix: Int32, a: Array[a], oix: Int32, out: Array[a]): Int32 & Impure =
-        if (aix >= length(a))
-            oix
-        else {
-            let x = a[aix];
-            if (f(x)) {
-                out[oix] = x;
-                filterHelper(f, aix + 1, a, oix + 1, out)
-            } else {
-                filterHelper(f, aix + 1, a, oix, out)
-            }
         }
 
     ///
@@ -1070,7 +1012,6 @@ namespace Array {
 
     ///
     /// Alias for `dropWhileLeft`.
-    ///
     ///
     /// The function `f` must be pure.
     ///
@@ -1265,20 +1206,13 @@ namespace Array {
     pub def foldLeft2(f: (c, a, b) ->  c & ef, c: c, a: Array[a], b: Array[b]): c & Impure =
         let lena = length(a);
         let lenb = length(b);
-        foldLeft2Helper(f, c, a, b, lena, lenb, 0)
-
-    ///
-    /// Helper function for `foldLeft2`.
-    ///
-    def foldLeft2Helper(f: (c, a, b) ->  c & ef, s: c, a: Array[a], b: Array[b], lena: Int32, lenb: Int32, i: Int32): c & Impure =
-        if (i >= lena or i >= lenb)
-            s
-        else {
-            let x = a[i];
-            let y = b[i];
-            let s1 = f(s, x, y) as & Impure;
-            foldLeft2Helper(f, s1, a, b, lena, lenb, i+1)
-        }
+        def loop(i, acc) = {
+            if (i >= lena or i >= lenb)
+                acc
+            else
+                loop(i + 1, f(acc, a[i], b[i]))
+        };
+        loop(0, c)
 
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `a` and `b`
@@ -1286,22 +1220,15 @@ namespace Array {
     ///
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f))
     pub def foldRight2(f: (a, b, c) -> c & ef, c: c, a: Array[a], b: Array[b]): c & Impure =
+        def loop(i, j, acc) = {
+            if (i < 0 or j < 0)
+                acc
+            else
+                loop(i - 1, j - 1, f(a[i], b[j], acc))
+        };
         let starta = length(a) - 1;
         let startb = length(b) - 1;
-        foldRight2Helper(f, c, a, b, starta, startb)
-
-    ///
-    /// Helper function for `foldRight2`.
-    ///
-    def foldRight2Helper(f: (a, b, c) -> c & ef, s: c, a: Array[a], b: Array[b], ia: Int32, ib: Int32): c & Impure =
-        if (ia < 0 or ib < 0)
-            s
-        else {
-            let x = a[ia];
-            let y = b[ib];
-            let s1 = f(x, y, s) as & Impure;
-            foldRight2Helper(f, s1, a, b, ia - 1, ib - 1)
-        }
+        loop(starta, startb, c)
 
     ///
     /// Collects the results of applying the partial function `f` to every element in `a`.
@@ -1319,21 +1246,18 @@ namespace Array {
     ///
     @Time(time(f) * length(a)) @Space(space(f))
     pub def findMap(f: a -> Option[b] & ef, a: Array[a]): Option[b] & Impure =
-        findMapHelper(f, a, length(a), 0)
-
-    ///
-    /// Helper function for `findMap`.
-    ///
-    def findMapHelper(f: a -> Option[b] & ef, a: Array[a], len: Int32, i: Int32): Option[b] & Impure =
-        if (i >= len)
-            None
-        else {
-            let x = f(a[i]);
-            match x {
-                case Some(v) => Some(v)
-                case None => findMapHelper(f, a, len, i+1)
-            }
-        }
+        let len = length(a);
+        def loop(i) = {
+            if (i >= len)
+                None
+            else
+                let x = f(a[i]);
+                match x {
+                    case Some(v) => Some(v)
+                    case None    => loop(i + 1)
+                }
+        };
+        loop(0)
 
     ///
     /// Returns the array `a` as a set.
@@ -1355,85 +1279,77 @@ namespace Array {
     /// Returns the array `a` as a MutList.
     ///
     pub def toMutList(a: Array[a]): MutList[a] & Impure =
-        MutList(ref a, ref length(a))
+        let minCap = MutList.minCapacity();
+        let len = length(a);
+        if (len < minCap)
+            MutList(ref copyOfRange(0, minCap, a), ref len)
+        else
+            MutList(ref a, ref length(a))
 
     ///
     /// Alias for `findIndexOfLeft`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def findIndexOf(f: a -> Bool, a: Array[a]): Option[Int32] & Impure = findIndexOfLeft(f,a)
+    pub def findIndexOf(f: a -> Bool & ef, a: Array[a]): Option[Int32] & Impure = findIndexOfLeft(f,a)
 
     ///
     /// Optionally returns the position of the first element in `x` satisfying `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def findIndexOfLeft(f: a -> Bool, a: Array[a]): Option[Int32] & Impure =
-        if (length(a) < 1)
+    pub def findIndexOfLeft(f: a -> Bool & ef, a: Array[a]): Option[Int32] & Impure =
+        let len = length(a);
+        if (len < 1)
             None
         else {
-            let i = findIndexOfLeftHelper(f, a, 0);
+            def loop(i) = {
+                if (i >= len)
+                    -1
+                else
+                    if (f(a[i]))
+                        i
+                    else
+                        loop(i + 1)
+            };
+            let i = loop(0);
             if (i < 0) None else Some(i)
         }
-
-    ///
-    /// Helper function for `findIndexOfLeft`.
-    ///
-    def findIndexOfLeftHelper(f: a -> Bool, a: Array[a], i: Int32): Int32 & Impure =
-        if (i >= length(a))
-            -1
-        else
-            if (f(a[i]))
-                i
-            else
-                findIndexOfLeftHelper(f, a, i + 1)
 
     ///
     /// Optionally returns the position of the first element in `a` satisfying `f`
     /// searching from right to left.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def findIndexOfRight(f: a -> Bool, a: Array[a]): Option[Int32] & Impure =
+    pub def findIndexOfRight(f: a -> Bool & ef, a: Array[a]): Option[Int32] & Impure =
         let len = length(a);
-        let i = findIndexOfRightHelper(f, a, len-1);
-        if (i < 0) None else Some(i)
-
-    ///
-    /// Helper function for `findIndexOfRight`.
-    ///
-    def findIndexOfRightHelper(f: a -> Bool, a: Array[a], i: Int32): Int32 & Impure =
-        if (i < 0)
-            -1
-        else
-            if (f(a[i]))
-                i
+        def loop(i) = {
+            if (i < 0)
+                -1
             else
-                findIndexOfRightHelper(f, a, i - 1)
+                if (f(a[i]))
+                    i
+                else
+                    loop(i - 1)
+        };
+        let i = loop(len - 1);
+        if (i < 0) None else Some(i)
 
     ///
     /// Returns the positions of the all the elements in `a` satisfying `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def findIndices(f: a -> Bool, a: Array[a]): Array[Int32] & Impure =
-        findIndicesHelper(f, a, length(a), 0) |> List.toArray
-
-    ///
-    /// Helper function for `findIndices`.
-    ///
-    def findIndicesHelper(f: a -> Bool, a: Array[a], len: Int32, i: Int32): List[Int32] & Impure =
-        if (i >= len)
-            Nil
-        else {
-            let r = findIndicesHelper(f, a, len, i+1);
-            if (f(a[i])) i :: r else r
-        }
+    pub def findIndices(f: a -> Bool & ef, a: Array[a]): Array[Int32] & Impure =
+        let len = length(a);
+        let l = MutList.new();
+        def loop(i) = {
+            if (i >= len)
+                Nil
+            else {
+                if (f(a[i])) MutList.push!(i, l) else ();
+                loop(i + 1)
+            }
+        };
+        loop(0);
+        MutList.toArray(l)
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
@@ -1445,47 +1361,39 @@ namespace Array {
         else {
             let x = f(0);
             let a = new(x, len);
-            initHelper(a, f, len, 1);
+            def loop(i) = {
+                if (i < len) {
+                    a[i] = f(i);
+                    loop(i + 1)
+                } else
+                    ()
+            };
+            loop(1);
             a
-        }
-
-    ///
-    /// Helper function for `init`.
-    ///
-    def initHelper(a: Array[a], f: Int32 -> a & ef, len: Int32, i: Int32): Unit & Impure =
-        if (i >= len)
-            ()
-        else {
-            a[i] = f(i);
-            initHelper(a, f, len, i+1)
         }
 
     ///
     /// Build a pair of arrays of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init2(f: Int32 -> (a,b) & ef, len: Int32): (Array[a], Array[b]) & Impure =
+    pub def init2(f: Int32 -> (a, b) & ef, len: Int32): (Array[a], Array[b]) & Impure =
         if (len <= 0)
             ([], [])
         else {
-            let (x,y) = f(0);
-            let a = new(x, len);
-            let b = new(y, len);
-            init2Helper(a, b, f, len, 1);
-            (a, b)
-        }
-
-    ///
-    /// Helper function for `init2`.
-    ///
-    def init2Helper(a: Array[a], b: Array[b], f: Int32 -> (a,b) & ef, len: Int32, i: Int32): Unit & Impure =
-        if (i >= len)
-            ()
-        else {
-            let (x,y) = f(i);
-            a[i] = x as a & ef;
-            b[i] = y as b & ef;
-            init2Helper(a, b, f, len, i+1)
+            let (x, y) = f(0);
+            let arr = new(x, len);
+            let brr = new(y, len);
+            def loop(i) = {
+                if (i < len) {
+                    let (a, b) = f(i);
+                    arr[i] = a;
+                    brr[i] = b;
+                    loop(i + 1)
+                } else
+                    ()
+            };
+            loop(1);
+            (arr, brr)
         }
 
     ///
@@ -1495,22 +1403,19 @@ namespace Array {
     pub def sameElements(a: Array[a], b: Array[a]): Bool & Impure with Eq[a] =
         let alen = length(a);
         let blen = length(b);
+        def loop(i) = {
+            if (i >= alen)
+                true
+            else
+                if (a[i] != b[i])
+                    false
+                else
+                    loop(i + 1)
+        };
         if (alen == blen)
-            sameElementsHelper(a, b, alen, 0)
+            loop(0)
         else
             false
-
-    ///
-    /// Helper function for `sameElements`.
-    ///
-    def sameElementsHelper(a: Array[a], b: Array[a], len: Int32, i: Int32): Bool & Impure with Eq[a] =
-        if (i >= len)
-            true
-        else
-            if (a[i] != b[i])
-                false
-            else
-                sameElementsHelper(a, b, len, i+1)
 
     ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
@@ -1518,21 +1423,18 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f))
     pub def foreach(f: a -> Unit & ef, a: Array[a]): Unit & Impure =
         let len = length(a);
+        def loop(i) = {
+            if (i >= len)
+                ()
+            else {
+                f(a[i]);
+                loop(i + 1)
+            }
+        };
         if (len < 1)
             ()
         else
-            foreachHelper(f, a, len, 0)
-
-    ///
-    /// Helper function for `foreach`.
-    ///
-    def foreachHelper(f: a -> Unit & ef, a: Array[a], len: Int32, i: Int32): Unit & Impure =
-        if (i >= len)
-            ()
-        else {
-            f(a[i]);
-            foreachHelper(f, a, len, i + 1)
-        }
+            loop(0)
 
     ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
@@ -1540,40 +1442,33 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f))
     pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, a: Array[a]): Unit & Impure =
         let len = length(a);
+        def loop(i) = {
+            if (i >= len)
+                ()
+            else {
+                f(a[i], i);
+                loop(i + 1)
+            }
+        };
         if (len < 1)
             ()
         else
-            foreachWithIndexHelper(f, a, len, 0)
-
-    ///
-    /// Helper function for `foreachWithIndex`.
-    ///
-    def foreachWithIndexHelper(f: (a, Int32) -> Unit & ef, a: Array[a], len: Int32, i: Int32): Unit & Impure =
-        if (i >= len)
-            ()
-        else {
-            f(a[i], i);
-            foreachWithIndexHelper(f, a, len, i + 1)
-        }
+            loop(0)
 
     ///
     /// Apply the effectful function `f` to all the elements in the array `a` and the accumulator `s`.
     /// The function returns the final value of the accumulator `s`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    def foreachAccum(f: (a, st) -> st & ef, s: st, a: Array[a]): st & Impure =
-        foreachAccumHelper(f, a, length(a), s, 0)
-
-    ///
-    /// Helper function for `foreachAccum`.
-    ///
-    def foreachAccumHelper(f: (a, st) -> st & ef, a: Array[a], len: Int32, s: st, i: Int32): st & Impure =
-        if (i >= len)
-            s
-        else {
-            let s1 = f(a[i], s);
-            foreachAccumHelper(f, a, len, s1, i + 1)
-        }
+    def foreachAccum(f: (a, b) -> b & ef, s: b, a: Array[a]): b & Impure =
+        let len = length(a);
+        def loop(i, acc) = {
+            if (i >= len)
+                acc
+            else
+                loop(i + 1, f(a[i], acc))
+        };
+        loop(0, s)
 
     ///
     /// Returns a copy of `a` with the elements starting at index `i` replaced by `sub`.
@@ -1607,10 +1502,10 @@ namespace Array {
         let sb = StringBuilder.new();
         let step = (x,i) ->
             if (i == 0)
-                StringBuilder.appendString!(sb, f(x))
+                StringBuilder.appendString!(f(x), sb)
             else {
-                StringBuilder.appendString!(sb, sep);
-                StringBuilder.appendString!(sb, f(x))
+                StringBuilder.appendString!(sep, sb);
+                StringBuilder.appendString!(f(x), sb)
             };
         foreachWithIndex(step, a);
         StringBuilder.toString(sb)
@@ -1630,7 +1525,7 @@ namespace Array {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foldLeft((_, x) -> { append!(sb, f(x)); append!(sb, sep) }, (), a);
+        foreach(x -> { append!(f(x), sb); append!(sep, sb) }, a);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
 
     ///
@@ -1769,43 +1664,43 @@ namespace Array {
         match (reifyType a) {
             case ErasedType =>
                 let arr = a as Array[##java.lang.Object];
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32): Array[##java.lang.Object] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedBool =>
                 let arr = a as Array[Bool];
-                import static java.util.Arrays.copyOfRange(Array[Bool], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Bool], Int32, Int32): Array[Bool] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedChar =>
                 let arr = a as Array[Char];
-                import static java.util.Arrays.copyOfRange(Array[Char], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Char], Int32, Int32): Array[Char] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedFloat32 =>
                 let arr = a as Array[Float32];
-                import static java.util.Arrays.copyOfRange(Array[Float32], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Float32], Int32, Int32): Array[Float32] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedFloat64 =>
                 let arr = a as Array[Float64];
-                import static java.util.Arrays.copyOfRange(Array[Float64], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Float64], Int32, Int32): Array[Float64] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedInt8 =>
                 let arr = a as Array[Int8];
-                import static java.util.Arrays.copyOfRange(Array[Int8], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Int8], Int32, Int32): Array[Int8] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedInt16 =>
                 let arr = a as Array[Int16];
-                import static java.util.Arrays.copyOfRange(Array[Int16], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Int16], Int32, Int32): Array[Int16] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedInt32 =>
                 let arr = a as Array[Int32];
-                import static java.util.Arrays.copyOfRange(Array[Int32], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Int32], Int32, Int32): Array[Int32] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedInt64 =>
                 let arr = a as Array[Int64];
-                import static java.util.Arrays.copyOfRange(Array[Int64], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[Int64], Int32, Int32): Array[Int64] & Impure as copy;
                 copy(arr, b, e) as Array[a]
             case ReifiedArray(_) =>
                 let arr = a as Array[##java.lang.Object];
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32) as copy;
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32): Array[##java.lang.Object] & Impure as copy;
                 copy(arr, b, e) as Array[a]
         }
 

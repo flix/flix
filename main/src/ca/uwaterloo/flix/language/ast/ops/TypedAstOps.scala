@@ -150,6 +150,9 @@ object TypedAstOps {
       case Expression.Ref(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
+      case Expression.RefWithRegion(exp1, exp2, tpe, eff, loc) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0)
+
       case Expression.Deref(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
@@ -264,7 +267,7 @@ object TypedAstOps {
       * Finds the holes and hole contexts in the given body predicate `b0`.
       */
     def visitBody(b0: Predicate.Body, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = b0 match {
-      case Predicate.Body.Atom(_, _, _, _, _, _) => Map.empty
+      case Predicate.Body.Atom(_, _, _, _, _, _, _) => Map.empty
       case Predicate.Body.Guard(exp, _) => visitExp(exp, env0)
       case Predicate.Body.Loop(_, exp, _) => visitExp(exp, env0)
     }
@@ -373,6 +376,7 @@ object TypedAstOps {
     case Expression.ArrayStore(base, index, elm, _) => sigSymsOf(base) ++ sigSymsOf(index) ++ sigSymsOf(elm)
     case Expression.ArraySlice(base, beginIndex, endIndex, _, _) => sigSymsOf(base) ++ sigSymsOf(beginIndex) ++ sigSymsOf(endIndex)
     case Expression.Ref(exp, _, _, _) => sigSymsOf(exp)
+    case Expression.RefWithRegion(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Deref(exp, _, _, _) => sigSymsOf(exp)
     case Expression.Assign(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Ascribe(exp, _, _, _) => sigSymsOf(exp)
@@ -555,6 +559,9 @@ object TypedAstOps {
     case Expression.Ref(exp, _, _, _) =>
       freeVars(exp)
 
+    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
     case Expression.Deref(exp, _, _, _) =>
       freeVars(exp)
 
@@ -719,7 +726,7 @@ object TypedAstOps {
     * Returns the free variables in the given body predicate `body0`.
     */
   private def freeVars(body0: Predicate.Body): Map[Symbol.VarSym, Type] = body0 match {
-    case Body.Atom(_, _, _, terms, _, _) =>
+    case Body.Atom(_, _, _, _, terms, _, _) =>
       terms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, term) => acc ++ freeVars(term)
       }

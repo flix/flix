@@ -1906,6 +1906,44 @@ def toArray04(): Bool & Impure =
     Array.sameElements(a, [1,2,3])
 
 /////////////////////////////////////////////////////////////////////////////
+// toNel                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toNel01(): Bool = List.toNel(Nil: List[Unit]) == None
+
+@test
+def toNel02(): Bool = List.toNel(1 :: Nil) == Some(Nel(1, Nil))
+
+@test
+def toNel03(): Bool = List.toNel(1 :: 2 :: Nil) == Some(Nel(1, 2 :: Nil))
+
+@test
+def toNel04(): Bool = List.toNel(1 :: 1 :: Nil) == Some(Nel(1, 1 :: Nil))
+
+@test
+def toNel05(): Bool = List.toNel(2 :: 1 :: Nil) == Some(Nel(2, 1 :: Nil))
+
+/////////////////////////////////////////////////////////////////////////////
+// toNec                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toNec01(): Bool = List.toNec(Nil: List[Unit]) == None
+
+@test
+def toNec02(): Bool = List.toNec(1 :: Nil) == Some(Nec.singleton(1))
+
+@test
+def toNec03(): Bool = List.toNec(1 :: 2 :: Nil) == Some(Nec.cons(1, Nec.singleton(2)))
+
+@test
+def toNec04(): Bool = List.toNec(1 :: 1 :: Nil) == Some(Nec.cons(1, Nec.singleton(1)))
+
+@test
+def toNec05(): Bool = List.toNec(2 :: 1 :: Nil) == Some(Nec.cons(2, Nec.singleton(1)))
+
+/////////////////////////////////////////////////////////////////////////////
 // sortWith                                                                //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2354,17 +2392,17 @@ def distinctWith09(): Bool =
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toLazyList                                                              //
+    // toDelayList                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toLazyList01(): Bool = Nil: List[Unit] |> List.toLazyList == LazyList.empty()
+    def toDelayList01(): Bool = Nil: List[Unit] |> List.toDelayList == DelayList.empty()
 
     @test
-    def toLazyList02(): Bool = List.range(-1000, 1000) |> List.toLazyList == LazyList.range(-1000, 1000)
+    def toDelayList02(): Bool = List.range(-1000, 1000) |> List.toDelayList == DelayList.range(-1000, 1000)
 
     @test
-    def toLazyList03(): Bool = List.range(-1000, 1000) |> List.toLazyList |> LazyList.toList == List.range(-1000, 1000)
+    def toDelayList03(): Bool = List.range(-1000, 1000) |> List.toDelayList |> DelayList.toList == List.range(-1000, 1000)
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
