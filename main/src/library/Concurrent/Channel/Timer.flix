@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-namespace Timer {
+namespace Concurrent/Channel/Timer {
 
     ///
     /// Returns a channel that receives the Unit value after `n` days.
     ///
     pub def days(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
-        spawn sleepAndSend(n * Duration.oneDay(), c);
+        spawn sleepAndSend(n * Time/Duration.oneDay(), c);
         c
 
     ///
@@ -29,7 +29,7 @@ namespace Timer {
     ///
     pub def hours(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
-        spawn sleepAndSend(n * Duration.oneHour(), c);
+        spawn sleepAndSend(n * Time/Duration.oneHour(), c);
         c
 
     ///
@@ -37,7 +37,7 @@ namespace Timer {
     ///
     pub def minutes(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
-        spawn sleepAndSend(n * Duration.oneMinute(), c);
+        spawn sleepAndSend(n * Time/Duration.oneMinute(), c);
         c
 
     ///
@@ -45,7 +45,7 @@ namespace Timer {
     ///
     pub def seconds(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
-        spawn sleepAndSend(n * Duration.oneSecond(), c);
+        spawn sleepAndSend(n * Time/Duration.oneSecond(), c);
         c
 
     ///
@@ -53,7 +53,7 @@ namespace Timer {
     ///
     pub def milliseconds(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
-        spawn sleepAndSend(n * Duration.oneMillisecond(), c);
+        spawn sleepAndSend(n * Time/Duration.oneMillisecond(), c);
         c
 
     ///
@@ -61,7 +61,7 @@ namespace Timer {
     ///
     pub def microseconds(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
-        spawn sleepAndSend(n * Duration.oneMicrosecond(), c);
+        spawn sleepAndSend(n * Time/Duration.oneMicrosecond(), c);
         c
 
     ///
@@ -69,13 +69,15 @@ namespace Timer {
     ///
     pub def nanoseconds(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
-        spawn sleepAndSend(n * Duration.oneNanosecond(), c);
+        spawn sleepAndSend(n * Time/Duration.oneNanosecond(), c);
         c
 
     ///
     /// Sleeps for `s` nanoseconds and then sends the Unit value to the given channel `c`.
     ///
     def sleepAndSend(ns: Int64, c: Channel[Unit]): Unit & Impure =
-        import static java.lang.Thread.sleep(Int64);
-        sleep(ns / 1000000i64); c <- (); ()
+        import static java.lang.Thread.sleep(Int64, Int32): Unit & Impure;
+        let millis = ns  /  1_000_000i64;
+        let nanos  = ns mod 1_000_000i64;
+        sleep(millis, Int64.clampToInt32(nanos, 0i32, 1_000_000i32)); c <- (); ()
 }

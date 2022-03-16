@@ -34,41 +34,45 @@ pub lawless class SemiGroup[a] {
 
 }
 
+///
+/// Alias for `SemiGroup.combine`.
+///
+pub def ++(x: a, y: a): a with SemiGroup[a] = SemiGroup.combine(x, y)
+
 instance SemiGroup[Unit] {
     pub def combine(_: Unit, _: Unit): Unit = ()
 }
 
+instance SemiGroup[Int8] {
+    pub def combine(x: Int8, y: Int8): Int8 = x + y
+}
+
+instance SemiGroup[Int16] {
+    pub def combine(x: Int16, y: Int16): Int16 = x + y
+}
+
+instance SemiGroup[Int32] {
+    pub def combine(x: Int32, y: Int32): Int32 = x + y
+}
+
+instance SemiGroup[Int64] {
+    pub def combine(x: Int64, y: Int64): Int64 = x + y
+}
+
+instance SemiGroup[BigInt] {
+    pub def combine(x: BigInt, y: BigInt): BigInt = x + y
+}
+
+instance SemiGroup[Float32] {
+    pub def combine(x: Float32, y: Float32): Float32 = x + y
+}
+
+instance SemiGroup[Float64] {
+    pub def combine(x: Float64, y: Float64): Float64 = x + y
+}
+
 instance SemiGroup[String] {
     pub def combine(x: String, y: String): String = x + y
-}
-
-instance SemiGroup[Option[a]] with SemiGroup[a] {
-    pub def combine(x: Option[a], y: Option[a]): Option[a] = match (x, y) {
-        case (a, None)              => a
-        case (None, b)              => b
-        case (Some(x1), Some(y1))   => Some(SemiGroup.combine(x1, y1))
-    }
-}
-
-instance SemiGroup[List[a]] {
-    pub def combine(x: List[a], y: List[a]): List[a] = x ::: y
-}
-
-instance SemiGroup[Set[a]] with Order[a] {
-    pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x,y)
-}
-
-instance SemiGroup[Map[k,v]] with Order[k], SemiGroup[v] {
-    pub def combine(x: Map[k,v], y: Map[k,v]): Map[k,v] = Map.unionWith(SemiGroup.combine, x, y)
-}
-
-instance SemiGroup[Validation[t, e]] with SemiGroup[t] {
-    pub def combine(x: Validation[t, e], y: Validation[t, e]): Validation[t, e] = match (x, y) {
-        case (Success(x1), Success(y1))     => Success(SemiGroup.combine(x1, y1))
-        case (Failure(es1), Failure(es2))   => Failure(Nel.append(es1, es2))
-        case (Failure(_), _)                => x
-        case (_, Failure(_))                => y
-    }
 }
 
 instance SemiGroup[(a1, a2)] with SemiGroup[a1], SemiGroup[a2] {

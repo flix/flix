@@ -19,8 +19,8 @@ namespace Object {
     /// Returns `true` if the given value `x` is `null`.
     ///
     pub def isNull(x: a): Bool =
-        import static java.util.Objects.isNull(##java.lang.Object);
-        isNull(x as ##java.lang.Object) as & Pure
+        import static java.util.Objects.isNull(##java.lang.Object): Bool & Pure;
+        isNull(x as ##java.lang.Object)
 
     ///
     /// Returns `None` if the given value `x` is `null`, otherwise returns `Some(x)`.
@@ -33,7 +33,7 @@ namespace Object {
     ///
     @Unsafe
     pub def toString(x: a): String =
-        import static java.util.Objects.toString(##java.lang.Object);
-        toString(x as ##java.lang.Object) as & Pure
+        import static java.util.Objects.toString(##java.lang.Object): String & Pure;
+        toString(x as ##java.lang.Object)
 
 }

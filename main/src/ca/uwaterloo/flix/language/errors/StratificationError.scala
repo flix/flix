@@ -29,28 +29,32 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
 
   def kind: String = "Stratification Error"
 
-  def summary: String = "The expression is not stratified. A predicate depends negatively on itself."
+  def summary: String = "The expression is not stratified. A predicate depends strongly on itself."
 
   def message(formatter: Formatter): String = {
     import formatter._
     s"""${line(kind, source.name)}
-       |>> The expression is not stratified. A predicate depends negatively on itself.
+       |>> The expression is not stratified. A predicate depends strongly on itself.
        |
        |${code(loc, "the expression is not stratified.")}
+       |
        |The type of the expression is:
        |
        |  ${cyan(FormatType.formatType(tpe))}
        |
-       |The following predicate symbols are on the negative cycle:
+       |The following predicate symbols are on the cycle:
        |
        |  ${cycle.map(_._1).mkString(" <- ")}
        |
-       |The following constraints are part of the negative cycle:
-       |${constraints(formatter)}
+       |The following constraints are part of the cycle:
+       |${fmtConstraints(formatter)}
        |""".stripMargin
   }
 
-  private def constraints(formatter: Formatter): String = {
+  /**
+    * Formats the constraint dependencies.
+    */
+  private def fmtConstraints(formatter: Formatter): String = {
     cycle.map(t => "  " + formatter.cyan(t._1.name) + " at " + t._2.format + " (which depends on)" + System.lineSeparator()).mkString
   }
 

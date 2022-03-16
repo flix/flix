@@ -18,11 +18,11 @@ pub def listLength(l: Array[Int32]): Benchmark =
         List.length
     } as & Pure)
 
-pub def lazyListLength(l: Array[Int32]): Benchmark =
-    defBenchmark("LazyList.length", () -> {
+pub def delayListLength(l: Array[Int32]): Benchmark =
+    defBenchmark("DelayList.length", () -> {
         l |>
-        Array.toLazyList |>
-        LazyList.length
+        Array.toDelayList |>
+        DelayList.length
     } as & Pure)
 
 pub def streamLength(l: Array[Int32]): Benchmark =
@@ -43,12 +43,12 @@ pub def listFilterLength(l: Array[Int32]): Benchmark =
         List.length
     } as & Pure)
 
-pub def lazyListFilterLength(l: Array[Int32]): Benchmark =
-    defBenchmark("LazyList.filterLength", () -> {
+pub def delayListFilterLength(l: Array[Int32]): Benchmark =
+    defBenchmark("DelayList.filterLength", () -> {
         l |>
-        Array.toLazyList |>
-        LazyList.filter(x -> x rem 2 == 0) |>
-        LazyList.length
+        Array.toDelayList |>
+        DelayList.filter(x -> x rem 2 == 0) |>
+        DelayList.length
     } as & Pure)
 
 pub def streamFilterLength(l: Array[Int32]): Benchmark =
@@ -71,13 +71,13 @@ pub def listFilterMapLength(l: Array[Int32]): Benchmark =
         List.length
     } as & Pure)
 
-pub def lazyListFilterMapLength(l: Array[Int32]): Benchmark =
-    defBenchmark("LazyList.filterMapLength", () -> {
+pub def delayListFilterMapLength(l: Array[Int32]): Benchmark =
+    defBenchmark("DelayList.filterMapLength", () -> {
         l |>
-        Array.toLazyList |>
-        LazyList.filter(x -> x rem 2 == 0) |>
-        LazyList.map(x -> x * x) |>
-        LazyList.length
+        Array.toDelayList |>
+        DelayList.filter(x -> x rem 2 == 0) |>
+        DelayList.map(x -> x * x) |>
+        DelayList.length
     } as & Pure)
 
 pub def streamFilterMapLength(l: Array[Int32]): Benchmark =
@@ -99,11 +99,11 @@ pub def listSum(l: Array[Int32]): Benchmark =
         List.sum
     } as & Pure)
 
-pub def lazyListSum(l: Array[Int32]): Benchmark =
-    defBenchmark("LazyList.sum", () -> {
+pub def delayListSum(l: Array[Int32]): Benchmark =
+    defBenchmark("DelayList.sum", () -> {
         l |>
-        Array.toLazyList |>
-        LazyList.sum
+        Array.toDelayList |>
+        DelayList.sum
     } as & Pure)
 
 pub def streamSum(l: Array[Int32]): Benchmark =
@@ -124,12 +124,12 @@ pub def listFilterSum(l: Array[Int32]): Benchmark =
         List.sum
     } as & Pure)
 
-pub def lazyListFilterSum(l: Array[Int32]): Benchmark =
-    defBenchmark("LazyList.filterSum", () -> {
+pub def delayListFilterSum(l: Array[Int32]): Benchmark =
+    defBenchmark("DelayList.filterSum", () -> {
         l |>
-        Array.toLazyList |>
-        LazyList.filter(x -> x rem 2 == 0) |>
-        LazyList.sum
+        Array.toDelayList |>
+        DelayList.filter(x -> x rem 2 == 0) |>
+        DelayList.sum
     } as & Pure)
 
 pub def streamFilterSum(l: Array[Int32]): Benchmark =
@@ -152,13 +152,13 @@ pub def listFilterMapSum(l: Array[Int32]): Benchmark =
         List.sum
     } as & Pure)
 
-pub def lazyListFilterMapSum(l: Array[Int32]): Benchmark =
-    defBenchmark("LazyList.filterMapSum", () -> {
+pub def delayListFilterMapSum(l: Array[Int32]): Benchmark =
+    defBenchmark("DelayList.filterMapSum", () -> {
         l |>
-        Array.toLazyList |>
-        LazyList.filter(x -> x rem 2 == 0) |>
-        LazyList.map(x -> x * x) |>
-        LazyList.sum
+        Array.toDelayList |>
+        DelayList.filter(x -> x rem 2 == 0) |>
+        DelayList.map(x -> x * x) |>
+        DelayList.sum
     } as & Pure)
 
 pub def streamFilterMapSum(l: Array[Int32]): Benchmark =
@@ -188,19 +188,19 @@ pub def listFilter8(l: Array[Int32]): Benchmark =
         List.length
     } as & Pure)
 
-pub def lazyListFilter8(l: Array[Int32]): Benchmark =
-    defBenchmark("LazyList.filter8", () -> {
+pub def delayListFilter8(l: Array[Int32]): Benchmark =
+    defBenchmark("DelayList.filter8", () -> {
         l |>
-        Array.toLazyList |>
-        LazyList.filter(x -> x > 1) |>
-        LazyList.filter(x -> x > 2) |>
-        LazyList.filter(x -> x > 3) |>
-        LazyList.filter(x -> x > 4) |>
-        LazyList.filter(x -> x > 5) |>
-        LazyList.filter(x -> x > 6) |>
-        LazyList.filter(x -> x > 7) |>
-        LazyList.filter(x -> x > 8) |>
-        LazyList.length
+        Array.toDelayList |>
+        DelayList.filter(x -> x > 1) |>
+        DelayList.filter(x -> x > 2) |>
+        DelayList.filter(x -> x > 3) |>
+        DelayList.filter(x -> x > 4) |>
+        DelayList.filter(x -> x > 5) |>
+        DelayList.filter(x -> x > 6) |>
+        DelayList.filter(x -> x > 7) |>
+        DelayList.filter(x -> x > 8) |>
+        DelayList.length
     } as & Pure)
 
 pub def streamFilter8(l: Array[Int32]): Benchmark =
@@ -236,19 +236,19 @@ pub def listMap8(l: Array[Int32]): Benchmark =
         List.length
     } as & Pure)
 
-pub def lazyListMap8(l: Array[Int32]): Benchmark =
-    defBenchmark("LazyList.map8", () -> {
+pub def delayListMap8(l: Array[Int32]): Benchmark =
+    defBenchmark("DelayList.map8", () -> {
         l |>
-        Array.toLazyList |>
-        LazyList.map(x -> x + 1) |>
-        LazyList.map(x -> x + 2) |>
-        LazyList.map(x -> x + 3) |>
-        LazyList.map(x -> x + 4) |>
-        LazyList.map(x -> x + 5) |>
-        LazyList.map(x -> x + 6) |>
-        LazyList.map(x -> x + 7) |>
-        LazyList.map(x -> x + 8) |>
-        LazyList.length
+        Array.toDelayList |>
+        DelayList.map(x -> x + 1) |>
+        DelayList.map(x -> x + 2) |>
+        DelayList.map(x -> x + 3) |>
+        DelayList.map(x -> x + 4) |>
+        DelayList.map(x -> x + 5) |>
+        DelayList.map(x -> x + 6) |>
+        DelayList.map(x -> x + 7) |>
+        DelayList.map(x -> x + 8) |>
+        DelayList.length
     } as & Pure)
 
 pub def streamMap8(l: Array[Int32]): Benchmark =
@@ -279,14 +279,14 @@ pub def listFlatMapTakeSum(l: Array[Int32]): Benchmark =
         List.sum
     } as & Pure)
 
-pub def lazyListFlatMapTakeSum(l: Array[Int32]): Benchmark =
-    let l2 = LazyList.range(1, 10);
-    defBenchmark("LazyList.flatMapTakeSum", () -> {
+pub def delayListFlatMapTakeSum(l: Array[Int32]): Benchmark =
+    let l2 = DelayList.range(1, 10);
+    defBenchmark("DelayList.flatMapTakeSum", () -> {
         l |>
-        Array.toLazyList |>
-        LazyList.flatMap(x -> LazyList.map(y -> x * y, l2)) |>
-        LazyList.take(100_000) |>  // TODO
-        LazyList.sum
+        Array.toDelayList |>
+        DelayList.flatMap(x -> DelayList.map(y -> x * y, l2)) |>
+        DelayList.take(100_000) |>  // TODO
+        DelayList.sum
     } as & Pure)
 
 pub def streamFlatMapTakeSum(l: Array[Int32]): Benchmark =
@@ -311,13 +311,13 @@ pub def listCartesian(l: Array[Int32]): Benchmark =
         List.sum
     } as & Pure)
 
-pub def lazyListCartesian(l: Array[Int32]): Benchmark =
-    let l2 = LazyList.range(1, 10);
-    defBenchmark("LazyList.cartesian", () -> {
+pub def delayListCartesian(l: Array[Int32]): Benchmark =
+    let l2 = DelayList.range(1, 10);
+    defBenchmark("DelayList.cartesian", () -> {
         l |>
-        Array.toLazyList |>
-        LazyList.flatMap(x -> LazyList.map(y -> x * y, l2)) |>
-        LazyList.sum
+        Array.toDelayList |>
+        DelayList.flatMap(x -> DelayList.map(y -> x * y, l2)) |>
+        DelayList.sum
     } as & Pure)
 
 pub def streamCartesian(l: Array[Int32]): Benchmark =
@@ -358,17 +358,17 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
         listFlatMapTakeSum(l),
         listCartesian(l),
 
-        // LazyList
-        lazyListLength(l),
-        lazyListFilterLength(l),
-        lazyListFilterMapLength(l),
-        lazyListSum(l),
-        lazyListFilterSum(l),
-        lazyListFilterMapSum(l),
-        lazyListFilter8(l),
-        lazyListMap8(l),
-        lazyListFlatMapTakeSum(l),
-        lazyListCartesian(l),
+        // DelayList
+        delayListLength(l),
+        delayListFilterLength(l),
+        delayListFilterMapLength(l),
+        delayListSum(l),
+        delayListFilterSum(l),
+        delayListFilterMapSum(l),
+        delayListFilter8(l),
+        delayListMap8(l),
+        delayListFlatMapTakeSum(l),
+        delayListCartesian(l),
 
         // Stream
         streamLength(l),

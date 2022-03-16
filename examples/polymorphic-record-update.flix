@@ -1,5 +1,5 @@
 /// Returns the record `r` with a new value of its `x` label.
-def setX(r: {x :: Int, y :: Int}, v: Int): {x :: Int, y :: Int} =
+def setX(r: {x :: Int32, y :: Int32}, v: Int32): {x :: Int32, y :: Int32} =
     { x = v | r }
 
 /// Returns the value 1 + 3 = 4.
@@ -10,7 +10,7 @@ def main2(): Int32 =
 
 /// Returns the record `r` with a new value of its `y` label.
 /// Preserves (retains) all other labels polymorphically.
-def setY(r: {y :: Int32 | a}, v: Int): {y :: Int32 | a} =
+def setY(r: {y :: Int32 | a}, v: Int32): {y :: Int32 | a} =
     { y = v | r }
 
 /// Returns the value 0 + 1 + 3 = 4.

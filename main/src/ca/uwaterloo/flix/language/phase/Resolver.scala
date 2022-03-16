@@ -18,11 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation}
+import ca.uwaterloo.flix.language.ast.NamedAst.DefOrSig
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, ParOps, Validation}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import scala.collection.mutable
@@ -51,19 +52,13 @@ object Resolver {
   /**
     * Performs name resolution on the given program `root`.
     */
-  def run(root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
+  def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
     resolveTypeAliases(root.typealiases, root) flatMap {
       case (taenv, taOrder) =>
 
-        val classesVal = root.classes.flatMap {
-          case (ns0, classes) => classes.map {
-            case (_, clazz) => resolveClass(clazz, taenv, ns0, root) map {
-              case s => s.sym -> s
-            }
-          }
-        }
+        val classesVal = resolveClasses(root, taenv, oldRoot, changeSet)
 
         val instancesVal = root.instances.flatMap {
           case (ns0, instances0) => instances0.map {
@@ -73,14 +68,7 @@ object Resolver {
           }
         }
 
-        val definitionsVal = root.defsAndSigs.flatMap {
-          case (ns0, defsAndSigs) => defsAndSigs.collect {
-            case (_, NamedAst.DefOrSig.Def(defn)) => resolveDef(defn, taenv, ns0, root) map {
-              case d => d.sym -> d
-            }
-            // Skip Sigs as they are handled under classes.
-          }
-        }
+        val definitionsVal = resolveDefs(root, taenv, oldRoot, changeSet)
 
         val enumsVal = root.enums.flatMap {
           case (ns0, enums) => enums.map {
@@ -91,13 +79,13 @@ object Resolver {
         }
 
         for {
-          classes <- sequence(classesVal)
+          classes <- classesVal
           instances <- sequence(instancesVal)
-          definitions <- sequence(definitionsVal)
+          definitions <- definitionsVal
           enums <- sequence(enumsVal)
-          _ <- checkSuperClassDag(classes.toMap)
+          _ <- checkSuperClassDag(classes)
         } yield ResolvedAst.Root(
-          classes.toMap, combine(instances), definitions.toMap, enums.toMap, taenv, taOrder, root.reachable, root.sources
+          classes, combine(instances), definitions, enums.toMap, taenv, taOrder, root.reachable, root.sources
         )
     }
 
@@ -265,7 +253,31 @@ object Resolver {
   }
 
   /**
-    * Performs name resolution on the given typeclass `c0` in the given namespace `ns0`.
+    * Resolves all the classes in the given root.
+    */
+  private def resolveClasses(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, ResolvedAst.Class], ResolutionError] = {
+
+    val rootClasses = for {
+      (ns, classes) <- root.classes
+      (_, clazz) <- classes
+    } yield clazz.sym -> (clazz, ns)
+
+    val (staleClasses, freshClasses) = changeSet.partition(rootClasses, oldRoot.classes)
+
+    val results = ParOps.parMap(staleClasses.values) {
+      case (clazz, ns) => resolveClass(clazz, taenv, ns, root)
+    }
+
+    Validation.sequence(results) map {
+      res =>
+        res.foldLeft(freshClasses) {
+          case (acc, clazz) => acc + (clazz.sym -> clazz)
+        }
+    }
+  }
+
+  /**
+    * Resolves all the classes in the given root.
     */
   def resolveClass(c0: NamedAst.Class, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
     case NamedAst.Class(doc, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
@@ -305,6 +317,35 @@ object Resolver {
         exp <- traverse(exp0)(Expressions.resolve(_, Map(fparam.sym -> fparamType), taenv, ns0, root))
         spec <- resolveSpec(spec0, taenv, ns0, root)
       } yield ResolvedAst.Sig(sym, spec, exp.headOption)
+  }
+
+  /**
+    * Resolves all the definitions in the given root.
+    */
+  private def resolveDefs(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, ResolvedAst.Def], ResolutionError] = {
+    def getDef(defOrSig: NamedAst.DefOrSig): Option[NamedAst.Def] = defOrSig match {
+      case DefOrSig.Def(d) => Some(d)
+      case DefOrSig.Sig(_) => None
+    }
+
+    val rootDefs = for {
+      (ns, defsAndSigs) <- root.defsAndSigs
+      (_, defOrSig) <- defsAndSigs
+      defn <- getDef(defOrSig)
+    } yield defn.sym -> (defn, ns)
+
+    val (staleDefs, freshDefs) = changeSet.partition(rootDefs, oldRoot.defs)
+
+    val results = ParOps.parMap(staleDefs.values) {
+      case (defn, ns) => resolveDef(defn, taenv, ns, root)
+    }
+
+    Validation.sequence(results) map {
+      res =>
+        res.foldLeft(freshDefs) {
+          case (acc, defn) => acc + (defn.sym -> defn)
+        }
+    }
   }
 
   /**
@@ -349,6 +390,7 @@ object Resolver {
     val tparams = resolveTypeParams(e0.tparams, ns0, root)
     val tconstrs = Nil
     val derivesVal = resolveDerivations(e0.derives, ns0, root)
+    val annVal = traverse(e0.ann)(visitAnnotation(_, taenv, ns0, root))
     val casesVal = traverse(e0.cases) {
       case (name, NamedAst.Case(enum, tag, tpe)) =>
         for {
@@ -363,12 +405,13 @@ object Resolver {
         }
     }
     for {
+      ann <- annVal
       cases <- casesVal
       tpe <- resolveType(e0.tpe, taenv, ns0, root)
       derives <- derivesVal
     } yield {
       val sc = ResolvedAst.Scheme(tparams.tparams.map(_.tpe), tconstrs, tpe)
-      ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, derives, cases.toMap, tpe, sc, e0.loc)
+      ResolvedAst.Enum(e0.doc, ann, e0.mod, e0.sym, tparams, derives, cases.toMap, tpe, sc, e0.loc)
     }
   }
 
@@ -1089,10 +1132,10 @@ object Resolver {
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
       def resolve(b0: NamedAst.Predicate.Body, tenv0: Map[Symbol.VarSym, Type], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Atom(pred, den, polarity, terms, loc) =>
+        case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
           for {
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, root))
-          } yield ResolvedAst.Predicate.Body.Atom(pred, den, polarity, ts, loc)
+          } yield ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
 
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
           for {
@@ -1475,16 +1518,15 @@ object Resolver {
       case "Char" => Type.mkChar(loc).toSuccess
       case "Float32" => Type.mkFloat32(loc).toSuccess
       case "Float64" => Type.mkFloat64(loc).toSuccess
-      case "Int" => Type.mkInt32(loc).toSuccess
       case "Int8" => Type.mkInt8(loc).toSuccess
       case "Int16" => Type.mkInt16(loc).toSuccess
       case "Int32" => Type.mkInt32(loc).toSuccess
       case "Int64" => Type.mkInt64(loc).toSuccess
       case "BigInt" => Type.mkBigInt(loc).toSuccess
       case "String" => Type.mkString(loc).toSuccess
-      case "Array" => Type.mkArray(loc).toSuccess
       case "Channel" => Type.mkChannel(loc).toSuccess
       case "Lazy" => Type.mkLazy(loc).toSuccess
+      case "ScopedArray" => Type.Cst(TypeConstructor.ScopedArray, loc).toSuccess
       case "ScopedRef" => Type.Cst(TypeConstructor.ScopedRef, loc).toSuccess
       case "Region" => Type.Cst(TypeConstructor.Region, loc).toSuccess
 
@@ -2052,7 +2094,7 @@ object Resolver {
     *
     * An array type is mapped to the corresponding array type.
     */
-  private def getJVMType(tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], ResolutionError] = tpe.typeConstructor match {
+  private def getJVMType(tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], ResolutionError] = Type.eraseAliases(tpe).typeConstructor match {
     case None =>
       ResolutionError.IllegalType(tpe, loc).toFailure
 
@@ -2089,15 +2131,16 @@ object Resolver {
 
       case TypeConstructor.Tuple(_) => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.Array =>
-        tpe.typeArguments match {
-          case elmTyp :: Nil =>
+      case TypeConstructor.ScopedArray =>
+        Type.eraseAliases(tpe).typeArguments match {
+          case elmTyp :: region :: Nil =>
             mapN(getJVMType(elmTyp, loc)) {
               case elmClass =>
                 // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
                 java.lang.reflect.Array.newInstance(elmClass, 0).getClass
             }
-          case _ => ResolutionError.IllegalType(tpe, loc).toFailure
+          case _ =>
+            ResolutionError.IllegalType(tpe, loc).toFailure
         }
 
       case TypeConstructor.Native(clazz) => clazz.toSuccess
@@ -2105,7 +2148,6 @@ object Resolver {
       case TypeConstructor.Record => Class.forName("java.lang.Object").toSuccess
 
       case TypeConstructor.Schema => Class.forName("java.lang.Object").toSuccess
-
 
       case _ => ResolutionError.IllegalType(tpe, loc).toFailure
     }

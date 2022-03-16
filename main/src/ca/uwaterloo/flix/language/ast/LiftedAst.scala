@@ -29,7 +29,7 @@ object LiftedAst {
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[LiftedAst.FormalParam], exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation)
 
-  case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, LiftedAst.Case], tpeDeprecated: Type, loc: SourceLocation)
+  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, LiftedAst.Case], tpeDeprecated: Type, loc: SourceLocation)
 
   sealed trait Expression {
     def tpe: Type
@@ -113,7 +113,7 @@ object LiftedAst {
 
     case class JumpTo(sym: Symbol.LabelSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Let(sym: Symbol.VarSym, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Let(sym: Symbol.VarSym, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
     case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 

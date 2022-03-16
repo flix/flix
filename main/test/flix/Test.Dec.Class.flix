@@ -17,11 +17,11 @@ namespace Test/Dec/Class {
             pub def f(x: a): Bool
         }
 
-        instance X[Int] {
-            pub def f(x: Int): Bool = x == 0
+        instance X[Int32] {
+            pub def f(x: Int32): Bool = x == 0
         }
 
-        pub def g(x: Int): Bool = Test/Dec/Class/Test03/X.f(x)
+        pub def g(x: Int32): Bool = Test/Dec/Class/Test03/X.f(x)
     }
 
     namespace Test04 {
@@ -53,8 +53,8 @@ namespace Test/Dec/Class {
             pub def f(x: a): Bool
         }
 
-        instance C[Int] {
-            pub def f(x: Int): Bool = x == 0
+        instance C[Int32] {
+            pub def f(x: Int32): Bool = x == 0
         }
 
         instance C[List[a]] with C[a] {
@@ -66,7 +66,7 @@ namespace Test/Dec/Class {
             }
         }
 
-        pub def g(x: List[Int]): Bool = Test/Dec/Class/Test06/C.f(x)
+        pub def g(x: List[Int32]): Bool = Test/Dec/Class/Test06/C.f(x)
     }
 
     namespace Test07 {
@@ -111,13 +111,13 @@ namespace Test/Dec/Class {
 
         lawless class E[a] with D[a]
 
-        instance C[Int] {
-            pub def f(_x: Int): Bool = true
+        instance C[Int32] {
+            pub def f(_x: Int32): Bool = true
         }
 
-        instance D[Int]
+        instance D[Int32]
 
-        instance E[Int]
+        instance E[Int32]
 
         pub def g(x: a): Bool with D[a] = Test/Dec/Class/Test10/C.f(x)
 
@@ -132,8 +132,8 @@ namespace Test/Dec/Class {
             law reflexivity: forall (x: a, y: a) . Test/Dec/Class/Test11/C.f(x, y) == Test/Dec/Class/Test11/C.f(y, x)
         }
 
-        instance C[Int] {
-            pub def f(_x: Int, _y: Int): Bool = true
+        instance C[Int32] {
+            pub def f(_x: Int32, _y: Int32): Bool = true
         }
     }
 
@@ -158,10 +158,10 @@ namespace Test/Dec/Class {
             pub def h(): a = Test/Dec/Class/Test13/C.g()
         }
 
-        instance C[Int] {
-            pub def f(): Int = 0
+        instance C[Int32] {
+            pub def f(): Int32 = 0
 
-            override pub def h(): Int = 1
+            override pub def h(): Int32 = 1
         }
 
         @test
@@ -176,14 +176,14 @@ namespace Test/Dec/Class {
 
     namespace Test14 {
         lawless class C[a] {
-            pub def c(x: a): Int
+            pub def c(x: a): Int32
         }
 
         lawless class D[a] with C[a] {
-            pub def d(x: a): Int
+            pub def d(x: a): Int32
         }
 
-        pub def f(x: a): Int with D[a] = Test/Dec/Class/Test14/C.c(x) + Test/Dec/Class/Test14/D.d(x)
+        pub def f(x: a): Int32 with D[a] = Test/Dec/Class/Test14/C.c(x) + Test/Dec/Class/Test14/D.d(x)
     }
 
     namespace Test15 {
@@ -238,10 +238,10 @@ namespace Test/Dec/Class {
         }
 
         @test
-        def testCallComplexBoolSig01(): Bool = M(10): M[true, Int] == M(10): M[true, Int]
+        def testCallComplexBoolSig01(): Bool = M(10): M[true, Int32] == M(10): M[true, Int32]
 
         @test
-        def testCallComplexBoolSig02(): Bool = M(10): M[true, Int] != M(11): M[true, Int]
+        def testCallComplexBoolSig02(): Bool = M(10): M[true, Int32] != M(11): M[true, Int32]
     }
 
     pub enum List[a] {

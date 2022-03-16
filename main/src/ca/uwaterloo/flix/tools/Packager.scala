@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.github.GitHub
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
+import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
 import ca.uwaterloo.flix.util._
 
 import java.io.{File, PrintWriter}
@@ -28,7 +29,7 @@ import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
 import scala.collection.mutable
-import scala.util.Using
+import scala.util.{Using, Success, Failure}
 
 /**
   * An interface to manage flix packages.
@@ -42,7 +43,7 @@ object Packager {
     *
     * The package is installed at `lib/<owner>/<repo>`
     */
-  def install(project: String, p: Path, o: Options): Unit = {
+  def install(project: String, p: Path, o: Options): Result[Unit, Int] = {
     val proj = GitHub.parseProject(project)
     val release = GitHub.getLatestRelease(proj)
     val assets = release.assets.filter(_.name.endsWith(".fpkg"))
@@ -62,6 +63,7 @@ object Packager {
         stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
       }
     }
+    ().toOk
   }
 
   /**
@@ -69,7 +71,7 @@ object Packager {
     *
     * The project must not already exist.
     */
-  def init(p: Path, o: Options): Unit = {
+  def init(p: Path, o: Options): Result[Unit, Int] = {
     //
     // Check that the current working directory is usable.
     //
@@ -138,8 +140,8 @@ object Packager {
     newFile(mainSourceFile) {
       """// The main entry point.
         |def main(_args: Array[String]): Int32 & Impure =
-        |  println("Hello World!");
-        |  0 // exit code
+        |    println("Hello World!");
+        |    0 // exit code
         |""".stripMargin
     }
 
@@ -148,12 +150,13 @@ object Packager {
         |def test01(): Bool = 1 + 1 == 2
         |""".stripMargin
     }
+    ().toOk
   }
 
   /**
     * Type checks the source files for the given project path `p`.
     */
-  def check(p: Path, o: Options): Unit = {
+  def check(p: Path, o: Options): Result[Unit, Int] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -166,16 +169,17 @@ object Packager {
     addSourcesAndPackages(p, o)
 
     flix.check() match {
-      case Validation.Success(_) => ()
+      case Validation.Success(_) => ().toOk
       case Validation.Failure(errors) =>
         errors.foreach(e => println(e.message(flix.getFormatter)))
+        Result.Err(1)
     }
   }
 
   /**
     * Builds (compiles) the source files for the given project path `p`.
     */
-  def build(p: Path, o: Options, loadClasses: Boolean = true)(implicit flix: Flix = new Flix()): Option[CompilationResult] = {
+  def build(p: Path, o: Options, loadClasses: Boolean = true)(implicit flix: Flix = new Flix()): Result[CompilationResult, Int] = {
     flix.setFormatter(AnsiTerminalFormatter)
     // Check that the path is a project path.
     if (!isProjectPath(p))
@@ -183,26 +187,26 @@ object Packager {
 
     // Configure a new Flix object.
     val newOptions = o.copy(
-      targetDirectory = getBuildDirectory(p),
-      loadClassFiles = loadClasses,
-      writeClassFiles = true)
+      output = Some(getBuildDirectory(p)),
+      loadClassFiles = loadClasses
+    )
     flix.setOptions(newOptions)
 
     // Add sources and packages.
     addSourcesAndPackages(p, o)
 
     flix.compile() match {
-      case Validation.Success(r) => Some(r)
+      case Validation.Success(r) => Result.Ok(r)
       case Validation.Failure(errors) =>
         errors.foreach(e => println(e.message(flix.getFormatter)))
-        None
+        1.toErr
     }
   }
 
   /**
     * Adds all source files and packages to the given `flix` object.
     */
-  private def addSourcesAndPackages(p: Path, o: Options)(implicit flix: Flix): Unit = {
+  private def addSourcesAndPackages(p: Path, o: Options)(implicit flix: Flix): Result[Unit, Int] = {
     // Add all source files.
     for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
       if (sourceFile.getFileName.toString.endsWith(".flix")) {
@@ -218,21 +222,25 @@ object Packager {
     }
 
     // Add all library packages.
-    for (file <- getAllFiles(getLibraryDirectory(p))) {
-      if (file.getFileName.toString.endsWith(".fpkg")) {
-        // Case 1: It's a Flix package.
-        flix.addSourcePath(file)
-      } else if (file.getFileName.toString.endsWith(".jar")) {
-        // Case 2: It's a JAR.
-        flix.addJar(file)
+    val lib = getLibraryDirectory(p)
+    if (lib.toFile.isDirectory) {
+      for (file <- getAllFiles(lib)) {
+        if (file.getFileName.toString.endsWith(".fpkg")) {
+          // Case 1: It's a Flix package.
+          flix.addSourcePath(file)
+        } else if (file.getFileName.toString.endsWith(".jar")) {
+          // Case 2: It's a JAR.
+          flix.addJar(file)
+        }
       }
     }
+    ().toOk
   }
 
   /**
     * Builds a jar package for the given project path `p`.
     */
-  def buildJar(p: Path, o: Options): Unit = {
+  def buildJar(p: Path, o: Options): Result[Unit, Int] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -246,32 +254,35 @@ object Packager {
     }
 
     // Construct a new zip file.
-    val zip = new ZipOutputStream(Files.newOutputStream(jarFile))
+    Using(new ZipOutputStream(Files.newOutputStream(jarFile))) { zip =>
+      // META-INF/MANIFEST.MF
+      val manifest =
+        """Manifest-Version: 1.0
+          |Main-Class: Main
+          |""".stripMargin
 
-    // META-INF/MANIFEST.MF
-    val manifest =
-      """Manifest-Version: 1.0
-        |Main-Class: Main
-        |""".stripMargin
+      // Add manifest file.
+      addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
 
-    // Add manifest file.
-    addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
-
-    // Add all class files.
-    for (buildFile <- getAllFiles(getBuildDirectory(p))) {
-      val fileName = getBuildDirectory(p).relativize(buildFile).toString
-      val fileNameWithSlashes = fileName.replace('\\', '/')
-      addToZip(zip, fileNameWithSlashes, buildFile)
+      // Add all class files.
+      for (buildFile <- getAllFiles(getBuildDirectory(p))) {
+        val fileName = getBuildDirectory(p).relativize(buildFile).toString
+        val fileNameWithSlashes = fileName.replace('\\', '/')
+        addToZip(zip, fileNameWithSlashes, buildFile)
+      }
+    } match {
+      case Success(()) => ().toOk
+      case Failure(e) => {
+        println(e.getMessage)
+        1.toErr
+      }
     }
-
-    // Close the zip file.
-    zip.finish()
   }
 
   /**
     * Builds a flix package for the given project path `p`.
     */
-  def buildPkg(p: Path, o: Options): Unit = {
+  def buildPkg(p: Path, o: Options): Result[Unit, Int] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -285,43 +296,47 @@ object Packager {
     }
 
     // Construct a new zip file.
-    val zip = new ZipOutputStream(Files.newOutputStream(pkgFile))
+    Using(new ZipOutputStream(Files.newOutputStream(pkgFile))) { zip =>
+      // Add required resources.
+      addToZip(zip, "HISTORY.md", getHistoryFile(p))
+      addToZip(zip, "LICENSE.md", getLicenseFile(p))
+      addToZip(zip, "README.md", getReadmeFile(p))
 
-    // Add required resources.
-    addToZip(zip, "HISTORY.md", getHistoryFile(p))
-    addToZip(zip, "LICENSE.md", getLicenseFile(p))
-    addToZip(zip, "README.md", getReadmeFile(p))
-
-    // Add all source files.
-    for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
-      val name = p.relativize(sourceFile).toString
-      addToZip(zip, name, sourceFile)
+      // Add all source files.
+      for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
+        val name = p.relativize(sourceFile).toString
+        addToZip(zip, name, sourceFile)
+      }
+    } match {
+      case Success(()) => ().toOk
+      case Failure(e) => {
+        println(e.getMessage)
+        1.toErr
+      }
     }
-
-    // Close the zip file.
-    zip.finish()
   }
 
   /**
     * Runs the main function in flix package for the given project path `p`.
     */
-  def run(p: Path, o: Options): Unit = {
-    for {
-      compilationResult <- build(p, o)
+  def run(p: Path, o: Options): Result[Unit, Int] = {
+    val res = for {
+      compilationResult <- build(p, o).toOption
       main <- compilationResult.getMain
     } yield {
       val exitCode = main(Array.empty)
       println(s"Main exited with status code $exitCode.")
+      resultFor(exitCode)
     }
+    res.getOrElse(1.toErr)
   }
 
   /**
     * Runs all benchmarks in the flix package for the given project path `p`.
     */
-  def benchmark(p: Path, o: Options): Unit = {
-    build(p, o) match {
-      case None => // nop
-      case Some(compilationResult) =>
+  def benchmark(p: Path, o: Options): Result[Unit, Int] = {
+    build(p, o) map {
+      compilationResult =>
         Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
     }
   }
@@ -329,14 +344,16 @@ object Packager {
   /**
     * Runs all tests in the flix package for the given project path `p`.
     */
-  def test(p: Path, o: Options): Tester.OverallTestResult = {
+  def test(p: Path, o: Options): Result[Unit, Int] = {
     implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
-    build(p, o) match {
-      case None => Tester.OverallTestResult.NoTests
-      case Some(compilationResult) =>
+    build(p, o) flatMap {
+      compilationResult =>
         val results = Tester.test(compilationResult)
         Console.println(results.output(flix.getFormatter))
-        results.overallResult
+        results.overallResult match {
+          case Tester.OverallTestResult.Failure => 1.toErr
+          case Tester.OverallTestResult.Success | Tester.OverallTestResult.NoTests => ().toOk
+        }
     }
   }
 
@@ -349,31 +366,29 @@ object Packager {
       throw new RuntimeException(s"The path '$p' is not a flix package.")
 
     // Open the zip file.
-    val zip = new ZipFile(p.toFile)
-
-    // Collect all source and test files.
-    val result = mutable.ListBuffer.empty[Source]
-    val iterator = zip.entries()
-    while (iterator.hasMoreElements) {
-      val entry = iterator.nextElement()
-      val name = entry.getName
-      if (name.endsWith(".flix")) {
-        val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
-        val str = new String(bytes, flix.defaultCharset)
-        val arr = str.toCharArray
-        result += Source(Ast.Input.Text(name, str, stable = false), arr, stable = false)
+    Using(new ZipFile(p.toFile)) { zip =>
+      // Collect all source and test files.
+      val result = mutable.ListBuffer.empty[Source]
+      val iterator = zip.entries()
+      while (iterator.hasMoreElements) {
+        val entry = iterator.nextElement()
+        val name = entry.getName
+        if (name.endsWith(".flix")) {
+          val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
+          val str = new String(bytes, flix.defaultCharset)
+          val arr = str.toCharArray
+          result += Source(Ast.Input.Text(name, str, stable = false), arr, stable = false)
+        }
       }
-    }
-
-    result.toList
+      result.toList
+    }.get // TODO Return a Result instead, see https://github.com/flix/flix/issues/3132
   }
 
   /**
     * Returns `true` if the given path `p` appears to be a flix project path.
     */
   private def isProjectPath(p: Path): Boolean =
-    Files.exists(getLibraryDirectory(p)) &&
-      Files.exists(getSourceDirectory(p)) &&
+    Files.exists(getSourceDirectory(p)) &&
       Files.exists(getTestDirectory(p)) &&
       Files.exists(getHistoryFile(p)) &&
       Files.exists(getLicenseFile(p)) &&
@@ -382,7 +397,7 @@ object Packager {
   /**
     * Returns the package name based on the given path `p`.
     */
-  private def getPackageName(p: Path): String = p.toAbsolutePath.getParent.getFileName.toString
+  private def getPackageName(p: Path): String = p.toAbsolutePath.normalize().getFileName.toString
 
   /**
     * Returns the path to the pkg file based on the given path `p`.
@@ -458,9 +473,7 @@ object Packager {
   private def newFile(p: Path)(s: String): Unit = {
     if (Files.exists(p)) throw InternalCompilerException(s"Path '$p' already exists.")
 
-    val writer = Files.newBufferedWriter(p)
-    writer.write(s)
-    writer.close()
+    Files.writeString(p, s, StandardOpenOption.CREATE_NEW)
   }
 
   /**
@@ -516,15 +529,14 @@ object Packager {
   private def isZipArchive(p: Path): Boolean = {
     if (Files.exists(p) && Files.isReadable(p) && Files.isRegularFile(p)) {
       // Read the first four bytes of the file.
-      val is = Files.newInputStream(p)
-      val b1 = is.read()
-      val b2 = is.read()
-      val b3 = is.read()
-      val b4 = is.read()
-      is.close()
-
-      // Check if the four first bytes match 0x50, 0x4b, 0x03, 0x04
-      return b1 == 0x50 && b2 == 0x4b && b3 == 0x03 && b4 == 0x04
+      return Using(Files.newInputStream(p)) { is =>
+        val b1 = is.read()
+        val b2 = is.read()
+        val b3 = is.read()
+        val b4 = is.read()
+        // Check if the four first bytes match 0x50, 0x4b, 0x03, 0x04
+        return b1 == 0x50 && b2 == 0x4b && b3 == 0x03 && b4 == 0x04
+      }.get
     }
     false
   }
@@ -538,4 +550,14 @@ object Packager {
     }
   }
 
+  /**
+    * Converts the given exit code into a result.
+    */
+  private def resultFor(code: Int): Result[Unit, Int] = {
+    if (code == 0) {
+      ().toOk
+    } else {
+      code.toErr
+    }
+  }
 }

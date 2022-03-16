@@ -1,5 +1,6 @@
 /*
  * Copyright 2017 Magnus Madsen
+ * Copyright 2022 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +17,13 @@
 namespace Console {
 
     ///
+    /// Returns true if there is a `Console` object associated with the current JVM.
+    ///
+    pub def hasConsole(): Bool & Impure =
+        import static java.lang.System.console(): ##java.io.Console & Impure;
+        not Object.isNull(console())
+
+    ///
     /// Reads a single line from the console.
     ///
     /// Returns `None` if nothing was entered or if no console is presented.
@@ -23,12 +31,11 @@ namespace Console {
     /// See also `System/StdIn.readLines`.
     ///
     pub def readLine(): Option[String] & Impure =
-        import static java.lang.System.console();
-        import java.io.Console.readLine() as consoleReadLine;
-        Object.toOption(console()) |> Option.map(consoleReadLine)
+        import java.io.Console.readLine(): String & Impure as consoleReadLine;
+        console() |> Option.map(consoleReadLine)
 
     ///
-    /// Prints `s` to the console.
+    /// Converts `x` to a string and prints it to the console.
     ///
     /// Note: This function does not print to standard out.
     ///
@@ -38,15 +45,13 @@ namespace Console {
     ///
     /// See also `System/StdOut.print`.
     ///
-    pub def print(s: String): Unit & Impure =
-        import static java.lang.System.console();
-        import java.io.Console.writer();
-        import java.io.PrintWriter.print(String) as printWriterPrint;
-        Object.toOption(console()) |> Option.map(c -> printWriterPrint(writer(c), s));
-        ()
+    pub def print(x: a): Unit & Impure with ToString[a] =
+        import java.io.Console.writer(): ##java.io.PrintWriter & Impure;
+        import java.io.PrintWriter.print(String): Unit & Impure as printWriterPrint;
+        console() |> Option.foreach(c -> printWriterPrint(writer(c), ToString.toString(x)))
 
     ///
-    /// Prints `s` to the console followed by a new line.
+    /// Converts `x` to a string and prints it to the console followed by a new line.
     ///
     /// Note: This function does not print to standard out.
     ///
@@ -56,12 +61,10 @@ namespace Console {
     ///
     /// See also `System/StdOut.println`.
     ///
-    pub def printLine(s: String): Unit & Impure =
-        import static java.lang.System.console();
-        import java.io.Console.writer();
-        import java.io.PrintWriter.println(String) as printWriterPrintln;
-        Object.toOption(console()) |> Option.map(c -> printWriterPrintln(writer(c), s));
-        ()
+    pub def printLine(x: a): Unit & Impure with ToString[a] =
+        import java.io.Console.writer(): ##java.io.PrintWriter & Impure;
+        import java.io.PrintWriter.println(String): Unit & Impure as printWriterPrintln;
+        console() |> Option.foreach(c -> printWriterPrintln(writer(c), ToString.toString(x)))
 
     ///
     /// Flushes the console output.
@@ -73,10 +76,8 @@ namespace Console {
     /// See also `System/StdOut.flush`.
     ///
     pub def flush(): Unit & Impure =
-        import static java.lang.System.console();
-        import java.io.Console.flush() as consoleFlush;
-        Object.toOption(console()) |> Option.map(consoleFlush);
-        ()
+        import java.io.Console.flush(): Unit & Impure as consoleFlush;
+        console() |> Option.foreach(consoleFlush)
 
     ///
     /// Returns `s` formatted as bold.
@@ -89,6 +90,46 @@ namespace Console {
                 esc + "[1m" + ToString.toString(s) + esc + "[0m"
             case ColorSupport.TrueColor =>
                 esc + "[38;2;1m" + ToString.toString(s) + esc + "[0m"
+        }
+
+    ///
+    /// Returns `s` formatted with color `hexCode`
+    /// or if there's an error, returns the original string.
+    /// Expected format of `hexCode`: "#" + "--" + "--" + "--"
+    /// where each -- is a hex number between 00 and FF.
+    ///
+    pub def hex(hexCode: String, s: a): String with ToString[a] =
+        let text = ToString.toString(s);
+        let hexOpt: Option[String] = {
+            use Option.flatMap;
+            let* hex = String.stripPrefix(substr = "#", hexCode);
+            if (String.length(hex) == 6) {
+                let* r = String.sliceLeft(2, hex) |> stringToHex;
+                let* g = String.slice(2, 4, hex) |> stringToHex;
+                let* b = String.slice(4, 6, hex) |> stringToHex;
+                Some(rgb((r, g, b), text, isFg = true))
+            } else None as Option[String]
+        };
+        hexOpt |> Option.getWithDefault(text)
+
+    ///
+    /// Retrieves the console of the JVM if there is one, otherwise None.
+    ///
+    def console(): Option[##java.io.Console] & Impure =
+        import static java.lang.System.console(): ##java.io.Console & Impure as getConsole;
+        getConsole() |> Object.toOption
+
+    ///
+    /// Helper for `hex`.
+    /// Returns `hexNo` as a hex number.
+    ///
+    def stringToHex(hexNo: String): Option[Int32] & Pure =
+        import static java.lang.Integer.parseInt(String, Int32): Int32 & Pure;
+        try {
+            Some(parseInt(hexNo, 16))
+        } catch {
+            case _: ##java.lang.NumberFormatException =>
+                None as Option[Int32]
         }
 
     ///

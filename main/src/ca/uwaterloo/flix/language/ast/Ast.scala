@@ -325,6 +325,11 @@ object Ast {
       */
     case object Synthetic extends Modifier
 
+    /**
+      * The unlawful modifier.
+      */
+    case object Unlawful extends Modifier
+
   }
 
   /**
@@ -366,62 +371,87 @@ object Ast {
   }
 
   /**
-    * Contains the edges held in a single constraint.
+    * A common super-type for the fixity of an atom.
     */
-  case class MultiEdge(head: (Name.Pred, Type), positives: Vector[TypedPredicate], negatives: Vector[TypedPredicate])
+  sealed trait Fixity
 
-  /**
-    * Represents a body predicate on a MultiEdge.
-    */
-  case class TypedPredicate(atom: Name.Pred, tpe: Type, loc: SourceLocation)
+  object Fixity {
 
-  object ConstraintGraph {
     /**
-      * The empty constraint graph.
+      * The atom is loose (it does not have to be fully materialized before it can be used).
       */
-    val empty: ConstraintGraph = ConstraintGraph(Set.empty)
+    case object Loose extends Fixity
+
+    /**
+      * The atom is fixed (it must be fully materialized before it can be used).
+      */
+    case object Fixed extends Fixity
+
   }
 
   /**
-    * Represents a constraint graph; a set dependency graphs representing each rule.
+    * Represents a positive or negative labelled dependency edge.
+    *
+    * The labels represent predicate nodes that must co-occur for the dependency to be relevant.
     */
-  case class ConstraintGraph(xs: Set[MultiEdge]) {
+  case class LabelledEdge(head: Name.Pred, polarity: Polarity, fixity: Fixity, labels: Vector[Label], body: Name.Pred, loc: SourceLocation)
+
+  /**
+    * Represents a label in the labelled graph.
+    */
+  case class Label(pred: Name.Pred, den: Denotation, arity: Int, terms: List[Type])
+
+  object LabelledGraph {
     /**
-      * Returns a constraint graph with all dependency graphs in `this` and `that` constraint graph.
+      * The empty labelled graph.
       */
-    def +(that: ConstraintGraph): ConstraintGraph = {
-      if (this eq ConstraintGraph.empty)
+    val empty: LabelledGraph = LabelledGraph(Vector.empty)
+  }
+
+  /**
+    * Represents a labelled graph; the dependency graph with additional labels
+    * on the edges allowing more accurate filtering. The rule `A :- not B, C` would
+    * add dependency edges `B -x> A` and `C -> A`. The labelled graph can then
+    * add labels that allow the two edges to be filtered out together. If we
+    * look at a program consisting of A, B, and D. then the rule `C -> A`
+    * cannot be relevant, but by remembering that B occurred together with A,
+    * we can also rule out `B -x> A`. The labelled edges would be `B -[C]-x> A`
+    * and `C -[B]-> A`.
+    */
+  case class LabelledGraph(edges: Vector[LabelledEdge]) {
+    /**
+      * Returns a labelled graph with all labelled edges in `this` and `that` labelled graph.
+      */
+    def +(that: LabelledGraph): LabelledGraph = {
+      if (this eq LabelledGraph.empty)
         that
-      else if (that eq ConstraintGraph.empty)
+      else if (that eq LabelledGraph.empty)
         this
       else
-        ConstraintGraph(this.xs ++ that.xs)
+        LabelledGraph(this.edges ++ that.edges)
     }
 
     /**
-      * Returns `this` constraint graph including only the edges where all
-      * its predicates is in `syms` and `typeEquality` returns true for the predicate type and its type in `syms`.
-      * A rule like
-      * `A(ta) :- B(tb), C(tc), not D(tc).` is represented by `MultiEdge((A, ta), {(B, tb), (C, tc)}, {(D, td)})`
-      * and is only included in the output if `syms` contains all of `A, B, C, D` and `typeEquality(syms(A), ta)` etc.
+      * Returns `this` labelled graph including only the edges where all its labels are in
+      * `syms` and the labels match according to `'`labelEq`'`.
+      *
+      * A rule like `A(ta) :- B(tb), not C(tc).` is represented by `edge(A, pos, {la, lb, lc}, B)` etc.
+      * and is only included in the output if `syms` contains all of `la.pred, lb.pred, lc.pred` and `labelEq(syms(A), la)` etc.
       */
-    def restrict(syms: Map[Name.Pred, Type], typeEquality: (Type, Type) => Boolean): ConstraintGraph =
-      ConstraintGraph(xs.filter {
-        case MultiEdge((head, headTpe), positives, negatives) =>
-          def checkBody(e: TypedPredicate): Boolean = e match {
-            case TypedPredicate(s, tpe, _) => syms.get(s).exists(typeEquality(_, tpe))
-          }
+    def restrict(syms: Map[Name.Pred, Label], labelEq: (Label, Label) => Boolean): LabelledGraph = {
+      def include(l: Label): Boolean = syms.get(l.pred).exists(l2 => labelEq(l, l2))
 
-          syms.get(head).exists(typeEquality(_, headTpe)) &&
-            positives.forall(checkBody) && negatives.forall(checkBody)
+      LabelledGraph(edges.filter {
+        case LabelledEdge(_, _, _, labels, _, _) => labels.forall(include)
       })
+    }
   }
 
   object Stratification {
     /**
       * Represents the empty stratification.
       */
-    val Empty: Stratification = Stratification(Map.empty)
+    val empty: Stratification = Stratification(Map.empty)
   }
 
   /**

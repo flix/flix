@@ -88,13 +88,13 @@ namespace MutSet {
         ms := Set.filter(f, deref ms)
 
     ///
-    /// Replaces the element `x` with the element `y` if `x` is in the mutable set `s`.
+    /// Replaces the element `from` with the element `to` if `from` is in the mutable set `s`.
     ///
-    /// The mutable set `s` is unchanged if the element `x` is not in it.
+    /// The mutable set `s` is unchanged if the element `from` is not in it.
     ///
-    pub def replace!(x: a, y: a, s: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def replace!(from: {from :: a}, to: {to :: a}, s: mut MutSet[a]): Unit & Impure with Order[a] =
         let MutSet(ms) = s;
-        ms := Set.replace(x, y, deref ms)
+        ms := Set.replace(from = from.from, to = to.to, deref ms)
 
     ///
     /// Applies the function `f` to every element in the mutable set `s`.
@@ -131,7 +131,10 @@ namespace MutSet {
     ///
     /// Returns `None` if `s` is empty.
     ///
-    pub def minimumBy(cmp: (a, a) -> Comparison, s: MutSet[a]): Option[a] & Impure =
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def minimumBy(cmp: (a, a) -> Comparison & ef, s: MutSet[a]): Option[a] & Impure =
         let MutSet(ms) = s;
         Set.minimumBy(cmp, deref ms)
 
@@ -149,7 +152,10 @@ namespace MutSet {
     ///
     /// Returns `None` if `s` is empty.
     ///
-    pub def maximumBy(cmp: (a, a) -> Comparison, s: MutSet[a]): Option[a] & Impure =
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def maximumBy(cmp: (a, a) -> Comparison & ef, s: MutSet[a]): Option[a] & Impure =
         let MutSet(ms) = s;
         Set.maximumBy(cmp, deref ms)
 
@@ -220,6 +226,16 @@ namespace MutSet {
         Set.foldRight(f, i, deref ms)
 
     ///
+    /// Lazily applies `f` to a start value `s` and all elements in `s` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
+    /// The foldRightLazy function exists to allow early termination of a fold.
+    ///
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b, i: b, s: MutSet[a]): b & Impure =
+        let MutSet(ms) = s;
+        Set.foldRightLazy(f, i, deref ms)
+
+    ///
     /// Applies `f` to all elements in the mutable set `s` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
@@ -244,11 +260,46 @@ namespace MutSet {
     ///
     /// Returns the number of elements in the mutable set `s` that satisfy the predicate function `f`.
     ///
-    /// The function `f` must be pure.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    pub def count(f: a -> Bool, s: MutSet[a]): Int32 & Impure =
+    @ParallelWhenPure
+    pub def count(f: a -> Bool & ef, s: MutSet[a]): Int32 & Impure =
         let MutSet(ms) = s;
         Set.count(f, deref ms)
+
+    ///
+    /// Returns the sum of all elements in the mutable set `s`.
+    ///
+    pub def sum(s: MutSet[Int32]): Int32 & Impure =
+        let MutSet(ss) = s;
+        Set.sum(deref ss)
+
+    ///
+    /// Returns the sum of all elements in the mutable set `s` according to the function `f`.
+    ///
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def sumWith(f: a -> Int32 & ef, s: MutSet[a]): Int32 & Impure =
+        let MutSet(ss) = s;
+        Set.sumWith(f, deref ss)
+
+    ///
+    /// Returns the product of all elements in the set `s`.
+    ///
+    pub def product(s: MutSet[Int32]): Int32 & Impure =
+        let MutSet(ss) = s;
+        Set.product(deref ss)
+
+    ///
+    /// Returns the product of all elements in the set `s` according to the function `f`.
+    ///
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def productWith(f: a -> Int32 & ef, s: MutSet[a]): Int32 & Impure =
+        let MutSet(ss) = s;
+        Set.productWith(f, deref ss)
 
     ///
     /// Returns `true` if and only if at least one element in the mutable set `s` satisfies the predicate function `f`.
@@ -328,5 +379,21 @@ namespace MutSet {
     ///
     pub def sameElements(a: MutSet[t], b: MutSet[t]): Bool & Impure with Order[t] =
         MutSet.isSubsetOf(a, b) and MutSet.isSubsetOf(b, a)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `s` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, s: MutSet[a]): String & Impure with ToString[a] =
+        let MutSet(ms) = s;
+        Set.join(sep, deref ms)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `s` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: a -> String & ef, sep: String, s: MutSet[a]): String & Impure =
+        let MutSet(ms) = s;
+        Set.joinWith(f, sep, deref ms)
 
 }

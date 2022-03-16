@@ -13,7 +13,7 @@ namespace Test/Enum/Kinding {
     }
 
     namespace Explicit {
-        rel R(i: Int)
+        rel R(i: Int32)
 
         pub enum EStar[a: Type] {
             case CStar1(a)
@@ -27,7 +27,7 @@ namespace Test/Enum/Kinding {
         }
 
         pub enum EBool[a: Bool] {
-            case CBool1(Int -> Int32 & a)
+            case CBool1(Int32 -> Int32 & a)
         }
 
         pub enum ERecordRow[a: RecordRow] {
@@ -40,7 +40,7 @@ namespace Test/Enum/Kinding {
 
         // These pass kinding but cause a crash in the Finalizer.
 //        pub enum EStarToStar[a: Type -> Type] {
-//            case CStarToStar1(a[Int])
+//            case CStarToStar1(a[Int32])
 //        }
 //
 //        pub enum EBoolToStar[a: Bool -> Type] {

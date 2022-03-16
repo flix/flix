@@ -20,11 +20,11 @@ import ca.uwaterloo.flix.language.phase.unification.TestUnification
 import org.scalatest.Suites
 
 class PhaseSuite extends Suites(
+  new TestIncremental,
   new TestParser,
   new TestNamer,
   new TestPatExhaustiveness,
   new TestRedundancy,
-  new TestTerminator,
   new TestResolver,
   new TestSafety,
   new TestKinder,

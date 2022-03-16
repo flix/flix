@@ -182,8 +182,9 @@ object Indexer {
     case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expression.LetRegion(sym, exp, _, _, _) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
+    case Expression.LetRegion(sym, exp, _, _, loc) =>
+      val tpe = Type.mkRegion(sym.tvar.ascribedWith(Kind.Bool), loc)
+      Index.occurrenceOf(sym, tpe) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
@@ -240,6 +241,9 @@ object Indexer {
 
     case Expression.Ref(exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
+
+    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.Deref(exp1, _, _, _) =>
       visitExp(exp1) ++ Index.occurrenceOf(exp0)
@@ -399,7 +403,7 @@ object Indexer {
     * Returns a reverse index for the given body predicate `b0`.
     */
   private def visitBody(b0: Predicate.Body): Index = b0 match {
-    case Body.Atom(pred, _, _, terms, _, _) => Index.occurrenceOf(pred) ++ Index.useOf(pred) ++ visitPats(terms)
+    case Body.Atom(pred, _, _, _, terms, _, _) => Index.occurrenceOf(pred) ++ Index.useOf(pred) ++ visitPats(terms)
     case Body.Guard(exp, _) => visitExp(exp)
     case Body.Loop(_, exp, _) => visitExp(exp)
   }

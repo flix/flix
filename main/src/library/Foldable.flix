@@ -35,7 +35,37 @@ pub lawless class Foldable[t : Type -> Type] {
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
     pub def count(f: a -> Bool, t: t[a]): Int32 =
-      Foldable.foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, t)
+        Foldable.foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, t)
+
+    ///
+    /// Returns the sum of all elements in `t`.
+    ///
+    pub def sum(t: t[Int32]): Int32 =
+        Foldable.foldLeft((acc, x) -> acc + x, 0, t)
+
+    ///
+    /// Returns the sum of all elements in `t` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, t: t[a]): Int32 & ef =
+        Foldable.foldLeft((acc, x) -> acc + f(x), 0, t)
+
+    ///
+    /// Returns the product of all elements in `t`.
+    ///
+    pub def product(t: t[Int32]): Int32 =
+        if (Foldable.isEmpty(t))
+            0
+        else
+            Foldable.foldLeft((acc, x) -> acc * x, 1, t)
+
+    ///
+    /// Returns the product of all elements in `t` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, t: t[a]): Int32 & ef =
+        if (Foldable.isEmpty(t))
+            0
+        else
+            Foldable.foldLeft((acc, x) -> acc * f(x), 1, t)
 
     ///
     /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
@@ -146,7 +176,7 @@ pub lawless class Foldable[t : Type -> Type] {
     ///
     pub def toArray(t: t[a]): Array[a] & Impure =
         let v = MutList.new();
-        Foldable.foldRight((x, _) -> MutList.push!(x, v), (), t);
+        Foldable.foreach(a -> MutList.push!(a, v), t);
         MutList.toArray(v)
 
     ///
@@ -184,6 +214,12 @@ pub lawless class Foldable[t : Type -> Type] {
     ///
     pub def toMap(t: t[(k, v)]): Map[k, v] with Order[k] =
         Foldable.foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc), Map.empty(), t)
+
+    ///
+    /// Returns a map with elements of `s` as keys and `f` applied as values.
+    ///
+    pub def toMapWith(f: a -> b, s: t[a]): Map[a, b] with Order[a] =
+            Foldable.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
 
     ///
     /// Returns `t` without the longest prefix that satisfies the predicate `f`.
@@ -253,6 +289,30 @@ pub lawless class Foldable[t : Type -> Type] {
         use Applicative.{point, *>};
         Foldable.foldLeftM((acc, a) -> f(a) *> point(acc), (), t)
 
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `t` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, t: t[a]): String with ToString[a] = {
+        use StringBuilder.append!;
+        let lastSep = String.length(sep);
+        let sb = StringBuilder.new();
+        t |> Foldable.foreach(x -> { append!(ToString.toString(x), sb); append!(sep, sb) });
+        StringBuilder.toString(sb) |> String.dropRight(lastSep)
+    } as & Pure
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `t` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: a -> String & ef, sep: String, t: t[a]): String & ef = {
+        use StringBuilder.append!;
+        let lastSep = String.length(sep);
+        let sb = StringBuilder.new();
+        t |> Foldable.foreach(x -> { append!(f(x), sb); append!(sep, sb) });
+        StringBuilder.toString(sb) |> String.dropRight(lastSep)
+    } as & ef
+
 }
 
 namespace Foldable {
@@ -264,11 +324,5 @@ namespace Foldable {
     ///
     pub def fold[t: Type -> Type, a: Type](t: t[a]): a with Foldable[t], Monoid[a] =
         Foldable.foldLeft((acc, x) -> Monoid.combine(acc, x), Monoid.empty(), t)
-
-    ///
-    /// Returns a map with elements of `s` as keys and `f` applied as values.
-    ///
-    pub def toMapWith(f: a -> b, s: t[a]): Map[a, b] with Order[a], Foldable[t] =
-            Foldable.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
 
 }

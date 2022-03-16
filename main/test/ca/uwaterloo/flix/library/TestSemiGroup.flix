@@ -26,6 +26,118 @@ namespace TestSemiGroup {
     def combineUnit01(): Bool = combine((), ()) == ()
 
     /////////////////////////////////////////////////////////////////////////////
+    // Int8                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineInt801(): Bool = combine(0i8, 0i8) == 0i8
+
+    @test
+    def combineInt802(): Bool = combine(1i8, 0i8) == 1i8
+
+    @test
+    def combineInt803(): Bool = combine(0i8, 2i8) == 2i8
+
+    @test
+    def combineInt804(): Bool = combine(1i8, 2i8) == 3i8
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Int16                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineInt1601(): Bool = combine(0i16, 0i16) == 0i16
+
+    @test
+    def combineInt1602(): Bool = combine(1i16, 0i16) == 1i16
+
+    @test
+    def combineInt1603(): Bool = combine(0i16, 2i16) == 2i16
+
+    @test
+    def combineInt1604(): Bool = combine(1i16, 2i16) == 3i16
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Int32                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineInt3201(): Bool = combine(0i32, 0i32) == 0i32
+
+    @test
+    def combineInt3202(): Bool = combine(1i32, 0i32) == 1i32
+
+    @test
+    def combineInt3203(): Bool = combine(0i32, 2i32) == 2i32
+
+    @test
+    def combineInt3204(): Bool = combine(1i32, 2i32) == 3i32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Int64                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineInt6401(): Bool = combine(0i64, 0i64) == 0i64
+
+    @test
+    def combineInt6402(): Bool = combine(1i64, 0i64) == 1i64
+
+    @test
+    def combineInt6403(): Bool = combine(0i64, 2i64) == 2i64
+
+    @test
+    def combineInt6404(): Bool = combine(1i64, 2i64) == 3i64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // BigInt                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineBigInt01(): Bool = combine(0ii, 0ii) == 0ii
+
+    @test
+    def combineBigInt02(): Bool = combine(1ii, 0ii) == 1ii
+
+    @test
+    def combineBigInt03(): Bool = combine(0ii, 2ii) == 2ii
+
+    @test
+    def combineBigInt04(): Bool = combine(1ii, 2ii) == 3ii
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Float32                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineFloat3201(): Bool = combine(0.0f32, 0.0f32) == 0.0f32
+
+    @test
+    def combineFloat3202(): Bool = combine(1.0f32, 0.0f32) == 1.0f32
+
+    @test
+    def combineFloat3203(): Bool = combine(0.0f32, 2.0f32) == 2.0f32
+
+    @test
+    def combineFloat3204(): Bool = combine(1.0f32, 2.0f32) == 3.0f32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Float64                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def combineFloat6401(): Bool = combine(0.0f64, 0.0f64) == 0.0f64
+
+    @test
+    def combineFloat6402(): Bool = combine(1.0f64, 0.0f64) == 1.0f64
+
+    @test
+    def combineFloat6403(): Bool = combine(0.0f64, 2.0f64) == 2.0f64
+
+    @test
+    def combineFloat6404(): Bool = combine(1.0f64, 2.0f64) == 3.0f64
+
+    /////////////////////////////////////////////////////////////////////////////
     // String                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -100,13 +212,13 @@ namespace TestSemiGroup {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def combineValidation01(): Bool = combine(Failure(Nel.singleton("e1")), Failure(Nel.singleton("e2"))): Validation[String, String] == Failure(Nel.append(Nel.singleton("e1"), Nel.singleton("e2")))
+    def combineValidation01(): Bool = combine(Failure(Nec.singleton("e1")), Failure(Nec.singleton("e2"))): Validation[String, String] == Failure(Nec.append(Nec.singleton("e1"), Nec.singleton("e2")))
 
     @test
-    def combineValidation02(): Bool = combine(Success("a"), Failure(Nel.singleton("e1"))): Validation[String, String] == Failure(Nel.singleton("e1"))
+    def combineValidation02(): Bool = combine(Success("a"), Failure(Nec.singleton("e1"))): Validation[String, String] == Failure(Nec.singleton("e1"))
 
     @test
-    def combineValidation03(): Bool = combine(Failure(Nel.singleton("e1")), Success("1")): Validation[String, String] == Failure(Nel.singleton("e1"))
+    def combineValidation03(): Bool = combine(Failure(Nec.singleton("e1")), Success("1")): Validation[String, String] == Failure(Nec.singleton("e1"))
 
     @test
     def combineValidation04(): Bool = combine(Success("a"), Success("1")): Validation[String, String] == Success("a1")
@@ -316,5 +428,18 @@ namespace TestSemiGroup {
 
     @test
     def associativeTest01(): Bool = combine(combine("a", "b"), "c") == combine("a", combine("b", "c"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Syntax                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def operator01(): Bool = (1 ++ 1) == 2
+
+    @test
+    def operator02(): Bool = ("abc" ++ "def") == "abcdef"
+
+    @test
+    def operator03(): Bool = (1 :: 2 :: Nil ++ 3 :: 4 :: Nil) == 1 :: 2 :: 3 :: 4 :: Nil
 
 }

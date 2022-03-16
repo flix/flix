@@ -130,25 +130,25 @@ namespace RedBlackTree {
     }
 
     ///
-    /// Updates `tree` with `k -> v` if `k -> v1` is in `tree`.
+    /// Updates `tree` with `k => v` if `k => v1` is in `tree`.
     ///
-    /// Otherwise, updates `tree` with `k -> v`.
+    /// Otherwise, updates `tree` with `k => v`.
     ///
     @Time(Int32.log2(size(tree))) @Space(Int32.log2(size(tree)))
     pub def insert(k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] =
         blacken(insertHelper(k, v, tree))
 
     ///
-    /// Updates `tree` with `k -> f(k, v, v1)` if `k -> v1` is in `tree`.
+    /// Updates `tree` with `k => f(k, v, v1)` if `k => v1` is in `tree`.
     ///
-    /// Otherwise, updates `tree` with `k -> v`.
+    /// Otherwise, updates `tree` with `k => v`.
     ///
     @Time(time(f) + Int32.log2(size(tree))) @Space(space(f) + Int32.log2(size(tree)))
     pub def insertWith(f: (k, v, v) -> v & ef, k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & ef with Order[k] =
         blacken(insertWithHelper(f, k, v, tree))
 
     ///
-    /// Updates `tree` with `k -> v1` if `k -> v` is in `tree` and `f(k, v) = Some(v1)`.
+    /// Updates `tree` with `k => v1` if `k => v` is in `tree` and `f(k, v) = Some(v1)`.
     ///
     /// Otherwise, returns `tree`.
     ///
@@ -157,14 +157,14 @@ namespace RedBlackTree {
         blacken(updateWithHelper(f, k, tree))
 
     ///
-    /// Removes `k -> v` from `tree` if `tree` contains the key `k`.
+    /// Removes `k => v` from `tree` if `tree` contains the key `k`.
     ///
     /// Otherwise, returns `tree`.
     ///
     pub def remove(k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] = redden(removeHelper(k, tree))
 
     ///
-    /// Returns `Some(v)` if `k -> v` is in `tree`.
+    /// Returns `Some(v)` if `k => v` is in `tree`.
     ///
     /// Otherwise returns `None`.
     ///
@@ -240,6 +240,23 @@ namespace RedBlackTree {
         case Node(_, a, k, v, b) => foldRight(f, f(k, v, foldRight(f, s, b)), a)
         case _ => s
     }
+
+
+    ///
+    /// Lazily applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(k1, v1, ... lazy f(kn-1, vn-1, lazy f(kn, vn, s)))`.
+    /// The foldRightLazy function exists to allow early termination of a fold.
+    ///
+    @Experimental
+    @Lazy
+    pub def foldRightLazy(f: (k, v, Lazy[b]) -> b, s: b, tree: RedBlackTree[k, v]): b =
+        def loop(s2: b, tree2: RedBlackTree[k, v]) = match tree2 {
+            case Node(_, a, k, v, b) => loop(f(k, v, lazy loop(s2, b)), a)
+            case _ => s2
+        };
+        loop(s, tree)
+
 
     /// Applies `f` to all key-value pairs in `tree` going from left to right until a single pair `(k, v)` is obtained.
     ///
@@ -435,8 +452,8 @@ namespace RedBlackTree {
     /// Helper function for `delete`.
     ///
     def removeHelper(k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] = match tree {
-        case Node(Red, Leaf, k1, _, Leaf) => if (k <=> k1 == EqualTo) Leaf else tree
-        case Node(Black, Leaf, k1, _, Leaf) => if (k <=> k1 == EqualTo) DoubleBlackLeaf else tree
+        case Node(Red, Leaf, k1, _, Leaf) => if ((k <=> k1) == EqualTo) Leaf else tree
+        case Node(Black, Leaf, k1, _, Leaf) => if ((k <=> k1) == EqualTo) DoubleBlackLeaf else tree
         case Node(Black, Node(Red, Leaf, k1, v1, Leaf), k2, v2, Leaf) =>
             match k <=> k2 {
                 case LessThan => Node(Black, removeHelper(k, Node(Red, Leaf, k1, v1, Leaf)), k2, v2, Leaf)
@@ -486,20 +503,20 @@ namespace RedBlackTree {
     } as & ef
 
     ///
-    /// Extracts `k -> v` where `k` is the leftmost (i.e. smallest) key in the tree.
+    /// Extracts `k => v` where `k` is the leftmost (i.e. smallest) key in the tree.
     ///
-    pub def minimum(tree: RedBlackTree[k, v]): Option[(k, v)] = match tree {
+    pub def minimumKey(tree: RedBlackTree[k, v]): Option[(k, v)] = match tree {
         case Node(_, Leaf, k, v, _) => Some((k, v))
-        case Node(_, a, _, _, _) => minimum(a)
+        case Node(_, a, _, _, _) => minimumKey(a)
         case _ => None
     }
 
     ///
-    /// Extracts `k -> v` where `k` is the rightmost (i.e. largest) key in the tree.
+    /// Extracts `k => v` where `k` is the rightmost (i.e. largest) key in the tree.
     ///
-    pub def maximum(tree: RedBlackTree[k, v]): Option[(k, v)] = match tree {
+    pub def maximumKey(tree: RedBlackTree[k, v]): Option[(k, v)] = match tree {
         case Node(_, _, k, v, Leaf) => Some((k, v))
-        case Node(_, _, _, _, b) => maximum(b)
+        case Node(_, _, _, _, b) => maximumKey(b)
         case _ => None
     }
 
@@ -514,9 +531,9 @@ namespace RedBlackTree {
     }
 
     ///
-    /// Returns a RedBlackTree with mappings `k -> f(k, v)` for every `k -> v` in `t`.
+    /// Returns a RedBlackTree with mappings `k => f(k, v)` for every `k => v` in `t`.
     ///
-    /// Purity polymorphic: Runs in parallel when given a pure function `f`.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 & ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & ef =
@@ -621,9 +638,6 @@ namespace RedBlackTree {
     /// Applies `f` over the tree `t` sequentially from left to right and returns the number of elements
     /// that satisfy the predicate `f`.
     ///
-    /// Note that this is equivalent to `seqCount` but for performance reasons -- to avoid
-    /// megamorphic calls -- we use a copy here.
-    ///
     def seqCount(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 = match t {
         case Leaf                   => 0
         case DoubleBlackLeaf        => 0
@@ -633,6 +647,164 @@ namespace RedBlackTree {
             let b1 = seqCount(f, b);
             a1 + v1 + b1
     }
+
+    ///
+    /// Returns the sum of all keys in the tree `t`.
+    ///
+    pub def sumKeys(t: RedBlackTree[Int32, v]): Int32 =
+        sumWith((k, _) -> k, t)
+
+    ///
+    /// Returns the sum of all values in the tree `t`.
+    ///
+    pub def sumValues(t: RedBlackTree[k, Int32]): Int32 =
+        sumWith((_, v) -> v, t)
+
+    ///
+    /// Returns the sum of all key-value pairs `k => v` in the tree `t`
+    /// according to the function `f`.
+    ///
+    pub def sumWith(f: (k, v) -> Int32 & ef, t: RedBlackTree[k, v]): Int32 & ef =
+        def loop(tt) = match tt {
+            case Leaf                => 0
+            case DoubleBlackLeaf     => 0
+            case Node(_, a, k, v, b) =>
+                let x = loop(a);
+                let y = f(k, v);
+                let z = loop(b);
+                x + y + z
+        };
+        loop(t)
+
+    ///
+    /// Returns the sum of all key-value pairs `k => v` in the tree `t`
+    /// according to the function `f`.
+    ///
+    /// The implementation spawns `n` threads each applying `f` sequentially
+    /// from left to right on some subtree that is disjoint from the rest of
+    /// the threads.
+    ///
+    @Parallel
+    pub def parSumWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 & Impure = {
+        if (n <= 1)
+            seqSumWith(f, t)
+        else
+            match t {
+                case Leaf                   => 0
+                case DoubleBlackLeaf        => 0
+                case Node(_, a, k, v, b)    =>
+                    let chanL = chan Int32 1;
+                    let chanR = chan Int32 1;
+                    spawn (chanL <- parSumWith((n - 2) / 2, f, a)); // We divide the rest of the threads as follows:
+                    spawn (chanR <- parSumWith((n - 2) / 2, f, b)); // We spawn two new threads leaving us with n - 2
+                    let v1 = f(k, v);                               // that we distribute over the two spanned threads.
+                    let a1 = <- chanL;
+                    let b1 = <- chanR;
+                    a1 + v1 + b1
+            }
+    }
+
+    ///
+    /// Returns the sum of all key-value pairs `k => v` in the tree `t`
+    /// according to the function `f`.
+    ///
+    /// Note that this is equivalent to `sumWith` but for performance reasons -- to avoid
+    /// megamorphic calls -- we use a copy here.
+    ///
+    def seqSumWith(f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 =
+        def loop(tt) = match tt {
+            case Leaf                => 0
+            case DoubleBlackLeaf     => 0
+            case Node(_, a, k, v, b) =>
+                let x = loop(a);
+                let y = f(k, v);
+                let z = loop(b);
+                x + y + z
+        };
+        loop(t)
+
+    ///
+    /// Returns the product of all keys in the tree `t`.
+    ///
+    pub def productKeys(t: RedBlackTree[Int32, v]): Int32 =
+        productWith((k, _) -> k, t)
+
+    ///
+    /// Returns the product of all values in the tree `t`.
+    ///
+    pub def productValues(t: RedBlackTree[k, Int32]): Int32 =
+        productWith((_, v) -> v, t)
+
+    ///
+    /// Returns the product of all key-value pairs `k => v` in the tree `t`
+    /// according to the function `f`.
+    ///
+    pub def productWith(f: (k, v) -> Int32 & ef, t: RedBlackTree[k, v]): Int32 & ef =
+        def loop(tt) = match tt {
+            case Leaf                => 1
+            case DoubleBlackLeaf     => 1
+            case Node(_, a, k, v, b) =>
+                let x = loop(a);
+                let y = f(k, v);
+                let z = loop(b);
+                x * y * z
+        };
+        match t {
+            case Leaf            => 0
+            case DoubleBlackLeaf => 0
+            case _               => loop(t)
+        }
+
+    ///
+    /// Returns the product of all key-value pairs `k => v` in the tree `t`
+    /// according to the function `f`.
+    ///
+    /// The implementation spawns `n` threads each applying `f` sequentially
+    /// from left to right on some subtree that is disjoint from the rest of
+    /// the threads.
+    ///
+    @Parallel
+    pub def parProductWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 & Impure = {
+        if (n <= 1)
+            seqProductWith(f, t)
+        else
+            match t {
+                case Leaf                   => 1
+                case DoubleBlackLeaf        => 1
+                case Node(_, a, k, v, b)    =>
+                    let chanL = chan Int32 1;
+                    let chanR = chan Int32 1;
+                    spawn (chanL <- parProductWith((n - 2) / 2, f, a)); // We divide the rest of the threads as follows:
+                    spawn (chanR <- parProductWith((n - 2) / 2, f, b)); // We spawn two new threads leaving us with n - 2
+                    let v1 = f(k, v);                                   // that we distribute over the two spanned threads.
+                    let a1 = <- chanL;
+                    let b1 = <- chanR;
+                    a1 * v1 * b1
+            }
+    }
+
+    ///
+    /// Returns the product of all key-value pairs `k => v` in the tree `t`
+    /// according to the function `f`.
+    ///
+    /// Note that this is equivalent to `productWith` but for performance reasons -- to avoid
+    /// megamorphic calls -- we use a copy here.
+    ///
+    def seqProductWith(f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 =
+        def loop(tt) = match tt {
+            case Leaf                => 1
+            case DoubleBlackLeaf     => 1
+            case Node(_, a, k, v, b) =>
+                let x = loop(a);
+                let y = f(k, v);
+                let z = loop(b);
+                x * y * z
+        };
+        match t {
+            case Leaf            => 0
+            case DoubleBlackLeaf => 0
+            case _               => loop(t)
+        }
 
     ///
     /// Returns the tree `t` as a list. Elements are ordered from smallest (left) to largest (right).
@@ -749,4 +921,31 @@ namespace RedBlackTree {
                     Some(selector(ks, vs, kr, vr))
             }
     }
+
+    ///
+    /// Returns the concatenation of the string representation of each key `k`
+    /// in `t` with `sep` inserted between each element.
+    ///
+    pub def joinKeys(sep: String, t: RedBlackTree[k, v]): String with ToString[k] =
+        joinWith((k, _) -> ToString.toString(k), sep, t)
+
+    ///
+    /// Returns the concatenation of the string representation of each value `v`
+    /// in `t` with `sep` inserted between each element.
+    ///
+    pub def joinValues(sep: String, t: RedBlackTree[k, v]): String with ToString[v] =
+        joinWith((_, v) -> ToString.toString(v), sep, t)
+
+    ///
+    /// Returns the concatenation of the string representation of each key-value pair
+    /// `k => v` in `t` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: (k, v) -> String & ef, sep: String, t: RedBlackTree[k, v]): String & ef = {
+        use StringBuilder.append!;
+        let lastSep = String.length(sep);
+        let sb = StringBuilder.new();
+        foreach((k, v) -> { append!(f(k, v), sb); append!(sep, sb) }, t);
+        StringBuilder.toString(sb) |> String.dropRight(lastSep)
+    } as & ef
+
 }

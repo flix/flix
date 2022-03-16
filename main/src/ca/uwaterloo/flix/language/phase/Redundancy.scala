@@ -344,8 +344,20 @@ object Redundancy {
         (used ++ shadowedVar) - sym
 
     case Expression.LetRegion(sym, exp, _, _, _) =>
-      // TODO: Rules for region variables?
-      visitExp(exp, env0) - sym
+      // Extend the environment with the variable symbol.
+      val env1 = env0 + sym
+
+      // Visit the expression under the extended environment.
+      val innerUsed = visitExp(exp, env0)
+
+      // Check for shadowing.
+      val shadowedVar = shadowing(sym, env0)
+
+      // Check if the let-bound variable symbol is dead in exp.
+      if (deadVarSym(sym, innerUsed))
+        (innerUsed ++ shadowedVar) - sym + UnusedVarSym(sym)
+      else
+        (innerUsed ++ shadowedVar) - sym
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       val us1 = visitExp(exp1, env0)
@@ -469,6 +481,11 @@ object Redundancy {
 
     case Expression.Ref(exp, _, _, _) =>
       visitExp(exp, env0)
+
+    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+      val us1 = visitExp(exp1, env0)
+      val us2 = visitExp(exp2, env0)
+      us1 ++ us2
 
     case Expression.Deref(exp, _, _, _) =>
       visitExp(exp, env0)
@@ -687,7 +704,7 @@ object Redundancy {
     * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
     */
   private def visitBodyPred(b0: Predicate.Body, env0: Env): Used = b0 match {
-    case Body.Atom(_, _, _, terms, _, _) =>
+    case Body.Atom(_, _, _, _, terms, _, _) =>
       terms.foldLeft(Used.empty) {
         case (acc, term) => acc ++ Used.of(freeVars(term))
       }

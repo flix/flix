@@ -31,6 +31,30 @@ pub enum MutDeque[a] {
     case MutDeque(Ref[Array[a]], Ref[Int32], Ref[Int32])
 }
 
+instance Iterable[MutDeque] {
+    pub def iterator(t: MutDeque[a]): Iterator[a] & Impure =
+        let MutDeque(a, f, b) = t;
+        let len = Array.length(deref a);
+        let copy = deref a;
+        let i = f;
+
+        let done = () -> (deref i) == deref b;
+        let next = () -> {
+            if (deref i != deref b) {
+                let j = {
+                    if (deref i == len) 0
+                    else deref i
+                };
+                let x = copy[j];
+                i := j + 1;
+                x
+            } else {
+                bug!("Empty Iterator!")
+            }
+        };
+        Iterator(done, next)
+}
+
 namespace MutDeque {
 
     ///
@@ -86,6 +110,71 @@ namespace MutDeque {
     pub def isEmpty(d: MutDeque[a]): Bool & Impure =
         let MutDeque(_, f, b) = d;
         deref f == deref b
+
+    ///
+    /// Returns the sum of all elements in the deque `d`.
+    ///
+    pub def sum(d: MutDeque[Int32]): Int32 & Impure =
+        sumWith(identity, d)
+
+    ///
+    /// Returns the sum of all elements in the deque `d` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 & ef, d: MutDeque[a]): Int32 & Impure =
+        foldLeft((acc, x) -> f(x) + acc, 0, d)
+
+    ///
+    /// Returns the product of all elements in the deque `d`.
+    ///
+    pub def product(d: MutDeque[Int32]): Int32 & Impure =
+        productWith(identity, d)
+
+    ///
+    /// Returns the product of all elements in the deque `d` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 & ef, d: MutDeque[a]): Int32 & Impure =
+        if (isEmpty(d))
+            0
+        else
+            foldLeft((acc, x) -> f(x) * acc, 1, d)
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `d` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, d: MutDeque[a]): b & Impure =
+        let MutDeque(ar_, front_, back_) = d;
+        let ar = deref ar_;
+        let front = deref front_;
+        let back = deref back_;
+        let c = capacity(d) - 1;
+        def loop(i, e, acc) =
+            if (i == e)
+                acc
+            else
+                loop((i + 1) &&& c, e, f(acc, ar[i]));
+        loop(front, back, s)
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `d` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, d: MutDeque[a]): b & Impure =
+        let MutDeque(ar_, front_, back_) = d;
+        let ar = deref ar_;
+        let front = deref front_;
+        let back = deref back_;
+        let c = capacity(d) - 1;
+        def loop(i, e, acc) =
+            if (i == e)
+                acc
+            else {
+                let j = (i - 1) &&& c;
+                loop(j, e, f(ar[j], acc))
+            };
+        loop(back, front, s)
 
     ///
     /// Returns `Some(x)` where `x` is the element at the front. Returns `None` if `d` is empty.
@@ -243,5 +332,51 @@ namespace MutDeque {
             Array.sameElements(a1, b1)
         else
             false
+
+    ///
+    /// Returns `d` as a `List`.
+    ///
+    pub def toList(d: MutDeque[a]): List[a] & Impure =
+        foldRight((x, acc) -> x :: acc, Nil, d)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `d` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, d: MutDeque[a]): String & Impure with ToString[a] =
+        joinWith(x -> ToString.toString(x), sep, d)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `d` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: a -> String & ef, sep: String, d: MutDeque[a]): String & Impure =
+        use StringBuilder.append!;
+        let lastSep = String.length(sep);
+        let sb = StringBuilder.new();
+        foreach(x -> { append!(f(x), sb); append!(sep, sb) }, d);
+        StringBuilder.toString(sb) |> String.dropRight(lastSep)
+
+    ///
+    /// Apply the effectful function `f` to all the elements in the MutDeque `d`.
+    ///
+    pub def foreach(f: a -> Unit & ef, d: MutDeque[a]): Unit & Impure =
+        let MutDeque(a, front, back) = d;
+        let len = Array.length(deref a);
+
+        def loop(i) = {
+            if (i == deref back) {
+                ()
+            } else {
+                f(Array.get(i, deref a));
+                loop((i + 1) &&& (len - 1))
+            }
+        };
+
+        if(MutDeque.isEmpty(d)) {
+            ()
+        } else {
+            loop(deref front)
+        }
 
 }

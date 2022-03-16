@@ -29,7 +29,7 @@ namespace Stratifier {
         };
         b |> map(unfoldBodyAtom) |> map(pna -> match pna {case (pn, a) => (a0, pn, a)})
 
-    pub def ullman(p: Program, numberOfPredicates: Int): Option[Map[PredicateSymbol, Int]] & Impure =
+    pub def ullman(p: Program, numberOfPredicates: Int32): Option[Map[PredicateSymbol, Int32]] & Impure =
         let pg: PrecedenceGraph = convertProgram(p);
         let (pos, neg) = partition(e -> match e {case (_, b, _) => b}, pg);
         let removeBool = triple -> match triple {case (a, _, b) => (a, b)};

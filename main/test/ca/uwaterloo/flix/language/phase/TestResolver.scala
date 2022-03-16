@@ -44,11 +44,11 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |enum A {
-         |  case Foo(Int)
+         |  case Foo(Int32)
          |}
          |
          |enum B {
-         |  case Foo(Int)
+         |  case Foo(Int32)
          |}
          |
          |def f(): A = Foo(42)
@@ -61,11 +61,11 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f(): Int = 42
+         |  def f(): Int32 = 42
          |}
          |
          |namespace B {
-         |  def g(): Int = A.f()
+         |  def g(): Int32 = A.f()
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -76,10 +76,10 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f(): Int = A/B/C.g()
+         |  def f(): Int32 = A/B/C.g()
          |
          |  namespace B/C {
-         |    def g(): Int = A.f()
+         |    def g(): Int32 = A.f()
          |  }
          |}
        """.stripMargin
@@ -163,7 +163,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  type alias Color = Int
+         |  type alias Color = Int32
          |}
          |
          |namespace B {
@@ -181,7 +181,7 @@ class TestResolver extends FunSuite with TestUtils {
          |  def f(): A/B/C.Color = 123
          |
          |  namespace B/C {
-         |    type alias Color = Int
+         |    type alias Color = Int32
          |  }
          |}
        """.stripMargin
@@ -199,7 +199,7 @@ class TestResolver extends FunSuite with TestUtils {
          |}
          |
          |namespace B {
-         |  def g(x: a): Int with A.Show[a] = ???
+         |  def g(x: a): Int32 with A.Show[a] = ???
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -210,7 +210,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f(x: a): Int with A/B/C.Show[a] = ???
+         |  def f(x: a): Int32 with A/B/C.Show[a] = ???
          |
          |  namespace B/C {
          |    class Show[a] {
@@ -231,7 +231,7 @@ class TestResolver extends FunSuite with TestUtils {
         |}
         |
         |namespace O {
-        |    instance N.C[Int]
+        |    instance N.C[Int32]
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -261,7 +261,7 @@ class TestResolver extends FunSuite with TestUtils {
         |}
         |
         |namespace O {
-        |    instance N.C[Int]
+        |    instance N.C[Int32]
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -275,7 +275,7 @@ class TestResolver extends FunSuite with TestUtils {
         |    sealed class C[a]
         |
         |    namespace O {
-        |        instance N.C[Int]
+        |        instance N.C[Int32]
         |    }
         |}
         |""".stripMargin
@@ -373,7 +373,7 @@ class TestResolver extends FunSuite with TestUtils {
   }
 
   test("UndefinedName.01") {
-    val input = "def f(): Int = x"
+    val input = "def f(): Int32 = x"
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
@@ -382,7 +382,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f(x: Int, y: Int): Int = x + y + z
+         |  def f(x: Int32, y: Int32): Int32 = x + y + z
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -409,7 +409,7 @@ class TestResolver extends FunSuite with TestUtils {
          |
          |namespace B {
          |    use A.f;
-         |    def g(): Int = f(1)
+         |    def g(): Int32 = f(1)
          |}
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -419,7 +419,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedClass.01") {
     val input =
       """
-        |instance C[Int]
+        |instance C[Int32]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedClass](result)
@@ -460,7 +460,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import new java.io.File() as _;
+         |    import new java.io.File(): ##java.io.File & Impure as _;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -471,7 +471,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import new java.io.File(Int32) as _;
+         |    import new java.io.File(Int32): ##java.io.File & Impure as _;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -482,7 +482,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import new java.lang.String(Bool) as _;
+         |    import new java.lang.String(Bool): ##java.lang.String & Impure as _;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -493,7 +493,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import new java.lang.String(Bool, Char, String) as _;
+         |    import new java.lang.String(Bool, Char, String): ##java.lang.String & Impure as _;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -504,7 +504,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import new foo.bar.Baz() as newObject;
+         |    import new foo.bar.Baz(): Unit & Impure as newObject;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -515,7 +515,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import foo.bar.Baz.f();
+         |    import foo.bar.Baz.f(): Unit & Impure;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -526,7 +526,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import static foo.bar.Baz.f();
+         |    import static foo.bar.Baz.f(): Unit & Impure;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -537,7 +537,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import get foo.bar.Baz.f as getF;
+         |    import get foo.bar.Baz.f: Unit & Impure as getF;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -548,7 +548,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import set foo.bar.Baz.f as setF;
+         |    import set foo.bar.Baz.f: Unit & Impure as setF;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -559,7 +559,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import static get foo.bar.Baz.f as getF;
+         |    import static get foo.bar.Baz.f: Unit & Impure as getF;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -570,7 +570,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import static set foo.bar.Baz.f as setF;
+         |    import static set foo.bar.Baz.f: Unit & Impure as setF;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -581,7 +581,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import java.lang.String.getFoo();
+         |    import java.lang.String.getFoo(): ##java.lang.String & Impure;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -592,7 +592,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import java.lang.String.charAt();
+         |    import java.lang.String.charAt(): ##java.lang.String & Impure;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -603,7 +603,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import java.lang.String.charAt(Int32, Int32);
+         |    import java.lang.String.charAt(Int32, Int32): ##java.lang.String & Impure;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -614,7 +614,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import java.lang.String.isEmpty(Bool);
+         |    import java.lang.String.isEmpty(Bool): Bool & Impure;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -625,7 +625,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import static java.lang.String.isEmpty();
+         |    import static java.lang.String.isEmpty(): Bool & Impure;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -636,7 +636,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import java.lang.String.valueOf(Bool);
+         |    import java.lang.String.valueOf(Bool): ##java.lang.String & Impure;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -647,7 +647,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import get java.lang.Character.foo as getFoo;
+         |    import get java.lang.Character.foo: ##java.lang.Character & Impure as getFoo;
          |    ()
          |
        """.stripMargin
@@ -659,7 +659,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import set java.lang.Character.foo as setFoo;
+         |    import set java.lang.Character.foo: ##java.lang.Character & Impure as setFoo;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -670,7 +670,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import static get java.lang.Character.foo as getFoo;
+         |    import static get java.lang.Character.foo: ##java.lang.Character & Impure as getFoo;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -681,7 +681,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def foo(): Unit =
-         |    import static set java.lang.Character.foo as setFoo;
+         |    import static set java.lang.Character.foo: Unit & Impure as setFoo;
          |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -727,7 +727,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    case Bar
          |  }
          |
-         |  def f(b: B): Int = match b {
+         |  def f(b: B): Int32 = match b {
          |    case B.Qux => 42
          |  }
          |}
@@ -756,7 +756,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f(): Int = Foo.Bar
+         |  def f(): Int32 = Foo.Bar
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -767,7 +767,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f(): Int = Foo/Bar.Qux(true)
+         |  def f(): Int32 = Foo/Bar.Qux(true)
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -854,7 +854,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       """
         |type alias T[a, b] = (a, b)
-        |type alias S = T[Int]
+        |type alias S = T[Int32]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
@@ -865,7 +865,7 @@ class TestResolver extends FunSuite with TestUtils {
       """
         |type alias T[a] = a
         |
-        |def f(x: T): Int = ???
+        |def f(x: T): Int32 = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
@@ -877,7 +877,7 @@ class TestResolver extends FunSuite with TestUtils {
         |type alias T[a] = a
         |enum E[f: Type -> Type]
         |
-        |def f(x: E[T]): Int = ???
+        |def f(x: E[T]): Int32 = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UnderAppliedTypeAlias](result)

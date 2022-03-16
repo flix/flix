@@ -157,4 +157,63 @@ namespace TestFoldable {
     def toMapWith05(): Bool =
         Foldable.toMapWith(x -> x + "b", List.toChain("aa" :: "a" :: Nil)) == Map#{"a" => "ab", "aa" => "aab"}
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool =
+        Foldable.join(",", Nil: List[Int32]) == ""
+
+    @test
+    def join02(): Bool =
+        Foldable.join(",", 1 :: Nil) == "1"
+
+    @test
+    def join03(): Bool =
+        Foldable.join(",", 1 :: 2 :: 3 :: Nil) == "1,2,3"
+
+    @test
+    def join04(): Bool =
+        Foldable.join(",", "1" :: "2" :: "3" :: Nil) == "1,2,3"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinWith                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinWith01(): Bool =
+        Foldable.joinWith(x -> "${x + 1}", ",", Nil: List[Int32]) == ""
+
+    @test
+    def joinWith02(): Bool =
+        Foldable.joinWith(x -> "${x + 1}", ",", 1 :: Nil) == "2"
+
+    @test
+    def joinWith03(): Bool =
+        Foldable.joinWith(x -> "${x + 1}", ",", 1 :: 2 :: 3 :: Nil) == "2,3,4"
+
+    @test
+    def joinWith04(): Bool =
+        Foldable.joinWith(x -> x + x, ",", "1" :: "2" :: "3" :: Nil) == "11,22,33"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toArray01(): Bool & Impure =
+        Array.sameElements(Foldable.toArray(Nel(1, Nil)), [1])
+
+    @test
+    def toArray02(): Bool & Impure =
+        Array.sameElements(Foldable.toArray(Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
+
+    @test
+    def toArray03(): Bool & Impure =
+        Array.sameElements(Foldable.toArray(Nel(1, 1 :: 2 :: 3 :: Nil)), [1, 1, 2, 3])
+
 }

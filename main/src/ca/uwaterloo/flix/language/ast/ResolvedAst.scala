@@ -43,7 +43,7 @@ object ResolvedAst {
 
   case class Spec(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], sc: ResolvedAst.Scheme, tpe: Type, eff: Type, loc: SourceLocation)
 
-  case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, derives: List[Ast.Derivation], cases: Map[Name.Tag, ResolvedAst.Case], tpeDeprecated: Type, sc: ResolvedAst.Scheme, loc: SourceLocation)
+  case class Enum(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, derives: List[Ast.Derivation], cases: Map[Name.Tag, ResolvedAst.Case], tpeDeprecated: Type, sc: ResolvedAst.Scheme, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: ResolvedAst.TypeParams, tpe: Type, loc: SourceLocation)
 
@@ -275,7 +275,7 @@ object ResolvedAst {
 
     object Body {
 
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, terms: List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
       case class Guard(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 

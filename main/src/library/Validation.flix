@@ -19,7 +19,7 @@
 ///
 pub enum Validation[t, e] with Eq, Order, ToString {
     case Success(t),
-    case Failure(Nel[e])
+    case Failure(Nec[e])
 }
 
 instance Hash[Validation[t, e]] with Hash[t], Hash[e] {
@@ -29,17 +29,30 @@ instance Hash[Validation[t, e]] with Hash[t], Hash[e] {
     }
 }
 
+instance SemiGroup[Validation[t, e]] with SemiGroup[t] {
+    pub def combine(x: Validation[t, e], y: Validation[t, e]): Validation[t, e] = match (x, y) {
+        case (Success(x1), Success(y1))     => Success(SemiGroup.combine(x1, y1))
+        case (Failure(es1), Failure(es2))   => Failure(Nec.append(es1, es2))
+        case (Failure(_), _)                => x
+        case (_, Failure(_))                => y
+    }
+}
+
+instance Monoid[Validation[t, e]] with Monoid[t] {
+    pub def empty(): Validation[t, e] = Success(Monoid.empty())
+}
+
 namespace Validation {
 
     ///
     /// Applies the function in `v1` to the value in `v2`.
     ///
     @Time(1) @Space(1)
-    pub def ap(v1: Validation[t -> u & f, e], v2: Validation[t, e]): Validation[u, e] & f = match (v1, v2) {
+    pub def ap(v1: Validation[t -> u & ef, e], v2: Validation[t, e]): Validation[u, e] & ef = match (v1, v2) {
         case (Success(f), Success(v)) => Success(f(v))
         case (Success(_), Failure(e)) => Failure(e)
         case (Failure(e), Success(_)) => Failure(e)
-        case (Failure(x), Failure(y)) => Failure(Nel.append(x, y))
+        case (Failure(x), Failure(y)) => Failure(Nec.append(x, y))
     }
 
     ///
@@ -84,7 +97,7 @@ namespace Validation {
     /// Returns `Success(f(v))` if `o` is `Success(v)`. Otherwise returns `v`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def map(f: t -> u & f, v: Validation[t, e]): Validation[u, e] & f = match v {
+    pub def map(f: t -> u & ef, v: Validation[t, e]): Validation[u, e] & ef = match v {
         case Success(t) => Success(f(t))
         case Failure(e) => Failure(e)
     }
@@ -113,10 +126,10 @@ namespace Validation {
     ///
     /// Precondition: at least one Failure has been encountered.
     ///
-    def sequenceHelperFailure(xs: List[Validation[a, e]], ac: Nel[e]): Validation[List[a], e] = match xs {
+    def sequenceHelperFailure(xs: List[Validation[a, e]], ac: Nec[e]): Validation[List[a], e] = match xs {
         case Nil              => Failure(ac)
         case Success(_) :: vs => sequenceHelperFailure(vs, ac)
-        case Failure(e) :: vs => sequenceHelperFailure(vs, Nel.append(ac, e))
+        case Failure(e) :: vs => sequenceHelperFailure(vs, Nec.append(ac, e))
     }
 
 
@@ -125,7 +138,7 @@ namespace Validation {
     ///
     /// Otherwise returns `Failure(e1 :: ... :: en)` with all of the failures concatenated.
     ///
-    pub def traverse(f: a -> Validation[b, e] & f, xs: List[a]): Validation[List[b], e] & f =
+    pub def traverse(f: a -> Validation[b, e] & ef, xs: List[a]): Validation[List[b], e] & ef =
         traverseHelperSuccess(f, xs, ys -> Success(ys))
 
     ///
@@ -133,7 +146,7 @@ namespace Validation {
     ///
     /// Precondition: no Failure has been encountered.
     ///
-    def traverseHelperSuccess(f: a -> Validation[b, e] & f, xs: List[a], sk: List[b] -> Validation[List[b], e]): Validation[List[b], e] & f = match xs {
+    def traverseHelperSuccess(f: a -> Validation[b, e] & ef, xs: List[a], sk: List[b] -> Validation[List[b], e]): Validation[List[b], e] & ef = match xs {
         case Nil        => sk(Nil)
         case v :: vs    => match f(v) {
             case Success(x) => traverseHelperSuccess(f, vs, xs -> sk(x :: xs))
@@ -146,11 +159,11 @@ namespace Validation {
     ///
     /// Precondition: at least one Failure has been encountered.
     ///
-    def traverseHelperFailure(f: a -> Validation[b, e] & f, xs: List[a], ac: Nel[e]): Validation[List[b], e] & f = match xs {
+    def traverseHelperFailure(f: a -> Validation[b, e] & ef, xs: List[a], ac: Nec[e]): Validation[List[b], e] & ef = match xs {
         case Nil        => Failure(ac)
         case v :: vs    => match f(v) {
             case Success(_) => traverseHelperFailure(f, vs, ac)
-            case Failure(x) => traverseHelperFailure(f, vs, Nel.append(ac, x))
+            case Failure(x) => traverseHelperFailure(f, vs, Nec.append(ac, x))
         }
     }
 
@@ -162,7 +175,7 @@ namespace Validation {
     /// This function is the "forgetful" version of `traverse`, use it when the you want the effect
     /// of applying `f` to each element but do not care about collecting the results.
     ///
-    pub def traverseX(f: a -> Validation[b, e] & f, xs: List[a]): Validation[Unit, e] & f =
+    pub def traverseX(f: a -> Validation[b, e] & ef, xs: List[a]): Validation[Unit, e] & ef =
         traverseXHelperSuccess(f, xs)
 
     ///
@@ -170,7 +183,7 @@ namespace Validation {
     ///
     /// Precondition: no Failure has been encountered.
     ///
-    def traverseXHelperSuccess(f: a -> Validation[b, e] & f, xs: List[a]): Validation[Unit, e] & f = match xs {
+    def traverseXHelperSuccess(f: a -> Validation[b, e] & ef, xs: List[a]): Validation[Unit, e] & ef = match xs {
         case Nil        => Success()
         case v :: vs    => match f(v) {
             case Success(_) => traverseXHelperSuccess(f, vs)
@@ -183,11 +196,11 @@ namespace Validation {
     ///
     /// Precondition: at least one Failure has been encountered.
     ///
-    def traverseXHelperFailure(f: a -> Validation[b, e] & f, xs: List[a], ac: Nel[e]): Validation[Unit, e] & f = match xs {
+    def traverseXHelperFailure(f: a -> Validation[b, e] & ef, xs: List[a], ac: Nec[e]): Validation[Unit, e] & ef = match xs {
         case Nil        => Failure(ac)
         case v :: vs    => match f(v) {
             case Success(_) => traverseXHelperFailure(f, vs, ac)
-            case Failure(e) => traverseXHelperFailure(f, vs, Nel.append(ac, e))
+            case Failure(e) => traverseXHelperFailure(f, vs, Nec.append(ac, e))
         }
     }
 
@@ -210,7 +223,7 @@ namespace Validation {
     /// Returns `Err(e)` if `v` is `Failure(e)`.
     ///
     @Time(1) @Space(1)
-    pub def toResult(v: Validation[t, e]): Result[t, Nel[e]] = match v {
+    pub def toResult(v: Validation[t, e]): Result[t, Nec[e]] = match v {
         case Success(t) => Ok(t)
         case Failure(e) => Err(e)
     }
@@ -233,7 +246,7 @@ namespace Validation {
     /// Returns the concatenation of all the failures as `Failure(xs)` if either or both of `v1` or `v2` are `Failure(xs1)`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift2(f: (t1, t2) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e]): Validation[u, e] & f =
+    pub def lift2(f: (t1, t2) -> u & ef, v1: Validation[t1, e], v2: Validation[t2, e]): Validation[u, e] & ef =
         ap(map(f, v1), v2)
 
     ///
@@ -242,7 +255,7 @@ namespace Validation {
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2` and `v3` are `Failure(xs1)`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift3(f: (t1, t2, t3) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e]): Validation[u, e] & f =
+    pub def lift3(f: (t1, t2, t3) -> u & ef, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e]): Validation[u, e] & ef =
         ap(lift2(f, v1, v2), v3)
 
     ///
@@ -251,7 +264,7 @@ namespace Validation {
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, `v3` and `v4` are `Failure(xs1)`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift4(f: (t1, t2, t3, t4) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e]): Validation[u, e] & f=
+    pub def lift4(f: (t1, t2, t3, t4) -> u & ef, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e]): Validation[u, e] & ef=
         ap(lift3(f, v1, v2, v3), v4)
 
     ///
@@ -260,7 +273,7 @@ namespace Validation {
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v5` are `Failure(xs1)`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift5(f: (t1, t2, t3, t4, t5) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e]): Validation[u, e] & f =
+    pub def lift5(f: (t1, t2, t3, t4, t5) -> u & ef, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e]): Validation[u, e] & ef =
         ap(lift4(f, v1, v2, v3, v4), v5)
 
     ///
@@ -269,7 +282,7 @@ namespace Validation {
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v6` are `Failure(xs1)`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift6(f: (t1, t2, t3, t4, t5, t6) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e], v6: Validation[t6, e]): Validation[u, e] & f =
+    pub def lift6(f: (t1, t2, t3, t4, t5, t6) -> u & ef, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e], v6: Validation[t6, e]): Validation[u, e] & ef =
         ap(lift5(f, v1, v2, v3, v4, v5), v6)
 
     ///
@@ -278,7 +291,7 @@ namespace Validation {
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v7` are `Failure(xs1)`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift7(f: (t1, t2, t3, t4, t5, t6, t7) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e], v6: Validation[t6, e], v7: Validation[t7, e]): Validation[u, e] & f=
+    pub def lift7(f: (t1, t2, t3, t4, t5, t6, t7) -> u & ef, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e], v6: Validation[t6, e], v7: Validation[t7, e]): Validation[u, e] & ef=
         ap(lift6(f, v1, v2, v3, v4, v5, v6), v7)
 
     ///
@@ -287,7 +300,7 @@ namespace Validation {
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v8` are `Failure(xs1)`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e], v6: Validation[t6, e], v7: Validation[t7, e], v8: Validation[t8, e]): Validation[u, e] & f =
+    pub def lift8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u & ef, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e], v6: Validation[t6, e], v7: Validation[t7, e], v8: Validation[t8, e]): Validation[u, e] & ef =
         ap(lift7(f, v1, v2, v3, v4, v5, v6, v7), v8)
 
     ///
@@ -296,7 +309,7 @@ namespace Validation {
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v9` are `Failure(xs1)`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e], v6: Validation[t6, e], v7: Validation[t7, e], v8: Validation[t8, e], v9: Validation[t9, e]): Validation[u, e] & f =
+    pub def lift9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u & ef, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e], v6: Validation[t6, e], v7: Validation[t7, e], v8: Validation[t8, e], v9: Validation[t9, e]): Validation[u, e] & ef =
         ap(lift8(f, v1, v2, v3, v4, v5, v6, v7, v8), v9)
 
     ///
@@ -305,7 +318,7 @@ namespace Validation {
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v10` are `Failure(xs1)`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & f, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e], v6: Validation[t6, e], v7: Validation[t7, e], v8: Validation[t8, e], v9: Validation[t9, e], v10: Validation[t10, e]): Validation[u, e] & f =
+    pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & ef, v1: Validation[t1, e], v2: Validation[t2, e], v3: Validation[t3, e], v4: Validation[t4, e], v5: Validation[t5, e], v6: Validation[t6, e], v7: Validation[t7, e], v8: Validation[t8, e], v9: Validation[t9, e], v10: Validation[t10, e]): Validation[u, e] & ef =
         ap(lift9(f, v1, v2, v3, v4, v5, v6, v7, v8, v9), v10)
 
 

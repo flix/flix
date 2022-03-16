@@ -132,7 +132,7 @@ object Monomorph {
     *
     * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
     */
-  private type DefQueue = mutable.Queue[(Symbol.DefnSym, Def, StrictSubstitution)]
+  private type DefQueue = mutable.Set[(Symbol.DefnSym, Def, StrictSubstitution)]
 
   /**
     * A function-local map from a symbol and a concrete type to the fresh symbol for the specialized version of that function.
@@ -148,13 +148,27 @@ object Monomorph {
   private type Def2Def = mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym]
 
   /**
+    * Enqueues the element `x` in `xs`.
+    */
+  private def enqueue[A](x: A, xs: mutable.Set[A]): Unit = xs += x
+
+  /**
+    * Dequeues an element from a non-empty `xs`.
+    */
+  private def dequeue[A](xs: mutable.Set[A]): A = {
+    val elm = xs.head
+    xs -= elm
+    elm
+  }
+
+  /**
     * Performs monomorphization of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Monomorph") {
 
     implicit val r: Root = root
 
-    val defQueue: DefQueue = mutable.Queue.empty
+    val defQueue: DefQueue = mutable.Set.empty
 
     val def2def: Def2Def = mutable.Map.empty
 
@@ -177,18 +191,13 @@ object Monomorph {
       for ((sym, defn) <- nonParametricDefns) {
         // Get a substitution from the inferred scheme to the declared scheme.
         // This is necessary because the inferred scheme may be more generic than the declared scheme.
-        val subst = Unification.unifyTypes(defn.spec.declaredScheme.base, defn.impl.inferredScheme.base) match {
-          case Result.Ok(subst1) => subst1
-          // This should not happen, since the Typer guarantees that the schemes unify
-          case Result.Err(_) => throw InternalCompilerException("Failed to unify declared and inferred schemes.")
-        }
-        val subst0 = StrictSubstitution(subst)
+        val subst = infallibleUnify(defn.spec.declaredScheme.base, defn.impl.inferredScheme.base)
 
         // Specialize the formal parameters to obtain fresh local variable symbols for them.
-        val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst0)
+        val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
 
         // Specialize the body expression.
-        val body = specialize(defn.impl.exp, env0, subst0, def2def, defQueue)
+        val body = specialize(defn.impl.exp, env0, subst, def2def, defQueue)
 
         // Reassemble the definition.
         specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body)))
@@ -199,7 +208,7 @@ object Monomorph {
        */
       while (defQueue.nonEmpty) {
         // Extract a function from the queue and specializes it w.r.t. its substitution.
-        val (freshSym, defn, subst) = defQueue.dequeue()
+        val (freshSym, defn, subst) = dequeue(defQueue)
 
         flix.subtask(freshSym.toString, sample = true)
 
@@ -248,7 +257,8 @@ object Monomorph {
     def visitExp(e0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym]): Expression = e0 match {
       case Expression.Wild(tpe, loc) => Expression.Wild(subst0(tpe), loc)
 
-      case Expression.Var(sym, tpe, loc) => Expression.Var(env0(sym), subst0(tpe), loc)
+      case Expression.Var(sym, tpe, loc) =>
+        Expression.Var(env0(sym), subst0(tpe), loc)
 
       case Expression.Def(sym, tpe, loc) =>
         /*
@@ -448,6 +458,11 @@ object Monomorph {
         Expression.ArraySlice(b, i1, i2, subst0(tpe), loc)
 
       case Expression.Ref(exp, tpe, eff, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.Ref(e, subst0(tpe), eff, loc)
+
+      case Expression.RefWithRegion(exp, _, tpe, eff, loc) =>
+        // Note: Regions are erased.
         val e = visitExp(exp, env0)
         Expression.Ref(e, subst0(tpe), eff, loc)
 
@@ -723,7 +738,7 @@ object Monomorph {
     */
   private def specializeDef(defn: TypedAst.Def, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
-    val subst = StrictSubstitution(Unification.unifyTypes(defn.impl.inferredScheme.base, tpe).get)
+    val subst = infallibleUnify(defn.impl.inferredScheme.base, tpe)
 
     // Check whether the function definition has already been specialized.
     def2def.get((defn.sym, tpe)) match {
@@ -736,7 +751,7 @@ object Monomorph {
         def2def.put((defn.sym, tpe), freshSym)
 
         // Enqueue the fresh symbol with the definition and substitution.
-        defQueue.enqueue((freshSym, defn, subst))
+        enqueue((freshSym, defn, subst), defQueue)
 
         // Now simply refer to the freshly generated symbol.
         freshSym
@@ -876,9 +891,9 @@ object Monomorph {
           val tag = Name.Tag("ReifiedInt64", loc)
           Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
 
-        case TypeConstructor.Array =>
+        case TypeConstructor.ScopedArray =>
           val tag = Name.Tag("ReifiedArray", loc)
-          val innerTpe = t0.typeArguments.head
+          val innerTpe = Type.eraseAliases(t0).typeArguments.head
           val innerExp = visit(innerTpe)
           Expression.Tag(sym, tag, innerExp, resultTpe, resultEff, loc)
 
@@ -890,6 +905,18 @@ object Monomorph {
     }
 
     visit(tpe)
+  }
+
+  /**
+    * Unifies `tpe1` and `tpe2` which must be unifiable.
+    */
+  private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit flix: Flix): StrictSubstitution = {
+    Unification.unifyTypes(tpe1, tpe2) match {
+      case Result.Ok(subst) =>
+        StrictSubstitution(subst)
+      case Result.Err(_) =>
+        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.")
+    }
   }
 
   /**

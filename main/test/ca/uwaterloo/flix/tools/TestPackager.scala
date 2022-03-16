@@ -33,12 +33,22 @@ class TestPackager extends FunSuite {
     Packager.init(p, DefaultOptions)
     Packager.build(p, DefaultOptions)
     Packager.buildJar(p, DefaultOptions)
+
+    val packageName = p.getFileName.toString
+    val jarPath = p.resolve(packageName + ".jar")
+    assert(Files.exists(jarPath))
+    assert(jarPath.getFileName.toString.startsWith(ProjectPrefix))
   }
 
   test("build-pkg") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Packager.init(p, DefaultOptions)
     Packager.buildPkg(p, DefaultOptions)
+
+    val packageName = p.getFileName.toString
+    val packagePath = p.resolve(packageName + ".fpkg")
+    assert(Files.exists(packagePath))
+    assert(packagePath.getFileName.toString.startsWith(ProjectPrefix))
   }
 
   test("benchmark") {

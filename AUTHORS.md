@@ -44,3 +44,7 @@ By adding your name to this document, you agree to release all your contribution
 - [Nicola Dardanis](https://github.com/nicdard)
 - [Nina Andrup Pedersen](https://github.com/ninaandrup)
 - [Dylan Do Amaral](https://github.com/dylandoamaral)
+- [Anna Krogh](https://github.com/theannanas)
+- [Patrick Lundvig](https://github.com/plun411)
+- [Christian Bonde](https://github.com/ChrBondi)
+- [Kengo TODA](http://github.com/KengoTODA/)

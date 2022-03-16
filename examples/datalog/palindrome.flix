@@ -1,4 +1,4 @@
-def main(_args: Array[String]): Int & Impure =
+def main(_args: Array[String]): Int32 & Impure =
     // Test an input word and print the output
     def trial(input) = {
         let res = input |>
@@ -21,7 +21,7 @@ def main(_args: Array[String]): Int & Impure =
 /// Example: longestPalindromeSequence("Hello") == Some(2,3)
 /// Example: longestPalindromeSequence("abammabba") == Some(1, 6)
 ///
-def longestPalindromeSequence(s: String): Option[(Int, Int)] & Impure = {
+def longestPalindromeSequence(s: String): Option[(Int32, Int32)] & Impure = {
     use Option.flatMap;
     let length = String.length(s);
     // Check the char equality of `s` with index `i` and `j`.
