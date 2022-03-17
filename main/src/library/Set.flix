@@ -514,22 +514,6 @@ namespace Set {
             s)
 
     ///
-    /// Returns `s` as a mutable set.
-    ///
-    @Time(1) @Space(1)
-    pub def toMutSet(s: Set[a]): MutSet[a, Impure] & Impure =
-        MutSet(ref s)
-
-    ///
-    /// Returns `s` as a mutable set given the region `r`.
-    ///
-    @Time(1) @Space(1)
-    pub def toMutSetWithRegion(r: Region[r], s: Set[a]): MutSet[a, r] & reg(r) with Order[a] =
-        let ms = MutSet.newWithRegion(r);
-        foldLeft((_, a) -> MutSet.add!(a, ms), (), s);
-        ms
-
-    ///
     /// Returns the set `s` as a list.
     ///
     @Time(size(s)) @Space(size(s))
