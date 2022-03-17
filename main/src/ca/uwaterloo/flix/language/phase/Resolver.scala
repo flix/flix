@@ -673,10 +673,10 @@ object Resolver {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.LetRec(sym, mod, e1, e2, loc)
 
-        case NamedAst.Expression.Region(sym, exp, loc) =>
+        case NamedAst.Expression.Scope(sym, exp, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Region(sym, e, loc)
+          } yield ResolvedAst.Expression.Scope(sym, e, loc)
 
         case NamedAst.Expression.Match(exp, rules, loc) =>
           val rulesVal = traverse(rules) {

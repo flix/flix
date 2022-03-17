@@ -629,14 +629,14 @@ object ParsedAst {
     case class LetImport(sp1: SourcePosition, op: ParsedAst.JvmOp, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Region Expression.
+      * Scope Expression.
       *
       * @param sp1   the position of the first character in the expression.
       * @param ident the name of the region.
       * @param exp   the body expression.
       * @param sp2   the position of the last character in the expression.
       */
-    case class Region(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Scope(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Match Expression (pattern match expression).

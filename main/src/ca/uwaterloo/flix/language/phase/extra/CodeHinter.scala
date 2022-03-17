@@ -127,7 +127,7 @@ object CodeHinter {
     case Expression.LetRec(_, _, exp1, exp2, _, eff, loc) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Region(_, exp, _, _, _) =>
+    case Expression.Scope(_, exp, _, _, _) =>
       visitExp(exp)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
