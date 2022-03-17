@@ -1075,12 +1075,6 @@ object Namer {
         }
       }
 
-    case WeededAst.Type.RigidVar(ident, loc) =>
-      // TODO: SuspiciousTypeVarName
-      // TODO: Check wild var and check not in tenv!
-      val tvar = Type.freshUnkindedVar(loc, Rigidity.Rigid, Some(ident.name))
-      NamedAst.Type.Var(tvar, loc).toSuccess
-
     case WeededAst.Type.Ambiguous(qname, loc) =>
       if (qname.isUnqualified) {
         val name = qname.ident.name
@@ -1362,7 +1356,6 @@ object Namer {
     */
   private def freeVars(tpe0: WeededAst.Type): List[Name.Ident] = tpe0 match {
     case WeededAst.Type.Var(ident, loc) => ident :: Nil
-    case WeededAst.Type.RigidVar(ident, loc) => throw InternalCompilerException(s"Unexpected free rigid type variable: '${ident.name}'.") // TODO
     case WeededAst.Type.Ambiguous(qname, loc) => Nil
     case WeededAst.Type.Unit(loc) => Nil
     case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
@@ -1393,7 +1386,6 @@ object Namer {
     def visit(tpe0: WeededAst.Type): List[Name.Ident] = tpe0 match {
       case WeededAst.Type.Var(ident, loc) if tenv.contains(ident.name) => Nil
       case WeededAst.Type.Var(ident, loc) => ident :: Nil
-      case WeededAst.Type.RigidVar(ident, loc) => throw InternalCompilerException(s"Unexpected free rigid type variable: '${ident.name}'.") // TODO
       case WeededAst.Type.Ambiguous(qname, loc) => Nil
       case WeededAst.Type.Unit(loc) => Nil
       case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(visit)
