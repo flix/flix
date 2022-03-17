@@ -47,22 +47,92 @@ object FormatSimpleType {
     }
 
     /**
+      * Wrap the given type with parentheses
+      */
+    def parenthesize(s: String): String = "(" + s + ")"
+
+    /**
       * Wrap the given type with parentheses if it isn't already wrapped.
       */
-    def withParens(tpe: String): String = {
-      if (tpe.startsWith("(") && tpe.endsWith(")")) {
-        tpe
+    def ensureParens(s: String): String = {
+      if (s.startsWith("(")) {
+        s
       } else {
-        s"($tpe)"
+        parenthesize(s)
       }
     }
 
-    def formatRecordFieldType(fieldType: SimpleType.FieldType): String = fieldType match {
+    def visitRecordFieldType(fieldType: SimpleType.FieldType): String = fieldType match {
       case SimpleType.FieldType(field, tpe) => s"$field :: ${visit(tpe)}"
     }
 
-    def formatSchemaFieldType(fieldType: SimpleType.FieldType): String = fieldType match {
-      case SimpleType.FieldType(field, tpe) => s"$field${withParens(visit(tpe))}"
+    def visitSchemaFieldType(fieldType: SimpleType.FieldType): String = fieldType match {
+      case SimpleType.FieldType(field, tpe) => s"$field${ensureParens(visit(tpe))}"
+    }
+
+    def delimitFunctionArg(arg: SimpleType): String = arg match {
+      // Tuples get an extra set of parentheses
+      case tuple: SimpleType.Tuple => parenthesize(visit(tuple))
+      case tpe => delimit(tpe)
+    }
+
+    def isDelimited(tpe: SimpleType): Boolean = tpe match {
+      // non-delimited types
+      case SimpleType.Not(_) => false
+      case SimpleType.And(_) => false
+      case SimpleType.Or(_) => false
+      case SimpleType.PureArrow(_, _) => false
+      case SimpleType.PolyArrow(_, _, _) => false
+
+      // delimited types
+      case SimpleType.Hole => true
+      case SimpleType.Unit => true
+      case SimpleType.Null => true
+      case SimpleType.Bool => true
+      case SimpleType.Char => true
+      case SimpleType.Float32 => true
+      case SimpleType.Float64 => true
+      case SimpleType.Int8 => true
+      case SimpleType.Int16 => true
+      case SimpleType.Int32 => true
+      case SimpleType.Int64 => true
+      case SimpleType.BigInt => true
+      case SimpleType.Str => true
+      case SimpleType.ScopedArray => true
+      case SimpleType.ScopedRef => true
+      case SimpleType.Channel => true
+      case SimpleType.Lazy => true
+      case SimpleType.True => true
+      case SimpleType.False => true
+      case SimpleType.Region => true
+      case SimpleType.RecordConstructor(_) => true
+      case SimpleType.Record(_) => true
+      case SimpleType.RecordExtend(_, _) => true
+      case SimpleType.RecordRow(_) => true
+      case SimpleType.RecordRowExtend(_, _) => true
+      case SimpleType.SchemaConstructor(_) => true
+      case SimpleType.Schema(_) => true
+      case SimpleType.SchemaExtend(_, _) => true
+      case SimpleType.SchemaRow(_) => true
+      case SimpleType.SchemaRowExtend(_, _) => true
+      case SimpleType.RelationConstructor => true
+      case SimpleType.Relation(_) => true
+      case SimpleType.LatticeConstructor => true
+      case SimpleType.Lattice(_) => true
+      case SimpleType.TagConstructor(_) => true
+      case SimpleType.Tag(_, _, _) => true
+      case SimpleType.Name(_) => true
+      case SimpleType.Apply(_, _) => true
+      case SimpleType.Var(_) => true
+      case SimpleType.Tuple(_) => true
+    }
+
+    def delimit(tpe: SimpleType): String = {
+      if (isDelimited(tpe)) {
+        visit(tpe)
+      } else {
+        parenthesize(visit(tpe))
+      }
     }
 
     def visit(tpe0: SimpleType): String = tpe0 match {
@@ -87,41 +157,41 @@ object FormatSimpleType {
       case SimpleType.False => "False"
       case SimpleType.Region => "Region"
       case SimpleType.Record(fields) =>
-        val fieldString = fields.map(formatRecordFieldType).mkString(", ")
+        val fieldString = fields.map(visitRecordFieldType).mkString(", ")
         s"{ $fieldString }"
       case SimpleType.RecordExtend(fields, rest) =>
-        val fieldString = fields.map(formatRecordFieldType).mkString(", ")
+        val fieldString = fields.map(visitRecordFieldType).mkString(", ")
         val restString = visit(rest)
         s"{ $fieldString | $restString }"
       case SimpleType.RecordRow(fields) =>
-        val fieldString = fields.map(formatRecordFieldType).mkString(", ")
+        val fieldString = fields.map(visitRecordFieldType).mkString(", ")
         s"( $fieldString )"
       case SimpleType.RecordRowExtend(fields, rest) =>
-        val fieldString = fields.map(formatRecordFieldType).mkString(", ")
+        val fieldString = fields.map(visitRecordFieldType).mkString(", ")
         val restString = visit(rest)
         s"( $fieldString | $restString )"
       case SimpleType.RecordConstructor(arg) => s"{ $arg }"
       case SimpleType.Schema(fields) =>
-        val fieldString = fields.map(formatSchemaFieldType).mkString(", ")
+        val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
         s"#{ $fieldString }"
       case SimpleType.SchemaExtend(fields, rest) =>
-        val fieldString = fields.map(formatSchemaFieldType).mkString(", ")
+        val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
         val restString = visit(rest)
         s"#{ $fieldString | $restString}"
       case SimpleType.SchemaRow(fields) =>
-        val fieldString = fields.map(formatSchemaFieldType).mkString(", ")
+        val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
         s"#( $fieldString )"
       case SimpleType.SchemaRowExtend(fields, rest) =>
-        val fieldString = fields.map(formatSchemaFieldType).mkString(", ")
+        val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
         val restString = visit(rest)
         s"#( $fieldString | $restString)"
       case SimpleType.SchemaConstructor(arg) => s"#{ $arg }"
-      case SimpleType.Not(tpe) => s"not ${visit(tpe)}" // MATT handle parens
+      case SimpleType.Not(tpe) => s"not ${delimit(tpe)}"
       case SimpleType.And(tpes) =>
-        val strings = tpes.map(visit)
+        val strings = tpes.map(delimit)
         strings.mkString(" and ")
       case SimpleType.Or(tpes) =>
-        val strings = tpes.map(visit)
+        val strings = tpes.map(delimit)
         strings.mkString(" or ")
       case SimpleType.RelationConstructor => "Relation" // MATT ?
       case SimpleType.Relation(tpes) =>
@@ -132,8 +202,15 @@ object FormatSimpleType {
         val lat = visit(tpes.last)
         val terms = tpes.init.map(visit).mkString(", ")
         s"Lattice($terms; $lat)"
-      case SimpleType.PureArrow(arg, ret) => s"$arg -> $ret"
-      case SimpleType.PolyArrow(arg, eff, ret) => s"$arg ->{$eff} $ret"
+      case SimpleType.PureArrow(arg, ret) =>
+        val argString = delimitFunctionArg(arg)
+        val retString = delimit(ret)
+        s"$argString -> $retString"
+      case SimpleType.PolyArrow(arg, eff, ret) =>
+        val argString = delimitFunctionArg(arg)
+        val effString = visit(eff)
+        val retString = delimit(ret)
+        s"$argString ->{$effString} $retString"
       case SimpleType.TagConstructor(name) => ???
       case SimpleType.Tag(name, args, ret) => ???
       case SimpleType.Name(name) => name
