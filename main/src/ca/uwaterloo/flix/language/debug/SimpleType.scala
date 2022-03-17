@@ -133,13 +133,9 @@ object SimpleType {
 
   case class PartialPureArrow(arity: Int, tpes: List[SimpleType]) extends SimpleType
 
-  case class PartialImpureArrow(arity: Int, tpes: List[SimpleType]) extends SimpleType
-
   case class PartialPolyArrow(arity: Int, tpes: List[SimpleType], eff: SimpleType) extends SimpleType
 
   case class PureArrow(args: List[SimpleType], ret: SimpleType) extends SimpleType
-
-  case class ImpureArrow(args: List[SimpleType], ret: SimpleType) extends SimpleType
 
   case class PolyArrow(args: List[SimpleType], ret: SimpleType, eff: SimpleType) extends SimpleType
 
@@ -190,10 +186,8 @@ object SimpleType {
         args match {
           case Nil => ArrowConstructor(arity)
           case True :: tpes if tpes.length == arity => PureArrow(tpes.init, tpes.last)
-          case False :: tpes if tpes.length == arity => ImpureArrow(tpes.init, tpes.last)
           case eff :: tpes if tpes.length == arity => PolyArrow(tpes.init, tpes.last, eff)
           case True :: tpes => PartialPureArrow(arity, tpes)
-          case False :: tpes => PartialImpureArrow(arity, tpes)
           case eff :: tpes => PartialPolyArrow(arity, tpes, eff)
         }
       case TypeConstructor.RecordRowEmpty => RecordRowEmpty

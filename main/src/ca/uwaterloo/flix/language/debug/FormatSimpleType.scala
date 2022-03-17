@@ -113,10 +113,8 @@ object FormatSimpleType {
       case SimpleType.Lattice(tpes) => Delimited
       case SimpleType.ArrowConstructor(arity) => Arrow
       case SimpleType.PartialPureArrow(arity, tpes) => Arrow
-      case SimpleType.PartialImpureArrow(arity, tpes) => Arrow
       case SimpleType.PartialPolyArrow(arity, tpes, eff) => Arrow
       case SimpleType.PureArrow(args, ret) => Arrow
-      case SimpleType.ImpureArrow(args, ret) => Arrow
       case SimpleType.PolyArrow(args, ret, eff) => Arrow
       case SimpleType.TagConstructor(name) => ???
       case SimpleType.PartialTag(name, args) => ???
@@ -207,30 +205,23 @@ object FormatSimpleType {
         s"Lattice($terms; $lat)"
       case SimpleType.ArrowConstructor(arity) =>
         val params = Iterable.fill(arity - 1)("?").mkString("(", ", ", ")")
-        s"$params -> ? & ?"
+        s"$params ->{?} ?"
       case SimpleType.PartialPureArrow(arity, tpes) =>
         val params = tpes.map(visit).padTo(arity - 1, "?").mkString("(", ", ", ")")
         s"$params -> ?"
-      case SimpleType.PartialImpureArrow(arity, tpes) =>
-        val params = tpes.map(visit).padTo(arity - 1, "?").mkString("(", ", ", ")")
-        s"$params ~> ?"
       case SimpleType.PartialPolyArrow(arity, tpes, eff) =>
         val params = tpes.map(visit).padTo(arity - 1, "?").mkString("(", ", ", ")")
         val effString = visit(eff)
-        s"$params -> ? & $effString"
+        s"$params ->{$effString} ?"
       case SimpleType.PureArrow(args, ret) =>
         val params = args.mkString("(", ", ", ")")
         val retString = visit(ret)
         s"$params -> $retString"
-      case SimpleType.ImpureArrow(args, ret) =>
-        val params = args.mkString("(", ", ", ")")
-        val retString = visit(ret)
-        s"$params ~> $retString"
       case SimpleType.PolyArrow(args, ret, eff) =>
         val params = args.mkString("(", ", ", ")")
         val retString = visit(ret)
         val effString = visit(eff)
-        s"$params ~> $retString & $effString"
+        s"$params ->{$effString} $retString"
       case SimpleType.TagConstructor(name) => ???
       case SimpleType.PartialTag(name, args) => ???
       case SimpleType.Tag(name, args, ret) => ???
