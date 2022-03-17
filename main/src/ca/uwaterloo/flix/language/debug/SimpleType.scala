@@ -107,7 +107,7 @@ object SimpleType {
 
   // Boolean Operators
 
-  case class Not(tpe: Option[SimpleType]) extends SimpleType
+  case class Not(tpe: SimpleType) extends SimpleType
 
   // MATT use Hole for all the partial stuff
   case class And(tpes: List[SimpleType]) extends SimpleType
@@ -257,7 +257,13 @@ object SimpleType {
         }
       case TypeConstructor.True => True
       case TypeConstructor.False => False
-      case TypeConstructor.Not => Not(t.typeArguments.headOption.map(fromWellKindedType))
+      case TypeConstructor.Not =>
+        t.typeArguments.map(fromWellKindedType) match {
+          case Nil => Not(Hole)
+          case arg :: Nil => Not(arg)
+          case _ :: _ :: _ => throw IllKindedException
+        }
+
       case TypeConstructor.And =>
         // collapse into a chain of ands
         t.typeArguments.map(fromWellKindedType).map(splitAnds) match {
@@ -265,7 +271,7 @@ object SimpleType {
           case Nil => And(Hole :: Hole :: Nil)
           case args :: Nil => And(args :+ Hole)
           case args1 :: args2 :: Nil => And(args1 ++ args2)
-          case _ :: _ :: _ :: _ => ??? // MATT ICE
+          case _ :: _ :: _ :: _ => throw IllKindedException
         }
 
       case TypeConstructor.Or =>
@@ -275,7 +281,7 @@ object SimpleType {
           case Nil => Or(Hole :: Hole :: Nil)
           case args :: Nil => Or(args :+ Hole)
           case args1 :: args2 :: Nil => Or(args1 ++ args2)
-          case _ :: _ :: _ :: _ => ??? // MATT ICE
+          case _ :: _ :: _ :: _ => throw IllKindedException
         }
 
       case TypeConstructor.Region => mkApply(Region, t.typeArguments.map(fromWellKindedType))
