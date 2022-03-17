@@ -142,7 +142,7 @@ object SimpleType {
 
   case class Var(id: Int) extends SimpleType
 
-  case class Tuple(length: Int, fields: List[SimpleType]) extends SimpleType
+  case class Tuple(fields: List[SimpleType]) extends SimpleType
 
 
   /**
@@ -237,7 +237,9 @@ object SimpleType {
       case TypeConstructor.UnkindedEnum(sym) => throw InternalCompilerException("Unexpected unkinded type.")
       case TypeConstructor.Native(clazz) => Name(clazz.getSimpleName)
       case TypeConstructor.ScopedRef => mkApply(ScopedRef, t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.Tuple(l) => Tuple(l, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Tuple(l) =>
+        val tpes = t.typeArguments.map(fromWellKindedType).padTo(l, Hole)
+        Tuple(tpes)
       case TypeConstructor.Relation =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
@@ -294,7 +296,7 @@ object SimpleType {
 
   // MATT docs
   private def destructTuple(tpe: SimpleType): List[SimpleType] = tpe match {
-    case Tuple(_, fields) => fields
+    case Tuple(fields) => fields
     case Unit => Nil
     case t => t :: Nil
   }

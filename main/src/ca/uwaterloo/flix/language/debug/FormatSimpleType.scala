@@ -117,7 +117,7 @@ object FormatSimpleType {
       case SimpleType.Name(name) => Delimited
       case SimpleType.Apply(tpe, tpes) => Delimited
       case SimpleType.Var(id) => Delimited
-      case SimpleType.Tuple(length, fields) => Delimited
+      case SimpleType.Tuple(tpes) => Delimited
     }
 
     def visit(tpe0: SimpleType): String = tpe0 match {
@@ -211,9 +211,8 @@ object FormatSimpleType {
         val name = nc.getOrElseUpdate(id, nextAvailableName())
         names.add(name)
         name
-      case SimpleType.Tuple(length, fields) =>
-        val strings = fields.map(visit).padTo(length, "?")
-        strings.mkString("(", ", ", ")")
+      case SimpleType.Tuple(fields) =>
+        fields.map(visit).mkString("(", ", ", ")")
     }
 
     visit(tpe00)
