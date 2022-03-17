@@ -105,9 +105,17 @@ object SimpleType {
 
   case class Not(tpe: Option[SimpleType]) extends SimpleType
 
+  case object AndConstructor extends SimpleType
+
   case class And(tpes: List[SimpleType]) extends SimpleType
 
+  case class PartialAnd(tpe: List[SimpleType]) extends SimpleType
+
+  case object OrConstructor extends SimpleType
+
   case class Or(tpes: List[SimpleType]) extends SimpleType
+
+  case class PartialOr(tpe: List[SimpleType]) extends SimpleType
 
   // Relations and Lattices
 
@@ -263,8 +271,24 @@ object SimpleType {
       case TypeConstructor.True => True
       case TypeConstructor.False => False
       case TypeConstructor.Not => Not(t.typeArguments.headOption.map(fromWellKindedType))
-      case TypeConstructor.And => And(t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.Or => Or(t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.And =>
+        // collapse into a chain of ands
+        t.typeArguments.map(fromWellKindedType).map(splitAnds) match {
+          case Nil => AndConstructor
+          case args :: Nil => PartialAnd(args)
+          case args1 :: args2 :: Nil => And(args1 ++ args2)
+          case _ :: _ :: _ :: _ => ??? // MATT ICE
+        }
+
+      case TypeConstructor.Or =>
+        // collapse into a chain of ors
+        t.typeArguments.map(fromWellKindedType).map(splitOrs) match {
+          case Nil => OrConstructor
+          case args :: Nil => PartialOr(args)
+          case args1 :: args2 :: Nil => Or(args1 ++ args2)
+          case _ :: _ :: _ :: _ => ??? // MATT ICE
+        }
+
       case TypeConstructor.Region => mkApply(Region, t.typeArguments.map(fromWellKindedType))
       case _: TypeConstructor.UnappliedAlias => throw InternalCompilerException("Unexpected unapplied alias.")
     }
@@ -333,5 +357,15 @@ object SimpleType {
       case Var(id) => Var(id)
       case _ => ??? // MATT ICE (do I need var here?)
     }
+  }
+
+  private def splitAnds(tpe: SimpleType): List[SimpleType] = tpe match {
+    case And(tpes) => tpes
+    case t => List(t)
+  }
+
+  private def splitOrs(tpe: SimpleType): List[SimpleType] = tpe match {
+    case Or(tpes) => tpes
+    case t => List(t)
   }
 }

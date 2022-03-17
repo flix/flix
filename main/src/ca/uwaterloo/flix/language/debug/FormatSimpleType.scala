@@ -182,11 +182,19 @@ object FormatSimpleType {
       case SimpleType.SchemaRowConstructor(field) => s"#( $field :: ? | ? )"
       case SimpleType.SchemaRowHead(name, tpe) => s"#( $name :: ${visit(tpe)} | ? )"
       case SimpleType.Not(tpe) => s"not ${tpe.map(visit).getOrElse("?")}" // MATT handle parens
+      case SimpleType.AndConstructor => "? and ?"
+      case SimpleType.PartialAnd(tpes) =>
+        val strings = tpes.map(visit)
+        strings.mkString(" and ") + " and ?"
       case SimpleType.And(tpes) =>
-        val strings = tpes.map(visit).padTo(2, "?")
+        val strings = tpes.map(visit)
         strings.mkString(" and ")
+      case SimpleType.OrConstructor => "? or ?"
+      case SimpleType.PartialOr(tpes) =>
+        val strings = tpes.map(visit)
+        strings.mkString(" or ") + " or ?"
       case SimpleType.Or(tpes) =>
-        val strings = tpes.map(visit).padTo(2, "?")
+        val strings = tpes.map(visit)
         strings.mkString(" or ")
       case SimpleType.RelationConstructor => "Relation" // MATT ?
       case SimpleType.Relation(tpes) =>
