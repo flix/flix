@@ -15,20 +15,18 @@
  */
 package ca.uwaterloo.flix.language.debug
 
-import ca.uwaterloo.flix.language.ast.Type
-
-import scala.collection.mutable
+import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Type}
 
 object FormatSimpleType {
   // MATT docs
   // MATT decide on how API should look (exposing to all types here)
-  def formatWellKindedType(tpe: Type): String = {
+  def formatWellKindedType(tpe: Type)(implicit audience: Audience): String = {
     format(SimpleType.fromWellKindedType(tpe))
   }
 
   // MATT docs
   // MATT private?
-  def format(tpe00: SimpleType): String = {
+  def format(tpe00: SimpleType)(implicit audience: Audience): String = {
 
     /**
       * Wrap the given type with parentheses
@@ -107,7 +105,7 @@ object FormatSimpleType {
       case SimpleType.Tag(_, _, _) => true
       case SimpleType.Name(_) => true
       case SimpleType.Apply(_, _) => true
-      case SimpleType.Var(_) => true
+      case SimpleType.Var(_, _, _, _) => true
       case SimpleType.Tuple(_) => true
     }
 
@@ -202,7 +200,26 @@ object FormatSimpleType {
         val string = visit(tpe)
         val strings = tpes.map(visit)
         string + strings.mkString("[", ", ", "]")
-      case SimpleType.Var(id) => ???
+      case SimpleType.Var(id, kind, rigidity, text) =>
+        val prefix: String = kind match {
+          case Kind.Wild => "_" + id.toString
+          case Kind.Star => "t" + id
+          case Kind.Bool => "b" + id
+          case Kind.RecordRow => "r" + id
+          case Kind.SchemaRow => "s" + id
+          case Kind.Predicate => "'" + id.toString
+          case Kind.Arrow(_, _) => "'" + id.toString
+        }
+        val suffix = rigidity match {
+          case Rigidity.Flexible => ""
+          case Rigidity.Rigid => "!"
+        }
+        val s = prefix + suffix
+        audience match {
+          case Audience.Internal => s
+          case Audience.External => text.getOrElse(s)
+        }
+
       case SimpleType.Tuple(fields) =>
         fields.map(visit).mkString("(", ", ", ")")
     }

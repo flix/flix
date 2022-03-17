@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.debug
 
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -136,7 +136,7 @@ object SimpleType {
 
   case class Apply(tpe: SimpleType, tpes: List[SimpleType]) extends SimpleType
 
-  case class Var(id: Int) extends SimpleType
+  case class Var(id: Int, kind: Kind, rigidity: Rigidity, text: Option[String]) extends SimpleType
 
   case class Tuple(fields: List[SimpleType]) extends SimpleType
 
@@ -145,7 +145,7 @@ object SimpleType {
     * Creates a simple type from the well-kinded type `t`.
    */
   def fromWellKindedType(t: Type): SimpleType = t.baseType match {
-    case Type.KindedVar(id, kind, loc, rigidity, text) => Var(id) // MATT ignoring name
+    case Type.KindedVar(id, kind, loc, rigidity, text) => Var(id, kind, rigidity, text)
     case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
     case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
     case Type.Alias(cst, args, tpe, loc) => Apply(Name(cst.sym.name), args.map(fromWellKindedType))
@@ -311,7 +311,7 @@ object SimpleType {
           case _ => throw IllKindedException
         }
       case Type.Cst(TypeConstructor.RecordRowEmpty, _) => SimpleType.RecordRow(Nil)
-      case Type.KindedVar(id, kind, loc, rigidity, text) => SimpleType.Var(id) // MATT ignoring text
+      case Type.KindedVar(id, kind, loc, rigidity, text) => SimpleType.Var(id, kind, rigidity, text)
       case _ => throw IllKindedException
     }
 
@@ -319,7 +319,7 @@ object SimpleType {
     visit(row0) match {
       case RecordRowExtend(fields, rest) => RecordRowExtend(fields.sortBy(_.name), rest)
       case RecordRow(fields) => RecordRow(fields.sortBy(_.name))
-      case Var(id) => Var(id)
+      case v: Var => v
       case _ => throw IllKindedException
     }
   }
@@ -337,7 +337,7 @@ object SimpleType {
           case _ => throw IllKindedException
         }
       case Type.Cst(TypeConstructor.SchemaRowEmpty, _) => SimpleType.SchemaRow(Nil)
-      case Type.KindedVar(id, kind, loc, rigidity, text) => SimpleType.Var(id) // MATT ignoring text
+      case Type.KindedVar(id, kind, loc, rigidity, text) => SimpleType.Var(id, kind, rigidity, text)
       case _ => throw IllKindedException
     }
 
@@ -345,7 +345,7 @@ object SimpleType {
     visit(row0) match {
       case SchemaRow(fields) => SchemaRow(fields.sortBy(_.name))
       case SchemaRowExtend(fields, rest) => SchemaRowExtend(fields.sortBy(_.name), rest)
-      case Var(id) => Var(id)
+      case v: Var => v
       case _ => throw IllKindedException
     }
   }
