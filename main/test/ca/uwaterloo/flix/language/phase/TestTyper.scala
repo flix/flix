@@ -1275,9 +1275,10 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let _ = {
-        |        let region r;
-        |        let x = ref 123 @ r;
-        |        x
+        |        region r {
+        |            let x = ref 123 @ r;
+        |            x
+        |        }
         |    };
         |    42
         |
@@ -1291,9 +1292,10 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let _ = {
-        |        let region r;
-        |        let x = ref 123 @ r;
-        |        (123, x)
+        |        region r {
+        |            let x = ref 123 @ r;
+        |            (123, x)
+        |        }
         |    };
         |    42
         |
@@ -1307,9 +1309,10 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let _ = {
-        |        let region r;
-        |        let x = ref 123 @ r;
-        |        _w -> x
+        |        region r {
+        |            let x = ref 123 @ r;
+        |            _w -> x
+        |        }
         |    };
         |    42
         |
@@ -1323,11 +1326,12 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let _ = {
-        |        let region r;
-        |        let x = ref 123 @ r;
-        |        w -> {
-        |            let _ = deref x;
-        |            w
+        |        region r {
+        |            let x = ref 123 @ r;
+        |            w -> {
+        |                let _ = deref x;
+        |                w
+        |            }
         |        }
         |    };
         |    42

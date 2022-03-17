@@ -183,7 +183,7 @@ object Lowering {
     * Lowers the given enum `enum0`.
     */
   private def visitEnum(enum0: Enum)(implicit root: Root, flix: Flix): Enum = enum0 match {
-    case Enum(doc, mod, sym, tparams, derives, cases0, tpeDeprecated0, sc0, loc) =>
+    case Enum(doc, ann, mod, sym, tparams, derives, cases0, tpeDeprecated0, sc0, loc) =>
       val tpeDeprecated = visitType(tpeDeprecated0)
       val sc = visitScheme(sc0)
       val cases = cases0.map {
@@ -192,7 +192,7 @@ object Lowering {
           val caseSc = visitScheme(caseSc0)
           (tag, Case(caseSym, tag, caseTpeDeprecated, caseSc, loc))
       }
-      Enum(doc, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc)
+      Enum(doc, ann, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc)
   }
 
   /**
@@ -324,9 +324,12 @@ object Lowering {
       val t = visitType(tpe)
       Expression.LetRec(sym, mod, e1, e2, t, eff, loc)
 
-    case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expression.LetRegion(sym, e, tpe, eff, loc)
+    case Expression.Scope(sym, exp, tpe, eff, loc) =>
+      // Introduce a Unit value to represent the Region value.
+      val mod = Ast.Modifiers.Empty
+      val e1 = Expression.Unit(loc)
+      val e2 = visitExp(exp)
+      Expression.Let(sym, mod, e1, e2, tpe, eff, loc)
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -1339,10 +1342,10 @@ object Lowering {
       val e2 = substExp(exp2, subst)
       Expression.LetRec(s, mod, e1, e2, tpe, eff, loc)
 
-    case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
+    case Expression.Scope(sym, exp, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)
       val e = substExp(exp, subst)
-      Expression.LetRegion(s, e, tpe, eff, loc)
+      Expression.Scope(s, e, tpe, eff, loc)
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)
