@@ -87,19 +87,15 @@ object SimpleType {
 
   // Schemas
 
-  case class Schema(fields: List[FieldType], rest: Option[SimpleType.Var]) extends SimpleType
+  case class SchemaConstructor(arg: SimpleType) extends SimpleType
 
-  case class SchemaRow(fields: List[FieldType], rest: Option[SimpleType.Var]) extends SimpleType
+  case class Schema(fields: List[FieldType]) extends SimpleType
 
-  case object SchemaRowEmpty extends SimpleType
+  case class SchemaExtend(fields: List[FieldType], rest: SimpleType) extends SimpleType
 
-  case object SchemaEmpty extends SimpleType
+  case class SchemaRow(fields: List[FieldType]) extends SimpleType
 
-  case object SchemaConstructor extends SimpleType
-
-  case class SchemaRowConstructor(field: String) extends SimpleType
-
-  case class SchemaRowHead(name: String, tpe: SimpleType) extends SimpleType
+  case class SchemaRowExtend(fields: List[FieldType], rest: SimpleType) extends SimpleType
 
   // Boolean Operators
 
@@ -201,23 +197,23 @@ object SimpleType {
           }
           case _ => throw IllKindedException
         }
-      case TypeConstructor.SchemaRowEmpty => SchemaRowEmpty
+      case TypeConstructor.SchemaRowEmpty => SchemaRow(Nil)
       case TypeConstructor.SchemaRowExtend(pred) =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
-          case Nil => SchemaRowConstructor(pred.name)
-          case tpe :: Nil => SchemaRowHead(pred.name, tpe)
+          case Nil => SchemaRowExtend(FieldType(pred.name, Hole) :: Nil, Hole)
+          case tpe :: Nil => SchemaRowExtend(FieldType(pred.name, tpe) :: Nil, Hole)
           case _ :: _ :: Nil => fromSchemaRow(t)
           case _ => throw IllKindedException
         }
       case TypeConstructor.Schema =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
-          case Nil => SchemaConstructor
+          case Nil => SchemaConstructor(Hole)
           case tpe :: Nil => tpe match {
-            case SchemaRowEmpty => SchemaEmpty
-            case SchemaRow(fields, rest) => Schema(fields, rest)
-            case tvar: Var => Schema(Nil, Some(tvar))
+            case SchemaRow(fields) => Schema(fields)
+            case SchemaRowExtend(fields, rest) => SchemaExtend(fields, rest)
+            case tvar: Var => SchemaConstructor(tvar)
             case _ => throw IllKindedException
           }
           case _ => throw IllKindedException
@@ -310,6 +306,7 @@ object SimpleType {
         visit(rest) match {
           // MATT case docs
           case SimpleType.RecordRow(fields) => SimpleType.RecordRow(fieldType :: fields)
+          case SimpleType.RecordRowExtend(fields, rest) => SimpleType.RecordRowExtend(fieldType :: fields, rest) // MATT shadow
           case tvar: SimpleType.Var => SimpleType.RecordRowExtend(fieldType :: Nil, tvar)
           case _ => throw IllKindedException
         }
@@ -320,6 +317,7 @@ object SimpleType {
 
     // sort the fields after converting
     visit(row0) match {
+      case RecordRowExtend(fields, rest) => RecordRowExtend(fields.sortBy(_.name), rest)
       case RecordRow(fields) => RecordRow(fields.sortBy(_.name))
       case Var(id) => Var(id)
       case _ => throw IllKindedException
@@ -332,23 +330,23 @@ object SimpleType {
       // MATT case docs
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(name), _), tpe, _), rest, _) =>
         val fieldType = FieldType(name.name, fromWellKindedType(tpe))
-        fromSchemaRow(rest) match {
-          case SimpleType.SchemaRowEmpty => SimpleType.SchemaRow(fieldType :: Nil, None)
-          case SimpleType.SchemaRow(fields, rest) => SimpleType.SchemaRow(fieldType :: fields, rest) // MATT shadow
-          case tvar: SimpleType.Var => SimpleType.SchemaRow(fieldType :: Nil, Some(tvar))
-          case _ => ??? // MATT ICE
+        visit(rest) match {
+          case SimpleType.SchemaRow(fields) => SimpleType.SchemaRow(fieldType :: fields)
+          case SimpleType.SchemaRowExtend(fields, rest) => SimpleType.SchemaRowExtend(fieldType :: fields, rest) // MATT shadow
+          case tvar: SimpleType.Var => SimpleType.SchemaRowExtend(fieldType :: Nil, tvar)
+          case _ => throw IllKindedException
         }
-      case Type.Cst(TypeConstructor.SchemaRowEmpty, _) => SimpleType.SchemaRowEmpty
+      case Type.Cst(TypeConstructor.SchemaRowEmpty, _) => SimpleType.SchemaRow(Nil)
       case Type.KindedVar(id, kind, loc, rigidity, text) => SimpleType.Var(id) // MATT ignoring text
-      case _ => ??? // MATT ICE
+      case _ => throw IllKindedException
     }
 
     // sort the fields after converting
     visit(row0) match {
-      case SchemaRowEmpty => SchemaRowEmpty
-      case SchemaRow(fields, rest) => SchemaRow(fields.sortBy(_.name), rest)
+      case SchemaRow(fields) => SchemaRow(fields.sortBy(_.name))
+      case SchemaRowExtend(fields, rest) => SchemaRowExtend(fields.sortBy(_.name), rest)
       case Var(id) => Var(id)
-      case _ => ??? // MATT ICE (do I need var here?)
+      case _ => throw IllKindedException
     }
   }
 

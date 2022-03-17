@@ -98,11 +98,7 @@ object FormatSimpleType {
       case SimpleType.RecordConstructor(arg) => Delimited
       case SimpleType.Schema(fields, rest) => Delimited
       case SimpleType.SchemaRow(fields, rest) => Delimited
-      case SimpleType.SchemaRowEmpty => Delimited
-      case SimpleType.SchemaEmpty => Delimited
       case SimpleType.SchemaConstructor => Delimited
-      case SimpleType.SchemaRowConstructor(field) => Delimited
-      case SimpleType.SchemaRowHead(name, tpe) => Delimited
       case SimpleType.Not(tpe) => Not
       case SimpleType.And(tpes) => And
       case SimpleType.Or(tpes) => Or
