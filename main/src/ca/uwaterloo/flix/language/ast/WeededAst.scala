@@ -304,8 +304,6 @@ object WeededAst {
 
     case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Type
 
-    case class RigidVar(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Type
-
     case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends WeededAst.Type
 
     case class Unit(loc: SourceLocation) extends WeededAst.Type
