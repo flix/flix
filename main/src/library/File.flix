@@ -906,14 +906,15 @@ namespace File {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
             import static java.nio.file.Files.move(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption]): ##java.nio.file.Path & Impure;
-            import static java.nio.file.StandardCopyOption.valueOf(String): ##java.nio.file.StandardCopyOption & Impure;
+            //import static java.nio.file.StandardCopyOption.valueOf(String): ##java.nio.file.StandardCopyOption & Impure;
+            import static get java.nio.file.StandardCopyOption.REPLACE_EXISTING: ##java.nio.file.StandardCopyOption & Impure as getOverwrite;
 
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
-            move(srcPath, dstPath, [valueOf("REPLACE_EXISTING")] as Array[##java.nio.file.CopyOption]);
+            move(srcPath, dstPath, [getOverwrite() as ##java.nio.file.CopyOption]);
 
             Ok()
         } catch {
