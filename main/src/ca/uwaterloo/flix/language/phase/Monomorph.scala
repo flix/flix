@@ -357,10 +357,6 @@ object Monomorph {
         val env1 = env0 + (sym -> freshSym)
         Expression.LetRec(freshSym, mod, visitExp(exp1, env1), visitExp(exp2, env1), subst0(tpe), eff, loc)
 
-      case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.LetRegion(sym, e, subst0(tpe), eff, loc)
-
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
@@ -563,6 +559,9 @@ object Monomorph {
       case Expression.Force(exp, tpe, eff, loc) =>
         val e = visitExp(exp, env0)
         Expression.Force(e, subst0(tpe), eff, loc)
+
+      case Expression.Scope(_, _, _, _, loc) =>
+        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
       case Expression.FixpointConstraintSet(_, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
