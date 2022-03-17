@@ -43,7 +43,7 @@ object WeededAst {
 
     case class Law(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.KindedTypeParams, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, retTpe: WeededAst.Type, eff: WeededAst.Type, tconstrs: List[WeededAst.TypeConstraint], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, derives: List[Name.QName], cases: Map[Name.Tag, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
+    case class Enum(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, derives: List[Name.QName], cases: Map[Name.Tag, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
 
@@ -121,7 +121,7 @@ object WeededAst {
 
     case class LetRec(ident: Name.Ident, mod: Ast.Modifiers, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class LetRegion(ident: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Scope(ident: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Match(exp: WeededAst.Expression, rules: List[WeededAst.MatchRule], loc: SourceLocation) extends WeededAst.Expression
 
@@ -303,8 +303,6 @@ object WeededAst {
   object Type {
 
     case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Type
-
-    case class RigidVar(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Type
 
     case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends WeededAst.Type
 

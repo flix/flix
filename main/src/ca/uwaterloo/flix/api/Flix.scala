@@ -143,6 +143,7 @@ class Flix {
     "Map.flix" -> LocalResource.get("/src/library/Map.flix"),
     "Nec.flix" -> LocalResource.get("/src/library/Nec.flix"),
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
+    "Newable.flix" -> LocalResource.get("/src/library/Newable.flix"),
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
@@ -464,8 +465,7 @@ class Flix {
       afterStratifier <- Stratifier.run(afterInstances)
       afterPatternExhaustiveness <- PatternExhaustiveness.run(afterStratifier)
       afterRedundancy <- Redundancy.run(afterPatternExhaustiveness)
-      afterTerminator <- Terminator.run(afterRedundancy)
-      afterSafety <- Safety.run(afterTerminator)
+      afterSafety <- Safety.run(afterRedundancy)
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {

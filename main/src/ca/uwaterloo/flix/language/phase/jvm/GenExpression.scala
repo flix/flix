@@ -895,7 +895,12 @@ object GenExpression {
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
       val descriptor = asm.Type.getMethodDescriptor(method)
-      visitor.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, false)
+      // Check if we are invoking an interface or class.
+      if (method.getDeclaringClass.isInterface) {
+        visitor.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, true)
+      } else {
+        visitor.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, false)
+      }
       if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
         visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
       }

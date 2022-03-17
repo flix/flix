@@ -165,7 +165,7 @@ object Namer {
       /*
      * Enum.
      */
-      case WeededAst.Declaration.Enum(doc, mod, ident, tparams0, derives, cases, loc) =>
+      case WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams0, derives, cases, loc) =>
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
         lookupTypeOrClass(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
@@ -185,10 +185,10 @@ object Namer {
                 case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, tvar.loc)
               }
             }
-
-            mapN(casesOf(cases, uenv0, tenv)) {
-              case cases =>
-                val enum = NamedAst.Enum(doc, mod, sym, tparams, derives, cases, enumType, loc)
+            val annVal = traverse(ann)(visitAnnotation(_, Map.empty, uenv0, tenv))
+            mapN(annVal, casesOf(cases, uenv0, tenv)) {
+              case (ann, cases) =>
+                val enum = NamedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, enumType, loc)
                 val enums = enums0 + (ident.name -> enum)
                 prog0.copy(enums = prog0.enums + (ns0 -> enums))
             }
@@ -573,11 +573,11 @@ object Namer {
         case (e1, e2) => NamedAst.Expression.LetRec(sym, mod, e1, e2, loc)
       }
 
-    case WeededAst.Expression.LetRegion(ident, exp, loc) =>
+    case WeededAst.Expression.Scope(ident, exp, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       mapN(visitExp(exp, env0 + (ident.name -> sym), uenv0, tenv0)) {
-        case e => NamedAst.Expression.LetRegion(sym, e, loc)
+        case e => NamedAst.Expression.Scope(sym, e, loc)
       }
 
     case WeededAst.Expression.Match(exp, rules, loc) =>
@@ -1075,12 +1075,6 @@ object Namer {
         }
       }
 
-    case WeededAst.Type.RigidVar(ident, loc) =>
-      // TODO: SuspiciousTypeVarName
-      // TODO: Check wild var and check not in tenv!
-      val tvar = Type.freshUnkindedVar(loc, Rigidity.Rigid, Some(ident.name))
-      NamedAst.Type.Var(tvar, loc).toSuccess
-
     case WeededAst.Type.Ambiguous(qname, loc) =>
       if (qname.isUnqualified) {
         val name = qname.ident.name
@@ -1253,7 +1247,7 @@ object Namer {
     case WeededAst.Expression.Stm(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Let(ident, mod, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
     case WeededAst.Expression.LetRec(ident, mod, exp1, exp2, loc) => filterBoundVars( freeVars(exp1) ++ freeVars(exp2), List(ident))
-    case WeededAst.Expression.LetRegion(ident, exp, loc) => filterBoundVars(freeVars(exp), List(ident))
+    case WeededAst.Expression.Scope(ident, exp, loc) => filterBoundVars(freeVars(exp), List(ident))
     case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
     }
@@ -1362,7 +1356,6 @@ object Namer {
     */
   private def freeVars(tpe0: WeededAst.Type): List[Name.Ident] = tpe0 match {
     case WeededAst.Type.Var(ident, loc) => ident :: Nil
-    case WeededAst.Type.RigidVar(ident, loc) => throw InternalCompilerException(s"Unexpected free rigid type variable: '${ident.name}'.") // TODO
     case WeededAst.Type.Ambiguous(qname, loc) => Nil
     case WeededAst.Type.Unit(loc) => Nil
     case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
@@ -1393,7 +1386,6 @@ object Namer {
     def visit(tpe0: WeededAst.Type): List[Name.Ident] = tpe0 match {
       case WeededAst.Type.Var(ident, loc) if tenv.contains(ident.name) => Nil
       case WeededAst.Type.Var(ident, loc) => ident :: Nil
-      case WeededAst.Type.RigidVar(ident, loc) => throw InternalCompilerException(s"Unexpected free rigid type variable: '${ident.name}'.") // TODO
       case WeededAst.Type.Ambiguous(qname, loc) => Nil
       case WeededAst.Type.Unit(loc) => Nil
       case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(visit)

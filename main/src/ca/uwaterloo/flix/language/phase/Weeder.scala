@@ -245,13 +245,14 @@ object Weeder {
     * Performs weeding on the given enum declaration `d0`.
     */
   private def visitEnum(d0: ParsedAst.Declaration.Enum)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Enum], WeederError] = d0 match {
-    case ParsedAst.Declaration.Enum(doc0, mods, sp1, ident, tparams0, derives, cases, sp2) =>
+    case ParsedAst.Declaration.Enum(doc0, ann, mods, sp1, ident, tparams0, derives, cases, sp2) =>
       val doc = visitDoc(doc0)
+      val annVal = visitAnnotations(ann)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
       val tparamsVal = visitTypeParams(tparams0)
 
-      flatMapN(modVal, tparamsVal) {
-        case (mod, tparams) =>
+      flatMapN(annVal, modVal, tparamsVal) {
+        case (ann, mod, tparams) =>
           /*
            * Check for `DuplicateTag`.
            */
@@ -271,7 +272,7 @@ object Weeder {
                   ))
               }
           } map {
-            case m => List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, derives.toList, m, mkSL(sp1, sp2)))
+            case m => List(WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives.toList, m, mkSL(sp1, sp2)))
           }
       }
   }
@@ -291,7 +292,7 @@ object Weeder {
       mapN(modVal, tparamsVal) {
         case (mod, tparams) =>
           val cases = Map(Name.mkTag(ident) -> WeededAst.Case(ident, Name.mkTag(ident), visitType(tpe0)))
-          List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, derives.toList, cases, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Enum(doc, Nil, mod, ident, tparams, derives.toList, cases, mkSL(sp1, sp2)))
       }
   }
 
@@ -926,9 +927,9 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.LetRegion(sp1, ident, exp, sp2) =>
+    case ParsedAst.Expression.Scope(sp1, ident, exp, sp2) =>
       mapN(visitExp(exp)) {
-        case e => WeededAst.Expression.LetRegion(ident, e, mkSL(sp1, sp2))
+        case e => WeededAst.Expression.Scope(ident, e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
@@ -2090,8 +2091,6 @@ object Weeder {
 
     case ParsedAst.Type.Var(sp1, ident, sp2) => WeededAst.Type.Var(ident, mkSL(sp1, sp2))
 
-    case ParsedAst.Type.RigidVar(sp1, ident, sp2) => WeededAst.Type.RigidVar(ident, mkSL(sp1, sp2))
-
     case ParsedAst.Type.Region(sp1, ident, sp2) => WeededAst.Type.Var(ident, mkSL(sp1, sp2))
 
     case ParsedAst.Type.Ambiguous(sp1, qname, sp2) => WeededAst.Type.Ambiguous(qname, mkSL(sp1, sp2))
@@ -2549,7 +2548,7 @@ object Weeder {
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.LetRegion(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Scope(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Choose(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
@@ -2601,7 +2600,6 @@ object Weeder {
   private def leftMostSourcePosition(tpe: ParsedAst.Type): SourcePosition = tpe match {
     case ParsedAst.Type.Unit(sp1, _) => sp1
     case ParsedAst.Type.Var(sp1, _, _) => sp1
-    case ParsedAst.Type.RigidVar(sp1, _, _) => sp1
     case ParsedAst.Type.Region(sp1, _, _) => sp1
     case ParsedAst.Type.Ambiguous(sp1, _, _) => sp1
     case ParsedAst.Type.Tuple(sp1, _, _) => sp1

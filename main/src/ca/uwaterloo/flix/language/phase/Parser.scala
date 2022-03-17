@@ -176,7 +176,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ TypeParams ~ Derivations ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.Enum
+        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ TypeParams ~ Derivations ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.Enum
       }
     }
 
@@ -621,7 +621,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      Region | LetRegion | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
+      Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
         ReifyType | ReifyEff | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | ArrayLit | ArrayNew |
@@ -698,12 +698,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ Use ~ optWS ~ ";" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Expression.Use
     }
 
-    def Region: Rule1[ParsedAst.Expression.LetRegion] = rule {
-      SP ~ keyword("region") ~ WS ~ Names.Variable ~ optWS ~ Expressions.Block ~ SP ~> ParsedAst.Expression.LetRegion
-    }
-
-    def LetRegion: Rule1[ParsedAst.Expression.LetRegion] = rule {
-      SP ~ keyword("let region") ~ WS ~ Names.Variable ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetRegion
+    def Scope: Rule1[ParsedAst.Expression.Scope] = rule {
+      SP ~ keyword("region") ~ WS ~ Names.Variable ~ optWS ~ Expressions.Block ~ SP ~> ParsedAst.Expression.Scope
     }
 
     def LetImport: Rule1[ParsedAst.Expression] = {
@@ -1229,7 +1225,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | Native | True | False | Pure | Impure | Not | RigidVar | Region | Var | Ambiguous
+      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | Native | True | False | Pure | Impure | Not | Region | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1315,10 +1311,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Var: Rule1[ParsedAst.Type] = rule {
       SP ~ Names.Variable ~ SP ~> ParsedAst.Type.Var
-    }
-
-    def RigidVar: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("rigid") ~ WS ~ Names.Variable ~ SP ~> ParsedAst.Type.RigidVar
     }
 
     def Region: Rule1[ParsedAst.Type] = rule {
