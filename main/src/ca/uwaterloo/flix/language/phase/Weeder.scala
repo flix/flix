@@ -1074,14 +1074,14 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.ArrayLit(sp1, elms, sp2) =>
-      traverse(elms)(e => visitExp(e)) map {
+    case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
+      traverse(exps)(e => visitExp(e)) map {
         case es => WeededAst.Expression.ArrayLit(es, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.ArrayNew(sp1, elm, len, sp2) =>
-      mapN(visitExp(elm), visitExp(len)) {
-        case (e, ln) => WeededAst.Expression.ArrayNew(e, ln, mkSL(sp1, sp2))
+    case ParsedAst.Expression.ArrayNew(sp1, exp1, exp2, exp3, sp2) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => WeededAst.Expression.ArrayNew(e1, e2, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
@@ -2557,8 +2557,8 @@ object Weeder {
     case ParsedAst.Expression.RecordSelect(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.RecordSelectLambda(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordOperation(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.ArrayLit(sp1, _, _) => sp1
-    case ParsedAst.Expression.ArrayNew(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.ArrayLit(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.ArrayNew(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArraySlice(base, _, _, _) => leftMostSourcePosition(base)
