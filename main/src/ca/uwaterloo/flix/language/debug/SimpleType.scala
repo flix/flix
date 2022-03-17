@@ -75,19 +75,15 @@ object SimpleType {
 
   // Records
 
-  case class Record(fields: List[FieldType], rest: Option[SimpleType.Var]) extends SimpleType
+  case class RecordConstructor(arg: SimpleType) extends SimpleType
 
-  case class RecordRow(fields: List[FieldType], rest: Option[SimpleType.Var]) extends SimpleType
+  case class Record(fields: List[FieldType]) extends SimpleType
 
-  case object RecordRowEmpty extends SimpleType
+  case class RecordExtend(fields: List[FieldType], rest: SimpleType) extends SimpleType
 
-  case object RecordEmpty extends SimpleType
+  case class RecordRow(fields: List[FieldType]) extends SimpleType
 
-  case object RecordConstructor extends SimpleType
-
-  case class RecordRowConstructor(field: String) extends SimpleType
-
-  case class RecordRowHead(name: String, tpe: SimpleType) extends SimpleType
+  case class RecordRowExtend(fields: List[FieldType], rest: SimpleType) extends SimpleType
 
   // Schemas
 
@@ -183,23 +179,24 @@ object SimpleType {
             val lastArrow: SimpleType = PolyArrow(lastArg, eff, ret)
             tpes.dropRight(2).foldRight(lastArrow)(PureArrow)
         }
-      case TypeConstructor.RecordRowEmpty => RecordRowEmpty
+      case TypeConstructor.RecordRowEmpty => RecordRow(Nil)
       case TypeConstructor.RecordRowExtend(field) =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
-          case Nil => RecordRowConstructor(field.name)
-          case tpe :: Nil => RecordRowHead(field.name, tpe)
+          // MATT case docs
+          case Nil => RecordRowExtend(FieldType(field.name, Hole) :: Nil, Hole)
+          case tpe :: Nil => RecordRowExtend(FieldType(field.name, tpe) :: Nil, Hole)
           case _ :: _ :: Nil => fromRecordRow(t)
           case _ => throw IllKindedException
         }
       case TypeConstructor.Record =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
-          case Nil => RecordConstructor
+          case Nil => RecordConstructor(Hole)
           case tpe :: Nil => tpe match {
-            case RecordRowEmpty => RecordEmpty
-            case RecordRow(fields, rest) => Record(fields, rest)
-            case tvar: Var => Record(Nil, Some(tvar))
+            case RecordRow(fields) => Record(fields)
+            case RecordRowExtend(fields, rest) => RecordExtend(fields, rest)
+            case tvar: Var => RecordConstructor(tvar)
             case _ => throw IllKindedException
           }
           case _ => throw IllKindedException
@@ -308,23 +305,22 @@ object SimpleType {
       // MATT case docs
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(name), _), tpe, _), rest, _) =>
         val fieldType = FieldType(name.name, fromWellKindedType(tpe))
-        fromRecordRow(rest) match {
-          case SimpleType.RecordRowEmpty => SimpleType.RecordRow(fieldType :: Nil, None)
-          case SimpleType.RecordRow(fields, rest) => SimpleType.RecordRow(fieldType :: fields, rest) // MATT shadow
-          case tvar: SimpleType.Var => SimpleType.RecordRow(fieldType :: Nil, Some(tvar))
-          case _ => ??? // MATT ICE
+        visit(rest) match {
+          // MATT case docs
+          case SimpleType.RecordRow(fields) => SimpleType.RecordRow(fieldType :: fields)
+          case tvar: SimpleType.Var => SimpleType.RecordRowExtend(fieldType :: Nil, tvar)
+          case _ => throw IllKindedException
         }
-      case Type.Cst(TypeConstructor.RecordRowEmpty, _) => SimpleType.RecordRowEmpty
+      case Type.Cst(TypeConstructor.RecordRowEmpty, _) => SimpleType.RecordRow(Nil)
       case Type.KindedVar(id, kind, loc, rigidity, text) => SimpleType.Var(id) // MATT ignoring text
-      case _ => ??? // MATT ICE
+      case _ => throw IllKindedException
     }
 
     // sort the fields after converting
     visit(row0) match {
-      case RecordRowEmpty => RecordRowEmpty
-      case RecordRow(fields, rest) => RecordRow(fields.sortBy(_.name), rest)
+      case RecordRow(fields) => RecordRow(fields.sortBy(_.name))
       case Var(id) => Var(id)
-      case _ => ??? // MATT ICE (do I need var here?)
+      case _ => throw IllKindedException
     }
   }
 

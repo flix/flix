@@ -71,6 +71,7 @@ object FormatSimpleType {
      */
 
     def precedence(tpe0: SimpleType): Int = tpe0 match {
+      case SimpleType.Hole => Delimited
       case SimpleType.Unit => Delimited
       case SimpleType.Null => Delimited
       case SimpleType.Bool => Delimited
@@ -90,13 +91,11 @@ object FormatSimpleType {
       case SimpleType.True => Delimited
       case SimpleType.False => Delimited
       case SimpleType.Region => Delimited
-      case SimpleType.Record(fields, rest) => Delimited
-      case SimpleType.RecordRow(fields, rest) => Delimited
-      case SimpleType.RecordRowEmpty => Delimited
-      case SimpleType.RecordEmpty => Delimited
-      case SimpleType.RecordConstructor => Delimited
-      case SimpleType.RecordRowConstructor(field) => Delimited
-      case SimpleType.RecordRowHead(name, tpe) => Delimited
+      case SimpleType.Record(fields) => Delimited
+      case SimpleType.RecordRow(fields) => Delimited
+      case SimpleType.RecordRowExtend(fields, rest) => Delimited
+      case SimpleType.RecordExtend(fields, rest) => Delimited
+      case SimpleType.RecordConstructor(arg) => Delimited
       case SimpleType.Schema(fields, rest) => Delimited
       case SimpleType.SchemaRow(fields, rest) => Delimited
       case SimpleType.SchemaRowEmpty => Delimited
@@ -142,23 +141,30 @@ object FormatSimpleType {
       case SimpleType.True => "True"
       case SimpleType.False => "False"
       case SimpleType.Region => "Region"
-      case SimpleType.Record(fields, rest) =>
+      case SimpleType.Record(fields) =>
+        // MATT dedupe
         val fieldString = fields.map {
           case SimpleType.FieldType(name, tpe) => s"$name :: ${visit(tpe)}"
         }.mkString(", ")
-        val restString = rest.map(r => s" | ${visit(r)}").getOrElse("")
-        s"{$fieldString$restString}"
-      case SimpleType.RecordRow(fields, rest) =>
+        s"{ $fieldString }"
+      case SimpleType.RecordExtend(fields, rest) =>
         val fieldString = fields.map {
           case SimpleType.FieldType(name, tpe) => s"$name :: ${visit(tpe)}"
         }.mkString(", ")
-        val restString = rest.map(r => s" | ${visit(r)}").getOrElse("")
-        s"($fieldString$restString)"
-      case SimpleType.RecordRowEmpty => "()"
-      case SimpleType.RecordEmpty => "{}"
-      case SimpleType.RecordConstructor => "{ ? }"
-      case SimpleType.RecordRowConstructor(field) => s"( $field :: ? | ? )"
-      case SimpleType.RecordRowHead(name, tpe) => s"( $name :: ${visit(tpe)} | ? )"
+        val restString = visit(rest)
+        s"{ $fieldString | $restString }"
+      case SimpleType.RecordRow(fields) =>
+        val fieldString = fields.map {
+          case SimpleType.FieldType(name, tpe) => s"$name :: ${visit(tpe)}"
+        }.mkString(", ")
+        s"( $fieldString )"
+      case SimpleType.RecordRowExtend(fields, rest) =>
+        val fieldString = fields.map {
+          case SimpleType.FieldType(name, tpe) => s"$name :: ${visit(tpe)}"
+        }.mkString(", ")
+        val restString = visit(rest)
+        s"{ $fieldString | $restString }"
+      case SimpleType.RecordConstructor(arg) => s"{ $arg }"
       case SimpleType.Schema(fields, rest) =>
         val fieldString = fields.map {
           case SimpleType.FieldType(name, tpe) => s"$name${withParens(visit(tpe))}"
@@ -176,7 +182,7 @@ object FormatSimpleType {
       case SimpleType.SchemaConstructor => "#{ ? }"
       case SimpleType.SchemaRowConstructor(field) => s"#( $field :: ? | ? )"
       case SimpleType.SchemaRowHead(name, tpe) => s"#( $name :: ${visit(tpe)} | ? )"
-      case SimpleType.Not(tpe) => s"not ${tpe.map(visit).getOrElse("?")}" // MATT handle parens
+      case SimpleType.Not(tpe) => s"not ${visit(tpe)}" // MATT handle parens
       case SimpleType.And(tpes) =>
         val strings = tpes.map(visit)
         strings.mkString(" and ")
