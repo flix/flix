@@ -719,20 +719,22 @@ object ParsedAst {
       * ArrayLit Expression.
       *
       * @param sp1  the position of the first character in the expression.
-      * @param elms the elements of the array.
+      * @param exps the elements of the array.
+      * @param exp  the optional region.
       * @param sp2  the position of the last character in the expression.
       */
-    case class ArrayLit(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class ArrayLit(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ArrayNew Expression
       *
-      * @param sp1 the position of the first character in the expression.
-      * @param elm the default value of the array elements.
-      * @param len the length of the array.
-      * @param sp2 the position of the last character in the expression.
+      * @param sp1  the position of the first character in the expression.
+      * @param exp1 the default value of the array elements.
+      * @param exp2 the length of the array.
+      * @param exp3 the optional region.
+      * @param sp2  the position of the last character in the expression.
       */
-    case class ArrayNew(sp1: SourcePosition, elm: ParsedAst.Expression, len: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ArrayNew(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ArrayLoad Expression
