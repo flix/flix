@@ -29,6 +29,10 @@ object SimpleType {
 
   // MATT add examples for anything nontrivial
 
+  // Hole
+
+  case object Hole extends SimpleType
+
   // Primitives
 
   case object Unit extends SimpleType

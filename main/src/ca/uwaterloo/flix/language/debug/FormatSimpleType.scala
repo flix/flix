@@ -126,6 +126,7 @@ object FormatSimpleType {
     }
 
     def visit(tpe0: SimpleType): String = tpe0 match {
+      case SimpleType.Hole => "?"
       case SimpleType.Unit => "Unit"
       case SimpleType.Null => "Null"
       case SimpleType.Bool => "Bool"
