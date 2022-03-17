@@ -24,20 +24,8 @@ namespace MutSet {
     ///
     /// Returns a fresh empty set.
     ///
-    pub def empty(): MutSet[a, Impure] & Impure =
-        MutSet(ref Set.empty())
-
-    ///
-    /// Returns a fresh empty set.
-    ///
-    pub def emptyWithRegion(r: Region[r]): MutSet[a, r] & reg(r) =
+    pub def newWithRegion(r: Region[r]): MutSet[a, r] & reg(r) =
         MutSet(ref Set.empty() @ r)
-
-    ///
-    /// Returns the singleton set containing `x`.
-    ///
-    pub def singleton(x: a): MutSet[a, Impure] & Impure with Order[a] =
-        MutSet(ref Set.singleton(x))
 
     ///
     /// Adds the element `x` to the mutable set `s`.
@@ -332,9 +320,9 @@ namespace MutSet {
     ///
     /// Returns a shallow copy of the mutable set `s`.
     ///
-    pub def copy(s: MutSet[a, r]): MutSet[a, Impure] & Impure =
+    pub def copy(s: MutSet[a, r]): MutSet[a, r] & reg(r) =
         let MutSet(ms) = s;
-        MutSet(ref (deref ms))
+        MutSet(ref (deref ms)) as MutSet[a, r] & reg(r)
 
     ///
     /// Returns a pair of mutable sets `(s1, s2)` such that:
@@ -344,10 +332,10 @@ namespace MutSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def partition(f: a -> Bool, s: MutSet[a, r]): (MutSet[a, Impure], MutSet[a, Impure]) & Impure with Order[a] =
+    pub def partition(f: a -> Bool, s: MutSet[a, r]): (MutSet[a, r], MutSet[a, r]) & reg(r) with Order[a] =
         let MutSet(ms) = s;
         let (ys, zs) = Set.partition(f, deref ms);
-            (MutSet(ref ys), MutSet(ref zs))
+            (MutSet(ref ys), MutSet(ref zs)) as (MutSet[a, r], MutSet[a, r]) & reg(r)
 
     ///
     /// Returns the mutable set `s` as an immutable set.
