@@ -22,29 +22,13 @@ import scala.collection.mutable
 object FormatSimpleType {
   // MATT docs
   // MATT decide on how API should look (exposing to all types here)
-  def formatWellKindedType(tpe: Type, nameContext: Map[Int, String]): String = {
-    format(SimpleType.fromWellKindedType(tpe), nameContext)
+  def formatWellKindedType(tpe: Type): String = {
+    format(SimpleType.fromWellKindedType(tpe))
   }
 
   // MATT docs
   // MATT private?
-  def format(tpe00: SimpleType, nc0: Map[Int, String]): String = {
-
-    // generates the names a, b, ..., z, a1, b1, ...., z1, a2, b2, ...
-    val nameGenerator = Iterator.iterate(('a', 0)) {
-      case ('z', n) => ('a', n + 1)
-      case (c, n) => ((c + 1).toChar, n)
-    } map {
-      case (c, 0) => s"$c"
-      case (c, n) => s"$c$n"
-    }
-
-    val nc = mutable.Map.from(nc0)
-    val names = mutable.Set.from(nc0.values)
-
-    def nextAvailableName(): String = {
-      nameGenerator.find(!names.contains(_)).get // safe to get since nameGenerator is infinite
-    }
+  def format(tpe00: SimpleType): String = {
 
     /**
       * Wrap the given type with parentheses
@@ -218,10 +202,7 @@ object FormatSimpleType {
         val string = visit(tpe)
         val strings = tpes.map(visit)
         string + strings.mkString("[", ", ", "]")
-      case SimpleType.Var(id) =>
-        val name = nc.getOrElseUpdate(id, nextAvailableName())
-        names.add(name)
-        name
+      case SimpleType.Var(id) => ???
       case SimpleType.Tuple(fields) =>
         fields.map(visit).mkString("(", ", ", ")")
     }

@@ -28,7 +28,7 @@ object FormatType {
     */
   def formatType(tpe: Type)(implicit audience: Audience): String = {
 
-    return FormatSimpleType.formatWellKindedType(tpe, Map.empty) // MATT hacking for testing
+    return FormatSimpleType.formatWellKindedType(tpe) // MATT hacking for testing
 
     val renameMap = alphaRenameVars(tpe)
 
