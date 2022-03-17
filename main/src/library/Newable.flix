@@ -21,5 +21,5 @@ lawless class Newable[n: Type -> (Bool -> Type)] {
     ///
     /// Returns a fresh `n` parameterized by `t` allocated in region `r`.
     ///
-    pub def new[t: Type, r: Bool](r: Region[r]): n[t, r]
+    pub def new[t: Type, r: Bool](r: Region[r]): n[t, r] & reg(r)
 }
