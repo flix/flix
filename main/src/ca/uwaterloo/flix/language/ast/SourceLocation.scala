@@ -82,7 +82,10 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
     */
   def lineAt(line: Int): String = input match {
     case None => ""
-    case Some(input) => input.getLine(line)
+    case Some(input) =>
+      input.getLine(line)
+        .replaceAll(System.lineSeparator(), "")
+        .replaceAll("\r", "")
   }
 
   /**
