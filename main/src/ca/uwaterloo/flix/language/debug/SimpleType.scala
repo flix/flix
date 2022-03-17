@@ -109,17 +109,10 @@ object SimpleType {
 
   case class Not(tpe: Option[SimpleType]) extends SimpleType
 
-  case object AndConstructor extends SimpleType
-
+  // MATT use Hole for all the partial stuff
   case class And(tpes: List[SimpleType]) extends SimpleType
 
-  case class PartialAnd(tpe: List[SimpleType]) extends SimpleType
-
-  case object OrConstructor extends SimpleType
-
   case class Or(tpes: List[SimpleType]) extends SimpleType
-
-  case class PartialOr(tpe: List[SimpleType]) extends SimpleType
 
   // Relations and Lattices
 
@@ -146,8 +139,6 @@ object SimpleType {
   // Tag Stuff
 
   case class TagConstructor(name: String) extends SimpleType
-
-  case class PartialTag(name: String, args: List[SimpleType]) extends SimpleType
 
   case class Tag(name: String, args: List[SimpleType], ret: SimpleType) extends SimpleType
 
@@ -243,13 +234,13 @@ object SimpleType {
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
           case Nil => TagConstructor(tag.name)
-          case tpe :: Nil => PartialTag(tag.name, destructTuple(tpe))
+          case tpe :: Nil => Tag(tag.name, destructTuple(tpe), Hole)
           case tpe :: ret :: Nil => Tag(tag.name, destructTuple(tpe), ret)
           case _ => throw IllKindedException
         }
       case TypeConstructor.KindedEnum(sym, kind) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.UnkindedEnum(sym) => throw InternalCompilerException("Unexpected unkinded type.")
-      case TypeConstructor.Native(clazz) => Name(clazz.getSimpleName) // MATT do we need generics?
+      case TypeConstructor.Native(clazz) => Name(clazz.getSimpleName)
       case TypeConstructor.ScopedRef => mkApply(ScopedRef, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tuple(l) => Tuple(l, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Relation =>
@@ -272,8 +263,9 @@ object SimpleType {
       case TypeConstructor.And =>
         // collapse into a chain of ands
         t.typeArguments.map(fromWellKindedType).map(splitAnds) match {
-          case Nil => AndConstructor
-          case args :: Nil => PartialAnd(args)
+          // MATT case docs
+          case Nil => And(Hole :: Hole :: Nil)
+          case args :: Nil => And(args :+ Hole)
           case args1 :: args2 :: Nil => And(args1 ++ args2)
           case _ :: _ :: _ :: _ => ??? // MATT ICE
         }
@@ -281,8 +273,9 @@ object SimpleType {
       case TypeConstructor.Or =>
         // collapse into a chain of ors
         t.typeArguments.map(fromWellKindedType).map(splitOrs) match {
-          case Nil => OrConstructor
-          case args :: Nil => PartialOr(args)
+          // MATT case docs
+          case Nil => Or(Hole :: Hole :: Nil)
+          case args :: Nil => Or(args :+ Hole)
           case args1 :: args2 :: Nil => Or(args1 ++ args2)
           case _ :: _ :: _ :: _ => ??? // MATT ICE
         }

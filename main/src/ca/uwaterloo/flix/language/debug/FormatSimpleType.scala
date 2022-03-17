@@ -117,7 +117,6 @@ object FormatSimpleType {
       case SimpleType.PureArrow(args, ret) => Arrow
       case SimpleType.PolyArrow(args, ret, eff) => Arrow
       case SimpleType.TagConstructor(name) => ???
-      case SimpleType.PartialTag(name, args) => ???
       case SimpleType.Tag(name, args, ret) => ???
       case SimpleType.Name(name) => Delimited
       case SimpleType.Apply(tpe, tpes) => Delimited
@@ -181,17 +180,9 @@ object FormatSimpleType {
       case SimpleType.SchemaRowConstructor(field) => s"#( $field :: ? | ? )"
       case SimpleType.SchemaRowHead(name, tpe) => s"#( $name :: ${visit(tpe)} | ? )"
       case SimpleType.Not(tpe) => s"not ${tpe.map(visit).getOrElse("?")}" // MATT handle parens
-      case SimpleType.AndConstructor => "? and ?"
-      case SimpleType.PartialAnd(tpes) =>
-        val strings = tpes.map(visit)
-        strings.mkString(" and ") + " and ?"
       case SimpleType.And(tpes) =>
         val strings = tpes.map(visit)
         strings.mkString(" and ")
-      case SimpleType.OrConstructor => "? or ?"
-      case SimpleType.PartialOr(tpes) =>
-        val strings = tpes.map(visit)
-        strings.mkString(" or ") + " or ?"
       case SimpleType.Or(tpes) =>
         val strings = tpes.map(visit)
         strings.mkString(" or ")
@@ -224,7 +215,6 @@ object FormatSimpleType {
         val effString = visit(eff)
         s"$params ->{$effString} $retString"
       case SimpleType.TagConstructor(name) => ???
-      case SimpleType.PartialTag(name, args) => ???
       case SimpleType.Tag(name, args, ret) => ???
       case SimpleType.Name(name) => name
       case SimpleType.Apply(tpe, tpes) =>
