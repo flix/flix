@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
+import ca.uwaterloo.flix.language.phase.unification.BoolUnification
 import ca.uwaterloo.flix.language.phase.{Kinder, Monomorph}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -820,6 +821,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True, _)) => tpe1
     case (Type.Cst(TypeConstructor.False, _), _) => Type.False
     case (_, Type.Cst(TypeConstructor.False, _)) => Type.False
+    case (Type.KindedVar(id1, _, _, _, _), Type.KindedVar(id2, _, _, _, _)) if id1 == id2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.And, tpe1, loc), tpe2, loc)
   }
 
@@ -850,6 +852,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True, _)) => Type.True
     case (Type.Cst(TypeConstructor.False, _), _) => tpe2
     case (_, Type.Cst(TypeConstructor.False, _)) => tpe1
+    case (Type.KindedVar(id1, _, _, _, _), Type.KindedVar(id2, _, _, _, _)) if id1 == id2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.Or, tpe1, loc), tpe2, loc)
   }
 
