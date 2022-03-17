@@ -126,15 +126,9 @@ object SimpleType {
 
   // Arrow Stuff
 
-  case class ArrowConstructor(arity: Int) extends SimpleType
+  case class PureArrow(arg: SimpleType, ret: SimpleType) extends SimpleType
 
-  case class PartialPureArrow(arity: Int, tpes: List[SimpleType]) extends SimpleType
-
-  case class PartialPolyArrow(arity: Int, tpes: List[SimpleType], eff: SimpleType) extends SimpleType
-
-  case class PureArrow(args: List[SimpleType], ret: SimpleType) extends SimpleType
-
-  case class PolyArrow(args: List[SimpleType], ret: SimpleType, eff: SimpleType) extends SimpleType
+  case class PolyArrow(arg: SimpleType, eff: SimpleType, ret: SimpleType) extends SimpleType
 
   // Tag Stuff
 
@@ -179,11 +173,15 @@ object SimpleType {
       case TypeConstructor.Arrow(arity) =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
-          case Nil => ArrowConstructor(arity)
-          case True :: tpes if tpes.length == arity => PureArrow(tpes.init, tpes.last)
-          case eff :: tpes if tpes.length == arity => PolyArrow(tpes.init, tpes.last, eff)
-          case True :: tpes => PartialPureArrow(arity, tpes)
-          case eff :: tpes => PartialPolyArrow(arity, tpes, eff)
+          case Nil => PolyArrow(Hole, Hole, Hole)
+          case True :: tpes =>
+            // NB: safe to reduce because arity is always at least 2
+            tpes.padTo(arity, Hole).reduceRight(PureArrow)
+          case eff :: tpes =>
+            // NB: safe to take last 2 because arity is always at least 2
+            val List(lastArg, ret) = tpes.padTo(arity, Hole).takeRight(2)
+            val lastArrow: SimpleType = PolyArrow(lastArg, eff, ret)
+            tpes.dropRight(2).foldRight(lastArrow)(PureArrow)
         }
       case TypeConstructor.RecordRowEmpty => RecordRowEmpty
       case TypeConstructor.RecordRowExtend(field) =>

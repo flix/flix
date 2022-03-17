@@ -111,9 +111,6 @@ object FormatSimpleType {
       case SimpleType.Relation(tpes) => Delimited
       case SimpleType.LatticeConstructor => Delimited
       case SimpleType.Lattice(tpes) => Delimited
-      case SimpleType.ArrowConstructor(arity) => Arrow
-      case SimpleType.PartialPureArrow(arity, tpes) => Arrow
-      case SimpleType.PartialPolyArrow(arity, tpes, eff) => Arrow
       case SimpleType.PureArrow(args, ret) => Arrow
       case SimpleType.PolyArrow(args, ret, eff) => Arrow
       case SimpleType.TagConstructor(name) => ???
@@ -195,25 +192,8 @@ object FormatSimpleType {
         val lat = visit(tpes.last)
         val terms = tpes.init.map(visit).mkString(", ")
         s"Lattice($terms; $lat)"
-      case SimpleType.ArrowConstructor(arity) =>
-        val params = Iterable.fill(arity - 1)("?").mkString("(", ", ", ")")
-        s"$params ->{?} ?"
-      case SimpleType.PartialPureArrow(arity, tpes) =>
-        val params = tpes.map(visit).padTo(arity - 1, "?").mkString("(", ", ", ")")
-        s"$params -> ?"
-      case SimpleType.PartialPolyArrow(arity, tpes, eff) =>
-        val params = tpes.map(visit).padTo(arity - 1, "?").mkString("(", ", ", ")")
-        val effString = visit(eff)
-        s"$params ->{$effString} ?"
-      case SimpleType.PureArrow(args, ret) =>
-        val params = args.mkString("(", ", ", ")")
-        val retString = visit(ret)
-        s"$params -> $retString"
-      case SimpleType.PolyArrow(args, ret, eff) =>
-        val params = args.mkString("(", ", ", ")")
-        val retString = visit(ret)
-        val effString = visit(eff)
-        s"$params ->{$effString} $retString"
+      case SimpleType.PureArrow(arg, ret) => s"$arg -> $ret"
+      case SimpleType.PolyArrow(arg, eff, ret) => s"$arg ->{$eff} $ret"
       case SimpleType.TagConstructor(name) => ???
       case SimpleType.Tag(name, args, ret) => ???
       case SimpleType.Name(name) => name
