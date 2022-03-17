@@ -83,7 +83,7 @@ object FormatSimpleType {
       case SimpleType.Int64 => Delimited
       case SimpleType.BigInt => Delimited
       case SimpleType.Str => Delimited
-      case SimpleType.Array => Delimited
+      case SimpleType.ScopedArray => Delimited
       case SimpleType.ScopedRef => Delimited
       case SimpleType.Channel => Delimited
       case SimpleType.Lazy => Delimited
@@ -140,7 +140,7 @@ object FormatSimpleType {
       case SimpleType.Int64 => "Int64"
       case SimpleType.BigInt => "BigInt"
       case SimpleType.Str => "Str"
-      case SimpleType.Array => "Array"
+      case SimpleType.ScopedArray => "ScopedArray"
       case SimpleType.ScopedRef => "ScopedRef"
       case SimpleType.Channel => "Channel"
       case SimpleType.Lazy => "Lazy"

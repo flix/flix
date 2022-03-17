@@ -55,7 +55,7 @@ object SimpleType {
 
   case object Str extends SimpleType
 
-  case object Array extends SimpleType
+  case object ScopedArray extends SimpleType
 
   case object ScopedRef extends SimpleType
 
@@ -230,7 +230,7 @@ object SimpleType {
           }
           case _ => throw IllKindedException
         }
-      case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.ScopedArray => mkApply(ScopedArray, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tag(sym, tag) =>
