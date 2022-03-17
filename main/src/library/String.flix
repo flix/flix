@@ -386,11 +386,10 @@ namespace String {
         def loop(i, k) = {
             if (i >= len)
                 k(Nil)
-            else {
-                if (f(charAt(i, s)))
-                    loop(i+1, ks -> k(i :: ks))
-                else
-                    loop(i+1, k)
+            else if (f(charAt(i, s)))
+                loop(i+1, ks -> k(i :: ks))
+            else
+                loop(i+1, k)
             }
         };
         loop(0, identity)
@@ -617,7 +616,7 @@ namespace String {
         let sn = length(s) - 1;
         let tn = length(t) - 1;
         def loop(acc, i, j) = {
-            if (i < 0 or j < 0 )
+            if (i < 0 or j < 0)
                 acc
             else {
                 let acc1 = f(charAt(i, s), charAt(j, t), acc);
@@ -629,12 +628,12 @@ namespace String {
     ///
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
     ///
-    pub def unfold(f: b -> Option[(Char, b)] & ef, x: b) : String & ef =
+    pub def unfold(f: b -> Option[(Char, b)] & ef, x: b): String & ef =
         let sb = StringBuilder.new() as & ef;
         def loop(a) = {
-            let a1 = f(a) as & Impure;
+            let a1 = f(a);
             match a1 {
-                case None => StringBuilder.toString(sb)
+                case None         => StringBuilder.toString(sb)
                 case Some(c, st1) => {
                     StringBuilder.append!(c, sb);
                     loop(st1)
@@ -655,7 +654,7 @@ namespace String {
         let sb = StringBuilder.new() as & Pure;
         def loop() = {
             match f() {
-                case None => StringBuilder.toString(sb)
+                case None    => StringBuilder.toString(sb)
                 case Some(c) => {
                     StringBuilder.append!(c, sb);
                     loop()
@@ -672,9 +671,9 @@ namespace String {
     pub def unfoldString(f: b -> Option[(String, b)] & ef, x: b) : String & ef =
         let sb = StringBuilder.new() as & ef;
         def loop(a) = {
-            let a1 = f(a) as & Impure;
+            let a1 = f(a);
             match a1 {
-                case None => StringBuilder.toString(sb)
+                case None         => StringBuilder.toString(sb)
                 case Some(s, st1) => {
                     StringBuilder.appendString!(s, sb);
                     loop(st1)
@@ -695,7 +694,7 @@ namespace String {
         let sb = StringBuilder.new() as & Pure;
         def loop() = {
             match f() {
-                case None => StringBuilder.toString(sb)
+                case None    => StringBuilder.toString(sb)
                 case Some(s) => {
                     StringBuilder.appendString!(s, sb);
                     loop()
@@ -905,11 +904,10 @@ namespace String {
         def loop(s1, ix) = {
             if (ix >= limit)
                 sliceRight(ix, s1)
+            else if (not Char.isWhiteSpace(charAt(ix, s1)))
+                sliceRight(ix, s1)
             else
-                if (not Char.isWhiteSpace(charAt(ix, s1)))
-                    sliceRight(ix, s1)
-                else
-                    loop(s1, ix+1)
+                loop(s1, ix+1)
         };
         let step = s1 -> {
             let line = loop(s1, 0);
@@ -1288,9 +1286,9 @@ namespace String {
         let sublen = length(substr.substr);
         def loop(offset, count) = {
             match indexOfLeftWithOffset({substr = substr.substr}, {offset = offset}, s) {
-            case None => count
+            case None    => count
             case Some(i) => loop(i + sublen, count + 1)
-        }
+            }
         };
         if (sublen <= 0)
             0
