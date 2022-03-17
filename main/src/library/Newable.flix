@@ -17,9 +17,9 @@
 ///
 /// A type class for types that can be allocated in a region.
 ///
-lawless class Newable[n: Type -> (Bool -> Type)] {
+lawless class Newable[n: Region -> Type] {
     ///
     /// Returns a fresh `n` parameterized by `t` allocated in region `r`.
     ///
-    pub def new[t: Type, r: Bool](r: Region[r]): n[t, r] & reg(r)
+    pub def new[r: Region](r: Region[r]): n[r] & reg(r)
 }
