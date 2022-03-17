@@ -894,9 +894,8 @@ namespace File {
         }
 
     ///
-    /// Returns an Iterator naming the files and directories in the directory `f`.
+    /// Returns an Iterator over the files and directories recursively under the path `f`, including `f` itself.
     /// The full paths of the files and directories are specified.
-    /// The first `next` is always `f`. Even if `f` is not a directory or empty.
     ///
     /// Recursively traverses the directory.
     ///
@@ -924,9 +923,9 @@ namespace File {
         }
 
     ///
-    /// Converts a java iterator to an Iterator.
+    /// Converts a Java iterator to a Flix Iterator.
     ///
-    pub def fromJavaIter(iter: ##java.util.Iterator): Iterator[a] =
+    def fromJavaIter(iter: ##java.util.Iterator): Iterator[a] =
         import java.util.Iterator.hasNext(): Bool & Impure;
         import java.util.Iterator.next(): a & Impure as getNext;
 
