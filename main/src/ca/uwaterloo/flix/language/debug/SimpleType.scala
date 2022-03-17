@@ -180,9 +180,10 @@ object SimpleType {
             tpes.padTo(arity, Hole).reduceRight(PureArrow)
           case eff :: tpes =>
             // NB: safe to take last 2 because arity is always at least 2
-            val List(lastArg, ret) = tpes.padTo(arity, Hole).takeRight(2)
+            val allTpes = tpes.padTo(arity, Hole)
+            val List(lastArg, ret) = allTpes.takeRight(2)
             val lastArrow: SimpleType = PolyArrow(lastArg, eff, ret)
-            tpes.dropRight(2).foldRight(lastArrow)(PureArrow)
+            allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
         }
       case TypeConstructor.RecordRowEmpty => RecordRow(Nil)
       case TypeConstructor.RecordRowExtend(field) =>

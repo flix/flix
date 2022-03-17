@@ -171,14 +171,14 @@ object FormatSimpleType {
       case SimpleType.SchemaExtend(fields, rest) =>
         val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
         val restString = visit(rest, Mode.Type)
-        s"#{ $fieldString | $restString}"
+        s"#{ $fieldString | $restString }"
       case SimpleType.SchemaRow(fields) =>
         val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
         s"#( $fieldString )"
       case SimpleType.SchemaRowExtend(fields, rest) =>
         val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
         val restString = visit(rest, Mode.Type)
-        s"#( $fieldString | $restString)"
+        s"#( $fieldString | $restString )"
       case SimpleType.SchemaConstructor(arg) => s"#{ $arg }"
       case SimpleType.Not(tpe) => s"not ${delimit(tpe, Mode.Effect)}"
       case SimpleType.And(tpes) =>
