@@ -325,8 +325,11 @@ object Lowering {
       Expression.LetRec(sym, mod, e1, e2, t, eff, loc)
 
     case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expression.LetRegion(sym, e, tpe, eff, loc)
+      // Introduce a Unit value to represent the Region value.
+      val mod = Ast.Modifiers.Empty
+      val e1 = Expression.Unit(loc)
+      val e2 = visitExp(exp)
+      Expression.Let(sym, mod, e1, e2, tpe, eff, loc)
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
