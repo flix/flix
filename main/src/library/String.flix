@@ -390,7 +390,6 @@ namespace String {
                 loop(i+1, ks -> k(i :: ks))
             else
                 loop(i+1, k)
-            }
         };
         loop(0, identity)
 
