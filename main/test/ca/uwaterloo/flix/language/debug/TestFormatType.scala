@@ -98,7 +98,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatWellFormedType.Arrow.External.04") {
     val tpe = Type.mkImpureUncurriedArrow(Type.Int8 :: Type.Int16 :: Nil, Type.Int32, loc)
 
-    val expected = "Int8 -> Int16 ~> Int32"
+    val expected = "Int8 -> (Int16 ->{Impure} Int32)"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -108,7 +108,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val eff = Type.mkAnd(Type.KindedVar(1, Kind.Bool, loc, Rigidity.Flexible), Type.KindedVar(2, Kind.Bool, loc, Rigidity.Flexible), loc)
     val tpe = Type.mkArrowWithEffect(Type.BigInt, eff, Type.Bool, loc)
 
-    val expected = "BigInt -> Bool & (b1 ∧ b2)"
+    val expected = "BigInt ->{b1 and b2} Bool"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)

@@ -44,12 +44,18 @@ object FormatSimpleType {
       }
     }
 
-    def visitRecordFieldType(fieldType: SimpleType.FieldType): String = fieldType match {
-      case SimpleType.FieldType(field, tpe) => s"$field :: ${visit(tpe, Mode.Type)}"
+    def visitRecordFieldType(fieldType: SimpleType.RecordFieldType): String = fieldType match {
+      case SimpleType.RecordFieldType(field, tpe) => s"$field :: ${visit(tpe, Mode.Type)}"
     }
 
-    def visitSchemaFieldType(fieldType: SimpleType.FieldType): String = fieldType match {
-      case SimpleType.FieldType(field, tpe) => s"$field${ensureParens(visit(tpe, Mode.Type))}"
+    def visitSchemaFieldType(fieldType: SimpleType.PredicateFieldType): String = fieldType match {
+      case SimpleType.RelationFieldType(field, tpes) =>
+        val tpeString = tpes.map(visit(_, Mode.Type)).mkString(", ")
+        s"$field($tpeString)"
+      case SimpleType.LatticeFieldType(field, tpes, lat) =>
+        val tpeString = tpes.map(visit(_, Mode.Type)).mkString(", ")
+        val latString = visit(lat, Mode.Type)
+        s"$field($tpeString; $latString)"
     }
 
     def delimitFunctionArg(arg: SimpleType): String = arg match {

@@ -77,25 +77,25 @@ object SimpleType {
 
   case class RecordConstructor(arg: SimpleType) extends SimpleType
 
-  case class Record(fields: List[FieldType]) extends SimpleType
+  case class Record(fields: List[RecordFieldType]) extends SimpleType
 
-  case class RecordExtend(fields: List[FieldType], rest: SimpleType) extends SimpleType
+  case class RecordExtend(fields: List[RecordFieldType], rest: SimpleType) extends SimpleType
 
-  case class RecordRow(fields: List[FieldType]) extends SimpleType
+  case class RecordRow(fields: List[RecordFieldType]) extends SimpleType
 
-  case class RecordRowExtend(fields: List[FieldType], rest: SimpleType) extends SimpleType
+  case class RecordRowExtend(fields: List[RecordFieldType], rest: SimpleType) extends SimpleType
 
   // Schemas
 
   case class SchemaConstructor(arg: SimpleType) extends SimpleType
 
-  case class Schema(fields: List[FieldType]) extends SimpleType
+  case class Schema(fields: List[PredicateFieldType]) extends SimpleType
 
-  case class SchemaExtend(fields: List[FieldType], rest: SimpleType) extends SimpleType
+  case class SchemaExtend(fields: List[PredicateFieldType], rest: SimpleType) extends SimpleType
 
-  case class SchemaRow(fields: List[FieldType]) extends SimpleType
+  case class SchemaRow(fields: List[PredicateFieldType]) extends SimpleType
 
-  case class SchemaRowExtend(fields: List[FieldType], rest: SimpleType) extends SimpleType
+  case class SchemaRowExtend(fields: List[PredicateFieldType], rest: SimpleType) extends SimpleType
 
   // Boolean Operators
 
@@ -132,14 +132,23 @@ object SimpleType {
 
   case class Name(name: String) extends SimpleType
 
-  case class FieldType(name: String, tpe: SimpleType)
-
   case class Apply(tpe: SimpleType, tpes: List[SimpleType]) extends SimpleType
 
   case class Var(id: Int, kind: Kind, rigidity: Rigidity, text: Option[String]) extends SimpleType
 
   case class Tuple(fields: List[SimpleType]) extends SimpleType
 
+  // Fields
+
+  case class RecordFieldType(name: String, tpe: SimpleType)
+
+  sealed trait PredicateFieldType {
+    val name: String
+  }
+
+  case class RelationFieldType(name: String, tpes: List[SimpleType]) extends PredicateFieldType
+
+  case class LatticeFieldType(name: String, tpes: List[SimpleType], lat: SimpleType) extends PredicateFieldType
 
   /**
     * Creates a simple type from the well-kinded type `t`.
@@ -180,8 +189,8 @@ object SimpleType {
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
           // MATT case docs
-          case Nil => RecordRowExtend(FieldType(field.name, Hole) :: Nil, Hole)
-          case tpe :: Nil => RecordRowExtend(FieldType(field.name, tpe) :: Nil, Hole)
+          case Nil => RecordRowExtend(RecordFieldType(field.name, Hole) :: Nil, Hole)
+          case tpe :: Nil => RecordRowExtend(RecordFieldType(field.name, tpe) :: Nil, Hole)
           case _ :: _ :: Nil => fromRecordRow(t)
           case _ => throw IllKindedException
         }
@@ -201,8 +210,9 @@ object SimpleType {
       case TypeConstructor.SchemaRowExtend(pred) =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
-          case Nil => SchemaRowExtend(FieldType(pred.name, Hole) :: Nil, Hole)
-          case tpe :: Nil => SchemaRowExtend(FieldType(pred.name, tpe) :: Nil, Hole)
+          case Nil => SchemaRowExtend(RelationFieldType(pred.name, Hole :: Nil) :: Nil, Hole)
+          case Relation(tpes) :: Nil => SchemaRowExtend(RelationFieldType(pred.name, tpes) :: Nil, Hole)
+          case Lattice(tpes) :: Nil => SchemaRowExtend(LatticeFieldType(pred.name, tpes.init, tpes.last) :: Nil, Hole)
           case _ :: _ :: Nil => fromSchemaRow(t)
           case _ => throw IllKindedException
         }
@@ -302,7 +312,7 @@ object SimpleType {
     def visit(row: Type): SimpleType = row match {
       // MATT case docs
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(name), _), tpe, _), rest, _) =>
-        val fieldType = FieldType(name.name, fromWellKindedType(tpe))
+        val fieldType = RecordFieldType(name.name, fromWellKindedType(tpe))
         visit(rest) match {
           // MATT case docs
           case SimpleType.RecordRow(fields) => SimpleType.RecordRow(fieldType :: fields)
@@ -329,7 +339,10 @@ object SimpleType {
     def visit(row: Type): SimpleType = row match {
       // MATT case docs
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(name), _), tpe, _), rest, _) =>
-        val fieldType = FieldType(name.name, fromWellKindedType(tpe))
+        val fieldType = fromWellKindedType(tpe) match {
+          case Relation(tpes) => RelationFieldType(name.name, tpes)
+          case Lattice(tpes) => LatticeFieldType(name.name, tpes.init, tpes.last)
+        }
         visit(rest) match {
           case SimpleType.SchemaRow(fields) => SimpleType.SchemaRow(fieldType :: fields)
           case SimpleType.SchemaRowExtend(fields, rest) => SimpleType.SchemaRowExtend(fieldType :: fields, rest) // MATT shadow
