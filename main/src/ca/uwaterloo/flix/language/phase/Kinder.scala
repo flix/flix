@@ -346,10 +346,10 @@ object Kinder {
         exp2 <- visitExp(exp20, kenv, taenv, root)
       } yield KindedAst.Expression.LetRec(sym, mod, exp1, exp2, loc)
 
-    case ResolvedAst.Expression.Region(sym, exp0, loc) =>
+    case ResolvedAst.Expression.Scope(sym, exp0, loc) =>
       for {
         exp <- visitExp(exp0, kenv, taenv, root)
-      } yield KindedAst.Expression.Region(sym, exp, Type.freshVar(Kind.Bool, loc), loc)
+      } yield KindedAst.Expression.Scope(sym, exp, Type.freshVar(Kind.Bool, loc), loc)
 
     case ResolvedAst.Expression.Match(exp0, rules0, loc) =>
       for {
