@@ -525,7 +525,7 @@ namespace Set {
     ///
     @Time(1) @Space(1)
     pub def toMutSetWithRegion(r: Region[r], s: Set[a]): MutSet[a, r] & reg(r) with Order[a] =
-        let ms = MutSet.emptyWithRegion(r);
+        let ms = MutSet.newWithRegion(r);
         foldLeft((_, a) -> MutSet.add!(a, ms), (), s);
         ms
 
