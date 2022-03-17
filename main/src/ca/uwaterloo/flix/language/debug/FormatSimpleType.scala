@@ -45,17 +45,17 @@ object FormatSimpleType {
     }
 
     def visitRecordFieldType(fieldType: SimpleType.FieldType): String = fieldType match {
-      case SimpleType.FieldType(field, tpe) => s"$field :: ${visit(tpe)}"
+      case SimpleType.FieldType(field, tpe) => s"$field :: ${visit(tpe, Mode.Type)}"
     }
 
     def visitSchemaFieldType(fieldType: SimpleType.FieldType): String = fieldType match {
-      case SimpleType.FieldType(field, tpe) => s"$field${ensureParens(visit(tpe))}"
+      case SimpleType.FieldType(field, tpe) => s"$field${ensureParens(visit(tpe, Mode.Type))}"
     }
 
     def delimitFunctionArg(arg: SimpleType): String = arg match {
       // Tuples get an extra set of parentheses
-      case tuple: SimpleType.Tuple => parenthesize(visit(tuple))
-      case tpe => delimit(tpe)
+      case tuple: SimpleType.Tuple => parenthesize(visit(tuple, Mode.Type))
+      case tpe => delimit(tpe, Mode.Type)
     }
 
     def isDelimited(tpe: SimpleType): Boolean = tpe match {
@@ -109,15 +109,15 @@ object FormatSimpleType {
       case SimpleType.Tuple(_) => true
     }
 
-    def delimit(tpe: SimpleType): String = {
+    def delimit(tpe: SimpleType, mode: Mode): String = {
       if (isDelimited(tpe)) {
-        visit(tpe)
+        visit(tpe, mode)
       } else {
-        parenthesize(visit(tpe))
+        parenthesize(visit(tpe, mode))
       }
     }
 
-    def visit(tpe0: SimpleType): String = tpe0 match {
+    def visit(tpe0: SimpleType, mode: Mode): String = tpe0 match {
       case SimpleType.Hole => "?"
       case SimpleType.Unit => "Unit"
       case SimpleType.Null => "Null"
@@ -135,22 +135,28 @@ object FormatSimpleType {
       case SimpleType.ScopedRef => "ScopedRef"
       case SimpleType.Channel => "Channel"
       case SimpleType.Lazy => "Lazy"
-      case SimpleType.True => "True"
-      case SimpleType.False => "False"
+      case SimpleType.True => mode match {
+        case Mode.Type => "True"
+        case Mode.Effect => "Pure"
+      }
+      case SimpleType.False => mode match {
+        case Mode.Type => "False"
+        case Mode.Effect => "Impure"
+      }
       case SimpleType.Region => "Region"
       case SimpleType.Record(fields) =>
         val fieldString = fields.map(visitRecordFieldType).mkString(", ")
         s"{ $fieldString }"
       case SimpleType.RecordExtend(fields, rest) =>
         val fieldString = fields.map(visitRecordFieldType).mkString(", ")
-        val restString = visit(rest)
+        val restString = visit(rest, mode)
         s"{ $fieldString | $restString }"
       case SimpleType.RecordRow(fields) =>
         val fieldString = fields.map(visitRecordFieldType).mkString(", ")
         s"( $fieldString )"
       case SimpleType.RecordRowExtend(fields, rest) =>
         val fieldString = fields.map(visitRecordFieldType).mkString(", ")
-        val restString = visit(rest)
+        val restString = visit(rest, Mode.Type)
         s"( $fieldString | $restString )"
       case SimpleType.RecordConstructor(arg) => s"{ $arg }"
       case SimpleType.Schema(fields) =>
@@ -158,47 +164,47 @@ object FormatSimpleType {
         s"#{ $fieldString }"
       case SimpleType.SchemaExtend(fields, rest) =>
         val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
-        val restString = visit(rest)
+        val restString = visit(rest, Mode.Type)
         s"#{ $fieldString | $restString}"
       case SimpleType.SchemaRow(fields) =>
         val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
         s"#( $fieldString )"
       case SimpleType.SchemaRowExtend(fields, rest) =>
         val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
-        val restString = visit(rest)
+        val restString = visit(rest, Mode.Type)
         s"#( $fieldString | $restString)"
       case SimpleType.SchemaConstructor(arg) => s"#{ $arg }"
-      case SimpleType.Not(tpe) => s"not ${delimit(tpe)}"
+      case SimpleType.Not(tpe) => s"not ${delimit(tpe, Mode.Effect)}"
       case SimpleType.And(tpes) =>
-        val strings = tpes.map(delimit)
+        val strings = tpes.map(delimit(_, Mode.Effect))
         strings.mkString(" and ")
       case SimpleType.Or(tpes) =>
-        val strings = tpes.map(delimit)
+        val strings = tpes.map(delimit(_, Mode.Effect))
         strings.mkString(" or ")
       case SimpleType.RelationConstructor => "Relation" // MATT ?
       case SimpleType.Relation(tpes) =>
-        val terms = tpes.map(visit).mkString(", ")
+        val terms = tpes.map(visit(_, Mode.Type)).mkString(", ")
         s"Relation($terms)"
       case SimpleType.LatticeConstructor => "Lattice" // MATT ?
       case SimpleType.Lattice(tpes) =>
-        val lat = visit(tpes.last)
-        val terms = tpes.init.map(visit).mkString(", ")
+        val lat = visit(tpes.last, Mode.Type)
+        val terms = tpes.init.map(visit(_, Mode.Type)).mkString(", ")
         s"Lattice($terms; $lat)"
       case SimpleType.PureArrow(arg, ret) =>
         val argString = delimitFunctionArg(arg)
-        val retString = delimit(ret)
+        val retString = delimit(ret, Mode.Type)
         s"$argString -> $retString"
       case SimpleType.PolyArrow(arg, eff, ret) =>
         val argString = delimitFunctionArg(arg)
-        val effString = visit(eff)
-        val retString = delimit(ret)
+        val effString = visit(eff, Mode.Effect)
+        val retString = delimit(ret, Mode.Type)
         s"$argString ->{$effString} $retString"
       case SimpleType.TagConstructor(name) => ???
       case SimpleType.Tag(name, args, ret) => ???
       case SimpleType.Name(name) => name
       case SimpleType.Apply(tpe, tpes) =>
-        val string = visit(tpe)
-        val strings = tpes.map(visit)
+        val string = visit(tpe, Mode.Type)
+        val strings = tpes.map(visit(_, Mode.Type))
         string + strings.mkString("[", ", ", "]")
       case SimpleType.Var(id, kind, rigidity, text) =>
         val prefix: String = kind match {
@@ -221,10 +227,16 @@ object FormatSimpleType {
         }
 
       case SimpleType.Tuple(fields) =>
-        fields.map(visit).mkString("(", ", ", ")")
+        fields.map(visit(_, Mode.Type)).mkString("(", ", ", ")")
     }
 
-    visit(tpe00)
+    visit(tpe00, Mode.Type)
+  }
+
+  private sealed trait Mode
+  private object Mode {
+    case object Effect extends Mode
+    case object Type extends Mode
   }
 
 }
