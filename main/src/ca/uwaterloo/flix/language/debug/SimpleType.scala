@@ -343,6 +343,7 @@ object SimpleType {
         val fieldType = fromWellKindedType(tpe) match {
           case Relation(tpes) => RelationFieldType(name.name, tpes)
           case Lattice(tpes) => LatticeFieldType(name.name, tpes.init, tpes.last)
+          case _ => throw IllKindedException
         }
         visit(rest) match {
           case SimpleType.SchemaRow(fields) => SimpleType.SchemaRow(fieldType :: fields)
