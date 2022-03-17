@@ -165,7 +165,7 @@ namespace Test/Exp/Unary/Arithmetic {
     def testUnaryMinus01(): Bool = -0 == 0
 
     @test
-    def testUnaryMinus02(): Int = -36000
+    def testUnaryMinus02(): Int32 = -36000
 
     @test
     def testUnaryMinus03(): Bool = -(-36000) == 36000
@@ -174,7 +174,7 @@ namespace Test/Exp/Unary/Arithmetic {
     def testUnaryMinus04(): Bool = --2147483648 == -2147483648
 
     @test
-    def testUnaryMinus05(): Int = -2147483648
+    def testUnaryMinus05(): Int32 = -2147483648
 
     @test
     def testUnaryMinus06(): Int8 = -0i8

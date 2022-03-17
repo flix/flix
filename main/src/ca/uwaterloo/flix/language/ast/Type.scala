@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
-import ca.uwaterloo.flix.language.phase.{Kinder, Monomorph}
+import ca.uwaterloo.flix.language.phase.Kinder
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
@@ -256,13 +256,6 @@ object Type {
     * Represents the String type.
     */
   val Str: Type = Type.Cst(TypeConstructor.Str, SourceLocation.Unknown)
-
-  /**
-    * Represents the Array type constructor.
-    *
-    * NB: This type has kind: * -> *.
-    */
-  val Array: Type = Type.Cst(TypeConstructor.Array, SourceLocation.Unknown)
 
   /**
     * Represents the Channel type constructor.
@@ -592,14 +585,10 @@ object Type {
   def mkFalse(loc: SourceLocation): Type = Type.Cst(TypeConstructor.False, loc)
 
   /**
-    * Returns the Array type with the given source location `loc`.
-    */
-  def mkArray(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Array, loc)
-
-  /**
     * Returns the type `Array[tpe]` with the given optional source location `loc`.
     */
-  def mkArray(elmType: Type, loc: SourceLocation): Type = Apply(Type.Cst(TypeConstructor.Array, loc), elmType, loc)
+  def mkArray(elmType: Type, loc: SourceLocation): Type =
+    Apply(Apply(Type.Cst(TypeConstructor.ScopedArray, loc), elmType, loc), Type.False, loc)
 
   /**
     * Returns the Channel type with the given source location `loc`.
@@ -622,10 +611,16 @@ object Type {
   def mkLazy(tpe: Type, loc: SourceLocation): Type = Type.Apply(Type.Cst(TypeConstructor.Lazy, loc), tpe, loc)
 
   /**
-    * Returns the type `ScopedRef[tpe, lifetime]` with the given optional source location `loc`.
+    * Returns the type `ScopedArray[tpe, reg]` with the given source location `loc`.
     */
-  def mkScopedRef(tpe1: Type, tpe2: Type, loc: SourceLocation): Type =
-    Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedRef, loc), tpe1, loc), tpe2, loc)
+  def mkScopedArray(tpe: Type, reg: Type, loc: SourceLocation): Type =
+    Apply(Apply(Type.Cst(TypeConstructor.ScopedArray, loc), tpe, loc), reg, loc)
+
+  /**
+    * Returns the type `ScopedRef[tpe, reg]` with the given source location `loc`.
+    */
+  def mkScopedRef(tpe1: Type, reg: Type, loc: SourceLocation): Type =
+    Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedRef, loc), tpe1, loc), reg, loc)
 
   /**
     * Constructs the pure arrow type A -> B.
@@ -825,6 +820,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True, _)) => tpe1
     case (Type.Cst(TypeConstructor.False, _), _) => Type.False
     case (_, Type.Cst(TypeConstructor.False, _)) => Type.False
+    case (Type.KindedVar(id1, _, _, _, _), Type.KindedVar(id2, _, _, _, _)) if id1 == id2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.And, tpe1, loc), tpe2, loc)
   }
 
@@ -855,6 +851,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True, _)) => Type.True
     case (Type.Cst(TypeConstructor.False, _), _) => tpe2
     case (_, Type.Cst(TypeConstructor.False, _)) => tpe1
+    case (Type.KindedVar(id1, _, _, _, _), Type.KindedVar(id2, _, _, _, _)) if id1 == id2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.Or, tpe1, loc), tpe2, loc)
   }
 

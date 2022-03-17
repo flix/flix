@@ -602,6 +602,126 @@ namespace TestChain {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool =
+        List.toChain(Nil) |> Chain.sum == 0
+
+    @test
+    def sum02(): Bool =
+        List.toChain(1 :: Nil) |> Chain.sum == 1
+
+    @test
+    def sum03(): Bool =
+        List.toChain(1 :: 2 :: 3 :: Nil) |> Chain.sum == 6
+
+    @test
+    def sum04(): Bool =
+        List.toChain(1 :: 2 :: 3 :: -3 :: Nil) |> Chain.sum == 3
+
+    @test
+    def sum05(): Bool =
+        List.toChain(-1 :: -2 :: -3 :: -4 :: Nil) |> Chain.sum == -10
+
+    @test
+    def sum06(): Bool =
+        List.toChain(10 :: -10 :: Nil) |> Chain.sum == 0
+
+    @test
+    def sum07(): Bool =
+        List.range(1, 101) |> List.toChain |> Chain.sum == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        List.toChain(Nil) |> Chain.sumWith(x -> x + 1) == 0
+
+    @test
+    def sumWith02(): Bool =
+        List.toChain(1 :: Nil) |> Chain.sumWith(x -> x + 1) == 2
+
+    @test
+    def sumWith03(): Bool =
+        List.toChain(1 :: 2 :: 3 :: Nil) |> Chain.sumWith(x -> x + 1) == 9
+
+    @test
+    def sumWith04(): Bool =
+        List.toChain(1 :: 2 :: 3 :: -3 :: Nil) |> Chain.sumWith(x -> x + 1) == 7
+
+    @test
+    def sumWith05(): Bool =
+        List.toChain(-1 :: -2 :: -3 :: -4 :: Nil) |> Chain.sumWith(x -> x + 1) == -6
+
+    @test
+    def sumWith06(): Bool =
+        List.toChain(10 :: -10 :: Nil) |> Chain.sumWith(x -> x + 1) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool =
+        List.toChain(Nil) |> Chain.product == 0
+
+    @test
+    def product02(): Bool =
+        List.toChain(1 :: Nil) |> Chain.product == 1
+
+    @test
+    def product03(): Bool =
+        List.toChain(1 :: 2 :: 3 :: Nil) |> Chain.product == 6
+
+    @test
+    def product04(): Bool =
+        List.toChain(1 :: 2 :: 3 :: -3 :: Nil) |> Chain.product == -18
+
+    @test
+    def product05(): Bool =
+        List.toChain(-1 :: -2 :: -3 :: -4 :: Nil) |> Chain.product == 24
+
+    @test
+    def product06(): Bool =
+        List.toChain(10 :: -10 :: Nil) |> Chain.product == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool =
+        List.toChain(Nil) |> Chain.productWith(x -> x + 1) == 0
+
+    @test
+    def productWith02(): Bool =
+        List.toChain(1 :: Nil) |> Chain.productWith(x -> x + 1) == 2
+
+    @test
+    def productWith03(): Bool =
+        List.toChain(1 :: 2 :: 3 :: Nil) |> Chain.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith04(): Bool =
+        List.toChain(1 :: 2 :: 3 :: -3 :: Nil) |> Chain.productWith(x -> x + 1) == -48
+
+    @test
+    def productWith05(): Bool =
+        List.toChain(-2 :: -3 :: -4 :: -5 :: Nil) |> Chain.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith06(): Bool =
+        List.toChain(10 :: -10 :: Nil) |> Chain.productWith(x -> x + 1) == -99
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // flatten                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1214,7 +1334,7 @@ namespace TestChain {
 
     @test
     def toList01(): Bool =
-        Chain.toList(Chain.empty(): Chain[Int]) == Nil: List[Int]
+        Chain.toList(Chain.empty(): Chain[Int32]) == Nil: List[Int32]
 
     @test
     def toList02(): Bool =
@@ -1234,7 +1354,7 @@ namespace TestChain {
 
     @test
     def toMutList01(): Bool & Impure =
-        Chain.toMutList(Chain.empty(): Chain[Int]) `MutList.sameElements` List.toMutList(Nil): MutList[Int]
+        Chain.toMutList(Chain.empty(): Chain[Int32]) `MutList.sameElements` List.toMutList(Nil): MutList[Int32]
 
     @test
     def toMutList02(): Bool & Impure =
@@ -1254,7 +1374,7 @@ namespace TestChain {
 
     @test
     def toSet01(): Bool =
-        Chain.toSet(Chain.empty(): Chain[Int]) == Set#{}: Set[Int]
+        Chain.toSet(Chain.empty(): Chain[Int32]) == Set#{}: Set[Int32]
 
     @test
     def toSet02(): Bool =
@@ -1274,7 +1394,7 @@ namespace TestChain {
 
     @test
     def toMap01(): Bool =
-        Chain.toMap(Chain.empty(): Chain[(Int, Int)]) == Map#{}: Map[Int, Int]
+        Chain.toMap(Chain.empty(): Chain[(Int32, Int32)]) == Map#{}: Map[Int32, Int32]
 
     @test
     def toMap02(): Bool =
@@ -1444,5 +1564,50 @@ namespace TestChain {
     def sortWith13(): Bool =
         Chain.sortWith(flip(cmp), List.toChain(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == List.toChain(4 :: 3 :: 2 :: 2 :: 1 :: 0 :: Nil)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool =
+        Nil: List[Int32] |> List.toChain |> Chain.join(",") == ""
+
+    @test
+    def join02(): Bool =
+        (1 :: Nil) |> List.toChain |> Chain.join(",") == "1"
+
+    @test
+    def join03(): Bool =
+        (1 :: 2 :: 3 :: Nil) |> List.toChain |> Chain.join(",") == "1,2,3"
+
+    @test
+    def join04(): Bool =
+        ("1" :: "2" :: "3" :: Nil) |> List.toChain |> Chain.join(",") == "1,2,3"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinWith                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinWith01(): Bool =
+        (Nil: List[Int32]) |> List.toChain |>
+            Chain.joinWith(x -> "${x + 1}", ",") == ""
+
+    @test
+    def joinWith02(): Bool =
+        (1 :: Nil) |> List.toChain |>
+            Chain.joinWith(x -> "${x + 1}", ",") == "2"
+
+    @test
+    def joinWith03(): Bool =
+        (1 :: 2 :: 3 :: Nil) |> List.toChain |>
+            Chain.joinWith(x -> "${x + 1}", ",") == "2,3,4"
+
+    @test
+    def joinWith04(): Bool =
+        ("1" :: "2" :: "3" :: Nil) |> List.toChain |>
+            Chain.joinWith(x -> x + x, ",") == "11,22,33"
 
 }

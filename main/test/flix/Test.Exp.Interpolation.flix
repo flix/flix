@@ -187,7 +187,7 @@ namespace Test/Exp/Interpolation {
 
     @test
     def interpolation35(): Bool =
-        let x = Ok(Some(123)): Result[Option[Int], Int32];
+        let x = Ok(Some(123)): Result[Option[Int32], Int32];
         "${x}" == "Ok(Some(123))"
 
     @test
@@ -212,12 +212,12 @@ namespace Test/Exp/Interpolation {
     }
 
     def toLowerCase(s: String): String =
-        import java.lang.String.toLowerCase();
-        (s |> toLowerCase) as & Pure
+        import java.lang.String.toLowerCase(): String & Pure;
+        (s |> toLowerCase)
 
     def toUpperCase(s: String): String =
-        import java.lang.String.toUpperCase();
-        (s |> toUpperCase) as & Pure
+        import java.lang.String.toUpperCase(): String & Pure;
+        (s |> toUpperCase)
 
 }
 
@@ -234,8 +234,8 @@ namespace Test/Exp/Interpolation {
 ///
 ///instance ToString[Int32] {
 ///    def toString(x: Int32): String =
-///        import static java.lang.Integer.toString(Int32);
-///        x.toString() as & Pure
+///        import static java.lang.Integer.toString(Int32): String & Pure;
+///        x.toString()
 ///}
 ///
 ///instance ToString[String] {

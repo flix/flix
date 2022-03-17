@@ -105,7 +105,7 @@ object Statistics {
       case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.LetRegion(sym, exp, tpe, eff, loc) => visitExp(exp)
+      case Expression.Scope(sym, exp, tpe, eff, loc) => visitExp(exp)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
       case Expression.Stm(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Match(exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchRule))
@@ -123,6 +123,7 @@ object Statistics {
       case Expression.ArrayStore(base, index, elm, loc) => visitExp(base) ++ visitExp(index) ++ visitExp(elm)
       case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
       case Expression.Ref(exp, tpe, eff, loc) => visitExp(exp)
+      case Expression.RefWithRegion(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Deref(exp, tpe, eff, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
@@ -202,7 +203,7 @@ object Statistics {
     * Counts AST nodes in the given predicate.
     */
   private def visitBodyPredicate(body: Predicate.Body): Counter = body match {
-    case Body.Atom(pred, den, polarity, terms, tpe, loc) => Counter.empty
+    case Body.Atom(_, _, _, _, _, _, _) => Counter.empty
     case Body.Guard(exp, loc) => visitExp(exp)
     case Body.Loop(varSyms, exp, loc) => visitExp(exp)
   }

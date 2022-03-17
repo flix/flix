@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-/// 
+
+///
 /// A fully polymorphic implementation of the IDE framework written in Flix.
 ///
 /// Written by Magnus Madsen, Ondřej Lhoták.
@@ -131,7 +132,7 @@ namespace IDE {
 
         (m |> Fixpoint.unsafePrint) as & Impure; // NB: Just for debugging.
 
-        query p, f1, f2 select (n, d; l) from Results(n, d; l) |> Array.toList
+        query p, f1, f2 select (n, d, l) from Results(n, d; l) |> Array.toList
 
 }
 
@@ -155,7 +156,7 @@ namespace ConstantProp {
     ///
     pub enum Const with Eq, Order, ToString {
         case Bot,
-        case Cst(Int),
+        case Cst(Int32),
         case Top
     }
 

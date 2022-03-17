@@ -22,6 +22,7 @@ class LangSuite extends Suites(
   //
   // Definitions.
   //
+  new FlixTest("Test.Def.Op", "main/test/flix/Test.Def.Op.flix"),
   new FlixTest("Test.Def.Scoped", "main/test/flix/Test.Def.Scoped.flix"),
 
   //
@@ -322,7 +323,6 @@ class LangSuite extends Suites(
   // Predicate.
   //
   new FlixTest("Test.Predicate", List(
-    "main/test/flix/Test.Predicate.Filter.flix",
     "main/test/flix/Test.Predicate.Guard.flix",
     "main/test/flix/Test.Predicate.Nullary.flix",
   ), Options.TestWithLibAll),

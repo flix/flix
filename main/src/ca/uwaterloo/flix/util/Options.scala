@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.util
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.Path
 
 object Options {
   /**
@@ -27,16 +27,15 @@ object Options {
     debug = false,
     documentor = false,
     explain = false,
+    incremental = true,
     json = false,
+    output = None,
     progress = false,
     test = false,
     target = JvmTarget.Version18,
-    targetDirectory = Paths.get("./target/flix/"),
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
-    writeClassFiles = true,
     xallowredundancies = false,
-    xnostratifier = false,
     xstatistics = false,
     xstrictmono = false
   )
@@ -69,15 +68,13 @@ object Options {
   * @param debug              enables the emission of debugging information.
   * @param documentor         enables generation of flixdoc.
   * @param json               enable json output.
+  * @param output             the optional output directory where to place JVM bytecode.
   * @param progress           print progress during compilation.
   * @param test               enables test mode.
   * @param target             the target JVM.
-  * @param targetDirectory    the target directory for compiled code.
   * @param threads            selects the number of threads to use.
   * @param loadClassFiles     loads the generated class files into the JVM.
-  * @param writeClassFiles    enables output of class files.
   * @param xallowredundancies disables the redundancy checker.
-  * @param xnostratifier      disables computation of stratification.
   * @param xstatistics        enables statistics collection.
   * @param xstrictmono        enables strict monomorphization.
   */
@@ -85,16 +82,15 @@ case class Options(lib: LibLevel,
                    debug: Boolean,
                    documentor: Boolean,
                    explain: Boolean,
+                   incremental: Boolean,
                    json: Boolean,
                    progress: Boolean,
+                   output: Option[Path],
                    target: JvmTarget,
-                   targetDirectory: Path,
                    test: Boolean,
                    threads: Int,
                    loadClassFiles: Boolean,
-                   writeClassFiles: Boolean,
                    xallowredundancies: Boolean,
-                   xnostratifier: Boolean,
                    xstatistics: Boolean,
                    xstrictmono: Boolean,
                   )

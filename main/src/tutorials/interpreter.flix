@@ -9,7 +9,7 @@
 //
 enum AExp {
     // a literal integer constant.
-    case Cst(Int),
+    case Cst(Int32),
 
     // a binary addition expression: e1 + e2.
     case Plus(AExp, AExp),
@@ -124,7 +124,7 @@ def testEvalBExp5(): Bool = evalBExp(Neq(Cst(1), Cst(2)))
 enum Inst {
 
     // an instruction that pushes the constant integer on the stack.
-    case Push(Int),
+    case Push(Int32),
 
     // an instruction that adds the top two operands on the stack.
     case Add,

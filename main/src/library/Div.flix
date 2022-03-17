@@ -74,6 +74,6 @@ instance Div[BigInt] {
 
 instance Div[String] {
     pub def div(x: String, y: String): String =
-        import static get java.io.File.separator as separator;
-        (x + separator() + y) as & Pure
+        import static get java.io.File.separator: String & Pure as separator;
+        (x + separator() + y)
 }

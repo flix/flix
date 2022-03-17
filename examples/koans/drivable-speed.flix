@@ -1,4 +1,4 @@
-pub def drivable(roads: List[(city, Int, city)], source: city, destination: city, minimumSpeed: Int): Bool with Boxable[city] =
+pub def drivable(roads: List[(city, Int32, city)], source: city, destination: city, minimumSpeed: Int32): Bool with Boxable[city] =
     let r = project roads into Road;
     let lp = #{
         Path(x, y) :- Road(x, maximumSpeed, y), if maximumSpeed > minimumSpeed.

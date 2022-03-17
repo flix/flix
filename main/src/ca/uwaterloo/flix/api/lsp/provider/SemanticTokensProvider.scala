@@ -155,7 +155,7 @@ object SemanticTokensProvider {
     * Returns tokens for the symbol, the type parameters, the derivations, and the cases.
     */
   private def visitEnum(enum0: TypedAst.Enum): Iterator[SemanticToken] = enum0 match {
-    case TypedAst.Enum(_, _, sym, tparams, derives, cases, _, _, _) =>
+    case TypedAst.Enum(_, _, _, sym, tparams, derives, cases, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Enum, Nil, sym.loc)
       val st1 = Iterator(t)
       val st2 = tparams.flatMap(visitTypeParam).iterator
@@ -292,7 +292,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.LetRegion(sym, exp, _, _, _) =>
+    case Expression.Scope(sym, exp, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp)
 
@@ -353,6 +353,9 @@ object SemanticTokensProvider {
 
     case Expression.Ref(exp, _, _, _) =>
       visitExp(exp)
+
+    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Deref(exp, _, _, _) =>
       visitExp(exp)
@@ -567,12 +570,12 @@ object SemanticTokensProvider {
     case TypeConstructor.SchemaRowEmpty => false
     case TypeConstructor.SchemaRowExtend(_) => false
     case TypeConstructor.Schema => false
-    case TypeConstructor.Array => true
     case TypeConstructor.Channel => true
     case TypeConstructor.Lazy => true
     case TypeConstructor.Tag(_, _) => false
     case TypeConstructor.KindedEnum(_, _) => true
     case TypeConstructor.Native(_) => true
+    case TypeConstructor.ScopedArray => true
     case TypeConstructor.ScopedRef => true
     case TypeConstructor.Tuple(_) => false
     case TypeConstructor.Relation => false
@@ -655,7 +658,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given body predicate `b0`.
     */
   private def visitBodyPredicate(b0: TypedAst.Predicate.Body): Iterator[SemanticToken] = b0 match {
-    case Body.Atom(pred, _, _, terms, _, _) =>
+    case Body.Atom(pred, _, _, _, terms, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, pred.loc)
       Iterator(t) ++ terms.flatMap(visitPat).iterator
 

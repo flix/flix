@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ast.{Datalog, Constraint, HeadPredicate, BodyPredicate, Polarity, PrecedenceGraph, PredSym};
+use Fixpoint/Ast.{Datalog, Constraint, HeadPredicate, BodyPredicate, Polarity, Fixity, PrecedenceGraph, PredSym};
 use Fixpoint/Ast.Datalog.{Datalog, Model, Join};
 use Fixpoint/Ast.PrecedenceGraph.PrecedenceGraph;
-use Fixpoint/Ast.PrecedenceEdge.{PositiveEdge, NegativeEdge};
+use Fixpoint/Ast.PrecedenceEdge.{WeakEdge, StrongEdge};
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.BodyPredicate.BodyAtom;
@@ -43,27 +43,27 @@ namespace Fixpoint {
             // which is bounded by the number of edges in the precedence graph.
             let maxStratum = Set.size(xs);
             // Visit every edge and ensure the following:
-            // 1. If (body, head) is a positive edge, then body belongs to a lower stratum
+            // 1. If (body, head) is a weak edge, then body belongs to a lower stratum
             // or the same stratum as head.
-            // 2. If (body, head) is a negative edge, then body belongs to a strictly lower stratum
+            // 2. If (body, head) is a strong edge, then body belongs to a strictly lower stratum
             // than head.
             let (newStf, changed) = Set.foldLeft(match (acc, changed) -> edge -> match edge {
-                case PositiveEdge(bodySym, headSym) =>
+                case WeakEdge(bodySym, headSym) =>
                     let bodyStratum = Map.getWithDefault(bodySym, 0, acc);
                     let headStratum = Map.getWithDefault(headSym, 0, acc);
                     if (bodyStratum > headStratum)
                         (Map.insert(headSym, bodyStratum, acc), true)
                     else
                         (acc, changed)
-                case NegativeEdge(bodySym, headSym) =>
+                case StrongEdge(bodySym, headSym) =>
                     let bodyStratum = Map.getWithDefault(bodySym, 0, acc);
                     let headStratum = Map.getWithDefault(headSym, 0, acc);
                     if (bodyStratum >= headStratum)
                         let newHeadStratum = bodyStratum + 1;
                         // If there are more strata than edges,
-                        // the precedence graph must contain a negative cycle!
+                        // the precedence graph must contain a strong cycle!
                         if (newHeadStratum > maxStratum)
-                            bug!("Stratification error (negative cycle)")
+                            bug!("Stratification error (strong cycle)")
                         else
                             (Map.insert(headSym, newHeadStratum, acc), true)
                     else
@@ -86,11 +86,17 @@ namespace Fixpoint {
         case Constraint(head, body) => Array.fold(Array.map(mkDepEdge(head), body))
     }
 
+    ///
+    /// Creates a singleton set with a strong or weak edge. Negatively bound atoms and
+    /// fixed atoms create strong edges because the body predicate has to be in a strictly
+    /// lower strata than the head. Positive, loose atoms create weak edges where the body
+    /// has to be in the same strata as the head or lower.
+    ///
     def mkDepEdge(dst: HeadPredicate[v], src: BodyPredicate[v]): PrecedenceGraph = match (dst, src) {
-        case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, Polarity.Positive, _)) =>
-            PrecedenceGraph(Set#{PositiveEdge(bodySym, headSym)})
-        case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, Polarity.Negative, _)) =>
-            PrecedenceGraph(Set#{NegativeEdge(bodySym, headSym)})
+        case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, Polarity.Positive, Fixity.Loose, _)) =>
+            PrecedenceGraph(Set#{WeakEdge(bodySym, headSym)})
+        case (HeadAtom(headSym, _, _), BodyAtom(bodySym, _, _, _, _)) =>
+            PrecedenceGraph(Set#{StrongEdge(bodySym, headSym)})
         case _ => PrecedenceGraph(Set#{})
     }
 }

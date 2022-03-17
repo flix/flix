@@ -99,6 +99,12 @@ class TestMain extends FunSuite {
     assert(opts.lsp.nonEmpty)
   }
 
+  test("--output build") {
+    val args = Array("--output", "build", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.output.contains("build"))
+  }
+
   test("--test") {
     val args = Array("--test", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -133,12 +139,6 @@ class TestMain extends FunSuite {
     val args = Array("--Xdebug", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xdebug)
-  }
-
-  test("--Xno-stratifier") {
-    val args = Array("--Xno-stratifier", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnostratifier)
   }
 
   test("--Xlib nix") {

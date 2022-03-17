@@ -195,6 +195,64 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool & Impure =
+        Iterator.empty() |> Iterator.product == 0
+
+    @test
+    def product02(): Bool & Impure =
+        List.toIterator(1 :: Nil) |> Iterator.product == 1
+
+    @test
+    def product03(): Bool & Impure =
+        List.toIterator(1 :: 2 :: 3 :: Nil) |> Iterator.product == 6
+
+    @test
+    def product04(): Bool & Impure =
+        List.toIterator(1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.product == -18
+
+    @test
+    def product05(): Bool & Impure =
+        List.toIterator(-1 :: -2 :: -3 :: -4 :: Nil) |> Iterator.product == 24
+
+    @test
+    def product06(): Bool & Impure =
+        List.toIterator(10 :: -10 :: Nil) |> Iterator.product == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool & Impure =
+        Iterator.empty() |> Iterator.productWith(x -> x + 1) == 0
+
+    @test
+    def productWith02(): Bool & Impure =
+        List.toIterator(1 :: Nil) |> Iterator.productWith(x -> x + 1) == 2
+
+    @test
+    def productWith03(): Bool & Impure =
+        List.toIterator(1 :: 2 :: 3 :: Nil) |> Iterator.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith04(): Bool & Impure =
+        List.toIterator(1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.productWith(x -> x + 1) == -48
+
+    @test
+    def productWith05(): Bool & Impure =
+        List.toIterator(-2 :: -3 :: -4 :: -5 :: Nil) |> Iterator.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith06(): Bool & Impure =
+        List.toIterator(10 :: -10 :: Nil) |> Iterator.productWith(x -> x + 1) == -99
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -271,6 +329,36 @@ namespace TestIterator {
     @test
     def toNel03(): Bool & Impure =
         Iterator.range(0, 1000) |> Iterator.toNel == Some(Nel(0, List.range(1, 1000)))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toNec                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNec01(): Bool & Impure =
+        let iter = List.toIterator(Nil: List[Unit]);
+        Iterator.toNec(iter) == None
+
+    @test
+    def toNec02(): Bool & Impure =
+        let iter = List.toIterator(1 :: Nil);
+        Iterator.toNec(iter) == Some(Nec.singleton(1))
+
+    @test
+    def toNec03(): Bool & Impure =
+        let iter = List.toIterator(1 :: 2 :: Nil);
+        Iterator.toNec(iter) == Some(Nec.cons(1, Nec.singleton(2)))
+
+    @test
+    def toNec04(): Bool & Impure =
+        let iter = List.toIterator(1 :: 1 :: Nil);
+        Iterator.toNec(iter) == Some(Nec.cons(1, Nec.singleton(1)))
+
+    @test
+    def toNec05(): Bool & Impure =
+        let iter = List.toIterator(2 :: 1 :: Nil);
+        Iterator.toNec(iter) == Some(Nec.cons(2, Nec.singleton(1)))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -522,42 +610,42 @@ namespace TestIterator {
     @test
     def replace01(): Bool & Impure =
         List.toIterator(Nil) |>
-            Iterator.replace(3, 4) |> Iterator.toList == Nil
+            Iterator.replace(from = 3, to = 4) |> Iterator.toList == Nil
 
     @test
     def replace02(): Bool & Impure =
         List.toIterator(1 :: Nil) |>
-            Iterator.replace(3, 4) |> Iterator.toList == 1 :: Nil
+            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: Nil
 
     @test
     def replace03(): Bool & Impure =
         List.toIterator(3 :: Nil) |>
-            Iterator.replace(3, 4) |> Iterator.toList == 4 :: Nil
+            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: Nil
 
     @test
     def replace04(): Bool & Impure =
         List.toIterator(4 :: Nil) |>
-            Iterator.replace(3, 4) |> Iterator.toList == 4 :: Nil
+            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: Nil
 
     @test
     def replace05(): Bool & Impure =
         List.toIterator(1 :: 2 :: Nil) |>
-            Iterator.replace(3, 4) |> Iterator.toList == 1 :: 2 :: Nil
+            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: 2 :: Nil
 
     @test
     def replace06(): Bool & Impure =
         List.toIterator(1 :: 3 :: Nil) |>
-            Iterator.replace(3, 4) |> Iterator.toList == 1 :: 4 :: Nil
+            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: 4 :: Nil
 
     @test
     def replace07(): Bool & Impure =
         List.toIterator(3 :: 4 :: Nil) |>
-            Iterator.replace(3, 4) |> Iterator.toList == 4 :: 4 :: Nil
+            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: 4 :: Nil
 
     @test
     def replace08(): Bool & Impure =
         List.toIterator(3 :: 3 :: Nil) |>
-            Iterator.replace(3, 4) |> Iterator.toList == 4 :: 4 :: Nil
+            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: 4 :: Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -763,12 +851,37 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRight01(): Bool & Impure =
+        let iter = List.toIterator(Nil);
+        Iterator.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, iter) == 100
+
+    @test
+    def foldRight02(): Bool & Impure =
+        let iter = List.toIterator(1 :: Nil);
+        Iterator.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, iter) == 198
+
+    @test
+    def foldRight03(): Bool & Impure =
+        let iter = List.toIterator(1 :: 2 :: Nil);
+        Iterator.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, iter) == 194
+
+    @test
+    def foldRight04(): Bool & Impure =
+        let iter = List.toIterator(1 :: 2 :: 3 :: Nil);
+        Iterator.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, iter) == 382
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def reduceLeft01(): Bool & Impure =
-        let iter = List.toIterator(Nil: List[Int]);
+        let iter = List.toIterator(Nil: List[Int32]);
         Iterator.reduceLeft((a, b) -> a - b, iter) == None
 
     @test
@@ -1050,5 +1163,117 @@ namespace TestIterator {
             List.toIterator;
         Iterator.unfoldWithOk(() -> { d(); n() }) |>
             Iterator.toList == 1 :: 2 :: 3 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool & Impure =
+        List.toIterator(Nil) |> Iterator.sum == 0
+
+    @test
+    def sum02(): Bool & Impure =
+        List.toIterator(1 :: Nil) |> Iterator.sum == 1
+
+    @test
+    def sum03(): Bool & Impure =
+        List.toIterator(1 :: 2 :: 3 :: Nil) |> Iterator.sum == 6
+
+    @test
+    def sum04(): Bool & Impure =
+        List.toIterator(1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.sum == 3
+
+    @test
+    def sum05(): Bool & Impure =
+        List.toIterator(-1 :: -2 :: -3 :: -4 :: Nil) |> Iterator.sum == -10
+
+    @test
+    def sum06(): Bool & Impure =
+        List.toIterator(10 :: -10 :: Nil) |> Iterator.sum == 0
+
+    @test
+    def sum07(): Bool & Impure =
+        Iterator.range(1, 101) |> Iterator.sum == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool & Impure =
+        List.toIterator(Nil) |> Iterator.sumWith(x -> x + 1) == 0
+
+    @test
+    def sumWith02(): Bool & Impure =
+        List.toIterator(1 :: Nil) |> Iterator.sumWith(x -> x + 1) == 2
+
+    @test
+    def sumWith03(): Bool & Impure =
+        List.toIterator(1 :: 2 :: 3 :: Nil) |> Iterator.sumWith(x -> x + 1) == 9
+
+    @test
+    def sumWith04(): Bool & Impure =
+        List.toIterator(1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.sumWith(x -> x + 1) == 7
+
+    @test
+    def sumWith05(): Bool & Impure =
+        List.toIterator(-1 :: -2 :: -3 :: -4 :: Nil) |> Iterator.sumWith(x -> x + 1) == -6
+
+    @test
+    def sumWith06(): Bool & Impure =
+        List.toIterator(10 :: -10 :: Nil) |> Iterator.sumWith(x -> x + 1) == 2
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool & Impure =
+        (Nil: List[Int32]) |> List.toIterator |>
+            Iterator.join(",") == ""
+
+    @test
+    def join02(): Bool & Impure =
+        (1 :: Nil) |> List.toIterator |>
+            Iterator.join(",") == "1"
+
+    @test
+    def join03(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
+            Iterator.join(",") == "1,2,3"
+
+    @test
+    def join04(): Bool & Impure =
+        ("1" :: "2" :: "3" :: Nil) |> List.toIterator |>
+            Iterator.join(",") == "1,2,3"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinWith                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinWith01(): Bool & Impure =
+        (Nil: List[Int32]) |> List.toIterator |>
+            Iterator.joinWith(x -> "${x + 1}", ",") == ""
+
+    @test
+    def joinWith02(): Bool & Impure =
+        (1 :: Nil) |> List.toIterator |>
+            Iterator.joinWith(x -> "${x + 1}", ",") == "2"
+
+    @test
+    def joinWith03(): Bool & Impure =
+        (1 :: 2 :: 3 :: Nil) |> List.toIterator |>
+            Iterator.joinWith(x -> "${x + 1}", ",") == "2,3,4"
+
+    @test
+    def joinWith04(): Bool & Impure =
+        ("1" :: "2" :: "3" :: Nil) |> List.toIterator |>
+            Iterator.joinWith(x -> x + x, ",") == "11,22,33"
 
 }

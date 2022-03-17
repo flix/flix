@@ -17,30 +17,17 @@
 namespace TestOrder {
 
     /////////////////////////////////////////////////////////////////////////////
-    // toInt                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def toInt01(): Bool = Order.toInt(LessThan) < 0
-
-    @test
-    def toInt02(): Bool = Order.toInt(EqualTo) == 0
-
-    @test
-    def toInt03(): Bool = Order.toInt(GreaterThan) > 0
-
-    /////////////////////////////////////////////////////////////////////////////
     // fromInt                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def fromInt01(): Bool = Comparison.fromInt(-1) == LessThan
+    def fromInt01(): Bool = Comparison.fromInt32(-1) == LessThan
 
     @test
-    def fromInt02(): Bool = Comparison.fromInt(0) == EqualTo
+    def fromInt02(): Bool = Comparison.fromInt32(0) == EqualTo
 
     @test
-    def fromInt03(): Bool = Comparison.fromInt(+1) == GreaterThan
+    def fromInt03(): Bool = Comparison.fromInt32(+1) == GreaterThan
 
     /////////////////////////////////////////////////////////////////////////////
     // min                                                                     //

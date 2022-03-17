@@ -44,7 +44,7 @@ object Documentor {
   /**
     * The directory where to write the ouput.
     */
-  val OutputDirectory: Path = Paths.get("./target/api")
+  val OutputDirectory: Path = Paths.get("./build/api")
 
   /**
     * The audience to use for formatting types and effects.
@@ -84,7 +84,12 @@ object Documentor {
     //
     val enumsByNS = root.enums.values.groupBy(getNameSpace).flatMap {
       case (ns, decls) =>
-        val filtered = decls.filter(_.mod.isPublic).toList
+        def isInternal(enum: TypedAst.Enum): Boolean =
+          enum.ann.exists(a => a.name match {
+            case Ast.Annotation.Internal(_) => true
+            case _ => false
+          })
+        val filtered = decls.filter(enum => enum.mod.isPublic && !isInternal(enum)).toList
         val sorted = filtered.sortBy(_.sym.name)
         if (sorted.isEmpty)
           None
@@ -169,7 +174,10 @@ object Documentor {
     */
   private def getNameSpace(decl: TypedAst.Class): String = {
     val namespace = decl.sym.namespace
-    if (namespace == Nil) RootNS else namespace.mkString(".")
+    if (namespace == Nil)
+      RootNS
+    else
+      namespace.mkString("/")
   }
 
   /**
@@ -179,7 +187,7 @@ object Documentor {
     if (decl.sym.namespace == Nil)
       RootNS
     else
-      decl.sym.namespace.mkString(".")
+      decl.sym.namespace.mkString("/")
 
   /**
     * Returns the namespace of the given definition `decl`.
@@ -188,7 +196,7 @@ object Documentor {
     if (decl.sym.namespace == Nil)
       RootNS
     else
-      decl.sym.namespace.mkString(".")
+      decl.sym.namespace.mkString("/")
 
   /**
     * Returns the namespace of the given type alias `decl`.
@@ -197,7 +205,7 @@ object Documentor {
     if (decl.sym.namespace == Nil)
       RootNS
     else
-      decl.sym.namespace.mkString(".")
+      decl.sym.namespace.mkString("/")
 
   /**
     * Returns the given definition `defn0` as a JSON object.
@@ -328,6 +336,7 @@ object Documentor {
     case Modifier.Scoped => "scoped"
     case Modifier.Sealed => "sealed"
     case Modifier.Synthetic => "synthetic"
+    case Modifier.Unlawful => "unlawful"
   })
 
   /**
@@ -378,8 +387,9 @@ object Documentor {
     * Returns the given Enum `enum` as a JSON value.
     */
   private def visitEnum(enum0: Enum, instances: Map[Symbol.EnumSym, List[Instance]]): JObject = enum0 match {
-    case Enum(doc, _, sym, tparams, derives, cases, _, _, loc) =>
+    case Enum(doc, ann, _, sym, tparams, derives, cases, _, _, loc) =>
       ("doc" -> visitDoc(doc)) ~
+        ("ann" -> visitAnnotations(ann))
         ("sym" -> visitEnumSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
         ("cases" -> cases.values.toList.sortBy(_.loc).map(visitCase)) ~
@@ -393,14 +403,7 @@ object Documentor {
     */
   private def visitCase(caze: Case): JObject = caze match {
     case Case(_, tag, _, _, _) =>
-      // TODO: FormatType.formatType is broken.
-      val tpe = try {
-        // We try our best.
-        FormatType.formatType(caze.tpeDeprecated)
-      } catch {
-        // And if it crashes we use a placeholder:
-        case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
-      }
+      val tpe = FormatType.formatType(caze.tpeDeprecated)
       ("tag" -> tag.name) ~ ("tpe" -> tpe)
   }
 
@@ -413,7 +416,7 @@ object Documentor {
 
       val sigs = sigs0.sortBy(_.sym.name).map(visitSig)
       val defs = defs0.sortBy(_.sym.name).map(visitSig)
-      val instances = root.instances(sym).sortBy(_.loc).map(inst => visitInstance(sym, inst))
+      val instances = root.instances.getOrElse(sym, Nil).sortBy(_.loc).map(inst => visitInstance(sym, inst))
 
       ("sym" -> visitClassSym(sym)) ~
         ("doc" -> visitDoc(doc)) ~

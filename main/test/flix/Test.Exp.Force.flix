@@ -181,8 +181,8 @@ namespace Test/Exp/Force {
 
     @test
     def testPrecedenceForce04(): Bool =
-        let x = lazy 2 : Lazy[Int];
-        let y = force x : Int;
+        let x = lazy 2 : Lazy[Int32];
+        let y = force x : Int32;
         y == 2
 
     pub enum Suit {
@@ -190,7 +190,7 @@ namespace Test/Exp/Force {
     }
 
     pub enum Rank {
-        case N(Int), Jack, Queen, King, Ace
+        case N(Int32), Jack, Queen, King, Ace
     }
 
     pub enum Card {

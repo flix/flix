@@ -205,11 +205,11 @@ object JvmBackend {
     // Write each class (and interface) to disk.
     //
     // NB: In interactive and test mode we skip writing the files to disk.
-    if (flix.options.writeClassFiles && !flix.options.test) {
+    if (flix.options.output.nonEmpty) {
       flix.subphase("WriteClasses") {
         for ((_, jvmClass) <- allClasses) {
           flix.subtask(jvmClass.name.toBinaryName, sample = true)
-          JvmOps.writeClass(flix.options.targetDirectory, jvmClass)
+          JvmOps.writeClass(flix.options.output.get, jvmClass)
         }
       }
     }
@@ -222,7 +222,7 @@ object JvmBackend {
       //
       // Do not load any classes.
       //
-      new CompilationResult(root, None, Map.empty, outputBytes).toSuccess
+      new CompilationResult(root, None, Map.empty, flix.getTotalTime, outputBytes).toSuccess
     } else {
       //
       // Loads all the generated classes into the JVM and decorates the AST.
@@ -232,7 +232,7 @@ object JvmBackend {
       //
       // Return the compilation result.
       //
-      new CompilationResult(root, getCompiledMain(root), getCompiledDefs(root), outputBytes).toSuccess
+      new CompilationResult(root, getCompiledMain(root), getCompiledDefs(root), flix.getTotalTime, outputBytes).toSuccess
     }
   }
 

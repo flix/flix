@@ -689,6 +689,15 @@ def mapWithKey04(): Bool = Map.mapWithKey((k, v) -> k + v, Map#{2 => -1, 5 => 15
 def mapWithKey05(): Bool = Map.mapWithKey((k, v) -> k + v, Map#{2 => -1, 5 => 15, 11 => -9, 8 => 8})
                                         == Map#{2 => 1, 5 => 20, 11 => 2, 8 => 16}
 
+@test
+def mapWithKey06(): Bool & Impure =
+    let range = List.range(0, 2000);
+    let m = List.zip(range, range) |> List.toMap;
+    let a = MutList.new();
+    Map.mapWithKey((k, v) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); v }, m);
+    MutList.toList(a) == range
+
+
 /////////////////////////////////////////////////////////////////////////////
 // foldWithKey                                                             //
 /////////////////////////////////////////////////////////////////////////////
@@ -748,6 +757,21 @@ def foldRight03(): Bool = Map.foldRight((v, s) -> s + v, 0, Map#{1 => 2, 3 => 4}
 
 @test
 def foldRight04(): Bool = Map.foldRight((v, s) -> s + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}) == 12
+
+/////////////////////////////////////////////////////////////////////////////
+// foldRightLazy                                                           //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldRightLazy01(): Bool = Map.foldRightLazy((v, s) -> force s + v, 0, Map#{}) == 0
+
+@test
+def foldRightLazy02(): Bool = Map.foldRightLazy((v, s) -> force s + v, 0, Map#{1 => 2}) == 2
+
+@test
+def foldRightLazy03(): Bool = Map.foldRightLazy((v, s) -> force s + v, 0, Map#{1 => 2, 3 => 4}) == 6
+
+@test
+def foldRightLazy04(): Bool = Map.foldRightLazy((v, s) -> force s + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}) == 12
 
 /////////////////////////////////////////////////////////////////////////////
 // foldRightWithKey                                                        //
@@ -847,6 +871,245 @@ def count06(): Bool = Map.count((k, v) -> k == v, Map#{1 => 2, 2 => 2}) == 1
 
 @test
 def count07(): Bool = Map.count((k, v) -> k == v, Map#{1 => 1, 2 => 2}) == 2
+
+@test
+def count08(): Bool & Impure =
+    let range = List.range(0, 2000);
+    let m = List.zip(range, range) |> List.toMap;
+    let a = MutList.new();
+    Map.count((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); true }, m);
+    MutList.toList(a) == range
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumValues                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumValues01(): Bool =
+        Map.empty() |> Map.sumValues == 0
+
+    @test
+    def sumValues02(): Bool =
+        Map#{1 => 1} |>
+            Map.sumValues == 1
+
+    @test
+    def sumValues03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |>
+            Map.sumValues == 6
+
+    @test
+    def sumValues04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |>
+            Map.sumValues == 3
+
+    @test
+    def sumValues05(): Bool =
+        Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4} |>
+            Map.sumValues == -10
+
+    @test
+    def sumValues06(): Bool =
+        Map#{10 => 10, -10 => -10} |>
+            Map.sumValues == 0
+
+    @test
+    def sumValues07(): Bool =
+        List.range(1, 101) |> List.zip(List.range(1, 101)) |> List.toMap |>
+            Map.sumValues == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumKeys                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumKeys01(): Bool =
+        Map.empty() |> Map.sumKeys == 0
+
+    @test
+    def sumKeys02(): Bool =
+        Map#{1 => 1} |>
+            Map.sumKeys == 1
+
+    @test
+    def sumKeys03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |>
+            Map.sumKeys == 6
+
+    @test
+    def sumKeys04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |>
+            Map.sumKeys == 3
+
+    @test
+    def sumKeys05(): Bool =
+        Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4} |>
+            Map.sumKeys == -12
+
+    @test
+    def sumKeys06(): Bool =
+        Map#{10 => 10, -10 => -10} |>
+            Map.sumKeys == 0
+
+    @test
+    def sumKeys07(): Bool =
+        List.range(1, 101) |> List.zip(List.range(1, 101)) |> List.toMap |>
+            Map.sumKeys == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        Map.empty() |> Map.sumWith((k, v) -> k + v) == 0
+
+    @test
+    def sumWith02(): Bool =
+        Map#{1 => 1} |>
+            Map.sumWith((k, v) -> k + v) == 2
+
+    @test
+    def sumWith03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |>
+            Map.sumWith((k, v) -> k + v) == 12
+
+    @test
+    def sumWith04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |>
+            Map.sumWith((k, v) -> k + v) == 6
+
+    @test
+    def sumWith05(): Bool =
+        Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4} |>
+            Map.sumWith((k, v) -> k + v) == -20
+
+    @test
+    def sumWith06(): Bool =
+        Map#{10 => 10, -10 => -10} |>
+            Map.sumWith((k, v) -> k + v) == 0
+
+    @test
+    def sumWith07(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, range) |> List.toMap;
+        let a = MutList.new();
+        Map.sumWith((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
+        MutList.toList(a) == range
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productValues                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productValues01(): Bool =
+        Map.empty() |> Map.productValues == 0
+
+    @test
+    def productValues02(): Bool =
+        Map#{1 => 1} |>
+            Map.productValues == 1
+
+    @test
+    def productValues03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |>
+            Map.productValues == 6
+
+    @test
+    def productValues04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |>
+            Map.productValues == -18
+
+    @test
+    def productValues05(): Bool =
+        Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4} |>
+            Map.productValues == 24
+
+    @test
+    def productValues06(): Bool =
+        Map#{10 => 10, -10 => -10} |>
+            Map.productValues == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productKeys                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productKeys01(): Bool =
+        Map.empty() |> Map.productValues == 0
+
+    @test
+    def productKeys02(): Bool =
+        Map#{1 => 1} |>
+            Map.productKeys == 1
+
+    @test
+    def productKeys03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |>
+            Map.productKeys == 6
+
+    @test
+    def productKeys04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |>
+            Map.productKeys == -18
+
+    @test
+    def productKeys05(): Bool =
+        Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4} |>
+            Map.productKeys == 40
+
+    @test
+    def productKeys06(): Bool =
+        Map#{10 => 10, -10 => -10} |>
+            Map.productKeys == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool =
+        Map.empty() |> Map.productWith((k, v) -> k + v) == 0
+
+    @test
+    def productWith02(): Bool =
+        Map#{1 => 1} |>
+            Map.productWith((k, v) -> k + v) == 2
+
+    @test
+    def productWith03(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3} |>
+            Map.productWith((k, v) -> k + v) == 48
+
+    @test
+    def productWith04(): Bool =
+        Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3} |>
+            Map.productWith((k, v) -> k + v) == -288
+
+    @test
+    def productWith05(): Bool =
+        Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4} |>
+            Map.productWith((k, v) -> k + v) == 384
+
+    @test
+    def productWith06(): Bool =
+        Map#{10 => 10, -10 => -10} |>
+            Map.productWith((k, v) -> k + v) == -400
+
+    @test
+    def productWith07(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, range) |> List.toMap;
+        let a = MutList.new();
+        Map.productWith((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
+        MutList.toList(a) == range
+
 
 /////////////////////////////////////////////////////////////////////////////
 // exists                                                                  //
@@ -952,7 +1215,7 @@ def union16(): Bool = Map.union(Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{1
 // unionWith                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def unionWith01(): Bool = Map.unionWith((v1, v2) -> v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
+def unionWith01(): Bool = Map.unionWith((v1, v2) -> v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int32, Int32]
 
 @test
 def unionWith02(): Bool = Map.unionWith((v1, v2) -> v1 - v2, Map#{1 => 2}, Map#{}) == Map#{1 => 2}
@@ -1004,7 +1267,7 @@ def unionWith16(): Bool = Map.unionWith((v1, v2) -> v1 - v2, Map#{2 => 7, 11 => 
 // unionWithKey                                                            //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def unionWithKey01(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
+def unionWithKey01(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int32, Int32]
 
 @test
 def unionWithKey02(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2}, Map#{}) == Map#{1 => 2}
@@ -1108,7 +1371,7 @@ def intersection16(): Bool = Map.intersection(Map#{2 => 7, 11 => 14, 9 => 8, 15 
 // intersectionWith                                                        //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def intersectionWith01(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
+def intersectionWith01(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int32, Int32]
 
 @test
 def intersectionWith02(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2}, Map#{}) == Map#{}
@@ -1160,7 +1423,7 @@ def intersectionWith16(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{
 // intersectionWithKey                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def intersectionWithKey01(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
+def intersectionWithKey01(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}) == Map#{}: Map[Int32, Int32]
 
 @test
 def intersectionWithKey02(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2}, Map#{}) == Map#{}
@@ -1264,7 +1527,7 @@ def difference16(): Bool = Map.difference(Map#{2 => 7, 11 => 14, 9 => 8, 15 => 2
 // differenceWith                                                          //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def differenceWith01(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
+def differenceWith01(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{}) == Map#{}: Map[Int32, Int32]
 
 @test
 def differenceWith02(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2}, Map#{}) == Map#{1 => 2}
@@ -1331,7 +1594,7 @@ def differenceWith21(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(
 // differenceWithKey                                                       //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def differenceWithKey01(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{}) == Map#{}: Map[Int, Int]
+def differenceWithKey01(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{}) == Map#{}: Map[Int32, Int32]
 
 @test
 def differenceWithKey02(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2}, Map#{}) == Map#{1 => 2}
@@ -1814,85 +2077,201 @@ def query18(): Bool =
     def hash05(): Bool = hash(Map#{1 => 'a', 2 => 'b', 3 => 'z', 4 => 'x'}) == hash(Map#{1 => 'a', 2 => 'b', 3 => 'z', 4 => 'x'})
 
     /////////////////////////////////////////////////////////////////////////////
-    // minimum                                                                 //
+    // minimumKey                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def minimum01(): Bool = Map.minimum(Map#{}: Map[Int32, Int32]) == None
+    def minimumKey01(): Bool = Map.minimumKey(Map#{}: Map[Int32, Int32]) == None
 
     @test
-    def minimum02(): Bool = Map.minimum(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((1, 2))
+    def minimumKey02(): Bool = Map.minimumKey(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((1, 2))
 
     @test
-    def minimum03(): Bool = Map.minimum(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((0, 2))
+    def minimumKey03(): Bool = Map.minimumKey(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((0, 2))
 
     @test
-    def minimum04(): Bool = Map.minimum(Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}) == Some((-44, 4))
+    def minimumKey04(): Bool = Map.minimumKey(Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}) == Some((-44, 4))
 
     /////////////////////////////////////////////////////////////////////////////
     // minimumBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def minimumBy01(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
+    def minimumKeyBy01(): Bool =
+        Map.minimumKeyBy((x, y) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
 
     @test
-    def minimumBy02(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((1, 2))
+    def minimumKeyBy02(): Bool =
+        Map.minimumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((1, 2))
 
     @test
-    def minimumBy03(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((0, 2))
+    def minimumKeyBy03(): Bool =
+        Map.minimumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((0, 2))
 
     @test
-    def minimumBy04(): Bool = Map.minimumBy((x, _, y, _) -> x <=> y, Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}) == Some((-44, 4))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // maximum                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+    def minimumKeyBy04(): Bool =
+        Map.minimumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}) == Some((-44, 4))
 
     @test
-    def maximum01(): Bool = Map.maximum(Map#{}: Map[Int32, Int32]) == None
-
-    @test
-    def maximum02(): Bool = Map.maximum(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((5, 5))
-
-    @test
-    def maximum03(): Bool = Map.maximum(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((5, 5))
-
-    @test
-    def maximum04(): Bool = Map.maximum(Map#{1 => 2, 2 => 3, 107 => -107, 5 => 5, 0 => 2}) == Some((107, -107))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // maximumBy                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def maximumBy01(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
-
-    @test
-    def maximumBy02(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((5, 5))
-
-    @test
-    def maximumBy03(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((5, 5))
-
-    @test
-    def maximumBy04(): Bool = Map.maximumBy((x, _, y, _) -> x <=> y, Map#{1 => 2, 2 => 3, 107 => -107, 5 => 5, 0 => 2}) == Some((107, -107))
+    def minimumKeyBy05(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, range) |> List.toMap;
+        let a = MutList.new();
+        Map.minimumKeyBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
+        MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toLazyList                                                              //
+    // minimumValue                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toLazyList01(): Bool =
-        Map.empty(): Map[Unit, Unit] |> Map.toLazyList == LazyList.empty()
+    def minimumValue01(): Bool = Map.minimumValue(Map#{}: Map[Int32, Int32]) == None
 
     @test
-    def toLazyList02(): Bool =
-        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toLazyList == LazyList.repeat("a") |> LazyList.zip(LazyList.range(0, 1000))
+    def minimumValue02(): Bool = Map.minimumValue(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((1, 2))
 
     @test
-    def toLazyList03(): Bool =
-        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toLazyList |> LazyList.toMap == Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0)
+    def minimumValue03(): Bool = Map.minimumValue(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((1, 2))
+
+    @test
+    def minimumValue04(): Bool = Map.minimumValue(Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}) == Some((1, 2))
+
+    @test
+    def minimumValue05(): Bool = Map.minimumValue(Map#{1 => 2, 2 => 3, 4 => -44, 5 => 5, 0 => 2}) == Some((4, -44))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // minimumBy                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def minimumValueBy01(): Bool =
+        Map.minimumValueBy((x, y) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
+
+    @test
+    def minimumValueBy02(): Bool =
+        Map.minimumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((1, 2))
+
+    @test
+    def minimumValueBy03(): Bool =
+        Map.minimumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((1, 2))
+
+    @test
+    def minimumValueBy04(): Bool =
+        Map.minimumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}) == Some((1, 2))
+
+    @test
+    def minimumValueBy05(): Bool =
+        Map.minimumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 4 => -44, 5 => 5, 0 => 2}) == Some((4, -44))
+
+    @test
+    def minimumValueBy06(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, List.reverse(range)) |> List.toMap;
+        let a = MutList.new();
+        Map.minimumValueBy((x, y) -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(b, a); x <=> y }, m);
+        MutList.toList(a) == List.reverse(List.range(1, 2000)) // The first / left most value is ignored
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximumKey                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximumKey01(): Bool = Map.maximumKey(Map#{}: Map[Int32, Int32]) == None
+
+    @test
+    def maximumKey02(): Bool = Map.maximumKey(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((5, 5))
+
+    @test
+    def maximumKey03(): Bool = Map.maximumKey(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((5, 5))
+
+    @test
+    def maximumKey04(): Bool = Map.maximumKey(Map#{1 => 2, 2 => 3, 107 => -107, 5 => 5, 0 => 2}) == Some((107, -107))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximumKeyBy                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximumKeyBy01(): Bool = Map.maximumKeyBy((x, y) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
+
+    @test
+    def maximumKeyBy02(): Bool = Map.maximumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((5, 5))
+
+    @test
+    def maximumKeyBy03(): Bool = Map.maximumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((5, 5))
+
+    @test
+    def maximumKeyBy04(): Bool = Map.maximumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 107 => -107, 5 => 5, 0 => 2}) == Some((107, -107))
+
+    @test
+    def maximumKeyBy05(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, range) |> List.toMap;
+        let a = MutList.new();
+        Map.maximumKeyBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
+        MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximumValue                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximumValue01(): Bool = Map.maximumValue(Map#{}: Map[Int32, Int32]) == None
+
+    @test
+    def maximumValue02(): Bool = Map.maximumValue(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((5, 5))
+
+    @test
+    def maximumValue03(): Bool = Map.maximumValue(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((5, 5))
+
+    @test
+    def maximumValue04(): Bool = Map.maximumValue(Map#{1 => 2, 2 => 3, -107 => 107, 0 => 2}) == Some((-107, 107))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // maximumValueBy                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def maximumValueBy01(): Bool = Map.maximumValueBy((x, y) -> x <=> y, Map#{}: Map[Int32, Int32]) == None
+
+    @test
+    def maximumValueBy02(): Bool = Map.maximumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((5, 5))
+
+    @test
+    def maximumValueBy03(): Bool = Map.maximumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((5, 5))
+
+    @test
+    def maximumValueBy04(): Bool = Map.maximumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, -107 => 107,5 => 5, 0 => 2}) == Some((-107, 107))
+
+    @test
+    def maximumValueBy05(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = List.zip(range, range) |> List.toMap;
+        let a = MutList.new();
+        Map.maximumValueBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
+        MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toDelayList                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toDelayList01(): Bool =
+        Map.empty(): Map[Unit, Unit] |> Map.toDelayList == DelayList.empty()
+
+    @test
+    def toDelayList02(): Bool =
+        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toDelayList == DelayList.repeat("a") |> DelayList.zip(DelayList.range(0, 1000))
+
+    @test
+    def toDelayList03(): Bool =
+        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toDelayList |> DelayList.toMap == Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0)
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
@@ -1900,7 +2279,7 @@ def query18(): Bool =
 
     @test
     def toChain01(): Bool =
-        Map.toChain(Map#{}: Map[Int, Int]) == Chain.empty(): Chain[(Int, Int)]
+        Map.toChain(Map#{}: Map[Int32, Int32]) == Chain.empty(): Chain[(Int32, Int32)]
 
     @test
     def toChain02(): Bool =
@@ -1931,5 +2310,71 @@ def query18(): Bool =
     def toIterator03(): Bool & Impure =
         let l = List.range(0, 100);
         List.zip(l, List.reverse(l)) |> List.toMap |> Map.toIterator |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinKeys                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinKeys01(): Bool =
+        Map.empty(): Map[Int32, Int32] |> Map.joinKeys(",") == ""
+
+    @test
+    def joinKeys02(): Bool =
+        Map#{1 => 1} |> Map.joinKeys(",") == "1"
+
+    @test
+    def joinKeys03(): Bool =
+        Map#{0 => 1, 1 => 2, 2 => 2} |> Map.joinKeys(",") == "0,1,2"
+
+    @test
+    def joinKeys04(): Bool =
+        Map#{"0" => 1, "1" => 2, "2" => 2} |> Map.joinKeys(",") == "0,1,2"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinValues                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinValues01(): Bool =
+        Map.empty(): Map[Int32, Int32] |> Map.joinValues(",") == ""
+
+    @test
+    def joinValues02(): Bool =
+        Map#{1 => 1} |> Map.joinValues(",") == "1"
+
+    @test
+    def joinValues03(): Bool =
+        Map#{0 => 1, 1 => 2, 2 => 2} |> Map.joinValues(",") == "1,2,2"
+
+    @test
+    def joinValues04(): Bool =
+        Map#{0 => "1", 1 => "2", 2 => "2"} |> Map.joinValues(",") == "1,2,2"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinWith                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinWith01(): Bool =
+        Map.empty(): Map[Int32, Int32] |> Map.joinWith((k, v) -> "${k} => ${v}", ",") == ""
+
+    @test
+    def joinWith02(): Bool =
+        Map#{1 => 1} |>
+            Map.joinWith((k, v) -> "${k} => ${v}", ", ") == "1 => 1"
+
+    @test
+    def joinWith03(): Bool =
+        Map#{0 => 1, 1 => 2, 2 => 2} |>
+            Map.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
+
+    @test
+    def joinWith04(): Bool =
+        Map#{0 => "1", 1 => "2", 2 => "2"} |>
+            Map.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
 
 }

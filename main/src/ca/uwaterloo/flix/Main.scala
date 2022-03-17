@@ -81,16 +81,15 @@ object Main {
       documentor = cmdOpts.documentor,
       explain = cmdOpts.explain,
       json = cmdOpts.json,
+      output = cmdOpts.output.map(s => Paths.get(s)),
       progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
-      writeClassFiles = !cmdOpts.interactive,
-      xnostratifier = cmdOpts.xnostratifier,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono
     )
 
     // Don't use progress bar if benchmarking.
-    if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
+    if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkIncremental || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
       options = options.copy(progress = false)
     }
 
@@ -101,53 +100,50 @@ object Main {
 
     // check if command was passed.
     try {
-      val cwd = Paths.get(".")
+      val cwd = Paths.get(".").toAbsolutePath.normalize()
 
       cmdOpts.command match {
         case Command.None =>
         // nop, continue
 
         case Command.Init =>
-          Packager.init(cwd, options)
-          System.exit(0)
+          val result = Packager.init(cwd, options)
+          System.exit(getCode(result))
 
         case Command.Check =>
-          Packager.check(cwd, options)
-          System.exit(0)
+          val result = Packager.check(cwd, options)
+          System.exit(getCode(result))
 
         case Command.Build =>
-          Packager.build(cwd, options, loadClasses = false)
-          System.exit(0)
+          val result = Packager.build(cwd, options, loadClasses = false)
+          System.exit(getCode(result))
 
         case Command.BuildJar =>
-          Packager.buildJar(cwd, options)
-          System.exit(0)
+          val result = Packager.buildJar(cwd, options)
+          System.exit(getCode(result))
 
         case Command.BuildPkg =>
-          Packager.buildPkg(cwd, options)
-          System.exit(0)
+          val result = Packager.buildPkg(cwd, options)
+          System.exit(getCode(result))
 
         case Command.Run =>
-          Packager.run(cwd, options)
-          System.exit(0)
+          val result = Packager.run(cwd, options)
+          System.exit(getCode(result))
 
         case Command.Benchmark =>
           val o = options.copy(progress = false)
-          Packager.benchmark(cwd, o)
-          System.exit(0)
+          val result = Packager.benchmark(cwd, o)
+          System.exit(getCode(result))
 
         case Command.Test =>
           val o = options.copy(progress = false)
-          Packager.test(cwd, o) match {
-            case Tester.OverallTestResult.NoTests | Tester.OverallTestResult.Success => System.exit(0)
-            case Tester.OverallTestResult.Failure => System.exit(1)
-          }
+          val result = Packager.test(cwd, o)
+          System.exit(getCode(result))
 
         case Command.Install(project) =>
           val o = options.copy(progress = false)
-          Packager.install(project, cwd, o)
-          System.exit(0)
-
+          val result = Packager.install(project, cwd, o)
+          System.exit(getCode(result))
       }
     } catch {
       case ex: RuntimeException =>
@@ -158,6 +154,12 @@ object Main {
     // check if the --Xbenchmark-code-size flag was passed.
     if (cmdOpts.xbenchmarkCodeSize) {
       BenchmarkCompiler.benchmarkCodeSize(options)
+      System.exit(0)
+    }
+
+    // check if the --Xbenchmark-incremental flag was passed.
+    if (cmdOpts.xbenchmarkIncremental) {
+      BenchmarkCompiler.benchmarkIncremental(options)
       System.exit(0)
     }
 
@@ -236,6 +238,14 @@ object Main {
   }
 
   /**
+    * Extracts the exit code from the given result.
+    */
+  private def getCode(result: Result[_, Int]): Int = result match {
+    case Result.Ok(_) => 0
+    case Result.Err(code) => code
+  }
+
+  /**
     * A case class representing the parsed command line options.
     */
   case class CmdOpts(command: Command = Command.None,
@@ -247,14 +257,15 @@ object Main {
                      json: Boolean = false,
                      listen: Option[Int] = None,
                      lsp: Option[Int] = None,
+                     output: Option[String] = None,
                      test: Boolean = false,
                      threads: Option[Int] = None,
                      xbenchmarkCodeSize: Boolean = false,
+                     xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
-                     xnostratifier: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
                      files: Seq[File] = Seq())
@@ -367,6 +378,11 @@ object Main {
       opt[Int]("lsp").action((s, c) => c.copy(lsp = Some(s))).
         valueName("<port>").
         text("starts the LSP server and listens on the given port.")
+
+      // Output.
+      opt[String]("output").action((s, c) => c.copy(output = Some(s))).
+        text("specifies the output directory for JVM bytecode.")
+
       // Test.
       opt[Unit]("test").action((_, c) => c.copy(test = true)).
         text("runs unit tests.")
@@ -382,9 +398,13 @@ object Main {
       note("")
       note("The following options are experimental:")
 
-      // xbenchmark-code-size
+      // Xbenchmark-code-size
       opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).
         text("[experimental] benchmarks the size of the generated JVM files.")
+
+      // Xbenchmark-incremental
+      opt[Unit]("Xbenchmark-incremental").action((_, c) => c.copy(xbenchmarkIncremental=true)).
+        text("[experimental] benchmarks the performance of each compiler phase in incremental mode.")
 
       // Xbenchmark-phases
       opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
@@ -401,10 +421,6 @@ object Main {
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
-
-      // Xno-stratifier
-      opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
-        text("[experimental] disables computation of stratification.")
 
       // Xstatistics
       opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).

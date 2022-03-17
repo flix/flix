@@ -17,7 +17,6 @@
 
 package ca.uwaterloo.flix.language.debug
 
-import ca.uwaterloo.flix.language.ast.Kind.Bool
 import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -154,8 +153,6 @@ object FormatType {
 
           case TypeConstructor.False => formatApply("false", args)
 
-          case TypeConstructor.Array => formatApply("Array", args)
-
           case TypeConstructor.Channel => formatApply("Channel", args)
 
           case TypeConstructor.KindedEnum(sym, _) => formatApply(sym.toString, args)
@@ -169,6 +166,8 @@ object FormatType {
           case TypeConstructor.Relation => formatApply("Relation", args)
 
           case TypeConstructor.Lazy => formatApply("Lazy", args)
+
+          case TypeConstructor.ScopedArray => formatApply("ScopedArray", args)
 
           case TypeConstructor.ScopedRef => formatApply("ScopedRef", args)
 
@@ -288,7 +287,12 @@ object FormatType {
       }
     }
 
-    visit(tpe)
+    // TODO: Until the new formatter arrives we do this:
+    try {
+      visit(tpe)
+    } catch {
+      case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
+    }
   }
 
   /**

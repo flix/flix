@@ -18,7 +18,55 @@ namespace TestFile {
 
     use File.{exists, isDirectory, isRegularFile, isReadable, isSymbolicLink,
         isWritable, isExecutable, readLines, readLinesWith, read, readWith,
-        readLinesIter, readLinesIterWith, readBytes, readBytesWith, readChunks};
+        readLinesIter, readLinesIterWith, readBytes, readBytesWith, readChunks,
+        stat, accessTime, creationTime, modificationTime, size};
+
+    /////////////////////////////////////////////////////////////////////////////
+    // accessTime                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testAccessTime01(): Bool & Impure =
+        Result.isOk(accessTime("README.md"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // creationTime                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testCreationTime01(): Bool & Impure =
+        Result.isOk(creationTime("README.md"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // modificationTime                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testModificationTime01(): Bool & Impure =
+        Result.isOk(modificationTime("README.md"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testSize01(): Bool & Impure =
+        Result.isOk(size("README.md"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // stat                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testStat01(): Bool & Impure =
+        Result.isOk(stat("README.md"))
+
+    @test
+    def testStat02(): Bool & Impure =
+        match stat("README.md") {
+            case Ok(v) => v.fileType == File/FileType.File
+            case _ => false
+        }
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //

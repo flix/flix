@@ -21,22 +21,11 @@ use RedBlackTree.RedBlackTree;
 ///
 /// A set is currently represented internally as a red-black tree.
 ///
-enum Set[t] {
+pub enum Set[t] {
     case Set(RedBlackTree[t, Unit])
 }
 
-instance Boxable[Set[t]]
-
-instance ToString[Set[a]] with ToString[a] {
-    pub def toString(s: Set[a]): String =
-        let st = Set.foldRight((x, acc) -> "${x}, ${acc}", "", s);
-        "Set#{${String.dropRight(2, st)}}"
-}
-
-instance Hash[Set[a]] with Hash[a] {
-    pub def hash(s: Set[a]): Int32 =
-        Set.foldLeft((acc, x) -> acc * 37 + Hash.hash(x), 7793, s)
-}
+instance Boxable[Set[t]] with Boxable[t]
 
 instance Eq[Set[a]] with Eq[a] {
     pub def eq(s1: Set[a], s2: Set[a]): Bool =
@@ -49,12 +38,69 @@ instance Order[Set[a]] with Order[a] {
 
 }
 
+instance Hash[Set[a]] with Hash[a] {
+    pub def hash(s: Set[a]): Int32 =
+        Set.foldLeft((acc, x) -> acc * 37 + Hash.hash(x), 7793, s)
+}
+
+instance ToString[Set[a]] with ToString[a] {
+    pub def toString(s: Set[a]): String =
+        let st = Set.foldRight((x, acc) -> "${x}, ${acc}", "", s);
+        "Set#{${String.dropRight(2, st)}}"
+}
+
+instance LowerBound[Set[a]] {
+    pub def minValue(): Set[a] = Set.empty()
+}
+
+instance PartialOrder[Set[a]] with Order[a] {
+    pub def lessEqual(s1: Set[a], s2: Set[a]): Bool = s1 `Set.isSubsetOf` s2
+}
+
+instance JoinLattice[Set[a]] with Order[a] {
+    pub def leastUpperBound(s1: Set[a], s2: Set[a]): Set[a] = s1 `Set.union` s2
+}
+
+instance MeetLattice[Set[a]] with Order[a] {
+    pub def greatestLowerBound(s1: Set[a], s2: Set[a]): Set[a] = s1 `Set.intersection` s2
+}
+
 instance Foldable[Set] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldLeft(f, s, s1)
     pub def foldRight(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRight(f, s, s1)
 }
 
+instance SemiGroup[Set[a]] with Order[a] {
+    pub def combine(x: Set[a], y: Set[a]): Set[a] = Set.union(x,y)
+}
+
+instance CommutativeSemiGroup[Set[a]] with Order[a]
+
+instance Monoid[Set[a]] with Order[a] {
+    pub def empty(): Set[a] = Set.empty()
+}
+
+instance CommutativeMonoid[Set[a]] with Order[a]
+
 namespace Set {
+
+    ///
+    /// Returns the number of threads to use for parallel evaluation.
+    ///
+    def threads(): Int32 =
+        // Note: We use a multiple of the number of physical cores for better performance.
+        let multiplier = 4;
+        multiplier * Environment.getVirtualProcessors()
+
+    ///
+    /// Determines whether to use parallel evaluation.
+    ///
+    /// By default we only enable parallel evaluation if the set has a certain size.
+    ///
+    def useParallelEvaluation(s: Set[a]): Bool =
+        let Set(t) = s;
+        let minSize = 2 ** RedBlackTree.blackHeight(t);
+        minSize >= 1024
 
     ///
     /// Returns the size of `s`.
@@ -87,7 +133,13 @@ namespace Set {
     ///
     @Time(e - b) @Space(e - b)
     pub def range(b: Int32, e: Int32): Set[Int32] =
-        if (b >= e) empty() else rangeHelper(b, e - 1, empty())
+        def loop(i, s) = {
+            if (i >= e)
+                s
+            else
+                loop(i + 1, insert(i, s))
+        };
+        loop(b, empty())
 
     ///
     /// Adds `x` to `s`.
@@ -128,17 +180,30 @@ namespace Set {
     ///
     pub def minimum(s: Set[a]): Option[a] =
         let Set(t) = s;
-        RedBlackTree.minimum(t) |> Option.map(fst)
+        RedBlackTree.minimumKey(t) |> Option.map(fst)
 
     ///
     /// Optionally finds the smallest element of `s` according to the given comparator `cmp`.
     ///
     /// Returns `None` if `s` is empty.
     ///
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
     @ParallelWhenPure
     pub def minimumBy(cmp: (a, a) -> Comparison & ef, s: Set[a]): Option[a] & ef =
-        let Set(t) = s;
-        RedBlackTree.minimumBy((k1, _, k2, _) -> cmp(k1, k2), t) |> Option.map(fst)
+        def min() = reduceLeft((x, y) -> if (cmp(x, y) == LessThan) x else y, s);
+        let f = r -> cmp(r.kl, r.kr);
+        reifyEff(f) {
+            case Pure(g) =>
+                if (useParallelEvaluation(s))
+                    let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
+                    let Set(t) = s;
+                    let o = RedBlackTree.parMinimumBy(threads() - 1, h, t) as & Pure;
+                    Option.map(fst, o)
+                else
+                    min()
+            case _ => min()
+        }
 
     ///
     /// Optionally finds the largest element of `s` according to the `Order` on `a`.
@@ -147,15 +212,30 @@ namespace Set {
     ///
     pub def maximum(s: Set[a]): Option[a] =
         let Set(t) = s;
-        RedBlackTree.maximum(t) |> Option.map(fst)
+        RedBlackTree.maximumKey(t) |> Option.map(fst)
 
     ///
     /// Optionally finds the largest element of `s` according to the given comparator `cmp`.
     ///
     /// Returns `None` if `s` is empty.
     ///
-    pub def maximumBy(cmp: (a, a) -> Comparison, s: Set[a]): Option[a] =
-        reduceLeft(Order.maxBy(cmp), s)
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def maximumBy(cmp: (a, a) -> Comparison & ef, s: Set[a]): Option[a] & ef =
+        def max() = reduceLeft((x, y) -> if (cmp(x, y) == GreaterThan) x else y, s);
+        let f = r -> cmp(r.kl, r.kr);
+        reifyEff(f) {
+            case Pure(g) =>
+                if (useParallelEvaluation(s))
+                    let h = (kl, _, kr, _) -> g({kl = kl, kr = kr});
+                    let Set(t) = s;
+                    let o = RedBlackTree.parMaximumBy(threads() - 1, h, t) as & Pure;
+                    Option.map(fst, o)
+                else
+                    max()
+            case _ => max()
+        }
 
     ///
     /// Returns true if and only if every element in `s1` appears in `s2`.
@@ -221,6 +301,18 @@ namespace Set {
         RedBlackTree.foldRight((k, _, acc) -> f(k, acc), s, t)
 
     ///
+    /// Lazily applies `f` to a start value `s` and all elements in `s` going from right to left.
+    /// The function f must be pure.
+    ///
+    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
+    /// The foldRightLazy function exists to allow early termination of a fold.
+    ///
+    @Experimental @Lazy
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b, i: b, s: Set[a]): b =
+        let Set(es) = s;
+        RedBlackTree.foldRightLazy((k, _, acc) -> f(k, acc), i, es)
+
+    ///
     /// Applies `f` to all elements in `s` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     /// Returns `None` if `s` is the empty set.
@@ -241,10 +333,68 @@ namespace Set {
     ///
     /// Returns the number of elements in `s` that satisfy the predicate `f`.
     ///
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
     @ParallelWhenPure
     pub def count(f: a -> Bool & ef, s: Set[a]): Int32 & ef =
+        reifyEff(f) {
+            case Pure(g) =>
+                if (useParallelEvaluation(s))
+                    let h = (k, _) -> g(k);
+                    let Set(t) = s;
+                    RedBlackTree.parCount(threads() - 1, h, t) as & Pure
+                else
+                    foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
+            case _  => foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
+        }
+
+    ///
+    /// Returns the sum of all elements in the set `s`.
+    ///
+    pub def sum(s: Set[Int32]): Int32 =
+        Foldable.sum(s)
+
+    ///
+    /// Returns the sum of all elements in the set `s` according to the function `f`.
+    ///
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def sumWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
         let Set(t) = s;
-        RedBlackTree.count((k, _) -> f(k), t)
+        def sw() = RedBlackTree.sumWith((k, _) -> f(k), t);
+        reifyEff(f) {
+            case Pure(g) =>
+                if (useParallelEvaluation(s))
+                    RedBlackTree.parSumWith(threads() - 1, (k, _) -> g(k), t) as & Pure
+                else
+                    sw()
+            case _ => sw()
+        }
+
+    ///
+    /// Returns the product of all elements in the set `s`.
+    ///
+    pub def product(s: Set[Int32]): Int32 =
+        Foldable.product(s)
+
+    ///
+    /// Returns the product of all elements in the set `s` according to the function `f`.
+    ///
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure
+    pub def productWith(f: a -> Int32 & ef, s: Set[a]): Int32 & ef =
+        let Set(t) = s;
+        def pw() = RedBlackTree.productWith((k, _) -> f(k), t);
+        reifyEff(f) {
+            case Pure(g) =>
+                if (useParallelEvaluation(s))
+                    RedBlackTree.parProductWith(threads() - 1, (k, _) -> g(k), t) as & Pure
+                else
+                    pw()
+            case _ => pw()
+        }
 
     ///
     /// Returns the union of the elements in `s`.
@@ -326,7 +476,6 @@ namespace Set {
     ///
     /// Note: The returned set may be smaller than `s`.
     ///
-    @ParallelWhenPure // TODO
     pub def map(f: a -> b & ef, s: Set[a]): Set[b] & ef with Order[b] =
         foldLeft((acc, x) -> insert(f(x), acc), empty(), s)
 
@@ -338,13 +487,13 @@ namespace Set {
         foldLeft((acc, x) -> union(acc, f(x)), empty(), s)
 
     ///
-    /// Replaces the element `x` with `y` if `x` is in `s`. Otherwise, returns `s`.
+    /// Replaces the element `from` with `to` if `from` is in `s`. Otherwise, returns `s`.
     ///
     /// Note: The returned set may be smaller than `s`.
     ///
     @Time(Int32.log2(size(s))) @Space(Int32.log2(size(s)))
-    pub def replace(x: a, y: a, s: Set[a]): Set[a] with Order[a] =
-        if (memberOf(x, s)) insert(y, remove(x, s)) else s
+    pub def replace(from: {from :: a}, to: {to :: a}, s: Set[a]): Set[a] with Order[a] =
+        if (memberOf(from.from, s)) insert(to.to, remove(from.from, s)) else s
 
     ///
     /// Returns a pair of sets `(s1, s2)`.
@@ -395,6 +544,12 @@ namespace Set {
         foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc), Map#{}, s)
 
     ///
+    /// Returns a map with elements of `s` as keys and `f` applied as values.
+    ///
+    pub def toMapWith(f: a -> b, s: Set[a]): Map[a, b] with Order[a] =
+        Set.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
+
+    ///
     /// Applies `f` to every element of `s`.
     ///
     @Time(size(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
@@ -409,15 +564,12 @@ namespace Set {
     ///
     /// `f` should return `None` to signal the end of building the set.
     ///
-    pub def unfold(f: s -> Option[(a, s)] & ef, st: s): Set[a] & ef with Order[a] = unfoldHelper(f, st, empty())
-
-    ///
-    /// Helper function for `unfold`.
-    ///
-    def unfoldHelper(f: s -> Option[(a, s)] & ef, st: s, acc: Set[a]): Set[a] & ef with Order[a] = match f(st) {
-        case None => acc
-        case Some((a, st1)) => unfoldHelper(f, st1, insert(a, acc))
-    }
+    pub def unfold(f: s -> Option[(a, s)] & ef, st: s): Set[a] & ef with Order[a] =
+        def loop(sst, s) = match f(sst) {
+            case None         => s
+            case Some(a, st1) => loop(st1, insert(a, s))
+        };
+        loop(st, empty())
 
     ///
     /// Build a set by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -427,26 +579,17 @@ namespace Set {
     ///
     /// `next` should return `None` to signal the end of building the set.
     ///
-    pub def unfoldWithIter(next: Unit -> Option[a] & ef): Set[a] & ef with Order[a] = unfoldWithIterHelper(next, empty())
+    pub def unfoldWithIter(next: Unit -> Option[a] & ef): Set[a] & ef with Order[a] =
+        def loop(s) = match next() {
+            case None    => s
+            case Some(a) => loop(insert(a, s))
+        };
+        loop(empty())
 
     ///
-    /// Helper function for `unfoldWithIter`.
+    /// Returns the set `s` as a `DelayList`.
     ///
-    def unfoldWithIterHelper(next: Unit -> Option[a] & ef, acc: Set[a]): Set[a] & ef with Order[a] = match next() {
-        case None => acc
-        case Some(a) => unfoldWithIterHelper(next, insert(a, acc))
-    }
-
-    ///
-    /// Helper function for `range`.
-    ///
-    def rangeHelper(b: Int32, n: Int32, acc: Set[Int32]): Set[Int32] =
-        if (n < b) acc else rangeHelper(b, n - 1, insert(n, acc))
-
-    ///
-    /// Returns the set `s` as a `LazyList`.
-    ///
-    pub def toLazyList(s: Set[a]): LazyList[a] =
+    pub def toDelayList(s: Set[a]): DelayList[a] =
         foldRight((x, acc) -> ECons(x, acc), ENil, s)
 
     ///
@@ -454,5 +597,19 @@ namespace Set {
     ///
     pub def toIterator(s: Set[a]): Iterator[a] & Impure =
         List.toIterator(Set.toList(s))
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `s` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, s: Set[a]): String with ToString[a] =
+        Foldable.join(sep, s)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `s` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: a -> String & ef, sep: String, s: Set[a]): String & ef =
+        Foldable.joinWith(f, sep, s)
 
 }

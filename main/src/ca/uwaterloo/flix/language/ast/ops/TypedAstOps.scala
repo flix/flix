@@ -77,7 +77,7 @@ object TypedAstOps {
         val env1 = env0 + (sym -> exp1.tpe)
         visitExp(exp1, env1) ++ visitExp(exp2, env1)
 
-      case Expression.LetRegion(_, exp, _, _, _) =>
+      case Expression.Scope(_, exp, _, _, _) =>
         visitExp(exp, env0)
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
@@ -149,6 +149,9 @@ object TypedAstOps {
 
       case Expression.Ref(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
+
+      case Expression.RefWithRegion(exp1, exp2, tpe, eff, loc) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
       case Expression.Deref(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
@@ -264,7 +267,7 @@ object TypedAstOps {
       * Finds the holes and hole contexts in the given body predicate `b0`.
       */
     def visitBody(b0: Predicate.Body, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = b0 match {
-      case Predicate.Body.Atom(_, _, _, _, _, _) => Map.empty
+      case Predicate.Body.Atom(_, _, _, _, _, _, _) => Map.empty
       case Predicate.Body.Guard(exp, _) => visitExp(exp, env0)
       case Predicate.Body.Loop(_, exp, _) => visitExp(exp, env0)
     }
@@ -355,7 +358,7 @@ object TypedAstOps {
     case Expression.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Let(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.LetRec(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expression.LetRegion(_, exp, _, _, _) => sigSymsOf(exp)
+    case Expression.Scope(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expression.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Match(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ sigSymsOf(rule.guard))
@@ -373,6 +376,7 @@ object TypedAstOps {
     case Expression.ArrayStore(base, index, elm, _) => sigSymsOf(base) ++ sigSymsOf(index) ++ sigSymsOf(elm)
     case Expression.ArraySlice(base, beginIndex, endIndex, _, _) => sigSymsOf(base) ++ sigSymsOf(beginIndex) ++ sigSymsOf(endIndex)
     case Expression.Ref(exp, _, _, _) => sigSymsOf(exp)
+    case Expression.RefWithRegion(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Deref(exp, _, _, _) => sigSymsOf(exp)
     case Expression.Assign(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Ascribe(exp, _, _, _) => sigSymsOf(exp)
@@ -490,7 +494,7 @@ object TypedAstOps {
     case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - sym
 
-    case Expression.LetRegion(sym, exp, _, _, _) =>
+    case Expression.Scope(sym, exp, _, _, _) =>
       freeVars(exp) - sym
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -554,6 +558,9 @@ object TypedAstOps {
 
     case Expression.Ref(exp, _, _, _) =>
       freeVars(exp)
+
+    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.Deref(exp, _, _, _) =>
       freeVars(exp)
@@ -719,7 +726,7 @@ object TypedAstOps {
     * Returns the free variables in the given body predicate `body0`.
     */
   private def freeVars(body0: Predicate.Body): Map[Symbol.VarSym, Type] = body0 match {
-    case Body.Atom(_, _, _, terms, _, _) =>
+    case Body.Atom(_, _, _, _, terms, _, _) =>
       terms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, term) => acc ++ freeVars(term)
       }

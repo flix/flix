@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
@@ -78,6 +78,7 @@ object Lowering {
 
     lazy val Denotation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Denotation")
     lazy val Polarity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Polarity")
+    lazy val Fixity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Fixity")
     lazy val SourceLocation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.SourceLocation")
 
     lazy val Comparison: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
@@ -111,6 +112,7 @@ object Lowering {
 
     lazy val Denotation: Type = Type.mkEnum(Enums.Denotation, Boxed :: Nil, SourceLocation.Unknown)
     lazy val Polarity: Type = Type.mkEnum(Enums.Polarity, Nil, SourceLocation.Unknown)
+    lazy val Fixity: Type = Type.mkEnum(Enums.Fixity, Nil, SourceLocation.Unknown)
     lazy val SL: Type = Type.mkEnum(Enums.SourceLocation, Nil, SourceLocation.Unknown)
 
     lazy val Comparison: Type = Type.mkEnum(Enums.Comparison, Nil, SourceLocation.Unknown)
@@ -181,7 +183,7 @@ object Lowering {
     * Lowers the given enum `enum0`.
     */
   private def visitEnum(enum0: Enum)(implicit root: Root, flix: Flix): Enum = enum0 match {
-    case Enum(doc, mod, sym, tparams, derives, cases0, tpeDeprecated0, sc0, loc) =>
+    case Enum(doc, ann, mod, sym, tparams, derives, cases0, tpeDeprecated0, sc0, loc) =>
       val tpeDeprecated = visitType(tpeDeprecated0)
       val sc = visitScheme(sc0)
       val cases = cases0.map {
@@ -190,7 +192,7 @@ object Lowering {
           val caseSc = visitScheme(caseSc0)
           (tag, Case(caseSym, tag, caseTpeDeprecated, caseSc, loc))
       }
-      Enum(doc, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc)
+      Enum(doc, ann, mod, sym, tparams, derives, cases, tpeDeprecated, sc, loc)
   }
 
   /**
@@ -322,9 +324,12 @@ object Lowering {
       val t = visitType(tpe)
       Expression.LetRec(sym, mod, e1, e2, t, eff, loc)
 
-    case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expression.LetRegion(sym, e, tpe, eff, loc)
+    case Expression.Scope(sym, exp, tpe, eff, loc) =>
+      // Introduce a Unit value to represent the Region value.
+      val mod = Ast.Modifiers.Empty
+      val e1 = Expression.Unit(loc)
+      val e2 = visitExp(exp)
+      Expression.Let(sym, mod, e1, e2, tpe, eff, loc)
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -419,6 +424,12 @@ object Lowering {
       val e = visitExp(exp)
       val t = visitType(tpe)
       Expression.Ref(e, t, eff, loc)
+
+    case Expression.RefWithRegion(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      Expression.RefWithRegion(e1, e2, t, eff, loc)
 
     case Expression.Deref(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -571,7 +582,7 @@ object Lowering {
       // Compute the arity of the predicate symbol.
       // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
       val arity = Type.eraseAliases(tpe) match {
-        case Type.Apply(Type.Cst(TypeConstructor.Array, _), innerType, _) => innerType.typeConstructor match {
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedArray, _), innerType, _), _, _) => innerType.typeConstructor match {
           case Some(TypeConstructor.Tuple(_)) => innerType.typeArguments.length
           case Some(TypeConstructor.Unit) => 0
           case _ => 1
@@ -811,12 +822,13 @@ object Lowering {
     * Lowers the given body predicate `p0`.
     */
   private def visitBodyPred(cparams0: List[ConstraintParam], p0: Predicate.Body)(implicit root: Root, flix: Flix): Expression = p0 match {
-    case Body.Atom(pred, den, polarity, terms, _, loc) =>
+    case Body.Atom(pred, den, polarity, fixity, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val polarityExp = mkPolarity(polarity, loc)
+      val fixityExp = mkFixity(fixity, loc)
       val termsExp = mkArray(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
-      val innerExp = mkTuple(predSymExp :: denotationExp :: polarityExp :: termsExp :: Nil, loc)
+      val innerExp = mkTuple(predSymExp :: denotationExp :: polarityExp :: fixityExp :: termsExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
     case Body.Guard(exp0, loc) =>
@@ -1010,6 +1022,19 @@ object Lowering {
   }
 
   /**
+    * Constructs a `Fixpoint/Ast.Fixity` from the given fixity `f`.
+    */
+  private def mkFixity(f: Ast.Fixity, loc: SourceLocation): Expression = f match {
+    case Fixity.Loose =>
+      val innerExp = Expression.Unit(loc)
+      mkTag(Enums.Fixity, "Loose", innerExp, Types.Fixity, loc)
+
+    case Fixity.Fixed =>
+      val innerExp = Expression.Unit(loc)
+      mkTag(Enums.Fixity, "Fixed", innerExp, Types.Fixity, loc)
+  }
+
+  /**
     * Constructs a `Fixpoint/Ast.PredSym` from the given predicate `pred`.
     */
   private def mkPredSym(pred: Name.Pred): Expression = pred match {
@@ -1198,7 +1223,7 @@ object Lowering {
     * Returns a pure array expression constructed from the given list of expressions `exps`.
     */
   private def mkArray(exps: List[Expression], elmType: Type, loc: SourceLocation): Expression = {
-    val tpe = Type.mkArray(elmType, loc)
+    val tpe = Type.mkScopedArray(elmType, Type.Pure, loc)
     val eff = Type.Pure
     Expression.ArrayLit(exps, tpe, eff, loc)
   }
@@ -1317,10 +1342,10 @@ object Lowering {
       val e2 = substExp(exp2, subst)
       Expression.LetRec(s, mod, e1, e2, tpe, eff, loc)
 
-    case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
+    case Expression.Scope(sym, exp, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)
       val e = substExp(exp, subst)
-      Expression.LetRegion(s, e, tpe, eff, loc)
+      Expression.Scope(s, e, tpe, eff, loc)
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)
@@ -1399,6 +1424,11 @@ object Lowering {
     case Expression.Ref(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.Ref(e, tpe, eff, loc)
+
+    case Expression.RefWithRegion(exp1, exp2, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      Expression.RefWithRegion(e1, e2, tpe, eff, loc)
 
     case Expression.Deref(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)

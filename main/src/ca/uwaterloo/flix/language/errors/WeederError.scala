@@ -200,6 +200,30 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that a negative atom is marked as fixed.
+    *
+    * @param loc the location where the illegal fixed atom occurs.
+    */
+  case class IllegalFixedAtom(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal fixed atom"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |
+         |>> Illegal fixed atom. A negative atom is implicitly fixed.
+         |
+         |${code(loc, "Illegal fixed atom.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate that the formal parameter lacks a type declaration.
     *
     * @param name the name of the parameter.
@@ -670,6 +694,32 @@ object WeederError {
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Add an expression to the interpolation or remove the interpolation."
+    })
+
+  }
+
+  /**
+    * An error raised to indicate that a newly defined name is reserved.
+    *
+    * @param ident the reserved name that conflicts.
+    * @param loc   the location where the error occurred.
+    */
+  case class ReservedName(ident: Name.Ident, loc: SourceLocation) extends WeederError {
+    def summary: String = "Re-definition of a reserved name."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Re-definition of reserved name '${red(ident.name)}'.
+         |
+         |${code(loc, "re-definition of a reserved name")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Try to find a new name that doesn't match one that is reserved."
     })
 
   }

@@ -244,7 +244,7 @@ object CompleteProvider {
         case Type.Cst(TypeConstructor.False, _) => " & Impure"
         case e => " & " + FormatType.formatType(e)
       }
-      s"  pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
+      s"    pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
     }
 
     // Return immediately if the current line does not contain the word "instance".

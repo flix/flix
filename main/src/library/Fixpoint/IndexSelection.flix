@@ -136,7 +136,7 @@ namespace Fixpoint {
         use Fixpoint/Ram.RamTerm.{RowLoad, Lit};
         // Sort equalities of the form `var[i] = rhs` ascending on `i`.
         List.sortWith(x -> y -> match (x, y) {
-            case (Eq(RowLoad(_, index1), _), Eq(RowLoad(_, index2), _)) => Comparison.fromInt(index1 - index2)
+            case (Eq(RowLoad(_, index1), _), Eq(RowLoad(_, index2), _)) => Comparison.fromInt32(index1 - index2)
             case _ => ???
         }, varQuery) |>
         // Group `var[i] = rhs` by `i`.

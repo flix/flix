@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, PhaseTime}
+import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils}
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods
@@ -13,7 +14,7 @@ object BenchmarkCompiler {
   /**
     * The number of compilations to perform when collecting statistics.
     */
-  val N = 14
+  val N = 10
 
   /**
     * Outputs statistics about the size of the generated JVM code.
@@ -53,6 +54,33 @@ object BenchmarkCompiler {
       (compilationResult, flix.phaseTimers.toList)
     }
 
+    processPhasesResults(o, r)
+  }
+
+  def benchmarkIncremental(o: Options): Unit = {
+    // Get an initial Flix object and precompile it once.
+    val flix = newFlix(o)
+    flix.setOptions(flix.options.copy(incremental = true))
+    flix.compile()
+
+    //
+    // Collect data from N iterations, using the same Flix object.
+    //
+    val r = (0 until N).map { _ =>
+      // Re-add all the inputs to mark them all as changed.
+      addInputs(flix)
+
+      val compilationResult = flix.compile().get
+      (compilationResult, flix.phaseTimers.toList)
+    }
+
+    processPhasesResults(o, r)
+  }
+
+  /**
+    * Processes and prints the results of the phase benchmarking.
+    */
+  private def processPhasesResults(o: Options, r: IndexedSeq[(CompilationResult, List[PhaseTime])]): Unit = {
     //
     // Split into compilation results and phase results.
     //
@@ -77,7 +105,7 @@ object BenchmarkCompiler {
     val lines = results.head.getTotalLines.toLong
 
     // Find the timings of each run.
-    val timings = results.map(_.getTotalTime)
+    val timings = results.map(_.totalTime)
 
     // Compute the total time in seconds.
     val totalTime = (timings.sum / 1_000_000_000L).toInt
@@ -106,7 +134,6 @@ object BenchmarkCompiler {
       println(f"Finished $N iterations on $lines%,6d lines of code in $totalTime seconds.")
     }
   }
-
   /**
     * Computes the throughput of the compiler.
     */
@@ -126,7 +153,7 @@ object BenchmarkCompiler {
     val lines = results.head.getTotalLines.toLong
 
     // Find the timings of each run.
-    val timings = results.map(_.getTotalTime).toList
+    val timings = results.map(_.totalTime).toList
 
     // Compute the total time in seconds.
     val totalTime = (timings.sum / 1_000_000_000L).toInt
@@ -186,26 +213,23 @@ object BenchmarkCompiler {
   private def newFlix(o: Options): Flix = {
     val flix = new Flix()
 
-    flix.setOptions(opts = o.copy(loadClassFiles = false, writeClassFiles = false))
+    flix.setOptions(opts = o.copy(incremental = false, loadClassFiles = false))
 
+    addInputs(flix)
+
+    flix
+  }
+
+  /**
+    * Adds test code to the benchmarking suite.
+    */
+  private def addInputs(flix: Flix): Unit = {
     // NB: We only use unit tests from the standard library because we want to test real code.
 
     flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
-    flix.addSourceCode("TestBigInt.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestBigInt.flix"))
     flix.addSourceCode("TestChain.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
-    flix.addSourceCode("TestChar.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChar.flix"))
-    flix.addSourceCode("TestDelayMap.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestDelayMap.flix"))
-    flix.addSourceCode("TestFloat32.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestFloat32.flix"))
-    flix.addSourceCode("TestFloat64.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestFloat64.flix"))
-    flix.addSourceCode("TestFromString.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestFromString.flix"))
-    flix.addSourceCode("TestGetOpt.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestGetOpt.flix"))
-    flix.addSourceCode("TestHash.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestHash.flix"))
-    flix.addSourceCode("TestInt8.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestInt8.flix"))
-    flix.addSourceCode("TestInt16.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestInt16.flix"))
-    flix.addSourceCode("TestInt32.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestInt32.flix"))
-    flix.addSourceCode("TestInt64.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestInt64.flix"))
     flix.addSourceCode("TestIterator.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"))
-    flix.addSourceCode("TestLazyList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestLazyList.flix"))
+    flix.addSourceCode("TestDelayList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestDelayList.flix"))
     flix.addSourceCode("TestList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestList.flix"))
     flix.addSourceCode("TestMap.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMap.flix"))
     flix.addSourceCode("TestMutList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutList.flix"))
@@ -215,10 +239,7 @@ object BenchmarkCompiler {
     flix.addSourceCode("TestPrelude.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestPrelude.flix"))
     flix.addSourceCode("TestResult.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestResult.flix"))
     flix.addSourceCode("TestSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"))
-    flix.addSourceCode("TestString.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestString.flix"))
     flix.addSourceCode("TestValidation.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"))
-
-    flix
   }
 
 }

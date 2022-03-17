@@ -405,10 +405,25 @@ def foldRight03(): Bool = Set.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Se
 def foldRight04(): Bool = Set.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Set#{3, 2, 1}) == 382
 
 /////////////////////////////////////////////////////////////////////////////
+// foldRightLazy                                                           //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldRightLazy01(): Bool = Set.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, Set#{}) == 100
+
+@test
+def foldRightLazy02(): Bool = Set.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, Set#{1}) == 198
+
+@test
+def foldRightLazy03(): Bool = Set.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, Set#{2, 1}) == 194
+
+@test
+def foldRightLazy04(): Bool = Set.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, Set#{3, 2, 1}) == 382
+
+/////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def reduceLeft01(): Bool = Set.reduceLeft((a, b) -> a-b, Set#{}: Set[Int]) == None
+def reduceLeft01(): Bool = Set.reduceLeft((a, b) -> a-b, Set#{}: Set[Int32]) == None
 
 @test
 def reduceLeft02(): Bool = Set.reduceLeft((a, b) -> a-b, Set#{1}) == Some(1)
@@ -426,7 +441,7 @@ def reduceLeft05(): Bool = Set.reduceLeft((a, b) -> a-b, Set#{4, 3, 2, 1}) == So
 // reduceRight                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def reduceRight01(): Bool = Set.reduceRight((a, b) -> a-b, Set#{}: Set[Int]) == None
+def reduceRight01(): Bool = Set.reduceRight((a, b) -> a-b, Set#{}: Set[Int32]) == None
 
 @test
 def reduceRight02(): Bool = Set.reduceRight((a, b) -> a-b, Set#{1}) == Some(1)
@@ -463,6 +478,151 @@ def count06(): Bool = Set.count(i -> i > 3, Set#{1, 8}) == 1
 
 @test
 def count07(): Bool = Set.count(i -> i > 3, Set#{7, 6}) == 2
+
+@test
+def count08(): Bool & Impure =
+    let range = List.range(0, 2000);
+    let s = range |> List.toSet;
+    let a = MutList.new();
+    Set.count(x -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(b, a); true }, s);
+    MutList.toList(a) == range
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sum                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sum01(): Bool =
+        Set.empty() |> Set.sum == 0
+
+    @test
+    def sum02(): Bool =
+        Set#{1} |> Set.sum == 1
+
+    @test
+    def sum03(): Bool =
+        Set#{1, 2, 3} |> Set.sum == 6
+
+    @test
+    def sum04(): Bool =
+        Set#{1, 2, 3, -3} |> Set.sum == 3
+
+    @test
+    def sum05(): Bool =
+        Set#{1, 2, -3, -4} |> Set.sum == -4
+
+    @test
+    def sum06(): Bool =
+        Set#{10, -10} |> Set.sum == 0
+
+    @test
+    def sum07(): Bool =
+        Set.range(1, 101) |> Set.sum == 5050
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sumWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sumWith01(): Bool =
+        Set.empty() |> Set.sumWith(x -> x + 1) == 0
+
+    @test
+    def sumWith02(): Bool =
+        Set#{1} |> Set.sumWith(x -> x + 1) == 2
+
+    @test
+    def sumWith03(): Bool =
+        Set#{1, 2, 3} |> Set.sumWith(x -> x + 1) == 9
+
+    @test
+    def sumWith04(): Bool =
+        Set#{1, 2, 3, -3} |> Set.sumWith(x -> x + 1) == 7
+
+    @test
+    def sumWith05(): Bool =
+        Set#{-1, -2, -3, -4} |> Set.sumWith(x -> x + 1) == -6
+
+    @test
+    def sumWith06(): Bool =
+        Set#{10, -10} |> Set.sumWith(x -> x + 1) == 2
+
+    @test
+    def sumWith08(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = range |> List.toSet;
+        let a = MutList.new();
+        Set.sumWith(k -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
+        MutList.toList(a) == range
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool =
+        Set.product(Set.empty()) == 0
+
+    @test
+    def product02(): Bool =
+       Set#{1} |> Set.product == 1
+
+    @test
+    def product03(): Bool =
+        Set#{1, 2, 3} |> Set.product == 6
+
+    @test
+    def product04(): Bool =
+        Set#{1, 2, 3, -3} |> Set.product == -18
+
+    @test
+    def product05(): Bool =
+        Set#{-1, -2, -3, -4} |> Set.product == 24
+
+    @test
+    def product06(): Bool =
+        Set#{10, -10} |> Set.product == -100
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productWith                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productWith01(): Bool =
+        Set#{} |> Set.productWith(x -> x + 1) == 0
+
+    @test
+    def productWith02(): Bool =
+        Set#{1} |> Set.productWith(x -> x + 1) == 2
+
+    @test
+    def productWith03(): Bool =
+        Set#{1, 2, 3} |> Set.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith04(): Bool =
+        Set#{1, 2, 3, -3} |> Set.productWith(x -> x + 1) == -48
+
+    @test
+    def productWith05(): Bool =
+        Set#{-2, -3, -4, -5} |> Set.productWith(x -> x + 1) == 24
+
+    @test
+    def productWith06(): Bool =
+        Set#{10, -10} |> Set.productWith(x -> x + 1) == -99
+
+    @test
+    def productWith08(): Bool & Impure =
+        let range = List.range(0, 2000);
+        let m = range |> List.toSet;
+        let a = MutList.new();
+        Set.productWith(k -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
+        MutList.toList(a) == range
+
 
 /////////////////////////////////////////////////////////////////////////////
 // flatten                                                                 //
@@ -809,6 +969,15 @@ def map14(): Bool = Set.map(x -> x rem 9, Set#{0, 5, 1, -9, -8}) == Set#{5, 1, 0
 @test
 def map15(): Bool = Set.map(x -> x rem 9, Set#{0, 5, 1, 10, 7, 19, 28, 2}) == Set#{0, 5, 7, 1, 2}
 
+@test
+def map16(): Bool & Impure =
+    let range = List.range(0, 2000);
+    let s = List.toSet(range);
+    let a = MutList.new();
+    Set.map(x -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(b, a); x }, s);
+    MutList.toList(a) == range
+
+
 /////////////////////////////////////////////////////////////////////////////
 // flatMap                                                                 //
 /////////////////////////////////////////////////////////////////////////////
@@ -846,28 +1015,28 @@ def flatMap10(): Bool = Set.flatMap(x -> Set#{x, 2*x, 3*x}, Set#{1, 4, 3, 2}) ==
 // replace                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def replace01(): Bool = Set.replace(3, 4, Set#{}) == Set#{}
+def replace01(): Bool = Set.replace(from = 3, to = 4, Set#{}) == Set#{}
 
 @test
-def replace02(): Bool = Set.replace(3, 4, Set#{1}) == Set#{1}
+def replace02(): Bool = Set.replace(from = 3, to = 4, Set#{1}) == Set#{1}
 
 @test
-def replace03(): Bool = Set.replace(3, 4, Set#{3}) == Set#{4}
+def replace03(): Bool = Set.replace(from = 3, to = 4, Set#{3}) == Set#{4}
 
 @test
-def replace04(): Bool = Set.replace(3, 4, Set#{4}) == Set#{4}
+def replace04(): Bool = Set.replace(from = 3, to = 4, Set#{4}) == Set#{4}
 
 @test
-def replace05(): Bool = Set.replace(3, 4, Set#{1, 2}) == Set#{1, 2}
+def replace05(): Bool = Set.replace(from = 3, to = 4, Set#{1, 2}) == Set#{1, 2}
 
 @test
-def replace06(): Bool = Set.replace(3, 4, Set#{1, 3}) == Set#{1, 4}
+def replace06(): Bool = Set.replace(from = 3, to = 4, Set#{1, 3}) == Set#{1, 4}
 
 @test
-def replace07(): Bool = Set.replace(3, 4, Set#{3, 2}) == Set#{4, 2}
+def replace07(): Bool = Set.replace(from = 3, to = 4, Set#{3, 2}) == Set#{4, 2}
 
 @test
-def replace08(): Bool = Set.replace(3, 4, Set#{3, 4}) == Set#{4}
+def replace08(): Bool = Set.replace(from = 3, to = 4, Set#{3, 4}) == Set#{4}
 
 /////////////////////////////////////////////////////////////////////////////
 // partition                                                               //
@@ -923,7 +1092,7 @@ def toList04(): Bool = Set.toList(Set#{1, 2, 3}) == 3 :: 2 :: 1 :: Nil
 
 @test
 def toChain01(): Bool =
-    Set.toChain(Set#{}: Set[Int]) == Chain.empty(): Chain[Int]
+    Set.toChain(Set#{}: Set[Int32]) == Chain.empty(): Chain[Int32]
 
 @test
 def toChain02(): Bool =
@@ -954,6 +1123,27 @@ def toMap04(): Bool = Set.toMap(Set#{(1, true), (1, false)}) == Map#{1 => false}
 
 @test
 def toMap05(): Bool = Set.toMap(Set#{(1, true), (2, false), (3, true)}) == Map#{1 => true, 2 => false, 3 => true}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// toMapWith                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toMapWith02(): Bool =
+    Set.toMapWith(x -> 0 * x, Set#{}) == Map#{}
+
+@test
+def toMapWith03(): Bool =
+    Set.toMapWith(x -> 2 * x, Set#{1, 3, 6}) == Map#{1 => 2, 3 => 6, 6 => 12}
+
+@test
+def toMapWith04(): Bool =
+    Set.toMapWith(x -> x + 10, Set#{1, 3, 6}) == Map#{1 => 11, 3 => 13, 6 => 16}
+
+@test
+def toMapWith05(): Bool =
+    Set.toMapWith(x -> x + 10, Set#{7, 1, 3, 6}) == Map#{1 => 11, 3 => 13, 6 => 16, 7 => 17}
 
 /////////////////////////////////////////////////////////////////////////////
 // eq                                                                      //
@@ -1216,6 +1406,14 @@ def unfoldWithIter06(): Bool & Impure =
     @test
     def minimumBy04(): Bool = Set.minimumBy((x, y) -> x <=> y, Set.range(5, 55)) == Some(5)
 
+    @test
+    def minimumBy05(): Bool & Impure =
+        let s = List.range(0, 2000) |> List.toSet;
+        let a = MutList.new();
+        Set.minimumBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, s);
+        MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
+
+
     /////////////////////////////////////////////////////////////////////////////
     // maximum                                                                 //
     /////////////////////////////////////////////////////////////////////////////
@@ -1250,20 +1448,20 @@ def unfoldWithIter06(): Bool & Impure =
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toLazyList                                                              //
+    // toDelayList                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toLazyList01(): Bool =
-        Set.empty(): Set[Unit] |> Set.toLazyList == LazyList.empty()
+    def toDelayList01(): Bool =
+        Set.empty(): Set[Unit] |> Set.toDelayList == DelayList.empty()
 
     @test
-    def toLazyList02(): Bool =
-        Set.range(-1000, 1000) |> Set.toLazyList == LazyList.range(-1000, 1000)
+    def toDelayList02(): Bool =
+        Set.range(-1000, 1000) |> Set.toDelayList == DelayList.range(-1000, 1000)
 
     @test
-    def toLazyList03(): Bool =
-        Set.range(-1000, 1000) |> Set.toLazyList |> LazyList.toSet == Set.range(-1000, 1000)
+    def toDelayList03(): Bool =
+        Set.range(-1000, 1000) |> Set.toDelayList |> DelayList.toSet == Set.range(-1000, 1000)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1281,5 +1479,51 @@ def unfoldWithIter06(): Bool & Impure =
     @test
     def toIterator03(): Bool & Impure =
         Set.range(0, 100) |> Set.toIterator |> Iterator.toSet == Set.range(0, 100)
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // join                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def join01(): Bool =
+        Set.join(",", Set.empty(): Set[Int32]) == ""
+
+    @test
+    def join02(): Bool =
+        Set.join(",", Set#{1}) == "1"
+
+    @test
+    def join03(): Bool =
+        Set.join(",", Set#{1, 2, 3}) == "1,2,3"
+
+    @test
+    def join04(): Bool =
+        Set.join(",", Set#{"1", "2", "3"}) == "1,2,3"
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinWith                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def joinWith01(): Bool =
+        (Nil: List[Int32]) |> List.toSet |>
+            Set.joinWith(x -> "${x + 1}", ",") == ""
+
+    @test
+    def joinWith02(): Bool =
+        (1 :: Nil) |> List.toSet |>
+            Set.joinWith(x -> "${x + 1}", ",") == "2"
+
+    @test
+    def joinWith03(): Bool =
+        (1 :: 2 :: 3 :: Nil) |> List.toSet |>
+            Set.joinWith(x -> "${x + 1}", ",") == "2,3,4"
+
+    @test
+    def joinWith04(): Bool =
+        ("1" :: "2" :: "3" :: Nil) |> List.toSet |>
+            Set.joinWith(x -> x + x, ",") == "11,22,33"
 
 }
