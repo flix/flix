@@ -148,7 +148,7 @@ object FormatSimpleType {
       case SimpleType.Int32 => "Int32"
       case SimpleType.Int64 => "Int64"
       case SimpleType.BigInt => "BigInt"
-      case SimpleType.Str => "Str"
+      case SimpleType.Str => "String"
       case SimpleType.ScopedArray => "ScopedArray"
       case SimpleType.ScopedRef => "ScopedRef"
       case SimpleType.Channel => "Channel"
