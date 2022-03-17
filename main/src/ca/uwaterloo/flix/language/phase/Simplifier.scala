@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.Purity.{Pure, Impure}
+import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -123,9 +123,6 @@ object Simplifier {
       case TypedAst.Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc) =>
         val purity = isPure(e1.eff)
         SimplifiedAst.Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
-
-      case TypedAst.Expression.LetRegion(_, exp, _, _, _) =>
-        visitExp(exp)
 
       case TypedAst.Expression.Match(exp0, rules, tpe, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
@@ -292,6 +289,9 @@ object Simplifier {
       case TypedAst.Expression.Default(_, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case TypedAst.Expression.Wild(_, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
+      case TypedAst.Expression.LetRegion(_, _, _, _, _) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case TypedAst.Expression.FixpointConstraintSet(_, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
@@ -615,16 +615,16 @@ object Simplifier {
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
 
         /**
-         * Matching an array with a TailSpread may succeed or fail
-         *
-         * We generate an if clause checking that array length is at least the length of
-         * each pattern, and generate a fresh variable and let-binding for each variable
-         * in the array, which we load with ArrayLoad.
-         * We then check whether the Spread is a variable, creating a let-binding for the
-         * appropriate ArraySlice to the spread, if it is.
-         * We then recurse over the freshly generated variables as the true case of the previously
-         * created if clause
-         */
+          * Matching an array with a TailSpread may succeed or fail
+          *
+          * We generate an if clause checking that array length is at least the length of
+          * each pattern, and generate a fresh variable and let-binding for each variable
+          * in the array, which we load with ArrayLoad.
+          * We then check whether the Spread is a variable, creating a let-binding for the
+          * appropriate ArraySlice to the spread, if it is.
+          * We then recurse over the freshly generated variables as the true case of the previously
+          * created if clause
+          */
         case (TypedAst.Pattern.ArrayTailSpread(elms, sym, tpe, loc) :: ps, v :: vs) =>
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
@@ -657,16 +657,16 @@ object Simplifier {
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
 
         /**
-         * Matching an array with a HeadSpread may succeed or fail
-         *
-         * We generate an if clause checking that array length is at least the length of
-         * each pattern, and generate a fresh variable and let-binding for each variable
-         * in the array, which we load with ArrayLoad.
-         * We then check whether the Spread is a variable, creating a let-binding for the
-         * appropriate ArraySlice to the spread, if it is.
-         * We then recurse over the freshly generated variables as the true case of the previously
-         * created if clause
-         */
+          * Matching an array with a HeadSpread may succeed or fail
+          *
+          * We generate an if clause checking that array length is at least the length of
+          * each pattern, and generate a fresh variable and let-binding for each variable
+          * in the array, which we load with ArrayLoad.
+          * We then check whether the Spread is a variable, creating a let-binding for the
+          * appropriate ArraySlice to the spread, if it is.
+          * We then recurse over the freshly generated variables as the true case of the previously
+          * created if clause
+          */
         case (TypedAst.Pattern.ArrayHeadSpread(sym, elms, tpe, loc) :: ps, v :: vs) =>
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
@@ -1041,8 +1041,8 @@ object Simplifier {
   }
 
   /**
-   * Returns the purity (or impurity) of an expression.
-   */
+    * Returns the purity (or impurity) of an expression.
+    */
   private def isPure(eff: Type): Purity = {
     if (eff == Type.Pure)
       Pure
