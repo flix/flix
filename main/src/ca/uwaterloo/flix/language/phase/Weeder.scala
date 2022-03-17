@@ -927,9 +927,9 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.LetRegion(sp1, ident, exp, sp2) =>
+    case ParsedAst.Expression.Region(sp1, ident, exp, sp2) =>
       mapN(visitExp(exp)) {
-        case e => WeededAst.Expression.LetRegion(ident, e, mkSL(sp1, sp2))
+        case e => WeededAst.Expression.Region(ident, e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
@@ -2550,7 +2550,7 @@ object Weeder {
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.LetRegion(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Region(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Choose(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
