@@ -573,11 +573,11 @@ object Namer {
         case (e1, e2) => NamedAst.Expression.LetRec(sym, mod, e1, e2, loc)
       }
 
-    case WeededAst.Expression.LetRegion(ident, exp, loc) =>
+    case WeededAst.Expression.Region(ident, exp, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       mapN(visitExp(exp, env0 + (ident.name -> sym), uenv0, tenv0)) {
-        case e => NamedAst.Expression.LetRegion(sym, e, loc)
+        case e => NamedAst.Expression.Region(sym, e, loc)
       }
 
     case WeededAst.Expression.Match(exp, rules, loc) =>
@@ -1253,7 +1253,7 @@ object Namer {
     case WeededAst.Expression.Stm(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Let(ident, mod, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
     case WeededAst.Expression.LetRec(ident, mod, exp1, exp2, loc) => filterBoundVars( freeVars(exp1) ++ freeVars(exp2), List(ident))
-    case WeededAst.Expression.LetRegion(ident, exp, loc) => filterBoundVars(freeVars(exp), List(ident))
+    case WeededAst.Expression.Region(ident, exp, loc) => filterBoundVars(freeVars(exp), List(ident))
     case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
     }
