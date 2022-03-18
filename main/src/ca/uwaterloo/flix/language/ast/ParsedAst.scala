@@ -629,14 +629,14 @@ object ParsedAst {
     case class LetImport(sp1: SourcePosition, op: ParsedAst.JvmOp, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Let Region Expression.
+      * Scope Expression.
       *
       * @param sp1   the position of the first character in the expression.
       * @param ident the name of the region.
       * @param exp   the body expression.
       * @param sp2   the position of the last character in the expression.
       */
-    case class LetRegion(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Scope(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Match Expression (pattern match expression).
@@ -719,20 +719,22 @@ object ParsedAst {
       * ArrayLit Expression.
       *
       * @param sp1  the position of the first character in the expression.
-      * @param elms the elements of the array.
+      * @param exps the elements of the array.
+      * @param exp  the optional region.
       * @param sp2  the position of the last character in the expression.
       */
-    case class ArrayLit(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class ArrayLit(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ArrayNew Expression
       *
-      * @param sp1 the position of the first character in the expression.
-      * @param elm the default value of the array elements.
-      * @param len the length of the array.
-      * @param sp2 the position of the last character in the expression.
+      * @param sp1  the position of the first character in the expression.
+      * @param exp1 the default value of the array elements.
+      * @param exp2 the length of the array.
+      * @param exp3 the optional region.
+      * @param sp2  the position of the last character in the expression.
       */
-    case class ArrayNew(sp1: SourcePosition, elm: ParsedAst.Expression, len: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ArrayNew(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ArrayLoad Expression
@@ -1258,15 +1260,6 @@ object ParsedAst {
       * @param sp2   the position of the last character in the type.
       */
     case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
-      * Rigid Type Variable.
-      *
-      * @param sp1   the position of the first character in the type.
-      * @param ident the variable name.
-      * @param sp2   the position of the last character in the type.
-      */
-    case class RigidVar(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Region.
