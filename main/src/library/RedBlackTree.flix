@@ -457,16 +457,16 @@ namespace RedBlackTree {
     ///
     /// Helper function for `delete`.
     ///
-    def minDelete(tree: RedBlackTree[k, v]): (k, v, RedBlackTree[k, v]) = match tree {
-        case Node(Red, Leaf, k1, v1, Leaf) => (k1, v1, Leaf)
-        case Node(Black, Leaf, k1, v1, Leaf) => (k1, v1, DoubleBlackLeaf)
-        case Node(Black, Leaf, k1, v1, Node(Red, Leaf, k2, v2, Leaf)) =>
-            (k1, v1, Node(Black, Leaf, k2, v2, Leaf))
-        case Node(c, a, k1, v1, b) =>
-            let (k3, v3, e) = minDelete(a);
-            (k3, v3, rotate(Node(c, e, k1, v1, b)))
-        case _ => unreachable!()
-    }
+    def minDelete(tree: RedBlackTree[k, v]): (k, v, RedBlackTree[k, v]) =
+        def loop(t, sk) = match t {
+            case Node(Red, Leaf, k1, v1, Leaf)   => sk((k1, v1, Leaf))
+            case Node(Black, Leaf, k1, v1, Leaf) => sk((k1, v1, DoubleBlackLeaf))
+            case Node(Black, Leaf, k1, v1, Node(Red, Leaf, k2, v2, Leaf)) =>
+                sk((k1, v1, Node(Black, Leaf, k2, v2, Leaf)))
+            case Node(c, a, k1, v1, b) => loop(a, match (k3, v3, e) -> sk((k3, v3, rotate(Node(c, e, k1, v1, b)))))
+            case _ => unreachable!()
+        };
+        loop(tree, identity)
 
     ///
     /// Applies `f` to all key-value pairs from `tree` where `p(k)` returns `EqualTo`.
