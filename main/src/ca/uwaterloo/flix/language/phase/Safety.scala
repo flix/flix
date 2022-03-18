@@ -155,7 +155,7 @@ object Safety {
     case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
       visitExp(base) ::: visitExp(beginIndex) ::: visitExp(endIndex)
 
-    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+    case Expression.Ref(exp1, exp2, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
     case Expression.Deref(exp, _, _, _) =>

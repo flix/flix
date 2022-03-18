@@ -1257,7 +1257,7 @@ object Weeder {
         // If there is no explicit region, we use the global region.
         val defaultRegionType = Type.mkRegion(Type.False, loc)
         val defaultRegion = e2.getOrElse(WeededAst.Expression.Region(defaultRegionType, loc))
-        WeededAst.Expression.RefWithRegion(e1, defaultRegion, loc)
+        WeededAst.Expression.Ref(e1, defaultRegion, loc)
       }
 
     case ParsedAst.Expression.Deref(sp1, exp, sp2) =>

@@ -453,10 +453,10 @@ object Monomorph {
         val i2 = visitExp(endIndex, env0)
         Expression.ArraySlice(b, i1, i2, subst0(tpe), loc)
 
-      case Expression.RefWithRegion(exp1, exp2, tpe, eff, loc) =>
+      case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
-        Expression.RefWithRegion(e1, e2, subst0(tpe), eff, loc)
+        Expression.Ref(e1, e2, subst0(tpe), eff, loc)
 
       case Expression.Deref(exp, tpe, eff, loc) =>
         val e = visitExp(exp, env0)

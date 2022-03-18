@@ -420,11 +420,11 @@ object Lowering {
       val t = visitType(tpe)
       Expression.ArraySlice(b, bi, ei, t, loc)
 
-    case Expression.RefWithRegion(exp1, exp2, tpe, eff, loc) =>
+    case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      Expression.RefWithRegion(e1, e2, t, eff, loc)
+      Expression.Ref(e1, e2, t, eff, loc)
 
     case Expression.Deref(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -1416,10 +1416,10 @@ object Lowering {
       val ei = substExp(endIndex, subst)
       Expression.ArraySlice(b, bi, ei, tpe, loc)
 
-    case Expression.RefWithRegion(exp1, exp2, tpe, eff, loc) =>
+    case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
-      Expression.RefWithRegion(e1, e2, tpe, eff, loc)
+      Expression.Ref(e1, e2, tpe, eff, loc)
 
     case Expression.Deref(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)

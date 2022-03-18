@@ -479,7 +479,7 @@ object Redundancy {
       val us3 = visitExp(end, env0)
       us1 ++ us2 ++ us3
 
-    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+    case Expression.Ref(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0)
       val us2 = visitExp(exp2, env0)
       us1 ++ us2

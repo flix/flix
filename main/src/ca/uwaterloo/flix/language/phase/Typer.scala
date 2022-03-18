@@ -1151,7 +1151,7 @@ object Typer {
           resultEff = Type.mkAnd(List(regionVar, eff1, eff2, eff3), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
-      case KindedAst.Expression.RefWithRegion(exp1, exp2, tvar, evar, loc) =>
+      case KindedAst.Expression.Ref(exp1, exp2, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc, Rigidity.Flexible, Some("l"))
         for {
           (constrs1, elmType, eff1) <- visitExp(exp1)
@@ -1733,12 +1733,12 @@ object Typer {
         val tpe = e1.tpe
         TypedAst.Expression.ArraySlice(e1, e2, e3, tpe, loc)
 
-      case KindedAst.Expression.RefWithRegion(exp1, exp2, tvar, evar, loc) =>
+      case KindedAst.Expression.Ref(exp1, exp2, tvar, evar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = subst0(tvar)
         val eff = subst0(evar)
-        TypedAst.Expression.RefWithRegion(e1, e2, tpe, eff, loc)
+        TypedAst.Expression.Ref(e1, e2, tpe, eff, loc)
 
       case KindedAst.Expression.Deref(exp, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)

@@ -181,7 +181,7 @@ object CodeHinter {
     case Expression.ArraySlice(exp1, exp2, exp3, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.RefWithRegion(exp1, exp2,_, _, _) =>
+    case Expression.Ref(exp1, exp2,_, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Deref(exp, _, _, _) =>
