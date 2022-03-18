@@ -649,7 +649,7 @@ namespace String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldWithIter(f: Unit -> Option[Char] & ef): String =
+    pub def unfoldWithIter(f: Unit -> Option[Char] & ef): String & ef =
         let sb = StringBuilder.new() as & Pure;
         def loop() = {
             match f() {
