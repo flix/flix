@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
-import ca.uwaterloo.flix.language.ast.Symbol.VarSym
+import ca.uwaterloo.flix.language.ast.Symbol.{LabelSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -150,14 +150,17 @@ object OccurrenceAnalyzer {
 
     case Expression.Branch(exp, branches, tpe, loc) =>
       val (e1, o1) = visitExp(exp)
-      val (o2, bs) = branches.map {
+      val (o2, bs) = branches.foldLeft(Map[VarSym, Occur](), Map[LabelSym, OccurrenceAst.Expression]())((acc, b) => {
+        val (oacc, bsacc) = acc
+        b match {
         case (sym, exp1) =>
           val (e2, o3) = visitExp(exp1)
-          (o3, sym -> e2)
-      }.unzip
-      val o4 = o2.foldLeft(Map[VarSym, Occur]())((acc, o5) => combineAllBranch(acc, o5))
-      val o6 = combineAllSeq(o1, o4)
-      (OccurrenceAst.Expression.Branch(e1, bs.toMap, tpe, loc), o6)
+          val o4 = combineAllBranch(oacc, o3)
+          val bs = bsacc + (sym -> e2)
+          (o4, bs)
+      }})
+      val o5 = combineAllSeq(o1, o2)
+      (OccurrenceAst.Expression.Branch(e1, bs, tpe, loc), o5)
 
     case Expression.JumpTo(sym, tpe, loc) => (OccurrenceAst.Expression.JumpTo(sym, tpe, loc), Map.empty)
 
