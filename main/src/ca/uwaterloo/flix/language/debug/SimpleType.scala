@@ -265,13 +265,17 @@ object SimpleType {
       case TypeConstructor.Int64 => Int64
       case TypeConstructor.BigInt => BigInt
       case TypeConstructor.Str => Str
+
       case TypeConstructor.Arrow(arity) =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
+          // Case 1: No args. (? ->{?} ?) // MATT need to address arity here
           case Nil => PolyArrow(Hole, Hole, Hole)
+          // Case 2: Pure function.
           case True :: tpes =>
             // NB: safe to reduce because arity is always at least 2
             tpes.padTo(arity, Hole).reduceRight(PureArrow)
+          // Case 3: Impure function.
           case eff :: tpes =>
             // NB: safe to take last 2 because arity is always at least 2
             val allTpes = tpes.padTo(arity, Hole)
@@ -279,48 +283,68 @@ object SimpleType {
             val lastArrow: SimpleType = PolyArrow(lastArg, eff, ret)
             allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
         }
+
       case TypeConstructor.RecordRowEmpty => RecordRow(Nil)
+
       case TypeConstructor.RecordRowExtend(field) =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
-          // MATT case docs
+          // Case 1: No args. ( name: ? | ? )
           case Nil => RecordRowExtend(RecordFieldType(field.name, Hole) :: Nil, Hole)
+          // Case 2: One arg. ( name: tpe | ? )
           case tpe :: Nil => RecordRowExtend(RecordFieldType(field.name, tpe) :: Nil, Hole)
+          // Case 3: Fully applied. Dispatch to proper record handler.
           case _ :: _ :: Nil => fromRecordRow(t)
+          // Case 4: Too many args. Error.
           case _ => throw IllKindedException
         }
+
       case TypeConstructor.Record =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
+          // Case 1: No args. { ? }
           case Nil => RecordConstructor(Hole)
+          // Case 2: One row argument. Extract its values.
           case tpe :: Nil => tpe match {
             case RecordRow(fields) => Record(fields)
             case RecordRowExtend(fields, rest) => RecordExtend(fields, rest)
             case tvar: Var => RecordConstructor(tvar)
             case _ => throw IllKindedException
           }
+          // Case 3: Too many args. Error.
           case _ => throw IllKindedException
         }
+
       case TypeConstructor.SchemaRowEmpty => SchemaRow(Nil)
+
       case TypeConstructor.SchemaRowExtend(pred) =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
+          // Case 1: No args. #( Name(?) | ? )
           case Nil => SchemaRowExtend(RelationFieldType(pred.name, Hole :: Nil) :: Nil, Hole)
+          // Case 2: One relation arg. #( Name(tpe1, tpe2) | ? )
           case Relation(tpes) :: Nil => SchemaRowExtend(RelationFieldType(pred.name, tpes) :: Nil, Hole)
+          // Case 3: One lattice arg. #( Name(tpe1; tpe2) | ? )
           case Lattice(tpes) :: Nil => SchemaRowExtend(LatticeFieldType(pred.name, tpes.init, tpes.last) :: Nil, Hole)
+          // Case 4: Fully applied. Dispatch to proper schema handler.
           case _ :: _ :: Nil => fromSchemaRow(t)
+          // Case 5: Too many or invalid args. Error.
           case _ => throw IllKindedException
         }
+
       case TypeConstructor.Schema =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
+          // Case 1: No args. { ? }
           case Nil => SchemaConstructor(Hole)
+          // Case 2: One row argument. Extract its values.
           case tpe :: Nil => tpe match {
             case SchemaRow(fields) => Schema(fields)
             case SchemaRowExtend(fields, rest) => SchemaExtend(fields, rest)
             case tvar: Var => SchemaConstructor(tvar)
             case _ => throw IllKindedException
           }
+          // Case 3: Too many args. Error.
           case _ => throw IllKindedException
         }
       case TypeConstructor.ScopedArray => mkApply(ScopedArray, t.typeArguments.map(fromWellKindedType))
@@ -367,20 +391,26 @@ object SimpleType {
       case TypeConstructor.And =>
         // collapse into a chain of ands
         t.typeArguments.map(fromWellKindedType).map(splitAnds) match {
-          // MATT case docs
+          // Case 1: No args. ? and ?
           case Nil => And(Hole :: Hole :: Nil)
+          // Case 2: One arg. Take the left and put a hole at the end: tpe1 and tpe2 and ?
           case args :: Nil => And(args :+ Hole)
+          // Case 3: Multiple args. Concatenate them: tpe1 and tpe2 and tpe3 and tpe4
           case args1 :: args2 :: Nil => And(args1 ++ args2)
+          // Case 4: Too many args. Error.
           case _ :: _ :: _ :: _ => throw IllKindedException
         }
 
       case TypeConstructor.Or =>
         // collapse into a chain of ors
         t.typeArguments.map(fromWellKindedType).map(splitOrs) match {
-          // MATT case docs
+          // Case 1: No args. ? or ?
           case Nil => Or(Hole :: Hole :: Nil)
+          // Case 2: One arg. Take the left and put a hole at the end: tpe1 or tpe2 or ?
           case args :: Nil => Or(args :+ Hole)
+          // Case 3: Multiple args. Concatenate them: tpe1 or tpe2 or tpe3 or tpe4
           case args1 :: args2 :: Nil => Or(args1 ++ args2)
+          // Case 4: Too many args. Error.
           case _ :: _ :: _ :: _ => throw IllKindedException
         }
 
