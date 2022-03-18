@@ -21,10 +21,10 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
-import ca.uwaterloo.flix.language.ast.Symbol.{LabelSym, VarSym}
+import ca.uwaterloo.flix.language.ast.Symbol.VarSym
 import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Symbol}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 /**
  * The occurrence analyzer collects information on variable usage
@@ -320,20 +320,20 @@ object OccurrenceAnalyzer {
       (OccurrenceAst.Expression.PutChannel(e1, e2, tpe, loc), o3)
 
     case Expression.SelectChannel(rules, default, tpe, loc) =>
-      val (rs, o1, o2) = rules.foldRight((List[OccurrenceAst.SelectChannelRule](), Map[VarSym, Occur](), Map[VarSym, Occur]()))((r, acc) => {
+      val (rs, o1, o2) = rules.map(r => {
         val (c, o3) = visitExp(r.chan)
         val (e, o4) = visitExp(r.exp)
-        val o5 = combineAllSeq(acc._2, o3)
-        val o6 = combineAllBranch(acc._3, o4)
-        (OccurrenceAst.SelectChannelRule(r.sym, c, e) :: acc._1, o5, o6)
-      })
+        (OccurrenceAst.SelectChannelRule(r.sym, c, e), o3, o4)
+      }).unzip3
 
-      val (d1, o5) = default.fold[(Option[OccurrenceAst.Expression], Map[Symbol.VarSym, Occur])](None, o1)(x => {
-        val (d2, o6) = visitExp(x)
-        (Some(d2), combineAllBranch(o2, o6))
-      })
-      val o7 = combineAllSeq(o1, o5)
-      (OccurrenceAst.Expression.SelectChannel(rs, d1, tpe, loc), o7)
+      val o5 =  o1.foldLeft(Map[VarSym, Occur]())(combineAllSeq)
+      val o7 =  o2.foldLeft(Map[VarSym, Occur]())(combineAllBranch)
+
+      val (d1, o9) = default.map(visitExp).unzip
+      val o8 = combineAllBranch(o9.getOrElse(Map.empty), o7)
+
+      val o10 = combineAllSeq(o5, o8)
+      (OccurrenceAst.Expression.SelectChannel(rs, d1, tpe, loc), o10)
 
     case Expression.Spawn(exp, tpe, loc) =>
       val (e, o1) = visitExp(exp)
@@ -358,11 +358,9 @@ object OccurrenceAnalyzer {
    * Performs occurrence analysis on a list of expressions 'exps' and merges occurrences
    */
   private def visitExps(exps: List[LiftedAst.Expression]): (List[OccurrenceAst.Expression], Map[Symbol.VarSym, Occur]) = {
-    exps.foldRight((List[OccurrenceAst.Expression](), Map[Symbol.VarSym, OccurrenceAst.Occur]()))((exp, acc) => {
-      val (e, o1) = visitExp(exp)
-      val o2 = combineAllSeq(o1, acc._2)
-      (e :: acc._1, o2)
-    })
+    val (es, o1) = exps.map(visitExp).unzip
+    val o2 =  o1.foldLeft(Map[VarSym, Occur]())(combineAllSeq)
+    (es, o2)
   }
 
   /**
@@ -385,12 +383,7 @@ object OccurrenceAnalyzer {
   private def combineAll(m1: Map[VarSym, Occur], m2: Map[VarSym, Occur], combine: (Occur, Occur) => Occur): Map[VarSym, Occur] = {
     (m1.keys ++ m2.keys).foldLeft[Map[VarSym, Occur]](Map.empty) {
       case (acc, k) =>
-        val occur = (m1.get(k), m2.get(k)) match {
-          case (None, None) => throw InternalCompilerException(s"Unexpected options.")
-          case (None, Some(o2)) => o2
-          case (Some(o1), None) => o1
-          case (Some(o1), Some(o2)) => combine(o1, o2)
-        }
+        val occur = combine(m1.getOrElse(k, Dead), m2.getOrElse(k, Dead))
         acc + (k -> occur)
     }
   }
