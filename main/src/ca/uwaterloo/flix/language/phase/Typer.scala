@@ -748,6 +748,9 @@ object Typer {
           resultEff = Type.mkAnd(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
+      case KindedAst.Expression.Region(tpe, loc) =>
+        liftM(Nil, tpe, Type.Pure)
+
       case KindedAst.Expression.Scope(sym, exp, evar, loc) =>
         // Introduce a rigid variable for the region of `exp`.
         val regionVar = Type.freshVar(Kind.Bool, sym.loc, Rigidity.Rigid, Some(sym.text))
@@ -1632,6 +1635,10 @@ object Typer {
         val tpe = e2.tpe
         val eff = Type.mkAnd(e1.eff, e2.eff, loc)
         TypedAst.Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
+
+      case KindedAst.Expression.Region(tpe, loc) =>
+        // TODO: Is this what we want?
+        TypedAst.Expression.Unit(loc)
 
       case KindedAst.Expression.Scope(sym, exp, evar, loc) =>
         val e = visitExp(exp, subst0)
