@@ -1257,7 +1257,7 @@ object Weeder {
           val loc = mkSL(sp1, sp2)
           val tpe = Type.mkRegion(Type.False, loc)
           val e2 = WeededAst.Expression.Region(tpe, loc)
-          WeededAst.Expression.RefWithRegion(e1, loc)
+          WeededAst.Expression.RefWithRegion(e1, e2, loc)
         }
 
       case Some(exp2) =>
