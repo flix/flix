@@ -153,11 +153,11 @@ object FormatSimpleType {
       case SimpleType.Channel => "Channel"
       case SimpleType.Lazy => "Lazy"
       case SimpleType.True => mode match {
-        case Mode.Type => "True"
+        case Mode.Type => "true"
         case Mode.Effect => "Pure"
       }
       case SimpleType.False => mode match {
-        case Mode.Type => "False"
+        case Mode.Type => "false"
         case Mode.Effect => "Impure"
       }
       case SimpleType.Region => "Region"
