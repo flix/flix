@@ -458,7 +458,7 @@ object SimpleType {
           // Case 1.1: Unextended row. Put the fields together.
           case SimpleType.RecordRow(fields) => SimpleType.RecordRow(fieldType :: fields)
           // Case 1.2: Extended row. Put the fields together.
-          case SimpleType.RecordRowExtend(fields, rest) => SimpleType.RecordRowExtend(fieldType :: fields, rest) // MATT shadow
+          case SimpleType.RecordRowExtend(fields, restOfRest) => SimpleType.RecordRowExtend(fieldType :: fields, restOfRest)
           // Case 1.3: Var. Put it in the "rest" position.
           case tvar: SimpleType.Var => SimpleType.RecordRowExtend(fieldType :: Nil, tvar)
           // Case 1.4: Not a row. Error.
@@ -498,7 +498,7 @@ object SimpleType {
           // Case 1.1: Unextended row. Put the fields together.
           case SimpleType.SchemaRow(fields) => SimpleType.SchemaRow(fieldType :: fields)
           // Case 1.2: Extended row. Put the fields together.
-          case SimpleType.SchemaRowExtend(fields, rest) => SimpleType.SchemaRowExtend(fieldType :: fields, rest) // MATT shadow
+          case SimpleType.SchemaRowExtend(fields, restOfRest) => SimpleType.SchemaRowExtend(fieldType :: fields, restOfRest)
           // Case 1.3: Var. Put it in the "rest" position.
           case tvar: SimpleType.Var => SimpleType.SchemaRowExtend(fieldType :: Nil, tvar)
           // Case 1.4: Not a row. Error.
