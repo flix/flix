@@ -269,8 +269,11 @@ object SimpleType {
       case TypeConstructor.Arrow(arity) =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
-          // Case 1: No args. (? ->{?} ?) // MATT need to address arity here
-          case Nil => PolyArrow(Hole, Hole, Hole)
+          // Case 1: No args. Fill everything with a hole.
+          case Nil =>
+            val lastArrow: SimpleType = PolyArrow(Hole, Hole, Hole)
+            // NB: safe to subtract 2 since arity is always at least 2
+            List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
           // Case 2: Pure function.
           case True :: tpes =>
             // NB: safe to reduce because arity is always at least 2

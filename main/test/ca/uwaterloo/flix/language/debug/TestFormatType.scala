@@ -114,6 +114,16 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
+  test("FormatType.Arrow.External.06") {
+    val arg = Type.mkTuple(List(Type.Bool, Type.Bool), loc)
+    val tpe = Type.mkPureArrow(arg, Type.Str, loc)
+
+    val expected = "((Bool, Bool)) -> String"
+    val actual = FormatType.formatType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
+
   test("FormatType.Schema.External.01") {
     val relationType = Type.mkRelation(Type.Int32 :: Type.Str :: Nil, loc)
     val tpe = Type.mkSchema(Type.mkSchemaRowExtend(Name.Pred("S", loc), relationType, Type.SchemaRowEmpty, loc), loc)
@@ -245,6 +255,18 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
+  test("FormatType.Boolean.External.01") {
+    val tvar1 = Type.KindedVar(1, Kind.Bool, loc, Rigidity.Flexible, Some("a"))
+    val tvar2 = Type.KindedVar(2, Kind.Bool, loc, Rigidity.Flexible, Some("b"))
+    val tvar3 = Type.KindedVar(3, Kind.Bool, loc, Rigidity.Flexible, Some("c"))
+    val tpe = Type.mkAnd(List(tvar1, tvar2, tvar3), loc)
+
+    val expected = "a and b and c"
+    val actual = FormatType.formatType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
+
   test("FormatPartialType.Tuple.External.01") {
     val tpe = Type.mkApply(Type.Cst(TypeConstructor.Tuple(2), loc), List(Type.Str), loc)
 
@@ -312,6 +334,15 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(3), loc), List(Type.Impure, Type.Str), loc)
 
     val expected = "String -> (? ->{Impure} ?)"
+    val actual = FormatType.formatType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatPartialType.Arrow.External.03") {
+    val tpe = Type.Cst(TypeConstructor.Arrow(4), loc)
+
+    val expected = "? -> (? -> (? ->{?} ?))"
     val actual = FormatType.formatType(tpe)(Audience.External)
 
     assert(actual == expected)
