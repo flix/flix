@@ -27,9 +27,9 @@ object SimpleType {
 
   private val IllKindedException = InternalCompilerException("Unexpected ill-kinded type")
 
-  // MATT add examples for anything nontrivial
-
+  ///////
   // Hole
+  ///////
 
   /**
     * An unfilled parameter in a partially-applied type-level function.
@@ -222,14 +222,26 @@ object SimpleType {
   // Fields
   /////////
 
+  /**
+    * A record field name and its type.
+    */
   case class RecordFieldType(name: String, tpe: SimpleType)
 
+  /**
+    * A common supertype for schema predicates.
+    */
   sealed trait PredicateFieldType {
     val name: String
   }
 
+  /**
+    * A relation field name and its types.
+    */
   case class RelationFieldType(name: String, tpes: List[SimpleType]) extends PredicateFieldType
 
+  /**
+    * A lattice field name, its types, and its lattice.
+    */
   case class LatticeFieldType(name: String, tpes: List[SimpleType], lat: SimpleType) extends PredicateFieldType
 
   /**
@@ -377,20 +389,26 @@ object SimpleType {
     }
   }
 
-  // MATT docs
+  /**
+    * Builds an Apply type.
+    */
   private def mkApply(base: SimpleType, args: List[SimpleType]): SimpleType = args match {
     case Nil => base
     case _ :: _ => Apply(base, args)
   }
 
-  // MATT docs
+  /**
+    * Extracts the types from a tuple, treating non-tuples as singletons.
+    */
   private def destructTuple(tpe: SimpleType): List[SimpleType] = tpe match {
     case Tuple(fields) => fields
     case Unit => Nil
     case t => t :: Nil
   }
 
-  // MATT docs
+  /**
+    * Transforms the given type, assuming it is a record row.
+    */
   private def fromRecordRow(row0: Type): SimpleType = {
     def visit(row: Type): SimpleType = row match {
       // MATT case docs
@@ -417,7 +435,9 @@ object SimpleType {
     }
   }
 
-  // MATT docs
+  /**
+    * Transforms the given type, assuming it is a schema row.
+    */
   private def fromSchemaRow(row0: Type): SimpleType = {
     def visit(row: Type): SimpleType = row match {
       // MATT case docs
@@ -447,11 +467,19 @@ object SimpleType {
     }
   }
 
+  /**
+    * Splits `t1 and t2` into `t1 :: t2 :: Nil`,
+    * and leaves non-and types as singletons.
+    */
   private def splitAnds(tpe: SimpleType): List[SimpleType] = tpe match {
     case And(tpes) => tpes
     case t => List(t)
   }
 
+  /**
+    * Splits `t1 or t2` into `t1 :: t2 :: Nil`,
+    * and leaves non-or types as singletons.
+    */
   private def splitOrs(tpe: SimpleType): List[SimpleType] = tpe match {
     case Or(tpes) => tpes
     case t => List(t)
