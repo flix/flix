@@ -430,11 +430,6 @@ object Kinder {
         endIndex <- visitExp(endIndex0, kenv, taenv, root)
       } yield KindedAst.Expression.ArraySlice(base, beginIndex, endIndex, loc)
 
-    case ResolvedAst.Expression.Ref(exp0, loc) =>
-      for {
-        exp <- visitExp(exp0, kenv, taenv, root)
-      } yield KindedAst.Expression.Ref(exp, Type.freshVar(Kind.Star, loc), loc)
-
     case ResolvedAst.Expression.RefWithRegion(exp10, exp20, loc) =>
       for {
         exp1 <- visitExp(exp10, kenv, taenv, root)

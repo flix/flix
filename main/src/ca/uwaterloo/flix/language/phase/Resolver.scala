@@ -817,11 +817,6 @@ object Resolver {
             i2 <- visit(endIndex, tenv0)
           } yield ResolvedAst.Expression.ArraySlice(b, i1, i2, loc)
 
-        case NamedAst.Expression.Ref(exp, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Ref(e, loc)
-
         case NamedAst.Expression.RefWithRegion(exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
