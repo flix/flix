@@ -18,36 +18,33 @@ package ca.uwaterloo.flix.language.debug
 import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Type}
 
 object FormatSimpleType {
-  // MATT docs
-  // MATT decide on how API should look (exposing to all types here)
+  /**
+    * Transforms the given well-kinded type into a string.
+    */
   def formatWellKindedType(tpe: Type)(implicit audience: Audience): String = {
     format(SimpleType.fromWellKindedType(tpe))
   }
 
-  // MATT docs
-  // MATT private?
-  def format(tpe00: SimpleType)(implicit audience: Audience): String = {
+  /**
+    * Transforms the given type into a string.
+    */
+  private def format(tpe00: SimpleType)(implicit audience: Audience): String = {
 
     /**
-      * Wrap the given type with parentheses
+      * Wraps the given type with parentheses.
       */
     def parenthesize(s: String): String = "(" + s + ")"
 
     /**
-      * Wrap the given type with parentheses if it isn't already wrapped.
+      * Transforms the given record `fieldType` pair into a string.
       */
-    def ensureParens(s: String): String = {
-      if (s.startsWith("(")) {
-        s
-      } else {
-        parenthesize(s)
-      }
-    }
-
     def visitRecordFieldType(fieldType: SimpleType.RecordFieldType): String = fieldType match {
       case SimpleType.RecordFieldType(field, tpe) => s"$field :: ${visit(tpe, Mode.Type)}"
     }
 
+    /**
+      * Transforms the given schema `fieldType` pair into a string.
+      */
     def visitSchemaFieldType(fieldType: SimpleType.PredicateFieldType): String = fieldType match {
       case SimpleType.RelationFieldType(field, tpes) =>
         val tpeString = tpes.map(visit(_, Mode.Type)).mkString(", ")
@@ -58,12 +55,20 @@ object FormatSimpleType {
         s"$field($tpeString; $latString)"
     }
 
+    /**
+      * Transforms the given type into a string,
+      * delimiting it as appropriate for display as a function argument.
+      */
     def delimitFunctionArg(arg: SimpleType): String = arg match {
       // Tuples get an extra set of parentheses
       case tuple: SimpleType.Tuple => parenthesize(visit(tuple, Mode.Type))
       case tpe => delimit(tpe, Mode.Type)
     }
 
+    /**
+      * Returns `true` iff the given `tpe` is innately delimited,
+      * meaning that it never needs parenthesization.
+      */
     def isDelimited(tpe: SimpleType): Boolean = tpe match {
       // non-delimited types
       case SimpleType.Not(_) => false
@@ -115,6 +120,9 @@ object FormatSimpleType {
       case SimpleType.Tuple(_) => true
     }
 
+    /**
+      * Delimits the given `tpe`, parenthesizing it if needed.
+      */
     def delimit(tpe: SimpleType, mode: Mode): String = {
       if (isDelimited(tpe)) {
         visit(tpe, mode)
@@ -123,6 +131,9 @@ object FormatSimpleType {
       }
     }
 
+    /**
+      * Converts the given `tpe0` to a string.
+      */
     def visit(tpe0: SimpleType, mode: Mode): String = tpe0 match {
       case SimpleType.Hole => "?"
       case SimpleType.Unit => "Unit"
@@ -239,6 +250,9 @@ object FormatSimpleType {
     visit(tpe00, Mode.Type)
   }
 
+  /**
+    * Flag indicating whether a type should be formatted as an effect or as a regular type.
+    */
   private sealed trait Mode
   private object Mode {
     case object Effect extends Mode
