@@ -1629,7 +1629,6 @@ object Typer {
         TypedAst.Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
 
       case KindedAst.Expression.Region(tpe, loc) =>
-        // TODO: Is this what we want?
         TypedAst.Expression.Unit(loc)
 
       case KindedAst.Expression.Scope(sym, exp, evar, loc) =>
