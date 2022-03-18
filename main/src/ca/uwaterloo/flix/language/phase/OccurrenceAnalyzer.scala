@@ -326,8 +326,8 @@ object OccurrenceAnalyzer {
         (OccurrenceAst.SelectChannelRule(r.sym, c, e), o3, o4)
       }).unzip3
 
-      val o5 =  o1.foldLeft(Map[VarSym, Occur]())(combineAllSeq)
-      val o7 =  o2.foldLeft(Map[VarSym, Occur]())(combineAllBranch)
+      val o5 =  o1.foldLeft(Map[VarSym, Occur]())((acc, o6) => combineAllSeq(acc, o6))
+      val o7 =  o2.foldLeft(Map[VarSym, Occur]())((acc, o8) => combineAllBranch(acc, o8))
 
       val (d1, o9) = default.map(visitExp).unzip
       val o8 = combineAllBranch(o9.getOrElse(Map.empty), o7)
@@ -359,7 +359,7 @@ object OccurrenceAnalyzer {
    */
   private def visitExps(exps: List[LiftedAst.Expression]): (List[OccurrenceAst.Expression], Map[Symbol.VarSym, Occur]) = {
     val (es, o1) = exps.map(visitExp).unzip
-    val o2 =  o1.foldLeft(Map[VarSym, Occur]())(combineAllSeq)
+    val o2 =  o1.foldLeft(Map[VarSym, Occur]())((acc, o3) => combineAllSeq(acc, o3))
     (es, o2)
   }
 
