@@ -150,15 +150,14 @@ object OccurrenceAnalyzer {
 
     case Expression.Branch(exp, branches, tpe, loc) =>
       val (e1, o1) = visitExp(exp)
-      var (o2, bs) = branches.foldLeft(Map[VarSym, Occur](), Map[LabelSym, OccurrenceAst.Expression]())((acc, b) => b match {
+      val (o2, bs) = branches.map {
         case (sym, exp1) =>
           val (e2, o3) = visitExp(exp1)
-          val o4 = combineAllBranch(acc._1, o3)
-          val bs = acc._2 + (sym -> e2)
-          (o4, bs)
-      })
-      o2 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expression.Branch(e1, bs, tpe, loc), o2)
+          (o3, sym -> e2)
+      }.unzip
+      val o4 = o2.foldLeft(Map[VarSym, Occur]())((acc, o5) => combineAllBranch(acc, o5))
+      val o6 = combineAllSeq(o1, o4)
+      (OccurrenceAst.Expression.Branch(e1, bs.toMap, tpe, loc), o6)
 
     case Expression.JumpTo(sym, tpe, loc) => (OccurrenceAst.Expression.JumpTo(sym, tpe, loc), Map.empty)
 
@@ -266,13 +265,13 @@ object OccurrenceAnalyzer {
 
     case Expression.TryCatch(exp, rules, tpe, loc) =>
       val (e, o1) = visitExp(exp)
-      val (rs, o2) = rules.foldRight(List[OccurrenceAst.CatchRule](), o1)((r, acc) => {
-        val (e, o3) = visitExp(r.exp)
-        val o4 = combineAllSeq(acc._2, o3)
-        val rs = OccurrenceAst.CatchRule(r.sym, r.clazz, e) :: acc._1
-        (rs, o4)
-      })
-      (OccurrenceAst.Expression.TryCatch(e, rs, tpe, loc), o2)
+      val (rs, o2) = rules.map {
+        case LiftedAst.CatchRule(sym, clazz, exp) =>
+          val (e, o3) = visitExp(exp)
+          (OccurrenceAst.CatchRule(sym, clazz, e), o3)
+      }.unzip
+      val o4 = o2.foldLeft(o1)((acc, o5) => combineAllSeq(acc, o5))
+      (OccurrenceAst.Expression.TryCatch(e, rs, tpe, loc), o4)
 
     case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
       val (as, o) = visitExps(args)
@@ -330,10 +329,10 @@ object OccurrenceAnalyzer {
       val o7 =  o2.foldLeft(Map[VarSym, Occur]())((acc, o8) => combineAllBranch(acc, o8))
 
       val (d1, o9) = default.map(visitExp).unzip
-      val o8 = combineAllBranch(o9.getOrElse(Map.empty), o7)
+      val o10 = combineAllBranch(o9.getOrElse(Map.empty), o7)
 
-      val o10 = combineAllSeq(o5, o8)
-      (OccurrenceAst.Expression.SelectChannel(rs, d1, tpe, loc), o10)
+      val o11 = combineAllSeq(o5, o10)
+      (OccurrenceAst.Expression.SelectChannel(rs, d1, tpe, loc), o11)
 
     case Expression.Spawn(exp, tpe, loc) =>
       val (e, o1) = visitExp(exp)
