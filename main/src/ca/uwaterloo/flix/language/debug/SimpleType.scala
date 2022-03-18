@@ -31,9 +31,15 @@ object SimpleType {
 
   // Hole
 
+  /**
+    * An unfilled parameter in a partially-applied type-level function.
+    * For example, `Not` (applied to nothing) is `Not(Hole)`.
+    */
   case object Hole extends SimpleType
 
+  /////////////
   // Primitives
+  /////////////
 
   case object Unit extends SimpleType
 
@@ -73,56 +79,118 @@ object SimpleType {
 
   case object Region extends SimpleType
 
+  //////////
   // Records
+  //////////
 
+  /**
+    * A record constructor. `arg` should be a variable or a Hole.
+    */
   case class RecordConstructor(arg: SimpleType) extends SimpleType
 
+  /**
+    * An unextended record.
+    */
   case class Record(fields: List[RecordFieldType]) extends SimpleType
 
+  /**
+    * An extended record. `arg` should be a variable or a Hole.
+    */
   case class RecordExtend(fields: List[RecordFieldType], rest: SimpleType) extends SimpleType
 
+  /**
+    * An unextended record row.
+    */
   case class RecordRow(fields: List[RecordFieldType]) extends SimpleType
 
+  /**
+    * An extended record row. `arg` should be a variable or a Hole.
+    */
   case class RecordRowExtend(fields: List[RecordFieldType], rest: SimpleType) extends SimpleType
 
+  //////////
   // Schemas
+  //////////
 
+  /**
+    * A schema constructor. `arg` should be a variable or a Hole.
+    */
   case class SchemaConstructor(arg: SimpleType) extends SimpleType
 
+  /**
+    * An unextended schema.
+    */
   case class Schema(fields: List[PredicateFieldType]) extends SimpleType
 
+  /**
+    * An extended schema. `arg` should be a variable or a Hole.
+    */
   case class SchemaExtend(fields: List[PredicateFieldType], rest: SimpleType) extends SimpleType
 
+  /**
+    * An unextended schema row.
+    */
   case class SchemaRow(fields: List[PredicateFieldType]) extends SimpleType
 
+  /**
+    * An extended schema row. `arg` should be a variable or a Hole.
+    */
   case class SchemaRowExtend(fields: List[PredicateFieldType], rest: SimpleType) extends SimpleType
 
+  ////////////////////
   // Boolean Operators
+  ////////////////////
 
+  /**
+    * Boolean negation.
+    */
   case class Not(tpe: SimpleType) extends SimpleType
 
-  // MATT use Hole for all the partial stuff
+  /**
+    * A chain of types connected by `and`.
+    */
   case class And(tpes: List[SimpleType]) extends SimpleType
 
+  /**
+    * A chain of types connected by `or`.
+    */
   case class Or(tpes: List[SimpleType]) extends SimpleType
 
-  // Relations and Lattices
+  /////////////
+  // Predicates
+  /////////////
 
   case object RelationConstructor extends SimpleType
 
+  /**
+    * A relation over a list of types.
+    */
   case class Relation(tpes: List[SimpleType]) extends SimpleType
 
   case object LatticeConstructor extends SimpleType
 
-  case class Lattice(tpes: List[SimpleType]) extends SimpleType
+  /**
+    * A lattice over a list of types.
+    */
+  case class Lattice(tpes: List[SimpleType]) extends SimpleType // MATT tpes and lat probably
 
-  // Arrow Stuff
+  ////////////
+  // Functions
+  ////////////
 
+  /**
+    * A pure function.
+    */
   case class PureArrow(arg: SimpleType, ret: SimpleType) extends SimpleType
 
+  /**
+    * A function with an effect.
+    */
   case class PolyArrow(arg: SimpleType, eff: SimpleType, ret: SimpleType) extends SimpleType
 
-  // Tag Stuff
+  ///////
+  // Tags
+  ///////
 
   case class TagConstructor(name: String) extends SimpleType
 
@@ -130,15 +198,29 @@ object SimpleType {
 
   // Auxiliary Types
 
+  /**
+    * A simple named type (e.g., enum or type alias).
+    */
   case class Name(name: String) extends SimpleType
 
+  /**
+    * A type applied to one or more types.
+    */
   case class Apply(tpe: SimpleType, tpes: List[SimpleType]) extends SimpleType
 
+  /**
+    * A type variable.
+    */
   case class Var(id: Int, kind: Kind, rigidity: Rigidity, text: Option[String]) extends SimpleType
 
+  /**
+    * A tuple.
+    */
   case class Tuple(fields: List[SimpleType]) extends SimpleType
 
+  /////////
   // Fields
+  /////////
 
   case class RecordFieldType(name: String, tpe: SimpleType)
 
