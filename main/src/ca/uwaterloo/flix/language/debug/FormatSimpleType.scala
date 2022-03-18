@@ -191,18 +191,18 @@ object FormatSimpleType {
         val restString = visit(rest, Mode.Type)
         s"#( $fieldString | $restString )"
       case SimpleType.SchemaConstructor(arg) => s"#{ $arg }"
-      case SimpleType.Not(tpe) => s"not ${delimit(tpe, Mode.Effect)}"
+      case SimpleType.Not(tpe) => s"not ${delimit(tpe, mode)}"
       case SimpleType.And(tpes) =>
-        val strings = tpes.map(delimit(_, Mode.Effect))
+        val strings = tpes.map(delimit(_, mode))
         strings.mkString(" and ")
       case SimpleType.Or(tpes) =>
-        val strings = tpes.map(delimit(_, Mode.Effect))
+        val strings = tpes.map(delimit(_, mode))
         strings.mkString(" or ")
-      case SimpleType.RelationConstructor => "Relation" // MATT ?
+      case SimpleType.RelationConstructor => "Relation"
       case SimpleType.Relation(tpes) =>
         val terms = tpes.map(visit(_, Mode.Type)).mkString(", ")
         s"Relation($terms)"
-      case SimpleType.LatticeConstructor => "Lattice" // MATT ?
+      case SimpleType.LatticeConstructor => "Lattice"
       case SimpleType.Lattice(tpes) =>
         val lat = visit(tpes.last, Mode.Type)
         val terms = tpes.init.map(visit(_, Mode.Type)).mkString(", ")
