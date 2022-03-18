@@ -33,14 +33,14 @@ object FindReferencesProvider {
 
         case Entity.Class(class0) => findClassUses(class0.sym)
 
-        case Entity.Def(defn) => findDefUses(defn.sym)
+        case Entity.Def(defn) => findDefReferences(defn.sym)
 
         case Entity.Sig(sig0) => findSigUses(sig0.sym)
 
         case Entity.Enum(enum0) => findEnumUses(enum0.sym)
 
         case Entity.Exp(exp) => exp match {
-          case Expression.Def(sym, _, _) => findDefUses(sym)
+          case Expression.Def(sym, _, _) => findDefReferences(sym)
           case Expression.Sig(sym, _, _) => findSigUses(sym)
           case Expression.Var(sym, _, _) => findVarUses(sym)
           case Expression.Tag(sym, tag, _, _, _, _) => findTagUses(sym, tag)
@@ -80,9 +80,10 @@ object FindReferencesProvider {
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def findDefUses(sym: Symbol.DefnSym)(implicit index: Index, root: Root): JObject = {
+  private def findDefReferences(sym: Symbol.DefnSym)(implicit index: Index, root: Root): JObject = {
+    val defn = Location.from(sym.loc)
     val uses = index.usesOf(sym)
-    val locs = uses.toList.map(Location.from)
+    val locs = defn :: uses.toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
