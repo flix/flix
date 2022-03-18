@@ -75,7 +75,7 @@ object Kinder {
 
         mapN(enumsVal, classesVal, defsVal, instancesVal) {
           case (enums, classes, defs, instances) =>
-            KindedAst.Root(classes.toMap, instances.toMap, defs.toMap, enums.toMap, taenv, root.reachable, root.sources)
+            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, taenv, root.reachable, root.sources)
         }
     }
 
@@ -430,11 +430,11 @@ object Kinder {
         endIndex <- visitExp(endIndex0, kenv, taenv, root)
       } yield KindedAst.Expression.ArraySlice(base, beginIndex, endIndex, loc)
 
-    case ResolvedAst.Expression.Ref(exp10, exp20, loc) =>
+    case ResolvedAst.Expression.Ref(exp1, exp2, loc) =>
       for {
-        exp1 <- visitExp(exp10, kenv, taenv, root)
-        exp2 <- visitExp(exp20, kenv, taenv, root)
-      } yield KindedAst.Expression.Ref(exp1, exp2, Type.freshVar(Kind.Star, loc), Type.freshVar(Kind.Bool, loc), loc)
+        e1 <- visitExp(exp1, kenv, taenv, root)
+        e2 <- visitExp(exp2, kenv, taenv, root)
+      } yield KindedAst.Expression.Ref(e1, e2, Type.freshVar(Kind.Star, loc), Type.freshVar(Kind.Bool, loc), loc)
 
     case ResolvedAst.Expression.Deref(exp0, loc) =>
       for {
