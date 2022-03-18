@@ -111,7 +111,7 @@ object FormatSimpleType {
       case SimpleType.RelationConstructor => true
       case SimpleType.Relation(_) => true
       case SimpleType.LatticeConstructor => true
-      case SimpleType.Lattice(_) => true
+      case SimpleType.Lattice(_, _) => true
       case SimpleType.TagConstructor(_) => true
       case SimpleType.Tag(_, _, _) => true
       case SimpleType.Name(_) => true
@@ -203,10 +203,10 @@ object FormatSimpleType {
         val terms = tpes.map(visit(_, Mode.Type)).mkString(", ")
         s"Relation($terms)"
       case SimpleType.LatticeConstructor => "Lattice"
-      case SimpleType.Lattice(tpes) =>
-        val lat = visit(tpes.last, Mode.Type)
-        val terms = tpes.init.map(visit(_, Mode.Type)).mkString(", ")
-        s"Lattice($terms; $lat)"
+      case SimpleType.Lattice(tpes0, lat0) =>
+        val lat = visit(lat0, Mode.Type)
+        val tpes = tpes0.map(visit(_, Mode.Type)).mkString(", ")
+        s"Lattice($tpes; $lat)"
       case SimpleType.PureArrow(arg, ret) =>
         val argString = delimitFunctionArg(arg)
         val retString = delimit(ret, Mode.Type)

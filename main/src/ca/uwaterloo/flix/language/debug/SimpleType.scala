@@ -172,7 +172,7 @@ object SimpleType {
   /**
     * A lattice over a list of types.
     */
-  case class Lattice(tpes: List[SimpleType]) extends SimpleType // MATT tpes and lat probably
+  case class Lattice(tpes: List[SimpleType], lat: SimpleType) extends SimpleType
 
   ////////////
   // Functions
@@ -328,7 +328,7 @@ object SimpleType {
           // Case 2: One relation arg. #( Name(tpe1, tpe2) | ? )
           case Relation(tpes) :: Nil => SchemaRowExtend(RelationFieldType(pred.name, tpes) :: Nil, Hole)
           // Case 3: One lattice arg. #( Name(tpe1; tpe2) | ? )
-          case Lattice(tpes) :: Nil => SchemaRowExtend(LatticeFieldType(pred.name, tpes.init, tpes.last) :: Nil, Hole)
+          case Lattice(tpes, lat) :: Nil => SchemaRowExtend(LatticeFieldType(pred.name, tpes, lat) :: Nil, Hole)
           // Case 4: Fully applied. Dispatch to proper schema handler.
           case _ :: _ :: Nil => fromSchemaRow(t)
           // Case 5: Too many or invalid args. Error.
@@ -379,7 +379,12 @@ object SimpleType {
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
           case Nil => LatticeConstructor
-          case tpe :: Nil => Lattice(destructTuple(tpe))
+          case tpe :: Nil =>
+            val tpesAndLat = destructTuple(tpe)
+            // NB: safe to take init/last since every lattice has a lattice field
+            val tpes = tpesAndLat.init
+            val lat = tpesAndLat.last
+            Lattice(tpes, lat)
           case _ => throw IllKindedException
         }
       case TypeConstructor.True => True
@@ -477,7 +482,7 @@ object SimpleType {
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(name), _), tpe, _), rest, _) =>
         val fieldType = fromWellKindedType(tpe) match {
           case Relation(tpes) => RelationFieldType(name.name, tpes)
-          case Lattice(tpes) => LatticeFieldType(name.name, tpes.init, tpes.last)
+          case Lattice(tpes, lat) => LatticeFieldType(name.name, tpes, lat)
           case _ => throw IllKindedException
         }
         visit(rest) match {
