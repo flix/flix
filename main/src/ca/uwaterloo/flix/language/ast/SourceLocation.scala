@@ -84,7 +84,7 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
     case None => ""
     case Some(input) =>
       input.getLine(line)
-        .replaceAll(System.lineSeparator(), "")
+        .replaceAll("\n", "")
         .replaceAll("\r", "")
   }
 
