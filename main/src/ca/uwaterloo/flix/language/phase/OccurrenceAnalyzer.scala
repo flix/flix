@@ -48,7 +48,7 @@ object OccurrenceAnalyzer {
           case (tag, caze) =>
             tag -> OccurrenceAst.Case(caze.sym, tag, caze.tpeDeprecated, caze.loc)
         }
-        sym -> OccurrenceAst.Enum(enum.mod, enum.sym, cases, enum.tpeDeprecated, enum.loc)
+        sym -> OccurrenceAst.Enum(enum.ann, enum.mod, enum.sym, cases, enum.tpeDeprecated, enum.loc)
     }
 
     // Reassemble the ast root.
