@@ -473,19 +473,17 @@ namespace RedBlackTree {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, tree: RedBlackTree[k, v]): Unit & ef = match tree {
-        case Node(_, a, k, v, b) =>
-            match p(k) {
-                case LessThan => queryWith(p, f, b)
-                case EqualTo => {
-                    queryWith(p, f, a);
-                    f(k, v);
-                    queryWith(p, f, b)
+    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, tree: RedBlackTree[k, v]): Unit & ef =
+        def loop(t) = match t {
+            case Node(_, a, k, v, b) =>
+                match p(k) {
+                    case LessThan    => loop(b)
+                    case EqualTo     => loop(a); f(k, v); loop(b)
+                    case GreaterThan => loop(a)
                 }
-                case GreaterThan => queryWith(p, f, a)
-            }
-        case _ => ()
-    }
+            case _ => ()
+        };
+        loop(tree)
 
     ///
     /// Extracts a range of key-value pairs from `tree`.
