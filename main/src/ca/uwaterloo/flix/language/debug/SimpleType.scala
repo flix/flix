@@ -467,7 +467,7 @@ object SimpleType {
       // Case 2: Empty record row.
       case Type.Cst(TypeConstructor.RecordRowEmpty, _) => SimpleType.RecordRow(Nil)
       // Case 3: Variable.
-      case Type.KindedVar(id, kind, loc, rigidity, text) => SimpleType.Var(id, kind, rigidity, text)
+      case Type.KindedVar(id, kind, _, rigidity, text) => SimpleType.Var(id, kind, rigidity, text)
       // Case 4: Not a row. Error.
       case _ => throw IllKindedException
     }
@@ -486,21 +486,29 @@ object SimpleType {
     */
   private def fromSchemaRow(row0: Type): SimpleType = {
     def visit(row: Type): SimpleType = row match {
-      // MATT case docs
+      // Case 1: A fully applied record row.
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(name), _), tpe, _), rest, _) =>
+        // create the right field/type for the field
         val fieldType = fromWellKindedType(tpe) match {
           case Relation(tpes) => RelationFieldType(name.name, tpes)
           case Lattice(tpes, lat) => LatticeFieldType(name.name, tpes, lat)
           case _ => throw IllKindedException
         }
         visit(rest) match {
+          // Case 1.1: Unextended row. Put the fields together.
           case SimpleType.SchemaRow(fields) => SimpleType.SchemaRow(fieldType :: fields)
+          // Case 1.2: Extended row. Put the fields together.
           case SimpleType.SchemaRowExtend(fields, rest) => SimpleType.SchemaRowExtend(fieldType :: fields, rest) // MATT shadow
+          // Case 1.3: Var. Put it in the "rest" position.
           case tvar: SimpleType.Var => SimpleType.SchemaRowExtend(fieldType :: Nil, tvar)
+          // Case 1.4: Not a row. Error.
           case _ => throw IllKindedException
         }
+      // Case 2: Empty record row.
       case Type.Cst(TypeConstructor.SchemaRowEmpty, _) => SimpleType.SchemaRow(Nil)
-      case Type.KindedVar(id, kind, loc, rigidity, text) => SimpleType.Var(id, kind, rigidity, text)
+      // Case 3: Variable.
+      case Type.KindedVar(id, kind, _, rigidity, text) => SimpleType.Var(id, kind, rigidity, text)
+      // Case 4: Not a row. Error.
       case _ => throw IllKindedException
     }
 
