@@ -265,30 +265,30 @@ def appendLineSeparator02!(): Bool & Impure =
 @test
 def appendLine01!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLine!(sb, "");
+    StringBuilder.appendLine!("", sb);
     StringBuilder.toString(sb) == String.lineSeparator()
 
 @test
 def appendLine02!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLine!(sb, "A");
+    StringBuilder.appendLine!("A", sb);
     let s1 = "A" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLine03!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLine!(sb, "A");
-    StringBuilder.appendLine!(sb, "B");
+    StringBuilder.appendLine!("A", sb);
+    StringBuilder.appendLine!("B", sb);
     let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLine04!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLine!(sb, "A");
-    StringBuilder.appendLine!(sb, "B");
-    StringBuilder.appendLine!(sb, "C");
+    StringBuilder.appendLine!("A", sb);
+    StringBuilder.appendLine!("B", sb);
+    StringBuilder.appendLine!("C", sb);
     let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator() + "C" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
@@ -298,34 +298,34 @@ def appendLine04!(): Bool & Impure =
 @test
 def appendLineWith01!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLineWith!(sb, Int32.toString, 1);
+    StringBuilder.appendLineWith!(Int32.toString, 1, sb);
     let s1 = "1" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLineWith02!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLineWith!(sb, Int32.toString, 1);
-    StringBuilder.appendLineWith!(sb, Int32.toString, 2);
+    StringBuilder.appendLineWith!(Int32.toString, 1, sb);
+    StringBuilder.appendLineWith!(Int32.toString, 2, sb);
     let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLineWith03!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLineWith!(sb, Int32.toString, 1);
-    StringBuilder.appendLineWith!(sb, Int32.toString, 2);
-    StringBuilder.appendLineWith!(sb, Int32.toString, 3);
+    StringBuilder.appendLineWith!(Int32.toString, 1, sb);
+    StringBuilder.appendLineWith!(Int32.toString, 2, sb);
+    StringBuilder.appendLineWith!(Int32.toString, 3, sb);
     let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator() + "3" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLineWith04!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLineWith!(sb, Int32.toString, 1);
-    StringBuilder.appendLineWith!(sb, Int32.toString, 2);
-    StringBuilder.appendLineWith!(sb, Int32.toString, 3);
-    StringBuilder.appendLineWith!(sb, Int32.toString, 4);
+    StringBuilder.appendLineWith!(Int32.toString, 1, sb);
+    StringBuilder.appendLineWith!(Int32.toString, 2, sb);
+    StringBuilder.appendLineWith!(Int32.toString, 3, sb);
+    StringBuilder.appendLineWith!(Int32.toString, 4, sb);
     let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator() + "3" + String.lineSeparator() + "4" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
@@ -335,27 +335,27 @@ def appendLineWith04!(): Bool & Impure =
 @test
 def appendLines01!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLines!(sb, []);
+    StringBuilder.appendLines!([], sb);
     StringBuilder.toString(sb) == ""
 
 @test
 def appendLines02!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLines!(sb, ["A"]);
+    StringBuilder.appendLines!(["A"], sb);
     let s1 = "A" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLines03!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLines!(sb, ["A", "B"]);
+    StringBuilder.appendLines!(["A", "B"], sb);
     let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLines04!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLines!(sb, ["A", "B", "C"]);
+    StringBuilder.appendLines!(["A", "B", "C"], sb);
     let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator() + "C" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
@@ -365,27 +365,27 @@ def appendLines04!(): Bool & Impure =
 @test
 def appendLinesWith01!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLinesWith!(sb, Int32.toString, []: Array[Int32]);
+    StringBuilder.appendLinesWith!(Int32.toString, []: Array[Int32], sb);
     StringBuilder.toString(sb) == ""
 
 @test
 def appendLinesWith02!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLinesWith!(sb, Int32.toString, [1]);
+    StringBuilder.appendLinesWith!(Int32.toString, [1], sb);
     let s1 = "1" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLinesWith03!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLinesWith!(sb, Int32.toString, [1, 2]);
+    StringBuilder.appendLinesWith!(Int32.toString, [1, 2], sb);
     let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 
 @test
 def appendLinesWith04!(): Bool & Impure =
     let sb = StringBuilder.new();
-    StringBuilder.appendLinesWith!(sb, Int32.toString, [1, 2, 3]);
+    StringBuilder.appendLinesWith!(Int32.toString, [1, 2, 3], sb);
     let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator() + "3" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 

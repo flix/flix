@@ -168,7 +168,7 @@ object TreeShaker {
     case Expression.JumpTo(_, _, _) =>
       Set.empty
 
-    case Expression.Let(_, exp1, exp2, _, _) =>
+    case Expression.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.LetRec(_, _, _, exp1, exp2, _, _) =>
