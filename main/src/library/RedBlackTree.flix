@@ -106,10 +106,10 @@ namespace RedBlackTree {
         minSize >= 1024
 
     ///
-    /// Returns the number of nodes in `tree`.
+    /// Returns the number of nodes in `t`.
     ///
-    @Time(size(tree)) @Space(Int32.log2(size(tree)))
-    pub def size(tree: RedBlackTree[k, v]): Int32 = match tree {
+    @Time(size(t)) @Space(Int32.log2(size(t)))
+    pub def size(t: RedBlackTree[k, v]): Int32 = match t {
         case Node(_, a, _, _, b) => 1 + size(a) + size(b)
         case _                   => 0
     }
@@ -121,7 +121,7 @@ namespace RedBlackTree {
     pub def empty(): RedBlackTree[k, v] = Leaf
 
     ///
-    /// Returns `true` if and only if `tree` is the empty tree.
+    /// Returns `true` if and only if `t` is the empty tree.
     ///
     @Time(1) @Space(1)
     pub def isEmpty(tree: RedBlackTree[k, v]): Bool = match tree {
@@ -130,97 +130,97 @@ namespace RedBlackTree {
     }
 
     ///
-    /// Updates `tree` with `k => v` if `k => v1` is in `tree`.
+    /// Updates `t` with `k => v` if `k => v1` is in `t`.
     ///
-    /// Otherwise, updates `tree` with `k => v`.
+    /// Otherwise, updates `t` with `k => v`.
     ///
-    @Time(Int32.log2(size(tree))) @Space(Int32.log2(size(tree)))
-    pub def insert(k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] =
-        def loop(t, sk) = match t {
+    @Time(Int32.log2(size(t))) @Space(Int32.log2(size(t)))
+    pub def insert(k: k, v: v, t: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] =
+        def loop(tt, sk) = match tt {
             case Leaf                  => sk(Node(Red, Leaf, k, v, Leaf))
             case Node(c, a, k1, v1, b) => match k <=> k1 {
-                case LessThan    => loop(a, ts -> sk(balance(Node(c, ts, k1, v1, b))))
+                case LessThan    => loop(a, ks -> sk(balance(Node(c, ks, k1, v1, b))))
                 case EqualTo     => sk(Node(c, a, k, v, b))
-                case GreaterThan => loop(b, ts -> sk(balance(Node(c, a, k1, v1, ts))))
+                case GreaterThan => loop(b, ks -> sk(balance(Node(c, a, k1, v1, ks))))
             }
-            case _ => sk(t)
+            case _ => sk(tt)
         };
-        blacken(loop(tree, identity))
+        blacken(loop(t, identity))
 
     ///
-    /// Updates `tree` with `k => f(k, v, v1)` if `k => v1` is in `tree`.
+    /// Updates `t` with `k => f(k, v, v1)` if `k => v1` is in `t`.
     ///
-    /// Otherwise, updates `tree` with `k => v`.
+    /// Otherwise, updates `t` with `k => v`.
     ///
-    @Time(time(f) + Int32.log2(size(tree))) @Space(space(f) + Int32.log2(size(tree)))
-    pub def insertWith(f: (k, v, v) -> v & ef, k: k, v: v, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & ef with Order[k] =
-        def loop(t, sk) = match t {
+    @Time(time(f) + Int32.log2(size(t))) @Space(space(f) + Int32.log2(size(t)))
+    pub def insertWith(f: (k, v, v) -> v & ef, k: k, v: v, t: RedBlackTree[k, v]): RedBlackTree[k, v] & ef with Order[k] =
+        def loop(tt, sk) = match tt {
             case Leaf                  => sk(Node(Red, Leaf, k, v, Leaf))
             case Node(c, a, k1, v1, b) => match k <=> k1 {
                 case LessThan    => loop(a, ks -> sk(balance(Node(c, ks, k1, v1, b))))
                 case EqualTo     => sk(Node(c, a, k, f(k, v, v1), b))
                 case GreaterThan => loop(b, ks -> sk(balance(Node(c, a, k1, v1, ks))))
             }
-            case _ => sk(t)
+            case _ => sk(tt)
         };
-        blacken(loop(tree, identity))
+        blacken(loop(t, identity))
 
     ///
-    /// Updates `tree` with `k => v1` if `k => v` is in `tree` and `f(k, v) = Some(v1)`.
+    /// Updates `t` with `k => v1` if `k => v` is in `t` and `f(k, v) = Some(v1)`.
     ///
-    /// Otherwise, returns `tree`.
+    /// Otherwise, returns `t`.
     ///
-    @Time(time(f) + Int32.log2(size(tree))) @Space(space(f) + Int32.log2(size(tree)))
-    pub def updateWith(f: (k, v) -> Option[v] & ef, k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] & ef with Order[k] =
-        def loop(t, sk) = match t {
-            case Leaf                  => sk(t)
+    @Time(time(f) + Int32.log2(size(t))) @Space(space(f) + Int32.log2(size(t)))
+    pub def updateWith(f: (k, v) -> Option[v] & ef, k: k, t: RedBlackTree[k, v]): RedBlackTree[k, v] & ef with Order[k] =
+        def loop(tt, sk) = match tt {
+            case Leaf                  => sk(tt)
             case Node(c, a, k1, v1, b) => match k <=> k1 {
                 case LessThan => loop(a, ks -> sk(balance(Node(c, ks, k1, v1, b))))
                 case EqualTo  => match f(k1, v1) {
-                    case None    => sk(t)
+                    case None    => sk(tt)
                     case Some(v) => sk(Node(c, a, k, v, b))
                 }
                 case GreaterThan => loop(b, ks -> sk(balance(Node(c, a, k1, v1, ks))))
             }
-            case _ => sk(t)
+            case _ => sk(tt)
         };
-        blacken(loop(tree, identity))
+        blacken(loop(t, identity))
 
     ///
-    /// Removes `k => v` from `tree` if `tree` contains the key `k`.
+    /// Removes `k => v` from `t` if `t` contains the key `k`.
     ///
-    /// Otherwise, returns `tree`.
+    /// Otherwise, returns `t`.
     ///
-    pub def remove(k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] =
-        def loop(t, sk) = match t {
-            case Node(Red, Leaf, k1, _, Leaf)   => sk(if ((k <=> k1) == EqualTo) Leaf else t)
-            case Node(Black, Leaf, k1, _, Leaf) => sk(if ((k <=> k1) == EqualTo) DoubleBlackLeaf else t)
-            case Node(Black, Node(Red, Leaf, k1, v1, Leaf), k2, v2, Leaf) =>
-                match k <=> k2 {
-                    case LessThan    => loop(Node(Red, Leaf, k1, v1, Leaf), ks -> sk(Node(Black, ks, k2, v2, Leaf)))
-                    case EqualTo     => sk(Node(Black, Leaf, k1, v1, Leaf))
-                    case GreaterThan => sk(Node(Black, Node(Red, Leaf, k1, v1, Leaf), k2, v2, Leaf))
-                }
-            case Node(c, a, k1, v1, b) =>
-                match k <=> k1 {
-                    case LessThan => loop(a, ks -> sk(rotate(Node(c, ks, k1, v1, b))))
-                    case EqualTo =>
-                        let (k2, v2, e) = minDelete(b);
-                        sk(rotate(Node(c, a, k2, v2, e)))
-                    case GreaterThan => loop(b, ks -> sk(rotate(Node(c, a, k1, v1, ks))))
-                }
-            case _ => sk(t)
+    pub def remove(k: k, t: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] =
+        def loop(tt, sk) = match tt {
+        case Node(Red, Leaf, k1, _, Leaf)   => sk(if ((k <=> k1) == EqualTo) Leaf else tt)
+        case Node(Black, Leaf, k1, _, Leaf) => sk(if ((k <=> k1) == EqualTo) DoubleBlackLeaf else tt)
+        case Node(Black, Node(Red, Leaf, k1, v1, Leaf), k2, v2, Leaf) =>
+            match k <=> k2 {
+                case LessThan    => loop(Node(Red, Leaf, k1, v1, Leaf), ks -> sk(Node(Black, ks, k2, v2, Leaf)))
+                case EqualTo     => sk(Node(Black, Leaf, k1, v1, Leaf))
+                case GreaterThan => sk(Node(Black, Node(Red, Leaf, k1, v1, Leaf), k2, v2, Leaf))
+            }
+        case Node(c, a, k1, v1, b) =>
+            match k <=> k1 {
+                case LessThan => loop(a, ks -> sk(rotate(Node(c, ks, k1, v1, b))))
+                case EqualTo  =>
+                    let (k2, v2, e) = minDelete(b);
+                    sk(rotate(Node(c, a, k2, v2, e)))
+                case GreaterThan => loop(b, ks -> sk(rotate(Node(c, a, k1, v1, ks))))
+            }
+            case _ => sk(tt)
         };
-        redden(loop(tree, identity))
+        redden(loop(t, identity))
 
     ///
-    /// Returns `Some(v)` if `k => v` is in `tree`.
+    /// Returns `Some(v)` if `k => v` is in `t`.
     ///
     /// Otherwise returns `None`.
     ///
-    @Time(Int32.log2(size(tree))) @Space(1)
-    pub def get(k: k, tree: RedBlackTree[k, v]): Option[v] with Order[k] =
-        def loop(t) = match t {
+    @Time(Int32.log2(size(t))) @Space(1)
+    pub def get(k: k, t: RedBlackTree[k, v]): Option[v] with Order[k] =
+        def loop(tt) = match tt {
             case Node(_, a, k1, v, b) => match k <=> k1 {
                 case LessThan    => loop(a)
                 case EqualTo     => Some(v)
@@ -228,14 +228,14 @@ namespace RedBlackTree {
             }
             case _ => None
         };
-        loop(tree)
+        loop(t)
 
     ///
-    /// Returns `true` if and only if `tree` contains the key `k`.
+    /// Returns `true` if and only if `t` contains the key `k`.
     ///
-    @Time(Int32.log2(size(tree))) @Space(1)
-    pub def memberOf(k: k, tree: RedBlackTree[k, v]): Bool with Order[k] =
-        def loop(t) = match t {
+    @Time(Int32.log2(size(t))) @Space(1)
+    pub def memberOf(k: k, t: RedBlackTree[k, v]): Bool with Order[k] =
+        def loop(tt) = match tt {
             case Node(_, a, k1, _, b) => match k <=> k1 {
                 case LessThan    => loop(a)
                 case EqualTo     => true
@@ -243,85 +243,84 @@ namespace RedBlackTree {
             }
             case _ => false
         };
-        loop(tree)
+        loop(t)
 
     ///
-    /// Optionally returns the first key-value pair in `tree` that satisfies the predicate `f` when searching from left to right.
+    /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from left to right.
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
-    pub def findLeft(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Option[(k, v)] =
-        def loop(t) = match t {
+    @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
+    pub def findLeft(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Option[(k, v)] =
+        def loop(tt) = match tt {
             case Node(_, a, k, v, b) => match loop(a) {
                 case None         => if (f(k, v)) Some(k, v) else loop(b)
                 case Some(k1, v1) => Some(k1, v1)
             }
             case _ => None
         };
-        loop(tree)
+        loop(t)
 
     ///
-    /// Optionally returns the first key-value pair in `tree` that satisfies the predicate `f` when searching from right to left.
+    /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from right to left.
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
-    pub def findRight(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Option[(k, v)] =
-        def loop(t) = match t {
+    @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
+    pub def findRight(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Option[(k, v)] =
+        def loop(tt) = match tt {
             case Node(_, a, k, v, b) => match loop(b) {
                 case None         => if (f(k, v)) Some(k, v) else loop(a)
                 case Some(k1, v1) => Some(k1, v1)
             }
             case _ => None
         };
-        loop(tree)
+        loop(t)
 
     ///
-    /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from left to right.
+    /// Applies `f` to a start value `s` and all key-value pairs in `t` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, k1, v1), k2, v2)..., vn)`.
     ///
-    pub def foldLeft(f: (b, k, v) -> b & ef, s: b, tree: RedBlackTree[k, v]): b & ef =
-        def loop(t, acc) = match t {
+    pub def foldLeft(f: (b, k, v) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef =
+        def loop(tt, acc) = match tt {
             case Node(_, a, k, v, b) => loop(b, f(loop(a, acc), k, v))
             case _                   => acc
         };
-        loop(tree, s)
+        loop(t, s)
 
     ///
-    /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left.
+    /// Applies `f` to a start value `s` and all key-value pairs in `t` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
-    pub def foldRight(f: (k, v, b) -> b & ef, s: b, tree: RedBlackTree[k, v]): b & ef =
-        def loop(t, acc) = match t {
-            case Node(_, a, k, v, b) => loop(a, f(k, v, loop(b, acc)))
+    pub def foldRight(f: (k, v, b) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef =
+        def loop(acc, tt) = match tt {
+            case Node(_, a, k, v, b) => loop(f(k, v, loop(acc, b)), a)
             case _                   => acc
         };
-        loop(tree, s)
-
+        loop(s, t)
 
     ///
-    /// Lazily applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left.
+    /// Lazily applies `f` to a start value `s` and all key-value pairs in `t` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ... lazy f(kn-1, vn-1, lazy f(kn, vn, s)))`.
     /// The foldRightLazy function exists to allow early termination of a fold.
     ///
     @Experimental @Lazy
-    pub def foldRightLazy(f: (k, v, Lazy[b]) -> b, s: b, tree: RedBlackTree[k, v]): b =
-        def loop(s2: b, tree2: RedBlackTree[k, v]) = match tree2 {
-            case Node(_, a, k, v, b) => loop(f(k, v, lazy loop(s2, b)), a)
-            case _                   => s2
+    pub def foldRightLazy(f: (k, v, Lazy[b]) -> b, s: b, t: RedBlackTree[k, v]): b =
+        def loop(acc, tt) = match tt {
+            case Node(_, a, k, v, b) => loop(f(k, v, lazy loop(acc, b)), a)
+            case _                   => acc
         };
-        loop(s, tree)
+        loop(s, t)
 
 
-    /// Applies `f` to all key-value pairs in `tree` going from left to right until a single pair `(k, v)` is obtained.
+    /// Applies `f` to all key-value pairs in `t` going from left to right until a single pair `(k, v)` is obtained.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(k1, v1, k2, v2), k3, v3)..., kn, vn))`
     ///
-    /// Returns `None` if `tree` is the empty tree.
+    /// Returns `None` if `t` is the empty tree.
     ///
     pub def reduceLeft(f: (k, v, k, v) -> (k, v) & ef, tree: RedBlackTree[k, v]): Option[(k, v)] & ef =
         foldLeft((x, k1, v1) -> match x {
@@ -330,11 +329,11 @@ namespace RedBlackTree {
         }, None, tree)
 
     ///
-    /// Applies `f` to all key-value pairs in `tree` going from right to left until a single pair `(k, v)` is obtained.
+    /// Applies `f` to all key-value pairs in `t` going from right to left until a single pair `(k, v)` is obtained.
     ///
     /// That is, the result is of the form: `Some(f(k1, v1, ...f(kn-2, vn-2, f(kn-1, vn-1, kn, vn))...))`.
     ///
-    /// Returns `None` if `tree` is the empty tree.
+    /// Returns `None` if `t` is the empty tree.
     ///
     pub def reduceRight(f: (k, v, k, v) -> (k, v) & ef, tree: RedBlackTree[k, v]): Option[(k, v)] & ef =
         foldRight((k1, v1, x) -> match x {
@@ -343,50 +342,50 @@ namespace RedBlackTree {
         }, None, tree)
 
     ///
-    /// Returns `true` if and only if at least one key-value pair in `tree` satisfies the predicate `f`.
+    /// Returns `true` if and only if at least one key-value pair in `t` satisfies the predicate `f`.
     ///
-    /// Returns `false` if `tree` is the empty tree.
+    /// Returns `false` if `t` is the empty tree.
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
-    pub def exists(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Bool =
-        def loop(t) = match t {
+    @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
+    pub def exists(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool =
+        def loop(tt) = match tt {
             case Node(_, a, k, v, b) => if (f(k, v)) true else loop(a) or loop(b)
             case _                   => false
         };
-        loop(tree)
+        loop(t)
 
     ///
-    /// Returns `true` if and only if all key-value pairs in `tree` satisfy the predicate `f`.
+    /// Returns `true` if and only if all key-value pairs in `t` satisfy the predicate `f`.
     ///
-    /// Returns `true` if `tree` is the empty tree.
+    /// Returns `true` if `t` is the empty tree.
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
-    pub def forall(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Bool =
-        def loop(t) = match t {
+    @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
+    pub def forall(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool =
+        def loop(tt) = match tt {
             case Node(_, a, k, v, b) => if (f(k, v)) loop(a) and loop(b) else false
             case _                   => true
         };
-        loop(tree)
+        loop(t)
 
     ///
-    /// Applies `f` to every key-value pair of `tree`.
+    /// Applies `f` to every key-value pair of `t`.
     ///
-    @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
-    pub def foreach(f: (k, v) -> Unit & ef, tree: RedBlackTree[k, v]): Unit & ef =
-        def loop(t) = match t {
+    @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
+    pub def foreach(f: (k, v) -> Unit & ef, t: RedBlackTree[k, v]): Unit & ef =
+        def loop(tt) = match tt {
             case Node(_, a, k, v, b) => loop(a); f(k, v); loop(b)
             case _                   => ()
         };
-        loop(tree)
+        loop(t)
 
     ///
     /// Helper function for `insert` and `delete`.
     ///
-    def balance(tree: RedBlackTree[k, v]): RedBlackTree[k, v] = match tree {
+    def balance(t: RedBlackTree[k, v]): RedBlackTree[k, v] = match t {
         case Node(Black, Node(Red, Node(Red, a, k1, v1, b), k2, v2, c), k3, v3, d) =>
             Node(Red, Node(Black, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d))
         case Node(Black, Node(Red, a, k1, v1, Node(Red, b, k2, v2, c)), k3, v3, d) =>
@@ -399,24 +398,24 @@ namespace RedBlackTree {
             Node(Black, Node(Black, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d))
         case Node(DoubleBlack, Node(Red, a, k1, v1, Node(Red, b, k2, v2, c)), k3, v3, d) =>
             Node(Black, Node(Black, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d))
-        case _ => tree
+        case _ => t
     }
 
     ///
     /// Helper function for `insert`.
     ///
-    def blacken(tree: RedBlackTree[k, v]): RedBlackTree[k, v] = match tree {
+    def blacken(t: RedBlackTree[k, v]): RedBlackTree[k, v] = match t {
         case Node(Red, Node(Red, a, k1, v1, b), k2, v2, c) =>
             Node(Black, Node(Red, a, k1, v1, b), k2, v2, c)
         case Node(Red, a, k1, v1, Node(Red, b, k2, v2, c)) =>
             Node(Black, a, k1, v1, Node(Red, b, k2, v2, c))
-        case _ => tree
+        case _ => t
     }
 
     ///
     /// Helper function for `delete`.
     ///
-    def rotate(tree: RedBlackTree[k, v]): RedBlackTree[k, v] = match tree {
+    def rotate(t: RedBlackTree[k, v]): RedBlackTree[k, v] = match t {
         case Node(Red, Node(DoubleBlack, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d)) =>
             balance(Node(Black, Node(Red, Node(Black, a, k1, v1, b), k2, v2, c), k3, v3, d))
         case Node(Red, DoubleBlackLeaf, k2, v2, Node(Black, c, k3, v3, d)) =>
@@ -441,24 +440,24 @@ namespace RedBlackTree {
             Node(Black, a, k4, v4, balance(Node(Black, b, k1, v1, Node(Red, c, k2, v2, Node(Black, d, k3, v3, e)))))
         case Node(Black, Node(Red, a, k4, v4, Node(Black, b, k1, v1, c)), k2, v2, DoubleBlackLeaf) =>
             Node(Black, a, k4, v4, balance(Node(Black, b, k1, v1, Node(Red, c, k2, v2, Leaf))))
-        case _ => tree
+        case _ => t
     }
 
     ///
     /// Helper function for `delete`.
     ///
-    def redden(tree: RedBlackTree[k, v]): RedBlackTree[k, v] = match tree {
+    def redden(t: RedBlackTree[k, v]): RedBlackTree[k, v] = match t {
         case Node(Black, Node(Black, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d)) =>
             Node(Red, Node(Black, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d))
         case DoubleBlackLeaf => Leaf
-        case _ => tree
+        case _ => t
     }
 
     ///
     /// Helper function for `delete`.
     ///
-    def minDelete(tree: RedBlackTree[k, v]): (k, v, RedBlackTree[k, v]) =
-        def loop(t, sk) = match t {
+    def minDelete(t: RedBlackTree[k, v]): (k, v, RedBlackTree[k, v]) =
+        def loop(tt, sk) = match tt {
             case Node(Red, Leaf, k1, v1, Leaf)   => sk((k1, v1, Leaf))
             case Node(Black, Leaf, k1, v1, Leaf) => sk((k1, v1, DoubleBlackLeaf))
             case Node(Black, Leaf, k1, v1, Node(Red, Leaf, k2, v2, Leaf)) =>
@@ -466,15 +465,15 @@ namespace RedBlackTree {
             case Node(c, a, k1, v1, b) => loop(a, match (k3, v3, e) -> sk((k3, v3, rotate(Node(c, e, k1, v1, b)))))
             case _ => unreachable!()
         };
-        loop(tree, identity)
+        loop(t, identity)
 
     ///
-    /// Applies `f` to all key-value pairs from `tree` where `p(k)` returns `EqualTo`.
+    /// Applies `f` to all key-value pairs from `t` where `p(k)` returns `EqualTo`.
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, tree: RedBlackTree[k, v]): Unit & ef =
-        def loop(t) = match t {
+    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, t: RedBlackTree[k, v]): Unit & ef =
+        def loop(tt) = match tt {
             case Node(_, a, k, v, b) =>
                 match p(k) {
                     case LessThan    => loop(b)
@@ -483,10 +482,10 @@ namespace RedBlackTree {
                 }
             case _ => ()
         };
-        loop(tree)
+        loop(t)
 
     ///
-    /// Extracts a range of key-value pairs from `tree`.
+    /// Extracts a range of key-value pairs from `t`.
     ///
     /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
     ///
@@ -500,30 +499,32 @@ namespace RedBlackTree {
     ///
     /// Extracts `k => v` where `k` is the leftmost (i.e. smallest) key in the tree.
     ///
-    pub def minimumKey(tree: RedBlackTree[k, v]): Option[(k, v)] = match tree {
-        case Node(_, Leaf, k, v, _) => Some((k, v))
-        case Node(_, a, _, _, _) => minimumKey(a)
-        case _ => None
+    pub def minimumKey(t: RedBlackTree[k, v]): Option[(k, v)] = match t {
+        case Node(_, Leaf, k, v, _) => Some(k, v)
+        case Node(_, a, _, _, _)    => minimumKey(a)
+        case _                      => None
     }
 
     ///
     /// Extracts `k => v` where `k` is the rightmost (i.e. largest) key in the tree.
     ///
-    pub def maximumKey(tree: RedBlackTree[k, v]): Option[(k, v)] = match tree {
-        case Node(_, _, k, v, Leaf) => Some((k, v))
-        case Node(_, _, _, _, b) => maximumKey(b)
-        case _ => None
+    pub def maximumKey(t: RedBlackTree[k, v]): Option[(k, v)] = match t {
+        case Node(_, _, k, v, Leaf) => Some(k, v)
+        case Node(_, _, _, _, b)    => maximumKey(b)
+        case _                      => None
     }
 
     ///
-    /// Returns the black height of `tree`.
+    /// Returns the black height of `t`.
     ///
-    @Time(Int32.log2(size(tree))) @Space(1)
-    pub def blackHeight(tree: RedBlackTree[k, v]): Int32 = match tree {
-        case Node(Black, a, _, _, _) => 1 + blackHeight(a)
-        case Node(_, a, _, _, _) => blackHeight(a)
-        case _ => 0
-    }
+    @Time(Int32.log2(size(t))) @Space(1)
+    pub def blackHeight(t: RedBlackTree[k, v]): Int32 =
+        def loop(tt, acc) = match tt {
+            case Node(Black, a, _, _, _) => loop(a, 1 + acc)
+            case Node(_, a, _, _, _)     => loop(a, acc)
+            case _                       => acc
+        };
+        loop(t, 0)
 
     ///
     /// Returns a RedBlackTree with mappings `k => f(k, v)` for every `k => v` in `t`.
@@ -816,10 +817,10 @@ namespace RedBlackTree {
         ((((l, v, r) -> Node(color, l, k, v, r)) `Functor.map` left) `Applicative.ap` value) `Applicative.ap` right
 
     ///
-    /// Returns a RedBlackTree with mappings `k => f(v)` for every `k => v` in `tree`.
+    /// Returns a RedBlackTree with mappings `k => f(v)` for every `k => v` in `t`.
     ///
-    pub def mapAWithKey(f: (k, v1) -> m[v2] & ef, tree: RedBlackTree[k, v1]): m[RedBlackTree[k, v2]] & ef with Applicative[m] =
-        mapAWithKeyHelper(f, tree, t -> t as & ef)
+    pub def mapAWithKey(f: (k, v1) -> m[v2] & ef, t: RedBlackTree[k, v1]): m[RedBlackTree[k, v2]] & ef with Applicative[m] =
+        mapAWithKeyHelper(f, t, s -> s as & ef)
 
     ///
     /// Helper function for `mapAWithKey`.
