@@ -196,7 +196,9 @@ object SimpleType {
 
   case class Tag(name: String, args: List[SimpleType], ret: SimpleType) extends SimpleType
 
-  // Auxiliary Types
+  //////////////////////
+  // Miscellaneous Types
+  //////////////////////
 
   /**
     * A simple named type (e.g., enum or type alias).
