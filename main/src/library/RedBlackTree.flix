@@ -219,29 +219,31 @@ namespace RedBlackTree {
     /// Otherwise returns `None`.
     ///
     @Time(Int32.log2(size(tree))) @Space(1)
-    pub def get(k: k, tree: RedBlackTree[k, v]): Option[v] with Order[k] = match tree {
-        case Node(_, a, k1, v, b) =>
-            match k <=> k1 {
-                case LessThan => get(k, a)
-                case EqualTo => Some(v)
-                case GreaterThan => get(k, b)
+    pub def get(k: k, tree: RedBlackTree[k, v]): Option[v] with Order[k] =
+        def loop(t) = match t {
+            case Node(_, a, k1, v, b) => match k <=> k1 {
+                case LessThan    => loop(a)
+                case EqualTo     => Some(v)
+                case GreaterThan => loop(b)
             }
-        case _ => None
-    }
+            case _ => None
+        };
+        loop(tree)
 
     ///
     /// Returns `true` if and only if `tree` contains the key `k`.
     ///
     @Time(Int32.log2(size(tree))) @Space(1)
-    pub def memberOf(k: k, tree: RedBlackTree[k, v]): Bool with Order[k] = match tree {
-        case Node(_, a, k1, _, b) =>
-            match k <=> k1 {
-                case LessThan => memberOf(k, a)
-                case EqualTo => true
-                case GreaterThan => memberOf(k, b)
+    pub def memberOf(k: k, tree: RedBlackTree[k, v]): Bool with Order[k] =
+        def loop(t) = match t {
+            case Node(_, a, k1, _, b) => match k <=> k1 {
+                case LessThan    => loop(a)
+                case EqualTo     => true
+                case GreaterThan => loop(b)
             }
-        case _ => false
-    }
+            case _ => false
+        };
+        loop(tree)
 
     ///
     /// Optionally returns the first key-value pair in `tree` that satisfies the predicate `f` when searching from left to right.
@@ -249,13 +251,15 @@ namespace RedBlackTree {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
-    pub def findLeft(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Option[(k, v)] = match tree {
-        case Node(_, a, k, v, b) => match findLeft(f, a) {
-            case None => if (f(k, v)) Some((k, v)) else findLeft(f, b)
-            case Some((k1, v1)) => Some((k1, v1))
-        }
-        case _ => None
-    }
+    pub def findLeft(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Option[(k, v)] =
+        def loop(t) = match t {
+            case Node(_, a, k, v, b) => match loop(a) {
+                case None         => if (f(k, v)) Some(k, v) else loop(b)
+                case Some(k1, v1) => Some(k1, v1)
+            }
+            case _ => None
+        };
+        loop(tree)
 
     ///
     /// Optionally returns the first key-value pair in `tree` that satisfies the predicate `f` when searching from right to left.
@@ -263,23 +267,27 @@ namespace RedBlackTree {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
-    pub def findRight(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Option[(k, v)] = match tree {
-        case Node(_, a, k, v, b) => match findRight(f, b) {
-            case None => if (f(k, v)) Some(k, v) else findRight(f, a)
-            case Some((k1, v1)) => Some((k1, v1))
-        }
-        case _ => None
-    }
+    pub def findRight(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Option[(k, v)] =
+        def loop(t) = match t {
+            case Node(_, a, k, v, b) => match loop(b) {
+                case None         => if (f(k, v)) Some(k, v) else loop(a)
+                case Some(k1, v1) => Some(k1, v1)
+            }
+            case _ => None
+        };
+        loop(tree)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, k1, v1), k2, v2)..., vn)`.
     ///
-    pub def foldLeft(f: (b, k, v) -> b & ef, s: b, tree: RedBlackTree[k, v]): b & ef = match tree {
-        case Node(_, a, k, v, b) => foldLeft(f, f(foldLeft(f, s, a), k, v), b)
-        case _ => s
-    }
+    pub def foldLeft(f: (b, k, v) -> b & ef, s: b, tree: RedBlackTree[k, v]): b & ef =
+        def loop(t, acc) = match t {
+            case Node(_, a, k, v, b) => loop(b, f(loop(a, acc), k, v))
+            case _                   => acc
+        };
+        loop(tree, s)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left.
