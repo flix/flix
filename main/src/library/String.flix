@@ -660,7 +660,7 @@ namespace String {
                 }
             }
         };
-        loop() as & Pure
+        loop() as & ef
 
     ///
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
