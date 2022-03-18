@@ -1249,16 +1249,22 @@ object Weeder {
       }
 
     case ParsedAst.Expression.Ref(sp1, exp, reg, sp2) => reg match {
+      // TODO: Collapse cases into one.
       case None =>
         for {
-          e <- visitExp(exp)
-        } yield WeededAst.Expression.Ref(e, mkSL(sp1, sp2))
+          e1 <- visitExp(exp)
+        } yield {
+          val loc = mkSL(sp1, sp2)
+          val tpe = Type.mkRegion(Type.False, loc)
+          val e2 = WeededAst.Expression.Region(tpe, loc)
+          WeededAst.Expression.Ref(e1, loc)
+        }
 
       case Some(exp2) =>
         for {
-          e <- visitExp(exp)
+          e1 <- visitExp(exp)
           e2 <- visitExp(exp2)
-        } yield WeededAst.Expression.RefWithRegion(e, e2, mkSL(sp1, sp2))
+        } yield WeededAst.Expression.RefWithRegion(e1, e2, mkSL(sp1, sp2))
     }
 
     case ParsedAst.Expression.Deref(sp1, exp, sp2) =>

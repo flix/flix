@@ -673,6 +673,9 @@ object Resolver {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.LetRec(sym, mod, e1, e2, loc)
 
+        case NamedAst.Expression.Region(tpe, loc) =>
+          ResolvedAst.Expression.Region(tpe, loc).toSuccess
+
         case NamedAst.Expression.Scope(sym, exp, loc) =>
           for {
             e <- visit(exp, tenv0)

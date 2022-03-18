@@ -346,6 +346,9 @@ object Kinder {
         exp2 <- visitExp(exp20, kenv, taenv, root)
       } yield KindedAst.Expression.LetRec(sym, mod, exp1, exp2, loc)
 
+    case ResolvedAst.Expression.Region(tpe, loc) =>
+      KindedAst.Expression.Region(tpe, loc).toSuccess
+
     case ResolvedAst.Expression.Scope(sym, exp0, loc) =>
       for {
         exp <- visitExp(exp0, kenv, taenv, root)
