@@ -301,18 +301,18 @@ namespace RedBlackTree {
         };
         loop(tree, s)
 
+
     ///
     /// Lazily applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ... lazy f(kn-1, vn-1, lazy f(kn, vn, s)))`.
     /// The foldRightLazy function exists to allow early termination of a fold.
     ///
-    @Experimental
-    @Lazy
+    @Experimental @Lazy
     pub def foldRightLazy(f: (k, v, Lazy[b]) -> b, s: b, tree: RedBlackTree[k, v]): b =
         def loop(s2: b, tree2: RedBlackTree[k, v]) = match tree2 {
             case Node(_, a, k, v, b) => loop(f(k, v, lazy loop(s2, b)), a)
-            case _ => s2
+            case _                   => s2
         };
         loop(s, tree)
 
@@ -326,7 +326,7 @@ namespace RedBlackTree {
     pub def reduceLeft(f: (k, v, k, v) -> (k, v) & ef, tree: RedBlackTree[k, v]): Option[(k, v)] & ef =
         foldLeft((x, k1, v1) -> match x {
             case Some((k2, v2)) => Some(f(k2, v2, k1, v1))
-            case None => Some(k1, v1)
+            case None           => Some(k1, v1)
         }, None, tree)
 
     ///
@@ -339,7 +339,7 @@ namespace RedBlackTree {
     pub def reduceRight(f: (k, v, k, v) -> (k, v) & ef, tree: RedBlackTree[k, v]): Option[(k, v)] & ef =
         foldRight((k1, v1, x) -> match x {
             case Some((k2, v2)) => Some(f(k1, v1, k2, v2))
-            case None => Some(k1, v1)
+            case None           => Some(k1, v1)
         }, None, tree)
 
     ///
@@ -350,10 +350,12 @@ namespace RedBlackTree {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
-    pub def exists(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Bool = match tree {
-        case Node(_, a, k, v, b) => f(k, v) or exists(f, a) or exists(f, b)
-        case _ => false
-    }
+    pub def exists(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Bool =
+        def loop(t) = match t {
+            case Node(_, a, k, v, b) => if (f(k, v)) true else loop(a) or loop(b)
+            case _                   => false
+        };
+        loop(tree)
 
     ///
     /// Returns `true` if and only if all key-value pairs in `tree` satisfy the predicate `f`.
@@ -363,10 +365,12 @@ namespace RedBlackTree {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
-    pub def forall(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Bool = match tree {
-        case Node(_, a, k, v, b) => f(k, v) and forall(f, a) and forall(f, b)
-        case _ => true
-    }
+    pub def forall(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Bool =
+        def loop(t) = match t {
+            case Node(_, a, k, v, b) => if (f(k, v)) loop(a) and loop(b) else false
+            case _                   => true
+        };
+        loop(tree)
 
     ///
     /// Applies `f` to every key-value pair of `tree`.
