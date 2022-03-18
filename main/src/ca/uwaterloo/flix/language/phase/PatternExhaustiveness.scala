@@ -244,8 +244,7 @@ object PatternExhaustiveness {
           _ <- checkPats(beginIndex, root)
           _ <- checkPats(endIndex, root)
         } yield tast
-        case Expression.Ref(exp, _, _, _) =>
-          checkPats(exp, root).map(const(tast))
+
         case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
           for {
             _ <- checkPats(exp1, root)
