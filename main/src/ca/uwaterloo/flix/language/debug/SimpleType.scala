@@ -449,18 +449,24 @@ object SimpleType {
     */
   private def fromRecordRow(row0: Type): SimpleType = {
     def visit(row: Type): SimpleType = row match {
-      // MATT case docs
+      // Case 1: A fully applied record row.
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(name), _), tpe, _), rest, _) =>
         val fieldType = RecordFieldType(name.name, fromWellKindedType(tpe))
         visit(rest) match {
-          // MATT case docs
+          // Case 1.1: Unextended row. Put the fields together.
           case SimpleType.RecordRow(fields) => SimpleType.RecordRow(fieldType :: fields)
+          // Case 1.2: Extended row. Put the fields together.
           case SimpleType.RecordRowExtend(fields, rest) => SimpleType.RecordRowExtend(fieldType :: fields, rest) // MATT shadow
+          // Case 1.3: Var. Put it in the "rest" position.
           case tvar: SimpleType.Var => SimpleType.RecordRowExtend(fieldType :: Nil, tvar)
+          // Case 1.4: Not a row. Error.
           case _ => throw IllKindedException
         }
+      // Case 2: Empty record row.
       case Type.Cst(TypeConstructor.RecordRowEmpty, _) => SimpleType.RecordRow(Nil)
+      // Case 3: Variable.
       case Type.KindedVar(id, kind, loc, rigidity, text) => SimpleType.Var(id, kind, rigidity, text)
+      // Case 4: Not a row. Error.
       case _ => throw IllKindedException
     }
 
