@@ -43,7 +43,7 @@ object ResolvedAst {
 
   case class Spec(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], sc: ResolvedAst.Scheme, tpe: Type, eff: Type, loc: SourceLocation)
 
-  case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, derives: List[Ast.Derivation], cases: Map[Name.Tag, ResolvedAst.Case], tpeDeprecated: Type, sc: ResolvedAst.Scheme, loc: SourceLocation)
+  case class Enum(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, derives: List[Ast.Derivation], cases: Map[Name.Tag, ResolvedAst.Case], tpeDeprecated: Type, sc: ResolvedAst.Scheme, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: ResolvedAst.TypeParams, tpe: Type, loc: SourceLocation)
 
@@ -107,7 +107,7 @@ object ResolvedAst {
 
     case class LetRec(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class LetRegion(sym: Symbol.VarSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Scope(sym: Symbol.VarSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 

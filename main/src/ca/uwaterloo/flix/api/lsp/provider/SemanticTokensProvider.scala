@@ -155,7 +155,7 @@ object SemanticTokensProvider {
     * Returns tokens for the symbol, the type parameters, the derivations, and the cases.
     */
   private def visitEnum(enum0: TypedAst.Enum): Iterator[SemanticToken] = enum0 match {
-    case TypedAst.Enum(_, _, sym, tparams, derives, cases, _, _, _) =>
+    case TypedAst.Enum(_, _, _, sym, tparams, derives, cases, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Enum, Nil, sym.loc)
       val st1 = Iterator(t)
       val st2 = tparams.flatMap(visitTypeParam).iterator
@@ -292,7 +292,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.LetRegion(sym, exp, _, _, _) =>
+    case Expression.Scope(sym, exp, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp)
 
