@@ -1248,24 +1248,17 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.Ref(sp1, exp, reg, sp2) => reg match {
-      // TODO: Collapse cases into one.
-      case None =>
-        for {
-          e1 <- visitExp(exp)
-        } yield {
-          val loc = mkSL(sp1, sp2)
-          val tpe = Type.mkRegion(Type.False, loc)
-          val e2 = WeededAst.Expression.Region(tpe, loc)
-          WeededAst.Expression.RefWithRegion(e1, e2, loc)
-        }
-
-      case Some(exp2) =>
-        for {
-          e1 <- visitExp(exp)
-          e2 <- visitExp(exp2)
-        } yield WeededAst.Expression.RefWithRegion(e1, e2, mkSL(sp1, sp2))
-    }
+    case ParsedAst.Expression.Ref(sp1, exp1, exp2, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      for {
+        e1 <- visitExp(exp1)
+        e2 <- Validation.traverse(exp2)(visitExp).map(_.headOption)
+      } yield {
+        // If there is no explicit region, we use the global region.
+        val defaultRegionType = Type.mkRegion(Type.False, loc)
+        val defaultRegion = e2.getOrElse(WeededAst.Expression.Region(defaultRegionType, loc))
+        WeededAst.Expression.RefWithRegion(e1, defaultRegion, loc)
+      }
 
     case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
       for {
