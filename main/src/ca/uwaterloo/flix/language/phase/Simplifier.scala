@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.Purity.{Pure, Impure}
+import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -43,7 +43,7 @@ object Simplifier {
       * Translates the given definition `def0` to the SimplifiedAst.
       */
     def visitDef(def0: TypedAst.Def): SimplifiedAst.Def = {
-      val ann = if (def0.spec.ann.isEmpty) Ast.Annotations.Empty else Ast.Annotations(def0.spec.ann.map(a => a.name))
+      val ann = Ast.Annotations(def0.spec.ann.map(a => a.name))
       val fs = def0.spec.fparams.map(visitFormalParam)
       val exp = visitExp(def0.impl.exp)
       SimplifiedAst.Def(ann, def0.spec.mod, def0.sym, fs, exp, def0.impl.inferredScheme.base, def0.sym.loc)
@@ -124,9 +124,6 @@ object Simplifier {
         val purity = isPure(e1.eff)
         SimplifiedAst.Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
 
-      case TypedAst.Expression.LetRegion(_, exp, _, _, _) =>
-        visitExp(exp)
-
       case TypedAst.Expression.Match(exp0, rules, tpe, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
 
@@ -184,11 +181,7 @@ object Simplifier {
         val i2 = visitExp(endIndex)
         SimplifiedAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
 
-      case TypedAst.Expression.Ref(exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.Ref(e, tpe, loc)
-
-      case TypedAst.Expression.RefWithRegion(exp, _, tpe, eff, loc) =>
+      case TypedAst.Expression.Ref(exp, _, tpe, eff, loc) =>
         // Note: The region parameter is erased.
         val e = visitExp(exp)
         SimplifiedAst.Expression.Ref(e, tpe, loc)
@@ -292,6 +285,9 @@ object Simplifier {
       case TypedAst.Expression.Default(_, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case TypedAst.Expression.Wild(_, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
+      case TypedAst.Expression.Scope(_, _, _, _, _) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case TypedAst.Expression.FixpointConstraintSet(_, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
@@ -615,16 +611,16 @@ object Simplifier {
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
 
         /**
-         * Matching an array with a TailSpread may succeed or fail
-         *
-         * We generate an if clause checking that array length is at least the length of
-         * each pattern, and generate a fresh variable and let-binding for each variable
-         * in the array, which we load with ArrayLoad.
-         * We then check whether the Spread is a variable, creating a let-binding for the
-         * appropriate ArraySlice to the spread, if it is.
-         * We then recurse over the freshly generated variables as the true case of the previously
-         * created if clause
-         */
+          * Matching an array with a TailSpread may succeed or fail
+          *
+          * We generate an if clause checking that array length is at least the length of
+          * each pattern, and generate a fresh variable and let-binding for each variable
+          * in the array, which we load with ArrayLoad.
+          * We then check whether the Spread is a variable, creating a let-binding for the
+          * appropriate ArraySlice to the spread, if it is.
+          * We then recurse over the freshly generated variables as the true case of the previously
+          * created if clause
+          */
         case (TypedAst.Pattern.ArrayTailSpread(elms, sym, tpe, loc) :: ps, v :: vs) =>
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
@@ -657,16 +653,16 @@ object Simplifier {
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
 
         /**
-         * Matching an array with a HeadSpread may succeed or fail
-         *
-         * We generate an if clause checking that array length is at least the length of
-         * each pattern, and generate a fresh variable and let-binding for each variable
-         * in the array, which we load with ArrayLoad.
-         * We then check whether the Spread is a variable, creating a let-binding for the
-         * appropriate ArraySlice to the spread, if it is.
-         * We then recurse over the freshly generated variables as the true case of the previously
-         * created if clause
-         */
+          * Matching an array with a HeadSpread may succeed or fail
+          *
+          * We generate an if clause checking that array length is at least the length of
+          * each pattern, and generate a fresh variable and let-binding for each variable
+          * in the array, which we load with ArrayLoad.
+          * We then check whether the Spread is a variable, creating a let-binding for the
+          * appropriate ArraySlice to the spread, if it is.
+          * We then recurse over the freshly generated variables as the true case of the previously
+          * created if clause
+          */
         case (TypedAst.Pattern.ArrayHeadSpread(sym, elms, tpe, loc) :: ps, v :: vs) =>
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
@@ -808,11 +804,12 @@ object Simplifier {
     //
     val defns = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map {
-      case (k, TypedAst.Enum(_, mod, sym, _, _, cases0, enumType, _, loc)) =>
+      case (k, TypedAst.Enum(_, ann, mod, sym, _, _, cases0, enumType, _, loc)) =>
         val cases = cases0 map {
           case (tag, TypedAst.Case(enumSym, tagName, tagType, _, tagLoc)) => tag -> SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)
         }
-        k -> SimplifiedAst.Enum(mod, sym, cases, enumType, loc)
+        val sAnn = Ast.Annotations(ann.map(a => a.name))
+        k -> SimplifiedAst.Enum(sAnn, mod, sym, cases, enumType, loc)
     }
     val reachable = root.reachable
 
@@ -1040,8 +1037,8 @@ object Simplifier {
   }
 
   /**
-   * Returns the purity (or impurity) of an expression.
-   */
+    * Returns the purity (or impurity) of an expression.
+    */
   private def isPure(eff: Type): Purity = {
     if (eff == Type.Pure)
       Pure

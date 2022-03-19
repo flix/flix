@@ -339,7 +339,7 @@ object Typer {
     flix.subphase("Enums") {
       // Visit every enum in the ast.
       val result = root.enums.toList.map {
-        case (_, enum) => visitEnum(enum)
+        case (_, enum) => visitEnum(enum, root)
       }
 
       // Sequence the results and convert them back to a map.
@@ -349,15 +349,18 @@ object Typer {
   /**
     * Performs type resolution on the given enum and its cases.
     */
-  private def visitEnum(enum: KindedAst.Enum): Validation[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum match {
-    case KindedAst.Enum(doc, mod, enumSym, tparams0, derives, cases0, tpeDeprecated, sc, loc) =>
+  private def visitEnum(enum: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): Validation[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum match {
+    case KindedAst.Enum(doc, ann, mod, enumSym, tparams0, derives, cases0, tpeDeprecated, sc, loc) =>
+      val annVal = visitAnnotations(ann, root)
       val tparams = getTypeParams(tparams0)
       val cases = cases0 map {
         case (name, KindedAst.Case(_, tagName, tagType, tagScheme)) =>
           name -> TypedAst.Case(enumSym, tagName, tagType, tagScheme, tagName.loc)
       }
 
-      Validation.Success(enumSym -> TypedAst.Enum(doc, mod, enumSym, tparams, derives, cases, tpeDeprecated, sc, loc))
+      Validation.mapN(annVal) {
+        ann => enumSym -> TypedAst.Enum(doc, ann, mod, enumSym, tparams, derives, cases, tpeDeprecated, sc, loc)
+      }
   }
 
   /**
@@ -745,7 +748,10 @@ object Typer {
           resultEff = Type.mkAnd(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.LetRegion(sym, exp, evar, loc) =>
+      case KindedAst.Expression.Region(tpe, loc) =>
+        liftM(Nil, tpe, Type.Pure)
+
+      case KindedAst.Expression.Scope(sym, exp, evar, loc) =>
         // Introduce a rigid variable for the region of `exp`.
         val regionVar = Type.freshVar(Kind.Bool, sym.loc, Rigidity.Rigid, Some(sym.text))
         for {
@@ -1145,15 +1151,7 @@ object Typer {
           resultEff = Type.mkAnd(List(regionVar, eff1, eff2, eff3), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
-      case KindedAst.Expression.Ref(exp, tvar, loc) =>
-        val regionVar = Type.False
-        for {
-          (constrs, elmType, eff1) <- visitExp(exp)
-          resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(elmType, regionVar, loc), loc)
-          resultEff = Type.Impure
-        } yield (constrs, resultTyp, resultEff)
-
-      case KindedAst.Expression.RefWithRegion(exp1, exp2, tvar, evar, loc) =>
+      case KindedAst.Expression.Ref(exp1, exp2, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc, Rigidity.Flexible, Some("l"))
         for {
           (constrs1, elmType, eff1) <- visitExp(exp1)
@@ -1630,11 +1628,14 @@ object Typer {
         val eff = Type.mkAnd(e1.eff, e2.eff, loc)
         TypedAst.Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
 
-      case KindedAst.Expression.LetRegion(sym, exp, evar, loc) =>
+      case KindedAst.Expression.Region(tpe, loc) =>
+        TypedAst.Expression.Unit(loc)
+
+      case KindedAst.Expression.Scope(sym, exp, evar, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = e.tpe
         val eff = subst0(evar)
-        TypedAst.Expression.LetRegion(sym, e, tpe, eff, loc)
+        TypedAst.Expression.Scope(sym, e, tpe, eff, loc)
 
       case KindedAst.Expression.Match(matchExp, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)
@@ -1731,18 +1732,12 @@ object Typer {
         val tpe = e1.tpe
         TypedAst.Expression.ArraySlice(e1, e2, e3, tpe, loc)
 
-      case KindedAst.Expression.Ref(exp, tvar, loc) =>
-        val e = visitExp(exp, subst0)
-        val tpe = subst0(tvar)
-        val eff = Type.Impure
-        TypedAst.Expression.Ref(e, tpe, eff, loc)
-
-      case KindedAst.Expression.RefWithRegion(exp1, exp2, tvar, evar, loc) =>
+      case KindedAst.Expression.Ref(exp1, exp2, tvar, evar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = subst0(tvar)
         val eff = subst0(evar)
-        TypedAst.Expression.RefWithRegion(e1, e2, tpe, eff, loc)
+        TypedAst.Expression.Ref(e1, e2, tpe, eff, loc)
 
       case KindedAst.Expression.Deref(exp, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)

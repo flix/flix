@@ -84,7 +84,12 @@ object Documentor {
     //
     val enumsByNS = root.enums.values.groupBy(getNameSpace).flatMap {
       case (ns, decls) =>
-        val filtered = decls.filter(_.mod.isPublic).toList
+        def isInternal(enum: TypedAst.Enum): Boolean =
+          enum.ann.exists(a => a.name match {
+            case Ast.Annotation.Internal(_) => true
+            case _ => false
+          })
+        val filtered = decls.filter(enum => enum.mod.isPublic && !isInternal(enum)).toList
         val sorted = filtered.sortBy(_.sym.name)
         if (sorted.isEmpty)
           None
@@ -328,7 +333,6 @@ object Documentor {
     case Modifier.Lawless => "lawless"
     case Modifier.Override => "override"
     case Modifier.Public => "public"
-    case Modifier.Scoped => "scoped"
     case Modifier.Sealed => "sealed"
     case Modifier.Synthetic => "synthetic"
     case Modifier.Unlawful => "unlawful"
@@ -382,8 +386,9 @@ object Documentor {
     * Returns the given Enum `enum` as a JSON value.
     */
   private def visitEnum(enum0: Enum, instances: Map[Symbol.EnumSym, List[Instance]]): JObject = enum0 match {
-    case Enum(doc, _, sym, tparams, derives, cases, _, _, loc) =>
+    case Enum(doc, ann, _, sym, tparams, derives, cases, _, _, loc) =>
       ("doc" -> visitDoc(doc)) ~
+        ("ann" -> visitAnnotations(ann))
         ("sym" -> visitEnumSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
         ("cases" -> cases.values.toList.sortBy(_.loc).map(visitCase)) ~

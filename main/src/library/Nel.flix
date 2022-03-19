@@ -176,7 +176,7 @@ namespace Nel {
     ///
     @Time(length(l)) @Space(1)
     pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = match l {
-        case Nel(x, xs) => x == a or List.memberOf(a, xs)
+        case Nel(x, xs) => if (x == a) true else List.memberOf(a, xs)
     }
 
     ///
@@ -244,17 +244,16 @@ namespace Nel {
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def mapWithIndex(f: (a, Int32) -> b & ef, l: Nel[a]): Nel[b] & ef = match l {
-        case Nel(x, xs) => Nel(f(x, 0), mapWithIndexHelper(f, xs, 1))
-    }
-
-    ///
-    /// Helper function for `mapWithIndex`.
-    ///
-    def mapWithIndexHelper(f: (a, Int32) -> b & ef, l: List[a], i: Int32): List[b] & ef = match l {
-        case Nil     => Nil
-        case x :: xs => f(x, i) :: mapWithIndexHelper(f, xs, i + 1)
-    }
+    pub def mapWithIndex(f: (a, Int32) -> b & ef, l: Nel[a]): Nel[b] & ef =
+        def loop(i, ll, k) = match ll {
+            case Nil     => k(Nil)
+            case x :: xs =>
+                let y = f(x, i);
+                loop(i + 1, xs, ks -> k(y :: ks))
+        };
+        match l {
+            case Nel(x, xs) => Nel(f(x, 0), loop(1, xs, identity))
+        }
 
     ///
     /// Apply every function from `f` to every argument from `l` and return a non-empty list with all results.
@@ -301,7 +300,8 @@ namespace Nel {
     /// Returns `l` with every occurrence of `from` replaced by `to`.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def replace(from: {from :: a}, to: {to :: a}, l: Nel[a]): Nel[a] with Eq[a] = map(e -> if (e == from.from) to.to else e, l)
+    pub def replace(from: {from :: a}, to: {to :: a}, l: Nel[a]): Nel[a] with Eq[a] =
+        map(e -> if (e == from.from) to.to else e, l)
 
     ///
     /// Returns all permutations of `l` in lexicographical order by element indices in `l`.
@@ -387,13 +387,13 @@ namespace Nel {
     /// with the remainder of `l` using `f` going from right to left.
     ///
     pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, l: Nel[a]): b & (ef1 and ef2) =
-        def loop(ll) = match ll { // TODO: Tail recursive impl
-            case x :: Nil => g(x)
-            case x :: xs  => f(x, loop(xs))
+        def loop(ll, k) = match ll {
+            case x :: Nil => k(g(x))
+            case x :: xs  => loop(xs, ks -> k(f(x, ks)))
             case _        => unreachable!()
         };
         let Nel(x, xs) = l;
-        loop(x :: xs)
+        loop(x :: xs, ks -> ks as & (ef1 and ef2))
 
     ///
     /// Applies `combine` to all elements in `l` until a single value is obtained.
@@ -468,7 +468,7 @@ namespace Nel {
     ///
     @Time(time(f) * length(l)) @Space(space(f))
     pub def exists(f: a -> Bool & ef, l: Nel[a]): Bool & ef = match l {
-        case Nel(x, xs) => f(x) or List.exists(f, xs)
+        case Nel(x, xs) => if (f(x)) true else List.exists(f, xs)
     }
 
     ///
@@ -476,7 +476,7 @@ namespace Nel {
     ///
     @Time(time(f) * length(l)) @Space(space(f))
     pub def forall(f: a -> Bool & ef, l: Nel[a]): Bool & ef = match l {
-        case Nel(x, xs) => f(x) and List.forall(f, xs)
+        case Nel(x, xs) => if (f(x)) List.forall(f, xs) else false
     }
 
     ///
