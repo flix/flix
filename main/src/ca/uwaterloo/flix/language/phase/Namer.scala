@@ -555,19 +555,13 @@ object Namer {
 
     case WeededAst.Expression.Let(ident, mod, exp1, exp2, loc) =>
       // make a fresh variable symbol for the local variable.
-      val scopedness = if (mod.isScoped)
-        Scopedness.Scoped
-      else
-        Scopedness.Unscoped
-
-      val sym = Symbol.freshVarSym(ident, scopedness, BoundBy.Let)
+      val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, tenv0)) {
         case (e1, e2) => NamedAst.Expression.Let(sym, mod, e1, e2, loc)
       }
 
     case WeededAst.Expression.LetRec(ident, mod, exp1, exp2, loc) =>
-      // TODO: Scopedness?
-      val sym = Symbol.freshVarSym(ident, Scopedness.Unscoped, BoundBy.Let)
+      val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       val env1 = env0 + (ident.name -> sym)
       mapN(visitExp(exp1, env1, uenv0, tenv0), visitExp(exp2, env1, uenv0, tenv0)) {
         case (e1, e2) => NamedAst.Expression.LetRec(sym, mod, e1, e2, loc)
@@ -885,7 +879,7 @@ object Namer {
       }
 
     case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, loc) =>
-      val sym = Symbol.freshVarSym(ident, Scopedness.Unscoped, BoundBy.Let)
+      val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, tenv0), visitExp(exp3, env0, uenv0, tenv0)) {
         case (e1, e2, e3) => NamedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
       }
@@ -1458,15 +1452,10 @@ object Namer {
   private def visitFormalParam(fparam: WeededAst.FormalParam, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError] = fparam match {
     case WeededAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
-      val scopedness = if (mod.isScoped)
-        Scopedness.Scoped
-      else
-        Scopedness.Unscoped
-
       val freshSym = if (ident.name == "_")
         Symbol.freshVarSym("_", BoundBy.FormalParam, fparam.loc)
       else
-        Symbol.freshVarSym(ident, scopedness, BoundBy.FormalParam)
+        Symbol.freshVarSym(ident, BoundBy.FormalParam)
 
       // Compute the type of the formal parameter or use the type variable of the symbol.
       val tpeVal = optType match {
