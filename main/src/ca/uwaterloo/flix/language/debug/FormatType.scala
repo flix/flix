@@ -251,7 +251,12 @@ object FormatType {
         fields.map(visit(_, Mode.Type)).mkString("(", ", ", ")")
     }
 
-    visit(tpe00, Mode.Type)
+    // TODO: Remove after we're confident in the formatter.
+    try {
+      visit(tpe00, Mode.Type)
+    } catch {
+      case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
+    }
   }
 
   /**
