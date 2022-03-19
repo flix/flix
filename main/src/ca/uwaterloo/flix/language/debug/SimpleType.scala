@@ -358,9 +358,13 @@ object SimpleType {
       case TypeConstructor.Tag(sym, tag) =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
-          case Nil => TagConstructor(tag.name)
-          case tpe :: Nil => Tag(tag.name, destructTuple(tpe), Hole)
-          case tpe :: ret :: Nil => Tag(tag.name, destructTuple(tpe), ret)
+          // Case 1: Bare tag.
+          case Nil => PureArrow(Hole, Hole)
+          // Case 2: Tag with arguments.
+          case tpe :: Nil => PureArrow(tpe, Hole)
+          // Case 3: Fully applied tag.
+          case tpe :: ret :: Nil => PureArrow(tpe, ret)
+          // Case 4: Too many arguments. Error.
           case _ => throw IllKindedException
         }
       case TypeConstructor.KindedEnum(sym, kind) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))

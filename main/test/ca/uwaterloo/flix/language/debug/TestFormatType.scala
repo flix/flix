@@ -359,4 +359,22 @@ class TestFormatType extends FunSuite with TestUtils {
 
     assert(actual == expected)
   }
+
+  test("FormatType.Tag.External.01") {
+    val sym = Symbol.mkEnumSym("MyType")
+    val tag = Name.mkTag(Name.Ident(SourcePosition.Unknown, "MyTag", SourcePosition.Unknown))
+    val tpe = Type.mkApply(
+      Type.Cst(TypeConstructor.Tag(sym, tag), loc),
+      List(
+        Type.mkTuple(List(Type.Int32, Type.Bool), loc),
+        Type.mkEnum(sym, Nil, loc)
+      ),
+      loc
+    )
+
+    val expected = "((Int32, Bool)) -> MyType"
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
 }
