@@ -253,7 +253,7 @@ object SimpleType {
     case Type.KindedVar(id, kind, loc, rigidity, text) => Var(id, kind, rigidity, text)
     case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
     case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
-    case Type.Alias(cst, args, tpe, loc) => Apply(Name(cst.sym.name), args.map(fromWellKindedType))
+    case Type.Alias(cst, args, tpe, loc) => mkApply(Name(cst.sym.name), args.map(fromWellKindedType))
     case Type.Cst(tc, loc) => tc match {
       case TypeConstructor.Unit => Unit
       case TypeConstructor.Null => Null

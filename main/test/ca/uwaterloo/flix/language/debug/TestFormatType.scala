@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.ast.{Kind, Name, Rigidity, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Rigidity, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
 import org.scalatest.FunSuite
 
 class TestFormatType extends FunSuite with TestUtils {
@@ -343,6 +343,18 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.Cst(TypeConstructor.Arrow(4), loc)
 
     val expected = "? -> (? -> (? ->{?} ?))"
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Alias.External.01") {
+    val name = Name.mkQName("MyType")
+    val ident = name.ident
+    val sym = Symbol.mkTypeAliasSym(name.namespace, ident)
+    val tpe = Type.Alias(Type.AliasConstructor(sym, loc), Nil, Type.Int32, loc)
+
+    val expected = "MyType"
     val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
