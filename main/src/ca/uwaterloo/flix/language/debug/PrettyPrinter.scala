@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.debug.FormatType.formatType
+import ca.uwaterloo.flix.language.debug.FormatType.formatWellKindedType
 import ca.uwaterloo.flix.util.Formatter
 
 object PrettyPrinter {
@@ -444,7 +444,7 @@ object PrettyPrinter {
     }
 
     def fmtParam(p: FormalParam, formatter: Formatter): String = {
-      fmtSym(p.sym, formatter) + ": " + formatType(p.tpe)
+      fmtSym(p.sym, formatter) + ": " + formatWellKindedType(p.tpe)
     }
 
     def fmtSym(sym: Symbol.VarSym, formatter: Formatter): String = {

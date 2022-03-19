@@ -186,7 +186,7 @@ sealed trait Type {
   /**
     * Returns a human readable string representation of `this` type.
     */
-  override def toString: String = FormatType.formatType(this)(Audience.Internal)
+  override def toString: String = FormatType.formatWellKindedType(this)(Audience.Internal)
 }
 
 object Type {

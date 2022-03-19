@@ -222,8 +222,8 @@ object Documentor {
       ("name" -> defn0.sym.name) ~
       ("tparams" -> defn0.spec.tparams.map(visitTypeParam)) ~
       ("fparams" -> defn0.spec.fparams.map(visitFormalParam)) ~
-      ("tpe" -> FormatType.formatType(defn0.spec.retTpe)) ~
-      ("eff" -> FormatType.formatType(defn0.spec.eff)) ~
+      ("tpe" -> FormatType.formatWellKindedType(defn0.spec.retTpe)) ~
+      ("eff" -> FormatType.formatWellKindedType(defn0.spec.eff)) ~
       ("tcs" -> defn0.spec.declaredScheme.constraints.map(visitTypeConstraint)) ~
       ("loc" -> visitSourceLocation(defn0.spec.loc))
   }
@@ -242,7 +242,7 @@ object Documentor {
   /**
     * Returns the given type `tpe` as a JSON value.
     */
-  private def visitType(tpe: Type): JString = JString(FormatType.formatType(tpe))
+  private def visitType(tpe: Type): JString = JString(FormatType.formatWellKindedType(tpe))
 
   /**
     * Returns the given type constraint `tc` as a JSON value.
@@ -351,7 +351,7 @@ object Documentor {
       ("doc" -> visitDoc(doc)) ~
         ("sym" -> visitTypeAliasSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
-        ("tpe" -> FormatType.formatType(tpe)) ~
+        ("tpe" -> FormatType.formatWellKindedType(tpe)) ~
         ("loc" -> visitSourceLocation(loc))
   }
 
@@ -407,7 +407,7 @@ object Documentor {
     */
   private def visitCase(caze: Case): JObject = caze match {
     case Case(_, tag, _, _, _) =>
-      val tpe = FormatType.formatType(caze.tpeDeprecated)
+      val tpe = FormatType.formatWellKindedType(caze.tpeDeprecated)
       ("tag" -> tag.name) ~ ("tpe" -> tpe)
   }
 

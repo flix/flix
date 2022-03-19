@@ -82,7 +82,7 @@ object ResolutionError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Illegal type: '${red(FormatType.formatType(tpe))}'.
+         |>> Illegal type: '${red(FormatType.formatWellKindedType(tpe))}'.
          |
          |${code(loc, "illegal type.")}
          |""".stripMargin

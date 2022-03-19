@@ -45,9 +45,9 @@ object FormatScheme {
       if (sc.quantifiers.isEmpty)
         ""
       else
-        "∀(" + sc.quantifiers.map(FormatType.formatType).mkString(", ") + "). "
+        "∀(" + sc.quantifiers.map(FormatType.formatWellKindedType).mkString(", ") + "). "
 
-    val typePart = FormatType.formatType(sc.base)
+    val typePart = FormatType.formatWellKindedType(sc.base)
 
     quantifiersPart + typePart
   }

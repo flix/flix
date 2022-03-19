@@ -28,7 +28,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Field("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc), loc)
 
     val expected = "{ x :: Int32, y :: String }"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -38,7 +38,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, rest, loc), loc)
 
     val expected = "{ x :: Int32 | r0! }"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -47,7 +47,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Field("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc)
 
     val expected = "( x :: Int32, y :: String )"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -57,7 +57,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, rest, loc)
 
     val expected = "( x :: Int32 | r0! )"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -67,7 +67,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType, loc)
 
     val expected = "t0! -> t0!"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -79,7 +79,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType, loc)
 
     val expected = "t0! ->{b2!} t1!"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -90,7 +90,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkArrowWithEffect(paramType, Type.Impure, returnType, loc)
 
     val expected = "t0! ->{Impure} t1!"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -99,7 +99,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkImpureUncurriedArrow(Type.Int8 :: Type.Int16 :: Nil, Type.Int32, loc)
 
     val expected = "Int8 -> (Int16 ->{Impure} Int32)"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -109,7 +109,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkArrowWithEffect(Type.BigInt, eff, Type.Bool, loc)
 
     val expected = "BigInt ->{b1 and b2} Bool"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -119,7 +119,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkPureArrow(arg, Type.Str, loc)
 
     val expected = "((Bool, Bool)) -> String"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -129,7 +129,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkSchema(Type.mkSchemaRowExtend(Name.Pred("S", loc), relationType, Type.SchemaRowEmpty, loc), loc)
 
     val expected = "#{ S(Int32, String) }"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -141,7 +141,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkSchema(Type.mkSchemaRowExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaRowExtend(Name.Pred("B", loc), latticeType2, restType, loc), loc), loc)
 
     val expected = "#{ A(String; Bool), B(Int32; String) | s5 }"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -151,7 +151,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkSchemaRowExtend(Name.Pred("S", loc), relationType, Type.SchemaRowEmpty, loc)
 
     val expected = "#( S(Int32, String) )"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -163,7 +163,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkSchemaRowExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaRowExtend(Name.Pred("B", loc), latticeType2, restType, loc), loc)
 
     val expected = "#( A(String; Bool), B(Int32; String) | s5 )"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -175,7 +175,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkEnum(Symbol.mkEnumSym("Triplet"), List(tvar1, tvar2, tvar3), loc)
 
     val expected = "Triplet[t1, t2, t3]"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -184,7 +184,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Field("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc), loc)
 
     val expected = "{ x :: Int32, y :: String }"
-    val actual = FormatType.formatType(tpe)(Audience.Internal)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.Internal)
 
     assert(actual == expected)
   }
@@ -194,7 +194,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, rest, loc), loc)
 
     val expected = "{ x :: Int32 | r0! }"
-    val actual = FormatType.formatType(tpe)(Audience.Internal)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.Internal)
 
     assert(actual == expected)
   }
@@ -204,7 +204,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType, loc)
 
     val expected = "t0! -> t0!"
-    val actual = FormatType.formatType(tpe)(Audience.Internal)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.Internal)
 
     assert(actual == expected)
   }
@@ -216,7 +216,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType, loc)
 
     val expected = "t0! ->{b2!} t1!"
-    val actual = FormatType.formatType(tpe)(Audience.Internal)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.Internal)
 
     assert(actual == expected)
   }
@@ -226,7 +226,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkSchema(Type.mkSchemaRowExtend(Name.Pred("S", loc), relationType, Type.SchemaRowEmpty, loc), loc)
 
     val expected = "#{ S(Int32, String) }"
-    val actual = FormatType.formatType(tpe)(Audience.Internal)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.Internal)
 
     assert(actual == expected)
   }
@@ -238,7 +238,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkSchema(Type.mkSchemaRowExtend(Name.Pred("A", loc), latticeType1, Type.mkSchemaRowExtend(Name.Pred("B", loc), latticeType2, restType, loc), loc), loc)
 
     val expected = "#{ A(String; Bool), B(Int32; String) | s5 }"
-    val actual = FormatType.formatType(tpe)(Audience.Internal)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.Internal)
 
     assert(actual == expected)
   }
@@ -250,7 +250,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkEnum(Symbol.mkEnumSym("Triplet"), List(tvar1, tvar2, tvar3), loc)
 
     val expected = "Triplet[t1, t2, t3]"
-    val actual = FormatType.formatType(tpe)(Audience.Internal)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.Internal)
 
     assert(actual == expected)
   }
@@ -262,7 +262,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkAnd(List(tvar1, tvar2, tvar3), loc)
 
     val expected = "a and b and c"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -271,7 +271,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkApply(Type.Cst(TypeConstructor.Tuple(2), loc), List(Type.Str), loc)
 
     val expected = "(String, ?)"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -280,7 +280,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.Not
 
     val expected = "not ?"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -289,7 +289,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.And
 
     val expected = "? and ?"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -298,7 +298,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.Apply(Type.And, Type.Pure, loc)
 
     val expected = "true and ?"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -307,7 +307,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.Or
 
     val expected = "? or ?"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -316,7 +316,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.Apply(Type.Or, Type.Pure, loc)
 
     val expected = "true or ?"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -325,7 +325,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.Apply(Type.Cst(TypeConstructor.Arrow(2), loc), Type.Pure, loc)
 
     val expected = "? -> ?"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -334,7 +334,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(3), loc), List(Type.Impure, Type.Str), loc)
 
     val expected = "String -> (? ->{Impure} ?)"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }
@@ -343,7 +343,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val tpe = Type.Cst(TypeConstructor.Arrow(4), loc)
 
     val expected = "? -> (? -> (? ->{?} ?))"
-    val actual = FormatType.formatType(tpe)(Audience.External)
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
   }

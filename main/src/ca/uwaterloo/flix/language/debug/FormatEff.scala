@@ -22,7 +22,7 @@ object FormatEff {
   def formatEff(eff: Type)(implicit audience: Audience): String = eff match {
     case Type.Cst(TypeConstructor.True, _) => "Pure"
     case Type.Cst(TypeConstructor.False, _) => "Impure"
-    case _ => FormatType.formatType(eff)
+    case _ => FormatType.formatWellKindedType(eff)
   }
 
 }

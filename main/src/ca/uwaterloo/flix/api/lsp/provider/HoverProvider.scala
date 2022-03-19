@@ -59,7 +59,7 @@ object HoverProvider {
   private def hoverType(tpe: Type, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
     val markup =
       s"""```flix
-         |${FormatType.formatType(tpe)}
+         |${FormatType.formatWellKindedType(tpe)}
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -111,11 +111,11 @@ object HoverProvider {
   }
 
   private def formatTypAndEff(tpe0: Type, eff0: Type): String = {
-    val t = FormatType.formatType(tpe0)
+    val t = FormatType.formatWellKindedType(tpe0)
     val e = eff0 match {
       case Type.Cst(TypeConstructor.True, _) => "Pure"
       case Type.Cst(TypeConstructor.False, _) => "Impure"
-      case eff => FormatType.formatType(eff)
+      case eff => FormatType.formatWellKindedType(eff)
     }
     s"$t & $e"
   }

@@ -40,7 +40,7 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
        |
        |The type of the expression is:
        |
-       |  ${cyan(FormatType.formatType(tpe))}
+       |  ${cyan(FormatType.formatWellKindedType(tpe))}
        |
        |The following predicate symbols are on the cycle:
        |

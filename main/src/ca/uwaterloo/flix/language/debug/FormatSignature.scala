@@ -47,7 +47,7 @@ object FormatSignature {
     */
   private def formatFormalParams(fparams: List[TypedAst.FormalParam])(implicit audience: Audience): String = {
     val formattedArgs = fparams.map {
-      case TypedAst.FormalParam(sym, _, tpe, _) => s"${sym.text}: ${FormatType.formatType(tpe)}"
+      case TypedAst.FormalParam(sym, _, tpe, _) => s"${sym.text}: ${FormatType.formatWellKindedType(tpe)}"
     }
 
     formattedArgs.mkString(", ")
@@ -57,8 +57,8 @@ object FormatSignature {
     * Returns a formatted string of the result type and effect.
     */
   private def formatResultTypeAndEff(tpe: Type, eff: Type)(implicit audience: Audience): String = eff match {
-    case Type.Cst(TypeConstructor.True, _) => FormatType.formatType(tpe)
-    case Type.Cst(TypeConstructor.False, _) => s"${FormatType.formatType(tpe)} & Impure"
-    case eff => s"${FormatType.formatType(tpe)} & ${FormatType.formatType(eff)}"
+    case Type.Cst(TypeConstructor.True, _) => FormatType.formatWellKindedType(tpe)
+    case Type.Cst(TypeConstructor.False, _) => s"${FormatType.formatWellKindedType(tpe)} & Impure"
+    case eff => s"${FormatType.formatWellKindedType(tpe)} & ${FormatType.formatWellKindedType(eff)}"
   }
 }
