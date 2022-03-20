@@ -886,9 +886,8 @@ namespace File {
             let javaStream = newDirectoryStream(javaPath);
             let javaIter = iterator(javaStream);
 
-            let Iterator(done, next) = fromJavaIter(javaIter);
-            let next1 = () -> pathToString(next());
-            Ok(Iterator(done, next1))
+            let iter = fromJavaIter(javaIter);
+            Ok(Iterator.mapL(x -> pathToString(x), iter))
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String & Impure;
