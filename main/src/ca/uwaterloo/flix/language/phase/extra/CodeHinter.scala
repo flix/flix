@@ -26,10 +26,9 @@ object CodeHinter {
   /**
     * Returns a collection of code quality hints for the given AST `root`.
     */
-  def run(root: TypedAst.Root, sources: Set[String])(implicit flix: Flix): List[CodeHint] = {
-    val defsHints = root.defs.values.flatMap(visitDef(_)(root)).toList
-    val enumsHints = root.enums.values.flatMap(visitEnum(_)(root)).toList
-    (defsHints ++ enumsHints).filter(include(_, sources))
+  def run(root: TypedAst.Root, sources: Set[String])(implicit flix: Flix): Set[CodeHint] = {
+    val defsHints = root.defs.values.flatMap(visitDef(_)(root)).toSet
+    defsHints.filter(include(_, sources))
   }
 
   /**
@@ -37,17 +36,6 @@ object CodeHinter {
     */
   private def include(hint: CodeHint, sources: Set[String]): Boolean =
     sources.contains(hint.loc.source.name)
-
-  /**
-    * Computes code quality hints for the given enum `enum`.
-    */
-  private def visitEnum(enum: TypedAst.Enum)(implicit root: Root): List[CodeHint] = {
-    val isDeprecated = enum.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
-    val deprecated = if (isDeprecated) CodeHint.Deprecated(enum.loc) :: Nil else Nil
-    val isExperimental = enum.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Experimental])
-    val experimental = if (isExperimental) CodeHint.Experimental(enum.loc) :: Nil else Nil
-    deprecated ++ experimental
-  }
 
   /**
     * Computes code quality hints for the given definition `def0`.
@@ -60,20 +48,27 @@ object CodeHinter {
     * Computes code quality hints for the given expression `exp0`.
     */
   private def visitExp(exp0: Expression)(implicit root: Root): List[CodeHint] = exp0 match {
-    case Expression.Wild(_, _) => Nil
+    case Expression.Wild(tpe, _) =>
+      visitType(tpe)
 
     case Expression.Var(_, _, _) => Nil
 
-    case Expression.Def(sym, _, loc) =>
+    case Expression.Def(sym, tpe, loc) =>
       checkDeprecated(sym, loc) ++
         checkExperimental(sym, loc) ++
         checkParallel(sym, loc) ++
         checkUnsafe(sym, loc) ++
-        checkLazy(sym, loc)
+        checkLazy(sym, loc) ++
+        visitSpec(root.defs(sym).spec) ++
+        visitType(tpe)
 
-    case Expression.Sig(_, _, _) => Nil
+    case Expression.Sig(sym, tpe, _) =>
+      visitSpec(root.sigs(sym).spec) ++
+        visitType(tpe)
 
-    case Expression.Hole(_, _, _) => Nil
+
+    case Expression.Hole(_, tpe, _) =>
+      visitType(tpe)
 
     case Expression.Unit(_) => Nil
 
@@ -101,19 +96,23 @@ object CodeHinter {
 
     case Expression.Str(_, _) => Nil
 
-    case Expression.Default(_, _) => Nil
+    case Expression.Default(tpe, loc) =>
+      visitTypeWithHintLocation(tpe, loc)
 
-    case Expression.Lambda(_, exp, _, _) =>
-      checkEffect(exp.eff, exp.loc) ++ visitExp(exp)
+    case Expression.Lambda(fparam, exp, tpe, loc) =>
+      visitFormalParameter(fparam) ++
+        checkEffect(exp.eff, exp.loc) ++
+        visitExp(exp) ++
+        visitType(tpe)
 
-    case Expression.Apply(exp, exps, _, eff, loc) =>
+    case Expression.Apply(exp, exps, tpe, eff, loc) =>
       val hints0 = (exp, exps) match {
         case (Expression.Def(sym, _, _), lambda :: _) =>
           checkPurity(sym, lambda.tpe, loc)
         case _ => Nil
       }
       val hints1 = checkEffect(eff, loc)
-      hints0 ++ hints1 ++ visitExp(exp) ++ visitExps(exps)
+      hints0 ++ hints1 ++ visitExp(exp) ++ visitExps(exps) ++ visitType(tpe)
 
     case Expression.Unary(_, exp, _, _, _) =>
       visitExp(exp)
@@ -121,24 +120,25 @@ object CodeHinter {
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Let(_, _, exp1, exp2, _, eff, loc) =>
-      checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
+    case Expression.Let(_, _, exp1, exp2, tpe, eff, loc) =>
+      checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe)
 
-    case Expression.LetRec(_, _, exp1, exp2, _, eff, loc) =>
-      visitExp(exp1) ++ visitExp(exp2)
+    case Expression.LetRec(_, _, exp1, exp2, tpe, eff, loc) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe)
 
     case Expression.Scope(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ visitType(tpe)
 
-    case Expression.Stm(exp1, exp2, _, eff, loc) =>
-      checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
+    case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+      checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2) ++ visitType(tpe)
 
     case Expression.Match(matchExp, rules, _, _, _) =>
       visitExp(matchExp) ++ rules.flatMap {
-        case MatchRule(_, guard, exp) => visitExp(guard) ++ visitExp(exp)
+        case MatchRule(pattern, guard, exp) =>
+          visitTypeWithHintLocation(pattern.tpe, pattern.loc) ++ visitExp(guard) ++ visitExp(exp)
       }
 
     case Expression.Choose(exps, rules, _, _, _) =>
@@ -146,11 +146,11 @@ object CodeHinter {
         case ChoiceRule(_, exp) => visitExp(exp)
       }
 
-    case Expression.Tag(_, _, exp, _, _, _) =>
-      visitExp(exp)
+    case Expression.Tag(sym, _, exp, _, _, loc) =>
+      checkEnum(root.enums(sym), loc) ++ visitExp(exp)
 
-    case Expression.Tuple(exps, _, _, _) =>
-      visitExps(exps)
+    case Expression.Tuple(exps, tpe, _, loc) =>
+      visitTypeWithHintLocation(tpe, loc) ++ visitExps(exps)
 
     case Expression.RecordEmpty(_, _) => Nil
 
@@ -190,11 +190,11 @@ object CodeHinter {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Ascribe(exp, _, _, _) =>
-      visitExp(exp)
+    case Expression.Ascribe(exp, tpe, _, _) =>
+      visitExp(exp) ++ visitType(tpe)
 
     case Expression.Cast(exp, _, _, tpe, eff, loc) =>
-      checkCast(tpe, eff, loc) ++ visitExp(exp)
+      checkCast(tpe, eff, loc) ++ visitExp(exp) ++ visitType(tpe)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ rules.flatMap {
@@ -299,6 +299,42 @@ object CodeHinter {
     case Body.Atom(_, _, _, _, _, _, _) => Nil
     case Body.Guard(exp, _) => visitExp(exp)
     case Body.Loop(_, exp, _) => visitExp(exp)
+  }
+
+  /**
+    * Computes code quality hints for the given spec `spec`.
+    */
+  private def visitSpec(spec: Spec)(implicit root: Root): List[CodeHint] =
+    spec.fparams.flatMap(visitFormalParameter(_)) ++ visitType(spec.retTpe)
+
+  /**
+    * Compute code quality hints for the given formal parameter `fparam`.
+    */
+  private def visitFormalParameter(fparam: FormalParam)(implicit root: Root): List[CodeHint] =
+    visitType(fparam.tpe)
+
+  /**
+    * Compute code quality hints for a type `tpe` reported at location `loc`.
+    */
+  private def visitTypeWithHintLocation(tpe: Type, loc: SourceLocation)(implicit root: Root):  List[CodeHint] = {
+    val typeArgumentsHints = tpe.typeArguments.flatMap(tpe => visitTypeWithHintLocation(tpe, tpe.loc))
+    val typeHints = tpe match {
+      case Type.Cst(TypeConstructor.KindedEnum(sym, _), _) => checkEnum(root.enums(sym), loc)
+      case _ => Nil
+    }
+    typeHints ++ typeArgumentsHints
+  }
+  private def visitType(tpe: Type)(implicit root: Root):  List[CodeHint] = visitTypeWithHintLocation(tpe, tpe.loc)
+
+  /**
+    * Checks wether the given enum `enum` is experimental and/or deprecated.
+    */
+  private def checkEnum(enum: TypedAst.Enum, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
+    val isDeprecated = enum.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
+    val deprecated = if (isDeprecated) CodeHint.Deprecated(loc) :: Nil else Nil
+    val isExperimental = enum.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Experimental])
+    val experimental = if (isExperimental) CodeHint.Experimental(loc) :: Nil else Nil
+    deprecated ++ experimental
   }
 
   /**
