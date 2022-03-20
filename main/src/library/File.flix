@@ -887,7 +887,7 @@ namespace File {
             let javaIter = iterator(javaStream);
 
             let iter = fromJavaIter(javaIter);
-            Ok(Iterator.mapL(x -> pathToString(x), iter))
+            Ok(Iterator.mapL(pathToString, iter))
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String & Impure;
@@ -906,17 +906,15 @@ namespace File {
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
             import static java.nio.file.Files.walk(##java.nio.file.Path, Array[##java.nio.file.FileVisitOption]): ##java.util.stream.Stream & Impure;
             import java.util.stream.BaseStream.iterator(): ##java.util.Iterator & Impure;
-            import java.nio.file.Path.getFileName(): ##java.nio.file.Path & Impure;
-            import java.nio.file.Path.toString(): String & Impure as pathToString;
+            import java.nio.file.Path.toString(): String & Pure as pathToString;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let javaStream = walk(javaPath, []);
             let javaIter = iterator(javaStream as ##java.util.stream.BaseStream);
 
-            let Iterator(done, next) = fromJavaIter(javaIter);
-            let next1 = () -> pathToString(getFileName(next()));
-            Ok(Iterator(done, next1))
+            let iter = fromJavaIter(javaIter);
+            Ok(Iterator.mapL(pathToString, iter))
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String & Impure;
