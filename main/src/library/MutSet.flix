@@ -93,7 +93,7 @@ namespace MutSet {
     ///
     /// Applies the function `f` to every element in the mutable set `s`.
     ///
-    pub def transform!(f: a -> a & ef, s: MutSet[a, r]): Unit & reg(r) and ef with Order[a] =
+    pub def transform!(f: a -> a & ef, s: MutSet[a, r]): Unit & ef and reg(r) with Order[a] =
         let MutSet(ms) = s;
         ms := Set.map(f, deref ms)
 
@@ -128,7 +128,7 @@ namespace MutSet {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def minimumBy(cmp: (a, a) -> Comparison & ef, s: MutSet[a, r]): Option[a] & reg(r) and ef =
+    pub def minimumBy(cmp: (a, a) -> Comparison & ef, s: MutSet[a, r]): Option[a] & ef and reg(r) =
         let MutSet(ms) = s;
         Set.minimumBy(cmp, deref ms)
 
@@ -149,7 +149,7 @@ namespace MutSet {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def maximumBy(cmp: (a, a) -> Comparison & ef, s: MutSet[a, r]): Option[a] & reg(r) and ef =
+    pub def maximumBy(cmp: (a, a) -> Comparison & ef, s: MutSet[a, r]): Option[a] & ef and reg(r) =
         let MutSet(ms) = s;
         Set.maximumBy(cmp, deref ms)
 
@@ -206,7 +206,7 @@ namespace MutSet {
     ///
     /// That is, the result is of the form: `f(...f(f(i, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, i: b, s: MutSet[a, r]): b & reg(r) and ef =
+    pub def foldLeft(f: (b, a) -> b & ef, i: b, s: MutSet[a, r]): b & ef and reg(r) =
         let MutSet(ms) = s;
         Set.foldLeft(f, i, deref ms)
 
@@ -215,7 +215,7 @@ namespace MutSet {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, i))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, i: b, s: MutSet[a, r]): b & reg(r) and ef =
+    pub def foldRight(f: (a, b) -> b & ef, i: b, s: MutSet[a, r]): b & ef and reg(r) =
         let MutSet(ms) = s;
         Set.foldRight(f, i, deref ms)
 
@@ -236,7 +236,7 @@ namespace MutSet {
     ///
     /// Returns `None` if `s` is the empty set.
     ///
-    pub def reduceLeft(f: (a, a) -> a & ef, s: MutSet[a, r]): Option[a] & reg(r) and ef =
+    pub def reduceLeft(f: (a, a) -> a & ef, s: MutSet[a, r]): Option[a] & ef and reg(r) =
         let MutSet(ms) = s;
         Set.reduceLeft(f, deref ms)
 
@@ -247,7 +247,7 @@ namespace MutSet {
     ///
     /// Returns `None` if `s` is the empty set.
     ///
-    pub def reduceRight(f: (a, a) -> a & ef, s: MutSet[a, r]): Option[a] & reg(r) and ef =
+    pub def reduceRight(f: (a, a) -> a & ef, s: MutSet[a, r]): Option[a] & ef and reg(r) =
         let MutSet(ms) = s;
         Set.reduceRight(f, deref ms)
 
@@ -257,7 +257,7 @@ namespace MutSet {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def count(f: a -> Bool & ef, s: MutSet[a, r]): Int32 & reg(r) and ef =
+    pub def count(f: a -> Bool & ef, s: MutSet[a, r]): Int32 & ef and reg(r) =
         let MutSet(ms) = s;
         Set.count(f, deref ms)
 
@@ -274,7 +274,7 @@ namespace MutSet {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def sumWith(f: a -> Int32 & ef, s: MutSet[a, r]): Int32 & reg(r) and ef =
+    pub def sumWith(f: a -> Int32 & ef, s: MutSet[a, r]): Int32 & ef and reg(r) =
         let MutSet(ss) = s;
         Set.sumWith(f, deref ss)
 
@@ -291,7 +291,7 @@ namespace MutSet {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def productWith(f: a -> Int32 & ef, s: MutSet[a, r]): Int32 & reg(r) and ef =
+    pub def productWith(f: a -> Int32 & ef, s: MutSet[a, r]): Int32 & ef and reg(r) =
         let MutSet(ss) = s;
         Set.productWith(f, deref ss)
 
@@ -364,7 +364,7 @@ namespace MutSet {
     ///
     /// Applies `f` to every element of the mutable set `s`.
     ///
-    pub def foreach(f: a -> Unit & ef, s: MutSet[a, r]): Unit & reg(r) and ef =
+    pub def foreach(f: a -> Unit & ef, s: MutSet[a, r]): Unit & ef and reg(r) =
         let MutSet(ms) = s;
         Set.foreach(f, deref ms)
 
@@ -386,7 +386,7 @@ namespace MutSet {
     /// Returns the concatenation of the string representation
     /// of each element in `s` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, s: MutSet[a, r]): String & reg(r) and ef =
+    pub def joinWith(f: a -> String & ef, sep: String, s: MutSet[a, r]): String & ef and reg(r) =
         let MutSet(ms) = s;
         Set.joinWith(f, sep, deref ms)
 
