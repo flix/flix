@@ -19,6 +19,15 @@
 ///
 opaque type MutSet[t: Type, r: Region] = ScopedRef[Set[t], r]
 
+instance Scoped[MutSet[t]] {
+    pub def regionOf(_: MutSet[t, r]): Region[r] = () as Region[r]
+}
+
+instance Newable[MutSet[t]] {
+    pub def new(r: Region[r]): MutSet[t, r] & reg(r) = MutSet.newWithRegion(r)
+}
+
+
 namespace MutSet {
 
     ///
@@ -181,7 +190,8 @@ namespace MutSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def find(f: a -> Bool, s: MutSet[a, r]): Option[a] & reg(r) = findLeft(f, s)
+    pub def find(f: a -> Bool, s: MutSet[a, r]): Option[a] & reg(r) =
+        findLeft(f, s)
 
     ///
     /// Optionally returns the first element of the mutable set `s` that satisfies the predicate function `f` when searching from left to right.
@@ -190,7 +200,7 @@ namespace MutSet {
     ///
     pub def findLeft(f: a -> Bool, s: MutSet[a, r]): Option[a] & reg(r) =
         let MutSet(ms) = s;
-            Set.findLeft(f, deref ms)
+        Set.findLeft(f, deref ms)
 
     ///
     /// Optionally returns the first element of the mutable set `s` that satisfies the predicate function `f` when searching from right to left.
@@ -322,7 +332,7 @@ namespace MutSet {
     ///
     pub def copy(s: MutSet[a, r]): MutSet[a, r] & reg(r) =
         let MutSet(ms) = s;
-        MutSet(ref (deref ms)) as MutSet[a, r] & reg(r)
+        MutSet(ref (deref ms) @ Scoped.regionOf(s))
 
     ///
     /// Returns a pair of mutable sets `(s1, s2)` such that:
@@ -335,7 +345,7 @@ namespace MutSet {
     pub def partition(f: a -> Bool, s: MutSet[a, r]): (MutSet[a, r], MutSet[a, r]) & reg(r) with Order[a] =
         let MutSet(ms) = s;
         let (ys, zs) = Set.partition(f, deref ms);
-            (MutSet(ref ys), MutSet(ref zs)) as (MutSet[a, r], MutSet[a, r]) & reg(r)
+            (MutSet(ref ys @ Scoped.regionOf(s)), MutSet(ref zs @ Scoped.regionOf(s)))
 
     ///
     /// Returns the mutable set `s` as an immutable set.
