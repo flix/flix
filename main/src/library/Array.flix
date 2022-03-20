@@ -380,7 +380,7 @@ namespace Array {
     /// Apply `f` to every element in array `arr`. Array `arr` is mutated.
     ///
     @Time(time(f) * length(arr)) @Space(space(f) * length(arr))
-    pub def transform!(f: a -> a, arr: mut Array[a]): Unit & Impure =
+    pub def transform!(f: a -> a, arr: Array[a]): Unit & Impure =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
@@ -406,7 +406,7 @@ namespace Array {
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
     ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def transformWithIndex!(f: (a, Int32) -> a, arr: mut Array[a]): Unit & Impure =
+    pub def transformWithIndex!(f: (a, Int32) -> a, arr: Array[a]): Unit & Impure =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
@@ -439,7 +439,7 @@ namespace Array {
     /// Reverse the array `arr`, mutating it in place.
     ///
     @Time(length(arr)) @Space(1)
-    pub def reverse!(arr: mut Array[a]): Unit & Impure =
+    pub def reverse!(arr: Array[a]): Unit & Impure =
         let len = length(arr);
         let halflen = len / 2;
         def loop(i, j) = {
@@ -529,7 +529,7 @@ namespace Array {
     /// Replace every occurrence of `from` by `to` in the array `a`, mutating it in place.
     ///
     @Time(length(a)) @Space(1)
-    pub def replace!(from: {from :: a}, to: {to :: a}, a: mut Array[a]): Unit & Impure with Eq[a] =
+    pub def replace!(from: {from :: a}, to: {to :: a}, a: Array[a]): Unit & Impure with Eq[a] =
         transform!(e -> if (e == from.from) to.to else e, a)
 
     ///
@@ -554,7 +554,7 @@ namespace Array {
     /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
     ///
     @Time(n) @Space(1)
-    pub def patch!(i: Int32, n: Int32, a: Array[a], b: mut Array[a]): Unit & Impure =
+    pub def patch!(i: Int32, n: Int32, a: Array[a], b: Array[a]): Unit & Impure =
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
         let sub = slice(0, size, a);
@@ -1483,7 +1483,7 @@ namespace Array {
     /// Update the mutable array `a` with the elements starting at index `i` replaced by `sub`.
     ///
     @Time(length(a)) @Space(1)
-    pub def updateSequence!(i: Int32, sub: Array[a], a: mut Array[a]): Unit & Impure =
+    pub def updateSequence!(i: Int32, sub: Array[a], a: Array[a]): Unit & Impure =
         let end = i + length(sub);
         let f = { (_,ix) ->
             if (ix >= i and ix < end)
@@ -1570,7 +1570,7 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort!(a: mut Array[a]): Unit & Impure with Order[a] = sortWith!(Order.compare, a)
+    pub def sort!(a: Array[a]): Unit & Impure with Order[a] = sortWith!(Order.compare, a)
 
     ///
     /// Sort array `a` so that elements are ordered from low to high according to the `Order` instance for
@@ -1580,7 +1580,7 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy!(f: a -> b, a: mut Array[a]): Unit & Impure with Order[b] = sortWith!(Order.compare `on` f, a)
+    pub def sortBy!(f: a -> b, a: Array[a]): Unit & Impure with Order[b] = sortWith!(Order.compare `on` f, a)
 
     ///
     /// Sort array `a` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -1590,7 +1590,7 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith!(cmp: (a,a) -> Comparison, a: mut Array[a]): Unit & Impure = sortWithin!(cmp, 0, length(a) - 1, a)
+    pub def sortWith!(cmp: (a,a) -> Comparison, a: Array[a]): Unit & Impure = sortWithin!(cmp, 0, length(a) - 1, a)
 
     ///
     /// Sort array `a` between the indices `lo` and `hi` (both inclusive) so that elements in that range are ordered
@@ -1601,7 +1601,7 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWithin!(cmp: (a,a) -> Comparison, lo: Int32, hi: Int32, a: mut Array[a]): Unit & Impure =
+    pub def sortWithin!(cmp: (a,a) -> Comparison, lo: Int32, hi: Int32, a: Array[a]): Unit & Impure =
         if (lo >= hi)
             ()
         else {
@@ -1615,7 +1615,7 @@ namespace Array {
     ///
     /// Precondition: `i` and `j` are within bounds.
     ///
-    def swap!(a: mut Array[a], i: Int32, j: Int32): Unit & Impure =
+    def swap!(a: Array[a], i: Int32, j: Int32): Unit & Impure =
         let x = a[i];
         let y = a[j];
         a[i] = y;

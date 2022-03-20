@@ -1378,8 +1378,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Helpers                                                                 //
   /////////////////////////////////////////////////////////////////////////////
   def FormalParam: Rule1[ParsedAst.FormalParam] = rule {
-    // TODO: A quick hack to allow mut annotations.
-    SP ~ Modifiers ~ Names.Variable ~ optional(optWS ~ ":" ~ optWS ~ optional(keyword("mut") ~ WS) ~ Type) ~ SP ~> ParsedAst.FormalParam
+    SP ~ Modifiers ~ Names.Variable ~ optional(optWS ~ ":" ~ optWS ~ Type) ~ SP ~> ParsedAst.FormalParam
   }
 
   def FormalParamList: Rule1[Seq[ParsedAst.FormalParam]] = rule {
@@ -1437,16 +1436,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ capture(keyword("sealed")) ~ SP ~> ParsedAst.Modifier
     }
 
-    def Scoped: Rule1[ParsedAst.Modifier] = rule {
-      SP ~ capture(keyword("scoped")) ~ SP ~> ParsedAst.Modifier
-    }
-
     def Unlawful: Rule1[ParsedAst.Modifier] = rule {
       SP ~ capture(keyword("unlawful")) ~ SP ~> ParsedAst.Modifier
     }
 
     def Modifier: Rule1[ParsedAst.Modifier] = rule {
-      Inline | Lawless | Override | Public | Sealed | Scoped | Unlawful
+      Inline | Lawless | Override | Public | Sealed | Unlawful
     }
 
     rule {

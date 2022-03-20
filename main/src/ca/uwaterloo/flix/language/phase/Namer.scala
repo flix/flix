@@ -555,23 +555,20 @@ object Namer {
 
     case WeededAst.Expression.Let(ident, mod, exp1, exp2, loc) =>
       // make a fresh variable symbol for the local variable.
-      val scopedness = if (mod.isScoped)
-        Scopedness.Scoped
-      else
-        Scopedness.Unscoped
-
-      val sym = Symbol.freshVarSym(ident, scopedness, BoundBy.Let)
+      val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, tenv0)) {
         case (e1, e2) => NamedAst.Expression.Let(sym, mod, e1, e2, loc)
       }
 
     case WeededAst.Expression.LetRec(ident, mod, exp1, exp2, loc) =>
-      // TODO: Scopedness?
-      val sym = Symbol.freshVarSym(ident, Scopedness.Unscoped, BoundBy.Let)
+      val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       val env1 = env0 + (ident.name -> sym)
       mapN(visitExp(exp1, env1, uenv0, tenv0), visitExp(exp2, env1, uenv0, tenv0)) {
         case (e1, e2) => NamedAst.Expression.LetRec(sym, mod, e1, e2, loc)
       }
+
+    case WeededAst.Expression.Region(tpe, loc) =>
+      NamedAst.Expression.Region(tpe, loc).toSuccess
 
     case WeededAst.Expression.Scope(ident, exp, loc) =>
       // make a fresh variable symbol for the local variable.
@@ -685,16 +682,10 @@ object Namer {
         case (b, i1, i2) => NamedAst.Expression.ArraySlice(b, i1, i2, loc)
       }
 
-    case WeededAst.Expression.Ref(exp, loc) =>
-      visitExp(exp, env0, uenv0, tenv0) map {
-        case e =>
-          NamedAst.Expression.Ref(e, loc)
-      }
-
-    case WeededAst.Expression.RefWithRegion(exp1, exp2, loc) =>
+    case WeededAst.Expression.Ref(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
         case (e1, e2) =>
-          NamedAst.Expression.RefWithRegion(e1, e2, loc)
+          NamedAst.Expression.Ref(e1, e2, loc)
       }
 
     case WeededAst.Expression.Deref(exp, loc) =>
@@ -888,7 +879,7 @@ object Namer {
       }
 
     case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, loc) =>
-      val sym = Symbol.freshVarSym(ident, Scopedness.Unscoped, BoundBy.Let)
+      val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), uenv0, tenv0), visitExp(exp3, env0, uenv0, tenv0)) {
         case (e1, e2, e3) => NamedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
       }
@@ -1247,6 +1238,7 @@ object Namer {
     case WeededAst.Expression.Stm(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Let(ident, mod, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
     case WeededAst.Expression.LetRec(ident, mod, exp1, exp2, loc) => filterBoundVars( freeVars(exp1) ++ freeVars(exp2), List(ident))
+    case WeededAst.Expression.Region(_, _) => Nil
     case WeededAst.Expression.Scope(ident, exp, loc) => filterBoundVars(freeVars(exp), List(ident))
     case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
@@ -1266,8 +1258,7 @@ object Namer {
     case WeededAst.Expression.ArrayStore(base, index, elm, loc) => freeVars(base) ++ freeVars(index) ++ freeVars(elm)
     case WeededAst.Expression.ArrayLength(base, loc) => freeVars(base)
     case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, loc) => freeVars(base) ++ freeVars(startIndex) ++ freeVars(endIndex)
-    case WeededAst.Expression.Ref(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.RefWithRegion(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.Ref(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => freeVars(exp)
@@ -1461,15 +1452,10 @@ object Namer {
   private def visitFormalParam(fparam: WeededAst.FormalParam, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError] = fparam match {
     case WeededAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
-      val scopedness = if (mod.isScoped)
-        Scopedness.Scoped
-      else
-        Scopedness.Unscoped
-
       val freshSym = if (ident.name == "_")
         Symbol.freshVarSym("_", BoundBy.FormalParam, fparam.loc)
       else
-        Symbol.freshVarSym(ident, scopedness, BoundBy.FormalParam)
+        Symbol.freshVarSym(ident, BoundBy.FormalParam)
 
       // Compute the type of the formal parameter or use the type variable of the symbol.
       val tpeVal = optType match {

@@ -147,10 +147,7 @@ object TypedAstOps {
       case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
         visitExp(base, env0) ++ visitExp(beginIndex, env0) ++ visitExp(endIndex, env0)
 
-      case Expression.Ref(exp, tpe, eff, loc) =>
-        visitExp(exp, env0)
-
-      case Expression.RefWithRegion(exp1, exp2, tpe, eff, loc) =>
+      case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
       case Expression.Deref(exp, tpe, eff, loc) =>
@@ -375,8 +372,7 @@ object TypedAstOps {
     case Expression.ArrayLength(base, _, _) => sigSymsOf(base)
     case Expression.ArrayStore(base, index, elm, _) => sigSymsOf(base) ++ sigSymsOf(index) ++ sigSymsOf(elm)
     case Expression.ArraySlice(base, beginIndex, endIndex, _, _) => sigSymsOf(base) ++ sigSymsOf(beginIndex) ++ sigSymsOf(endIndex)
-    case Expression.Ref(exp, _, _, _) => sigSymsOf(exp)
-    case Expression.RefWithRegion(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.Ref(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Deref(exp, _, _, _) => sigSymsOf(exp)
     case Expression.Assign(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Ascribe(exp, _, _, _) => sigSymsOf(exp)
@@ -556,10 +552,7 @@ object TypedAstOps {
     case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
       freeVars(base) ++ freeVars(beginIndex) ++ freeVars(endIndex)
 
-    case Expression.Ref(exp, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+    case Expression.Ref(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.Deref(exp, _, _, _) =>

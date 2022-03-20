@@ -47,7 +47,7 @@ object Weeder {
     "class", "def", "deref", "else", "enum", "false", "fix", "force", "if", "import",
     "inline", "instance", "into", "lat", "law", "lawless", "lazy", "let", "let*", "match", "mut", "namespace",
     "null", "opaque", "override", "pub", "ref", "reify", "reifyBool",
-    "reifyEff", "reifyType", "rel", "rigid", "scoped", "sealed", "set", "spawn",
+    "reifyEff", "reifyType", "rel", "rigid", "sealed", "set", "spawn",
     "static", "true", "type", "unlawful", "use", "where", "with", "|||", "~~~"
   )
 
@@ -652,7 +652,7 @@ object Weeder {
       flatMapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
         case (WeededAst.Pattern.Var(ident, _), value, body) =>
           // No pattern match.
-          mapN(visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Scoped))) {
+          mapN(visitModifiers(mod0, legalModifiers = Set.empty)) {
             mod => WeededAst.Expression.Let(ident, mod, withAscription(value, tpe), body, loc)
           }
         case (pat, value, body) =>
@@ -1248,18 +1248,17 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.Ref(sp1, exp, reg, sp2) => reg match {
-      case None =>
-        for {
-          e <- visitExp(exp)
-        } yield WeededAst.Expression.Ref(e, mkSL(sp1, sp2))
-
-      case Some(exp2) =>
-        for {
-          e <- visitExp(exp)
-          e2 <- visitExp(exp2)
-        } yield WeededAst.Expression.RefWithRegion(e, e2, mkSL(sp1, sp2))
-    }
+    case ParsedAst.Expression.Ref(sp1, exp1, exp2, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      for {
+        e1 <- visitExp(exp1)
+        e2 <- Validation.traverse(exp2)(visitExp).map(_.headOption)
+      } yield {
+        // If there is no explicit region, we use the global region.
+        val defaultRegionType = Type.mkRegion(Type.False, loc)
+        val defaultRegion = e2.getOrElse(WeededAst.Expression.Region(defaultRegionType, loc))
+        WeededAst.Expression.Ref(e1, defaultRegion, loc)
+      }
 
     case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
       for {
@@ -2058,7 +2057,6 @@ object Weeder {
       case "override" => Ast.Modifier.Override
       case "pub" => Ast.Modifier.Public
       case "sealed" => Ast.Modifier.Sealed
-      case "scoped" => Ast.Modifier.Scoped
       case "unlawful" => Ast.Modifier.Unlawful
       case s => throw InternalCompilerException(s"Unknown modifier '$s' near ${mkSL(m.sp1, m.sp2).format}.")
     }
@@ -2269,7 +2267,7 @@ object Weeder {
             seen += (ident.name -> param)
           }
 
-          visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Scoped)) flatMap {
+          visitModifiers(mods, legalModifiers = Set.empty) flatMap {
             case mod =>
               if (typeRequired && typeOpt.isEmpty)
                 IllegalFormalParameter(ident.name, mkSL(sp1, sp2)).toFailure
