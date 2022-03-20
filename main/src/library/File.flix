@@ -879,7 +879,7 @@ namespace File {
             import java.io.File.toPath(): ##java.nio.file.Path & Impure;
             import static java.nio.file.Files.newDirectoryStream(##java.nio.file.Path): ##java.nio.file.DirectoryStream & Impure;
             import java.nio.file.DirectoryStream.iterator(): ##java.util.Iterator & Impure;
-            import java.nio.file.Path.toString(): String & Impure as pathToString;
+            import java.nio.file.Path.toString(): String & Pure as pathToString;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
