@@ -866,10 +866,10 @@ object Type {
   }
 
   /**
-    * Returns a Region type for the given rigid variable `l` with the given source location `loc`.
+    * Returns a Region type for the given region argument `r` with the given source location `loc`.
     */
-  def mkRegion(l: Type.KindedVar, loc: SourceLocation): Type =
-    Type.Apply(Type.Cst(TypeConstructor.Region, loc), l, loc)
+  def mkRegion(r: Type, loc: SourceLocation): Type =
+    Type.Apply(Type.Cst(TypeConstructor.Region, loc), r, loc)
 
   /**
     * Returns the type `tpe1 => tpe2`.

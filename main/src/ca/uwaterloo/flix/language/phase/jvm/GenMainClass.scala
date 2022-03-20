@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, Root}
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
@@ -36,12 +36,13 @@ object GenMainClass {
     case Some(defn) =>
       val jvmType = JvmOps.getMainClassType()
       val jvmName = jvmType.name
-      val retJvmType = JvmOps.getErasedJvmType(defn.tpe)
-      val bytecode = genByteCode(jvmType)
+      // returnType and its use can be inlined if m_main return type is known
+      val returnType = JvmOps.getErasedJvmType(defn.tpe.asInstanceOf[MonoType.Arrow].result)
+      val bytecode = genByteCode(jvmType, returnType)
       Map(jvmName -> JvmClass(jvmName, bytecode))
   }
 
-  private def genByteCode(jvmType: JvmType.Reference)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(jvmType: JvmType.Reference, returnType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -55,7 +56,7 @@ object GenMainClass {
     visitor.visitSource(jvmType.name.toInternalName, null)
 
     // Emit the code for the main method
-    compileMainMethod(visitor)
+    compileMainMethod(visitor, returnType)
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -71,7 +72,7 @@ object GenMainClass {
     *
     * Ns.m_main((Object)null);
     */
-  private def compileMainMethod(visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
+  private def compileMainMethod(visitor: ClassWriter, returnType: JvmType)(implicit root: Root, flix: Flix): Unit = {
 
     //Get the (argument) descriptor, since the main argument is of type String[], we need to get it's corresponding descriptor
     val argumentDescriptor = AsmOps.getArrayType(JvmType.String)
@@ -94,10 +95,9 @@ object GenMainClass {
 
     //Invoke m_main
     main.visitMethodInsn(INVOKESTATIC, JvmOps.getNamespaceClassType(ns).name.toInternalName, "m_main",
-      AsmOps.getMethodDescriptor(List(/* TODO: Should be string array */ JvmType.Object), JvmType.PrimInt), false)
+      AsmOps.getMethodDescriptor(List(JvmType.Object), returnType), false)
 
-    main.visitMethodInsn(INVOKESTATIC, "java/lang/System", "exit",
-      AsmOps.getMethodDescriptor(List(JvmType.PrimInt), JvmType.Void), false)
+    // The return value is ignored
 
     main.visitInsn(RETURN)
     main.visitMaxs(1, 1)
@@ -112,11 +112,7 @@ object GenMainClass {
     val sym = Symbol.Main
 
     // Check if the main function exists.
-    root.defs.get(sym) flatMap {
-      defn =>
-        // The main function must take zero arguments.
-        Some(defn)
-    }
+    root.defs.get(sym)
   }
 
 }

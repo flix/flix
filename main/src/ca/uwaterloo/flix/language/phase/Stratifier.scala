@@ -256,14 +256,9 @@ object Stratifier {
         case (b, i1, i2) => Expression.ArraySlice(b, i1, i2, tpe, loc)
       }
 
-    case Expression.Ref(exp, tpe, eff, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Ref(e, tpe, eff, loc)
-      }
-
-    case Expression.RefWithRegion(exp1, exp2, tpe, eff, loc) =>
+    case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.RefWithRegion(e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expression.Ref(e1, e2, tpe, eff, loc)
       }
 
     case Expression.Deref(exp, tpe, eff, loc) =>
@@ -582,10 +577,7 @@ object Stratifier {
     case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
       LabelledGraphOfExp(base) + LabelledGraphOfExp(beginIndex) + LabelledGraphOfExp(endIndex)
 
-    case Expression.Ref(exp, _, _, _) =>
-      LabelledGraphOfExp(exp)
-
-    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+    case Expression.Ref(exp1, exp2, _, _, _) =>
       LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
 
     case Expression.Deref(exp, _, _, _) =>

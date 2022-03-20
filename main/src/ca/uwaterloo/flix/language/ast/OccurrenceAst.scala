@@ -209,7 +209,6 @@ object OccurrenceAst {
     case object Once extends Occur
     case object ManyBranch extends Occur
     case object Dead extends Occur
-    case object OnceInLam extends Occur
     case object Many extends Occur
   }
 }
