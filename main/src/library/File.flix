@@ -842,20 +842,22 @@ namespace File {
 
     ///
     /// Returns a list naming the files and directories in the directory `f`.
-    /// Only the names of the files and directories are specified.
+    /// The full paths of the files and directories are specified.
     ///
     /// Does not recursively traverse the directory.
     ///
     pub def list(f: String): Result[List[String], String] & Impure =
         try {
             import new java.io.File(String): ##java.io.File & Impure as newFile;
-            import java.io.File.list(): Array[String] & Impure;
+            import java.io.File.listFiles(): Array[##java.io.File] & Impure;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import java.nio.file.Path.toString(): String & Impure as pathToString;
 
-            let javaFile = newFile(f);
-            let javaList = list(javaFile);
+            let javaList = f |> newFile |> listFiles;
 
             if (not Object.isNull(javaList)) {
-                Ok(Array.toList(javaList))
+                let paths = javaList |> Array.map(toPath) |> Array.map(pathToString);
+                Ok(Array.toList(paths))
             } else {
                 Err("An error occurred when trying to list the file: '${f}'.")
             }
@@ -867,7 +869,7 @@ namespace File {
 
     ///
     /// Returns an Iterator naming the files and directories in the directory `f`.
-    /// Only the names of the files and directories are specified.
+    /// The full paths of the files and directories are specified.
     ///
     /// Does not recursively traverse the directory.
     ///
