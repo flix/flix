@@ -782,16 +782,18 @@ object Resolver {
             r <- visit(rest, tenv0)
           } yield ResolvedAst.Expression.RecordRestrict(field, r, loc)
 
-        case NamedAst.Expression.ArrayLit(elms, loc) =>
+        case NamedAst.Expression.ArrayLit(exps, exp, loc) =>
           for {
-            es <- traverse(elms)(e => visit(e, tenv0))
-          } yield ResolvedAst.Expression.ArrayLit(es, loc)
+            es <- traverse(exps)(visit(_, tenv0))
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.ArrayLit(es, e, loc)
 
-        case NamedAst.Expression.ArrayNew(elm, len, loc) =>
+        case NamedAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
           for {
-            e <- visit(elm, tenv0)
-            ln <- visit(len, tenv0)
-          } yield ResolvedAst.Expression.ArrayNew(e, ln, loc)
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+            e3 <- visit(exp3, tenv0)
+          } yield ResolvedAst.Expression.ArrayNew(e1, e2, e3, loc)
 
         case NamedAst.Expression.ArrayLoad(base, index, loc) =>
           for {
