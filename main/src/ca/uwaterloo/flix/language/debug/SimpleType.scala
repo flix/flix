@@ -247,6 +247,11 @@ object SimpleType {
   case class LatticeFieldType(name: String, tpes: List[SimpleType], lat: SimpleType) extends PredicateFieldType
 
   /**
+    * A predicate field type that's not actually a predicate.
+    */
+  case class NonPredFieldType(name: String, tpe: SimpleType) extends PredicateFieldType
+
+  /**
     * Creates a simple type from the well-kinded type `t`.
    */
   def fromWellKindedType(t: Type): SimpleType = t.baseType match {
@@ -331,11 +336,12 @@ object SimpleType {
           case Relation(tpes) :: Nil => SchemaRowExtend(RelationFieldType(pred.name, tpes) :: Nil, Hole)
           // Case 3: One lattice arg. #( Name(tpe1; tpe2) | ? )
           case Lattice(tpes, lat) :: Nil => SchemaRowExtend(LatticeFieldType(pred.name, tpes, lat) :: Nil, Hole)
-          // Case 4: Fully applied. Dispatch to proper schema handler.
+          // Case 4: Some non-predicate type.
+          case _ :: Nil => SchemaRowExtend(NonPredFieldType(pred.name, args.head) :: Nil, Hole)
+          // Case 5: Fully applied. Dispatch to proper schema handler.
           case _ :: _ :: Nil => fromSchemaRow(t)
-          // Case 5: Too many args. Error.
+          // Case 6: Too many args. Error.
           case _ :: _ :: _ :: _ => throw new OverAppliedType
-          case _ => ??? // MATT handle other error?
         }
 
       case TypeConstructor.Schema =>
@@ -489,10 +495,11 @@ object SimpleType {
       // Case 1: A fully applied record row.
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(name), _), tpe, _), rest, _) =>
         // create the right field/type for the field
-        val fieldType = fromWellKindedType(tpe) match {
+        val fieldType = fromWellKindedType(Type.eraseTopAliases(tpe)) match {
           case Relation(tpes) => RelationFieldType(name.name, tpes)
           case Lattice(tpes, lat) => LatticeFieldType(name.name, tpes, lat)
-          case _ => ??? // MATT why is this currently working??
+          // If it's not a relation or lattice, keep any aliases.
+          case _ => NonPredFieldType(name.name, fromWellKindedType(tpe))
         }
         visit(rest) match {
           // Case 1.1: Unextended row. Put the fields together.

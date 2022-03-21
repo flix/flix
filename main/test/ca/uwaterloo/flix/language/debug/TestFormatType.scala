@@ -217,10 +217,10 @@ class TestFormatType extends FunSuite with TestUtils {
     val ident = name.ident
     val sym = Symbol.mkTypeAliasSym(name.namespace, ident)
     val latticeType1 = Type.mkLattice(List(Type.Str, Type.Bool), loc)
-    val alias = Type.Alias(Type.AliasConstructor(sym, loc), Nil, Type.RecordRowEmpty, loc)
+    val alias = Type.Alias(Type.AliasConstructor(sym, loc), Nil, latticeType1, loc)
 
 
-    val tpe = Type.mkSchemaRowExtend(Name.Pred("X", loc), latticeType1, Type.SchemaRowEmpty, loc)
+    val tpe = Type.mkSchemaRowExtend(Name.Pred("X", loc), alias, Type.SchemaRowEmpty, loc)
 
     val expected = "#( X(String; Bool) )"
     val actual = FormatType.formatWellKindedType(tpe)(Audience.External)

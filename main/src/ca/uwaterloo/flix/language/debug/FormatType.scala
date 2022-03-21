@@ -58,6 +58,9 @@ object FormatType {
         val tpeString = tpes.map(visit(_, Mode.Type)).mkString(", ")
         val latString = visit(lat, Mode.Type)
         s"$field($tpeString; $latString)"
+      case SimpleType.NonPredFieldType(field, tpe) =>
+        val tpeString = visit(tpe, Mode.Type)
+        s"$field(<$tpeString>)"
     }
 
     /**
