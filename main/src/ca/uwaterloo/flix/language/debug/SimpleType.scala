@@ -324,7 +324,8 @@ object SimpleType {
       case TypeConstructor.SchemaRowEmpty => SchemaRow(Nil)
 
       case TypeConstructor.SchemaRowExtend(pred) =>
-        val args = t.typeArguments.map(fromWellKindedType)
+        // erase aliases over the Schema/Relation
+        val args = mapHead(t.typeArguments, Type.eraseTopAliases).map(fromWellKindedType)
         args match {
           // Case 1: No args. #( Name(?) | ? )
           case Nil => SchemaRowExtend(RelationFieldType(pred.name, Hole :: Nil) :: Nil, Hole)
@@ -468,7 +469,7 @@ object SimpleType {
           case tvar: SimpleType.Var => SimpleType.RecordRowExtend(fieldType :: Nil, tvar)
           // Case 1.4: Type alias. Put it in the "rest" position.
           case alias: Name => SimpleType.RecordRowExtend(fieldType :: Nil, alias)
-          // Case 1.4: Not a row. Error.
+          // Case 1.5: Not a row. Error.
           case _ => throw IllKindedException
         }
       // Case 2: Empty record row.
@@ -477,7 +478,7 @@ object SimpleType {
       case tvar: Type.KindedVar => fromWellKindedType(tvar)
       // Case 4: Type alias.
       case alias: Type.Alias => fromWellKindedType(alias)
-      // Case 4: Not a row. Error.
+      // Case 5: Not a row. Error.
       case _ => throw IllKindedException
     }
 
@@ -486,6 +487,7 @@ object SimpleType {
       case RecordRowExtend(fields, rest) => RecordRowExtend(fields.sortBy(_.name), rest)
       case RecordRow(fields) => RecordRow(fields.sortBy(_.name))
       case v: Var => v
+      case alias: Name => alias
       case _ => throw IllKindedException
     }
   }
@@ -510,14 +512,18 @@ object SimpleType {
           case SimpleType.SchemaRowExtend(fields, restOfRest) => SimpleType.SchemaRowExtend(fieldType :: fields, restOfRest)
           // Case 1.3: Var. Put it in the "rest" position.
           case tvar: SimpleType.Var => SimpleType.SchemaRowExtend(fieldType :: Nil, tvar)
-          // Case 1.4: Not a row. Error.
+          // Case 1.4: Type alias. Put it in the "rest" position.
+          case alias: Name => SimpleType.SchemaRowExtend(fieldType :: Nil, alias)
+          // Case 1.5: Not a row. Error.
           case _ => throw IllKindedException
         }
       // Case 2: Empty record row.
       case Type.Cst(TypeConstructor.SchemaRowEmpty, _) => SimpleType.SchemaRow(Nil)
       // Case 3: Variable.
-      case Type.KindedVar(id, kind, _, rigidity, text) => SimpleType.Var(id, kind, rigidity, text)
-      // Case 4: Not a row. Error.
+      case tvar: Type.KindedVar => fromWellKindedType(tvar)
+      // Case 4: Type alias.
+      case alias: Type.Alias => fromWellKindedType(alias)
+      // Case 5: Not a row. Error.
       case _ => throw IllKindedException
     }
 
@@ -526,6 +532,7 @@ object SimpleType {
       case SchemaRow(fields) => SchemaRow(fields.sortBy(_.name))
       case SchemaRowExtend(fields, rest) => SchemaRowExtend(fields.sortBy(_.name), rest)
       case v: Var => v
+      case alias: Name => alias
       case _ => throw IllKindedException
     }
   }
