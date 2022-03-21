@@ -969,7 +969,11 @@ namespace File {
     /// Moves a file or directory from path `src` to directory `dst`.
     ///
     /// Returns `Ok(())` if `src` was moved, and `dst` is a directory.
-    /// Returns `Err(msg)` if `src` was not moved, or `dst` is a subpath of `src` or `dst` is not a directory, or an I/O error occurred.
+    /// Returns `Err(msg)` if:
+    /// - `src` was not moved, or
+    /// - `dst` is a subpath of `src`, or
+    /// - `dst` is not a directory, or
+    /// - an I/O error occurred.
     ///
     pub def moveInto(src: {src :: String} , dst: String): Result[Unit, String] & Impure =
         try {
