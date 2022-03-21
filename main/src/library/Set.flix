@@ -514,13 +514,6 @@ namespace Set {
             s)
 
     ///
-    /// Returns `s` as a mutable set.
-    ///
-    @Time(1) @Space(1)
-    pub def toMutSet(s: Set[a]): MutSet[a] & Impure =
-        MutSet(ref s)
-
-    ///
     /// Returns the set `s` as a list.
     ///
     @Time(size(s)) @Space(size(s))
