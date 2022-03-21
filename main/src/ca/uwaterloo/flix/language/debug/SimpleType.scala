@@ -25,7 +25,7 @@ sealed trait SimpleType
 
 object SimpleType {
 
-  private val IllKindedException = InternalCompilerException("Unexpected ill-kinded type")
+  private class OverAppliedType extends InternalCompilerException("Unexpected over-applied type.")
 
   ///////
   // Hole
@@ -301,7 +301,7 @@ object SimpleType {
           // Case 3: Fully applied. Dispatch to proper record handler.
           case _ :: _ :: Nil => fromRecordRow(t)
           // Case 4: Too many args. Error.
-          case _ => throw IllKindedException
+          case _ :: _ :: _ :: _ => throw new OverAppliedType
         }
 
       case TypeConstructor.Record =>
@@ -313,12 +313,10 @@ object SimpleType {
           case tpe :: Nil => tpe match {
             case RecordRow(fields) => Record(fields)
             case RecordRowExtend(fields, rest) => RecordExtend(fields, rest)
-            case tvar: Var => RecordConstructor(tvar)
-            case alias: Name => RecordConstructor(alias)
-            case _ => throw IllKindedException
+            case nonRecord => RecordConstructor(nonRecord)
           }
           // Case 3: Too many args. Error.
-          case _ => throw IllKindedException
+          case _ :: _ :: _ => throw new OverAppliedType
         }
 
       case TypeConstructor.SchemaRowEmpty => SchemaRow(Nil)
@@ -335,8 +333,9 @@ object SimpleType {
           case Lattice(tpes, lat) :: Nil => SchemaRowExtend(LatticeFieldType(pred.name, tpes, lat) :: Nil, Hole)
           // Case 4: Fully applied. Dispatch to proper schema handler.
           case _ :: _ :: Nil => fromSchemaRow(t)
-          // Case 5: Too many or invalid args. Error.
-          case _ => throw IllKindedException
+          // Case 5: Too many args. Error.
+          case _ :: _ :: _ :: _ => throw new OverAppliedType
+          // MATT handle other error?
         }
 
       case TypeConstructor.Schema =>
@@ -348,12 +347,10 @@ object SimpleType {
           case tpe :: Nil => tpe match {
             case SchemaRow(fields) => Schema(fields)
             case SchemaRowExtend(fields, rest) => SchemaExtend(fields, rest)
-            case tvar: Var => SchemaConstructor(tvar)
-            case alias: Name => SchemaConstructor(alias)
-            case _ => throw IllKindedException
+            case nonSchema => SchemaConstructor(nonSchema)
           }
           // Case 3: Too many args. Error.
-          case _ => throw IllKindedException
+          case _ :: _ :: _ => throw new OverAppliedType
         }
       case TypeConstructor.ScopedArray => mkApply(ScopedArray, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(fromWellKindedType))
@@ -368,7 +365,7 @@ object SimpleType {
           // Case 3: Fully applied tag.
           case tpe :: ret :: Nil => PureArrow(tpe, ret)
           // Case 4: Too many arguments. Error.
-          case _ => throw IllKindedException
+          case _ :: _ :: _ :: _ => throw new OverAppliedType
         }
       case TypeConstructor.KindedEnum(sym, kind) => mkApply(Name(sym.name), t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.UnkindedEnum(sym) => throw InternalCompilerException("Unexpected unkinded type.")
@@ -382,7 +379,7 @@ object SimpleType {
         args match {
           case Nil => RelationConstructor
           case tpe :: Nil => Relation(destructTuple(tpe))
-          case _ => throw IllKindedException
+          case _ :: _ :: _ => throw new OverAppliedType
         }
       case TypeConstructor.Lattice =>
         val args = t.typeArguments.map(fromWellKindedType)
@@ -391,10 +388,11 @@ object SimpleType {
           case tpe :: Nil =>
             val tpesAndLat = destructTuple(tpe)
             // NB: safe to take init/last since every lattice has a lattice field
+            // MATT not safe in case of alias!
             val tpes = tpesAndLat.init
             val lat = tpesAndLat.last
             Lattice(tpes, lat)
-          case _ => throw IllKindedException
+          case _ :: _ :: _ => throw new OverAppliedType
         }
       case TypeConstructor.True => True
       case TypeConstructor.False => False
@@ -402,7 +400,7 @@ object SimpleType {
         t.typeArguments.map(fromWellKindedType) match {
           case Nil => Not(Hole)
           case arg :: Nil => Not(arg)
-          case _ :: _ :: _ => throw IllKindedException
+          case _ :: _ :: _ => throw new OverAppliedType
         }
 
       case TypeConstructor.And =>
@@ -415,7 +413,7 @@ object SimpleType {
           // Case 3: Multiple args. Concatenate them: tpe1 and tpe2 and tpe3 and tpe4
           case args1 :: args2 :: Nil => And(args1 ++ args2)
           // Case 4: Too many args. Error.
-          case _ :: _ :: _ :: _ => throw IllKindedException
+          case _ :: _ :: _ :: _ => throw new OverAppliedType
         }
 
       case TypeConstructor.Or =>
@@ -428,7 +426,7 @@ object SimpleType {
           // Case 3: Multiple args. Concatenate them: tpe1 or tpe2 or tpe3 or tpe4
           case args1 :: args2 :: Nil => Or(args1 ++ args2)
           // Case 4: Too many args. Error.
-          case _ :: _ :: _ :: _ => throw IllKindedException
+          case _ :: _ :: _ :: _ => throw new OverAppliedType
         }
 
       case TypeConstructor.Region => mkApply(Region, t.typeArguments.map(fromWellKindedType))
@@ -466,30 +464,20 @@ object SimpleType {
           case SimpleType.RecordRow(fields) => SimpleType.RecordRow(fieldType :: fields)
           // Case 1.2: Extended row. Put the fields together.
           case SimpleType.RecordRowExtend(fields, restOfRest) => SimpleType.RecordRowExtend(fieldType :: fields, restOfRest)
-          // Case 1.3: Var. Put it in the "rest" position.
-          case tvar: SimpleType.Var => SimpleType.RecordRowExtend(fieldType :: Nil, tvar)
-          // Case 1.4: Type alias. Put it in the "rest" position.
-          case alias: Name => SimpleType.RecordRowExtend(fieldType :: Nil, alias)
-          // Case 1.5: Not a row. Error.
-          case _ => throw IllKindedException
+          // Case 1.3: Non-row. Put it in the "rest" position.
+          case nonRecord => SimpleType.RecordRowExtend(fieldType :: Nil, nonRecord)
         }
       // Case 2: Empty record row.
       case Type.Cst(TypeConstructor.RecordRowEmpty, _) => SimpleType.RecordRow(Nil)
-      // Case 3: Variable.
-      case tvar: Type.KindedVar => fromWellKindedType(tvar)
-      // Case 4: Type alias.
-      case alias: Type.Alias => fromWellKindedType(alias)
-      // Case 5: Not a row. Error.
-      case _ => throw IllKindedException
+      // Case 3: Non-row.
+      case nonRecord: Type.KindedVar => fromWellKindedType(nonRecord)
     }
 
     // sort the fields after converting
     visit(row0) match {
       case RecordRowExtend(fields, rest) => RecordRowExtend(fields.sortBy(_.name), rest)
       case RecordRow(fields) => RecordRow(fields.sortBy(_.name))
-      case v: Var => v
-      case alias: Name => alias
-      case _ => throw IllKindedException
+      case nonRecord => nonRecord
     }
   }
 
@@ -504,37 +492,27 @@ object SimpleType {
         val fieldType = fromWellKindedType(tpe) match {
           case Relation(tpes) => RelationFieldType(name.name, tpes)
           case Lattice(tpes, lat) => LatticeFieldType(name.name, tpes, lat)
-          case _ => throw IllKindedException
+          case _ => ??? // MATT why is this currently working??
         }
         visit(rest) match {
           // Case 1.1: Unextended row. Put the fields together.
           case SimpleType.SchemaRow(fields) => SimpleType.SchemaRow(fieldType :: fields)
           // Case 1.2: Extended row. Put the fields together.
           case SimpleType.SchemaRowExtend(fields, restOfRest) => SimpleType.SchemaRowExtend(fieldType :: fields, restOfRest)
-          // Case 1.3: Var. Put it in the "rest" position.
-          case tvar: SimpleType.Var => SimpleType.SchemaRowExtend(fieldType :: Nil, tvar)
-          // Case 1.4: Type alias. Put it in the "rest" position.
-          case alias: Name => SimpleType.SchemaRowExtend(fieldType :: Nil, alias)
-          // Case 1.5: Not a row. Error.
-          case _ => throw IllKindedException
+          // Case 1.3: Non-row. Put it in the "rest" position.
+          case nonSchema => SimpleType.SchemaRowExtend(fieldType :: Nil, nonSchema)
         }
       // Case 2: Empty record row.
       case Type.Cst(TypeConstructor.SchemaRowEmpty, _) => SimpleType.SchemaRow(Nil)
-      // Case 3: Variable.
-      case tvar: Type.KindedVar => fromWellKindedType(tvar)
-      // Case 4: Type alias.
-      case alias: Type.Alias => fromWellKindedType(alias)
-      // Case 5: Not a row. Error.
-      case _ => throw IllKindedException
+      // Case 3: Non-row.
+      case nonSchema: Type.KindedVar => fromWellKindedType(nonSchema)
     }
 
     // sort the fields after converting
     visit(row0) match {
       case SchemaRow(fields) => SchemaRow(fields.sortBy(_.name))
       case SchemaRowExtend(fields, rest) => SchemaRowExtend(fields.sortBy(_.name), rest)
-      case v: Var => v
-      case alias: Name => alias
-      case _ => throw IllKindedException
+      case nonSchema => nonSchema
     }
   }
 
@@ -559,7 +537,6 @@ object SimpleType {
   /**
     * Map over the first element in the list, if it exists.
     */
-  // MATT use this for handling matching on possibly aliased stuff
   private def mapHead[A](l: List[A], f: A => A): List[A] = l match {
     case Nil => Nil
     case hd :: tl => f(hd) :: tl
