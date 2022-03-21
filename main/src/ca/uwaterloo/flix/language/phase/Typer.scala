@@ -1684,18 +1684,20 @@ object Typer {
         val eff = r.eff
         TypedAst.Expression.RecordRestrict(field, r, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.ArrayLit(exps, _, tvar, evar, loc) =>
+      case KindedAst.Expression.ArrayLit(exps, exp, tvar, evar, loc) =>
         val es = exps.map(visitExp(_, subst0))
+        val e = visitExp(exp, subst0)
         val tpe = subst0(tvar)
         val eff = subst0(evar)
-        TypedAst.Expression.ArrayLit(es, tpe, eff, loc)
+        TypedAst.Expression.ArrayLit(es, e, tpe, eff, loc)
 
-      case KindedAst.Expression.ArrayNew(exp1, exp2, _, tvar, evar, loc) =>
+      case KindedAst.Expression.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
+        val e3 = visitExp(exp3, subst0)
         val tpe = subst0(tvar)
         val eff = subst0(evar)
-        TypedAst.Expression.ArrayNew(e1, e2, tpe, eff, loc)
+        TypedAst.Expression.ArrayNew(e1, e2, e3, tpe, eff, loc)
 
       case KindedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)

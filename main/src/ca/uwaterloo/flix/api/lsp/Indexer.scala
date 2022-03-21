@@ -221,11 +221,11 @@ object Indexer {
     case Expression.RecordRestrict(field, exp, _, _, _) =>
       Index.occurrenceOf(field) ++ Index.defOf(field) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.ArrayLit(exps, _, _, _) =>
-      visitExps(exps) ++ Index.occurrenceOf(exp0)
+    case Expression.ArrayLit(exps, exp, _, _, _) =>
+      visitExps(exps) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.ArrayNew(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
     case Expression.ArrayLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
