@@ -76,6 +76,20 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
+  test("FormatType.Record.External.04") {
+    val name = Name.mkQName("MyEmptyRecordRow")
+    val ident = name.ident
+    val sym = Symbol.mkTypeAliasSym(name.namespace, ident)
+    val alias = Type.Alias(Type.AliasConstructor(sym, loc), Nil, Type.RecordRowEmpty, loc)
+
+    val tpe = Type.mkRecord(alias, loc)
+
+    val expected = "{ MyEmptyRecordRow }"
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
+
   test("FormatType.Arrow.External.01") {
     val paramType = Type.KindedVar(0, Kind.Star, loc, Rigidity.Rigid)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Pure, paramType, loc)

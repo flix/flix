@@ -180,7 +180,7 @@ object FormatType {
         val fieldString = fields.map(visitRecordFieldType).mkString(", ")
         val restString = visit(rest, Mode.Type)
         s"( $fieldString | $restString )"
-      case SimpleType.RecordConstructor(arg) => s"{ $arg }"
+      case SimpleType.RecordConstructor(arg) => s"{ ${visit(arg, Mode.Type)} }"
       case SimpleType.Schema(fields) =>
         val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
         s"#{ $fieldString }"
@@ -195,7 +195,7 @@ object FormatType {
         val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
         val restString = visit(rest, Mode.Type)
         s"#( $fieldString | $restString )"
-      case SimpleType.SchemaConstructor(arg) => s"#{ $arg }"
+      case SimpleType.SchemaConstructor(arg) => s"#{ ${visit(arg, Mode.Type)} }"
       case SimpleType.Not(tpe) => s"not ${delimit(tpe, mode)}"
       case SimpleType.And(tpes) =>
         val strings = tpes.map(delimit(_, mode))

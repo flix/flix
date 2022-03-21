@@ -314,6 +314,7 @@ object SimpleType {
             case RecordRow(fields) => Record(fields)
             case RecordRowExtend(fields, rest) => RecordExtend(fields, rest)
             case tvar: Var => RecordConstructor(tvar)
+            case alias: Name => RecordConstructor(alias)
             case _ => throw IllKindedException
           }
           // Case 3: Too many args. Error.
