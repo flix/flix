@@ -335,7 +335,7 @@ object SimpleType {
           case _ :: _ :: Nil => fromSchemaRow(t)
           // Case 5: Too many args. Error.
           case _ :: _ :: _ :: _ => throw new OverAppliedType
-          // MATT handle other error?
+          case _ => ??? // MATT handle other error?
         }
 
       case TypeConstructor.Schema =>
@@ -470,7 +470,7 @@ object SimpleType {
       // Case 2: Empty record row.
       case Type.Cst(TypeConstructor.RecordRowEmpty, _) => SimpleType.RecordRow(Nil)
       // Case 3: Non-row.
-      case nonRecord: Type.KindedVar => fromWellKindedType(nonRecord)
+      case nonRecord => fromWellKindedType(nonRecord)
     }
 
     // sort the fields after converting
@@ -505,7 +505,7 @@ object SimpleType {
       // Case 2: Empty record row.
       case Type.Cst(TypeConstructor.SchemaRowEmpty, _) => SimpleType.SchemaRow(Nil)
       // Case 3: Non-row.
-      case nonSchema: Type.KindedVar => fromWellKindedType(nonSchema)
+      case nonSchema => fromWellKindedType(nonSchema)
     }
 
     // sort the fields after converting
