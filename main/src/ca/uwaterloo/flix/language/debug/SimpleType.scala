@@ -542,4 +542,13 @@ object SimpleType {
     case Or(tpes) => tpes
     case t => List(t)
   }
+
+  /**
+    * Map over the first element in the list, if it exists.
+    */
+  // MATT use this for handling matching on possibly aliased stuff
+  private def mapHead[A](l: List[A], f: A => A): List[A] = l match {
+    case Nil => Nil
+    case hd :: tl => f(hd) :: tl
+  }
 }
