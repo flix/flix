@@ -153,9 +153,10 @@ object Kinder {
     val results = ParOps.parMap(staleClasses.values)(visitClass(_, taenv, root))
 
     Validation.sequence(results) map {
-      res => res.foldLeft(freshClasses) {
-        case (acc, defn) => acc + (defn.sym -> defn)
-      }
+      res =>
+        res.foldLeft(freshClasses) {
+          case (acc, defn) => acc + (defn.sym -> defn)
+        }
     }
   }
 
@@ -203,9 +204,10 @@ object Kinder {
     val results = ParOps.parMap(staleDefs.values)(visitDef(_, KindEnv.empty, taenv, root))
 
     Validation.sequence(results) map {
-      res => res.foldLeft(freshDefs) {
-        case (acc, defn) => acc + (defn.sym -> defn)
-      }
+      res =>
+        res.foldLeft(freshDefs) {
+          case (acc, defn) => acc + (defn.sym -> defn)
+        }
     }
   }
 
@@ -398,14 +400,22 @@ object Kinder {
       for {
         es <- Validation.traverse(exps)(visitExp(_, kenv, taenv, root))
         e <- visitExp(exp, kenv, taenv, root)
-      } yield KindedAst.Expression.ArrayLit(es, e, Type.freshVar(Kind.Star, loc), loc)
+      } yield {
+        val tvar = Type.freshVar(Kind.Star, loc)
+        val evar = Type.freshVar(Kind.Bool, loc)
+        KindedAst.Expression.ArrayLit(es, e, tvar, evar, loc)
+      }
 
     case ResolvedAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
       for {
         e1 <- visitExp(exp1, kenv, taenv, root)
         e2 <- visitExp(exp2, kenv, taenv, root)
         e3 <- visitExp(exp3, kenv, taenv, root)
-      } yield KindedAst.Expression.ArrayNew(e1, e2, e3, Type.freshVar(Kind.Star, loc), loc)
+      } yield {
+        val tvar = Type.freshVar(Kind.Star, loc)
+        val evar = Type.freshVar(Kind.Bool, loc)
+        KindedAst.Expression.ArrayNew(e1, e2, e3, tvar, evar, loc)
+      }
 
     case ResolvedAst.Expression.ArrayLoad(base0, index0, loc) =>
       for {
