@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.phase.Kinder
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
+import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
 /**
@@ -906,13 +907,26 @@ object Type {
 
   /**
     * Replace type aliases with the types they represent.
+    * In general, this function should be used in back-end phases
+    * to clear all aliases for easier processing.
     */
   def eraseAliases(t: Type): Type = t match {
     case tvar: Type.Var => tvar.asKinded
     case Type.Cst(_, _) => t
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
-    case Type.Ascribe(tpe, kind, loc) => throw InternalCompilerException("Unexpected type ascription.")
+    case Type.Ascribe(_, _, _) => throw InternalCompilerException("Unexpected type ascription.")
+  }
+
+  /**
+    * Replace top-level type aliases with the types they represent.
+    * In general, this function should be used in front-end phases
+    * to maintain aliases in error messages to the extent possible.
+    */
+  @tailrec
+  def eraseTopAliases(t: Type): Type = t match {
+    case Type.Alias(_, _, tpe, _) => eraseTopAliases(tpe)
+    case tpe => tpe
   }
 
 
