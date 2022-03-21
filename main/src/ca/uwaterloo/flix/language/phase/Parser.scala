@@ -914,7 +914,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def New: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("new") ~ WS ~ Names.UpperCaseQName ~ optional(optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")") ~ SP ~> ParsedAst.Expression.New
+      SP ~ keyword("new") ~ WS ~ Names.UpperCaseQName ~ optWS ~ "(" ~ optWS ~ optional(Expression) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.New
     }
 
     def ArrayLit: Rule1[ParsedAst.Expression] = rule {
