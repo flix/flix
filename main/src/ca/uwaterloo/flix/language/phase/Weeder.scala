@@ -1082,9 +1082,9 @@ object Weeder {
         case e =>
           ///
           /// Translate [[new Foo]](r) => Newable.new(r)
-          /// Translate [[new Foo]] => Newable.new(defaultRegion)
+          /// Translate [[new Foo]]    => Newable.new(defaultRegion)
           ///
-          val targetName = Name.mkQName("Newable.new", sp1, sp2)
+          val targetName = Name.mkQName("Newable.new", qname.sp1, qname.sp2)
           val e1 = WeededAst.Expression.DefOrSig(targetName, loc)
           val e2 = getRegionOrDefault(e, loc)
           WeededAst.Expression.Apply(e1, List(e2), loc)
