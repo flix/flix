@@ -465,13 +465,17 @@ object SimpleType {
           case SimpleType.RecordRowExtend(fields, restOfRest) => SimpleType.RecordRowExtend(fieldType :: fields, restOfRest)
           // Case 1.3: Var. Put it in the "rest" position.
           case tvar: SimpleType.Var => SimpleType.RecordRowExtend(fieldType :: Nil, tvar)
+          // Case 1.4: Type alias. Put it in the "rest" position.
+          case alias: Name => SimpleType.RecordRowExtend(fieldType :: Nil, alias)
           // Case 1.4: Not a row. Error.
           case _ => throw IllKindedException
         }
       // Case 2: Empty record row.
       case Type.Cst(TypeConstructor.RecordRowEmpty, _) => SimpleType.RecordRow(Nil)
       // Case 3: Variable.
-      case Type.KindedVar(id, kind, _, rigidity, text) => SimpleType.Var(id, kind, rigidity, text)
+      case tvar: Type.KindedVar => fromWellKindedType(tvar)
+      // Case 4: Type alias.
+      case alias: Type.Alias => fromWellKindedType(alias)
       // Case 4: Not a row. Error.
       case _ => throw IllKindedException
     }
