@@ -655,12 +655,12 @@ object Namer {
 
     case WeededAst.Expression.ArrayLit(exps, exp, loc) =>
       mapN(traverse(exps)(visitExp(_, env0, uenv0, tenv0)), visitExp(exp, env0, uenv0, tenv0)) {
-        case (es, e) => NamedAst.Expression.ArrayLit(es, loc)
+        case (es, e) => NamedAst.Expression.ArrayLit(es, e, loc)
       }
 
     case WeededAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0), visitExp(exp3, env0, uenv0, tenv0)) {
-        case (e1, e2, e3) => NamedAst.Expression.ArrayNew(e1, e2, loc)
+        case (e1, e2, e3) => NamedAst.Expression.ArrayNew(e1, e2, e3, loc)
       }
 
     case WeededAst.Expression.ArrayLoad(base, index, loc) =>
