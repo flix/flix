@@ -394,16 +394,18 @@ object Kinder {
         rest <- visitExp(rest0, kenv, taenv, root)
       } yield KindedAst.Expression.RecordRestrict(field, rest, Type.freshVar(Kind.Star, loc), loc)
 
-    case ResolvedAst.Expression.ArrayLit(elms0, loc) =>
+    case ResolvedAst.Expression.ArrayLit(exps, exp, loc) =>
       for {
-        elms <- Validation.traverse(elms0)(visitExp(_, kenv, taenv, root))
-      } yield KindedAst.Expression.ArrayLit(elms, Type.freshVar(Kind.Star, loc), loc)
+        es <- Validation.traverse(exps)(visitExp(_, kenv, taenv, root))
+        e <- visitExp(exp, kenv, taenv, root)
+      } yield KindedAst.Expression.ArrayLit(es, e, Type.freshVar(Kind.Star, loc), loc)
 
-    case ResolvedAst.Expression.ArrayNew(elm0, len0, loc) =>
+    case ResolvedAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
       for {
-        elm <- visitExp(elm0, kenv, taenv, root)
-        len <- visitExp(len0, kenv, taenv, root)
-      } yield KindedAst.Expression.ArrayNew(elm, len, Type.freshVar(Kind.Star, loc), loc)
+        e1 <- visitExp(exp1, kenv, taenv, root)
+        e2 <- visitExp(exp2, kenv, taenv, root)
+        e3 <- visitExp(exp3, kenv, taenv, root)
+      } yield KindedAst.Expression.ArrayNew(e1, e2, e3, Type.freshVar(Kind.Star, loc), loc)
 
     case ResolvedAst.Expression.ArrayLoad(base0, index0, loc) =>
       for {
