@@ -1072,12 +1072,14 @@ object Typer {
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.ArrayLit(exps, exp, tvar, evar, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc)
         for {
-          (constrs, elementTypes, _) <- seqM(exps.map(visitExp)).map(_.unzip3)
-          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
+          (constrs1, elmTypes, eff1) <- seqM(exps.map(visitExp)).map(_.unzip3)
+          (constrs2, regionType, eff2) <- visitExp(exp)
+          elementType <- unifyTypeAllowEmptyM(elmTypes, Kind.Star, loc)
           resultTyp <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
-          resultEff = Type.Impure
-        } yield (constrs.flatten, resultTyp, resultEff)
+          resultEff <- unifyTypeM(evar, Type.mkAnd(Type.mkAnd(eff1, loc), eff2, regionVar, loc), loc)
+        } yield (constrs1.flatten ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc)
