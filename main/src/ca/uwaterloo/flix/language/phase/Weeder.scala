@@ -1075,6 +1075,21 @@ object Weeder {
           }
       }
 
+    case ParsedAst.Expression.New(sp1, qname, exp, sp2) =>
+      // TODO: Use qname later for ascribe.
+      val loc = mkSL(sp1, sp2)
+      mapN(traverse(exp)(visitExp).map(_.headOption)) {
+        case e =>
+          ///
+          /// Translate [[new Foo]](r) => Newable.new(r)
+          /// Translate [[new Foo]] => Newable.new(defaultRegion)
+          ///
+          val targetName = Name.mkQName("Newable.new", sp1, sp2)
+          val e1 = WeededAst.Expression.DefOrSig(targetName, loc)
+          val e2 = getRegionOrDefault(e, loc)
+          WeededAst.Expression.Apply(e1, List(e2), loc)
+      }
+
     case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
       mapN(traverse(exps)(visitExp), traverse(exp)(visitExp).map(_.headOption)) {
@@ -2560,6 +2575,7 @@ object Weeder {
     case ParsedAst.Expression.RecordSelect(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.RecordSelectLambda(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordOperation(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.New(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLit(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayNew(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
