@@ -47,7 +47,7 @@ object Weeder {
     "class", "def", "deref", "else", "enum", "false", "fix", "force", "if", "import",
     "inline", "instance", "into", "lat", "law", "lawless", "lazy", "let", "let*", "match", "mut", "namespace",
     "null", "opaque", "override", "pub", "ref", "reify", "reifyBool",
-    "reifyEff", "reifyType", "rel", "rigid", "scoped", "sealed", "set", "spawn",
+    "reifyEff", "reifyType", "rel", "rigid", "sealed", "set", "spawn",
     "static", "true", "type", "unlawful", "use", "where", "with", "|||", "~~~"
   )
 
@@ -123,18 +123,19 @@ object Weeder {
     * Performs weeding on the given class declaration `c0`.
     */
   private def visitClass(c0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Class], WeederError] = c0 match {
-    case ParsedAst.Declaration.Class(doc0, mods0, sp1, ident, tparam0, superClasses0, lawsAndSigs, sp2) =>
+    case ParsedAst.Declaration.Class(doc0, ann0, mods0, sp1, ident, tparam0, superClasses0, lawsAndSigs, sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
       val laws0 = lawsAndSigs.collect { case law: ParsedAst.Declaration.Law => law }
       val sigs0 = lawsAndSigs.collect { case sig: ParsedAst.Declaration.Sig => sig }
       for {
+        ann <- visitAnnotations(ann0)
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Sealed, Ast.Modifier.Lawless))
         sigs <- traverse(sigs0)(visitSig)
         laws <- traverse(laws0)(visitLaw)
         tparam = visitTypeParam(tparam0)
         superClasses <- traverse(superClasses0)(visitTypeConstraint)
-      } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparam, superClasses, sigs.flatten, laws.flatten, loc))
+      } yield List(WeededAst.Declaration.Class(doc, ann, mods, ident, tparam, superClasses, sigs.flatten, laws.flatten, loc))
   }
 
   /**
@@ -652,7 +653,7 @@ object Weeder {
       flatMapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
         case (WeededAst.Pattern.Var(ident, _), value, body) =>
           // No pattern match.
-          mapN(visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Scoped))) {
+          mapN(visitModifiers(mod0, legalModifiers = Set.empty)) {
             mod => WeededAst.Expression.Let(ident, mod, withAscription(value, tpe), body, loc)
           }
         case (pat, value, body) =>
@@ -1074,14 +1075,14 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.ArrayLit(sp1, elms, sp2) =>
-      traverse(elms)(e => visitExp(e)) map {
+    case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
+      traverse(exps)(e => visitExp(e)) map {
         case es => WeededAst.Expression.ArrayLit(es, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.ArrayNew(sp1, elm, len, sp2) =>
-      mapN(visitExp(elm), visitExp(len)) {
-        case (e, ln) => WeededAst.Expression.ArrayNew(e, ln, mkSL(sp1, sp2))
+    case ParsedAst.Expression.ArrayNew(sp1, exp1, exp2, exp3, sp2) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => WeededAst.Expression.ArrayNew(e1, e2, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
@@ -1248,18 +1249,17 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.Ref(sp1, exp, reg, sp2) => reg match {
-      case None =>
-        for {
-          e <- visitExp(exp)
-        } yield WeededAst.Expression.Ref(e, mkSL(sp1, sp2))
-
-      case Some(exp2) =>
-        for {
-          e <- visitExp(exp)
-          e2 <- visitExp(exp2)
-        } yield WeededAst.Expression.RefWithRegion(e, e2, mkSL(sp1, sp2))
-    }
+    case ParsedAst.Expression.Ref(sp1, exp1, exp2, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      for {
+        e1 <- visitExp(exp1)
+        e2 <- Validation.traverse(exp2)(visitExp).map(_.headOption)
+      } yield {
+        // If there is no explicit region, we use the global region.
+        val defaultRegionType = Type.mkRegion(Type.False, loc)
+        val defaultRegion = e2.getOrElse(WeededAst.Expression.Region(defaultRegionType, loc))
+        WeededAst.Expression.Ref(e1, defaultRegion, loc)
+      }
 
     case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
       for {
@@ -2058,7 +2058,6 @@ object Weeder {
       case "override" => Ast.Modifier.Override
       case "pub" => Ast.Modifier.Public
       case "sealed" => Ast.Modifier.Sealed
-      case "scoped" => Ast.Modifier.Scoped
       case "unlawful" => Ast.Modifier.Unlawful
       case s => throw InternalCompilerException(s"Unknown modifier '$s' near ${mkSL(m.sp1, m.sp2).format}.")
     }
@@ -2269,7 +2268,7 @@ object Weeder {
             seen += (ident.name -> param)
           }
 
-          visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Scoped)) flatMap {
+          visitModifiers(mods, legalModifiers = Set.empty) flatMap {
             case mod =>
               if (typeRequired && typeOpt.isEmpty)
                 IllegalFormalParameter(ident.name, mkSL(sp1, sp2)).toFailure
@@ -2557,8 +2556,8 @@ object Weeder {
     case ParsedAst.Expression.RecordSelect(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.RecordSelectLambda(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordOperation(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.ArrayLit(sp1, _, _) => sp1
-    case ParsedAst.Expression.ArrayNew(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.ArrayLit(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.ArrayNew(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArraySlice(base, _, _, _) => leftMostSourcePosition(base)

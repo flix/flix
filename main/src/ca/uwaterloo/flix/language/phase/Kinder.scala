@@ -75,7 +75,7 @@ object Kinder {
 
         mapN(enumsVal, classesVal, defsVal, instancesVal) {
           case (enums, classes, defs, instances) =>
-            KindedAst.Root(classes.toMap, instances.toMap, defs.toMap, enums.toMap, taenv, root.reachable, root.sources)
+            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, taenv, root.reachable, root.sources)
         }
     }
 
@@ -163,18 +163,18 @@ object Kinder {
     * Performs kinding on the given type class.
     */
   private def visitClass(clazz: ResolvedAst.Class, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, KindError] = clazz match {
-    case ResolvedAst.Class(doc, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
+    case ResolvedAst.Class(doc, ann0, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
       val kenv = getKindEnvFromTypeParamDefaultStar(tparam0)
 
+      val annVal = traverse(ann0)(visitAnnotation(_, kenv, taenv, root))
       val tparamVal = visitTypeParam(tparam0, kenv)
       val superClassesVal = Validation.traverse(superClasses0)(visitTypeConstraint(_, kenv, taenv, root))
       val sigsVal = Validation.traverse(sigs0) {
         case (sigSym, sig0) => visitSig(sig0, kenv, taenv, root).map(sig => sigSym -> sig)
       }
       val lawsVal = traverse(laws0)(visitDef(_, kenv, taenv, root))
-
-      mapN(tparamVal, superClassesVal, sigsVal, lawsVal) {
-        case (tparam, superClasses, sigs, laws) => KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs.toMap, laws, loc)
+      mapN(annVal, tparamVal, superClassesVal, sigsVal, lawsVal) {
+        case (ann, tparam, superClasses, sigs, laws) => KindedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs.toMap, laws, loc)
       }
   }
 
@@ -346,6 +346,9 @@ object Kinder {
         exp2 <- visitExp(exp20, kenv, taenv, root)
       } yield KindedAst.Expression.LetRec(sym, mod, exp1, exp2, loc)
 
+    case ResolvedAst.Expression.Region(tpe, loc) =>
+      KindedAst.Expression.Region(tpe, loc).toSuccess
+
     case ResolvedAst.Expression.Scope(sym, exp0, loc) =>
       for {
         exp <- visitExp(exp0, kenv, taenv, root)
@@ -427,16 +430,11 @@ object Kinder {
         endIndex <- visitExp(endIndex0, kenv, taenv, root)
       } yield KindedAst.Expression.ArraySlice(base, beginIndex, endIndex, loc)
 
-    case ResolvedAst.Expression.Ref(exp0, loc) =>
+    case ResolvedAst.Expression.Ref(exp1, exp2, loc) =>
       for {
-        exp <- visitExp(exp0, kenv, taenv, root)
-      } yield KindedAst.Expression.Ref(exp, Type.freshVar(Kind.Star, loc), loc)
-
-    case ResolvedAst.Expression.RefWithRegion(exp10, exp20, loc) =>
-      for {
-        exp1 <- visitExp(exp10, kenv, taenv, root)
-        exp2 <- visitExp(exp20, kenv, taenv, root)
-      } yield KindedAst.Expression.RefWithRegion(exp1, exp2, Type.freshVar(Kind.Star, loc), Type.freshVar(Kind.Bool, loc), loc)
+        e1 <- visitExp(exp1, kenv, taenv, root)
+        e2 <- visitExp(exp2, kenv, taenv, root)
+      } yield KindedAst.Expression.Ref(e1, e2, Type.freshVar(Kind.Star, loc), Type.freshVar(Kind.Bool, loc), loc)
 
     case ResolvedAst.Expression.Deref(exp0, loc) =>
       for {
@@ -999,7 +997,7 @@ object Kinder {
   private def getKindEnvFromSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
     case ResolvedAst.Spec(_, _, _, tparams0, _, _, _, _, _) =>
       tparams0 match {
-        case tparams: ResolvedAst.TypeParams.Kinded => getKindEnvFromKindedTypeParams(tparams).toSuccess
+        case tparams: ResolvedAst.TypeParams.Kinded => getKindEnvFromKindedTypeParams(tparams) ++ kenv
         case _: ResolvedAst.TypeParams.Unkinded => inferSpec(spec0, kenv, taenv, root)
       }
   }
