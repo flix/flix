@@ -23,7 +23,6 @@ class LangSuite extends Suites(
   // Definitions.
   //
   new FlixTest("Test.Def.Op", "main/test/flix/Test.Def.Op.flix"),
-  new FlixTest("Test.Def.Scoped", "main/test/flix/Test.Def.Scoped.flix"),
 
   //
   // Derivations.

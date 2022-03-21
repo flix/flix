@@ -121,7 +121,9 @@ object WeededAst {
 
     case class LetRec(ident: Name.Ident, mod: Ast.Modifiers, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class LetRegion(ident: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Scope(ident: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Match(exp: WeededAst.Expression, rules: List[WeededAst.MatchRule], loc: SourceLocation) extends WeededAst.Expression
 
@@ -151,9 +153,7 @@ object WeededAst {
 
     case class ArraySlice(base: WeededAst.Expression, beginIndex: WeededAst.Expression, endIndex: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Ref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class RefWithRegion(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Ref(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Deref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -303,8 +303,6 @@ object WeededAst {
   object Type {
 
     case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Type
-
-    case class RigidVar(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Type
 
     case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends WeededAst.Type
 

@@ -29,42 +29,42 @@ object FindReferencesProvider {
 
       case Some(entity) => entity match {
 
-        case Entity.Case(caze) => findTagUses(caze.sym, caze.tag)
+        case Entity.Case(caze) => findTagReferences(caze.sym, caze.tag)
 
-        case Entity.Class(class0) => findClassUses(class0.sym)
+        case Entity.Class(class0) => findClassReferences(class0.sym)
 
-        case Entity.Def(defn) => findDefUses(defn.sym)
+        case Entity.Def(defn) => findDefReferences(defn.sym)
 
-        case Entity.Sig(sig0) => findSigUses(sig0.sym)
+        case Entity.Sig(sig0) => findSigReferences(sig0.sym)
 
-        case Entity.Enum(enum0) => findEnumUses(enum0.sym)
+        case Entity.Enum(enum0) => findEnumReferences(enum0.sym)
 
         case Entity.Exp(exp) => exp match {
-          case Expression.Def(sym, _, _) => findDefUses(sym)
-          case Expression.Sig(sym, _, _) => findSigUses(sym)
-          case Expression.Var(sym, _, _) => findVarUses(sym)
-          case Expression.Tag(sym, tag, _, _, _, _) => findTagUses(sym, tag)
+          case Expression.Def(sym, _, _) => findDefReferences(sym)
+          case Expression.Sig(sym, _, _) => findSigReferences(sym)
+          case Expression.Var(sym, _, _) => findVarReferences(sym)
+          case Expression.Tag(sym, tag, _, _, _, _) => findTagReferences(sym, tag)
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.Field(field) => findFieldUses(field)
+        case Entity.Field(field) => findFieldReferences(field)
 
-        case Entity.FormalParam(param) => findVarUses(param.sym)
+        case Entity.FormalParam(param) => findVarReferences(param.sym)
 
         case Entity.Pattern(pat) => pat match {
-          case Pattern.Var(sym, _, _) => findVarUses(sym)
-          case Pattern.Tag(sym, tag, _, _, _) => findTagUses(sym, tag)
+          case Pattern.Var(sym, _, _) => findVarReferences(sym)
+          case Pattern.Tag(sym, tag, _, _, _) => findTagReferences(sym, tag)
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.Pred(pred) => findPredUses(pred)
+        case Entity.Pred(pred) => findPredReferences(pred)
 
-        case Entity.LocalVar(sym, _) => findVarUses(sym)
+        case Entity.LocalVar(sym, _) => findVarReferences(sym)
 
         case Entity.TypeCon(tc, loc) => tc match {
-          case TypeConstructor.RecordRowExtend(field) => findFieldUses(field)
-          case TypeConstructor.SchemaRowExtend(pred) => findPredUses(pred)
-          case TypeConstructor.KindedEnum(sym, _) => findEnumUses(sym)
+          case TypeConstructor.RecordRowExtend(field) => findFieldReferences(field)
+          case TypeConstructor.SchemaRowExtend(pred) => findPredReferences(pred)
+          case TypeConstructor.KindedEnum(sym, _) => findEnumReferences(sym)
           case _ => mkNotFound(uri, pos)
         }
 
@@ -74,53 +74,59 @@ object FindReferencesProvider {
     }
   }
 
-  private def findClassUses(sym: Symbol.ClassSym)(implicit index: Index, root: Root): JObject = {
-    val uses = index.usesOf(sym)
-    val locs = uses.toList.map(Location.from)
+  private def findClassReferences(sym: Symbol.ClassSym)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(sym.loc)
+    val useSites = index.usesOf(sym)
+    val locs = defSite :: useSites.toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def findDefUses(sym: Symbol.DefnSym)(implicit index: Index, root: Root): JObject = {
-    val uses = index.usesOf(sym)
-    val locs = uses.toList.map(Location.from)
+  private def findDefReferences(sym: Symbol.DefnSym)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(sym.loc)
+    val useSites = index.usesOf(sym)
+    val locs = defSite :: useSites.toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def findSigUses(sym: Symbol.SigSym)(implicit index: Index, root: Root): JObject = {
-    val uses = index.usesOf(sym)
-    val locs = uses.toList.map(Location.from)
+  private def findSigReferences(sym: Symbol.SigSym)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(sym.loc)
+    val useSites = index.usesOf(sym)
+    val locs = defSite :: useSites.toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def findEnumUses(sym: Symbol.EnumSym)(implicit index: Index, root: Root): JObject = {
-    val uses = index.usesOf(sym)
-    val locs = uses.toList.map(Location.from)
+  private def findEnumReferences(sym: Symbol.EnumSym)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(sym.loc)
+    val useSites = index.usesOf(sym)
+    val locs = defSite :: useSites.toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def findFieldUses(field: Name.Field)(implicit index: Index, root: Root): JObject = {
-    val defs = index.defsOf(field)
-    val uses = index.usesOf(field)
-    val locs = (defs ++ uses).toList.map(Location.from)
+  private def findFieldReferences(field: Name.Field)(implicit index: Index, root: Root): JObject = {
+    val defSites = index.defsOf(field)
+    val useSites = index.usesOf(field)
+    val locs = (defSites ++ useSites).toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def findPredUses(pred: Name.Pred)(implicit index: Index, root: Root): JObject = {
-    val defs = index.defsOf(pred)
-    val uses = index.usesOf(pred)
-    val locs = (defs ++ uses).toList.map(Location.from)
+  private def findPredReferences(pred: Name.Pred)(implicit index: Index, root: Root): JObject = {
+    val defSites = index.defsOf(pred)
+    val useSites = index.usesOf(pred)
+    val locs = (defSites ++ useSites).toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def findTagUses(sym: Symbol.EnumSym, tag: Name.Tag)(implicit index: Index, root: Root): JObject = {
-    val uses = index.usesOf(sym, tag)
-    val locs = uses.toList.map(Location.from)
+  private def findTagReferences(sym: Symbol.EnumSym, tag: Name.Tag)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(root.enums(sym).cases(tag).loc)
+    val useSites = index.usesOf(sym, tag)
+    val locs = defSite :: useSites.toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 
-  private def findVarUses(sym: Symbol.VarSym)(implicit index: Index, root: Root): JObject = {
-    val uses = index.usesOf(sym)
-    val locs = uses.toList.map(Location.from)
+  private def findVarReferences(sym: Symbol.VarSym)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(sym.loc)
+    val useSites = index.usesOf(sym)
+    val locs = defSite :: useSites.toList.map(Location.from)
     ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
   }
 

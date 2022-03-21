@@ -338,7 +338,6 @@ object Documentor {
     case Modifier.Lawless => "lawless"
     case Modifier.Override => "override"
     case Modifier.Public => "public"
-    case Modifier.Scoped => "scoped"
     case Modifier.Sealed => "sealed"
     case Modifier.Synthetic => "synthetic"
     case Modifier.Unlawful => "unlawful"

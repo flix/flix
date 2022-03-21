@@ -139,7 +139,7 @@ object CodeHinter {
     case Expression.LetRec(_, _, exp1, exp2, _, eff, loc) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.LetRegion(_, exp, _, _, _) =>
+    case Expression.Scope(_, exp, _, _, _) =>
       visitExp(exp)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -193,10 +193,7 @@ object CodeHinter {
     case Expression.ArraySlice(exp1, exp2, exp3, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.Ref(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.RefWithRegion(exp1, exp2,_, _, _) =>
+    case Expression.Ref(exp1, exp2,_, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Deref(exp, _, _, _) =>
