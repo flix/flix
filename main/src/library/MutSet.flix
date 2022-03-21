@@ -24,7 +24,7 @@ instance Scoped[MutSet[t]] {
 }
 
 instance Newable[MutSet[t]] {
-    pub def new(r: Region[r]): MutSet[t, r] & reg(r) = MutSet.newWithRegion(r)
+    pub def new(r: Region[r]): MutSet[t, r] & reg(r) = MutSet.emptyWithRegion(r)
 }
 
 
@@ -33,7 +33,7 @@ namespace MutSet {
     ///
     /// Returns a fresh empty set.
     ///
-    pub def newWithRegion(r: Region[r]): MutSet[a, r] & reg(r) =
+    pub def emptyWithRegion(r: Region[r]): MutSet[a, r] & reg(r) =
         MutSet(ref Set.empty() @ r)
 
     ///
