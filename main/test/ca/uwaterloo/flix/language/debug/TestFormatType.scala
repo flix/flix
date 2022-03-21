@@ -212,6 +212,22 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
+  test("FormatType.SchemaRow.External.04") {
+    val name = Name.mkQName("X")
+    val ident = name.ident
+    val sym = Symbol.mkTypeAliasSym(name.namespace, ident)
+    val latticeType1 = Type.mkLattice(List(Type.Str, Type.Bool), loc)
+    val alias = Type.Alias(Type.AliasConstructor(sym, loc), Nil, Type.RecordRowEmpty, loc)
+
+
+    val tpe = Type.mkSchemaRowExtend(Name.Pred("X", loc), latticeType1, Type.SchemaRowEmpty, loc)
+
+    val expected = "#( X(String; Bool) )"
+    val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
+
+    assert(actual == expected)
+  }
+
   test("FormatType.Enum.External.07") {
     val tvar1 = Type.KindedVar(1, Kind.Star, loc, Rigidity.Flexible)
     val tvar2 = Type.KindedVar(2, Kind.Star, loc, Rigidity.Flexible)
