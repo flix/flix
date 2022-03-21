@@ -1075,9 +1075,8 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.New(sp1, qname, exp, sp2) =>
+    case ParsedAst.Expression.New(_, qname, exp, sp2) =>
       // TODO: Use qname later for ascribe.
-      val loc = mkSL(sp1, sp2)
       mapN(traverse(exp)(visitExp).map(_.headOption)) {
         case e =>
           ///
@@ -1085,9 +1084,9 @@ object Weeder {
           /// Translate [[new Foo]]    => Newable.new(defaultRegion)
           ///
           val targetName = Name.mkQName("Newable.new", qname.sp1, qname.sp2)
-          val e1 = WeededAst.Expression.DefOrSig(targetName, loc)
-          val e2 = getRegionOrDefault(e, loc)
-          WeededAst.Expression.Apply(e1, List(e2), loc)
+          val e1 = WeededAst.Expression.DefOrSig(targetName, mkSL(qname.sp1, qname.sp2))
+          val e2 = getRegionOrDefault(e, mkSL(qname.sp1, qname.sp2))
+          WeededAst.Expression.Apply(e1, List(e2), mkSL(qname.sp2, sp2))
       }
 
     case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
