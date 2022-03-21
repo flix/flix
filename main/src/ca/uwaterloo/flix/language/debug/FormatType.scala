@@ -22,7 +22,12 @@ object FormatType {
     * Transforms the given well-kinded type into a string.
     */
   def formatWellKindedType(tpe: Type)(implicit audience: Audience): String = {
-    format(SimpleType.fromWellKindedType(tpe))
+    // TODO: Remove after we're confident in the formatter.
+    try {
+      format(SimpleType.fromWellKindedType(tpe))
+    } catch {
+      case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
+    }
   }
 
   /**
@@ -251,12 +256,7 @@ object FormatType {
         fields.map(visit(_, Mode.Type)).mkString("(", ", ", ")")
     }
 
-    // TODO: Remove after we're confident in the formatter.
-    try {
       visit(tpe00, Mode.Type)
-    } catch {
-      case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
-    }
   }
 
   /**
