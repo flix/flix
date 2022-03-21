@@ -942,7 +942,10 @@ namespace File {
     /// Moves a file or directory from path `src` to path `dst`.
     ///
     /// Returns `Ok(())` if `src` was moved, and `dst` did not already exist.
-    /// Returns `Err(msg)` if `src` was not moved, because `dst` already exists or is a subpath of `src`, or an I/O error occurred.
+    /// Returns `Err(msg)` if `src` was not moved because:
+    /// - `dst` already exists, or
+    /// - `dst` is a subpath of `src`, or
+    /// - an I/O error occurred.
     ///
     pub def move(src: {src :: String} , dst: String): Result[Unit, String] & Impure =
         try {
