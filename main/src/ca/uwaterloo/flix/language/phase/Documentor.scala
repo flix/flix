@@ -64,7 +64,12 @@ object Documentor {
     //
     val classesByNS = root.classes.values.groupBy(getNameSpace).flatMap {
       case (ns, decls) =>
-        val filtered = decls.filter(_.mod.isPublic).toList
+        def isInternal(clazz: TypedAst.Class): Boolean =
+          clazz.ann.exists(a => a.name match {
+            case Ast.Annotation.Internal(_) => true
+            case _ => false
+          })
+        val filtered = decls.filter(clazz => clazz.mod.isPublic && !isInternal(clazz)).toList
         val sorted = filtered.sortBy(_.sym.name)
         if (sorted.isEmpty)
           None
@@ -84,7 +89,12 @@ object Documentor {
     //
     val enumsByNS = root.enums.values.groupBy(getNameSpace).flatMap {
       case (ns, decls) =>
-        val filtered = decls.filter(_.mod.isPublic).toList
+        def isInternal(enum: TypedAst.Enum): Boolean =
+          enum.ann.exists(a => a.name match {
+            case Ast.Annotation.Internal(_) => true
+            case _ => false
+          })
+        val filtered = decls.filter(enum => enum.mod.isPublic && !isInternal(enum)).toList
         val sorted = filtered.sortBy(_.sym.name)
         if (sorted.isEmpty)
           None
@@ -328,7 +338,6 @@ object Documentor {
     case Modifier.Lawless => "lawless"
     case Modifier.Override => "override"
     case Modifier.Public => "public"
-    case Modifier.Scoped => "scoped"
     case Modifier.Sealed => "sealed"
     case Modifier.Synthetic => "synthetic"
     case Modifier.Unlawful => "unlawful"
@@ -382,8 +391,9 @@ object Documentor {
     * Returns the given Enum `enum` as a JSON value.
     */
   private def visitEnum(enum0: Enum, instances: Map[Symbol.EnumSym, List[Instance]]): JObject = enum0 match {
-    case Enum(doc, _, sym, tparams, derives, cases, _, _, loc) =>
+    case Enum(doc, ann, _, sym, tparams, derives, cases, _, _, loc) =>
       ("doc" -> visitDoc(doc)) ~
+        ("ann" -> visitAnnotations(ann))
         ("sym" -> visitEnumSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
         ("cases" -> cases.values.toList.sortBy(_.loc).map(visitCase)) ~
@@ -405,7 +415,7 @@ object Documentor {
     * Return the given class `clazz` as a JSON value.
     */
   private def visitClass(cla: Class)(implicit root: Root): JObject = cla match {
-    case Class(doc, mod, sym, tparam, superClasses, signatures0, _, loc) =>
+    case Class(doc, ann, mod, sym, tparam, superClasses, signatures0, _, loc) =>
       val (sigs0, defs0) = signatures0.partition(_.impl.isEmpty)
 
       val sigs = sigs0.sortBy(_.sym.name).map(visitSig)
@@ -414,6 +424,7 @@ object Documentor {
 
       ("sym" -> visitClassSym(sym)) ~
         ("doc" -> visitDoc(doc)) ~
+        ("ann" -> visitAnnotations(ann)) ~
         ("mod" -> visitModifier(mod)) ~
         ("tparam" -> visitTypeParam(tparam)) ~
         ("superClasses" -> superClasses.map(visitTypeConstraint)) ~

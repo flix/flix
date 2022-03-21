@@ -759,6 +759,21 @@ def foldRight03(): Bool = Map.foldRight((v, s) -> s + v, 0, Map#{1 => 2, 3 => 4}
 def foldRight04(): Bool = Map.foldRight((v, s) -> s + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}) == 12
 
 /////////////////////////////////////////////////////////////////////////////
+// foldRightLazy                                                           //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldRightLazy01(): Bool = Map.foldRightLazy((v, s) -> force s + v, 0, Map#{}) == 0
+
+@test
+def foldRightLazy02(): Bool = Map.foldRightLazy((v, s) -> force s + v, 0, Map#{1 => 2}) == 2
+
+@test
+def foldRightLazy03(): Bool = Map.foldRightLazy((v, s) -> force s + v, 0, Map#{1 => 2, 3 => 4}) == 6
+
+@test
+def foldRightLazy04(): Bool = Map.foldRightLazy((v, s) -> force s + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}) == 12
+
+/////////////////////////////////////////////////////////////////////////////
 // foldRightWithKey                                                        //
 /////////////////////////////////////////////////////////////////////////////
 @test

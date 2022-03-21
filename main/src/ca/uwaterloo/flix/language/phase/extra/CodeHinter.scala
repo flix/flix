@@ -27,8 +27,10 @@ object CodeHinter {
     * Returns a collection of code quality hints for the given AST `root`.
     */
   def run(root: TypedAst.Root, sources: Set[String])(implicit flix: Flix): List[CodeHint] = {
-    val codeHints = root.defs.values.flatMap(visitDef(_)(root)).toList
-    codeHints.filter(include(_, sources))
+    val classHints = root.classes.values.flatMap(visitClass(_)(root)).toList
+    val defsHints = root.defs.values.flatMap(visitDef(_)(root)).toList
+    val enumsHints = root.enums.values.flatMap(visitEnum(_)(root)).toList
+    (classHints ++ defsHints ++ enumsHints).filter(include(_, sources))
   }
 
   /**
@@ -36,6 +38,28 @@ object CodeHinter {
     */
   private def include(hint: CodeHint, sources: Set[String]): Boolean =
     sources.contains(hint.loc.source.name)
+
+  /**
+    * Computes code quality hints for the given enum `enum`.
+    */
+  private def visitEnum(enum: TypedAst.Enum)(implicit root: Root): List[CodeHint] = {
+    val isDeprecated = enum.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
+    val deprecated = if (isDeprecated) CodeHint.Deprecated(enum.loc) :: Nil else Nil
+    val isExperimental = enum.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Experimental])
+    val experimental = if (isExperimental) CodeHint.Experimental(enum.loc) :: Nil else Nil
+    deprecated ++ experimental
+  }
+
+  /**
+    * Computes code quality hints for the given class `typeclass`.
+    */
+  private def visitClass(typeclass: TypedAst.Class)(implicit root: Root): List[CodeHint] = {
+    val isDeprecated = typeclass.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
+    val deprecated = if (isDeprecated) CodeHint.Deprecated(typeclass.loc) :: Nil else Nil
+    val isExperimental = typeclass.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Experimental])
+    val experimental = if (isExperimental) CodeHint.Experimental(typeclass.loc) :: Nil else Nil
+    deprecated ++ experimental
+  }
 
   /**
     * Computes code quality hints for the given definition `def0`.
@@ -115,7 +139,7 @@ object CodeHinter {
     case Expression.LetRec(_, _, exp1, exp2, _, eff, loc) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.LetRegion(_, exp, _, _, _) =>
+    case Expression.Scope(_, exp, _, _, _) =>
       visitExp(exp)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -169,10 +193,7 @@ object CodeHinter {
     case Expression.ArraySlice(exp1, exp2, exp3, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.Ref(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.RefWithRegion(exp1, exp2,_, _, _) =>
+    case Expression.Ref(exp1, exp2,_, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Deref(exp, _, _, _) =>

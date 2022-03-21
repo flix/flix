@@ -31,15 +31,15 @@ namespace StringBuilder {
     ///
     /// Append `x` to the StringBuilder `sb`.
     ///
-    pub def append!(sb: StringBuilder, x: a): Unit & Impure with ToString[a] =
+    pub def append!(x: a, sb: StringBuilder): Unit & Impure with ToString[a] =
         let s = ToString.toString(x);
-        sb `appendString!` s;
+        s `appendString!` sb;
         ()
 
     ///
     /// Append the String `s` to the StringBuilder `sb`.
     ///
-    pub def appendString!(sb: StringBuilder, s: String): Unit & Impure =
+    pub def appendString!(s: String, sb: StringBuilder): Unit & Impure =
         import java.lang.StringBuilder.append(String): ##java.lang.StringBuilder & Impure;
         let StringBuilder(msb) = sb;
         msb `append` s;
@@ -49,44 +49,44 @@ namespace StringBuilder {
     /// Append the system line separator to the StringBuilder `sb`.
     ///
     pub def appendLineSeparator!(sb: StringBuilder): Unit & Impure =
-        sb `appendString!` String.lineSeparator()
+        String.lineSeparator() `appendString!` sb
 
     ///
     /// Append the String `s` followed by the system line separator to the StringBuilder `sb`.
     ///
-    pub def appendLine!(sb: StringBuilder, s: String): Unit & Impure =
-        sb `appendString!` s;
+    pub def appendLine!(s: String, sb: StringBuilder): Unit & Impure =
+        s `appendString!` sb;
         appendLineSeparator!(sb)
 
     ///
     /// Appends `f(x)` to the string builder `sb`.
     ///
-    pub def appendLineWith!(sb: StringBuilder, f: a -> String, x: a): Unit & Impure =
-        sb `appendString!` f(x);
+    pub def appendLineWith!(f: a -> String, x: a, sb: StringBuilder): Unit & Impure =
+        f(x) `appendString!` sb;
         appendLineSeparator!(sb)
 
     ///
     /// Appends each string in the array `a` to the string builder `sb`.
     ///
-    pub def appendLines!(sb: StringBuilder, a: Array[String]): Unit & Impure =
-        Array.foreach(appendLine!(sb), a)
+    pub def appendLines!(a: Array[String], sb: StringBuilder): Unit & Impure =
+        Array.foreach(x -> appendLine!(x, sb), a)
 
     ///
     /// Appends `f(x)` for each x in array `a` to the string builder `sb`.
     ///
-    pub def appendLinesWith!(sb: StringBuilder, f: a -> String, a: Array[a]): Unit & Impure =
-        Array.foreach(appendLineWith!(sb, f), a)
+    pub def appendLinesWith!(f: a -> String, a: Array[a], sb: StringBuilder): Unit & Impure =
+        Array.foreach(x -> appendLineWith!(f, x, sb), a)
 
     ///
     /// Append the array of strings `a` separating each pair of string with `sep` to the StringBuilder `sb`.
     ///
-    pub def intercalate!(sb: StringBuilder, sep: String, a: Array[String]): Unit & Impure =
+    pub def intercalate!(sep: String, a: Array[String], sb: StringBuilder): Unit & Impure =
         let append1! = (s,i) ->
             if (i > 0) {
-                appendString!(sb, sep);
-                appendString!(sb, s)
+                appendString!(sep, sb);
+                appendString!(s, sb)
             } else {
-                appendString!(sb, s)
+                appendString!(s, sb)
             };
        Array.foreachWithIndex(append1!, a)
 

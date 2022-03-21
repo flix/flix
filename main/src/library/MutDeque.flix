@@ -354,7 +354,7 @@ namespace MutDeque {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foldLeft((_, x) -> { append!(sb, f(x)); append!(sb, sep) }, (), d);
+        foreach(x -> { append!(f(x), sb); append!(sep, sb) }, d);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
 
     ///

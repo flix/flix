@@ -133,7 +133,13 @@ namespace Set {
     ///
     @Time(e - b) @Space(e - b)
     pub def range(b: Int32, e: Int32): Set[Int32] =
-        if (b >= e) empty() else rangeHelper(b, e - 1, empty())
+        def loop(i, s) = {
+            if (i >= e)
+                s
+            else
+                loop(i + 1, insert(i, s))
+        };
+        loop(b, empty())
 
     ///
     /// Adds `x` to `s`.
@@ -293,6 +299,18 @@ namespace Set {
     pub def foldRight(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef =
         let Set(t) = s1;
         RedBlackTree.foldRight((k, _, acc) -> f(k, acc), s, t)
+
+    ///
+    /// Lazily applies `f` to a start value `s` and all elements in `s` going from right to left.
+    /// The function f must be pure.
+    ///
+    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
+    /// The foldRightLazy function exists to allow early termination of a fold.
+    ///
+    @Experimental @Lazy
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b, i: b, s: Set[a]): b =
+        let Set(es) = s;
+        RedBlackTree.foldRightLazy((k, _, acc) -> f(k, acc), i, es)
 
     ///
     /// Applies `f` to all elements in `s` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -529,7 +547,7 @@ namespace Set {
     /// Returns a map with elements of `s` as keys and `f` applied as values.
     ///
     pub def toMapWith(f: a -> b, s: Set[a]): Map[a, b] with Order[a] =
-            Set.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
+        Set.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
 
     ///
     /// Applies `f` to every element of `s`.
@@ -546,15 +564,12 @@ namespace Set {
     ///
     /// `f` should return `None` to signal the end of building the set.
     ///
-    pub def unfold(f: s -> Option[(a, s)] & ef, st: s): Set[a] & ef with Order[a] = unfoldHelper(f, st, empty())
-
-    ///
-    /// Helper function for `unfold`.
-    ///
-    def unfoldHelper(f: s -> Option[(a, s)] & ef, st: s, acc: Set[a]): Set[a] & ef with Order[a] = match f(st) {
-        case None => acc
-        case Some((a, st1)) => unfoldHelper(f, st1, insert(a, acc))
-    }
+    pub def unfold(f: s -> Option[(a, s)] & ef, st: s): Set[a] & ef with Order[a] =
+        def loop(sst, s) = match f(sst) {
+            case None         => s
+            case Some(a, st1) => loop(st1, insert(a, s))
+        };
+        loop(st, empty())
 
     ///
     /// Build a set by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -564,21 +579,12 @@ namespace Set {
     ///
     /// `next` should return `None` to signal the end of building the set.
     ///
-    pub def unfoldWithIter(next: Unit -> Option[a] & ef): Set[a] & ef with Order[a] = unfoldWithIterHelper(next, empty())
-
-    ///
-    /// Helper function for `unfoldWithIter`.
-    ///
-    def unfoldWithIterHelper(next: Unit -> Option[a] & ef, acc: Set[a]): Set[a] & ef with Order[a] = match next() {
-        case None => acc
-        case Some(a) => unfoldWithIterHelper(next, insert(a, acc))
-    }
-
-    ///
-    /// Helper function for `range`.
-    ///
-    def rangeHelper(b: Int32, n: Int32, acc: Set[Int32]): Set[Int32] =
-        if (n < b) acc else rangeHelper(b, n - 1, insert(n, acc))
+    pub def unfoldWithIter(next: Unit -> Option[a] & ef): Set[a] & ef with Order[a] =
+        def loop(s) = match next() {
+            case None    => s
+            case Some(a) => loop(insert(a, s))
+        };
+        loop(empty())
 
     ///
     /// Returns the set `s` as a `DelayList`.
@@ -588,7 +594,6 @@ namespace Set {
 
     ///
     /// Returns an iterator over `s`.
-    /// TODO: rewrite to not use `toList`.
     ///
     pub def toIterator(s: Set[a]): Iterator[a] & Impure =
         List.toIterator(Set.toList(s))

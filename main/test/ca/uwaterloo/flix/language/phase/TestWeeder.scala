@@ -551,4 +551,66 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalModifier](result)
   }
+
+  test("ReservedName.Def.01") {
+    val input =
+      """
+        |pub def |||(x: a, y: a): a = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.ReservedName](result)
+  }
+
+  test("ReservedName.Def.02") {
+    val input =
+      """
+        |pub def def(x: a, y: a): a = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.ReservedName](result)
+  }
+
+  test("ReservedName.Sig.01") {
+    val input =
+      """
+        |class C[a] {
+        |    pub def <+>(x: a): a
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.ReservedName](result)
+  }
+
+  test("ReservedName.Sig.02") {
+    val input =
+      """
+        |class C[a] {
+        |    pub def pub(x: a): a
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.ReservedName](result)
+  }
+
+  test("ReservedName.Law.01") {
+    val input =
+      """
+        |class C[a] {
+        |    law ^^^: forall (x: a) . true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.ReservedName](result)
+  }
+
+  test("ReservedName.Law.02") {
+    val input =
+      """
+        |class C[a] {
+        |    law law: forall (x: a) . true
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.ReservedName](result)
+  }
 }

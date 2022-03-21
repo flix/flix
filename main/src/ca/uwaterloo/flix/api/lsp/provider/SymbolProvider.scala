@@ -60,7 +60,7 @@ object SymbolProvider {
     * Returns an Interface SymbolInformation from a Class node.
     */
   private def mkClassSymbolInformation(c: TypedAst.Class) = c match {
-    case TypedAst.Class(_, _, sym, _, _, _, _, _) => SymbolInformation(
+    case TypedAst.Class(_, _, _, sym, _, _, _, _, _) => SymbolInformation(
       sym.name, SymbolKind.Interface, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
     )
   }
@@ -70,7 +70,7 @@ object SymbolProvider {
     * It navigates the AST and adds Sig and TypeParam of c and as children DocumentSymbols.
     */
   private def mkClassDocumentSymbol(c: TypedAst.Class): DocumentSymbol = c match {
-    case TypedAst.Class(doc, _, sym, tparam, _, signatures, _, _) => DocumentSymbol(
+    case TypedAst.Class(doc, _, _, sym, tparam, _, signatures, _, _) => DocumentSymbol(
       sym.name,
       Some(doc.text),
       SymbolKind.Interface,
@@ -131,7 +131,7 @@ object SymbolProvider {
     * It navigates the AST and adds Cases of enum as children DocumentSymbols.
     */
   private def mkEnumDocumentSymbol(enum: TypedAst.Enum): DocumentSymbol = enum match {
-    case TypedAst.Enum(doc, _, sym, tparams, _, cases, _, _, loc) => DocumentSymbol(
+    case TypedAst.Enum(doc, _, _, sym, tparams, _, cases, _, _, loc) => DocumentSymbol(
       sym.name,
       Some(doc.text),
       SymbolKind.Enum,
@@ -156,7 +156,7 @@ object SymbolProvider {
     * It navigates the AST and returns also the Cases of the enum to the returned List.
     */
   private def mkEnumSymbolInformation(enum: TypedAst.Enum): List[SymbolInformation] = enum match {
-    case TypedAst.Enum(_, _, sym, _, _, cases, _, _, loc) =>
+    case TypedAst.Enum(_, _, _, sym, _, _, cases, _, _, loc) =>
       cases.values.map(mkCaseSymbolInformation).toList :+ SymbolInformation(
           sym.name, SymbolKind.Enum, Nil, deprecated = false, Location(loc.source.name, Range.from(loc)), None,
       )

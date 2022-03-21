@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Matthew Lutze
+ * Copyright 2022 Christian Bonde, Patrick Lundvig, Anna Krogh
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ca.uwaterloo.flix.language.ast
 
+sealed trait Purity
+
 /**
-  * Indicates whether a variable is scoped.
-  * A scoped value must not escape its scope.
-  */
-sealed trait Scopedness
+ * Represents the purity (or impurity) of an expression.
+ */
+object Purity {
 
-object Scopedness {
-  case object Scoped extends Scopedness
+  /**
+   * Represents a pure expression (i.e. an expression that cannot have side-effects).
+   */
+  case object Pure extends Purity
 
-  case object Unscoped extends Scopedness
+  /**
+   * Represents an impure expression (i.e. an expression that could potentially have side-effects).
+   */
+  case object Impure extends Purity
 }

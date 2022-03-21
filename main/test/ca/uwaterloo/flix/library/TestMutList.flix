@@ -560,6 +560,25 @@ namespace TestMutList {
     def foldRight05(): Bool & Impure = MutList.foldRight((x, acc) -> x + acc, 42, MutList.new()) == 42
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldRightLazy                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightLazy01(): Bool & Impure = MutList.foldRightLazy((x, acc) -> force acc + x, 0, MutList.range(1, 5)) == 10
+
+    @test
+    def foldRightLazy02(): Bool & Impure = MutList.foldRightLazy((x, acc) -> Int32.toString(x) + force acc, "", MutList.range(3, 8)) == "34567"
+
+    @test
+    def foldRightLazy03(): Bool & Impure = MutList.foldRightLazy((x, acc) -> x :: force acc, Nil, MutList.range(0, 6)) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+
+    @test
+    def foldRightLazy04(): Bool & Impure = MutList.foldRightLazy((x, acc) -> x - force acc, 0, MutList.range(0, 100)) == -50
+
+    @test
+    def foldRightLazy05(): Bool & Impure = MutList.foldRightLazy((x, acc) -> x + force acc, 42, MutList.new()) == 42
+
+    /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1131,7 +1150,7 @@ namespace TestMutList {
     def foreach01(): Bool & Impure =
         let v = MutList.new();
         let sb = StringBuilder.new();
-        let f = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let f = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == ""
 
@@ -1139,7 +1158,7 @@ namespace TestMutList {
     def foreach02(): Bool & Impure =
         let v = MutList.range(0, 5);
         let sb = StringBuilder.new();
-        let f = x -> if (x rem 2 == 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let f = x -> if (x rem 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == "TFTFT"
 
@@ -1147,7 +1166,7 @@ namespace TestMutList {
     def foreach03(): Bool & Impure =
         let v = MutList.range(0, 2);
         let sb = StringBuilder.new();
-        let f = x -> if (x > 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let f = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == "FT"
 
@@ -1155,7 +1174,7 @@ namespace TestMutList {
     def foreach04(): Bool & Impure =
         let v = MutList.range(0, 2);
         let sb = StringBuilder.new();
-        let f = x -> if (x < 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let f = x -> if (x < 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == "FF"
 
@@ -1174,7 +1193,7 @@ namespace TestMutList {
     def foreachWithIndex02(): Bool & Impure =
         let v = MutList.range(1, 4);
         let sb = StringBuilder.new();
-        let f = (x, i) -> if (x rem 2 == 1 and i == 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let f = (x, i) -> if (x rem 2 == 1 and i == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFF"
 
@@ -1182,7 +1201,7 @@ namespace TestMutList {
     def foreachWithIndex03(): Bool & Impure =
         let v = MutList.range(0, 5);
         let sb = StringBuilder.new();
-        let f = (x, _) -> if (x rem 2 == 0) StringBuilder.append!(sb, 'T') else StringBuilder.append!(sb, 'F');
+        let f = (x, _) -> if (x rem 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFTFT"
 

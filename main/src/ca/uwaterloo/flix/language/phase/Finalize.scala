@@ -53,14 +53,14 @@ object Finalize {
   }
 
   private def visitEnum(enum0: LiftedAst.Enum, m: TopLevel)(implicit flix: Flix): FinalAst.Enum = enum0 match {
-    case LiftedAst.Enum(mod, sym, cases0, tpe0, loc) =>
+    case LiftedAst.Enum(ann, mod, sym, cases0, tpe0, loc) =>
       val cases = cases0.map {
         case (tag, LiftedAst.Case(enumSym, tagName, tagType, tagLoc)) =>
           val tpe = visitType(tagType)
           tag -> FinalAst.Case(enumSym, tagName, tpe, tagLoc)
       }
       val tpe = visitType(tpe0)
-      FinalAst.Enum(mod, sym, cases, tpe, loc)
+      FinalAst.Enum(ann, mod, sym, cases, tpe, loc)
   }
 
   private def visitExp(exp0: LiftedAst.Expression, m: TopLevel)(implicit flix: Flix): FinalAst.Expression = {
@@ -171,7 +171,7 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.JumpTo(sym, t, loc)
 
-      case LiftedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
+      case LiftedAst.Expression.Let(sym, exp1, exp2, tpe, _, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         val t = visitType(tpe)

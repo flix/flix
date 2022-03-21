@@ -129,8 +129,8 @@ class Flix {
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
     "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
+    "DelayList.flix" -> LocalResource.get("/src/library/DelayList.flix"),
     "DelayMap.flix" -> LocalResource.get("/src/library/DelayMap.flix"),
-    "DemandList.flix" -> LocalResource.get("/src/library/DemandList.flix"),
     "Float32.flix" -> LocalResource.get("/src/library/Float32.flix"),
     "Float64.flix" -> LocalResource.get("/src/library/Float64.flix"),
     "Int8.flix" -> LocalResource.get("/src/library/Int8.flix"),
@@ -139,15 +139,16 @@ class Flix {
     "Int64.flix" -> LocalResource.get("/src/library/Int64.flix"),
     "Iterable.flix" -> LocalResource.get("/src/library/Iterable.flix"),
     "Iterator.flix" -> LocalResource.get("/src/library/Iterator.flix"),
-    "DelayList.flix" -> LocalResource.get("/src/library/DelayList.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),
     "Map.flix" -> LocalResource.get("/src/library/Map.flix"),
     "Nec.flix" -> LocalResource.get("/src/library/Nec.flix"),
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
+    "Newable.flix" -> LocalResource.get("/src/library/Newable.flix"),
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
+    "Scoped.flix" -> LocalResource.get("/src/library/Scoped.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
     "System.flix" -> LocalResource.get("/src/library/System.flix"),
@@ -465,8 +466,7 @@ class Flix {
       afterStratifier <- Stratifier.run(afterInstances)
       afterPatternExhaustiveness <- PatternExhaustiveness.run(afterStratifier)
       afterRedundancy <- Redundancy.run(afterPatternExhaustiveness)
-      afterTerminator <- Terminator.run(afterRedundancy)
-      afterSafety <- Safety.run(afterTerminator)
+      afterSafety <- Safety.run(afterRedundancy)
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {
@@ -507,9 +507,7 @@ class Flix {
       afterClosureConv <- ClosureConv.run(afterSimplifier)
       afterLambdaLift <- LambdaLift.run(afterClosureConv)
       afterTailrec <- Tailrec.run(afterLambdaLift)
-      afterOccurrenceAnalyzer <- OccurrenceAnalyzer.run(afterTailrec)
-      afterInliner <- Inliner.run(afterOccurrenceAnalyzer)
-      afterOptimizer <- Optimizer.run(afterInliner)
+      afterOptimizer <- Optimizer.run(afterTailrec)
       afterTreeShaker <- TreeShaker.run(afterOptimizer)
       afterVarNumbering <- VarNumbering.run(afterTreeShaker)
       afterFinalize <- Finalize.run(afterVarNumbering)

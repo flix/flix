@@ -31,7 +31,7 @@ object ErasedAst {
     var method: Method = _
   }
 
-  case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, ErasedAst.Case], tpeDeprecated: MonoType, loc: SourceLocation)
+  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, ErasedAst.Case], tpeDeprecated: MonoType, loc: SourceLocation)
 
   sealed trait Expression {
     def tpe: MonoType

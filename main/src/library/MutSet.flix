@@ -36,14 +36,14 @@ namespace MutSet {
     ///
     /// Adds the element `x` to the mutable set `s`.
     ///
-    pub def add!(x: a, s: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def add!(x: a, s: MutSet[a]): Unit & Impure with Order[a] =
         let MutSet(ms) = s;
         ms := Set.insert(x, deref ms)
 
     ///
     /// Adds all elements in the mutable set `s1` to the mutable set `s2`.
     ///
-    pub def addAll!(s1: MutSet[a], s2: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def addAll!(s1: MutSet[a], s2: MutSet[a]): Unit & Impure with Order[a] =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         ms2 := Set.union(deref ms1, deref ms2)
@@ -51,21 +51,21 @@ namespace MutSet {
     ///
     /// Removes all elements from the mutable set `s`.
     ///
-    pub def clear!(s: mut MutSet[a]): Unit & Impure =
+    pub def clear!(s: MutSet[a]): Unit & Impure =
         let MutSet(ms) = s;
         ms := Set.empty()
 
     ///
     /// Removes the element `x` from the mutable set `s`.
     ///
-    pub def remove!(x: a, s: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def remove!(x: a, s: MutSet[a]): Unit & Impure with Order[a] =
         let MutSet(ms) = s;
         ms := Set.remove(x, deref ms)
 
     ///
     /// Removes all elements in the mutable set `s1` from the mutable set `s2`.
     ///
-    pub def removeAll!(s1: MutSet[a], s2: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def removeAll!(s1: MutSet[a], s2: MutSet[a]): Unit & Impure with Order[a] =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         ms2 := Set.difference(deref ms2, deref ms1)
@@ -73,7 +73,7 @@ namespace MutSet {
     ///
     /// Removes all elements from the mutable set `s2` that are not in the mutable set `s1`.
     ///
-    pub def retainAll!(s1: MutSet[a], s2: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def retainAll!(s1: MutSet[a], s2: MutSet[a]): Unit & Impure with Order[a] =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         ms2 := Set.intersection(deref ms1, deref ms2)
@@ -83,7 +83,7 @@ namespace MutSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def refine!(f: a -> Bool, s: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def refine!(f: a -> Bool, s: MutSet[a]): Unit & Impure with Order[a] =
         let MutSet(ms) = s;
         ms := Set.filter(f, deref ms)
 
@@ -92,14 +92,14 @@ namespace MutSet {
     ///
     /// The mutable set `s` is unchanged if the element `from` is not in it.
     ///
-    pub def replace!(from: {from :: a}, to: {to :: a}, s: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def replace!(from: {from :: a}, to: {to :: a}, s: MutSet[a]): Unit & Impure with Order[a] =
         let MutSet(ms) = s;
         ms := Set.replace(from = from.from, to = to.to, deref ms)
 
     ///
     /// Applies the function `f` to every element in the mutable set `s`.
     ///
-    pub def transform!(f: a -> a & ef, s: mut MutSet[a]): Unit & Impure with Order[a] =
+    pub def transform!(f: a -> a & ef, s: MutSet[a]): Unit & Impure with Order[a] =
         let MutSet(ms) = s;
         ms := Set.map(f, deref ms)
 
@@ -224,6 +224,16 @@ namespace MutSet {
     pub def foldRight(f: (a, b) -> b & ef, i: b, s: MutSet[a]): b & Impure =
         let MutSet(ms) = s;
         Set.foldRight(f, i, deref ms)
+
+    ///
+    /// Lazily applies `f` to a start value `s` and all elements in `s` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
+    /// The foldRightLazy function exists to allow early termination of a fold.
+    ///
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b, i: b, s: MutSet[a]): b & Impure =
+        let MutSet(ms) = s;
+        Set.foldRightLazy(f, i, deref ms)
 
     ///
     /// Applies `f` to all elements in the mutable set `s` going from left to right until a single value `v` is obtained. Returns `Some(v)`.

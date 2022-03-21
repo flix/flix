@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
-import ca.uwaterloo.flix.language.phase.{Kinder, Monomorph}
+import ca.uwaterloo.flix.language.phase.Kinder
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
@@ -611,10 +611,16 @@ object Type {
   def mkLazy(tpe: Type, loc: SourceLocation): Type = Type.Apply(Type.Cst(TypeConstructor.Lazy, loc), tpe, loc)
 
   /**
-    * Returns the type `ScopedRef[tpe, lifetime]` with the given optional source location `loc`.
+    * Returns the type `ScopedArray[tpe, reg]` with the given source location `loc`.
     */
-  def mkScopedRef(tpe1: Type, tpe2: Type, loc: SourceLocation): Type =
-    Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedRef, loc), tpe1, loc), tpe2, loc)
+  def mkScopedArray(tpe: Type, reg: Type, loc: SourceLocation): Type =
+    Apply(Apply(Type.Cst(TypeConstructor.ScopedArray, loc), tpe, loc), reg, loc)
+
+  /**
+    * Returns the type `ScopedRef[tpe, reg]` with the given source location `loc`.
+    */
+  def mkScopedRef(tpe1: Type, reg: Type, loc: SourceLocation): Type =
+    Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedRef, loc), tpe1, loc), reg, loc)
 
   /**
     * Constructs the pure arrow type A -> B.
@@ -814,6 +820,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True, _)) => tpe1
     case (Type.Cst(TypeConstructor.False, _), _) => Type.False
     case (_, Type.Cst(TypeConstructor.False, _)) => Type.False
+    case (Type.KindedVar(id1, _, _, _, _), Type.KindedVar(id2, _, _, _, _)) if id1 == id2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.And, tpe1, loc), tpe2, loc)
   }
 
@@ -844,6 +851,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True, _)) => Type.True
     case (Type.Cst(TypeConstructor.False, _), _) => tpe2
     case (_, Type.Cst(TypeConstructor.False, _)) => tpe1
+    case (Type.KindedVar(id1, _, _, _, _), Type.KindedVar(id2, _, _, _, _)) if id1 == id2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.Or, tpe1, loc), tpe2, loc)
   }
 
@@ -858,10 +866,10 @@ object Type {
   }
 
   /**
-    * Returns a Region type for the given rigid variable `l` with the given source location `loc`.
+    * Returns a Region type for the given region argument `r` with the given source location `loc`.
     */
-  def mkRegion(l: Type.KindedVar, loc: SourceLocation): Type =
-    Type.Apply(Type.Cst(TypeConstructor.Region, loc), l, loc)
+  def mkRegion(r: Type, loc: SourceLocation): Type =
+    Type.Apply(Type.Cst(TypeConstructor.Region, loc), r, loc)
 
   /**
     * Returns the type `tpe1 => tpe2`.

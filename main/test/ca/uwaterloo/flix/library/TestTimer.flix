@@ -32,3 +32,8 @@ def testMicrosecondsTimer01(): Bool & Impure = select {
 def testNanosecondsTimer01(): Bool & Impure = select {
     case _ <- Concurrent/Channel/Timer.nanoseconds(0i64) => true
 }
+
+@test
+def testNanosecondsTimer02(): Bool & Impure = select {
+    case _ <- Concurrent/Channel/Timer.nanoseconds(999999i64) => true
+}

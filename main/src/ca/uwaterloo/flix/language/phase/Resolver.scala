@@ -280,15 +280,16 @@ object Resolver {
     * Resolves all the classes in the given root.
     */
   def resolveClass(c0: NamedAst.Class, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
-    case NamedAst.Class(doc, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
+    case NamedAst.Class(doc, ann0, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
       val tparam = Params.resolveTparam(tparam0)
       for {
+        ann <- traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
         sigsList <- traverse(signatures)(resolveSig(_, taenv, ns0, root))
         // ignore the parameter of the super class; we don't use it
         superClasses <- traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, taenv, ns0, root))
         laws <- traverse(laws0)(resolveDef(_, taenv, ns0, root))
         sigs = sigsList.map(sig => (sig.sym, sig)).toMap
-      } yield ResolvedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws, loc)
+      } yield ResolvedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
   }
 
   /**
@@ -390,6 +391,7 @@ object Resolver {
     val tparams = resolveTypeParams(e0.tparams, ns0, root)
     val tconstrs = Nil
     val derivesVal = resolveDerivations(e0.derives, ns0, root)
+    val annVal = traverse(e0.ann)(visitAnnotation(_, taenv, ns0, root))
     val casesVal = traverse(e0.cases) {
       case (name, NamedAst.Case(enum, tag, tpe)) =>
         for {
@@ -404,12 +406,13 @@ object Resolver {
         }
     }
     for {
+      ann <- annVal
       cases <- casesVal
       tpe <- resolveType(e0.tpe, taenv, ns0, root)
       derives <- derivesVal
     } yield {
       val sc = ResolvedAst.Scheme(tparams.tparams.map(_.tpe), tconstrs, tpe)
-      ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, derives, cases.toMap, tpe, sc, e0.loc)
+      ResolvedAst.Enum(e0.doc, ann, e0.mod, e0.sym, tparams, derives, cases.toMap, tpe, sc, e0.loc)
     }
   }
 
@@ -671,10 +674,13 @@ object Resolver {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.LetRec(sym, mod, e1, e2, loc)
 
-        case NamedAst.Expression.LetRegion(sym, exp, loc) =>
+        case NamedAst.Expression.Region(tpe, loc) =>
+          ResolvedAst.Expression.Region(tpe, loc).toSuccess
+
+        case NamedAst.Expression.Scope(sym, exp, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.LetRegion(sym, e, loc)
+          } yield ResolvedAst.Expression.Scope(sym, e, loc)
 
         case NamedAst.Expression.Match(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
@@ -812,16 +818,11 @@ object Resolver {
             i2 <- visit(endIndex, tenv0)
           } yield ResolvedAst.Expression.ArraySlice(b, i1, i2, loc)
 
-        case NamedAst.Expression.Ref(exp, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Ref(e, loc)
-
-        case NamedAst.Expression.RefWithRegion(exp1, exp2, loc) =>
+        case NamedAst.Expression.Ref(exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.RefWithRegion(e1, e2, loc)
+          } yield ResolvedAst.Expression.Ref(e1, e2, loc)
 
         case NamedAst.Expression.Deref(exp, loc) =>
           for {
