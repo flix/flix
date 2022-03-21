@@ -987,7 +987,7 @@ namespace File {
                     let javaFile = newFile(src.src);
                     let javaPath = toPath(javaFile);
                     let name = pathToString(getFileName(javaPath));
-                    let newDst = dst + "/" + name;
+                    let newDst = dst / name;
 
                     move(src = src.src, newDst)
                 }
