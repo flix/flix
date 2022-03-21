@@ -349,6 +349,7 @@ object SimpleType {
             case SchemaRow(fields) => Schema(fields)
             case SchemaRowExtend(fields, rest) => SchemaExtend(fields, rest)
             case tvar: Var => SchemaConstructor(tvar)
+            case alias: Name => SchemaConstructor(alias)
             case _ => throw IllKindedException
           }
           // Case 3: Too many args. Error.
