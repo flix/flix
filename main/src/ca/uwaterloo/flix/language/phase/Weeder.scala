@@ -2204,6 +2204,9 @@ object Weeder {
     * Returns the given read or write effect as a WeededAst type.
     */
   private def visitReadOrWrite(rw: ParsedAst.Effect, loc: SourceLocation): WeededAst.Type = rw match {
+    case Effect.Var(sp1, ident, sp2) =>
+      WeededAst.Type.Var(ident, mkSL(sp1, sp2))
+
     case Effect.Read(idents) =>
       if (idents.isEmpty)
         WeededAst.Type.True(loc)

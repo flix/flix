@@ -1428,7 +1428,7 @@ object ParsedAst {
       * @param efs the effects.
       * @param sp2 the position of the last character in the type.
       */
-    case class Union(sp1: SourcePosition, efs: Seq[Effect], sp2: SourcePosition) extends Type
+    case class Union(sp1: SourcePosition, efs: Seq[ParsedAst.Effect], sp2: SourcePosition) extends Type
 
     /**
       * Kind Ascription.
@@ -1449,18 +1449,27 @@ object ParsedAst {
   object Effect {
 
     /**
+      * Represents an effect variable.
+      *
+      * @param sp1   the position of the first character in the type.
+      * @param ident the variable name.
+      * @param sp2   the position of the last character in the type.
+      */
+    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Effect
+
+    /**
       * Represents a read of the region variables `idents`.
       *
       * @param idents the region variables that are read.
       */
-    case class Read(idents: Seq[Name.Ident]) extends Effect
+    case class Read(idents: Seq[Name.Ident]) extends ParsedAst.Effect
 
     /**
       * Represents a write of the region variables `idents`.
       *
       * @param idents the region variables that are written.
       */
-    case class Write(idents: Seq[Name.Ident]) extends Effect
+    case class Write(idents: Seq[Name.Ident]) extends ParsedAst.Effect
 
   }
 
