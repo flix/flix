@@ -423,14 +423,16 @@ object Monomorph {
         val r = visitExp(rest, env0)
         Expression.RecordRestrict(field, r, subst0(tpe), eff, loc)
 
-      case Expression.ArrayLit(elms, tpe, eff, loc) =>
-        val es = elms.map(e => visitExp(e, env0))
-        Expression.ArrayLit(es, subst0(tpe), eff, loc)
+      case Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
+        val es = exps.map(visitExp(_, env0))
+        val e = visitExp(exp, env0)
+        Expression.ArrayLit(es, e, subst0(tpe), eff, loc)
 
-      case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
-        val e = visitExp(elm, env0)
-        val ln = visitExp(len, env0)
-        Expression.ArrayNew(e, ln, subst0(tpe), eff, loc)
+      case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+        val e1 = visitExp(exp1, env0)
+        val e2 = visitExp(exp2, env0)
+        val e3 = visitExp(exp3, env0)
+        Expression.ArrayNew(e1, e2, e3, subst0(tpe), eff, loc)
 
       case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
         val b = visitExp(base, env0)

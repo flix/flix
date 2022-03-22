@@ -829,7 +829,16 @@ object Type {
     *
     * Must not be used before kinding.
     */
-  def mkAnd(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): Type = mkAnd(tpe1, mkAnd(tpe2, tpe3, loc), loc)
+  def mkAnd(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): Type =
+    mkAnd(tpe1, mkAnd(tpe2, tpe3, loc), loc)
+
+  /**
+    * Returns the type `And(tpe1, And(tpe2, And(tpe3, tpe4)))`.
+    *
+    * Must not be used before kinding.
+    */
+  def mkAnd(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation): Type =
+    mkAnd(tpe1, mkAnd(tpe2, mkAnd(tpe3, tpe4, loc), loc), loc)
 
   /**
     * Returns the type `And(tpe1, And(tpe2, ...))`.
