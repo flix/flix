@@ -19,14 +19,13 @@
 ///
 opaque type MutSet[t: Type, r: Region] = ScopedRef[Set[t], r]
 
-instance Scoped[MutSet[t]] {
-    pub def regionOf(_: MutSet[t, r]): Region[r] = () as Region[r]
-}
-
 instance Newable[MutSet[t]] {
     pub def new(r: Region[r]): MutSet[t, r] \ { Write(r) } = MutSet.emptyWithRegion(r)
 }
 
+instance Scoped[MutSet[t]] {
+    pub def regionOf(_: MutSet[t, r]): Region[r] = () as Region[r]
+}
 
 namespace MutSet {
 
