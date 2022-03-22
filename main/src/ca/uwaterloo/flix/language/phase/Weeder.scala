@@ -1274,10 +1274,7 @@ object Weeder {
       for {
         e1 <- visitExp(exp1)
         e2 <- Validation.traverse(exp2)(visitExp).map(_.headOption)
-      } yield {
-        val reg = getRegionOrDefault(e2, loc)
-        WeededAst.Expression.Ref(e1, reg, loc)
-      }
+      } yield WeededAst.Expression.Ref(e1, e2, loc)
 
     case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
       for {

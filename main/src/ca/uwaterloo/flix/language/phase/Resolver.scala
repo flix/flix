@@ -823,8 +823,11 @@ object Resolver {
         case NamedAst.Expression.Ref(exp1, exp2, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Ref(e1, e2, loc)
+            e2 <- traverse(exp2)(visit(_, tenv0)).map(_.headOption)
+          } yield {
+            val reg = getRegionOrDefault(e2, loc)
+            ResolvedAst.Expression.Ref(e1, reg, loc)
+          }
 
         case NamedAst.Expression.Deref(exp, loc) =>
           for {
@@ -2205,6 +2208,15 @@ object Resolver {
     * Returns the type `Or(tpe1, tpe2)`.
     */
   private def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, loc), tpe1, loc), tpe2, loc)
+
+  /**
+    * Returns the region expression `region` if it is non-None. Otherwise returns the global region.
+    */
+  private def getRegionOrDefault(region: Option[ResolvedAst.Expression], loc: SourceLocation): ResolvedAst.Expression = {
+    val tpe = Type.mkRegion(Type.False, loc)
+    val exp = ResolvedAst.Expression.Region(tpe, loc)
+    region.getOrElse(exp)
+  }
 
   /**
     * Enum describing the extent to which a class is accessible.
