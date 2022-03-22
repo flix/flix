@@ -1075,10 +1075,10 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.New(_, qname, exp, sp2) =>
+    case ParsedAst.Expression.New(sp1, qname, exp, sp2) =>
       mapN(traverse(exp)(visitExp).map(_.headOption)) {
         case e =>
-          WeededAst.Expression.New(qname, e, mkSL(qname.sp2, sp2))
+          WeededAst.Expression.New(qname, e, mkSL(qname.sp1, qname.sp2))
       }
 
     case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>

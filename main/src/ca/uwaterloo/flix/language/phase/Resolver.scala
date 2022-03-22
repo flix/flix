@@ -790,9 +790,10 @@ object Resolver {
             /// Translate [[new Foo(r)]] => Newable.new(r)
             /// Translate [[new Foo()]]  => Newable.new(currentRegion)
             ///
-            val sp = SourcePosition.Unknown
-            val classSym = Symbol.mkClassSym(Name.RootNS, Name.Ident(sp, "Newable", sp))
-            val sigSym = Symbol.mkSigSym(classSym, Name.Ident(sp, "new", sp))
+            val sp1 = qname.sp1
+            val sp2 = qname.sp2
+            val classSym = Symbol.mkClassSym(Name.RootNS, Name.Ident(sp1, "Newable", sp2))
+            val sigSym = Symbol.mkSigSym(classSym, Name.Ident(sp1, "new", sp2))
             val newExp = ResolvedAst.Expression.Sig(sigSym, loc)
             val reg = getExplicitOrImplicitRegion(er, region, loc)
             ResolvedAst.Expression.Apply(newExp, List(reg), loc)
@@ -2243,7 +2244,7 @@ object Resolver {
       currentRegion match {
         case Some(sym) =>
           // Case 2.1: Use the current region.
-          ResolvedAst.Expression.Var(sym, sym.tvar, loc)
+          ResolvedAst.Expression.Var(sym, sym.tvar, sym.loc)
         case None =>
           // Case 2.2: Use the global region.
           val tpe = Type.mkRegion(Type.False, loc)
