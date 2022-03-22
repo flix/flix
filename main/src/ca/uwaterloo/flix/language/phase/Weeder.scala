@@ -1076,33 +1076,23 @@ object Weeder {
       }
 
     case ParsedAst.Expression.New(_, qname, exp, sp2) =>
-      // TODO: Use qname later for ascribe.
       mapN(traverse(exp)(visitExp).map(_.headOption)) {
         case e =>
-          ///
-          /// Translate [[new Foo]](r) => Newable.new(r)
-          /// Translate [[new Foo]]    => Newable.new(defaultRegion)
-          ///
-          val targetName = Name.mkQName("Newable.new", qname.sp1, qname.sp2)
-          val e1 = WeededAst.Expression.DefOrSig(targetName, mkSL(qname.sp1, qname.sp2))
-          val e2 = getRegionOrDefault(e, mkSL(qname.sp1, qname.sp2))
-          WeededAst.Expression.Apply(e1, List(e2), mkSL(qname.sp2, sp2))
+          WeededAst.Expression.New(qname, e, mkSL(qname.sp2, sp2))
       }
 
     case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
       mapN(traverse(exps)(visitExp), traverse(exp)(visitExp).map(_.headOption)) {
         case (es, e) =>
-          val reg = getRegionOrDefault(e, loc)
-          WeededAst.Expression.ArrayLit(es, reg, loc)
+          WeededAst.Expression.ArrayLit(es, e, loc)
       }
 
     case ParsedAst.Expression.ArrayNew(sp1, exp1, exp2, exp3, sp2) =>
       val loc = mkSL(sp1, sp2)
       mapN(visitExp(exp1), visitExp(exp2), traverse(exp3)(visitExp).map(_.headOption)) {
         case (e1, e2, e3) =>
-          val reg = getRegionOrDefault(e3, loc)
-          WeededAst.Expression.ArrayNew(e1, e2, reg, loc)
+          WeededAst.Expression.ArrayNew(e1, e2, e3, loc)
       }
 
     case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
@@ -1274,10 +1264,7 @@ object Weeder {
       for {
         e1 <- visitExp(exp1)
         e2 <- Validation.traverse(exp2)(visitExp).map(_.headOption)
-      } yield {
-        val reg = getRegionOrDefault(e2, loc)
-        WeededAst.Expression.Ref(e1, reg, loc)
-      }
+      } yield WeededAst.Expression.Ref(e1, e2, loc)
 
     case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
       for {
