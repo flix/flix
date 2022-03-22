@@ -1075,14 +1075,34 @@ object Weeder {
           }
       }
 
+    case ParsedAst.Expression.New(_, qname, exp, sp2) =>
+      // TODO: Use qname later for ascribe.
+      mapN(traverse(exp)(visitExp).map(_.headOption)) {
+        case e =>
+          ///
+          /// Translate [[new Foo]](r) => Newable.new(r)
+          /// Translate [[new Foo]]    => Newable.new(defaultRegion)
+          ///
+          val targetName = Name.mkQName("Newable.new", qname.sp1, qname.sp2)
+          val e1 = WeededAst.Expression.DefOrSig(targetName, mkSL(qname.sp1, qname.sp2))
+          val e2 = getRegionOrDefault(e, mkSL(qname.sp1, qname.sp2))
+          WeededAst.Expression.Apply(e1, List(e2), mkSL(qname.sp2, sp2))
+      }
+
     case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
-      traverse(exps)(e => visitExp(e)) map {
-        case es => WeededAst.Expression.ArrayLit(es, mkSL(sp1, sp2))
+      val loc = mkSL(sp1, sp2)
+      mapN(traverse(exps)(visitExp), traverse(exp)(visitExp).map(_.headOption)) {
+        case (es, e) =>
+          val reg = getRegionOrDefault(e, loc)
+          WeededAst.Expression.ArrayLit(es, reg, loc)
       }
 
     case ParsedAst.Expression.ArrayNew(sp1, exp1, exp2, exp3, sp2) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => WeededAst.Expression.ArrayNew(e1, e2, mkSL(sp1, sp2))
+      val loc = mkSL(sp1, sp2)
+      mapN(visitExp(exp1), visitExp(exp2), traverse(exp3)(visitExp).map(_.headOption)) {
+        case (e1, e2, e3) =>
+          val reg = getRegionOrDefault(e3, loc)
+          WeededAst.Expression.ArrayNew(e1, e2, reg, loc)
       }
 
     case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
@@ -1255,10 +1275,8 @@ object Weeder {
         e1 <- visitExp(exp1)
         e2 <- Validation.traverse(exp2)(visitExp).map(_.headOption)
       } yield {
-        // If there is no explicit region, we use the global region.
-        val defaultRegionType = Type.mkRegion(Type.False, loc)
-        val defaultRegion = e2.getOrElse(WeededAst.Expression.Region(defaultRegionType, loc))
-        WeededAst.Expression.Ref(e1, defaultRegion, loc)
+        val reg = getRegionOrDefault(e2, loc)
+        WeededAst.Expression.Ref(e1, reg, loc)
       }
 
     case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
@@ -2556,6 +2574,7 @@ object Weeder {
     case ParsedAst.Expression.RecordSelect(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.RecordSelectLambda(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordOperation(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.New(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLit(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayNew(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
@@ -2670,6 +2689,15 @@ object Weeder {
     val memberName = fqn.last
 
     (className, memberName).toSuccess
+  }
+
+  /**
+    * Returns the region expression `region` if it is non-None. Otherwise returns the global region.
+    */
+  private def getRegionOrDefault(region: Option[WeededAst.Expression], loc: SourceLocation): WeededAst.Expression = {
+    val tpe = Type.mkRegion(Type.False, loc)
+    val exp = WeededAst.Expression.Region(tpe, loc)
+    region.getOrElse(exp)
   }
 
 }
