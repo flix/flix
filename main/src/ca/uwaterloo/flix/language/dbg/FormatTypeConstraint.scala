@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Magnus Madsen
+ * Copyright 2021 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.debug
+
+package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.language.ast.Ast
 
-object FormatDoc {
+object FormatTypeConstraint {
 
   /**
-    * Returns a markdown string for the given documentation `doc`.
+    * Formats the given `tconstr` as `Class[Param]`.
     */
-  def asMarkDown(doc: Ast.Doc): String = doc.lines.mkString("\n")
-
+  def formatTypeConstraint(tconstr: Ast.TypeConstraint)(implicit audience: Audience): String = tconstr match {
+    case Ast.TypeConstraint(sym, arg, _) =>
+      val typeString = FormatType.formatWellKindedType(arg)
+      s"${sym}[${typeString}]"
+  }
 }

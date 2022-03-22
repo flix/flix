@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.debug
+package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.language.ast.Scheme
 

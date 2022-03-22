@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Magnus Madsen
+ * Copyright 2020 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.debug
 
-object MarkDown {
+package ca.uwaterloo.flix.language.dbg
 
-  /**
-    * Escapes certain markdown characters.
-    */
-  def escape(s: String): String =
-    s
-      .replace("[", "\\[")
-      .replace("]", "\\]")
-
+/**
+  * Describes the intended audience of the result of a method call.
+  *
+  * [[Audience.External]] indicates the result should be formatted for display to users.
+  *
+  * [[Audience.Internal]] indicates the result should be formatted for display to compiler programmers.
+  */
+sealed trait Audience
+object Audience {
+  case object External extends Audience
+  case object Internal extends Audience
 }

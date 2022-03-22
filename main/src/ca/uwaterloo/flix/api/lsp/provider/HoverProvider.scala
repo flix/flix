@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Position, Range}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Root}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.debug._
+import ca.uwaterloo.flix.language.dbg._
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 

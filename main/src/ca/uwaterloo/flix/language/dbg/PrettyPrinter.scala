@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.debug
+package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.debug.FormatType.formatWellKindedType
+import ca.uwaterloo.flix.language.dbg.FormatType.formatWellKindedType
 import ca.uwaterloo.flix.util.Formatter
 
 object PrettyPrinter {

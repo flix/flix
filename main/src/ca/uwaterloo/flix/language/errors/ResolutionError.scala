@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
+import ca.uwaterloo.flix.language.dbg.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Formatter
 
 import java.lang.reflect.{Constructor, Field, Method}
