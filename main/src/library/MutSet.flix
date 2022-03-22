@@ -20,7 +20,7 @@
 opaque type MutSet[t: Type, r: Region] = ScopedRef[Set[t], r]
 
 instance Newable[MutSet[t]] {
-    pub def new(r: Region[r]): MutSet[t, r] \ { Write(r) } = MutSet.emptyWithRegion(r)
+    pub def new(r: Region[r]): MutSet[t, r] \ { Write(r) } = MutSet.new(r)
 }
 
 instance Scoped[MutSet[t]] {
@@ -32,7 +32,7 @@ namespace MutSet {
     ///
     /// Returns a fresh empty set.
     ///
-    pub def emptyWithRegion(r: Region[r]): MutSet[a, r] \ { Write(r) } =
+    pub def new(r: Region[r]): MutSet[a, r] \ { Write(r) } =
         MutSet(ref Set.empty() @ r)
 
     ///
