@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.dbg.{Audience, FormatTypeConstraint}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatTypeConstraint}
 import ca.uwaterloo.flix.util.Formatter
 
 /**

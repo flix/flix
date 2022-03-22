@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.language.dbg
+package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.language.ast.Kind
 

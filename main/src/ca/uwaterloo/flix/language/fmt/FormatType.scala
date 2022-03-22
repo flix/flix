@@ -1,19 +1,4 @@
-/*
- * Copyright 2022 Matthew Lutze
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package ca.uwaterloo.flix.language.dbg
+package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Type}
 
@@ -259,15 +244,17 @@ object FormatType {
         fields.map(visit(_, Mode.Type)).mkString("(", ", ", ")")
     }
 
-      visit(tpe00, Mode.Type)
+    visit(tpe00, Mode.Type)
   }
 
   /**
     * Flag indicating whether a type should be formatted as an effect or as a regular type.
     */
   private sealed trait Mode
+
   private object Mode {
     case object Effect extends Mode
+
     case object Type extends Mode
   }
 

@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.dbg.{Audience, FormatScheme, FormatType}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 object CompleteProvider {

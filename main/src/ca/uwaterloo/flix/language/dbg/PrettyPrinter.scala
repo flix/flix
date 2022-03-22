@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.dbg.FormatType.formatWellKindedType
+import ca.uwaterloo.flix.language.fmt.Audience
+import ca.uwaterloo.flix.language.fmt.FormatType.formatWellKindedType
 import ca.uwaterloo.flix.util.Formatter
 
 object PrettyPrinter {

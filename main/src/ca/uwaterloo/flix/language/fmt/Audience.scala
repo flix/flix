@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Magnus Madsen
+ * Copyright 2020 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.dbg
 
-import ca.uwaterloo.flix.language.ast.TypedAst
+package ca.uwaterloo.flix.language.fmt
 
-object FormatCase {
-
-  /**
-    * Returns a markdown string for the given `caze`.
-    */
-  def asMarkDown(caze: TypedAst.Case)(implicit audience: Audience): String = {
-    s"case **${caze.tag.name}**: ${FormatScheme.formatScheme(caze.sc)}"
-  }
-
+/**
+  * Describes the intended audience of the result of a method call.
+  *
+  * [[Audience.External]] indicates the result should be formatted for display to users.
+  *
+  * [[Audience.Internal]] indicates the result should be formatted for display to compiler programmers.
+  */
+sealed trait Audience
+object Audience {
+  case object External extends Audience
+  case object Internal extends Audience
 }

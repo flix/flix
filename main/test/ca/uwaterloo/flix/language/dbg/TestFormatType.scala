@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Rigidity, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.fmt.FormatType
 import org.scalatest.FunSuite
 
 class TestFormatType extends FunSuite with TestUtils {
