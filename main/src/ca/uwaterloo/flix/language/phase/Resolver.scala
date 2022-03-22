@@ -785,15 +785,21 @@ object Resolver {
         case NamedAst.Expression.ArrayLit(exps, exp, loc) =>
           for {
             es <- traverse(exps)(visitExp(_, tenv0))
-            e <- visitExp(exp, tenv0)
-          } yield ResolvedAst.Expression.ArrayLit(es, e, loc)
+            e <- traverse(exp)(visitExp(_, tenv0)).map(_.headOption)
+          } yield {
+            val reg = getRegionOrDefault(e, loc)
+            ResolvedAst.Expression.ArrayLit(es, reg, loc)
+          }
 
         case NamedAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
           for {
             e1 <- visitExp(exp1, tenv0)
             e2 <- visitExp(exp2, tenv0)
-            e3 <- visitExp(exp3, tenv0)
-          } yield ResolvedAst.Expression.ArrayNew(e1, e2, e3, loc)
+            e3 <- traverse(exp3)(visitExp(_, tenv0)).map(_.headOption)
+          } yield {
+            val reg = getRegionOrDefault(e3, loc)
+            ResolvedAst.Expression.ArrayNew(e1, e2, reg, loc)
+          }
 
         case NamedAst.Expression.ArrayLoad(base, index, loc) =>
           for {

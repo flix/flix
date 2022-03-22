@@ -1085,7 +1085,7 @@ object Weeder {
           ///
           val targetName = Name.mkQName("Newable.new", qname.sp1, qname.sp2)
           val e1 = WeededAst.Expression.DefOrSig(targetName, mkSL(qname.sp1, qname.sp2))
-          val e2 = getRegionOrDefault(e, mkSL(qname.sp1, qname.sp2))
+          val e2 = getRegionOrDefault(e, mkSL(qname.sp1, qname.sp2)) // TODO: Refactor
           WeededAst.Expression.Apply(e1, List(e2), mkSL(qname.sp2, sp2))
       }
 
@@ -1093,16 +1093,14 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       mapN(traverse(exps)(visitExp), traverse(exp)(visitExp).map(_.headOption)) {
         case (es, e) =>
-          val reg = getRegionOrDefault(e, loc)
-          WeededAst.Expression.ArrayLit(es, reg, loc)
+          WeededAst.Expression.ArrayLit(es, e, loc)
       }
 
     case ParsedAst.Expression.ArrayNew(sp1, exp1, exp2, exp3, sp2) =>
       val loc = mkSL(sp1, sp2)
       mapN(visitExp(exp1), visitExp(exp2), traverse(exp3)(visitExp).map(_.headOption)) {
         case (e1, e2, e3) =>
-          val reg = getRegionOrDefault(e3, loc)
-          WeededAst.Expression.ArrayNew(e1, e2, reg, loc)
+          WeededAst.Expression.ArrayNew(e1, e2, e3, loc)
       }
 
     case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
