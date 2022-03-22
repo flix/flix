@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
-import ca.uwaterloo.flix.language.ast.ParsedAst.RecordFieldType
+import ca.uwaterloo.flix.language.ast.ParsedAst.{Effect, RecordFieldType}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -2182,11 +2182,50 @@ object Weeder {
       val t2 = visitType(tpe2)
       WeededAst.Type.Or(t1, t2, mkSL(sp1, sp2))
 
+    case ParsedAst.Type.Union(sp1, efs, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      if (efs.isEmpty)
+        WeededAst.Type.True(loc)
+      else {
+        val zero = visitReadOrWrite(efs.head, loc)
+        efs.tail.foldLeft(zero) {
+          case (acc, rw) => WeededAst.Type.And(acc, visitReadOrWrite(rw, loc), loc)
+        }
+      }
+
     case ParsedAst.Type.Ascribe(tpe, kind, sp2) =>
       val sp1 = leftMostSourcePosition(tpe)
       val t = visitType(tpe)
       val k = visitKind(kind)
       WeededAst.Type.Ascribe(t, k, mkSL(sp1, sp2))
+  }
+
+  /**
+    * Returns the given read or write effect as a WeededAst type.
+    */
+  private def visitReadOrWrite(rw: ParsedAst.Effect, loc: SourceLocation): WeededAst.Type = rw match {
+    case Effect.Var(sp1, ident, sp2) =>
+      WeededAst.Type.Var(ident, mkSL(sp1, sp2))
+
+    case Effect.Read(idents) =>
+      if (idents.isEmpty)
+        WeededAst.Type.True(loc)
+      else {
+        val zero: WeededAst.Type = WeededAst.Type.Var(idents.head, idents.head.loc)
+        idents.tail.foldLeft(zero) {
+          case (acc, ident) => WeededAst.Type.And(acc, WeededAst.Type.Var(ident, ident.loc), loc)
+        }
+      }
+
+    case Effect.Write(idents) =>
+      if (idents.isEmpty)
+        WeededAst.Type.True(loc)
+      else {
+        val zero: WeededAst.Type = WeededAst.Type.Var(idents.head, idents.head.loc)
+        idents.tail.foldLeft(zero) {
+          case (acc, ident) => WeededAst.Type.And(acc, WeededAst.Type.Var(ident, ident.loc), loc)
+        }
+      }
   }
 
   /**
@@ -2634,6 +2673,7 @@ object Weeder {
     case ParsedAst.Type.Not(sp1, _, _) => sp1
     case ParsedAst.Type.And(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Or(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.Union(sp1, _, _) => sp1
     case ParsedAst.Type.Ascribe(tpe, _, _) => leftMostSourcePosition(tpe)
   }
 

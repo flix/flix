@@ -264,7 +264,29 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = rule {
-    Type ~ optional(WS ~ "&" ~ WS ~ Type)
+    Type ~ optional((WS ~ "&" ~ WS ~ Type) | EffectAlt)
+  }
+
+  def EffectAlt: Rule1[ParsedAst.Type] = {
+    def Var: Rule1[ParsedAst.Effect.Var] = rule {
+      SP ~ Names.Variable ~ SP ~> ParsedAst.Effect.Var
+    }
+
+    def Read: Rule1[ParsedAst.Effect.Read] = rule {
+      keyword("Read") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Effect.Read
+    }
+
+    def Write: Rule1[ParsedAst.Effect.Write] = rule {
+      keyword("Write") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Effect.Write
+    }
+
+    def Union: Rule1[ParsedAst.Type] = rule {
+      SP ~ "{" ~ optWS ~ zeroOrMore(Var | Read | Write).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Union
+    }
+
+    rule {
+      WS ~ "\\" ~ WS ~ Union
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
