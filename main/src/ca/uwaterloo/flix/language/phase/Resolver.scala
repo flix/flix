@@ -129,7 +129,7 @@ object Resolver {
     * Returns a pair:
     *   - a map of type alias symbols to their AST nodes
     *   - a list of the aliases in a processing order,
-    *       such that any alias only depends on those earlier in the list
+    *     such that any alias only depends on those earlier in the list
     */
   private def resolveTypeAliases(aliases0: Map[Name.NName, Map[String, NamedAst.TypeAlias]], root: NamedAst.Root)(implicit flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
 
@@ -227,7 +227,6 @@ object Resolver {
       aliases <- finishResolveTypeAliases(sortedAliases)
     } yield (aliases, sortedSyms)
   }
-
 
 
   object Constraints {
@@ -782,6 +781,22 @@ object Resolver {
             r <- visitExp(rest, tenv0)
           } yield ResolvedAst.Expression.RecordRestrict(field, r, loc)
 
+        case NamedAst.Expression.New(qname, exp, loc) =>
+          for {
+            e <- traverse(exp)(visitExp(_, tenv0)).map(_.headOption)
+          } yield {
+            ///
+            /// Translate [[new Foo(r)]] => Newable.new(r)
+            /// Translate [[new Foo()]]  => Newable.new(currentRegion)
+            ///
+            val sp = SourcePosition.Unknown
+            val classSym = Symbol.mkClassSym(Name.RootNS, Name.Ident(sp, "Newable", sp))
+            val sigSym = Symbol.mkSigSym(classSym, Name.Ident(sp, "new", sp))
+            val e1 = ResolvedAst.Expression.Sig(sigSym, loc)
+            val e2 = getRegionOrDefault(e, loc)
+            ResolvedAst.Expression.Apply(e1, List(e2), loc)
+          }
+
         case NamedAst.Expression.ArrayLit(exps, exp, loc) =>
           for {
             es <- traverse(exps)(visitExp(_, tenv0))
@@ -1184,8 +1199,8 @@ object Resolver {
       * Performs name resolution on the given type parameter `tparam0` in the given namespace `ns0`.
       */
     def resolveTparam(tparam0: NamedAst.TypeParam): ResolvedAst.TypeParam = tparam0 match {
-        case tparam: NamedAst.TypeParam.Kinded => resolveKindedTparam(tparam)
-        case tparam: NamedAst.TypeParam.Unkinded => resolveUnkindedTparam(tparam)
+      case tparam: NamedAst.TypeParam.Kinded => resolveKindedTparam(tparam)
+      case tparam: NamedAst.TypeParam.Unkinded => resolveUnkindedTparam(tparam)
     }
 
     /**
