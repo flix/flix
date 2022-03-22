@@ -1422,6 +1422,15 @@ object ParsedAst {
     case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+      * Represents a union of effects.
+      *
+      * @param sp1 the position of the first character in the type.
+      * @param efs the effects in the union.
+      * @param sp2 the position of the last character in the type.
+      */
+    case class Union(sp1: SourcePosition, efs: Seq[ReadOrWrite], sp2: SourcePosition) extends Type
+
+    /**
       * Kind Ascription.
       *
       * @param tpe  the ascribed type.
@@ -1429,6 +1438,29 @@ object ParsedAst {
       * @param sp2  the position of the last character in the type.
       */
     case class Ascribe(tpe: ParsedAst.Type, kind: ParsedAst.Kind, sp2: SourcePosition) extends ParsedAst.Type
+
+  }
+
+  /**
+    * Represents a read or write effect.
+    */
+  sealed trait ReadOrWrite
+
+  object ReadOrWrite {
+
+    /**
+      * Represents a read of the region variables `idents`.
+      *
+      * @param idents the region variables that are read.
+      */
+    case class Read(idents: Seq[Name.Ident]) extends ReadOrWrite
+
+    /**
+      * Represents a write of the region variables `idents`.
+      *
+      * @param idents the region variables that are written.
+      */
+    case class Write(idents: Seq[Name.Ident]) extends ReadOrWrite
 
   }
 
