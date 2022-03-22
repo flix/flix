@@ -677,8 +677,9 @@ object Resolver {
           ResolvedAst.Expression.Region(tpe, loc).toSuccess
 
         case NamedAst.Expression.Scope(sym, exp, loc) =>
+          // Note: Here we update the current region.
           for {
-            e <- visitExp(exp, tenv0, region)
+            e <- visitExp(exp, tenv0, Some(sym))
           } yield ResolvedAst.Expression.Scope(sym, e, loc)
 
         case NamedAst.Expression.Match(exp, rules, loc) =>
@@ -2231,9 +2232,9 @@ object Resolver {
   private def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, loc), tpe1, loc), tpe2, loc)
 
   /**
-    * Returns the region expression `region` if it is non-None. Otherwise returns the global region.
+    * Returns either the explicit region (if present), the current region (if present), or the global region.
     */
-  private def getExplicitOrImplicitRegion(region: Option[ResolvedAst.Expression], currentRegion: Option[Symbol.VarSym], loc: SourceLocation): ResolvedAst.Expression = region match {
+  private def getExplicitOrImplicitRegion(explicitRegion: Option[ResolvedAst.Expression], currentRegion: Option[Symbol.VarSym], loc: SourceLocation): ResolvedAst.Expression = explicitRegion match {
     case Some(result) =>
       // Case 1: The region is explicitly given.
       result
