@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
-import ca.uwaterloo.flix.language.ast.ParsedAst.{ReadOrWrite, RecordFieldType}
+import ca.uwaterloo.flix.language.ast.ParsedAst.{Effect, RecordFieldType}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -2203,8 +2203,8 @@ object Weeder {
   /**
     * Returns the given read or write effect as a WeededAst type.
     */
-  private def visitReadOrWrite(rw: ParsedAst.ReadOrWrite, loc: SourceLocation): WeededAst.Type = rw match {
-    case ReadOrWrite.Read(idents) =>
+  private def visitReadOrWrite(rw: ParsedAst.Effect, loc: SourceLocation): WeededAst.Type = rw match {
+    case Effect.Read(idents) =>
       if (idents.isEmpty)
         WeededAst.Type.True(loc)
       else {
@@ -2214,7 +2214,7 @@ object Weeder {
         }
       }
 
-    case ReadOrWrite.Write(idents) =>
+    case Effect.Write(idents) =>
       if (idents.isEmpty)
         WeededAst.Type.True(loc)
       else {

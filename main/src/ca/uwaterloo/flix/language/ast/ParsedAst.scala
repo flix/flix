@@ -1425,10 +1425,10 @@ object ParsedAst {
       * Represents a union of effects.
       *
       * @param sp1 the position of the first character in the type.
-      * @param efs the effects in the union.
+      * @param efs the effects.
       * @param sp2 the position of the last character in the type.
       */
-    case class Union(sp1: SourcePosition, efs: Seq[ReadOrWrite], sp2: SourcePosition) extends Type
+    case class Union(sp1: SourcePosition, efs: Seq[Effect], sp2: SourcePosition) extends Type
 
     /**
       * Kind Ascription.
@@ -1442,25 +1442,25 @@ object ParsedAst {
   }
 
   /**
-    * Represents a read or write effect.
+    * Represents an effect.
     */
-  sealed trait ReadOrWrite
+  sealed trait Effect
 
-  object ReadOrWrite {
+  object Effect {
 
     /**
       * Represents a read of the region variables `idents`.
       *
       * @param idents the region variables that are read.
       */
-    case class Read(idents: Seq[Name.Ident]) extends ReadOrWrite
+    case class Read(idents: Seq[Name.Ident]) extends Effect
 
     /**
       * Represents a write of the region variables `idents`.
       *
       * @param idents the region variables that are written.
       */
-    case class Write(idents: Seq[Name.Ident]) extends ReadOrWrite
+    case class Write(idents: Seq[Name.Ident]) extends Effect
 
   }
 
