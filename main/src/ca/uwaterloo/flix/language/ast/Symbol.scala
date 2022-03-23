@@ -70,6 +70,11 @@ object Symbol {
     new VarSym(flix.genSym.freshId(), text, Type.freshUnkindedVar(loc), boundBy, loc)
   }
 
+  // MATT docs
+  def freshTypeVarSym(text: Option[String], loc: SourceLocation)(implicit flix: Flix): TypeVarSym = {
+    new TypeVarSym(flix.genSym.freshId(), text, loc)
+  }
+
   /**
     * Returns a label symbol with the given text.
     */
@@ -211,7 +216,9 @@ object Symbol {
 
   // MATT docs
   // MATT include kind?
-  final class TypeVarSym(val id: Int, val text: String, val loc: SourceLocation) extends Sourceable with Locatable {
+  // MATT rigidity?
+  // MATT eq, hash, toString
+  final class TypeVarSym(val id: Int, val text: Option[String], val loc: SourceLocation) extends Sourceable with Locatable {
     /**
       * Returns the source of `this`.
       */

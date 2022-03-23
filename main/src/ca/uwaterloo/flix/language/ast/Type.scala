@@ -341,7 +341,7 @@ object Type {
     * The union of type variables.
     */
   sealed trait Var extends Type {
-    def id: Int
+    def sym: Symbol.TypeVarSym
 
     def text: Option[String]
 
@@ -372,31 +372,31 @@ object Type {
     * A type variable.
     */
   @IntroducedBy(Kinder.getClass)
-  case class KindedVar(id: Int, kind: Kind, loc: SourceLocation, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with Var with BaseType with Ordered[Type.KindedVar] {
+  case class KindedVar(sym: Symbol.TypeVarSym, kind: Kind, loc: SourceLocation, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with Var with BaseType with Ordered[Type.KindedVar] {
     /**
       * Returns `true` if `this` type variable is equal to `o`.
       */
     override def equals(o: scala.Any): Boolean = o match {
-      case that: KindedVar => this.id == that.id
+      case that: KindedVar => this.sym == that.sym
       case _ => false
     }
 
     /**
       * Returns the hash code of `this` type variable.
       */
-    override def hashCode(): Int = id
+    override def hashCode(): Int = sym.hashCode()
 
     /**
       * Compares `this` type variable to `that` type variable.
       */
-    override def compare(that: Type.KindedVar): Int = this.id - that.id
+    override def compare(that: Type.KindedVar): Int = this.sym.id - that.sym.id
   }
 
   /**
     * A type variable without a kind.
     */
   @EliminatedBy(Kinder.getClass)
-  case class UnkindedVar(id: Int, loc: SourceLocation, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with Var with BaseType with Ordered[Type.UnkindedVar] {
+  case class UnkindedVar(sym: Symbol.TypeVarSym, loc: SourceLocation, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with Var with BaseType with Ordered[Type.UnkindedVar] {
 
     override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type variable")
 
@@ -404,24 +404,24 @@ object Type {
       * Returns `true` if `this` type variable is equal to `o`.
       */
     override def equals(o: scala.Any): Boolean = o match {
-      case that: UnkindedVar => this.id == that.id
+      case that: UnkindedVar => this.sym == that.sym
       case _ => false
     }
 
     /**
       * Returns the hash code of `this` type variable.
       */
-    override def hashCode(): Int = id
+    override def hashCode(): Int = sym.hashCode()
 
     /**
       * Compares `this` type variable to `that` type variable.
       */
-    override def compare(that: Type.UnkindedVar): Int = this.id - that.id
+    override def compare(that: Type.UnkindedVar): Int = this.sym.id - that.sym.id
 
     /**
       * Converts the UnkindedVar to a Var with the given `kind`.
       */
-    def ascribedWith(kind: Kind): Type.KindedVar = Type.KindedVar(id, kind, loc, rigidity, text)
+    def ascribedWith(kind: Kind): Type.KindedVar = Type.KindedVar(sym, kind, loc, rigidity, text)
   }
 
   /**
@@ -503,16 +503,18 @@ object Type {
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
   def freshVar(k: Kind, loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.KindedVar = {
-    val id = flix.genSym.freshId()
-    Type.KindedVar(id, k, loc, r, text)
+    // MATT consider difference between Symbol loc and Var loc
+    val sym = Symbol.freshTypeVarSym(text, loc)
+    Type.KindedVar(sym, k, loc, r, text)
   }
 
   /**
     * Returns a fresh unkinded type variable of the given kind `k` and rigidity `r`.
     */
   def freshUnkindedVar(loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.UnkindedVar = {
-    val id = flix.genSym.freshId()
-    Type.UnkindedVar(id, loc, r, text)
+    // MATT consider difference between Symbol loc and Var loc
+    val sym = Symbol.freshTypeVarSym(text, loc)
+    Type.UnkindedVar(sym, loc, r, text)
   }
 
   /**

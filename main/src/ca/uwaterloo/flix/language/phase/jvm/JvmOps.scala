@@ -744,7 +744,7 @@ object JvmOps {
 
   // TODO: Should be removed.
   private def hackMonoType2Type(tpe: MonoType): Type = tpe match {
-    case MonoType.Var(id) => Type.KindedVar(id, Kind.Star, SourceLocation.Unknown)
+    case MonoType.Var(id) => Type.KindedVar(hackId2TypeVarSym(id), Kind.Star, SourceLocation.Unknown)
     case MonoType.Unit => Type.Unit
     case MonoType.Bool => Type.Bool
     case MonoType.Char => Type.Char
@@ -776,7 +776,7 @@ object JvmOps {
   private def hackMonoType2RecordRowType(tpe: MonoType): Type = tpe match {
     case MonoType.RecordExtend(field, value, rest) => Type.mkRecordRowExtend(Name.Field(field, SourceLocation.Unknown), hackMonoType2Type(value), hackMonoType2RecordRowType(rest), SourceLocation.Unknown)
     case MonoType.RecordEmpty() => Type.RecordRowEmpty
-    case MonoType.Var(id) => Type.KindedVar(id, Kind.RecordRow, SourceLocation.Unknown)
+    case MonoType.Var(id) => Type.KindedVar(hackId2TypeVarSym(id), Kind.RecordRow, SourceLocation.Unknown)
     case _ => throw InternalCompilerException("Unexpected non-row type.")
   }
 
@@ -784,12 +784,15 @@ object JvmOps {
   private def hackMonoType2SchemaRowType(tpe: MonoType): Type = tpe match {
     case MonoType.SchemaExtend(sym, t, rest) => Type.mkSchemaRowExtend(Name.Pred(sym, SourceLocation.Unknown), hackMonoType2Type(t), hackMonoType2SchemaRowType(rest), SourceLocation.Unknown)
     case MonoType.SchemaEmpty() => Type.SchemaRowEmpty
-    case MonoType.Var(id) => Type.KindedVar(id, Kind.RecordRow, SourceLocation.Unknown)
+    case MonoType.Var(id) => Type.KindedVar(hackId2TypeVarSym(id), Kind.RecordRow, SourceLocation.Unknown)
     case _ => throw InternalCompilerException("Unexpected non-row type.")
   }
 
   // TODO: Remove
   private def hackType2MonoType(tpe: Type): MonoType = Finalize.visitType(tpe)
+
+  // TODO: Remove
+  private def hackId2TypeVarSym(id: Int): Symbol.TypeVarSym = new Symbol.TypeVarSym(id, None, SourceLocation.Unknown)
 
   /**
     * Returns the tag info for the given `tpe` and `tag`

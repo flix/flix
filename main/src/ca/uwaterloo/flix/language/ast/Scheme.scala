@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme}
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 object Scheme {
 
@@ -82,7 +82,7 @@ object Scheme {
           case InstantiateMode.Rigid => Rigidity.Rigid
           case InstantiateMode.Mixed => Rigidity.Flexible
         }
-        macc + (tvar.id -> Type.freshVar(tvar.kind, tvar.loc, rigidity, None))
+        macc + (tvar.sym.id -> Type.freshVar(tvar.kind, tvar.loc, rigidity, None))
     }
 
     /**
@@ -90,7 +90,7 @@ object Scheme {
       */
     def visitTvar(t: Type.KindedVar): Type.KindedVar = t match {
       case Type.KindedVar(x, k, loc, rigidity, text) =>
-        freshVars.get(x) match {
+        freshVars.get(x.id) match {
           case None =>
             // Determine the rigidity of the free type variable.
             val newRigidity = mode match {

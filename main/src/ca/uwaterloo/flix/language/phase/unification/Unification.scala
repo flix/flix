@@ -28,7 +28,7 @@ object Unification {
     */
   private def unifyVars(x: Type.KindedVar, y: Type.KindedVar)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // Case 0: types are identical
-    if (x.id == y.id) {
+    if (x.sym == y.sym) {
       Result.Ok(Substitution.empty)
     } else {
       (x.rigidity, y.rigidity) match {
@@ -430,7 +430,7 @@ object Unification {
   private def purify(tvar: Type.KindedVar, tpe: Type): Type = tpe.typeConstructor match {
     case None => tpe match {
       case t: Type.Var =>
-        if (tvar.id == t.asKinded.id) Type.True else tpe
+        if (tvar.sym == t.asKinded.sym) Type.True else tpe
       case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tpe'.")
     }
 

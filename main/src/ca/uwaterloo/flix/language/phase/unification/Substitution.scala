@@ -33,7 +33,7 @@ object Substitution {
   def singleton(x: Type.KindedVar, tpe: Type): Substitution = {
     // Ensure that we do not add any x -> x mappings.
     tpe match {
-      case y: Type.Var if x.id == y.asKinded.id => empty
+      case y: Type.Var if x.sym.id == y.asKinded.sym.id => empty
       case y: Type.Var if x.text.nonEmpty => Substitution(Map(x -> y.asKinded.copy(text = x.text)))
       case y: Type.Var if y.text.nonEmpty => Substitution(Map(x.asKinded.copy(text = y.text) -> y))
       case _ => Substitution(Map(x -> tpe))
