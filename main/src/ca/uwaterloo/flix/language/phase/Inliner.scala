@@ -126,12 +126,16 @@ object Inliner {
       }
       Expression.Branch(e, bs, tpe, loc)
 
-    case Expression.JumpTo(_,_,_) => exp0
+    case Expression.JumpTo(_, _, _) => exp0
 
     case Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
-      if (wantToPreInline(occur, purity)) {
-        val e2 = preInline(sym, exp1, exp2, subst0)
-        e2
+      val wantToPreInline = (occur, purity) match {
+        case (Occur.Once, Purity.Pure) => true
+        case _ => false
+      }
+      if (wantToPreInline) {
+        val subst1 = subst0 + (sym -> exp1)
+        visitExp(exp2, subst1)
       } else {
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
@@ -163,7 +167,7 @@ object Inliner {
       val es = elms.map(visitExp(_, subst0))
       Expression.Tuple(es, tpe, loc)
 
-    case Expression.RecordEmpty(_,_) => exp0
+    case Expression.RecordEmpty(_, _) => exp0
 
     case Expression.RecordSelect(exp, field, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -300,25 +304,5 @@ object Inliner {
     case Expression.HoleError(_, _, _) => exp0
 
     case Expression.MatchError(_, _) => exp0
-  }
-
-  /**
-   * Inlines `exp1` in `exp2` based on the PreInline phase.
-   * Adds symbol `sym` and its substitution `exp1` to the substitution map `subst1`.
-   */
-  private def preInline(sym: Symbol.VarSym, exp1: Expression, exp2: Expression, subst0: Map[Symbol.VarSym, Expression]): Expression = {
-    val subst1 = subst0 + (sym -> exp1)
-    visitExp(exp2, subst1)
-  }
-
-  /**
-   * Predicate that determines if an expression should be inlined in the PreInline phase.
-   * In this phase, an expression is to be inlined if it is both pure and occurs precisely once.
-   */
-  private def wantToPreInline(occur: Occur, purity: Purity): Boolean = {
-    (occur, purity) match {
-      case (Occur.Once, Purity.Pure) => true
-      case _ => false
-    }
   }
 }
