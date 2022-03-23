@@ -217,12 +217,19 @@ object Symbol {
   // MATT docs
   // MATT include kind?
   // MATT rigidity?
-  // MATT eq, hash, toString
+  // MATT toString
   final class TypeVarSym(val id: Int, val text: Option[String], val loc: SourceLocation) extends Sourceable with Locatable {
     /**
       * Returns the source of `this`.
       */
     override def src: Ast.Source = loc.source
+
+    override def equals(that: Any): Boolean = that match {
+      case sym: TypeVarSym => this.id == sym.id
+      case _ => false
+    }
+
+    override def hashCode(): Int = id
   }
 
   /**
