@@ -1071,41 +1071,27 @@ object Typer {
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.ArrayLit(elms, tvar, loc) =>
-        //
-        //  e1 : t ... en: t
-        //  --------------------------------
-        //  [e1,..., en] : Array[t] @ Impure
-        //
-        if (elms.isEmpty) {
-          val elmTypeVar = Type.freshVar(Kind.Star, loc)
-          for {
-            resultTyp <- unifyTypeM(tvar, Type.mkArray(elmTypeVar, loc), loc)
-            resultEff = Type.Impure
-            _ <- unbindVar(elmTypeVar)
-          } yield (List.empty, resultTyp, resultEff)
-        } else {
-          for {
-            (constrs, elementTypes, _) <- seqM(elms.map(visitExp)).map(_.unzip3)
-            elementType <- unifyTypeM(elementTypes, loc)
-            resultTyp <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
-            resultEff = Type.Impure
-          } yield (constrs.flatten, resultTyp, resultEff)
-        }
-
-      case KindedAst.Expression.ArrayNew(exp1, exp2, tvar, loc) =>
-        //
-        //  exp1 : t @ _    exp2: Int @ _
-        //  ---------------------------------
-        //  [exp1 ; exp2] : Array[t] @ Impure
-        //
+      case KindedAst.Expression.ArrayLit(exps, exp, tvar, evar, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc)
         for {
-          (constrs1, tpe1, _) <- visitExp(exp1)
-          (constrs2, tpe2, _) <- visitExp(exp2)
-          lengthType <- unifyTypeM(tpe2, Type.Int32, loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkArray(tpe1, loc), loc)
-          resultEff = Type.Impure
-        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+          (constrs1, elmTypes, eff1) <- seqM(exps.map(visitExp)).map(_.unzip3)
+          (constrs2, regionType, eff2) <- visitExp(exp)
+          elementType <- unifyTypeAllowEmptyM(elmTypes, Kind.Star, loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
+          resultEff <- unifyTypeM(evar, Type.mkAnd(Type.mkAnd(eff1, loc), eff2, regionVar, loc), loc)
+        } yield (constrs1.flatten ++ constrs2, resultTyp, resultEff)
+
+      case KindedAst.Expression.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc)
+        for {
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          (constrs3, regionType, eff3) <- visitExp(exp3)
+          _ <- unifyTypeM(regionType, Type.mkRegion(regionVar, loc), loc)
+          lenType <- unifyTypeM(tpe2, Type.Int32, loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkScopedArray(tpe1, regionVar, loc), loc)
+          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, eff3, regionVar, loc), loc)
+        } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
       case KindedAst.Expression.ArrayLength(exp, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
@@ -1153,7 +1139,7 @@ object Typer {
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
       case KindedAst.Expression.Ref(exp1, exp2, tvar, evar, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc, Rigidity.Flexible, Some("l"))
+        val regionVar = Type.freshVar(Kind.Bool, loc)
         for {
           (constrs1, elmType, eff1) <- visitExp(exp1)
           (constrs2, regionType, eff2) <- visitExp(exp2)
@@ -1698,16 +1684,20 @@ object Typer {
         val eff = r.eff
         TypedAst.Expression.RecordRestrict(field, r, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.ArrayLit(elms, tvar, loc) =>
-        val es = elms.map(e => visitExp(e, subst0))
-        val eff = Type.Impure
-        TypedAst.Expression.ArrayLit(es, subst0(tvar), eff, loc)
+      case KindedAst.Expression.ArrayLit(exps, exp, tvar, evar, loc) =>
+        val es = exps.map(visitExp(_, subst0))
+        val e = visitExp(exp, subst0)
+        val tpe = subst0(tvar)
+        val eff = subst0(evar)
+        TypedAst.Expression.ArrayLit(es, e, tpe, eff, loc)
 
-      case KindedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
-        val e = visitExp(elm, subst0)
-        val ln = visitExp(len, subst0)
-        val eff = Type.Impure
-        TypedAst.Expression.ArrayNew(e, ln, subst0(tvar), eff, loc)
+      case KindedAst.Expression.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        val e3 = visitExp(exp3, subst0)
+        val tpe = subst0(tvar)
+        val eff = subst0(evar)
+        TypedAst.Expression.ArrayNew(e1, e2, e3, tpe, eff, loc)
 
       case KindedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
