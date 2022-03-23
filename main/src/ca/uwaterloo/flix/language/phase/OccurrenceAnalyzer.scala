@@ -118,12 +118,10 @@ object OccurrenceAnalyzer {
     case Expression.Var(sym, tpe, loc) => (OccurrenceAst.Expression.Var(sym, tpe, loc), Map(sym -> Once))
 
     case Expression.Closure(sym, freeVars, tpe, loc) =>
-      val (fv, o) = freeVars.foldRight[(List[OccurrenceAst.FreeVar], Map[Symbol.VarSym, Occur])]((List.empty, Map.empty))((fv, acc) =>
-        fv match {
-          case LiftedAst.FreeVar(sym, tpe) =>
-            (OccurrenceAst.FreeVar(sym, tpe) :: acc._1, acc._2 + (sym -> Many))
-        }
-      )
+      val (fv, o) = freeVars.foldRight[(List[OccurrenceAst.FreeVar], Map[Symbol.VarSym, Occur])]((List.empty, Map.empty)) {
+        case (LiftedAst.FreeVar(sym, tpe), (fvs, o)) =>
+          (OccurrenceAst.FreeVar(sym, tpe) :: fvs, o + (sym -> Many))
+      }
       (OccurrenceAst.Expression.Closure(sym, fv, tpe, loc), o)
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
