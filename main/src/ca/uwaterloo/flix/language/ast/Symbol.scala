@@ -209,6 +209,15 @@ object Symbol {
     override def toString: String = text + Flix.Delimiter + id
   }
 
+  // MATT docs
+  // MATT include kind?
+  final class TypeVarSym(val id: Int, val text: String, val loc: SourceLocation) extends Sourceable with Locatable {
+    /**
+      * Returns the source of `this`.
+      */
+    override def src: Ast.Source = loc.source
+  }
+
   /**
     * Definition Symbol.
     */
