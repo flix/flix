@@ -34,7 +34,7 @@ object Inliner {
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.subphase("Inliner") {
     // Visit every definition in the program.
     val defs = root.defs.map {
-      case (sym, defn) => sym -> defn.copy(exp = visitExp(defn.exp, Map.empty))
+      case (sym, defn) => sym -> visitDef(defn)
     }
 
     // Reassemble the ast root.
@@ -43,6 +43,13 @@ object Inliner {
     result.toSuccess
   }
 
+  private def visitDef(def0: Def, defs: Map[Symbol.DefnSym, Def]): Def = {
+    val exp = visitExp(def0.exp, Map.empty)
+    if (def0.occurDef.isConstantNonSelfCall) {
+      //TODO get name of the function being called in occurdef.
+    }
+    def0.copy(exp = visitExp(def0.exp, Map.empty))
+  }
 
   /**
    * Performs inlining operations on the expression `exp0` of type OccurrenceAst.Expression.

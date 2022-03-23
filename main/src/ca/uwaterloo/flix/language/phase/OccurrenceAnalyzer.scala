@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Occur, OccurDef}
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.Symbol.{LabelSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Symbol}
@@ -76,7 +76,46 @@ object OccurrenceAnalyzer {
       visitFormalParam
     }
     val (e, _) = visitExp(defn.exp)
-    OccurrenceAst.Def(defn.ann, defn.mod, defn.sym, fparams, e, defn.tpe, defn.loc)
+
+    val occurDef = e match {
+      case OccurrenceAst.Expression.ApplyDef(sym, args, _, _) =>
+        if (sym==defn.sym)
+          OccurDef(false)
+        else {
+          val argsTrivial = args.forall(isTrivial)
+          OccurDef(argsTrivial)
+        }
+
+      case OccurrenceAst.Expression.ApplyClo(_, args, _, _) =>
+        val argsTrivial = args.forall(isTrivial)
+        OccurDef(argsTrivial)
+
+      case _ => OccurDef(false)
+
+    }
+
+    OccurrenceAst.Def(defn.ann, defn.mod, defn.sym, fparams, e, occurDef, defn.tpe, defn.loc)
+  }
+
+
+  private def isTrivial(exp: OccurrenceAst.Expression): Boolean = {
+    exp match {
+      case OccurrenceAst.Expression.Unit(loc) => true
+      case OccurrenceAst.Expression.Null(tpe, loc) => true
+      case OccurrenceAst.Expression.True(loc) => true
+      case OccurrenceAst.Expression.False(loc) => true
+      case OccurrenceAst.Expression.Char(lit, loc) => true
+      case OccurrenceAst.Expression.Float32(lit, loc) => true
+      case OccurrenceAst.Expression.Float64(lit, loc) => true
+      case OccurrenceAst.Expression.Int8(lit, loc) => true
+      case OccurrenceAst.Expression.Int16(lit, loc) => true
+      case OccurrenceAst.Expression.Int32(lit, loc) => true
+      case OccurrenceAst.Expression.Int64(lit, loc) => true
+      case OccurrenceAst.Expression.BigInt(lit, loc) => true
+      case OccurrenceAst.Expression.Str(lit, loc) => true
+      case OccurrenceAst.Expression.Var(sym, tpe, loc) => true
+      case _ => false
+    }
   }
 
   /**
