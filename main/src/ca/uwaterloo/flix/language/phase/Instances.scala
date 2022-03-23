@@ -46,8 +46,8 @@ object Instances {
       * Checks that all signatures in `class0` are used in laws, unless `class0` is marked `lawless`.
       */
     def checkLawApplication(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
-      case TypedAst.Class(_, mod, _, _, _, _, _, _) if mod.isLawless => ().toSuccess
-      case TypedAst.Class(_, _, _, _, _, sigs, laws, _) =>
+      case TypedAst.Class(_, _, mod, _, _, _, _, _, _) if mod.isLawless => ().toSuccess
+      case TypedAst.Class(_, _, _, _, _, _, sigs, laws, _) =>
         val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
           case (acc, TypedAst.Def(_, _, TypedAst.Impl(exp, _))) => acc ++ TypedAstOps.sigSymsOf(exp)
         }

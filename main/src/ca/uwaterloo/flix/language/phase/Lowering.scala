@@ -208,11 +208,11 @@ object Lowering {
     * Lowers the given class `clazz0`, with the given lowered sigs `sigs`.
     */
   private def visitClass(clazz0: Class, sigs: Map[Symbol.SigSym, Sig])(implicit root: Root, flix: Flix): Class = clazz0 match {
-    case Class(doc, mod, sym, tparam, superClasses0, signatures0, laws0, loc) =>
+    case Class(doc, ann, mod, sym, tparam, superClasses0, signatures0, laws0, loc) =>
       val superClasses = superClasses0.map(visitTypeConstraint)
       val signatures = signatures0.map(sig => sigs(sig.sym))
       val laws = laws0.map(visitDef)
-      Class(doc, mod, sym, tparam, superClasses, signatures, laws, loc)
+      Class(doc, ann, mod, sym, tparam, superClasses, signatures, laws, loc)
   }
 
   /**
@@ -386,16 +386,18 @@ object Lowering {
       val t = visitType(tpe)
       Expression.RecordRestrict(field, r, t, eff, loc)
 
-    case Expression.ArrayLit(elms, tpe, eff, loc) =>
-      val es = visitExps(elms)
+    case Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
+      val es = visitExps(exps)
+      val e = visitExp(exp)
       val t = visitType(tpe)
-      Expression.ArrayLit(es, t, eff, loc)
+      Expression.ArrayLit(es, e, t, eff, loc)
 
-    case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
-      val e = visitExp(elm)
-      val l = visitExp(len)
+    case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
       val t = visitType(tpe)
-      Expression.ArrayNew(e, l, t, eff, loc)
+      Expression.ArrayNew(e1, e2, e3, t, eff, loc)
 
     case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
       val b = visitExp(base)
@@ -1220,7 +1222,8 @@ object Lowering {
   private def mkArray(exps: List[Expression], elmType: Type, loc: SourceLocation): Expression = {
     val tpe = Type.mkScopedArray(elmType, Type.Pure, loc)
     val eff = Type.Pure
-    Expression.ArrayLit(exps, tpe, eff, loc)
+    val reg = Expression.Unit(loc)
+    Expression.ArrayLit(exps, reg, tpe, eff, loc)
   }
 
   /**
@@ -1387,14 +1390,16 @@ object Lowering {
       val r = substExp(rest, subst)
       Expression.RecordRestrict(field, r, tpe, eff, loc)
 
-    case Expression.ArrayLit(elms, tpe, eff, loc) =>
-      val es = elms.map(substExp(_, subst))
-      Expression.ArrayLit(es, tpe, eff, loc)
+    case Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
+      val es = exps.map(substExp(_, subst))
+      val e = substExp(exp, subst)
+      Expression.ArrayLit(es, e, tpe, eff, loc)
 
-    case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
-      val e = substExp(elm, subst)
-      val l = substExp(len, subst)
-      Expression.ArrayNew(e, l, tpe, eff, loc)
+    case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      val e3 = substExp(exp3, subst)
+      Expression.ArrayNew(e1, e2, e3, tpe, eff, loc)
 
     case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
       val b = substExp(base, subst)

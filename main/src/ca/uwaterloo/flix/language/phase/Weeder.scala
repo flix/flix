@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
-import ca.uwaterloo.flix.language.ast.ParsedAst.RecordFieldType
+import ca.uwaterloo.flix.language.ast.ParsedAst.{Effect, RecordFieldType}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -123,18 +123,19 @@ object Weeder {
     * Performs weeding on the given class declaration `c0`.
     */
   private def visitClass(c0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Class], WeederError] = c0 match {
-    case ParsedAst.Declaration.Class(doc0, mods0, sp1, ident, tparam0, superClasses0, lawsAndSigs, sp2) =>
+    case ParsedAst.Declaration.Class(doc0, ann0, mods0, sp1, ident, tparam0, superClasses0, lawsAndSigs, sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
       val laws0 = lawsAndSigs.collect { case law: ParsedAst.Declaration.Law => law }
       val sigs0 = lawsAndSigs.collect { case sig: ParsedAst.Declaration.Sig => sig }
       for {
+        ann <- visitAnnotations(ann0)
         mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Sealed, Ast.Modifier.Lawless))
         sigs <- traverse(sigs0)(visitSig)
         laws <- traverse(laws0)(visitLaw)
         tparam = visitTypeParam(tparam0)
         superClasses <- traverse(superClasses0)(visitTypeConstraint)
-      } yield List(WeededAst.Declaration.Class(doc, mods, ident, tparam, superClasses, sigs.flatten, laws.flatten, loc))
+      } yield List(WeededAst.Declaration.Class(doc, ann, mods, ident, tparam, superClasses, sigs.flatten, laws.flatten, loc))
   }
 
   /**
@@ -1074,14 +1075,24 @@ object Weeder {
           }
       }
 
+    case ParsedAst.Expression.New(sp1, qname, exp, sp2) =>
+      mapN(traverse(exp)(visitExp).map(_.headOption)) {
+        case e =>
+          WeededAst.Expression.New(qname, e, mkSL(qname.sp1, qname.sp2))
+      }
+
     case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
-      traverse(exps)(e => visitExp(e)) map {
-        case es => WeededAst.Expression.ArrayLit(es, mkSL(sp1, sp2))
+      val loc = mkSL(sp1, sp2)
+      mapN(traverse(exps)(visitExp), traverse(exp)(visitExp).map(_.headOption)) {
+        case (es, e) =>
+          WeededAst.Expression.ArrayLit(es, e, loc)
       }
 
     case ParsedAst.Expression.ArrayNew(sp1, exp1, exp2, exp3, sp2) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => WeededAst.Expression.ArrayNew(e1, e2, mkSL(sp1, sp2))
+      val loc = mkSL(sp1, sp2)
+      mapN(visitExp(exp1), visitExp(exp2), traverse(exp3)(visitExp).map(_.headOption)) {
+        case (e1, e2, e3) =>
+          WeededAst.Expression.ArrayNew(e1, e2, e3, loc)
       }
 
     case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
@@ -1253,12 +1264,7 @@ object Weeder {
       for {
         e1 <- visitExp(exp1)
         e2 <- Validation.traverse(exp2)(visitExp).map(_.headOption)
-      } yield {
-        // If there is no explicit region, we use the global region.
-        val defaultRegionType = Type.mkRegion(Type.False, loc)
-        val defaultRegion = e2.getOrElse(WeededAst.Expression.Region(defaultRegionType, loc))
-        WeededAst.Expression.Ref(e1, defaultRegion, loc)
-      }
+      } yield WeededAst.Expression.Ref(e1, e2, loc)
 
     case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
       for {
@@ -2089,8 +2095,6 @@ object Weeder {
 
     case ParsedAst.Type.Var(sp1, ident, sp2) => WeededAst.Type.Var(ident, mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Region(sp1, ident, sp2) => WeededAst.Type.Var(ident, mkSL(sp1, sp2))
-
     case ParsedAst.Type.Ambiguous(sp1, qname, sp2) => WeededAst.Type.Ambiguous(qname, mkSL(sp1, sp2))
 
     case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(visitType), mkSL(sp1, sp2))
@@ -2163,11 +2167,50 @@ object Weeder {
       val t2 = visitType(tpe2)
       WeededAst.Type.Or(t1, t2, mkSL(sp1, sp2))
 
+    case ParsedAst.Type.Union(sp1, efs, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      if (efs.isEmpty)
+        WeededAst.Type.True(loc)
+      else {
+        val zero = visitReadOrWrite(efs.head, loc)
+        efs.tail.foldLeft(zero) {
+          case (acc, rw) => WeededAst.Type.And(acc, visitReadOrWrite(rw, loc), loc)
+        }
+      }
+
     case ParsedAst.Type.Ascribe(tpe, kind, sp2) =>
       val sp1 = leftMostSourcePosition(tpe)
       val t = visitType(tpe)
       val k = visitKind(kind)
       WeededAst.Type.Ascribe(t, k, mkSL(sp1, sp2))
+  }
+
+  /**
+    * Returns the given read or write effect as a WeededAst type.
+    */
+  private def visitReadOrWrite(rw: ParsedAst.Effect, loc: SourceLocation): WeededAst.Type = rw match {
+    case Effect.Var(sp1, ident, sp2) =>
+      WeededAst.Type.Var(ident, mkSL(sp1, sp2))
+
+    case Effect.Read(idents) =>
+      if (idents.isEmpty)
+        WeededAst.Type.True(loc)
+      else {
+        val zero: WeededAst.Type = WeededAst.Type.Var(idents.head, idents.head.loc)
+        idents.tail.foldLeft(zero) {
+          case (acc, ident) => WeededAst.Type.And(acc, WeededAst.Type.Var(ident, ident.loc), loc)
+        }
+      }
+
+    case Effect.Write(idents) =>
+      if (idents.isEmpty)
+        WeededAst.Type.True(loc)
+      else {
+        val zero: WeededAst.Type = WeededAst.Type.Var(idents.head, idents.head.loc)
+        idents.tail.foldLeft(zero) {
+          case (acc, ident) => WeededAst.Type.And(acc, WeededAst.Type.Var(ident, ident.loc), loc)
+        }
+      }
   }
 
   /**
@@ -2555,6 +2598,7 @@ object Weeder {
     case ParsedAst.Expression.RecordSelect(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.RecordSelectLambda(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordOperation(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.New(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLit(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayNew(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
@@ -2598,7 +2642,6 @@ object Weeder {
   private def leftMostSourcePosition(tpe: ParsedAst.Type): SourcePosition = tpe match {
     case ParsedAst.Type.Unit(sp1, _) => sp1
     case ParsedAst.Type.Var(sp1, _, _) => sp1
-    case ParsedAst.Type.Region(sp1, _, _) => sp1
     case ParsedAst.Type.Ambiguous(sp1, _, _) => sp1
     case ParsedAst.Type.Tuple(sp1, _, _) => sp1
     case ParsedAst.Type.Record(sp1, _, _, _) => sp1
@@ -2614,6 +2657,7 @@ object Weeder {
     case ParsedAst.Type.Not(sp1, _, _) => sp1
     case ParsedAst.Type.And(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Or(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.Union(sp1, _, _) => sp1
     case ParsedAst.Type.Ascribe(tpe, _, _) => leftMostSourcePosition(tpe)
   }
 
@@ -2669,6 +2713,15 @@ object Weeder {
     val memberName = fqn.last
 
     (className, memberName).toSuccess
+  }
+
+  /**
+    * Returns the region expression `region` if it is non-None. Otherwise returns the global region.
+    */
+  private def getRegionOrDefault(region: Option[WeededAst.Expression], loc: SourceLocation): WeededAst.Expression = {
+    val tpe = Type.mkRegion(Type.False, loc)
+    val exp = WeededAst.Expression.Region(tpe, loc)
+    region.getOrElse(exp)
   }
 
 }
