@@ -42,14 +42,7 @@ object OccurrenceAnalyzer {
     val newDefs = defs.map(kv => kv.sym -> kv).toMap
 
     // Visit every enum in the program and transform to type 'OccurrenceAst.Enum'
-    val enums = root.enums.map {
-      case (sym, enum) =>
-        val cases = enum.cases.map {
-          case (tag, caze) =>
-            tag -> OccurrenceAst.Case(caze.sym, tag, caze.tpeDeprecated, caze.loc)
-        }
-        sym -> OccurrenceAst.Enum(enum.ann, enum.mod, enum.sym, cases, enum.tpeDeprecated, enum.loc)
-    }
+    val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
 
     // Reassemble the ast root.
     val result = OccurrenceAst.Root(newDefs, enums, root.reachable, root.sources)
@@ -58,13 +51,39 @@ object OccurrenceAnalyzer {
   }
 
   /**
+   * Translates the given enum `enum0` to the OccurrenceAst.
+   */
+  private def visitEnum(enum0: LiftedAst.Enum): OccurrenceAst.Enum = {
+    val cases = enum0.cases.map {
+      case (k, v) =>
+        k -> visitCase(v)
+    }
+    OccurrenceAst.Enum(enum0.ann, enum0.mod, enum0.sym, cases, enum0.tpeDeprecated, enum0.loc)
+  }
+
+  /**
+   * Translates the given case `case0` to the OccurrenceAst.
+   */
+  private def visitCase(case0: LiftedAst.Case): OccurrenceAst.Case = {
+    OccurrenceAst.Case(case0.sym, case0.tag, case0.tpeDeprecated, case0.loc)
+  }
+
+  /**
    * Visits a definition in the program and performs occurrence analysis
    */
   private def visitDef(defn: LiftedAst.Def): OccurrenceAst.Def = {
-    val fparams = defn.fparams.map { case LiftedAst.FormalParam(sym, mod, tpe, loc) => OccurrenceAst.FormalParam(sym, mod, tpe, loc) }
+    val fparams = defn.fparams.map {
+      visitFormalParam
+    }
     val (e, _) = visitExp(defn.exp)
     OccurrenceAst.Def(defn.ann, defn.mod, defn.sym, fparams, e, defn.tpe, defn.loc)
   }
+
+  /**
+   * Translates the given formal param `p` to the OccurrenceAst.
+   */
+  private def visitFormalParam(p: LiftedAst.FormalParam): OccurrenceAst.FormalParam =
+    OccurrenceAst.FormalParam(p.sym, p.mod, p.tpe, p.loc)
 
   /**
    * Performs occurrence analysis on the given expression `exp0`
@@ -156,12 +175,13 @@ object OccurrenceAnalyzer {
       val (o2, bs) = branches.foldLeft(Map[VarSym, Occur](), Map[LabelSym, OccurrenceAst.Expression]())((acc, b) => {
         val (oacc, bsacc) = acc
         b match {
-        case (sym, exp1) =>
-          val (e2, o3) = visitExp(exp1)
-          val o4 = combineAllBranch(oacc, o3)
-          val bs = bsacc + (sym -> e2)
-          (o4, bs)
-      }})
+          case (sym, exp1) =>
+            val (e2, o3) = visitExp(exp1)
+            val o4 = combineAllBranch(oacc, o3)
+            val bs = bsacc + (sym -> e2)
+            (o4, bs)
+        }
+      })
       val o5 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.Branch(e1, bs, tpe, loc), o5)
 
@@ -331,8 +351,8 @@ object OccurrenceAnalyzer {
         (OccurrenceAst.SelectChannelRule(r.sym, c, e), o3, o4)
       }).unzip3
 
-      val o5 =  o1.foldLeft(Map[VarSym, Occur]())((acc, o6) => combineAllSeq(acc, o6))
-      val o7 =  o2.foldLeft(Map[VarSym, Occur]())((acc, o8) => combineAllBranch(acc, o8))
+      val o5 = o1.foldLeft(Map[VarSym, Occur]())((acc, o6) => combineAllSeq(acc, o6))
+      val o7 = o2.foldLeft(Map[VarSym, Occur]())((acc, o8) => combineAllBranch(acc, o8))
 
       val (d1, o9) = default.map(visitExp).unzip
       val o10 = combineAllBranch(o9.getOrElse(Map.empty), o7)
@@ -364,7 +384,7 @@ object OccurrenceAnalyzer {
    */
   private def visitExps(exps: List[LiftedAst.Expression]): (List[OccurrenceAst.Expression], Map[Symbol.VarSym, Occur]) = {
     val (es, o1) = exps.map(visitExp).unzip
-    val o2 =  o1.foldLeft(Map[VarSym, Occur]())((acc, o3) => combineAllSeq(acc, o3))
+    val o2 = o1.foldLeft(Map[VarSym, Occur]())((acc, o3) => combineAllSeq(acc, o3))
     (es, o2)
   }
 

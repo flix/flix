@@ -840,4 +840,102 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+    ///
+    /// Returns a list naming the files and directories in the directory `f`.
+    /// The full paths of the files and directories are specified.
+    ///
+    /// Does not recursively traverse the directory.
+    ///
+    pub def list(f: String): Result[List[String], String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.listFiles(): Array[##java.io.File] & Impure;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import java.nio.file.Path.toString(): String & Impure as pathToString;
+
+            let javaList = f |> newFile |> listFiles;
+
+            if (not Object.isNull(javaList)) {
+                let paths = javaList |> Array.map(toPath) |> Array.map(pathToString);
+                Ok(Array.toList(paths))
+            } else {
+                Err("An error occurred when trying to list the file: '${f}'.")
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns an Iterator naming the files and directories in the directory `f`.
+    /// The full paths of the files and directories are specified.
+    ///
+    /// Does not recursively traverse the directory.
+    ///
+    pub def listWithIter(f: String): Result[Iterator[String], String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.newDirectoryStream(##java.nio.file.Path): ##java.nio.file.DirectoryStream & Impure;
+            import java.nio.file.DirectoryStream.iterator(): ##java.util.Iterator & Impure;
+            import java.nio.file.Path.toString(): String & Pure as pathToString;
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let javaStream = newDirectoryStream(javaPath);
+            let javaIter = iterator(javaStream);
+
+            let iter = fromJavaIter(javaIter);
+            Ok(Iterator.mapL(pathToString, iter))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns an Iterator over the files and directories recursively under the path `f`, including `f` itself.
+    /// The full paths of the files and directories are specified.
+    ///
+    /// Recursively traverses the directory.
+    ///
+    pub def walk(f: String): Result[Iterator[String], String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.walk(##java.nio.file.Path, Array[##java.nio.file.FileVisitOption]): ##java.util.stream.Stream & Impure;
+            import java.util.stream.BaseStream.iterator(): ##java.util.Iterator & Impure;
+            import java.nio.file.Path.toString(): String & Pure as pathToString;
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let javaStream = walk(javaPath, []);
+            let javaIter = iterator(javaStream as ##java.util.stream.BaseStream);
+
+            let iter = fromJavaIter(javaIter);
+            Ok(Iterator.mapL(pathToString, iter))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Converts a Java iterator to a Flix Iterator.
+    ///
+    def fromJavaIter(iter: ##java.util.Iterator): Iterator[a] =
+        import java.util.Iterator.hasNext(): Bool & Impure;
+        import java.util.Iterator.next(): a & Impure as getNext;
+
+        let done = () -> not hasNext(iter);
+        let next = () -> {
+            if(hasNext(iter)) {
+                getNext(iter)
+            } else {
+                bug!("Empty iterator.")
+            }
+        };
+        Iterator(done, next)
+
 }
