@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expression, Occur}
-import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Symbol}
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Purity, Symbol}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.Validation
 
 /**
  * The Reducer phase performs intra-procedural optimizations.
@@ -170,7 +170,7 @@ object Reducer {
 
     case Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
       // If `e1` is unused (dead) and has no side effects (pure), visit `e2` and remove `e1`
-      if (occur == Occur.Dead && isPureTemporaryToBeRemoved(exp1)) {
+      if (occur == Occur.Dead && purity == Purity.Pure) {
         visitExp(exp2, env0)
       } else {
         // Visit the value expression.
@@ -355,29 +355,4 @@ object Reducer {
 
     case Expression.MatchError(tpe, loc) => LiftedAst.Expression.MatchError(tpe, loc)
   }
-
-
-    private def isPureTemporaryToBeRemoved(exp0: Expression): Boolean = exp0 match {
-      case Expression.Unit(loc) => true
-      case Expression.Null(tpe, loc) => true
-      case Expression.True(loc) => true
-      case Expression.False(loc) => true
-      case Expression.Char(lit, loc) => true
-      case Expression.Float32(lit, loc) => true
-      case Expression.Float64(lit, loc) => true
-      case Expression.Int8(lit, loc) => true
-      case Expression.Int16(lit, loc) => true
-      case Expression.Int32(lit, loc) => true
-      case Expression.Int64(lit, loc) => true
-      case Expression.BigInt(lit, loc) => true
-      case Expression.Str(lit, loc) => true
-      case Expression.Var(sym, tpe, loc) => true
-      case Expression.Unary(sop, op, exp, tpe, loc) => isPureTemporaryToBeRemoved(exp)
-      case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => isPureTemporaryToBeRemoved(exp1) && isPureTemporaryToBeRemoved(exp2)
-      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => isPureTemporaryToBeRemoved(exp1) && isPureTemporaryToBeRemoved(exp2) && isPureTemporaryToBeRemoved(exp3)
-      case Expression.Tag(sym, tag, exp, tpe, loc) => isPureTemporaryToBeRemoved(exp)
-      case Expression.Untag(sym, tag, exp, tpe, loc) => isPureTemporaryToBeRemoved(exp)
-      case Expression.Tuple(elms, tpe, loc) => elms.forall(isPureTemporaryToBeRemoved)
-      case _ => false
-    }
 }
