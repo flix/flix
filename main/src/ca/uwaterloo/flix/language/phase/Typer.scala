@@ -1038,12 +1038,9 @@ object Typer {
         } yield (elementConstrs.flatten, Type.mkTuple(elementTypes, loc), resultEff)
 
       case KindedAst.Expression.RecordEmpty(tvar, loc) =>
-        //
-        //  ---------
-        //  { } : { }
-        //
+        val emptyRecord = Type.mkRecord(Type.RecordRowEmpty, loc)
         for {
-          resultType <- unifyTypeM(tvar, Type.mkRecord(Type.RecordRowEmpty, loc), loc)
+          resultType <- unifyTypeM(tvar, emptyRecord, loc)
         } yield (List.empty, resultType, Type.Pure)
 
       case KindedAst.Expression.RecordSelect(exp, field, tvar, loc) =>
