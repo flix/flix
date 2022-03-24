@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Magnus Madsen
+ * Copyright 2020 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.debug
 
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
+package ca.uwaterloo.flix.language.fmt
 
-object FormatEff {
-
-  def formatEff(eff: Type)(implicit audience: Audience): String = eff match {
-    case Type.Cst(TypeConstructor.True, _) => "Pure"
-    case Type.Cst(TypeConstructor.False, _) => "Impure"
-    case _ => FormatType.formatType(eff)
-  }
-
+/**
+  * Describes the intended audience of the result of a method call.
+  *
+  * [[Audience.External]] indicates the result should be formatted for display to users.
+  *
+  * [[Audience.Internal]] indicates the result should be formatted for display to compiler programmers.
+  */
+sealed trait Audience
+object Audience {
+  case object External extends Audience
+  case object Internal extends Audience
 }
