@@ -730,7 +730,7 @@ object Typer {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           (constrs3, tpe3, eff3) <- visitExp(exp3)
-          condType <- unifyTypeM(Type.Bool, tpe1, loc)
+          condType <- expectTypeM(expected = Type.Bool, actual = tpe1, exp1.loc)
           resultTyp <- unifyTypeM(tpe2, tpe3, loc)
           resultEff = Type.mkAnd(eff1, eff2, eff3, loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
@@ -744,10 +744,12 @@ object Typer {
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
+        // Note: The call to unify on sym.tvar occurs immediately after we have inferred the type of exp1.
+        // This ensures that uses of sym inside exp2 are type checked according to this type.
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
-          (constrs2, tpe2, eff2) <- visitExp(exp2)
           boundVar <- unifyTypeM(sym.tvar.ascribedWith(Kind.Star), tpe1, loc)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
           resultTyp = tpe2
           resultEff = Type.mkAnd(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
@@ -767,7 +769,7 @@ object Typer {
           resultEff = Type.mkAnd(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.Region(tpe, loc) =>
+      case KindedAst.Expression.Region(tpe, _) =>
         liftM(Nil, tpe, Type.Pure)
 
       case KindedAst.Expression.Scope(sym, exp, evar, loc) =>
@@ -1357,11 +1359,6 @@ object Typer {
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.Lazy(exp, loc) =>
-        //
-        //  exp: t & Pure
-        //  -------------------------
-        //  lazy exp : Lazy[t] @ Pure
-        //
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           resultTyp = Type.mkLazy(tpe, loc)
@@ -1369,14 +1366,9 @@ object Typer {
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.Force(exp, tvar, loc) =>
-        //
-        //  exp: Lazy[t] @ e
-        //  -------------------------
-        //  force exp : t @ e
-        //
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          lazyTyp <- unifyTypeM(tpe, Type.mkLazy(tvar, loc), loc)
+          lazyTyp <- expectTypeM(expected = Type.mkLazy(tvar, loc), actual = tpe, loc)
           resultTyp = tvar
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
