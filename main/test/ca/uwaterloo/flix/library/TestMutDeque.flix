@@ -791,7 +791,7 @@ namespace TestMutDeque {
 
     @test
     def join01(): Bool = region r {
-        new MutDeque(r) |> MutDeque.join(",") == ""
+        new MutDeque(r): MutDeque[Int32, _] |> MutDeque.join(",") == ""
     }
 
     @test
@@ -859,7 +859,7 @@ namespace TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
     // iterator                                                                //
     /////////////////////////////////////////////////////////////////////////////
-
+/*
     @test
     def iterator01(): Bool = region r {
         match new MutDeque(r) |> Iterable.iterator {
@@ -912,7 +912,7 @@ namespace TestMutDeque {
                 next() == 2
         }
     }
-
+*/
     /////////////////////////////////////////////////////////////////////////////
     // foreach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
@@ -920,31 +920,30 @@ namespace TestMutDeque {
     @test
     def foreach01(): Bool = region r {
         let d = new MutDeque(r);
-        let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let l = ref Nil @ r;
+        let fn = x -> if (x > 0) l := "T" :: deref l else l := "F" :: deref l;
         MutDeque.foreach(fn, d);
-        StringBuilder.toString(sb) == ""
+        List.reverse(deref l) |> List.join("") == ""
     }
 
     @test
     def foreach02(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushBack(0, d);
-
-        let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let l = ref Nil @ r;
+        let fn = x -> if (x > 0) l := "T" :: deref l else l := "F" :: deref l;
         MutDeque.foreach(fn, d);
-        StringBuilder.toString(sb) == "F"
+        List.reverse(deref l) |> List.join("") == "F"
     }
 
     @test
     def foreach03(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushBack(1, d);
-        let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let l = ref Nil @ r;
+        let fn = x -> if (x > 0) l := "T" :: deref l else l := "F" :: deref l;
         MutDeque.foreach(fn, d);
-        StringBuilder.toString(sb) == "T"
+        List.reverse(deref l) |> List.join("") == "T"
     }
 
     @test
@@ -952,10 +951,10 @@ namespace TestMutDeque {
         let d = new MutDeque(r);
         MutDeque.pushBack(0, d);
         MutDeque.pushBack(1, d);
-        let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let l = ref Nil @ r;
+        let fn = x -> if (x > 0) l := "T" :: deref l else l := "F" :: deref l;
         MutDeque.foreach(fn, d);
-        StringBuilder.toString(sb) == "FT"
+        List.reverse(deref l) |> List.join("") == "FT"
     }
 
     @test
@@ -963,10 +962,10 @@ namespace TestMutDeque {
         let d = new MutDeque(r);
         MutDeque.pushBack(1, d);
         MutDeque.pushFront(0, d);
-        let sb = StringBuilder.new();
-        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let l = ref Nil @ r;
+        let fn = x -> if (x > 0) l := "T" :: deref l else l := "F" :: deref l;
         MutDeque.foreach(fn, d);
-        StringBuilder.toString(sb) == "FT"
+        List.reverse(deref l) |> List.join("") == "FT"
     }
 
 }
