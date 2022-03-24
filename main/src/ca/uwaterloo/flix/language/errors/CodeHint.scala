@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatEff}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatEff}
 
 /**
   * A common super-type for code hints.
