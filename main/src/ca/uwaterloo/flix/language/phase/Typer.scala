@@ -419,7 +419,7 @@ object Typer {
       */
     def visitExp(e0: KindedAst.Expression): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = e0 match {
 
-      case KindedAst.Expression.Wild(tvar, loc) =>
+      case KindedAst.Expression.Wild(tvar, _) =>
         liftM(List.empty, tvar, Type.Pure)
 
       case KindedAst.Expression.Var(sym, tpe, loc) =>
@@ -444,49 +444,49 @@ object Typer {
           tconstrs = tconstrs0.map(_.copy(loc = loc))
         } yield (tconstrs, resultTyp, Type.Pure)
 
-      case KindedAst.Expression.Hole(sym, tvar, loc) =>
+      case KindedAst.Expression.Hole(sym, tvar, _) =>
         liftM(List.empty, tvar, Type.Pure)
 
-      case KindedAst.Expression.Unit(loc) =>
+      case KindedAst.Expression.Unit(_) =>
         liftM(List.empty, Type.Unit, Type.Pure)
 
-      case KindedAst.Expression.Null(loc) =>
+      case KindedAst.Expression.Null(_) =>
         liftM(List.empty, Type.Null, Type.Pure)
 
-      case KindedAst.Expression.True(loc) =>
+      case KindedAst.Expression.True(_) =>
         liftM(List.empty, Type.Bool, Type.Pure)
 
-      case KindedAst.Expression.False(loc) =>
+      case KindedAst.Expression.False(_) =>
         liftM(List.empty, Type.Bool, Type.Pure)
 
-      case KindedAst.Expression.Char(lit, loc) =>
+      case KindedAst.Expression.Char(lit, _) =>
         liftM(List.empty, Type.Char, Type.Pure)
 
-      case KindedAst.Expression.Float32(lit, loc) =>
+      case KindedAst.Expression.Float32(lit, _) =>
         liftM(List.empty, Type.Float32, Type.Pure)
 
-      case KindedAst.Expression.Float64(lit, loc) =>
+      case KindedAst.Expression.Float64(lit, _) =>
         liftM(List.empty, Type.Float64, Type.Pure)
 
-      case KindedAst.Expression.Int8(lit, loc) =>
+      case KindedAst.Expression.Int8(lit, _) =>
         liftM(List.empty, Type.Int8, Type.Pure)
 
-      case KindedAst.Expression.Int16(lit, loc) =>
+      case KindedAst.Expression.Int16(lit, _) =>
         liftM(List.empty, Type.Int16, Type.Pure)
 
-      case KindedAst.Expression.Int32(lit, loc) =>
+      case KindedAst.Expression.Int32(lit, _) =>
         liftM(List.empty, Type.Int32, Type.Pure)
 
-      case KindedAst.Expression.Int64(lit, loc) =>
+      case KindedAst.Expression.Int64(lit, _) =>
         liftM(List.empty, Type.Int64, Type.Pure)
 
-      case KindedAst.Expression.BigInt(lit, loc) =>
+      case KindedAst.Expression.BigInt(lit, _) =>
         liftM(List.empty, Type.BigInt, Type.Pure)
 
-      case KindedAst.Expression.Str(lit, loc) =>
+      case KindedAst.Expression.Str(lit, _) =>
         liftM(List.empty, Type.Str, Type.Pure)
 
-      case KindedAst.Expression.Default(tvar, loc) =>
+      case KindedAst.Expression.Default(tvar, _) =>
         liftM(List.empty, tvar, Type.Pure)
 
       case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
@@ -522,49 +522,49 @@ object Typer {
         case SemanticOperator.Float32Op.Neg =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Float32, loc)
+            resultTyp <- expectTypeM(expected = Type.Float32, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.Float64Op.Neg =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Float64, loc)
+            resultTyp <- expectTypeM(expected = Type.Float64, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.Int8Op.Neg | SemanticOperator.Int8Op.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Int8, loc)
+            resultTyp <- expectTypeM(expected = Type.Int8, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.Int16Op.Neg | SemanticOperator.Int16Op.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Int16, loc)
+            resultTyp <- expectTypeM(expected = Type.Int16, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.Int32Op.Neg | SemanticOperator.Int32Op.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Int32, loc)
+            resultTyp <- expectTypeM(expected = Type.Int32, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.Int64Op.Neg | SemanticOperator.Int64Op.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Int64, loc)
+            resultTyp <- expectTypeM(expected = Type.Int64, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.BigIntOp.Neg | SemanticOperator.BigIntOp.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.BigInt, loc)
+            resultTyp <- expectTypeM(expected = Type.BigInt, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
@@ -577,9 +577,11 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultType <- unifyTypeM(tvar, tpe1, tpe2, Type.Bool, loc)
+            lhs <- expectTypeM(expected = Type.Bool, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.Bool, actual = tpe2, exp2.loc)
+            resultTyp = Type.Bool
             resultEff = Type.mkAnd(eff1, eff2, loc)
-          } yield (constrs1 ++ constrs2, resultType, resultEff)
+          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Float32Op.Add | SemanticOperator.Float32Op.Sub | SemanticOperator.Float32Op.Mul | SemanticOperator.Float32Op.Div
              | SemanticOperator.Float32Op.Exp =>
