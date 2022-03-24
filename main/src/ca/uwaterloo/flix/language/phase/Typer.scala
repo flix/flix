@@ -1167,15 +1167,18 @@ object Typer {
 
       case KindedAst.Expression.Deref(exp, tvar, evar, loc) =>
         // Introduce a fresh type variable for element type.
-        val elmTypeVar = Type.freshVar(Kind.Star, loc, Rigidity.Flexible, Some("t"))
+        val elmVar = Type.freshVar(Kind.Star, loc, Rigidity.Flexible)
 
         // Introduce a flexible variable for the region variable.
-        // This variable will become unified with the rigid variable.
-        val regionVar = Type.freshVar(Kind.Bool, loc, Rigidity.Flexible, Some("l"))
+        val regionVar = Type.freshVar(Kind.Bool, loc, Rigidity.Flexible)
+
+        // The expected type is of the form ScopedRef[elmVar, regionVar]
+        val expectedType = Type.mkScopedRef(elmVar, regionVar, loc)
+
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          refType <- unifyTypeM(tpe, Type.mkScopedRef(elmTypeVar, regionVar, loc), loc)
-          resultTyp <- unifyTypeM(tvar, elmTypeVar, loc)
+          _ <- expectTypeM(expected = expectedType, actual = tpe, exp.loc)
+          resultTyp <- unifyTypeM(tvar, elmVar, loc)
           resultEff <- unifyTypeM(evar, Type.mkAnd(eff, regionVar, loc), loc)
         } yield (constrs, resultTyp, resultEff)
 
