@@ -316,7 +316,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           // println(s"lsp/check: ${e / 1_000_000}ms")
 
           // Compute Code Quality hints.
-          val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix)
+          val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
           if (codeHints.isEmpty) {
             // Case 1: No code hints.
             ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)

@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.language.debug
+package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, SemanticOperator, SemanticOperatorOps, Type, TypeConstructor, TypedAst, UnaryOperator}
