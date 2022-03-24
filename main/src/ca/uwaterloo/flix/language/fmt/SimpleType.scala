@@ -255,7 +255,7 @@ object SimpleType {
     * Creates a simple type from the well-kinded type `t`.
    */
   def fromWellKindedType(t: Type): SimpleType = t.baseType match {
-    case Type.KindedVar(id, kind, loc, rigidity, text) => Var(id, kind, rigidity, text)
+    case Type.KindedVar(sym, kind, loc, rigidity, text) => Var(sym.id, kind, rigidity, text)
     case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
     case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
     case Type.Alias(cst, args, tpe, loc) => mkApply(Name(cst.sym.name), args.map(fromWellKindedType))
