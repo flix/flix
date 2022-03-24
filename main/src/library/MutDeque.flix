@@ -28,7 +28,7 @@
 /// and the back index always points to the first empty index (going clockwise).
 ///
 pub enum MutDeque[a: Type, r: Region] {
-    case MutDeque(ScopedArray[a, r], ScopedRef[Int32, r], ScopedRef[Int32, r])
+    case MutDeque(ScopedRef[ScopedArray[a, r], r], ScopedRef[Int32, r], ScopedRef[Int32, r])
 }
 
 
@@ -41,6 +41,7 @@ instance Scoped[MutDeque[a]] {
 }
 
 // Find fix for this
+/*
 instance Iterable[MutDeque] {
     pub def iterator(t: MutDeque[a, r]): Iterator[a] \ { Read(r) } =
         let MutDeque(a, f, b) = t;
@@ -64,6 +65,7 @@ instance Iterable[MutDeque] {
         };
         Iterator(done, next)
 }
+*/
 
 namespace MutDeque {
 
@@ -96,7 +98,7 @@ namespace MutDeque {
     /// Returns an empty MutDeque.
     ///
     pub def new(r: Region[r]): MutDeque[a, r] \ { Write(r) } =
-        MutDeque(ref [$DEFAULT$; minCapacity()] @ r, ref 0 @ r, ref 0 @ r)
+        MutDeque(ref [$DEFAULT$; minCapacity()] @ r @ r, ref 0 @ r, ref 0 @ r)
 
     ///
     /// Returns the number of elements in `d`.
@@ -257,15 +259,14 @@ namespace MutDeque {
     ///
     /// Doubles the capacity of `d`.
     ///
-    def grow!(d: MutDeque[a, r]): Unit \ { Read(r), Write(r) } = {
+    def grow!(d: MutDeque[a, r]): Unit \ { Read(r), Write(r) } =
         let MutDeque(a, f, b) = d;
         let c = capacity(d);
-        let arr = [$DEFAULT$; 2 * c];                  // Allocate new array `arr` with double the capacity of `a`.
+        let arr = [$DEFAULT$; c <<< 1];                // Allocate new array `arr` with double the capacity of `a`.
         copyElements!(deref f, deref b, deref a, arr); // Copy elements from old array `a` to new array `arr`.
         a := arr;                                      // Update references.
         b := computeSize(c, deref f, deref b);
         f := 0
-    }
 
     ///
     /// Compresses MutDeque `d` if the load factor is less than or equal to `minLoadFactor`.
@@ -287,7 +288,7 @@ namespace MutDeque {
         let mc = minCapacity();
         let c = capacity(d);
         if (c > mc) {                                      // Prevent the backing array from shrinking below `minCapacity`.
-            let arr = [$DEFAULT$; c / 2];                  // Allocate new array `arr` with half the capacity of `a`.
+            let arr = [$DEFAULT$; c >>> 1];                // Allocate new array `arr` with half the capacity of `a`.
             copyElements!(deref f, deref b, deref a, arr); // Copy elements from old array `a` to new array `arr`.
             a := arr;                                      // Update references.
             b := computeSize(c, deref f, deref b);
