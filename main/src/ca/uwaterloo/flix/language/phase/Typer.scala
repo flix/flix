@@ -515,7 +515,7 @@ object Typer {
         case SemanticOperator.BoolOp.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Bool, loc)
+            resultTyp <- expectTypeM(expected = Type.Bool, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
