@@ -579,7 +579,7 @@ object Typer {
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.Bool, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Bool, actual = tpe2, exp2.loc)
-            resultTyp = Type.Bool
+            resultTyp <- unifyTypeM(tvar, Type.Bool, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -590,7 +590,7 @@ object Typer {
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.Float32, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Float32, actual = tpe2, exp2.loc)
-            resultTyp = Type.Float32
+            resultTyp <- unifyTypeM(tvar, Type.Float32, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -601,7 +601,7 @@ object Typer {
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.Float64, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Float64, actual = tpe2, exp2.loc)
-            resultTyp = Type.Float64
+            resultTyp <- unifyTypeM(tvar, Type.Float64, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -613,7 +613,7 @@ object Typer {
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.Int8, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Int8, actual = tpe2, exp2.loc)
-            resultTyp = Type.Int8
+            resultTyp <- unifyTypeM(tvar, Type.Int8, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -625,7 +625,7 @@ object Typer {
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.Int16, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Int16, actual = tpe2, exp2.loc)
-            resultTyp = Type.Int16
+            resultTyp <- unifyTypeM(tvar, Type.Int16, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -637,7 +637,7 @@ object Typer {
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.Int32, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
-            resultTyp = Type.Int32
+            resultTyp <- unifyTypeM(tvar, Type.Int32, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -649,7 +649,7 @@ object Typer {
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.Int64, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Int64, actual = tpe2, exp2.loc)
-            resultTyp = Type.Int64
+            resultTyp <- unifyTypeM(tvar, Type.Int64, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -661,7 +661,7 @@ object Typer {
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.BigInt, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.BigInt, actual = tpe2, exp2.loc)
-            resultTyp = Type.BigInt
+            resultTyp <- unifyTypeM(tvar, Type.BigInt, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -718,7 +718,7 @@ object Typer {
             (constrs2, tpe2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.Str, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.Str, actual = tpe2, exp2.loc)
-            resultTyp = Type.Str
+            resultTyp <- unifyTypeM(tvar, Type.Str, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
