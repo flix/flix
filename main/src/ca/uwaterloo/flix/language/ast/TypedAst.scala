@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
-import ca.uwaterloo.flix.language.debug.{FormatExpression, FormatPattern}
+import ca.uwaterloo.flix.language.dbg.{FormatExpression, FormatPattern}
 
 import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.List
