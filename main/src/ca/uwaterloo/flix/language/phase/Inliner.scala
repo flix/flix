@@ -129,6 +129,7 @@ object Inliner {
     case Expression.JumpTo(_, _, _) => exp0
 
     case Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
+      // Wants to inline `exp1` if `occur` is Once and `purity` is Pure
       val wantToPreInline = (occur, purity) match {
         case (Occur.Once, Purity.Pure) => true
         case _ => false
@@ -137,9 +138,20 @@ object Inliner {
         val subst1 = subst0 + (sym -> exp1)
         visitExp(exp2, subst1)
       } else {
+        // Wants to inline `e1` if is trivial and `purity` is Pure
         val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        Expression.Let(sym, e1, e2, occur, tpe, purity, loc)
+        val wantToPostInline = (occur, purity, isTrivial(e1)) match {
+          case (Occur.Sacred, _, _) => false
+          case (_, Purity.Pure, true) => true
+          case _ => false
+        }
+        if (wantToPostInline) {
+          val subst1 = subst0 + (sym -> e1)
+          visitExp(exp2, subst1)
+        } else {
+          val e2 = visitExp(exp2, subst0)
+          Expression.Let(sym, e1, e2, occur, tpe, purity, loc)
+        }
       }
 
     case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
@@ -260,7 +272,7 @@ object Inliner {
       val e2 = visitExp(exp2, subst0)
       Expression.PutField(field, e1, e2, tpe, loc)
 
-    case Expression.GetStaticField(_,_,_) => exp0
+    case Expression.GetStaticField(_, _, _) => exp0
 
     case Expression.PutStaticField(field, exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -304,5 +316,23 @@ object Inliner {
     case Expression.HoleError(_, _, _) => exp0
 
     case Expression.MatchError(_, _) => exp0
+  }
+
+  private def isTrivial(exp0: Expression): Boolean = exp0 match {
+    case Expression.Unit(_) => true
+    case Expression.Null(_, _) => true
+    case Expression.True(_) => true
+    case Expression.False(_) => true
+    case Expression.Char(_, _) => true
+    case Expression.Float32(_, _) => true
+    case Expression.Float64(_, _) => true
+    case Expression.Int8(_, _) => true
+    case Expression.Int16(_, _) => true
+    case Expression.Int32(_, _) => true
+    case Expression.Int64(_, _) => true
+    case Expression.BigInt(_, _) => true
+    case Expression.Str(_, _) => true
+    case Expression.Var(_, _, _) => true
+    case _ => false
   }
 }
