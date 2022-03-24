@@ -653,13 +653,18 @@ object Namer {
         case r => NamedAst.Expression.RecordRestrict(field, r, loc)
       }
 
+    case WeededAst.Expression.New(qname, exp, loc) =>
+      mapN(traverse(exp)(visitExp(_, env0, uenv0, tenv0)).map(_.headOption)) {
+        case e => NamedAst.Expression.New(qname, e, loc)
+      }
+
     case WeededAst.Expression.ArrayLit(exps, exp, loc) =>
-      mapN(traverse(exps)(visitExp(_, env0, uenv0, tenv0)), visitExp(exp, env0, uenv0, tenv0)) {
+      mapN(traverse(exps)(visitExp(_, env0, uenv0, tenv0)), traverse(exp)(visitExp(_, env0, uenv0, tenv0)).map(_.headOption)) {
         case (es, e) => NamedAst.Expression.ArrayLit(es, e, loc)
       }
 
     case WeededAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
-      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0), visitExp(exp3, env0, uenv0, tenv0)) {
+      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0), traverse(exp3)(visitExp(_, env0, uenv0, tenv0)).map(_.headOption)) {
         case (e1, e2, e3) => NamedAst.Expression.ArrayNew(e1, e2, e3, loc)
       }
 
@@ -684,7 +689,7 @@ object Namer {
       }
 
     case WeededAst.Expression.Ref(exp1, exp2, loc) =>
-      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
+      mapN(visitExp(exp1, env0, uenv0, tenv0), traverse(exp2)(visitExp(_, env0, uenv0, tenv0)).map(_.headOption)) {
         case (e1, e2) =>
           NamedAst.Expression.Ref(e1, e2, loc)
       }
@@ -1253,13 +1258,14 @@ object Namer {
     case WeededAst.Expression.RecordSelect(exp, _, loc) => freeVars(exp)
     case WeededAst.Expression.RecordExtend(_, exp, rest, loc) => freeVars(exp) ++ freeVars(rest)
     case WeededAst.Expression.RecordRestrict(_, rest, loc) => freeVars(rest)
-    case WeededAst.Expression.ArrayLit(exps, exp, loc) => exps.flatMap(freeVars) ++ freeVars(exp)
-    case WeededAst.Expression.ArrayNew(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+    case WeededAst.Expression.New(qname, exp, loc) => exp.map(freeVars).getOrElse(Nil)
+    case WeededAst.Expression.ArrayLit(exps, exp, loc) => exps.flatMap(freeVars) ++ exp.map(freeVars).getOrElse(Nil)
+    case WeededAst.Expression.ArrayNew(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ exp3.map(freeVars).getOrElse(Nil)
     case WeededAst.Expression.ArrayLoad(base, index, loc) => freeVars(base) ++ freeVars(index)
     case WeededAst.Expression.ArrayStore(base, index, elm, loc) => freeVars(base) ++ freeVars(index) ++ freeVars(elm)
     case WeededAst.Expression.ArrayLength(base, loc) => freeVars(base)
     case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, loc) => freeVars(base) ++ freeVars(startIndex) ++ freeVars(endIndex)
-    case WeededAst.Expression.Ref(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.Ref(exp1, exp2, loc) => freeVars(exp1) ++ exp2.map(freeVars).getOrElse(Nil)
     case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => freeVars(exp)

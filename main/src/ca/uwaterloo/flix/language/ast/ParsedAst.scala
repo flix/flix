@@ -1273,15 +1273,6 @@ object ParsedAst {
     case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Region.
-      *
-      * @param sp1   the position of the first character in the type.
-      * @param ident the variable name.
-      * @param sp2   the position of the last character in the type.
-      */
-    case class Region(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
       * Primitive or Named type.
       *
       * @param sp1   the position of the first character in the type.
@@ -1422,6 +1413,15 @@ object ParsedAst {
     case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+      * Represents a union of effects.
+      *
+      * @param sp1 the position of the first character in the type.
+      * @param efs the effects.
+      * @param sp2 the position of the last character in the type.
+      */
+    case class Union(sp1: SourcePosition, efs: Seq[ParsedAst.Effect], sp2: SourcePosition) extends Type
+
+    /**
       * Kind Ascription.
       *
       * @param tpe  the ascribed type.
@@ -1429,6 +1429,38 @@ object ParsedAst {
       * @param sp2  the position of the last character in the type.
       */
     case class Ascribe(tpe: ParsedAst.Type, kind: ParsedAst.Kind, sp2: SourcePosition) extends ParsedAst.Type
+
+  }
+
+  /**
+    * Represents an effect.
+    */
+  sealed trait Effect
+
+  object Effect {
+
+    /**
+      * Represents an effect variable.
+      *
+      * @param sp1   the position of the first character in the type.
+      * @param ident the variable name.
+      * @param sp2   the position of the last character in the type.
+      */
+    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Effect
+
+    /**
+      * Represents a read of the region variables `idents`.
+      *
+      * @param idents the region variables that are read.
+      */
+    case class Read(idents: Seq[Name.Ident]) extends ParsedAst.Effect
+
+    /**
+      * Represents a write of the region variables `idents`.
+      *
+      * @param idents the region variables that are written.
+      */
+    case class Write(idents: Seq[Name.Ident]) extends ParsedAst.Effect
 
   }
 
