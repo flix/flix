@@ -2636,15 +2636,15 @@ namespace TestDelayList {
         DelayList.span(x -> { l := "b" :: deref l; x < 3 }); // The working list is `1 :: 2 :: Nil`
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: Nil)
 
-    @test
-    def spanSpanFusion02(): Bool & Impure =
-        let l = ref Nil;
-        let _ =
-        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.span(x -> { l := "a" :: deref l; x < 3 } as & Pure) |> fst |>
-        DelayList.span(x -> { l := "b" :: deref l; x < 3 } as & Pure) |> fst |>
-        DelayList.toList;
-        List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
+    //@test
+    //def spanSpanFusion02(): Bool & Impure =
+    //    let l = ref Nil;
+    //    let _ =
+    //    (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+    //    DelayList.span(x -> { l := "a" :: deref l; x < 3 } as & Pure) |> fst |>
+    //    DelayList.span(x -> { l := "b" :: deref l; x < 3 } as & Pure) |> fst |>
+    //    DelayList.toList;
+    //    List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
 
 
     /////////////////////////////////////////////////////////////////////////////

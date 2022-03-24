@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -44,7 +44,7 @@ object ReificationError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unable to reify the non-constant Bool '${red(FormatType.formatType(tpe))}'.
+         |>> Unable to reify the non-constant Bool '${red(FormatType.formatWellKindedType(tpe))}'.
          |
          |${code(loc, "unable to reify type.")}
          |""".stripMargin
@@ -68,7 +68,7 @@ object ReificationError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unable to reify the type '${red(FormatType.formatType(tpe))}'.
+         |>> Unable to reify the type '${red(FormatType.formatWellKindedType(tpe))}'.
          |
          |${code(loc, "unable to reify type.")}
          |""".stripMargin
@@ -92,7 +92,7 @@ object ReificationError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unexpected Boolean type: '${red(FormatType.formatType(tpe))}'.
+         |>> Unexpected Boolean type: '${red(FormatType.formatWellKindedType(tpe))}'.
          |
          |${code(loc, "unexpected Boolean type.")}
          |""".stripMargin
