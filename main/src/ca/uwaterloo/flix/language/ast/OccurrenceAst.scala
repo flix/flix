@@ -210,6 +210,7 @@ object OccurrenceAst {
     case object ManyBranch extends Occur
     case object Dead extends Occur
     case object Many extends Occur
+    case object Sacred extends Occur
   }
 }
 
