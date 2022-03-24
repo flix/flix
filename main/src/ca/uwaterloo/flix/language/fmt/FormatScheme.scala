@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package ca.uwaterloo.flix.language.debug
+package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.language.ast.Scheme
 
@@ -45,9 +44,9 @@ object FormatScheme {
       if (sc.quantifiers.isEmpty)
         ""
       else
-        "∀(" + sc.quantifiers.map(FormatType.formatType).mkString(", ") + "). "
+        "∀(" + sc.quantifiers.map(FormatType.formatWellKindedType).mkString(", ") + "). "
 
-    val typePart = FormatType.formatType(sc.base)
+    val typePart = FormatType.formatWellKindedType(sc.base)
 
     quantifiersPart + typePart
   }

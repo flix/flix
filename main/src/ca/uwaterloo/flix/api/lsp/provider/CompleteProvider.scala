@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 object CompleteProvider {
@@ -223,7 +223,7 @@ object CompleteProvider {
       * Formats the given type `tpe`.
       */
     def fmtType(clazz: TypedAst.Class, tpe: Type, hole: String): String =
-      FormatType.formatType(replaceText(clazz.tparam.tpe, tpe, hole))
+      FormatType.formatWellKindedType(replaceText(clazz.tparam.tpe, tpe, hole))
 
     /**
       * Formats the given formal parameters in `spec`.
@@ -242,7 +242,7 @@ object CompleteProvider {
       val eff = sig.spec.eff match {
         case Type.Cst(TypeConstructor.True, _) => ""
         case Type.Cst(TypeConstructor.False, _) => " & Impure"
-        case e => " & " + FormatType.formatType(e)
+        case e => " & " + FormatType.formatWellKindedType(e)
       }
       s"    pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
     }
@@ -386,14 +386,14 @@ object CompleteProvider {
   private def getLabel(name: String, spec: TypedAst.Spec): String = spec match {
     case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, eff0, _) =>
       val args = fparams.map {
-        fparam => s"${fparam.sym.text}: ${FormatType.formatType(fparam.tpe)}"
+        fparam => s"${fparam.sym.text}: ${FormatType.formatWellKindedType(fparam.tpe)}"
       }
 
-      val retTpe = FormatType.formatType(retTpe0)
+      val retTpe = FormatType.formatWellKindedType(retTpe0)
       val eff = eff0 match {
         case Type.Cst(TypeConstructor.True, _) => "Pure"
         case Type.Cst(TypeConstructor.False, _) => "Impure"
-        case e => FormatType.formatType(e)
+        case e => FormatType.formatWellKindedType(e)
       }
 
       s"$name(${args.mkString(", ")}): $retTpe & $eff"
