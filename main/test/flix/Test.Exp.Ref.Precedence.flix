@@ -1,4 +1,4 @@
-namespace Test/Exp/Reference/Precedence {
+namespace Test/Exp/Ref/Precedence {
 
     @test
     def testRefPrecedence01(): Bool & Impure =

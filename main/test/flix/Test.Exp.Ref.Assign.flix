@@ -1,4 +1,4 @@
-namespace Test/Exp/Reference/Assign {
+namespace Test/Exp/Ref/Assign {
 
     @test
     def testAssignUnit01(): Bool & Impure =
