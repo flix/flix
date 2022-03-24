@@ -140,7 +140,7 @@ object Inliner {
       } else {
         // Wants to inline `e1` if is trivial and `purity` is Pure
         val e1 = visitExp(exp1, subst0)
-        val wantToPostInline = (occur, purity, isTrivial(e1)) match {
+        val wantToPostInline = (occur, purity, isTrivialExp(e1)) match {
           case (Occur.Sacred, _, _) => false
           case (_, Purity.Pure, true) => true
           case _ => false
@@ -318,7 +318,10 @@ object Inliner {
     case Expression.MatchError(_, _) => exp0
   }
 
-  private def isTrivial(exp0: Expression): Boolean = exp0 match {
+  /**
+   * returns `true` if `exp0` is considered a trivial expression
+   */
+  private def isTrivialExp(exp0: Expression): Boolean = exp0 match {
     case Expression.Unit(_) => true
     case Expression.Null(_, _) => true
     case Expression.True(_) => true
