@@ -588,7 +588,9 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, Type.Float32, tpe1, tpe2, loc)
+            lhs <- expectTypeM(expected = Type.Float32, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.Float32, actual = tpe2, exp2.loc)
+            resultTyp = Type.Float32
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -597,7 +599,9 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, Type.Float64, tpe1, tpe2, loc)
+            lhs <- expectTypeM(expected = Type.Float64, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.Float64, actual = tpe2, exp2.loc)
+            resultTyp = Type.Float64
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -607,7 +611,9 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, Type.Int8, tpe1, tpe2, loc)
+            lhs <- expectTypeM(expected = Type.Int8, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.Int8, actual = tpe2, exp2.loc)
+            resultTyp = Type.Int8
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -617,7 +623,9 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, Type.Int16, tpe1, tpe2, loc)
+            lhs <- expectTypeM(expected = Type.Int16, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.Int16, actual = tpe2, exp2.loc)
+            resultTyp = Type.Int16
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -627,7 +635,9 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, Type.Int32, tpe1, tpe2, loc)
+            lhs <- expectTypeM(expected = Type.Int32, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+            resultTyp = Type.Int32
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -637,7 +647,9 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, Type.Int64, tpe1, tpe2, loc)
+            lhs <- expectTypeM(expected = Type.Int64, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.Int64, actual = tpe2, exp2.loc)
+            resultTyp = Type.Int64
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -647,7 +659,9 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, Type.BigInt, tpe1, tpe2, loc)
+            lhs <- expectTypeM(expected = Type.BigInt, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.BigInt, actual = tpe2, exp2.loc)
+            resultTyp = Type.BigInt
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -659,10 +673,10 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            lhsType <- unifyTypeM(tvar, tpe1, loc)
-            rhsType <- unifyTypeM(tpe2, Type.Int32, loc)
+            lhs <- unifyTypeM(tvar, tpe1, loc)
+            rhs <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
-          } yield (constrs1 ++ constrs2, lhsType, resultEff)
+          } yield (constrs1 ++ constrs2, lhs, resultEff)
 
         case SemanticOperator.BoolOp.Eq | SemanticOperator.BoolOp.Neq
              | SemanticOperator.CharOp.Eq | SemanticOperator.CharOp.Neq
@@ -702,7 +716,9 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, Type.Str, tpe1, tpe2, loc)
+            lhs <- expectTypeM(expected = Type.Str, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.Str, actual = tpe2, exp2.loc)
+            resultTyp = Type.Str
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
