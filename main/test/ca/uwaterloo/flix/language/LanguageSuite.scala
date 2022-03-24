@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.dbg.TestFormatType
+import ca.uwaterloo.flix.language.fmt.TestFormatType
 import ca.uwaterloo.flix.language.phase.PhaseSuite
 import org.scalatest.Suites
 
