@@ -1105,7 +1105,7 @@ object Typer {
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           (constrs3, regionType, eff3) <- visitExp(exp3)
           _ <- unifyTypeM(regionType, Type.mkRegion(regionVar, loc), loc)
-          lenType <- expectTypeM(expected = Type.Int32, actual = tpe2, loc)
+          lenType <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
           resultTyp <- unifyTypeM(tvar, Type.mkScopedArray(tpe1, regionVar, loc), loc)
           resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, eff3, regionVar, loc), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
@@ -1375,7 +1375,7 @@ object Typer {
       case KindedAst.Expression.Force(exp, tvar, loc) =>
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          lazyTyp <- expectTypeM(expected = Type.mkLazy(tvar, loc), actual = tpe, loc)
+          lazyTyp <- expectTypeM(expected = Type.mkLazy(tvar, loc), actual = tpe, exp.loc)
           resultTyp = tvar
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
