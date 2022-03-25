@@ -1165,49 +1165,47 @@ object Typer {
 
       case KindedAst.Expression.Ref(exp1, exp2, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc)
+        val refType = Type.mkRegion(regionVar, loc)
         for {
-          (constrs1, elmType, eff1) <- visitExp(exp1)
-          (constrs2, regionType, eff2) <- visitExp(exp2)
-          _ <- unifyTypeM(regionType, Type.mkRegion(regionVar, loc), loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(elmType, regionVar, loc), loc)
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          _ <- unifyTypeM(tpe2, refType, loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(tpe1, regionVar, loc), loc)
           resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, regionVar, loc), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.Deref(exp, tvar, evar, loc) =>
-        // Introduce a fresh type variable for element type.
         val elmVar = Type.freshVar(Kind.Star, loc, Rigidity.Flexible)
-
-        // Introduce a flexible variable for the region variable.
         val regionVar = Type.freshVar(Kind.Bool, loc, Rigidity.Flexible)
-
-        // The expected type is of the form ScopedRef[elmVar, regionVar]
-        val expectedType = Type.mkScopedRef(elmVar, regionVar, loc)
+        val refType = Type.mkScopedRef(elmVar, regionVar, loc)
 
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          _ <- expectTypeM(expected = expectedType, actual = tpe, exp.loc)
+          _ <- expectTypeM(expected = refType, actual = tpe, exp.loc)
           resultTyp <- unifyTypeM(tvar, elmVar, loc)
           resultEff <- unifyTypeM(evar, Type.mkAnd(eff, regionVar, loc), loc)
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.Assign(exp1, exp2, evar, loc) =>
-        // Introduce a flexible variable for the lifetime.
-        // This variable will become unified with the rigid variable.
-        val lifetimeVar = Type.freshVar(Kind.Bool, loc, Rigidity.Flexible, Some("l"))
+        val elmVar = Type.freshVar(Kind.Star, loc, Rigidity.Flexible)
+        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val refType = Type.mkScopedRef(elmVar, regionVar, loc)
+
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          refType <- unifyTypeM(tpe1, Type.mkScopedRef(tpe2, lifetimeVar, loc), loc)
+          _ <- expectTypeM(expected = refType, actual = tpe1, exp1.loc)
+          _ <- expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
           resultTyp = Type.Unit
-          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1 :: eff2 :: lifetimeVar :: Nil, loc), loc)
+          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, regionVar, loc), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.Ascribe(exp, expectedTyp, expectedEff, tvar, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
         for {
           (constrs, actualTyp, actualEff) <- visitExp(exp)
-          resultTyp <- unifyTypeM(tvar, actualTyp, expectedTyp.getOrElse(tvar), loc)
-          resultEff <- unifyBoolM(actualEff, expectedEff.getOrElse(Type.freshVar(Kind.Bool, loc)), loc)
+          resultTyp <- expectTypeM(expected = expectedTyp.getOrElse(Type.freshVar(Kind.Star, loc)), actual = actualTyp, bind = tvar, loc)
+          resultEff <- expectTypeM(expected = expectedEff.getOrElse(Type.freshVar(Kind.Bool, loc)), actual = actualEff, loc)
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.Cast(exp, declaredTyp, declaredEff, tvar, loc) =>
