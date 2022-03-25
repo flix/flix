@@ -1312,10 +1312,15 @@ object Typer {
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
+        val elmVar = Type.freshVar(Kind.Star, loc)
+        val channelType = Type.mkChannel(elmVar, loc)
+
         for {
           (constrs1, tpe1, _) <- visitExp(exp1)
           (constrs2, tpe2, _) <- visitExp(exp2)
-          resultTyp <- unifyTypeM(tvar, tpe1, Type.mkChannel(tpe2, loc), loc)
+          _ <- expectTypeM(expected = channelType, actual = tpe1, exp1.loc)
+          _ <- expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
+          resultTyp <- unifyTypeM(tvar, channelType, loc)
           resultEff = Type.Impure
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
