@@ -1037,11 +1037,8 @@ object Typer {
           resultEff = Type.mkAnd(elementEffects, loc)
         } yield (elementConstrs.flatten, Type.mkTuple(elementTypes, loc), resultEff)
 
-      case KindedAst.Expression.RecordEmpty(tvar, loc) =>
-        val emptyRecord = Type.mkRecord(Type.RecordRowEmpty, loc)
-        for {
-          resultType <- unifyTypeM(tvar, emptyRecord, loc)
-        } yield (List.empty, resultType, Type.Pure)
+      case KindedAst.Expression.RecordEmpty(loc) =>
+        liftM(List.empty, Type.mkRecord(Type.RecordRowEmpty, loc), Type.Pure)
 
       case KindedAst.Expression.RecordSelect(exp, field, tvar, loc) =>
         //
@@ -1261,23 +1258,23 @@ object Typer {
         val fieldType = getFlixType(field.getType)
         val classType = getFlixType(field.getDeclaringClass)
         for {
-          (baseConstrs, baseTyp, _) <- visitExp(exp)
-          objectTyp <- unifyTypeM(baseTyp, classType, loc)
+          (constrs, tpe, _) <- visitExp(exp)
+          objectTyp <- expectTypeM(expected = classType, actual = tpe, exp.loc)
           resultTyp = fieldType
           resultEff = Type.Impure
-        } yield (baseConstrs, resultTyp, resultEff)
+        } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.PutField(field, exp1, exp2, loc) =>
         val fieldType = getFlixType(field.getType)
         val classType = getFlixType(field.getDeclaringClass)
         for {
-          (baseConstrs, baseTyp, _) <- visitExp(exp1)
-          (valueConstrs, valueType, _) <- visitExp(exp2)
-          objectTyp <- unifyTypeM(baseTyp, classType, loc)
-          valueTyp <- unifyTypeM(valueType, fieldType, loc)
+          (constrs1, tpe1, _) <- visitExp(exp1)
+          (constrs2, tpe2, _) <- visitExp(exp2)
+          _ <- expectTypeM(expected = classType, actual = tpe1, exp1.loc)
+          _ <- expectTypeM(expected = fieldType, actual = tpe2, exp2.loc)
           resultTyp = Type.Unit
           resultEff = Type.Impure
-        } yield (baseConstrs ++ valueConstrs, resultTyp, resultEff)
+        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.GetStaticField(field, loc) =>
         val fieldType = getFlixType(field.getType)
@@ -1288,7 +1285,7 @@ object Typer {
       case KindedAst.Expression.PutStaticField(field, exp, loc) =>
         for {
           (valueConstrs, valueTyp, _) <- visitExp(exp)
-          fieldTyp <- unifyTypeM(getFlixType(field.getType), valueTyp, loc)
+          fieldTyp <- expectTypeM(expected = getFlixType(field.getType), actual = valueTyp, exp.loc)
           resultTyp = Type.Unit
           resultEff = Type.Impure
         } yield (valueConstrs, resultTyp, resultEff)
@@ -1304,6 +1301,7 @@ object Typer {
       case KindedAst.Expression.GetChannel(exp, tvar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
         val channelType = Type.mkChannel(elmVar, loc)
+
         for {
           (constrs, tpe, _) <- visitExp(exp)
           _ <- expectTypeM(expected = channelType, actual = tpe, exp.loc)
@@ -1369,7 +1367,7 @@ object Typer {
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           resultTyp = Type.mkLazy(tpe, loc)
-          resultEff <- unifyTypeM(Type.Pure, eff, loc)
+          resultEff <- expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.Force(exp, tvar, loc) =>
@@ -1682,8 +1680,8 @@ object Typer {
         val eff = Type.mkAnd(es.map(_.eff), loc)
         TypedAst.Expression.Tuple(es, tpe, eff, loc)
 
-      case KindedAst.Expression.RecordEmpty(tvar, loc) =>
-        TypedAst.Expression.RecordEmpty(subst0(tvar), loc)
+      case KindedAst.Expression.RecordEmpty(loc) =>
+        TypedAst.Expression.RecordEmpty(Type.mkRecord(Type.RecordRowEmpty, loc), loc)
 
       case KindedAst.Expression.RecordSelect(exp, field, tvar, loc) =>
         val e = visitExp(exp, subst0)
