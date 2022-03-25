@@ -1105,53 +1105,61 @@ object Typer {
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           (constrs3, regionType, eff3) <- visitExp(exp3)
           _ <- unifyTypeM(regionType, Type.mkRegion(regionVar, loc), loc)
-          lenType <- unifyTypeM(tpe2, Type.Int32, loc)
+          lenType <- expectTypeM(expected = Type.Int32, actual = tpe2, loc)
           resultTyp <- unifyTypeM(tvar, Type.mkScopedArray(tpe1, regionVar, loc), loc)
           resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, eff3, regionVar, loc), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
       case KindedAst.Expression.ArrayLength(exp, loc) =>
-        val elmVar = Type.freshVar(Kind.Star, loc)
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        // Note: Experiment with named temporary type variables to generate better error messages.
+        // Note: We probably want two types of text-- in particular these names should freely be overwritten.
+        val elmVar = Type.freshVar(Kind.Star, loc, text = Some("?elm"))
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = Some("?region"))
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          _ <- unifyTypeM(tpe, Type.mkScopedArray(elmVar, regionVar, loc), loc)
+          _ <- expectTypeM(Type.mkScopedArray(elmVar, regionVar, loc), tpe, exp.loc)
+          resultTyp = Type.Int32
           resultEff = Type.Pure
           _ <- unbindVar(elmVar)
           _ <- unbindVar(regionVar)
-        } yield (constrs, Type.Int32, resultEff)
+        } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          arrayType <- unifyTypeM(tpe1, Type.mkScopedArray(tvar, regionVar, loc), loc)
-          indexType <- unifyTypeM(tpe2, Type.Int32, loc)
+          arrayType <- expectTypeM(expected = Type.mkScopedArray(tvar, regionVar, loc), actual = tpe1, exp1.loc)
+          indexType <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
           resultEff = Type.mkAnd(regionVar, eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, tvar, resultEff)
 
       case KindedAst.Expression.ArrayStore(exp1, exp2, exp3, loc) =>
+        val elmVar = Type.freshVar(Kind.Star, loc)
         val regionVar = Type.freshVar(Kind.Bool, loc)
+        val arrayType = Type.mkScopedArray(elmVar, regionVar, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           (constrs3, tpe3, eff3) <- visitExp(exp3)
-          arrayType <- unifyTypeM(tpe1, Type.mkScopedArray(tpe3, regionVar, loc), loc)
-          indexType <- unifyTypeM(tpe2, Type.Int32, loc)
+          _ <- expectTypeM(expected = arrayType, actual = tpe1, exp1.loc)
+          _ <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+          _ <- expectTypeM(expected = elmVar, actual = tpe3, exp3.loc)
+          resultTyp = Type.Unit
           resultEff = Type.mkAnd(List(regionVar, eff1, eff2, eff3), loc)
-        } yield (constrs1 ++ constrs2 ++ constrs3, Type.Unit, resultEff)
+        } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
       case KindedAst.Expression.ArraySlice(exp1, exp2, exp3, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
         val regionVar = Type.freshVar(Kind.Bool, loc)
+        val arrayType = Type.mkScopedArray(elmVar, regionVar, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           (constrs3, tpe3, eff3) <- visitExp(exp3)
-          fstIndexType <- unifyTypeM(tpe2, Type.Int32, loc)
-          lstIndexType <- unifyTypeM(tpe3, Type.Int32, loc)
-          resultTyp <- unifyTypeM(tpe1, Type.mkScopedArray(elmVar, regionVar, loc), loc)
+          _ <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+          _ <- expectTypeM(expected = Type.Int32, actual = tpe3, exp3.loc)
+          resultTyp <- expectTypeM(expected = arrayType, actual = tpe1, exp1.loc)
           resultEff = Type.mkAnd(List(regionVar, eff1, eff2, eff3), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
