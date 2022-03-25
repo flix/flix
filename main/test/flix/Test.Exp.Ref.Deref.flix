@@ -1,4 +1,4 @@
-namespace Test/Exp/Reference/Deref {
+namespace Test/Exp/Ref/Deref {
 
     @test
     def testDeref01(): Bool & Impure =
