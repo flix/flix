@@ -272,6 +272,18 @@ namespace Int8 {
     pub def flipBit(x: Int8, position: Int32): Int8 = x ^^^ (1i8 <<< position)
 
     ///
+    /// Returns the integer binary logarithm of `x`.
+    ///
+    @Time(1) @Space(1)
+    pub def log2(x: Int8): Int32 = highestOneBitPosition(x)
+
+    ///
+    /// Returns the factorial of `x`.
+    ///
+    @Time(factorial(x)) @Space(1)
+    pub def factorial(x: Int8): Int32 = toInt32(x) |> Int32.factorial
+
+    ///
     /// Return a string representation of `x`.
     ///
     @Time(1) @Space(1)
