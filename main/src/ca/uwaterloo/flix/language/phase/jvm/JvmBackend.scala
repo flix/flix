@@ -239,12 +239,12 @@ object JvmBackend {
   /**
     * Optionally returns a reference to main.
     */
-  private def getCompiledMain(root: Root)(implicit flix: Flix): Option[Array[String] => Int] =
+  private def getCompiledMain(root: Root)(implicit flix: Flix): Option[Array[String] => Unit] =
     root.defs.get(Symbol.Main) map { defn =>
       (actualArgs: Array[String]) => {
         val args: Array[AnyRef] = Array(actualArgs)
-        val result = link(defn.sym, root).apply(args)
-        result.asInstanceOf[Integer].intValue()
+        link(defn.sym, root).apply(args)
+        ()
       }
     }
 

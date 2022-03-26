@@ -228,7 +228,7 @@ namespace Test/Dec/Class {
 
     namespace Test19 {
         pub enum M[_: Bool, a: Type] {
-          case M(a)
+            case M(a)
         }
 
         instance Eq[M[true, a]] with Eq[a] {

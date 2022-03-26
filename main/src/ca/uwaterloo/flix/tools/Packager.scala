@@ -29,7 +29,7 @@ import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
 import scala.collection.mutable
-import scala.util.{Using, Success, Failure}
+import scala.util.{Failure, Success, Using}
 
 /**
   * An interface to manage flix packages.
@@ -324,9 +324,8 @@ object Packager {
       compilationResult <- build(p, o).toOption
       main <- compilationResult.getMain
     } yield {
-      val exitCode = main(Array.empty)
-      println(s"Main exited with status code $exitCode.")
-      resultFor(exitCode)
+      main(Array.empty)
+      ().toOk[Unit, Int]
     }
     res.getOrElse(1.toErr)
   }
@@ -547,17 +546,6 @@ object Packager {
     override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
       result += file
       FileVisitResult.CONTINUE
-    }
-  }
-
-  /**
-    * Converts the given exit code into a result.
-    */
-  private def resultFor(code: Int): Result[Unit, Int] = {
-    if (code == 0) {
-      ().toOk
-    } else {
-      code.toErr
     }
   }
 }

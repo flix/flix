@@ -33,7 +33,7 @@ object ResolvedAst {
                   sources: Map[Source, SourceLocation])
 
   // TODO use ResolvedAst.Law for laws
-  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[ResolvedAst.TypeConstraint], sigs: Map[Symbol.SigSym, ResolvedAst.Sig], laws: List[ResolvedAst.Def], loc: SourceLocation)
+  case class Class(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[ResolvedAst.TypeConstraint], sigs: Map[Symbol.SigSym, ResolvedAst.Sig], laws: List[ResolvedAst.Def], loc: SourceLocation)
 
   case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.InstanceSym, tpe: Type, tconstrs: List[ResolvedAst.TypeConstraint], defs: List[ResolvedAst.Def], ns: Name.NName, loc: SourceLocation)
 
@@ -107,7 +107,9 @@ object ResolvedAst {
 
     case class LetRec(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class LetRegion(sym: Symbol.VarSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Region(tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Scope(sym: Symbol.VarSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -125,9 +127,9 @@ object ResolvedAst {
 
     case class RecordRestrict(field: Name.Field, rest: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArrayLit(elms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
+    case class ArrayLit(exps: List[ResolvedAst.Expression], exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArrayNew(elm: ResolvedAst.Expression, len: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ArrayNew(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, exp3: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class ArrayLoad(base: ResolvedAst.Expression, index: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -137,9 +139,7 @@ object ResolvedAst {
 
     case class ArraySlice(base: ResolvedAst.Expression, beginIndex: ResolvedAst.Expression, endIndex: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Ref(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class RefWithRegion(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Ref(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Deref(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 

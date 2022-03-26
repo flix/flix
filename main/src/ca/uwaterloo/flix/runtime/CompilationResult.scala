@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.language.ast._
   * @param codeSize the number of bytes the compiler generated.
   */
 class CompilationResult(root: Root,
-                        main: Option[Array[String] => Int],
+                        main: Option[Array[String] => Unit],
                         defs: Map[Symbol.DefnSym, () => AnyRef],
                         val totalTime: Long,
                         val codeSize: Int) {
@@ -40,7 +40,7 @@ class CompilationResult(root: Root,
   /**
     * Optionally returns the main function.
     */
-  def getMain: Option[Array[String] => Int] = main
+  def getMain: Option[Array[String] => Unit] = main
 
   /**
     * Returns all the benchmark functions in the program.

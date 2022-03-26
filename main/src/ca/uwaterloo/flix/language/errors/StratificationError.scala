@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -40,7 +40,7 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
        |
        |The type of the expression is:
        |
-       |  ${cyan(FormatType.formatType(tpe))}
+       |  ${cyan(FormatType.formatWellKindedType(tpe))}
        |
        |The following predicate symbols are on the cycle:
        |

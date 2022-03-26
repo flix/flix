@@ -125,7 +125,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given class `classDecl`.
     */
   private def visitClass(classDecl: TypedAst.Class): Iterator[SemanticToken] = classDecl match {
-    case TypedAst.Class(_, _, sym, tparam, superClasses, signatures, laws, _) =>
+    case TypedAst.Class(_, _, _, sym, tparam, superClasses, signatures, laws, _) =>
       val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
       val st1 = Iterator(t)
       val st2 = superClasses.flatMap(visitTypeConstraint)
@@ -292,7 +292,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.LetRegion(sym, exp, _, _, _) =>
+    case Expression.Scope(sym, exp, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp)
 
@@ -333,11 +333,11 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)
       Iterator(t) ++ visitExp(exp)
 
-    case Expression.ArrayLit(exps, _, _, _) =>
-      visitExps(exps)
+    case Expression.ArrayLit(exps, exp, _, _, _) =>
+      visitExps(exps) ++ visitExp(exp)
 
-    case Expression.ArrayNew(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     case Expression.ArrayLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
@@ -351,10 +351,7 @@ object SemanticTokensProvider {
     case Expression.ArraySlice(exp1, exp2, exp3, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.Ref(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+    case Expression.Ref(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Deref(exp, _, _, _) =>

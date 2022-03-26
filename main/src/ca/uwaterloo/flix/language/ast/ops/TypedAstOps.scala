@@ -77,7 +77,7 @@ object TypedAstOps {
         val env1 = env0 + (sym -> exp1.tpe)
         visitExp(exp1, env1) ++ visitExp(exp2, env1)
 
-      case Expression.LetRegion(_, exp, _, _, _) =>
+      case Expression.Scope(_, exp, _, _, _) =>
         visitExp(exp, env0)
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
@@ -127,13 +127,13 @@ object TypedAstOps {
       case Expression.RecordRestrict(_, rest, tpe, eff, loc) =>
         visitExp(rest, env0)
 
-      case Expression.ArrayLit(elms, tpe, eff, loc) =>
-        elms.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (macc, elm) => macc ++ visitExp(elm, env0)
+      case Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
+        exps.foldLeft(visitExp(exp, env0)) {
+          case (acc, e) => acc ++ visitExp(e, env0)
         }
 
-      case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
-        visitExp(elm, env0)
+      case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
 
       case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
         visitExp(base, env0) ++ visitExp(index, env0)
@@ -147,10 +147,7 @@ object TypedAstOps {
       case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
         visitExp(base, env0) ++ visitExp(beginIndex, env0) ++ visitExp(endIndex, env0)
 
-      case Expression.Ref(exp, tpe, eff, loc) =>
-        visitExp(exp, env0)
-
-      case Expression.RefWithRegion(exp1, exp2, tpe, eff, loc) =>
+      case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
       case Expression.Deref(exp, tpe, eff, loc) =>
@@ -358,7 +355,7 @@ object TypedAstOps {
     case Expression.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Let(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.LetRec(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expression.LetRegion(_, exp, _, _, _) => sigSymsOf(exp)
+    case Expression.Scope(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expression.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Match(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ sigSymsOf(rule.guard))
@@ -369,14 +366,13 @@ object TypedAstOps {
     case Expression.RecordSelect(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.RecordExtend(_, value, rest, _, _, _) => sigSymsOf(value) ++ sigSymsOf(rest)
     case Expression.RecordRestrict(_, rest, _, _, _) => sigSymsOf(rest)
-    case Expression.ArrayLit(elms, _, _, _) => elms.flatMap(sigSymsOf).toSet
-    case Expression.ArrayNew(elm, len, _, _, _) => sigSymsOf(elm) ++ sigSymsOf(len)
+    case Expression.ArrayLit(exps, exp, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ sigSymsOf(exp)
+    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expression.ArrayLoad(base, index, _, _, _) => sigSymsOf(base) ++ sigSymsOf(index)
     case Expression.ArrayLength(base, _, _) => sigSymsOf(base)
     case Expression.ArrayStore(base, index, elm, _) => sigSymsOf(base) ++ sigSymsOf(index) ++ sigSymsOf(elm)
     case Expression.ArraySlice(base, beginIndex, endIndex, _, _) => sigSymsOf(base) ++ sigSymsOf(beginIndex) ++ sigSymsOf(endIndex)
-    case Expression.Ref(exp, _, _, _) => sigSymsOf(exp)
-    case Expression.RefWithRegion(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.Ref(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Deref(exp, _, _, _) => sigSymsOf(exp)
     case Expression.Assign(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Ascribe(exp, _, _, _) => sigSymsOf(exp)
@@ -404,7 +400,7 @@ object TypedAstOps {
     case Expression.FixpointProjectOut(_, exp, _, _, _) => sigSymsOf(exp)
     case Expression.Reify(_, _, _, _) => Set.empty
     case Expression.ReifyType(_, _, _, _, _) => Set.empty
-    case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++sigSymsOf(exp3)
+    case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
   }
 
   /**
@@ -494,7 +490,7 @@ object TypedAstOps {
     case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - sym
 
-    case Expression.LetRegion(sym, exp, _, _, _) =>
+    case Expression.Scope(sym, exp, _, _, _) =>
       freeVars(exp) - sym
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -536,13 +532,13 @@ object TypedAstOps {
     case Expression.RecordRestrict(_, rest, _, _, _) =>
       freeVars(rest)
 
-    case Expression.ArrayLit(elms, _, _, _) =>
-      elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, exp) => acc ++ freeVars(exp)
+    case Expression.ArrayLit(elms, exp, _, _, _) =>
+      elms.foldLeft(freeVars(exp)) {
+        case (acc, e) => acc ++ freeVars(e)
       }
 
-    case Expression.ArrayNew(elm, len, _, _, _) =>
-      freeVars(elm) ++ freeVars(len)
+    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
 
     case Expression.ArrayLoad(base, index, _, _, _) =>
       freeVars(base) ++ freeVars(index)
@@ -556,10 +552,7 @@ object TypedAstOps {
     case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
       freeVars(base) ++ freeVars(beginIndex) ++ freeVars(endIndex)
 
-    case Expression.Ref(exp, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+    case Expression.Ref(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.Deref(exp, _, _, _) =>

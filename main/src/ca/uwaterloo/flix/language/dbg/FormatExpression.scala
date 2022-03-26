@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.language.debug
+package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.language.ast.TypedAst
 
@@ -36,7 +36,7 @@ object FormatExpression {
     case TypedAst.Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => s"Binary($sop, $exp1, $exp2)"
     case TypedAst.Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) => s"Let($sym, $mod, $exp1, $exp2)"
     case TypedAst.Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) => s"LetRec($sym, $mod, $exp1, $exp2)"
-    case TypedAst.Expression.LetRegion(sym, exp, tpe, eff, loc) => s"LetRegion($sym, $exp)"
+    case TypedAst.Expression.Scope(sym, exp, tpe, eff, loc) => s"LetRegion($sym, $exp)"
     case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => s"IfThenElse($exp1, $exp2, $exp3)"
     case TypedAst.Expression.Stm(exp1, exp2, _, _, _) => s"Stm($exp1, $exp2)"
     case TypedAst.Expression.Match(exp, rules, tpe, eff, loc) => s"Match($exp, ${rules.mkString(", ")})"
@@ -47,14 +47,13 @@ object FormatExpression {
     case TypedAst.Expression.RecordSelect(exp, field, tpe, eff, loc) => s"RecordSelect($exp, $field)"
     case TypedAst.Expression.RecordExtend(field, value, rest, tpe, eff, loc) => s"RecordExtend($field, $value, $rest)"
     case TypedAst.Expression.RecordRestrict(field, rest, tpe, eff, loc) => s"RecordRestrict($field, $rest)"
-    case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) => s"ArrayLit(${elms.mkString(", ")})"
-    case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) => s"ArrayNew($elm, $len)"
+    case TypedAst.Expression.ArrayLit(exps, exp, tpe, eff, loc) => s"ArrayLit(${exps.mkString(", ")}, $exp)"
+    case TypedAst.Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => s"ArrayNew($exp1, $exp2, $exp3)"
     case TypedAst.Expression.ArrayLoad(base, index, tpe, eff, loc) => s"ArrayLoad($base, $index)"
     case TypedAst.Expression.ArrayLength(base, eff, loc) => s"ArrayLength($base)"
     case TypedAst.Expression.ArrayStore(base, index, elm, loc) => s"ArrayStore($base, $index, $elm)"
     case TypedAst.Expression.ArraySlice(base, begin, end, tpe, loc) => s"ArraySlice($base, $begin, $end)"
-    case TypedAst.Expression.Ref(exp, tpe, eff, loc) => s"Ref($exp)"
-    case TypedAst.Expression.RefWithRegion(exp1, exp2, tpe, eff, loc) => s"RefWithRegion($exp1, $exp2)"
+    case TypedAst.Expression.Ref(exp1, exp2, tpe, eff, loc) => s"Ref($exp1, $exp2)"
     case TypedAst.Expression.Deref(exp, tpe, eff, loc) => s"Deref($exp)"
     case TypedAst.Expression.Assign(exp1, exp2, tpe, eff, loc) => s"Assign($exp1, $exp2)"
     case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => s"Ascribe($exp, $tpe)"

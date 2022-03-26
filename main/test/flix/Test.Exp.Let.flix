@@ -121,9 +121,4 @@ namespace Test/Exp/Let {
         let x = "Hello World!";
         x == "Hello World!"
 
-    @test
-    def testLetScoped01(): Bool =
-        let scoped x = 123;
-        x == 123
-
 }

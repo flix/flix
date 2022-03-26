@@ -377,7 +377,7 @@ namespace MutList {
     ///
     /// Apply `f` to every element in `v`.
     ///
-    pub def transform!(f: a -> a, v: mut MutList[a]): Unit & Impure =
+    pub def transform!(f: a -> a, v: MutList[a]): Unit & Impure =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -418,7 +418,7 @@ namespace MutList {
     ///
     /// Apply `f` to every element in `v` along with that element's index.
     ///
-    pub def transformWithIndex!(f: (a, Int32) -> a, v: mut MutList[a]): Unit & Impure =
+    pub def transformWithIndex!(f: (a, Int32) -> a, v: MutList[a]): Unit & Impure =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -515,7 +515,7 @@ namespace MutList {
     ///
     /// Removes all elements from the given mutable list `v`.
     ///
-    pub def clear!(v: mut MutList[a]): Unit & Impure =
+    pub def clear!(v: MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         a := Array.new($DEFAULT$, Array.length(deref a));
         l := 0
@@ -535,7 +535,7 @@ namespace MutList {
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
     ///
-    pub def pop!(v: mut MutList[a]): Option[a] & Impure =
+    pub def pop!(v: MutList[a]): Option[a] & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         if (len > 0)
@@ -550,7 +550,7 @@ namespace MutList {
     ///
     /// Inserts the given element `x` at the end of the given mutable list `v`.
     ///
-    pub def push!(x: a, v: mut MutList[a]): Unit & Impure =
+    pub def push!(x: a, v: MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         if (capacity(v) - len == 0)
@@ -566,7 +566,7 @@ namespace MutList {
     ///
     /// If the given index `i` exceeds the length of the mutable list, the element is inserted at the last position.
     ///
-    pub def insert!(x: a, i: Int32, v: mut MutList[a]): Unit & Impure =
+    pub def insert!(x: a, i: Int32, v: MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         let len = deref l;
         if (capacity(v) - len == 0)
@@ -584,7 +584,7 @@ namespace MutList {
     ///
     /// If the given index `i` exceeds the length of the mutable list, no element is removed.
     ///
-    pub def remove!(i: Int32, v: mut MutList[a]): Unit & Impure =
+    pub def remove!(i: Int32, v: MutList[a]): Unit & Impure =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -618,7 +618,7 @@ namespace MutList {
     ///
     /// Removes all elements from the given mutable list `v` that do not satisfy the given predicate `f`.
     ///
-    pub def retain!(f: a -> Bool, v: mut MutList[a]): Unit & Impure =
+    pub def retain!(f: a -> Bool, v: MutList[a]): Unit & Impure =
         let MutList(a1, l1) = v;
         let l = new();
         foreach(e -> if (f(e)) push!(e, l) else (), v);
@@ -629,13 +629,13 @@ namespace MutList {
     ///
     /// Replaces all occurrences of the `from` with `to` in the given mutable list `v`.
     ///
-    pub def replace!(from: {from :: a}, to: {to :: a}, v: mut MutList[a]): Unit & Impure with Eq[a] =
+    pub def replace!(from: {from :: a}, to: {to :: a}, v: MutList[a]): Unit & Impure with Eq[a] =
         transform!(e -> if (e == from.from) to.to else e, v)
 
     ///
     /// Reverses the order of the elements in the given mutable list `v`.
     ///
-    pub def reverse!(v: mut MutList[a]): Unit & Impure =
+    pub def reverse!(v: MutList[a]): Unit & Impure =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -673,7 +673,7 @@ namespace MutList {
     ///
     /// Shrinks the given mutable list `v` to its actual size.
     ///
-    pub def shrink!(v: mut MutList[a]): Unit & Impure = shrinkTo!(length(v), v)
+    pub def shrink!(v: MutList[a]): Unit & Impure = shrinkTo!(length(v), v)
 
     ///
     /// Truncates the given mutable list `v` to the given length `l`.
@@ -682,7 +682,7 @@ namespace MutList {
     ///
     /// If the given length `l` is negative, all elements are removed.
     ///
-    pub def truncate!(l: Int32, v: mut MutList[a]): Unit & Impure =
+    pub def truncate!(l: Int32, v: MutList[a]): Unit & Impure =
         if (l < 0)
             clear!(v)
         else if (l < length(v)) {
@@ -702,7 +702,7 @@ namespace MutList {
     ///
     /// The content of the mutable list is unchanged.
     ///
-    pub def reserve!(n: Int32, v: mut MutList[a]): Unit & Impure =
+    pub def reserve!(n: Int32, v: MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         a := Array.copyOfRange(0, (deref l) + n, deref a)
 
@@ -818,7 +818,7 @@ namespace MutList {
     ///
     /// The mutable list will be shrunk to 1/2 of its size if the load factor is less than 1/4.
     ///
-    pub def compress!(v: mut MutList[a]): Unit & Impure =
+    pub def compress!(v: MutList[a]): Unit & Impure =
         let c = capacity(v);
         let len = length(v);
         let loadFactor = Int32.toFloat32(len) / Int32.toFloat32(c);
@@ -878,7 +878,7 @@ namespace MutList {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort!(v: mut MutList[a]): Unit & Impure with Order[a] = sortWith!(Order.compare, v)
+    pub def sort!(v: MutList[a]): Unit & Impure with Order[a] = sortWith!(Order.compare, v)
 
     ///
     /// Sort MutList `v` so that elements are ordered from low to high according to the `Order` instance for
@@ -888,7 +888,7 @@ namespace MutList {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy!(f: a -> b, v: mut MutList[a]): Unit & Impure with Order[b] = sortWith!(Order.compare `on` f, v)
+    pub def sortBy!(f: a -> b, v: MutList[a]): Unit & Impure with Order[b] = sortWith!(Order.compare `on` f, v)
 
     ///
     /// Sort MutList `v` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -898,7 +898,7 @@ namespace MutList {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith!(cmp: (a,a) -> Comparison, v: mut MutList[a]): Unit & Impure =
+    pub def sortWith!(cmp: (a,a) -> Comparison, v: MutList[a]): Unit & Impure =
         let MutList(a, l) = v;
         Array.sortWithin!(cmp, 0, (deref l) - 1, deref a)
 

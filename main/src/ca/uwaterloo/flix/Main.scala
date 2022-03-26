@@ -214,10 +214,10 @@ object Main {
               case Some(a) => a.split(" ")
             }
             // Invoke main with the supplied arguments.
-            val exitCode = m(args)
+            m(args)
 
-            // Exit with the returned exit code.
-            System.exit(exitCode)
+            // Exit.
+            System.exit(0)
         }
 
         if (cmdOpts.benchmark) {

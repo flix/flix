@@ -357,10 +357,6 @@ object Monomorph {
         val env1 = env0 + (sym -> freshSym)
         Expression.LetRec(freshSym, mod, visitExp(exp1, env1), visitExp(exp2, env1), subst0(tpe), eff, loc)
 
-      case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.LetRegion(sym, e, subst0(tpe), eff, loc)
-
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
@@ -427,14 +423,16 @@ object Monomorph {
         val r = visitExp(rest, env0)
         Expression.RecordRestrict(field, r, subst0(tpe), eff, loc)
 
-      case Expression.ArrayLit(elms, tpe, eff, loc) =>
-        val es = elms.map(e => visitExp(e, env0))
-        Expression.ArrayLit(es, subst0(tpe), eff, loc)
+      case Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
+        val es = exps.map(visitExp(_, env0))
+        val e = visitExp(exp, env0)
+        Expression.ArrayLit(es, e, subst0(tpe), eff, loc)
 
-      case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
-        val e = visitExp(elm, env0)
-        val ln = visitExp(len, env0)
-        Expression.ArrayNew(e, ln, subst0(tpe), eff, loc)
+      case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+        val e1 = visitExp(exp1, env0)
+        val e2 = visitExp(exp2, env0)
+        val e3 = visitExp(exp3, env0)
+        Expression.ArrayNew(e1, e2, e3, subst0(tpe), eff, loc)
 
       case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
         val b = visitExp(base, env0)
@@ -457,14 +455,10 @@ object Monomorph {
         val i2 = visitExp(endIndex, env0)
         Expression.ArraySlice(b, i1, i2, subst0(tpe), loc)
 
-      case Expression.Ref(exp, tpe, eff, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Ref(e, subst0(tpe), eff, loc)
-
-      case Expression.RefWithRegion(exp, _, tpe, eff, loc) =>
-        // Note: Regions are erased.
-        val e = visitExp(exp, env0)
-        Expression.Ref(e, subst0(tpe), eff, loc)
+      case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1, env0)
+        val e2 = visitExp(exp2, env0)
+        Expression.Ref(e1, e2, subst0(tpe), eff, loc)
 
       case Expression.Deref(exp, tpe, eff, loc) =>
         val e = visitExp(exp, env0)
@@ -563,6 +557,9 @@ object Monomorph {
       case Expression.Force(exp, tpe, eff, loc) =>
         val e = visitExp(exp, env0)
         Expression.Force(e, subst0(tpe), eff, loc)
+
+      case Expression.Scope(_, _, _, _, loc) =>
+        throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
       case Expression.FixpointConstraintSet(_, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")

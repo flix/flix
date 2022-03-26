@@ -182,7 +182,7 @@ object Indexer {
     case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expression.LetRegion(sym, exp, _, _, loc) =>
+    case Expression.Scope(sym, exp, _, _, loc) =>
       val tpe = Type.mkRegion(sym.tvar.ascribedWith(Kind.Bool), loc)
       Index.occurrenceOf(sym, tpe) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
@@ -221,11 +221,11 @@ object Indexer {
     case Expression.RecordRestrict(field, exp, _, _, _) =>
       Index.occurrenceOf(field) ++ Index.defOf(field) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.ArrayLit(exps, _, _, _) =>
-      visitExps(exps) ++ Index.occurrenceOf(exp0)
+    case Expression.ArrayLit(exps, exp, _, _, _) =>
+      visitExps(exps) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.ArrayNew(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
     case Expression.ArrayLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
@@ -239,10 +239,7 @@ object Indexer {
     case Expression.ArraySlice(exp1, exp2, exp3, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
-    case Expression.Ref(exp, _, _, _) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
-
-    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+    case Expression.Ref(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.Deref(exp1, _, _, _) =>

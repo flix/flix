@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.debug.FormatSourceLocation
+import ca.uwaterloo.flix.language.dbg.FormatSourceLocation
 import org.parboiled2.ParserInput
 
 /**
@@ -82,7 +82,10 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
     */
   def lineAt(line: Int): String = input match {
     case None => ""
-    case Some(input) => input.getLine(line)
+    case Some(input) =>
+      input.getLine(line)
+        .replaceAll("\n", "")
+        .replaceAll("\r", "")
   }
 
   /**

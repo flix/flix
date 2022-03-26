@@ -18,11 +18,12 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
-import ca.uwaterloo.flix.language.phase.{Kinder, Monomorph}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
+import ca.uwaterloo.flix.language.phase.Kinder
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
+import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
 /**
@@ -186,7 +187,7 @@ sealed trait Type {
   /**
     * Returns a human readable string representation of `this` type.
     */
-  override def toString: String = FormatType.formatType(this)(Audience.Internal)
+  override def toString: String = FormatType.formatWellKindedType(this)(Audience.Internal)
 }
 
 object Type {
@@ -820,6 +821,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True, _)) => tpe1
     case (Type.Cst(TypeConstructor.False, _), _) => Type.False
     case (_, Type.Cst(TypeConstructor.False, _)) => Type.False
+    case (Type.KindedVar(id1, _, _, _, _), Type.KindedVar(id2, _, _, _, _)) if id1 == id2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.And, tpe1, loc), tpe2, loc)
   }
 
@@ -828,7 +830,16 @@ object Type {
     *
     * Must not be used before kinding.
     */
-  def mkAnd(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): Type = mkAnd(tpe1, mkAnd(tpe2, tpe3, loc), loc)
+  def mkAnd(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): Type =
+    mkAnd(tpe1, mkAnd(tpe2, tpe3, loc), loc)
+
+  /**
+    * Returns the type `And(tpe1, And(tpe2, And(tpe3, tpe4)))`.
+    *
+    * Must not be used before kinding.
+    */
+  def mkAnd(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation): Type =
+    mkAnd(tpe1, mkAnd(tpe2, mkAnd(tpe3, tpe4, loc), loc), loc)
 
   /**
     * Returns the type `And(tpe1, And(tpe2, ...))`.
@@ -850,6 +861,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True, _)) => Type.True
     case (Type.Cst(TypeConstructor.False, _), _) => tpe2
     case (_, Type.Cst(TypeConstructor.False, _)) => tpe1
+    case (Type.KindedVar(id1, _, _, _, _), Type.KindedVar(id2, _, _, _, _)) if id1 == id2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.Or, tpe1, loc), tpe2, loc)
   }
 
@@ -864,10 +876,10 @@ object Type {
   }
 
   /**
-    * Returns a Region type for the given rigid variable `l` with the given source location `loc`.
+    * Returns a Region type for the given region argument `r` with the given source location `loc`.
     */
-  def mkRegion(l: Type.KindedVar, loc: SourceLocation): Type =
-    Type.Apply(Type.Cst(TypeConstructor.Region, loc), l, loc)
+  def mkRegion(r: Type, loc: SourceLocation): Type =
+    Type.Apply(Type.Cst(TypeConstructor.Region, loc), r, loc)
 
   /**
     * Returns the type `tpe1 => tpe2`.
@@ -895,13 +907,26 @@ object Type {
 
   /**
     * Replace type aliases with the types they represent.
+    * In general, this function should be used in back-end phases
+    * to clear all aliases for easier processing.
     */
   def eraseAliases(t: Type): Type = t match {
     case tvar: Type.Var => tvar.asKinded
     case Type.Cst(_, _) => t
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
-    case Type.Ascribe(tpe, kind, loc) => throw InternalCompilerException("Unexpected type ascription.")
+    case Type.Ascribe(_, _, _) => throw InternalCompilerException("Unexpected type ascription.")
+  }
+
+  /**
+    * Replace top-level type aliases with the types they represent.
+    * In general, this function should be used in front-end phases
+    * to maintain aliases in error messages to the extent possible.
+    */
+  @tailrec
+  def eraseTopAliases(t: Type): Type = t match {
+    case Type.Alias(_, _, tpe, _) => eraseTopAliases(tpe)
+    case tpe => tpe
   }
 
 

@@ -174,7 +174,7 @@ object PatternExhaustiveness {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)
         } yield tast
-        case Expression.LetRegion(_, exp, _, _, _) =>
+        case Expression.Scope(_, exp, _, _, _) =>
           for {
             _ <- checkPats(exp, root)
           } yield tast
@@ -220,12 +220,14 @@ object PatternExhaustiveness {
             _ <- checkPats(rest, root)
           } yield tast
 
-        case Expression.ArrayLit(elms, _, _, _) => sequence(elms map {
-          checkPats(_, root)
-        }).map(const(tast))
-        case Expression.ArrayNew(elm, len, _, _, _) => for {
-          _ <- checkPats(elm, root)
-          _ <- checkPats(len, root)
+        case Expression.ArrayLit(exps, exp, _, _, _) => for {
+          _ <- sequence(exps.map(checkPats(_, root)))
+          _ <- checkPats(exp, root)
+        } yield tast
+        case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) => for {
+          _ <- checkPats(exp1, root)
+          _ <- checkPats(exp2, root)
+          _ <- checkPats(exp3, root)
         } yield tast
         case Expression.ArrayLoad(base, index, _, _, _) => for {
           _ <- checkPats(base, root)
@@ -244,9 +246,8 @@ object PatternExhaustiveness {
           _ <- checkPats(beginIndex, root)
           _ <- checkPats(endIndex, root)
         } yield tast
-        case Expression.Ref(exp, _, _, _) =>
-          checkPats(exp, root).map(const(tast))
-        case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+
+        case Expression.Ref(exp1, exp2, _, _, _) =>
           for {
             _ <- checkPats(exp1, root)
             _ <- checkPats(exp2, root)

@@ -343,7 +343,7 @@ object Redundancy {
       else
         (used ++ shadowedVar) - sym
 
-    case Expression.LetRegion(sym, exp, _, _, _) =>
+    case Expression.Scope(sym, exp, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
@@ -451,13 +451,14 @@ object Redundancy {
     case Expression.RecordRestrict(_, rest, _, _, _) =>
       visitExp(rest, env0)
 
-    case Expression.ArrayLit(elms, tpe, eff, loc) =>
-      visitExps(elms, env0)
+    case Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
+      visitExps(exps, env0) ++ visitExp(exp, env0)
 
-    case Expression.ArrayNew(elm, len, _, _, _) =>
-      val us1 = visitExp(elm, env0)
-      val us2 = visitExp(len, env0)
-      us1 ++ us2
+    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+      val us1 = visitExp(exp1, env0)
+      val us2 = visitExp(exp2, env0)
+      val us3 = visitExp(exp3, env0)
+      us1 ++ us2 ++ us3
 
     case Expression.ArrayLoad(base, index, _, _, _) =>
       val us1 = visitExp(base, env0)
@@ -479,10 +480,7 @@ object Redundancy {
       val us3 = visitExp(end, env0)
       us1 ++ us2 ++ us3
 
-    case Expression.Ref(exp, _, _, _) =>
-      visitExp(exp, env0)
-
-    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
+    case Expression.Ref(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0)
       val us2 = visitExp(exp2, env0)
       us1 ++ us2

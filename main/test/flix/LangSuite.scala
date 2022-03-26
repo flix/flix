@@ -23,7 +23,6 @@ class LangSuite extends Suites(
   // Definitions.
   //
   new FlixTest("Test.Def.Op", "main/test/flix/Test.Def.Op.flix"),
-  new FlixTest("Test.Def.Scoped", "main/test/flix/Test.Def.Scoped.flix"),
 
   //
   // Derivations.
@@ -269,15 +268,15 @@ class LangSuite extends Suites(
   //
   // Reference.
   //
-  new FlixTest("Test.Exp.Reference", List(
-    "main/test/flix/Test.Exp.Reference.Assign.flix",
-    "main/test/flix/Test.Exp.Reference.Ref.flix",
-    "main/test/flix/Test.Exp.Reference.Deref.flix",
-    "main/test/flix/Test.Exp.Reference.Precedence.flix",
+  new FlixTest("Test.Exp.Ref", List(
+    "main/test/flix/Test.Exp.Ref.Assign.flix",
+    "main/test/flix/Test.Exp.Ref.Ref.flix",
+    "main/test/flix/Test.Exp.Ref.Deref.flix",
+    "main/test/flix/Test.Exp.Ref.Precedence.flix",
   ), Options.TestWithLibAll),
 
-  new FlixTest("Test.Exp.ScopedReference", List(
-    "main/test/flix/Test.Exp.ScopedReference.flix"
+  new FlixTest("Test.Exp.ScopedRef", List(
+    "main/test/flix/Test.Exp.ScopedRef.flix"
   ), Options.TestWithLibAll),
 
   //

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme, FormatType, FormatTypeConstraint}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme, FormatType, FormatTypeConstraint}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -149,9 +149,9 @@ object InstanceError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Duplicate type variable '${red(FormatType.formatType(tvar))}' in '${red(sym.name)}'.
+         |>> Duplicate type variable '${red(FormatType.formatWellKindedType(tvar))}' in '${red(sym.name)}'.
          |
-         |${code(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")}
+         |${code(loc, s"The type variable '${FormatType.formatWellKindedType(tvar)}' occurs more than once.")}
          |""".stripMargin
     }
 
@@ -175,7 +175,7 @@ object InstanceError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Complex instance type '${red(FormatType.formatType(tpe))}' in '${red(sym.name)}'.
+         |>> Complex instance type '${red(FormatType.formatWellKindedType(tpe))}' in '${red(sym.name)}'.
          |${code(loc, s"complex instance type")}
          |""".stripMargin
     }
@@ -225,7 +225,7 @@ object InstanceError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Orphan instance for type '${red(FormatType.formatType(tpe))}' in '${red(sym.name)}'.
+         |>> Orphan instance for type '${red(FormatType.formatWellKindedType(tpe))}' in '${red(sym.name)}'.
          |${code(loc, s"orphan instance")}
          |""".stripMargin
     }
@@ -250,7 +250,7 @@ object InstanceError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Missing super class instance '${red(superClass.name)}' for type '${red(FormatType.formatType(tpe))}'.
+         |>> Missing super class instance '${red(superClass.name)}' for type '${red(FormatType.formatWellKindedType(tpe))}'.
          |
          |>> The class '${red(subClass.name)}' extends the class '${red(superClass.name)}'.
          |>> If you provide an instance for '${red(subClass.name)}' you must also provide an instance for '${red(superClass.name)}'.
@@ -261,7 +261,7 @@ object InstanceError {
 
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
-      s"${underline("Tip:")} Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'."
+      s"${underline("Tip:")} Add an instance of '${superClass.name}' for '${FormatType.formatWellKindedType(tpe)}'."
     })
   }
 

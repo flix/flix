@@ -78,7 +78,7 @@ object Stratifier {
   /**
     * Performs Stratification of the given instance `i0`.
     */
-  private def visitInstance(i0: TypedAst.Instance)(implicit g: LabelledGraph, flix: Flix):Validation[TypedAst.Instance, CompilationMessage] =
+  private def visitInstance(i0: TypedAst.Instance)(implicit g: LabelledGraph, flix: Flix): Validation[TypedAst.Instance, CompilationMessage] =
     traverse(i0.defs)(d => visitDef(d)).map(ds => i0.copy(defs = ds))
 
   /**
@@ -163,9 +163,9 @@ object Stratifier {
         case (e1, e2) => Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
       }
 
-    case Expression.LetRegion(sym, exp, tpe, eff, loc) =>
+    case Expression.Scope(sym, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.LetRegion(sym, e, tpe, eff, loc)
+        case e => Expression.Scope(sym, e, tpe, eff, loc)
       }
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
@@ -226,14 +226,14 @@ object Stratifier {
         case r => Expression.RecordRestrict(field, r, tpe, eff, loc)
       }
 
-    case Expression.ArrayLit(elms, tpe, eff, loc) =>
-      mapN(traverse(elms)(visitExp)) {
-        case es => Expression.ArrayLit(es, tpe, eff, loc)
+    case Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
+      mapN(traverse(exps)(visitExp), visitExp(exp)) {
+        case (es, e) => Expression.ArrayLit(es, e, tpe, eff, loc)
       }
 
-    case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
-      mapN(visitExp(elm), visitExp(len)) {
-        case (e, l) => Expression.ArrayNew(e, l, tpe, eff, loc)
+    case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
+        case (e1, e2, e3) => Expression.ArrayNew(e1, e2, e3, tpe, eff, loc)
       }
 
     case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
@@ -256,14 +256,9 @@ object Stratifier {
         case (b, i1, i2) => Expression.ArraySlice(b, i1, i2, tpe, loc)
       }
 
-    case Expression.Ref(exp, tpe, eff, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Ref(e, tpe, eff, loc)
-      }
-
-    case Expression.RefWithRegion(exp1, exp2, tpe, eff, loc) =>
+    case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.RefWithRegion(e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expression.Ref(e1, e2, tpe, eff, loc)
       }
 
     case Expression.Deref(exp, tpe, eff, loc) =>
@@ -453,12 +448,12 @@ object Stratifier {
     * Returns the labelled graph of the given definition `def0`.
     */
   private def labelledGraphOfDef(def0: Def): LabelledGraph =
-    LabelledGraphOfExp(def0.impl.exp)
+    labelledGraphOfExp(def0.impl.exp)
 
   /**
     * Returns the labelled graph of the given expression `exp0`.
     */
-  private def LabelledGraphOfExp(exp0: Expression): LabelledGraph = exp0 match {
+  private def labelledGraphOfExp(exp0: Expression): LabelledGraph = exp0 match {
     case Expression.Unit(_) => LabelledGraph.empty
 
     case Expression.Null(_, _) => LabelledGraph.empty
@@ -498,167 +493,164 @@ object Stratifier {
     case Expression.Hole(_, _, _) => LabelledGraph.empty
 
     case Expression.Lambda(_, exp, _, _) =>
-      LabelledGraphOfExp(exp)
+      labelledGraphOfExp(exp)
 
     case Expression.Apply(exp, exps, _, _, _) =>
-      val init = LabelledGraphOfExp(exp)
+      val init = labelledGraphOfExp(exp)
       exps.foldLeft(init) {
-        case (acc, exp) => acc + LabelledGraphOfExp(exp)
+        case (acc, exp) => acc + labelledGraphOfExp(exp)
       }
 
     case Expression.Unary(_, exp, _, _, _) =>
-      LabelledGraphOfExp(exp)
+      labelledGraphOfExp(exp)
 
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
-      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expression.Let(_, _, exp1, exp2, _, _, _) =>
-      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
-      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
-    case Expression.LetRegion(_, exp, _, _, _) =>
-      LabelledGraphOfExp(exp)
+    case Expression.Scope(_, exp, _, _, _) =>
+      labelledGraphOfExp(exp)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2) + LabelledGraphOfExp(exp3)
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2) + labelledGraphOfExp(exp3)
 
     case Expression.Stm(exp1, exp2, _, _, _) =>
-      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expression.Match(exp, rules, _, _, _) =>
-      val dg = LabelledGraphOfExp(exp)
+      val dg = labelledGraphOfExp(exp)
       rules.foldLeft(dg) {
-        case (acc, MatchRule(_, g, b)) => acc + LabelledGraphOfExp(g) + LabelledGraphOfExp(b)
+        case (acc, MatchRule(_, g, b)) => acc + labelledGraphOfExp(g) + labelledGraphOfExp(b)
       }
 
     case Expression.Choose(exps, rules, _, _, _) =>
       val dg1 = exps.foldLeft(LabelledGraph.empty) {
-        case (acc, exp) => acc + LabelledGraphOfExp(exp)
+        case (acc, exp) => acc + labelledGraphOfExp(exp)
       }
       val dg2 = rules.foldLeft(LabelledGraph.empty) {
-        case (acc, ChoiceRule(_, exp)) => acc + LabelledGraphOfExp(exp)
+        case (acc, ChoiceRule(_, exp)) => acc + labelledGraphOfExp(exp)
       }
       dg1 + dg2
 
     case Expression.Tag(_, _, exp, _, _, _) =>
-      LabelledGraphOfExp(exp)
+      labelledGraphOfExp(exp)
 
     case Expression.Tuple(elms, _, _, _) =>
       elms.foldLeft(LabelledGraph.empty) {
-        case (acc, e) => acc + LabelledGraphOfExp(e)
+        case (acc, e) => acc + labelledGraphOfExp(e)
       }
 
     case Expression.RecordEmpty(_, _) =>
       LabelledGraph.empty
 
     case Expression.RecordSelect(base, _, _, _, _) =>
-      LabelledGraphOfExp(base)
+      labelledGraphOfExp(base)
 
     case Expression.RecordExtend(_, value, rest, _, _, _) =>
-      LabelledGraphOfExp(value) + LabelledGraphOfExp(rest)
+      labelledGraphOfExp(value) + labelledGraphOfExp(rest)
 
     case Expression.RecordRestrict(_, rest, _, _, _) =>
-      LabelledGraphOfExp(rest)
+      labelledGraphOfExp(rest)
 
-    case Expression.ArrayLit(elms, _, _, _) =>
-      elms.foldLeft(LabelledGraph.empty) {
-        case (acc, e) => acc + LabelledGraphOfExp(e)
+    case Expression.ArrayLit(elms, exp, _, _, _) =>
+      elms.foldLeft(labelledGraphOfExp(exp)) {
+        case (acc, e) => acc + labelledGraphOfExp(e)
       }
 
-    case Expression.ArrayNew(elm, len, _, _, _) =>
-      LabelledGraphOfExp(elm) + LabelledGraphOfExp(len)
+    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2) + labelledGraphOfExp(exp3)
 
     case Expression.ArrayLoad(base, index, _, _, _) =>
-      LabelledGraphOfExp(base) + LabelledGraphOfExp(index)
+      labelledGraphOfExp(base) + labelledGraphOfExp(index)
 
     case Expression.ArrayLength(base, _, _) =>
-      LabelledGraphOfExp(base)
+      labelledGraphOfExp(base)
 
     case Expression.ArrayStore(base, index, elm, _) =>
-      LabelledGraphOfExp(base) + LabelledGraphOfExp(index) + LabelledGraphOfExp(elm)
+      labelledGraphOfExp(base) + labelledGraphOfExp(index) + labelledGraphOfExp(elm)
 
     case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
-      LabelledGraphOfExp(base) + LabelledGraphOfExp(beginIndex) + LabelledGraphOfExp(endIndex)
+      labelledGraphOfExp(base) + labelledGraphOfExp(beginIndex) + labelledGraphOfExp(endIndex)
 
-    case Expression.Ref(exp, _, _, _) =>
-      LabelledGraphOfExp(exp)
-
-    case Expression.RefWithRegion(exp1, exp2, _, _, _) =>
-      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+    case Expression.Ref(exp1, exp2, _, _, _) =>
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expression.Deref(exp, _, _, _) =>
-      LabelledGraphOfExp(exp)
+      labelledGraphOfExp(exp)
 
     case Expression.Assign(exp1, exp2, _, _, _) =>
-      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expression.Ascribe(exp, _, _, _) =>
-      LabelledGraphOfExp(exp)
+      labelledGraphOfExp(exp)
 
     case Expression.Cast(exp, _, _, _, _, _) =>
-      LabelledGraphOfExp(exp)
+      labelledGraphOfExp(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
-      rules.foldLeft(LabelledGraphOfExp(exp)) {
-        case (acc, CatchRule(_, _, e)) => acc + LabelledGraphOfExp(e)
+      rules.foldLeft(labelledGraphOfExp(exp)) {
+        case (acc, CatchRule(_, _, e)) => acc + labelledGraphOfExp(e)
       }
 
     case Expression.InvokeConstructor(_, args, _, _, _) =>
       args.foldLeft(LabelledGraph.empty) {
-        case (acc, e) => acc + LabelledGraphOfExp(e)
+        case (acc, e) => acc + labelledGraphOfExp(e)
       }
 
     case Expression.InvokeMethod(_, exp, args, _, _, _) =>
-      args.foldLeft(LabelledGraphOfExp(exp)) {
-        case (acc, e) => acc + LabelledGraphOfExp(e)
+      args.foldLeft(labelledGraphOfExp(exp)) {
+        case (acc, e) => acc + labelledGraphOfExp(e)
       }
 
     case Expression.InvokeStaticMethod(_, args, _, _, _) =>
       args.foldLeft(LabelledGraph.empty) {
-        case (acc, e) => acc + LabelledGraphOfExp(e)
+        case (acc, e) => acc + labelledGraphOfExp(e)
       }
 
     case Expression.GetField(_, exp, _, _, _) =>
-      LabelledGraphOfExp(exp)
+      labelledGraphOfExp(exp)
 
     case Expression.PutField(_, exp1, exp2, _, _, _) =>
-      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expression.GetStaticField(_, _, _, _) =>
       LabelledGraph.empty
 
     case Expression.PutStaticField(_, exp, _, _, _) =>
-      LabelledGraphOfExp(exp)
+      labelledGraphOfExp(exp)
 
     case Expression.NewChannel(exp, _, _, _) =>
-      LabelledGraphOfExp(exp)
+      labelledGraphOfExp(exp)
 
     case Expression.GetChannel(exp, _, _, _) =>
-      LabelledGraphOfExp(exp)
+      labelledGraphOfExp(exp)
 
     case Expression.PutChannel(exp1, exp2, _, _, _) =>
-      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expression.SelectChannel(rules, default, _, _, _) =>
       val dg = default match {
         case None => LabelledGraph.empty
-        case Some(d) => LabelledGraphOfExp(d)
+        case Some(d) => labelledGraphOfExp(d)
       }
 
       rules.foldLeft(dg) {
-        case (acc, SelectChannelRule(_, exp1, exp2)) => acc + LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+        case (acc, SelectChannelRule(_, exp1, exp2)) => acc + labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
       }
 
     case Expression.Spawn(exp, _, _, _) =>
-      LabelledGraphOfExp(exp)
+      labelledGraphOfExp(exp)
 
     case Expression.Lazy(exp, _, _) =>
-      LabelledGraphOfExp(exp)
+      labelledGraphOfExp(exp)
 
     case Expression.Force(exp, _, _, _) =>
-      LabelledGraphOfExp(exp)
+      labelledGraphOfExp(exp)
 
     case Expression.FixpointConstraintSet(cs, _, _, _) =>
       cs.foldLeft(LabelledGraph.empty) {
@@ -666,19 +658,19 @@ object Stratifier {
       }
 
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
-      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2)
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expression.FixpointSolve(exp, _, _, _, _) =>
-      LabelledGraphOfExp(exp)
+      labelledGraphOfExp(exp)
 
     case Expression.FixpointFilter(_, exp, _, _, _) =>
-      LabelledGraphOfExp(exp)
+      labelledGraphOfExp(exp)
 
     case Expression.FixpointProjectIn(exp, _, _, _, _) =>
-      LabelledGraphOfExp(exp)
+      labelledGraphOfExp(exp)
 
     case Expression.FixpointProjectOut(_, exp, _, _, _) =>
-      LabelledGraphOfExp(exp)
+      labelledGraphOfExp(exp)
 
     case Expression.Reify(_, _, _, _) =>
       LabelledGraph.empty
@@ -687,7 +679,7 @@ object Stratifier {
       LabelledGraph.empty
 
     case Expression.ReifyEff(_, exp1, exp2, exp3, _, _, _) =>
-      LabelledGraphOfExp(exp1) + LabelledGraphOfExp(exp2) + LabelledGraphOfExp(exp3)
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2) + labelledGraphOfExp(exp3)
   }
 
   /**

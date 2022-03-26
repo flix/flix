@@ -182,6 +182,7 @@ object ParsedAst {
       * Typeclass Declaration.
       *
       * @param doc          the optional comment associated with the declaration.
+      * @param ann          the annotations associated with the declaration.
       * @param mod          the associated modifiers.
       * @param sp1          the position of the first character in the declaration.
       * @param ident        the name of the definition.
@@ -190,7 +191,7 @@ object ParsedAst {
       * @param lawsAndSigs  the signatures and laws of the class.
       * @param sp2          the position of the last character in the declaration.
       */
-    case class Class(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, superClasses: Seq[ParsedAst.TypeConstraint], lawsAndSigs: Seq[ParsedAst.Declaration.LawOrSig], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Class(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, superClasses: Seq[ParsedAst.TypeConstraint], lawsAndSigs: Seq[ParsedAst.Declaration.LawOrSig], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Typeclass instance.
@@ -629,14 +630,14 @@ object ParsedAst {
     case class LetImport(sp1: SourcePosition, op: ParsedAst.JvmOp, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Let Region Expression.
+      * Scope Expression.
       *
       * @param sp1   the position of the first character in the expression.
       * @param ident the name of the region.
       * @param exp   the body expression.
       * @param sp2   the position of the last character in the expression.
       */
-    case class LetRegion(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Scope(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Match Expression (pattern match expression).
@@ -716,23 +717,35 @@ object ParsedAst {
     case class RecordOperation(sp1: SourcePosition, ops: Seq[ParsedAst.RecordOp], rest: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * New Expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param qname the qualified name of the type.
+      * @param exp   the optional region expression.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class New(sp1: SourcePosition, qname: Name.QName, exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * ArrayLit Expression.
       *
       * @param sp1  the position of the first character in the expression.
-      * @param elms the elements of the array.
+      * @param exps the elements of the array.
+      * @param exp  the optional region.
       * @param sp2  the position of the last character in the expression.
       */
-    case class ArrayLit(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class ArrayLit(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ArrayNew Expression
       *
-      * @param sp1 the position of the first character in the expression.
-      * @param elm the default value of the array elements.
-      * @param len the length of the array.
-      * @param sp2 the position of the last character in the expression.
+      * @param sp1  the position of the first character in the expression.
+      * @param exp1 the default value of the array elements.
+      * @param exp2 the length of the array.
+      * @param exp3 the optional region.
+      * @param sp2  the position of the last character in the expression.
       */
-    case class ArrayNew(sp1: SourcePosition, elm: ParsedAst.Expression, len: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ArrayNew(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ArrayLoad Expression
@@ -1260,24 +1273,6 @@ object ParsedAst {
     case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Rigid Type Variable.
-      *
-      * @param sp1   the position of the first character in the type.
-      * @param ident the variable name.
-      * @param sp2   the position of the last character in the type.
-      */
-    case class RigidVar(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
-      * Region.
-      *
-      * @param sp1   the position of the first character in the type.
-      * @param ident the variable name.
-      * @param sp2   the position of the last character in the type.
-      */
-    case class Region(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
       * Primitive or Named type.
       *
       * @param sp1   the position of the first character in the type.
@@ -1418,6 +1413,15 @@ object ParsedAst {
     case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+      * Represents a union of effects.
+      *
+      * @param sp1 the position of the first character in the type.
+      * @param efs the effects.
+      * @param sp2 the position of the last character in the type.
+      */
+    case class Union(sp1: SourcePosition, efs: Seq[ParsedAst.Effect], sp2: SourcePosition) extends Type
+
+    /**
       * Kind Ascription.
       *
       * @param tpe  the ascribed type.
@@ -1425,6 +1429,38 @@ object ParsedAst {
       * @param sp2  the position of the last character in the type.
       */
     case class Ascribe(tpe: ParsedAst.Type, kind: ParsedAst.Kind, sp2: SourcePosition) extends ParsedAst.Type
+
+  }
+
+  /**
+    * Represents an effect.
+    */
+  sealed trait Effect
+
+  object Effect {
+
+    /**
+      * Represents an effect variable.
+      *
+      * @param sp1   the position of the first character in the type.
+      * @param ident the variable name.
+      * @param sp2   the position of the last character in the type.
+      */
+    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Effect
+
+    /**
+      * Represents a read of the region variables `idents`.
+      *
+      * @param idents the region variables that are read.
+      */
+    case class Read(idents: Seq[Name.Ident]) extends ParsedAst.Effect
+
+    /**
+      * Represents a write of the region variables `idents`.
+      *
+      * @param idents the region variables that are written.
+      */
+    case class Write(idents: Seq[Name.Ident]) extends ParsedAst.Effect
 
   }
 
