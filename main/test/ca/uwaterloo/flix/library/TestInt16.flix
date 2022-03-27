@@ -710,6 +710,12 @@ namespace TestInt16 {
     @test
     def log207(): Bool = Int16.log2(20i16) == 4i16
 
+    @test
+    def log208(): Bool = Int16.log2(0i16) == 0i16
+
+    @test
+    def log209(): Bool = Int16.log2(-1i16) == 0i16
+
     /////////////////////////////////////////////////////////////////////////////
     // factorial                                                               //
     /////////////////////////////////////////////////////////////////////////////
@@ -734,6 +740,9 @@ namespace TestInt16 {
 
     @test
     def factorial07(): Bool = Int16.factorial(10i16) == 3628800
+
+    @test
+    def factorial08(): Bool = Int16.factorial(-1i16) == 0
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //

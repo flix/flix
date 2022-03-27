@@ -268,20 +268,31 @@ namespace Int64 {
 
     ///
     /// Returns the integer binary logarithm of `x`.
+    /// If the given value is 0 or negative, 0 is returned.
     ///
     @Time(1) @Space(1)
-    pub def log2(x: Int64): Int64 = highestOneBitPosition(x) |> Int32.toInt64
+    pub def log2(x: Int64): Int64 =
+        if (x <= 0i64) {
+            0i64
+        } else {
+            highestOneBitPosition(x) |> Int32.toInt64
+        }
 
     ///
     /// Returns the factorial of `x`.
+    /// If the given value is negative, 0 is returned.
     ///
     @Time(factorial(x)) @Space(1)
     pub def factorial(x: Int64): Int64 =
-        def loop(y, acc) = match y {
-            case 0i64 => acc
-            case _    => loop(y - 1i64, y * acc)
-        };
-        loop(x, 1i64)
+        if (x < 0i64) {
+            0i64
+        } else {
+            def loop(y, acc) = match y {
+                case 0i64 => acc
+                case _    => loop(y - 1i64, y * acc)
+            };
+            loop(x, 1i64)
+        }
 
     ///
     /// Return a string representation of `x`.
