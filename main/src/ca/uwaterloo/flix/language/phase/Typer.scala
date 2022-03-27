@@ -242,7 +242,12 @@ object Typer {
           val initialSubst = getSubstFromParams(fparams0)
 
           run(initialSubst) match {
-            case Ok((subst, (partialTconstrs, partialType))) =>
+            case Ok((subst0, (partialTconstrs, partialType))) =>
+              ///
+              /// Propagate type variables *names* in the substitution.
+              ///
+              val subst = subst0.propagate
+
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.
               ///

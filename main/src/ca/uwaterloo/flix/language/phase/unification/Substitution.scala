@@ -34,6 +34,8 @@ object Substitution {
     // Ensure that we do not add any x -> x mappings.
     tpe match {
       case y: Type.Var if x.id == y.asKinded.id => empty
+      case y: Type.Var if x.text.nonEmpty => Substitution(Map(x -> y.asKinded.copy(text = x.text)))
+      case y: Type.Var if y.text.nonEmpty => Substitution(Map(x.asKinded.copy(text = y.text) -> y))
       case _ => Substitution(Map(x -> tpe))
     }
   }
@@ -57,15 +59,7 @@ case class Substitution(m: Map[Type.Var, Type]) {
     // NB: The order of cases has been determined by code coverage analysis.
     def visit(t: Type): Type =
       t match {
-        case x: Type.Var => m.get(x) match {
-          case None => x
-          case Some(t0) => t0 match {
-            // NB: This small trick is used to propagate variable names.
-            case tr: Type.KindedVar => tr.copy(text = x.text)
-            case tr: Type.UnkindedVar => tr.copy(text = x.text)
-            case tr => tr
-          }
-        }
+        case x: Type.Var => m.getOrElse(x, x)
         case Type.Cst(tc, _) => t
         case Type.Apply(t1, t2, loc) =>
           val y = visit(t2)
@@ -163,6 +157,65 @@ case class Substitution(m: Map[Type.Var, Type]) {
     }
 
     Substitution(newTypeMap.toMap) ++ this
+  }
+
+  /**
+    * Propagates type variable *names* within a substitution.
+    *
+    * During type inference we may construct bindings such as:
+    *
+    * x -> y
+    * u -> v
+    *
+    * Here `x` may have a name ("text") but `y` may not.
+    * Conversely, `v` may have a name ("text"), but not `u`.
+    *
+    * The idea is to propagate these names across these bindings.
+    *
+    * This process does *not* have to be transitive, because the substitution
+    * (if computed by inference) should already be transitive.
+    */
+  def propagate: Substitution = {
+    ///
+    /// A map from type variables (without a name) to a string name ("text"0.
+    ///
+    var replacement = Map.empty[Type.Var, String]
+
+    //
+    // Compute all bindings where there is a name to be propagated.
+    //
+    for ((tvar1, tpe) <- m) {
+      tpe match {
+        case tvar2: Type.KindedVar =>
+          (tvar1.text, tvar2.text) match {
+            case (None, Some(text)) =>
+              replacement = replacement + (tvar1 -> text)
+            case (Some(text), None) =>
+              replacement = replacement + (tvar2 -> text)
+            case _ => // nop
+          }
+        case _ => // nop
+      }
+    }
+
+    /**
+      * A utility function to replace the text in `tvar` using the computed map.
+      */
+    def replace(tvar: Type.KindedVar): Type.KindedVar = replacement.get(tvar) match {
+      case None => tvar
+      case Some(text) => tvar.copy(text = Some(text))
+    }
+
+    ///
+    /// Computes the new substitution. It is equivalent to the old, but with updated names.
+    ///
+    val m2 = m.foldLeft(Map.empty[Type.Var, Type]) {
+      case (acc, (tvar, tpe)) =>
+        val t = tpe.map(replace)
+        acc + (tvar -> t)
+    }
+
+    Substitution(m2)
   }
 
 }
