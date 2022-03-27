@@ -271,17 +271,17 @@ namespace Int64 {
     ///
     @Time(1) @Space(1)
     pub def log2(x: Int64): Int32 = highestOneBitPosition(x)
+
     ///
     /// Returns the factorial of `x`.
     ///
     @Time(factorial(x)) @Space(1)
-    pub def factorial(x: Int64): Int64 = factorialHelper(x, 1i64)
-
-    ///
-    /// Helper function for `factorial`.
-    ///
-    def factorialHelper(x: Int64, acc: Int64): Int64 =
-        if (x == 0i64) acc else factorialHelper(x - 1i64, x * acc)
+    pub def factorial(x: Int64): Int64 =
+        def factorialHelper(y, acc) = match y {
+            case 0i64 => acc
+            case _    => factorialHelper(y - 1i64, y * acc)
+        };
+        factorialHelper(x, 1i64)
 
     ///
     /// Return a string representation of `x`.
