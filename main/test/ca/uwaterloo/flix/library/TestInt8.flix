@@ -687,19 +687,19 @@ namespace TestInt8 {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def log201(): Bool = Int8.log2(10i8) == 3
+    def log201(): Bool = Int8.log2(10i8) == 3i8
 
     @test
-    def log202(): Bool = Int8.log2(8i8) == 3
+    def log202(): Bool = Int8.log2(8i8) == 3i8
 
     @test
-    def log203(): Bool = Int8.log2(127i8) == 6
+    def log203(): Bool = Int8.log2(127i8) == 6i8
 
     @test
-    def log204(): Bool = Int8.log2(1i8) == 0
+    def log204(): Bool = Int8.log2(1i8) == 0i8
 
     @test
-    def log205(): Bool = Int8.log2(20i8) == 4
+    def log205(): Bool = Int8.log2(20i8) == 4i8
 
     /////////////////////////////////////////////////////////////////////////////
     // factorial                                                               //

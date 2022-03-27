@@ -663,28 +663,28 @@ namespace TestInt64 {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def log201(): Bool = Int64.log2(10i64) == 3
+    def log201(): Bool = Int64.log2(10i64) == 3i64
 
     @test
-    def log202(): Bool = Int64.log2(10000i64) == 13
+    def log202(): Bool = Int64.log2(10000i64) == 13i64
 
     @test
-    def log203(): Bool = Int64.log2(8i64) == 3
+    def log203(): Bool = Int64.log2(8i64) == 3i64
 
     @test
-    def log204(): Bool = Int64.log2(256i64) == 8
+    def log204(): Bool = Int64.log2(256i64) == 8i64
 
     @test
-    def log205(): Bool = Int64.log2(1i64) == 0
+    def log205(): Bool = Int64.log2(1i64) == 0i64
 
     @test
-    def log206(): Bool = Int64.log2(12345678i64) == 23
+    def log206(): Bool = Int64.log2(12345678i64) == 23i64
 
     @test
-    def log207(): Bool = Int64.log2(20i64) == 4
+    def log207(): Bool = Int64.log2(20i64) == 4i64
 
     @test
-    def log208(): Bool = Int64.log2(9_223_372_036_854_775_807i64) == 62
+    def log208(): Bool = Int64.log2(9_223_372_036_854_775_807i64) == 62i64
 
     /////////////////////////////////////////////////////////////////////////////
     // factorial                                                               //

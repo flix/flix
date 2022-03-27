@@ -275,7 +275,9 @@ namespace Int16 {
     /// Returns the integer binary logarithm of `x`.
     ///
     @Time(1) @Space(1)
-    pub def log2(x: Int16): Int32 = highestOneBitPosition(x)
+    pub def log2(x: Int16): Int16 =
+        let position = highestOneBitPosition(x);
+        Int32.clampToInt16(position, 0i16, Int16.maxValue())
 
     ///
     /// Returns the factorial of `x`.

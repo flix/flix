@@ -270,7 +270,7 @@ namespace Int64 {
     /// Returns the integer binary logarithm of `x`.
     ///
     @Time(1) @Space(1)
-    pub def log2(x: Int64): Int32 = highestOneBitPosition(x)
+    pub def log2(x: Int64): Int64 = highestOneBitPosition(x) |> Int32.toInt64
 
     ///
     /// Returns the factorial of `x`.

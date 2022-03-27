@@ -690,25 +690,25 @@ namespace TestInt16 {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def log201(): Bool = Int16.log2(10i16) == 3
+    def log201(): Bool = Int16.log2(10i16) == 3i16
 
     @test
-    def log202(): Bool = Int16.log2(10000i16) == 13
+    def log202(): Bool = Int16.log2(10000i16) == 13i16
 
     @test
-    def log203(): Bool = Int16.log2(8i16) == 3
+    def log203(): Bool = Int16.log2(8i16) == 3i16
 
     @test
-    def log204(): Bool = Int16.log2(256i16) == 8
+    def log204(): Bool = Int16.log2(256i16) == 8i16
 
     @test
-    def log205(): Bool = Int16.log2(1i16) == 0
+    def log205(): Bool = Int16.log2(1i16) == 0i16
 
     @test
-    def log206(): Bool = Int16.log2(32767i16) == 14
+    def log206(): Bool = Int16.log2(32767i16) == 14i16
 
     @test
-    def log207(): Bool = Int16.log2(20i16) == 4
+    def log207(): Bool = Int16.log2(20i16) == 4i16
 
     /////////////////////////////////////////////////////////////////////////////
     // factorial                                                               //
