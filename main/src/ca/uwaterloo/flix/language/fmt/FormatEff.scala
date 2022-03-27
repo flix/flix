@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Magnus Madsen
+ * Copyright 2021 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.debug
+package ca.uwaterloo.flix.language.fmt
 
-object MarkDown {
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 
-  /**
-    * Escapes certain markdown characters.
-    */
-  def escape(s: String): String =
-    s
-      .replace("[", "\\[")
-      .replace("]", "\\]")
+object FormatEff {
+
+  def formatEff(eff: Type)(implicit audience: Audience): String = eff match {
+    case Type.Cst(TypeConstructor.True, _) => "Pure"
+    case Type.Cst(TypeConstructor.False, _) => "Impure"
+    case _ => FormatType.formatWellKindedType(eff)
+  }
 
 }

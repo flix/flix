@@ -244,25 +244,6 @@ namespace Test/Dec/Class {
         def testCallComplexBoolSig02(): Bool = M(10): M[true, Int32] != M(11): M[true, Int32]
     }
 
-    namespace Test20 {
-        lawless class TestNewable[n: Region -> Type] {
-            pub def testNew[r: Region](r: Region[r]): n[r] & reg(r)
-        }
-
-        opaque type TestMutSet[_t: Type, _r: Region] = Unit
-
-        instance TestNewable[TestMutSet[t]] {
-            pub def testNew[r: Region](_r: Region[r]): TestMutSet[t, r] & reg(r) = TestMutSet(()) as _ & reg(r)
-        }
-
-        @test
-        def testCallComplexRegionSig01(): Bool =
-            region r {
-                let _ = Test/Dec/Class/Test20/TestNewable.testNew(r): TestMutSet[String, _];
-                true
-            }
-    }
-
     pub enum List[a] {
         case Nil
         case Cons(a, List[a])

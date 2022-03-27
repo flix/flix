@@ -264,7 +264,29 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = rule {
-    Type ~ optional(WS ~ "&" ~ WS ~ Type)
+    Type ~ optional((WS ~ "&" ~ WS ~ Type) | EffectAlt)
+  }
+
+  def EffectAlt: Rule1[ParsedAst.Type] = {
+    def Var: Rule1[ParsedAst.Effect.Var] = rule {
+      SP ~ Names.Variable ~ SP ~> ParsedAst.Effect.Var
+    }
+
+    def Read: Rule1[ParsedAst.Effect.Read] = rule {
+      keyword("Read") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Effect.Read
+    }
+
+    def Write: Rule1[ParsedAst.Effect.Write] = rule {
+      keyword("Write") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Effect.Write
+    }
+
+    def Union: Rule1[ParsedAst.Type] = rule {
+      SP ~ "{" ~ optWS ~ zeroOrMore(Var | Read | Write).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Union
+    }
+
+    rule {
+      WS ~ "\\" ~ WS ~ Union
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -914,7 +936,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def New: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("new") ~ WS ~ Names.UpperCaseQName ~ optWS ~ "(" ~ optWS ~ optional(Expression) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.New
+      keyword("new") ~ WS ~ SP ~ Names.UpperCaseQName ~ optWS ~ "(" ~ optWS ~ optional(Expression) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.New
     }
 
     def ArrayLit: Rule1[ParsedAst.Expression] = rule {
@@ -1229,7 +1251,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | Native | True | False | Pure | Impure | Not | Region | Var | Ambiguous
+      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | Native | True | False | Pure | Impure | Not | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1315,10 +1337,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Var: Rule1[ParsedAst.Type] = rule {
       SP ~ Names.Variable ~ SP ~> ParsedAst.Type.Var
-    }
-
-    def Region: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("reg") ~ optWS ~ "(" ~ optWS ~ Names.Variable ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.Region
     }
 
     def Ambiguous: Rule1[ParsedAst.Type] = rule {

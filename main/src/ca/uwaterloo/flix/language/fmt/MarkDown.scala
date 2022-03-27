@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.debug
+package ca.uwaterloo.flix.language.fmt
 
-import ca.uwaterloo.flix.language.ast.Ast
-
-object FormatDoc {
+object MarkDown {
 
   /**
-    * Returns a markdown string for the given documentation `doc`.
+    * Escapes certain markdown characters.
     */
-  def asMarkDown(doc: Ast.Doc): String = doc.lines.mkString("\n")
+  def escape(s: String): String =
+    s
+      .replace("[", "\\[")
+      .replace("]", "\\]")
 
 }

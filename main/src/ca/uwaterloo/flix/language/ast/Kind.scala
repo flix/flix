@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.debug.FormatKind
+import ca.uwaterloo.flix.language.fmt.FormatKind
 
 import scala.annotation.tailrec
 
