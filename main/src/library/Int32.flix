@@ -279,13 +279,12 @@ namespace Int32 {
     /// Returns the factorial of `x`.
     ///
     @Time(factorial(x)) @Space(1)
-    pub def factorial(x: Int32): Int32 = factorialHelper(x, 1)
-
-    ///
-    /// Helper function for `factorial`.
-    ///
-    def factorialHelper(x: Int32, acc: Int32): Int32 =
-        if (x == 0) acc else factorialHelper(x - 1, x * acc)
+    pub def factorial(x: Int32): Int32 =
+        def loop(y, acc) = match y {
+            case 0 => acc
+            case _ => loop(y - 1, y * acc)
+        };
+        loop(x, 1)
 
     ///
     /// Return a string representation of `x`.

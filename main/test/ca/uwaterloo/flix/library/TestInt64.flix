@@ -659,6 +659,59 @@ namespace TestInt64 {
     def flipBit12(): Bool = Int64.flipBit(-1i64, 64) == -2i64
 
     /////////////////////////////////////////////////////////////////////////////
+    // log2                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def log201(): Bool = Int64.log2(10i64) == 3i64
+
+    @test
+    def log202(): Bool = Int64.log2(10000i64) == 13i64
+
+    @test
+    def log203(): Bool = Int64.log2(8i64) == 3i64
+
+    @test
+    def log204(): Bool = Int64.log2(256i64) == 8i64
+
+    @test
+    def log205(): Bool = Int64.log2(1i64) == 0i64
+
+    @test
+    def log206(): Bool = Int64.log2(12345678i64) == 23i64
+
+    @test
+    def log207(): Bool = Int64.log2(20i64) == 4i64
+
+    @test
+    def log208(): Bool = Int64.log2(9_223_372_036_854_775_807i64) == 62i64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // factorial                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def factorial01(): Bool = Int64.factorial(0i64) == 1i64
+
+    @test
+    def factorial02(): Bool = Int64.factorial(1i64) == 1i64
+
+    @test
+    def factorial03(): Bool = Int64.factorial(2i64) == 2i64
+
+    @test
+    def factorial04(): Bool = Int64.factorial(3i64) == 6i64
+
+    @test
+    def factorial05(): Bool = Int64.factorial(4i64) == 24i64
+
+    @test
+    def factorial06(): Bool = Int64.factorial(5i64) == 120i64
+
+    @test
+    def factorial07(): Bool = Int64.factorial(10i64) == 3628800i64
+
+    /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test

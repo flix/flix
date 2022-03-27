@@ -272,6 +272,20 @@ namespace Int16 {
     pub def flipBit(x: Int16, position: Int32): Int16 = x ^^^ (1i16 <<< position)
 
     ///
+    /// Returns the integer binary logarithm of `x`.
+    ///
+    @Time(1) @Space(1)
+    pub def log2(x: Int16): Int16 =
+        let position = highestOneBitPosition(x);
+        Int32.clampToInt16(position, 0i16, Int16.maxValue())
+
+    ///
+    /// Returns the factorial of `x`.
+    ///
+    @Time(factorial(x)) @Space(1)
+    pub def factorial(x: Int16): Int32 = toInt32(x) |> Int32.factorial
+
+    ///
     /// Return a string representation of `x`.
     ///
     @Time(1) @Space(1)
