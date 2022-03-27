@@ -531,4 +531,26 @@ object Ast {
 
   }
 
+  /**
+    * Represents the text of a variable.
+    */
+  sealed trait VarText
+
+  object VarText {
+    /**
+      * The variable has no associated text.
+      */
+    case object Absent extends VarText
+
+    /**
+      * The variable is associated with the string `s`.
+      */
+    case class Text(s: String) extends VarText
+
+    /**
+      * The variable is associated synthetic string `s`.
+      */
+    case class Synthetic(s: String) extends VarText
+  }
+
 }
