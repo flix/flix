@@ -280,11 +280,11 @@ namespace Int32 {
     ///
     @Time(factorial(x)) @Space(1)
     pub def factorial(x: Int32): Int32 =
-        def factorialHelper(y, acc) = match y {
+        def loop(y, acc) = match y {
             case 0 => acc
-            case _ => factorialHelper(y - 1, y * acc)
+            case _ => loop(y - 1, y * acc)
         };
-        factorialHelper(x, 1)
+        loop(x, 1)
 
     ///
     /// Return a string representation of `x`.

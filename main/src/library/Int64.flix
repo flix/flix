@@ -277,11 +277,11 @@ namespace Int64 {
     ///
     @Time(factorial(x)) @Space(1)
     pub def factorial(x: Int64): Int64 =
-        def factorialHelper(y, acc) = match y {
+        def loop(y, acc) = match y {
             case 0i64 => acc
-            case _    => factorialHelper(y - 1i64, y * acc)
+            case _    => loop(y - 1i64, y * acc)
         };
-        factorialHelper(x, 1i64)
+        loop(x, 1i64)
 
     ///
     /// Return a string representation of `x`.
