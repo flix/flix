@@ -271,9 +271,15 @@ namespace Int32 {
 
     ///
     /// Returns the integer binary logarithm of `x`.
+    /// If the given value is 0 or negative, 0 is returned.
     ///
     @Time(1) @Space(1)
-    pub def log2(x: Int32): Int32 = highestOneBitPosition(x)
+    pub def log2(x: Int32): Int32 =
+        if (x <= 0) {
+            0
+        } else {
+            highestOneBitPosition(x)
+        }
 
     ///
     /// Returns the factorial of `x`.
