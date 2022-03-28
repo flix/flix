@@ -316,13 +316,12 @@ namespace Int32 {
         case _: ##java.lang.NumberFormatException => Err("Int32.fromString")
     }
 
-
     ///
     /// Parse the string `s` as an Int32, where the `radix` is used while parsing.
     /// Leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Ok(x)`, a parse failure is indicated by `Err(_)`.
     ///
-    pub def parse(radix: Int32, s: String): Result[Int32, String] & Pure =
+    pub def parse(radix: Int32, s: String): Result[Int32, String] =
         try {
             import java.lang.String.strip(): String & Pure;
             import static java.lang.Integer.parseInt(String, Int32): Int32 & Pure;
