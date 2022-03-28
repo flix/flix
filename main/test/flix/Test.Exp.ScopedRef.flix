@@ -1,4 +1,4 @@
-namespace Test/Exp/ScopedReference {
+namespace Test/Exp/ScopedRef {
 
     @test
     def testScopedRef01(): Unit = // Pure

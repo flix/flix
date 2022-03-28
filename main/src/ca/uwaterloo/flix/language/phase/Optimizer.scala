@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.{LiftedAst, Symbol}
-import ca.uwaterloo.flix.language.debug.PrettyPrinter
+import ca.uwaterloo.flix.language.dbg.PrettyPrinter
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Formatter, Validation}
 

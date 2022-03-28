@@ -118,7 +118,7 @@ object KindedAst {
 
     case class Tuple(elms: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 
-    case class RecordEmpty(tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class RecordEmpty(loc: SourceLocation) extends KindedAst.Expression
 
     case class RecordSelect(exp: KindedAst.Expression, field: Name.Field, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
