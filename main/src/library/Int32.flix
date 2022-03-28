@@ -295,7 +295,7 @@ namespace Int32 {
 
     ///
     /// Parse the string `s` as an Int32, leading or trailing whitespace is trimmed.
-    /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
+    /// A successful parse is wrapped with `Ok(x)`, a parse failure is indicated by `Err(_)`.
     ///
     @Time(1) @Space(1)
     pub def fromString(s: String): Result[Int32, String] = try {
@@ -305,6 +305,21 @@ namespace Int32 {
     } catch {
         case _: ##java.lang.NumberFormatException => Err("Int32.fromString")
     }
+
+
+    ///
+    /// Parse the string `s` as an Int32, where the `radix` is used while parsing.
+    /// Leading or trailing whitespace is trimmed.
+    /// A successful parse is wrapped with `Ok(x)`, a parse failure is indicated by `Err(_)`.
+    ///
+    pub def parse(radix: Int32, s: String): Result[Int32, String] & Pure =
+        try {
+            import java.lang.String.strip(): String & Pure;
+            import static java.lang.Integer.parseInt(String, Int32): Int32 & Pure;
+            Ok(parseInt(strip(s), radix))
+        } catch {
+            case _: ##java.lang.NumberFormatException => Err("Int32.parse")
+        }
 
     ///
     /// Convert `x` to an `Option[Int8]`.
