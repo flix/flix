@@ -441,7 +441,7 @@ class Flix {
   /**
     * Compiles the Flix program and returns a typed ast.
     */
-  def check(): Validation[TypedAst.Root, CompilationMessage] = {
+  def check(): Validation[TypedAst.Root, CompilationMessage] = try {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
@@ -487,12 +487,16 @@ class Flix {
 
     // Return the result.
     result
+  } catch {
+    case ex: InternalCompilerException =>
+      CrashHandler.handleCrash(ex)(this)
+      throw ex
   }
 
   /**
     * Compiles the given typed ast to an executable ast.
     */
-  def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = {
+  def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = try {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
@@ -524,6 +528,10 @@ class Flix {
 
     // Return the result.
     result
+  } catch {
+    case ex: InternalCompilerException =>
+      CrashHandler.handleCrash(ex)(this)
+      throw ex
   }
 
   /**

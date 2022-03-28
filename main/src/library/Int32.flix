@@ -271,21 +271,31 @@ namespace Int32 {
 
     ///
     /// Returns the integer binary logarithm of `x`.
+    /// If the given value is 0 or negative, 0 is returned.
     ///
     @Time(1) @Space(1)
-    pub def log2(x: Int32): Int32 = highestOneBitPosition(x)
+    pub def log2(x: Int32): Int32 =
+        if (x <= 0) {
+            0
+        } else {
+            highestOneBitPosition(x)
+        }
 
     ///
     /// Returns the factorial of `x`.
+    /// If the given value is negative, 0 is returned.
     ///
     @Time(factorial(x)) @Space(1)
-    pub def factorial(x: Int32): Int32 = factorialHelper(x, 1)
-
-    ///
-    /// Helper function for `factorial`.
-    ///
-    def factorialHelper(x: Int32, acc: Int32): Int32 =
-        if (x == 0) acc else factorialHelper(x - 1, x * acc)
+    pub def factorial(x: Int32): Int32 =
+        if (x < 0) {
+            0
+        } else {
+            def loop(y, acc) = match y {
+                case 0 => acc
+                case _ => loop(y - 1, y * acc)
+            };
+            loop(x, 1)
+        }
 
     ///
     /// Return a string representation of `x`.

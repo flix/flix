@@ -378,7 +378,7 @@ object Kinder {
         elms <- Validation.traverse(elms0)(visitExp(_, kenv, taenv, root))
       } yield KindedAst.Expression.Tuple(elms, loc)
 
-    case ResolvedAst.Expression.RecordEmpty(loc) => KindedAst.Expression.RecordEmpty(Type.freshVar(Kind.Star, loc), loc).toSuccess
+    case ResolvedAst.Expression.RecordEmpty(loc) => KindedAst.Expression.RecordEmpty(loc).toSuccess
 
     case ResolvedAst.Expression.RecordSelect(exp0, field, loc) =>
       for {
