@@ -139,16 +139,7 @@ object CompleteProvider {
       CompletionItem("main", "def main(_args: Array[String]): Int32 & Impure = \n    println(\"Hello World!\");\n    0", None, Some("snippet for Hello World Program"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
 
       // Expressed-based:
-      CompletionItem("if", "if ${1:cond} ${2:exp} else ${3:exp}", None, Some("snippet for if ()"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("import", "import ${1:method}", None, Some("import snippet for method call"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("import", "import new ${1:object} as ${2:name}", None, Some("import snippet for new object"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("import", "import get ${1:field} as ${2:name}", None, Some("import snippet to get field"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("import", "import set ${1:field} as ${2:name}", None, Some("import snippet to set field"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("let", "let ${1:name}:${2:type} = ${3:exp};", None, Some("snippet for let"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("let*", "let* ${1:name}:${2:type} = ${3:exp};", None, Some("snippet for let*"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("match", "match ${1:exp} {\n    case ${2:pat} => ${3:exp}\n}", None, Some("snippet for pattern match"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
       CompletionItem("query", "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}", None, Some("snippet for query"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("select", "select {\n\tcase ${1:x} <- ${2:c} =>${3:exp}\n}", None, Some("snippet for select"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     )
   }
 
