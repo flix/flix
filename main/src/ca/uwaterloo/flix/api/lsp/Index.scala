@@ -194,6 +194,22 @@ case class Index(m: Map[(String, Int), List[Entity]],
   }
 
   /**
+    * Returns all entities in the document at the given `uri` which appear at most
+    * `beforeLine`s before `queryLine` and at most `afterLine`s after `queryLine`.
+    */
+  def queryWithRange(uri: String, queryLine: Int, beforeLine: Int, afterLine: Int): Iterable[Entity] = {
+    query(uri).filter {
+      case entity =>
+        val currentLine = entity.loc.beginLine
+        val delta = queryLine - currentLine
+        if (delta < 0)
+          (-delta) < beforeLine
+        else
+          delta < afterLine
+    }
+  }
+
+  /**
     * Returns all uses of the given symbol `sym`.
     */
   def usesOf(sym: Symbol.ClassSym): Set[SourceLocation] = classUses(sym)
