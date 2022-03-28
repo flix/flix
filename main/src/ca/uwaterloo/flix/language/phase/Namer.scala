@@ -375,20 +375,31 @@ object Namer {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, retTpe0, eff0, tconstrs0, loc) =>
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, allowElision = true, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
+
+      // First visit all the top-level information
       val sigTypeCheckVal = checkSigType(ident, classTparam, tpe0, ident.loc)
       val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
+      val tpeVal = visitType(tpe0, uenv0, tenv0)
+      val retTpeVal = visitType(retTpe0, uenv0, tenv)
+      val effVal = visitType(eff0, uenv0, tenv)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
-      flatMapN(sigTypeCheckVal, fparamsVal, tconstrsVal) {
-        case (_, fparams, tconstrs) =>
+
+      flatMapN(sigTypeCheckVal, fparamsVal, tpeVal, retTpeVal, effVal, tconstrsVal) {
+        case (_, fparams, tpe, retTpe, eff, tconstrs) =>
+
+          // Then visit the parts depending on the parameters
           val env0 = getVarEnv(fparams)
           val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
-          val classTconstr = NamedAst.TypeConstraint(Name.mkQName(classIdent), NamedAst.Type.Var(classTparam.tpe, classTparam.loc), classSym.loc)
-          val schemeVal = getDefOrSigScheme(tparams.tparams, tpe0, uenv0, tenv, classTconstr :: tconstrs, List(classTparam.tpe))
           val expVal = traverse(exp0)(visitExp(_, env0, uenv0, tenv))
-          val retTpeVal = visitType(retTpe0, uenv0, tenv)
-          val effVal = visitType(eff0, uenv0, tenv)
-          mapN(annVal, schemeVal, retTpeVal, effVal, expVal) {
-            case (as, sc, retTpe, eff, exp) =>
+
+          mapN(annVal, expVal) {
+            case (as, exp) =>
+
+              // Build the scheme, including the class type constraint.
+              val classTconstr = NamedAst.TypeConstraint(Name.mkQName(classIdent), NamedAst.Type.Var(classTparam.tpe, classTparam.loc), classSym.loc)
+              val quantifiers = classTparam.tpe :: tparams.tparams.map(_.tpe)
+              val sc = NamedAst.Scheme(quantifiers, classTconstr :: tconstrs, tpe)
+
               val sym = Symbol.mkSigSym(classSym, ident)
               val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, eff, loc)
               NamedAst.Sig(sym, spec, exp.headOption)
