@@ -15,7 +15,7 @@
  */
 namespace File {
 
-    ///
+    /// test
     /// File types.
     ///
     pub enum FileType with Eq, Order, ToString {
