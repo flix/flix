@@ -231,7 +231,7 @@ object CompleteProvider {
       */
     def fmtFormalParams(clazz: TypedAst.Class, spec: TypedAst.Spec, hole: String): String =
       spec.fparams.map {
-        case fparam => s"${fparam.sym}: ${fmtType(clazz, fparam.tpe, hole)}"
+        case fparam => s"${fparam.sym.text}: ${fmtType(clazz, fparam.tpe, hole)}"
       }.mkString(", ")
 
     /**

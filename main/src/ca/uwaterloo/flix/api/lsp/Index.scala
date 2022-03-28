@@ -194,7 +194,8 @@ case class Index(m: Map[(String, Int), List[Entity]],
   }
 
   /**
-    * Returns all entities in the document at the given `uri` up to `before` and `after` line.
+    * Returns all entities in the document at the given `uri` which appear at most
+    * `beforeLine`s before `queryLine` and at most `afterLine`s after `queryLine`.
     */
   def queryWithRange(uri: String, queryLine: Int, beforeLine: Int, afterLine: Int): Iterable[Entity] = {
     query(uri).filter {
