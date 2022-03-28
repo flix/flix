@@ -273,11 +273,16 @@ namespace Int8 {
 
     ///
     /// Returns the integer binary logarithm of `x`.
+    /// If the given value is 0 or negative, 0 is returned.
     ///
     @Time(1) @Space(1)
     pub def log2(x: Int8): Int8 =
-        let position = highestOneBitPosition(x);
-        Int32.clampToInt8(position, 0i8, Int8.maxValue())
+        if (x <= 0i8) {
+            0i8
+        } else {
+            let position = highestOneBitPosition(x);
+            Int32.clampToInt8(position, 0i8, Int8.maxValue())
+        }
 
     ///
     /// Returns the factorial of `x`.

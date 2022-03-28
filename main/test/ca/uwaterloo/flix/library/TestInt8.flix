@@ -701,6 +701,12 @@ namespace TestInt8 {
     @test
     def log205(): Bool = Int8.log2(20i8) == 4i8
 
+    @test
+    def log206(): Bool = Int8.log2(0i8) == 0i8
+
+    @test
+    def log207(): Bool = Int8.log2(-1i8) == 0i8
+
     /////////////////////////////////////////////////////////////////////////////
     // factorial                                                               //
     /////////////////////////////////////////////////////////////////////////////
@@ -725,6 +731,9 @@ namespace TestInt8 {
 
     @test
     def factorial07(): Bool = Int8.factorial(10i8) == 3628800
+
+    @test
+    def factorial08(): Bool = Int8.factorial(-1i8) == 0
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //

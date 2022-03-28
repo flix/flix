@@ -271,20 +271,31 @@ namespace Int32 {
 
     ///
     /// Returns the integer binary logarithm of `x`.
+    /// If the given value is 0 or negative, 0 is returned.
     ///
     @Time(1) @Space(1)
-    pub def log2(x: Int32): Int32 = highestOneBitPosition(x)
+    pub def log2(x: Int32): Int32 =
+        if (x <= 0) {
+            0
+        } else {
+            highestOneBitPosition(x)
+        }
 
     ///
     /// Returns the factorial of `x`.
+    /// If the given value is negative, 0 is returned.
     ///
     @Time(factorial(x)) @Space(1)
     pub def factorial(x: Int32): Int32 =
-        def loop(y, acc) = match y {
-            case 0 => acc
-            case _ => loop(y - 1, y * acc)
-        };
-        loop(x, 1)
+        if (x < 0) {
+            0
+        } else {
+            def loop(y, acc) = match y {
+                case 0 => acc
+                case _ => loop(y - 1, y * acc)
+            };
+            loop(x, 1)
+        }
 
     ///
     /// Return a string representation of `x`.
@@ -294,7 +305,7 @@ namespace Int32 {
 
     ///
     /// Parse the string `s` as an Int32, leading or trailing whitespace is trimmed.
-    /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
+    /// A successful parse is wrapped with `Ok(x)`, a parse failure is indicated by `Err(_)`.
     ///
     @Time(1) @Space(1)
     pub def fromString(s: String): Result[Int32, String] = try {
@@ -304,6 +315,20 @@ namespace Int32 {
     } catch {
         case _: ##java.lang.NumberFormatException => Err("Int32.fromString")
     }
+
+    ///
+    /// Parse the string `s` as an Int32, where the `radix` is used while parsing.
+    /// Leading or trailing whitespace is trimmed.
+    /// A successful parse is wrapped with `Ok(x)`, a parse failure is indicated by `Err(_)`.
+    ///
+    pub def parse(radix: Int32, s: String): Result[Int32, String] =
+        try {
+            import java.lang.String.strip(): String & Pure;
+            import static java.lang.Integer.parseInt(String, Int32): Int32 & Pure;
+            Ok(parseInt(strip(s), radix))
+        } catch {
+            case _: ##java.lang.NumberFormatException => Err("Int32.parse")
+        }
 
     ///
     /// Convert `x` to an `Option[Int8]`.

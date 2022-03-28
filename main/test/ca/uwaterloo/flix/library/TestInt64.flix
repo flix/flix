@@ -686,6 +686,12 @@ namespace TestInt64 {
     @test
     def log208(): Bool = Int64.log2(9_223_372_036_854_775_807i64) == 62i64
 
+    @test
+    def log209(): Bool = Int64.log2(0i64) == 0i64
+
+    @test
+    def log210(): Bool = Int64.log2(-1i64) == 0i64
+
     /////////////////////////////////////////////////////////////////////////////
     // factorial                                                               //
     /////////////////////////////////////////////////////////////////////////////
@@ -710,6 +716,9 @@ namespace TestInt64 {
 
     @test
     def factorial07(): Bool = Int64.factorial(10i64) == 3628800i64
+
+    @test
+    def factorial08(): Bool = Int64.factorial(-1i64) == 0i64
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
@@ -755,6 +764,27 @@ namespace TestInt64 {
 
     @test
     def fromString08(): Bool = Int64.fromString("-9223372036854775808") == Ok(-9223372036854775808i64)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parse                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def parse01(): Bool = ("0" |> Int64.parse(10)) == Ok(0i64)
+
+    @test
+    def parse02(): Bool = ("     0      " |> Int64.parse(10)) == Ok(0i64)
+
+    @test
+    def parse03(): Bool = ("-FF" |> Int64.parse(16)) == Ok(-255i64)
+
+    @test
+    def parse04(): Bool = ("1100110" |> Int64.parse(2)) == Ok(102i64)
+
+    @test
+    def parse05(): Bool = ("Kona" |> Int64.parse(27)) == Ok(411787i64)
+
+    @test
+    def parse06(): Bool = ("Kona" |> Int64.parse(10)) |> Result.isErr
 
     /////////////////////////////////////////////////////////////////////////////
     // tryToInt8                                                               //
