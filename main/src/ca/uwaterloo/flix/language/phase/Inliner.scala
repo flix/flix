@@ -20,7 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst._
 import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Purity, Symbol}
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.language.phase.Optimizer.isTrivialExp
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 /**
@@ -34,7 +35,7 @@ object Inliner {
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.subphase("Inliner") {
     // Visit every definition in the program.
     val defs = root.defs.map {
-      case (sym, defn) => sym -> visitDef(defn)
+      case (sym, defn) => sym -> visitDef(defn)(root)
     }
 
     // Reassemble the ast root.
@@ -43,11 +44,7 @@ object Inliner {
     result.toSuccess
   }
 
-  private def visitDef(def0: Def, defs: Map[Symbol.DefnSym, Def]): Def = {
-    val exp = visitExp(def0.exp, Map.empty)
-    if (def0.occurDef.isConstantNonSelfCall) {
-      //TODO get name of the function being called in occurdef.
-    }
+  private def visitDef(def0: Def)(implicit root: Root): Def = {
     def0.copy(exp = visitExp(def0.exp, Map.empty))
   }
 
@@ -55,7 +52,7 @@ object Inliner {
    * Performs inlining operations on the expression `exp0` of type OccurrenceAst.Expression.
    * Returns an expression of type Expression
    */
-  private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Expression]): Expression = exp0 match {
+  private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Expression])(implicit root: Root): Expression = exp0 match {
     case Expression.Unit(_) => exp0
 
     case Expression.Null(_, _) => exp0
@@ -92,8 +89,21 @@ object Inliner {
       Expression.ApplyClo(e, as, tpe, loc)
 
     case Expression.ApplyDef(sym, args, tpe, loc) =>
-      val as = args.map(visitExp(_, subst0))
-      Expression.ApplyDef(sym, as, tpe, loc)
+      val as1 = args.map(visitExp(_, subst0))
+      val def0 = root.defs.apply(sym) // f(x: Int)
+      // If `sym` is a single non-self call and is trivial, then inline `sym`.
+      if (def0.occurDef.isTrivialNonSelfCall) {
+        // Map parameters of the function `def0` to its arguments in the substitution map `subst1`.
+        val subst1 = subst0 ++ def0.fparams.map(_.sym).zip(as1).toMap
+        visitExp(def0.exp, subst1) match {
+          case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, loc) =>
+            OccurrenceAst.Expression.ApplyDef(sym, args, tpe, loc)
+          case _ => throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
+        }
+      }
+      else {
+        Expression.ApplyDef(sym, as1, tpe, loc)
+      }
 
     case Expression.ApplyCloTail(exp, args, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -330,31 +340,5 @@ object Inliner {
     case Expression.HoleError(_, _, _) => exp0
 
     case Expression.MatchError(_, _) => exp0
-  }
-
-  /**
-   * returns `true` if `exp0` is considered a trivial expression.
-   *
-   * An expression is trivial if:
-   * It is either a literal (float, string, int, bool, unit), or it is a variable.
-   *
-   * A pure and trivial expression can always be inlined even without duplicating work.
-   */
-  private def isTrivialExp(exp0: Expression): Boolean = exp0 match {
-    case Expression.Unit(_) => true
-    case Expression.Null(_, _) => true
-    case Expression.True(_) => true
-    case Expression.False(_) => true
-    case Expression.Char(_, _) => true
-    case Expression.Float32(_, _) => true
-    case Expression.Float64(_, _) => true
-    case Expression.Int8(_, _) => true
-    case Expression.Int16(_, _) => true
-    case Expression.Int32(_, _) => true
-    case Expression.Int64(_, _) => true
-    case Expression.BigInt(_, _) => true
-    case Expression.Str(_, _) => true
-    case Expression.Var(_, _, _) => true
-    case _ => false
   }
 }

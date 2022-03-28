@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{Constructor, Field, Method}
-
 import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
 
 object OccurrenceAst {
 
@@ -233,8 +233,12 @@ object OccurrenceAst {
     case object DontInline extends Occur
   }
 
-  //TODO Name
-  case class OccurDef(isConstantNonSelfCall: Boolean)
+  /**
+   * `OccurDef` contains information that indicates whether or not a def should be inlined
+   *  A def is `isTrivialNonSelfCall` if
+   *  the expression consist of a single (non-self) call with trivial arguments
+   */
+  case class OccurDef(isTrivialNonSelfCall: Boolean)
 
 }
 
