@@ -150,17 +150,18 @@ object Weeder {
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt, ident.loc)
-      val expVal = Validation.traverse(exp0)(visitExp)
+      val condVal = visitEff(cond0, ident.loc)
+      val expVal = Validation.traverseOption(exp0)(visitExp)
 
       for {
-        res <- sequenceT(annVal, modVal, identVal, tparamsVal, formalsVal, effVal, expVal)
-        (as, mod, _, tparams, fparams, eff, exp) = res
+        res <- sequenceT(annVal, modVal, identVal, tparamsVal, formalsVal, effVal, condVal, expVal)
+        (as, mod, _, tparams, fparams, eff, cond, exp) = res
         _ <- requirePublic(mod, ident)
         ts = fparams.map(_.tpe.get)
         retTpe = visitType(tpe0)
         tpe = WeededAst.Type.Arrow(ts, eff, retTpe, ident.loc)
         tconstrs <- traverse(tconstrs0)(visitTypeConstraint)
-      } yield List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, retTpe, eff, tconstrs, mkSL(sp1, sp2)))
+      } yield List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp, tpe, retTpe, eff, tconstrs, cond, mkSL(sp1, sp2)))
   }
 
   /**
@@ -207,16 +208,17 @@ object Weeder {
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt, ident.loc)
+      val condVal = visitEff(cond0, ident.loc)
 
       for {
-        res <- sequenceT(annVal, modVal, identVal, tparamsVal, formalsVal, expVal, effVal)
-        (as, mod, _, tparams, fparams, exp, eff) = res
+        res <- sequenceT(annVal, modVal, identVal, tparamsVal, formalsVal, expVal, effVal, condVal)
+        (as, mod, _, tparams, fparams, exp, eff, cond) = res
         _ <- if (requiresPublic) requirePublic(mod, ident) else ().toSuccess // conditionally require a public modifier
         ts = fparams.map(_.tpe.get)
         retTpe = visitType(tpe0)
         tpe = WeededAst.Type.Arrow(ts, eff, retTpe, ident.loc)
         tconstrs <- traverse(tconstrs0)(visitTypeConstraint)
-      } yield List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, retTpe, eff, tconstrs, mkSL(sp1, sp2)))
+      } yield List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, retTpe, eff, tconstrs, cond, mkSL(sp1, sp2)))
   }
 
   /**
@@ -238,7 +240,8 @@ object Weeder {
           val ts = fs.map(_.tpe.get)
           val retTpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
           val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(ident.loc), retTpe, ident.loc)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, retTpe, WeededAst.Type.True(ident.loc), tconstrs, mkSL(sp1, sp2)))
+          val cond = WeededAst.Type.True(ident.loc) // no side conditions on laws for now, so the condition is always true
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, retTpe, WeededAst.Type.True(ident.loc), tconstrs, cond, mkSL(sp1, sp2)))
       }
   }
 

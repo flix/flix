@@ -225,6 +225,18 @@ object Validation {
     }
 
   /**
+    * Maps over t1, t2, t3, t4, t5, t6, t7, and t8.
+    */
+  def mapN[T1, T2, T3, T4, T5, T6, T7, T8, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
+                                             t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
+                                             t7: Validation[T7, E], t8: Validation[T8, E])
+                                            (f: (T1, T2, T3, T4, T5, T6, T7, T8) => U): Validation[U, E] =
+    (t1, t2, t3, t4, t5, t6, t7, t8) match {
+      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6), Success(v7), Success(v8)) => Success(f(v1, v2, v3, v4, v5, v6, v7, v8))
+      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors #::: t7.errors #::: t8.errors)
+    }
+
+  /**
     * FlatMaps over t1.
     */
   def flatMapN[T1, U, E](t1: Validation[T1, E])(f: T1 => Validation[U, E]): Validation[U, E] =
@@ -315,7 +327,7 @@ object Validation {
     }
 
   /**
-    * Sequences over t1, t2, t3, t4, t5, and t6.
+    * Sequences over t1, t2, t3, t4, t5, t6, and t7
     */
   def sequenceT[T1, T2, T3, T4, T5, T6, T7, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                                   t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
@@ -324,6 +336,15 @@ object Validation {
       case (u1, u2, u3, u4, u5, u6, u7) => (u1, u2, u3, u4, u5, u6, u7)
     }
 
+  /**
+    * Sequences over t1, t2, t3, t4, t5, t6, t7, and t8
+    */
+  def sequenceT[T1, T2, T3, T4, T5, T6, T7, T8, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
+                                                      t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
+                                                      t7: Validation[T7, E], t8: Validation[T8, E]): Validation[(T1, T2, T3, T4, T5, T6, T7, T8), E] =
+    mapN(t1, t2, t3, t4, t5, t6, t7, t8) {
+      case (u1, u2, u3, u4, u5, u6, u7, u8) => (u1, u2, u3, u4, u5, u6, u7, u8)
+    }
   /**
     * Folds Right over `xs` using the function `f` with the initial value `zero`.
     */

@@ -136,7 +136,7 @@ object Namer {
       /*
      * Definition.
      */
-      case decl@WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, retTpe, eff0, tconstrs, loc) =>
+      case decl@WeededAst.Declaration.Def(_, _, _, ident, _, _, _, _, _, _, _, _, _) =>
         // Check if the definition already exists.
         val defsAndSigs = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
         defsAndSigs.get(ident.name) match {
@@ -372,7 +372,7 @@ object Namer {
     * Performs naming on the given signature declaration `sig` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar], ns0: Name.NName, classIdent: Name.Ident, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
-    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, retTpe0, eff0, tconstrs0, loc) =>
+    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, retTpe0, eff0, tconstrs0, cond0, loc) => // MATT use cond0
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, allowElision = true, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
 
@@ -422,7 +422,7 @@ object Namer {
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`, with type constraints `tconstrs`.
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
-    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs0, loc) =>
+    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs0, cond0, loc) => // MATT use cond0
       flix.subtask(ident.name, sample = true)
 
       // TODO: we use tenv when getting the types from formal params first, before the explicit tparams have a chance to modify it
