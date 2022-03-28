@@ -46,7 +46,7 @@ object NamedAst {
 
   case class Def(sym: Symbol.DefnSym, spec: NamedAst.Spec, exp: NamedAst.Expression)
 
-  case class Spec(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, retTpe: NamedAst.Type, eff: NamedAst.Type, loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, retTpe: NamedAst.Type, eff: NamedAst.Type, cond: NamedAst.Type, loc: SourceLocation)
 
   case class Enum(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: NamedAst.TypeParams, derives: List[Name.QName], cases: Map[Name.Tag, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation)
 
@@ -356,7 +356,7 @@ object NamedAst {
 
   }
 
-  case class Scheme(quantifiers: List[ast.Type.UnkindedVar], tconstrs: List[NamedAst.TypeConstraint], base: NamedAst.Type)
+  case class Scheme(quantifiers: List[ast.Type.UnkindedVar], tconstrs: List[NamedAst.TypeConstraint], base: NamedAst.Type, cond: NamedAst.Type)
 
   sealed trait TypeParams {
     val tparams: List[NamedAst.TypeParam]

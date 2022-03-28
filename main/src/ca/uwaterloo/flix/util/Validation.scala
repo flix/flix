@@ -297,6 +297,19 @@ object Validation {
       case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6)) => f(v1, v2, v3, v4, v5, v6)
       case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors)
     }
+
+  /**
+    * FlatMaps over t1, t2, t3, t4, t5, and t6.
+    */
+  def flatMapN[T1, T2, T3, T4, T5, T6, T7, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
+                                                 t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
+                                                 t7: Validation[T7, E])
+                                                (f: (T1, T2, T3, T4, T5, T6, T7) => Validation[U, E]): Validation[U, E] =
+    (t1, t2, t3, t4, t5, t6, t7) match {
+      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6), Success(v7)) => f(v1, v2, v3, v4, v5, v6, v7)
+      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors #::: t7.errors)
+    }
+
   /**
     * Sequences over t1, t2, and t3.
     */
