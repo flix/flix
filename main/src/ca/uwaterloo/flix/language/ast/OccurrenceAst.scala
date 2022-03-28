@@ -206,10 +206,31 @@ object OccurrenceAst {
   sealed trait Occur
 
   object Occur {
-    case object Once extends Occur
-    case object ManyBranch extends Occur
+
+    /**
+     * Represents a variable that is not used in an expression.
+     */
     case object Dead extends Occur
+
+    /**
+     * Represents a variables that occur exactly once in an expression.
+     */
+    case object Once extends Occur
+
+    /**
+     * Represents a variable that occur in expressions more than once.
+     */
     case object Many extends Occur
+
+    /**
+     * Represents a variable that occur in more than one branch, e.g. match cases.
+     */
+    case object ManyBranch extends Occur
+
+    /**
+     * Represents a variable that we explicitly do not want to inline.
+     */
+    case object DontInline extends Occur
   }
 }
 
