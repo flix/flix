@@ -2634,4 +2634,10 @@ def distinctWith09(): Bool =
         let l2 = 2 :: 3 :: 8 :: 9 :: Nil;
         List.merge(l1, l2) == 1 :: 2 :: 3 :: 4 :: 8 :: 8 :: 9 :: 10 :: Nil
 
+    @test
+    def merge06(): Bool =
+        let l1 = 4 :: 5 :: Nil;
+        let l2 = 2 :: 3 :: 6 :: 7 :: Nil;
+        List.merge(l1, l2) == 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: Nil
+
 }
