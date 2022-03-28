@@ -1,4 +1,4 @@
-namespace Test/Exp/Reference/Ref {
+namespace Test/Exp/Ref/Ref {
 
     @test
     def testRef01(): Ref[Unit] & Impure = ref ()

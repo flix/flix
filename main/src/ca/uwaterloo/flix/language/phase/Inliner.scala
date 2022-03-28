@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst._
-import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Purity, Symbol}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -48,43 +48,36 @@ object Inliner {
    * Performs inlining operations on the expression `exp0` of type OccurrenceAst.Expression.
    * Returns an expression of type Expression
    */
-  private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Int]): Expression = exp0 match {
-    case Expression.Unit(loc) => Expression.Unit(loc)
+  private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Expression]): Expression = exp0 match {
+    case Expression.Unit(_) => exp0
 
-    case Expression.Null(_,_) => exp0
+    case Expression.Null(_, _) => exp0
 
     case Expression.True(_) => exp0
 
     case Expression.False(_) => exp0
 
-    case Expression.Char(_,_) => exp0
+    case Expression.Char(_, _) => exp0
 
-    case Expression.Float32(_,_) => exp0
+    case Expression.Float32(_, _) => exp0
 
-    case Expression.Float64(_,_) => exp0
+    case Expression.Float64(_, _) => exp0
 
-    case Expression.Int8(_,_) => exp0
+    case Expression.Int8(_, _) => exp0
 
-    case Expression.Int16(_,_) => exp0
+    case Expression.Int16(_, _) => exp0
 
-    case Expression.Int32(_,_) => exp0
+    case Expression.Int32(_, _) => exp0
 
-    case Expression.Int64(_,_) => exp0
+    case Expression.Int64(_, _) => exp0
 
-    case Expression.BigInt(_,_) => exp0
+    case Expression.BigInt(_, _) => exp0
 
-    case Expression.Str(_,_) => exp0
+    case Expression.Str(_, _) => exp0
 
-    case Expression.Var(sym, tpe, loc) => subst0.get(sym) match {
-      case Some(lit) => Expression.Int32(lit, loc)
-      case None => Expression.Var(sym, tpe, loc)
-    }
+    case Expression.Var(sym, _, _) => subst0.get(sym).fold(exp0)(visitExp(_, subst0))
 
-    case Expression.Closure(sym, freeVars, tpe, loc) =>
-      val fv = freeVars.map {
-      case OccurrenceAst.FreeVar(sym, tpe) => FreeVar(sym, tpe)
-    }
-      Expression.Closure(sym, fv, tpe, loc)
+    case Expression.Closure(_, _, _, _) => exp0
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -133,17 +126,40 @@ object Inliner {
       }
       Expression.Branch(e, bs, tpe, loc)
 
-    case Expression.JumpTo(_,_,_) => exp0
+    case Expression.JumpTo(_, _, _) => exp0
 
     case Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
-      val e1 = visitExp(exp1, subst0)
-      val wantToInline: Boolean = e1 match {
-        case Expression.Int32(lit, _) if lit == 42 => true
+      /// Case 1:
+      /// If `exp1` occurs once and it is pure, then it is safe to inline without increasing neither the code size
+      /// nor the execution time.
+      val wantToPreInline = (occur, purity) match {
+        case (Occur.Once, Purity.Pure) => true
         case _ => false
       }
-      val subst1 = if (wantToInline) subst0 + (sym -> 42) else subst0
-      val e2 = visitExp(exp2, subst1)
-      Expression.Let(sym, e1, e2, occur, tpe, purity, loc)
+      if (wantToPreInline) {
+        val subst1 = subst0 + (sym -> exp1)
+        visitExp(exp2, subst1)
+      } else {
+        /// Case 2:
+        /// If `e1` is trivial and pure, then it is safe to inline without increasing execution time.
+        val e1 = visitExp(exp1, subst0)
+        val wantToPostInline = (occur, purity, isTrivialExp(e1)) match {
+          case (Occur.DontInline, _, _) => false
+          case (_, Purity.Pure, true) => true
+          case _ => false
+        }
+        /// If `e1` is to be inlined:
+        /// Add map `sym` to `e1` and return `e2` without constructing the let expression.
+        if (wantToPostInline) {
+          val subst1 = subst0 + (sym -> e1)
+          visitExp(exp2, subst1)
+        } else {
+          /// Case 3:
+          /// If none of the previous cases pass, `sym` is not inlined. Return a let expression with the visited expressions
+          val e2 = visitExp(exp2, subst0)
+          Expression.Let(sym, e1, e2, occur, tpe, purity, loc)
+        }
+      }
 
     case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1, subst0)
@@ -170,7 +186,7 @@ object Inliner {
       val es = elms.map(visitExp(_, subst0))
       Expression.Tuple(es, tpe, loc)
 
-    case Expression.RecordEmpty(_,_) => exp0
+    case Expression.RecordEmpty(_, _) => exp0
 
     case Expression.RecordSelect(exp, field, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -263,7 +279,7 @@ object Inliner {
       val e2 = visitExp(exp2, subst0)
       Expression.PutField(field, e1, e2, tpe, loc)
 
-    case Expression.GetStaticField(_,_,_) => exp0
+    case Expression.GetStaticField(_, _, _) => exp0
 
     case Expression.PutStaticField(field, exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -304,8 +320,34 @@ object Inliner {
       val e = visitExp(exp, subst0)
       Expression.Force(e, tpe, loc)
 
-    case Expression.HoleError(_,_,_) => exp0
+    case Expression.HoleError(_, _, _) => exp0
 
-    case Expression.MatchError(_,_) =>  exp0
+    case Expression.MatchError(_, _) => exp0
+  }
+
+  /**
+   * returns `true` if `exp0` is considered a trivial expression.
+   *
+   * An expression is trivial if:
+   * It is either a literal (float, string, int, bool, unit), or it is a variable.
+   *
+   * A pure and trivial expression can always be inlined even without duplicating work.
+   */
+  private def isTrivialExp(exp0: Expression): Boolean = exp0 match {
+    case Expression.Unit(_) => true
+    case Expression.Null(_, _) => true
+    case Expression.True(_) => true
+    case Expression.False(_) => true
+    case Expression.Char(_, _) => true
+    case Expression.Float32(_, _) => true
+    case Expression.Float64(_, _) => true
+    case Expression.Int8(_, _) => true
+    case Expression.Int16(_, _) => true
+    case Expression.Int32(_, _) => true
+    case Expression.Int64(_, _) => true
+    case Expression.BigInt(_, _) => true
+    case Expression.Str(_, _) => true
+    case Expression.Var(_, _, _) => true
+    case _ => false
   }
 }

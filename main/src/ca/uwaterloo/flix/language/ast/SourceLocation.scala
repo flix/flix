@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.debug.FormatSourceLocation
+import ca.uwaterloo.flix.language.dbg.FormatSourceLocation
 import org.parboiled2.ParserInput
 
 /**

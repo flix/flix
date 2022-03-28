@@ -686,6 +686,65 @@ namespace TestInt16 {
     def flipBit12(): Bool = Int16.flipBit(-1i16, 32) == -2i16
 
     /////////////////////////////////////////////////////////////////////////////
+    // log2                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def log201(): Bool = Int16.log2(10i16) == 3i16
+
+    @test
+    def log202(): Bool = Int16.log2(10000i16) == 13i16
+
+    @test
+    def log203(): Bool = Int16.log2(8i16) == 3i16
+
+    @test
+    def log204(): Bool = Int16.log2(256i16) == 8i16
+
+    @test
+    def log205(): Bool = Int16.log2(1i16) == 0i16
+
+    @test
+    def log206(): Bool = Int16.log2(32767i16) == 14i16
+
+    @test
+    def log207(): Bool = Int16.log2(20i16) == 4i16
+
+    @test
+    def log208(): Bool = Int16.log2(0i16) == 0i16
+
+    @test
+    def log209(): Bool = Int16.log2(-1i16) == 0i16
+
+    /////////////////////////////////////////////////////////////////////////////
+    // factorial                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def factorial01(): Bool = Int16.factorial(0i16) == 1
+
+    @test
+    def factorial02(): Bool = Int16.factorial(1i16) == 1
+
+    @test
+    def factorial03(): Bool = Int16.factorial(2i16) == 2
+
+    @test
+    def factorial04(): Bool = Int16.factorial(3i16) == 6
+
+    @test
+    def factorial05(): Bool = Int16.factorial(4i16) == 24
+
+    @test
+    def factorial06(): Bool = Int16.factorial(5i16) == 120
+
+    @test
+    def factorial07(): Bool = Int16.factorial(10i16) == 3628800
+
+    @test
+    def factorial08(): Bool = Int16.factorial(-1i16) == 0
+
+    /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test

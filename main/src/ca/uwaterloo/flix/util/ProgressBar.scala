@@ -84,19 +84,31 @@ class ProgressBar {
     val index = spinnerTick.getAndIncrement() % SpinnerChars.length
     val spinner = SpinnerChars(index)
 
-    // Build and pad the string.
-    val s = s" [${colorGreen(spinner)}] [${colorBlue(phase)}] $msg"
-    val r = s.padTo(80, ' ') // NB: This is not really correct because of escape chars.
+    // We abbreviate phase and msg if they are too long to fit.
+    val p = abbreviate(phase, 20)
+    val m = abbreviate(msg, 80 - (20 + 10))
+    val s = s" [${colorGreen(spinner)}] [${colorBlue(p)}] $m"
 
     // Print the string followed by carriage return.
     // NB: We do *NOT* print a newline because then
     // we would not be able to overwrite the current
     // line in the iteration.
-    System.out.print(s"$r\r")
+    System.out.print(s.padTo(80, ' ') + "\r")
 
     // Flush to ensure that the string is printed.
     System.out.flush()
   }
+
+  /**
+    * Returns `s` if it less than or equal to `l` chars.
+    *
+    * Otherwise returns a prefix of `s` with ...
+    */
+  private def abbreviate(s: String, l: Int): String =
+    if (s.length <= l)
+      s
+    else
+      s.substring(0, l - 3) + "..."
 
   /**
     * Colors the given string `s` green (if supported).
