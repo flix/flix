@@ -222,8 +222,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       optional(WS ~ keyword("with") ~ WS ~ oneOrMore(TypeConstraint).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.TypeConstraint]]) => o.getOrElse(Seq.empty))
     }
 
-    def OptSideCondition: Rule1[Option[ParsedAst.SideCondition]] = rule {
-      optional(WS ~ keyword("where") ~ WS ~ SP ~ Type ~ SP ~> ParsedAst.SideCondition)
+    def OptSideCondition: Rule1[Option[ParsedAst.Type]] = rule {
+      optional(WS ~ keyword("where") ~ WS ~ Type)
     }
 
     def Instance: Rule1[ParsedAst.Declaration] = {

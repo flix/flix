@@ -77,7 +77,7 @@ object ParsedAst {
       * @param tconstrs   the type constraints.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], cond: Option[SideCondition], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], cond: Option[ParsedAst.Type], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Signature Declaration.
@@ -94,7 +94,7 @@ object ParsedAst {
       * @param exp        the optional expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], cond: Option[SideCondition], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
+    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], cond: Option[ParsedAst.Type], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
 
     /**
       * Law Declaration.
@@ -1608,9 +1608,6 @@ object ParsedAst {
     * @param sp2    the position of the last character in the type constraint.
     */
   case class TypeConstraint(sp1: SourcePosition, clazz: Name.QName, tparam: ParsedAst.Type, sp2: SourcePosition)
-
-  // MATT docs
-  case class SideCondition(sp1: SourcePosition, cond: ParsedAst.Type, sp2: SourcePosition)
 
   /**
     * Formal Parameter.
