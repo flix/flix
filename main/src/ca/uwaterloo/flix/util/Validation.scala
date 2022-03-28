@@ -109,6 +109,11 @@ object Validation {
   def traverse[T, S, E](xs: Iterable[T])(f: T => Validation[S, E]): Validation[List[S], E] = fastTraverse(xs)(f)
 
   /**
+    * Traverses the option `opt`, applying the function `f` to the value if it exists.
+    */
+  def traverseOption[T, S, E](opt: Option[T])(f: T => Validation[S, E]): Validation[Option[S], E] = traverse(opt)(f).map(_.headOption)
+
+  /**
     * Traverses `xs` applying the function `f` to each element, ignoring non-error results.
     */
   def traverseX[T, E](xs: Iterable[T])(f: T => Validation[_, E]): Validation[Unit, E] = {
