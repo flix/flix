@@ -78,6 +78,20 @@ case class InferMonad[A](run: Substitution => Result[(Substitution, A), TypeErro
     InferMonad(runNext)
   }
 
+  /**
+    * Applies the given function `f` to transform an error in the monad.
+    */
+  def transformError[B](f: TypeError => TypeError): InferMonad[A] = {
+    def runNext(s0: Substitution): Result[(Substitution, A), TypeError] = {
+      run(s0) match {
+        case Ok(t) => Ok(t)
+        case Err(e) => Err(f(e))
+      }
+    }
+
+    InferMonad(runNext)
+  }
+
   // TODO: Necessary for pattern matching?
   // TODO: What should this return?
   def withFilter(f: A => Boolean): InferMonad[A] = InferMonad(x => run(x) match {

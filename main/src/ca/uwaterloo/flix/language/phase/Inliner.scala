@@ -136,6 +136,9 @@ object Inliner {
     case Expression.JumpTo(_, _, _) => exp0
 
     case Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
+      /// Case 1:
+      /// If `exp1` occurs once and it is pure, then it is safe to inline without increasing neither the code size
+      /// nor the execution time.
       val wantToPreInline = (occur, purity) match {
         case (Occur.Once, Purity.Pure) => true
         case _ => false
@@ -144,9 +147,25 @@ object Inliner {
         val subst1 = subst0 + (sym -> exp1)
         visitExp(exp2, subst1)
       } else {
+        /// Case 2:
+        /// If `e1` is trivial and pure, then it is safe to inline without increasing execution time.
         val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        Expression.Let(sym, e1, e2, occur, tpe, purity, loc)
+        val wantToPostInline = (occur, purity, isTrivialExp(e1)) match {
+          case (Occur.DontInline, _, _) => false
+          case (_, Purity.Pure, true) => true
+          case _ => false
+        }
+        /// If `e1` is to be inlined:
+        /// Add map `sym` to `e1` and return `e2` without constructing the let expression.
+        if (wantToPostInline) {
+          val subst1 = subst0 + (sym -> e1)
+          visitExp(exp2, subst1)
+        } else {
+          /// Case 3:
+          /// If none of the previous cases pass, `sym` is not inlined. Return a let expression with the visited expressions
+          val e2 = visitExp(exp2, subst0)
+          Expression.Let(sym, e1, e2, occur, tpe, purity, loc)
+        }
       }
 
     case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
@@ -267,7 +286,7 @@ object Inliner {
       val e2 = visitExp(exp2, subst0)
       Expression.PutField(field, e1, e2, tpe, loc)
 
-    case Expression.GetStaticField(_,_,_) => exp0
+    case Expression.GetStaticField(_, _, _) => exp0
 
     case Expression.PutStaticField(field, exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -311,5 +330,31 @@ object Inliner {
     case Expression.HoleError(_, _, _) => exp0
 
     case Expression.MatchError(_, _) => exp0
+  }
+
+  /**
+   * returns `true` if `exp0` is considered a trivial expression.
+   *
+   * An expression is trivial if:
+   * It is either a literal (float, string, int, bool, unit), or it is a variable.
+   *
+   * A pure and trivial expression can always be inlined even without duplicating work.
+   */
+  private def isTrivialExp(exp0: Expression): Boolean = exp0 match {
+    case Expression.Unit(_) => true
+    case Expression.Null(_, _) => true
+    case Expression.True(_) => true
+    case Expression.False(_) => true
+    case Expression.Char(_, _) => true
+    case Expression.Float32(_, _) => true
+    case Expression.Float64(_, _) => true
+    case Expression.Int8(_, _) => true
+    case Expression.Int16(_, _) => true
+    case Expression.Int32(_, _) => true
+    case Expression.Int64(_, _) => true
+    case Expression.BigInt(_, _) => true
+    case Expression.Str(_, _) => true
+    case Expression.Var(_, _, _) => true
+    case _ => false
   }
 }

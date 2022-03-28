@@ -45,12 +45,16 @@ object FormatSignature {
   /**
     * Returns a formatted string of the formal parameters.
     */
-  private def formatFormalParams(fparams: List[TypedAst.FormalParam])(implicit audience: Audience): String = {
-    val formattedArgs = fparams.map {
-      case TypedAst.FormalParam(sym, _, tpe, _) => s"${sym.text}: ${FormatType.formatWellKindedType(tpe)}"
-    }
+  private def formatFormalParams(fparams0: List[TypedAst.FormalParam])(implicit audience: Audience): String = fparams0 match {
+    // Case 1: Single Unit type parameter. This gets sugared into a nullary function: `foo()`
+    case fparam :: Nil if fparam.tpe == Type.Unit => ""
+    // Case 2: Some list of parameters. Format each and join them: `foo(x: Int32, y: Bool)`
+    case fparams =>
+      val formattedArgs = fparams.map {
+        case TypedAst.FormalParam(sym, _, tpe, _) => s"${sym.text}: ${FormatType.formatWellKindedType(tpe)}"
+      }
+      formattedArgs.mkString(", ")
 
-    formattedArgs.mkString(", ")
   }
 
   /**
