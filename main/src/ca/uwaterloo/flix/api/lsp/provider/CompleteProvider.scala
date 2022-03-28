@@ -351,9 +351,9 @@ object CompleteProvider {
     }
 
     ///
-    /// Find all local variables in the current uri.
+    /// Find all local variables in the current uri with a given range.
     ///
-    val iter = index.query(uri).collect {
+    val iter = index.queryWithRange(uri, queryLine = pos.line, beforeLine = 20, afterLine = 10).collect {
       case Entity.LocalVar(sym, tpe) => getVarCompletionItem(sym, tpe)
       case Entity.FormalParam(fparam) => getVarCompletionItem(fparam.sym, fparam.tpe)
     }
