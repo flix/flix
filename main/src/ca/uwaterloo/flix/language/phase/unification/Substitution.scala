@@ -177,7 +177,7 @@ case class Substitution(m: Map[Type.Var, Type]) {
     */
   def propagate: Substitution = {
     ///
-    /// A map from type variables (without a name) to a string name ("text"0.
+    /// A map from type variables (without a name) to a string name ("text").
     ///
     var replacement = Map.empty[Type.Var, String]
 
@@ -207,7 +207,7 @@ case class Substitution(m: Map[Type.Var, Type]) {
     }
 
     ///
-    /// Computes the new substitution. It is equivalent to the old, but with updated names.
+    /// Computes the new substitution. It is equivalent to the old one, but with updated names.
     ///
     val m2 = m.foldLeft(Map.empty[Type.Var, Type]) {
       case (acc, (tvar, tpe)) =>
