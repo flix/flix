@@ -285,7 +285,7 @@ object ResolvedAst {
 
   }
 
-  case class Scheme(quantifiers: List[Type.UnkindedVar], constraints: List[ResolvedAst.TypeConstraint], base: Type)
+  case class Scheme(quantifiers: List[Type.UnkindedVar], constraints: List[ResolvedAst.TypeConstraint], base: Type, cond: Type)
 
   sealed trait TypeParams {
     val tparams: List[ResolvedAst.TypeParam]

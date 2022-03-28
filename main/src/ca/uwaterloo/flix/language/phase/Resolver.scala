@@ -401,7 +401,7 @@ object Resolver {
           val caseType = t
           val enumType = mkUnkindedEnum(e0.sym, freeVars, e0.sym.loc)
           val base = Type.mkTag(e0.sym, tag, caseType, enumType, tpe.loc)
-          val sc = ResolvedAst.Scheme(freeVars, tconstrs, base)
+          val sc = ResolvedAst.Scheme(freeVars, tconstrs, base, Type.True) // no side condition
           name -> ResolvedAst.Case(enum, tag, t, sc)
         }
     }
@@ -411,7 +411,7 @@ object Resolver {
       tpe <- resolveType(e0.tpe, taenv, ns0, root)
       derives <- derivesVal
     } yield {
-      val sc = ResolvedAst.Scheme(tparams.tparams.map(_.tpe), tconstrs, tpe)
+      val sc = ResolvedAst.Scheme(tparams.tparams.map(_.tpe), tconstrs, tpe, Type.True) // no side condition
       ResolvedAst.Enum(e0.doc, ann, e0.mod, e0.sym, tparams, derives, cases.toMap, tpe, sc, e0.loc)
     }
   }
@@ -1243,11 +1243,14 @@ object Resolver {
   /**
     * Performs name resolution on the given scheme `sc0`.
     */
-  def resolveScheme(sc0: NamedAst.Scheme, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Scheme, ResolutionError] = {
-    for {
-      base <- resolveType(sc0.base, taenv, ns0, root)
-      tconstrs <- sequence(sc0.tconstrs.map(resolveTypeConstraint(_, taenv, ns0, root)))
-    } yield ResolvedAst.Scheme(sc0.quantifiers, tconstrs, base)
+  def resolveScheme(sc0: NamedAst.Scheme, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Scheme, ResolutionError] = sc0 match {
+    case NamedAst.Scheme(quantifiers, tconstrs0, base0, cond0) =>
+      val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, taenv, ns0, root))
+      val baseVal = resolveType(base0, taenv, ns0, root)
+      val condVal = resolveType(cond0, taenv, ns0, root)
+      mapN(tconstrsVal, baseVal, condVal) {
+        case (tconstrs, base, cond) => ResolvedAst.Scheme(quantifiers, tconstrs, base, cond)
+      }
   }
 
   /**
