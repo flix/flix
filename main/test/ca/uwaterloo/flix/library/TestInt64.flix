@@ -784,10 +784,7 @@ namespace TestInt64 {
     def parse05(): Bool = ("Kona" |> Int64.parse(27)) == Ok(411787i64)
 
     @test
-    def parse06(): Bool = ("2147483648" |> Int64.parse(10)) |> Result.isErr
-
-    @test
-    def parse07(): Bool = ("Kona" |> Int64.parse(10)) |> Result.isErr
+    def parse06(): Bool = ("Kona" |> Int64.parse(10)) |> Result.isErr
 
     /////////////////////////////////////////////////////////////////////////////
     // tryToInt8                                                               //
