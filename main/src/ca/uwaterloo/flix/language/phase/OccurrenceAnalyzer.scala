@@ -427,8 +427,8 @@ object OccurrenceAnalyzer {
    * ManyBranches can be IfThenElse, Branches, and SelectChannel
    */
   private def combineBranch(o1: Occur, o2: Occur): Occur = (o1, o2) match {
-    case (Sacred, _) => Sacred
-    case (_, Sacred) => Sacred
+    case (DontInline, _) => DontInline
+    case (_, DontInline) => DontInline
     case (Dead, _) => o2
     case (_, Dead) => o1
     case (Once, Once) => ManyBranch

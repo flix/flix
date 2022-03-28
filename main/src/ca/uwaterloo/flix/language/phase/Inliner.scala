@@ -129,7 +129,9 @@ object Inliner {
     case Expression.JumpTo(_, _, _) => exp0
 
     case Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
-      // Wants to inline `exp1` if `occur` is Once and `purity` is Pure
+      /// Case 1:
+      /// If `exp1` occurs once and it is pure, then it is safe to inline without increasing neither the code size
+      /// nor the execution time.
       val wantToPreInline = (occur, purity) match {
         case (Occur.Once, Purity.Pure) => true
         case _ => false
@@ -138,17 +140,22 @@ object Inliner {
         val subst1 = subst0 + (sym -> exp1)
         visitExp(exp2, subst1)
       } else {
-        // Wants to inline `e1` if is trivial and `purity` is Pure
+        /// Case 2:
+        /// If `e1` is trivial and pure, then it is safe to inline without increasing execution time.
         val e1 = visitExp(exp1, subst0)
         val wantToPostInline = (occur, purity, isTrivialExp(e1)) match {
-          case (Occur.Sacred, _, _) => false
+          case (Occur.DontInline, _, _) => false
           case (_, Purity.Pure, true) => true
           case _ => false
         }
+        /// If `e1` is to be inlined:
+        /// Add map `sym` to `e1` and return `e2` without constructing the let expression.
         if (wantToPostInline) {
           val subst1 = subst0 + (sym -> e1)
           visitExp(exp2, subst1)
         } else {
+          /// Case 3:
+          /// If none of the previous cases pass, `sym` is not inlined. Return a let expression with the visited expressions
           val e2 = visitExp(exp2, subst0)
           Expression.Let(sym, e1, e2, occur, tpe, purity, loc)
         }
@@ -319,7 +326,12 @@ object Inliner {
   }
 
   /**
-   * returns `true` if `exp0` is considered a trivial expression
+   * returns `true` if `exp0` is considered a trivial expression.
+   *
+   * An expression is trivial if:
+   * It is either a literal (float, string, int, bool, unit), or it is a variable.
+   *
+   * A pure and trivial expression can always be inlined even without duplicating work.
    */
   private def isTrivialExp(exp0: Expression): Boolean = exp0 match {
     case Expression.Unit(_) => true
