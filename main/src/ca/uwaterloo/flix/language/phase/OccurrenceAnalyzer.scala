@@ -120,7 +120,7 @@ object OccurrenceAnalyzer {
     case Expression.Closure(sym, freeVars, tpe, loc) =>
       val (fv, o) = freeVars.foldRight[(List[OccurrenceAst.FreeVar], Map[Symbol.VarSym, Occur])]((List.empty, Map.empty)) {
         case (LiftedAst.FreeVar(sym, tpe), (fvs, o)) =>
-          (OccurrenceAst.FreeVar(sym, tpe) :: fvs, o + (sym -> Sacred))
+          (OccurrenceAst.FreeVar(sym, tpe) :: fvs, o + (sym -> DontInline))
       }
       (OccurrenceAst.Expression.Closure(sym, fv, tpe, loc), o)
 
@@ -415,8 +415,8 @@ object OccurrenceAnalyzer {
    * Combines two occurrences `o1` and `o2` of type Occur into a single occurrence.
    */
   private def combineSeq(o1: Occur, o2: Occur): Occur = (o1, o2) match {
-    case (Sacred, _) => Sacred
-    case (_, Sacred) => Sacred
+    case (DontInline, _) => DontInline
+    case (_, DontInline) => DontInline
     case (Dead, _) => o2
     case (_, Dead) => o1
     case _ => Many
