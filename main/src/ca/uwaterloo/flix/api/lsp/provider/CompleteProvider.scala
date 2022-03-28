@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -34,7 +34,8 @@ object CompleteProvider {
     */
   def autoComplete(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     // Ordered by priority.
-    getDefAndSigSuggestions(uri, pos, line, word) ++
+    getVarSuggestions(uri, pos, line, word) ++
+      getDefAndSigSuggestions(uri, pos, line, word) ++
       getInstanceSuggestions(uri, pos, line, word) ++
       getWithSuggestions(uri, pos, line, word) ++
       getKeywordCompletionItems(line, word) ++
@@ -339,6 +340,28 @@ object CompleteProvider {
   }
 
   /**
+    * Returns a list of auto-complete suggestions of all variables in the current uri.
+    */
+  private def getVarSuggestions(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
+    ///
+    /// Return immediately if there is no AST or the position is not appropriate.
+    ///
+    if (root == null || matchesOneOf(line, BlockList)) {
+      return Nil
+    }
+
+    ///
+    /// Find all local variables in the current uri.
+    ///
+    val iter = index.query(uri).collect {
+      case Entity.LocalVar(sym, tpe) => getVarCompletionItem(sym, tpe)
+      case Entity.FormalParam(fparam) => getVarCompletionItem(fparam.sym, fparam.tpe)
+    }
+
+    iter.toList
+  }
+
+  /**
     * Returns a completion item for the given definition `decl`.
     */
   private def getDefCompletionItem(withoutNS: Boolean, decl: TypedAst.Def): CompletionItem = {
@@ -349,6 +372,21 @@ object CompleteProvider {
     val documentation = Some(decl.spec.doc.text)
     val completionKind = CompletionItemKind.Function
     val textFormat = InsertTextFormat.Snippet
+    val commitCharacters = Nil
+    CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
+  }
+
+  /**
+    * Returns a completion item for the given variable symbol `sym` with the given type `tpe`.
+    */
+  private def getVarCompletionItem(sym: Symbol.VarSym, tpe: Type): CompletionItem = {
+    val name = sym.text
+    val label = sym.text
+    val insertText = sym.text
+    val detail = Some(FormatType.formatWellKindedType(tpe))
+    val documentation = None
+    val completionKind = CompletionItemKind.Variable
+    val textFormat = InsertTextFormat.PlainText
     val commitCharacters = Nil
     CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
   }
