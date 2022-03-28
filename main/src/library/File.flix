@@ -1027,5 +1027,93 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+    ///
+    /// Copies a file or directory from path `src` to path `dst`.
+    ///
+    /// Returns `Ok(())` if `src` was copied, and `dst` did not already exist.
+    /// Returns `Err(msg)` if `src` was not copied because:
+    /// - `dst` already exists, or
+    /// - `dst` is a subpath of `src`, or
+    /// - an I/O error occurred.
+    ///
+    pub def copy(src: {src :: String} , dst: String): Result[Unit, String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.copy(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption]): ##java.nio.file.Path & Impure;
+
+            let srcFile = newFile(src.src);
+            let srcPath = toPath(srcFile);
+            let dstFile = newFile(dst);
+            let dstPath = toPath(dstFile);
+            copy(srcPath, dstPath, []);
+            Ok()
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Copies a file or directory from path `src` to directory `dst`.
+    ///
+    /// Returns `Ok(())` if `src` was copied, and `dst` is a directory.
+    /// Returns `Err(msg)` if:
+    /// - `src` was not copied, or
+    /// - `dst` is a subpath of `src`, or
+    /// - `dst` is not a directory, or
+    /// - an I/O error occurred.
+    ///
+    pub def copyInto(src: {src :: String} , dst: String): Result[Unit, String] & Impure =
+        try {
+            match File.isDirectory(dst) {
+                case Ok(true)  => {
+                    import new java.io.File(String): ##java.io.File & Impure as newFile;
+                    import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+                    import java.nio.file.Path.getFileName(): ##java.nio.file.Path & Impure;
+                    import java.nio.file.Path.toString(): String & Impure as pathToString;
+
+                    let javaFile = newFile(src.src);
+                    let javaPath = toPath(javaFile);
+                    let name = pathToString(getFileName(javaPath));
+                    let newDst = dst / name;
+
+                    copy(src = src.src, newDst)
+                }
+                case Ok(false) => Err("dst is not a directory.")
+                case Err(msg)  => Err(msg)
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Copies a file or directory from path `src` to path `dst`. Overwrites if `dst` already exists.
+    ///
+    /// Returns `Ok(())` if `src` was copied.
+    /// Returns `Err(msg)` if `src` was not copied, or an I/O error occurred.
+    ///
+    pub def copyOver(src: {src :: String}, dst: String): Result[Unit, String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.copy(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption]): ##java.nio.file.Path & Impure;
+            import static get java.nio.file.StandardCopyOption.REPLACE_EXISTING: ##java.nio.file.StandardCopyOption & Impure as getOverwrite;
+
+            let dstFile = newFile(dst);
+            let dstPath = toPath(dstFile);
+
+            let srcFile = newFile(src.src);
+            let srcPath = toPath(srcFile);
+            copy(srcPath, dstPath, [getOverwrite() as ##java.nio.file.CopyOption]);
+
+            Ok()
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
 
 }
