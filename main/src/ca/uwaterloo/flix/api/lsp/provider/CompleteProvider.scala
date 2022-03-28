@@ -136,18 +136,7 @@ object CompleteProvider {
       // NB: Please keep the list alphabetically sorted.
 
       // Declaration-based:
-      CompletionItem("class", "pub class ${1:name}[${2:clause}] {\n    $3\n}", None, Some("snippet for class"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("def", "def ${1:name}(${2:arg}:${3:type}): ${4:type} & Impure = \n\t", None, Some("snippet to define Impure function"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("def", "def ${1:name}(${2:arg}:${3:type}): ${4:type} & Pure = \n\t", None, Some("snippet to define Pure function"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("enum", "enum ${1:Name} {\n\tcase ${2:Name}\n}", None, Some("snippet for enum"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("law", "law ${1:name}: forall(${2:params}).${3:exp}", None, Some("snippet for law"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
       CompletionItem("main", "def main(_args: Array[String]): Int32 & Impure = \n    println(\"Hello World!\");\n    0", None, Some("snippet for Hello World Program"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("namespace", "namespace ${1:Name} {\n    ${2:/* code */} \n}", None, Some("snippet to create namespace"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("project", "project ${1:exp} into ${2:fixPoint}", None, Some("snippet for project"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("opaque", "opaque type ${1:name} = ${2:type}", None, Some("snippet for opaque type"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("rel", "rel ${1:name}(${2:x}: ${3:type}, ${4:y}: ${5:type})", None, Some("snippet to declare predicate symbol"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("type alias", "type alias ${1:name} = ${2:type}", None, Some("snippet for type alias"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("use", "use ${1:module};", None, Some("snippet for use"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
 
       // Expressed-based:
       CompletionItem("if", "if ${1:cond} ${2:exp} else ${3:exp}", None, Some("snippet for if ()"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
