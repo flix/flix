@@ -135,6 +135,11 @@ object Request {
   case class WorkspaceSymbols(requestId: String, query: String) extends Request
 
   /**
+    * A request to get the inlay hints for the given [[range]] in a file denoted by [[uri]]
+    */
+  case class InlayHint(requestId: String, uri: String, range: Range) extends Request
+
+  /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
     */
   def parseAddUri(json: json4s.JValue): Result[Request, String] = {
