@@ -314,6 +314,19 @@ namespace Int64 {
     }
 
     ///
+    /// Parse the string `s` as an Int64, where the `radix` is used while parsing.
+    /// Leading or trailing whitespace is trimmed.
+    /// A successful parse is wrapped with `Ok(x)`, a parse failure is indicated by `Err(_)`.
+    ///
+    pub def parse(radix: Int32, s: String): Result[Int64, String] = try {
+        import java.lang.String.strip(): String & Pure;
+        import static java.lang.Long.parseLong(String, Int32): Int64 & Pure;
+        Ok(parseLong(strip(s), radix))
+    } catch {
+        case _: ##java.lang.NumberFormatException => Err("Int64.parse")
+    }
+
+    ///
     /// Convert `x` to an `Option[Int8]`.
     ///
     /// Returns `Some(x as Int8)` if the numeric value of `x` can be represented exactly.
