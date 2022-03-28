@@ -317,7 +317,7 @@ object CompleteProvider {
   }
 
   /**
-    * Returns a list of auto-complete suggestions of all variables in the current uri.
+    * Returns a list of auto-complete suggestions based on local variables in the current uri.
     */
   private def getVarSuggestions(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
     ///
