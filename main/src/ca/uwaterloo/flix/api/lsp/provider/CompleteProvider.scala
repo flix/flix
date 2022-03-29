@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -34,7 +34,8 @@ object CompleteProvider {
     */
   def autoComplete(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     // Ordered by priority.
-    getDefAndSigSuggestions(uri, pos, line, word) ++
+    getVarSuggestions(uri, pos, line, word) ++
+      getDefAndSigSuggestions(uri, pos, line, word) ++
       getInstanceSuggestions(uri, pos, line, word) ++
       getWithSuggestions(uri, pos, line, word) ++
       getKeywordCompletionItems(line, word) ++
@@ -66,6 +67,7 @@ object CompleteProvider {
       CompletionItem("else", "else ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("enum", "enum ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("false", "false", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("fix", "fix ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("forall", "forall ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("force", "force ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("from", "from ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
@@ -73,12 +75,10 @@ object CompleteProvider {
       CompletionItem("if", "if ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("import", "import ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("instance", "instance ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
-      CompletionItem("inline", "inline ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("into", "into ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("lat", "lat ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("law", "law ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("let", "let ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
-      CompletionItem("lawless", "lawless ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("lazy", "lazy ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("match", "match ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("namespace", "namespace ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
@@ -92,6 +92,7 @@ object CompleteProvider {
       CompletionItem("pub", "pub ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("Pure", "Pure ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("query", "query ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("region", "region ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("Record", "Record ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("ref", "ref ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("rel", "rel ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
@@ -103,18 +104,15 @@ object CompleteProvider {
       CompletionItem("spawn", "spawn ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("true", "true", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("type", "type ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
-      CompletionItem("unlawful", "unlawful ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("use", "use ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("with", "with ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("where", "where ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
 
       // Types:
-      CompletionItem("BigInt", "BigInt", None, Some("type"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("Bool", "Bool", None, Some("type"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("Char", "Char", None, Some("type"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("Float32", "Float32", None, Some("type"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("Float64", "Float64", None, Some("type"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
-      CompletionItem("Int8", "Int8", None, Some("type"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("Int32", "Int32", None, Some("type"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("Int64", "Int64", None, Some("type"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("String", "String", None, Some("type"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
@@ -135,30 +133,10 @@ object CompleteProvider {
       // NB: Please keep the list alphabetically sorted.
 
       // Declaration-based:
-      CompletionItem("class", "pub class ${1:name}[${2:clause}] {\n    $3\n}", None, Some("snippet for class"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("def", "def ${1:name}(${2:arg}:${3:type}): ${4:type} & Impure = \n\t", None, Some("snippet to define Impure function"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("def", "def ${1:name}(${2:arg}:${3:type}): ${4:type} & Pure = \n\t", None, Some("snippet to define Pure function"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("enum", "enum ${1:Name} {\n\tcase ${2:Name}\n}", None, Some("snippet for enum"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("law", "law ${1:name}: forall(${2:params}).${3:exp}", None, Some("snippet for law"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
       CompletionItem("main", "def main(_args: Array[String]): Int32 & Impure = \n    println(\"Hello World!\");\n    0", None, Some("snippet for Hello World Program"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("namespace", "namespace ${1:Name} {\n    ${2:/* code */} \n}", None, Some("snippet to create namespace"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("project", "project ${1:exp} into ${2:fixPoint}", None, Some("snippet for project"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("opaque", "opaque type ${1:name} = ${2:type}", None, Some("snippet for opaque type"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("rel", "rel ${1:name}(${2:x}: ${3:type}, ${4:y}: ${5:type})", None, Some("snippet to declare predicate symbol"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("type alias", "type alias ${1:name} = ${2:type}", None, Some("snippet for type alias"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("use", "use ${1:module};", None, Some("snippet for use"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
 
       // Expressed-based:
-      CompletionItem("if", "if ${1:cond} ${2:exp} else ${3:exp}", None, Some("snippet for if ()"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("import", "import ${1:method}", None, Some("import snippet for method call"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("import", "import new ${1:object} as ${2:name}", None, Some("import snippet for new object"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("import", "import get ${1:field} as ${2:name}", None, Some("import snippet to get field"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("import", "import set ${1:field} as ${2:name}", None, Some("import snippet to set field"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("let", "let ${1:name}:${2:type} = ${3:exp};", None, Some("snippet for let"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("let*", "let* ${1:name}:${2:type} = ${3:exp};", None, Some("snippet for let*"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("match", "match ${1:exp} {\n    case ${2:pat} => ${3:exp}\n}", None, Some("snippet for pattern match"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
       CompletionItem("query", "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}", None, Some("snippet for query"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
-      CompletionItem("select", "select {\n\tcase ${1:x} <- ${2:c} =>${3:exp}\n}", None, Some("snippet for select"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
     )
   }
 
@@ -230,7 +208,7 @@ object CompleteProvider {
       */
     def fmtFormalParams(clazz: TypedAst.Class, spec: TypedAst.Spec, hole: String): String =
       spec.fparams.map {
-        case fparam => s"${fparam.sym}: ${fmtType(clazz, fparam.tpe, hole)}"
+        case fparam => s"${fparam.sym.text}: ${fmtType(clazz, fparam.tpe, hole)}"
       }.mkString(", ")
 
     /**
@@ -339,6 +317,28 @@ object CompleteProvider {
   }
 
   /**
+    * Returns a list of auto-complete suggestions based on local variables in the current uri.
+    */
+  private def getVarSuggestions(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): List[CompletionItem] = {
+    ///
+    /// Return immediately if there is no AST or the position is not appropriate.
+    ///
+    if (root == null || matchesOneOf(line, BlockList)) {
+      return Nil
+    }
+
+    ///
+    /// Find all local variables in the current uri with a given range.
+    ///
+    val iter = index.queryWithRange(uri, queryLine = pos.line, beforeLine = 20, afterLine = 10).collect {
+      case Entity.LocalVar(sym, tpe) => getVarCompletionItem(sym, tpe)
+      case Entity.FormalParam(fparam) => getVarCompletionItem(fparam.sym, fparam.tpe)
+    }
+
+    iter.toList
+  }
+
+  /**
     * Returns a completion item for the given definition `decl`.
     */
   private def getDefCompletionItem(withoutNS: Boolean, decl: TypedAst.Def): CompletionItem = {
@@ -349,6 +349,21 @@ object CompleteProvider {
     val documentation = Some(decl.spec.doc.text)
     val completionKind = CompletionItemKind.Function
     val textFormat = InsertTextFormat.Snippet
+    val commitCharacters = Nil
+    CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
+  }
+
+  /**
+    * Returns a completion item for the given variable symbol `sym` with the given type `tpe`.
+    */
+  private def getVarCompletionItem(sym: Symbol.VarSym, tpe: Type): CompletionItem = {
+    val name = sym.text
+    val label = sym.text
+    val insertText = sym.text
+    val detail = Some(FormatType.formatWellKindedType(tpe))
+    val documentation = None
+    val completionKind = CompletionItemKind.Variable
+    val textFormat = InsertTextFormat.PlainText
     val commitCharacters = Nil
     CompletionItem(label, insertText, detail, documentation, completionKind, textFormat, commitCharacters)
   }
