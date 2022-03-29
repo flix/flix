@@ -15,13 +15,29 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
+import ca.uwaterloo.flix.api.lsp.Entity.LocalVar
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.api.lsp.{Index, Range}
-import org.json4s.JsonAST.JArray
+import ca.uwaterloo.flix.api.lsp.{Index, InlayHint, InlayHintKind, Position, Range}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
 
 object InlayHintProvider {
 
-  def processInlayHints(uri: String, range: Range)(implicit index: Index, root: Root): JArray = {
-    JArray(Nil)
+  def processInlayHints(uri: String, range: Range)(implicit index: Index, root: Root): List[InlayHint] = {
+    index.queryByRange(uri, range) match {
+      case Nil => Nil
+      case entities => entities.foldLeft(Nil: List[InlayHint]) {
+        case (acc, LocalVar(sym, tpe)) => getTypeHint(sym.loc, tpe) :: acc
+        case (acc, _) => acc
+      }
+    }
   }
+
+  private def getTypeHint(loc: SourceLocation, tpe: Type): InlayHint = {
+    val pos = Position(loc.endLine, loc.endCol)
+    val label = FormatType.formatWellKindedType(tpe)(Audience.External)
+    InlayHint(pos, label, Some(InlayHintKind.Type), None, "", paddingRight = true)
+  }
+
 }
+
