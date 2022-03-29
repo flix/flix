@@ -40,9 +40,9 @@ object KindedAst {
 
   case class Def(sym: Symbol.DefnSym, spec: KindedAst.Spec, exp: KindedAst.Expression)
 
-  case class Spec(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, tparams: List[KindedAst.TypeParam], fparams: List[KindedAst.FormalParam], sc: Scheme, tpe: Type, eff: Type, loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, tparams: List[KindedAst.TypeParam], fparams: List[KindedAst.FormalParam], sc: KindedAst.Scheme, tpe: Type, eff: Type, loc: SourceLocation)
 
-  case class Enum(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[KindedAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Name.Tag, KindedAst.Case], tpeDeprecated: Type, sc: Scheme, loc: SourceLocation)
+  case class Enum(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[KindedAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Name.Tag, KindedAst.Case], tpeDeprecated: Type, sc: KindedAst.Scheme, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[KindedAst.TypeParam], tpe: Type, loc: SourceLocation)
 
@@ -288,7 +288,7 @@ object KindedAst {
 
   case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
-  case class Case(enum: Name.Ident, tag: Name.Tag, tpeDeprecated: Type, sc: Scheme)
+  case class Case(enum: Name.Ident, tag: Name.Tag, tpeDeprecated: Type, sc: KindedAst.Scheme)
 
   case class Constraint(cparams: List[KindedAst.ConstraintParam], head: KindedAst.Predicate.Head, body: List[KindedAst.Predicate.Body], loc: SourceLocation)
 
@@ -313,4 +313,6 @@ object KindedAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: KindedAst.Expression, exp: KindedAst.Expression)
 
   case class TypeParam(name: Name.Ident, tpe: Type.KindedVar, loc: SourceLocation)
+
+  case class Scheme(quants: List[Type.KindedVar], tconstrs: List[Ast.TypeConstraint], base: Type, cond: Type)
 }

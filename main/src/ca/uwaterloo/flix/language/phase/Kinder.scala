@@ -819,7 +819,7 @@ object Kinder {
   /**
     * Performs kinding on the given type under the given kind environment.
     */
-  private def visitScheme(sc: ResolvedAst.Scheme, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Scheme, KindError] = sc match {
+  private def visitScheme(sc: ResolvedAst.Scheme, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Scheme, KindError] = sc match {
     case ResolvedAst.Scheme(quantifiers0, constraints0, base0, cond0) =>
       val quantVal = Validation.traverse(quantifiers0)(visitTypeVar(_, Kind.Wild, kenv))
       val tconstrsVal = Validation.traverse(constraints0)(visitTypeConstraint(_, kenv, taenv, root))
@@ -827,7 +827,7 @@ object Kinder {
       val condVal = visitType(cond0, Kind.Bool, kenv, taenv, root)
 
       mapN(quantVal, tconstrsVal, baseVal, condVal) {
-        case (quant, tconstrs, base, cond) => Scheme(quant, tconstrs, base, cond)
+        case (quant, tconstrs, base, cond) => KindedAst.Scheme(quant, tconstrs, base, cond)
       }
   }
 

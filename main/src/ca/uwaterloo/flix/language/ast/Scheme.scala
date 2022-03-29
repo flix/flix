@@ -52,15 +52,14 @@ object Scheme {
     * Instantiate one of the variables in the scheme, adding new quantifiers as needed.
     */
   def partiallyInstantiate(sc: Scheme, quantifier: Type.KindedVar, value: Type)(implicit flix: Flix): Scheme = sc match {
-    case Scheme(quantifiers, constraints, base, cond) =>
+    case Scheme(quantifiers, constraints, base) =>
       if (!quantifiers.contains(quantifier)) {
         throw InternalCompilerException("Quantifier not in scheme.")
       }
       val subst = Substitution.singleton(quantifier, value)
       val newConstraints = constraints.map(subst.apply)
       val newBase = subst(base)
-      val newCond = subst(cond)
-      generalize(newConstraints, newBase, newCond)
+      generalize(newConstraints, newBase)
   }
 
   /**
@@ -118,9 +117,9 @@ object Scheme {
   /**
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
-  def generalize(tconstrs: List[Ast.TypeConstraint], tpe0: Type, cond: Type): Scheme = {
+  def generalize(tconstrs: List[Ast.TypeConstraint], tpe0: Type): Scheme = {
     val quantifiers = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars)
-    Scheme(quantifiers.toList, tconstrs, tpe0, cond)
+    Scheme(quantifiers.toList, tconstrs, tpe0)
   }
 
   /**
@@ -171,7 +170,7 @@ object Scheme {
 /**
   * Representation of polytypes.
   */
-case class Scheme(quantifiers: List[Type.KindedVar], constraints: List[Ast.TypeConstraint], base: Type, cond: Type) {
+case class Scheme(quantifiers: List[Type.KindedVar], constraints: List[Ast.TypeConstraint], base: Type) {
 
   /**
     * Returns a human readable representation of the polytype.
