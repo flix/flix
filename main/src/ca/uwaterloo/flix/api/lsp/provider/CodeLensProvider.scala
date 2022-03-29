@@ -23,21 +23,8 @@ import org.json4s.JsonDSL._
 
 object CodeLensProvider {
 
-  sealed trait EntryPoint
-
-  object EntryPoint {
-
-    /**
-      * Represents an entry point that takes no arguments.
-      */
-    case class Main(defn: Def) extends EntryPoint
-
-    /**
-      * Represents an entry point that takes arguments.
-      */
-    case class MainWithArgs(defn: Def) extends EntryPoint
-
-  }
+  // TODO: Doc
+  case class EntryPoint(defn: Def, withArgs: Boolean)
 
   /**
     * Processes a codelens request.
@@ -56,32 +43,26 @@ object CodeLensProvider {
     }
 
     getEntryPoints(uri).flatMap {
-      case EntryPoint.Main(defn) =>
+      case EntryPoint(defn, withArgs) =>
         val args = List(JString(defn.sym.toString))
         val runMain = Command("Run", "flix.runMain", args)
         val runMainWithArgs = Command("Run with args...", "flix.runMainWithArgs", args)
         val runMainNewTerminal = Command("Run (in new terminal)", "flix.runMainNewTerminal", args)
         val runMainNewTerminalWithArgs = Command("Run with args... (in new terminal)", "flix.runMainNewTerminalWithArgs", args)
-        val loc = defn.sym.loc
-        List(
-          CodeLens(Range.from(loc), Some(runMain)),
-          CodeLens(Range.from(loc), Some(runMainWithArgs)),
-          CodeLens(Range.from(loc), Some(runMainNewTerminal)),
-          CodeLens(Range.from(loc), Some(runMainNewTerminalWithArgs))
-        )
-      case EntryPoint.MainWithArgs(defn) =>
-        val args = List(JString(defn.sym.toString))
-        val runMain = Command("Run", "flix.runMain", args)
-        val runMainWithArgs = Command("Run with args...", "flix.runMainWithArgs", args)
-        val runMainNewTerminal = Command("Run (in new terminal)", "flix.runMainNewTerminal", args)
-        val runMainNewTerminalWithArgs = Command("Run with args... (in new terminal)", "flix.runMainNewTerminalWithArgs", args)
-        val loc = defn.sym.loc
-        List(
-          CodeLens(Range.from(loc), Some(runMain)),
-          CodeLens(Range.from(loc), Some(runMainWithArgs)),
-          CodeLens(Range.from(loc), Some(runMainNewTerminal)),
-          CodeLens(Range.from(loc), Some(runMainNewTerminalWithArgs))
-        )
+        val range = Range.from(defn.sym.loc)
+
+        if (!withArgs)
+          List(
+            CodeLens(range, Some(runMain)),
+            CodeLens(range, Some(runMainNewTerminal)),
+          )
+        else
+          List(
+            CodeLens(range, Some(runMain)),
+            CodeLens(range, Some(runMainWithArgs)),
+            CodeLens(range, Some(runMainNewTerminal)),
+            CodeLens(range, Some(runMainNewTerminalWithArgs))
+          )
     }
   }
 
@@ -89,8 +70,8 @@ object CodeLensProvider {
     * Returns all entry points in the given `uri`.
     */
   private def getEntryPoints(uri: String)(implicit root: Root): List[EntryPoint] = root.defs.foldLeft(List.empty[EntryPoint]) {
-    case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPointWithNoArgs(defn.spec) => EntryPoint.Main(defn) :: acc
-    case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPointWithArgs(defn.spec) => EntryPoint.MainWithArgs(defn) :: acc
+    case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPointWithNoArgs(defn.spec) => EntryPoint(defn, withArgs = false) :: acc
+    case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPointWithArgs(defn.spec) => EntryPoint(defn, withArgs = true) :: acc
     case (acc, _) => acc
   }
 
