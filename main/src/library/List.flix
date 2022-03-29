@@ -1406,4 +1406,22 @@ namespace List {
             case x :: xs => loop(xs, ks -> k(consA(f(x), ks)))
         };
         loop(l, ks -> ks as & ef)
+
+    ///
+    /// Merges the two lists `l1` and `l2`. Assuming they are both sorted.
+    /// If two elements compare `EqualTo`, then the element of `l1` is first in the result.
+    ///
+    pub def merge(l1: List[a], l2: List[a]): List[a] with Order[a] =
+        def loop(acc1, acc2, k) = match (acc1, acc2) {
+            case (x :: xs, y :: ys) => {
+                let cmp = x <=> y;
+                if (cmp == LessThan or cmp == EqualTo) loop(xs, acc2, ks -> k(x :: ks))
+                else                                   loop(acc1, ys, ks -> k(y :: ks))
+            }
+            case (Nil    , y :: ys) => k(y :: ys)
+            case (x :: xs, Nil    ) => k(x :: xs)
+            case (Nil    , Nil    ) => k(Nil)
+        };
+        loop(l1, l2, identity)
+
 }

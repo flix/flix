@@ -50,6 +50,7 @@ object LambdaLift {
     LiftedAst.Root(
       newDefs ++ m,
       newEnums,
+      root.entryPoint,
       root.reachable,
       root.sources
     ).toSuccess

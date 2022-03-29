@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase.extra
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
@@ -26,10 +27,10 @@ object CodeHinter {
   /**
     * Returns a collection of code quality hints for the given AST `root`.
     */
-  def run(root: TypedAst.Root, sources: Set[String])(implicit flix: Flix): List[CodeHint] = {
-    val classHints = root.classes.values.flatMap(visitClass(_)(root)).toList
+  def run(root: TypedAst.Root, sources: Set[String])(implicit flix: Flix, index: Index): List[CodeHint] = {
+    val classHints = root.classes.values.flatMap(visitClass(_)(root, index)).toList
     val defsHints = root.defs.values.flatMap(visitDef(_)(root)).toList
-    val enumsHints = root.enums.values.flatMap(visitEnum(_)(root)).toList
+    val enumsHints = root.enums.values.flatMap(visitEnum(_)(root, index)).toList
     (classHints ++ defsHints ++ enumsHints).filter(include(_, sources))
   }
 
@@ -42,23 +43,27 @@ object CodeHinter {
   /**
     * Computes code quality hints for the given enum `enum`.
     */
-  private def visitEnum(enum: TypedAst.Enum)(implicit root: Root): List[CodeHint] = {
+  private def visitEnum(enum: TypedAst.Enum)(implicit root: Root, index: Index): List[CodeHint] = {
+    val tagUses = enum.cases.keys.flatMap(tag => index.usesOf(enum.sym, tag))
+    val enumUses = index.usesOf(enum.sym)
+    val uses = enumUses ++ tagUses
     val isDeprecated = enum.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
-    val deprecated = if (isDeprecated) CodeHint.Deprecated(enum.loc) :: Nil else Nil
     val isExperimental = enum.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Experimental])
-    val experimental = if (isExperimental) CodeHint.Experimental(enum.loc) :: Nil else Nil
-    deprecated ++ experimental
+    val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated) else Nil
+    val experimental = if (isExperimental) uses.map(CodeHint.Experimental) else Nil
+    (deprecated ++ experimental).toList
   }
 
   /**
     * Computes code quality hints for the given class `typeclass`.
     */
-  private def visitClass(typeclass: TypedAst.Class)(implicit root: Root): List[CodeHint] = {
+  private def visitClass(typeclass: TypedAst.Class)(implicit root: Root, index: Index): List[CodeHint] = {
+    val uses = index.usesOf(typeclass.sym)
     val isDeprecated = typeclass.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
-    val deprecated = if (isDeprecated) CodeHint.Deprecated(typeclass.loc) :: Nil else Nil
+    val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated) else Nil
     val isExperimental = typeclass.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Experimental])
-    val experimental = if (isExperimental) CodeHint.Experimental(typeclass.loc) :: Nil else Nil
-    deprecated ++ experimental
+    val experimental = if (isExperimental) uses.map(CodeHint.Experimental) else Nil
+    (deprecated ++ experimental).toList
   }
 
   /**
@@ -175,11 +180,11 @@ object CodeHinter {
     case Expression.RecordRestrict(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.ArrayLit(exps, _, _, _) =>
-      visitExps(exps)
+    case Expression.ArrayLit(exps, exp, _, _, _) =>
+      visitExps(exps) ++ visitExp(exp)
 
-    case Expression.ArrayNew(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     case Expression.ArrayLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
@@ -193,7 +198,7 @@ object CodeHinter {
     case Expression.ArraySlice(exp1, exp2, exp3, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.Ref(exp1, exp2,_, _, _) =>
+    case Expression.Ref(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Deref(exp, _, _, _) =>

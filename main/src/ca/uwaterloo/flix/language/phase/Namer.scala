@@ -48,6 +48,7 @@ object Namer {
       defsAndSigs = Map.empty,
       enums = Map.empty,
       typealiases = Map.empty,
+      entryPoint = program.entryPoint,
       reachable = program.reachable,
       sources = locations
     )
@@ -375,20 +376,31 @@ object Namer {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, retTpe0, eff0, tconstrs0, loc) =>
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, allowElision = true, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
+
+      // First visit all the top-level information
       val sigTypeCheckVal = checkSigType(ident, classTparam, tpe0, ident.loc)
       val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
+      val tpeVal = visitType(tpe0, uenv0, tenv)
+      val retTpeVal = visitType(retTpe0, uenv0, tenv)
+      val effVal = visitType(eff0, uenv0, tenv)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
-      flatMapN(sigTypeCheckVal, fparamsVal, tconstrsVal) {
-        case (_, fparams, tconstrs) =>
+
+      flatMapN(sigTypeCheckVal, fparamsVal, tpeVal, retTpeVal, effVal, tconstrsVal) {
+        case (_, fparams, tpe, retTpe, eff, tconstrs) =>
+
+          // Then visit the parts depending on the parameters
           val env0 = getVarEnv(fparams)
           val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
-          val classTconstr = NamedAst.TypeConstraint(Name.mkQName(classIdent), NamedAst.Type.Var(classTparam.tpe, classTparam.loc), classSym.loc)
-          val schemeVal = getDefOrSigScheme(tparams.tparams, tpe0, uenv0, tenv, classTconstr :: tconstrs, List(classTparam.tpe))
           val expVal = traverse(exp0)(visitExp(_, env0, uenv0, tenv))
-          val retTpeVal = visitType(retTpe0, uenv0, tenv)
-          val effVal = visitType(eff0, uenv0, tenv)
-          mapN(annVal, schemeVal, retTpeVal, effVal, expVal) {
-            case (as, sc, retTpe, eff, exp) =>
+
+          mapN(annVal, expVal) {
+            case (as, exp) =>
+
+              // Build the scheme, including the class type constraint.
+              val classTconstr = NamedAst.TypeConstraint(Name.mkQName(classIdent), NamedAst.Type.Var(classTparam.tpe, classTparam.loc), classSym.loc)
+              val quantifiers = classTparam.tpe :: tparams.tparams.map(_.tpe)
+              val sc = NamedAst.Scheme(quantifiers, classTconstr :: tconstrs, tpe)
+
               val sym = Symbol.mkSigSym(classSym, ident)
               val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, eff, loc)
               NamedAst.Sig(sym, spec, exp.headOption)
@@ -411,7 +423,7 @@ object Namer {
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`, with type constraints `tconstrs`.
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
-    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs, loc) =>
+    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
       // TODO: we use tenv when getting the types from formal params first, before the explicit tparams have a chance to modify it
@@ -421,16 +433,30 @@ object Namer {
       // Or delay using the tenv until evaluating explicit tparams (could become complex)
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, allowElision = true, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
-      flatMapN(getFormalParams(fparams0, uenv0, tenv), traverse(tconstrs)(visitTypeConstraint(_, uenv0, tenv, ns0))) {
-        case (fparams, tconstrs) =>
+
+      // First visit all the top-level information
+      val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
+      val tpeVal = visitType(tpe0, uenv0, tenv)
+      val retTpeVal = visitType(retTpe0, uenv0, tenv)
+      val effVal = visitType(eff0, uenv0, tenv)
+      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
+
+      flatMapN(fparamsVal, tpeVal, retTpeVal, effVal, tconstrsVal) {
+        case (fparams, tpe, retTpe, eff, tconstrs) =>
+
+          // Then visit the parts depending on the parameters
           val env0 = getVarEnv(fparams)
           val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
           val expVal = visitExp(exp, env0, uenv0, tenv)
-          val schemeVal = getDefOrSigScheme(tparams.tparams, tpe0, uenv0, tenv, tconstrs ++ addedTconstrs, addedQuantifiers)
-          val retTpeVal = visitType(retTpe0, uenv0, tenv)
-          val effVal = visitType(eff0, uenv0, tenv)
-          mapN(annVal, expVal, schemeVal, retTpeVal, effVal) {
-            case (as, e, sc, retTpe, eff) =>
+
+          mapN(annVal, expVal) {
+            case (as, e) =>
+
+              // Build the scheme, including any instance parameters or type constraints
+              val quantifiers = addedQuantifiers ::: tparams.tparams.map(_.tpe)
+              val schemeTconstrs = addedTconstrs ::: tconstrs
+              val sc = NamedAst.Scheme(quantifiers, schemeTconstrs, tpe)
+
               val sym = Symbol.mkDefnSym(ns0, ident)
               val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, eff, loc)
               NamedAst.Def(sym, spec, e)
@@ -653,14 +679,19 @@ object Namer {
         case r => NamedAst.Expression.RecordRestrict(field, r, loc)
       }
 
-    case WeededAst.Expression.ArrayLit(elms, loc) =>
-      traverse(elms)(e => visitExp(e, env0, uenv0, tenv0)) map {
-        case es => NamedAst.Expression.ArrayLit(es, loc)
+    case WeededAst.Expression.New(qname, exp, loc) =>
+      mapN(traverse(exp)(visitExp(_, env0, uenv0, tenv0)).map(_.headOption)) {
+        case e => NamedAst.Expression.New(qname, e, loc)
       }
 
-    case WeededAst.Expression.ArrayNew(elm, len, loc) =>
-      mapN(visitExp(elm, env0, uenv0, tenv0), visitExp(len, env0, uenv0, tenv0)) {
-        case (es, ln) => NamedAst.Expression.ArrayNew(es, ln, loc)
+    case WeededAst.Expression.ArrayLit(exps, exp, loc) =>
+      mapN(traverse(exps)(visitExp(_, env0, uenv0, tenv0)), traverse(exp)(visitExp(_, env0, uenv0, tenv0)).map(_.headOption)) {
+        case (es, e) => NamedAst.Expression.ArrayLit(es, e, loc)
+      }
+
+    case WeededAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
+      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0), traverse(exp3)(visitExp(_, env0, uenv0, tenv0)).map(_.headOption)) {
+        case (e1, e2, e3) => NamedAst.Expression.ArrayNew(e1, e2, e3, loc)
       }
 
     case WeededAst.Expression.ArrayLoad(base, index, loc) =>
@@ -684,7 +715,7 @@ object Namer {
       }
 
     case WeededAst.Expression.Ref(exp1, exp2, loc) =>
-      mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
+      mapN(visitExp(exp1, env0, uenv0, tenv0), traverse(exp2)(visitExp(_, env0, uenv0, tenv0)).map(_.headOption)) {
         case (e1, e2) =>
           NamedAst.Expression.Ref(e1, e2, loc)
       }
@@ -1042,7 +1073,7 @@ object Namer {
   private def visibleInRuleScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
     case WeededAst.Predicate.Body.Atom(_, _, _, _, terms, _) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(_, _) => Nil
-    case WeededAst.Predicate.Body.Loop(_, _, _) =>  Nil
+    case WeededAst.Predicate.Body.Loop(_, _, _) => Nil
   }
 
   /**
@@ -1238,7 +1269,7 @@ object Namer {
     case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
     case WeededAst.Expression.Stm(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Let(ident, mod, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
-    case WeededAst.Expression.LetRec(ident, mod, exp1, exp2, loc) => filterBoundVars( freeVars(exp1) ++ freeVars(exp2), List(ident))
+    case WeededAst.Expression.LetRec(ident, mod, exp1, exp2, loc) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2), List(ident))
     case WeededAst.Expression.Region(_, _) => Nil
     case WeededAst.Expression.Scope(ident, exp, loc) => filterBoundVars(freeVars(exp), List(ident))
     case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
@@ -1253,13 +1284,14 @@ object Namer {
     case WeededAst.Expression.RecordSelect(exp, _, loc) => freeVars(exp)
     case WeededAst.Expression.RecordExtend(_, exp, rest, loc) => freeVars(exp) ++ freeVars(rest)
     case WeededAst.Expression.RecordRestrict(_, rest, loc) => freeVars(rest)
-    case WeededAst.Expression.ArrayLit(elms, loc) => elms.flatMap(freeVars)
-    case WeededAst.Expression.ArrayNew(elm, len, loc) => freeVars(elm) ++ freeVars(len)
+    case WeededAst.Expression.New(qname, exp, loc) => exp.map(freeVars).getOrElse(Nil)
+    case WeededAst.Expression.ArrayLit(exps, exp, loc) => exps.flatMap(freeVars) ++ exp.map(freeVars).getOrElse(Nil)
+    case WeededAst.Expression.ArrayNew(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ exp3.map(freeVars).getOrElse(Nil)
     case WeededAst.Expression.ArrayLoad(base, index, loc) => freeVars(base) ++ freeVars(index)
     case WeededAst.Expression.ArrayStore(base, index, elm, loc) => freeVars(base) ++ freeVars(index) ++ freeVars(elm)
     case WeededAst.Expression.ArrayLength(base, loc) => freeVars(base)
     case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, loc) => freeVars(base) ++ freeVars(startIndex) ++ freeVars(endIndex)
-    case WeededAst.Expression.Ref(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.Ref(exp1, exp2, loc) => freeVars(exp1) ++ exp2.map(freeVars).getOrElse(Nil)
     case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => freeVars(exp)
@@ -1601,16 +1633,6 @@ object Namer {
     */
   private def getTypeEnv(tparams0: List[NamedAst.TypeParam]): Map[String, Type.UnkindedVar] = {
     tparams0.map(p => p.name.name -> p.tpe).toMap
-  }
-
-  /**
-    * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given environments `uenv0` and `tenv0`, with the added type constraints `tconstrs0`.
-    */
-  private def getDefOrSigScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar], tconstrs0: List[NamedAst.TypeConstraint], addedQuantifiers: List[Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
-    for {
-      t <- visitType(tpe, uenv0, tenv0)
-      tparams = tparams0.map(_.tpe)
-    } yield NamedAst.Scheme(tparams ++ addedQuantifiers, tconstrs0, t)
   }
 
   /**

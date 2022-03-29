@@ -22,7 +22,7 @@ import scala.collection.immutable.List
 
 object WeededAst {
 
-  case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], reachable: Set[Symbol.DefnSym])
+  case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym], reachable: Set[Symbol.DefnSym])
 
   case class CompilationUnit(uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation)
 
@@ -141,9 +141,11 @@ object WeededAst {
 
     case class RecordRestrict(field: Name.Field, rest: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class ArrayLit(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class New(qname: Name.QName, exp: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class ArrayNew(elm: WeededAst.Expression, len: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class ArrayLit(exps: List[WeededAst.Expression], exp: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+
+    case class ArrayNew(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class ArrayLoad(base: WeededAst.Expression, index: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -153,7 +155,7 @@ object WeededAst {
 
     case class ArraySlice(base: WeededAst.Expression, beginIndex: WeededAst.Expression, endIndex: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Ref(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Ref(exp1: WeededAst.Expression, exp2: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class Deref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 

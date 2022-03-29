@@ -241,7 +241,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
 
     case Request.Check(id) => processCheck(id)
 
-    case Request.Codelens(id, uri) => processCodelens(id, uri)
+    case Request.Codelens(id, uri) =>
+      ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, root)
 
     case Request.Complete(id, uri, pos) => processComplete(id, uri, pos)
 
@@ -316,7 +317,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
           // println(s"lsp/check: ${e / 1_000_000}ms")
 
           // Compute Code Quality hints.
-          val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix)
+          val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
           if (codeHints.isEmpty) {
             // Case 1: No code hints.
             ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)
@@ -341,43 +342,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress("l
         t.printStackTrace(System.err)
         ("id" -> requestId) ~ ("status" -> "failure")
     }
-  }
-
-  /**
-    * Processes a codelens request.
-    */
-  private def processCodelens(requestId: String, uri: String)(implicit ws: WebSocket): JValue = {
-    /**
-      * Returns a code lens for main (if present).
-      */
-    def mkCodeLensForMain(): List[CodeLens] = {
-      if (root == null) {
-        return Nil
-      }
-
-      val main = Symbol.Main
-      root.defs.get(main) match {
-        case Some(defn) if matchesUri(uri, defn.sym.loc) =>
-          val runMain = Command("Run", "flix.runMain", Nil)
-          val runMainWithArgs = Command("Run with args...", "flix.runMainWithArgs", Nil)
-          val runMainNewTerminal = Command("Run (in new terminal)", "flix.runMainNewTerminal", Nil)
-          val runMainNewTerminalWithArgs = Command("Run with args... (in new terminal)", "flix.runMainNewTerminalWithArgs", Nil)
-          val loc = defn.sym.loc
-          List(
-            CodeLens(Range.from(loc), Some(runMain)),
-            CodeLens(Range.from(loc), Some(runMainWithArgs)),
-            CodeLens(Range.from(loc), Some(runMainNewTerminal)),
-            CodeLens(Range.from(loc), Some(runMainNewTerminalWithArgs))
-          )
-        case _ => Nil
-      }
-    }
-
-    //
-    // Compute all code lenses.
-    //
-    val allCodeLenses = mkCodeLensForMain()
-    ("id" -> requestId) ~ ("status" -> "success") ~ ("result" -> JArray(allCodeLenses.map(_.toJSON)))
   }
 
   /**

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.debug
+package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.language.ast.TypedAst
 

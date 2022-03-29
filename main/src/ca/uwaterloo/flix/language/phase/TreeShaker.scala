@@ -63,9 +63,9 @@ object TreeShaker {
     var reachable: Set[Symbol.DefnSym] = root.reachable
 
     //
-    // (a) The main function is always reachable.
+    // (a) The main function is always reachable (if it exists).
     //
-    reachable = reachable + Symbol.Main
+    reachable = reachable ++ root.entryPoint.toList
 
     //
     // (b) A function annotated with @benchmark or @test is always reachable.

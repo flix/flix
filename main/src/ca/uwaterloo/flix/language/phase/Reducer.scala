@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Expression
-import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Symbol}
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Expression, Occur}
+import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Purity, Symbol}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.Validation
 
@@ -53,7 +53,7 @@ object Reducer {
     }
 
     // Reassemble the ast root.
-    val result = LiftedAst.Root(defs, enums, root.reachable, root.sources)
+    val result = LiftedAst.Root(defs, enums, root.entryPoint, root.reachable, root.sources)
 
     result.toSuccess
   }
@@ -169,18 +169,23 @@ object Reducer {
       LiftedAst.Expression.JumpTo(sym, tpe, loc)
 
     case Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
-      // Visit the value expression.
-      val e1 = visitExp(exp1, env0)
+      // If `e1` is unused (dead) and has no side effects (pure), visit `e2` and remove `e1`
+      if (occur == Occur.Dead && purity == Purity.Pure) {
+        visitExp(exp2, env0)
+      } else {
+        // Visit the value expression.
+        val e1 = visitExp(exp1, env0)
 
-      // Check for copy propagation: let x = y; e ~~> e[x -> y]
-      e1 match {
-        case LiftedAst.Expression.Var(srcSym, _, _) =>
-          // The srcSym might itself originate from some other symbol.
-          val originalSym = env0.getOrElse(srcSym, srcSym)
-          visitExp(exp2, env0 + (sym -> originalSym))
-        case _ =>
-          val e2 = visitExp(exp2, env0)
-          LiftedAst.Expression.Let(sym, e1, e2, tpe, purity, loc)
+        // Check for copy propagation: let x = y; e ~~> e[x -> y]
+        e1 match {
+          case LiftedAst.Expression.Var(srcSym, _, _) =>
+            // The srcSym might itself originate from some other symbol.
+            val originalSym = env0.getOrElse(srcSym, srcSym)
+            visitExp(exp2, env0 + (sym -> originalSym))
+          case _ =>
+            val e2 = visitExp(exp2, env0)
+            LiftedAst.Expression.Let(sym, e1, e2, tpe, purity, loc)
+        }
       }
 
     case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
@@ -205,7 +210,7 @@ object Reducer {
       LiftedAst.Expression.Index(b, offset, tpe, loc)
 
     case Expression.Tuple(elms, tpe, loc) =>
-      val es = elms.map (visitExp(_, env0))
+      val es = elms.map(visitExp(_, env0))
       LiftedAst.Expression.Tuple(es, tpe, loc)
 
     case Expression.RecordEmpty(tpe, loc) =>
@@ -225,7 +230,7 @@ object Reducer {
       LiftedAst.Expression.RecordRestrict(field, r, tpe, loc)
 
     case Expression.ArrayLit(elms, tpe, loc) =>
-      val es = elms.map (visitExp(_, env0))
+      val es = elms.map(visitExp(_, env0))
       LiftedAst.Expression.ArrayLit(es, tpe, loc)
 
     case Expression.ArrayNew(elm, len, tpe, loc) =>
@@ -281,7 +286,7 @@ object Reducer {
       LiftedAst.Expression.TryCatch(e, rs, tpe, loc)
 
     case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
-      val as = args.map (visitExp(_, env0))
+      val as = args.map(visitExp(_, env0))
       LiftedAst.Expression.InvokeConstructor(constructor, as, tpe, loc)
 
     case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
@@ -350,5 +355,4 @@ object Reducer {
 
     case Expression.MatchError(tpe, loc) => LiftedAst.Expression.MatchError(tpe, loc)
   }
-
 }

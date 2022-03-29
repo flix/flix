@@ -61,11 +61,11 @@ class Flix {
   /**
     * A cache of compiled ASTs (for incremental compilation).
     */
-  private var cachedParsedAst: ParsedAst.Root = ParsedAst.Root(Map.empty)
-  private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, Set.empty)
-  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, Map.empty)
-  private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, Set.empty, Map.empty)
-  private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, Map.empty, Map.empty)
+  private var cachedParsedAst: ParsedAst.Root = ParsedAst.Root(Map.empty, None)
+  private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, None, Set.empty)
+  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
+  private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Set.empty, Map.empty)
+  private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty, Map.empty)
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -441,7 +441,7 @@ class Flix {
   /**
     * Compiles the Flix program and returns a typed ast.
     */
-  def check(): Validation[TypedAst.Root, CompilationMessage] = {
+  def check(): Validation[TypedAst.Root, CompilationMessage] = try {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
@@ -451,10 +451,13 @@ class Flix {
     // Reset the phase information.
     phaseTimers = ListBuffer.empty
 
+    // The default entry point
+    val entryPoint = flix.options.entryPoint
+
     // The compiler pipeline.
     val result = for {
       afterReader <- Reader.run(getInputs)
-      afterParser <- Parser.run(afterReader, cachedParsedAst, changeSet)
+      afterParser <- Parser.run(afterReader, entryPoint, cachedParsedAst, changeSet)
       afterWeeder <- Weeder.run(afterParser, cachedWeededAst, changeSet)
       afterNamer <- Namer.run(afterWeeder)
       afterResolver <- Resolver.run(afterNamer, cachedResolvedAst, changeSet)
@@ -487,12 +490,16 @@ class Flix {
 
     // Return the result.
     result
+  } catch {
+    case ex: InternalCompilerException =>
+      CrashHandler.handleCrash(ex)(this)
+      throw ex
   }
 
   /**
     * Compiles the given typed ast to an executable ast.
     */
-  def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = {
+  def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = try {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
@@ -524,6 +531,10 @@ class Flix {
 
     // Return the result.
     result
+  } catch {
+    case ex: InternalCompilerException =>
+      CrashHandler.handleCrash(ex)(this)
+      throw ex
   }
 
   /**

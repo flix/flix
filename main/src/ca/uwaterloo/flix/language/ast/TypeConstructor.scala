@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.{Kinder, Resolver}
+import ca.uwaterloo.flix.language.phase.{Kinder, Resolver, Typer}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -181,6 +181,7 @@ object TypeConstructor {
   /**
     * A type constructor that represent the type of tags.
     */
+  @EliminatedBy(Typer.getClass)
   case class Tag(sym: Symbol.EnumSym, tag: Name.Tag) extends TypeConstructor {
     /**
       * The shape of a tag is "like" a function `caseType` -> (`resultType`) -> *.

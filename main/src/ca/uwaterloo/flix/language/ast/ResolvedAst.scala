@@ -29,6 +29,7 @@ object ResolvedAst {
                   enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
                   typealiases: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias],
                   taOrder: List[Symbol.TypeAliasSym],
+                  entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
@@ -127,9 +128,9 @@ object ResolvedAst {
 
     case class RecordRestrict(field: Name.Field, rest: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArrayLit(elms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
+    case class ArrayLit(exps: List[ResolvedAst.Expression], exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArrayNew(elm: ResolvedAst.Expression, len: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ArrayNew(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, exp3: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class ArrayLoad(base: ResolvedAst.Expression, index: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 

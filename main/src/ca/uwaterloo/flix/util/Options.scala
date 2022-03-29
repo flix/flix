@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.language.ast.Symbol
+
 import java.nio.file.Path
 
 object Options {
@@ -26,6 +28,7 @@ object Options {
     lib = LibLevel.All,
     debug = false,
     documentor = false,
+    entryPoint = Some(Symbol.mkDefnSym("main")),
     explain = false,
     incremental = true,
     json = false,
@@ -67,6 +70,8 @@ object Options {
   * @param lib                selects the level of libraries to include.
   * @param debug              enables the emission of debugging information.
   * @param documentor         enables generation of flixdoc.
+  * @param entryPoint         specifies the main entry point.
+  * @param explain            enables additional explanations.
   * @param json               enable json output.
   * @param output             the optional output directory where to place JVM bytecode.
   * @param progress           print progress during compilation.
@@ -81,6 +86,7 @@ object Options {
 case class Options(lib: LibLevel,
                    debug: Boolean,
                    documentor: Boolean,
+                   entryPoint: Option[Symbol.DefnSym],
                    explain: Boolean,
                    incremental: Boolean,
                    json: Boolean,

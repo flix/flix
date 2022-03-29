@@ -2600,4 +2600,44 @@ def distinctWith09(): Bool =
     def toMutDeque05(): Bool & Impure =
         List.toMutDeque(1 :: 2 :: 3 :: Nil) |> MutDeque.toList == 1 :: 2 :: 3 :: Nil
 
+    /////////////////////////////////////////////////////////////////////////////
+    // merge                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def merge01(): Bool =
+        let l1 = Nil: List[Int32];
+        let l2 = Nil: List[Int32];
+        List.merge(l1, l2) == Nil
+
+    @test
+    def merge02(): Bool =
+        let l1 = 1 :: Nil;
+        let l2 = Nil: List[Int32];
+        List.merge(l1, l2) == 1 :: Nil
+
+    @test
+    def merge03(): Bool =
+        let l1 = 1 :: Nil;
+        let l2 = 2 :: Nil;
+        List.merge(l1, l2) == 1 :: 2 :: Nil
+
+    @test
+    def merge04(): Bool =
+        let l1 = 2 :: Nil;
+        let l2 = 1 :: Nil;
+        List.merge(l1, l2) == 1 :: 2 :: Nil
+
+    @test
+    def merge05(): Bool =
+        let l1 = 1 :: 4 :: 8 :: 10 :: Nil;
+        let l2 = 2 :: 3 :: 8 :: 9 :: Nil;
+        List.merge(l1, l2) == 1 :: 2 :: 3 :: 4 :: 8 :: 8 :: 9 :: 10 :: Nil
+
+    @test
+    def merge06(): Bool =
+        let l1 = 4 :: 5 :: Nil;
+        let l2 = 2 :: 3 :: 6 :: 7 :: Nil;
+        List.merge(l1, l2) == 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: Nil
+
 }

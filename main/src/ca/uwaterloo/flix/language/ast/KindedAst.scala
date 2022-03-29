@@ -29,6 +29,7 @@ object KindedAst {
                   defs: Map[Symbol.DefnSym, KindedAst.Def],
                   enums: Map[Symbol.EnumSym, KindedAst.Enum],
                   typeAliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias],
+                  entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
@@ -118,7 +119,7 @@ object KindedAst {
 
     case class Tuple(elms: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 
-    case class RecordEmpty(tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class RecordEmpty(loc: SourceLocation) extends KindedAst.Expression
 
     case class RecordSelect(exp: KindedAst.Expression, field: Name.Field, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
@@ -126,9 +127,9 @@ object KindedAst {
 
     case class RecordRestrict(field: Name.Field, rest: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class ArrayLit(elms: List[KindedAst.Expression], tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class ArrayLit(exps: List[KindedAst.Expression], exp: KindedAst.Expression, tvar: Type.KindedVar, evar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class ArrayNew(elm: KindedAst.Expression, len: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class ArrayNew(exp1: KindedAst.Expression, exp2: KindedAst.Expression, exp3: KindedAst.Expression, tvar: Type.KindedVar, evar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class ArrayLoad(base: KindedAst.Expression, index: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 

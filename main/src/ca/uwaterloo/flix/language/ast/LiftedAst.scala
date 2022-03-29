@@ -24,6 +24,7 @@ object LiftedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, LiftedAst.Def],
                   enums: Map[Symbol.EnumSym, LiftedAst.Enum],
+                  entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 

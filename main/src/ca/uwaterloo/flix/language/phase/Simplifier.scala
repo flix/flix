@@ -152,13 +152,16 @@ object Simplifier {
         val r = visitExp(rest)
         SimplifiedAst.Expression.RecordRestrict(field, r, tpe, loc)
 
-      case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) =>
-        SimplifiedAst.Expression.ArrayLit(elms map visitExp, tpe, loc)
+      case TypedAst.Expression.ArrayLit(exps, _, tpe, eff, loc) =>
+        // Note: The region expression is erased.
+        val es = exps.map(visitExp)
+        SimplifiedAst.Expression.ArrayLit(es, tpe, loc)
 
-      case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) =>
-        val e = visitExp(elm)
-        val ln = visitExp(len)
-        SimplifiedAst.Expression.ArrayNew(e, ln, tpe, loc)
+      case TypedAst.Expression.ArrayNew(exp1, exp2, _, tpe, eff, loc) =>
+        // Note: The region expression is erased.
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        SimplifiedAst.Expression.ArrayNew(e1, e2, tpe, loc)
 
       case TypedAst.Expression.ArrayLoad(base, index, tpe, eff, loc) =>
         val b = visitExp(base)
@@ -182,7 +185,7 @@ object Simplifier {
         SimplifiedAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
 
       case TypedAst.Expression.Ref(exp, _, tpe, eff, loc) =>
-        // Note: The region parameter is erased.
+        // Note: The region expression is erased.
         val e = visitExp(exp)
         SimplifiedAst.Expression.Ref(e, tpe, loc)
 
@@ -811,9 +814,8 @@ object Simplifier {
         val sAnn = Ast.Annotations(ann.map(a => a.name))
         k -> SimplifiedAst.Enum(sAnn, mod, sym, cases, enumType, loc)
     }
-    val reachable = root.reachable
 
-    SimplifiedAst.Root(defns ++ toplevel, enums, reachable, root.sources).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, enums, root.entryPoint, root.reachable, root.sources).toSuccess
   }
 
   /**
