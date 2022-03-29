@@ -24,45 +24,70 @@ import org.json4s.JsonDSL._
 object CodeLensProvider {
 
   /**
+    * Represents an entry point.
+    */
+  case class EntryPoint(defn: Def, hasArgs: Boolean)
+
+  /**
     * Processes a codelens request.
     */
   def processCodeLens(uri: String)(implicit index: Index, root: Root): JObject = {
-    //
-    // Compute all code lenses.
-    //
-    val allCodeLenses = mkCodeLensForMain(uri) ::: mkCodeLensesForEntryPoints(uri)
-    ("status" -> "success") ~ ("result" -> JArray(allCodeLenses.map(_.toJSON)))
+    val codeLenses = getRunCodeLenses(uri)
+    ("status" -> "success") ~ ("result" -> JArray(codeLenses.map(_.toJSON)))
   }
 
   /**
     * Returns code lenses for all possible entry points.
     */
-  private def mkCodeLensesForEntryPoints(uri: String)(implicit index: Index, root: Root): List[CodeLens] = {
+  private def getRunCodeLenses(uri: String)(implicit index: Index, root: Root): List[CodeLens] = {
     if (root == null) {
       return Nil
     }
 
-    getAllEntryPoints(uri).map {
-      case defn =>
+    getEntryPoints(uri).flatMap {
+      case EntryPoint(defn, hasArgs) =>
         val args = List(JString(defn.sym.toString))
-        val runMain = Command("Run as Main", "flix.runMain", args)
-        CodeLens(Range.from(defn.spec.loc), Some(runMain))
+        val runMain = Command("Run", "flix.runMain", args)
+        val runMainWithArgs = Command("Run with args...", "flix.runMainWithArgs", args)
+        val runMainNewTerminal = Command("Run (in new terminal)", "flix.runMainNewTerminal", args)
+        val runMainNewTerminalWithArgs = Command("Run with args... (in new terminal)", "flix.runMainNewTerminalWithArgs", args)
+        val range = Range.from(defn.sym.loc)
+
+        if (!hasArgs)
+          List(
+            CodeLens(range, Some(runMain)),
+            CodeLens(range, Some(runMainNewTerminal)),
+          )
+        else
+          List(
+            CodeLens(range, Some(runMainWithArgs)),
+            CodeLens(range, Some(runMainNewTerminalWithArgs))
+          )
     }
   }
 
   /**
     * Returns all entry points in the given `uri`.
     */
-  private def getAllEntryPoints(uri: String)(implicit root: Root): List[Def] = root.defs.foldLeft(List.empty[Def]) {
-    case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPoint(defn.spec) => defn :: acc
+  private def getEntryPoints(uri: String)(implicit root: Root): List[EntryPoint] = root.defs.foldLeft(List.empty[EntryPoint]) {
+    case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPointNoArgs(defn.spec) => EntryPoint(defn, hasArgs = false) :: acc
+    case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPointWithArgs(defn.spec) => EntryPoint(defn, hasArgs = true) :: acc
     case (acc, _) => acc
   }
 
   /**
-    * Returns `true` if the given `spec` is an entry point.
+    * Returns `true` if the given `spec` is an entry point and takes no arguments.
     */
-  private def isEntryPoint(s: Spec): Boolean = s.fparams match {
-    case fparam :: Nil => isUnitType(fparam.tpe) || isStringArray(fparam.tpe)
+  private def isEntryPointNoArgs(s: Spec): Boolean = s.fparams match {
+    case fparam :: Nil => isUnitType(fparam.tpe)
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if the given `spec` is an entry point and takes arguments.
+    */
+  private def isEntryPointWithArgs(s: Spec): Boolean = s.fparams match {
+    case fparam :: Nil => isStringArrayType(fparam.tpe)
     case _ => false
   }
 
@@ -77,38 +102,9 @@ object CodeLensProvider {
   /**
     * Returns `true` if the given type `tpe` is the Array[String] type.
     */
-  private def isStringArray(tpe: Type): Boolean = tpe.typeConstructor match {
+  private def isStringArrayType(tpe: Type): Boolean = tpe.typeConstructor match {
     case Some(TypeConstructor.ScopedArray) => true
     case _ => false
-  }
-
-  /**
-    * Returns a code lens for main (if present).
-    */
-  private def mkCodeLensForMain(uri: String)(implicit index: Index, root: Root): List[CodeLens] = {
-    if (root == null) {
-      return Nil
-    }
-
-    root.entryPoint match {
-      case None => Nil
-      case Some(sym) =>
-        root.defs.get(sym) match {
-          case Some(defn) if matchesUri(uri, defn.sym.loc) =>
-            val runMain = Command("Run", "flix.runMain", Nil)
-            val runMainWithArgs = Command("Run with args...", "flix.runMainWithArgs", Nil)
-            val runMainNewTerminal = Command("Run (in new terminal)", "flix.runMainNewTerminal", Nil)
-            val runMainNewTerminalWithArgs = Command("Run with args... (in new terminal)", "flix.runMainNewTerminalWithArgs", Nil)
-            val loc = defn.sym.loc
-            List(
-              CodeLens(Range.from(loc), Some(runMain)),
-              CodeLens(Range.from(loc), Some(runMainWithArgs)),
-              CodeLens(Range.from(loc), Some(runMainNewTerminal)),
-              CodeLens(Range.from(loc), Some(runMainNewTerminalWithArgs))
-            )
-          case _ => Nil
-        }
-    }
   }
 
   /**
