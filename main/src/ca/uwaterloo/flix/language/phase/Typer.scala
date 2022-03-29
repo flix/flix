@@ -177,12 +177,13 @@ object Typer {
     * Performs type inference and reassembly on the given Spec `spec`.
     */
   private def visitSpec(spec: KindedAst.Spec, root: KindedAst.Root, subst: Substitution)(implicit flix: Flix): Validation[TypedAst.Spec, TypeError] = spec match {
-    case KindedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc, tpe, eff, loc) =>
+    case KindedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, tpe, eff, loc) =>
       val annVal = visitAnnotations(ann0, root)
+      val scVal = visitScheme(sc0)
       val tparams = getTypeParams(tparams0)
       val fparams = getFormalParams(fparams0, subst)
-      Validation.mapN(annVal) {
-        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, loc)
+      Validation.mapN(annVal, scVal) {
+        case (ann, sc) => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, loc)
       }
   }
 
@@ -209,6 +210,30 @@ object Typer {
         }
       }
     }
+
+  // MATT docs
+  private def visitScheme(sc: KindedAst.Scheme)(implicit flix: Flix): Validation[Scheme, TypeError] = sc match {
+    case KindedAst.Scheme(quants0, tconstrs0, base0, cond) =>
+      // Unify the side condition with True
+      unifyTypes(cond, Type.True) match {
+
+        // Case 1: The side condition is satisfiable
+        case Ok(subst) =>
+
+          // Apply the substitution to the scheme
+          val tconstrs = tconstrs0.map(subst.apply)
+          val base = subst(base0)
+
+          // Remove any tvars that are eliminated by the substitution
+          val remainingTvars = base.typeVars ++ tconstrs.flatMap(_.arg.typeVars)
+          val quants = quants0.filter(remainingTvars.contains)
+          Scheme(quants, tconstrs, base).toSuccess
+
+        // Case 2: The side condition is not satisfiable.
+        case Err(e) =>
+          ??? // MATT unsatisfiable side condition error
+      }
+  }
 
   /**
     * Infers the type of the given definition `defn0`.
