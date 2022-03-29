@@ -801,7 +801,7 @@ object Redundancy {
     * Returns `true` if the given symbol `sym` either is `main` or is an entry point.
     */
   private def isMain(sym: Symbol.DefnSym)(implicit root: Root): Boolean =
-    sym.toString == "Main" || root.entryPoint.contains(sym)
+    sym.toString == "main" || root.entryPoint.contains(sym)
 
   /**
     * Returns `true` if the given `tag` is unused according to the `usedTags`.
