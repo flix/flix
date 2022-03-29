@@ -53,7 +53,7 @@ object Typer {
     Validation.mapN(classesVal, instancesVal, defsVal, enumsVal) {
       case (classes, instances, defs, enums) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
-        TypedAst.Root(classes, instances, sigs, defs, enums, typeAliases, root.reachable, root.sources, classEnv)
+        TypedAst.Root(classes, instances, sigs, defs, enums, typeAliases, root.entryPoint, root.reachable, root.sources, classEnv)
     }
   }
 
@@ -138,7 +138,7 @@ object Typer {
 
       for {
         // check the main signature before typechecking the def
-        _ <- checkMain(defn, classEnv)
+        _ <- checkMain(defn, root, classEnv)
         res <- typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv, sym.loc)
         (spec, exp) = res
       } yield TypedAst.Def(sym, spec, exp)
@@ -147,8 +147,8 @@ object Typer {
   /**
     * Checks that, if the function is a main function, it has the right type scheme.
     */
-  private def checkMain(defn: KindedAst.Def, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, TypeError] = {
-    if (!defn.sym.isMain) {
+  private def checkMain(defn: KindedAst.Def, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, TypeError] = {
+    if (!root.entryPoint.contains(defn.sym)) {
       return ().toSuccess
     }
 

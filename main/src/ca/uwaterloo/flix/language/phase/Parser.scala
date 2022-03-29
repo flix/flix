@@ -34,7 +34,7 @@ object Parser {
   /**
     * Parses the given source inputs into an abstract syntax tree.
     */
-  def run(root: Map[Source, Unit], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] =
+  def run(root: Map[Source, Unit], entryPoint: Option[Symbol.DefnSym], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] =
     flix.phase("Parser") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root, oldRoot.units)
@@ -48,8 +48,7 @@ object Parser {
           val m = as.foldLeft(fresh) {
             case (acc, (src, u)) => acc + (src -> u)
           }
-
-          ParsedAst.Root(m)
+          ParsedAst.Root(m, entryPoint)
       }
     }
 

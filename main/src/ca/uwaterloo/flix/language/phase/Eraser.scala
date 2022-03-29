@@ -27,9 +27,8 @@ object Eraser {
   def run(root: FinalAst.Root)(implicit flix: Flix): Validation[ErasedAst.Root, CompilationMessage] = flix.phase("Eraser") {
     val defs = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
-    val reachable = root.reachable
 
-    ErasedAst.Root(defs, enums, reachable, root.sources).toSuccess
+    ErasedAst.Root(defs, enums, root.entryPoint, root.reachable, root.sources).toSuccess
   }
 
   /**

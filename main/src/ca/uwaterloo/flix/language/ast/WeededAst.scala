@@ -22,7 +22,7 @@ import scala.collection.immutable.List
 
 object WeededAst {
 
-  case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], reachable: Set[Symbol.DefnSym])
+  case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym], reachable: Set[Symbol.DefnSym])
 
   case class CompilationUnit(uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation)
 
