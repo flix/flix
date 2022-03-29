@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Index, Range}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Root, Spec}
-import org.json4s.JsonAST.{JArray, JObject}
+import org.json4s.JsonAST.{JArray, JObject, JString}
 import org.json4s.JsonDSL._
 
 object CodeLensProvider {
@@ -44,7 +44,8 @@ object CodeLensProvider {
 
     getAllEntryPoints(uri).map {
       case defn =>
-        val runMain = Command("Run TODO", "flix.runMain", Nil) // TODO
+        val args = List(JString(defn.sym.toString))
+        val runMain = Command("Run TODO", "flix.runMain", args)
         CodeLens(Range.from(defn.spec.loc), Some(runMain))
     }
   }
