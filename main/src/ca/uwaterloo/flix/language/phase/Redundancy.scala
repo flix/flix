@@ -792,7 +792,7 @@ object Redundancy {
   private def deadDef(decl: Def, used: Used)(implicit root: Root): Boolean =
     !isTest(decl.spec.ann) &&
       !decl.spec.mod.isPublic &&
-      !decl.sym.isMain &&
+      !root.entryPoint.contains(decl.sym) &&
       !decl.sym.name.startsWith("_") &&
       !used.defSyms.contains(decl.sym) &&
       !root.reachable.contains(decl.sym)

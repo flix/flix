@@ -23,9 +23,10 @@ object ParsedAst {
   /**
     * A collection of abstract syntax trees.
     *
-    * @param units the abstract syntax trees of the parsed compilation units.
+    * @param units      the abstract syntax trees of the parsed compilation units.
+    * @param entryPoint the optional entry point.
     */
-  case class Root(units: Map[Ast.Source, ParsedAst.CompilationUnit])
+  case class Root(units: Map[Ast.Source, ParsedAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym])
 
   /**
     * A compilation unit (i.e. a source file).

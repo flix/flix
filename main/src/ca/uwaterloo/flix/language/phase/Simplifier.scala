@@ -814,9 +814,8 @@ object Simplifier {
         val sAnn = Ast.Annotations(ann.map(a => a.name))
         k -> SimplifiedAst.Enum(sAnn, mod, sym, cases, enumType, loc)
     }
-    val reachable = root.reachable
 
-    SimplifiedAst.Root(defns ++ toplevel, enums, reachable, root.sources).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, enums, root.entryPoint, root.reachable, root.sources).toSuccess
   }
 
   /**
