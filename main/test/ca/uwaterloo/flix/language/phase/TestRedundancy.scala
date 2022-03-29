@@ -602,6 +602,33 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
+  test("UnusedVarSym.LetRec.01") {
+    val input =
+      """
+        |pub def f(): Bool =
+        |    def g() = if (true) g() else false;
+        |    true
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.LetRec.02") {
+    val input =
+      """
+        |pub def f(): Bool =
+        |    def g() = {
+        |        def h() = {
+        |            if (true) g() else h()
+        |        };
+        |        if (true) g() else h()
+        |    };
+        |    true
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
   test("UnusedVarSym.Pattern.01") {
     val input =
       s"""
@@ -923,4 +950,15 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.IllegalSingleVariable](result)
   }
 
+  test("UnusedDefSym.01") {
+    val input = "def foo(): Bool = true"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedDefSym](result)
+  }
+
+  test("UnusedDefSym.Recursive.01") {
+    val input = "def foo(): Bool = if (true) foo() else false"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedDefSym](result)
+  }
 }
