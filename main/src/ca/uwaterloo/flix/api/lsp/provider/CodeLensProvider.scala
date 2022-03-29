@@ -23,8 +23,10 @@ import org.json4s.JsonDSL._
 
 object CodeLensProvider {
 
-  // TODO: Doc
-  case class EntryPoint(defn: Def, withArgs: Boolean)
+  /**
+    * Represents an entry point.
+    */
+  case class EntryPoint(defn: Def, hasArgs: Boolean)
 
   /**
     * Processes a codelens request.
@@ -43,7 +45,7 @@ object CodeLensProvider {
     }
 
     getEntryPoints(uri).flatMap {
-      case EntryPoint(defn, withArgs) =>
+      case EntryPoint(defn, hasArgs) =>
         val args = List(JString(defn.sym.toString))
         val runMain = Command("Run", "flix.runMain", args)
         val runMainWithArgs = Command("Run with args...", "flix.runMainWithArgs", args)
@@ -51,7 +53,7 @@ object CodeLensProvider {
         val runMainNewTerminalWithArgs = Command("Run with args... (in new terminal)", "flix.runMainNewTerminalWithArgs", args)
         val range = Range.from(defn.sym.loc)
 
-        if (!withArgs)
+        if (!hasArgs)
           List(
             CodeLens(range, Some(runMain)),
             CodeLens(range, Some(runMainNewTerminal)),
@@ -70,16 +72,16 @@ object CodeLensProvider {
     * Returns all entry points in the given `uri`.
     */
   private def getEntryPoints(uri: String)(implicit root: Root): List[EntryPoint] = root.defs.foldLeft(List.empty[EntryPoint]) {
-    case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPointWithNoArgs(defn.spec) => EntryPoint(defn, withArgs = false) :: acc
-    case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPointWithArgs(defn.spec) => EntryPoint(defn, withArgs = true) :: acc
+    case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPointNoArgs(defn.spec) => EntryPoint(defn, hasArgs = false) :: acc
+    case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPointWithArgs(defn.spec) => EntryPoint(defn, hasArgs = true) :: acc
     case (acc, _) => acc
   }
 
   /**
     * Returns `true` if the given `spec` is an entry point and takes no arguments.
     */
-  private def isEntryPointWithNoArgs(s: Spec): Boolean = s.fparams match {
-    case fparam :: Nil => isUnitType(fparam.tpe) || isStringArray(fparam.tpe)
+  private def isEntryPointNoArgs(s: Spec): Boolean = s.fparams match {
+    case fparam :: Nil => isUnitType(fparam.tpe)
     case _ => false
   }
 
@@ -87,7 +89,7 @@ object CodeLensProvider {
     * Returns `true` if the given `spec` is an entry point and takes arguments.
     */
   private def isEntryPointWithArgs(s: Spec): Boolean = s.fparams match {
-    case fparam :: Nil => isUnitType(fparam.tpe) || isStringArray(fparam.tpe)
+    case fparam :: Nil => isStringArrayType(fparam.tpe)
     case _ => false
   }
 
@@ -102,8 +104,8 @@ object CodeLensProvider {
   /**
     * Returns `true` if the given type `tpe` is the Array[String] type.
     */
-  private def isStringArray(tpe: Type): Boolean = tpe.typeConstructor match {
-    case Some(TypeConstructor.ScopedArray) => tpe.typeArguments.headOption.contains(Type.Str)
+  private def isStringArrayType(tpe: Type): Boolean = tpe.typeConstructor match {
+    case Some(TypeConstructor.ScopedArray) => true // TODO
     case _ => false
   }
 
