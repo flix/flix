@@ -26,11 +26,6 @@ import java.util.Objects
 object Symbol {
 
   /**
-    * The main symbol.
-    */
-  val Main: Symbol.DefnSym = Symbol.mkDefnSym("main")
-
-  /**
     * Returns a fresh def symbol based on the given symbol.
     */
   def freshDefnSym(sym: DefnSym)(implicit flix: Flix): DefnSym = {

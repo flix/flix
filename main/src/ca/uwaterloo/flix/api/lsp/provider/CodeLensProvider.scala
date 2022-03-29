@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Index, Range}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Root, Spec}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
 import org.json4s.JsonAST.{JArray, JObject, JString}
 import org.json4s.JsonDSL._
 
@@ -90,21 +90,24 @@ object CodeLensProvider {
       return Nil
     }
 
-    val main = Symbol.Main
-    root.defs.get(main) match {
-      case Some(defn) if matchesUri(uri, defn.sym.loc) =>
-        val runMain = Command("Run", "flix.runMain", Nil)
-        val runMainWithArgs = Command("Run with args...", "flix.runMainWithArgs", Nil)
-        val runMainNewTerminal = Command("Run (in new terminal)", "flix.runMainNewTerminal", Nil)
-        val runMainNewTerminalWithArgs = Command("Run with args... (in new terminal)", "flix.runMainNewTerminalWithArgs", Nil)
-        val loc = defn.sym.loc
-        List(
-          CodeLens(Range.from(loc), Some(runMain)),
-          CodeLens(Range.from(loc), Some(runMainWithArgs)),
-          CodeLens(Range.from(loc), Some(runMainNewTerminal)),
-          CodeLens(Range.from(loc), Some(runMainNewTerminalWithArgs))
-        )
-      case _ => Nil
+    root.entryPoint match {
+      case None => Nil
+      case Some(sym) =>
+        root.defs.get(sym) match {
+          case Some(defn) if matchesUri(uri, defn.sym.loc) =>
+            val runMain = Command("Run", "flix.runMain", Nil)
+            val runMainWithArgs = Command("Run with args...", "flix.runMainWithArgs", Nil)
+            val runMainNewTerminal = Command("Run (in new terminal)", "flix.runMainNewTerminal", Nil)
+            val runMainNewTerminalWithArgs = Command("Run with args... (in new terminal)", "flix.runMainNewTerminalWithArgs", Nil)
+            val loc = defn.sym.loc
+            List(
+              CodeLens(Range.from(loc), Some(runMain)),
+              CodeLens(Range.from(loc), Some(runMainWithArgs)),
+              CodeLens(Range.from(loc), Some(runMainNewTerminal)),
+              CodeLens(Range.from(loc), Some(runMainNewTerminalWithArgs))
+            )
+          case _ => Nil
+        }
     }
   }
 
