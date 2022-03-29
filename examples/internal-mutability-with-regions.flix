@@ -8,23 +8,19 @@ def deduplicate(l: List[a]): List[a] with Order[a] =
     region r {
 
         /// Create a new `MutSet` at region `r`.
-        let m = new MutSet(r);
+        /// This will be used to keep track of
+        /// unique elements in `l`.
+        let s = new MutSet(r);
 
-        /// Add all elements in `l` to `m`.
-        List.foreach(x -> MutSet.add!(x, m), l);
-
-        /// The following lambda would be
-        /// impure without a region.
+        /// The lambda used in the call to `filter`
+        /// would be impure without a region.
         List.filter(x -> {
-
-            /// Check if `x` is member of `m`.
-            let p = MutSet.memberOf(x, m);
-
-            /// If `x` is member of `m` then
-            /// remove it so no more elements
-            /// equal to `x` are added to the list.
-            if (p) MutSet.remove!(x, m) else ();
-            p
+            if (MutSet.memberOf(x, s))
+                false // `x` has already been seen.
+            else {
+                MutSet.add!(x, s);
+                true
+            }
         }, l)
     }
 
