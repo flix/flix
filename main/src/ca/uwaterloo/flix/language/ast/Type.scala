@@ -503,7 +503,6 @@ object Type {
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
   def freshVar(k: Kind, loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.KindedVar = {
-    // MATT consider difference between Symbol loc and Var loc
     val sym = Symbol.freshTypeVarSym(text, loc)
     Type.KindedVar(sym, k, loc, r, text)
   }
@@ -512,7 +511,6 @@ object Type {
     * Returns a fresh unkinded type variable of the given kind `k` and rigidity `r`.
     */
   def freshUnkindedVar(loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.UnkindedVar = {
-    // MATT consider difference between Symbol loc and Var loc
     val sym = Symbol.freshTypeVarSym(text, loc)
     Type.UnkindedVar(sym, loc, r, text)
   }

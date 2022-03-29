@@ -70,7 +70,9 @@ object Symbol {
     new VarSym(flix.genSym.freshId(), text, Type.freshUnkindedVar(loc), boundBy, loc)
   }
 
-  // MATT docs
+  /**
+    * Returns a fresh type variable symbol with the given text.
+    */
   def freshTypeVarSym(text: Option[String], loc: SourceLocation)(implicit flix: Flix): TypeVarSym = {
     new TypeVarSym(flix.genSym.freshId(), text, loc)
   }
@@ -214,22 +216,37 @@ object Symbol {
     override def toString: String = text + Flix.Delimiter + id
   }
 
-  // MATT docs
-  // MATT include kind?
-  // MATT rigidity?
-  // MATT toString
+  /**
+    * Type variable symbol.
+    *
+    * @param id   globally unique identifier of the symbol
+    * @param text optional name of the symbol
+    * @param loc  location of the symbol's declaration
+    */
   final class TypeVarSym(val id: Int, val text: Option[String], val loc: SourceLocation) extends Sourceable with Locatable {
+
     /**
       * Returns the source of `this`.
       */
     override def src: Ast.Source = loc.source
 
+    /**
+      * Returns true iff this symbol equals `that`
+      */
     override def equals(that: Any): Boolean = that match {
       case sym: TypeVarSym => this.id == sym.id
       case _ => false
     }
 
+    /**
+      * Returns a hashcode for the symbol.
+      */
     override def hashCode(): Int = id
+
+    /**
+      * Returns a string representation of the symbol.
+      */
+    override def toString: String = text.getOrElse("tvar") + Flix.Delimiter + id
   }
 
   /**
