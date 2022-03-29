@@ -68,16 +68,16 @@ object CodeLensProvider {
   /**
     * Returns `true` if the given type `tpe` is the Unit type.
     */
-  private def isUnitType(tpe: Type): Boolean = tpe match {
-    case Type.Apply(Type.Cst(TypeConstructor.Unit, _), _, _) => true
+  private def isUnitType(tpe: Type): Boolean = tpe.typeConstructor match {
+    case Some(TypeConstructor.Unit) => true
     case _ => false
   }
 
   /**
     * Returns `true` if the given type `tpe` is the Array[String] type.
     */
-  private def isStringArray(tpe: Type): Boolean = tpe match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedArray, _), _, _), _, _) => true
+  private def isStringArray(tpe: Type): Boolean = tpe.typeConstructor match {
+    case Some(TypeConstructor.ScopedArray) => true
     case _ => false
   }
 
