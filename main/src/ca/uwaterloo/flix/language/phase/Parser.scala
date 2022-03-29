@@ -34,7 +34,7 @@ object Parser {
   /**
     * Parses the given source inputs into an abstract syntax tree.
     */
-  def run(root: Map[Source, Unit], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] =
+  def run(root: Map[Source, Unit], entryPoint: Option[Symbol.DefnSym], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] =
     flix.phase("Parser") {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root, oldRoot.units)
@@ -48,8 +48,7 @@ object Parser {
           val m = as.foldLeft(fresh) {
             case (acc, (src, u)) => acc + (src -> u)
           }
-
-          ParsedAst.Root(m)
+          ParsedAst.Root(m, entryPoint)
       }
     }
 
@@ -280,12 +279,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       keyword("Write") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Effect.Write
     }
 
+    def Single: Rule1[ParsedAst.Type] = rule {
+      SP ~ (Var | Read | Write) ~ SP ~> ((sp1: SourcePosition, eff: ParsedAst.Effect, sp2: SourcePosition) => ParsedAst.Type.Union(sp1, Seq(eff), sp2))
+    }
+
     def Union: Rule1[ParsedAst.Type] = rule {
       SP ~ "{" ~ optWS ~ zeroOrMore(Var | Read | Write).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Union
     }
 
     rule {
-      WS ~ "\\" ~ WS ~ Union
+      WS ~ "\\" ~ WS ~ (Single | Union)
     }
   }
 
