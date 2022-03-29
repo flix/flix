@@ -452,7 +452,7 @@ class Flix {
     phaseTimers = ListBuffer.empty
 
     // The default entry point
-    val entryPoint = Some(Symbol.mkDefnSym("main"))
+    val entryPoint = flix.options.entryPoint
 
     // The compiler pipeline.
     val result = for {
