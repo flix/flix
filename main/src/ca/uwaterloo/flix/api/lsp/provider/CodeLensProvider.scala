@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Index, Range}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Root, Spec}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL._
@@ -44,7 +44,7 @@ object CodeLensProvider {
 
     getAllEntryPoints(uri).map {
       case defn =>
-        val runMain = Command("Run", "flix.runMain", Nil)
+        val runMain = Command("Run TODO", "flix.runMain", Nil) // TODO
         CodeLens(Range.from(defn.spec.loc), Some(runMain))
     }
   }
@@ -58,9 +58,28 @@ object CodeLensProvider {
   }
 
   /**
-    * Returns `true` if the given
+    * Returns `true` if the given `spec` is an entry point.
     */
-  private def isEntryPoint(s: Spec): Boolean = s.fparams.isEmpty
+  private def isEntryPoint(s: Spec): Boolean = s.fparams match {
+    case fparam :: Nil => isUnitType(fparam.tpe) || isStringArray(fparam.tpe)
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if the given type `tpe` is the Unit type.
+    */
+  private def isUnitType(tpe: Type): Boolean = tpe match {
+    case Type.Apply(Type.Cst(TypeConstructor.Unit, _), _, _) => true
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if the given type `tpe` is the Array[String] type.
+    */
+  private def isStringArray(tpe: Type): Boolean = tpe match {
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedArray, _), _, _), _, _) => true
+    case _ => false
+  }
 
   /**
     * Returns a code lens for main (if present).
