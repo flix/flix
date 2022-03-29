@@ -45,7 +45,7 @@ object CodeLensProvider {
     getAllEntryPoints(uri).map {
       case defn =>
         val args = List(JString(defn.sym.toString))
-        val runMain = Command("Run TODO", "flix.runMain", args)
+        val runMain = Command("Run as Main", "flix.runMain", args)
         CodeLens(Range.from(defn.spec.loc), Some(runMain))
     }
   }

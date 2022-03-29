@@ -792,10 +792,16 @@ object Redundancy {
   private def deadDef(decl: Def, used: Used)(implicit root: Root): Boolean =
     !isTest(decl.spec.ann) &&
       !decl.spec.mod.isPublic &&
-      !root.entryPoint.contains(decl.sym) &&
+      !isMain(decl.sym) &&
       !decl.sym.name.startsWith("_") &&
       !used.defSyms.contains(decl.sym) &&
       !root.reachable.contains(decl.sym)
+
+  /**
+    * Returns `true` if the given symbol `sym` either is `main` or is an entry point.
+    */
+  private def isMain(sym: Symbol.DefnSym)(implicit root: Root): Boolean =
+    sym.toString == "main" || root.entryPoint.contains(sym)
 
   /**
     * Returns `true` if the given `tag` is unused according to the `usedTags`.
