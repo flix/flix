@@ -1409,6 +1409,7 @@ namespace List {
 
     ///
     /// Merges the two lists `l1` and `l2`. Assuming they are both sorted.
+    /// If two elements compare `EqualTo`, then the element of `l1` is first in the result.
     ///
     pub def merge(l1: List[a], l2: List[a]): List[a] with Order[a] =
         def loop(acc1, acc2, k) = match (acc1, acc2) {
