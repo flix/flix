@@ -73,8 +73,15 @@ object Symbol {
   /**
     * Returns a fresh type variable symbol with the given text.
     */
-  def freshTypeVarSym(text: Option[String], loc: SourceLocation)(implicit flix: Flix): TypeVarSym = {
-    new TypeVarSym(flix.genSym.freshId(), text, loc)
+  def freshKindedTypeVarSym(text: Option[String], kind: Kind, rigidity: Rigidity, loc: SourceLocation)(implicit flix: Flix): KindedTypeVarSym = {
+    new KindedTypeVarSym(flix.genSym.freshId(), text, kind, rigidity, loc)
+  }
+
+  /**
+    * Returns a fresh type variable symbol with the given text.
+    */
+  def freshUnkindedTypeVarSym(text: Option[String], rigidity: Rigidity, loc: SourceLocation)(implicit flix: Flix): UnkindedTypeVarSym = {
+    new UnkindedTypeVarSym(flix.genSym.freshId(), text, rigidity, loc)
   }
 
   /**
@@ -216,37 +223,43 @@ object Symbol {
     override def toString: String = text + Flix.Delimiter + id
   }
 
-  /**
-    * Type variable symbol.
-    *
-    * @param id   globally unique identifier of the symbol
-    * @param text optional name of the symbol
-    * @param loc  location of the symbol's declaration
-    */
-  final class TypeVarSym(val id: Int, val text: Option[String], val loc: SourceLocation) extends Sourceable with Locatable {
+  trait TypeVarSym extends Locatable with Sourceable {
+    val id: Int
+    val text: Option[String]
+    val loc: SourceLocation
+    val rigidity: Rigidity
 
-    /**
-      * Returns the source of `this`.
-      */
     override def src: Ast.Source = loc.source
 
-    /**
-      * Returns true iff this symbol equals `that`
-      */
     override def equals(that: Any): Boolean = that match {
-      case sym: TypeVarSym => this.id == sym.id
+      case tvar: TypeVarSym => this.id == tvar.id
       case _ => false
     }
 
-    /**
-      * Returns a hashcode for the symbol.
-      */
-    override def hashCode(): Int = id
+    override def hashCode: Int = id
 
     /**
       * Returns a string representation of the symbol.
       */
     override def toString: String = text.getOrElse("tvar") + Flix.Delimiter + id
+  }
+
+  /**
+    * Kinded type variable symbol.
+    *
+    */
+  final class KindedTypeVarSym(val id: Int, val text: Option[String], val kind: Kind, val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym
+
+  /**
+    * Unkinded type variable symbol.
+    *
+    */
+  final class UnkindedTypeVarSym(val id: Int, val text: Option[String], val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym {
+
+    /**
+      * Ascribes this UnkindedTypeVarSym with the given kind.
+      */
+    def ascribedWith(k: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, k, rigidity, loc)
   }
 
   /**

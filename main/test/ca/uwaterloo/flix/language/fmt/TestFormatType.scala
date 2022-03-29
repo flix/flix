@@ -24,7 +24,7 @@ class TestFormatType extends FunSuite with TestUtils {
 
   val loc: SourceLocation = SourceLocation.Unknown
 
-  private def mkTvarSym(id: Int): Symbol.TypeVarSym = new Symbol.TypeVarSym(id, None, loc)
+  private def mkTvarSym(id: Int): Symbol.KindedTypeVarSym = new Symbol.KindedTypeVarSym(id, None, Kind.Wild, Rigidity.Flexible, loc)
 
   test("FormatType.Type.Record.External.01") {
     val tpe = Type.mkRecord(Type.mkRecordRowExtend(Name.Field("x", loc), Type.Int32, Type.mkRecordRowExtend(Name.Field("y", loc), Type.Str, Type.RecordRowEmpty, loc), loc), loc)

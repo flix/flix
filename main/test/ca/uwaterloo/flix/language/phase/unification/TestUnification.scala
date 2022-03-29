@@ -29,7 +29,7 @@ class TestUnification extends FunSuite with TestUtils {
 
   val loc: SourceLocation = SourceLocation.Unknown
 
-  def mkTvarSym(id: Int): Symbol.TypeVarSym = new Symbol.TypeVarSym(id, None, loc)
+  private def mkTvarSym(id: Int): Symbol.KindedTypeVarSym = new Symbol.KindedTypeVarSym(id, None, Kind.Wild, Rigidity.Flexible, loc)
 
   /////////////////////////////////////////////////////////////////////////////
   // Substitutions                                                           //

@@ -756,18 +756,10 @@ object Kinder {
         // Case 2: we know about this kind, make sure it's behaving as we expect
         case Some(actualKind) =>
           unify(expectedKind, actualKind) match {
-            case Some(kind) => Type.KindedVar(id, kind, loc, rigidity, text).toSuccess
+            case Some(kind) => Type.KindedVar(id.ascribedWith(kind), kind, loc, rigidity, text).toSuccess
             case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc = loc).toFailure
           }
       }
-  }
-
-  /**
-    * Performs kinding on the given free type variable, with `kindMatch` expected from context.
-    */
-  private def visitFreeTypeVar(tvar: Type.UnkindedVar, expectedKind: Kind): Type.KindedVar = tvar match {
-    case Type.UnkindedVar(id, rigidity, text, loc) =>
-      Type.KindedVar(id, expectedKind, rigidity, text, loc)
   }
 
   /**
