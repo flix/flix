@@ -220,13 +220,6 @@ object Symbol {
   final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Locatable {
 
     /**
-      * Returns `true` if `this` symbol is equal to the main symbol.
-      *
-      * NB: Must use equality because there could be more than once instance of the main symbol.
-      */
-    def isMain: Boolean = this == Symbol.Main
-
-    /**
       * Returns the name of `this` symbol.
       */
     def name: String = id match {
