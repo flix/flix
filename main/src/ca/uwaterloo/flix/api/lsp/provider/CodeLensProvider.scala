@@ -60,9 +60,7 @@ object CodeLensProvider {
           )
         else
           List(
-            CodeLens(range, Some(runMain)),
             CodeLens(range, Some(runMainWithArgs)),
-            CodeLens(range, Some(runMainNewTerminal)),
             CodeLens(range, Some(runMainNewTerminalWithArgs))
           )
     }
@@ -105,7 +103,7 @@ object CodeLensProvider {
     * Returns `true` if the given type `tpe` is the Array[String] type.
     */
   private def isStringArrayType(tpe: Type): Boolean = tpe.typeConstructor match {
-    case Some(TypeConstructor.ScopedArray) => true // TODO
+    case Some(TypeConstructor.ScopedArray) => true
     case _ => false
   }
 
