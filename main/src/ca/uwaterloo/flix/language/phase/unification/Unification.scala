@@ -31,7 +31,7 @@ object Unification {
     if (x.sym == y.sym) {
       Result.Ok(Substitution.empty)
     } else {
-      (x.rigidity, y.rigidity) match {
+      (x.sym.rigidity, y.sym.rigidity) match {
         // Case 1: x is flexible
         case (Rigidity.Flexible, _) => Result.Ok(Substitution.singleton(x, y))
         // Case 2: y is flexible
@@ -51,7 +51,7 @@ object Unification {
       throw InternalCompilerException(s"Unexpected variable type: '$tpe'.")
 
     // Check if `x` is rigid.
-    if (x.rigidity == Rigidity.Rigid) {
+    if (x.sym.rigidity == Rigidity.Rigid) {
       return Result.Err(UnificationError.RigidVar(x, tpe))
     }
 

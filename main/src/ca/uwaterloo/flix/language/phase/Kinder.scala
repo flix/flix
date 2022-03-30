@@ -749,14 +749,14 @@ object Kinder {
     * Performs kinding on the given type variable under the given kind environment, with `expectedKind` expected from context.
     */
   private def visitTypeVar(tvar: Type.UnkindedVar, expectedKind: Kind, kenv: KindEnv): Validation[Type.KindedVar, KindError] = tvar match {
-    case tvar@Type.UnkindedVar(id, loc, rigidity, text) =>
+    case tvar@Type.UnkindedVar(sym, loc) =>
       kenv.map.get(tvar) match {
         // Case 1: we don't know about this kind, just ascribe it with what the context expects
         case None => tvar.ascribedWith(expectedKind).toSuccess
         // Case 2: we know about this kind, make sure it's behaving as we expect
         case Some(actualKind) =>
           unify(expectedKind, actualKind) match {
-            case Some(kind) => Type.KindedVar(id.ascribedWith(kind), kind, loc, rigidity, text).toSuccess
+            case Some(kind) => Type.KindedVar(sym.ascribedWith(kind), loc).toSuccess
             case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc = loc).toFailure
           }
       }

@@ -229,6 +229,16 @@ object Symbol {
     val loc: SourceLocation
     val rigidity: Rigidity
 
+    /**
+      * Returns the same symbol with the given text.
+      */
+    def withText(text: Option[String]): this.type
+
+    /**
+      * Returns the same symbol with the given rigidity.
+      */
+    def withRigidity(rigidity: Rigidity): this.type
+
     override def src: Ast.Source = loc.source
 
     override def equals(that: Any): Boolean = that match {
@@ -248,13 +258,23 @@ object Symbol {
     * Kinded type variable symbol.
     *
     */
-  final class KindedTypeVarSym(val id: Int, val text: Option[String], val kind: Kind, val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym
+  final class KindedTypeVarSym(val id: Int, val text: Option[String], val kind: Kind, val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym {
+
+    override def withText(newText: Option[String]): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, rigidity, loc)
+
+    override def withRigidity(newRigidity: Rigidity): KindedTypeVarSym = new KindedTypeVarSym(id, text, kind, newRigidity, loc)
+
+  }
 
   /**
     * Unkinded type variable symbol.
     *
     */
   final class UnkindedTypeVarSym(val id: Int, val text: Option[String], val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym {
+
+    override def withText(newText: Option[String]): UnkindedTypeVarSym = new UnkindedTypeVarSym(id, newText, rigidity, loc)
+
+    override def withRigidity(newRigidity: Rigidity): UnkindedTypeVarSym = new UnkindedTypeVarSym(id, text, newRigidity, loc)
 
     /**
       * Ascribes this UnkindedTypeVarSym with the given kind.

@@ -179,8 +179,8 @@ object CompleteProvider {
       * with an equivalent variable symbol with the given `newText`.
       */
     def replaceText(tvar: Type.Var, tpe: Type, newText: String): Type = tpe match {
-      case Type.KindedVar(sym, kind, loc, rigidity, text) if tvar.sym == sym => Type.KindedVar(sym, kind, loc, rigidity, Some(newText))
-      case Type.KindedVar(_, _, _, _, _) => tpe
+      case Type.KindedVar(sym, loc) if tvar.sym == sym => Type.KindedVar(sym.withText(Some(newText)), loc)
+      case Type.KindedVar(_, _) => tpe
       case Type.Cst(_, _) => tpe
 
       case Type.Apply(tpe1, tpe2, loc) =>
