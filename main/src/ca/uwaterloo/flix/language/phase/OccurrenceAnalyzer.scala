@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Occur, OccurDef}
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Occur, DefContext}
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.Symbol.{LabelSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Symbol}
@@ -82,8 +82,8 @@ object OccurrenceAnalyzer {
       case OccurrenceAst.Expression.ApplyDefTail(sym, args, _, _) =>
         val argsTrivial = args.forall(isTrivialExp)
         val isTrivialNonSelfCall = argsTrivial && sym != defn.sym
-        OccurDef(isTrivialNonSelfCall)
-      case _ => OccurDef(false)
+        DefContext(isTrivialNonSelfCall)
+      case _ => DefContext(false)
     }
 
     OccurrenceAst.Def(defn.ann, defn.mod, defn.sym, fparams, e, occurDef, defn.tpe, defn.loc)

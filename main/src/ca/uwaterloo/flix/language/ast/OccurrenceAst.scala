@@ -28,7 +28,7 @@ object OccurrenceAst {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[OccurrenceAst.FormalParam], exp: OccurrenceAst.Expression, occurDef: OccurDef, tpe: Type, loc: SourceLocation)
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[OccurrenceAst.FormalParam], exp: OccurrenceAst.Expression, context: DefContext, tpe: Type, loc: SourceLocation)
 
   case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, OccurrenceAst.Case], tpeDeprecated: Type, loc: SourceLocation)
 
@@ -239,7 +239,7 @@ object OccurrenceAst {
    *  A def is `isTrivialNonSelfCall` if
    *  the expression consist of a single (non-self) call with trivial arguments
    */
-  case class OccurDef(isTrivialNonSelfCall: Boolean)
+  case class DefContext(isTrivialNonSelfCall: Boolean)
 
 }
 

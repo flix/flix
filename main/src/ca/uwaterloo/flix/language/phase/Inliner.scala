@@ -48,7 +48,7 @@ object Inliner {
   private def visitDef(def0: Def)(implicit root: Root, flix: Flix): Def = {
     val e1 = visitExp(def0.exp, Map.empty)
     // If `def0` is a single non-self call and its arguments are trivial, then inline the single non-self call, `e1`.
-    if (def0.occurDef.isTrivialNonSelfCall) {
+    if (def0.context.isTrivialNonSelfCall) {
       val e2 = inlineDef(def0, e1)
       def0.copy(exp = e2)
     } else
