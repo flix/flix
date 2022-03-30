@@ -128,14 +128,19 @@ object Weeder {
       val doc = visitDoc(doc0)
       val laws0 = lawsAndSigs.collect { case law: ParsedAst.Declaration.Law => law }
       val sigs0 = lawsAndSigs.collect { case sig: ParsedAst.Declaration.Sig => sig }
-      for {
-        ann <- visitAnnotations(ann0)
-        mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Sealed, Ast.Modifier.Lawless))
-        sigs <- traverse(sigs0)(visitSig)
-        laws <- traverse(laws0)(visitLaw)
-        tparam = visitTypeParam(tparam0)
-        superClasses <- traverse(superClasses0)(visitTypeConstraint)
-      } yield List(WeededAst.Declaration.Class(doc, ann, mods, ident, tparam, superClasses, sigs.flatten, laws.flatten, loc))
+
+      val annVal = visitAnnotations(ann0)
+      val modsVal = visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Sealed, Ast.Modifier.Lawless))
+      val sigsVal = traverse(sigs0)(visitSig)
+      val lawsVal = traverse(laws0)(visitLaw)
+      val superClassesVal = traverse(superClasses0)(visitTypeConstraint)
+
+      val tparam = visitTypeParam(tparam0)
+
+      mapN(annVal, modsVal, sigsVal, lawsVal, superClassesVal) {
+        case (ann, mods, sigs, laws, superClasses) =>
+          List(WeededAst.Declaration.Class(doc, ann, mods, ident, tparam, superClasses, sigs.flatten, laws.flatten, loc))
+      }
   }
 
   /**
@@ -144,37 +149,42 @@ object Weeder {
   private def visitSig(s0: ParsedAst.Declaration.Sig)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Sig], WeederError] = s0 match {
     case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOpt, tconstrs0, exp0, sp2) =>
       val doc = visitDoc(doc0)
+
       val annVal = visitAnnotations(ann)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
+      val pubVal = requirePublic(mods, ident)
       val identVal = visitName(ident)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt, ident.loc)
+      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       val expVal = Validation.traverse(exp0)(visitExp)
 
-      for {
-        res <- sequenceT(annVal, modVal, identVal, tparamsVal, formalsVal, effVal, expVal)
-        (as, mod, _, tparams, fparams, eff, exp) = res
-        _ <- requirePublic(mod, ident)
-        ts = fparams.map(_.tpe.get)
-        retTpe = visitType(tpe0)
-        tpe = WeededAst.Type.Arrow(ts, eff, retTpe, ident.loc)
-        tconstrs <- traverse(tconstrs0)(visitTypeConstraint)
-      } yield List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, retTpe, eff, tconstrs, mkSL(sp1, sp2)))
+      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, effVal, tconstrsVal, expVal) {
+        case (as, mod, _, _, tparams, fparams, eff, tconstrs, exp) =>
+          val ts = fparams.map(_.tpe.get)
+          val retTpe = visitType(tpe0)
+          val tpe = WeededAst.Type.Arrow(ts, eff, retTpe, ident.loc)
+          List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, retTpe, eff, tconstrs, mkSL(sp1, sp2)))
+      }
   }
 
   /**
     * Performs weeding on the given instance declaration `i0`.
     */
   private def visitInstance(i0: ParsedAst.Declaration.Instance)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Instance], WeederError] = i0 match {
-    case ParsedAst.Declaration.Instance(doc0, mods0, sp1, clazz, tpe0, constrs0, defs0, sp2) =>
+    case ParsedAst.Declaration.Instance(doc0, mods0, sp1, clazz, tpe0, tconstrs0, defs0, sp2) =>
       val doc = visitDoc(doc0)
       val tpe = visitType(tpe0)
-      for {
-        mods <- visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Unlawful))
-        defs <- traverse(defs0)(visitInstanceDef)
-        constrs <- traverse(constrs0)(visitTypeConstraint)
-      } yield List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, constrs, defs.flatten, mkSL(sp1, sp2)))
+
+      val modsVal = visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Unlawful))
+      val defsVal = traverse(defs0)(visitInstanceDef)
+      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
+
+      mapN(modsVal, defsVal, tconstrsVal) {
+        case (mods, defs, tconstrs) =>
+          List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, tconstrs, defs.flatten, mkSL(sp1, sp2)))
+      }
 
   }
 
@@ -202,21 +212,21 @@ object Weeder {
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann)
       val modVal = visitModifiers(mods, legalModifiers)
+      val pubVal = if (requiresPublic) requirePublic(mods, ident) else ().toSuccess // conditionally require a public modifier
       val identVal = visitName(ident)
       val expVal = visitExp(exp0)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt, ident.loc)
+      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
 
-      for {
-        res <- sequenceT(annVal, modVal, identVal, tparamsVal, formalsVal, expVal, effVal)
-        (as, mod, _, tparams, fparams, exp, eff) = res
-        _ <- if (requiresPublic) requirePublic(mod, ident) else ().toSuccess // conditionally require a public modifier
-        ts = fparams.map(_.tpe.get)
-        retTpe = visitType(tpe0)
-        tpe = WeededAst.Type.Arrow(ts, eff, retTpe, ident.loc)
-        tconstrs <- traverse(tconstrs0)(visitTypeConstraint)
-      } yield List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, retTpe, eff, tconstrs, mkSL(sp1, sp2)))
+      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, expVal, effVal, tconstrsVal) {
+        case (as, mod, _, _, tparams, fparams, exp, eff, tconstrs) =>
+          val ts = fparams.map(_.tpe.get)
+          val retTpe = visitType(tpe0)
+          val tpe = WeededAst.Type.Arrow(ts, eff, retTpe, ident.loc)
+          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, retTpe, eff, tconstrs, mkSL(sp1, sp2)))
+      }
   }
 
   /**
@@ -585,10 +595,11 @@ object Weeder {
       /*
        * Check for `DuplicateFormal`.
        */
-      for {
-        fs <- visitFormalParams(fparams0, typeRequired = false)
-        e <- visitExp(exp)
-      } yield mkCurried(fs, e, loc)
+      val fparamsVal = visitFormalParams(fparams0, typeRequired = false)
+      val expVal = visitExp(exp)
+      mapN(fparamsVal, expVal) {
+        case (fparams, e) => mkCurried(fparams, e, loc)
+      }
 
     case ParsedAst.Expression.LambdaMatch(sp1, pat, exp, sp2) =>
       /*
@@ -1261,10 +1272,11 @@ object Weeder {
 
     case ParsedAst.Expression.Ref(sp1, exp1, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
-      for {
-        e1 <- visitExp(exp1)
-        e2 <- Validation.traverse(exp2)(visitExp).map(_.headOption)
-      } yield WeededAst.Expression.Ref(e1, e2, loc)
+      val exp1Val = visitExp(exp1)
+      val exp2Val = Validation.traverse(exp2)(visitExp).map(_.headOption)
+      mapN(exp1Val, exp2Val) {
+        case (e1, e2) => WeededAst.Expression.Ref(e1, e2, loc)
+      }
 
     case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
       for {
@@ -1273,10 +1285,11 @@ object Weeder {
 
     case ParsedAst.Expression.Assign(exp1, exp2, sp2) =>
       val sp1 = leftMostSourcePosition(exp1)
-      for {
-        e1 <- visitExp(exp1)
-        e2 <- visitExp(exp2)
-      } yield WeededAst.Expression.Assign(e1, e2, mkSL(sp1, sp2))
+      val exp1Val = visitExp(exp1)
+      val exp2Val = visitExp(exp2)
+      mapN(exp1Val, exp2Val) {
+        case (e1, e2) => WeededAst.Expression.Assign(e1, e2, mkSL(sp1, sp2))
+      }
 
     case ParsedAst.Expression.Ascribe(exp, expectedType, expectedEff, sp2) =>
       val t = expectedType.map(visitType)
@@ -2079,8 +2092,8 @@ object Weeder {
   /**
     * Returns an error if `public` is not among the modifiers in `mods`.
     */
-  private def requirePublic(mods: Ast.Modifiers, ident: Name.Ident): Validation[Unit, WeederError] = {
-    if (mods.isPublic) {
+  private def requirePublic(mods: Seq[ParsedAst.Modifier], ident: Name.Ident): Validation[Unit, WeederError] = {
+    if (mods.exists(_.name == "pub")) {
       ().toSuccess
     } else {
       WeederError.IllegalPrivateDeclaration(ident, ident.loc).toFailure
