@@ -77,7 +77,7 @@ object Main {
 
     // compute the main entry point
     val entryPoint = cmdOpts.entryPoint match {
-      case None => None
+      case None => Options.Default.entryPoint
       case Some(s) => Some(Symbol.mkDefnSym(s))
     }
 
