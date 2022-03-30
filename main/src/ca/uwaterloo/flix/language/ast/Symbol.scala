@@ -232,12 +232,12 @@ object Symbol {
     /**
       * Returns the same symbol with the given text.
       */
-    def withText(text: Option[String]): this.type
+    def withText(text: Option[String]): TypeVarSym
 
     /**
       * Returns the same symbol with the given rigidity.
       */
-    def withRigidity(rigidity: Rigidity): this.type
+    def withRigidity(rigidity: Rigidity): TypeVarSym
 
     override def src: Ast.Source = loc.source
 

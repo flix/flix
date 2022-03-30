@@ -351,12 +351,12 @@ object Type {
     /**
       * Returns the same type variable with the given text.
       */
-    def withText(text: Option[String]): this.type
+    def withText(text: Option[String]): Var
 
     /**
       * Returns the same type variable with the given rigidity.
       */
-    def withRigidity(rigidity: Rigidity): this.type
+    def withRigidity(rigidity: Rigidity): Var
 
     /**
       * Casts this type variable to a kinded type variable.
