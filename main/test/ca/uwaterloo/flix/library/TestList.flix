@@ -1481,6 +1481,30 @@ def takeWhile08(): Bool = List.takeWhile(i -> i > 3, 4 :: 6 :: -3 :: 11 :: -5 ::
                         4 :: 6 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
+// splitAt                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def splitAt01(): Bool =
+    let xs = Nil: List[Int32];
+    List.splitAt(0, xs) == (Nil, Nil)
+
+@test
+def splitAt02(): Bool =
+    let xs = 1 :: 5 :: 19 :: 3 :: Nil;
+    List.splitAt(3, xs) == (1 :: 5 :: 19 :: Nil, 3 :: Nil)
+
+@test
+def splitAt03(): Bool =
+    let xs = 1 :: 5 :: 19 :: 3 :: Nil;
+    List.splitAt(-3, xs) == (Nil, xs)
+
+@test
+def splitAt04(): Bool =
+    let xs = 1 :: 5 :: 19 :: 3 :: Nil;
+    List.splitAt(5, xs) == (xs, Nil)
+
+/////////////////////////////////////////////////////////////////////////////
 // groupBy                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test

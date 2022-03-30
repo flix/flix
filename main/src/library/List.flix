@@ -898,6 +898,15 @@ namespace List {
         loop(l, identity)
 
     ///
+    /// Split the list `xs` at the position `n` returning the left and right parts.
+    ///
+    /// Returns `(xs, Nil)` if `n > length(xs)`.
+    /// Returns `(Nil, xs)` if `n < 0`.
+    ///
+    pub def splitAt(n: Int32, xs: List[a]): (List[a], List[a]) =
+        (List.take(n, xs), List.drop(n, xs))
+
+    ///
     /// Partitions `l` into sublists such that for any two elements `x` and `y` in a sublist, `f(x, y)` is true.
     ///
     /// A sublist is created by iterating through the remaining elements of `l` from left to right and adding an
