@@ -29,6 +29,7 @@ object KindedAst {
                   defs: Map[Symbol.DefnSym, KindedAst.Def],
                   enums: Map[Symbol.EnumSym, KindedAst.Enum],
                   typeAliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias],
+                  entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 

@@ -53,7 +53,7 @@ object Reducer {
     }
 
     // Reassemble the ast root.
-    val result = LiftedAst.Root(defs, enums, root.reachable, root.sources)
+    val result = LiftedAst.Root(defs, enums, root.entryPoint, root.reachable, root.sources)
 
     result.toSuccess
   }

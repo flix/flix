@@ -48,6 +48,7 @@ object Namer {
       defsAndSigs = Map.empty,
       enums = Map.empty,
       typealiases = Map.empty,
+      entryPoint = program.entryPoint,
       reachable = program.reachable,
       sources = locations
     )
@@ -375,20 +376,31 @@ object Namer {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, retTpe0, eff0, tconstrs0, loc) =>
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, allowElision = true, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
+
+      // First visit all the top-level information
       val sigTypeCheckVal = checkSigType(ident, classTparam, tpe0, ident.loc)
       val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
+      val tpeVal = visitType(tpe0, uenv0, tenv)
+      val retTpeVal = visitType(retTpe0, uenv0, tenv)
+      val effVal = visitType(eff0, uenv0, tenv)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
-      flatMapN(sigTypeCheckVal, fparamsVal, tconstrsVal) {
-        case (_, fparams, tconstrs) =>
+
+      flatMapN(sigTypeCheckVal, fparamsVal, tpeVal, retTpeVal, effVal, tconstrsVal) {
+        case (_, fparams, tpe, retTpe, eff, tconstrs) =>
+
+          // Then visit the parts depending on the parameters
           val env0 = getVarEnv(fparams)
           val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
-          val classTconstr = NamedAst.TypeConstraint(Name.mkQName(classIdent), NamedAst.Type.Var(classTparam.tpe, classTparam.loc), classSym.loc)
-          val schemeVal = getDefOrSigScheme(tparams.tparams, tpe0, uenv0, tenv, classTconstr :: tconstrs, List(classTparam.tpe))
           val expVal = traverse(exp0)(visitExp(_, env0, uenv0, tenv))
-          val retTpeVal = visitType(retTpe0, uenv0, tenv)
-          val effVal = visitType(eff0, uenv0, tenv)
-          mapN(annVal, schemeVal, retTpeVal, effVal, expVal) {
-            case (as, sc, retTpe, eff, exp) =>
+
+          mapN(annVal, expVal) {
+            case (as, exp) =>
+
+              // Build the scheme, including the class type constraint.
+              val classTconstr = NamedAst.TypeConstraint(Name.mkQName(classIdent), NamedAst.Type.Var(classTparam.tpe, classTparam.loc), classSym.loc)
+              val quantifiers = classTparam.tpe :: tparams.tparams.map(_.tpe)
+              val sc = NamedAst.Scheme(quantifiers, classTconstr :: tconstrs, tpe)
+
               val sym = Symbol.mkSigSym(classSym, ident)
               val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, eff, loc)
               NamedAst.Sig(sym, spec, exp.headOption)
@@ -411,7 +423,7 @@ object Namer {
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`, with type constraints `tconstrs`.
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
-    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs, loc) =>
+    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
       // TODO: we use tenv when getting the types from formal params first, before the explicit tparams have a chance to modify it
@@ -421,16 +433,30 @@ object Namer {
       // Or delay using the tenv until evaluating explicit tparams (could become complex)
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, allowElision = true, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
-      flatMapN(getFormalParams(fparams0, uenv0, tenv), traverse(tconstrs)(visitTypeConstraint(_, uenv0, tenv, ns0))) {
-        case (fparams, tconstrs) =>
+
+      // First visit all the top-level information
+      val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
+      val tpeVal = visitType(tpe0, uenv0, tenv)
+      val retTpeVal = visitType(retTpe0, uenv0, tenv)
+      val effVal = visitType(eff0, uenv0, tenv)
+      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
+
+      flatMapN(fparamsVal, tpeVal, retTpeVal, effVal, tconstrsVal) {
+        case (fparams, tpe, retTpe, eff, tconstrs) =>
+
+          // Then visit the parts depending on the parameters
           val env0 = getVarEnv(fparams)
           val annVal = traverse(ann)(visitAnnotation(_, env0, uenv0, tenv))
           val expVal = visitExp(exp, env0, uenv0, tenv)
-          val schemeVal = getDefOrSigScheme(tparams.tparams, tpe0, uenv0, tenv, tconstrs ++ addedTconstrs, addedQuantifiers)
-          val retTpeVal = visitType(retTpe0, uenv0, tenv)
-          val effVal = visitType(eff0, uenv0, tenv)
-          mapN(annVal, expVal, schemeVal, retTpeVal, effVal) {
-            case (as, e, sc, retTpe, eff) =>
+
+          mapN(annVal, expVal) {
+            case (as, e) =>
+
+              // Build the scheme, including any instance parameters or type constraints
+              val quantifiers = addedQuantifiers ::: tparams.tparams.map(_.tpe)
+              val schemeTconstrs = addedTconstrs ::: tconstrs
+              val sc = NamedAst.Scheme(quantifiers, schemeTconstrs, tpe)
+
               val sym = Symbol.mkDefnSym(ns0, ident)
               val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, eff, loc)
               NamedAst.Def(sym, spec, e)
@@ -1607,16 +1633,6 @@ object Namer {
     */
   private def getTypeEnv(tparams0: List[NamedAst.TypeParam]): Map[String, Type.UnkindedVar] = {
     tparams0.map(p => p.name.name -> p.tpe).toMap
-  }
-
-  /**
-    * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given environments `uenv0` and `tenv0`, with the added type constraints `tconstrs0`.
-    */
-  private def getDefOrSigScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.UnkindedVar], tconstrs0: List[NamedAst.TypeConstraint], addedQuantifiers: List[Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
-    for {
-      t <- visitType(tpe, uenv0, tenv0)
-      tparams = tparams0.map(_.tpe)
-    } yield NamedAst.Scheme(tparams ++ addedQuantifiers, tconstrs0, t)
   }
 
   /**

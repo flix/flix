@@ -24,6 +24,7 @@ object OccurrenceAst {
 
   case class Root(defs: Map[Symbol.DefnSym, OccurrenceAst.Def],
                   enums: Map[Symbol.EnumSym, OccurrenceAst.Enum],
+                  entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 

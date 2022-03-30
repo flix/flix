@@ -27,7 +27,6 @@ import org.objectweb.asm.Opcodes._
   */
 object GenMainClass {
 
-
   /**
     * Returns the main class.
     */
@@ -38,11 +37,21 @@ object GenMainClass {
       val jvmName = jvmType.name
       // returnType and its use can be inlined if m_main return type is known
       val returnType = JvmOps.getErasedJvmType(defn.tpe.asInstanceOf[MonoType.Arrow].result)
-      val bytecode = genByteCode(jvmType, returnType)
+      val bytecode = genByteCode(defn.sym, jvmType, returnType)
       Map(jvmName -> JvmClass(jvmName, bytecode))
   }
 
-  private def genByteCode(jvmType: JvmType.Reference, returnType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
+  /**
+    * Optionally returns the main definition in the given AST `root`.
+    */
+  private def getMain(root: Root): Option[Def] = {
+    root.entryPoint match {
+      case None => None
+      case Some(sym) => root.defs.get(sym)
+    }
+  }
+
+  private def genByteCode(sym: Symbol.DefnSym, jvmType: JvmType.Reference, returnType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -56,7 +65,7 @@ object GenMainClass {
     visitor.visitSource(jvmType.name.toInternalName, null)
 
     // Emit the code for the main method
-    compileMainMethod(visitor, returnType)
+    compileMainMethod(sym, visitor, returnType)
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -72,7 +81,7 @@ object GenMainClass {
     *
     * Ns.m_main((Object)null);
     */
-  private def compileMainMethod(visitor: ClassWriter, returnType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+  private def compileMainMethod(sym: Symbol.DefnSym, visitor: ClassWriter, returnType: JvmType)(implicit root: Root, flix: Flix): Unit = {
 
     //Get the (argument) descriptor, since the main argument is of type String[], we need to get it's corresponding descriptor
     val argumentDescriptor = AsmOps.getArrayType(JvmType.String)
@@ -86,7 +95,7 @@ object GenMainClass {
     main.visitCode()
 
     //Get the root namespace in order to get the class type when invoking m_main
-    val ns = JvmOps.getNamespace(Symbol.Main)
+    val ns = JvmOps.getNamespace(sym)
 
     // Call Ns.m_main(args)
 
@@ -102,17 +111,6 @@ object GenMainClass {
     main.visitInsn(RETURN)
     main.visitMaxs(1, 1)
     main.visitEnd()
-  }
-
-  /**
-    * Optionally returns the main definition in the given AST `root`.
-    */
-  private def getMain(root: Root): Option[Def] = {
-    // The main function must be called `main` and occur in the root namespace.
-    val sym = Symbol.Main
-
-    // Check if the main function exists.
-    root.defs.get(sym)
   }
 
 }
