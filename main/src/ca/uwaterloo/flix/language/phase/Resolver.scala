@@ -85,7 +85,7 @@ object Resolver {
           enums <- sequence(enumsVal)
           _ <- checkSuperClassDag(classes)
         } yield ResolvedAst.Root(
-          classes, combine(instances), definitions, enums.toMap, taenv, taOrder, root.reachable, root.sources
+          classes, combine(instances), definitions, enums.toMap, taenv, taOrder, root.entryPoint, root.reachable, root.sources
         )
     }
 
