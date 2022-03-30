@@ -260,6 +260,11 @@ object Symbol {
     */
   final class KindedTypeVarSym(val id: Int, val text: Option[String], val kind: Kind, val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym {
 
+    /**
+      * Returns the same symbol with the given kind.
+      */
+    def withKind(newKind: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, newKind, rigidity, loc)
+
     override def withText(newText: Option[String]): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, rigidity, loc)
 
     override def withRigidity(newRigidity: Rigidity): KindedTypeVarSym = new KindedTypeVarSym(id, text, kind, newRigidity, loc)

@@ -354,6 +354,11 @@ object Type {
     def withText(text: Option[String]): this.type
 
     /**
+      * Returns the same type variable with the given rigidity.
+      */
+    def withRigidity(rigidity: Rigidity): this.type
+
+    /**
       * Casts this type variable to a kinded type variable.
       */
     def asKinded: Type.KindedVar = this match {
@@ -384,6 +389,8 @@ object Type {
 
     override def withText(text: Option[String]): KindedVar = KindedVar(sym.withText(text), loc)
 
+    override def withRigidity(rigidity: Rigidity): KindedVar = KindedVar(sym.withRigidity(rigidity), loc)
+
     /**
       * Returns `true` if `this` type variable is equal to `o`.
       */
@@ -410,6 +417,8 @@ object Type {
   case class UnkindedVar(sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends Type with Var with BaseType with Ordered[Type.UnkindedVar] {
 
     override def withText(text: Option[String]): UnkindedVar = UnkindedVar(sym.withText(text), loc)
+
+    override def withRigidity(rigidity: Rigidity): UnkindedVar = UnkindedVar(sym.withRigidity(rigidity), loc)
 
     /**
       * Returns `true` if `this` type variable is equal to `o`.
