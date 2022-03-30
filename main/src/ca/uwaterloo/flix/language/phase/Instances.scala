@@ -243,7 +243,7 @@ object Instances {
       Validation.traverseX(checks) {
         case inst :: unchecked =>
           // check that the instance is on a valid type, suppressing other errors if not
-          checkSimple(inst) flatMap {
+          checkSimple(inst) andThen {
             _ =>
               Validation.sequenceX(List(
                 Validation.traverse(unchecked)(checkOverlap(_, inst)),

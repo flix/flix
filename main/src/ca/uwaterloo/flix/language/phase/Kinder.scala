@@ -53,7 +53,7 @@ object Kinder {
   def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[KindedAst.Root, CompilationMessage] = flix.phase("Kinder") {
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-    visitTypeAliases(root.taOrder, root) flatMap {
+    visitTypeAliases(root.taOrder, root) andThen {
       taenv =>
 
         // Extra type annotations are required due to limitations in Scala's type inference.
@@ -780,7 +780,7 @@ object Kinder {
   private def visitType(tpe0: Type, expectedKind: Kind, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe0 match {
     case tvar: Type.UnkindedVar => visitTypeVar(tvar, expectedKind, kenv)
     case Type.Cst(cst, loc) =>
-      visitTypeConstructor(cst, kenv, taenv, root) flatMap {
+      visitTypeConstructor(cst, kenv, taenv, root) andThen {
         tycon =>
           val kind = tycon.kind
           unify(expectedKind, kind) match {

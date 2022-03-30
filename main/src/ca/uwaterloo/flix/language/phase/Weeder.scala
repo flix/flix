@@ -1691,7 +1691,7 @@ object Weeder {
       WeededAst.Expression.False(mkSL(sp1, sp2)).toSuccess
 
     case ParsedAst.Literal.Char(sp1, chars, sp2) =>
-      weedCharSequence(chars) flatMap {
+      weedCharSequence(chars) andThen {
         case string if string.lengthIs == 1 => WeededAst.Expression.Char(string.head, mkSL(sp1, sp2)).toSuccess
         case string => WeederError.NonSingleCharacter(string, mkSL(sp1, sp2)).toFailure
       }
@@ -1749,7 +1749,7 @@ object Weeder {
     case ParsedAst.Literal.True(sp1, sp2) => WeededAst.Pattern.True(mkSL(sp1, sp2)).toSuccess
     case ParsedAst.Literal.False(sp1, sp2) => WeededAst.Pattern.False(mkSL(sp1, sp2)).toSuccess
     case ParsedAst.Literal.Char(sp1, chars, sp2) =>
-      weedCharSequence(chars) flatMap {
+      weedCharSequence(chars) andThen {
         case string if string.lengthIs == 1 => WeededAst.Pattern.Char(string.head, mkSL(sp1, sp2)).toSuccess
         case string => WeederError.NonSingleCharacter(string, mkSL(sp1, sp2)).toFailure
       }
@@ -2310,7 +2310,7 @@ object Weeder {
             seen += (ident.name -> param)
           }
 
-          visitModifiers(mods, legalModifiers = Set.empty) flatMap {
+          visitModifiers(mods, legalModifiers = Set.empty) andThen {
             case mod =>
               if (typeRequired && typeOpt.isEmpty)
                 IllegalFormalParameter(ident.name, mkSL(sp1, sp2)).toFailure

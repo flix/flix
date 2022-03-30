@@ -45,7 +45,7 @@ sealed trait Validation[+T, +E] {
     *
     * Preserves the errors.
     */
-  final def flatMap[U, A >: E](f: T => Validation[U, A]): Validation[U, A] = this match {
+  final def andThen[U, A >: E](f: T => Validation[U, A]): Validation[U, A] = this match {
     case Validation.Success(input) => f(input) match {
       case Validation.Success(value) => Validation.Success(value)
       case Validation.Failure(thatErrors) => Validation.Failure(errors #::: thatErrors)
@@ -324,7 +324,7 @@ object Validation {
     */
   def foldRight[T, U, E](xs: Seq[T])(zero: Validation[U, E])(f: (T, U) => Validation[U, E]): Validation[U, E] = {
     xs.foldRight(zero) {
-      case (a, acc) => acc flatMap {
+      case (a, acc) => acc andThen {
         case v => f(a, v)
       }
     }
@@ -353,7 +353,7 @@ object Validation {
     */
   def fold[In, Out, Error](xs: Iterable[In], zero: Out)(f: (Out, In) => Validation[Out, Error]): Validation[Out, Error] = {
     xs.foldLeft(Success(zero): Validation[Out, Error]) {
-      case (acc, a) => acc flatMap {
+      case (acc, a) => acc andThen {
         case value => f(value, a)
       }
     }
