@@ -82,7 +82,8 @@ namespace Concurrent/Channel/Ticker {
           case Ticker(t, s) => (t, s)
         };
 
-        sleep(ns / 1000000i64);
+        if (ns < 0i64) sleep(0i64)
+        else           sleep(ns / 1000000i64);
 
         select {
           case _stop <- stopChannel => ()
