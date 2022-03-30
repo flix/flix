@@ -78,14 +78,14 @@ class TestValidation extends FunSuite {
     assertResult(Failure(LazyList(ex)))(result)
   }
 
-  test("flatMap01") {
+  test("andThen01") {
     val result = "foo".toSuccess[String, Exception].andThen {
       case x => x.toUpperCase.toSuccess
     }
     assertResult(Success("FOO"))(result)
   }
 
-  test("flatMap02") {
+  test("andThen02") {
     val result = "foo".toSuccess[String, Exception].andThen {
       case x => x.toUpperCase.toSuccess
     }.andThen {
@@ -96,7 +96,7 @@ class TestValidation extends FunSuite {
     assertResult(Success("OOFOOF"))(result)
   }
 
-  test("flatMap03") {
+  test("andThen03") {
     val ex = new RuntimeException()
     val result = "foo".toSuccess[String, Exception].andThen {
       case x => ex.toFailure
@@ -104,7 +104,7 @@ class TestValidation extends FunSuite {
     assertResult(Failure(LazyList(ex)))(result)
   }
 
-  test("flatMap04") {
+  test("andThen04") {
     val result = "foo".toSuccess[String, Int].andThen {
       case x => Success(x.toUpperCase)
     }.andThen {
@@ -115,7 +115,7 @@ class TestValidation extends FunSuite {
     assertResult(Success("OOFOOF"))(result)
   }
 
-  test("flatMap05") {
+  test("andThen05") {
     val result = "foo".toSuccess[String, Int].andThen {
       case x => Success(x.toUpperCase)
     }.andThen {

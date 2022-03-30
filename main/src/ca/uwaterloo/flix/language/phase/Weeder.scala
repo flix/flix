@@ -256,13 +256,13 @@ object Weeder {
     * Performs weeding on the given enum declaration `d0`.
     */
   private def visitEnum(d0: ParsedAst.Declaration.Enum)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Enum], WeederError] = d0 match {
-    case ParsedAst.Declaration.Enum(doc0, ann, mods, sp1, ident, tparams0, derives, cases, sp2) =>
+    case ParsedAst.Declaration.Enum(doc0, ann0, mods, sp1, ident, tparams0, derives, cases, sp2) =>
       val doc = visitDoc(doc0)
-      val annVal = visitAnnotations(ann)
+      val annVal = visitAnnotations(ann0)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
       val tparamsVal = visitTypeParams(tparams0)
 
-      flatMapN(annVal, modVal, tparamsVal) {
+      sequenceT(annVal, modVal, tparamsVal) andThen {
         case (ann, mod, tparams) =>
           /*
            * Check for `DuplicateTag`.
@@ -423,7 +423,7 @@ object Weeder {
 
     case ParsedAst.Expression.Intrinsic(sp1, op, exps, sp2) =>
       val loc = mkSL(sp1, sp2)
-      flatMapN(traverse(exps)(visitArgument)) {
+      traverse(exps)(visitArgument) andThen {
         case es => (op.name, es) match {
           case ("BOOL_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.BoolOp.Not, e1, loc).toSuccess
           case ("BOOL_AND", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BoolOp.And, e1, e2, loc).toSuccess
@@ -661,19 +661,19 @@ object Weeder {
       //
       val loc = mkSL(sp1, sp2)
 
-      flatMapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
-        case (WeededAst.Pattern.Var(ident, _), value, body) =>
+      val patVal = visitPattern(pat)
+      val exp1Val = visitExp(exp1)
+      val exp2Val = visitExp(exp2)
+      val modVal = visitModifiers(mod0, legalModifiers = Set.empty)
+
+      mapN(patVal, exp1Val, exp2Val, modVal) {
+        case (WeededAst.Pattern.Var(ident, _), value, body, mod) =>
           // No pattern match.
-          mapN(visitModifiers(mod0, legalModifiers = Set.empty)) {
-            mod => WeededAst.Expression.Let(ident, mod, withAscription(value, tpe), body, loc)
-          }
-        case (pat, value, body) =>
+          WeededAst.Expression.Let(ident, mod, withAscription(value, tpe), body, loc)
+        case (pat, value, body, _) =>
           // Full-blown pattern match.
-          mapN(visitModifiers(mod0, legalModifiers = Set.empty)) {
-            _ =>
-              val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(loc.asSynthetic), body)
-              WeededAst.Expression.Match(withAscription(value, tpe), List(rule), loc)
-          }
+          val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(loc.asSynthetic), body)
+          WeededAst.Expression.Match(withAscription(value, tpe), List(rule), loc)
       }
 
     case ParsedAst.Expression.LetMatchStar(sp1, pat, tpe, exp1, exp2, sp2) =>
@@ -1018,12 +1018,11 @@ object Weeder {
     case ParsedAst.Expression.RecordLit(sp1, fields, sp2) =>
       val fieldsVal = traverse(fields) {
         case ParsedAst.RecordField(_, ident, exp, _) =>
-          flatMapN(visitExp(exp)) {
-            case e =>
-              if (ident.name == "length")
-                WeederError.IllegalFieldName(ident.loc).toFailure
-              else
-                (ident -> e).toSuccess
+          val expVal = visitExp(exp)
+          val fieldVal = visitFieldName(ident)
+
+          mapN(expVal, fieldVal) {
+            case (e, _) => (ident -> e)
           }
       }
 
@@ -1059,30 +1058,22 @@ object Weeder {
       // We translate the sequence of record operations into a nested tree using a fold right.
       foldRight(ops)(visitExp(rest)) {
         case (ParsedAst.RecordOp.Extend(sp1, ident, exp, sp2), acc) =>
-          flatMapN(visitExp(exp)) {
-            case e =>
-              if (ident.name == "length")
-                WeederError.IllegalFieldName(ident.loc).toFailure
-              else
-                WeededAst.Expression.RecordExtend(Name.mkField(ident), e, acc, mkSL(sp1, sp2)).toSuccess
+          mapN(visitExp(exp), visitFieldName(ident)) {
+            case (e, _) =>
+              WeededAst.Expression.RecordExtend(Name.mkField(ident), e, acc, mkSL(sp1, sp2))
           }
 
         case (ParsedAst.RecordOp.Restrict(sp1, ident, sp2), acc) =>
-          if (ident.name == "length")
-            WeederError.IllegalFieldName(ident.loc).toFailure
-          else
-            WeededAst.Expression.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2)).toSuccess
+          mapN(visitFieldName(ident)) {
+            _ => WeededAst.Expression.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2))
+          }
 
         case (ParsedAst.RecordOp.Update(sp1, ident, exp, sp2), acc) =>
-          flatMapN(visitExp(exp)) {
-            case e =>
-              if (ident.name == "length")
-                WeederError.IllegalFieldName(ident.loc).toFailure
-              else {
-                // An update is a restrict followed by an extension.
-                val inner = WeededAst.Expression.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2))
-                WeededAst.Expression.RecordExtend(Name.mkField(ident), e, inner, mkSL(sp1, sp2)).toSuccess
-              }
+          mapN(visitExp(exp), visitFieldName(ident)) {
+            case (e, _) =>
+              // An update is a restrict followed by an extension.
+              val inner = WeededAst.Expression.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2))
+              WeededAst.Expression.RecordExtend(Name.mkField(ident), e, inner, mkSL(sp1, sp2))
           }
       }
 
@@ -1864,7 +1855,7 @@ object Weeder {
         }
 
       case ParsedAst.Pattern.ArrayTailSpread(sp1, pats, ident, sp2) =>
-        flatMapN(traverse(pats)(visit)) {
+        traverse(pats)(visit) andThen {
           case elms if ident.name == "_" => WeededAst.Pattern.ArrayTailSpread(elms, None, mkSL(sp2, sp2)).toSuccess
           case elms =>
             seen.get(ident.name) match {
@@ -1877,7 +1868,7 @@ object Weeder {
         }
 
       case ParsedAst.Pattern.ArrayHeadSpread(sp1, ident, pats, sp2) =>
-        flatMapN(traverse(pats)(visit)) {
+        traverse(pats)(visit) andThen {
           case elms if ident.name == "_" => WeededAst.Pattern.ArrayHeadSpread(None, elms, mkSL(sp1, sp2)).toSuccess
           case elms =>
             seen.get(ident.name) match {
@@ -2019,26 +2010,32 @@ object Weeder {
     */
   private def visitAnnotation(past: ParsedAst.Annotation)(implicit flix: Flix): Validation[WeededAst.Annotation, WeederError] = {
     val loc = mkSL(past.sp1, past.sp2)
+
+    val tagVal = visitAnnotationTag(past.ident)
     val argsVal = traverse(past.args.getOrElse(Nil))(visitArgument)
 
-    flatMapN(argsVal) {
-      case args =>
-        past.ident.name match {
-          case "benchmark" => WeededAst.Annotation(Ast.Annotation.Benchmark(loc), args, loc).toSuccess
-          case "test" => WeededAst.Annotation(Ast.Annotation.Test(loc), args, loc).toSuccess
-          case "Deprecated" => WeededAst.Annotation(Ast.Annotation.Deprecated(loc), args, loc).toSuccess
-          case "Experimental" => WeededAst.Annotation(Ast.Annotation.Experimental(loc), args, loc).toSuccess
-          case "Internal" => WeededAst.Annotation(Ast.Annotation.Internal(loc), args, loc).toSuccess
-          case "Parallel" => WeededAst.Annotation(Ast.Annotation.Parallel(loc), args, loc).toSuccess
-          case "ParallelWhenPure" => WeededAst.Annotation(Ast.Annotation.ParallelWhenPure(loc), args, loc).toSuccess
-          case "Lazy" => WeededAst.Annotation(Ast.Annotation.Lazy(loc), args, loc).toSuccess
-          case "LazyWhenPure" => WeededAst.Annotation(Ast.Annotation.LazyWhenPure(loc), args, loc).toSuccess
-          case "Space" => WeededAst.Annotation(Ast.Annotation.Space(loc), args, loc).toSuccess
-          case "Time" => WeededAst.Annotation(Ast.Annotation.Time(loc), args, loc).toSuccess
-          case "Unsafe" => WeededAst.Annotation(Ast.Annotation.Unsafe(loc), args, loc).toSuccess
-          case name => WeederError.UndefinedAnnotation(name, loc).toFailure
-        }
+    mapN(tagVal, argsVal) {
+      case (tag, args) => WeededAst.Annotation(tag, args, loc)
     }
+  }
+
+  /**
+    * Performs weeding on the given annotation tag.
+    */
+  private def visitAnnotationTag(ident: Name.Ident)(implicit flix: Flix): Validation[Ast.Annotation, WeederError] = ident.name match {
+    case "benchmark" => Ast.Annotation.Benchmark(ident.loc).toSuccess
+    case "test" => Ast.Annotation.Test(ident.loc).toSuccess
+    case "Deprecated" => Ast.Annotation.Deprecated(ident.loc).toSuccess
+    case "Experimental" => Ast.Annotation.Experimental(ident.loc).toSuccess
+    case "Internal" => Ast.Annotation.Internal(ident.loc).toSuccess
+    case "Parallel" => Ast.Annotation.Parallel(ident.loc).toSuccess
+    case "ParallelWhenPure" => Ast.Annotation.ParallelWhenPure(ident.loc).toSuccess
+    case "Lazy" => Ast.Annotation.Lazy(ident.loc).toSuccess
+    case "LazyWhenPure" => Ast.Annotation.LazyWhenPure(ident.loc).toSuccess
+    case "Space" => Ast.Annotation.Space(ident.loc).toSuccess
+    case "Time" => Ast.Annotation.Time(ident.loc).toSuccess
+    case "Unsafe" => Ast.Annotation.Unsafe(ident.loc).toSuccess
+    case name => WeederError.UndefinedAnnotation(name, ident.loc).toFailure
   }
 
   /**
@@ -2440,6 +2437,17 @@ object Weeder {
   private def visitName(ident: Name.Ident): Validation[Unit, WeederError] = {
     if (ReservedWords.contains(ident.name)) {
       WeederError.ReservedName(ident, ident.loc).toFailure
+    } else {
+      ().toSuccess
+    }
+  }
+
+  /**
+    * Performs weeding on the given field name `ident`.
+    */
+  private def visitFieldName(ident: Name.Ident): Validation[Unit, WeederError] = {
+    if (ident.name == "length") {
+      WeederError.IllegalFieldName(ident.loc).toFailure
     } else {
       ().toSuccess
     }

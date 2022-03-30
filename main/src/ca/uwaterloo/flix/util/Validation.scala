@@ -249,6 +249,7 @@ object Validation {
   /**
     * FlatMaps over t1.
     */
+  // Deprecated. Use `sequenceT` and `andThen` instead.
   def flatMapN[T1, U, E](t1: Validation[T1, E])(f: T1 => Validation[U, E]): Validation[U, E] =
     t1 match {
       case Success(v1) => f(v1)
@@ -258,6 +259,7 @@ object Validation {
   /**
     * FlatMaps over t1 and t2.
     */
+  // Deprecated. Use `sequenceT` and `andThen` instead.
   def flatMapN[T1, T2, U, E](t1: Validation[T1, E], t2: Validation[T2, E])
                             (f: (T1, T2) => Validation[U, E]): Validation[U, E] =
     (t1, t2) match {
@@ -268,6 +270,7 @@ object Validation {
   /**
     * FlatMaps over t1, t2, and t3.
     */
+  // Deprecated. Use `sequenceT` and `andThen` instead.
   def flatMapN[T1, T2, T3, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E])
                                 (f: (T1, T2, T3) => Validation[U, E]): Validation[U, E] =
     (t1, t2, t3) match {
@@ -278,6 +281,7 @@ object Validation {
   /**
     * FlatMaps over t1, t2, t3, and t4.
     */
+  // Deprecated. Use `sequenceT` and `andThen` instead.
   def flatMapN[T1, T2, T3, T4, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                      t4: Validation[T4, E])
                                     (f: (T1, T2, T3, T4) => Validation[U, E]): Validation[U, E] =
@@ -289,6 +293,7 @@ object Validation {
   /**
     * FlatMaps over t1, t2, t3, t4, and t5.
     */
+  // Deprecated. Use `sequenceT` and `andThen` instead.
   def flatMapN[T1, T2, T3, T4, T5, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                          t4: Validation[T4, E], t5: Validation[T5, E])
                                         (f: (T1, T2, T3, T4, T5) => Validation[U, E]): Validation[U, E] =
@@ -300,6 +305,7 @@ object Validation {
   /**
     * FlatMaps over t1, t2, t3, t4, t5, and t6.
     */
+  // Deprecated. Use `sequenceT` and `andThen` instead.
   def flatMapN[T1, T2, T3, T4, T5, T6, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                              t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E])
                                              (f: (T1, T2, T3, T4, T5, T6) => Validation[U, E]): Validation[U, E] =
@@ -307,6 +313,7 @@ object Validation {
       case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6)) => f(v1, v2, v3, v4, v5, v6)
       case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors)
     }
+
   /**
     * Sequences over t1, t2, and t3.
     */
