@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.DontInline
 import ca.uwaterloo.flix.language.ast.OccurrenceAst._
 import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Purity, Symbol}
 import ca.uwaterloo.flix.language.phase.Optimizer.isTrivialExp
@@ -35,7 +36,7 @@ object Inliner {
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.subphase("Inliner") {
     // Visit every definition in the program.
     val defs = root.defs.map {
-      case (sym, defn) => sym -> visitDef(defn)(root)
+      case (sym, defn) => sym -> visitDef(defn)(root, flix)
     }
 
     // Reassemble the ast root.
@@ -44,8 +45,14 @@ object Inliner {
     result.toSuccess
   }
 
-  private def visitDef(def0: Def)(implicit root: Root): Def = {
-    def0.copy(exp = visitExp(def0.exp, Map.empty))
+  private def visitDef(def0: Def)(implicit root: Root, flix: Flix): Def = {
+    val e1 = visitExp(def0.exp, Map.empty)
+    // If `def0` is a single non-self call and its arguments are trivial, then inline the single non-self call, `e1`.
+    if (def0.occurDef.isTrivialNonSelfCall) {
+      val e2 = inlineDef(def0, e1)
+      def0.copy(exp = e2)
+    } else
+      def0.copy(exp = e1)
   }
 
   /**
@@ -89,21 +96,8 @@ object Inliner {
       Expression.ApplyClo(e, as, tpe, loc)
 
     case Expression.ApplyDef(sym, args, tpe, loc) =>
-      val as1 = args.map(visitExp(_, subst0))
-      val def0 = root.defs.apply(sym) // f(x: Int)
-      // If `sym` is a single non-self call and is trivial, then inline `sym`.
-      if (def0.occurDef.isTrivialNonSelfCall) {
-        // Map parameters of the function `def0` to its arguments in the substitution map `subst1`.
-        val subst1 = subst0 ++ def0.fparams.map(_.sym).zip(as1).toMap
-        visitExp(def0.exp, subst1) match {
-          case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, loc) =>
-            OccurrenceAst.Expression.ApplyDef(sym, args, tpe, loc)
-          case _ => throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
-        }
-      }
-      else {
-        Expression.ApplyDef(sym, as1, tpe, loc)
-      }
+      val as = args.map(visitExp(_, subst0))
+      Expression.ApplyDef(sym, as, tpe, loc)
 
     case Expression.ApplyCloTail(exp, args, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -340,5 +334,36 @@ object Inliner {
     case Expression.HoleError(_, _, _) => exp0
 
     case Expression.MatchError(_, _) => exp0
+  }
+
+  /**
+   * If `def0` is a single non-self call with trivial arguments then
+   * replace body of `def0` with body of the callee `def1` where
+   * all arguments of `def1` are converted to `let`-expressions with fresh variables as symbols.
+   */
+  private def inlineDef(def0: Def, exp0: Expression)(implicit root: Root, flix: Flix) =
+      exp0 match {
+        case Expression.ApplyDefTail(sym, args, _, _) =>
+          val def1 = root.defs.apply(sym)
+          // Bind parameters of the function `def1` to let expressions.
+          bindFormals(def1.exp, def1.fparams.map(_.sym), args, Map.empty)
+        case _ => throw InternalCompilerException(s"Unexpected expression near: ${def0.loc.format}.")
+      }
+
+  /**
+   * Recursively bind each argument in `args` to a let-expression with a fresh symbol
+   * Add corresponding symbol from `symbols` to substitution map `subst0`, mapping old symbols to fresh symbols.
+   * Visit `exp0` with the filled substitution map
+   */
+  private def bindFormals(exp0: Expression, symbols: List[Symbol.VarSym], args: List[Expression], subst0: Map[Symbol.VarSym, Expression])(implicit root: Root, flix: Flix): Expression = {
+    (symbols, args) match {
+      case (::(sym, nextSymbols), ::(e1, nextExpressions)) =>
+        val fresh = Symbol.freshVarSym(sym)
+        val subst1 = subst0 + (sym -> Expression.Var(fresh, e1.tpe, e1.loc))
+        val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, subst1)
+        val purity = if (isTrivialExp(e1)) Purity.Pure else Purity.Impure
+        Expression.Let(fresh, e1, nextLet, DontInline, exp0.tpe, purity, exp0.loc)
+      case _ => visitExp(exp0, subst0)
+    }
   }
 }
