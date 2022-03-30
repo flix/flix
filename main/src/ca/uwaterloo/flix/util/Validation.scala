@@ -40,6 +40,9 @@ sealed trait Validation[+T, +E] {
     case Validation.Failure(errors) => Validation.Failure(errors)
   }
 
+  // Deprecated. Use `andThen` instead.
+  final def flatMap[U, A >: E](f: T => Validation[U, A]): Validation[U, A] = this.andThen(f)
+
   /**
     * Similar to `map` but does not wrap the result in a [[Validation.Success]].
     *
