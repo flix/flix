@@ -24,6 +24,7 @@ object FinalAst {
 
   case class Root(defs: Map[Symbol.DefnSym, FinalAst.Def],
                   enums: Map[Symbol.EnumSym, FinalAst.Enum],
+                  entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 

@@ -48,6 +48,7 @@ object Namer {
       defsAndSigs = Map.empty,
       enums = Map.empty,
       typealiases = Map.empty,
+      entryPoint = program.entryPoint,
       reachable = program.reachable,
       sources = locations
     )
