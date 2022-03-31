@@ -517,7 +517,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given type `tpe0`.
     */
   private def visitType(tpe0: Type): Iterator[SemanticToken] = tpe0 match {
-    case Type.KindedVar(_, _, loc, _, _) =>
+    case Type.KindedVar(_, loc) =>
       // TODO: The source location of Type.KindedVar is associated with its declaration, not its use.
       Iterator.empty
 
@@ -539,7 +539,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
       Iterator(t) ++ args.flatMap(visitType).iterator
 
-    case Type.UnkindedVar(_, _, _, _) =>
+    case Type.UnkindedVar(_, _) =>
       throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
   }
 

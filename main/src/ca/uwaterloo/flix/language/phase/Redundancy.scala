@@ -519,7 +519,7 @@ object Redundancy {
           (eff, exp.eff) match {
             case (Type.Pure, Type.Pure) =>
               visitExp(exp, env0, rc) + RedundantPurityCast(loc)
-            case (tvar1: Type.KindedVar, tvar2: Type.KindedVar) if tvar1.id == tvar2.id =>
+            case (tvar1: Type.KindedVar, tvar2: Type.KindedVar) if tvar1.sym == tvar2.sym =>
               visitExp(exp, env0, rc) + RedundantEffectCast(loc)
             case _ => visitExp(exp, env0, rc)
           }
@@ -814,7 +814,7 @@ object Redundancy {
     * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
     */
   private def deadTypeVar(tvar: Type.KindedVar, used: Set[Type.KindedVar]): Boolean = {
-    !tvar.text.exists(_.startsWith("_")) &&
+    !tvar.sym.text.exists(_.startsWith("_")) &&
       !used.contains(tvar)
   }
 

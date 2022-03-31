@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme}
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 object Scheme {
 
@@ -82,23 +82,23 @@ object Scheme {
           case InstantiateMode.Rigid => Rigidity.Rigid
           case InstantiateMode.Mixed => Rigidity.Flexible
         }
-        macc + (tvar.id -> Type.freshVar(tvar.kind, tvar.loc, rigidity, None))
+        macc + (tvar.sym.id -> Type.freshVar(tvar.kind, tvar.loc, rigidity, None))
     }
 
     /**
       * Replaces every variable occurrence in the given type using `freeVars`. Updates the rigidity.
       */
     def visitTvar(t: Type.KindedVar): Type.KindedVar = t match {
-      case Type.KindedVar(x, k, loc, rigidity, text) =>
-        freshVars.get(x) match {
+      case Type.KindedVar(sym, loc) =>
+        freshVars.get(sym.id) match {
           case None =>
             // Determine the rigidity of the free type variable.
             val newRigidity = mode match {
-              case InstantiateMode.Flexible => rigidity
+              case InstantiateMode.Flexible => sym.rigidity
               case InstantiateMode.Rigid => Rigidity.Rigid
               case InstantiateMode.Mixed => Rigidity.Rigid
             }
-            Type.KindedVar(x, k, loc, newRigidity, text)
+            Type.KindedVar(sym.withRigidity(newRigidity), loc)
           case Some(tvar) => tvar
         }
     }
