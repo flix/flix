@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.language.ast.Symbol.{LabelSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{ParOps, Validation}
-import ca.uwaterloo.flix.language.phase.Optimizer.isTrivialExp
 
 /**
  * The occurrence analyzer collects information on variable usage
@@ -76,17 +75,15 @@ object OccurrenceAnalyzer {
     val fparams = defn.fparams.map(visitFormalParam)
     val (e, _) = visitExp(defn.exp)
     /// Inline defs if:
-    /// Arguments are trivial, i.e. literals or variables.
     /// Def consists of a single non-self function call.
-    val occurDef = e match {
-      case OccurrenceAst.Expression.ApplyDefTail(sym, args, _, _) =>
-        val argsTrivial = args.forall(isTrivialExp)
-        val isTrivialNonSelfCall = argsTrivial && sym != defn.sym
-        DefContext(isTrivialNonSelfCall)
+    val defContext = e match {
+      case OccurrenceAst.Expression.ApplyDefTail(sym, _, _, _) =>
+        val isNonSelfCall = sym != defn.sym
+        DefContext(isNonSelfCall)
       case _ => DefContext(false)
     }
 
-    OccurrenceAst.Def(defn.ann, defn.mod, defn.sym, fparams, e, occurDef, defn.tpe, defn.loc)
+    OccurrenceAst.Def(defn.ann, defn.mod, defn.sym, fparams, e, defContext, defn.tpe, defn.loc)
   }
 
   /**
