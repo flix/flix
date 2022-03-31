@@ -21,17 +21,17 @@ namespace TestMutMap {
 
     @test
     def sameElements01(): Bool = region r {
-        let m1 = MutMap.emptyWithRegion(r): MutMap[Int32, Int32, _];
-        let m2 = MutMap.emptyWithRegion(r): MutMap[Int32, Int32, _];
+        let m1 = new MutMap(r): MutMap[Int32, Int32, _];
+        let m2 = new MutMap(r): MutMap[Int32, Int32, _];
         MutMap.sameElements(m1, m2)
     }
 
     @test
     def sameElements02(): Bool = region r {
-        let m = MutMap.emptyWithRegion(r);
+        let m = new MutMap(r);
         MutMap.put!(1, "a", m);
 
-        let m2 = MutMap.emptyWithRegion(r);
+        let m2 = new MutMap(r);
         MutMap.put!(1, "a", m2);
 
         MutMap.sameElements(m, m2)
@@ -39,11 +39,11 @@ namespace TestMutMap {
 
     @test
     def sameElements03(): Bool = region r {
-        let m = MutMap.emptyWithRegion(r);
+        let m = new MutMap(r);
         MutMap.put!(1, "a", m);
         MutMap.put!(1, "b", m);
 
-        let m2 = MutMap.emptyWithRegion(r);
+        let m2 = new MutMap(r);
         MutMap.put!(1, "a", m2);
 
         not MutMap.sameElements(m, m2)
@@ -51,11 +51,11 @@ namespace TestMutMap {
 
     @test
     def sameElements04(): Bool = region r {
-        let m = MutMap.emptyWithRegion(r);
+        let m = new MutMap(r);
         MutMap.put!(1, "a", m);
         MutMap.put!(2, "b", m);
 
-        let m2 = MutMap.emptyWithRegion(r);
+        let m2 = new MutMap(r);
         MutMap.put!(1, "a", m2);
 
         not MutMap.sameElements(m, m2)
@@ -63,10 +63,10 @@ namespace TestMutMap {
 
     @test
     def sameElements05(): Bool = region r {
-        let m = MutMap.emptyWithRegion(r);
+        let m = new MutMap(r);
         MutMap.put!(1, "a", m);
 
-        let m2 = MutMap.emptyWithRegion(r);
+        let m2 = new MutMap(r);
         MutMap.put!(1, "a", m2);
         MutMap.put!(2, "b", m2);
 
@@ -75,12 +75,12 @@ namespace TestMutMap {
 
     @test
     def sameElements06(): Bool = region r {
-        let m = MutMap.emptyWithRegion(r);
+        let m = new MutMap(r);
         MutMap.put!(2, "b", m);
         MutMap.put!(3, "c", m);
         MutMap.put!(1, "a", m);
 
-        let m2 = MutMap.emptyWithRegion(r);
+        let m2 = new MutMap(r);
         MutMap.put!(1, "a", m2);
         MutMap.put!(2, "b", m2);
         MutMap.put!(3, "c", m2);
@@ -90,12 +90,27 @@ namespace TestMutMap {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // mergeWithKey                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def merge02(): Bool = region r {
+        let m1 = new MutMap(r);
+        let m2 = new MutMap(r);
+        let _ = MutMap.put!(1, 0, m1);
+        let _ = MutMap.put!(2, 0, m2);
+        MutMap.mergeWithKey!((_, v, _) -> v, m1, m2);
+        MutMap.memberOf(1, m2) and MutMap.memberOf(2, m2)
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // sumValues                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def sumValues01(): Bool = region r {
-        MutMap.emptyWithRegion(r) |> MutMap.sumValues == 0
+        new MutMap(r) |> MutMap.sumValues == 0
     }
 
     @test
@@ -135,7 +150,7 @@ namespace TestMutMap {
 
     @test
     def sumKeys01(): Bool = region r {
-        MutMap.emptyWithRegion(r) |> MutMap.sumKeys == 0
+        new MutMap(r) |> MutMap.sumKeys == 0
     }
 
     @test
@@ -175,7 +190,7 @@ namespace TestMutMap {
 
     @test
     def sumWith01(): Bool = region r {
-        MutMap.emptyWithRegion(r) |> MutMap.sumWith((k, v) -> k + v) == 0
+        new MutMap(r) |> MutMap.sumWith((k, v) -> k + v) == 0
     }
 
     @test
@@ -215,7 +230,7 @@ namespace TestMutMap {
 
     @test
     def productValues01(): Bool = region r {
-        MutMap.emptyWithRegion(r) |> MutMap.productValues == 0
+        new MutMap(r) |> MutMap.productValues == 0
     }
 
     @test
@@ -255,7 +270,7 @@ namespace TestMutMap {
 
     @test
     def productKeys01(): Bool = region r {
-        MutMap.emptyWithRegion(r) |> MutMap.productValues == 0
+        new MutMap(r) |> MutMap.productValues == 0
     }
 
     @test
@@ -295,7 +310,7 @@ namespace TestMutMap {
 
     @test
     def productWith01(): Bool = region r {
-        MutMap.emptyWithRegion(r) |> MutMap.productWith((k, v) -> k + v) == 0
+        new MutMap(r) |> MutMap.productWith((k, v) -> k + v) == 0
     }
 
     @test
@@ -335,7 +350,7 @@ namespace TestMutMap {
 
     @test
     def joinKeys01(): Bool = region r {
-        MutMap.emptyWithRegion(r): MutMap[Int32, Int32, _] |> MutMap.joinKeys(",") == ""
+        new MutMap(r): MutMap[Int32, Int32, _] |> MutMap.joinKeys(",") == ""
     }
 
     @test
@@ -360,7 +375,7 @@ namespace TestMutMap {
 
     @test
     def joinValues01(): Bool = region r {
-        MutMap.emptyWithRegion(r): MutMap[Int32, Int32, _] |> MutMap.joinValues(",") == ""
+        new MutMap(r): MutMap[Int32, Int32, _] |> MutMap.joinValues(",") == ""
     }
 
     @test
@@ -385,7 +400,7 @@ namespace TestMutMap {
 
     @test
     def joinWith01(): Bool = region r {
-        MutMap.emptyWithRegion(r): MutMap[Int32, Int32, _] |>
+        new MutMap(r): MutMap[Int32, Int32, _] |>
             MutMap.joinWith((k, v) -> "${k} => ${v}", ",") == ""
     }
 
@@ -414,12 +429,12 @@ namespace TestMutMap {
 
     @test
     def foldRightLazy01(): Bool = region r {
-        MutMap.foldRightLazy((v, s) -> force s + v, 0, MutMap.emptyWithRegion(r)) == 0
+        MutMap.foldRightLazy((v, s) -> force s + v, 0, new MutMap(r)) == 0
     }
 
     @test
     def foldRightLazy02(): Bool = region r {
-        let m = MutMap.emptyWithRegion(r);
+        let m = new MutMap(r);
         MutMap.put!(1, 2, m);
         MutMap.foldRightLazy((v, s) -> force s + v, 0, m) == 2
     }
