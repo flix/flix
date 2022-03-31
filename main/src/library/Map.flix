@@ -753,13 +753,6 @@ namespace Map {
         Map.foldLeftWithKey(f, empty(), m)
 
     ///
-    /// Returns `m` as a mutable set.
-    ///
-    @Time(1) @Space(1)
-    pub def toMutMap(r: Region[r], m: Map[k, v]): MutMap[k, v, r] & reg(r) =
-        MutMap(ref m @ r)
-
-    ///
     /// Returns the map `m` as a list of key-value pairs.
     ///
     @Time(size(m)) @Space(size(m))
