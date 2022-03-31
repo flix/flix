@@ -16,9 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Type}
 
-object BoolMinimization {
+object BooleanMinimization {
 
   sealed trait Formula
 
@@ -53,16 +53,10 @@ object BoolMinimization {
   }
 
   /**
-    * Merges the conjunctions if `f1` or `f2` are conjunctions themselves.
+    * Merges the conjunctions if arguments are conjunctions themselves.
     */
-  def mkAnd(f1: Formula, f2: Formula): Formula = {
-    import Formula._
-    (f1, f2) match {
-      case (And(ts1), And(ts2)) => And(ts1 ++ ts2)
-      case (And(ts), _) => And(f2 :: ts)
-      case (_, And(ts)) => And(f1 :: ts)
-      case (_, _) => And(List(f1, f2))
-    }
+  def mkAnd(f: Formula*): Formula = {
+    mkAnd(f.toList)
   }
 
   /**
@@ -78,16 +72,10 @@ object BoolMinimization {
   }
 
   /**
-    * Merges the disjunctions if `f1` or `f2` are disjunctions themselves.
+    * Merges the disjunctions if arguments are disjunctions themselves.
     */
-  def mkOr(f1: Formula, f2: Formula): Formula = {
-    import Formula._
-    (f1, f2) match {
-      case (Or(ts1), Or(ts2)) => Or(ts1 ++ ts2)
-      case (Or(ts), _) => Or(f2 :: ts)
-      case (_, Or(ts)) => Or(f1 :: ts)
-      case (_, _) => Or(List(f1, f2))
-    }
+  def mkOr(f: Formula*): Formula = {
+    mkOr(f.toList)
   }
 
   /**
@@ -144,5 +132,55 @@ object BoolMinimization {
     * Ex. `(x ∧ y) ∨ (z ∧ ¬y ∧ ¬z) ∨ (x)`
     */
   def toDNF(f: Formula): Formula = ???
+
+  def main(args: Array[String]): Unit = {
+    import Formula._
+    def mkVar(s: String): Var = Var(Type.KindedVar(s.hashCode, Kind.Bool, SourceLocation.Unknown, Rigidity.Flexible, Some(s)))
+
+    val formulas = List(
+      mkAnd(mkVar("x"), mkVar("y")),
+      mkOr(mkVar("y"), mkVar("z")),
+      mkAnd(mkOr(mkVar("x"), mkVar("y")), mkOr(mkVar("x"), mkVar("z"))),
+      mkNot(mkAnd(mkOr(mkVar("x"), mkNot(mkVar("y"))), mkNot(mkOr(mkVar("x"), mkVar("z"))))),
+    )
+
+    def run(msg: String, t: Formula => Formula): Unit = {
+      println(msg)
+      formulas.foreach(f => {
+        println("----")
+        println(show(f))
+        println(show(t(f)))
+      })
+    }
+
+    run("NNF", toNNF)
+  }
+
+  def show(f: Formula): String = {
+    def showAux(f: Formula): (String, Boolean) = {
+      def showTerm(term: Formula): String = {
+        val (termStr, paran) = showAux(term)
+        if (paran) s"($termStr)" else termStr
+      }
+
+      f match {
+        case Formula.True => ("T", false)
+        case Formula.False => ("F", false)
+        case Formula.Var(v) => (v.text.getOrElse("???"), false)
+        case Formula.Not(term) =>
+          val (termStr, paran) = showAux(term)
+          val rep = if (paran) s"($termStr)" else termStr
+          (s"¬$rep", false)
+        case Formula.And(terms) =>
+          val rep = terms.map(showTerm).mkString(" ∧ ")
+          (rep, true)
+        case Formula.Or(terms) =>
+          val rep = terms.map(showTerm).mkString(" ∨ ")
+          (rep, true)
+      }
+    }
+
+    showAux(f)._1
+  }
 
 }
