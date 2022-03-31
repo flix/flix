@@ -24,7 +24,7 @@ instance Scoped[MutMap[k, v]] {
 }
 
 instance Newable[MutMap[k, v]] {
-    pub def new(r: Region[r]): MutMap[k, v, r] & reg(r) = MutMap.emptyWithRegion(r)
+    pub def new(r: Region[r]): MutMap[k, v, r] \ Write(r) = MutMap.emptyWithRegion(r)
 }
 
 namespace MutMap {
@@ -32,13 +32,13 @@ namespace MutMap {
     ///
     /// Returns a fresh empty mutable map.
     ///
-    pub def emptyWithRegion(r: Region[r]): MutMap[k, v, r] & reg(r) =
+    pub def emptyWithRegion(r: Region[r]): MutMap[k, v, r] \ Write(r) =
         MutMap(ref Map.empty() @ r)
 
     ///
     /// Returns `true` if and only if the mutable map `m` contains the key `k`.
     ///
-    pub def memberOf(k: k, m: MutMap[k, v, r]): Bool & reg(r) with Order[k] =
+    pub def memberOf(k: k, m: MutMap[k, v, r]): Bool \ Read(r) with Order[k] =
         let MutMap(mm) = m;
         Map.memberOf(k, deref mm)
 
@@ -47,7 +47,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def minimumKey(m: MutMap[k, v, r]): Option[(k, v)] & reg(r) =
+    pub def minimumKey(m: MutMap[k, v, r]): Option[(k, v)] \ Read(r) =
         let MutMap(mm) = m;
         Map.minimumKey(deref mm)
 
@@ -59,7 +59,7 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
     @ParallelWhenPure
-    pub def minimumKeyBy(cmp: (k, k) -> Comparison & ef, m: MutMap[k, v, r]): Option[(k, v)] & ef and reg(r) =
+    pub def minimumKeyBy(cmp: (k, k) -> Comparison & ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.minimumKeyBy(cmp, deref mm)
 
@@ -69,7 +69,7 @@ namespace MutMap {
     /// Returns `None` if `m` is empty.
     ///
     @Parallel
-    pub def minimumValue(m: MutMap[k, v, r]): Option[(k, v)] & reg(r) with Order[v] =
+    pub def minimumValue(m: MutMap[k, v, r]): Option[(k, v)] \ Read(r) with Order[v] =
         let MutMap(mm) = m;
         Map.minimumValue(deref mm)
 
@@ -81,7 +81,7 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
     @ParallelWhenPure
-    pub def minimumValueBy(cmp: (v, v) -> Comparison & ef, m: MutMap[k, v, r]): Option[(k, v)] & ef and reg(r) =
+    pub def minimumValueBy(cmp: (v, v) -> Comparison & ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.minimumValueBy(cmp, deref mm)
 
@@ -90,7 +90,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is empty.
     ///
-    pub def maximumKey(m: MutMap[k, v, r]): Option[(k, v)] & reg(r) =
+    pub def maximumKey(m: MutMap[k, v, r]): Option[(k, v)] \ Read(r) =
         let MutMap(mm) = m;
         Map.maximumKey(deref mm)
 
@@ -102,7 +102,7 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def maximumKeyBy(cmp: (k, k) -> Comparison & ef, m: MutMap[k, v, r]): Option[(k, v)] & ef and reg(r) =
+    pub def maximumKeyBy(cmp: (k, k) -> Comparison & ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.maximumKeyBy(cmp, deref mm)
 
@@ -112,7 +112,7 @@ namespace MutMap {
     /// Returns `None` if `m` is empty.
     ///
     @Parallel
-    pub def maximumValue(m: MutMap[k, v, r]): Option[(k, v)] & reg(r) with Order[v] =
+    pub def maximumValue(m: MutMap[k, v, r]): Option[(k, v)] \ Read(r) with Order[v] =
         let MutMap(mm) = m;
         Map.maximumValue(deref mm)
 
@@ -124,28 +124,28 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
     @ParallelWhenPure
-    pub def maximumValueBy(cmp: (v, v) -> Comparison & ef, m: MutMap[k, v, r]): Option[(k, v)] & ef and reg(r) =
+    pub def maximumValueBy(cmp: (v, v) -> Comparison & ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.maximumValueBy(cmp, deref mm)
 
     ///
     /// Returns the keys of the mutable map `m`.
     ///
-    pub def keysOf(m: MutMap[k, v, r]): Set[k] & reg(r) with Order[k] =
+    pub def keysOf(m: MutMap[k, v, r]): Set[k] \ Read(r) with Order[k] =
         let MutMap(mm) = m;
         Map.keysOf(deref mm)
 
     ///
     /// Returns the values of the mutable map `m`.
     ///
-    pub def valuesOf(m: MutMap[k, v, r]): List[v] & reg(r) =
+    pub def valuesOf(m: MutMap[k, v, r]): List[v] \ Read(r) =
         let MutMap(mm) = m;
         Map.valuesOf(deref mm)
 
     ///
     /// Returns the size of the mutable map `m`.
     ///
-    pub def size(m: MutMap[k, v, r]): Int32 & reg(r) =
+    pub def size(m: MutMap[k, v, r]): Int32 \ Read(r) =
         let MutMap(mm) = m;
         Map.size(deref mm)
 
@@ -154,7 +154,7 @@ namespace MutMap {
     ///
     /// Otherwise returns `None`.
     ///
-    pub def get(k: k, m: MutMap[k, v, r]): Option[v] & reg(r) with Order[k] =
+    pub def get(k: k, m: MutMap[k, v, r]): Option[v] \ Read(r) with Order[k] =
         let MutMap(mm) = m;
         Map.get(k, deref mm)
 
@@ -163,14 +163,14 @@ namespace MutMap {
     ///
     /// Otherwise returns `d`.
     ///
-    pub def getWithDefault(k: k, d: v, m: MutMap[k, v, r]): v & reg(r) with Order[k] =
+    pub def getWithDefault(k: k, d: v, m: MutMap[k, v, r]): v \ Read(r) with Order[k] =
         let MutMap(mm) = m;
         Map.getWithDefault(k, d, deref mm)
 
     ///
     /// Updates the mutable map `m` with the binding `k -> v`. Replaces any existing binding.
     ///
-    pub def put!(k: k, v: v, m: MutMap[k, v, r]): Unit & reg(r) with Order[k] =
+    pub def put!(k: k, v: v, m: MutMap[k, v, r]): Unit \ { Read(r), Write(r) } with Order[k] =
         let MutMap(mm) = m;
         mm := Map.insert(k, v, deref mm)
 
@@ -179,7 +179,7 @@ namespace MutMap {
     ///
     /// Otherwise updates the mutable map `m` with the binding `k -> v`.
     ///
-    pub def putWith!(f: (v, v) -> v & ef, k: k, v: v, m: MutMap[k, v, r]): Unit & ef and reg(r) with Order[k] =
+    pub def putWith!(f: (v, v) -> v & ef, k: k, v: v, m: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
         let MutMap(mm) = m;
         mm := Map.insertWith(f, k, v, deref mm)
 
@@ -188,7 +188,7 @@ namespace MutMap {
     ///
     /// Otherwise leaves the map is unchanged.
     ///
-    pub def adjust!(f: v -> v & ef, k: k, m: MutMap[k, v, r]): Unit & ef and reg(r) with Order[k] =
+    pub def adjust!(f: v -> v & ef, k: k, m: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
         adjustWithKey!((_, v1) -> f(v1), k, m)
 
     ///
@@ -196,14 +196,14 @@ namespace MutMap {
     ///
     /// Otherwise leaves the map is unchanged.
     ///
-    pub def adjustWithKey!(f: (k, v) -> v & ef, k: k, m: MutMap[k, v, r]): Unit & ef and reg(r) with Order[k] =
+    pub def adjustWithKey!(f: (k, v) -> v & ef, k: k, m: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
         let MutMap(mm) = m;
         mm := Map.adjustWithKey(f, k, deref mm)
 
     ///
     /// Removes all mappings from the mutable map `m`.
     ///
-    pub def clear!(m: MutMap[k, v, r]): Unit & reg(r) =
+    pub def clear!(m: MutMap[k, v, r]): Unit \ { Read(r), Write(r) } =
         let MutMap(mm) = m;
         mm := Map.empty()
 
@@ -212,35 +212,38 @@ namespace MutMap {
     ///
     /// Otherwise updates the mutable map `m` with a new mapping `k -> d` and returns d.
     ///
-    pub def getOrElsePut!(k: k, d: v, m: MutMap[k, v, r]): v & reg(r) with Order[k] =
+    pub def getOrElsePut!(k: k, d: v, m: MutMap[k, v, r]): v \ { Read(r), Write(r) } with Order[k] =
         let MutMap(mm) = m;
         match Map.get(k, deref mm) {
             case None    => mm := Map.insert(k, d, deref mm); d
             case Some(v) => v
         }
-
+/*
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` in a left-biased manner.
     ///
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
-    pub def merge!(m1: MutMap[k, v, r], m2: MutMap[k, v, r]): Unit & reg(r) with Order[k] =
+    pub def merge!(m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit  \ { Read(r1, r2), Write(r2) } with Order[k] =
         mergeWithKey!((_, v1, _) -> v1, m1, m2)
 
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`.
     ///
-    pub def mergeWith!(f: (v, v) -> v & ef, m1: MutMap[k, v, r], m2: MutMap[k, v, r]): Unit & ef and reg(r) with Order[k] =
+    pub def mergeWith!(f: (v, v) -> v & ef, m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit  \ { ef, Read(r1, r2), Write(r2) } with Order[k] =
         mergeWithKey!((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
-    pub def mergeWithKey!(f: (k, v, v) -> v & ef, m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit & ef and reg(r1) and reg(r2) with Order[k] =
+    pub def mergeWithKey!(f: (k, v, v) -> v & ef, m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit \ { ef, Read(r1, r2), Write(r2) } with Order[k] =
         let MutMap(mm1) = m1;
         let MutMap(mm2) = m2;
         mm2 := Map.unionWithKey(f, deref mm1, deref mm2)
+/*
 
+
+/*
     ///
     /// Removes all mappings `k -> v` from the mutable map `m` where `v` does not satisfy the predicate function `f`.
     ///
@@ -600,5 +603,7 @@ namespace MutMap {
     pub def joinWith(f: (k, v) -> String & ef, sep: String, m: MutMap[k, v, r]): String & ef and reg(r) =
         let MutMap(mm) = m;
         Map.joinWith(f, sep, deref mm)
+
+*/
 
 }

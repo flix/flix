@@ -92,7 +92,7 @@ namespace TestMutMap {
     /////////////////////////////////////////////////////////////////////////////
     // mergeWithKey                                                            //
     /////////////////////////////////////////////////////////////////////////////
-
+/*
     @test
     def merge01(): Bool = region r {
         let m1 = new MutMap(r): MutMap[Int32, Int32, _];
@@ -110,7 +110,7 @@ namespace TestMutMap {
         MutMap.mergeWithKey!((_, v, _) -> v, m1, m2);
         MutMap.memberOf(1, m2) and MutMap.memberOf(2, m2)
     }
-
+*/
 
     /////////////////////////////////////////////////////////////////////////////
     // sumValues                                                               //
