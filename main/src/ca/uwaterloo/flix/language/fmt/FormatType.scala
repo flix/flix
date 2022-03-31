@@ -30,7 +30,9 @@ object FormatType {
     }
   }
 
-  // MATT docs
+  /**
+    * Transforms the given kinded type variable symbol into a string.
+    */
   def formatTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit audience: Audience): String = {
     val tpe = Type.KindedVar(sym, SourceLocation.Unknown)
     formatWellKindedType(tpe)
