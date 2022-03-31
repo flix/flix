@@ -240,16 +240,13 @@ namespace MutMap {
         let MutMap(mm1) = m1;
         let MutMap(mm2) = m2;
         mm2 := Map.unionWithKey(f, deref mm1, deref mm2)
-/*
-
-
-/*
+*/
     ///
     /// Removes all mappings `k -> v` from the mutable map `m` where `v` does not satisfy the predicate function `f`.
     ///
     /// The function `f` must be pure.
     ///
-    pub def refine!(f: v -> Bool, m: MutMap[k, v, r]): Unit & reg(r) with Order[k] =
+    pub def refine!(f: v -> Bool, m: MutMap[k, v, r]): Unit \ { Read(r), Write(r) } with Order[k] =
         refineWithKey!((_, v) -> f(v), m)
 
     ///
@@ -257,7 +254,7 @@ namespace MutMap {
     ///
     /// The function `f` must be pure.
     ///
-    pub def refineWithKey!(f: (k, v) -> Bool, m: MutMap[k, v, r]): Unit & reg(r) with Order[k] =
+    pub def refineWithKey!(f: (k, v) -> Bool, m: MutMap[k, v, r]): Unit \ { Read(r), Write(r) } with Order[k] =
         let MutMap(mm) = m;
         mm := Map.filterWithKey(f, deref mm)
 
@@ -266,28 +263,28 @@ namespace MutMap {
     ///
     /// Leaves the map unchanged if the mutable map `m` does not contain any mapping for `k`.
     ///
-    pub def remove!(k: k, m: MutMap[k, v, r]): Unit & reg(r) with Order[k] =
+    pub def remove!(k: k, m: MutMap[k, v, r]): Unit \ { Read(r), Write(r) } with Order[k] =
         let MutMap(mm) = m;
         mm := Map.remove(k, deref mm)
 
     ///
     /// Applies the function `f` to every value in the mutable map `m`.
     ///
-    pub def transform!(f: v -> v & ef, m: MutMap[k, v, r]): Unit & ef and reg(r) with Order[k] =
+    pub def transform!(f: v -> v & ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
         let MutMap(mm) = m;
         mm := Map.map(f, deref mm)
 
     ///
     /// Applies the function `f` to every value in the mutable map `m`.
     ///
-    pub def transformWithKey!(f: (k, v) -> v & ef, m: MutMap[k, v, r]): Unit & ef and reg(r) with Order[k] =
+    pub def transformWithKey!(f: (k, v) -> v & ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
         let MutMap(mm) = m;
         mm := Map.mapWithKey(f, deref mm)
 
     ///
     /// Returns `true` if and only if all mappings in the mutable map `m1` occur in the mutable map `m2`.
     ///
-    pub def isSubmapOf(m1: MutMap[k, v, r], m2: MutMap[k, v, r]): Bool & reg(r) with Order[k], Eq[v] =
+    pub def isSubmapOf(m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Bool \ { Read(r1, r2) } with Order[k], Eq[v] =
         let MutMap(mm1) = m1;
         let MutMap(mm2) = m2;
         Map.isSubmapOf(deref mm1, deref mm2)
@@ -295,7 +292,7 @@ namespace MutMap {
     ///
     /// Returns `true` if and only if all mappings in the mutable map `m1` occur in the mutable map `m2` and `m1 != m2`.
     ///
-    pub def isProperSubmapOf(m1: MutMap[k, v, r], m2: MutMap[k, v, r]): Bool & reg(r) with Order[k], Eq[v] =
+    pub def isProperSubmapOf(m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Bool \ { Read(r1, r2) } with Order[k], Eq[v] =
         let MutMap(mm1) = m1;
         let MutMap(mm2) = m2;
         Map.isProperSubmapOf(deref mm1, deref mm2)
@@ -305,7 +302,7 @@ namespace MutMap {
     ///
     /// The function `f` must be pure.
     ///
-    pub def find(f: (k, v) -> Bool, m: MutMap[k, v, r]): Option[(k, v)] & reg(r) =
+    pub def find(f: (k, v) -> Bool, m: MutMap[k, v, r]): Option[(k, v)] \ Read(r) =
         findLeft(f, m)
 
     ///
@@ -313,7 +310,7 @@ namespace MutMap {
     ///
     /// The function `f` must be pure.
     ///
-    pub def findLeft(f: (k, v) -> Bool, m: MutMap[k, v, r]): Option[(k, v)] & reg(r) =
+    pub def findLeft(f: (k, v) -> Bool, m: MutMap[k, v, r]): Option[(k, v)] \ Read(r) =
         let MutMap(mm) = m;
         Map.findLeft(f, deref mm)
 
@@ -322,17 +319,17 @@ namespace MutMap {
     ///
     /// The function `f` must be pure.
     ///
-    pub def findRight(f: (k, v) -> Bool, m: MutMap[k, v, r]): Option[(k, v)] & reg(r) =
+    pub def findRight(f: (k, v) -> Bool, m: MutMap[k, v, r]): Option[(k, v)] \ Read(r) =
         let MutMap(mm) = m;
         Map.findRight(f, deref mm)
-
+/*
     ///
     /// Returns a map with mappings `k => f(v)` for every `k => v` in `m`.
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def map(f: v1 -> v2 & ef, m: MutMap[k, v1, r]): MutMap[k, v2, r] & ef and reg(r) =
+    pub def map(f: v1 -> v2 & ef, m: MutMap[k, v1, r]): MutMap[k, v2, r] \ { ef, Read(r), Write(r) } =
         mapWithKey((_, v) -> f(v), m)
 
     ///
@@ -341,15 +338,15 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def mapWithKey(f: (k, v1) -> v2 & ef, m: MutMap[k, v1, r]): MutMap[k, v2, r] & ef and reg(r) =
+    pub def mapWithKey(f: (k, v1) -> v2 & ef, m: MutMap[k, v1, r]): MutMap[k, v2, r] \ { ef, Read(r), Write(r) } =
         let MutMap(mm) = m;
         mm := Map.mapWithKey(f, deref mm);
         m
-
+*/
     ///
     /// Alias for `foldLeftWithKey`.
     ///
-    pub def foldWithKey(f: (b, k, v) -> b & ef, i: b, m: MutMap[k, v, r]): b & ef and reg(r)  =
+    pub def foldWithKey(f: (b, k, v) -> b & ef, i: b, m: MutMap[k, v, r]): b \ { ef, Read(r) }  =
         foldLeftWithKey(f, i, m)
 
     ///
@@ -357,7 +354,7 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(...f(f(i, v1), v2)..., vn)`.
     ///
-    pub def foldLeft(f: (b, v) -> b & ef, i: b, m: MutMap[k, v, r]): b & ef and reg(r) =
+    pub def foldLeft(f: (b, v) -> b & ef, i: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.foldLeft(f, i, deref mm)
 
@@ -366,7 +363,7 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(...f(k2, f(k1, i, v1), v2)..., vn)`.
     ///
-    pub def foldLeftWithKey(f: (b, k, v) -> b & ef, i: b, m: MutMap[k, v, r]): b & ef and reg(r) =
+    pub def foldLeftWithKey(f: (b, k, v) -> b & ef, i: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.foldLeftWithKey(f, i, deref mm)
 
@@ -375,7 +372,7 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, i)))`.
     ///
-    pub def foldRight(f: (v, b) -> b & ef, i: b, m: MutMap[k, v, r]): b & ef and reg(r) =
+    pub def foldRight(f: (v, b) -> b & ef, i: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
         foldRightWithKey((_, v, b) -> f(v, b), i, m)
 
     ///
@@ -383,7 +380,7 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, i)))`.
     ///
-    pub def foldRightWithKey(f: (k, v, b) -> b & ef, i: b, m: MutMap[k, v, r]): b & ef and reg(r) =
+    pub def foldRightWithKey(f: (k, v, b) -> b & ef, i: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.foldRightWithKey(f, i, deref mm)
 
@@ -393,7 +390,7 @@ namespace MutMap {
     /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
     /// The foldRightLazy function exists to allow early termination of a fold.
     ///
-    pub def foldRightLazy(f: (v, Lazy[b]) -> b, i: b, m: MutMap[k, v, r]): b & reg(r) =
+    pub def foldRightLazy(f: (v, Lazy[b]) -> b, i: b, m: MutMap[k, v, r]): b \ Read(r) =
         let MutMap(mm) = m;
         Map.foldRightLazy(f, i, deref mm)
 
@@ -404,7 +401,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
-    pub def reduceLeft(f: (v, v) -> v & ef, m: MutMap[k, v, r]): Option[v] & ef and reg(r) =
+    pub def reduceLeft(f: (v, v) -> v & ef, m: MutMap[k, v, r]): Option[v] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.reduceLeft(f, deref mm)
 
@@ -415,7 +412,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
-    pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & ef, m: MutMap[k, v, r]): Option[(k, v)] & ef and reg(r) =
+    pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.reduceLeftWithKey(f, deref mm)
 
@@ -426,7 +423,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
-    pub def reduceRight(f: (v, v) -> v & ef, m: MutMap[k, v, r]): Option[v] & ef and reg(r) =
+    pub def reduceRight(f: (v, v) -> v & ef, m: MutMap[k, v, r]): Option[v] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.reduceRight(f, deref mm)
 
@@ -437,7 +434,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
-    pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & ef, m: MutMap[k, v, r]): Option[(k, v)] & ef and reg(r) =
+    pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.reduceRightWithKey(f, deref mm)
 
@@ -447,21 +444,21 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def count(f: (k, v) -> Bool & ef, m: MutMap[k, v, r]): Int32 & ef and reg(r) =
+    pub def count(f: (k, v) -> Bool & ef, m: MutMap[k, v, r]): Int32 \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.count(f, deref mm)
 
     ///
     /// Returns the sum of all keys in the map `m`.
     ///
-    pub def sumKeys(m: MutMap[Int32, v, r]): Int32 & reg(r) =
+    pub def sumKeys(m: MutMap[Int32, v, r]): Int32 \ Read(r) =
         let MutMap(mm) = m;
         Map.sumKeys(deref mm)
 
     ///
     /// Returns the sum of all values in the map `m`.
     ///
-    pub def sumValues(m: MutMap[k, Int32, r]): Int32 & reg(r) =
+    pub def sumValues(m: MutMap[k, Int32, r]): Int32 \ Read(r) =
         let MutMap(mm) = m;
         Map.sumValues(deref mm)
 
@@ -471,21 +468,21 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def sumWith(f: (k, v) -> Int32 & ef, m: MutMap[k, v, r]): Int32 & ef and reg(r) =
+    pub def sumWith(f: (k, v) -> Int32 & ef, m: MutMap[k, v, r]): Int32 \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.sumWith(f, deref mm)
 
     ///
     /// Returns the product of all keys in the mutable map `m`.
     ///
-    pub def productKeys(m: MutMap[Int32, v, r]): Int32 & reg(r) =
+    pub def productKeys(m: MutMap[Int32, v, r]): Int32 \ Read(r) =
         let MutMap(mm) = m;
         Map.productKeys(deref mm)
 
     ///
     /// Returns the product of all values in the mutable map `m`.
     ///
-    pub def productValues(m: MutMap[k, Int32, r]): Int32 & reg(r) =
+    pub def productValues(m: MutMap[k, Int32, r]): Int32 \ Read(r) =
         let MutMap(mm) = m;
         Map.productValues(deref mm)
 
@@ -495,7 +492,7 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def productWith(f: (k, v) -> Int32 & ef, m: MutMap[k, v, r]): Int32 & ef and reg(r) =
+    pub def productWith(f: (k, v) -> Int32 & ef, m: MutMap[k, v, r]): Int32 \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.productWith(f, deref mm)
 
@@ -506,7 +503,7 @@ namespace MutMap {
     ///
     /// The function `f` must be pure.
     ///
-    pub def exists(f: (k, v) -> Bool, m: MutMap[k, v, r]): Bool & reg(r) =
+    pub def exists(f: (k, v) -> Bool, m: MutMap[k, v, r]): Bool \ Read(r) =
         let MutMap(mm) = m;
         Map.exists(f, deref mm)
 
@@ -517,42 +514,42 @@ namespace MutMap {
     ///
     /// The function `f` must be pure.
     ///
-    pub def forall(f: (k, v) -> Bool, m: MutMap[k, v, r]): Bool & reg(r) =
+    pub def forall(f: (k, v) -> Bool, m: MutMap[k, v, r]): Bool \ Read(r) =
         let MutMap(mm) = m;
         Map.forall(f, deref mm)
 
     ///
     /// Returns a shallow copy of the mutable map `m`.
     ///
-    pub def copy(m: MutMap[k, v, r]): MutMap[k, v, r] & reg(r) =
+    pub def copy(m: MutMap[k, v, r]): MutMap[k, v, r] \ { Read(r), Write(r) } =
         let MutMap(mm) = m;
         MutMap(ref (deref mm) @ Scoped.regionOf(m))
 
     ///
     /// Returns the mutable map `m` as an immutable map.
     ///
-    pub def toMap(m: MutMap[k, v, r]): Map[k, v] & reg(r) =
+    pub def toMap(m: MutMap[k, v, r]): Map[k, v] \ Read(r) =
         let MutMap(mm) = m;
         deref mm
 
     ///
     /// Returns the mutable map `m` as a list of key-value pairs.
     ///
-    pub def toList(m: MutMap[k, v, r]): List[(k, v)] & reg(r) =
+    pub def toList(m: MutMap[k, v, r]): List[(k, v)] \ Read(r) =
         let MutMap(mm) = m;
         Map.toList(deref mm)
 
     ///
     /// Returns the mutable map `m` as a set of key-value pairs.
     ///
-    pub def toSet(m: MutMap[k, v, r]): Set[(k, v)] & reg(r) with Order[k], Order[v] =
+    pub def toSet(m: MutMap[k, v, r]): Set[(k, v)] \ Read(r) with Order[k], Order[v] =
         let MutMap(mm) = m;
         Map.toSet(deref mm)
 
     ///
     /// Applies `f` to every element in the mutable map `m`.
     ///
-    pub def foreach(f: (k, v) -> Unit & ef, m: MutMap[k, v, r]): Unit & ef and reg(r) =
+    pub def foreach(f: (k, v) -> Unit & ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.foreach(f, deref mm)
 
@@ -561,7 +558,7 @@ namespace MutMap {
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison, m: MutMap[k, v, r]): List[(k, v)] & reg(r) =
+    pub def query(p: k -> Comparison, m: MutMap[k, v, r]): List[(k, v)] \ Read(r) =
         let MutMap(mm) = m;
         Map.query(p, deref mm)
 
@@ -570,21 +567,23 @@ namespace MutMap {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, m: MutMap[k, v, r]): Unit & reg(r) =
+    pub def queryWith(p: k -> Comparison, f: (k, v) -> Unit & ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.queryWith(p, f, deref mm)
 
+/*
     ///
     /// Returns `true` if MutMaps `a` and `b` have the same elements, i.e. are structurally equal.
     ///
-    pub def sameElements(a: MutMap[k, v, r], b: MutMap[k, v, r]): Bool & reg(r) with Order[k], Eq[v] =
+    pub def sameElements(a: MutMap[k, v, r1], b: MutMap[k, v, r2]): Bool \ { Read(r1, r2) } with Order[k], Eq[v] =
         (MutMap.isSubmapOf(a, b) and MutMap.isSubmapOf(b, a))
+*/
 
     ///
     /// Returns the concatenation of the string representation of each key `k`
     /// in `m` with `sep` inserted between each element.
     ///
-    pub def joinKeys(sep: String, m: MutMap[k, v, r]): String & reg(r) with ToString[k] =
+    pub def joinKeys(sep: String, m: MutMap[k, v, r]): String \ Read(r) with ToString[k] =
         let MutMap(mm) = m;
         Map.joinKeys(sep, deref mm)
 
@@ -592,7 +591,7 @@ namespace MutMap {
     /// Returns the concatenation of the string representation of each value `v`
     /// in `m` with `sep` inserted between each element.
     ///
-    pub def joinValues(sep: String, m: MutMap[k, v, r]): String & reg(r) with ToString[v] =
+    pub def joinValues(sep: String, m: MutMap[k, v, r]): String \ Read(r) with ToString[v] =
         let MutMap(mm) = m;
         Map.joinValues(sep, deref mm)
 
@@ -600,10 +599,8 @@ namespace MutMap {
     /// Returns the concatenation of the string representation of each key-value pair
     /// `k => v` in `m` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: (k, v) -> String & ef, sep: String, m: MutMap[k, v, r]): String & ef and reg(r) =
+    pub def joinWith(f: (k, v) -> String & ef, sep: String, m: MutMap[k, v, r]): String \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.joinWith(f, sep, deref mm)
-
-*/
 
 }
