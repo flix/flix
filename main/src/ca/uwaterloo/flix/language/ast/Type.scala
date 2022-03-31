@@ -841,7 +841,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True, _)) => tpe1
     case (Type.Cst(TypeConstructor.False, _), _) => Type.False
     case (_, Type.Cst(TypeConstructor.False, _)) => Type.False
-    case (Type.KindedVar(id1, _), Type.KindedVar(id2, _)) if id1 == id2 => tpe1
+    case (Type.KindedVar(sym1, _), Type.KindedVar(sym2, _)) if sym1 == sym2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.And, tpe1, loc), tpe2, loc)
   }
 
@@ -881,7 +881,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True, _)) => Type.True
     case (Type.Cst(TypeConstructor.False, _), _) => tpe2
     case (_, Type.Cst(TypeConstructor.False, _)) => tpe1
-    case (Type.KindedVar(id1, _), Type.KindedVar(id2, _)) if id1 == id2 => tpe1
+    case (Type.KindedVar(sym1, _), Type.KindedVar(sym2, _)) if sym1 == sym2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.Or, tpe1, loc), tpe2, loc)
   }
 

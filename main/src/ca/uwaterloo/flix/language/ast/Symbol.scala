@@ -256,7 +256,6 @@ object Symbol {
 
   /**
     * Kinded type variable symbol.
-    *
     */
   final class KindedTypeVarSym(val id: Int, val text: Option[String], val kind: Kind, val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym {
 
@@ -273,7 +272,6 @@ object Symbol {
 
   /**
     * Unkinded type variable symbol.
-    *
     */
   final class UnkindedTypeVarSym(val id: Int, val text: Option[String], val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym {
 
