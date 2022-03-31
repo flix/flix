@@ -518,8 +518,8 @@ object SemanticTokensProvider {
     */
   private def visitType(tpe0: Type): Iterator[SemanticToken] = tpe0 match {
     case Type.KindedVar(_, loc) =>
-      // TODO: The source location of Type.KindedVar is associated with its declaration, not its use.
-      Iterator.empty
+      val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, loc)
+      Iterator(t)
 
     case Type.Ascribe(tpe, _, _) =>
       visitType(tpe)
