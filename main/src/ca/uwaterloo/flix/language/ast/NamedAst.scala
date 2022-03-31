@@ -309,7 +309,7 @@ object NamedAst {
 
   object Type {
 
-    case class Var(tvar: ast.Type.UnkindedVar, loc: SourceLocation) extends NamedAst.Type
+    case class Var(tvar: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends NamedAst.Type
 
     case class Ambiguous(name: Name.QName, loc: SourceLocation) extends NamedAst.Type
 

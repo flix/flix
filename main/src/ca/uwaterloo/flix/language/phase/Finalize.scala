@@ -406,7 +406,7 @@ object Finalize {
 
       base match {
         case None => t0 match {
-          case Type.KindedVar(id, _, _, _, _) => MonoType.Var(id)
+          case Type.KindedVar(sym, _) => MonoType.Var(sym.id)
           case _ => throw InternalCompilerException(s"Unexpected type: $t0")
         }
 
