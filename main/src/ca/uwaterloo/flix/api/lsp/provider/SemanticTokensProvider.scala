@@ -629,9 +629,9 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given type parameter `tparam0`.
     */
   private def visitTypeParam(tparam0: TypedAst.TypeParam): Iterator[SemanticToken] = tparam0 match {
-    case TypeParam(ident, _, _) =>
-      // TODO: Disabled until type variables are fixed.
-      Iterator.empty
+    case TypeParam(_, sym, _) =>
+      val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, sym.loc)
+      Iterator(t)
   }
 
   /**
