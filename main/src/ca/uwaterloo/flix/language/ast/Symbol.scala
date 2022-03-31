@@ -257,7 +257,7 @@ object Symbol {
   /**
     * Kinded type variable symbol.
     */
-  final class KindedTypeVarSym(val id: Int, val text: Option[String], val kind: Kind, val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym {
+  final class KindedTypeVarSym(val id: Int, val text: Option[String], val kind: Kind, val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym with Ordered[KindedTypeVarSym] {
 
     /**
       * Returns the same symbol with the given kind.
@@ -268,12 +268,13 @@ object Symbol {
 
     override def withRigidity(newRigidity: Rigidity): KindedTypeVarSym = new KindedTypeVarSym(id, text, kind, newRigidity, loc)
 
+    override def compare(that: KindedTypeVarSym): Int = that.id - this.id
   }
 
   /**
     * Unkinded type variable symbol.
     */
-  final class UnkindedTypeVarSym(val id: Int, val text: Option[String], val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym {
+  final class UnkindedTypeVarSym(val id: Int, val text: Option[String], val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym with Ordered[UnkindedTypeVarSym] {
 
     override def withText(newText: Option[String]): UnkindedTypeVarSym = new UnkindedTypeVarSym(id, newText, rigidity, loc)
 
@@ -283,6 +284,8 @@ object Symbol {
       * Ascribes this UnkindedTypeVarSym with the given kind.
       */
     def ascribedWith(k: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, k, rigidity, loc)
+
+    override def compare(that: UnkindedTypeVarSym): Int = that.id - this.id
   }
 
   /**
