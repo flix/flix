@@ -107,47 +107,47 @@ object Reducer {
         case Some(srcSym) => LiftedAst.Expression.Var(srcSym, tpe, loc)
       }
 
-    case Expression.Closure(sym, freeVars, tpe, loc) =>
+    case Expression.Closure(sym, freeVars, tpe, purity, loc) =>
       val fvs = freeVars.map {
         case OccurrenceAst.FreeVar(s, varType) => LiftedAst.FreeVar(env0.getOrElse(s, s), varType)
       }
-      LiftedAst.Expression.Closure(sym, fvs, tpe, loc)
+      LiftedAst.Expression.Closure(sym, fvs, tpe, purity, loc)
 
-    case Expression.ApplyClo(exp, args, tpe, loc) =>
+    case Expression.ApplyClo(exp, args, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
       val as = args.map(visitExp(_, env0))
-      LiftedAst.Expression.ApplyClo(e, as, tpe, loc)
+      LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
 
-    case Expression.ApplyDef(sym, args, tpe, loc) =>
+    case Expression.ApplyDef(sym, args, tpe, purity, loc) =>
       val as = args.map(visitExp(_, env0))
-      LiftedAst.Expression.ApplyDef(sym, as, tpe, loc)
+      LiftedAst.Expression.ApplyDef(sym, as, tpe, purity, loc)
 
-    case Expression.ApplyCloTail(exp, args, tpe, loc) =>
+    case Expression.ApplyCloTail(exp, args, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
       val as = args.map(visitExp(_, env0))
-      LiftedAst.Expression.ApplyCloTail(e, as, tpe, loc)
+      LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
 
-    case Expression.ApplyDefTail(sym, args, tpe, loc) =>
+    case Expression.ApplyDefTail(sym, args, tpe, purity, loc) =>
       val as = args.map(visitExp(_, env0))
-      LiftedAst.Expression.ApplyDefTail(sym, as, tpe, loc)
+      LiftedAst.Expression.ApplyDefTail(sym, as, tpe, purity, loc)
 
-    case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
+    case Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
       val as = actuals.map(visitExp(_, env0))
       val fs = formals.map {
         case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
       }
-      LiftedAst.Expression.ApplySelfTail(sym, fs, as, tpe, loc)
+      LiftedAst.Expression.ApplySelfTail(sym, fs, as, tpe, purity, loc)
 
-    case Expression.Unary(sop, op, exp, tpe, loc) =>
+    case Expression.Unary(sop, op, exp, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.Unary(sop, op, e, tpe, loc)
+      LiftedAst.Expression.Unary(sop, op, e, tpe, purity, loc)
 
-    case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+    case Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1, env0)
       val e2 = visitExp(exp2, env0)
-      LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, loc)
+      LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
 
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       // Eliminate dead branches, if possible.
       val e1 = visitExp(exp1, env0)
       val e2 = visitExp(exp2, env0)
@@ -155,7 +155,7 @@ object Reducer {
       e1 match {
         case LiftedAst.Expression.True(_) => e2
         case LiftedAst.Expression.False(_) => e3
-        case _ => LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc)
+        case _ => LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
       }
 
     case Expression.Branch(exp, branches, tpe, loc) =>
@@ -188,46 +188,46 @@ object Reducer {
         }
       }
 
-    case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
+    case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1, env0)
       val e2 = visitExp(exp2, env0)
-      LiftedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
+      LiftedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
-    case Expression.Is(sym, tag, exp, loc) =>
+    case Expression.Is(sym, tag, exp, purity, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.Is(sym, tag, e, loc)
+      LiftedAst.Expression.Is(sym, tag, e, purity, loc)
 
-    case Expression.Tag(sym, tag, exp, tpe, loc) =>
+    case Expression.Tag(sym, tag, exp, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.Tag(sym, tag, e, tpe, loc)
+      LiftedAst.Expression.Tag(sym, tag, e, tpe, purity, loc)
 
-    case Expression.Untag(sym, tag, exp, tpe, loc) =>
+    case Expression.Untag(sym, tag, exp, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.Untag(sym, tag, e, tpe, loc)
+      LiftedAst.Expression.Untag(sym, tag, e, tpe, purity, loc)
 
-    case Expression.Index(base, offset, tpe, loc) =>
+    case Expression.Index(base, offset, tpe, purity, loc) =>
       val b = visitExp(base, env0)
-      LiftedAst.Expression.Index(b, offset, tpe, loc)
+      LiftedAst.Expression.Index(b, offset, tpe, purity, loc)
 
-    case Expression.Tuple(elms, tpe, loc) =>
+    case Expression.Tuple(elms, tpe, purity, loc) =>
       val es = elms.map(visitExp(_, env0))
-      LiftedAst.Expression.Tuple(es, tpe, loc)
+      LiftedAst.Expression.Tuple(es, tpe, purity, loc)
 
     case Expression.RecordEmpty(tpe, loc) =>
       LiftedAst.Expression.RecordEmpty(tpe, loc)
 
-    case Expression.RecordSelect(exp, field, tpe, loc) =>
+    case Expression.RecordSelect(exp, field, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.RecordSelect(e, field, tpe, loc)
+      LiftedAst.Expression.RecordSelect(e, field, tpe, purity, loc)
 
-    case Expression.RecordExtend(field, value, rest, tpe, loc) =>
+    case Expression.RecordExtend(field, value, rest, tpe, purity, loc) =>
       val v = visitExp(value, env0)
       val r = visitExp(rest, env0)
-      LiftedAst.Expression.RecordExtend(field, v, r, tpe, loc)
+      LiftedAst.Expression.RecordExtend(field, v, r, tpe, purity, loc)
 
-    case Expression.RecordRestrict(field, rest, tpe, loc) =>
+    case Expression.RecordRestrict(field, rest, tpe, purity, loc) =>
       val r = visitExp(rest, env0)
-      LiftedAst.Expression.RecordRestrict(field, r, tpe, loc)
+      LiftedAst.Expression.RecordRestrict(field, r, tpe, purity, loc)
 
     case Expression.ArrayLit(elms, tpe, loc) =>
       val es = elms.map(visitExp(_, env0))
@@ -259,75 +259,75 @@ object Reducer {
       val i2 = visitExp(endIndex, env0)
       LiftedAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
 
-    case Expression.Ref(exp, tpe, loc) =>
+    case Expression.Ref(exp, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.Ref(e, tpe, loc)
+      LiftedAst.Expression.Ref(e, tpe, purity, loc)
 
-    case Expression.Deref(exp, tpe, loc) =>
+    case Expression.Deref(exp, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.Deref(e, tpe, loc)
+      LiftedAst.Expression.Deref(e, tpe, purity, loc)
 
-    case Expression.Assign(exp1, exp2, tpe, loc) =>
+    case Expression.Assign(exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1, env0)
       val e2 = visitExp(exp2, env0)
-      LiftedAst.Expression.Assign(e1, e2, tpe, loc)
+      LiftedAst.Expression.Assign(e1, e2, tpe, purity, loc)
 
-    case Expression.Cast(exp, tpe, loc) =>
+    case Expression.Cast(exp, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.Cast(e, tpe, loc)
+      LiftedAst.Expression.Cast(e, tpe, purity, loc)
 
-    case Expression.TryCatch(exp, rules, tpe, loc) =>
+    case Expression.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
       val rs = rules.map {
         case OccurrenceAst.CatchRule(sym, clazz, body) =>
           val b = visitExp(body, env0)
           LiftedAst.CatchRule(sym, clazz, b)
       }
-      LiftedAst.Expression.TryCatch(e, rs, tpe, loc)
+      LiftedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
 
-    case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
+    case Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
       val as = args.map(visitExp(_, env0))
-      LiftedAst.Expression.InvokeConstructor(constructor, as, tpe, loc)
+      LiftedAst.Expression.InvokeConstructor(constructor, as, tpe, purity, loc)
 
-    case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+    case Expression.InvokeMethod(method, exp, args, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
       val as = args.map(visitExp(_, env0))
-      LiftedAst.Expression.InvokeMethod(method, e, as, tpe, loc)
+      LiftedAst.Expression.InvokeMethod(method, e, as, tpe, purity, loc)
 
-    case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+    case Expression.InvokeStaticMethod(method, args, tpe, purity, loc) =>
       val as = args.map(visitExp(_, env0))
-      LiftedAst.Expression.InvokeStaticMethod(method, as, tpe, loc)
+      LiftedAst.Expression.InvokeStaticMethod(method, as, tpe, purity, loc)
 
-    case Expression.GetField(field, exp, tpe, loc) =>
+    case Expression.GetField(field, exp, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.GetField(field, e, tpe, loc)
+      LiftedAst.Expression.GetField(field, e, tpe, purity, loc)
 
-    case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+    case Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1, env0)
       val e2 = visitExp(exp2, env0)
-      LiftedAst.Expression.PutField(field, e1, e2, tpe, loc)
+      LiftedAst.Expression.PutField(field, e1, e2, tpe, purity, loc)
 
-    case Expression.GetStaticField(field, tpe, loc) =>
-      LiftedAst.Expression.GetStaticField(field, tpe, loc)
+    case Expression.GetStaticField(field, tpe, purity, loc) =>
+      LiftedAst.Expression.GetStaticField(field, tpe, purity, loc)
 
-    case Expression.PutStaticField(field, exp, tpe, loc) =>
+    case Expression.PutStaticField(field, exp, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.PutStaticField(field, e, tpe, loc)
+      LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
-    case Expression.NewChannel(exp, tpe, loc) =>
+    case Expression.NewChannel(exp, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.NewChannel(e, tpe, loc)
+      LiftedAst.Expression.NewChannel(e, tpe, purity, loc)
 
-    case Expression.GetChannel(exp, tpe, loc) =>
+    case Expression.GetChannel(exp, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.GetChannel(e, tpe, loc)
+      LiftedAst.Expression.GetChannel(e, tpe, purity, loc)
 
-    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+    case Expression.PutChannel(exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1, env0)
       val e2 = visitExp(exp2, env0)
-      LiftedAst.Expression.PutChannel(e1, e2, tpe, loc)
+      LiftedAst.Expression.PutChannel(e1, e2, tpe, purity, loc)
 
-    case Expression.SelectChannel(rules, default, tpe, loc) =>
+    case Expression.SelectChannel(rules, default, tpe, purity, loc) =>
       val rs = rules.map {
         case OccurrenceAst.SelectChannelRule(sym, chan, exp) =>
           val c = visitExp(chan, env0)
@@ -337,22 +337,22 @@ object Reducer {
 
       val d = default.map(visitExp(_, env0))
 
-      LiftedAst.Expression.SelectChannel(rs, d, tpe, loc)
+      LiftedAst.Expression.SelectChannel(rs, d, tpe, purity, loc)
 
-    case Expression.Spawn(exp, tpe, loc) =>
+    case Expression.Spawn(exp, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.Spawn(e, tpe, loc)
+      LiftedAst.Expression.Spawn(e, tpe, purity, loc)
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp, env0)
       LiftedAst.Expression.Lazy(e, tpe, loc)
 
-    case Expression.Force(exp, tpe, loc) =>
+    case Expression.Force(exp, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.Force(e, tpe, loc)
+      LiftedAst.Expression.Force(e, tpe, purity, loc)
 
-    case Expression.HoleError(sym, tpe, loc) => LiftedAst.Expression.HoleError(sym, tpe, loc)
+    case Expression.HoleError(sym, tpe, purity, loc) => LiftedAst.Expression.HoleError(sym, tpe, purity, loc)
 
-    case Expression.MatchError(tpe, loc) => LiftedAst.Expression.MatchError(tpe, loc)
+    case Expression.MatchError(tpe, purity, loc) => LiftedAst.Expression.MatchError(tpe, purity, loc)
   }
 }

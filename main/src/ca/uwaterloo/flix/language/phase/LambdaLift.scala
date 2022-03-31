@@ -114,7 +114,7 @@ object LambdaLift {
 
       case SimplifiedAst.Expression.Var(sym, tpe, loc) => LiftedAst.Expression.Var(sym, tpe, loc)
 
-      case SimplifiedAst.Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
+      case SimplifiedAst.Expression.LambdaClosure(fparams, freeVars, exp, tpe, purity, loc) =>
         // Recursively lift the inner expression.
         val liftedExp = visitExp(exp)
 
@@ -138,35 +138,35 @@ object LambdaLift {
         val fvs = freeVars.map(visitFreeVar)
 
         // Construct the closure expression.
-        LiftedAst.Expression.Closure(freshSymbol, fvs, tpe, loc)
+        LiftedAst.Expression.Closure(freshSymbol, fvs, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
+      case SimplifiedAst.Expression.Closure(sym, freeVars, tpe, purity, loc) =>
         val fvs = freeVars.map(visitFreeVar)
-        LiftedAst.Expression.Closure(sym, fvs, tpe, loc)
+        LiftedAst.Expression.Closure(sym, fvs, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) =>
+      case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
         val e = visitExp(exp)
         val as = args map visitExp
-        LiftedAst.Expression.ApplyClo(e, as, tpe, loc)
+        LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.ApplyDef(sym, args, tpe, loc) =>
+      case SimplifiedAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
         val as = args map visitExp
-        LiftedAst.Expression.ApplyDef(sym, as, tpe, loc)
+        LiftedAst.Expression.ApplyDef(sym, as, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, loc) =>
+      case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Unary(sop, op, e, tpe, loc)
+        LiftedAst.Expression.Unary(sop, op, e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+      case SimplifiedAst.Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, loc)
+        LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+      case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         val e3 = visitExp(exp3)
-        LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc)
+        LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
       case SimplifiedAst.Expression.Branch(exp, branches, tpe, loc) =>
         val e = visitExp(exp)
@@ -187,52 +187,52 @@ object LambdaLift {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         e1 match {
-          case LiftedAst.Expression.Closure(defSym, freeVars, _, _) =>
+          case LiftedAst.Expression.Closure(defSym, freeVars, _, _, _) =>
             val index = freeVars.indexWhere(freeVar => varSym == freeVar.sym)
             if (index == -1) {
               // function never calls itself
               LiftedAst.Expression.Let(varSym, e1, e2,tpe, purity, loc)
             } else
-              LiftedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
+              LiftedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
           case _ => throw InternalCompilerException(s"Unexpected expression: '$e1'.")
         }
 
-      case SimplifiedAst.Expression.Is(sym, tag, exp, loc) =>
+      case SimplifiedAst.Expression.Is(sym, tag, exp, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Is(sym, tag, e, loc)
+        LiftedAst.Expression.Is(sym, tag, e, purity, loc)
 
-      case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) =>
+      case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Tag(enum, tag, e, tpe, loc)
+        LiftedAst.Expression.Tag(enum, tag, e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Untag(sym, tag, exp, tpe, loc) =>
+      case SimplifiedAst.Expression.Untag(sym, tag, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Untag(sym, tag, e, tpe, loc)
+        LiftedAst.Expression.Untag(sym, tag, e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Index(exp, offset, tpe, loc) =>
+      case SimplifiedAst.Expression.Index(exp, offset, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Index(e, offset, tpe, loc)
+        LiftedAst.Expression.Index(e, offset, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
+      case SimplifiedAst.Expression.Tuple(elms, tpe, purity, loc) =>
         val es = elms map visitExp
-        LiftedAst.Expression.Tuple(es, tpe, loc)
+        LiftedAst.Expression.Tuple(es, tpe, purity, loc)
 
       case SimplifiedAst.Expression.RecordEmpty(tpe, loc) =>
         LiftedAst.Expression.RecordEmpty(tpe, loc)
 
-      case SimplifiedAst.Expression.RecordSelect(exp, field, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordSelect(exp, field, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.RecordSelect(e, field, tpe, loc)
+        LiftedAst.Expression.RecordSelect(e, field, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.RecordExtend(field, value, rest, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordExtend(field, value, rest, tpe, purity, loc) =>
         val v = visitExp(value)
         val r = visitExp(rest)
-        LiftedAst.Expression.RecordExtend(field, v, r, tpe, loc)
+        LiftedAst.Expression.RecordExtend(field, v, r, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.RecordRestrict(field, rest, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordRestrict(field, rest, tpe, purity, loc) =>
         val r = visitExp(rest)
-        LiftedAst.Expression.RecordRestrict(field, r, tpe, loc)
+        LiftedAst.Expression.RecordRestrict(field, r, tpe, purity, loc)
 
       case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map visitExp
@@ -264,75 +264,75 @@ object LambdaLift {
         val i2 = visitExp(endIndex)
         LiftedAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
 
-      case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.Ref(exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Ref(e, tpe, loc)
+        LiftedAst.Expression.Ref(e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.Deref(exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Deref(e, tpe, loc)
+        LiftedAst.Expression.Deref(e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
+      case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        LiftedAst.Expression.Assign(e1, e2, tpe, loc)
+        LiftedAst.Expression.Assign(e1, e2, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Cast(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.Cast(exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Cast(e, tpe, loc)
+        LiftedAst.Expression.Cast(e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.TryCatch(exp, rules, tpe, loc) =>
+      case SimplifiedAst.Expression.TryCatch(exp, rules, tpe, purity, loc) =>
         val e = visitExp(exp)
         val rs = rules map {
           case SimplifiedAst.CatchRule(sym, clazz, body) =>
             val b = visitExp(body)
             LiftedAst.CatchRule(sym, clazz, b)
         }
-        LiftedAst.Expression.TryCatch(e, rs, tpe, loc)
+        LiftedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
+      case SimplifiedAst.Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
         val as = args.map(visitExp)
-        LiftedAst.Expression.InvokeConstructor(constructor, as, tpe, loc)
+        LiftedAst.Expression.InvokeConstructor(constructor, as, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+      case SimplifiedAst.Expression.InvokeMethod(method, exp, args, tpe, purity, loc) =>
         val e = visitExp(exp)
         val as = args.map(visitExp)
-        LiftedAst.Expression.InvokeMethod(method, e, as, tpe, loc)
+        LiftedAst.Expression.InvokeMethod(method, e, as, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+      case SimplifiedAst.Expression.InvokeStaticMethod(method, args, tpe, purity, loc) =>
         val as = args.map(visitExp)
-        LiftedAst.Expression.InvokeStaticMethod(method, as, tpe, loc)
+        LiftedAst.Expression.InvokeStaticMethod(method, as, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.GetField(field, exp, tpe, loc) =>
+      case SimplifiedAst.Expression.GetField(field, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.GetField(field, e, tpe, loc)
+        LiftedAst.Expression.GetField(field, e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
+      case SimplifiedAst.Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        LiftedAst.Expression.PutField(field, e1, e2, tpe, loc)
+        LiftedAst.Expression.PutField(field, e1, e2, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.GetStaticField(field, tpe, loc) =>
-        LiftedAst.Expression.GetStaticField(field, tpe, loc)
+      case SimplifiedAst.Expression.GetStaticField(field, tpe, purity, loc) =>
+        LiftedAst.Expression.GetStaticField(field, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.PutStaticField(field, exp, tpe, loc) =>
+      case SimplifiedAst.Expression.PutStaticField(field, exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.PutStaticField(field, e, tpe, loc)
+        LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.NewChannel(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.NewChannel(exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.NewChannel(e, tpe, loc)
+        LiftedAst.Expression.NewChannel(e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.GetChannel(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.GetChannel(exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.GetChannel(e, tpe, loc)
+        LiftedAst.Expression.GetChannel(e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
+      case SimplifiedAst.Expression.PutChannel(exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        LiftedAst.Expression.PutChannel(e1, e2, tpe, loc)
+        LiftedAst.Expression.PutChannel(e1, e2, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.SelectChannel(rules, default, tpe, loc) =>
+      case SimplifiedAst.Expression.SelectChannel(rules, default, tpe, purity, loc) =>
         val rs = rules map {
           case SimplifiedAst.SelectChannelRule(sym, chan, exp) =>
             val c = visitExp(chan)
@@ -342,29 +342,29 @@ object LambdaLift {
 
         val d = default.map(visitExp)
 
-        LiftedAst.Expression.SelectChannel(rs, d, tpe, loc)
+        LiftedAst.Expression.SelectChannel(rs, d, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.Spawn(exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Spawn(e, tpe, loc)
+        LiftedAst.Expression.Spawn(e, tpe, purity, loc)
 
       case SimplifiedAst.Expression.Lazy(exp, tpe, loc) =>
         val e = visitExp(exp)
         LiftedAst.Expression.Lazy(e, tpe, loc)
 
-      case SimplifiedAst.Expression.Force(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.Force(exp, tpe, purity, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Force(e, tpe, loc)
+        LiftedAst.Expression.Force(e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.HoleError(sym, tpe, loc) =>
-        LiftedAst.Expression.HoleError(sym, tpe, loc)
+      case SimplifiedAst.Expression.HoleError(sym, tpe, purity, loc) =>
+        LiftedAst.Expression.HoleError(sym, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.MatchError(tpe, loc) =>
-        LiftedAst.Expression.MatchError(tpe, loc)
+      case SimplifiedAst.Expression.MatchError(tpe, purity, loc) =>
+        LiftedAst.Expression.MatchError(tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Def(_, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-      case SimplifiedAst.Expression.Lambda(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-      case SimplifiedAst.Expression.Apply(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+      case SimplifiedAst.Expression.Def(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+      case SimplifiedAst.Expression.Lambda(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+      case SimplifiedAst.Expression.Apply(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
     }
 
     visitExp(exp0)
