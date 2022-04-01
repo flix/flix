@@ -396,7 +396,7 @@ object Resolver {
         for {
           t <- resolveType(tpe, taenv, ns0, root)
         } yield {
-          val freeVars = e0.tparams.tparams.map(_.tpe)
+          val freeVars = e0.tparams.tparams.map(_.sym)
           val caseType = t
           val enumType = mkUnkindedEnum(e0.sym, freeVars, e0.sym.loc)
           val base = Type.mkTag(e0.sym, tag, caseType, enumType, tpe.loc)
@@ -410,7 +410,7 @@ object Resolver {
       tpe <- resolveType(e0.tpe, taenv, ns0, root)
       derives <- derivesVal
     } yield {
-      val sc = ResolvedAst.Scheme(tparams.tparams.map(_.tpe), tconstrs, tpe)
+      val sc = ResolvedAst.Scheme(tparams.tparams.map(_.sym), tconstrs, tpe)
       ResolvedAst.Enum(e0.doc, ann, e0.mod, e0.sym, tparams, derives, cases.toMap, tpe, sc, e0.loc)
     }
   }
@@ -1706,7 +1706,7 @@ object Resolver {
       * The list of arguments must be the same length as the alias's parameters.
       */
     def applyAlias(alias: ResolvedAst.TypeAlias, args: List[Type], cstLoc: SourceLocation): Type = {
-      val map = alias.tparams.tparams.map(_.tpe).zip(args).toMap[Type.Var, Type]
+      val map = alias.tparams.tparams.map(_.sym).zip(args).toMap[Symbol.TypeVarSym, Type]
       val subst = Substitution(map)
       val tpe = subst(alias.tpe)
       val cst = Type.AliasConstructor(alias.sym, cstLoc)
@@ -2198,7 +2198,10 @@ object Resolver {
   /**
     * Construct the enum type `Sym[ts]`.
     */
-  def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.UnkindedEnum(sym), loc), ts, loc)
+  def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Symbol.UnkindedTypeVarSym], loc: SourceLocation): Type = {
+    val args = ts.map(sym => Type.UnkindedVar(sym, sym.loc))
+    Type.mkApply(Type.Cst(TypeConstructor.UnkindedEnum(sym), loc), args, loc)
+  }
 
   /**
     * Construct the type alias type constructor for the given symbol `sym` with the given kind `k`.

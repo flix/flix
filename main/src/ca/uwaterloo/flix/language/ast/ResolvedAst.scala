@@ -286,7 +286,7 @@ object ResolvedAst {
 
   }
 
-  case class Scheme(quantifiers: List[Type.UnkindedVar], constraints: List[ResolvedAst.TypeConstraint], base: Type)
+  case class Scheme(quantifiers: List[Symbol.UnkindedTypeVarSym], constraints: List[ResolvedAst.TypeConstraint], base: Type)
 
   sealed trait TypeParams {
     val tparams: List[ResolvedAst.TypeParam]
@@ -329,14 +329,14 @@ object ResolvedAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 
   sealed trait TypeParam {
-    val tpe: Type.UnkindedVar
+    val sym: Symbol.UnkindedTypeVarSym
   }
 
   object TypeParam {
 
-    case class Kinded(name: Name.Ident, tpe: Type.UnkindedVar, kind: Kind, loc: SourceLocation) extends TypeParam
+    case class Kinded(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, kind: Kind, loc: SourceLocation) extends TypeParam
 
-    case class Unkinded(name: Name.Ident, tpe: Type.UnkindedVar, loc: SourceLocation) extends TypeParam
+    case class Unkinded(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends TypeParam
 
   }
 

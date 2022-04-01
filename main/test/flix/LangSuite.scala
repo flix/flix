@@ -275,10 +275,6 @@ class LangSuite extends Suites(
     "main/test/flix/Test.Exp.Ref.Precedence.flix",
   ), Options.TestWithLibAll),
 
-  new FlixTest("Test.Exp.ScopedRef", List(
-    "main/test/flix/Test.Exp.ScopedRef.flix"
-  ), Options.TestWithLibAll),
-
   //
   // Reify.
   //

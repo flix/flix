@@ -145,7 +145,7 @@ object Redundancy {
     */
   private def findUnusedTypeParameters(spec: Spec): List[UnusedTypeParam] = {
     spec.tparams.collect {
-      case tparam if deadTypeVar(tparam.tpe, spec.declaredScheme.base.typeVars) => UnusedTypeParam(tparam.name)
+      case tparam if deadTypeVar(tparam.sym, spec.declaredScheme.base.typeVars.map(_.sym)) => UnusedTypeParam(tparam.name)
     }
   }
 
@@ -191,10 +191,10 @@ object Redundancy {
   private def checkUnusedTypeParamsEnums()(implicit root: Root): Used = {
     root.enums.foldLeft(Used.empty) {
       case (acc, (_, decl)) =>
-        val usedTypeVars = decl.cases.foldLeft(Set.empty[Type.KindedVar]) {
-          case (sacc, (_, Case(_, _, tpe, _, _))) => sacc ++ tpe.typeVars
+        val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.TypeVarSym]) {
+          case (sacc, (_, Case(_, _, tpe, _, _))) => sacc ++ tpe.typeVars.map(_.sym)
         }
-        val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe) && !tparam.name.name.startsWith("_"))
+        val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.sym) && !tparam.name.name.startsWith("_"))
         acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
     }
   }
@@ -813,8 +813,8 @@ object Redundancy {
   /**
     * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
     */
-  private def deadTypeVar(tvar: Type.KindedVar, used: Set[Type.KindedVar]): Boolean = {
-    !tvar.sym.text.exists(_.startsWith("_")) &&
+  private def deadTypeVar(tvar: Symbol.KindedTypeVarSym, used: Set[Symbol.KindedTypeVarSym]): Boolean = {
+    !tvar.text.exists(_.startsWith("_")) &&
       !used.contains(tvar)
   }
 
