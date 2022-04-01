@@ -2278,7 +2278,7 @@ object Weeder {
     * Weeds the given parsed optional effect `effOpt`.
     */
   private def visitEff(effOpt: Option[ParsedAst.Type], loc: SourceLocation)(implicit flix: Flix): Validation[WeededAst.Type, WeederError] = effOpt match {
-    case None => WeededAst.Type.True(loc).toSuccess
+    case None => WeededAst.Type.True(loc.asSynthetic).toSuccess
     case Some(tpe) => visitType(tpe).toSuccess
   }
 
