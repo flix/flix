@@ -51,4 +51,25 @@ namespace Test/Exp/Ref/Ref {
     @test
     def testRef17(): Ref[Result[Int32, String]] & Impure = ref Err("Goodbye World!"): Result[Int32, String]
 
+    @test
+    def testScopedRef01(): Unit = // Pure
+        region r {
+            let _u = ref () @ r;
+            ()
+        }
+
+    @test
+    def testScopedRef02(): Unit = // Pure
+        region r {
+            let _u = ref true @ r;
+            ()
+        }
+
+    @test
+    def testScopedRef03(): Unit = // Pure
+        region r {
+            let _u = ref 'a' @ r;
+            ()
+        }
+
 }
