@@ -33,7 +33,7 @@ pub enum MutDeque[a: Type, r: Region] {
 
 
 instance Newable[MutDeque[a]] {
-    pub def new(r: Region[r]): MutDeque[a, r] \ { Write(r) } = MutDeque.new(r)
+    pub def new(r: Region[r]): MutDeque[a, r] \ Write(r) = MutDeque.new(r)
 }
 
 instance Scoped[MutDeque[a]] {
@@ -43,7 +43,7 @@ instance Scoped[MutDeque[a]] {
 // Find fix for this
 /*
 instance Iterable[MutDeque] {
-    pub def iterator(t: MutDeque[a, r]): Iterator[a] \ { Read(r) } =
+    pub def iterator(t: MutDeque[a, r]): Iterator[a] \ Read(r) =
         let MutDeque(a, f, b) = t;
         let len = Array.length(deref a);
         let copy = deref a;
@@ -103,13 +103,13 @@ namespace MutDeque {
     ///
     /// Returns an empty MutDeque.
     ///
-    pub def new(r: Region[r]): MutDeque[a, r] \ { Write(r) } =
+    pub def new(r: Region[r]): MutDeque[a, r] \ Write(r) =
         MutDeque(ref [$DEFAULT$; minCapacity()] @ r @ r, ref 0 @ r, ref 0 @ r)
 
     ///
     /// Returns the number of elements in `d`.
     ///
-    pub def size(d: MutDeque[a, r]): Int32 \ { Read(r) } =
+    pub def size(d: MutDeque[a, r]): Int32 \ Read(r) =
         let MutDeque(_, f, b) = d;
         computeSize(capacity(d), deref f, deref b)
 
@@ -125,14 +125,14 @@ namespace MutDeque {
     ///
     /// Returns `true` if `d` is empty.
     ///
-    pub def isEmpty(d: MutDeque[a, r]): Bool \ { Read(r) } =
+    pub def isEmpty(d: MutDeque[a, r]): Bool \ Read(r) =
         let MutDeque(_, f, b) = d;
         deref f == deref b
 
     ///
     /// Returns the sum of all elements in the deque `d`.
     ///
-    pub def sum(d: MutDeque[Int32, r]): Int32 \ { Read(r) } =
+    pub def sum(d: MutDeque[Int32, r]): Int32 \ Read(r) =
         sumWith(identity, d)
 
     ///
@@ -144,7 +144,7 @@ namespace MutDeque {
     ///
     /// Returns the product of all elements in the deque `d`.
     ///
-    pub def product(d: MutDeque[Int32, r]): Int32 \ { Read(r) } =
+    pub def product(d: MutDeque[Int32, r]): Int32 \ Read(r) =
         productWith(identity, d)
 
     ///
@@ -324,7 +324,7 @@ namespace MutDeque {
     ///
     /// Returns the capacity of `d`.
     ///
-    def capacity(d: MutDeque[a, r]): Int32 \ { Read(r) } =
+    def capacity(d: MutDeque[a, r]): Int32 \ Read(r) =
         let MutDeque(a, _, _) = d;
         Array.length(deref a)
 
@@ -342,7 +342,7 @@ namespace MutDeque {
     ///
     /// Returns `d` as a `List`.
     ///
-    pub def toList(d: MutDeque[a, r]): List[a] \ { Read(r) } =
+    pub def toList(d: MutDeque[a, r]): List[a] \ Read(r) =
         foldRight((x, acc) -> x :: acc, Nil, d)
 
     ///
