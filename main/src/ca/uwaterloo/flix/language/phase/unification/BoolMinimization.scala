@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Type}
 
-object BooleanMinimization {
+object BoolMinimization {
 
   sealed trait Formula
 
@@ -103,13 +103,9 @@ object BooleanMinimization {
 
       case Var(v) => Var(v)
 
-      case not: Not => not.term match {
-        case True => False
-        case False => True
-        case Var(v) => Not(Var(v))
-        case Not(term) => toNNF(term)
-        case And(terms) => mkOr(terms.map(t => toNNF(mkNot(t))))
-        case Or(terms) => mkAnd(terms.map(t => toNNF(mkNot(t))))
+      case not: Not => negate(not.term) match {
+        case n: Not => n // negation of variable
+        case nonNot => toNNF(nonNot)
       }
 
       case And(terms) => mkAnd(terms.map(toNNF))
@@ -119,12 +115,64 @@ object BooleanMinimization {
     }
   }
 
+  def negate(f: Formula): Formula = {
+    import Formula._
+    f match {
+      case True => False
+      case False => True
+      case Var(v) => mkNot(Var(v))
+      case Not(term) => term
+      case And(terms) => mkOr(terms.map(t => mkNot(t)))
+      case Or(terms) => mkAnd(terms.map(t => mkNot(t)))
+    }
+  }
+
   /**
     * Transform `f` to an equivalent formula that is a conjunction of
     * disjunctions of either variables or negated variables.
     * Ex. `(x ∨ y) ∧ (z ∨ ¬y ∨ ¬z) ∧ (x)`
     */
-  def toCNF(f: Formula): Formula = ???
+  def toCNF(f: Formula): Formula = {
+    import Formula._
+    f match {
+      case True => True
+      case False => False
+      case Var(v) => Var(v)
+      case Not(term) => negate(term) match {
+        case n: Not => n // negation of variable
+        case other => toCNF(other)
+      }
+      case And(terms) => mkAnd(terms.map(toCNF))
+      case Or(terms) =>
+        val cnfTerms = terms match {
+          case Nil => List()
+          case first :: rest => rest.foldLeft(toCNF(first))(
+            (cnf, term) => term match {
+              case Formula.True => mkOr(cnf)
+              case Formula.False => ???
+              case Var(v) => ???
+              case Not(term) => ???
+              case And(terms) => ???
+              case Or(terms) => ???
+            }
+          )
+        }
+        ???
+    }
+  }
+
+
+  def pushDownDisjunction(f: Formula, disjunction: Formula): Formula = {
+    import Formula._
+    f match {
+      case True => mkOr(True, disjunction)
+      case False => mkOr(False, disjunction)
+      case Var(v) => mkOr(Var(v), disjunction)
+      case Not(term) => mkOr(Not(term), disjunction)
+      case And(terms) => mkAnd(terms.map(t => pushDownDisjunction(t, disjunction)))
+      case Or(terms) => mkOr(terms :+ disjunction)
+    }
+  }
 
   /**
     * Transform `f` to an equivalent formula that is a disjunction of
@@ -142,6 +190,7 @@ object BooleanMinimization {
       mkOr(mkVar("y"), mkVar("z")),
       mkAnd(mkOr(mkVar("x"), mkVar("y")), mkOr(mkVar("x"), mkVar("z"))),
       mkNot(mkAnd(mkOr(mkVar("x"), mkNot(mkVar("y"))), mkNot(mkOr(mkVar("x"), mkVar("z"))))),
+      mkAnd(mkOr(mkVar("z"), mkNot(mkAnd(mkVar("z"), mkVar("Q")))), mkNot(mkAnd(mkOr(mkVar("x"), mkNot(mkVar("y"))), mkNot(mkOr(mkVar("x"), mkVar("z"))))))
     )
 
     def run(msg: String, t: Formula => Formula): Unit = {
