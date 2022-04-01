@@ -176,8 +176,8 @@ object Namer {
             // Compute the type parameters.
             val tparams = getTypeParams(tparams0, uenv0)
 
-            val tenv = tparams.tparams.map(kv => kv.name.name -> kv.tpe.sym).toMap
-            val quantifiers = tparams.tparams.map(_.tpe).map(x => NamedAst.Type.Var(x.sym, x.loc))
+            val tenv = tparams.tparams.map(kv => kv.name.name -> kv.sym).toMap
+            val quantifiers = tparams.tparams.map(_.sym).map(sym => NamedAst.Type.Var(sym, sym.loc))
             val enumType = if (quantifiers.isEmpty)
               NamedAst.Type.Enum(sym, ident.loc)
             else {
@@ -332,12 +332,12 @@ object Namer {
       val sym = Symbol.mkClassSym(ns0, ident)
       val tparam = getTypeParam(tparams0)
       val tenv = tenv0 ++ getTypeEnv(List(tparam))
-      val tconstr = NamedAst.TypeConstraint(Name.mkQName(ident), NamedAst.Type.Var(tparam.tpe.sym, tparam.loc), sym.loc)
+      val tconstr = NamedAst.TypeConstraint(Name.mkQName(ident), NamedAst.Type.Var(tparam.sym, tparam.loc), sym.loc)
       for {
         ann <- traverse(ann)(visitAnnotation(_, Map.empty, uenv0, tenv))
         superClasses <- traverse(superClasses0)(visitTypeConstraint(_, uenv0, tenv, ns0))
         sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam))
-        laws <- traverse(laws0)(visitDef(_, uenv0, tenv, ns0, List(tconstr), List(tparam.tpe)))
+        laws <- traverse(laws0)(visitDef(_, uenv0, tenv, ns0, List(tconstr), List(tparam.sym)))
       } yield NamedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
   }
 
@@ -353,7 +353,7 @@ object Namer {
         tconstrs <- traverse(tconstrs)(visitTypeConstraint(_, uenv0, tenv, ns0))
         qualifiedClass = getClass(clazz, uenv0)
         instTconstr = NamedAst.TypeConstraint(qualifiedClass, tpe, clazz.loc)
-        defs <- traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr), tparams.tparams.map(_.tpe)))
+        defs <- traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr), tparams.tparams.map(_.sym)))
       } yield NamedAst.Instance(doc, mod, qualifiedClass, tpe, tconstrs, defs, loc)
   }
 
@@ -397,8 +397,8 @@ object Namer {
             case (as, exp) =>
 
               // Build the scheme, including the class type constraint.
-              val classTconstr = NamedAst.TypeConstraint(Name.mkQName(classIdent), NamedAst.Type.Var(classTparam.tpe.sym, classTparam.loc), classSym.loc)
-              val quantifiers = classTparam.tpe :: tparams.tparams.map(_.tpe)
+              val classTconstr = NamedAst.TypeConstraint(Name.mkQName(classIdent), NamedAst.Type.Var(classTparam.sym, classTparam.loc), classSym.loc)
+              val quantifiers = classTparam.sym :: tparams.tparams.map(_.sym)
               val sc = NamedAst.Scheme(quantifiers, classTconstr :: tconstrs, tpe)
 
               val sym = Symbol.mkSigSym(classSym, ident)
@@ -422,7 +422,7 @@ object Namer {
   /**
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`, with type constraints `tconstrs`.
     */
-  private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[Type.UnkindedVar])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
+  private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
@@ -453,7 +453,7 @@ object Namer {
             case (as, e) =>
 
               // Build the scheme, including any instance parameters or type constraints
-              val quantifiers = addedQuantifiers ::: tparams.tparams.map(_.tpe)
+              val quantifiers = addedQuantifiers ::: tparams.tparams.map(_.sym)
               val schemeTconstrs = addedTconstrs ::: tconstrs
               val sc = NamedAst.Scheme(quantifiers, schemeTconstrs, tpe)
 
@@ -1531,9 +1531,9 @@ object Namer {
     */
   private def getTypeParam(tparam0: WeededAst.TypeParam)(implicit flix: Flix): NamedAst.TypeParam = tparam0 match {
     case WeededAst.TypeParam.Kinded(ident, kind) =>
-      NamedAst.TypeParam.Kinded(ident, Type.freshUnkindedVar(ident.loc, text = Some(ident.name)), kind, ident.loc)
+      NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), kind, ident.loc)
     case WeededAst.TypeParam.Unkinded(ident) =>
-      NamedAst.TypeParam.Unkinded(ident, Type.freshUnkindedVar(ident.loc, text = Some(ident.name)), ident.loc)
+      NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
   }
 
   /**
@@ -1566,8 +1566,7 @@ object Namer {
   private def getExplicitKindedTypeParams(tparams0: List[WeededAst.TypeParam.Kinded])(implicit flix: Flix): NamedAst.TypeParams.Kinded = {
     val tparams = tparams0.map {
       case WeededAst.TypeParam.Kinded(ident, kind) =>
-        val tvar = Type.freshUnkindedVar(loc = ident.loc, text = Some(ident.name))
-        NamedAst.TypeParam.Kinded(ident, tvar, kind, ident.loc)
+        NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), kind, ident.loc)
     }
     NamedAst.TypeParams.Kinded(tparams)
   }
@@ -1578,8 +1577,7 @@ object Namer {
   private def getExplicitTypeParams(tparams0: List[WeededAst.TypeParam.Unkinded], uenv0: UseEnv)(implicit flix: Flix): NamedAst.TypeParams.Unkinded = {
     val tparams = tparams0.map {
       case WeededAst.TypeParam.Unkinded(ident) =>
-        val tvar = Type.freshUnkindedVar(ident.loc, text = Some(ident.name))
-        NamedAst.TypeParam.Unkinded(ident, tvar, ident.loc)
+        NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
     }
     NamedAst.TypeParams.Unkinded(tparams)
   }
@@ -1590,7 +1588,7 @@ object Namer {
   private def getImplicitTypeParamsFromTypes(types: List[WeededAst.Type])(implicit flix: Flix): NamedAst.TypeParams.Unkinded = {
     val tvars = types.flatMap(freeVars).distinct
     val tparams = tvars.map {
-      tvar => NamedAst.TypeParam.Unkinded(tvar, Type.freshUnkindedVar(tvar.loc, text = Some(tvar.name)), tvar.loc)
+      ident => NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
     }
     NamedAst.TypeParams.Unkinded(tparams)
   }
@@ -1608,7 +1606,7 @@ object Namer {
     val returnTvars = freeVarsInTenv(tpe, tenv)
 
     val tparams = (fparamTvars ++ returnTvars).distinct.map {
-      tvar => NamedAst.TypeParam.Unkinded(tvar, Type.freshUnkindedVar(tvar.loc, text = Some(tvar.name)), tvar.loc)
+      ident => NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
     }
 
     NamedAst.TypeParams.Unkinded(tparams)
@@ -1628,7 +1626,7 @@ object Namer {
     * Returns a type environment constructed from the given type parameters `tparams0`.
     */
   private def getTypeEnv(tparams0: List[NamedAst.TypeParam]): Map[String, Symbol.UnkindedTypeVarSym] = {
-    tparams0.map(p => p.name.name -> p.tpe.sym).toMap
+    tparams0.map(p => p.name.name -> p.sym).toMap
   }
 
   /**
@@ -1682,6 +1680,13 @@ object Namer {
   private def getSymLocation(f: NamedAst.DefOrSig): SourceLocation = f match {
     case DefOrSig.Def(d) => d.sym.loc
     case DefOrSig.Sig(s) => s.sym.loc
+  }
+
+  /**
+    * Creates a flexible unkinded type variable symbol from the given ident.
+    */
+  private def mkTypeVarSym(ident: Name.Ident)(implicit flix: Flix): Symbol.UnkindedTypeVarSym = {
+    Symbol.freshUnkindedTypeVarSym(Some(ident.name), Rigidity.Flexible, ident.loc)
   }
 
 
