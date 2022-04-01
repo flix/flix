@@ -65,7 +65,7 @@ namespace Array {
     /// Equivalent to the expression `a[i]`.
     ///
     @Time(1) @Space(1)
-    pub def get(i: Int32, a: Array[a]): a & Impure = a[i]
+    pub def get(i: Int32, a: ScopedArray[a, r]): a \ Read(r) = a[i]
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.
@@ -85,7 +85,7 @@ namespace Array {
     /// Returns the length of the array `a`.
     ///
     @Time(1) @Space(1)
-    pub def length(a: Array[a]): Int32 = a.length
+    pub def length(a: ScopedArray[a, r]): Int32 = a.length
 
     ///
     /// Returns a fresh array with the elements from the array `a` from index `b` (inclusive) until index `e` (exclusive).
@@ -1400,7 +1400,7 @@ namespace Array {
     /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
     ///
     @Time(length(a)) @Space(1)
-    pub def sameElements(a: Array[a], b: Array[a]): Bool & Impure with Eq[a] =
+    pub def sameElements(a: ScopedArray[a, r1], b: ScopedArray[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
         let alen = length(a);
         let blen = length(b);
         def loop(i) = {
@@ -1440,7 +1440,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, a: Array[a]): Unit & Impure =
+    pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, a: ScopedArray[a, r]): Unit \ { ef, Read(r), Write(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)
@@ -1483,7 +1483,7 @@ namespace Array {
     /// Update the mutable array `a` with the elements starting at index `i` replaced by `sub`.
     ///
     @Time(length(a)) @Space(1)
-    pub def updateSequence!(i: Int32, sub: Array[a], a: Array[a]): Unit & Impure =
+    pub def updateSequence!(i: Int32, sub: ScopedArray[a, r], a: ScopedArray[a, r]): Unit \ { Read(r), Write(r) } =
         let end = i + length(sub);
         let f = { (_,ix) ->
             if (ix >= i and ix < end)
