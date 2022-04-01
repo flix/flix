@@ -43,7 +43,7 @@ object BoolMinimization {
     * Sort terms `True` -> `False` -> `Var`s (by name then negation) ->
     * complex negation -> conjunctions -> disjunctions.
     */
-  def sortTerms(terms: List[Formula]): List[Formula] = {
+  private def sortTerms(terms: List[Formula]): List[Formula] = {
     import Formula._
     terms.sortWith {
       case (True, True) => false
@@ -79,7 +79,7 @@ object BoolMinimization {
     * the list contains both `x` and `¬x` for some `x`.
     * Assumes the list is sorted.
     */
-  def removeSimpleDuplicates(terms: List[Formula]): Option[List[Formula]] = {
+  private def removeSimpleDuplicates(terms: List[Formula]): Option[List[Formula]] = {
     import Formula._
     terms match {
       case Nil =>
@@ -102,7 +102,7 @@ object BoolMinimization {
     * present, then they must be `True` and `False` respectively. This is
     * substituted in the remaining conjunction.
     */
-  def unitPropagation(terms: List[Formula]): Option[List[Formula]] = {
+  private def unitPropagation(terms: List[Formula]): Option[List[Formula]] = {
     import Formula._
     /**
       * Substitutes the `bindings` given on the formula `f`
@@ -208,7 +208,7 @@ object BoolMinimization {
     * Sorts terms, reduces simple duplicates and returns `None` if the terms
     * contains a simple contradiction.
     */
-  def normalizeTerms(terms: List[Formula]): Option[List[Formula]] = {
+  private def normalizeTerms(terms: List[Formula]): Option[List[Formula]] = {
     removeSimpleDuplicates(sortTerms(terms))
   }
 
@@ -319,6 +319,9 @@ object BoolMinimization {
     */
   def toDNF(f: Formula): Formula = ???
 
+  /**
+    * A couple tests for NNF and CNF
+    */
   def main(args: Array[String]): Unit = {
     import Formula._
     def mkVar(s: String): Var = Var(
@@ -370,7 +373,7 @@ object BoolMinimization {
   /**
     * Creates a string representation of the formula.
     */
-  def show(f: Formula): String = {
+  private def show(f: Formula): String = {
     def showAux(f: Formula): (String, Boolean) = {
       def showTermBraces(term: Formula): String = {
         val (termStr, paran) = showAux(term)
