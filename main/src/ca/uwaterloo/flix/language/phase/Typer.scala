@@ -98,7 +98,7 @@ object Typer {
   private def visitClass(clazz: KindedAst.Class, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
     case KindedAst.Class(doc, ann0, mod, sym, tparam, superClasses, sigs, laws0, loc) =>
       val tparams = getTypeParams(List(tparam))
-      val tconstr = Ast.TypeConstraint(sym, tparam.tpe, sym.loc)
+      val tconstr = Ast.TypeConstraint(sym, Type.KindedVar(tparam.sym, tparam.loc), sym.loc)
       for {
         ann <- visitAnnotations(ann0, root)
         sigs <- Validation.traverse(sigs.values)(visitSig(_, List(tconstr), root, classEnv))
@@ -327,7 +327,7 @@ object Typer {
               /// However, we require an even stronger property for the implementation to work. The inferred type scheme used in the rest of the
               /// compiler must *use the same type variables* in the scheme as in the body expression. Otherwise monomorphization et al. will break.
               ///
-              val inferredScheme = Scheme(inferredType.typeVars.toList, inferredConstrs, inferredType)
+              val inferredScheme = Scheme(inferredType.typeVars.toList.map(_.sym), inferredConstrs, inferredType)
 
               specVal map {
                 spec => (spec, TypedAst.Impl(exp, inferredScheme))
@@ -2243,7 +2243,7 @@ object Typer {
     val declaredTypes = params.map(_.tpe)
     (params zip declaredTypes).foldLeft(Substitution.empty) {
       case (macc, (KindedAst.FormalParam(sym, _, _, _), declaredType)) =>
-        macc ++ Substitution.singleton(sym.tvar.ascribedWith(Kind.Star), declaredType)
+        macc ++ Substitution.singleton(sym.tvar.sym.ascribedWith(Kind.Star), declaredType)
     }
   }
 
@@ -2251,7 +2251,7 @@ object Typer {
     * Returns the typed version of the given type parameters `tparams0`.
     */
   private def getTypeParams(tparams0: List[KindedAst.TypeParam]): List[TypedAst.TypeParam] = tparams0.map {
-    case KindedAst.TypeParam(name, tpe, loc) => TypedAst.TypeParam(name, tpe, loc)
+    case KindedAst.TypeParam(name, sym, loc) => TypedAst.TypeParam(name, sym, loc)
   }
 
   /**

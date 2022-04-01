@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.fmt
 
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Symbol, Type}
 
 object FormatType {
   /**
@@ -28,6 +28,14 @@ object FormatType {
     } catch {
       case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
     }
+  }
+
+  /**
+    * Transforms the given kinded type variable symbol into a string.
+    */
+  def formatTypeVarSym(sym: Symbol.KindedTypeVarSym)(implicit audience: Audience): String = {
+    val tpe = Type.KindedVar(sym, SourceLocation.Unknown)
+    formatWellKindedType(tpe)
   }
 
   /**
