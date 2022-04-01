@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.fmt.Audience
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -39,7 +38,7 @@ object BoolUnification {
     }
 
     tpe1 match {
-      case x: Type.KindedVar if x.rigidity eq Rigidity.Flexible =>
+      case x: Type.KindedVar if x.sym.rigidity eq Rigidity.Flexible =>
         if (tpe2 eq Type.True)
           return Ok(Substitution.singleton(x, Type.True))
         if (tpe2 eq Type.False)
@@ -50,7 +49,7 @@ object BoolUnification {
     }
 
     tpe2 match {
-      case y: Type.KindedVar if y.rigidity eq Rigidity.Flexible =>
+      case y: Type.KindedVar if y.sym.rigidity eq Rigidity.Flexible =>
         if (tpe1 eq Type.True)
           return Ok(Substitution.singleton(y, Type.True))
         if (tpe1 eq Type.False)
@@ -74,7 +73,7 @@ object BoolUnification {
     val query = mkEq(tpe1, tpe2)
 
     // The free and flexible type variables in the query.
-    val freeVars = query.typeVars.toList.filter(_.rigidity == Rigidity.Flexible)
+    val freeVars = query.typeVars.toList.filter(_.sym.rigidity == Rigidity.Flexible)
 
     // Eliminate all variables.
     try {
@@ -131,7 +130,7 @@ object BoolUnification {
     case Type.False => false
     case _ =>
       // Make all variables flexible.
-      val f1 = f.map(tvar => tvar.copy(rigidity = Rigidity.Flexible))
+      val f1 = f.map(tvar => tvar.withRigidity(Rigidity.Flexible))
       val q = mkEq(f1, Type.True)
       try {
         successiveVariableElimination(q, q.typeVars.toList)
