@@ -33,9 +33,9 @@ object Substitution {
   def singleton(x: Type.KindedVar, tpe: Type): Substitution = {
     // Ensure that we do not add any x -> x mappings.
     tpe match {
-      case y: Type.Var if x.id == y.asKinded.id => empty
-      case y: Type.Var if x.text.nonEmpty => Substitution(Map(x -> y.asKinded.copy(text = x.text)))
-      case y: Type.Var if y.text.nonEmpty => Substitution(Map(x.asKinded.copy(text = y.text) -> y))
+      case y: Type.Var if x.sym.id == y.asKinded.sym.id => empty
+      case y: Type.Var if x.sym.text.nonEmpty => Substitution(Map(x -> y.asKinded.withText(x.sym.text)))
+      case y: Type.Var if y.sym.text.nonEmpty => Substitution(Map(x.asKinded.withText(y.sym.text) -> y))
       case _ => Substitution(Map(x -> tpe))
     }
   }
@@ -187,7 +187,7 @@ case class Substitution(m: Map[Type.Var, Type]) {
     for ((tvar1, tpe) <- m) {
       tpe match {
         case tvar2: Type.KindedVar =>
-          (tvar1.text, tvar2.text) match {
+          (tvar1.sym.text, tvar2.sym.text) match {
             case (None, Some(text)) =>
               replacement = replacement + (tvar1 -> text)
             case (Some(text), None) =>
@@ -203,7 +203,7 @@ case class Substitution(m: Map[Type.Var, Type]) {
       */
     def replace(tvar: Type.KindedVar): Type.KindedVar = replacement.get(tvar) match {
       case None => tvar
-      case Some(text) => tvar.copy(text = Some(text))
+      case Some(text) => tvar.withText(Some(text))
     }
 
     ///

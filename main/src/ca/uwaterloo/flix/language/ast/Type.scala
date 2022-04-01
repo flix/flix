@@ -75,8 +75,8 @@ sealed trait Type {
     * }}}
     */
   def typeConstructor: Option[TypeConstructor] = this match {
-    case Type.KindedVar(_, _, _, _, _) => None
-    case Type.UnkindedVar(_, _, _, _) => None
+    case Type.KindedVar(_, _) => None
+    case Type.UnkindedVar(_, _) => None
     case Type.Cst(tc, _) => Some(tc)
     case Type.Apply(t1, _, _) => t1.typeConstructor
     case Type.Ascribe(tpe, _, _) => tpe.typeConstructor
@@ -103,8 +103,8 @@ sealed trait Type {
     * Returns a list of all type constructors in `this` type.
     */
   def typeConstructors: List[TypeConstructor] = this match {
-    case Type.KindedVar(_, _, _, _, _) => Nil
-    case Type.UnkindedVar(_, _, _, _) => Nil
+    case Type.KindedVar(_, _) => Nil
+    case Type.UnkindedVar(_, _) => Nil
     case Type.Cst(tc, _) => tc :: Nil
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Ascribe(tpe, _, _) => tpe.typeConstructors
@@ -176,9 +176,9 @@ sealed trait Type {
     * Returns the size of `this` type.
     */
   def size: Int = this match {
-    case Type.KindedVar(_, _, _, _, _) => 1
-    case Type.UnkindedVar(_, _, _, _) => 1
-    case Type.Cst(tc, _) => 1
+    case Type.KindedVar(_, _) => 1
+    case Type.UnkindedVar(_, _) => 1
+    case Type.Cst(_, _) => 1
     case Type.Ascribe(tpe, _, _) => tpe.size
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
     case Type.Alias(_, _, tpe, _) => tpe.size
@@ -341,9 +341,22 @@ object Type {
     * The union of type variables.
     */
   sealed trait Var extends Type {
-    def id: Int
+    def sym: Symbol.TypeVarSym
 
-    def text: Option[String]
+    def kind: Kind = this match {
+      case KindedVar(sym, _) => sym.kind
+      case UnkindedVar(_, _) => throw InternalCompilerException("Attempt to access kind of unkinded type variable.")
+    }
+
+    /**
+      * Returns the same type variable with the given text.
+      */
+    def withText(text: Option[String]): Var
+
+    /**
+      * Returns the same type variable with the given rigidity.
+      */
+    def withRigidity(rigidity: Rigidity): Var
 
     /**
       * Casts this type variable to a kinded type variable.
@@ -372,56 +385,63 @@ object Type {
     * A type variable.
     */
   @IntroducedBy(Kinder.getClass)
-  case class KindedVar(id: Int, kind: Kind, loc: SourceLocation, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with Var with BaseType with Ordered[Type.KindedVar] {
+  case class KindedVar(sym: Symbol.KindedTypeVarSym, loc: SourceLocation) extends Type with Var with BaseType with Ordered[Type.KindedVar] {
+
+    override def withText(text: Option[String]): KindedVar = KindedVar(sym.withText(text), loc)
+
+    override def withRigidity(rigidity: Rigidity): KindedVar = KindedVar(sym.withRigidity(rigidity), loc)
+
     /**
       * Returns `true` if `this` type variable is equal to `o`.
       */
     override def equals(o: scala.Any): Boolean = o match {
-      case that: KindedVar => this.id == that.id
+      case that: KindedVar => this.sym == that.sym
       case _ => false
     }
 
     /**
       * Returns the hash code of `this` type variable.
       */
-    override def hashCode(): Int = id
+    override def hashCode(): Int = sym.hashCode()
 
     /**
       * Compares `this` type variable to `that` type variable.
       */
-    override def compare(that: Type.KindedVar): Int = this.id - that.id
+    override def compare(that: Type.KindedVar): Int = this.sym.id - that.sym.id
   }
 
   /**
     * A type variable without a kind.
     */
   @EliminatedBy(Kinder.getClass)
-  case class UnkindedVar(id: Int, loc: SourceLocation, rigidity: Rigidity = Rigidity.Flexible, text: Option[String] = None) extends Type with Var with BaseType with Ordered[Type.UnkindedVar] {
+  case class UnkindedVar(sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends Type with Var with BaseType with Ordered[Type.UnkindedVar] {
 
-    override def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type variable")
+    override def withText(text: Option[String]): UnkindedVar = UnkindedVar(sym.withText(text), loc)
+
+    override def withRigidity(rigidity: Rigidity): UnkindedVar = UnkindedVar(sym.withRigidity(rigidity), loc)
 
     /**
       * Returns `true` if `this` type variable is equal to `o`.
       */
     override def equals(o: scala.Any): Boolean = o match {
-      case that: UnkindedVar => this.id == that.id
+      case that: UnkindedVar => this.sym == that.sym
       case _ => false
     }
 
     /**
       * Returns the hash code of `this` type variable.
       */
-    override def hashCode(): Int = id
+    override def hashCode(): Int = sym.hashCode()
 
     /**
       * Compares `this` type variable to `that` type variable.
       */
-    override def compare(that: Type.UnkindedVar): Int = this.id - that.id
+    override def compare(that: Type.UnkindedVar): Int = this.sym.id - that.sym.id
 
     /**
       * Converts the UnkindedVar to a Var with the given `kind`.
       */
-    def ascribedWith(kind: Kind): Type.KindedVar = Type.KindedVar(id, kind, loc, rigidity, text)
+    def ascribedWith(kind: Kind): Type.KindedVar = Type.KindedVar(sym.ascribedWith(kind), loc)
   }
 
   /**
@@ -503,16 +523,16 @@ object Type {
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
   def freshVar(k: Kind, loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.KindedVar = {
-    val id = flix.genSym.freshId()
-    Type.KindedVar(id, k, loc, r, text)
+    val sym = Symbol.freshKindedTypeVarSym(text, k, r, loc)
+    Type.KindedVar(sym, loc)
   }
 
   /**
     * Returns a fresh unkinded type variable of the given kind `k` and rigidity `r`.
     */
   def freshUnkindedVar(loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.UnkindedVar = {
-    val id = flix.genSym.freshId()
-    Type.UnkindedVar(id, loc, r, text)
+    val sym = Symbol.freshUnkindedTypeVarSym(text, r, loc)
+    Type.UnkindedVar(sym, loc)
   }
 
   /**
@@ -821,7 +841,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True, _)) => tpe1
     case (Type.Cst(TypeConstructor.False, _), _) => Type.False
     case (_, Type.Cst(TypeConstructor.False, _)) => Type.False
-    case (Type.KindedVar(id1, _, _, _, _), Type.KindedVar(id2, _, _, _, _)) if id1 == id2 => tpe1
+    case (Type.KindedVar(sym1, _), Type.KindedVar(sym2, _)) if sym1 == sym2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.And, tpe1, loc), tpe2, loc)
   }
 
@@ -861,7 +881,7 @@ object Type {
     case (_, Type.Cst(TypeConstructor.True, _)) => Type.True
     case (Type.Cst(TypeConstructor.False, _), _) => tpe2
     case (_, Type.Cst(TypeConstructor.False, _)) => tpe1
-    case (Type.KindedVar(id1, _, _, _, _), Type.KindedVar(id2, _, _, _, _)) if id1 == id2 => tpe1
+    case (Type.KindedVar(sym1, _), Type.KindedVar(sym2, _)) if sym1 == sym2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.Or, tpe1, loc), tpe2, loc)
   }
 
@@ -897,8 +917,8 @@ object Type {
     * Returns the size of the given type `tpe`.
     */
   def size(tpe: Type): Int = tpe match {
-    case KindedVar(_, _, _, _, _) => 1
-    case UnkindedVar(_, _, _, _) => 1
+    case KindedVar(_, _) => 1
+    case UnkindedVar(_, _) => 1
     case Ascribe(tpe, _, _) => 1 + size(tpe)
     case Cst(_, _) => 1
     case Apply(tpe1, tpe2, _) => size(tpe1) + size(tpe2)
