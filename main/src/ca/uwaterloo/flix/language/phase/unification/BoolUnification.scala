@@ -40,9 +40,9 @@ object BoolUnification {
     tpe1 match {
       case x: Type.KindedVar if x.sym.rigidity eq Rigidity.Flexible =>
         if (tpe2 eq Type.True)
-          return Ok(Substitution.singleton(x, Type.True))
+          return Ok(Substitution.singleton(x.sym, Type.True))
         if (tpe2 eq Type.False)
-          return Ok(Substitution.singleton(x, Type.False))
+          return Ok(Substitution.singleton(x.sym, Type.False))
 
       case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
       case _ => // nop
@@ -51,9 +51,9 @@ object BoolUnification {
     tpe2 match {
       case y: Type.KindedVar if y.sym.rigidity eq Rigidity.Flexible =>
         if (tpe1 eq Type.True)
-          return Ok(Substitution.singleton(y, Type.True))
+          return Ok(Substitution.singleton(y.sym, Type.True))
         if (tpe1 eq Type.False)
-          return Ok(Substitution.singleton(y, Type.False))
+          return Ok(Substitution.singleton(y.sym, Type.False))
 
       case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
       case _ => // nop
@@ -100,19 +100,19 @@ object BoolUnification {
   private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
-      val (_, q) = Scheme.instantiate(Scheme(f.typeVars.toList, List.empty, f), InstantiateMode.Flexible)
+      val (_, q) = Scheme.instantiate(Scheme(f.typeVars.toList.map(_.sym), List.empty, f), InstantiateMode.Flexible)
       if (!satisfiable(q))
         Substitution.empty
       else
         throw BooleanUnificationException
 
     case x :: xs =>
-      val t0 = Substitution.singleton(x, Type.False)(f)
-      val t1 = Substitution.singleton(x, Type.True)(f)
+      val t0 = Substitution.singleton(x.sym, Type.False)(f)
+      val t1 = Substitution.singleton(x.sym, Type.True)(f)
       val se = successiveVariableElimination(mkAnd(t0, t1), xs)
 
       // Investigate impact on Monomorph semantics:
-      val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(x, mkNot(se(t1)))))
+      val st = Substitution.singleton(x.sym, mkOr(se(t0), mkAnd(x, mkNot(se(t1)))))
       //val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshVar(Kind.Bool, f.loc), mkNot(se(t1)))))
       st ++ se
   }

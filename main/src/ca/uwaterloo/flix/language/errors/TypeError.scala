@@ -58,12 +58,12 @@ object TypeError {
     def explain(formatter: Formatter): Option[String] = Some({
       val newLineAndIndent: String = System.lineSeparator() + "  "
 
-      def fmtTypeVar(tvar: Type, declared: Boolean): String = {
+      def fmtTypeVar(tvar: Symbol.KindedTypeVarSym, declared: Boolean): String = {
         val color = if (declared) formatter.cyan _ else formatter.magenta _
-        s"${color(FormatType.formatWellKindedType(tvar))} of kind: '${FormatKind.formatKind(tvar.kind)}'."
+        s"${color(FormatType.formatTypeVarSym(tvar))} of kind: '${FormatKind.formatKind(tvar.kind)}'."
       }
 
-      def fmtQuantifiers(quantifiers: List[Type.Var], declared: Boolean): String = {
+      def fmtQuantifiers(quantifiers: List[Symbol.KindedTypeVarSym], declared: Boolean): String = {
         if (quantifiers.isEmpty)
           "<< no type variables >>"
         else
