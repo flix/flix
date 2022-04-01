@@ -88,33 +88,33 @@ object VarNumbering {
 
       case Expression.Var(_, _, _) => i0
 
-      case Expression.Closure(_, _, _, _) => i0
+      case Expression.Closure(_, _, _, _, _) => i0
 
-      case Expression.ApplyClo(exp, args, _, _) =>
+      case Expression.ApplyClo(exp, args, _, _, _) =>
         val i = visitExp(exp, i0)
         visitExps(args, i)
 
-      case Expression.ApplyDef(_, args, _, _) =>
+      case Expression.ApplyDef(_, args, _, _, _) =>
         visitExps(args, i0)
 
-      case Expression.ApplyCloTail(exp, args, _, _) =>
+      case Expression.ApplyCloTail(exp, args, _, _, _) =>
         val i = visitExp(exp, i0)
         visitExps(args, i)
 
-      case Expression.ApplyDefTail(_, args, _, _) =>
+      case Expression.ApplyDefTail(_, args, _, _, _) =>
         visitExps(args, i0)
 
-      case Expression.ApplySelfTail(_, _, args, _, _) =>
+      case Expression.ApplySelfTail(_, _, args, _, _, _) =>
         visitExps(args, i0)
 
-      case Expression.Unary(_, _, exp, _, _) =>
+      case Expression.Unary(_, _, exp, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.Binary(_, _, exp1, exp2, _, _) =>
+      case Expression.Binary(_, _, exp1, exp2, _, _, _) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
+      case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
         val i1 = visitExp(exp1, i0)
         val i2 = visitExp(exp2, i1)
         visitExp(exp3, i2)
@@ -131,38 +131,38 @@ object VarNumbering {
         val i2 = visitExp(exp1, i1)
         visitExp(exp2, i2)
 
-      case Expression.LetRec(varSym, _, _, exp1, exp2, _, _) =>
+      case Expression.LetRec(varSym, _, _, exp1, exp2, _, _, _) =>
         val i1 = visitSymbolAssignment(varSym, exp1.tpe, i0)
         val i2 = visitExp(exp1, i1)
         visitExp(exp2, i2)
 
-      case Expression.Is(_, _, exp, _) =>
+      case Expression.Is(_, _, exp, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.Tag(_, _, exp, _, _) =>
+      case Expression.Tag(_, _, exp, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.Untag(_, _, exp, _, _) =>
+      case Expression.Untag(_, _, exp, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.Index(exp, _, _, _) =>
+      case Expression.Index(exp, _, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.Tuple(elms, _, _) =>
+      case Expression.Tuple(elms, _, _, _) =>
         visitExps(elms, i0)
 
       case Expression.RecordEmpty(_, _) =>
         i0
 
-      case Expression.RecordSelect(base, _, _, _) =>
+      case Expression.RecordSelect(base, _, _, _, _) =>
         visitExp(base, i0)
 
-      case Expression.RecordExtend(_, value, rest, _, _) =>
+      case Expression.RecordExtend(_, value, rest, _, _, _) =>
         val i1 = visitExp(value, i0)
         val i2 = visitExp(rest, i1)
         i2
 
-      case Expression.RecordRestrict(_, rest, _, _) =>
+      case Expression.RecordRestrict(_, rest, _, _, _) =>
         visitExp(rest, i0)
 
       case Expression.ArrayLit(elms, _, _) =>
@@ -189,20 +189,20 @@ object VarNumbering {
         val i2 = visitExp(startIndex, i1)
         visitExp(endIndex, i2)
 
-      case Expression.Ref(exp, _, _) =>
+      case Expression.Ref(exp, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.Deref(exp, _, _) =>
+      case Expression.Deref(exp, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.Assign(exp1, exp2, _, _) =>
+      case Expression.Assign(exp1, exp2, _, _, _) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.Cast(exp, _, _) =>
+      case Expression.Cast(exp, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.TryCatch(exp, rules, _, _) =>
+      case Expression.TryCatch(exp, rules, _, _, _) =>
         val i1 = visitExp(exp, i0)
         val i2 = i1 + 1
         for (CatchRule(sym, _, _) <- rules) {
@@ -211,40 +211,40 @@ object VarNumbering {
         }
         visitExps(rules.map(_.exp), i2)
 
-      case Expression.InvokeConstructor(_, args, _, _) =>
+      case Expression.InvokeConstructor(_, args, _, _, _) =>
         visitExps(args, i0)
 
-      case Expression.InvokeMethod(_, exp, args, _, _) =>
+      case Expression.InvokeMethod(_, exp, args, _, _, _) =>
         val i1 = visitExp(exp, i0)
         visitExps(args, i1)
 
-      case Expression.InvokeStaticMethod(_, args, _, _) =>
+      case Expression.InvokeStaticMethod(_, args, _, _, _) =>
         visitExps(args, i0)
 
-      case Expression.GetField(_, exp, _, _) =>
+      case Expression.GetField(_, exp, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.PutField(_, exp1, exp2, _, _) =>
+      case Expression.PutField(_, exp1, exp2, _, _, _) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.GetStaticField(_, _, _) =>
+      case Expression.GetStaticField(_, _, _, _) =>
         i0
 
-      case Expression.PutStaticField(_, exp, _, _) =>
+      case Expression.PutStaticField(_, exp, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.NewChannel(exp, _, _) =>
+      case Expression.NewChannel(exp, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.GetChannel(exp, _, _) =>
+      case Expression.GetChannel(exp, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.PutChannel(exp1, exp2, _, _) =>
+      case Expression.PutChannel(exp1, exp2, _, _, _) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.SelectChannel(rules, default, _, _) =>
+      case Expression.SelectChannel(rules, default, _, _, _) =>
         var currentOffset = i0
         for (r <- rules) {
           currentOffset = visitSymbolAssignment(r.sym, r.chan.tpe.typeArguments.head, currentOffset)
@@ -253,19 +253,19 @@ object VarNumbering {
         }
         default.map(visitExp(_, currentOffset)).getOrElse(currentOffset)
 
-      case Expression.Spawn(exp, _, _) =>
+      case Expression.Spawn(exp, _, _, _) =>
         visitExp(exp, i0)
 
       case Expression.Lazy(exp, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.Force(exp, _, _) =>
+      case Expression.Force(exp, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.HoleError(_, _, _) =>
+      case Expression.HoleError(_, _, _, _) =>
         i0
 
-      case Expression.MatchError(_, _) =>
+      case Expression.MatchError(_, _, _) =>
         i0
     }
 

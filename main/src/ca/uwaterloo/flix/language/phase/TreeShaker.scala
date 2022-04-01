@@ -135,31 +135,31 @@ object TreeShaker {
     case Expression.Var(_, _, _) =>
       Set.empty
 
-    case Expression.Closure(sym, _, _, _) =>
+    case Expression.Closure(sym, _, _, _, _) =>
       Set(sym)
 
-    case Expression.ApplyClo(exp, args, _, _) =>
+    case Expression.ApplyClo(exp, args, _, _, _) =>
       visitExp(exp) ++ visitExps(args)
 
-    case Expression.ApplyDef(sym, args, _, _) =>
+    case Expression.ApplyDef(sym, args, _, _, _) =>
       Set(sym) ++ visitExps(args)
 
-    case Expression.ApplyCloTail(exp, args, _, _) =>
+    case Expression.ApplyCloTail(exp, args, _, _, _) =>
       visitExp(exp) ++ visitExps(args)
 
-    case Expression.ApplyDefTail(sym, args, _, _) =>
+    case Expression.ApplyDefTail(sym, args, _, _, _) =>
       Set(sym) ++ visitExps(args)
 
-    case Expression.ApplySelfTail(sym, _, args, _, _) =>
+    case Expression.ApplySelfTail(sym, _, args, _, _, _) =>
       Set(sym) ++ visitExps(args)
 
-    case Expression.Unary(_, _, exp, _, _) =>
+    case Expression.Unary(_, _, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Binary(_, _, exp1, exp2, _, _) =>
+    case Expression.Binary(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     case Expression.Branch(exp, branches, _, _) =>
@@ -171,34 +171,34 @@ object TreeShaker {
     case Expression.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.LetRec(_, _, _, exp1, exp2, _, _) =>
+    case Expression.LetRec(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Is(_, _, exp, _) =>
+    case Expression.Is(_, _, exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Tag(_, _, exp, _, _) =>
+    case Expression.Tag(_, _, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Untag(_, _, exp, _, _) =>
+    case Expression.Untag(_, _, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Index(exp, _, _, _) =>
+    case Expression.Index(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Tuple(elms, _, _) =>
+    case Expression.Tuple(elms, _, _, _) =>
       visitExps(elms)
 
     case Expression.RecordEmpty(_, _) =>
       Set.empty
 
-    case Expression.RecordSelect(exp, _, _, _) =>
+    case Expression.RecordSelect(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.RecordExtend(_, value, rest, _, _) =>
+    case Expression.RecordExtend(_, value, rest, _, _, _) =>
       visitExp(value) ++ visitExp(rest)
 
-    case Expression.RecordRestrict(_, rest, _, _) =>
+    case Expression.RecordRestrict(_, rest, _, _, _) =>
       visitExp(rest)
 
     case Expression.ArrayLit(elms, _, _) =>
@@ -219,69 +219,69 @@ object TreeShaker {
     case Expression.ArraySlice(base, startIndex, endIndex, _, _) =>
       visitExp(base) ++ visitExp(startIndex) ++ visitExp(endIndex)
 
-    case Expression.Ref(exp, _, _) =>
+    case Expression.Ref(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Deref(exp, _, _) =>
+    case Expression.Deref(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Assign(exp1, exp2, tpe, _) =>
+    case Expression.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Cast(exp, _, _) =>
+    case Expression.Cast(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.TryCatch(exp, rules, _, _) =>
+    case Expression.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expression.InvokeConstructor(_, args, _, _) =>
+    case Expression.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args)
 
-    case Expression.InvokeMethod(_, exp, args, _, _) =>
+    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
       visitExp(exp) ++ visitExps(args)
 
-    case Expression.InvokeStaticMethod(_, args, _, _) =>
+    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
       visitExps(args)
 
-    case Expression.GetField(_, exp, _, _) =>
+    case Expression.GetField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.PutField(_, exp1, exp2, _, _) =>
+    case Expression.PutField(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.GetStaticField(_, _, _) =>
+    case Expression.GetStaticField(_, _, _, _) =>
       Set.empty
 
-    case Expression.PutStaticField(_, exp, _, _) =>
+    case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewChannel(exp, _, _) =>
+    case Expression.NewChannel(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.GetChannel(exp, _, _) =>
+    case Expression.GetChannel(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.PutChannel(exp1, exp2, _, _) =>
+    case Expression.PutChannel(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.SelectChannel(rules, default, _, _) =>
+    case Expression.SelectChannel(rules, default, _, _, _) =>
       val rs = visitExps(rules.map(_.chan)) ++ visitExps(rules.map(_.exp))
       val d = default.map(visitExp).getOrElse(Set.empty)
       rs ++ d
 
-    case Expression.Spawn(exp, _, _) =>
+    case Expression.Spawn(exp, _, _, _) =>
       visitExp(exp)
 
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Force(exp, _, _) =>
+    case Expression.Force(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.HoleError(_, _, _) =>
+    case Expression.HoleError(_, _, _, _) =>
       Set.empty
 
-    case Expression.MatchError(_, _) =>
+    case Expression.MatchError(_, _, _) =>
       Set.empty
   }
 
