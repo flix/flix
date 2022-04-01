@@ -16,8 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.Symbol.KindedTypeVarSym
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 object BoolMinimization {
@@ -40,9 +39,13 @@ object BoolMinimization {
 
   }
 
+  /**
+    * Sort terms `True` -> `False` -> `Var`s (by name then negation) ->
+    * complex negation -> conjunctions -> disjunctions.
+    */
   def sortTerms(terms: List[Formula]): List[Formula] = {
     import Formula._
-    terms.sortWith{
+    terms.sortWith {
       case (True, True) => false
       case (True, False | Var(_) | Not(_) | And(_) | Or(_)) => true
 
@@ -69,6 +72,52 @@ object BoolMinimization {
 
       case (Or(_), True | False | Var(_) | Not(_) | And(_) | Or(_)) => false
     }
+  }
+
+  /**
+    * Reduces things like `y ∨ y` to `y` or `¬x ∧ ¬x` to `x`. Returns `None` if
+    * the list contains both `x` and `¬x` for some `x`.
+    * Assumes the list is sorted.
+    */
+  def removeSimpleDuplicates(terms: List[BoolMinimization.Formula]): Option[List[Formula]] = {
+    import Formula._
+    terms match {
+      case Nil =>
+        Some(Nil)
+      case _ :: Nil =>
+        Some(terms)
+      case Var(v1) :: Var(v2) :: rest if v1 == v2 =>
+        removeSimpleDuplicates(Var(v2) :: rest)
+      case Not(Var(v1)) :: Not(Var(v2)) :: rest if v1 == v2 =>
+        removeSimpleDuplicates(Not(Var(v2)) :: rest)
+      case Var(v1) :: Not(Var(v2)) :: _ if v1 == v2 =>
+        None
+      case other :: rest =>
+        removeSimpleDuplicates(rest).map(other :: _)
+    }
+  }
+
+  def unitPropagation(terms: List[Formula]): List[Formula] = {
+    import Formula._
+    def removeVars(f: Formula, trues: Set[Var]): Option[Formula] = f match {
+      case True => Some(True)
+      case False => Some(False)
+      case v: Var if trues.contains(v) => None
+      case v: Var => Some(v)
+      case Not(v: Var) if trues.contains(v) => None
+      case Not(_) => throw InternalCompilerException(s"Found complex negation after NNF ${show(f)}")
+      case And(_) => throw InternalCompilerException(s"Found conjunction in input ${show(f)}")
+      case Or(terms) => ???
+    }
+
+    def aux(terms0: List[Formula], trues: Set[Var]): List[Formula] = terms0 match {
+      case Nil => Nil
+      case (v: Var) :: rest => v :: aux(rest, trues + v)
+      case f :: rest if trues.nonEmpty => ??? // remove(f, trues)
+      case _ => ???
+    }
+
+    aux(terms, Set.empty)
   }
 
   /**
@@ -106,7 +155,7 @@ object BoolMinimization {
         acc => term match {
           case True => Some(acc)
           case False => None
-          case v: Var => Some(v :: acc) // not optimal
+          case v: Var => Some(v :: acc)
           case n: Not => Some(n :: acc)
           case And(terms) => Some(terms ++ acc)
           case or: Or => Some(or :: acc)
@@ -116,8 +165,20 @@ object BoolMinimization {
     hoistedTerms match {
       case None => False
       case Some(term :: Nil) => term
-      case Some(terms) => And(sortTerms(terms))
+      case Some(terms) =>
+        normalizeTerms(terms) match {
+          case None => False
+          case Some(normalizedTerms) => And(normalizedTerms)
+        }
     }
+  }
+
+  /**
+    * Sorts terms, reduces simple dublicates and returns `None` if the terms
+    * contains a simple contradiction.
+    */
+  def normalizeTerms(terms: List[Formula]): Option[List[Formula]] = {
+    removeSimpleDuplicates(sortTerms(terms))
   }
 
   /**
@@ -150,7 +211,11 @@ object BoolMinimization {
     hoistedTerms match {
       case None => True
       case Some(term :: Nil) => term
-      case Some(terms) => Or(sortTerms(terms))
+      case Some(terms) =>
+        normalizeTerms(terms) match {
+          case None => True
+          case Some(normalizedTerms) => Or(normalizedTerms)
+        }
     }
   }
 
@@ -227,7 +292,7 @@ object BoolMinimization {
     import Formula._
     def mkVar(s: String): Var = Var(
       Type.KindedVar(
-        new KindedTypeVarSym(
+        new Symbol.KindedTypeVarSym(
           s.hashCode,
           Some(s),
           Kind.Bool,
@@ -241,7 +306,7 @@ object BoolMinimization {
     val formulas = List(
       mkAnd(mkVar("x"), mkVar("y")),
       mkOr(mkVar("y"), mkVar("z")),
-      mkAnd(mkNot(mkVar("x")), mkVar("y"), mkVar("x")),
+      mkAnd(mkOr(mkVar("q"), mkAnd(mkVar("q"), mkVar("h"))), mkNot(mkVar("x")), mkVar("y"), mkVar("x")),
       mkAnd(mkOr(mkVar("x"), mkVar("y")), mkOr(mkVar("x"), mkVar("z"))),
       mkNot(mkAnd(mkOr(mkVar("x"), mkNot(mkVar("y"))), mkNot(mkOr(mkVar("x"), mkVar("z"))))),
       mkAnd(mkOr(mkVar("z"), mkNot(mkAnd(mkVar("z"), mkVar("Q")))), mkNot(mkAnd(mkOr(mkVar("x"), mkNot(mkVar("y"))), mkNot(mkOr(mkVar("x"), mkVar("z"))))))
@@ -262,6 +327,9 @@ object BoolMinimization {
     run("CNF", toCNF)
   }
 
+  /**
+    * Creates a string representation of the formula.
+    */
   def show(f: Formula): String = {
     def showAux(f: Formula): (String, Boolean) = {
       def showTermBraces(term: Formula): String = {
