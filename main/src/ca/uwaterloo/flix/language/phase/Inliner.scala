@@ -103,7 +103,13 @@ object Inliner {
 
     case Expression.ApplyDefTail(sym, args, tpe, loc) =>
       val as = args.map(visitExp(_, subst0))
-      Expression.ApplyDefTail(sym, as, tpe, loc)
+      val def1 = root.defs.apply(sym)
+      // If `def1` is a single non-self call and its arguments are trivial, then inline the single non-self call, `e1`.
+      if (def1.context.isNonSelfCall) {
+        bindFormals(def1.exp, def1.fparams.map(_.sym), as, Map.empty)
+      } else {
+        Expression.ApplyDefTail(sym, as, tpe, loc)
+      }
 
     case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
       val as = actuals.map(visitExp(_, subst0))
