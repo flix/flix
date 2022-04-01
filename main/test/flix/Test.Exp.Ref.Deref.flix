@@ -93,12 +93,12 @@ namespace Test/Exp/Ref/Deref {
     @test
     def testDeref16(): Bool = region r {
         let l = ref Ok(42) @ r;
-        deref l: ScopedRef[Result[_, Unit], r] == Ok(42)
+        deref l: ScopedRef[Result[_, Unit], _] == Ok(42)
     }
 
     @test
     def testDeref17(): Bool = region r {
         let l = ref Err("Goodbye World!") @ r;
-        deref l: ScopedRef[Result[Unit, _], r] == Err("Goodbye World!")
+        deref l: ScopedRef[Result[Unit, _], _] == Err("Goodbye World!")
     }
 }
