@@ -120,7 +120,7 @@ object ClosureConv {
       // it with ApplyRef. We remove the Ref node and don't recurse on it to avoid creating a closure.
       // We do something similar if `e` is a Hook, where we transform Apply to ApplyHook.
       e match {
-        case Expression.Def(sym, _, purity, _) => Expression.ApplyDef(sym, args.map(visitExp), tpe, purity, loc)
+        case Expression.Def(sym, _, _, _) => Expression.ApplyDef(sym, args.map(visitExp), tpe, purity, loc)
         case _ => Expression.ApplyClo(visitExp(e), args.map(visitExp), tpe, purity, loc)
       }
 
