@@ -206,7 +206,7 @@ object Namer {
         lookupTypeOrClass(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
             // Case 1: The type alias does not exist in the namespace. Add it.
-            val tparams = getTypeParamsFromFormalParams(tparams0, List.empty, tpe0, allowElision = false, uenv0, Map.empty)
+            val tparams = getTypeParams(tparams0, uenv0)
             val tenv = getTypeEnv(tparams.tparams)
             mapN(visitType(tpe0, uenv0, tenv)) {
               case tpe =>
@@ -374,7 +374,7 @@ object Namer {
     */
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, classIdent: Name.Ident, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, retTpe0, eff0, tconstrs0, loc) =>
-      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, allowElision = true, uenv0, tenv0)
+      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
 
       // First visit all the top-level information
@@ -431,7 +431,7 @@ object Namer {
       // Resulting in a type error rather than a redundancy error (as redundancy checking happens later)
       // To fix: require explicit kind annotations (getting rid of the formal-param-first logic)
       // Or delay using the tenv until evaluating explicit tparams (could become complex)
-      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, allowElision = true, uenv0, tenv0)
+      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
 
       // First visit all the top-level information
@@ -1551,13 +1551,9 @@ object Namer {
   /**
     * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
     */
-  private def getTypeParamsFromFormalParams(tparams0: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, allowElision: Boolean, uenv: UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): NamedAst.TypeParams = {
+  private def getTypeParamsFromFormalParams(tparams0: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, uenv: UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): NamedAst.TypeParams = {
     tparams0 match {
-      case WeededAst.TypeParams.Elided =>
-        if (allowElision)
-          getImplicitTypeParamsFromFormalParams(fparams, tpe, tenv)
-        else
-          NamedAst.TypeParams.Kinded(Nil)
+      case WeededAst.TypeParams.Elided => getImplicitTypeParamsFromFormalParams(fparams, tpe, tenv)
       case WeededAst.TypeParams.Unkinded(tparams0) => getExplicitTypeParams(tparams0, uenv)
       case WeededAst.TypeParams.Kinded(tparams0) => getExplicitKindedTypeParams(tparams0)
 
