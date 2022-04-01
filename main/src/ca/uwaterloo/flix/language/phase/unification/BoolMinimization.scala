@@ -16,7 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.language.ast.Symbol.KindedTypeVarSym
 import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Type}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object BoolMinimization {
 
@@ -28,7 +30,7 @@ object BoolMinimization {
 
     case object False extends Formula
 
-    case class Var(v: Type.Var) extends Formula
+    case class Var(v: Type.KindedVar) extends Formula
 
     case class Not(term: Formula) extends Formula
 
@@ -38,56 +40,118 @@ object BoolMinimization {
 
   }
 
-  // TODO: The `mkX` functions could also simplify cases like
-  //       `mkAnd(True, x)` to `x` etc.
-
-  /**
-    * Cancels the double negation if `f` is a direct negation.
-    */
-  def mkNot(f: Formula): Formula = {
+  def sortTerms(terms: List[Formula]): List[Formula] = {
     import Formula._
-    f match {
-      case Not(term) => term
-      case True | False | _: Var | _: And | _: Or => Not(f)
+    terms.sortWith{
+      case (True, True) => false
+      case (True, False | Var(_) | Not(_) | And(_) | Or(_)) => true
+
+      case (False, True | False) => false
+      case (False, Var(_) | Not(_) | And(_) | Or(_)) => true
+
+      case (Var(_), True | False) => false
+
+      case (Var(v1), Var(v2)) => v1 < v2
+      case (Var(v1), Not(Var(v2))) if v1 == v2 => true
+      case (Var(v1), Not(Var(v2))) => v1 < v2
+      case (Not(Var(v1)), Var(v2)) if v1 == v2 => false
+      case (Not(Var(v1)), Var(v2)) => v1 < v2
+      case (Not(Var(v1)), Not(Var(v2))) => v1 < v2
+      case (Var(_), Not(_) | And(_) | Or(_)) => true
+
+      case (Not(_), True | False | Var(_)) => false
+      case (Not(_), Not(_)) => false
+      case (Not(_), And(_) | Or(_)) => true
+
+      case (And(_), True | False | Var(_) | Not(_)) => false
+      case (And(_), And(_)) => false
+      case (And(_), Or(_)) => true
+
+      case (Or(_), True | False | Var(_) | Not(_) | And(_) | Or(_)) => false
     }
   }
 
   /**
-    * Merges the conjunctions if arguments are conjunctions themselves.
+    * Build `Not(f)` and performs shallow minimization.
+    */
+  def mkNot(f: Formula): Formula = {
+    import Formula._
+    f match {
+      case True => False
+      case False => True
+      case Var(v) => Not(Var(v))
+      case Not(term) => term
+      case And(terms) => Not(And(terms))
+      case Or(terms) => Not(Or(terms))
+    }
+  }
+
+  /**
+    * Merges the conjunctions if arguments are conjunctions themselves and
+    * performs shallow minimization.
     */
   def mkAnd(f: Formula*): Formula = {
     mkAnd(f.toList)
   }
 
   /**
-    * Merges the conjunctions in `f` into the new conjunction.
+    * Merges the conjunctions in `f` into the new conjunction and performs
+    * shallow minimization.
     */
   def mkAnd(f: List[Formula]): Formula = {
     import Formula._
-    val hoistedTerms = f.flatMap(f0 => f0 match {
-      case And(terms) => terms
-      case True | False | Var(_) | Not(_) | Or(_) => List(f0)
-    })
-    And(hoistedTerms)
+    val baseValue: Option[List[Formula]] = Some(Nil)
+    val hoistedTerms = f.foldRight(baseValue) {
+      case (term, opt) => opt.flatMap(
+        acc => term match {
+          case True => Some(acc)
+          case False => None
+          case v: Var => Some(v :: acc) // not optimal
+          case n: Not => Some(n :: acc)
+          case And(terms) => Some(terms ++ acc)
+          case or: Or => Some(or :: acc)
+        }
+      )
+    }
+    hoistedTerms match {
+      case None => False
+      case Some(term :: Nil) => term
+      case Some(terms) => And(sortTerms(terms))
+    }
   }
 
   /**
-    * Merges the disjunctions if arguments are disjunctions themselves.
+    * Merges the disjunctions if arguments are disjunctions themselves and
+    * perfoms shallow minimization.
     */
   def mkOr(f: Formula*): Formula = {
     mkOr(f.toList)
   }
 
   /**
-    * Merges the disjunctions in `f` into the new disjunction.
+    * Merges the disjunctions in `f` into the new disjunction and performs
+    * shallow minimization.
     */
   def mkOr(f: List[Formula]): Formula = {
     import Formula._
-    val hoistedTerms = f.flatMap(f0 => f0 match {
-      case Or(terms) => terms
-      case True | False | Var(_) | Not(_) | And(_) => List(f0)
-    })
-    Or(hoistedTerms)
+    val baseValue: Option[List[Formula]] = Some(Nil)
+    val hoistedTerms = f.foldRight(baseValue) {
+      case (term, opt) => opt.flatMap(
+        acc => term match {
+          case True => None
+          case False => Some(acc)
+          case v: Var => Some(v :: acc)
+          case n: Not => Some(n :: acc)
+          case and: And => Some(and :: acc)
+          case Or(terms) => Some(terms ++ acc)
+        }
+      )
+    }
+    hoistedTerms match {
+      case None => True
+      case Some(term :: Nil) => term
+      case Some(terms) => Or(sortTerms(terms))
+    }
   }
 
   /**
@@ -103,9 +167,13 @@ object BoolMinimization {
 
       case Var(v) => Var(v)
 
-      case not: Not => negate(not.term) match {
-        case n: Not => n // negation of variable
-        case nonNot => toNNF(nonNot)
+      case not: Not => not.term match {
+        case True => False
+        case False => True
+        case Var(v) => mkNot(Var(v))
+        case Not(term) => term
+        case And(terms) => toNNF(mkOr(terms.map(t => mkNot(t))))
+        case Or(terms) => toNNF(mkAnd(terms.map(t => mkNot(t))))
       }
 
       case And(terms) => mkAnd(terms.map(toNNF))
@@ -115,79 +183,65 @@ object BoolMinimization {
     }
   }
 
-  def negate(f: Formula): Formula = {
-    import Formula._
-    f match {
-      case True => False
-      case False => True
-      case Var(v) => mkNot(Var(v))
-      case Not(term) => term
-      case And(terms) => mkOr(terms.map(t => mkNot(t)))
-      case Or(terms) => mkAnd(terms.map(t => mkNot(t)))
-    }
-  }
-
   /**
     * Transform `f` to an equivalent formula that is a conjunction of
     * disjunctions of either variables or negated variables.
-    * Ex. `(x ∨ y) ∧ (z ∨ ¬y ∨ ¬z) ∧ (x)`
+    * Ex. `x ∧ (x ∨ y) ∧ (z ∨ ¬y ∨ ¬z)`
     */
   def toCNF(f: Formula): Formula = {
-    import Formula._
-    f match {
-      case True => True
-      case False => False
-      case Var(v) => Var(v)
-      case Not(term) => negate(term) match {
-        case n: Not => n // negation of variable
-        case other => toCNF(other)
-      }
-      case And(terms) => mkAnd(terms.map(toCNF))
-      case Or(terms) =>
-        val cnfTerms = terms match {
-          case Nil => List()
-          case first :: rest => rest.foldLeft(toCNF(first))(
+    def aux(f0: Formula): Formula = {
+      import Formula._
+      f0 match {
+        case True => True
+        case False => False
+        case Var(v) => Var(v)
+        case Not(Var(v)) => Not(Var(v))
+        case Not(_) => throw InternalCompilerException(s"Found complex negation after NNF ${show(f0)}")
+        case And(terms) => mkAnd(terms.map(toCNF))
+        case Or(terms) =>
+          // Note: this code relies on the ordering of simple terms before conjunctions
+          terms.foldLeft(False: Formula)(
             (cnf, term) => term match {
-              case Formula.True => mkOr(cnf)
-              case Formula.False => ???
-              case Var(v) => ???
-              case Not(term) => ???
-              case And(terms) => ???
-              case Or(terms) => ???
-            }
-          )
-        }
-        ???
+              case True => mkOr(cnf, True)
+              case False => mkOr(cnf, False)
+              case Var(v) => mkOr(cnf, Var(v))
+              case Not(Var(v)) => mkOr(cnf, Not(Var(v)))
+              case Not(_) => throw InternalCompilerException(s"Found complex negation after NNF ${show(term)}")
+              case And(terms0) => toCNF(mkAnd(terms0.map(t => mkOr(cnf, t))))
+              case Or(_) => throw InternalCompilerException(s"Found directly nested Or: ${show(f0)}")
+            })
+      }
     }
-  }
 
-
-  def pushDownDisjunction(f: Formula, disjunction: Formula): Formula = {
-    import Formula._
-    f match {
-      case True => mkOr(True, disjunction)
-      case False => mkOr(False, disjunction)
-      case Var(v) => mkOr(Var(v), disjunction)
-      case Not(term) => mkOr(Not(term), disjunction)
-      case And(terms) => mkAnd(terms.map(t => pushDownDisjunction(t, disjunction)))
-      case Or(terms) => mkOr(terms :+ disjunction)
-    }
+    aux(toNNF(f))
   }
 
   /**
     * Transform `f` to an equivalent formula that is a disjunction of
     * conjunctions of either variables or negated variables.
-    * Ex. `(x ∧ y) ∨ (z ∧ ¬y ∧ ¬z) ∨ (x)`
+    * Ex. `x ∨ (x ∧ y) ∨ (z ∧ ¬y ∧ ¬z)`
     */
   def toDNF(f: Formula): Formula = ???
 
   def main(args: Array[String]): Unit = {
     import Formula._
-    def mkVar(s: String): Var = Var(Type.KindedVar(s.hashCode, Kind.Bool, SourceLocation.Unknown, Rigidity.Flexible, Some(s)))
+    def mkVar(s: String): Var = Var(
+      Type.KindedVar(
+        new KindedTypeVarSym(
+          s.hashCode,
+          Some(s),
+          Kind.Bool,
+          Rigidity.Flexible,
+          SourceLocation.Unknown
+        ),
+        SourceLocation.Unknown
+      )
+    )
 
     val formulas = List(
       mkAnd(mkVar("x"), mkVar("y")),
       mkOr(mkVar("y"), mkVar("z")),
+      mkAnd(mkNot(mkVar("x")), mkVar("y"), mkVar("x")),
       mkAnd(mkOr(mkVar("x"), mkVar("y")), mkOr(mkVar("x"), mkVar("z"))),
       mkNot(mkAnd(mkOr(mkVar("x"), mkNot(mkVar("y"))), mkNot(mkOr(mkVar("x"), mkVar("z"))))),
       mkAnd(mkOr(mkVar("z"), mkNot(mkAnd(mkVar("z"), mkVar("Q")))), mkNot(mkAnd(mkOr(mkVar("x"), mkNot(mkVar("y"))), mkNot(mkOr(mkVar("x"), mkVar("z"))))))
@@ -195,19 +249,22 @@ object BoolMinimization {
 
     def run(msg: String, t: Formula => Formula): Unit = {
       println(msg)
+      val delim = "----"
       formulas.foreach(f => {
-        println("----")
+        println(delim)
         println(show(f))
         println(show(t(f)))
       })
+      println(delim)
     }
 
     run("NNF", toNNF)
+    run("CNF", toCNF)
   }
 
   def show(f: Formula): String = {
     def showAux(f: Formula): (String, Boolean) = {
-      def showTerm(term: Formula): String = {
+      def showTermBraces(term: Formula): String = {
         val (termStr, paran) = showAux(term)
         if (paran) s"($termStr)" else termStr
       }
@@ -215,16 +272,16 @@ object BoolMinimization {
       f match {
         case Formula.True => ("T", false)
         case Formula.False => ("F", false)
-        case Formula.Var(v) => (v.text.getOrElse("???"), false)
+        case Formula.Var(v) => (v.sym.text.getOrElse("???"), false)
         case Formula.Not(term) =>
           val (termStr, paran) = showAux(term)
           val rep = if (paran) s"($termStr)" else termStr
           (s"¬$rep", false)
         case Formula.And(terms) =>
-          val rep = terms.map(showTerm).mkString(" ∧ ")
+          val rep = terms.map(showTermBraces).mkString(" ∧ ")
           (rep, true)
         case Formula.Or(terms) =>
-          val rep = terms.map(showTerm).mkString(" ∨ ")
+          val rep = terms.map(showTermBraces).mkString(" ∨ ")
           (rep, true)
       }
     }
