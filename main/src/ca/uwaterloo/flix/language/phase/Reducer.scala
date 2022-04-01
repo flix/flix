@@ -170,7 +170,7 @@ object Reducer {
 
     case Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
       // If `e1` is unused (dead) and has no side effects (pure), visit `e2` and remove `e1`
-      if (occur == Occur.Dead && purity == Purity.Pure) {
+      if (occur == Occur.Dead && exp1.purity == Purity.Pure) {
         visitExp(exp2, env0)
       } else {
         // Visit the value expression.
