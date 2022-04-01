@@ -79,7 +79,7 @@ object BoolMinimization {
     * the list contains both `x` and `¬x` for some `x`.
     * Assumes the list is sorted.
     */
-  def removeSimpleDuplicates(terms: List[BoolMinimization.Formula]): Option[List[Formula]] = {
+  def removeSimpleDuplicates(terms: List[Formula]): Option[List[Formula]] = {
     import Formula._
     terms match {
       case Nil =>
@@ -97,27 +97,59 @@ object BoolMinimization {
     }
   }
 
-  def unitPropagation(terms: List[Formula]): List[Formula] = {
+  /**
+    * Performs unit propagation on `terms` of a conjunction. If `x` or `¬y` is
+    * present, then they must be `True` and `False` respectively. This is
+    * substituted in the remaining conjunction.
+    */
+  def unitPropagation(terms: List[Formula]): Option[List[Formula]] = {
     import Formula._
-    def removeVars(f: Formula, trues: Set[Var]): Option[Formula] = f match {
-      case True => Some(True)
-      case False => Some(False)
-      case v: Var if trues.contains(v) => None
-      case v: Var => Some(v)
-      case Not(v: Var) if trues.contains(v) => None
-      case Not(_) => throw InternalCompilerException(s"Found complex negation after NNF ${show(f)}")
-      case And(_) => throw InternalCompilerException(s"Found conjunction in input ${show(f)}")
-      case Or(terms) => ???
+    /**
+      * Substitutes the `bindings` given on the formula `f`
+      */
+    def subst(f: Formula, bindings: Map[Var, Formula]): Formula = f match {
+      case True => True
+      case False => False
+      case v: Var => bindings.getOrElse(v, v)
+      case Not(term) => mkNot(subst(term, bindings))
+      case And(terms) => mkAnd(terms.map(t => subst(t, bindings)))
+      case Or(terms) => mkOr(terms.map(t => subst(t, bindings)))
     }
 
-    def aux(terms0: List[Formula], trues: Set[Var]): List[Formula] = terms0 match {
-      case Nil => Nil
-      case (v: Var) :: rest => v :: aux(rest, trues + v)
-      case f :: rest if trues.nonEmpty => ??? // remove(f, trues)
-      case _ => ???
+    def aux(terms0: List[Formula], bindings: Map[Formula.Var, Formula]): List[Formula] = terms0 match {
+      case Nil =>
+        Nil
+      case (v: Var) :: rest if bindings.contains(v) =>
+        aux(subst(v, bindings) :: rest, bindings)
+      case (v: Var) :: rest =>
+        v :: aux(rest, bindings + (v -> True))
+      case Not(v: Var) :: rest if bindings.contains(v) =>
+        aux(subst(Not(v), bindings) :: rest, bindings)
+      case Not(v: Var) :: rest =>
+        Not(v) :: aux(rest, bindings + (v -> False))
+      case f :: rest if bindings.nonEmpty =>
+        val replacedF = subst(f, bindings)
+        replacedF match {
+          case True =>
+            aux(rest, bindings)
+          case False =>
+            // false shouldn't occur here so shortcutting doesn't matter
+            False :: aux(rest, bindings)
+          case v: Var if bindings.contains(v) =>
+            aux(subst(v, bindings) :: rest, bindings)
+          case v: Var =>
+            v :: aux(rest, bindings + (v -> True))
+          case Not(v: Var) =>
+            Not(v) :: aux(rest, bindings + (v -> False))
+          case Not(_) | And(_) | Or(_) =>
+            replacedF :: aux(rest, bindings)
+        }
+      case f :: rest => f :: aux(rest, bindings)
     }
 
-    aux(terms, Set.empty)
+    val propagatedTerms = aux(terms, Map.empty)
+    // This last normalization is for sorting
+    normalizeTerms(propagatedTerms)
   }
 
   /**
@@ -137,7 +169,7 @@ object BoolMinimization {
 
   /**
     * Merges the conjunctions if arguments are conjunctions themselves and
-    * performs shallow minimization.
+    * performs shallow minimization along with unit propagation.
     */
   def mkAnd(f: Formula*): Formula = {
     mkAnd(f.toList)
@@ -162,19 +194,18 @@ object BoolMinimization {
         }
       )
     }
-    hoistedTerms match {
+    val finalTerms = hoistedTerms
+      .flatMap(normalizeTerms)
+      .flatMap(unitPropagation)
+    finalTerms match {
       case None => False
       case Some(term :: Nil) => term
-      case Some(terms) =>
-        normalizeTerms(terms) match {
-          case None => False
-          case Some(normalizedTerms) => And(normalizedTerms)
-        }
+      case Some(terms) => And(terms)
     }
   }
 
   /**
-    * Sorts terms, reduces simple dublicates and returns `None` if the terms
+    * Sorts terms, reduces simple duplicates and returns `None` if the terms
     * contains a simple contradiction.
     */
   def normalizeTerms(terms: List[Formula]): Option[List[Formula]] = {
@@ -183,7 +214,7 @@ object BoolMinimization {
 
   /**
     * Merges the disjunctions if arguments are disjunctions themselves and
-    * perfoms shallow minimization.
+    * performs shallow minimization.
     */
   def mkOr(f: Formula*): Formula = {
     mkOr(f.toList)
@@ -304,12 +335,20 @@ object BoolMinimization {
     )
 
     val formulas = List(
-      mkAnd(mkVar("x"), mkVar("y")),
-      mkOr(mkVar("y"), mkVar("z")),
-      mkAnd(mkOr(mkVar("q"), mkAnd(mkVar("q"), mkVar("h"))), mkNot(mkVar("x")), mkVar("y"), mkVar("x")),
-      mkAnd(mkOr(mkVar("x"), mkVar("y")), mkOr(mkVar("x"), mkVar("z"))),
-      mkNot(mkAnd(mkOr(mkVar("x"), mkNot(mkVar("y"))), mkNot(mkOr(mkVar("x"), mkVar("z"))))),
-      mkAnd(mkOr(mkVar("z"), mkNot(mkAnd(mkVar("z"), mkVar("Q")))), mkNot(mkAnd(mkOr(mkVar("x"), mkNot(mkVar("y"))), mkNot(mkOr(mkVar("x"), mkVar("z"))))))
+      (mkAnd(mkVar("x"), mkVar("y")),
+        "x ∧ y"),
+      (mkOr(mkVar("y"), mkVar("z")),
+        "y ∨ z"),
+      (mkAnd(mkOr(mkVar("q"), mkAnd(mkVar("q"), mkVar("h"))), mkNot(mkVar("x")), mkVar("y"), mkVar("x")),
+        "(q ∨ (q ∧ h)) ∧ ¬x ∧ y ∧ x"),
+      (mkAnd(mkOr(mkVar("x"), mkVar("y")), mkOr(mkVar("x"), mkVar("z"))),
+        "(x ∨ y) ∧ (x ∨ z)"),
+      (mkNot(mkAnd(mkOr(mkVar("x"), mkNot(mkVar("y"))), mkNot(mkOr(mkVar("x"), mkVar("z"))))),
+        "¬((x ∨ ¬y) ∧ ¬(x ∨ z))"),
+      (mkAnd(mkOr(mkVar("z"), mkNot(mkAnd(mkVar("z"), mkVar("Q")))), mkNot(mkAnd(mkOr(mkVar("x"), mkNot(mkVar("y"))), mkNot(mkOr(mkVar("x"), mkVar("z")))))),
+        "(z ∨ ¬(z ∧ Q)) ∧ ¬((x ∨ ¬y) ∧ ¬(x ∨ z))"),
+      (mkAnd(mkVar("x"), mkOr(mkVar("y"), mkVar("x"))),
+        "x ∧ (y ∨ x)")
     )
 
     def run(msg: String, t: Formula => Formula): Unit = {
@@ -317,8 +356,9 @@ object BoolMinimization {
       val delim = "----"
       formulas.foreach(f => {
         println(delim)
-        println(show(f))
-        println(show(t(f)))
+        println(f._2)
+        println(show(f._1))
+        println(show(t(f._1)))
       })
       println(delim)
     }
