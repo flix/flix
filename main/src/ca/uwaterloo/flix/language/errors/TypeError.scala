@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatEff, FormatKind, FormatScheme, FormatType}
+import ca.uwaterloo.flix.language.fmt._
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -160,6 +160,28 @@ object TypeError {
         |                                             ^^^^
         |""".stripMargin
     })
+  }
+
+  /**
+    * Unexpected Type.
+    *
+    * @param expected the expected type.
+    * @param inferred the inferred type.
+    * @param loc      the location of the inferred type.
+    */
+  case class UnexpectedType(expected: Type, inferred: Type, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Expected type '$expected' but found type: '$inferred'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Expected type: '${red(FormatType.formatWellKindedType(expected))}' but found type: '${red(FormatType.formatWellKindedType(inferred))}'.
+         |
+         |${code(loc, "expression has unexpected type.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**

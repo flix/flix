@@ -28,6 +28,7 @@ object NamedAst {
                   defsAndSigs: Map[Name.NName, Map[String, NamedAst.DefOrSig]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
+                  entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
@@ -308,7 +309,7 @@ object NamedAst {
 
   object Type {
 
-    case class Var(tvar: ast.Type.UnkindedVar, loc: SourceLocation) extends NamedAst.Type
+    case class Var(tvar: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends NamedAst.Type
 
     case class Ambiguous(name: Name.QName, loc: SourceLocation) extends NamedAst.Type
 

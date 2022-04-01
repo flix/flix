@@ -28,7 +28,7 @@ object CodeHinter {
     * Returns a collection of code quality hints for the given AST `root`.
     */
   def run(root: TypedAst.Root, sources: Set[String])(implicit flix: Flix, index: Index): List[CodeHint] = {
-    val classHints = root.classes.values.flatMap(visitClass(_)(root)).toList
+    val classHints = root.classes.values.flatMap(visitClass(_)(root, index)).toList
     val defsHints = root.defs.values.flatMap(visitDef(_)(root)).toList
     val enumsHints = root.enums.values.flatMap(visitEnum(_)(root, index)).toList
     (classHints ++ defsHints ++ enumsHints).filter(include(_, sources))
@@ -57,12 +57,13 @@ object CodeHinter {
   /**
     * Computes code quality hints for the given class `typeclass`.
     */
-  private def visitClass(typeclass: TypedAst.Class)(implicit root: Root): List[CodeHint] = {
+  private def visitClass(typeclass: TypedAst.Class)(implicit root: Root, index: Index): List[CodeHint] = {
+    val uses = index.usesOf(typeclass.sym)
     val isDeprecated = typeclass.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
-    val deprecated = if (isDeprecated) CodeHint.Deprecated(typeclass.loc) :: Nil else Nil
+    val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated) else Nil
     val isExperimental = typeclass.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Experimental])
-    val experimental = if (isExperimental) CodeHint.Experimental(typeclass.loc) :: Nil else Nil
-    deprecated ++ experimental
+    val experimental = if (isExperimental) uses.map(CodeHint.Experimental) else Nil
+    (deprecated ++ experimental).toList
   }
 
   /**

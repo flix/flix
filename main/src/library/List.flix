@@ -898,6 +898,15 @@ namespace List {
         loop(l, identity)
 
     ///
+    /// Split the list `xs` at the position `n` returning the left and right parts.
+    ///
+    /// Returns `(xs, Nil)` if `n > length(xs)`.
+    /// Returns `(Nil, xs)` if `n < 0`.
+    ///
+    pub def splitAt(n: Int32, xs: List[a]): (List[a], List[a]) =
+        (List.take(n, xs), List.drop(n, xs))
+
+    ///
     /// Partitions `l` into sublists such that for any two elements `x` and `y` in a sublist, `f(x, y)` is true.
     ///
     /// A sublist is created by iterating through the remaining elements of `l` from left to right and adding an
@@ -1406,4 +1415,22 @@ namespace List {
             case x :: xs => loop(xs, ks -> k(consA(f(x), ks)))
         };
         loop(l, ks -> ks as & ef)
+
+    ///
+    /// Merges the two lists `l1` and `l2`. Assuming they are both sorted.
+    /// If two elements compare `EqualTo`, then the element of `l1` is first in the result.
+    ///
+    pub def merge(l1: List[a], l2: List[a]): List[a] with Order[a] =
+        def loop(acc1, acc2, k) = match (acc1, acc2) {
+            case (x :: xs, y :: ys) => {
+                let cmp = x <=> y;
+                if (cmp == LessThan or cmp == EqualTo) loop(xs, acc2, ks -> k(x :: ks))
+                else                                   loop(acc1, ys, ks -> k(y :: ks))
+            }
+            case (Nil    , y :: ys) => k(y :: ys)
+            case (x :: xs, Nil    ) => k(x :: xs)
+            case (Nil    , Nil    ) => k(Nil)
+        };
+        loop(l1, l2, identity)
+
 }

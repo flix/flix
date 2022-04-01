@@ -75,7 +75,7 @@ object Kinder {
 
         mapN(enumsVal, classesVal, defsVal, instancesVal) {
           case (enums, classes, defs, instances) =>
-            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, taenv, root.reachable, root.sources)
+            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, taenv, root.entryPoint, root.reachable, root.sources)
         }
     }
 
@@ -378,7 +378,7 @@ object Kinder {
         elms <- Validation.traverse(elms0)(visitExp(_, kenv, taenv, root))
       } yield KindedAst.Expression.Tuple(elms, loc)
 
-    case ResolvedAst.Expression.RecordEmpty(loc) => KindedAst.Expression.RecordEmpty(Type.freshVar(Kind.Star, loc), loc).toSuccess
+    case ResolvedAst.Expression.RecordEmpty(loc) => KindedAst.Expression.RecordEmpty(loc).toSuccess
 
     case ResolvedAst.Expression.RecordSelect(exp0, field, loc) =>
       for {
@@ -749,25 +749,17 @@ object Kinder {
     * Performs kinding on the given type variable under the given kind environment, with `expectedKind` expected from context.
     */
   private def visitTypeVar(tvar: Type.UnkindedVar, expectedKind: Kind, kenv: KindEnv): Validation[Type.KindedVar, KindError] = tvar match {
-    case tvar@Type.UnkindedVar(id, loc, rigidity, text) =>
+    case tvar@Type.UnkindedVar(sym, loc) =>
       kenv.map.get(tvar) match {
         // Case 1: we don't know about this kind, just ascribe it with what the context expects
         case None => tvar.ascribedWith(expectedKind).toSuccess
         // Case 2: we know about this kind, make sure it's behaving as we expect
         case Some(actualKind) =>
           unify(expectedKind, actualKind) match {
-            case Some(kind) => Type.KindedVar(id, kind, loc, rigidity, text).toSuccess
+            case Some(kind) => Type.KindedVar(sym.ascribedWith(kind), loc).toSuccess
             case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc = loc).toFailure
           }
       }
-  }
-
-  /**
-    * Performs kinding on the given free type variable, with `kindMatch` expected from context.
-    */
-  private def visitFreeTypeVar(tvar: Type.UnkindedVar, expectedKind: Kind): Type.KindedVar = tvar match {
-    case Type.UnkindedVar(id, rigidity, text, loc) =>
-      Type.KindedVar(id, expectedKind, rigidity, text, loc)
   }
 
   /**

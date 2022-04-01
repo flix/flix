@@ -26,11 +26,6 @@ import java.util.Objects
 object Symbol {
 
   /**
-    * The main symbol.
-    */
-  val Main: Symbol.DefnSym = Symbol.mkDefnSym("main")
-
-  /**
     * Returns a fresh def symbol based on the given symbol.
     */
   def freshDefnSym(sym: DefnSym)(implicit flix: Flix): DefnSym = {
@@ -73,6 +68,20 @@ object Symbol {
     */
   def freshVarSym(text: String, boundBy: BoundBy, loc: SourceLocation)(implicit flix: Flix): VarSym = {
     new VarSym(flix.genSym.freshId(), text, Type.freshUnkindedVar(loc), boundBy, loc)
+  }
+
+  /**
+    * Returns a fresh type variable symbol with the given text.
+    */
+  def freshKindedTypeVarSym(text: Option[String], kind: Kind, rigidity: Rigidity, loc: SourceLocation)(implicit flix: Flix): KindedTypeVarSym = {
+    new KindedTypeVarSym(flix.genSym.freshId(), text, kind, rigidity, loc)
+  }
+
+  /**
+    * Returns a fresh type variable symbol with the given text.
+    */
+  def freshUnkindedTypeVarSym(text: Option[String], rigidity: Rigidity, loc: SourceLocation)(implicit flix: Flix): UnkindedTypeVarSym = {
+    new UnkindedTypeVarSym(flix.genSym.freshId(), text, rigidity, loc)
   }
 
   /**
@@ -214,17 +223,72 @@ object Symbol {
     override def toString: String = text + Flix.Delimiter + id
   }
 
+  trait TypeVarSym extends Locatable with Sourceable {
+    val id: Int
+    val text: Option[String]
+    val loc: SourceLocation
+    val rigidity: Rigidity
+
+    /**
+      * Returns the same symbol with the given text.
+      */
+    def withText(text: Option[String]): TypeVarSym
+
+    /**
+      * Returns the same symbol with the given rigidity.
+      */
+    def withRigidity(rigidity: Rigidity): TypeVarSym
+
+    override def src: Ast.Source = loc.source
+
+    override def equals(that: Any): Boolean = that match {
+      case tvar: TypeVarSym => this.id == tvar.id
+      case _ => false
+    }
+
+    override def hashCode: Int = id
+
+    /**
+      * Returns a string representation of the symbol.
+      */
+    override def toString: String = text.getOrElse("tvar") + Flix.Delimiter + id
+  }
+
+  /**
+    * Kinded type variable symbol.
+    */
+  final class KindedTypeVarSym(val id: Int, val text: Option[String], val kind: Kind, val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym {
+
+    /**
+      * Returns the same symbol with the given kind.
+      */
+    def withKind(newKind: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, newKind, rigidity, loc)
+
+    override def withText(newText: Option[String]): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, rigidity, loc)
+
+    override def withRigidity(newRigidity: Rigidity): KindedTypeVarSym = new KindedTypeVarSym(id, text, kind, newRigidity, loc)
+
+  }
+
+  /**
+    * Unkinded type variable symbol.
+    */
+  final class UnkindedTypeVarSym(val id: Int, val text: Option[String], val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym {
+
+    override def withText(newText: Option[String]): UnkindedTypeVarSym = new UnkindedTypeVarSym(id, newText, rigidity, loc)
+
+    override def withRigidity(newRigidity: Rigidity): UnkindedTypeVarSym = new UnkindedTypeVarSym(id, text, newRigidity, loc)
+
+    /**
+      * Ascribes this UnkindedTypeVarSym with the given kind.
+      */
+    def ascribedWith(k: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, k, rigidity, loc)
+  }
+
   /**
     * Definition Symbol.
     */
   final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Locatable {
-
-    /**
-      * Returns `true` if `this` symbol is equal to the main symbol.
-      *
-      * NB: Must use equality because there could be more than once instance of the main symbol.
-      */
-    def isMain: Boolean = this == Symbol.Main
 
     /**
       * Returns the name of `this` symbol.

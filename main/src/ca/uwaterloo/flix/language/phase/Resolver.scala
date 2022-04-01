@@ -85,7 +85,7 @@ object Resolver {
           enums <- sequence(enumsVal)
           _ <- checkSuperClassDag(classes)
         } yield ResolvedAst.Root(
-          classes, combine(instances), definitions, enums.toMap, taenv, taOrder, root.reachable, root.sources
+          classes, combine(instances), definitions, enums.toMap, taenv, taOrder, root.entryPoint, root.reachable, root.sources
         )
     }
 
@@ -1533,7 +1533,7 @@ object Resolver {
     * Type aliases are given temporary placeholders.
     */
   private def semiResolveType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Type, ResolutionError] = tpe0 match {
-    case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
+    case NamedAst.Type.Var(sym, loc) => Type.UnkindedVar(sym, loc).toSuccess
 
     case NamedAst.Type.Unit(loc) => Type.mkUnit(loc).toSuccess
 

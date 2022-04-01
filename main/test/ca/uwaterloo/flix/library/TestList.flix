@@ -1481,6 +1481,30 @@ def takeWhile08(): Bool = List.takeWhile(i -> i > 3, 4 :: 6 :: -3 :: 11 :: -5 ::
                         4 :: 6 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
+// splitAt                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def splitAt01(): Bool =
+    let xs = Nil: List[Int32];
+    List.splitAt(0, xs) == (Nil, Nil)
+
+@test
+def splitAt02(): Bool =
+    let xs = 1 :: 5 :: 19 :: 3 :: Nil;
+    List.splitAt(3, xs) == (1 :: 5 :: 19 :: Nil, 3 :: Nil)
+
+@test
+def splitAt03(): Bool =
+    let xs = 1 :: 5 :: 19 :: 3 :: Nil;
+    List.splitAt(-3, xs) == (Nil, xs)
+
+@test
+def splitAt04(): Bool =
+    let xs = 1 :: 5 :: 19 :: 3 :: Nil;
+    List.splitAt(5, xs) == (xs, Nil)
+
+/////////////////////////////////////////////////////////////////////////////
 // groupBy                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -2599,5 +2623,45 @@ def distinctWith09(): Bool =
     @test
     def toMutDeque05(): Bool & Impure =
         List.toMutDeque(1 :: 2 :: 3 :: Nil) |> MutDeque.toList == 1 :: 2 :: 3 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // merge                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def merge01(): Bool =
+        let l1 = Nil: List[Int32];
+        let l2 = Nil: List[Int32];
+        List.merge(l1, l2) == Nil
+
+    @test
+    def merge02(): Bool =
+        let l1 = 1 :: Nil;
+        let l2 = Nil: List[Int32];
+        List.merge(l1, l2) == 1 :: Nil
+
+    @test
+    def merge03(): Bool =
+        let l1 = 1 :: Nil;
+        let l2 = 2 :: Nil;
+        List.merge(l1, l2) == 1 :: 2 :: Nil
+
+    @test
+    def merge04(): Bool =
+        let l1 = 2 :: Nil;
+        let l2 = 1 :: Nil;
+        List.merge(l1, l2) == 1 :: 2 :: Nil
+
+    @test
+    def merge05(): Bool =
+        let l1 = 1 :: 4 :: 8 :: 10 :: Nil;
+        let l2 = 2 :: 3 :: 8 :: 9 :: Nil;
+        List.merge(l1, l2) == 1 :: 2 :: 3 :: 4 :: 8 :: 8 :: 9 :: 10 :: Nil
+
+    @test
+    def merge06(): Bool =
+        let l1 = 4 :: 5 :: Nil;
+        let l2 = 2 :: 3 :: 6 :: 7 :: Nil;
+        List.merge(l1, l2) == 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: Nil
 
 }

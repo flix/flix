@@ -40,9 +40,7 @@ object Finalize {
       case (sym, enum) => sym -> visitEnum(enum, m)
     }
 
-    val reachable = root.reachable
-
-    FinalAst.Root(defs ++ m, enums, reachable, root.sources).toSuccess
+    FinalAst.Root(defs ++ m, enums, root.entryPoint, root.reachable, root.sources).toSuccess
   }
 
   private def visitDef(def0: LiftedAst.Def, m: TopLevel)(implicit flix: Flix): FinalAst.Def = {
@@ -408,7 +406,7 @@ object Finalize {
 
       base match {
         case None => t0 match {
-          case Type.KindedVar(id, _, _, _, _) => MonoType.Var(id)
+          case Type.KindedVar(sym, _) => MonoType.Var(sym.id)
           case _ => throw InternalCompilerException(s"Unexpected type: $t0")
         }
 

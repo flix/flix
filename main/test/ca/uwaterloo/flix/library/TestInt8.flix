@@ -683,6 +683,59 @@ namespace TestInt8 {
     def flipBit12(): Bool = Int8.flipBit(-1i8, 32) == -2i8
     
     /////////////////////////////////////////////////////////////////////////////
+    // log2                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def log201(): Bool = Int8.log2(10i8) == 3i8
+
+    @test
+    def log202(): Bool = Int8.log2(8i8) == 3i8
+
+    @test
+    def log203(): Bool = Int8.log2(127i8) == 6i8
+
+    @test
+    def log204(): Bool = Int8.log2(1i8) == 0i8
+
+    @test
+    def log205(): Bool = Int8.log2(20i8) == 4i8
+
+    @test
+    def log206(): Bool = Int8.log2(0i8) == 0i8
+
+    @test
+    def log207(): Bool = Int8.log2(-1i8) == 0i8
+
+    /////////////////////////////////////////////////////////////////////////////
+    // factorial                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def factorial01(): Bool = Int8.factorial(0i8) == 1
+
+    @test
+    def factorial02(): Bool = Int8.factorial(1i8) == 1
+
+    @test
+    def factorial03(): Bool = Int8.factorial(2i8) == 2
+
+    @test
+    def factorial04(): Bool = Int8.factorial(3i8) == 6
+
+    @test
+    def factorial05(): Bool = Int8.factorial(4i8) == 24
+
+    @test
+    def factorial06(): Bool = Int8.factorial(5i8) == 120
+
+    @test
+    def factorial07(): Bool = Int8.factorial(10i8) == 3628800
+
+    @test
+    def factorial08(): Bool = Int8.factorial(-1i8) == 0
+
+    /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
