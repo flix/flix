@@ -78,7 +78,7 @@ object Namer {
        * Namespace.
        */
       case WeededAst.Declaration.Namespace(ns, uses, decls, loc) =>
-        mergeUseEnvs(uses, uenv0) andThen {
+        flatMapN(mergeUseEnvs(uses, uenv0)) {
           newEnv =>
             Validation.fold(decls, prog0) {
               case (pacc, decl) =>
@@ -95,7 +95,7 @@ object Namer {
         lookupTypeOrClass(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
             // Case 1: The class does not already exist. Update it.
-            visitClass(decl, uenv0, Map.empty, ns0) andThen {
+            flatMapN(visitClass(decl, uenv0, Map.empty, ns0)) {
               case clazz@NamedAst.Class(_, _, _, _, _, _, sigs, _, _) =>
                 // add each signature to the namespace
                 // TODO add laws

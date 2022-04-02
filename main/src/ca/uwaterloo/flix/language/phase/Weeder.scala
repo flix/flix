@@ -262,7 +262,7 @@ object Weeder {
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
       val tparamsVal = visitTypeParams(tparams0)
 
-      sequenceT(annVal, modVal, tparamsVal) andThen {
+      flatMapN(annVal, modVal, tparamsVal) {
         case (ann, mod, tparams) =>
           /*
            * Check for `DuplicateTag`.
@@ -423,7 +423,7 @@ object Weeder {
 
     case ParsedAst.Expression.Intrinsic(sp1, op, exps, sp2) =>
       val loc = mkSL(sp1, sp2)
-      traverse(exps)(visitArgument) andThen {
+      flatMapN(traverse(exps)(visitArgument)) {
         case es => (op.name, es) match {
           case ("BOOL_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.BoolOp.Not, e1, loc).toSuccess
           case ("BOOL_AND", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BoolOp.And, e1, e2, loc).toSuccess
@@ -1695,7 +1695,7 @@ object Weeder {
       WeededAst.Expression.False(mkSL(sp1, sp2)).toSuccess
 
     case ParsedAst.Literal.Char(sp1, chars, sp2) =>
-      weedCharSequence(chars) andThen {
+      flatMapN(weedCharSequence(chars)) {
         case string if string.lengthIs == 1 => WeededAst.Expression.Char(string.head, mkSL(sp1, sp2)).toSuccess
         case string => WeederError.NonSingleCharacter(string, mkSL(sp1, sp2)).toFailure
       }
@@ -1753,7 +1753,7 @@ object Weeder {
     case ParsedAst.Literal.True(sp1, sp2) => WeededAst.Pattern.True(mkSL(sp1, sp2)).toSuccess
     case ParsedAst.Literal.False(sp1, sp2) => WeededAst.Pattern.False(mkSL(sp1, sp2)).toSuccess
     case ParsedAst.Literal.Char(sp1, chars, sp2) =>
-      weedCharSequence(chars) andThen {
+      flatMapN(weedCharSequence(chars)) {
         case string if string.lengthIs == 1 => WeededAst.Pattern.Char(string.head, mkSL(sp1, sp2)).toSuccess
         case string => WeederError.NonSingleCharacter(string, mkSL(sp1, sp2)).toFailure
       }
@@ -1855,7 +1855,7 @@ object Weeder {
         }
 
       case ParsedAst.Pattern.ArrayTailSpread(sp1, pats, ident, sp2) =>
-        traverse(pats)(visit) andThen {
+        flatMapN(traverse(pats)(visit)) {
           case elms if ident.name == "_" => WeededAst.Pattern.ArrayTailSpread(elms, None, mkSL(sp2, sp2)).toSuccess
           case elms =>
             seen.get(ident.name) match {
@@ -1868,7 +1868,7 @@ object Weeder {
         }
 
       case ParsedAst.Pattern.ArrayHeadSpread(sp1, ident, pats, sp2) =>
-        traverse(pats)(visit) andThen {
+        flatMapN(traverse(pats)(visit)) {
           case elms if ident.name == "_" => WeededAst.Pattern.ArrayHeadSpread(None, elms, mkSL(sp1, sp2)).toSuccess
           case elms =>
             seen.get(ident.name) match {
@@ -2320,7 +2320,7 @@ object Weeder {
             seen += (ident.name -> param)
           }
 
-          visitModifiers(mods, legalModifiers = Set.empty) andThen {
+          flatMapN(visitModifiers(mods, legalModifiers = Set.empty)) {
             case mod =>
               if (typeRequired && typeOpt.isEmpty)
                 IllegalFormalParameter(ident.name, mkSL(sp1, sp2)).toFailure

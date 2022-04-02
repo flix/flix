@@ -40,15 +40,13 @@ sealed trait Validation[+T, +E] {
     case Validation.Failure(errors) => Validation.Failure(errors)
   }
 
-  // Deprecated. Use `andThen` instead.
-  final def flatMap[U, A >: E](f: T => Validation[U, A]): Validation[U, A] = this.andThen(f)
-
   /**
     * Similar to `map` but does not wrap the result in a [[Validation.Success]].
     *
     * Preserves the errors.
     */
-  final def andThen[U, A >: E](f: T => Validation[U, A]): Validation[U, A] = this match {
+    // Deprecated. Use flatMapN instead.
+  final def flatMap[U, A >: E](f: T => Validation[U, A]): Validation[U, A] = this match {
     case Validation.Success(input) => f(input) match {
       case Validation.Success(value) => Validation.Success(value)
       case Validation.Failure(thatErrors) => Validation.Failure(errors #::: thatErrors)
@@ -249,7 +247,6 @@ object Validation {
   /**
     * FlatMaps over t1.
     */
-  // Deprecated. Use `sequenceT` and `andThen` instead.
   def flatMapN[T1, U, E](t1: Validation[T1, E])(f: T1 => Validation[U, E]): Validation[U, E] =
     t1 match {
       case Success(v1) => f(v1)
@@ -259,7 +256,6 @@ object Validation {
   /**
     * FlatMaps over t1 and t2.
     */
-  // Deprecated. Use `sequenceT` and `andThen` instead.
   def flatMapN[T1, T2, U, E](t1: Validation[T1, E], t2: Validation[T2, E])
                             (f: (T1, T2) => Validation[U, E]): Validation[U, E] =
     (t1, t2) match {
@@ -270,7 +266,6 @@ object Validation {
   /**
     * FlatMaps over t1, t2, and t3.
     */
-  // Deprecated. Use `sequenceT` and `andThen` instead.
   def flatMapN[T1, T2, T3, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E])
                                 (f: (T1, T2, T3) => Validation[U, E]): Validation[U, E] =
     (t1, t2, t3) match {
@@ -281,7 +276,6 @@ object Validation {
   /**
     * FlatMaps over t1, t2, t3, and t4.
     */
-  // Deprecated. Use `sequenceT` and `andThen` instead.
   def flatMapN[T1, T2, T3, T4, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                      t4: Validation[T4, E])
                                     (f: (T1, T2, T3, T4) => Validation[U, E]): Validation[U, E] =
@@ -293,7 +287,6 @@ object Validation {
   /**
     * FlatMaps over t1, t2, t3, t4, and t5.
     */
-  // Deprecated. Use `sequenceT` and `andThen` instead.
   def flatMapN[T1, T2, T3, T4, T5, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                          t4: Validation[T4, E], t5: Validation[T5, E])
                                         (f: (T1, T2, T3, T4, T5) => Validation[U, E]): Validation[U, E] =
@@ -305,7 +298,6 @@ object Validation {
   /**
     * FlatMaps over t1, t2, t3, t4, t5, and t6.
     */
-  // Deprecated. Use `sequenceT` and `andThen` instead.
   def flatMapN[T1, T2, T3, T4, T5, T6, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                              t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E])
                                              (f: (T1, T2, T3, T4, T5, T6) => Validation[U, E]): Validation[U, E] =
@@ -358,7 +350,7 @@ object Validation {
     */
   def foldRight[T, U, E](xs: Seq[T])(zero: Validation[U, E])(f: (T, U) => Validation[U, E]): Validation[U, E] = {
     xs.foldRight(zero) {
-      case (a, acc) => acc andThen {
+      case (a, acc) => flatMapN(acc) {
         case v => f(a, v)
       }
     }
@@ -387,7 +379,7 @@ object Validation {
     */
   def fold[In, Out, Error](xs: Iterable[In], zero: Out)(f: (Out, In) => Validation[Out, Error]): Validation[Out, Error] = {
     xs.foldLeft(Success(zero): Validation[Out, Error]) {
-      case (acc, a) => acc andThen {
+      case (acc, a) => flatMapN(acc) {
         case value => f(value, a)
       }
     }
