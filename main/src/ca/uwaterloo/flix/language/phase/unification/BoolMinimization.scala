@@ -16,8 +16,10 @@
 
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
+
+import scala.annotation.tailrec
 
 object BoolMinimization {
 
@@ -116,38 +118,39 @@ object BoolMinimization {
       case Or(terms) => mkOr(terms.map(t => subst(t, bindings)))
     }
 
-    def aux(terms0: List[Formula], bindings: Map[Formula.Var, Formula]): List[Formula] = terms0 match {
+    @tailrec
+    def aux(terms0: List[Formula], bindings: Map[Formula.Var, Formula], acc: List[Formula]): List[Formula] = terms0 match {
       case Nil =>
-        Nil
+        acc.reverse
       case (v: Var) :: rest if bindings.contains(v) =>
-        aux(subst(v, bindings) :: rest, bindings)
+        aux(subst(v, bindings) :: rest, bindings, acc)
       case (v: Var) :: rest =>
-        v :: aux(rest, bindings + (v -> True))
+        aux(rest, bindings + (v -> True), v :: acc)
       case Not(v: Var) :: rest if bindings.contains(v) =>
-        aux(subst(Not(v), bindings) :: rest, bindings)
+        aux(subst(Not(v), bindings) :: rest, bindings, acc)
       case Not(v: Var) :: rest =>
-        Not(v) :: aux(rest, bindings + (v -> False))
+        aux(rest, bindings + (v -> False), Not(v) :: acc)
       case f :: rest if bindings.nonEmpty =>
         val replacedF = subst(f, bindings)
         replacedF match {
           case True =>
-            aux(rest, bindings)
+            aux(rest, bindings, acc)
           case False =>
             // false shouldn't occur here so shortcutting doesn't matter
-            False :: aux(rest, bindings)
+            aux(rest, bindings, False :: acc)
           case v: Var if bindings.contains(v) =>
-            aux(subst(v, bindings) :: rest, bindings)
+            aux(subst(v, bindings) :: rest, bindings, acc)
           case v: Var =>
-            v :: aux(rest, bindings + (v -> True))
+            aux(rest, bindings + (v -> True), v :: acc)
           case Not(v: Var) =>
-            Not(v) :: aux(rest, bindings + (v -> False))
+            aux(rest, bindings + (v -> False), Not(v) :: acc)
           case Not(_) | And(_) | Or(_) =>
-            replacedF :: aux(rest, bindings)
+            aux(rest, bindings, replacedF :: acc)
         }
-      case f :: rest => f :: aux(rest, bindings)
+      case f :: rest => aux(rest, bindings, f :: acc)
     }
 
-    val propagatedTerms = aux(terms, Map.empty)
+    val propagatedTerms = aux(terms, Map.empty, Nil)
     // This last normalization is for sorting
     normalizeTerms(propagatedTerms)
   }
@@ -319,6 +322,81 @@ object BoolMinimization {
     */
   def toDNF(f: Formula): Formula = ???
 
+  def fromType(t: Type): Formula = {
+    import Formula._
+    t match {
+      case Type.True => True
+      case Type.False => False
+      case v: Type.KindedVar => Var(v)
+      case TypeNot(t0) => mkNot(fromType(t0))
+      case TypeAnd(t1, t2) => mkAnd(fromType(t1), fromType(t2))
+      case TypeOr(t1, t2) => mkOr(fromType(t1), fromType(t2))
+      case other => throw InternalCompilerException(s"Unexpected non-boolean type ${other.toString}")
+    }
+  }
+
+  def toType(f: Formula): Type = {
+    import Formula._
+    f match {
+      case True => Type.True
+      case False => Type.False
+      case Var(v) => v
+      case Not(term) => TypeNot(toType(term))
+      case And(terms) => terms match {
+        case Nil => throw InternalCompilerException("Cannot transform empty conjunction")
+        case fst :: rest => rest.foldLeft(toType(fst)){
+          (acc, f) => TypeAnd(acc, toType(f))
+        }
+      }
+      case Or(terms) => terms match {
+        case Nil => throw InternalCompilerException("Cannot transform empty disjunction")
+        case fst :: rest => rest.foldLeft(toType(fst)){
+          (acc, f) => TypeOr(acc, toType(f))
+        }
+      }
+    }
+  }
+
+  private object TypeNot {
+    @inline
+    def apply(t: Type): Type =
+      Type.Apply(Type.Cst(TypeConstructor.Not, SourceLocation.Unknown), t, SourceLocation.Unknown)
+
+    @inline
+    def unapply(tpe: Type): Option[Type] = tpe match {
+      case Type.Apply(Type.Cst(TypeConstructor.Not, _), x, _) => Some(x)
+      case _ => None
+    }
+  }
+
+  private object TypeAnd {
+    @inline
+    def apply(t1: Type, t2: Type): Type = {
+      val uknwn = SourceLocation.Unknown
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, uknwn), t1, uknwn), t2, uknwn)
+    }
+
+    @inline
+    def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), x, _), y, _) => Some((x, y))
+      case _ => None
+    }
+  }
+
+  private object TypeOr {
+    @inline
+    def apply(t1: Type, t2: Type): Type = {
+      val uknwn = SourceLocation.Unknown
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, uknwn), t1, uknwn), t2, uknwn)
+    }
+
+    @inline
+    def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _), y, _) => Some((x, y))
+      case _ => None
+    }
+  }
+
   /**
     * A couple tests for NNF and CNF
     */
@@ -380,18 +458,19 @@ object BoolMinimization {
         if (paran) s"($termStr)" else termStr
       }
 
+      import Formula._
       f match {
-        case Formula.True => ("T", false)
-        case Formula.False => ("F", false)
-        case Formula.Var(v) => (v.sym.text.getOrElse("???"), false)
-        case Formula.Not(term) =>
+        case True => ("T", false)
+        case False => ("F", false)
+        case Var(v) => (v.sym.text.getOrElse("???"), false)
+        case Not(term) =>
           val (termStr, paran) = showAux(term)
           val rep = if (paran) s"($termStr)" else termStr
           (s"¬$rep", false)
-        case Formula.And(terms) =>
+        case And(terms) =>
           val rep = terms.map(showTermBraces).mkString(" ∧ ")
           (rep, true)
-        case Formula.Or(terms) =>
+        case Or(terms) =>
           val rep = terms.map(showTermBraces).mkString(" ∨ ")
           (rep, true)
       }

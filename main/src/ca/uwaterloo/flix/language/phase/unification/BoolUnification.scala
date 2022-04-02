@@ -59,10 +59,20 @@ object BoolUnification {
       case _ => // nop
     }
 
+    def cnf(t: Type): Type = {
+      import BoolMinimization._
+      val res = toType(toCNF(fromType(t)))
+      val before = t.toString.length
+      val after = res.toString.length
+      if (before > 9 || after > 9)
+        println(s"$before cnf'ed to $after")
+      res
+    }
+
     ///
     /// Run the expensive boolean unification algorithm.
     ///
-    booleanUnification(eraseAliases(tpe1), eraseAliases(tpe2))
+    booleanUnification(cnf(eraseAliases(tpe1)), cnf(eraseAliases(tpe2)))
   }
 
   /**
