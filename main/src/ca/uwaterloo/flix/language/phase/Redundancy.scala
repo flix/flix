@@ -814,7 +814,7 @@ object Redundancy {
     * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
     */
   private def deadTypeVar(tvar: Symbol.KindedTypeVarSym, used: Set[Symbol.KindedTypeVarSym]): Boolean = {
-    !tvar.text.exists(_.startsWith("_")) &&
+    !tvar.isWild &&
       !used.contains(tvar)
   }
 

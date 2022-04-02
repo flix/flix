@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.fmt
 
+import ca.uwaterloo.flix.language.ast.Ast.VarText
 import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Symbol, Type}
 
 object FormatType {
@@ -257,10 +258,14 @@ object FormatType {
           case Rigidity.Flexible => ""
           case Rigidity.Rigid => "!"
         }
-        val s = prefix + suffix
+        val string = prefix + suffix
         audience match {
-          case Audience.Internal => s
-          case Audience.External => text.getOrElse(s)
+          case Audience.Internal => string
+          case Audience.External => text match { // MATT ? what to do if synthetic?
+            case VarText.Absent => string
+            case VarText.Text(s) => s
+            case VarText.Synthetic(s) => s
+          }
         }
 
       case SimpleType.Tuple(fields) =>

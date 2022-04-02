@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.fmt
 
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Rigidity, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -213,7 +213,7 @@ object SimpleType {
   /**
     * A type variable.
     */
-  case class Var(id: Int, kind: Kind, rigidity: Rigidity, text: Option[String]) extends SimpleType
+  case class Var(id: Int, kind: Kind, rigidity: Rigidity, text: Ast.VarText) extends SimpleType
 
   /**
     * A tuple.

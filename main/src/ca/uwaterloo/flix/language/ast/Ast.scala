@@ -535,7 +535,25 @@ object Ast {
   /**
     * Represents the text of a variable.
     */
-  sealed trait VarText
+  sealed trait VarText {
+
+    /**
+      * A measure of precision of the text.
+      */
+    private def precision: Int = this match {
+      case VarText.Absent => 0
+      case VarText.Synthetic(_) => 1
+      case VarText.Text(_) => 2
+    }
+
+    /**
+      * Returns true if `this` VarText is less precise than `that` VarText.
+      *
+      * More precise text should be preferred when choosing a text to use when substituting.
+      *
+      */
+    def lessPreciseThan(that: VarText): Boolean = this.precision < that.precision
+  }
 
   object VarText {
     /**
