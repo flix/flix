@@ -272,10 +272,12 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedEnumSym.01") {
     val input =
       s"""
-         |enum Color {
-         |  case Red,
-         |  case Green,
-         |  case Blue
+         |namespace N {
+         |    enum Color {
+         |        case Red,
+         |        case Green,
+         |        case Blue
+         |    }
          |}
          |
        """.stripMargin
@@ -286,14 +288,15 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedEnumSym.02") {
     val input =
       s"""
-         |enum One {
-         |  case A(Two)
-         |}
+         |namespace N {
+         |    enum One {
+         |      case A(Two)
+         |    }
          |
-         |enum Two {
-         |  case B(One)
+         |    enum Two {
+         |      case B(One)
+         |    }
          |}
-         |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UnusedEnumSym](result)
@@ -302,8 +305,9 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedEnumSym.03") {
     val input =
       s"""
-         |opaque type USD = Int32
-         |
+         |namespace N {
+         |    opaque type USD = Int32
+         |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UnusedEnumSym](result)
@@ -312,13 +316,14 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedEnumTag.01") {
     val input =
       s"""
-         |enum Color {
-         |  case Red,
-         |  case Blue
+         |namespace N {
+         |    enum Color {
+         |        case Red,
+         |        case Blue
+         |    }
+         |
+         |    def f(): Color = Red
          |}
-         |
-         |def f(): Color = Red
-         |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UnusedEnumTag](result)
@@ -327,14 +332,15 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedEnumTag.02") {
     val input =
       s"""
-         |enum Color {
-         |  case Red,
-         |  case Green,
-         |  case Blue
+         |namespace N {
+         |    enum Color {
+         |        case Red,
+         |        case Green,
+         |        case Blue
+         |    }
+         |
+         |    def f(): Color = Green
          |}
-         |
-         |def f(): Color = Green
-         |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UnusedEnumTag](result)
@@ -940,24 +946,37 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("IllegalSingleVariable.Predicate.01") {
     val input =
       s"""
-         |def f(): #{ A(Int32), B(Int32), C(Int32) } =
-         |  #{
-         |    A(x) :- B(x), C(y).
-         |  }
-         |
+         |namespace N {
+         |    def f(): #{ A(Int32), B(Int32), C(Int32) } =
+         |        #{
+         |            A(x) :- B(x), C(y).
+         |        }
+         |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.IllegalSingleVariable](result)
   }
 
   test("UnusedDefSym.01") {
-    val input = "def foo(): Bool = true"
+    val input =
+      """
+        |namespace N {
+        |    def foo(): Bool = true
+        |}
+        |""".stripMargin
+
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UnusedDefSym](result)
   }
 
   test("UnusedDefSym.Recursive.01") {
-    val input = "def foo(): Bool = if (true) foo() else false"
+    val input =
+      """
+        |namespace N {
+        |    def foo(): Bool = if (true) foo() else false
+        |}
+        |""".stripMargin
+
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UnusedDefSym](result)
   }
