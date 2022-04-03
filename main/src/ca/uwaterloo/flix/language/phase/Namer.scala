@@ -137,7 +137,7 @@ object Namer {
       /*
      * Definition.
      */
-      case decl@WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, retTpe, eff0, tconstrs, loc) =>
+      case decl@WeededAst.Declaration.Def(_, _, _, ident, _, _, _, _, _, _, _, _) =>
         // Check if the definition already exists.
         val defsAndSigs = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
         defsAndSigs.get(ident.name) match {
@@ -166,7 +166,7 @@ object Namer {
       /*
      * Enum.
      */
-      case enum0@WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams0, derives, cases, loc) =>
+      case enum0@WeededAst.Declaration.Enum(_, _, _, ident, _, _, _, _) =>
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
         lookupTypeOrClass(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
