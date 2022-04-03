@@ -85,7 +85,7 @@ object SemanticTokensProvider {
     //
     // Construct an iterator of the semantic tokens from type aliases.
     //
-    val typeAliasTokens = root.typealiases.flatMap {
+    val typeAliasTokens = root.typeAliases.flatMap {
       case (_, decl) if include(uri, decl.loc) => visitTypeAlias(decl)
       case _ => Nil
     }
