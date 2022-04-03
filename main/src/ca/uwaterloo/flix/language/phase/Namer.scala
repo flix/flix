@@ -166,7 +166,8 @@ object Namer {
       /*
      * Enum.
      */
-      case WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams0, derives, cases, loc) =>
+      case WeededAst.Declaration.Enum(doc, ann, mod0, ident, tparams0, derives, cases, loc) =>
+        // TODO make visitEnum
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
         lookupTypeOrClass(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
@@ -187,6 +188,7 @@ object Namer {
               }
             }
             val annVal = traverse(ann)(visitAnnotation(_, Map.empty, uenv0, tenv))
+            val mod = visitModifiers(mod0, ns0)
             mapN(annVal, casesOf(cases, uenv0, tenv)) {
               case (ann, cases) =>
                 val enum = NamedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, enumType, loc)
@@ -201,11 +203,13 @@ object Namer {
       /*
      * Type Alias.
      */
-      case WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams0, tpe0, loc) =>
+      case WeededAst.Declaration.TypeAlias(doc, mod0, ident, tparams0, tpe0, loc) =>
+        // TODO make visitTypeAlias
         val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
         lookupTypeOrClass(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
             // Case 1: The type alias does not exist in the namespace. Add it.
+            val mod = visitModifiers(mod0, ns0)
             val tparams = getTypeParams(tparams0, uenv0)
             val tenv = getTypeEnv(tparams.tparams)
             mapN(visitType(tpe0, uenv0, tenv)) {
@@ -328,8 +332,9 @@ object Namer {
     * Performs naming on the given class `clazz`.
     */
   private def visitClass(clazz: WeededAst.Declaration.Class, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = clazz match {
-    case WeededAst.Declaration.Class(doc, ann, mod, ident, tparams0, superClasses0, signatures, laws0, loc) =>
+    case WeededAst.Declaration.Class(doc, ann, mod0, ident, tparams0, superClasses0, signatures, laws0, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
+      val mod = visitModifiers(mod0, ns0)
       val tparam = getTypeParam(tparams0)
       val tenv = tenv0 ++ getTypeEnv(List(tparam))
       val tconstr = NamedAst.TypeConstraint(Name.mkQName(ident), NamedAst.Type.Var(tparam.sym, tparam.loc), sym.loc)
@@ -373,12 +378,13 @@ object Namer {
     * Performs naming on the given signature declaration `sig` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, classIdent: Name.Ident, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
-    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, exp0, tpe0, retTpe0, eff0, tconstrs0, loc) =>
+    case WeededAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, retTpe0, eff0, tconstrs0, loc) =>
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
 
       // First visit all the top-level information
       val sigTypeCheckVal = checkSigType(ident, classTparam, tpe0, ident.loc)
+      val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
       val tpeVal = visitType(tpe0, uenv0, tenv)
       val retTpeVal = visitType(retTpe0, uenv0, tenv)
@@ -423,7 +429,7 @@ object Namer {
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`, with type constraints `tconstrs`.
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
-    case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs0, loc) =>
+    case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
       // TODO: we use tenv when getting the types from formal params first, before the explicit tparams have a chance to modify it
@@ -435,6 +441,7 @@ object Namer {
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
 
       // First visit all the top-level information
+      val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
       val tpeVal = visitType(tpe0, uenv0, tenv)
       val retTpeVal = visitType(retTpe0, uenv0, tenv)
@@ -1467,6 +1474,19 @@ object Namer {
       mapN(traverse(args)(visitExp(_, env0, uenv0, tenv0))) {
         case as => NamedAst.Annotation(name, as, loc)
       }
+  }
+
+  /**
+    * Performs naming on the given modifiers.
+    *
+    * Adds the `pub` modifier if in the root namespace.
+    */
+  private def visitModifiers(mod: Ast.Modifiers, ns0: Name.NName): Ast.Modifiers = {
+    if (ns0.isRoot) {
+      mod.asPublic
+    } else {
+      mod
+    }
   }
 
   /**
