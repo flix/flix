@@ -55,7 +55,7 @@ object Resolver {
   def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-    resolveTypeAliases(root.typealiases, root) flatMap {
+    flatMapN(resolveTypeAliases(root.typealiases, root)) {
       case (taenv, taOrder) =>
 
         val classesVal = resolveClasses(root, taenv, oldRoot, changeSet)
