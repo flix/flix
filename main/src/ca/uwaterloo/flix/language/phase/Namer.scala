@@ -166,36 +166,16 @@ object Namer {
       /*
      * Enum.
      */
-      case WeededAst.Declaration.Enum(doc, ann, mod0, ident, tparams0, derives, cases, loc) =>
-        // TODO make visitEnum
+      case enum0@WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams0, derives, cases, loc) =>
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
         lookupTypeOrClass(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
             // Case 1: The enum does not exist in the namespace. Update it.
-            val sym = Symbol.mkEnumSym(ns0, ident)
-
-            // Compute the type parameters.
-            val tparams = getTypeParams(tparams0, uenv0)
-
-            val tenv = tparams.tparams.map(kv => kv.name.name -> kv.sym).toMap
-            val quantifiers = tparams.tparams.map(_.sym).map(sym => NamedAst.Type.Var(sym, sym.loc))
-            val enumType = if (quantifiers.isEmpty)
-              NamedAst.Type.Enum(sym, ident.loc)
-            else {
-              val base = NamedAst.Type.Enum(sym, ident.loc)
-              quantifiers.foldLeft(base: NamedAst.Type) {
-                case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, tvar.loc)
-              }
-            }
-            val annVal = traverse(ann)(visitAnnotation(_, Map.empty, uenv0, tenv))
-            val mod = visitModifiers(mod0, ns0)
-            mapN(annVal, casesOf(cases, uenv0, tenv)) {
-              case (ann, cases) =>
-                val enum = NamedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, enumType, loc)
+            visitEnum(enum0, uenv0, ns0) map {
+              enum =>
                 val enums = enums0 + (ident.name -> enum)
                 prog0.copy(enums = prog0.enums + (ns0 -> enums))
             }
-
           // Case 2: The name is in use.
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
@@ -312,6 +292,32 @@ object Namer {
           }
           val cparams = (headParams ++ ruleParam).toList
           NamedAst.Constraint(cparams, head, body, loc)
+      }
+  }
+
+
+  /**
+    * Performs naming on the given enum `enum0`.
+    */
+  private def visitEnum(enum0: WeededAst.Declaration.Enum, uenv0: UseEnv, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Enum, NameError] = enum0 match {
+    case WeededAst.Declaration.Enum(doc, ann0, mod0, ident, tparams0, derives, cases0, loc) =>
+      val sym = Symbol.mkEnumSym(ns0, ident)
+
+      // Compute the type parameters.
+      val tparams = getTypeParams(tparams0, uenv0)
+
+      val tenv = tparams.tparams.map(kv => kv.name.name -> kv.sym).toMap
+      val quantifiers = tparams.tparams.map(_.sym).map(sym => NamedAst.Type.Var(sym, sym.loc))
+      val base = NamedAst.Type.Enum(sym, ident.loc)
+      val enumType = quantifiers.foldLeft(base: NamedAst.Type) {
+        case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, tvar.loc)
+      }
+
+      val annVal = traverse(ann0)(visitAnnotation(_, Map.empty, uenv0, tenv))
+      val mod = visitModifiers(mod0, ns0)
+      mapN(annVal, casesOf(cases0, uenv0, tenv)) {
+        case (ann, cases) =>
+          NamedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, enumType, loc)
       }
   }
 
