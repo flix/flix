@@ -125,7 +125,7 @@ object Kinder {
   private def visitTypeAliases(aliases: List[Symbol.TypeAliasSym], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], KindError] = {
     Validation.fold(aliases, Map.empty[Symbol.TypeAliasSym, KindedAst.TypeAlias]) {
       case (taenv, sym) =>
-        val alias = root.typealiases(sym)
+        val alias = root.typeAliases(sym)
         visitTypeAlias(alias, taenv, root) map {
           kind => taenv + (sym -> kind)
         }
