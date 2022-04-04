@@ -205,11 +205,12 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given `spec`.
     */
   private def visitSpec(spec: Spec): Iterator[SemanticToken] = spec match {
-    case Spec(_, _, _, tparams, fparams, _, retTpe, _, _) =>
+    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, _) =>
       val st1 = visitTypeParams(tparams)
       val st2 = visitFormalParams(fparams)
       val st3 = visitType(retTpe)
-      st1 ++ st2 ++ st3
+      val st4 = visitType(eff)
+      st1 ++ st2 ++ st3 ++ st4
   }
 
   /**
