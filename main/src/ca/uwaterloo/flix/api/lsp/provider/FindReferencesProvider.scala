@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, Location, Position}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -61,10 +61,13 @@ object FindReferencesProvider {
 
         case Entity.LocalVar(sym, _) => findVarReferences(sym)
 
-        case Entity.TypeCon(tc, loc) => tc match {
-          case TypeConstructor.RecordRowExtend(field) => findFieldReferences(field)
-          case TypeConstructor.SchemaRowExtend(pred) => findPredReferences(pred)
-          case TypeConstructor.KindedEnum(sym, _) => findEnumReferences(sym)
+        case Entity.Type(t) => t match {
+          case Type.Cst(tc, _) => tc match {
+            case TypeConstructor.RecordRowExtend(field) => findFieldReferences(field)
+            case TypeConstructor.SchemaRowExtend(pred) => findPredReferences(pred)
+            case TypeConstructor.KindedEnum(sym, _) => findEnumReferences(sym)
+            case _ => mkNotFound(uri, pos)
+          }
           case _ => mkNotFound(uri, pos)
         }
 
