@@ -88,7 +88,7 @@ object VarNumbering {
 
       case Expression.Var(_, _, _) => i0
 
-      case Expression.Closure(_, _, _, _, _) => i0
+      case Expression.Closure(_, _, _, _) => i0
 
       case Expression.ApplyClo(exp, args, _, _, _) =>
         val i = visitExp(exp, i0)
@@ -119,7 +119,7 @@ object VarNumbering {
         val i2 = visitExp(exp2, i1)
         visitExp(exp3, i2)
 
-      case Expression.Branch(exp, branches, _, _) =>
+      case Expression.Branch(exp, branches, _, _, _) =>
         val i1 = visitExp(exp, i0)
         visitExps(branches.values.toList, i1)
 
@@ -181,7 +181,7 @@ object VarNumbering {
         val i2 = visitExp(index, i1)
         visitExp(elm, i2)
 
-      case Expression.ArrayLength(base, _, _) =>
+      case Expression.ArrayLength(base, _, _, _) =>
         visitExp(base, i0)
 
       case Expression.ArraySlice(base, startIndex, endIndex, _, _) =>
@@ -189,13 +189,13 @@ object VarNumbering {
         val i2 = visitExp(startIndex, i1)
         visitExp(endIndex, i2)
 
-      case Expression.Ref(exp, _, _, _) =>
+      case Expression.Ref(exp, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.Deref(exp, _, _, _) =>
+      case Expression.Deref(exp, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.Assign(exp1, exp2, _, _, _) =>
+      case Expression.Assign(exp1, exp2, _, _) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
@@ -234,17 +234,17 @@ object VarNumbering {
       case Expression.PutStaticField(_, exp, _, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.NewChannel(exp, _, _, _) =>
+      case Expression.NewChannel(exp, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.GetChannel(exp, _, _, _) =>
+      case Expression.GetChannel(exp, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.PutChannel(exp1, exp2, _, _, _) =>
+      case Expression.PutChannel(exp1, exp2, _, _) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.SelectChannel(rules, default, _, _, _) =>
+      case Expression.SelectChannel(rules, default, _, _) =>
         var currentOffset = i0
         for (r <- rules) {
           currentOffset = visitSymbolAssignment(r.sym, r.chan.tpe.typeArguments.head, currentOffset)
@@ -253,13 +253,13 @@ object VarNumbering {
         }
         default.map(visitExp(_, currentOffset)).getOrElse(currentOffset)
 
-      case Expression.Spawn(exp, _, _, _) =>
+      case Expression.Spawn(exp, _, _) =>
         visitExp(exp, i0)
 
       case Expression.Lazy(exp, _, _) =>
         visitExp(exp, i0)
 
-      case Expression.Force(exp, _, _, _) =>
+      case Expression.Force(exp, _, _) =>
         visitExp(exp, i0)
 
       case Expression.HoleError(_, _, _, _) =>

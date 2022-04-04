@@ -107,7 +107,7 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.Var(sym, t, loc)
 
-      case LiftedAst.Expression.Closure(sym, freeVars, tpe, _, loc) =>
+      case LiftedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
         val fvs = freeVars.map(visitFreeVar)
         val t = visitType(tpe)
         FinalAst.Expression.Closure(sym, fvs, getFunctionTypeTemporaryToBeRemoved(fvs, t), t, loc)
@@ -157,7 +157,7 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.IfThenElse(e1, e2, v3, t, loc)
 
-      case LiftedAst.Expression.Branch(exp, branches, tpe, loc) =>
+      case LiftedAst.Expression.Branch(exp, branches, tpe, _, loc) =>
         val e = visit(exp)
         val bs = branches map {
           case (sym, br) => sym -> visit(br)
@@ -249,7 +249,7 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.ArrayStore(b, i, e, t, loc)
 
-      case LiftedAst.Expression.ArrayLength(base, tpe, loc) =>
+      case LiftedAst.Expression.ArrayLength(base, tpe, _, loc) =>
         val b = visit(base)
         val t = visitType(tpe)
         FinalAst.Expression.ArrayLength(b, t, loc)
@@ -261,17 +261,17 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.ArraySlice(b, i1, i2, t, loc)
 
-      case LiftedAst.Expression.Ref(exp, tpe, _, loc) =>
+      case LiftedAst.Expression.Ref(exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
         FinalAst.Expression.Ref(e, t, loc)
 
-      case LiftedAst.Expression.Deref(exp, tpe, _, loc) =>
+      case LiftedAst.Expression.Deref(exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
         FinalAst.Expression.Deref(e, t, loc)
 
-      case LiftedAst.Expression.Assign(exp1, exp2, tpe, _, loc) =>
+      case LiftedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         val t = visitType(tpe)
@@ -328,23 +328,23 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.PutStaticField(field, e, t, loc)
 
-      case LiftedAst.Expression.NewChannel(exp, tpe, _, loc) =>
+      case LiftedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
         FinalAst.Expression.NewChannel(e, t, loc)
 
-      case LiftedAst.Expression.GetChannel(exp, tpe, _, loc) =>
+      case LiftedAst.Expression.GetChannel(exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
         FinalAst.Expression.GetChannel(e, t, loc)
 
-      case LiftedAst.Expression.PutChannel(exp1, exp2, tpe, _, loc) =>
+      case LiftedAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         val t = visitType(tpe)
         FinalAst.Expression.PutChannel(e1, e2, t, loc)
 
-      case LiftedAst.Expression.SelectChannel(rules, default, tpe, _, loc) =>
+      case LiftedAst.Expression.SelectChannel(rules, default, tpe, loc) =>
         val rs = rules map {
           case LiftedAst.SelectChannelRule(sym, chan, exp) =>
             val c = visit(chan)
@@ -355,7 +355,7 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.SelectChannel(rs, d, t, loc)
 
-      case LiftedAst.Expression.Spawn(exp, tpe, _, loc) =>
+      case LiftedAst.Expression.Spawn(exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
         FinalAst.Expression.Spawn(e, t, loc)
@@ -365,7 +365,7 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.Lazy(e, t, loc)
 
-      case LiftedAst.Expression.Force(exp, tpe, _, loc) =>
+      case LiftedAst.Expression.Force(exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
         FinalAst.Expression.Force(e, t, loc)

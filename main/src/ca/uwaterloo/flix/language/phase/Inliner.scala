@@ -77,7 +77,7 @@ object Inliner {
 
     case Expression.Var(sym, _, _) => subst0.get(sym).fold(exp0)(visitExp(_, subst0))
 
-    case Expression.Closure(_, _, _, _, _) => exp0
+    case Expression.Closure(_, _, _, _) => exp0
 
     case Expression.ApplyClo(exp, args, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -119,12 +119,12 @@ object Inliner {
       val e3 = visitExp(exp3, subst0)
       Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
-    case Expression.Branch(exp, branches, tpe, loc) =>
+    case Expression.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       val bs = branches.map {
         case (sym, br) => sym -> visitExp(br, subst0)
       }
-      Expression.Branch(e, bs, tpe, loc)
+      Expression.Branch(e, bs, tpe, purity, loc)
 
     case Expression.JumpTo(_, _, _) => exp0
 
@@ -221,9 +221,10 @@ object Inliner {
       val e = visitExp(elm, subst0)
       Expression.ArrayStore(b, i, e, tpe, loc)
 
-    case Expression.ArrayLength(base, tpe, loc) =>
+    case Expression.ArrayLength(base, tpe, _, loc) =>
       val b = visitExp(base, subst0)
-      Expression.ArrayLength(b, tpe, loc)
+      val purity = b.purity
+      Expression.ArrayLength(b, tpe, purity, loc)
 
     case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
       val b = visitExp(base, subst0)
@@ -231,18 +232,18 @@ object Inliner {
       val i2 = visitExp(endIndex, subst0)
       Expression.ArraySlice(b, i1, i2, tpe, loc)
 
-    case Expression.Ref(exp, tpe, purity, loc) =>
+    case Expression.Ref(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
-      Expression.Ref(e, tpe, purity, loc)
+      Expression.Ref(e, tpe, loc)
 
-    case Expression.Deref(exp, tpe, purity, loc) =>
+    case Expression.Deref(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
-      Expression.Deref(e, tpe, purity, loc)
+      Expression.Deref(e, tpe, loc)
 
-    case Expression.Assign(exp1, exp2, tpe, purity, loc) =>
+    case Expression.Assign(exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
-      Expression.Assign(e1, e2, tpe, purity, loc)
+      Expression.Assign(e1, e2, tpe, loc)
 
     case Expression.Cast(exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -285,20 +286,20 @@ object Inliner {
       val e = visitExp(exp, subst0)
       Expression.PutStaticField(field, e, tpe, purity, loc)
 
-    case Expression.NewChannel(exp, tpe, purity, loc) =>
+    case Expression.NewChannel(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
-      Expression.NewChannel(e, tpe, purity, loc)
+      Expression.NewChannel(e, tpe, loc)
 
-    case Expression.GetChannel(exp, tpe, purity, loc) =>
+    case Expression.GetChannel(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
-      Expression.GetChannel(e, tpe, purity, loc)
+      Expression.GetChannel(e, tpe, loc)
 
-    case Expression.PutChannel(exp1, exp2, tpe, purity, loc) =>
+    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
-      Expression.PutChannel(e1, e2, tpe, purity, loc)
+      Expression.PutChannel(e1, e2, tpe, loc)
 
-    case Expression.SelectChannel(rules, default, tpe, purity, loc) =>
+    case Expression.SelectChannel(rules, default, tpe, loc) =>
       val rs = rules.map {
         case OccurrenceAst.SelectChannelRule(sym, chan, exp) =>
           val c = visitExp(chan, subst0)
@@ -306,19 +307,19 @@ object Inliner {
           SelectChannelRule(sym, c, e)
       }
       val d = default.map(visitExp(_, subst0))
-      Expression.SelectChannel(rs, d, tpe, purity, loc)
+      Expression.SelectChannel(rs, d, tpe, loc)
 
-    case Expression.Spawn(exp, tpe, purity, loc) =>
+    case Expression.Spawn(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
-      Expression.Spawn(e, tpe, purity, loc)
+      Expression.Spawn(e, tpe, loc)
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
       Expression.Lazy(e, tpe, loc)
 
-    case Expression.Force(exp, tpe, purity, loc) =>
+    case Expression.Force(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
-      Expression.Force(e, tpe, purity, loc)
+      Expression.Force(e, tpe, loc)
 
     case Expression.HoleError(_, _, _, _) => exp0
 

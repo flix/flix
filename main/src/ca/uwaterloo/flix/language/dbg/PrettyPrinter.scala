@@ -79,7 +79,7 @@ object PrettyPrinter {
 
         case Expression.Var(sym, tpe, loc) => fmtSym(sym, formatter)
 
-        case Expression.Closure(sym, freeVars, tpe, _, loc) =>
+        case Expression.Closure(sym, freeVars, tpe, loc) =>
           val sb = new StringBuilder()
           sb.append("Closure(")
             .append(fmtSym(sym, formatter))
@@ -175,7 +175,7 @@ object PrettyPrinter {
             .append("}")
             .toString()
 
-        case Expression.Branch(exp, branches, tpe, loc) =>
+        case Expression.Branch(exp, branches, tpe, _, loc) =>
           val sb = new StringBuilder()
           sb.append("branch {")
             .append((" " * 2) + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
@@ -300,7 +300,7 @@ object PrettyPrinter {
             " = " +
             visitExp(elm)
 
-        case Expression.ArrayLength(base, tpe, loc) =>
+        case Expression.ArrayLength(base, tpe, _, loc) =>
           "length" +
             "[" +
             visitExp(base) +
@@ -314,11 +314,11 @@ object PrettyPrinter {
             visitExp(endIndex) +
             "]"
 
-        case Expression.Ref(exp, tpe, _, loc) => "ref " + visitExp(exp)
+        case Expression.Ref(exp, tpe, loc) => "ref " + visitExp(exp)
 
-        case Expression.Deref(exp, tpe, _, loc) => "deref " + visitExp(exp)
+        case Expression.Deref(exp, tpe, loc) => "deref " + visitExp(exp)
 
-        case Expression.Assign(exp1, exp2, tpe, _, loc) => visitExp(exp1) + " := " + visitExp(exp2)
+        case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) + " := " + visitExp(exp2)
 
         case Expression.Cast(exp, tpe, _, loc) =>
           visitExp(exp) +
@@ -402,13 +402,13 @@ object PrettyPrinter {
             " value " +
             visitExp(exp)
 
-        case Expression.NewChannel(exp, tpe, _, loc) => "Channel" + " " + visitExp(exp)
+        case Expression.NewChannel(exp, tpe, loc) => "Channel" + " " + visitExp(exp)
 
-        case Expression.PutChannel(exp1, exp2, tpe, _, loc) => visitExp(exp1) + " <- " + visitExp(exp2)
+        case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) + " <- " + visitExp(exp2)
 
-        case Expression.GetChannel(exp, tpe, _, loc) => "<- " + visitExp(exp)
+        case Expression.GetChannel(exp, tpe, loc) => "<- " + visitExp(exp)
 
-        case Expression.SelectChannel(rules, default, tpe, _, loc) =>
+        case Expression.SelectChannel(rules, default, tpe, loc) =>
           val sb = new StringBuilder()
           sb.append("select {")
             .append(System.lineSeparator())
@@ -433,11 +433,11 @@ object PrettyPrinter {
           sb.append("}")
             .toString()
 
-        case Expression.Spawn(exp, tpe, _, loc) => "spawn " + visitExp(exp)
+        case Expression.Spawn(exp, tpe, loc) => "spawn " + visitExp(exp)
 
         case Expression.Lazy(exp, tpe, loc) => "lazy " + visitExp(exp)
 
-        case Expression.Force(exp, tpe, _, loc) => "force " + visitExp(exp)
+        case Expression.Force(exp, tpe, loc) => "force " + visitExp(exp)
 
         case Expression.HoleError(sym, tpe, _, loc) => formatter.red("HoleError")
         case Expression.MatchError(tpe, _, loc) => formatter.red("MatchError")

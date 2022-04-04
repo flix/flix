@@ -73,11 +73,11 @@ object Tailrec {
       /*
        * Branch: Each branch is in tail position.
        */
-      case Expression.Branch(e0, br0, tpe, loc) =>
+      case Expression.Branch(e0, br0, tpe, purity, loc) =>
         val br = br0 map {
           case (sym, exp) => sym -> visit(exp)
         }
-        Expression.Branch(e0, br, tpe, loc)
+        Expression.Branch(e0, br, tpe, purity, loc)
 
       /*
        * ApplyClo.
@@ -98,14 +98,14 @@ object Tailrec {
           Expression.ApplySelfTail(sym, defn.fparams, args, tpe, purity, loc)
         }
 
-      case Expression.SelectChannel(rules, default, tpe, purity, loc) =>
+      case Expression.SelectChannel(rules, default, tpe, loc) =>
         val rs = rules map {
           case SelectChannelRule(sym, chan, exp) => SelectChannelRule(sym, chan, visit(exp))
         }
 
         val d = default.map(exp => visit(exp))
 
-        Expression.SelectChannel(rs, d, tpe, purity, loc)
+        Expression.SelectChannel(rs, d, tpe, loc)
 
       /*
        * Other expression: No calls in tail position.

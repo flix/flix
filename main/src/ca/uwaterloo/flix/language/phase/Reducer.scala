@@ -107,11 +107,11 @@ object Reducer {
         case Some(srcSym) => LiftedAst.Expression.Var(srcSym, tpe, loc)
       }
 
-    case Expression.Closure(sym, freeVars, tpe, purity, loc) =>
+    case Expression.Closure(sym, freeVars, tpe, loc) =>
       val fvs = freeVars.map {
         case OccurrenceAst.FreeVar(s, varType) => LiftedAst.FreeVar(env0.getOrElse(s, s), varType)
       }
-      LiftedAst.Expression.Closure(sym, fvs, tpe, purity, loc)
+      LiftedAst.Expression.Closure(sym, fvs, tpe, loc)
 
     case Expression.ApplyClo(exp, args, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
@@ -158,12 +158,12 @@ object Reducer {
         case _ => LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
       }
 
-    case Expression.Branch(exp, branches, tpe, loc) =>
+    case Expression.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
       val bs = branches.map {
         case (sym, br) => sym -> visitExp(br, env0)
       }
-      LiftedAst.Expression.Branch(e, bs, tpe, loc)
+      LiftedAst.Expression.Branch(e, bs, tpe, purity, loc)
 
     case Expression.JumpTo(sym, tpe, loc) =>
       LiftedAst.Expression.JumpTo(sym, tpe, loc)
@@ -249,9 +249,10 @@ object Reducer {
       val e = visitExp(elm, env0)
       LiftedAst.Expression.ArrayStore(b, i, e, tpe, loc)
 
-    case Expression.ArrayLength(base, tpe, loc) =>
+    case Expression.ArrayLength(base, tpe, _, loc) =>
       val b = visitExp(base, env0)
-      LiftedAst.Expression.ArrayLength(b, tpe, loc)
+      val purity = b.purity
+      LiftedAst.Expression.ArrayLength(b, tpe, purity, loc)
 
     case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
       val b = visitExp(base, env0)
@@ -259,18 +260,18 @@ object Reducer {
       val i2 = visitExp(endIndex, env0)
       LiftedAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
 
-    case Expression.Ref(exp, tpe, purity, loc) =>
+    case Expression.Ref(exp, tpe, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.Ref(e, tpe, purity, loc)
+      LiftedAst.Expression.Ref(e, tpe, loc)
 
-    case Expression.Deref(exp, tpe, purity, loc) =>
+    case Expression.Deref(exp, tpe, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.Deref(e, tpe, purity, loc)
+      LiftedAst.Expression.Deref(e, tpe, loc)
 
-    case Expression.Assign(exp1, exp2, tpe, purity, loc) =>
+    case Expression.Assign(exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1, env0)
       val e2 = visitExp(exp2, env0)
-      LiftedAst.Expression.Assign(e1, e2, tpe, purity, loc)
+      LiftedAst.Expression.Assign(e1, e2, tpe, loc)
 
     case Expression.Cast(exp, tpe, purity, loc) =>
       val e = visitExp(exp, env0)
@@ -314,20 +315,20 @@ object Reducer {
       val e = visitExp(exp, env0)
       LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
-    case Expression.NewChannel(exp, tpe, purity, loc) =>
+    case Expression.NewChannel(exp, tpe, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.NewChannel(e, tpe, purity, loc)
+      LiftedAst.Expression.NewChannel(e, tpe, loc)
 
-    case Expression.GetChannel(exp, tpe, purity, loc) =>
+    case Expression.GetChannel(exp, tpe, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.GetChannel(e, tpe, purity, loc)
+      LiftedAst.Expression.GetChannel(e, tpe, loc)
 
-    case Expression.PutChannel(exp1, exp2, tpe, purity, loc) =>
+    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1, env0)
       val e2 = visitExp(exp2, env0)
-      LiftedAst.Expression.PutChannel(e1, e2, tpe, purity, loc)
+      LiftedAst.Expression.PutChannel(e1, e2, tpe, loc)
 
-    case Expression.SelectChannel(rules, default, tpe, purity, loc) =>
+    case Expression.SelectChannel(rules, default, tpe, loc) =>
       val rs = rules.map {
         case OccurrenceAst.SelectChannelRule(sym, chan, exp) =>
           val c = visitExp(chan, env0)
@@ -337,19 +338,19 @@ object Reducer {
 
       val d = default.map(visitExp(_, env0))
 
-      LiftedAst.Expression.SelectChannel(rs, d, tpe, purity, loc)
+      LiftedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
-    case Expression.Spawn(exp, tpe, purity, loc) =>
+    case Expression.Spawn(exp, tpe, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.Spawn(e, tpe, purity, loc)
+      LiftedAst.Expression.Spawn(e, tpe, loc)
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp, env0)
       LiftedAst.Expression.Lazy(e, tpe, loc)
 
-    case Expression.Force(exp, tpe, purity, loc) =>
+    case Expression.Force(exp, tpe, loc) =>
       val e = visitExp(exp, env0)
-      LiftedAst.Expression.Force(e, tpe, purity, loc)
+      LiftedAst.Expression.Force(e, tpe, loc)
 
     case Expression.HoleError(sym, tpe, purity, loc) => LiftedAst.Expression.HoleError(sym, tpe, purity, loc)
 

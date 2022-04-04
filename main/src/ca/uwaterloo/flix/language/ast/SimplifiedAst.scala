@@ -111,7 +111,9 @@ object SimplifiedAst {
       def purity: Purity = Pure
     }
 
-    case class Def(sym: Symbol.DefnSym, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def purity: Purity = Pure
+    }
 
     case class Lambda(fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -121,7 +123,9 @@ object SimplifiedAst {
     case class LambdaClosure(fparams: List[SimplifiedAst.FormalParam], freeVars: List[FreeVar], exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
     @IntroducedBy(LambdaLift.getClass)
-    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def purity: Purity = Pure
+    }
 
     @IntroducedBy(ClosureConv.getClass)
     case class ApplyClo(exp: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
@@ -135,9 +139,7 @@ object SimplifiedAst {
 
     case class IfThenElse(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, exp3: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Branch(exp: Expression, branches: Map[Symbol.LabelSym, SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
-      def purity: Purity = Impure
-    }
+    case class Branch(exp: Expression, branches: Map[Symbol.LabelSym, SimplifiedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class JumpTo(sym: Symbol.LabelSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
       def purity: Purity = Impure
@@ -185,19 +187,23 @@ object SimplifiedAst {
       def purity: Purity = Impure
     }
 
-    case class ArrayLength(base: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
-      def purity: Purity = Impure
-    }
+    case class ArrayLength(base: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class ArraySlice(base: SimplifiedAst.Expression, beginIndex: SimplifiedAst.Expression, endIndex: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
       def purity: Purity = Impure
     }
 
-    case class Ref(exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Ref(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class Deref(exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Deref(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class Assign(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Assign(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def purity: Purity = Impure
+    }
 
     case class Cast(exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -217,21 +223,33 @@ object SimplifiedAst {
 
     case class PutStaticField(field: Field, exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class NewChannel(exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class GetChannel(exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class PutChannel(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class SelectChannel(rules: List[SimplifiedAst.SelectChannelRule], default: Option[SimplifiedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class Spawn(exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class Lazy(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+    case class NewChannel(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
       def purity: Purity = Impure
     }
 
-    case class Force(exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class GetChannel(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def purity: Purity = Impure
+    }
+
+    case class PutChannel(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def purity: Purity = Impure
+    }
+
+    case class SelectChannel(rules: List[SimplifiedAst.SelectChannelRule], default: Option[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def purity: Purity = Impure
+    }
+
+    case class Spawn(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def purity: Purity = Impure
+    }
+
+    case class Lazy(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def purity: Purity = Pure
+    }
+
+    case class Force(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def purity: Purity = Pure
+    }
 
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 

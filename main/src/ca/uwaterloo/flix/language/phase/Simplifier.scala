@@ -58,7 +58,7 @@ object Simplifier {
         case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
 
         case TypedAst.Expression.Def(sym, tpe, loc) =>
-          SimplifiedAst.Expression.Def(sym, tpe, purity, loc)
+          SimplifiedAst.Expression.Def(sym, tpe, loc)
 
         case TypedAst.Expression.Sig(sym, tpe, loc) =>
           SimplifiedAst.Expression.HoleError(new Symbol.HoleSym(sym.clazz.namespace, sym.name, loc), tpe, purity, loc) // TODO replace with implementation
@@ -176,9 +176,10 @@ object Simplifier {
           val e = visitExp(elm)
           SimplifiedAst.Expression.ArrayStore(b, i, e, Type.Unit, loc)
 
-        case TypedAst.Expression.ArrayLength(base, eff, loc) =>
+        case TypedAst.Expression.ArrayLength(base, _, loc) =>
           val b = visitExp(base)
-          SimplifiedAst.Expression.ArrayLength(b, Type.Int32, loc)
+          val purity = b.purity
+          SimplifiedAst.Expression.ArrayLength(b, Type.Int32, purity, loc)
 
         case TypedAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
           val b = visitExp(base)
@@ -189,16 +190,16 @@ object Simplifier {
         case TypedAst.Expression.Ref(exp, _, tpe, eff, loc) =>
           // Note: The region expression is erased.
           val e = visitExp(exp)
-          SimplifiedAst.Expression.Ref(e, tpe, purity, loc)
+          SimplifiedAst.Expression.Ref(e, tpe, loc)
 
         case TypedAst.Expression.Deref(exp, tpe, eff, loc) =>
           val e = visitExp(exp)
-          SimplifiedAst.Expression.Deref(e, tpe, purity, loc)
+          SimplifiedAst.Expression.Deref(e, tpe, loc)
 
         case TypedAst.Expression.Assign(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1)
           val e2 = visitExp(exp2)
-          SimplifiedAst.Expression.Assign(e1, e2, tpe, purity, loc)
+          SimplifiedAst.Expression.Assign(e1, e2, tpe, loc)
 
         case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
 
@@ -246,16 +247,16 @@ object Simplifier {
 
         case TypedAst.Expression.NewChannel(exp, tpe, eff, loc) =>
           val e = visitExp(exp)
-          SimplifiedAst.Expression.NewChannel(e, tpe, purity, loc)
+          SimplifiedAst.Expression.NewChannel(e, tpe, loc)
 
         case TypedAst.Expression.GetChannel(exp, tpe, eff, loc) =>
           val e = visitExp(exp)
-          SimplifiedAst.Expression.GetChannel(e, tpe, purity, loc)
+          SimplifiedAst.Expression.GetChannel(e, tpe, loc)
 
         case TypedAst.Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1)
           val e2 = visitExp(exp2)
-          SimplifiedAst.Expression.PutChannel(e1, e2, tpe, purity, loc)
+          SimplifiedAst.Expression.PutChannel(e1, e2, tpe, loc)
 
         case TypedAst.Expression.SelectChannel(rules, default, tpe, eff, loc) =>
           val rs = rules map {
@@ -267,14 +268,14 @@ object Simplifier {
 
           val d = default.map(visitExp)
 
-          SimplifiedAst.Expression.SelectChannel(rs, d, tpe, purity, loc)
+          SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
         case TypedAst.Expression.Spawn(exp, tpe, eff, loc) =>
           // Wrap the expression in a closure: () -> tpe & eff
           val e = visitExp(exp)
           val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, eff, e.tpe, loc)
           val lambdaExp = SimplifiedAst.Expression.Lambda(List(), e, lambdaTyp, e.purity, loc)
-          SimplifiedAst.Expression.Spawn(lambdaExp, tpe, purity, loc)
+          SimplifiedAst.Expression.Spawn(lambdaExp, tpe, loc)
 
         case TypedAst.Expression.Lazy(exp, tpe, loc) =>
           // Wrap the expression in a closure: () -> tpe & Pure
@@ -285,7 +286,7 @@ object Simplifier {
 
         case TypedAst.Expression.Force(exp, tpe, eff, loc) =>
           val e = visitExp(exp)
-          SimplifiedAst.Expression.Force(e, tpe, purity, loc)
+          SimplifiedAst.Expression.Force(e, tpe, loc)
 
         case TypedAst.Expression.Default(_, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
@@ -499,14 +500,19 @@ object Simplifier {
       // The initial expression simply jumps to the first label.
       val entry = SimplifiedAst.Expression.JumpTo(ruleLabels.head, tpe, loc)
 
+      // The purity of the branch
+      val branchPurity = (errorBranch :: branches).foldLeft[Purity](Pure){
+        case (acc, (_, exp)) => acc combine exp.purity
+      }
+
       // Assemble all the branches together.
-      val branch = SimplifiedAst.Expression.Branch(entry, branches.toMap + errorBranch, tpe, loc)
+      val branch = SimplifiedAst.Expression.Branch(entry, branches.toMap + errorBranch, tpe, branchPurity, loc)
 
       // The purity of the match exp
-      val purity = isPure(exp0.eff)
+      val matchPurity = isPure(exp0.eff)
 
       // Wrap the branches inside a let-binding for the match variable.
-      SimplifiedAst.Expression.Let(matchVar, matchExp, branch, tpe, purity, loc)
+      SimplifiedAst.Expression.Let(matchVar, matchExp, branch, tpe, matchPurity, loc)
     }
 
     /**
@@ -618,11 +624,13 @@ object Simplifier {
                   , exp, succ.tpe, purity, loc)
             }
           }
-          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
+          val actualBase = SimplifiedAst.Expression.Var(v, tpe, loc)
+          val purity = actualBase.purity
+          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(actualBase, Type.Int32, purity, loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
           val lengthCheck = mkEqual(actualArrayLengthExp, expectedArrayLengthExp, loc)
-          val purity = lengthCheck.purity combine patternCheck.purity combine fail.purity
-          SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, purity, loc)
+          val purity1 = lengthCheck.purity combine patternCheck.purity combine fail.purity
+          SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, purity1, loc)
 
         /**
          * Matching an array with a TailSpread may succeed or fail
@@ -636,7 +644,9 @@ object Simplifier {
          * created if clause
          */
         case (TypedAst.Pattern.ArrayTailSpread(elms, sym, tpe, loc) :: ps, v :: vs) =>
-          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
+          val actualBase = SimplifiedAst.Expression.Var(v, tpe, loc)
+          val purity2 = actualBase.purity
+          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(actualBase, Type.Int32, purity2, loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
           val patternCheck = {
             val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm" + Flix.Delimiter, BoundBy.Let, loc))
@@ -679,7 +689,9 @@ object Simplifier {
          * created if clause
          */
         case (TypedAst.Pattern.ArrayHeadSpread(sym, elms, tpe, loc) :: ps, v :: vs) =>
-          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
+          val actualBase = SimplifiedAst.Expression.Var(v, tpe, loc)
+          val purity1 = actualBase.purity
+          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(actualBase, Type.Int32, purity1, loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
           val offset = mkSub(actualArrayLengthExp, expectedArrayLengthExp, loc)
           val patternCheck = {
@@ -708,8 +720,8 @@ object Simplifier {
           }
           val ge = SemanticOperator.Int32Op.Ge
           val lengthCheck = SimplifiedAst.Expression.Binary(ge, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Bool, actualArrayLengthExp.purity, loc)
-          val purity = lengthCheck.purity combine patternCheck.purity combine fail.purity
-          SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, purity, loc)
+          val purity2 = lengthCheck.purity combine patternCheck.purity combine fail.purity
+          SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, purity2, loc)
 
 
         case p => throw InternalCompilerException(s"Unsupported pattern '$p'.")
@@ -870,7 +882,7 @@ object Simplifier {
         case Some(replacement) => SimplifiedAst.Expression.Var(replacement, tpe, loc)
       }
 
-      case SimplifiedAst.Expression.Def(sym, tpe, purity, loc) => e
+      case SimplifiedAst.Expression.Def(sym, tpe, loc) => e
 
       case SimplifiedAst.Expression.Lambda(fparams, body, tpe, purity, loc) =>
         SimplifiedAst.Expression.Lambda(fparams, visitExp(body), tpe, purity, loc)
@@ -887,12 +899,12 @@ object Simplifier {
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         SimplifiedAst.Expression.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), tpe, purity, loc)
 
-      case SimplifiedAst.Expression.Branch(exp, branches, tpe, loc) =>
+      case SimplifiedAst.Expression.Branch(exp, branches, tpe, purity, loc) =>
         val e = visitExp(exp)
         val bs = branches map {
           case (sym, br) => sym -> br
         }
-        SimplifiedAst.Expression.Branch(e, bs, tpe, loc)
+        SimplifiedAst.Expression.Branch(e, bs, tpe, purity, loc)
 
       case SimplifiedAst.Expression.JumpTo(sym, tpe, loc) =>
         SimplifiedAst.Expression.JumpTo(sym, tpe, loc)
@@ -946,20 +958,22 @@ object Simplifier {
       case SimplifiedAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
         SimplifiedAst.Expression.ArrayStore(visitExp(base), visitExp(index), visitExp(elm), tpe, loc)
 
-      case SimplifiedAst.Expression.ArrayLength(base, tpe, loc) =>
-        SimplifiedAst.Expression.ArrayLength(visitExp(base), tpe, loc)
+      case SimplifiedAst.Expression.ArrayLength(base, tpe, _, loc) =>
+        val b = visitExp(base)
+        val purity = b.purity
+        SimplifiedAst.Expression.ArrayLength(b, tpe, purity, loc)
 
       case SimplifiedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
         SimplifiedAst.Expression.ArraySlice(visitExp(base), visitExp(startIndex), visitExp(endIndex), tpe, loc)
 
-      case SimplifiedAst.Expression.Ref(exp, tpe, purity, loc) =>
-        SimplifiedAst.Expression.Ref(visitExp(exp), tpe, purity, loc)
+      case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
+        SimplifiedAst.Expression.Ref(visitExp(exp), tpe, loc)
 
-      case SimplifiedAst.Expression.Deref(exp, tpe, purity, loc) =>
-        SimplifiedAst.Expression.Deref(visitExp(exp), tpe, purity, loc)
+      case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>
+        SimplifiedAst.Expression.Deref(visitExp(exp), tpe, loc)
 
-      case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, purity, loc) =>
-        SimplifiedAst.Expression.Assign(visitExp(exp1), visitExp(exp2), tpe, purity, loc)
+      case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
+        SimplifiedAst.Expression.Assign(visitExp(exp1), visitExp(exp2), tpe, loc)
 
       case SimplifiedAst.Expression.Cast(exp, tpe, purity, loc) =>
         val e = visitExp(exp)
@@ -1003,20 +1017,20 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.NewChannel(exp, tpe, purity, loc) =>
+      case SimplifiedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.NewChannel(e, tpe, purity, loc)
+        SimplifiedAst.Expression.NewChannel(e, tpe, loc)
 
-      case SimplifiedAst.Expression.GetChannel(exp, tpe, purity, loc) =>
+      case SimplifiedAst.Expression.GetChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.GetChannel(e, tpe, purity, loc)
+        SimplifiedAst.Expression.GetChannel(e, tpe, loc)
 
-      case SimplifiedAst.Expression.PutChannel(exp1, exp2, tpe, purity, loc) =>
+      case SimplifiedAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        SimplifiedAst.Expression.PutChannel(e1, e2, tpe, purity, loc)
+        SimplifiedAst.Expression.PutChannel(e1, e2, tpe, loc)
 
-      case SimplifiedAst.Expression.SelectChannel(rules, default, tpe, purity, loc) =>
+      case SimplifiedAst.Expression.SelectChannel(rules, default, tpe, loc) =>
         val rs = rules map {
           case SimplifiedAst.SelectChannelRule(sym, chan, exp) =>
             val c = visitExp(chan)
@@ -1026,25 +1040,25 @@ object Simplifier {
 
         val d = default.map(visitExp)
 
-        SimplifiedAst.Expression.SelectChannel(rs, d, tpe, purity, loc)
+        SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
-      case SimplifiedAst.Expression.Spawn(exp, tpe, purity, loc) =>
+      case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.Spawn(e, tpe, purity, loc)
+        SimplifiedAst.Expression.Spawn(e, tpe, loc)
 
       case SimplifiedAst.Expression.Lazy(exp, tpe, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Lazy(e, tpe, loc)
 
-      case SimplifiedAst.Expression.Force(exp, tpe, purity, loc) =>
+      case SimplifiedAst.Expression.Force(exp, tpe, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.Force(e, tpe, purity, loc)
+        SimplifiedAst.Expression.Force(e, tpe, loc)
 
       case SimplifiedAst.Expression.HoleError(sym, tpe, purity, loc) => e
 
       case SimplifiedAst.Expression.MatchError(purity, tpe, loc) => e
 
-      case SimplifiedAst.Expression.Closure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+      case SimplifiedAst.Expression.Closure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
       case SimplifiedAst.Expression.LambdaClosure(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
       case SimplifiedAst.Expression.ApplyClo(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
       case SimplifiedAst.Expression.ApplyDef(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")

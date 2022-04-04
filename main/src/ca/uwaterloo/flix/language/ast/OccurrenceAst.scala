@@ -110,7 +110,9 @@ object OccurrenceAst {
       def purity: Purity = Pure
     }
 
-    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+      def purity: Purity = Pure
+    }
 
     case class ApplyClo(exp: OccurrenceAst.Expression, args: List[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
@@ -128,9 +130,7 @@ object OccurrenceAst {
 
     case class IfThenElse(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, exp3: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class Branch(exp: Expression, branches: Map[Symbol.LabelSym, OccurrenceAst.Expression], tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Impure
-    }
+    case class Branch(exp: Expression, branches: Map[Symbol.LabelSym, OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class JumpTo(sym: Symbol.LabelSym, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Impure
@@ -178,19 +178,23 @@ object OccurrenceAst {
       def purity: Purity = Impure
     }
 
-    case class ArrayLength(base: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Impure
-    }
+    case class ArrayLength(base: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class ArraySlice(base: OccurrenceAst.Expression, beginIndex: OccurrenceAst.Expression, endIndex: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Impure
     }
 
-    case class Ref(exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class Ref(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class Deref(exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class Deref(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class Assign(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class Assign(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+      def purity: Purity = Impure
+    }
 
     case class Cast(exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
@@ -210,21 +214,33 @@ object OccurrenceAst {
 
     case class PutStaticField(field: Field, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class NewChannel(exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class GetChannel(exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class PutChannel(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class SelectChannel(rules: List[OccurrenceAst.SelectChannelRule], default: Option[OccurrenceAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class Spawn(exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class Lazy(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+    case class NewChannel(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Impure
     }
 
-    case class Force(exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class GetChannel(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+      def purity: Purity = Impure
+    }
+
+    case class PutChannel(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+      def purity: Purity = Impure
+    }
+
+    case class SelectChannel(rules: List[OccurrenceAst.SelectChannelRule], default: Option[OccurrenceAst.Expression], tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+      def purity: Purity = Impure
+    }
+
+    case class Spawn(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+      def purity: Purity = Impure
+    }
+
+    case class Lazy(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+      def purity: Purity = Pure
+    }
+
+    case class Force(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+      def purity: Purity = Pure
+    }
 
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 

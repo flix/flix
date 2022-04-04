@@ -110,7 +110,9 @@ object LiftedAst {
       def purity: Purity = Pure
     }
 
-    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
+    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Pure
+    }
 
     case class ApplyClo(exp: LiftedAst.Expression, args: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
@@ -128,9 +130,7 @@ object LiftedAst {
 
     case class IfThenElse(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, exp3: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Branch(exp: Expression, branches: Map[Symbol.LabelSym, LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression  {
-      def purity: Purity = Impure
-    }
+    case class Branch(exp: Expression, branches: Map[Symbol.LabelSym, LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
     case class JumpTo(sym: Symbol.LabelSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
       def purity: Purity = Impure
@@ -178,19 +178,23 @@ object LiftedAst {
       def purity: Purity = Impure
     }
 
-    case class ArrayLength(base: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
-      def purity: Purity = Impure
-    }
+    case class ArrayLength(base: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
     case class ArraySlice(base: LiftedAst.Expression, beginIndex: LiftedAst.Expression, endIndex: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
       def purity: Purity = Impure
     }
 
-    case class Ref(exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
+    case class Ref(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class Deref(exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
+    case class Deref(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class Assign(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
+    case class Assign(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
     case class Cast(exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
@@ -210,21 +214,33 @@ object LiftedAst {
 
     case class PutStaticField(field: Field, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class NewChannel(exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
-
-    case class GetChannel(exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
-
-    case class PutChannel(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
-
-    case class SelectChannel(rules: List[LiftedAst.SelectChannelRule], default: Option[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
-
-    case class Spawn(exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
-
-    case class Lazy(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression  {
+    case class NewChannel(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
       def purity: Purity = Impure
     }
 
-    case class Force(exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
+    case class GetChannel(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
+
+    case class PutChannel(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
+
+    case class SelectChannel(rules: List[LiftedAst.SelectChannelRule], default: Option[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
+
+    case class Spawn(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
+
+    case class Lazy(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression  {
+      def purity: Purity = Pure
+    }
+
+    case class Force(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Pure
+    }
 
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 

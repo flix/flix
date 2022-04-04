@@ -135,7 +135,7 @@ object TreeShaker {
     case Expression.Var(_, _, _) =>
       Set.empty
 
-    case Expression.Closure(sym, _, _, _, _) =>
+    case Expression.Closure(sym, _, _, _) =>
       Set(sym)
 
     case Expression.ApplyClo(exp, args, _, _, _) =>
@@ -162,7 +162,7 @@ object TreeShaker {
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.Branch(exp, branches, _, _) =>
+    case Expression.Branch(exp, branches, _, _, _) =>
       visitExp(exp) ++ visitExps(branches.values.toList)
 
     case Expression.JumpTo(_, _, _) =>
@@ -213,19 +213,19 @@ object TreeShaker {
     case Expression.ArrayStore(base, index, elm, _, _) =>
       visitExp(base) ++ visitExp(index) ++ visitExp(elm)
 
-    case Expression.ArrayLength(base, _, _) =>
+    case Expression.ArrayLength(base, _, _, _) =>
       visitExp(base)
 
     case Expression.ArraySlice(base, startIndex, endIndex, _, _) =>
       visitExp(base) ++ visitExp(startIndex) ++ visitExp(endIndex)
 
-    case Expression.Ref(exp, _, _, _) =>
+    case Expression.Ref(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Deref(exp, _, _, _) =>
+    case Expression.Deref(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Assign(exp1, exp2, _, _, _) =>
+    case Expression.Assign(exp1, exp2, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Cast(exp, _, _, _) =>
@@ -255,27 +255,27 @@ object TreeShaker {
     case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.NewChannel(exp, _, _, _) =>
+    case Expression.NewChannel(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.GetChannel(exp, _, _, _) =>
+    case Expression.GetChannel(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.PutChannel(exp1, exp2, _, _, _) =>
+    case Expression.PutChannel(exp1, exp2, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.SelectChannel(rules, default, _, _, _) =>
+    case Expression.SelectChannel(rules, default, _, _) =>
       val rs = visitExps(rules.map(_.chan)) ++ visitExps(rules.map(_.exp))
       val d = default.map(visitExp).getOrElse(Set.empty)
       rs ++ d
 
-    case Expression.Spawn(exp, _, _, _) =>
+    case Expression.Spawn(exp, _, _) =>
       visitExp(exp)
 
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Force(exp, _, _, _) =>
+    case Expression.Force(exp, _, _) =>
       visitExp(exp)
 
     case Expression.HoleError(_, _, _, _) =>
