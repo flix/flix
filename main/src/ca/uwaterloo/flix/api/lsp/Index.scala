@@ -26,7 +26,7 @@ object Index {
     * Represents the empty reverse index.
     */
   val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
-    MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
+    MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
 
   /**
     * Returns an index for the given `class0`.
@@ -153,7 +153,9 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  fieldUses: MultiMap[Name.Field, SourceLocation],
                  predDefs: MultiMap[Name.Pred, SourceLocation],
                  predUses: MultiMap[Name.Pred, SourceLocation],
-                 varUses: MultiMap[Symbol.VarSym, SourceLocation]) {
+                 varUses: MultiMap[Symbol.VarSym, SourceLocation],
+                 tvarUses: MultiMap[Symbol.KindedTypeVarSym, SourceLocation]
+                ) {
 
   /**
     * Optionally returns the expression in the document at the given `uri` at the given position `pos`.
@@ -240,6 +242,11 @@ case class Index(m: Map[(String, Int), List[Entity]],
   def usesOf(sym: Symbol.VarSym): Set[SourceLocation] = varUses(sym)
 
   /**
+    * Returns all uses of the given symbol `sym`.
+    */
+  def usesOf(sym: Symbol.KindedTypeVarSym): Set[SourceLocation] = tvarUses(sym)
+
+  /**
     * Returns all defs of the given `field`.
     */
   def defsOf(field: Name.Field): Set[SourceLocation] = fieldDefs(field)
@@ -304,7 +311,8 @@ case class Index(m: Map[(String, Int), List[Entity]],
       this.fieldUses ++ that.fieldUses,
       this.predDefs ++ that.predDefs,
       this.predUses ++ that.predUses,
-      this.varUses ++ that.varUses
+      this.varUses ++ that.varUses,
+      this.tvarUses ++ that.tvarUses
     )
   }
 
