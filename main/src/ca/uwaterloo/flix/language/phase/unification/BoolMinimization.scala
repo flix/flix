@@ -106,7 +106,7 @@ object BoolMinimization {
           aux(rest, other :: acc)
       }
     }
-    if (terms.length > 1000) println(terms.length)
+
     aux(terms, Nil)
   }
 
