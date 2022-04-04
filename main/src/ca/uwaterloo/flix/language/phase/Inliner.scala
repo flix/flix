@@ -359,6 +359,7 @@ object Inliner {
   /**
    * Convert a given tailCall expression `exp0` to a non tail call
    */
+  //TODO expand `convertTailCall` when more functions are being inlined
   private def convertTailCall(exp0: Expression): Expression = exp0 match {
     case Expression.ApplyCloTail(exp, args, tpe, loc) => Expression.ApplyClo(exp, args, tpe, loc)
     case Expression.ApplyDefTail(sym, args, tpe, loc) => Expression.ApplyDef(sym, args, tpe, loc)
