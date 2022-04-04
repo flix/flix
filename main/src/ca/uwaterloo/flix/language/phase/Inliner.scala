@@ -89,7 +89,7 @@ object Inliner {
       val as = args.map(visitExp(_, subst0))
       val def1 = root.defs.apply(sym)
       // If `def1` is a single non-self call and its arguments are trivial, then inline the single non-self call, `e1`.
-      if (def1.context.isNonSelfCall) {
+      if (def1.context.isNonSelfCall && purity == Purity.Pure) {
         val e1 = convertTailCall(def1.exp)
         bindFormals(e1, def1.fparams.map(_.sym), as, Map.empty)
       } else {
@@ -105,7 +105,7 @@ object Inliner {
       val as = args.map(visitExp(_, subst0))
       val def1 = root.defs.apply(sym)
       // If `def1` is a single non-self call and its arguments are trivial, then inline the single non-self call, `e1`.
-      if (def1.context.isNonSelfCall) {
+      if (def1.context.isNonSelfCall && purity == Purity.Pure) {
         bindFormals(def1.exp, def1.fparams.map(_.sym), as, Map.empty)
       } else {
         Expression.ApplyDefTail(sym, as, tpe, purity, loc)
