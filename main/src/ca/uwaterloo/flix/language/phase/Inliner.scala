@@ -346,7 +346,7 @@ object Inliner {
    */
   private def bindFormals(exp0: Expression, symbols: List[Symbol.VarSym], args: List[Expression], env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: Root, flix: Flix): Expression = {
     (symbols, args) match {
-      case (::(sym, nextSymbols), ::(e1, nextExpressions)) =>
+      case ((sym :: nextSymbols), (e1 :: nextExpressions)) =>
         val freshVar = Symbol.freshVarSym(sym)
         val env1 = env0 + (sym -> freshVar)
         val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env1)
