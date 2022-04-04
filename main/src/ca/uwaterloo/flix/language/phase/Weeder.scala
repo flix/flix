@@ -43,13 +43,14 @@ object Weeder {
   private val ReservedWords = Set(
     "!=", "$DEFAULT$", "&&&", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<<<", "<=",
     "<=>", "==", "=>", ">", ">=", ">>>", "???", "@", "Absent", "Bool", "Impure", "Nil", "Predicate", "Present", "Pure",
-    "RecordRow", "SchemaRow", "Type", "^^^", "alias", "case", "catch", "chan",
-    "class", "def", "deref", "else", "enum", "false", "fix", "force", "if", "import",
-    "inline", "instance", "into", "lat", "law", "lawless", "lazy", "let", "let*", "match", "mut", "namespace",
-    "null", "opaque", "override", "pub", "ref", "reify", "reifyBool",
-    "reifyEff", "reifyType", "rel", "rigid", "sealed", "set", "spawn",
-    "static", "true", "type", "unlawful", "use", "where", "with", "|||", "~~~"
+    "Read", "RecordRow", "Region", "SchemaRow", "Type", "Write", "^^^", "alias", "case", "catch", "chan",
+    "class", "def", "deref", "else", "enum", "false", "fix", "force",
+    "if", "import", "inline", "instance", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
+    "namespace", "null", "opaque", "override", "pub", "ref", "region", "reify",
+    "reifyBool", "reifyEff", "reifyType", "rel", "sealed", "set", "spawn", "static", "true",
+    "type", "use", "where", "with", "|||", "~~~"
   )
+
 
   // NB: The following words should be reserved, but are currently allowed because of their presence in the standard library:
   // as, and, choose, choose*, forall, from, get, mod, new, not, or, project, query, rem, select, solve, try
