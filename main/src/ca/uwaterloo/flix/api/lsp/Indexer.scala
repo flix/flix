@@ -422,14 +422,14 @@ object Indexer {
     * Returns a reverse index for the given type `tpe0`.
     */
   private def visitType(tpe0: Type): Index = tpe0 match {
-    case _: Type.KindedVar => Index.empty
+    case _: Type.KindedVar => Index.occurrenceOf(tpe0)
     case Type.Cst(tc, loc) => tc match {
       case TypeConstructor.Arrow(_) =>
         // We do not index arrow constructors.
         Index.empty
-      case TypeConstructor.RecordRowExtend(field) => Index.occurrenceOf(tc, loc) ++ Index.useOf(field)
-      case TypeConstructor.SchemaRowExtend(pred) => Index.occurrenceOf(tc, loc) ++ Index.useOf(pred)
-      case _ => Index.occurrenceOf(tc, loc)
+      case TypeConstructor.RecordRowExtend(field) => Index.occurrenceOf(tpe0) ++ Index.useOf(field)
+      case TypeConstructor.SchemaRowExtend(pred) => Index.occurrenceOf(tpe0) ++ Index.useOf(pred)
+      case _ => Index.occurrenceOf(tpe0)
     }
     case Type.Apply(tpe1, tpe2, _) => visitType(tpe1) ++ visitType(tpe2)
     case Type.Alias(_, _, tpe, _) => visitType(tpe) // TODO index TypeAlias

@@ -47,7 +47,7 @@ object Namer {
       instances = Map.empty,
       defsAndSigs = Map.empty,
       enums = Map.empty,
-      typealiases = Map.empty,
+      typeAliases = Map.empty,
       entryPoint = program.entryPoint,
       reachable = program.reachable,
       sources = locations
@@ -137,7 +137,7 @@ object Namer {
       /*
      * Definition.
      */
-      case decl@WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, retTpe, eff0, tconstrs, loc) =>
+      case decl@WeededAst.Declaration.Def(_, _, _, ident, _, _, _, _, _, _, _, _) =>
         // Check if the definition already exists.
         val defsAndSigs = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
         defsAndSigs.get(ident.name) match {
@@ -166,36 +166,16 @@ object Namer {
       /*
      * Enum.
      */
-      case WeededAst.Declaration.Enum(doc, ann, mod0, ident, tparams0, derives, cases, loc) =>
-        // TODO make visitEnum
+      case enum0@WeededAst.Declaration.Enum(_, _, _, ident, _, _, _, _) =>
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
         lookupTypeOrClass(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
             // Case 1: The enum does not exist in the namespace. Update it.
-            val sym = Symbol.mkEnumSym(ns0, ident)
-
-            // Compute the type parameters.
-            val tparams = getTypeParams(tparams0, uenv0)
-
-            val tenv = tparams.tparams.map(kv => kv.name.name -> kv.sym).toMap
-            val quantifiers = tparams.tparams.map(_.sym).map(sym => NamedAst.Type.Var(sym, sym.loc))
-            val enumType = if (quantifiers.isEmpty)
-              NamedAst.Type.Enum(sym, ident.loc)
-            else {
-              val base = NamedAst.Type.Enum(sym, ident.loc)
-              quantifiers.foldLeft(base: NamedAst.Type) {
-                case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, tvar.loc)
-              }
-            }
-            val annVal = traverse(ann)(visitAnnotation(_, Map.empty, uenv0, tenv))
-            val mod = visitModifiers(mod0, ns0)
-            mapN(annVal, casesOf(cases, uenv0, tenv)) {
-              case (ann, cases) =>
-                val enum = NamedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, enumType, loc)
+            visitEnum(enum0, uenv0, ns0) map {
+              enum =>
                 val enums = enums0 + (ident.name -> enum)
                 prog0.copy(enums = prog0.enums + (ns0 -> enums))
             }
-
           // Case 2: The name is in use.
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
@@ -203,21 +183,15 @@ object Namer {
       /*
      * Type Alias.
      */
-      case WeededAst.Declaration.TypeAlias(doc, mod0, ident, tparams0, tpe0, loc) =>
-        // TODO make visitTypeAlias
-        val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
+      case alias0@WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams0, tpe0, loc) =>
+        val typeAliases0 = prog0.typeAliases.getOrElse(ns0, Map.empty)
         lookupTypeOrClass(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
             // Case 1: The type alias does not exist in the namespace. Add it.
-            val mod = visitModifiers(mod0, ns0)
-            val tparams = getTypeParams(tparams0, uenv0)
-            val tenv = getTypeEnv(tparams.tparams)
-            mapN(visitType(tpe0, uenv0, tenv)) {
-              case tpe =>
-                val sym = Symbol.mkTypeAliasSym(ns0, ident)
-                val typealias = NamedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
-                val typealiases = typealiases0 + (ident.name -> typealias)
-                prog0.copy(typealiases = prog0.typealiases + (ns0 -> typealiases))
+            visitTypeAlias(alias0, uenv0, ns0) map {
+              alias =>
+                val typeAliases = typeAliases0 + (ident.name -> alias)
+                prog0.copy(typeAliases = prog0.typeAliases + (ns0 -> typeAliases))
             }
           // Case 2: The name is in use.
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
@@ -258,8 +232,8 @@ object Namer {
   private def lookupTypeOrClass(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Root): NameLookupResult = {
     val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
     val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
-    val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
-    (classes0.get(ident.name), enums0.get(ident.name), typealiases0.get(ident.name)) match {
+    val typeAliases0 = prog0.typeAliases.getOrElse(ns0, Map.empty)
+    (classes0.get(ident.name), enums0.get(ident.name), typeAliases0.get(ident.name)) match {
       // Case 1: The name is unused.
       case (None, None, None) => LookupResult.NotDefined
       // Case 2: A class with the name already exists.
@@ -267,7 +241,7 @@ object Namer {
       // Case 3: An enum with the name already exists.
       case (None, Some(enum), None) => LookupResult.AlreadyDefined(enum.sym.loc)
       // Case 4: A type alias with the name already exists.
-      case (None, None, Some(typealias)) => LookupResult.AlreadyDefined(typealias.sym.loc)
+      case (None, None, Some(typeAlias)) => LookupResult.AlreadyDefined(typeAlias.sym.loc)
       // Impossible.
       case _ => throw InternalCompilerException("Unexpected duplicate enum, type alias, or class found.")
     }
@@ -315,6 +289,32 @@ object Namer {
       }
   }
 
+
+  /**
+    * Performs naming on the given enum `enum0`.
+    */
+  private def visitEnum(enum0: WeededAst.Declaration.Enum, uenv0: UseEnv, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Enum, NameError] = enum0 match {
+    case WeededAst.Declaration.Enum(doc, ann0, mod0, ident, tparams0, derives, cases0, loc) =>
+      val sym = Symbol.mkEnumSym(ns0, ident)
+
+      // Compute the type parameters.
+      val tparams = getTypeParams(tparams0, uenv0)
+
+      val tenv = tparams.tparams.map(kv => kv.name.name -> kv.sym).toMap
+      val quantifiers = tparams.tparams.map(_.sym).map(sym => NamedAst.Type.Var(sym, sym.loc))
+      val base = NamedAst.Type.Enum(sym, ident.loc)
+      val enumType = quantifiers.foldLeft(base: NamedAst.Type) {
+        case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, tvar.loc)
+      }
+
+      val annVal = traverse(ann0)(visitAnnotation(_, Map.empty, uenv0, tenv))
+      val mod = visitModifiers(mod0, ns0)
+      mapN(annVal, casesOf(cases0, uenv0, tenv)) {
+        case (ann, cases) =>
+          NamedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, enumType, loc)
+      }
+  }
+
   /**
     * Performs naming on the given `cases` map.
     */
@@ -329,6 +329,21 @@ object Namer {
   }
 
   /**
+    * Performs naming on the given type alias `alias0`.
+    */
+  private def visitTypeAlias(alias0: WeededAst.Declaration.TypeAlias, uenv0: UseEnv, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.TypeAlias, NameError] = alias0 match {
+    case WeededAst.Declaration.TypeAlias(doc, mod0, ident, tparams0, tpe0, loc) =>
+      val mod = visitModifiers(mod0, ns0)
+      val tparams = getTypeParams(tparams0, uenv0)
+      val tenv = getTypeEnv(tparams.tparams)
+      mapN(visitType(tpe0, uenv0, tenv)) {
+        tpe =>
+          val sym = Symbol.mkTypeAliasSym(ns0, ident)
+          NamedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+      }
+  }
+
+  /**
     * Performs naming on the given class `clazz`.
     */
   private def visitClass(clazz: WeededAst.Declaration.Class, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = clazz match {
@@ -337,7 +352,7 @@ object Namer {
       val mod = visitModifiers(mod0, ns0)
       val tparam = getTypeParam(tparams0)
       val tenv = tenv0 ++ getTypeEnv(List(tparam))
-      val tconstr = NamedAst.TypeConstraint(Name.mkQName(ident), NamedAst.Type.Var(tparam.sym, tparam.loc), sym.loc)
+      val tconstr = NamedAst.TypeConstraint(Name.mkQName(ident), NamedAst.Type.Var(tparam.sym, tparam.loc.asSynthetic), sym.loc.asSynthetic)
       for {
         ann <- traverse(ann)(visitAnnotation(_, Map.empty, uenv0, tenv))
         superClasses <- traverse(superClasses0)(visitTypeConstraint(_, uenv0, tenv, ns0))
