@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, Symbol, Type, TypeCons
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 object Instances {
@@ -243,7 +243,7 @@ object Instances {
       Validation.traverseX(checks) {
         case inst :: unchecked =>
           // check that the instance is on a valid type, suppressing other errors if not
-          checkSimple(inst) flatMap {
+          flatMapN(checkSimple(inst)) {
             _ =>
               Validation.sequenceX(List(
                 Validation.traverse(unchecked)(checkOverlap(_, inst)),
