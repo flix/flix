@@ -119,6 +119,11 @@ object Index {
   def useOf(sym: Symbol.VarSym, loc: SourceLocation): Index = Index.empty.copy(varUses = MultiMap.singleton(sym, loc))
 
   /**
+    * Returns an index with the symbol `sym` used at location `loc.`
+    */
+  def useOf(sym: Symbol.KindedTypeVarSym, loc: SourceLocation): Index = Index.empty.copy(varUses = MultiMap.singleton(sym, loc))
+
+  /**
     * Returns an index with a def of the given `field`.
     */
   def defOf(field: Name.Field): Index = Index.empty.copy(fieldDefs = MultiMap.singleton(field, field.loc))
