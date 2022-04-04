@@ -327,6 +327,20 @@ object BoolMinimization {
   }
 
   /**
+    * Minimizes the Boolean formula given by `t`.
+    */
+  def minimize(t: Type): Type = {
+    val res = toType(toCNF(fromType(t)))
+    val before = t.size
+    val after = res.size
+    if (before > 9 || after > 9) {
+      val goodBad = if (after <= before) "+" else " "
+      println(s"$goodBad $before cnf'ed to $after")
+    }
+    res
+  }
+
+  /**
     * Transform `f` to an equivalent formula that is a disjunction of
     * conjunctions of either variables or negated variables.
     * Ex. `x ∨ (x ∧ y) ∨ (z ∧ ¬y ∧ ¬z)`
