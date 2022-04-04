@@ -780,7 +780,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedFormalParam.Instance.01") {
     val input =
       """
-        |lawless class C[a] {
+        |class C[a] {
         |    pub def f(x: a): a
         |}
         |
@@ -827,9 +827,9 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantTypeConstraint.Class.01") {
     val input =
       """
-        |lawless class C[a]
+        |class C[a]
         |
-        |lawless class D[a] with C[a], C[a]
+        |class D[a] with C[a], C[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantTypeConstraint](result)
@@ -838,11 +838,11 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantTypeConstraint.Class.02") {
     val input =
       """
-        |lawless class C[a]
+        |class C[a]
         |
-        |lawless class D[a] with C[a]
+        |class D[a] with C[a]
         |
-        |lawless class E[a] with C[a], D[a]
+        |class E[a] with C[a], D[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantTypeConstraint](result)
@@ -851,7 +851,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantTypeConstraint.Def.01") {
     val input =
       """
-        |lawless class C[a]
+        |class C[a]
         |
         |pub def f(x: a): Bool with C[a], C[a] = ???
         |""".stripMargin
@@ -862,9 +862,9 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantTypeConstraint.Def.02") {
     val input =
       """
-        |lawless class C[a]
+        |class C[a]
         |
-        |lawless class D[a] with C[a]
+        |class D[a] with C[a]
         |
         |pub def f(x: a): Bool with C[a], D[a] = ???
         |""".stripMargin
@@ -875,9 +875,9 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantTypeConstraint.Sig.01") {
     val input =
       """
-        |lawless class C[a]
+        |class C[a]
         |
-        |lawless class D[a] {
+        |class D[a] {
         |  pub def f(x: a): Bool with C[a], C[a]
         |}
         |""".stripMargin
@@ -888,11 +888,11 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantTypeConstraint.Sig.02") {
     val input =
       """
-        |lawless class C[a]
+        |class C[a]
         |
-        |lawless class D[a] with C[a]
+        |class D[a] with C[a]
         |
-        |lawless class E[a] {
+        |class E[a] {
         |  pub def f(x: a): Bool with C[a], D[a]
         |}
         |""".stripMargin
@@ -905,9 +905,9 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |opaque type Box[a] = a
         |
-        |lawless class C[a]
+        |class C[a]
         |
-        |lawless class D[a]
+        |class D[a]
         |
         |instance D[Box[a]] with C[a], C[a]
         |""".stripMargin
@@ -920,11 +920,11 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |opaque type Box[a] = a
         |
-        |lawless class C[a]
+        |class C[a]
         |
-        |lawless class D[a] with C[a]
+        |class D[a] with C[a]
         |
-        |lawless class E[a]
+        |class E[a]
         |
         |instance E[Box[a]] with C[a], C[a]
         |""".stripMargin
@@ -935,7 +935,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedFormalParam.Class.01") {
     val input =
       """
-        |pub lawless class C[a] {
+        |pub class C[a] {
         |  pub def f(x: a): String = "Hello!"
         |}
         |""".stripMargin

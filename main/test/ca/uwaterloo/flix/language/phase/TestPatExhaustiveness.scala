@@ -271,7 +271,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |    case E2
         |}
         |
-        |lawless class C[a] {
+        |class C[a] {
         |    pub def f(x: a): Int32
         |}
         |
@@ -293,7 +293,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |    case E2
         |}
         |
-        |lawless class C[a] {
+        |class C[a] {
         |    pub def f(_x: a): Int32 = match E1 {
         |        case E1 => 1
         |    }

@@ -17,7 +17,7 @@
 ///
 /// A type class for types that are allocated in a region.
 ///
-lawless class Scoped[t: Region -> Type] {
+class Scoped[t: Region -> Type] {
     ///
     /// Returns the region where `x` is allocated.
     ///

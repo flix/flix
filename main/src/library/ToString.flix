@@ -17,7 +17,7 @@
 ///
 /// A type class for types that can be converted to strings.
 ///
-pub lawless class ToString[a] {
+pub class ToString[a] {
     ///
     /// Returns a string representation of the given x.
     ///
