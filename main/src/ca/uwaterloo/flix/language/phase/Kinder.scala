@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse}
@@ -50,10 +49,10 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
   */
 object Kinder {
 
-  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[KindedAst.Root, CompilationMessage] = flix.phase("Kinder") {
+  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[KindedAst.Root, KindError] = flix.phase("Kinder") {
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-    visitTypeAliases(root.taOrder, root) flatMap {
+    flatMapN(visitTypeAliases(root.taOrder, root)) {
       taenv =>
 
         // Extra type annotations are required due to limitations in Scala's type inference.
@@ -84,7 +83,7 @@ object Kinder {
   /**
     * Performs kinding on the given enum.
     */
-  private def visitEnum(enum: ResolvedAst.Enum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Enum, CompilationMessage] = enum match {
+  private def visitEnum(enum: ResolvedAst.Enum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Enum, KindError] = enum match {
     case ResolvedAst.Enum(doc, ann, mod, sym, tparams0, derives, cases0, tpeDeprecated0, sc0, loc) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams0)
 
@@ -780,7 +779,7 @@ object Kinder {
   private def visitType(tpe0: Type, expectedKind: Kind, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe0 match {
     case tvar: Type.UnkindedVar => visitTypeVar(tvar, expectedKind, kenv)
     case Type.Cst(cst, loc) =>
-      visitTypeConstructor(cst, kenv, taenv, root) flatMap {
+      flatMapN(visitTypeConstructor(cst, kenv, taenv, root)) {
         tycon =>
           val kind = tycon.kind
           unify(expectedKind, kind) match {
