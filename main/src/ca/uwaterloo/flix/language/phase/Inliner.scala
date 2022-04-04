@@ -315,11 +315,9 @@ object Inliner {
     case Expression.SelectChannel(rules, default, tpe, loc) =>
       val rs = rules.map {
         case OccurrenceAst.SelectChannelRule(sym, chan, exp) =>
-          val fresh = Symbol.freshVarSym(sym)
-          val env = Map(sym -> fresh)
           val c = visitExp(chan, subst0)
-          val e = visitExp(substituteExp(exp, env), subst0)
-          SelectChannelRule(fresh, c, e)
+          val e = visitExp(exp, subst0)
+          SelectChannelRule(sym, c, e)
       }
       val d = default.map(visitExp(_, subst0))
       Expression.SelectChannel(rs, d, tpe, loc)
@@ -349,11 +347,11 @@ object Inliner {
   private def bindFormals(exp0: Expression, symbols: List[Symbol.VarSym], args: List[Expression], env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: Root, flix: Flix): Expression = {
     (symbols, args) match {
       case (::(sym, nextSymbols), ::(e1, nextExpressions)) =>
-        val fresh = Symbol.freshVarSym(sym)
-        val env1 = env0 + (sym -> fresh)
+        val freshVar = Symbol.freshVarSym(sym)
+        val env1 = env0 + (sym -> freshVar)
         val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env1)
         val purity = if (isTrivialExp(e1)) Purity.Pure else Purity.Impure
-        Expression.Let(fresh, e1, nextLet, DontInline, exp0.tpe, purity, exp0.loc)
+        Expression.Let(freshVar, e1, nextLet, DontInline, exp0.tpe, purity, exp0.loc)
       case _ => substituteExp(exp0, env0)
     }
   }
@@ -452,19 +450,19 @@ object Inliner {
     case Expression.JumpTo(_, _, _) => exp0
 
     case Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) => {
-      val fresh = Symbol.freshVarSym(sym)
-      val env1 = env0 + (sym -> fresh)
+      val freshVar = Symbol.freshVarSym(sym)
+      val env1 = env0 + (sym -> freshVar)
       val e1 = substituteExp(exp1, env1)
       val e2 = substituteExp(exp2, env1)
-      Expression.Let(fresh, e1, e2, occur, tpe, purity, loc)
+      Expression.Let(freshVar, e1, e2, occur, tpe, purity, loc)
     }
 
     case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) => {
-      val fresh = Symbol.freshVarSym(varSym)
-      val env1 = env0 + (varSym -> fresh)
+      val freshVar = Symbol.freshVarSym(varSym)
+      val env1 = env0 + (varSym -> freshVar)
       val e1 = substituteExp(exp1, env1)
       val e2 = substituteExp(exp2, env1)
-      Expression.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
+      Expression.LetRec(freshVar, index, defSym, e1, e2, tpe, loc)
     }
     case Expression.Is(sym, tag, exp, loc) =>
       val e = substituteExp(exp, env0)
@@ -552,8 +550,10 @@ object Inliner {
       val e = substituteExp(exp, env0)
       val rs = rules.map {
         case OccurrenceAst.CatchRule(sym, clazz, exp) =>
-          val e = substituteExp(exp, env0)
-          CatchRule(sym, clazz, e)
+          val freshVar = Symbol.freshVarSym(sym)
+          val env1 = env0 + (sym -> freshVar)
+          val e = substituteExp(exp, env1)
+          CatchRule(freshVar, clazz, e)
       }
       Expression.TryCatch(e, rs, tpe, loc)
 
@@ -601,11 +601,11 @@ object Inliner {
     case Expression.SelectChannel(rules, default, tpe, loc) =>
       val rs = rules.map {
         case OccurrenceAst.SelectChannelRule(sym, chan, exp) =>
-          val fresh = Symbol.freshVarSym(sym)
-          val env1 = env0 + (sym -> fresh)
+          val freshVar = Symbol.freshVarSym(sym)
+          val env1 = env0 + (sym -> freshVar)
           val c = substituteExp(chan, env1)
           val e = substituteExp(exp, env1)
-          SelectChannelRule(sym, c, e)
+          SelectChannelRule(freshVar, c, e)
       }
       val d = default.map(substituteExp(_, env0))
       Expression.SelectChannel(rs, d, tpe, loc)
