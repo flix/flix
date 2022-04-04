@@ -43,13 +43,14 @@ object Weeder {
   private val ReservedWords = Set(
     "!=", "$DEFAULT$", "&&&", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<<<", "<=",
     "<=>", "==", "=>", ">", ">=", ">>>", "???", "@", "Absent", "Bool", "Impure", "Nil", "Predicate", "Present", "Pure",
-    "RecordRow", "SchemaRow", "Type", "^^^", "alias", "case", "catch", "chan",
-    "class", "def", "deref", "else", "enum", "false", "fix", "force", "if", "import",
-    "inline", "instance", "into", "lat", "law", "lawless", "lazy", "let", "let*", "match", "mut", "namespace",
-    "null", "opaque", "override", "pub", "ref", "reify", "reifyBool",
-    "reifyEff", "reifyType", "rel", "rigid", "sealed", "set", "spawn",
-    "static", "true", "type", "unlawful", "use", "where", "with", "|||", "~~~"
+    "Read", "RecordRow", "Region", "SchemaRow", "Type", "Write", "^^^", "alias", "case", "catch", "chan",
+    "class", "def", "deref", "else", "enum", "false", "fix", "force",
+    "if", "import", "inline", "instance", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
+    "namespace", "null", "opaque", "override", "pub", "ref", "region", "reify",
+    "reifyBool", "reifyEff", "reifyType", "rel", "sealed", "set", "spawn", "static", "true",
+    "type", "use", "where", "with", "|||", "~~~"
   )
+
 
   // NB: The following words should be reserved, but are currently allowed because of their presence in the standard library:
   // as, and, choose, choose*, forall, from, get, mod, new, not, or, project, query, rem, select, solve, try
@@ -130,7 +131,7 @@ object Weeder {
       val sigs0 = lawsAndSigs.collect { case sig: ParsedAst.Declaration.Sig => sig }
 
       val annVal = visitAnnotations(ann0)
-      val modsVal = visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Sealed, Ast.Modifier.Lawless))
+      val modsVal = visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Lawful, Ast.Modifier.Public, Ast.Modifier.Sealed))
       val sigsVal = traverse(sigs0)(visitSig)
       val lawsVal = traverse(laws0)(visitLaw)
       val superClassesVal = traverse(superClasses0)(visitTypeConstraint)
@@ -177,7 +178,7 @@ object Weeder {
       val doc = visitDoc(doc0)
       val tpe = visitType(tpe0)
 
-      val modsVal = visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Unlawful))
+      val modsVal = visitModifiers(mods0, legalModifiers = Set.empty)
       val defsVal = traverse(defs0)(visitInstanceDef)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
 
@@ -2069,11 +2070,10 @@ object Weeder {
     */
   private def visitModifier(m: ParsedAst.Modifier, legalModifiers: Set[Ast.Modifier]): Validation[Ast.Modifier, WeederError] = {
     val modifier = m.name match {
-      case "lawless" => Ast.Modifier.Lawless
+      case "lawful" => Ast.Modifier.Lawful
       case "override" => Ast.Modifier.Override
       case "pub" => Ast.Modifier.Public
       case "sealed" => Ast.Modifier.Sealed
-      case "unlawful" => Ast.Modifier.Unlawful
       case s => throw InternalCompilerException(s"Unknown modifier '$s' near ${mkSL(m.sp1, m.sp2).format}.")
     }
 
