@@ -63,6 +63,7 @@ object RenameProvider {
             case TypeConstructor.SchemaRowExtend(pred) => renamePred(pred, newName)
             case _ => mkNotFound(uri, pos)
           }
+          case Type.KindedVar(sym, loc) => renameTypeVar(sym, newName)
           case _ => mkNotFound(uri, pos)
         }
 
@@ -123,6 +124,12 @@ object RenameProvider {
   private def renameTag(sym: Symbol.EnumSym, tag: Name.Tag, newName: String)(implicit index: Index, root: Root): JObject = {
     val defn = root.enums(sym).cases(tag).tag.loc
     val uses = index.usesOf(sym, tag)
+    rename(newName, uses + defn)
+  }
+
+  private def renameTypeVar(sym: Symbol.KindedTypeVarSym, newName: String)(implicit index: Index, root: Root): JObject = {
+    val defn = sym.loc
+    val uses = index.usesOf(sym)
     rename(newName, uses + defn)
   }
 
