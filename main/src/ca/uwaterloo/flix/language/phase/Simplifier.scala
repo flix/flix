@@ -486,19 +486,22 @@ object Simplifier {
           // Success case: evaluate the match body.
           val success = visitExp(body)
 
+          val purity = isPure(guard.eff) combine isPure(body.eff)
+
           // Failure case: Jump to the next label.
-          val failure = SimplifiedAst.Expression.JumpTo(next, tpe, loc)
+          val failure = SimplifiedAst.Expression.JumpTo(next, tpe, purity, loc)
 
           // Return the branch with its label.
           field -> patternMatchList(List(pat), List(matchVar), guard, success, failure
           )
       }
+      val purity = isPure(rules.head.exp.eff) combine isPure(rules.head.guard.eff)
 
       // Construct the error branch.
       val errorBranch = defaultLab -> SimplifiedAst.Expression.MatchError(tpe, Pure, loc)
 
       // The initial expression simply jumps to the first label.
-      val entry = SimplifiedAst.Expression.JumpTo(ruleLabels.head, tpe, loc)
+      val entry = SimplifiedAst.Expression.JumpTo(ruleLabels.head, tpe, purity, loc)
 
       // The purity of the branch
       val branchPurity = (errorBranch :: branches).foldLeft[Purity](Pure){
@@ -906,8 +909,8 @@ object Simplifier {
         }
         SimplifiedAst.Expression.Branch(e, bs, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.JumpTo(sym, tpe, loc) =>
-        SimplifiedAst.Expression.JumpTo(sym, tpe, loc)
+      case SimplifiedAst.Expression.JumpTo(sym, tpe, purity, loc) =>
+        SimplifiedAst.Expression.JumpTo(sym, tpe, purity, loc)
 
       case SimplifiedAst.Expression.Let(sym, exp1, exp2, purity, tpe, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(exp1), visitExp(exp2), purity, tpe, loc)

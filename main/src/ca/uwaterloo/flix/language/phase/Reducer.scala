@@ -165,8 +165,8 @@ object Reducer {
       }
       LiftedAst.Expression.Branch(e, bs, tpe, purity, loc)
 
-    case Expression.JumpTo(sym, tpe, loc) =>
-      LiftedAst.Expression.JumpTo(sym, tpe, loc)
+    case Expression.JumpTo(sym, tpe, purity, loc) =>
+      LiftedAst.Expression.JumpTo(sym, tpe, purity, loc)
 
     case Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
       // If `e1` is unused (dead) and has no side effects (pure), visit `e2` and remove `e1`

@@ -175,8 +175,8 @@ object LambdaLift {
         }
         LiftedAst.Expression.Branch(e, bs, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.JumpTo(sym, tpe, loc) =>
-        LiftedAst.Expression.JumpTo(sym, tpe, loc)
+      case SimplifiedAst.Expression.JumpTo(sym, tpe, purity, loc) =>
+        LiftedAst.Expression.JumpTo(sym, tpe, purity, loc)
 
       case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, purity, loc) =>
         val e1 = visitExp(exp1)

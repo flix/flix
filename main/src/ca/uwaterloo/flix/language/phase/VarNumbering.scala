@@ -123,7 +123,7 @@ object VarNumbering {
         val i1 = visitExp(exp, i0)
         visitExps(branches.values.toList, i1)
 
-      case Expression.JumpTo(_, _, _) =>
+      case Expression.JumpTo(_, _, _, _) =>
         i0
 
       case Expression.Let(sym, exp1, exp2, _, _, _) =>

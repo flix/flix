@@ -191,7 +191,7 @@ object PrettyPrinter {
             .append(System.lineSeparator())
             .toString()
 
-        case Expression.JumpTo(sym, tpe, loc) => s"jumpto ${fmtSym(sym, formatter)}"
+        case Expression.JumpTo(sym, tpe, purity, loc) => s"jumpto ${fmtSym(sym, formatter)}"
 
         case Expression.Let(sym, exp1, exp2, tpe, purity, loc) =>
           val sb = new StringBuilder()

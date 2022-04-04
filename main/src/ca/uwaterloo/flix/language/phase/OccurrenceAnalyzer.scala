@@ -183,7 +183,7 @@ object OccurrenceAnalyzer {
       val o5 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.Branch(e1, bs, tpe, purity, loc), o5)
 
-    case Expression.JumpTo(sym, tpe, loc) => (OccurrenceAst.Expression.JumpTo(sym, tpe, loc), Map.empty)
+    case Expression.JumpTo(sym, tpe, purity, loc) => (OccurrenceAst.Expression.JumpTo(sym, tpe, purity, loc), Map.empty)
 
     case Expression.Let(sym, exp1, exp2, tpe, purity, loc) =>
       val (e1, o1) = visitExp(exp1)

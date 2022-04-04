@@ -165,7 +165,7 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.Branch(e, bs, t, loc)
 
-      case LiftedAst.Expression.JumpTo(sym, tpe, loc) =>
+      case LiftedAst.Expression.JumpTo(sym, tpe, _, loc) =>
         val t = visitType(tpe)
         FinalAst.Expression.JumpTo(sym, t, loc)
 

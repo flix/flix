@@ -140,8 +140,8 @@ object ClosureConv {
       }
       Expression.Branch(e, bs, tpe, purity, loc)
 
-    case Expression.JumpTo(sym, tpe, loc) =>
-      Expression.JumpTo(sym, tpe, loc)
+    case Expression.JumpTo(sym, tpe, purity, loc) =>
+      Expression.JumpTo(sym, tpe, purity, loc)
 
     case Expression.Let(sym, e1, e2, tpe, purity, loc) =>
       Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, purity, loc)
@@ -346,7 +346,7 @@ object ClosureConv {
       mutable.LinkedHashSet.empty ++ freeVars(exp) ++ (branches flatMap {
         case (_, br) => freeVars(br)
       })
-    case Expression.JumpTo(_, _, _) => mutable.LinkedHashSet.empty
+    case Expression.JumpTo(_, _, _, _) => mutable.LinkedHashSet.empty
 
     case Expression.Let(sym, exp1, exp2, _, _, _) =>
       val bound = sym
@@ -509,8 +509,8 @@ object ClosureConv {
         }
         Expression.Branch(e, bs, tpe, purity, loc)
 
-      case Expression.JumpTo(sym, tpe, loc) =>
-        Expression.JumpTo(sym, tpe, loc)
+      case Expression.JumpTo(sym, tpe, purity, loc) =>
+        Expression.JumpTo(sym, tpe, purity, loc)
 
       case Expression.Let(sym, exp1, exp2, tpe, purity, loc) =>
         val newSym = subst.getOrElse(sym, sym)

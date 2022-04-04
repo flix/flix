@@ -165,7 +165,7 @@ object TreeShaker {
     case Expression.Branch(exp, branches, _, _, _) =>
       visitExp(exp) ++ visitExps(branches.values.toList)
 
-    case Expression.JumpTo(_, _, _) =>
+    case Expression.JumpTo(_, _, _, _) =>
       Set.empty
 
     case Expression.Let(_, exp1, exp2, _, _, _) =>
