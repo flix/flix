@@ -59,20 +59,10 @@ object BoolUnification {
       case _ => // nop
     }
 
-    def cnf(t: Type): Type = {
-      import BoolMinimization._
-      val res = toType(toCNF(fromType(t)))
-      val before = t.toString.length
-      val after = res.toString.length
-      if (before > 9 || after > 9)
-        println(s"$before cnf'ed to $after")
-      res
-    }
-
     ///
     /// Run the expensive boolean unification algorithm.
     ///
-    booleanUnification(cnf(eraseAliases(tpe1)), cnf(eraseAliases(tpe2)))
+    booleanUnification(eraseAliases(tpe1), eraseAliases(tpe2))
   }
 
   /**
@@ -104,6 +94,18 @@ object BoolUnification {
     }
   }
 
+  private def cnf(t: Type): Type = {
+    import BoolMinimization._
+    val res = toType(toCNF(fromType(t)))
+    val before = t.size
+    val after = res.size
+    if (before > 9 || after > 9) {
+      val goodBad = if (after <= before) "+" else " "
+      println(s"$goodBad $before cnf'ed to $after")
+    }
+    res
+  }
+
   /**
     * Performs success variable elimination on the given boolean expression `f`.
     */
@@ -122,7 +124,7 @@ object BoolUnification {
       val se = successiveVariableElimination(mkAnd(t0, t1), xs)
 
       // Investigate impact on Monomorph semantics:
-      val st = Substitution.singleton(x.sym, mkOr(se(t0), mkAnd(x, mkNot(se(t1)))))
+      val st = Substitution.singleton(x.sym, cnf(mkOr(se(t0), mkAnd(x, mkNot(se(t1))))))
       //val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshVar(Kind.Bool, f.loc), mkNot(se(t1)))))
       st ++ se
   }
