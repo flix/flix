@@ -27,7 +27,7 @@ object NamedAst {
                   instances: Map[Name.NName, Map[String, List[NamedAst.Instance]]],
                   defsAndSigs: Map[Name.NName, Map[String, NamedAst.DefOrSig]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
-                  typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
+                  typeAliases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
                   entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])

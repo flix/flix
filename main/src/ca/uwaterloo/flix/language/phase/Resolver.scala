@@ -55,7 +55,7 @@ object Resolver {
   def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-    flatMapN(resolveTypeAliases(root.typealiases, root)) {
+    flatMapN(resolveTypeAliases(root.typeAliases, root)) {
       case (taenv, taOrder) =>
 
         val classesVal = resolveClasses(root, taenv, oldRoot, changeSet)
@@ -1607,10 +1607,10 @@ object Resolver {
         case None =>
           // Case 1: The type alias was not found. Report an error.
           ResolutionError.UndefinedName(qname, ns0, loc).toFailure
-        case Some(typealias) =>
+        case Some(typeAlias) =>
           // Case 2: The type alias was found. Use it.
           for {
-            t <- getTypeAliasTypeIfAccessible(typealias, ns0, root, loc)
+            t <- getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
             ts <- traverse(targs)(semiResolveType(_, ns0, root))
             r <- semiResolveType(rest, ns0, root)
             app = Type.mkApply(t, ts, loc)
@@ -1793,7 +1793,7 @@ object Resolver {
       */
     def lookupIn(ns: Name.NName): EnumOrTypeAliasLookupResult = {
       val enumsInNamespace = root.enums.getOrElse(ns, Map.empty)
-      val aliasesInNamespace = root.typealiases.getOrElse(ns, Map.empty)
+      val aliasesInNamespace = root.typeAliases.getOrElse(ns, Map.empty)
       (enumsInNamespace.get(qname.ident.name), aliasesInNamespace.get(qname.ident.name)) match {
         case (None, None) =>
           // Case 1: name not found
@@ -1846,15 +1846,15 @@ object Resolver {
   private def lookupTypeAlias(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.TypeAlias] = {
     if (qname.isUnqualified) {
       // Case 1: The name is unqualified. Lookup in the current namespace.
-      val typeAliasesInNamespace = root.typealiases.getOrElse(ns0, Map.empty)
+      val typeAliasesInNamespace = root.typeAliases.getOrElse(ns0, Map.empty)
       typeAliasesInNamespace.get(qname.ident.name) orElse {
         // Case 1.1: The name was not found in the current namespace. Try the root namespace.
-        val typeAliasesInRootNS = root.typealiases.getOrElse(Name.RootNS, Map.empty)
+        val typeAliasesInRootNS = root.typeAliases.getOrElse(Name.RootNS, Map.empty)
         typeAliasesInRootNS.get(qname.ident.name)
       }
     } else {
       // Case 2: The name is qualified. Look it up in its namespace.
-      root.typealiases.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+      root.typeAliases.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }
 
