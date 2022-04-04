@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
+import ca.uwaterloo.flix.language.ast.Purity._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -350,8 +350,7 @@ object Simplifier {
         SimplifiedAst.Expression.Tag(sym, tag, e, tpe, e.purity, loc)
       case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
         val es = elms.map(pat2exp)
-        val purities = es.map(_.purity)
-        val purity = isPureSeq(purities)
+        val purity = es.foldLeft[Purity](Pure)(_ combine _.purity)
         SimplifiedAst.Expression.Tuple(es, tpe, purity, loc)
       case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat0.")
     }
@@ -405,8 +404,7 @@ object Simplifier {
         case Some(TypeConstructor.Str) => SemanticOperator.StringOp.Eq
         case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
       }
-      val purities = List(e1.purity, e2.purity)
-      val purity = isPureSeq(purities)
+      val purity = e1.purity combine e2.purity
       SimplifiedAst.Expression.Binary(sop, BinaryOperator.Equal, e1, e2, Type.Bool, purity, loc)
     }
 
@@ -416,8 +414,7 @@ object Simplifier {
     def mkAdd(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
       val add = SemanticOperator.Int32Op.Add
       val tpe = Type.Int32
-      val purities = List(e1.purity, e2.purity)
-      val purity = isPureSeq(purities)
+      val purity = e1.purity combine e2.purity
       SimplifiedAst.Expression.Binary(add, BinaryOperator.Plus, e1, e2, tpe, purity, loc)
     }
 
@@ -427,8 +424,7 @@ object Simplifier {
     def mkSub(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
       val sub = SemanticOperator.Int32Op.Sub
       val tpe = Type.Int32
-      val purities = List(e1.purity, e2.purity)
-      val purity = isPureSeq(purities)
+      val purity = e1.purity combine e2.purity
       SimplifiedAst.Expression.Binary(sub, BinaryOperator.Minus, e1, e2, tpe, purity, loc)
     }
 
@@ -563,8 +559,7 @@ object Simplifier {
         case (lit :: ps, v :: vs) if isPatLiteral(lit) =>
           val exp = patternMatchList(ps, vs, guard, succ, fail)
           val cond = mkEqual(pat2exp(lit), SimplifiedAst.Expression.Var(v, lit.tpe, lit.loc), lit.loc)
-          val purities = List(cond.purity, exp.purity, fail.purity)
-          val purity = isPureSeq(purities)
+          val purity = cond.purity combine exp.purity combine fail.purity
           SimplifiedAst.Expression.IfThenElse(cond, exp, fail, succ.tpe, purity, lit.loc)
 
         /**
@@ -583,8 +578,7 @@ object Simplifier {
           val inner = patternMatchList(pat :: ps, freshVar :: vs, guard, succ, fail)
           val purity1 = Pure
           val consequent = SimplifiedAst.Expression.Let(freshVar, SimplifiedAst.Expression.Untag(sym, tag, SimplifiedAst.Expression.Var(v, tpe, loc), pat.tpe, purity1, loc), inner, succ.tpe, purity1, loc)
-          val purities = List(cond.purity, consequent.purity, fail.purity)
-          val purity2 = isPureSeq(purities)
+          val purity2 = cond.purity combine consequent.purity combine fail.purity
           SimplifiedAst.Expression.IfThenElse(cond, consequent, fail, succ.tpe, purity2, loc)
 
         /**
@@ -627,8 +621,7 @@ object Simplifier {
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
           val lengthCheck = mkEqual(actualArrayLengthExp, expectedArrayLengthExp, loc)
-          val purities = List(lengthCheck.purity, patternCheck.purity, fail.purity)
-          val purity = isPureSeq(purities)
+          val purity = lengthCheck.purity combine patternCheck.purity combine fail.purity
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, purity, loc)
 
         /**
@@ -671,8 +664,7 @@ object Simplifier {
           }
           val op = SemanticOperator.Int32Op.Ge
           val lengthCheck = SimplifiedAst.Expression.Binary(op, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Bool, actualArrayLengthExp.purity, loc)
-          val purities = List(lengthCheck.purity, patternCheck.purity, fail.purity)
-          val purity = isPureSeq(purities)
+          val purity = lengthCheck.purity combine patternCheck.purity combine fail.purity
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, purity, loc)
 
         /**
@@ -716,8 +708,7 @@ object Simplifier {
           }
           val ge = SemanticOperator.Int32Op.Ge
           val lengthCheck = SimplifiedAst.Expression.Binary(ge, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Bool, actualArrayLengthExp.purity, loc)
-          val purities = List(lengthCheck.purity, patternCheck.purity, fail.purity)
-          val purity = isPureSeq(purities)
+          val purity = lengthCheck.purity combine patternCheck.purity combine fail.purity
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, purity, loc)
 
 
@@ -812,8 +803,7 @@ object Simplifier {
               SimplifiedAst.Expression.Let(matchVar, untagExp, acc, acc.tpe, untagExp.purity, loc)
           }
           val elseExp = acc
-          val purities = List(condExp.purity, thenExp.purity, elseExp.purity)
-          val purity = isPureSeq(purities)
+          val purity = condExp.purity combine thenExp.purity
           SimplifiedAst.Expression.IfThenElse(condExp, thenExp, elseExp, tpe, purity, loc)
       }
 
@@ -1071,14 +1061,5 @@ object Simplifier {
       Pure
     else
       Impure
-  }
-
-  /**
-   * returns `Pure` if every purity in sequence is Pure
-   * Impure otherwise
-   */
-  private def isPureSeq(purities: List[Purity]): Purity = {
-    val isPure = purities.forall(purity => purity == Pure)
-    if (isPure) Pure else Impure
   }
 }
