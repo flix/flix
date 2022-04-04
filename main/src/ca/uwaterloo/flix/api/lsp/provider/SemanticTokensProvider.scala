@@ -85,7 +85,7 @@ object SemanticTokensProvider {
     //
     // Construct an iterator of the semantic tokens from type aliases.
     //
-    val typeAliasTokens = root.typealiases.flatMap {
+    val typeAliasTokens = root.typeAliases.flatMap {
       case (_, decl) if include(uri, decl.loc) => visitTypeAlias(decl)
       case _ => Nil
     }
@@ -158,7 +158,7 @@ object SemanticTokensProvider {
     case TypedAst.Enum(_, _, _, sym, tparams, derives, cases, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Enum, Nil, sym.loc)
       val st1 = Iterator(t)
-      val st2 = tparams.flatMap(visitTypeParam).iterator
+      val st2 = visitTypeParams(tparams)
       val st3 = Iterator(derives: _*).map {
         case Ast.Derivation(_, loc) => SemanticToken(SemanticTokenType.Class, Nil, loc)
       }
@@ -180,14 +180,13 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given definition `defn0`.
     */
-  private def visitDef(defn0: TypedAst.Def): Iterator[SemanticToken] = {
-    val t = SemanticToken(SemanticTokenType.Function, Nil, defn0.sym.loc)
-    val st1 = Iterator(t)
-    val st2 = visitFormalParams(defn0.spec.fparams)
-    val st3 = visitType(defn0.spec.retTpe)
-    val st4 = defn0.spec.declaredScheme.constraints.flatMap(visitTypeConstraint)
-    val st5 = visitExp(defn0.impl.exp)
-    st1 ++ st2 ++ st3 ++ st4 ++ st5
+  private def visitDef(defn0: TypedAst.Def): Iterator[SemanticToken] = defn0 match {
+    case Def(sym, spec, impl) =>
+      val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
+      val st1 = Iterator(t)
+      val st2 = visitSpec(spec)
+      val st3 = visitImpl(impl)
+      st1 ++ st2 ++ st3
   }
 
   /**
@@ -195,12 +194,30 @@ object SemanticTokensProvider {
     */
   private def visitSig(sig0: TypedAst.Sig): Iterator[SemanticToken] = sig0 match {
     case TypedAst.Sig(sym, spec, impl) =>
-      val t = SemanticToken(SemanticTokenType.Function, Nil, sig0.sym.loc)
+      val t = SemanticToken(SemanticTokenType.Function, Nil, sym.loc)
       val st1 = Iterator(t)
-      val st2 = visitFormalParams(spec.fparams)
-      val st3 = visitType(spec.retTpe)
-      val st4 = impl.map(impl => visitExp(impl.exp)).getOrElse(Iterator.empty)
+      val st2 = visitSpec(spec)
+      val st3 = impl.iterator.flatMap(visitImpl)
+      st1 ++ st2 ++ st3
+  }
+
+  /**
+    * Returns all semantic tokens in the given `spec`.
+    */
+  private def visitSpec(spec: Spec): Iterator[SemanticToken] = spec match {
+    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, _) =>
+      val st1 = visitTypeParams(tparams)
+      val st2 = visitFormalParams(fparams)
+      val st3 = visitType(retTpe)
+      val st4 = visitType(eff)
       st1 ++ st2 ++ st3 ++ st4
+  }
+
+  /**
+    * Returns all semantic tokens in the given `impl`.
+    */
+  private def visitImpl(impl: Impl): Iterator[SemanticToken] = impl match {
+    case Impl(exp, _) => visitExp(exp)
   }
 
   /**
@@ -517,9 +534,9 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given type `tpe0`.
     */
   private def visitType(tpe0: Type): Iterator[SemanticToken] = tpe0 match {
-    case Type.KindedVar(_, _, loc, _, _) =>
-      // TODO: The source location of Type.KindedVar is associated with its declaration, not its use.
-      Iterator.empty
+    case Type.KindedVar(_, loc) =>
+      val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, loc)
+      Iterator(t)
 
     case Type.Ascribe(tpe, _, _) =>
       visitType(tpe)
@@ -539,7 +556,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
       Iterator(t) ++ args.flatMap(visitType).iterator
 
-    case Type.UnkindedVar(_, _, _, _) =>
+    case Type.UnkindedVar(_, _) =>
       throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
   }
 
@@ -629,9 +646,9 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given type parameter `tparam0`.
     */
   private def visitTypeParam(tparam0: TypedAst.TypeParam): Iterator[SemanticToken] = tparam0 match {
-    case TypeParam(ident, _, _) =>
-      // TODO: Disabled until type variables are fixed.
-      Iterator.empty
+    case TypeParam(_, sym, _) =>
+      val t = SemanticToken(SemanticTokenType.TypeParameter, Nil, sym.loc)
+      Iterator(t)
   }
 
   /**

@@ -256,6 +256,12 @@ object Ast {
     * A sequence of modifiers.
     */
   case class Modifiers(mod: List[Modifier]) {
+
+    /**
+      * Returns a new modifier sequence with `pub` added.
+      */
+    def asPublic: Modifiers = if (isPublic) this else Modifiers(Modifier.Public :: mod)
+
     /**
       * Returns `true` if these modifiers contain the lawless modifier.
       */

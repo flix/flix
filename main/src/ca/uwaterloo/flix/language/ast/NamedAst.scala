@@ -27,7 +27,7 @@ object NamedAst {
                   instances: Map[Name.NName, Map[String, List[NamedAst.Instance]]],
                   defsAndSigs: Map[Name.NName, Map[String, NamedAst.DefOrSig]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
-                  typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
+                  typeAliases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
                   entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
@@ -309,7 +309,7 @@ object NamedAst {
 
   object Type {
 
-    case class Var(tvar: ast.Type.UnkindedVar, loc: SourceLocation) extends NamedAst.Type
+    case class Var(tvar: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends NamedAst.Type
 
     case class Ambiguous(name: Name.QName, loc: SourceLocation) extends NamedAst.Type
 
@@ -357,7 +357,7 @@ object NamedAst {
 
   }
 
-  case class Scheme(quantifiers: List[ast.Type.UnkindedVar], tconstrs: List[NamedAst.TypeConstraint], base: NamedAst.Type)
+  case class Scheme(quantifiers: List[Symbol.UnkindedTypeVarSym], tconstrs: List[NamedAst.TypeConstraint], base: NamedAst.Type)
 
   sealed trait TypeParams {
     val tparams: List[NamedAst.TypeParam]
@@ -404,16 +404,16 @@ object NamedAst {
   sealed trait TypeParam {
     def name: Name.Ident
 
-    def tpe: ast.Type.UnkindedVar
+    def sym: Symbol.UnkindedTypeVarSym
 
     def loc: SourceLocation
   }
 
   object TypeParam {
 
-    case class Kinded(name: Name.Ident, tpe: ast.Type.UnkindedVar, kind: Kind, loc: SourceLocation) extends TypeParam
+    case class Kinded(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, kind: Kind, loc: SourceLocation) extends TypeParam
 
-    case class Unkinded(name: Name.Ident, tpe: ast.Type.UnkindedVar, loc: SourceLocation) extends TypeParam
+    case class Unkinded(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends TypeParam
 
   }
 

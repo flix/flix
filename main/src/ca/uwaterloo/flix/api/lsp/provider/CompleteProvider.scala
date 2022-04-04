@@ -178,9 +178,9 @@ object CompleteProvider {
       * Replaces the text in the given variable symbol `sym` everywhere in the type `tpe`
       * with an equivalent variable symbol with the given `newText`.
       */
-    def replaceText(tvar: Type.Var, tpe: Type, newText: String): Type = tpe match {
-      case Type.KindedVar(id, kind, loc, rigidity, text) if tvar.id == id => Type.KindedVar(id, kind, loc, rigidity, Some(newText))
-      case Type.KindedVar(_, _, _, _, _) => tpe
+    def replaceText(tvar: Symbol.TypeVarSym, tpe: Type, newText: String): Type = tpe match {
+      case Type.KindedVar(sym, loc) if tvar == sym => Type.KindedVar(sym.withText(Some(newText)), loc)
+      case Type.KindedVar(_, _) => tpe
       case Type.Cst(_, _) => tpe
 
       case Type.Apply(tpe1, tpe2, loc) =>
@@ -201,7 +201,7 @@ object CompleteProvider {
       * Formats the given type `tpe`.
       */
     def fmtType(clazz: TypedAst.Class, tpe: Type, hole: String): String =
-      FormatType.formatWellKindedType(replaceText(clazz.tparam.tpe, tpe, hole))
+      FormatType.formatWellKindedType(replaceText(clazz.tparam.sym, tpe, hole))
 
     /**
       * Formats the given formal parameters in `spec`.

@@ -149,7 +149,7 @@ object Deriver {
         tparams = tparams,
         fparams = List(KindedAst.FormalParam(param1, Ast.Modifiers.Empty, sc.base, loc), KindedAst.FormalParam(param2, Ast.Modifiers.Empty, sc.base, loc)),
         sc = Scheme(
-          tparams.map(_.tpe),
+          tparams.map(_.sym),
           List(Ast.TypeConstraint(eqClassSym, sc.base, loc)),
           Type.mkPureUncurriedArrow(List(sc.base, sc.base), Type.mkBool(loc), loc)
         ),
@@ -323,7 +323,7 @@ object Deriver {
         tparams = tparams,
         fparams = List(KindedAst.FormalParam(param1, Ast.Modifiers.Empty, sc.base, loc), KindedAst.FormalParam(param2, Ast.Modifiers.Empty, sc.base, loc)),
         sc = Scheme(
-          tparams.map(_.tpe),
+          tparams.map(_.sym),
           List(Ast.TypeConstraint(orderClassSym, sc.base, loc)),
           Type.mkPureUncurriedArrow(List(sc.base, sc.base), Type.mkEnum(comparisonEnumSym, Kind.Star, loc), loc)
         ),
@@ -488,7 +488,7 @@ object Deriver {
         tparams = tparams,
         fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, sc.base, loc)),
         sc = Scheme(
-          tparams.map(_.tpe),
+          tparams.map(_.sym),
           List(Ast.TypeConstraint(toStringClassSym, sc.base, loc)),
           Type.mkPureArrow(sc.base, Type.mkString(loc), loc)
         ),
@@ -624,7 +624,7 @@ object Deriver {
         tparams = tparams,
         fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, sc.base, loc)),
         sc = Scheme(
-          tparams.map(_.tpe),
+          tparams.map(_.sym),
           List(Ast.TypeConstraint(hashClassSym, sc.base, loc)),
           Type.mkPureArrow(sc.base, Type.mkInt32(loc), loc)
         ),
@@ -720,7 +720,7 @@ object Deriver {
     * Filters out non-star type parameters and wild type parameters.
     */
   private def getTypeConstraintsForTypeParams(tparams: List[KindedAst.TypeParam], clazz: Symbol.ClassSym, loc: SourceLocation): List[Ast.TypeConstraint] = tparams.collect {
-    case tparam if tparam.tpe.kind == Kind.Star && !tparam.name.isWild => Ast.TypeConstraint(clazz, tparam.tpe, loc)
+    case tparam if tparam.sym.kind == Kind.Star && !tparam.name.isWild => Ast.TypeConstraint(clazz, Type.KindedVar(tparam.sym, loc), loc)
   }
 
   /**

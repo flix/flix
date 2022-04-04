@@ -17,6 +17,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Dec.Namespace", "main/test/flix/Test.Dec.Namespace.flix"),
   new FlixTest("Test.Dec.OpaqueType", "main/test/flix/Test.Dec.OpaqueType.flix"),
   new FlixTest("Test.Dec.RelAlias", "main/test/flix/Test.Dec.RelAlias.flix")(Options.TestWithLibAll),
+  new FlixTest("Test.Dec.TopLevel", "main/test/flix/Test.Dec.TopLevel.flix"),
   new FlixTest("Test.Dec.TypeAlias", "main/test/flix/Test.Dec.TypeAlias.flix"),
 
   //
@@ -273,10 +274,6 @@ class LangSuite extends Suites(
     "main/test/flix/Test.Exp.Ref.Ref.flix",
     "main/test/flix/Test.Exp.Ref.Deref.flix",
     "main/test/flix/Test.Exp.Ref.Precedence.flix",
-  ), Options.TestWithLibAll),
-
-  new FlixTest("Test.Exp.ScopedRef", List(
-    "main/test/flix/Test.Exp.ScopedRef.flix"
   ), Options.TestWithLibAll),
 
   //

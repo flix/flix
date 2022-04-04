@@ -71,6 +71,20 @@ object Symbol {
   }
 
   /**
+    * Returns a fresh type variable symbol with the given text.
+    */
+  def freshKindedTypeVarSym(text: Option[String], kind: Kind, rigidity: Rigidity, loc: SourceLocation)(implicit flix: Flix): KindedTypeVarSym = {
+    new KindedTypeVarSym(flix.genSym.freshId(), text, kind, rigidity, loc)
+  }
+
+  /**
+    * Returns a fresh type variable symbol with the given text.
+    */
+  def freshUnkindedTypeVarSym(text: Option[String], rigidity: Rigidity, loc: SourceLocation)(implicit flix: Flix): UnkindedTypeVarSym = {
+    new UnkindedTypeVarSym(flix.genSym.freshId(), text, rigidity, loc)
+  }
+
+  /**
     * Returns a label symbol with the given text.
     */
   def freshLabel(text: String)(implicit flix: Flix): LabelSym = {
@@ -207,6 +221,71 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = text + Flix.Delimiter + id
+  }
+
+  trait TypeVarSym extends Locatable with Sourceable {
+    val id: Int
+    val text: Option[String]
+    val loc: SourceLocation
+    val rigidity: Rigidity
+
+    /**
+      * Returns the same symbol with the given text.
+      */
+    def withText(text: Option[String]): TypeVarSym
+
+    /**
+      * Returns the same symbol with the given rigidity.
+      */
+    def withRigidity(rigidity: Rigidity): TypeVarSym
+
+    override def src: Ast.Source = loc.source
+
+    override def equals(that: Any): Boolean = that match {
+      case tvar: TypeVarSym => this.id == tvar.id
+      case _ => false
+    }
+
+    override def hashCode: Int = id
+
+    /**
+      * Returns a string representation of the symbol.
+      */
+    override def toString: String = text.getOrElse("tvar") + Flix.Delimiter + id
+  }
+
+  /**
+    * Kinded type variable symbol.
+    */
+  final class KindedTypeVarSym(val id: Int, val text: Option[String], val kind: Kind, val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym with Ordered[KindedTypeVarSym] {
+
+    /**
+      * Returns the same symbol with the given kind.
+      */
+    def withKind(newKind: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, newKind, rigidity, loc)
+
+    override def withText(newText: Option[String]): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, rigidity, loc)
+
+    override def withRigidity(newRigidity: Rigidity): KindedTypeVarSym = new KindedTypeVarSym(id, text, kind, newRigidity, loc)
+
+    override def compare(that: KindedTypeVarSym): Int = that.id - this.id
+  }
+
+  /**
+    * Unkinded type variable symbol.
+    */
+  final class UnkindedTypeVarSym(val id: Int, val text: Option[String], val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym with Ordered[UnkindedTypeVarSym] {
+
+    override def withText(newText: Option[String]): UnkindedTypeVarSym = new UnkindedTypeVarSym(id, newText, rigidity, loc)
+
+    override def withRigidity(newRigidity: Rigidity): UnkindedTypeVarSym = new UnkindedTypeVarSym(id, text, newRigidity, loc)
+
+    /**
+      * Ascribes this UnkindedTypeVarSym with the given kind.
+      */
+    def ascribedWith(k: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, k, rigidity, loc)
+
+    override def compare(that: UnkindedTypeVarSym): Int = that.id - this.id
   }
 
   /**
