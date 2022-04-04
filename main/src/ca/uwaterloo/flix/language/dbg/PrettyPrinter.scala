@@ -83,7 +83,7 @@ object PrettyPrinter {
             .append(fmtSym(sym, formatter))
             .append(", [")
           for (freeVar <- freeVars) {
-            sb.append(fmtSym(freeVar.sym, formatter))
+            sb.append(visitExp(freeVar))
               .append(", ")
           }
           sb.append("])")

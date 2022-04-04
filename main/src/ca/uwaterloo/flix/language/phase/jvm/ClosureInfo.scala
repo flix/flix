@@ -1,12 +1,12 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.ErasedAst.FreeVar
+import ca.uwaterloo.flix.language.ast.ErasedAst.Expression
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 
 /**
   * Meta information about a closure.
   */
-case class ClosureInfo(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: MonoType) {
+case class ClosureInfo(sym: Symbol.DefnSym, freeVars: List[Expression], tpe: MonoType) {
   /**
     * Returns the hash code of `this` closure info.
     */

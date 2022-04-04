@@ -92,7 +92,7 @@ object LiftedAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Closure(sym: Symbol.DefnSym, freeVars: List[Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
     case class ApplyClo(exp: LiftedAst.Expression, args: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
 
@@ -201,8 +201,5 @@ object LiftedAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: LiftedAst.Expression)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
-
-  case class FreeVar(sym: Symbol.VarSym, tpe: Type)
-
 }
 

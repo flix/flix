@@ -77,7 +77,9 @@ object Inliner {
 
     case Expression.Var(sym, _, _) => subst0.get(sym).fold(exp0)(visitExp(_, subst0))
 
-    case Expression.Closure(_, _, _, _) => exp0
+    case Expression.Closure(sym, freeVars, tpe, loc) =>
+      val fvs = freeVars.map(visitExp(_, subst0))
+      Expression.Closure(sym, fvs, tpe, loc)
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -144,7 +146,6 @@ object Inliner {
         /// If `e1` is trivial and pure, then it is safe to inline without increasing execution time.
         val e1 = visitExp(exp1, subst0)
         val wantToPostInline = (occur, purity, isTrivialExp(e1)) match {
-          case (Occur.DontInline, _, _) => false
           case (_, Purity.Pure, true) => true
           case _ => false
         }

@@ -108,7 +108,7 @@ object Finalize {
         FinalAst.Expression.Var(sym, t, loc)
 
       case LiftedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
-        val fvs = freeVars.map(visitFreeVar)
+        val fvs = freeVars.map(visit)
         val t = visitType(tpe)
         FinalAst.Expression.Closure(sym, fvs, getFunctionTypeTemporaryToBeRemoved(fvs, t), t, loc)
 
@@ -387,11 +387,6 @@ object Finalize {
     FinalAst.FormalParam(p0.sym, tpe)
   }
 
-  private def visitFreeVar(v0: LiftedAst.FreeVar): FinalAst.FreeVar = {
-    val tpe = visitType(v0.tpe)
-    FinalAst.FreeVar(v0.sym, tpe)
-  }
-
   // TODO: Should be private
 
   /**
@@ -502,7 +497,7 @@ object Finalize {
   }
 
   // TODO: Deprecated
-  private def getFunctionTypeTemporaryToBeRemoved(fvs: List[FinalAst.FreeVar], tpe: MonoType): MonoType = tpe match {
+  private def getFunctionTypeTemporaryToBeRemoved(fvs: List[FinalAst.Expression], tpe: MonoType): MonoType = tpe match {
     case MonoType.Arrow(targs, tresult) =>
       val freeArgs = fvs.map(_.tpe)
       MonoType.Arrow(freeArgs ::: targs, tresult)

@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Purity.Impure
-import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, Purity, SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -135,13 +134,13 @@ object LambdaLift {
         m += (freshSymbol -> defn)
 
         // Construct the free variables.
-        val fvs = freeVars.map(visitFreeVar)
+        val fvs = freeVars.map(visitExp)
 
         // Construct the closure expression.
         LiftedAst.Expression.Closure(freshSymbol, fvs, tpe, loc)
 
       case SimplifiedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
-        val fvs = freeVars.map(visitFreeVar)
+        val fvs = freeVars.map(visitExp)
         LiftedAst.Expression.Closure(sym, fvs, tpe, loc)
 
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) =>
@@ -188,7 +187,10 @@ object LambdaLift {
         val e2 = visitExp(exp2)
         e1 match {
           case LiftedAst.Expression.Closure(defSym, freeVars, _, _) =>
-            val index = freeVars.indexWhere(freeVar => varSym == freeVar.sym)
+            val index = freeVars.indexWhere{
+              case LiftedAst.Expression.Var(sym, tpe, loc) => varSym == sym
+              case _ => throw InternalCompilerException("Unexpected expression")
+            }
             if (index == -1) {
               // function never calls itself
               LiftedAst.Expression.Let(varSym, e1, e2,tpe, purity, loc)
@@ -376,12 +378,4 @@ object LambdaLift {
   private def visitFormalParam(fparam: SimplifiedAst.FormalParam): LiftedAst.FormalParam = fparam match {
     case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
   }
-
-  /**
-    * Translates the given simplified free variable `fv` into a lifted free variable.
-    */
-  private def visitFreeVar(fv: SimplifiedAst.FreeVar): LiftedAst.FreeVar = fv match {
-    case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.FreeVar(sym, tpe)
-  }
-
 }

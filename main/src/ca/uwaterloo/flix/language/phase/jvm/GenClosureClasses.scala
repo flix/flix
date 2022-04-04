@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, FormalParam, FreeVar, Root}
+import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, FormalParam, Expression, Root}
 import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
@@ -113,7 +113,7 @@ object GenClosureClasses {
     * Invoke method for the given `defn`, `classType`, and `resultType`.
     */
   private def compileInvokeMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def,
-                                  freeVars: List[FreeVar], resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
+                                  freeVars: List[Expression], resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
     // Continuation class
     val continuationType = JvmOps.getContinuationInterfaceType(defn.tpe)
     val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(resultType))
@@ -124,7 +124,7 @@ object GenClosureClasses {
     invokeMethod.visitCode()
 
     // Free variables
-    val frees = defn.formals.take(freeVars.length).map(x => FreeVar(x.sym, x.tpe))
+    val frees = defn.formals.take(freeVars.length).map(x => (x.sym, x.tpe))
 
     // Function parameters
     val params = defn.formals.takeRight(defn.formals.length - freeVars.length)
@@ -133,7 +133,7 @@ object GenClosureClasses {
     val enterLabel = new Label()
 
     // Saving free variables on variable stack
-    for ((FreeVar(sym, tpe), ind) <- frees.zipWithIndex) {
+    for (((sym, tpe), ind) <- frees.zipWithIndex) {
       // Erased type of the free variable
       val erasedType = JvmOps.getErasedJvmType(tpe)
 
@@ -186,7 +186,7 @@ object GenClosureClasses {
   }
 
   private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def,
-                                                  freeVars: List[FreeVar])(implicit root: Root, flix: Flix): Unit = {
+                                                  freeVars: List[Expression])(implicit root: Root, flix: Flix): Unit = {
 
     val closureAbstractClass = JvmOps.getClosureAbstractClassType(defn.tpe)
 

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -92,14 +92,14 @@ object ClosureConv {
 
       // First, we collect the free variables in the lambda expression.
       // NB: We pass the lambda expression (instead of its body) to account for bound arguments.
-      val fvs = freeVars(exp0).toList
+      val fvs1 = freeVars(exp0).toList
 
       // We prepend the free variables to the arguments list. Thus all variables within the lambda body will be treated
       // uniformly. The implementation will supply values for the free variables, without any effort from the caller.
       // We introduce new symbols for each introduced parameter and replace their occurrence in the body.
       val subst = mutable.Map.empty[Symbol.VarSym, Symbol.VarSym]
-      val newArgs = fvs.map {
-        case (oldSym, ptype) =>
+      val newArgs = fvs1.map {
+        case (oldSym, ptype, loc) =>
           val newSym = Symbol.freshVarSym(oldSym)
           subst += (oldSym -> newSym)
           FormalParam(newSym, Ast.Modifiers.Empty, ptype, loc)
@@ -113,7 +113,10 @@ object ClosureConv {
       // The closure will actually be created at run time, where the values for the free variables are bound
       // and stored in the closure structure. When the closure is called, the bound values are passed as arguments.
       // In a later phase, we will lift the lambda to a top-level definition.
-      Expression.LambdaClosure(newArgs, fvs.map(v => FreeVar(v._1, v._2)), newBody, tpe, loc)
+      val fvs2 =  fvs1.map{
+        case (sym, tpe, loc) => Expression.Var(sym, tpe, loc)
+      }
+      Expression.LambdaClosure(newArgs, fvs2, newBody, tpe, loc)
 
     case Expression.Apply(e, args, tpe, loc) =>
       // We're trying to call some expression `e`. If `e` is a Ref, then it's a top-level function, so we directly call
@@ -315,7 +318,7 @@ object ClosureConv {
     * Does a left-to-right traversal of the AST, collecting free variables in order, in a LinkedHashSet.
     */
   // TODO: Use immutable, but sorted data structure?
-  private def freeVars(exp0: Expression): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = exp0 match {
+  private def freeVars(exp0: Expression): mutable.LinkedHashSet[(Symbol.VarSym, Type, SourceLocation)] = exp0 match {
     case Expression.Unit(_) => mutable.LinkedHashSet.empty
     case Expression.Null(_, _) => mutable.LinkedHashSet.empty
     case Expression.True(_) => mutable.LinkedHashSet.empty
@@ -329,7 +332,7 @@ object ClosureConv {
     case Expression.Int64(_, _) => mutable.LinkedHashSet.empty
     case Expression.BigInt(_, _) => mutable.LinkedHashSet.empty
     case Expression.Str(_, _) => mutable.LinkedHashSet.empty
-    case Expression.Var(sym, tpe, _) => mutable.LinkedHashSet((sym, tpe))
+    case Expression.Var(sym, tpe, loc) => mutable.LinkedHashSet((sym, tpe, loc))
     case Expression.Def(_, _, _) => mutable.LinkedHashSet.empty
     case Expression.Lambda(args, body, _, _) =>
       val bound = args.map(_.sym)

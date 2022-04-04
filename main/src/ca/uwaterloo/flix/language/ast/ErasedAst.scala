@@ -94,7 +94,7 @@ object ErasedAst {
 
     case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], fnMonoType: MonoType, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class Closure(sym: Symbol.DefnSym, freeVars: List[ErasedAst.Expression], fnMonoType: MonoType, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class ApplyClo(exp: ErasedAst.Expression, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
@@ -266,6 +266,4 @@ object ErasedAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ErasedAst.Expression)
 
   case class FormalParam(sym: Symbol.VarSym, tpe: MonoType)
-
-  case class FreeVar(sym: Symbol.VarSym, tpe: MonoType)
 }

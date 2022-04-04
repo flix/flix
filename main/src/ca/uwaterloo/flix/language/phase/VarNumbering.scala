@@ -88,7 +88,8 @@ object VarNumbering {
 
       case Expression.Var(_, _, _) => i0
 
-      case Expression.Closure(_, _, _, _) => i0
+      case Expression.Closure(_, freeVars, _, _) =>
+        visitExps(freeVars, i0)
 
       case Expression.ApplyClo(exp, args, _, _) =>
         val i = visitExp(exp, i0)

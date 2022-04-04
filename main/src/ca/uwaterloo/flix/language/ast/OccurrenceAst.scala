@@ -92,7 +92,7 @@ object OccurrenceAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class Closure(sym: Symbol.DefnSym, freeVars: List[Expression], tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class ApplyClo(exp: OccurrenceAst.Expression, args: List[OccurrenceAst.Expression], tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression
 
@@ -202,8 +202,6 @@ object OccurrenceAst {
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
 
-  case class FreeVar(sym: Symbol.VarSym, tpe: Type)
-
   sealed trait Occur
 
   object Occur {
@@ -228,10 +226,6 @@ object OccurrenceAst {
      */
     case object ManyBranch extends Occur
 
-    /**
-     * Represents a variable that we explicitly do not want to inline.
-     */
-    case object DontInline extends Occur
   }
 }
 

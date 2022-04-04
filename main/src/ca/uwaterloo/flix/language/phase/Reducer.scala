@@ -108,9 +108,7 @@ object Reducer {
       }
 
     case Expression.Closure(sym, freeVars, tpe, loc) =>
-      val fvs = freeVars.map {
-        case OccurrenceAst.FreeVar(s, varType) => LiftedAst.FreeVar(env0.getOrElse(s, s), varType)
-      }
+      val fvs = freeVars.map(visitExp(_, env0))
       LiftedAst.Expression.Closure(sym, fvs, tpe, loc)
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>

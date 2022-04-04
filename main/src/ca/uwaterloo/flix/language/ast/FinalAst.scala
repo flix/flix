@@ -95,7 +95,7 @@ object FinalAst {
     case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     // TODO: Get rid of the fnMonoType here.
-    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], fnMonoType: MonoType, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class Closure(sym: Symbol.DefnSym, freeVars: List[Expression], fnMonoType: MonoType, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class ApplyClo(exp: FinalAst.Expression, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
@@ -204,7 +204,4 @@ object FinalAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: FinalAst.Expression)
 
   case class FormalParam(sym: Symbol.VarSym, tpe: MonoType)
-
-  case class FreeVar(sym: Symbol.VarSym, tpe: MonoType)
-
 }

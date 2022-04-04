@@ -119,8 +119,7 @@ object GenExpression {
       // Capturing free args
       for ((f, i) <- freeVars.zipWithIndex) {
         visitor.visitInsn(DUP)
-        val v = Expression.Var(f.sym, f.tpe, loc)
-        compileExpression(v, visitor, currentClass, lenv0, entryPoint)
+        compileExpression(f, visitor, currentClass, lenv0, entryPoint)
         visitor.visitFieldInsn(PUTFIELD, jvmType.name.toInternalName, s"clo$i", JvmOps.getErasedJvmType(f.tpe).toDescriptor)
       }
 
