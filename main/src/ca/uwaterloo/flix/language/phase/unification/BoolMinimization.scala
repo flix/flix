@@ -23,9 +23,23 @@ import scala.annotation.tailrec
 
 object BoolMinimization {
 
-  sealed trait Formula
+  /**
+    * Minimizes the Boolean formula given by `t`.
+    */
+  def minimize(t: Type): Type = {
+    val res = toType(toCNF(fromType(t)))
+    val before = t.size
+    val after = res.size
+    if (before > 9 || after > 9) {
+      val goodBad = if (after <= before) "+" else " "
+      println(s"$goodBad $before cnf'ed to $after")
+    }
+    res
+  }
 
-  object Formula {
+  private sealed trait Formula
+
+  private object Formula {
 
     case object True extends Formula
 
@@ -169,7 +183,7 @@ object BoolMinimization {
   /**
     * Build `Not(f)` and performs shallow minimization.
     */
-  def mkNot(f: Formula): Formula = {
+  private def mkNot(f: Formula): Formula = {
     import Formula._
     f match {
       case True => False
@@ -185,7 +199,7 @@ object BoolMinimization {
     * Merges the conjunctions if arguments are conjunctions themselves and
     * performs shallow minimization along with unit propagation.
     */
-  def mkAnd(f: Formula*): Formula = {
+  private def mkAnd(f: Formula*): Formula = {
     mkAnd(f.toList)
   }
 
@@ -193,7 +207,7 @@ object BoolMinimization {
     * Merges the conjunctions in `f` into the new conjunction and performs
     * shallow minimization.
     */
-  def mkAnd(f: List[Formula]): Formula = {
+  private def mkAnd(f: List[Formula]): Formula = {
     import Formula._
     val baseValue: Option[List[Formula]] = Some(Nil)
     val hoistedTerms = f.foldRight(baseValue) {
@@ -230,7 +244,7 @@ object BoolMinimization {
     * Merges the disjunctions if arguments are disjunctions themselves and
     * performs shallow minimization.
     */
-  def mkOr(f: Formula*): Formula = {
+  private def mkOr(f: Formula*): Formula = {
     mkOr(f.toList)
   }
 
@@ -238,7 +252,7 @@ object BoolMinimization {
     * Merges the disjunctions in `f` into the new disjunction and performs
     * shallow minimization.
     */
-  def mkOr(f: List[Formula]): Formula = {
+  private def mkOr(f: List[Formula]): Formula = {
     import Formula._
     val baseValue: Option[List[Formula]] = Some(Nil)
     val hoistedTerms = f.foldRight(baseValue) {
@@ -268,7 +282,7 @@ object BoolMinimization {
     * Transform `f` to an equivalent formula where negation only appears
     * on variables directly.
     */
-  def toNNF(f: Formula): Formula = {
+  private def toNNF(f: Formula): Formula = {
     import Formula._
     f match {
       case True => True
@@ -298,7 +312,7 @@ object BoolMinimization {
     * disjunctions of either variables or negated variables.
     * Ex. `x ∧ (x ∨ y) ∧ (z ∨ ¬y ∨ ¬z)`
     */
-  def toCNF(f: Formula): Formula = {
+  private def toCNF(f: Formula): Formula = {
     def aux(f0: Formula): Formula = {
       import Formula._
       f0 match {
@@ -327,27 +341,13 @@ object BoolMinimization {
   }
 
   /**
-    * Minimizes the Boolean formula given by `t`.
-    */
-  def minimize(t: Type): Type = {
-    val res = toType(toCNF(fromType(t)))
-    val before = t.size
-    val after = res.size
-    if (before > 9 || after > 9) {
-      val goodBad = if (after <= before) "+" else " "
-      println(s"$goodBad $before cnf'ed to $after")
-    }
-    res
-  }
-
-  /**
     * Transform `f` to an equivalent formula that is a disjunction of
     * conjunctions of either variables or negated variables.
     * Ex. `x ∨ (x ∧ y) ∨ (z ∧ ¬y ∧ ¬z)`
     */
-  def toDNF(f: Formula): Formula = ???
+  private def toDNF(f: Formula): Formula = ???
 
-  def fromType(t: Type): Formula = {
+  private def fromType(t: Type): Formula = {
     import Formula._
     t match {
       case Type.True => True
@@ -360,7 +360,7 @@ object BoolMinimization {
     }
   }
 
-  def toType(f: Formula): Type = {
+  private def toType(f: Formula): Type = {
     import Formula._
     f match {
       case True => Type.True
