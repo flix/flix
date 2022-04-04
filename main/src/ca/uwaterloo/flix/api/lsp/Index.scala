@@ -121,7 +121,7 @@ object Index {
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
     */
-  def useOf(sym: Symbol.KindedTypeVarSym, loc: SourceLocation): Index = Index.empty.copy(varUses = MultiMap.singleton(sym, loc))
+  def useOf(sym: Symbol.KindedTypeVarSym, loc: SourceLocation): Index = Index.empty.copy(tvarUses = MultiMap.singleton(sym, loc))
 
   /**
     * Returns an index with a def of the given `field`.
