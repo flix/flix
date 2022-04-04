@@ -82,21 +82,26 @@ object BoolMinimization {
     * Assumes the list is sorted.
     */
   private def removeSimpleDuplicates(terms: List[Formula]): Option[List[Formula]] = {
-    import Formula._
-    terms match {
-      case Nil =>
-        Some(Nil)
-      case _ :: Nil =>
-        Some(terms)
-      case Var(v1) :: Var(v2) :: rest if v1 == v2 =>
-        removeSimpleDuplicates(Var(v2) :: rest)
-      case Not(Var(v1)) :: Not(Var(v2)) :: rest if v1 == v2 =>
-        removeSimpleDuplicates(Not(Var(v2)) :: rest)
-      case Var(v1) :: Not(Var(v2)) :: _ if v1 == v2 =>
-        None
-      case other :: rest =>
-        removeSimpleDuplicates(rest).map(other :: _)
+    @tailrec
+    def aux(terms0: List[Formula], acc: List[Formula]): Option[List[Formula]] = {
+      import Formula._
+      terms0 match {
+        case Nil =>
+          Some(acc.reverse)
+        case last :: Nil =>
+          Some((last :: acc).reverse)
+        case Var(v1) :: Var(v2) :: rest if v1 == v2 =>
+          aux(Var(v2) :: rest, acc)
+        case Not(Var(v1)) :: Not(Var(v2)) :: rest if v1 == v2 =>
+          aux(Not(Var(v2)) :: rest, acc)
+        case Var(v1) :: Not(Var(v2)) :: _ if v1 == v2 =>
+          None
+        case other :: rest =>
+          aux(rest, other :: acc)
+      }
     }
+    if (terms.length > 1000) println(terms.length)
+    aux(terms, Nil)
   }
 
   /**
@@ -344,13 +349,13 @@ object BoolMinimization {
       case Not(term) => TypeNot(toType(term))
       case And(terms) => terms match {
         case Nil => throw InternalCompilerException("Cannot transform empty conjunction")
-        case fst :: rest => rest.foldLeft(toType(fst)){
+        case fst :: rest => rest.foldLeft(toType(fst)) {
           (acc, f) => TypeAnd(acc, toType(f))
         }
       }
       case Or(terms) => terms match {
         case Nil => throw InternalCompilerException("Cannot transform empty disjunction")
-        case fst :: rest => rest.foldLeft(toType(fst)){
+        case fst :: rest => rest.foldLeft(toType(fst)) {
           (acc, f) => TypeOr(acc, toType(f))
         }
       }
