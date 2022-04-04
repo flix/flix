@@ -77,7 +77,7 @@ object OccurrenceAnalyzer {
     /// Inline defs if:
     /// Def consists of a single non-self function call.
     val defContext = e match {
-      case OccurrenceAst.Expression.ApplyDefTail(sym, _, _, _) =>
+      case OccurrenceAst.Expression.ApplyDefTail(sym, _, _, _, _) =>
         val isNonSelfCall = sym != defn.sym
         DefContext(isNonSelfCall)
       case _ => DefContext(false)
