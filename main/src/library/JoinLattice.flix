@@ -18,7 +18,7 @@
 ///
 /// A type class for join semi lattices.
 ///
-pub class JoinLattice[a] with PartialOrder[a] {
+pub lawful class JoinLattice[a] with PartialOrder[a] {
 
     ///
     /// Returns the least upper bound of `x` and `y`.

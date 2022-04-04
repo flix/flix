@@ -17,7 +17,7 @@
 ///
 /// A type class for data structures that can be folded.
 ///
-pub lawless class Foldable[t : Type -> Type] {
+pub class Foldable[t : Type -> Type] {
 
     ///
     /// Left-associative fold of a structure.
