@@ -35,8 +35,14 @@ object BoolMinimization {
 
     case class Not(term: Formula) extends Formula
 
+    /**
+      * A conjunction of terms. And empty list is `True`.
+      */
     case class And(terms: List[Formula]) extends Formula
 
+    /**
+      * A disjunction of terms. And empty list is `True`.
+      */
     case class Or(terms: List[Formula]) extends Formula
 
   }
@@ -348,13 +354,13 @@ object BoolMinimization {
       case Var(v) => v
       case Not(term) => TypeNot(toType(term))
       case And(terms) => terms match {
-        case Nil => throw InternalCompilerException("Cannot transform empty conjunction")
+        case Nil => Type.True
         case fst :: rest => rest.foldLeft(toType(fst)) {
           (acc, f) => TypeAnd(acc, toType(f))
         }
       }
       case Or(terms) => terms match {
-        case Nil => throw InternalCompilerException("Cannot transform empty disjunction")
+        case Nil => Type.True
         case fst :: rest => rest.foldLeft(toType(fst)) {
           (acc, f) => TypeOr(acc, toType(f))
         }
