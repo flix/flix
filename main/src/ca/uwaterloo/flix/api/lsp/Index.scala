@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import scala.collection.mutable.ArrayBuffer
@@ -79,9 +79,9 @@ object Index {
   def occurrenceOf(pred: Name.Pred): Index = empty + Entity.Pred(pred)
 
   /**
-    * Returns an index for the given `tpe0`.
+    * Returns an index for the given type `t`.
     */
-  def occurrenceOf(tc: TypeConstructor, loc: SourceLocation): Index = empty + Entity.TypeCon(tc, loc)
+  def occurrenceOf(t: Type): Index = empty + Entity.Type(t)
 
   /**
     * Returns an index for the given local variable `sym0`.

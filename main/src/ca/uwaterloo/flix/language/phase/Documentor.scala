@@ -105,7 +105,7 @@ object Documentor {
     //
     // Type Aliases.
     //
-    val typeAliasesByNS = root.typealiases.values.groupBy(getNameSpace).flatMap {
+    val typeAliasesByNS = root.typeAliases.values.groupBy(getNameSpace).flatMap {
       case (ns, decls) =>
         val filtered = decls.filter(_.mod.isPublic).toList
         val sorted = filtered.sortBy(_.sym.name)
