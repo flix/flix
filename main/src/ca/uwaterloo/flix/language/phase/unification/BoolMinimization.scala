@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.SourceLocation.Unknown
+import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.annotation.tailrec
@@ -28,11 +29,14 @@ object BoolMinimization {
     */
   def minimize(t: Type): Type = {
     val res = toType(toCNF(fromType(t)))
-    val before = t.size
-    val after = res.size
-    if (before > 9 || after > 9) {
-      val goodBad = if (after <= before) "+" else " "
-      println(s"$goodBad $before cnf'ed to $after")
+    val prints = false
+    if (prints) {
+      val before = t.size
+      val after = res.size
+      if (before > 9 || after > 9) {
+        val goodBad = if (after <= before) "+" else " "
+        println(s"$goodBad $before cnf'ed to $after")
+      }
     }
     res
   }
@@ -353,10 +357,14 @@ object BoolMinimization {
       case Type.True => True
       case Type.False => False
       case v: Type.KindedVar => Var(v)
-      case TypeNot(t0) => mkNot(fromType(t0))
-      case TypeAnd(t1, t2) => mkAnd(fromType(t1), fromType(t2))
-      case TypeOr(t1, t2) => mkOr(fromType(t1), fromType(t2))
-      case other => throw InternalCompilerException(s"Unexpected non-boolean type ${other.toString}")
+      case Type.Apply(Type.Cst(TypeConstructor.Not, _), t0, _) =>
+        mkNot(fromType(t0))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), t1, _), t2, _) =>
+        mkAnd(fromType(t1), fromType(t2))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), t1, _), t2, _) =>
+        mkOr(fromType(t1), fromType(t2))
+      case other =>
+        throw InternalCompilerException(s"Unexpected non-boolean type ${other.toString}")
     }
   }
 
@@ -366,59 +374,19 @@ object BoolMinimization {
       case True => Type.True
       case False => Type.False
       case Var(v) => v
-      case Not(term) => TypeNot(toType(term))
+      case Not(term) => Type.mkNot(toType(term), Unknown)
       case And(terms) => terms match {
         case Nil => Type.True
         case fst :: rest => rest.foldLeft(toType(fst)) {
-          (acc, f) => TypeAnd(acc, toType(f))
+          (acc, f) => Type.mkAnd(acc, toType(f), Unknown)
         }
       }
       case Or(terms) => terms match {
         case Nil => Type.True
         case fst :: rest => rest.foldLeft(toType(fst)) {
-          (acc, f) => TypeOr(acc, toType(f))
+          (acc, f) => Type.mkOr(acc, toType(f), Unknown)
         }
       }
-    }
-  }
-
-  private object TypeNot {
-    @inline
-    def apply(t: Type): Type =
-      Type.Apply(Type.Cst(TypeConstructor.Not, SourceLocation.Unknown), t, SourceLocation.Unknown)
-
-    @inline
-    def unapply(tpe: Type): Option[Type] = tpe match {
-      case Type.Apply(Type.Cst(TypeConstructor.Not, _), x, _) => Some(x)
-      case _ => None
-    }
-  }
-
-  private object TypeAnd {
-    @inline
-    def apply(t1: Type, t2: Type): Type = {
-      val uknwn = SourceLocation.Unknown
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, uknwn), t1, uknwn), t2, uknwn)
-    }
-
-    @inline
-    def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), x, _), y, _) => Some((x, y))
-      case _ => None
-    }
-  }
-
-  private object TypeOr {
-    @inline
-    def apply(t1: Type, t2: Type): Type = {
-      val uknwn = SourceLocation.Unknown
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, uknwn), t1, uknwn), t2, uknwn)
-    }
-
-    @inline
-    def unapply(tpe: Type): Option[(Type, Type)] = tpe match {
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _), y, _) => Some((x, y))
-      case _ => None
     }
   }
 
@@ -434,9 +402,9 @@ object BoolMinimization {
           Some(s),
           Kind.Bool,
           Rigidity.Flexible,
-          SourceLocation.Unknown
+          Unknown
         ),
-        SourceLocation.Unknown
+        Unknown
       )
     )
 
