@@ -552,7 +552,7 @@ object Ast {
       * More precise text should be preferred when choosing a text to use when substituting.
       *
       */
-    def lessPreciseThan(that: VarText): Boolean = this.precision < that.precision
+    def isStrictlyLessPreciseThan(that: VarText): Boolean = this.precision < that.precision
   }
 
   object VarText {

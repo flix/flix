@@ -34,8 +34,8 @@ object Substitution {
     // Ensure that we do not add any x -> x mappings.
     tpe match {
       case y: Type.Var if x.id == y.sym.id => empty
-      case y: Type.Var if y.sym.text lessPreciseThan x.text => Substitution(Map(x -> y.withText(x.text)))
-      case y: Type.Var if x.text lessPreciseThan y.sym.text => Substitution(Map(x.withText(y.sym.text) -> y))
+      case y: Type.Var if y.sym.text isStrictlyLessPreciseThan x.text => Substitution(Map(x -> y.withText(x.text)))
+      case y: Type.Var if x.text isStrictlyLessPreciseThan y.sym.text => Substitution(Map(x.withText(y.sym.text) -> y))
       case _ => Substitution(Map(x -> tpe))
     }
   }
@@ -188,9 +188,9 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
       tpe match {
         case tvar2: Type.KindedVar =>
           (tvar1.text, tvar2.sym.text) match {
-            case (text1, text2) if text1 lessPreciseThan text2 =>
+            case (text1, text2) if text1 isStrictlyLessPreciseThan text2 =>
               replacement = replacement + (tvar1 -> text2)
-            case (text1, text2) if text2 lessPreciseThan text1 =>
+            case (text1, text2) if text2 isStrictlyLessPreciseThan text1 =>
               replacement = replacement + (tvar2.sym -> text1)
             case _ => // nop
           }

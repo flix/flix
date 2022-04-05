@@ -261,7 +261,7 @@ object FormatType {
         val string = prefix + suffix
         audience match {
           case Audience.Internal => string
-          case Audience.External => text match { // MATT ? what to do if synthetic?
+          case Audience.External => text match {
             case VarText.Absent => string
             case VarText.Text(s) => s
             case VarText.Synthetic(s) => s
