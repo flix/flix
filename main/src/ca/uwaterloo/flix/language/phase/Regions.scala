@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
+import scala.collection.SortedSet
+
 object Regions {
 
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Regions") {
@@ -356,9 +358,7 @@ object Regions {
   }
 
   private def checkType(tpe: Type, scope: List[Type.KindedVar], loc: SourceLocation): Validation[Unit, CompilationMessage] = {
-    val regionVars = tpe.typeVars.filter {
-      case tvar => tvar.sym.kind == Kind.Bool && tvar.sym.rigidity == Rigidity.Rigid
-    }
+    val regionVars = regionVarsOf(tpe)
     val diff = regionVars -- scope
 
     if (diff.nonEmpty) {
@@ -367,6 +367,16 @@ object Regions {
     }
 
     ().toSuccess
+  }
+
+  /**
+    * Returns all region variables in the given type `tpe`.
+    */
+  private def regionVarsOf(tpe: Type): SortedSet[Type.KindedVar] = tpe.typeVars.filter {
+    case tvar =>
+      val isBool = tvar.sym.kind == Kind.Bool
+      val isRigid = tvar.sym.rigidity == Rigidity.Rigid
+      isBool && isRigid
   }
 
 }
