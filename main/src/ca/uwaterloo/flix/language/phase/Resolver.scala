@@ -286,14 +286,16 @@ object Resolver {
   def resolveClass(c0: NamedAst.Class, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
     case NamedAst.Class(doc, ann0, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
       val tparam = Params.resolveTparam(tparam0)
-      for {
-        ann <- traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
-        sigsList <- traverse(signatures)(resolveSig(_, taenv, ns0, root))
-        // ignore the parameter of the super class; we don't use it
-        superClasses <- traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, taenv, ns0, root))
-        laws <- traverse(laws0)(resolveDef(_, taenv, ns0, root))
-        sigs = sigsList.map(sig => (sig.sym, sig)).toMap
-      } yield ResolvedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
+      val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
+      val sigsListVal = traverse(signatures)(resolveSig(_, taenv, ns0, root))
+      // ignore the parameter of the super class; we don't use it
+      val superClassesVal = traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, taenv, ns0, root))
+      val lawsVal = traverse(laws0)(resolveDef(_, taenv, ns0, root))
+      mapN(annVal, sigsListVal, superClassesVal, lawsVal) {
+        case (ann, sigsList, superClasses, laws) =>
+          val sigs = sigsList.map(sig => (sig.sym, sig)).toMap
+          ResolvedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
+      }
   }
 
   /**
@@ -301,13 +303,15 @@ object Resolver {
     */
   def resolveInstance(i0: NamedAst.Instance, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Instance, ResolutionError] = i0 match {
     case NamedAst.Instance(doc, mod, clazz0, tpe0, tconstrs0, defs0, loc) =>
-      for {
-        clazz <- lookupClassForImplementation(clazz0, ns0, root)
-        tpe <- resolveType(tpe0, taenv, ns0, root)
-        tconstrs <- traverse(tconstrs0)(resolveTypeConstraint(_, taenv, ns0, root))
-        defs <- traverse(defs0)(resolveDef(_, taenv, ns0, root))
-        sym = Symbol.freshInstanceSym(clazz.sym, clazz0.loc)
-      } yield ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns0, loc)
+      val clazzVal = lookupClassForImplementation(clazz0, ns0, root)
+      val tpeVal = resolveType(tpe0, taenv, ns0, root)
+      val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, taenv, ns0, root))
+      val defsVal = traverse(defs0)(resolveDef(_, taenv, ns0, root))
+      mapN(clazzVal, tpeVal, tconstrsVal, defsVal) {
+        case (clazz, tpe, tconstrs, defs) =>
+          val sym = Symbol.freshInstanceSym(clazz.sym, clazz0.loc)
+          ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns0, loc)
+      }
   }
 
   /**
@@ -315,10 +319,11 @@ object Resolver {
     */
   def resolveSig(s0: NamedAst.Sig, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Sig, ResolutionError] = s0 match {
     case NamedAst.Sig(sym, spec0, exp0) =>
-      for {
-        exp <- traverse(exp0)(Expressions.resolve(_, taenv, ns0, root))
-        spec <- resolveSpec(spec0, taenv, ns0, root)
-      } yield ResolvedAst.Sig(sym, spec, exp.headOption)
+      val specVal = resolveSpec(spec0, taenv, ns0, root)
+      val expVal = traverse(exp0)(Expressions.resolve(_, taenv, ns0, root))
+      mapN(specVal, expVal) {
+        case (spec, exp) => ResolvedAst.Sig(sym, spec, exp.headOption)
+      }
   }
 
   /**
@@ -357,10 +362,11 @@ object Resolver {
     case NamedAst.Def(sym, spec0, exp0) =>
       flix.subtask(sym.toString, sample = true)
 
-      for {
-        exp <- Expressions.resolve(exp0, taenv, ns0, root)
-        spec <- resolveSpec(spec0, taenv, ns0, root)
-      } yield ResolvedAst.Def(sym, spec, exp)
+      val specVal = resolveSpec(spec0, taenv, ns0, root)
+      val expVal = Expressions.resolve(exp0, taenv, ns0, root)
+      mapN(specVal, expVal) {
+        case (spec, exp) => ResolvedAst.Def(sym, spec, exp)
+      }
   }
 
   /**
@@ -385,33 +391,35 @@ object Resolver {
   /**
     * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
     */
-  def resolveEnum(e0: NamedAst.Enum, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Enum, ResolutionError] = {
-    val tparams = resolveTypeParams(e0.tparams, ns0, root)
-    val tconstrs = Nil
-    val derivesVal = resolveDerivations(e0.derives, ns0, root)
-    val annVal = traverse(e0.ann)(visitAnnotation(_, taenv, ns0, root))
-    val casesVal = traverse(e0.cases) {
-      case (name, NamedAst.Case(enum, tag, tpe)) =>
-        for {
-          t <- resolveType(tpe, taenv, ns0, root)
-        } yield {
-          val freeVars = e0.tparams.tparams.map(_.sym)
-          val caseType = t
-          val enumType = mkUnkindedEnum(e0.sym, freeVars, e0.sym.loc)
-          val base = Type.mkTag(e0.sym, tag, caseType, enumType, tpe.loc)
-          val sc = ResolvedAst.Scheme(freeVars, tconstrs, base)
-          name -> ResolvedAst.Case(enum, tag, t, sc)
-        }
-    }
-    for {
-      ann <- annVal
-      cases <- casesVal
-      tpe <- resolveType(e0.tpe, taenv, ns0, root)
-      derives <- derivesVal
-    } yield {
-      val sc = ResolvedAst.Scheme(tparams.tparams.map(_.sym), tconstrs, tpe)
-      ResolvedAst.Enum(e0.doc, ann, e0.mod, e0.sym, tparams, derives, cases.toMap, tpe, sc, e0.loc)
-    }
+  def resolveEnum(e0: NamedAst.Enum, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Enum, ResolutionError] = e0 match {
+    case NamedAst.Enum(doc, ann0, mod, sym, tparams0, derives0, cases0, tpe0, loc) =>
+      val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
+      val tparams = resolveTypeParams(tparams0, ns0, root)
+      val derivesVal = resolveDerivations(derives0, ns0, root)
+      val casesVal = traverse(cases0)(resolveCase(_, e0, taenv, ns0, root))
+      val tpeVal = resolveType(tpe0, taenv, ns0, root)
+      mapN(annVal, derivesVal, casesVal, tpeVal) {
+        case (ann, derives, cases, tpe) =>
+          val sc = ResolvedAst.Scheme(tparams.tparams.map(_.sym), Nil, tpe)
+          ResolvedAst.Enum(doc, ann, mod, sym, tparams, derives, cases.toMap, tpe, sc, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given case `caze0` in the given namespace `ns0`.
+    */
+  private def resolveCase(caze0: (Name.Tag, NamedAst.Case), enum0: NamedAst.Enum, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix) = (enum0, caze0) match {
+    case (NamedAst.Enum(doc, ann, mod, sym, tparams, _, _, _, loc), (name, NamedAst.Case(enumIdent, tag, tpe0))) =>
+      val tpeVal = resolveType(tpe0, taenv, ns0, root)
+      mapN(tpeVal) {
+        tpe =>
+          val freeVars = tparams.tparams.map(_.sym)
+          val caseType = tpe
+          val enumType = mkUnkindedEnum(sym, freeVars, sym.loc)
+          val base = Type.mkTag(sym, tag, caseType, enumType, tpe.loc)
+          val sc = ResolvedAst.Scheme(freeVars, Nil, base)
+          name -> ResolvedAst.Case(enumIdent, tag, tpe, sc)
+      }
   }
 
   /**
