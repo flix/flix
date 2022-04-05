@@ -89,6 +89,11 @@ object Index {
   def occurrenceOf(sym: Symbol.VarSym, tpe0: Type): Index = empty + Entity.LocalVar(sym, tpe0)
 
   /**
+    * Returns an index for the given local variable `sym0`.
+    */
+  def occurrenceOf(sym: Symbol.KindedTypeVarSym): Index = empty + Entity.TypeVar(sym)
+
+  /**
     * Returns an index with the symbol 'sym' used at location 'loc'.
     */
   def useOf(sym: Symbol.ClassSym, loc: SourceLocation): Index = Index.empty.copy(classUses = MultiMap.singleton(sym, loc))
@@ -142,6 +147,15 @@ object Index {
     * Returns an index with a use of the predicate `pred`.
     */
   def useOf(pred: Name.Pred): Index = Index.empty.copy(predUses = MultiMap.singleton(pred, pred.loc))
+
+  /**
+    * Applies `f` to each element in `xs` and merges the result into a single index.
+    */
+  def traverse[T](xs: Iterable[T])(f: T => Index): Index = {
+    xs.foldLeft(Index.empty) {
+      case (acc, idx) => acc ++ f(idx)
+    }
+  }
 
 }
 
