@@ -15,8 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.api.lsp.Index.traverse
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule, Sig, Spec}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, Impl, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule, Sig, Spec, TypeParam}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -49,26 +50,43 @@ object Indexer {
   /**
     * Returns a reverse index for the given definition `def0`.
     */
-  private def visitDef(def0: Def): Index = {
-    val idx0 = Index.occurrenceOf(def0)
-    val idx1 = visitExp(def0.impl.exp)
-    val idx2 = def0.spec.fparams.foldLeft(Index.empty) {
-      case (acc, fparam) => acc ++ visitFormalParam(fparam)
-    }
-    val idx3 = visitScheme(def0.spec.declaredScheme, def0.sym.loc)
-    idx0 ++ idx1 ++ idx2 ++ idx3
+  private def visitDef(def0: Def): Index = def0 match {
+    case Def(_, spec, impl) =>
+      val idx0 = Index.occurrenceOf(def0)
+      val idx1 = visitSpec(spec)
+      val idx2 = visitImpl(impl)
+      idx0 ++ idx1 ++ idx2
   }
 
   /**
     * Returns a reverse index for the given signature `sig0`.
     */
   private def visitSig(sig0: Sig): Index = sig0 match {
-    case Sig(_, Spec(_, _, _, _, fparams, _, _, _, _), _) =>
-      val idx1 = Index.occurrenceOf(sig0)
-      val idx2 = fparams.foldLeft(Index.empty) {
-        case (acc, fparam) => acc ++ visitFormalParam(fparam)
-      }
-      idx1 ++ idx2
+    case Sig(_, spec, impl) =>
+      val idx0 = Index.occurrenceOf(sig0)
+      val idx1 = visitSpec(spec)
+      val idx2 = Index.traverse(impl)(visitImpl)
+      idx0 ++ idx1 ++ idx2
+  }
+
+  /**
+    * Returns a reverse index for the given `impl`.
+    */
+  private def visitImpl(impl: Impl): Index = impl match {
+    case Impl(exp, _) => visitExp(exp)
+  }
+
+  /**
+    * Returns a reverse index for the given `spec`.
+    */
+  private def visitSpec(spec: Spec): Index = spec match {
+    case Spec(_, _, _, tparams, fparams, declaredScheme, retTpe, eff, _) =>
+      val idx1 = traverse(tparams)(visitTypeParam)
+      val idx2 = traverse(fparams)(visitFormalParam)
+      val idx3 = traverse(declaredScheme.constraints)(visitTypeConstraint)
+      val idx4 = visitType(retTpe)
+      val idx5 = visitType(eff)
+      idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5
   }
 
   /**
@@ -406,17 +424,19 @@ object Indexer {
   }
 
   /**
+    * Returns a reverse index for the given type parameter `tparam0`.
+    */
+  private def visitTypeParam(tparam0: TypeParam): Index = tparam0 match {
+    case TypeParam(_, sym, _) => Index.occurrenceOf(sym)
+  }
+
+  /**
     * Returns a reverse index for the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: FormalParam): Index = fparam0 match {
     case FormalParam(_, _, tpe, _) =>
       Index.occurrenceOf(fparam0) ++ visitType(tpe)
   }
-
-  /**
-    * Returns a reverse index for the given type scheme `sc0` at the given source location `loc`.
-    */
-  private def visitScheme(sc0: Scheme, loc: SourceLocation): Index = visitType(sc0.base)
 
   /**
     * Returns a reverse index for the given type `tpe0`.
@@ -435,6 +455,13 @@ object Indexer {
     case Type.Alias(_, _, tpe, _) => visitType(tpe) // TODO index TypeAlias
     case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: $tpe0.")
     case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: $tpe0.")
+  }
+
+  /**
+    * Returns a reverse index for the given type constraint `tpe0`.
+    */
+  private def visitTypeConstraint(tconstr0: Ast.TypeConstraint): Index = tconstr0 match {
+    case Ast.TypeConstraint(sym, arg, loc) => Index.useOf(sym, loc) ++ visitType(arg)
   }
 
 }

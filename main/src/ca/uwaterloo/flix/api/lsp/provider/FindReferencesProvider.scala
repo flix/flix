@@ -62,6 +62,7 @@ object FindReferencesProvider {
         case Entity.LocalVar(sym, _) => findVarReferences(sym)
 
         case Entity.Type(t) => t match {
+          case Type.KindedVar(sym, loc) => findTypeVarReferences(sym)
           case Type.Cst(tc, _) => tc match {
             case TypeConstructor.RecordRowExtend(field) => findFieldReferences(field)
             case TypeConstructor.SchemaRowExtend(pred) => findPredReferences(pred)
@@ -127,6 +128,13 @@ object FindReferencesProvider {
   }
 
   private def findVarReferences(sym: Symbol.VarSym)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(sym.loc)
+    val useSites = index.usesOf(sym)
+    val locs = defSite :: useSites.toList.map(Location.from)
+    ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+  }
+
+  private def findTypeVarReferences(sym: Symbol.KindedTypeVarSym)(implicit index: Index, root: Root): JObject = {
     val defSite = Location.from(sym.loc)
     val useSites = index.usesOf(sym)
     val locs = defSite :: useSites.toList.map(Location.from)
