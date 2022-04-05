@@ -145,8 +145,8 @@ object Regions {
       }
 
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Tag(sym, tag, e, tpe, eff, loc)
+      mapN(visitExp(exp), checkType(tpe, scope, loc)) {
+        case (e, _) => Expression.Tag(sym, tag, e, tpe, eff, loc)
       }
 
     case Expression.Tuple(elms, tpe, eff, loc) =>
