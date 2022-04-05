@@ -209,8 +209,8 @@ object Indexer {
       i0 ++ i1
 
     case Expression.Choose(exps, rules, _, _, _) =>
-      visitExps(exps) ++ rules.foldLeft(Index.empty) {
-        case (acc, ChoiceRule(_, exp)) => acc ++ visitExp(exp)
+      visitExps(exps) ++ traverse(rules) {
+        case ChoiceRule(_, exp) => visitExp(exp)
       }
 
     case Expression.Tag(sym, tag, exp, _, _, _) =>
@@ -268,9 +268,10 @@ object Indexer {
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
-      rules.foldLeft(i0) {
-        case (index, CatchRule(_, _, exp)) => index ++ visitExp(exp)
+      val i1 = traverse(rules) {
+        case CatchRule(_, _, exp) => visitExp(exp)
       }
+      i0 ++ i1
 
     case Expression.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args) ++ Index.occurrenceOf(exp0)
@@ -304,9 +305,9 @@ object Indexer {
 
     case Expression.SelectChannel(rules, default, _, _, _) =>
       val i0 = default.map(visitExp).getOrElse(Index.empty)
-      val i1 = rules.foldLeft(Index.empty) {
-        case (index, SelectChannelRule(sym, chan, body)) =>
-          index ++ Index.occurrenceOf(sym, sym.tvar.ascribedWith(Kind.Star)) ++ visitExp(chan) ++ visitExp(body)
+      val i1 = traverse(rules) {
+        case SelectChannelRule(sym, chan, body) =>
+          Index.occurrenceOf(sym, sym.tvar.ascribedWith(Kind.Star)) ++ visitExp(chan) ++ visitExp(body)
       }
       i0 ++ i1 ++ Index.occurrenceOf(exp0)
 
@@ -319,10 +320,8 @@ object Indexer {
     case Expression.Force(exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.FixpointConstraintSet(cs, _, _, _) =>
-      cs.foldLeft(Index.empty) {
-        case (index, c) => index ++ visitConstraint(c)
-      }
+    case Expression.FixpointConstraintSet(cs, _, _, _) => traverse(cs)(visitConstraint)
+
 
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
