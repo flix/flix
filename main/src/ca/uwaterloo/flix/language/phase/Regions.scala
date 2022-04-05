@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Type}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
@@ -32,11 +33,11 @@ object Regions {
   }
 
   private def visitDef(def0: Def)(implicit flix: Flix): Validation[Def, CompilationMessage] =
-    mapN(visitExp(def0.impl.exp)) {
+    mapN(visitExp(def0.impl.exp)(Nil, flix)) {
       case e => def0.copy(impl = def0.impl.copy(exp = e))
     }
 
-  private def visitExp(exp0: Expression)(implicit flix: Flix): Validation[Expression, CompilationMessage] = exp0 match {
+  private def visitExp(exp0: Expression)(implicit scope: List[Type.KindedVar], flix: Flix): Validation[Expression, CompilationMessage] = exp0 match {
     case Expression.Unit(_) => exp0.toSuccess
 
     case Expression.Null(_, _) => exp0.toSuccess
@@ -105,9 +106,9 @@ object Regions {
         case (e1, e2) => Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
       }
 
-    case Expression.Scope(sym, exp, tpe, eff, loc) =>
+    case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Scope(sym, e, tpe, eff, loc)
+        case e => Expression.Scope(sym, regionVar, e, tpe, eff, loc)
       }
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
@@ -351,6 +352,19 @@ object Regions {
         case (e1, e2, e3) => Expression.ReifyEff(sym, e1, e2, e3, tpe, eff, loc)
       }
 
+  }
+
+  private def checkType(tpe: Type, scope: List[Type.KindedVar], loc: SourceLocation): Validation[Unit, CompilationMessage] = {
+    val regionVars = tpe.typeVars.filter {
+      case tvar => tvar.sym.kind == Kind.Bool && tvar.sym.rigidity == Rigidity.Rigid
+    }
+    val diff = regionVars -- scope
+
+    if (diff.nonEmpty) {
+      println(diff)
+    }
+
+    ().toSuccess
   }
 
 }
