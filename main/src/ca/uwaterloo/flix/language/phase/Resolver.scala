@@ -68,7 +68,7 @@ object Resolver {
           }
         }
 
-        val definitionsVal = resolveDefs(root, taenv, oldRoot, changeSet)
+        val defsVal = resolveDefs(root, taenv, oldRoot, changeSet)
 
         val enumsVal = root.enums.flatMap {
           case (ns0, enums) => enums.map {
@@ -78,17 +78,13 @@ object Resolver {
           }
         }
 
-        for {
-          classes <- classesVal
-          instances <- sequence(instancesVal)
-          definitions <- definitionsVal
-          enums <- sequence(enumsVal)
-          _ <- checkSuperClassDag(classes)
-        } yield ResolvedAst.Root(
-          classes, combine(instances), definitions, enums.toMap, taenv, taOrder, root.entryPoint, root.reachable, root.sources
-        )
+        flatMapN(classesVal, sequence(instancesVal), defsVal, sequence(enumsVal)) {
+          case (classes, instances, defs, enums) =>
+            mapN(checkSuperClassDag(classes)) {
+              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, taenv, taOrder, root.entryPoint, root.reachable, root.sources)
+            }
+        }
     }
-
   }
 
   /**
@@ -203,29 +199,36 @@ object Resolver {
     }
 
     // Extract all the aliases and namespaces from the map.
-    val aliases1 = for {
+    val aliasesMap0 = for {
       (ns, aliasesInNs) <- aliases0
       (_, alias) <- aliasesInNs
     } yield (alias, ns)
 
-    for {
-      // Partially resolve the aliases
-      aliases1 <- traverse(aliases1) {
-        case (alias, ns) => semiResolveTypeAlias(alias, ns)
-      }
+    // Partially resolve the aliases
+    val semiAliasesVal = traverse(aliasesMap0) {
+      case (alias, ns) => semiResolveTypeAlias(alias, ns)
+    }
 
+    flatMapN(semiAliasesVal) {
       // Get the resolution order
-      sortedSyms <- findResolutionOrder(aliases1)
+      semiAliases =>
+        flatMapN(findResolutionOrder(semiAliases)) {
+          sortedSyms =>
+            // Create mapping for the partially resolved aliases
+            val semiAliasEnv = semiAliases.map(alias => alias.sym -> alias).toMap
 
-      // Create mapping for the partially resolved aliases
-      semiAliasEnv = aliases1.map(alias => alias.sym -> alias).toMap
+            // Get the sorted aliases from the mapping
+            val sortedAliases = sortedSyms.map(semiAliasEnv)
 
-      // Get the sorted aliases from the mapping
-      sortedAliases = sortedSyms.map(semiAliasEnv)
+            // Resolve the sorted aliases
+            val aliasesVal = finishResolveTypeAliases(sortedAliases)
 
-      // Resolve the sorted aliases
-      aliases <- finishResolveTypeAliases(sortedAliases)
-    } yield (aliases, sortedSyms)
+            mapN(aliasesVal) {
+              aliases => (aliases, sortedSyms)
+            }
+
+        }
+    }
   }
 
 
@@ -241,12 +244,14 @@ object Resolver {
     /**
       * Performs name resolution on the given constraint `c0` in the given namespace `ns0`.
       */
-    def resolve(c0: NamedAst.Constraint, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Constraint, ResolutionError] = {
-      for {
-        ps <- traverse(c0.cparams)(p => Params.resolve(p, ns0, root))
-        h <- Predicates.Head.resolve(c0.head, taenv, ns0, root)
-        bs <- traverse(c0.body)(b => Predicates.Body.resolve(b, taenv, ns0, root))
-      } yield ResolvedAst.Constraint(ps, h, bs, c0.loc)
+    def resolve(c0: NamedAst.Constraint, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Constraint, ResolutionError] = c0 match {
+      case NamedAst.Constraint(cparams0, head0, body0, loc) =>
+        val cparamsVal = traverse(cparams0)(p => Params.resolve(p, ns0, root))
+        val headVal = Predicates.Head.resolve(head0, taenv, ns0, root)
+        val bodyVal = traverse(body0)(Predicates.Body.resolve(_, taenv, ns0, root))
+        mapN(cparamsVal, headVal, bodyVal) {
+          case (cparams, head, body) => ResolvedAst.Constraint(cparams, head, body, loc)
+        }
     }
 
   }
