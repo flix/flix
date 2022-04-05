@@ -299,7 +299,7 @@ object BoolMinimization {
         case True => False
         case False => True
         case Var(v) => mkNot(Var(v))
-        case Not(term) => term
+        case Not(term) => toNNF(term)
         case And(terms) => toNNF(mkOr(terms.map(t => mkNot(t))))
         case Or(terms) => toNNF(mkAnd(terms.map(t => mkNot(t))))
       }
