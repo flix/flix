@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Type}
+import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
@@ -107,7 +108,7 @@ object Regions {
       }
 
     case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
-      mapN(visitExp(exp)) {
+      mapN(visitExp(exp)(regionVar :: scope, flix)) {
         case e => Expression.Scope(sym, regionVar, e, tpe, eff, loc)
       }
 
@@ -200,8 +201,8 @@ object Regions {
       }
 
     case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Ref(e1, e2, tpe, eff, loc)
+      mapN(visitExp(exp1), visitExp(exp2), checkType(tpe, scope, loc)) {
+        case (e1, e2, _) => Expression.Ref(e1, e2, tpe, eff, loc)
       }
 
     case Expression.Deref(exp, tpe, eff, loc) =>
@@ -361,7 +362,8 @@ object Regions {
     val diff = regionVars -- scope
 
     if (diff.nonEmpty) {
-      println(diff)
+      val rvar = diff.head
+      return TypeError.RegionVarEscapes(rvar, tpe, loc).toFailure
     }
 
     ().toSuccess
