@@ -27,23 +27,13 @@ object Indexer {
     * Returns a reverse index for the given AST `root`.
     */
   def visitRoot(root: Root): Index = {
-    val idx1 = root.defs.foldLeft(Index.empty) {
-      case (acc, (_, def0)) => acc ++ visitDef(def0)
+    val idx1 = traverse(root.defs.values)(visitDef)
+    val idx2 = traverse(root.enums.values)(visitEnum)
+    val idx3 = traverse(root.classes.values)(visitClass)
+    val idx4 = traverse(root.instances.values) {
+      instances => traverse(instances)(visitInstance)
     }
-    val idx2 = root.enums.foldLeft(Index.empty) {
-      case (acc, (_, enum0)) => acc ++ visitEnum(enum0)
-    }
-    val idx3 = root.classes.foldLeft(Index.empty) {
-      case (acc, (_, class0)) => acc ++ visitClass(class0)
-    }
-    val idx4 = root.instances.foldLeft(Index.empty) {
-      case (acc, (_, instances)) => acc ++ instances.foldLeft(Index.empty) {
-        case (acc1, instance) => acc1 ++ visitInstance(instance)
-      }
-    }
-    val idx5 = root.sigs.foldLeft(Index.empty) {
-      case (acc, (_, sig)) => acc ++ visitSig(sig)
-    }
+    val idx5 = traverse(root.sigs.values)(visitSig)
     idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5
   }
 
@@ -65,7 +55,7 @@ object Indexer {
     case Sig(_, spec, impl) =>
       val idx0 = Index.occurrenceOf(sig0)
       val idx1 = visitSpec(spec)
-      val idx2 = Index.traverse(impl)(visitImpl)
+      val idx2 = traverse(impl)(visitImpl)
       idx0 ++ idx1 ++ idx2
   }
 
@@ -92,15 +82,17 @@ object Indexer {
   /**
     * Returns a reverse index for the given enum `enum0`.
     */
-  private def visitEnum(enum0: Enum): Index = {
-    val idx0 = Index.occurrenceOf(enum0)
-    val idx1 = enum0.derives.foldLeft(Index.empty) {
-      case (idx, Ast.Derivation(clazz, loc)) => Index.useOf(clazz, loc)
-    }
-    val idx2 = enum0.cases.foldLeft(Index.empty) {
-      case (idx, (tag, caze)) => idx ++ Index.occurrenceOf(caze)
-    }
-    idx0 ++ idx1 ++ idx2
+  private def visitEnum(enum0: Enum): Index = enum0 match {
+    case Enum(_, _, _, _, tparams, derives, cases, _, _, _) =>
+      val idx0 = Index.occurrenceOf(enum0)
+      val idx1 = traverse(tparams)(visitTypeParam)
+      val idx2 = traverse(derives) {
+        case Ast.Derivation(clazz, loc) => Index.useOf(clazz, loc)
+      }
+      val idx3 = traverse(cases) {
+        case (_, caze) => Index.occurrenceOf(caze)
+      }
+    idx0 ++ idx1 ++ idx2 ++ idx3
   }
 
   /**
@@ -112,13 +104,12 @@ object Indexer {
     * Returns a reverse index for the given instance `instance0`.
     */
   private def visitInstance(instance0: Instance): Index = instance0 match {
-    case Instance(_, _, sym, tpe, _, defs, _, _) =>
+    case Instance(_, _, sym, tpe, tconstrs, defs, _, _) =>
       val idx1 = Index.useOf(sym.clazz, sym.loc)
       val idx2 = visitType(tpe)
-      val idx3 = defs.foldLeft(Index.empty) {
-        case (acc, defn) => visitDef(defn)
-      }
-      idx1 ++ idx2 ++ idx3
+      val idx3 = traverse(tconstrs)(visitTypeConstraint)
+      val idx4 = traverse(defs)(visitDef)
+      idx1 ++ idx2 ++ idx3 ++ idx4
   }
 
   /**
@@ -212,13 +203,14 @@ object Indexer {
 
     case Expression.Match(exp, rules, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
-      rules.foldLeft(i0) {
-        case (index, MatchRule(pat, guard, exp)) => index ++ visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
+      val i1 = traverse(rules) {
+        case MatchRule(pat, guard, exp) => visitPat(pat) ++ visitExp(guard) ++ visitExp(exp)
       }
+      i0 ++ i1
 
     case Expression.Choose(exps, rules, _, _, _) =>
-      visitExps(exps) ++ rules.foldLeft(Index.empty) {
-        case (acc, ChoiceRule(_, exp)) => acc ++ visitExp(exp)
+      visitExps(exps) ++ traverse(rules) {
+        case ChoiceRule(_, exp) => visitExp(exp)
       }
 
     case Expression.Tag(sym, tag, exp, _, _, _) =>
@@ -276,9 +268,10 @@ object Indexer {
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
-      rules.foldLeft(i0) {
-        case (index, CatchRule(_, _, exp)) => index ++ visitExp(exp)
+      val i1 = traverse(rules) {
+        case CatchRule(_, _, exp) => visitExp(exp)
       }
+      i0 ++ i1
 
     case Expression.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args) ++ Index.occurrenceOf(exp0)
@@ -312,9 +305,9 @@ object Indexer {
 
     case Expression.SelectChannel(rules, default, _, _, _) =>
       val i0 = default.map(visitExp).getOrElse(Index.empty)
-      val i1 = rules.foldLeft(Index.empty) {
-        case (index, SelectChannelRule(sym, chan, body)) =>
-          index ++ Index.occurrenceOf(sym, sym.tvar.ascribedWith(Kind.Star)) ++ visitExp(chan) ++ visitExp(body)
+      val i1 = traverse(rules) {
+        case SelectChannelRule(sym, chan, body) =>
+          Index.occurrenceOf(sym, sym.tvar.ascribedWith(Kind.Star)) ++ visitExp(chan) ++ visitExp(body)
       }
       i0 ++ i1 ++ Index.occurrenceOf(exp0)
 
@@ -327,10 +320,8 @@ object Indexer {
     case Expression.Force(exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.FixpointConstraintSet(cs, _, _, _) =>
-      cs.foldLeft(Index.empty) {
-        case (index, c) => index ++ visitConstraint(c)
-      }
+    case Expression.FixpointConstraintSet(cs, _, _, _) => traverse(cs)(visitConstraint)
+
 
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
@@ -360,10 +351,7 @@ object Indexer {
   /**
     * Returns a reverse index for the given expressions `exps0`.
     */
-  private def visitExps(exps0: List[Expression]): Index =
-    exps0.foldLeft(Index.empty) {
-      case (index, exp0) => index ++ visitExp(exp0)
-    }
+  private def visitExps(exps0: List[Expression]): Index = traverse(exps0)(visitExp)
 
   /**
     * Returns a reverse index for the given pattern `pat0`.
@@ -393,18 +381,16 @@ object Indexer {
   /**
     * Returns a reverse index for the given patterns `pats0`.
     */
-  private def visitPats(pats0: List[Pattern]): Index = pats0.foldLeft(Index.empty) {
-    case (acc, pat0) => acc ++ visitPat(pat0)
-  }
+  private def visitPats(pats0: List[Pattern]): Index = traverse(pats0)(visitPat)
 
   /**
     * Returns a reverse index for the given constraint `c0`.
     */
-  private def visitConstraint(c0: Constraint): Index = {
-    val i = visitHead(c0.head)
-    c0.body.foldLeft(i) {
-      case (index, b0) => index ++ visitBody(b0)
-    }
+  private def visitConstraint(c0: Constraint): Index = c0 match {
+    case Constraint(_, head, body, _) =>
+      val idx1 = visitHead(head)
+      val idx2 = traverse(body)(visitBody)
+      idx1 ++ idx2
   }
 
   /**
