@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
-import scala.collection.SortedSet
+import scala.collection.immutable.SortedSet
 
 object Regions {
 
