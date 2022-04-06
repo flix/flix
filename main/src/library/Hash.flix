@@ -17,7 +17,7 @@
 ///
 /// A type class for types that can be hashed.
 ///
-pub lawless class Hash[a] {
+pub class Hash[a] {
     ///
     /// Returns a hash value for the given x.
     ///

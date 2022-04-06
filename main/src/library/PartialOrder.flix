@@ -17,7 +17,7 @@
 ///
 /// A Partial Order is a function ⊑ which satisfies three properties: reflexivity, anti-symmetry, and transitivity.
 ///
-pub class PartialOrder[a] {
+pub lawful class PartialOrder[a] {
 
     ///
     /// Returns `true` if `x` is smaller or equal to `y`.
