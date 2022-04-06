@@ -190,11 +190,36 @@ object Typer {
     }
   }
 
+  private def transformEntrypoint(defn: TypedAst.Def, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = defn match {
+    case TypedAst.Def(sym, spec, impl) =>
+      // If this is not the entrypoint, no need to modify the def.
+      if (!root.entryPoint.contains(defn.sym)) {
+        return defn.toSuccess
+      }
+
+      val argTypes = spec.fparams.map(_.tpe)
+
+      argTypes match {
+        case tpe :: Nil =>
+        case _ :: _ :: _ => ??? // too many args
+        case Nil => ??? // impossible, should have been replaced by Unit
+      }
+
+  }
+
+  private def transformEntrypointArg()
+
   private def transformEntrypoint(defn: KindedAst.Def, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[KindedAst.Def, TypeError] = defn match {
     case KindedAst.Def(sym, spec, exp) =>
+      // If this is not the entrypoint, no need to modify the def.
       if (!root.entryPoint.contains(defn.sym)) {
-        return ().toSuccess
+        return defn.toSuccess
       }
+
+
+
+      // MATT this is too complex
+      // MATT do this in a simpler way: check fparams and return type separately
 
       val arrayEntrypointScheme = getArrayEntrypointScheme(root)
       val unitEntrypointScheme = getUnitEntrypointScheme(root)
