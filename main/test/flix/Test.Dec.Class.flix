@@ -6,14 +6,14 @@ namespace Test/Dec/Class {
 
     namespace Test02 {
 
-        lawless class X[a] {
+        class X[a] {
             pub def f(x: a): Bool
         }
 
     }
 
     namespace Test03 {
-        lawless class X[a] {
+        class X[a] {
             pub def f(x: a): Bool
         }
 
@@ -25,11 +25,11 @@ namespace Test/Dec/Class {
     }
 
     namespace Test04 {
-        lawless class C[a] {
+        class C[a] {
             pub def f(x: a): Bool
         }
 
-        lawless class D[a] {
+        class D[a] {
             pub def g(x: a): Bool
         }
 
@@ -49,7 +49,7 @@ namespace Test/Dec/Class {
         use Test/Dec/Class.List.Nil;
         use Test/Dec/Class.Option;
 
-        pub lawless class C[a] {
+        pub class C[a] {
             pub def f(x: a): Bool
         }
 
@@ -80,7 +80,7 @@ namespace Test/Dec/Class {
         use Test/Dec/Class.Option.None;
         use Test/Dec/Class.Option.Some;
 
-        lawless class F[m : Type -> Type] {
+        class F[m : Type -> Type] {
             pub def map(f: a -> b, x: m[a]): m[b]
         }
 
@@ -93,7 +93,7 @@ namespace Test/Dec/Class {
     }
 
     namespace Test09 {
-        lawless class Eff[e : Bool] {
+        class Eff[e : Bool] {
             pub def isPure(f: a -> b & e): Bool
         }
 
@@ -103,13 +103,13 @@ namespace Test/Dec/Class {
     }
 
     namespace Test10 {
-        lawless class C[a] {
+        class C[a] {
             pub def f(x: a): Bool
         }
 
-        lawless class D[a] with C[a]
+        class D[a] with C[a]
 
-        lawless class E[a] with D[a]
+        class E[a] with D[a]
 
         instance C[Int32] {
             pub def f(_x: Int32): Bool = true
@@ -125,7 +125,7 @@ namespace Test/Dec/Class {
     }
 
     namespace Test11 {
-        class C[a] {
+        lawful class C[a] {
             pub def f(x: a, y: a): Bool
 
             // TODO handle namespaces better
@@ -138,7 +138,7 @@ namespace Test/Dec/Class {
     }
 
     namespace Test12 {
-        lawless class C[a] {
+        class C[a] {
             pub def f(): a
 
             law l: forall (_x: a) . true
@@ -150,7 +150,7 @@ namespace Test/Dec/Class {
     }
 
     namespace Test13 {
-        lawless class C[a] {
+        class C[a] {
             pub def f(): a
 
             pub def g(): a = Test/Dec/Class/Test13/C.f()
@@ -175,11 +175,11 @@ namespace Test/Dec/Class {
     }
 
     namespace Test14 {
-        lawless class C[a] {
+        class C[a] {
             pub def c(x: a): Int32
         }
 
-        lawless class D[a] with C[a] {
+        class D[a] with C[a] {
             pub def d(x: a): Int32
         }
 
@@ -187,15 +187,15 @@ namespace Test/Dec/Class {
     }
 
     namespace Test15 {
-        lawless class C[a]
+        class C[a]
 
-        lawless class D[a]
+        class D[a]
 
         pub def f(x: a, y: b): Bool with C[a], D[b] = ???
     }
 
     namespace Test16 {
-        lawless class D[a] {
+        class D[a] {
             pub def f(x: a, y: a): Bool
         }
 
@@ -205,7 +205,7 @@ namespace Test/Dec/Class {
     }
 
     namespace Test17 {
-        lawless class D[a] {
+        class D[a] {
             pub def f(x: a): Bool
         }
 
@@ -218,8 +218,8 @@ namespace Test/Dec/Class {
         pub enum E[_: Bool]
         pub enum F[_: Bool, _: Type]
 
-        lawless class C[a]
-        lawless class D[a: Type -> Type]
+        class C[a]
+        class D[a: Type -> Type]
 
         instance C[E[true]]
         instance C[F[false, a]]

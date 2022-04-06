@@ -17,7 +17,7 @@
 ///
 /// A type class for division.
 ///
-pub lawless class Div[a] {
+pub class Div[a] {
     ///
     /// Returns `x` divided by `y`.
     ///

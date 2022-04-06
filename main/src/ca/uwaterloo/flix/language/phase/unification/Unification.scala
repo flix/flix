@@ -33,9 +33,9 @@ object Unification {
     } else {
       (x.sym.rigidity, y.sym.rigidity) match {
         // Case 1: x is flexible
-        case (Rigidity.Flexible, _) => Result.Ok(Substitution.singleton(x, y))
+        case (Rigidity.Flexible, _) => Result.Ok(Substitution.singleton(x.sym, y))
         // Case 2: y is flexible
-        case (_, Rigidity.Flexible) => Result.Ok(Substitution.singleton(y, x))
+        case (_, Rigidity.Flexible) => Result.Ok(Substitution.singleton(y.sym, x))
         // Case 3: both variables are rigid
         case (Rigidity.Rigid, Rigidity.Rigid) => Result.Err(UnificationError.RigidVar(x, y))
       }
@@ -60,7 +60,7 @@ object Unification {
       return Result.Err(UnificationError.OccursCheck(x, tpe))
     }
 
-    Result.Ok(Substitution.singleton(x, tpe))
+    Result.Ok(Substitution.singleton(x.sym, tpe))
   }
 
   /**
@@ -152,7 +152,7 @@ object Unification {
           // Introduce a fresh type variable to represent one more level of the row.
           val restRow2 = Type.freshVar(Kind.RecordRow, tvar.loc)
           val type2 = Type.mkRecordRowExtend(field1, fieldType1, restRow2, tvar.loc)
-          val subst = Substitution.singleton(tv, type2)
+          val subst = Substitution.singleton(tv.sym, type2)
           Ok((subst, restRow2))
         }
 
@@ -198,7 +198,7 @@ object Unification {
           // Introduce a fresh type variable to represent one more level of the row.
           val restRow2 = Type.freshVar(Kind.SchemaRow, tvar.loc)
           val type2 = Type.mkSchemaRowExtend(label1, fieldType1, restRow2, tvar.loc)
-          val subst = Substitution.singleton(tv, type2)
+          val subst = Substitution.singleton(tv.sym, type2)
           Ok((subst, restRow2))
         }
 
@@ -412,7 +412,7 @@ object Unification {
     */
   def unbindVar(tvar: Type.KindedVar): InferMonad[Unit] =
     InferMonad(s => {
-      Ok((s.unbind(tvar), ()))
+      Ok((s.unbind(tvar.sym), ()))
     })
 
   /**
