@@ -345,9 +345,7 @@ object Simplifier {
         SimplifiedAst.Expression.Tag(sym, tag, e, tpe, e.purity, loc)
       case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
         val es = elms.map(pat2exp)
-        val purity = es.foldLeft[Purity](Pure){
-          case (acc, exp) => combinePurities(acc, exp.purity)
-        }
+        val purity = combineAll(es.map(_.purity))
         SimplifiedAst.Expression.Tuple(es, tpe, purity, loc)
       case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat0.")
     }
@@ -401,7 +399,7 @@ object Simplifier {
         case Some(TypeConstructor.Str) => SemanticOperator.StringOp.Eq
         case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
       }
-      val purity = combinePurities(e1.purity, e2.purity)
+      val purity = combine(e1.purity, e2.purity)
       SimplifiedAst.Expression.Binary(sop, BinaryOperator.Equal, e1, e2, Type.Bool, purity, loc)
     }
 
@@ -411,7 +409,7 @@ object Simplifier {
     def mkAdd(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
       val add = SemanticOperator.Int32Op.Add
       val tpe = Type.Int32
-      val purity = combinePurities(e1.purity, e2.purity)
+      val purity = combine(e1.purity, e2.purity)
       SimplifiedAst.Expression.Binary(add, BinaryOperator.Plus, e1, e2, tpe, purity, loc)
     }
 
@@ -421,7 +419,7 @@ object Simplifier {
     def mkSub(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
       val sub = SemanticOperator.Int32Op.Sub
       val tpe = Type.Int32
-      val purity = combinePurities(e1.purity,e2.purity)
+      val purity = combine(e1.purity, e2.purity)
       SimplifiedAst.Expression.Binary(sub, BinaryOperator.Minus, e1, e2, tpe, purity, loc)
     }
 
@@ -482,7 +480,7 @@ object Simplifier {
           // Success case: evaluate the match body.
           val success = visitExp(body)
 
-          val purity = combinePurities(effectToPurity(guard.eff), effectToPurity(body.eff))
+          val purity = combine(effectToPurity(guard.eff), effectToPurity(body.eff))
 
           // Failure case: Jump to the next label.
           val failure = SimplifiedAst.Expression.JumpTo(next, tpe, purity, loc)
@@ -491,7 +489,7 @@ object Simplifier {
           field -> patternMatchList(List(pat), List(matchVar), guard, success, failure
           )
       }
-      val purity = combinePurities(effectToPurity(rules.head.exp.eff), effectToPurity(rules.head.guard.eff))
+      val purity = combine(effectToPurity(rules.head.exp.eff), effectToPurity(rules.head.guard.eff))
 
       // Construct the error branch.
       val errorBranch = defaultLab -> SimplifiedAst.Expression.MatchError(tpe, loc)
@@ -500,9 +498,7 @@ object Simplifier {
       val entry = SimplifiedAst.Expression.JumpTo(ruleLabels.head, tpe, purity, loc)
 
       // The purity of the branch
-      val branchPurity = (errorBranch :: branches).foldLeft[Purity](Pure){
-        case (acc, (_, exp)) => combinePurities(acc, exp.purity)
-      }
+      val branchPurity = combineAll((errorBranch :: branches).map{case (_, exp) => exp.purity})
 
       // Assemble all the branches together.
       val branch = SimplifiedAst.Expression.Branch(entry, branches.toMap + errorBranch, tpe, branchPurity, loc)
@@ -564,7 +560,7 @@ object Simplifier {
         case (lit :: ps, v :: vs) if isPatLiteral(lit) =>
           val exp = patternMatchList(ps, vs, guard, succ, fail)
           val cond = mkEqual(pat2exp(lit), SimplifiedAst.Expression.Var(v, lit.tpe, lit.loc), lit.loc)
-          val purity = combinePurities(combinePurities(cond.purity, exp.purity), fail.purity)
+          val purity = combine(cond.purity, exp.purity, fail.purity)
           SimplifiedAst.Expression.IfThenElse(cond, exp, fail, succ.tpe, purity, lit.loc)
 
         /**
@@ -583,7 +579,7 @@ object Simplifier {
           val inner = patternMatchList(pat :: ps, freshVar :: vs, guard, succ, fail)
           val purity1 = inner.purity
           val consequent = SimplifiedAst.Expression.Let(freshVar, SimplifiedAst.Expression.Untag(sym, tag, SimplifiedAst.Expression.Var(v, tpe, loc), pat.tpe, purity1, loc), inner, succ.tpe, purity1, loc)
-          val purity2 = combinePurities(combinePurities(cond.purity, consequent.purity), fail.purity)
+          val purity2 = combine(cond.purity, consequent.purity, fail.purity)
           SimplifiedAst.Expression.IfThenElse(cond, consequent, fail, succ.tpe, purity2, loc)
 
         /**
@@ -628,7 +624,7 @@ object Simplifier {
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(actualBase, Type.Int32, purity, loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length, loc)
           val lengthCheck = mkEqual(actualArrayLengthExp, expectedArrayLengthExp, loc)
-          val purity1 = combinePurities(lengthCheck.purity, combinePurities(patternCheck.purity, fail.purity))
+          val purity1 = combine(lengthCheck.purity, patternCheck.purity, fail.purity)
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, purity1, loc)
 
         /**
@@ -673,7 +669,7 @@ object Simplifier {
           }
           val op = SemanticOperator.Int32Op.Ge
           val lengthCheck = SimplifiedAst.Expression.Binary(op, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Bool, actualArrayLengthExp.purity, loc)
-          val purity = combinePurities(combinePurities(lengthCheck.purity, patternCheck.purity), fail.purity)
+          val purity = combine(lengthCheck.purity, patternCheck.purity, fail.purity)
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, purity, loc)
 
         /**
@@ -719,7 +715,7 @@ object Simplifier {
           }
           val ge = SemanticOperator.Int32Op.Ge
           val lengthCheck = SimplifiedAst.Expression.Binary(ge, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Bool, actualArrayLengthExp.purity, loc)
-          val purity2 = combinePurities(combinePurities(lengthCheck.purity, patternCheck.purity), fail.purity)
+          val purity2 = combine(lengthCheck.purity, patternCheck.purity, fail.purity)
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, purity2, loc)
 
 
@@ -813,7 +809,7 @@ object Simplifier {
               SimplifiedAst.Expression.Let(matchVar, untagExp, acc, acc.tpe, untagExp.purity, loc)
           }
           val elseExp = acc
-          val purity = combinePurities(condExp.purity, thenExp.purity)
+          val purity = combine(condExp.purity, thenExp.purity)
           SimplifiedAst.Expression.IfThenElse(condExp, thenExp, elseExp, tpe, purity, loc)
       }
 
@@ -1076,11 +1072,25 @@ object Simplifier {
   }
 
   /**
-   * Merges purities `p1` and `p2`
-   * A merged purity is only pure if both `p1` and `that` are pure, otherwise it is always impure.
+   * Combines purities `p1` and `p2`
+   * A combined purity is only pure if both `p1` and `p2` are pure, otherwise it is always impure.
    */
-  def combinePurities(p1: Purity, p2: Purity): Purity = (p1, p2) match {
+  def combine(p1: Purity, p2: Purity): Purity = (p1, p2) match {
     case (Pure, Pure) => Pure
     case _ => Impure
+  }
+
+  /**
+   * Combine `p1`, `p2` and `p3`
+   * A combined purity is only pure if `p1`, `p2` and `p3` are pure, otherwise it is always impure.
+   */
+  def combine(p1: Purity, p2: Purity, p3: Purity): Purity = combine(p1, combine (p2, p3))
+
+  /**
+   * Combine `purities`
+   * A combined purity is only pure if every purity in `purities` are pure, otherwise it is always impure.
+   */
+  def combineAll(purities: List[Purity]): Purity = purities.foldLeft[Purity](Pure){
+    case (acc, purity) => combine(acc, purity)
   }
 }
