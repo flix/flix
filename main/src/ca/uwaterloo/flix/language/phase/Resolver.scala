@@ -514,14 +514,14 @@ object Resolver {
         * Resolve the application expression, performing currying over the subexpressions.
         */
       def visitApply(exp: NamedAst.Expression.Apply, region: Option[Symbol.VarSym]): Validation[ResolvedAst.Expression, ResolutionError] = exp match {
-        case NamedAst.Expression.Apply(exp, exps, loc) =>
-          for {
-            e <- visitExp(exp, region)
-            es <- traverse(exps)(visitExp(_, region))
-          } yield {
-            es.foldLeft(e) {
-              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), loc.asSynthetic)
-            }
+        case NamedAst.Expression.Apply(exp0, exps0, loc) =>
+          val expVal = visitExp(exp0, region)
+          val expsVal = traverse(exps0)(visitExp(_, region))
+          mapN(expVal, expsVal) {
+            case (e, es) =>
+              es.foldLeft(e) {
+                case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), loc.asSynthetic)
+              }
           }
       }
 
@@ -635,11 +635,11 @@ object Resolver {
         case app@NamedAst.Expression.Apply(_, _, _) => visitApply(app, region)
 
         case NamedAst.Expression.Lambda(fparam, exp, loc) =>
-          for {
-            paramType <- resolveType(fparam.tpe, taenv, ns0, root)
-            e <- visitExp(exp, region)
-            p <- Params.resolve(fparam, taenv, ns0, root)
-          } yield ResolvedAst.Expression.Lambda(p, e, loc)
+          val pVal = Params.resolve(fparam, taenv, ns0, root)
+          val eVal = visitExp(exp, region)
+          mapN(pVal, eVal) {
+            case (p, e) => ResolvedAst.Expression.Lambda(p, e, loc)
+          }
 
         case NamedAst.Expression.Unary(sop, exp, loc) =>
           for {
