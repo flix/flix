@@ -36,9 +36,34 @@ import java.io.PrintWriter
 object Typer {
 
   /**
-    * The expected scheme of the `main` function.
+    * The resulting scheme of the entry point function.
+    * `Array[String] -> Int32`
     */
-  private val mainScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str, SourceLocation.Unknown), Type.Int32, SourceLocation.Unknown))
+  private val finalEntrypointScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str, SourceLocation.Unknown), Type.Int32, SourceLocation.Unknown))
+
+  /**
+    * The array-based generalized scheme of the entry point function.
+    * `Array[String] -> t with ToString[t] & e`
+    */
+  private def getArrayEntrypointScheme(root: KindedAst.Root)(implicit flix: Flix): Scheme = {
+    val tvar = Type.freshVar(Kind.Star, SourceLocation.Unknown) // MATT synthetic locs
+    val evar = Type.freshVar(Kind.Bool, SourceLocation.Unknown) // MATT synthetic locs
+    val arrow = Type.mkArrowWithEffect(Type.mkArray(Type.Str, SourceLocation.Unknown), evar, tvar, SourceLocation.Unknown)
+    val tconstr = Ast.TypeConstraint(PredefinedClasses.lookupClassSym("ToString", root), tvar, SourceLocation.Unknown)
+    Scheme(List(tvar.sym), List(tconstr), arrow)
+  }
+
+  /**
+    * The unit-based generalized scheme of the entry point function.
+    * `Unit -> t with ToString[t] & e`
+    */
+  private def getUnitEntrypointScheme(root: KindedAst.Root)(implicit flix: Flix): Scheme = {
+    val tvar = Type.freshVar(Kind.Star, SourceLocation.Unknown) // MATT synthetic locs
+    val evar = Type.freshVar(Kind.Bool, SourceLocation.Unknown) // MATT synthetic locs
+    val arrow = Type.mkArrowWithEffect(Type.Unit, evar, tvar, SourceLocation.Unknown)
+    val tconstr = Ast.TypeConstraint(PredefinedClasses.lookupClassSym("ToString", root), tvar, SourceLocation.Unknown)
+    Scheme(List(tvar.sym), List(tconstr), arrow)
+  }
 
   /**
     * Type checks the given AST root.
@@ -158,11 +183,35 @@ object Typer {
       return ().toSuccess
     }
 
-    if (!Scheme.equal(defn.spec.sc, mainScheme, classEnv)) {
-      TypeError.IllegalMain(declaredScheme = defn.spec.sc, expectedScheme = mainScheme, defn.sym.loc).toFailure
+    if (!Scheme.equal(defn.spec.sc, finalEntrypointScheme, classEnv)) {
+      TypeError.IllegalMain(declaredScheme = defn.spec.sc, expectedScheme = finalEntrypointScheme, defn.sym.loc).toFailure
     } else {
       ().toSuccess
     }
+  }
+
+  private def transformEntrypoint(defn: KindedAst.Def, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[KindedAst.Def, TypeError] = defn match {
+    case KindedAst.Def(sym, spec, exp) =>
+      if (!root.entryPoint.contains(defn.sym)) {
+        return ().toSuccess
+      }
+
+      val arrayEntrypointScheme = getArrayEntrypointScheme(root)
+      val unitEntrypointScheme = getUnitEntrypointScheme(root)
+
+      (Scheme.checkLessThanEqual(defn.spec.sc, arrayEntrypointScheme, classEnv), Scheme.checkLessThanEqual(defn.spec.sc, unitEntrypointScheme, classEnv)) match {
+        // Case 1: Not a valid array- or unit-based entrypoint. Error.
+        case (Validation.Failure(_), Validation.Failure(_)) =>
+          // MATT expected is arrayEntrypoint or unitEntrypoint, not finalEntrypoint
+          TypeError.IllegalMain(declaredScheme = defn.spec.sc, expectedScheme = finalEntrypointScheme, defn.sym.loc).toFailure
+        // Case 2: Valid array-based entrypoint. Transform it.
+        case (Validation.Success(_), Validation.Failure(_)) =>
+        // Case 3: Valid unit-based entrypoint. Transform it.
+        case (Validation.Failure(_), Validation.Success(_)) => ???
+        // Case 4: Valid as both array-based an unit based. Impossible.
+        case (Validation.Success(_), Validation.Success(_)) => ???
+
+      }
   }
 
   /**
