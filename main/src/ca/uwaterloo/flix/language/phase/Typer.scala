@@ -190,53 +190,87 @@ object Typer {
     }
   }
 
-  private def transformEntrypoint(defn: TypedAst.Def, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = defn match {
-    case TypedAst.Def(sym, spec, impl) =>
-      // If this is not the entrypoint, no need to modify the def.
-      if (!root.entryPoint.contains(defn.sym)) {
-        return defn.toSuccess
+  private def transformEntrypoint(defn: TypedAst.Def, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = {
+
+    sealed trait TransformFlag
+    object Transform extends TransformFlag
+    object NoAction extends TransformFlag
+
+    def transformFormalParams(fparams: List[TypedAst.FormalParam])(implicit flix: Flix): Validation[List[TypedAst.FormalParam], TypeError] = fparams match {
+      case TypedAst.FormalParam(sym0, mod, tpe, loc) :: Nil =>
+        val sc = Scheme.generalize(Nil, tpe)
+        val unitSc = Scheme.generalize(Nil, Type.Unit)
+        val stringArray = Type.mkArray(Type.mkString(loc.asSynthetic), loc.asSynthetic)
+        val stringArraySc = Scheme.generalize(Nil, stringArray)
+        if (Scheme.equal(sc, unitSc, classEnv)) {
+          // Case 1: Unit formal param. Transform it to Array[String].
+          val sym = Symbol.freshVarSym("_args", Ast.BoundBy.FormalParam, loc.asSynthetic)
+          List(TypedAst.FormalParam(sym, mod, stringArray, loc)).toSuccess
+        } else if (Scheme.equal(sc, stringArraySc, classEnv)) {
+          // Case 2: Array[String] formal param. Keep it.
+          fparams.toSuccess
+        } else {
+          // Case 3: Bad fparam type. Error
+          ??? // MATT bad arg
+        }
+      case _ :: _ :: _ => ??? // MATT too many args
+      case Nil => ??? // MATT impossible
+    }
+
+    def transformResult(tpe: Type)(implicit flix: Flix): Validation[(Type, TransformFlag), TypeError] = {
+      val sc = Scheme.generalize(Nil, tpe)
+      val unit = Type.mkUnit(tpe.loc.asSynthetic)
+      val unitSc = Scheme.generalize(Nil, unit)
+
+      val toStringSc = {
+        val tvar = Type.freshVar(Kind.Star, tpe.loc.asSynthetic)
+        val toString = PredefinedClasses.lookupClassSym("ToString", root)
+        Scheme.generalize(List(Ast.TypeConstraint(toString, tvar, tpe.loc.asSynthetic)), tvar)
       }
 
-      val argTypes = spec.fparams.map(_.tpe)
-
-      argTypes match {
-        case tpe :: Nil =>
-        case _ :: _ :: _ => ??? // too many args
-        case Nil => ??? // impossible, should have been replaced by Unit
+      if (Scheme.equal(sc, unitSc, classEnv)) {
+        // Case 1: Unit return type. Keep it.
+        (tpe, NoAction).toSuccess
+      } else if (Scheme.lessThanEqual(sc, toStringSc, classEnv)) {
+        // Case 2: ToString return type. Replace with Unit.
+        (unit, Transform).toSuccess
+      } else {
+        // Case 3: Bad return type. Error
+        ??? // MATT error
       }
+    }
 
+    def transformSpec(spec: TypedAst.Spec)(implicit flix: Flix): Validation[(TypedAst.Spec, TransformFlag), TypeError] = spec match {
+      case TypedAst.Spec(doc, ann, mod, tparams, fparams0, declaredScheme, retTpe0, eff, loc) =>
+        val fparamsVal = transformFormalParams(fparams0)
+        val retTpeVal = transformResult(retTpe0)
+
+        mapN(fparamsVal, retTpeVal) {
+          case (fparams, retTpe) =>
+        }
+    }
+
+    defn match {
+      case TypedAst.Def(sym, spec, impl) =>
+        // If this is not the entrypoint, no need to modify the def.
+        if (!root.entryPoint.contains(defn.sym)) {
+          return defn.toSuccess
+        }
+
+      // transform fparams
+      // transform return type
+      // if return type was transformed, transform expression
+
+
+    }
   }
 
-  private def transformEntrypointArg()
+  private def transformEntrypointFormalParams(fparams: List[TypedAst.FormalParam], root: KindedAst.Root)(implicit flix: Flix): Validation[List[TypedAst.FormalParam], TypeError] = fparams match {
+    case _ => ???
+  }
 
-  private def transformEntrypoint(defn: KindedAst.Def, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[KindedAst.Def, TypeError] = defn match {
-    case KindedAst.Def(sym, spec, exp) =>
-      // If this is not the entrypoint, no need to modify the def.
-      if (!root.entryPoint.contains(defn.sym)) {
-        return defn.toSuccess
-      }
+  private def transformEntrypointResult(tpe: Type, root: KindedAst.Root)(implicit flix: Flix): Validation[Type, TypeError] = {
 
-
-
-      // MATT this is too complex
-      // MATT do this in a simpler way: check fparams and return type separately
-
-      val arrayEntrypointScheme = getArrayEntrypointScheme(root)
-      val unitEntrypointScheme = getUnitEntrypointScheme(root)
-
-      (Scheme.checkLessThanEqual(defn.spec.sc, arrayEntrypointScheme, classEnv), Scheme.checkLessThanEqual(defn.spec.sc, unitEntrypointScheme, classEnv)) match {
-        // Case 1: Not a valid array- or unit-based entrypoint. Error.
-        case (Validation.Failure(_), Validation.Failure(_)) =>
-          // MATT expected is arrayEntrypoint or unitEntrypoint, not finalEntrypoint
-          TypeError.IllegalMain(declaredScheme = defn.spec.sc, expectedScheme = finalEntrypointScheme, defn.sym.loc).toFailure
-        // Case 2: Valid array-based entrypoint. Transform it.
-        case (Validation.Success(_), Validation.Failure(_)) =>
-        // Case 3: Valid unit-based entrypoint. Transform it.
-        case (Validation.Failure(_), Validation.Success(_)) => ???
-        // Case 4: Valid as both array-based an unit based. Impossible.
-        case (Validation.Success(_), Validation.Success(_)) => ???
-
-      }
   }
 
   /**
