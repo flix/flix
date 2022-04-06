@@ -46,13 +46,13 @@ sealed trait Validation[+T, +E] {
     * Preserves the errors.
     */
     // Deprecated. Use flatMapN instead.
-//  final def flatMap[U, A >: E](f: T => Validation[U, A]): Validation[U, A] = this match {
-//    case Validation.Success(input) => f(input) match {
-//      case Validation.Success(value) => Validation.Success(value)
-//      case Validation.Failure(thatErrors) => Validation.Failure(errors #::: thatErrors)
-//    }
-//    case Validation.Failure(errors) => Validation.Failure(errors)
-//  }
+  final def flatMap[U, A >: E](f: T => Validation[U, A]): Validation[U, A] = this match {
+    case Validation.Success(input) => f(input) match {
+      case Validation.Success(value) => Validation.Success(value)
+      case Validation.Failure(thatErrors) => Validation.Failure(errors #::: thatErrors)
+    }
+    case Validation.Failure(errors) => Validation.Failure(errors)
+  }
 
   /**
     * Returns the errors in this [[Validation.Success]] or [[Validation.Failure]] object.
