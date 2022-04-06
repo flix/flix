@@ -432,7 +432,6 @@ object Resolver {
     /**
       * Performs name resolution on the given expression `exp0` in the namespace `ns0`.
       */
-    // TODO: Why is this tenv here?
     def resolve(exp0: NamedAst.Expression, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Expression, ResolutionError] = {
 
       /**
