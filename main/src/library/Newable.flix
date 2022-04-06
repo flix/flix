@@ -17,7 +17,7 @@
 ///
 /// A type class for types that can be allocated in a region.
 ///
-lawless class Newable[n: Region -> Type] {
+class Newable[n: Region -> Type] {
     ///
     /// Returns a fresh `n` parameterized by `t` allocated in region `r`.
     ///

@@ -19,7 +19,7 @@
 /// A Meet Lattice is pair of functions (⊑, ⊓) where ⊑ is a partial order and ⊓ satisfy two properties:
 /// lower-bound and greatest-lower-bound.
 ///
-pub class MeetLattice[a] with PartialOrder[a] {
+pub lawful class MeetLattice[a] with PartialOrder[a] {
 
     ///
     /// Returns the greatest lower bound of `x` and `y`.

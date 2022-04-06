@@ -43,11 +43,11 @@ object Instances {
   private def visitClasses(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
 
     /**
-      * Checks that all signatures in `class0` are used in laws, unless `class0` is marked `lawless`.
+      * Checks that all signatures in `class0` are used in laws if `class0` is marked `lawful`.
       */
     def checkLawApplication(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
-      case TypedAst.Class(_, _, mod, _, _, _, _, _, _) if mod.isLawless => ().toSuccess
-      case TypedAst.Class(_, _, _, _, _, _, sigs, laws, _) =>
+      // Case 1: lawful class
+      case TypedAst.Class(_, _, mod, _, _, _, sigs, laws, _) if mod.isLawful =>
         val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
           case (acc, TypedAst.Def(_, _, TypedAst.Impl(exp, _))) => acc ++ TypedAstOps.sigSymsOf(exp)
         }
@@ -55,6 +55,8 @@ object Instances {
         Validation.traverseX(unusedSigs) {
           sig => InstanceError.UnlawfulSignature(sig, sig.loc).toFailure
         }
+      // Case 2: non-lawful class
+      case TypedAst.Class(_, _, mod, _, _, _, _, _, _) => ().toSuccess
     }
 
     /**

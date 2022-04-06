@@ -17,7 +17,7 @@
 ///
 /// A type class for types that form a semigroup.
 ///
-pub lawless class SemiGroup[a] {
+pub class SemiGroup[a] {
     ///
     /// An associative binary operation on `a`.
     ///

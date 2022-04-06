@@ -17,7 +17,7 @@
 ///
 /// A type class for bitwise or.
 ///
-pub lawless class BitwiseOr[a] {
+pub class BitwiseOr[a] {
     ///
     /// Returns the bitwise OR of `x` and `y`.
     ///

@@ -1,5 +1,5 @@
 namespace A {
-    pub lawless class FClass[a] {
+    pub class FClass[a] {
         pub def f(): a
     }
 
@@ -24,7 +24,7 @@ namespace A {
 }
 
 namespace B {
-    pub lawless class FClass[a] {
+    pub class FClass[a] {
         pub def f(): a
     }
 
@@ -50,7 +50,7 @@ namespace B {
 }
 
 namespace C {
-    pub lawless class FClass[a] {
+    pub class FClass[a] {
         pub def f(): a
     }
 
@@ -85,7 +85,7 @@ namespace D {
     def testNamespace11(): Bool = gz() == 7
 }
 
-pub lawless class GClass[a] {
+pub class GClass[a] {
     pub def g(): a
 }
 
@@ -94,7 +94,7 @@ instance GClass[Int32] {
 }
 
 namespace X {
-    pub lawless class GClass[a] {
+    pub class GClass[a] {
         pub def g(): a
     }
 
@@ -103,7 +103,7 @@ namespace X {
     }
 
     namespace Y {
-        pub lawless class GClass[a] {
+        pub class GClass[a] {
             pub def g(): a
         }
 
@@ -112,7 +112,7 @@ namespace X {
         }
 
         namespace Z {
-            pub lawless class GClass[a] {
+            pub class GClass[a] {
                 pub def g(): a
             }
 

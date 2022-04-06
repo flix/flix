@@ -263,9 +263,9 @@ object Ast {
     def asPublic: Modifiers = if (isPublic) this else Modifiers(Modifier.Public :: mod)
 
     /**
-      * Returns `true` if these modifiers contain the lawless modifier.
+      * Returns `true` if these modifiers contain the lawful modifier.
       */
-    def isLawless: Boolean = mod contains Modifier.Lawless
+    def isLawful: Boolean = mod contains Modifier.Lawful
 
     /**
       * Returns `true` if these modifiers contain the override modifier.
@@ -297,9 +297,9 @@ object Ast {
   object Modifier {
 
     /**
-      * The lawless modifier.
+      * The lawful modifier.
       */
-    case object Lawless extends Modifier
+    case object Lawful extends Modifier
 
     /**
       * The override modifier.
@@ -320,11 +320,6 @@ object Ast {
       * The synthetic modifier.
       */
     case object Synthetic extends Modifier
-
-    /**
-      * The unlawful modifier.
-      */
-    case object Unlawful extends Modifier
 
   }
 
