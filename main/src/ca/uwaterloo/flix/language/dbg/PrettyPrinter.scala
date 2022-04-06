@@ -36,7 +36,9 @@ object PrettyPrinter {
         for (fparam <- defn.fparams) {
           sb.append(s"${fmtParam(fparam, formatter)}, ")
         }
-        sb.append(") = ")
+        sb.append(") & ")
+        sb.append(defn.exp.purity)
+        sb.append(" = ")
         sb.append(fmtDef(defn, formatter).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
         sb.append(System.lineSeparator() + System.lineSeparator())
       }
@@ -89,7 +91,7 @@ object PrettyPrinter {
           sb.append("])")
             .toString()
 
-        case Expression.ApplyClo(exp, args, tpe, loc) =>
+        case Expression.ApplyClo(exp, args, tpe, _, loc) =>
           val sb = new StringBuilder()
           sb.append(visitExp(exp))
             .append("(")
@@ -100,7 +102,7 @@ object PrettyPrinter {
           sb.append(")")
             .toString()
 
-        case Expression.ApplyDef(sym, args, tpe, loc) =>
+        case Expression.ApplyDef(sym, args, tpe, _, loc) =>
           val sb = new StringBuilder()
           sb.append(fmtSym(sym, formatter))
             .append("(")
@@ -112,7 +114,7 @@ object PrettyPrinter {
             .append(")")
             .toString()
 
-        case Expression.ApplyCloTail(exp, args, tpe, loc) =>
+        case Expression.ApplyCloTail(exp, args, tpe, _, loc) =>
           val sb = new StringBuilder()
           sb.append(visitExp(exp))
             .append("*(")
@@ -123,7 +125,7 @@ object PrettyPrinter {
           sb.append(")")
             .toString()
 
-        case Expression.ApplyDefTail(sym, args, tpe, loc) =>
+        case Expression.ApplyDefTail(sym, args, tpe, _, loc) =>
           val sb = new StringBuilder()
           sb.append(fmtSym(sym, formatter))
             .append("*(")
@@ -134,7 +136,7 @@ object PrettyPrinter {
           sb.append(")")
             .toString()
 
-        case Expression.ApplySelfTail(name, formals, args, tpe, loc) =>
+        case Expression.ApplySelfTail(name, formals, args, tpe, _, loc) =>
           val sb = new StringBuilder()
           sb.append("ApplySelfTail")
             .append("*(")
@@ -145,10 +147,10 @@ object PrettyPrinter {
           sb.append(")")
             .toString()
 
-        case Expression.Unary(sop, op, exp, tpe, loc) =>
+        case Expression.Unary(sop, op, exp, tpe, _, loc) =>
           fmtUnaryOp(op) + visitExp(exp)
 
-        case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+        case Expression.Binary(sop, op, exp1, exp2, tpe, _, loc) =>
           val sb = new StringBuilder()
           sb.append(visitExp(exp1))
             .append(" ")
@@ -157,7 +159,7 @@ object PrettyPrinter {
             .append(visitExp(exp2))
             .toString()
 
-        case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+        case Expression.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
           val sb = new StringBuilder()
           sb.append(formatter.bold("if") + " (")
             .append(visitExp(exp1))
@@ -173,7 +175,7 @@ object PrettyPrinter {
             .append("}")
             .toString()
 
-        case Expression.Branch(exp, branches, tpe, loc) =>
+        case Expression.Branch(exp, branches, tpe, _, loc) =>
           val sb = new StringBuilder()
           sb.append("branch {")
             .append((" " * 2) + visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
@@ -189,7 +191,7 @@ object PrettyPrinter {
             .append(System.lineSeparator())
             .toString()
 
-        case Expression.JumpTo(sym, tpe, loc) => s"jumpto ${fmtSym(sym, formatter)}"
+        case Expression.JumpTo(sym, tpe, purity, loc) => s"jumpto ${fmtSym(sym, formatter)}"
 
         case Expression.Let(sym, exp1, exp2, tpe, purity, loc) =>
           val sb = new StringBuilder()
@@ -202,7 +204,7 @@ object PrettyPrinter {
             .append(visitExp(exp2))
             .toString()
 
-        case Expression.LetRec(varSym, _, _, exp1, exp2, tpe, loc) =>
+        case Expression.LetRec(varSym, _, _, exp1, exp2, tpe, _, loc) =>
           val sb = new StringBuilder()
           sb.append(formatter.bold("let rec"))
             .append(fmtSym(varSym, formatter))
@@ -213,9 +215,9 @@ object PrettyPrinter {
             .append(visitExp(exp2))
             .toString()
 
-        case Expression.Is(sym, tag, exp, loc) => visitExp(exp) + " is " + tag.name
+        case Expression.Is(sym, tag, exp, _, loc) => visitExp(exp) + " is " + tag.name
 
-        case Expression.Tag(sym, tag, exp, tpe, loc) => exp match {
+        case Expression.Tag(sym, tag, exp, tpe, _, loc) => exp match {
           case Expression.Unit(_) => tag.name
           case _ =>
             val sb = new StringBuilder()
@@ -226,15 +228,15 @@ object PrettyPrinter {
               .toString()
         }
 
-        case Expression.Untag(sym, tag, exp, tpe, loc) => "Untag(" + visitExp(exp) + ")"
+        case Expression.Untag(sym, tag, exp, tpe, _, loc) => "Untag(" + visitExp(exp) + ")"
 
-        case Expression.Index(exp, offset, tpe, loc) =>
+        case Expression.Index(exp, offset, tpe, _, loc) =>
           visitExp(exp) +
             "[" +
             offset.toString +
             "]"
 
-        case Expression.Tuple(elms, tpe, loc) =>
+        case Expression.Tuple(elms, tpe, _, loc) =>
           val sb = new StringBuilder()
           sb.append("(")
           for (elm <- elms) {
@@ -246,12 +248,12 @@ object PrettyPrinter {
 
         case Expression.RecordEmpty(tpe, loc) => "{}"
 
-        case Expression.RecordSelect(exp, field, tpe, loc) =>
+        case Expression.RecordSelect(exp, field, tpe, _, loc) =>
           visitExp(exp) +
             "." +
             field.name
 
-        case Expression.RecordExtend(field, value, rest, tpe, loc) =>
+        case Expression.RecordExtend(field, value, rest, tpe, _, loc) =>
           "{ " +
             field.name +
             " = " +
@@ -260,7 +262,7 @@ object PrettyPrinter {
             visitExp(rest) +
             " }"
 
-        case Expression.RecordRestrict(field, rest, tpe, loc) =>
+        case Expression.RecordRestrict(field, rest, tpe, _, loc) =>
           "{ -" +
             field.name +
             " | " +
@@ -298,7 +300,7 @@ object PrettyPrinter {
             " = " +
             visitExp(elm)
 
-        case Expression.ArrayLength(base, tpe, loc) =>
+        case Expression.ArrayLength(base, tpe, _, loc) =>
           "length" +
             "[" +
             visitExp(base) +
@@ -318,12 +320,12 @@ object PrettyPrinter {
 
         case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) + " := " + visitExp(exp2)
 
-        case Expression.Cast(exp, tpe, loc) =>
+        case Expression.Cast(exp, tpe, _, loc) =>
           visitExp(exp) +
             " as " +
             tpe.toString
 
-        case Expression.TryCatch(exp, rules, tpe, loc) =>
+        case Expression.TryCatch(exp, rules, tpe, _, loc) =>
           val sb = new StringBuilder()
           sb.append("try {")
             .append(System.lineSeparator())
@@ -343,7 +345,7 @@ object PrettyPrinter {
             .append(System.lineSeparator())
             .toString()
 
-        case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
+        case Expression.InvokeConstructor(constructor, args, tpe, _, loc) =>
           val sb = new StringBuilder()
           sb.append(constructor.toString)
             .append("(")
@@ -354,7 +356,7 @@ object PrettyPrinter {
           sb.append(")")
             .toString()
 
-        case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+        case Expression.InvokeMethod(method, exp, args, tpe, _, loc) =>
           val sb = new StringBuilder()
           sb.append(visitExp(exp))
             .append(".")
@@ -367,7 +369,7 @@ object PrettyPrinter {
           sb.append(")")
             .toString()
 
-        case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+        case Expression.InvokeStaticMethod(method, args, tpe, _, loc) =>
           val sb = new StringBuilder()
           sb.append(method.getDeclaringClass.getCanonicalName + "." + method.getName)
             .append("(")
@@ -378,13 +380,13 @@ object PrettyPrinter {
           sb.append(")")
             .toString()
 
-        case Expression.GetField(field, exp, tpe, loc) =>
+        case Expression.GetField(field, exp, tpe, _, loc) =>
           "get field " +
             field.getName +
             " of " +
             visitExp(exp)
 
-        case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+        case Expression.PutField(field, exp1, exp2, tpe, _, loc) =>
           "put field " +
             field.getName +
             " of " +
@@ -392,9 +394,9 @@ object PrettyPrinter {
             " value " +
             visitExp(exp2)
 
-        case Expression.GetStaticField(field, tpe, loc) => "get static field " + field.getName
+        case Expression.GetStaticField(field, tpe, _, loc) => "get static field " + field.getName
 
-        case Expression.PutStaticField(field, exp, tpe, loc) =>
+        case Expression.PutStaticField(field, exp, tpe, _, loc) =>
           "put static field " +
             field.getName +
             " value " +
