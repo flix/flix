@@ -56,10 +56,16 @@ namespace Validation {
     }
 
     ///
-    /// Chain two functions in `fa` and `fb`, returns the product of their results.
+    /// Chain two functions, returns the product of their results.
     ///
     pub def product(fa: Validation[t1, e], fb: Validation[t2, e]): Validation[(t1, t2), e] =
-        Validation.ap(Validation.map((a, b) -> (a, b), fa), fb)
+        ap(map((a, b) -> (a, b), fa), fb)
+
+    ///
+    /// Chain three functions, returns the product of their results.
+    ///
+    pub def product3(fa: Validation[t1, e], fb: Validation[t2, e], fc: Validation[t3, e]): Validation[(t1, t2, t3), e] =
+        ap(ap(map((a, b, c) -> (a, b, c), fa), fb), fc)
 
     ///
     /// Returns `t` if `v` is `Success(t).` Otherwise returns `d`.
