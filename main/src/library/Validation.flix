@@ -56,6 +56,12 @@ namespace Validation {
     }
 
     ///
+    /// Chain two applicative actions, returns the product of their results.
+    ///
+    pub def product(fa: Validation[t1, e], fb: Validation[t2, e]): Validation[(t1, t2), e] =
+        Validation.ap(Validation.map((a, b) -> (a, b), fa), fb)
+
+    ///
     /// Returns `t` if `v` is `Success(t).` Otherwise returns `d`.
     ///
     @Time(1) @Space(1)
