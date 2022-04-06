@@ -373,7 +373,7 @@ object Namer {
       val tparams = getImplicitTypeParamsFromTypes(List(tpe0))
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
 
-      val tpeVal = visitType(tpe0, uenv0, tenv0)
+      val tpeVal = visitType(tpe0, uenv0, tenv)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
       flatMapN(tpeVal, tconstrsVal) {
         case (tpe, tconstrs) =>
