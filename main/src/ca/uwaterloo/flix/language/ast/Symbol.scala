@@ -235,8 +235,8 @@ object Symbol {
       */
     def isWild: Boolean = text match {
       case VarText.Absent => false
-      case VarText.Text(s) => s.startsWith("_")
-      case VarText.Synthetic(s) => s.startsWith("_")
+      case VarText.SourceText(s) => s.startsWith("_")
+      case VarText.FallbackText(s) => s.startsWith("_")
     }
 
     /**
@@ -264,8 +264,8 @@ object Symbol {
     override def toString: String = {
       val string = text match {
         case VarText.Absent => "tvar"
-        case VarText.Text(s) => s
-        case VarText.Synthetic(s) => s
+        case VarText.SourceText(s) => s
+        case VarText.FallbackText(s) => s
       }
       string + Flix.Delimiter + id
     }

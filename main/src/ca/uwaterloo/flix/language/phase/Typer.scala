@@ -779,7 +779,7 @@ object Typer {
 
       case KindedAst.Expression.Scope(sym, exp, evar, loc) =>
         // Introduce a rigid variable for the region of `exp`.
-        val regionVar = Type.freshVar(Kind.Bool, sym.loc, Rigidity.Rigid, Ast.VarText.Text(sym.text))
+        val regionVar = Type.freshVar(Kind.Bool, sym.loc, Rigidity.Rigid, Ast.VarText.SourceText(sym.text))
         for {
           _ <- unifyTypeM(sym.tvar.ascribedWith(Kind.Star), Type.mkRegion(regionVar, loc), loc)
           (constrs, tpe, eff) <- visitExp(exp)
@@ -1115,8 +1115,8 @@ object Typer {
       case KindedAst.Expression.ArrayLength(exp, loc) =>
         // Note: Experiment with named temporary type variables to generate better error messages.
         // Note: We probably want two types of text-- in particular these names should freely be overwritten.
-        val elmVar = Type.freshVar(Kind.Star, loc, text = Ast.VarText.Synthetic("?elm"))
-        val regionVar = Type.freshVar(Kind.Bool, loc, text = Ast.VarText.Synthetic("?region"))
+        val elmVar = Type.freshVar(Kind.Star, loc, text = Ast.VarText.FallbackText("?elm"))
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = Ast.VarText.FallbackText("?region"))
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           _ <- expectTypeM(Type.mkScopedArray(elmVar, regionVar, loc), tpe, exp.loc)

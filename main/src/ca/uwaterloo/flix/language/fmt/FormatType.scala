@@ -263,8 +263,8 @@ object FormatType {
           case Audience.Internal => string
           case Audience.External => text match {
             case VarText.Absent => string
-            case VarText.Text(s) => s
-            case VarText.Synthetic(s) => s
+            case VarText.SourceText(s) => s
+            case VarText.FallbackText(s) => s
           }
         }
 

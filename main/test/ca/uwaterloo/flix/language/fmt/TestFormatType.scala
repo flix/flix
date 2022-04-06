@@ -316,9 +316,9 @@ class TestFormatType extends FunSuite with TestUtils {
   }
 
   test("FormatType.Boolean.External.01") {
-    val tvar1 = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Text("a"), Kind.Bool, Rigidity.Flexible, loc), loc)
-    val tvar2 = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Text("b"), Kind.Bool, Rigidity.Flexible, loc), loc)
-    val tvar3 = Type.KindedVar(new Symbol.KindedTypeVarSym(3, Ast.VarText.Text("c"), Kind.Bool, Rigidity.Flexible, loc), loc)
+    val tvar1 = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("a"), Kind.Bool, Rigidity.Flexible, loc), loc)
+    val tvar2 = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("b"), Kind.Bool, Rigidity.Flexible, loc), loc)
+    val tvar3 = Type.KindedVar(new Symbol.KindedTypeVarSym(3, Ast.VarText.SourceText("c"), Kind.Bool, Rigidity.Flexible, loc), loc)
     val tpe = Type.mkAnd(List(tvar1, tvar2, tvar3), loc)
 
     val expected = "a and b and c"
