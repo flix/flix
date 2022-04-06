@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 namespace TestMutMap {
-
+/*
     /////////////////////////////////////////////////////////////////////////////
     // sameElements                                                            //
     /////////////////////////////////////////////////////////////////////////////
@@ -87,21 +87,8 @@ namespace TestMutMap {
 
         MutMap.sameElements(m, m2)
     }
-
-    @test
-    def sameElements07(): Bool & Impure =
-        let m = MutMap.empty();
-        MutMap.put!(2, "b", m);
-        MutMap.put!(3, "c", m);
-        MutMap.put!(1, "a", m);
-
-        let m2 = MutMap.empty();
-        MutMap.put!(1, "a", m2);
-        MutMap.put!(2, "b", m2);
-        MutMap.put!(3, "c", m2);
-        MutMap.sameElements(m, m2)
-
-
+*/
+/*
     /////////////////////////////////////////////////////////////////////////////
     // mergeWithKey                                                            //
     /////////////////////////////////////////////////////////////////////////////
@@ -123,7 +110,7 @@ namespace TestMutMap {
         MutMap.mergeWithKey!((_, v, _) -> v, m1, m2);
         MutMap.memberOf(1, m2) and MutMap.memberOf(2, m2)
     }
-
+*/
 
     /////////////////////////////////////////////////////////////////////////////
     // sumValues                                                               //
@@ -471,4 +458,5 @@ namespace TestMutMap {
         let m = MutMap(ref Map#{1 => 2, 3 => 4, 5 => 6});
         MutMap.foldRightLazy((v, s) -> force s + v, 0, m) == 12
     }
+
 }

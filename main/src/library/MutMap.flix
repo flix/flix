@@ -56,6 +56,13 @@ namespace MutMap {
         Map.memberOf(k, deref mm)
 
     ///
+    /// Returns `true` if and only if `m` is the empty map.
+    ///
+    pub def isEmpty(m: MutMap[k, v, r]): Bool \ Read(r) =
+        let MutMap(mm) = m;
+        Map.isEmpty(deref mm)
+
+    ///
     /// Optionally finds `k -> v` where `k` is the smallest key according to the `Order` instance of `k`.
     ///
     /// Returns `None` if `m` is empty.
@@ -231,30 +238,29 @@ namespace MutMap {
             case None    => mm := Map.insert(k, d, deref mm); d
             case Some(v) => v
         }
-
-    // TODO: use regions r1 and r2 in `merge` functions.
+/*
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` in a left-biased manner.
     ///
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
-    pub def merge!(m1: MutMap[k, v, r], m2: MutMap[k, v, r]): Unit  \ { Read(r), Write(r) } with Order[k] =
+    pub def merge!(m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit  \ { Read(r1, r2), Write(r2) } with Order[k] =
         mergeWithKey!((_, v1, _) -> v1, m1, m2)
 
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`.
     ///
-    pub def mergeWith!(f: (v, v) -> v & ef, m1: MutMap[k, v, r], m2: MutMap[k, v, r]): Unit  \ { ef, Read(r), Write(r) } with Order[k] =
+    pub def mergeWith!(f: (v, v) -> v & ef, m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit  \ { ef, Read(r1, r2), Write(r2) } with Order[k] =
         mergeWithKey!((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
-    pub def mergeWithKey!(f: (k, v, v) -> v & ef, m1: MutMap[k, v, r], m2: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
+    pub def mergeWithKey!(f: (k, v, v) -> v & ef, m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit \ { ef, Read(r1, r2), Write(r2) } with Order[k] =
         let MutMap(mm1) = m1;
         let MutMap(mm2) = m2;
         mm2 := Map.unionWithKey(f, deref mm1, deref mm2)
-
+*/
     ///
     /// Removes all mappings `k -> v` from the mutable map `m` where `v` does not satisfy the predicate function `f`.
     ///
@@ -588,7 +594,7 @@ namespace MutMap {
     ///
     /// Returns `true` if MutMaps `a` and `b` have the same elements, i.e. are structurally equal.
     ///
-    pub def sameElements(a: MutMap[k, v, r], b: MutMap[k, v, r]): Bool \ { Read(r) } with Order[k], Eq[v] =
+    pub def sameElements(a: MutMap[k, v, r], b: MutMap[k, v, r]): Bool \ Read(r) with Order[k], Eq[v] =
         (MutMap.isSubmapOf(a, b) and MutMap.isSubmapOf(b, a))
 
     ///
