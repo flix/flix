@@ -205,12 +205,13 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given `spec`.
     */
   private def visitSpec(spec: Spec): Iterator[SemanticToken] = spec match {
-    case Spec(_, _, _, tparams, fparams, _, retTpe, eff, _) =>
+    case Spec(_, _, _, tparams, fparams, sc, retTpe, eff, _) =>
       val st1 = visitTypeParams(tparams)
       val st2 = visitFormalParams(fparams)
-      val st3 = visitType(retTpe)
-      val st4 = visitType(eff)
-      st1 ++ st2 ++ st3 ++ st4
+      val st3 = sc.constraints.iterator.flatMap(visitTypeConstraint)
+      val st4 = visitType(retTpe)
+      val st5 = visitType(eff)
+      st1 ++ st2 ++ st3 ++ st4 ++ st5
   }
 
   /**
@@ -609,7 +610,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given type constraint `tc0`.
     */
   private def visitTypeConstraint(tc0: TypeConstraint): Iterator[SemanticToken] = tc0 match {
-    case TypeConstraint(sym, arg, loc) =>
+    case TypeConstraint(_, arg, loc) =>
       // TODO: We need a source location, not for the entire constraint, just for the class name.
       val o = SemanticTokenType.Class
       val t = SemanticToken(o, Nil, loc)

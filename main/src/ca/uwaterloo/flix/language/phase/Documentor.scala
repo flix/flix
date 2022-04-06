@@ -335,12 +335,11 @@ object Documentor {
     * Returns the given Modifier `mod` as a JSON value.
     */
   private def visitModifier(mod: Ast.Modifiers): JArray = JArray(mod.mod.map {
-    case Modifier.Lawless => "lawless"
+    case Modifier.Lawful => "lawful"
     case Modifier.Override => "override"
     case Modifier.Public => "public"
     case Modifier.Sealed => "sealed"
     case Modifier.Synthetic => "synthetic"
-    case Modifier.Unlawful => "unlawful"
   })
 
   /**

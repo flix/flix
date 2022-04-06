@@ -17,7 +17,7 @@
 ///
 /// A type class for Euclidean modulo.
 ///
-pub lawless class Mod[a] {
+pub class Mod[a] {
     ///
     /// Returns the Euclidean modulo of `x` and `n`.
     ///

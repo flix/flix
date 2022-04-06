@@ -71,6 +71,10 @@ object Entity {
     def loc: SourceLocation = sym.loc
   }
 
+  case class TypeVar(sym: Symbol.KindedTypeVarSym) extends Entity {
+    def loc: SourceLocation = sym.loc
+  }
+
   case class Type(t: ast.Type) extends Entity {
     def loc: SourceLocation = t.loc
   }

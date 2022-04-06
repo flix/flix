@@ -17,7 +17,7 @@
 ///
 /// A type class for multiplication.
 ///
-pub lawless class Mul[a] {
+pub class Mul[a] {
     ///
     /// Returns `x` multiplied by `y`.
     ///
