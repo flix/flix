@@ -469,6 +469,9 @@ object Simplifier {
       // The default label is the next label of the last case.
       val nextLabel = (ruleLabels zip (ruleLabels.drop(1) ::: defaultLab :: Nil)).toMap
 
+      //TODO Intermediate solution (which is correct, but imprecise): Compute the purity of every match rule in rules
+      val jumpPurity = combineAll(rules.map(r => effectToPurity(r.exp.eff)))
+
       // Create a branch for each rule.
       val branches = (ruleLabels zip rules) map {
         // Process each (label, rule) pair.
@@ -480,22 +483,18 @@ object Simplifier {
           // Success case: evaluate the match body.
           val success = visitExp(body)
 
-          val purity = combine(effectToPurity(guard.eff), effectToPurity(body.eff))
-
           // Failure case: Jump to the next label.
-          val failure = SimplifiedAst.Expression.JumpTo(next, tpe, purity, loc)
+          val failure = SimplifiedAst.Expression.JumpTo(next, tpe, jumpPurity, loc)
 
           // Return the branch with its label.
           field -> patternMatchList(List(pat), List(matchVar), guard, success, failure
           )
       }
-      val purity = combine(effectToPurity(rules.head.exp.eff), effectToPurity(rules.head.guard.eff))
-
       // Construct the error branch.
       val errorBranch = defaultLab -> SimplifiedAst.Expression.MatchError(tpe, loc)
 
       // The initial expression simply jumps to the first label.
-      val entry = SimplifiedAst.Expression.JumpTo(ruleLabels.head, tpe, purity, loc)
+      val entry = SimplifiedAst.Expression.JumpTo(ruleLabels.head, tpe, jumpPurity, loc)
 
       // The purity of the branch
       val branchPurity = combineAll((errorBranch :: branches).map{case (_, exp) => exp.purity})
