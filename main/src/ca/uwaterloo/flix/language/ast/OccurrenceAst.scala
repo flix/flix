@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import java.lang.reflect.{Constructor, Field, Method}
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.Purity.{Pure, Impure}
+import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
 
 object OccurrenceAst {
 
@@ -28,7 +29,7 @@ object OccurrenceAst {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[OccurrenceAst.FormalParam], exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation)
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[OccurrenceAst.FormalParam], exp: OccurrenceAst.Expression, context: DefContext, tpe: Type, loc: SourceLocation)
 
   case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Name.Tag, OccurrenceAst.Case], tpeDeprecated: Type, loc: SourceLocation)
 
@@ -289,6 +290,14 @@ object OccurrenceAst {
      */
     case object DontInline extends Occur
   }
+
+  /**
+   * `OccurDef` contains information that indicates whether or not a def should be inlined
+   *  A def is `isTrivialNonSelfCall` if
+   *  the expression consist of a single (non-self) call with trivial arguments
+   */
+  case class DefContext(isNonSelfCall: Boolean)
+
 }
 
 

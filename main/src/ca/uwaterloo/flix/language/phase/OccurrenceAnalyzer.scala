@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expression
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.{Occur, DefContext}
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.Symbol.{LabelSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Symbol}
@@ -72,11 +72,18 @@ object OccurrenceAnalyzer {
    * Visits a definition in the program and performs occurrence analysis
    */
   private def visitDef(defn: LiftedAst.Def): OccurrenceAst.Def = {
-    val fparams = defn.fparams.map {
-      visitFormalParam
-    }
+    val fparams = defn.fparams.map(visitFormalParam)
     val (e, _) = visitExp(defn.exp)
-    OccurrenceAst.Def(defn.ann, defn.mod, defn.sym, fparams, e, defn.tpe, defn.loc)
+    /// Inline defs if:
+    /// Def consists of a single non-self function call.
+    val defContext = e match {
+      case OccurrenceAst.Expression.ApplyDefTail(sym, _, _, _, _) =>
+        val isNonSelfCall = sym != defn.sym
+        DefContext(isNonSelfCall)
+      case _ => DefContext(false)
+    }
+
+    OccurrenceAst.Def(defn.ann, defn.mod, defn.sym, fparams, e, defContext, defn.tpe, defn.loc)
   }
 
   /**
