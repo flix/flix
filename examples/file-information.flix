@@ -12,6 +12,7 @@ def main(_args: Array[String]): Int32 & Impure =
   // Get statistics of the file 'README.md'.
   match File.stat(f) {
     case Ok(stats) => {
+      println("${f} is of type: ${stats.fileType}");
       println("The size of ${f} is: ${stats.size}.");
       println("The creation time of ${f} is: ${stats.creationTime}.")
     }
