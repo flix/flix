@@ -97,7 +97,7 @@ class TestInstances extends FunSuite with TestUtils {
   test("Test.OverlappingInstances.06") {
     val input =
       """
-        |lawless class C[a] {
+        | class C[a] {
         |  pub def f(x: a, y: a): Bool
         |}
         |
@@ -118,7 +118,7 @@ class TestInstances extends FunSuite with TestUtils {
   test("Test.OverlappingInstances.Bool.01") {
     val input =
       """
-        |lawless class C[a]
+        | class C[a]
         |
         |enum E[_: Bool]
         |
@@ -132,7 +132,7 @@ class TestInstances extends FunSuite with TestUtils {
   test("Test.OverlappingInstances.Bool.02") {
     val input =
       """
-        |lawless class C[a]
+        | class C[a]
         |
         |enum E[_: Bool, _: Type]
         |
@@ -485,8 +485,8 @@ class TestInstances extends FunSuite with TestUtils {
   test("Test.UnlawfulSignature.01") {
     val input =
       """
-        |class C[a] {
-        |  pub def f(): a
+        |lawful class C[a] {
+        |    pub def f(): a
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -497,11 +497,11 @@ class TestInstances extends FunSuite with TestUtils {
     val input =
       """
         |instance C[Int32] {
-        |  pub def f(x: Int32): Bool = true
-        |  pub def g(x: Int32): Bool = true
+        |    pub def f(x: Int32): Bool = true
+        |    pub def g(x: Int32): Bool = true
         |}
         |
-        |class C[a] {
+        |lawful class C[a] {
         |  pub def f(x: a): Bool
         |  pub def g(x: a): Bool
         |
@@ -515,7 +515,7 @@ class TestInstances extends FunSuite with TestUtils {
   test("Test.MultipleErrors.01") {
     val input =
       """
-        |lawless class Foo[a] {
+        |class Foo[a] {
         |    pub def bar(): a
         |}
         |

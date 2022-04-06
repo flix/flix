@@ -105,7 +105,7 @@ object Documentor {
     //
     // Type Aliases.
     //
-    val typeAliasesByNS = root.typealiases.values.groupBy(getNameSpace).flatMap {
+    val typeAliasesByNS = root.typeAliases.values.groupBy(getNameSpace).flatMap {
       case (ns, decls) =>
         val filtered = decls.filter(_.mod.isPublic).toList
         val sorted = filtered.sortBy(_.sym.name)
@@ -335,12 +335,11 @@ object Documentor {
     * Returns the given Modifier `mod` as a JSON value.
     */
   private def visitModifier(mod: Ast.Modifiers): JArray = JArray(mod.mod.map {
-    case Modifier.Lawless => "lawless"
+    case Modifier.Lawful => "lawful"
     case Modifier.Override => "override"
     case Modifier.Public => "public"
     case Modifier.Sealed => "sealed"
     case Modifier.Synthetic => "synthetic"
-    case Modifier.Unlawful => "unlawful"
   })
 
   /**

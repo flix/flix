@@ -34,7 +34,7 @@
 ///     `ap(f: m[a -> b & e], x: m[a]): m[b] & ef = liftA2(identity, f, x)`
 ///     `liftA2(f: a -> b -> c & e, x: m[a], y: m[b]): m[c] & ef = ap(Functor.map(f, x), y)`
 ///
-pub class Applicative[m : Type -> Type] with Functor[m] {
+pub lawful class Applicative[m : Type -> Type] with Functor[m] {
     ///
     /// Puts `x` into a default context.
     ///

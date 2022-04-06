@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, LocationLink, Position}
-import ca.uwaterloo.flix.language.ast.TypeConstructor
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -55,9 +55,12 @@ object GotoProvider {
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.TypeCon(tc, loc) => tc match {
-          case TypeConstructor.KindedEnum(sym, _) =>
+        case Entity.Type(t) => t match {
+          case Type.Cst(TypeConstructor.KindedEnum(sym, _), loc) =>
             ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, loc)(root).toJSON)
+
+          case Type.KindedVar(sym, loc) =>
+            ("status" -> "success") ~ ("result" -> LocationLink.fromTypeVarSym(sym, loc).toJSON)
 
           case _ => mkNotFound(uri, pos)
         }

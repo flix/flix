@@ -17,7 +17,7 @@
 ///
 /// A type class for types that form a commutative semigroup.
 ///
-pub class CommutativeSemiGroup[a] with SemiGroup[a] {
+pub lawful class CommutativeSemiGroup[a] with SemiGroup[a] {
 
     ///
     /// An associative & commutative binary operation on `a`.

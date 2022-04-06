@@ -19,7 +19,7 @@
 ///
 /// `Reducible` is like a non-empty `Foldable` and may only be implemented on non-empty data structures.
 ///
-pub lawless class Reducible[t: Type -> Type] {
+pub class Reducible[t: Type -> Type] {
 
     ///
     /// Left-associative reduction of a structure.

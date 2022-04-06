@@ -17,7 +17,7 @@
 ///
 /// A type class for exponentiation.
 ///
-pub lawless class Exp[a] {
+pub class Exp[a] {
     ///
     /// Returns `b` raised to the power of `n`.
     ///

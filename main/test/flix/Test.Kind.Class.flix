@@ -10,13 +10,13 @@ namespace Test/Class/Kinding {
 
         namespace Sig {
             namespace FormalParams {
-                lawless class CStar1[a] {
+                class CStar1[a] {
                     pub def star(x: a): Int32 = ???
                 }
             }
 
             namespace Return {
-                lawless class CStar1[a] {
+                class CStar1[a] {
                     pub def star(): a = ???
                 }
             }
@@ -24,7 +24,7 @@ namespace Test/Class/Kinding {
             namespace TypeConstraint {
                 class CStar[a: Type]
 
-                lawless class CStar1[a] {
+                class CStar1[a] {
                     pub def star(x: a): Int32 with CStar[a] = ???
                 }
             }
@@ -32,13 +32,13 @@ namespace Test/Class/Kinding {
             namespace Enum {
                 pub enum EStar[_a: Type]
 
-                lawless class CStar1[a] {
+                class CStar1[a] {
                     pub def star(x: EStar[a]): Int32 = ???
                 }
             }
 
             namespace Exp {
-                lawless class CStar1[a] {
+                class CStar1[a] {
                     pub def star(x: a): Int32 = let _: a = ???; ???
                 }
             }
@@ -87,21 +87,21 @@ namespace Test/Class/Kinding {
 
         namespace Sig {
             namespace FormalParams {
-                lawless class CStar1[a: Type] {
+                class CStar1[a: Type] {
                     pub def star(x: a): Int32 = ???
                 }
 
-                lawless class CStarToStar1[a: Type -> Type] {
+                class CStarToStar1[a: Type -> Type] {
                     pub def starToStar(x: a[Int32]): Int32 = ???
                 }
             }
 
             namespace Return {
-                lawless class CStar1[a: Type] {
+                class CStar1[a: Type] {
                     pub def star(): a = ???
                 }
 
-                lawless class CStarToStar1[a: Type -> Type] {
+                class CStarToStar1[a: Type -> Type] {
                     pub def starToStar(): a[Int32] = ???
                 }
             }
@@ -111,15 +111,15 @@ namespace Test/Class/Kinding {
                 class CStarToStar[a: Type -> Type]
                 class CBoolToStar[a: Bool -> Type]
 
-                lawless class CStar1[a: Type] {
+                class CStar1[a: Type] {
                     pub def star(x: a): Int32 with CStar[a] = ???
                 }
 
-                lawless class CStarToStar1[a: Type -> Type] {
+                class CStarToStar1[a: Type -> Type] {
                     pub def starToStar(x: a[Int32]): Int32 with CStarToStar[a] = ???
                 }
 
-                lawless class CBoolToStar1[a: Bool -> Type] {
+                class CBoolToStar1[a: Bool -> Type] {
                     pub def boolToStar(x: a[Pure]): Int32 with CBoolToStar[a] = ???
                 }
             }
@@ -128,17 +128,17 @@ namespace Test/Class/Kinding {
                 pub enum EStar[_a: Type]
                 pub enum EStarToStar[_a: Type -> Type]
 
-                lawless class CStar1[a: Type] {
+                class CStar1[a: Type] {
                     pub def star(x: EStar[a]): Int32 = ???
                 }
 
-                lawless class CStarToStar1[a: Type -> Type] {
+                class CStarToStar1[a: Type -> Type] {
                     pub def starToStar(x: EStarToStar[a]): Int32 = ???
                 }
             }
 
             namespace Exp {
-                lawless class CStar1[a: Type] {
+                class CStar1[a: Type] {
                     pub def star(x: a): Int32 = let _: a = ???; ???
                 }
             }
