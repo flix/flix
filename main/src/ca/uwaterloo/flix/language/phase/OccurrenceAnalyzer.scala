@@ -371,11 +371,11 @@ object OccurrenceAnalyzer {
       val (e, o1) = visitExp(exp)
       (OccurrenceAst.Expression.Force(e, tpe, loc), o1)
 
-    case Expression.HoleError(sym, tpe, purity, loc) =>
-      (OccurrenceAst.Expression.HoleError(sym, tpe, purity, loc), Map.empty)
+    case Expression.HoleError(sym, tpe, loc) =>
+      (OccurrenceAst.Expression.HoleError(sym, tpe, loc), Map.empty)
 
-    case Expression.MatchError(tpe, purity, loc) =>
-      (OccurrenceAst.Expression.MatchError(tpe, purity, loc), Map.empty)
+    case Expression.MatchError(tpe, loc) =>
+      (OccurrenceAst.Expression.MatchError(tpe, loc), Map.empty)
   }
 
   /**

@@ -86,7 +86,7 @@ object ClosureConv {
       // We must create a closure, without free variables, of the definition symbol.
       Expression.Closure(sym, List.empty, tpe, loc)
 
-    case Expression.Lambda(args, body, tpe, purity, loc) =>
+    case Expression.Lambda(args, body, tpe, loc) =>
       // Convert lambdas to closures. This is the main part of the `convert` function.
       // Closure conversion happens as follows:
 
@@ -113,7 +113,7 @@ object ClosureConv {
       // The closure will actually be created at run time, where the values for the free variables are bound
       // and stored in the closure structure. When the closure is called, the bound values are passed as arguments.
       // In a later phase, we will lift the lambda to a top-level definition.
-      Expression.LambdaClosure(newArgs, fvs.map(v => FreeVar(v._1, v._2)), newBody, tpe, purity, loc)
+      Expression.LambdaClosure(newArgs, fvs.map(v => FreeVar(v._1, v._2)), newBody, tpe, loc)
 
     case Expression.Apply(e, args, tpe, purity, loc) =>
       // We're trying to call some expression `e`. If `e` is a Ref, then it's a top-level function, so we directly call
@@ -302,11 +302,11 @@ object ClosureConv {
       val e = visitExp(exp)
       Expression.Force(e, tpe, loc)
 
-    case Expression.HoleError(_, _, _, _) => exp0
-    case Expression.MatchError(_, _, _) => exp0
+    case Expression.HoleError(_, _, _) => exp0
+    case Expression.MatchError(_, _) => exp0
 
     case Expression.Closure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-    case Expression.LambdaClosure(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+    case Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
     case Expression.ApplyClo(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
     case Expression.ApplyDef(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
   }
@@ -332,7 +332,7 @@ object ClosureConv {
     case Expression.Str(_, _) => mutable.LinkedHashSet.empty
     case Expression.Var(sym, tpe, _) => mutable.LinkedHashSet((sym, tpe))
     case Expression.Def(_, _, _) => mutable.LinkedHashSet.empty
-    case Expression.Lambda(args, body, _, _, _) =>
+    case Expression.Lambda(args, body, _, _) =>
       val bound = args.map(_.sym)
       freeVars(body).filterNot { v => bound.contains(v._1) }
     case Expression.Apply(exp, args, _, _, _) =>
@@ -414,10 +414,10 @@ object ClosureConv {
 
     case Expression.Force(exp, _, _) => freeVars(exp)
 
-    case Expression.HoleError(_, _, _, _) => mutable.LinkedHashSet.empty
-    case Expression.MatchError(_, _, _) => mutable.LinkedHashSet.empty
+    case Expression.HoleError(_, _, _) => mutable.LinkedHashSet.empty
+    case Expression.MatchError(_, _) => mutable.LinkedHashSet.empty
 
-    case Expression.LambdaClosure(_, _, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+    case Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
     case Expression.Closure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
     case Expression.ApplyClo(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
     case Expression.ApplyDef(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
@@ -462,16 +462,16 @@ object ClosureConv {
 
       case Expression.Def(_, _, _) => e
 
-      case Expression.Lambda(fparams, exp, tpe, purity, loc) =>
+      case Expression.Lambda(fparams, exp, tpe, loc) =>
         val fs = fparams.map(fparam => replace(fparam, subst))
         val e = visitExp(exp)
-        Expression.Lambda(fs, e, tpe, purity, loc)
+        Expression.Lambda(fs, e, tpe, loc)
 
       case Expression.Closure(_, _, _, _) => e
 
-      case Expression.LambdaClosure(fparams, freeVars, exp, tpe, purity, loc) =>
+      case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
         val e = visitExp(exp).asInstanceOf[Expression.Lambda]
-        Expression.LambdaClosure(fparams, freeVars, e, tpe, purity, loc)
+        Expression.LambdaClosure(fparams, freeVars, e, tpe, loc)
 
       case Expression.ApplyClo(exp, args, tpe, purity, loc) =>
         val e = visitExp(exp)
@@ -683,9 +683,9 @@ object ClosureConv {
         val e = visitExp(exp)
         Expression.Force(e, tpe, loc)
 
-      case Expression.HoleError(_, _, _, _) => e
+      case Expression.HoleError(_, _, _) => e
 
-      case Expression.MatchError(_, _, _) => e
+      case Expression.MatchError( _, _) => e
     }
 
     visitExp(e0)

@@ -321,9 +321,9 @@ object Inliner {
       val e = visitExp(exp, subst0)
       Expression.Force(e, tpe, loc)
 
-    case Expression.HoleError(_, _, _, _) => exp0
+    case Expression.HoleError(_, _, _) => exp0
 
-    case Expression.MatchError(_, _, _) => exp0
+    case Expression.MatchError(_, _) => exp0
   }
 
   /**

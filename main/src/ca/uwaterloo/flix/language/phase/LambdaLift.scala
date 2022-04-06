@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Purity.Impure
-import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, Purity, SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -114,7 +113,7 @@ object LambdaLift {
 
       case SimplifiedAst.Expression.Var(sym, tpe, loc) => LiftedAst.Expression.Var(sym, tpe, loc)
 
-      case SimplifiedAst.Expression.LambdaClosure(fparams, freeVars, exp, tpe, purity, loc) =>
+      case SimplifiedAst.Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
         // Recursively lift the inner expression.
         val liftedExp = visitExp(exp)
 
@@ -357,14 +356,14 @@ object LambdaLift {
         val e = visitExp(exp)
         LiftedAst.Expression.Force(e, tpe, loc)
 
-      case SimplifiedAst.Expression.HoleError(sym, tpe, purity, loc) =>
-        LiftedAst.Expression.HoleError(sym, tpe, purity, loc)
+      case SimplifiedAst.Expression.HoleError(sym, tpe, loc) =>
+        LiftedAst.Expression.HoleError(sym, tpe, loc)
 
-      case SimplifiedAst.Expression.MatchError(tpe, purity, loc) =>
-        LiftedAst.Expression.MatchError(tpe, purity, loc)
+      case SimplifiedAst.Expression.MatchError(tpe, loc) =>
+        LiftedAst.Expression.MatchError(tpe, loc)
 
       case SimplifiedAst.Expression.Def(_, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-      case SimplifiedAst.Expression.Lambda(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+      case SimplifiedAst.Expression.Lambda(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
       case SimplifiedAst.Expression.Apply(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
     }
 

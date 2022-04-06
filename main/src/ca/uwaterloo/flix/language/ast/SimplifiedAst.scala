@@ -115,12 +115,16 @@ object SimplifiedAst {
       def purity: Purity = Pure
     }
 
-    case class Lambda(fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Lambda(fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def purity: Purity = Pure
+    }
 
     case class Apply(exp: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
     @IntroducedBy(ClosureConv.getClass)
-    case class LambdaClosure(fparams: List[SimplifiedAst.FormalParam], freeVars: List[FreeVar], exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class LambdaClosure(fparams: List[SimplifiedAst.FormalParam], freeVars: List[FreeVar], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def purity: Purity = Pure
+    }
 
     @IntroducedBy(LambdaLift.getClass)
     case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
@@ -249,9 +253,13 @@ object SimplifiedAst {
       def purity: Purity = Pure
     }
 
-    case class HoleError(sym: Symbol.HoleSym, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class MatchError(tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class MatchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def purity: Purity = Impure
+    }
 
   }
 

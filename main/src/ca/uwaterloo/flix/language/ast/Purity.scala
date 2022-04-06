@@ -33,14 +33,4 @@ object Purity {
    */
   case object Impure extends Purity
 
-  /**
-   * Infix operator `combine` merges purities `self` and `that`
-   * A merged purity is only pure if both `self` and `that` are pure, otherwise it is always impure.
-   */
-  implicit class compare(self: Purity) extends Purity {
-    def combine(that: Purity): Purity = (self, that) match {
-        case (Pure, Pure) => Pure
-        case _ => Impure
-      }
-  }
 }

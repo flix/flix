@@ -439,8 +439,8 @@ object PrettyPrinter {
 
         case Expression.Force(exp, tpe, loc) => "force " + visitExp(exp)
 
-        case Expression.HoleError(sym, tpe, _, loc) => formatter.red("HoleError")
-        case Expression.MatchError(tpe, _, loc) => formatter.red("MatchError")
+        case Expression.HoleError(sym, tpe, loc) => formatter.red("HoleError")
+        case Expression.MatchError(tpe, loc) => formatter.red("MatchError")
       }
 
       visitExp(exp0)

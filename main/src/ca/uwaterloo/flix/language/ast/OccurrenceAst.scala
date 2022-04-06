@@ -240,9 +240,13 @@ object OccurrenceAst {
       def purity: Purity = Pure
     }
 
-    case class HoleError(sym: Symbol.HoleSym, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class MatchError(tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class MatchError(tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+      def purity: Purity = Impure
+    }
 
   }
 

@@ -240,9 +240,13 @@ object LiftedAst {
       def purity: Purity = Pure
     }
 
-    case class HoleError(sym: Symbol.HoleSym, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
+    case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class MatchError(tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
+    case class MatchError(tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
   }
 

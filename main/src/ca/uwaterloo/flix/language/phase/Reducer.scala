@@ -352,8 +352,8 @@ object Reducer {
       val e = visitExp(exp, env0)
       LiftedAst.Expression.Force(e, tpe, loc)
 
-    case Expression.HoleError(sym, tpe, purity, loc) => LiftedAst.Expression.HoleError(sym, tpe, purity, loc)
+    case Expression.HoleError(sym, tpe, loc) => LiftedAst.Expression.HoleError(sym, tpe, loc)
 
-    case Expression.MatchError(tpe, purity, loc) => LiftedAst.Expression.MatchError(tpe, purity, loc)
+    case Expression.MatchError(tpe, loc) => LiftedAst.Expression.MatchError(tpe, loc)
   }
 }

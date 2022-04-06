@@ -370,11 +370,11 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.Force(e, t, loc)
 
-      case LiftedAst.Expression.HoleError(sym, tpe, _, loc) =>
+      case LiftedAst.Expression.HoleError(sym, tpe, loc) =>
         val t = visitType(tpe)
         FinalAst.Expression.HoleError(sym, t, loc)
 
-      case LiftedAst.Expression.MatchError(tpe, _, loc) =>
+      case LiftedAst.Expression.MatchError(tpe, loc) =>
         val t = visitType(tpe)
         FinalAst.Expression.MatchError(t, loc)
     }

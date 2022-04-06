@@ -278,10 +278,10 @@ object TreeShaker {
     case Expression.Force(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.HoleError(_, _, _, _) =>
+    case Expression.HoleError(_, _, _) =>
       Set.empty
 
-    case Expression.MatchError(_, _, _) =>
+    case Expression.MatchError(_, _) =>
       Set.empty
   }
 
