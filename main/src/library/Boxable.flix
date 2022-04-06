@@ -17,7 +17,7 @@
 ///
 /// A type class for types that can be boxed.
 ///
-pub lawless class Boxable[a] with Order[a], ToString[a] {
+pub class Boxable[a] with Order[a], ToString[a] {
 
     ///
     /// Boxes the given `x`.

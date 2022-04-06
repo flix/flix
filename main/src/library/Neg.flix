@@ -17,7 +17,7 @@
 ///
 /// A type class for negation.
 ///
-pub lawless class Neg[a] {
+pub class Neg[a] {
     ///
     /// Returns -`x`.
     ///

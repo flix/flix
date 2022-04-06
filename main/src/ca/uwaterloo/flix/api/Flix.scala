@@ -541,7 +541,7 @@ class Flix {
     * Compiles the given typed ast to an executable ast.
     */
   def compile(): Validation[CompilationResult, CompilationMessage] =
-    check() flatMap codeGen
+    Validation.flatMapN(check())(codeGen)
 
   /**
     * Enters the phase with the given name.

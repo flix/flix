@@ -17,7 +17,7 @@
 ///
 /// A type class for bitwise and.
 ///
-pub lawless class BitwiseAnd[a] {
+pub class BitwiseAnd[a] {
     ///
     /// Returns the bitwise AND of `x` and `y`.
     ///
