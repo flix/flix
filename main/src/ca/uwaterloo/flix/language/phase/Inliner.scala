@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.DontInline
 import ca.uwaterloo.flix.language.ast.OccurrenceAst._
 import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Purity, Symbol}
 import ca.uwaterloo.flix.language.phase.Optimizer.isTrivialExp
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 /**
@@ -624,8 +624,8 @@ object Inliner {
       val e = substituteExp(exp, env0)
       Expression.Force(e, tpe, loc)
 
-    case Expression.HoleError(_, _, _, _) => exp0
+    case Expression.HoleError(_, _, _) => exp0
 
-    case Expression.MatchError(_, _, _) => exp0
+    case Expression.MatchError(_, _) => exp0
   }
 }
