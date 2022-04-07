@@ -18,6 +18,7 @@ object EntryPoint {
 
 
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EntryPointError] = flix.phase("Typer") {
+    // MATT probably need to check that the entry point exists? But what location to give that?
     root.entryPoint match {
       // Case 1: There is an entry point. Wrap it.
       case Some(sym) =>
