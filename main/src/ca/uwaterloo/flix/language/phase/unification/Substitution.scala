@@ -34,8 +34,8 @@ object Substitution {
     // Ensure that we do not add any x -> x mappings.
     tpe match {
       case y: Type.Var if x.id == y.sym.id => empty
-      case y: Type.Var if x.text.nonEmpty => Substitution(Map(x -> y.withText(x.text)))
-      case y: Type.Var if y.sym.text.nonEmpty => Substitution(Map(x.withText(y.sym.text) -> y))
+      case y: Type.Var if y.sym.text isStrictlyLessPreciseThan x.text => Substitution(Map(x -> y.withText(x.text)))
+      case y: Type.Var if x.text isStrictlyLessPreciseThan y.sym.text => Substitution(Map(x.withText(y.sym.text) -> y))
       case _ => Substitution(Map(x -> tpe))
     }
   }
@@ -179,7 +179,7 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
     ///
     /// A map from type variables (without a name) to a string name ("text").
     ///
-    var replacement = Map.empty[Symbol.TypeVarSym, String]
+    var replacement = Map.empty[Symbol.TypeVarSym, Ast.VarText]
 
     //
     // Compute all bindings where there is a name to be propagated.
@@ -188,10 +188,10 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
       tpe match {
         case tvar2: Type.KindedVar =>
           (tvar1.text, tvar2.sym.text) match {
-            case (None, Some(text)) =>
-              replacement = replacement + (tvar1 -> text)
-            case (Some(text), None) =>
-              replacement = replacement + (tvar2.sym -> text)
+            case (text1, text2) if text1 isStrictlyLessPreciseThan text2 =>
+              replacement = replacement + (tvar1 -> text2)
+            case (text1, text2) if text2 isStrictlyLessPreciseThan text1 =>
+              replacement = replacement + (tvar2.sym -> text1)
             case _ => // nop
           }
         case _ => // nop
@@ -203,7 +203,7 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
       */
     def replace(tvar: Type.KindedVar): Type = replacement.get(tvar.sym) match {
       case None => tvar
-      case Some(text) => tvar.withText(Some(text))
+      case Some(text) => tvar.withText(text)
     }
 
     ///

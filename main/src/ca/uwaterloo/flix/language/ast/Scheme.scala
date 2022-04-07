@@ -82,7 +82,7 @@ object Scheme {
           case InstantiateMode.Rigid => Rigidity.Rigid
           case InstantiateMode.Mixed => Rigidity.Flexible
         }
-        macc + (tvar.id -> Type.freshVar(tvar.kind, tvar.loc, rigidity, None))
+        macc + (tvar.id -> Type.freshVar(tvar.kind, tvar.loc, rigidity, Ast.VarText.Absent))
     }
 
     /**

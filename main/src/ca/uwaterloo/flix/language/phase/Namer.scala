@@ -347,34 +347,43 @@ object Namer {
     * Performs naming on the given class `clazz`.
     */
   private def visitClass(clazz: WeededAst.Declaration.Class, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = clazz match {
-    case WeededAst.Declaration.Class(doc, ann, mod0, ident, tparams0, superClasses0, signatures, laws0, loc) =>
+    case WeededAst.Declaration.Class(doc, ann0, mod0, ident, tparams0, superClasses0, signatures, laws0, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparam = getTypeParam(tparams0)
       val tenv = tenv0 ++ getTypeEnv(List(tparam))
       val tconstr = NamedAst.TypeConstraint(Name.mkQName(ident), NamedAst.Type.Var(tparam.sym, tparam.loc.asSynthetic), sym.loc.asSynthetic)
-      for {
-        ann <- traverse(ann)(visitAnnotation(_, Map.empty, uenv0, tenv))
-        superClasses <- traverse(superClasses0)(visitTypeConstraint(_, uenv0, tenv, ns0))
-        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam))
-        laws <- traverse(laws0)(visitDef(_, uenv0, tenv, ns0, List(tconstr), List(tparam.sym)))
-      } yield NamedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
+
+      val annVal = traverse(ann0)(visitAnnotation(_, Map.empty, uenv0, tenv))
+      val superClassesVal = traverse(superClasses0)(visitTypeConstraint(_, uenv0, tenv, ns0))
+      val sigsVal = traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam))
+      val lawsVal = traverse(laws0)(visitDef(_, uenv0, tenv, ns0, List(tconstr), List(tparam.sym)))
+
+      mapN(annVal, superClassesVal, sigsVal, lawsVal) {
+        case (ann, superClasses, sigs, laws) =>
+          NamedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
+      }
   }
 
   /**
     * Performs naming on the given instance `instance`.
     */
   private def visitInstance(instance: WeededAst.Declaration.Instance, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Instance, NameError] = instance match {
-    case WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, tconstrs, defs0, loc) =>
+    case WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, tconstrs0, defs0, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe0))
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
-      for {
-        tpe <- visitType(tpe0, uenv0, tenv)
-        tconstrs <- traverse(tconstrs)(visitTypeConstraint(_, uenv0, tenv, ns0))
-        qualifiedClass = getClass(clazz, uenv0)
-        instTconstr = NamedAst.TypeConstraint(qualifiedClass, tpe, clazz.loc)
-        defs <- traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr), tparams.tparams.map(_.sym)))
-      } yield NamedAst.Instance(doc, mod, qualifiedClass, tpe, tconstrs, defs, loc)
+
+      val tpeVal = visitType(tpe0, uenv0, tenv)
+      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
+      flatMapN(tpeVal, tconstrsVal) {
+        case (tpe, tconstrs) =>
+          val qualifiedClass = getClass(clazz, uenv0)
+          val instTconstr = NamedAst.TypeConstraint(qualifiedClass, tpe, clazz.loc)
+          val defsVal = traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr), tparams.tparams.map(_.sym)))
+          mapN(defsVal) {
+            defs => NamedAst.Instance(doc, mod, qualifiedClass, tpe, tconstrs, defs, loc)
+          }
+      }
   }
 
 
@@ -1112,7 +1121,7 @@ object Namer {
         NameError.SuspiciousTypeVarName(ident.name, loc).toFailure
       } else if (ident.isWild) {
         // Wild idents will not be in the environment. Create a tvar instead.
-        NamedAst.Type.Var(Symbol.freshUnkindedTypeVarSym(None, Rigidity.Flexible, loc), loc).toSuccess
+        NamedAst.Type.Var(Symbol.freshUnkindedTypeVarSym(Ast.VarText.Absent, Rigidity.Flexible, loc), loc).toSuccess
       } else {
         tenv0.get(ident.name) match {
           case None => NameError.UndefinedTypeVar(ident.name, loc).toFailure
@@ -1721,7 +1730,7 @@ object Namer {
     * Creates a flexible unkinded type variable symbol from the given ident.
     */
   private def mkTypeVarSym(ident: Name.Ident)(implicit flix: Flix): Symbol.UnkindedTypeVarSym = {
-    Symbol.freshUnkindedTypeVarSym(Some(ident.name), Rigidity.Flexible, ident.loc)
+    Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(ident.name), Rigidity.Flexible, ident.loc)
   }
 
 
