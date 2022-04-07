@@ -83,6 +83,19 @@ object Inliner {
     case Expression.ApplyClo(exp, args, tpe, loc) =>
       val e = visitExp(exp, subst0)
       val as = args.map(visitExp(_, subst0))
+      e match {
+        case Expression.Closure(sym, _, _, _) =>
+          val def1 = root.defs.apply(sym)
+          if (def1.context.isNonSelfCall) {
+            val e1 = convertTailCall(def1.exp)
+            bindFormals(e1, def1.fparams.map(_.sym), as, Map.empty)
+          } else {
+            Expression.ApplyClo(e, as, tpe, loc)
+          }
+        case _ =>
+          val as = args.map(visitExp(_, subst0))
+          Expression.ApplyClo(e, as, tpe, loc)
+      }
       Expression.ApplyClo(e, as, tpe, loc)
 
     case Expression.ApplyDef(sym, args, tpe, loc) =>
@@ -99,6 +112,18 @@ object Inliner {
     case Expression.ApplyCloTail(exp, args, tpe, loc) =>
       val e = visitExp(exp, subst0)
       val as = args.map(visitExp(_, subst0))
+      e match {
+        case Expression.Closure(sym, _, _, _) =>
+          val def1 = root.defs.apply(sym)
+          if (def1.context.isNonSelfCall) {
+            bindFormals(def1.exp, def1.fparams.map(_.sym), as, Map.empty)
+          } else {
+            Expression.ApplyCloTail(e, as, tpe, loc)
+          }
+        case _ =>
+          val as = args.map(visitExp(_, subst0))
+          Expression.ApplyCloTail(e, as, tpe, loc)
+      }
       Expression.ApplyCloTail(e, as, tpe, loc)
 
     case Expression.ApplyDefTail(sym, args, tpe, loc) =>
