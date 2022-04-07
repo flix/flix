@@ -63,6 +63,42 @@ namespace TestValidation {
     def ap07(): Bool = Validation.ap(Failure(necOf2(1, 2)), (Failure(necOf2(3, 4)))): Validation[Unit, _] == Failure(necOf4(1, 2, 3, 4))
 
     /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool =
+    let p = product(Failure(singleton(1)), (Failure(singleton(2))));
+    match p {
+        case Success(_) => false
+        case Failure(v) => v == necOf2(1, 2)
+    }
+
+    @test
+    def product02(): Bool =
+        let p = product(Failure(singleton(1)), Success(2));
+        match p {
+            case Success(_) => false
+            case Failure(v) => v == singleton(1)
+        }
+
+    @test
+    def product03(): Bool =
+        let p = product(Success(1), Failure(singleton(2)));
+        match p {
+            case Success(_) => false
+            case Failure(v) => v == singleton(2)
+        }
+
+    @test
+    def product04(): Bool =
+        let p = product(Success(1), Success(2));
+        match p {
+            case Success(v) => v == (1, 2)
+            case Failure(_) => false
+        }
+
+    /////////////////////////////////////////////////////////////////////////////
     // getWithDefault                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
