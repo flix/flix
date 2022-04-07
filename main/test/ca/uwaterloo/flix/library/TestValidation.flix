@@ -171,6 +171,42 @@ namespace TestValidation {
         }
 
     /////////////////////////////////////////////////////////////////////////////
+    // product5                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product501(): Bool =
+        let p = product5(Success(1), Success(2), Success(3), Success(4), Success(5));
+        match p {
+            case Success(v) => v == (1, 2, 3, 4, 5)
+            case Failure(_) => false
+        }
+
+    @test
+    def product502(): Bool =
+        let p = product5(Success(1), Failure(singleton(2)), Success(3), Success(4), Success(5));
+        match p {
+            case Success(_) => false
+            case Failure(v) => v == singleton(2)
+        }
+
+    @test
+    def product503(): Bool =
+        let p = product5(Failure(singleton(1)), Success(2), Failure(singleton(3)), Success(4), Failure(singleton(5)));
+        match p {
+            case Success(_) => false
+            case Failure(v) => v == necOf3(1, 3, 5)
+        }
+
+    @test
+    def product504(): Bool =
+        let p = product5(Failure(singleton(1)), Failure(singleton(2)), Failure(singleton(3)), Failure(singleton(4)), Failure(singleton(5)));
+        match p {
+            case Success(_) => false
+            case Failure(v) => v == necOf5(1, 2, 3, 4, 5)
+        }
+
+    /////////////////////////////////////////////////////////////////////////////
     // getWithDefault                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
