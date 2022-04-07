@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.Ast.VarText
-import ca.uwaterloo.flix.language.ast.SourceLocation.Unknown
 import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -337,9 +336,9 @@ object BoolMinimization {
           VarText.SourceText(s),
           Kind.Bool,
           Rigidity.Flexible,
-          Unknown
+          SourceLocation.Unknown
         ),
-        Unknown
+        SourceLocation.Unknown
       )
     )
 
