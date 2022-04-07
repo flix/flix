@@ -18,13 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.DontInline
-import ca.uwaterloo.flix.language.ast.OccurrenceAst._
-import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Purity, Symbol}
-import ca.uwaterloo.flix.language.phase.Optimizer.isTrivialExp
-import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
+import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
 import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Purity, Symbol}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -137,12 +133,12 @@ object Inliner {
       }
       LiftedAst.Expression.Closure(sym, fvs, tpe, loc)
 
-    case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, loc) =>
+    case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       val as = args.map(visitExp(_, subst0))
-      LiftedAst.Expression.ApplyClo(e, as, tpe, loc)
+      LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplyDef(sym, args, tpe, loc) =>
+    case OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
       val as = args.map(visitExp(_, subst0))
       val def1 = root.defs.apply(sym)
       // If `def1` is a single non-self call and its arguments are trivial, then inline the single non-self call, `e1`.
@@ -150,56 +146,56 @@ object Inliner {
         val e1 = convertTailCall(def1.exp)
         bindFormals(e1, def1.fparams.map(_.sym), as, Map.empty)
       } else {
-        LiftedAst.Expression.ApplyDef(sym, as, tpe, loc)
+        LiftedAst.Expression.ApplyDef(sym, as, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplyCloTail(exp, args, tpe, loc) =>
+    case OccurrenceAst.Expression.ApplyCloTail(exp, args, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       val as = args.map(visitExp(_, subst0))
-      LiftedAst.Expression.ApplyCloTail(e, as, tpe, loc)
+      LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, loc) =>
+    case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) =>
       val as = args.map(visitExp(_, subst0))
       val def1 = root.defs.apply(sym)
       // If `def1` is a single non-self call and its arguments are trivial, then inline the single non-self call, `e1`.
       if (def1.context.isNonSelfCall && purity == Purity.Pure) {
         bindFormals(def1.exp, def1.fparams.map(_.sym), as, Map.empty)
       } else {
-        LiftedAst.Expression.ApplyDefTail(sym, as, tpe, loc)
+        LiftedAst.Expression.ApplyDefTail(sym, as, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
+    case OccurrenceAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
       val as = actuals.map(visitExp(_, subst0))
       val fs = formals.map(visitFormalParam)
-      LiftedAst.Expression.ApplySelfTail(sym, fs, as, tpe, loc)
+      LiftedAst.Expression.ApplySelfTail(sym, fs, as, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Unary(sop, op, exp, tpe, loc) =>
+    case OccurrenceAst.Expression.Unary(sop, op, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Unary(sop, op, e, tpe, loc)
+      LiftedAst.Expression.Unary(sop, op, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+    case OccurrenceAst.Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
-      LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, loc)
+      LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+    case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
       val e3 = visitExp(exp3, subst0)
       e1 match {
         case LiftedAst.Expression.True(_) => e2
         case LiftedAst.Expression.False(_) => e3
-        case _ => LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc)
+        case _ => LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.Branch(exp, branches, tpe, loc) =>
+    case OccurrenceAst.Expression.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       val bs = branches.map {
         case (sym, br) => sym -> visitExp(br, subst0)
       }
-      LiftedAst.Expression.Branch(e, bs, tpe, loc)
+      LiftedAst.Expression.Branch(e, bs, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.JumpTo(sym, tpe, loc) => LiftedAst.Expression.JumpTo(sym, tpe, loc)
+    case OccurrenceAst.Expression.JumpTo(sym, tpe, purity, loc) => LiftedAst.Expression.JumpTo(sym, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
       /// Case 1:
@@ -236,45 +232,45 @@ object Inliner {
         }
       }
 
-    case OccurrenceAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
+    case OccurrenceAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
-      LiftedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
+      LiftedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Is(sym, tag, exp, loc) =>
+    case OccurrenceAst.Expression.Is(sym, tag, exp, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Is(sym, tag, e, loc)
+      LiftedAst.Expression.Is(sym, tag, e, purity, loc)
 
-    case OccurrenceAst.Expression.Tag(sym, tag, exp, tpe, loc) =>
+    case OccurrenceAst.Expression.Tag(sym, tag, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Tag(sym, tag, e, tpe, loc)
+      LiftedAst.Expression.Tag(sym, tag, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Untag(sym, tag, exp, tpe, loc) =>
+    case OccurrenceAst.Expression.Untag(sym, tag, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Untag(sym, tag, e, tpe, loc)
+      LiftedAst.Expression.Untag(sym, tag, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Index(base, offset, tpe, loc) =>
+    case OccurrenceAst.Expression.Index(base, offset, tpe, purity, loc) =>
       val b = visitExp(base, subst0)
-      LiftedAst.Expression.Index(b, offset, tpe, loc)
+      LiftedAst.Expression.Index(b, offset, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Tuple(elms, tpe, loc) =>
+    case OccurrenceAst.Expression.Tuple(elms, tpe, purity, loc) =>
       val es = elms.map(visitExp(_, subst0))
-      LiftedAst.Expression.Tuple(es, tpe, loc)
+      LiftedAst.Expression.Tuple(es, tpe, purity, loc)
 
     case OccurrenceAst.Expression.RecordEmpty(tpe, loc) => LiftedAst.Expression.RecordEmpty(tpe, loc)
 
-    case OccurrenceAst.Expression.RecordSelect(exp, field, tpe, loc) =>
+    case OccurrenceAst.Expression.RecordSelect(exp, field, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.RecordSelect(e, field, tpe, loc)
+      LiftedAst.Expression.RecordSelect(e, field, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.RecordExtend(field, value, rest, tpe, loc) =>
+    case OccurrenceAst.Expression.RecordExtend(field, value, rest, tpe, purity, loc) =>
       val v = visitExp(value, subst0)
       val r = visitExp(rest, subst0)
-      LiftedAst.Expression.RecordExtend(field, v, r, tpe, loc)
+      LiftedAst.Expression.RecordExtend(field, v, r, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.RecordRestrict(field, rest, tpe, loc) =>
+    case OccurrenceAst.Expression.RecordRestrict(field, rest, tpe, purity, loc) =>
       val r = visitExp(rest, subst0)
-      LiftedAst.Expression.RecordRestrict(field, r, tpe, loc)
+      LiftedAst.Expression.RecordRestrict(field, r, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ArrayLit(elms, tpe, loc) =>
       val es = elms.map(visitExp(_, subst0))
@@ -296,7 +292,7 @@ object Inliner {
       val e = visitExp(elm, subst0)
       LiftedAst.Expression.ArrayStore(b, i, e, tpe, loc)
 
-    case OccurrenceAst.Expression.ArrayLength(base, tpe, loc) =>
+    case OccurrenceAst.Expression.ArrayLength(base, tpe, _, loc) =>
       val b = visitExp(base, subst0)
       val purity = b.purity
       LiftedAst.Expression.ArrayLength(b, tpe, purity, loc)
@@ -320,46 +316,46 @@ object Inliner {
       val e2 = visitExp(exp2, subst0)
       LiftedAst.Expression.Assign(e1, e2, tpe, loc)
 
-    case OccurrenceAst.Expression.Cast(exp, tpe, loc) =>
+    case OccurrenceAst.Expression.Cast(exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Cast(e, tpe, loc)
+      LiftedAst.Expression.Cast(e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.TryCatch(exp, rules, tpe, loc) =>
+    case OccurrenceAst.Expression.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       val rs = rules.map {
         case OccurrenceAst.CatchRule(sym, clazz, exp) =>
           val e = visitExp(exp, subst0)
           LiftedAst.CatchRule(sym, clazz, e)
       }
-      LiftedAst.Expression.TryCatch(e, rs, tpe, loc)
+      LiftedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
+    case OccurrenceAst.Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
       val as = args.map(visitExp(_, subst0))
-      LiftedAst.Expression.InvokeConstructor(constructor, as, tpe, loc)
+      LiftedAst.Expression.InvokeConstructor(constructor, as, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+    case OccurrenceAst.Expression.InvokeMethod(method, exp, args, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       val as = args.map(visitExp(_, subst0))
-      LiftedAst.Expression.InvokeMethod(method, e, as, tpe, loc)
+      LiftedAst.Expression.InvokeMethod(method, e, as, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+    case OccurrenceAst.Expression.InvokeStaticMethod(method, args, tpe, purity, loc) =>
       val as = args.map(visitExp(_, subst0))
-      LiftedAst.Expression.InvokeStaticMethod(method, as, tpe, loc)
+      LiftedAst.Expression.InvokeStaticMethod(method, as, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.GetField(field, exp, tpe, loc) =>
+    case OccurrenceAst.Expression.GetField(field, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.GetField(field, e, tpe, loc)
+      LiftedAst.Expression.GetField(field, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
+    case OccurrenceAst.Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
-      LiftedAst.Expression.PutField(field, e1, e2, tpe, loc)
+      LiftedAst.Expression.PutField(field, e1, e2, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.GetStaticField(field, tpe, loc) => LiftedAst.Expression.GetStaticField(field, tpe, loc)
+    case OccurrenceAst.Expression.GetStaticField(field, tpe, purity, loc) => LiftedAst.Expression.GetStaticField(field, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.PutStaticField(field, exp, tpe, loc) =>
+    case OccurrenceAst.Expression.PutStaticField(field, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.PutStaticField(field, e, tpe, loc)
+      LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
     case OccurrenceAst.Expression.NewChannel(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -436,10 +432,19 @@ object Inliner {
         val freshVar = Symbol.freshVarSym(sym)
         val env1 = env0 + (sym -> freshVar)
         val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env1)
-        val purity = if (isTrivialExp(e1)) Purity.Pure else Purity.Impure
+        val purity =  combine(e1.purity, nextLet.purity)
         LiftedAst.Expression.Let(freshVar, e1, nextLet, exp0.tpe, purity, exp0.loc)
       case _ => substituteExp(exp0, env0)
     }
+  }
+
+  /**
+   * Combines purities `p1` and `p2`
+   * A combined purity is only pure if both `p1` and `p2` are pure, otherwise it is always impure.
+   */
+  def combine(p1: Purity, p2: Purity): Purity = (p1, p2) match {
+    case (Pure, Pure) => Pure
+    case _ => Impure
   }
 
   /**
@@ -447,8 +452,8 @@ object Inliner {
    */
   //TODO expand `convertTailCall` when more functions are being inlined
   private def convertTailCall(exp0: OccurrenceAst.Expression): OccurrenceAst.Expression = exp0 match {
-    case OccurrenceAst.Expression.ApplyCloTail(exp, args, tpe, loc) => OccurrenceAst.Expression.ApplyClo(exp, args, tpe, loc)
-    case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, loc) => OccurrenceAst.Expression.ApplyDef(sym, args, tpe, loc)
+    case OccurrenceAst.Expression.ApplyCloTail(exp, args, tpe, purity, loc) => OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc)
+    case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc)
     case _ => exp0
   }
 
@@ -490,23 +495,23 @@ object Inliner {
 
     case OccurrenceAst.Expression.False(loc) => LiftedAst.Expression.False(loc)
 
-    case OccurrenceAst.Expression.Char(tpe, loc) => LiftedAst.Expression.Char(tpe, loc)
+    case OccurrenceAst.Expression.Char(lit, loc) => LiftedAst.Expression.Char(lit, loc)
 
-    case OccurrenceAst.Expression.Float32(tpe, loc) => LiftedAst.Expression.Float32(tpe, loc)
+    case OccurrenceAst.Expression.Float32(lit, loc) => LiftedAst.Expression.Float32(lit, loc)
 
-    case OccurrenceAst.Expression.Float64(tpe, loc) => LiftedAst.Expression.Float64(tpe, loc)
+    case OccurrenceAst.Expression.Float64(lit, loc) => LiftedAst.Expression.Float64(lit, loc)
 
-    case OccurrenceAst.Expression.Int8(tpe, loc) => LiftedAst.Expression.Int8(tpe, loc)
+    case OccurrenceAst.Expression.Int8(lit, loc) => LiftedAst.Expression.Int8(lit, loc)
 
-    case OccurrenceAst.Expression.Int16(tpe, loc) => LiftedAst.Expression.Int16(tpe, loc)
+    case OccurrenceAst.Expression.Int16(lit, loc) => LiftedAst.Expression.Int16(lit, loc)
 
-    case OccurrenceAst.Expression.Int32(tpe, loc) => LiftedAst.Expression.Int32(tpe, loc)
+    case OccurrenceAst.Expression.Int32(lit, loc) => LiftedAst.Expression.Int32(lit, loc)
 
-    case OccurrenceAst.Expression.Int64(tpe, loc) => LiftedAst.Expression.Int64(tpe, loc)
+    case OccurrenceAst.Expression.Int64(lit, loc) => LiftedAst.Expression.Int64(lit, loc)
 
-    case OccurrenceAst.Expression.BigInt(tpe, loc) => LiftedAst.Expression.BigInt(tpe, loc)
+    case OccurrenceAst.Expression.BigInt(lit, loc) => LiftedAst.Expression.BigInt(lit, loc)
 
-    case OccurrenceAst.Expression.Str(tpe, loc) => LiftedAst.Expression.Str(tpe, loc)
+    case OccurrenceAst.Expression.Str(lit, loc) => LiftedAst.Expression.Str(lit, loc)
 
     case OccurrenceAst.Expression.Var(sym, tpe, loc) => LiftedAst.Expression.Var(env0.getOrElse(sym, sym), tpe, loc)
 
@@ -516,52 +521,52 @@ object Inliner {
       }
       LiftedAst.Expression.Closure(sym, fvs, tpe, loc)
 
-    case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, loc) =>
+    case OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.ApplyClo(e, as, tpe, loc)
+      LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplyDef(sym, args, tpe, loc) =>
+    case OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
       val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.ApplyDef(sym, as, tpe, loc)
+      LiftedAst.Expression.ApplyDef(sym, as, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplyCloTail(exp, args, tpe, loc) =>
+    case OccurrenceAst.Expression.ApplyCloTail(exp, args, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.ApplyCloTail(e, as, tpe, loc)
+      LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, loc) =>
+    case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) =>
       val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.ApplyDefTail(sym, as, tpe, loc)
+      LiftedAst.Expression.ApplyDefTail(sym, as, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
+    case OccurrenceAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
       val as = actuals.map(substituteExp(_, env0))
       val fs = formals.map(visitFormalParam)
-      LiftedAst.Expression.ApplySelfTail(sym, fs, as, tpe, loc)
+      LiftedAst.Expression.ApplySelfTail(sym, fs, as, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Unary(sop, op, exp, tpe, loc) =>
+    case OccurrenceAst.Expression.Unary(sop, op, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Unary(sop, op, e, tpe, loc)
+      LiftedAst.Expression.Unary(sop, op, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+    case OccurrenceAst.Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
       val e2 = substituteExp(exp2, env0)
-      LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, loc)
+      LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+    case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
       val e2 = substituteExp(exp2, env0)
       val e3 = substituteExp(exp3, env0)
-      LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc)
+      LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Branch(exp, branches, tpe, loc) =>
+    case OccurrenceAst.Expression.Branch(exp, branches, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       val bs = branches.map {
         case (sym, br) => sym -> substituteExp(br, env0)
       }
-      LiftedAst.Expression.Branch(e, bs, tpe, loc)
+      LiftedAst.Expression.Branch(e, bs, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.JumpTo(sym, tpe, loc) => LiftedAst.Expression.JumpTo(sym, tpe, loc)
+    case OccurrenceAst.Expression.JumpTo(sym, tpe, purity, loc) => LiftedAst.Expression.JumpTo(sym, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Let(sym, exp1, exp2, _, tpe, purity, loc) =>
       val freshVar = Symbol.freshVarSym(sym)
@@ -570,47 +575,47 @@ object Inliner {
       val e2 = substituteExp(exp2, env1)
       LiftedAst.Expression.Let(freshVar, e1, e2, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
+    case OccurrenceAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
       val freshVar = Symbol.freshVarSym(varSym)
       val env1 = env0 + (varSym -> freshVar)
       val e1 = substituteExp(exp1, env1)
       val e2 = substituteExp(exp2, env1)
-      LiftedAst.Expression.LetRec(freshVar, index, defSym, e1, e2, tpe, loc)
+      LiftedAst.Expression.LetRec(freshVar, index, defSym, e1, e2, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Is(sym, tag, exp, loc) =>
+    case OccurrenceAst.Expression.Is(sym, tag, exp, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Is(sym, tag, e, loc)
+      LiftedAst.Expression.Is(sym, tag, e, purity, loc)
 
-    case OccurrenceAst.Expression.Tag(sym, tag, exp, tpe, loc) =>
+    case OccurrenceAst.Expression.Tag(sym, tag, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Tag(sym, tag, e, tpe, loc)
+      LiftedAst.Expression.Tag(sym, tag, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Untag(sym, tag, exp, tpe, loc) =>
+    case OccurrenceAst.Expression.Untag(sym, tag, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Untag(sym, tag, e, tpe, loc)
+      LiftedAst.Expression.Untag(sym, tag, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Index(base, offset, tpe, loc) =>
+    case OccurrenceAst.Expression.Index(base, offset, tpe, purity, loc) =>
       val b = substituteExp(base, env0)
-      LiftedAst.Expression.Index(b, offset, tpe, loc)
+      LiftedAst.Expression.Index(b, offset, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Tuple(elms, tpe, loc) =>
+    case OccurrenceAst.Expression.Tuple(elms, tpe, purity, loc) =>
       val es = elms.map(substituteExp(_, env0))
-      LiftedAst.Expression.Tuple(es, tpe, loc)
+      LiftedAst.Expression.Tuple(es, tpe, purity, loc)
 
     case OccurrenceAst.Expression.RecordEmpty(tpe, loc) => LiftedAst.Expression.RecordEmpty(tpe, loc)
 
-    case OccurrenceAst.Expression.RecordSelect(exp, field, tpe, loc) =>
+    case OccurrenceAst.Expression.RecordSelect(exp, field, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.RecordSelect(e, field, tpe, loc)
+      LiftedAst.Expression.RecordSelect(e, field, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.RecordExtend(field, value, rest, tpe, loc) =>
+    case OccurrenceAst.Expression.RecordExtend(field, value, rest, tpe, purity, loc) =>
       val v = substituteExp(value, env0)
       val r = substituteExp(rest, env0)
-      LiftedAst.Expression.RecordExtend(field, v, r, tpe, loc)
+      LiftedAst.Expression.RecordExtend(field, v, r, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.RecordRestrict(field, rest, tpe, loc) =>
+    case OccurrenceAst.Expression.RecordRestrict(field, rest, tpe, purity, loc) =>
       val r = substituteExp(rest, env0)
-      LiftedAst.Expression.RecordRestrict(field, r, tpe, loc)
+      LiftedAst.Expression.RecordRestrict(field, r, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ArrayLit(elms, tpe, loc) =>
       val es = elms.map(substituteExp(_, env0))
@@ -632,9 +637,9 @@ object Inliner {
       val e = substituteExp(elm, env0)
       LiftedAst.Expression.ArrayStore(b, i, e, tpe, loc)
 
-    case OccurrenceAst.Expression.ArrayLength(base, tpe, loc) =>
+    case OccurrenceAst.Expression.ArrayLength(base, tpe, purity, loc) =>
       val b = substituteExp(base, env0)
-      LiftedAst.Expression.ArrayLength(b, tpe, loc)
+      LiftedAst.Expression.ArrayLength(b, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
       val b = substituteExp(base, env0)
@@ -655,11 +660,11 @@ object Inliner {
       val e2 = substituteExp(exp2, env0)
       LiftedAst.Expression.Assign(e1, e2, tpe, loc)
 
-    case OccurrenceAst.Expression.Cast(exp, tpe, loc) =>
+    case OccurrenceAst.Expression.Cast(exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Cast(e, tpe, loc)
+      LiftedAst.Expression.Cast(e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.TryCatch(exp, rules, tpe, loc) =>
+    case OccurrenceAst.Expression.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       val rs = rules.map {
         case OccurrenceAst.CatchRule(sym, clazz, exp) =>
@@ -668,35 +673,35 @@ object Inliner {
           val e = substituteExp(exp, env1)
           LiftedAst.CatchRule(freshVar, clazz, e)
       }
-      LiftedAst.Expression.TryCatch(e, rs, tpe, loc)
+      LiftedAst.Expression.TryCatch(e, rs, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
+    case OccurrenceAst.Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
       val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.InvokeConstructor(constructor, as, tpe, loc)
+      LiftedAst.Expression.InvokeConstructor(constructor, as, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+    case OccurrenceAst.Expression.InvokeMethod(method, exp, args, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.InvokeMethod(method, e, as, tpe, loc)
+      LiftedAst.Expression.InvokeMethod(method, e, as, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+    case OccurrenceAst.Expression.InvokeStaticMethod(method, args, tpe, purity, loc) =>
       val as = args.map(substituteExp(_, env0))
-      LiftedAst.Expression.InvokeStaticMethod(method, as, tpe, loc)
+      LiftedAst.Expression.InvokeStaticMethod(method, as, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.GetField(field, exp, tpe, loc) =>
+    case OccurrenceAst.Expression.GetField(field, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.GetField(field, e, tpe, loc)
+      LiftedAst.Expression.GetField(field, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
+    case OccurrenceAst.Expression.PutField(field, exp1, exp2, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
       val e2 = substituteExp(exp2, env0)
-      LiftedAst.Expression.PutField(field, e1, e2, tpe, loc)
+      LiftedAst.Expression.PutField(field, e1, e2, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.GetStaticField(field, tpe, loc) => LiftedAst.Expression.GetStaticField(field, tpe, loc)
+    case OccurrenceAst.Expression.GetStaticField(field, tpe, purity, loc) => LiftedAst.Expression.GetStaticField(field, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.PutStaticField(field, exp, tpe, loc) =>
+    case OccurrenceAst.Expression.PutStaticField(field, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      LiftedAst.Expression.PutStaticField(field, e, tpe, loc)
+      LiftedAst.Expression.PutStaticField(field, e, tpe, purity, loc)
 
     case OccurrenceAst.Expression.NewChannel(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)
