@@ -19,8 +19,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
-import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation.{ToSuccess, mapN}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN}
 
 // MATT overall docs
 object EntryPoint {
@@ -72,20 +72,34 @@ object EntryPoint {
     * Returns a flag indicating whether the args should be passed to this function or ignored.
     */
   private def checkEntryPointArgs(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[EntryPointArgsAction, EntryPointError] = defn match {
-    case TypedAst.Def(_, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _), _) =>
+    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _), _) =>
       val unitSc = Scheme.generalize(Nil, Type.Unit)
-      val argSc = Scheme.generalize(Nil, declaredScheme.base.arrowArgTypes.head) // MATT must check only one parameter
-      val stringArraySc = Scheme.generalize(Nil, Type.mkArray(Type.Str, SourceLocation.Unknown))
 
-      if (Scheme.equal(unitSc, argSc, classEnv)) {
-        // Case 1: Unit -> XYZ. We can ignore the args.
-        EntryPointArgsAction.Ignore.toSuccess
-      } else if (Scheme.equal(argSc, stringArraySc, classEnv)) {
-        // Case 2: Array[String] -> XYZ. We need to pass along the input args.
-        EntryPointArgsAction.Use.toSuccess
-      } else {
-        // Case 3: Bad arguments. Error.
-        ??? // MATT throw error about bad args
+      // First check that there's exactly one argument.
+      val argVal = declaredScheme.base.arrowArgTypes match {
+        // Case 1: One arg. Ok :)
+        case arg :: Nil => arg.toSuccess
+        // Case 2: Multiple args. Error.
+        case _ :: _ :: _ => EntryPointError.TooManyEntryPointArgs(sym, sym.loc).toFailure
+        // Case 3: Empty arguments. Impossible since this is desugared to Unit.
+        case Nil => throw InternalCompilerException("Unexpected empty argument list.")
+      }
+
+      flatMapN(argVal: Validation[Type, EntryPointError]) {
+        arg =>
+          val argSc = Scheme.generalize(Nil, arg)
+          val stringArraySc = Scheme.generalize(Nil, Type.mkArray(Type.Str, SourceLocation.Unknown))
+
+          if (Scheme.equal(unitSc, argSc, classEnv)) {
+            // Case 1: Unit -> XYZ. We can ignore the args.
+            EntryPointArgsAction.Ignore.toSuccess
+          } else if (Scheme.equal(argSc, stringArraySc, classEnv)) {
+            // Case 2: Array[String] -> XYZ. We need to pass along the input args.
+            EntryPointArgsAction.Use.toSuccess
+          } else {
+            // Case 3: Bad arguments. Error.
+            EntryPointError.UnexpectedEntryPointArg(sym, arg, sym.loc).toFailure
+          }
       }
   }
 
@@ -94,7 +108,7 @@ object EntryPoint {
     * Returns a flag indicating whether the result should be printed, cast, or unchanged.
     */
   private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[EntryPointResultAction, EntryPointError] = defn match {
-    case TypedAst.Def(_, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _), _) =>
+    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _), _) =>
       val resultTpe = declaredScheme.base.arrowResultType
       val unitSc = Scheme.generalize(Nil, Type.Unit)
       val resultSc = Scheme.generalize(Nil, resultTpe)
@@ -115,7 +129,7 @@ object EntryPoint {
         EntryPointResultAction.Print.toSuccess
       } else {
         // Case 3: Bad result type. Error.
-        ??? // MATT throw error about bad result
+        EntryPointError.UnexpectedEntryPointResult(sym, resultTpe, sym.loc).toFailure
       }
   }
 
