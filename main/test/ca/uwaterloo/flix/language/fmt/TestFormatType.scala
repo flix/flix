@@ -437,4 +437,16 @@ class TestFormatType extends FunSuite with TestUtils {
 
     assert(actual == expected)
   }
+
+  test("FormatType.Var.External.01") {
+    val m = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("m"), Kind.Star ->: Kind.Star, Rigidity.Flexible, loc), loc)
+    val a = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("a"), Kind.Star, Rigidity.Flexible, loc), loc)
+
+    val ma = Type.mkApply(m, List(a), loc)
+
+    val expected = "m[a]"
+    val actual = FormatType.formatWellKindedType(ma)(Audience.External)
+
+    assert(actual == expected)
+  }
 }
