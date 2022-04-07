@@ -84,7 +84,7 @@ object EntryPoint {
     * The new entrypoint should be added to the AST.
     */
   private def visitEntrypoint(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, EntryPointError] = {
-    val argsActionVal = checkEntryPointArgs(defn, root, classEnv)
+    val argsActionVal = checkEntryPointArgs(defn, classEnv)
     val resultActionVal = checkEntryPointResult(defn, root, classEnv)
 
     mapN(argsActionVal, resultActionVal) {
@@ -97,7 +97,7 @@ object EntryPoint {
     * Checks the entry point function arguments.
     * Returns a flag indicating whether the args should be passed to this function or ignored.
     */
-  private def checkEntryPointArgs(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[EntryPointArgsAction, EntryPointError] = defn match {
+  private def checkEntryPointArgs(defn: TypedAst.Def, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[EntryPointArgsAction, EntryPointError] = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _), _) =>
       val unitSc = Scheme.generalize(Nil, Type.Unit)
 
