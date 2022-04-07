@@ -74,13 +74,14 @@ object EntryPoint {
               entryPoint = Some(entryPoint.sym)
             )
         }
-      )
       // Case 2: No entry point. Don't touch anything.
       case None => root.toSuccess
     }
   }
 
-  // MATT docs
+  /**
+    * Finds the entry point in the given `root`.
+    */
   def findOriginalEntryPoint(root: TypedAst.Root)(implicit flix: Flix): Validation[Option[TypedAst.Def], EntryPointError] = {
     root.entryPoint match {
       case Some(sym) => root.defs.get(sym) match {
