@@ -68,11 +68,11 @@ namespace TestValidation {
 
     @test
     def product01(): Bool =
-    let p = product(Failure(singleton(1)), (Failure(singleton(2))));
-    match p {
-        case Success(_) => false
-        case Failure(v) => v == necOf2(1, 2)
-    }
+        let p = product(Failure(singleton(1)), (Failure(singleton(2))));
+        match p {
+            case Success(_) => false
+            case Failure(v) => v == necOf2(1, 2)
+        }
 
     @test
     def product02(): Bool =
