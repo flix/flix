@@ -17,7 +17,7 @@
 ///
 /// A type class for data structures that can be iterated.
 ///
-pub lawless class Iterable[t: Type -> Type] {
+pub class Iterable[t: Type -> Type] {
 
     ///
     /// Returns an iterator of `t`.

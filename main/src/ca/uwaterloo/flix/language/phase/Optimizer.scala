@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.LiftedAst._
-import ca.uwaterloo.flix.language.ast.{LiftedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.LiftedAst.Root
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.Expression
 import ca.uwaterloo.flix.language.dbg.PrettyPrinter
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Formatter, Validation}
@@ -47,5 +47,31 @@ object Optimizer {
     }
 
     result.toSuccess
+  }
+
+  /**
+   * returns `true` if `exp0` is considered a trivial expression.
+   *
+   * An expression is trivial if:
+   * It is either a literal (float, string, int, bool, unit), or it is a variable.
+   *
+   * A pure and trivial expression can always be inlined even without duplicating work.
+   */
+  def isTrivialExp(exp0: Expression): Boolean = exp0 match {
+    case Expression.Unit(_) => true
+    case Expression.Null(_, _) => true
+    case Expression.True(_) => true
+    case Expression.False(_) => true
+    case Expression.Char(_, _) => true
+    case Expression.Float32(_, _) => true
+    case Expression.Float64(_, _) => true
+    case Expression.Int8(_, _) => true
+    case Expression.Int16(_, _) => true
+    case Expression.Int32(_, _) => true
+    case Expression.Int64(_, _) => true
+    case Expression.BigInt(_, _) => true
+    case Expression.Str(_, _) => true
+    case Expression.Var(_, _, _) => true
+    case _ => false
   }
 }

@@ -17,7 +17,7 @@
 ///
 /// A type class for bitwise not.
 ///
-pub lawless class BitwiseNot[a] {
+pub class BitwiseNot[a] {
     ///
     /// Returns the bitwise NOT of `x`.
     ///
