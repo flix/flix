@@ -15,7 +15,9 @@
  */
 package ca.uwaterloo.flix.language.errors
 
-sealed trait EntryPointError
+import ca.uwaterloo.flix.language.CompilationMessage
+
+sealed trait EntryPointError extends CompilationMessage
 object EntryPointError {
   // MATT make entrypoint errors
 }
