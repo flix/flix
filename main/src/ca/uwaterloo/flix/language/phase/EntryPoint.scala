@@ -44,9 +44,9 @@ import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN}
   *  For example, given an entry point `func` with type `Array[String] -> Float64`,
   *  we produce:
   *  {{{
-  *      pub def main%(args: Array[String]): Unit = {
-  *          println(func(args))
-  *      }
+  *  pub def main%(args: Array[String]): Unit = {
+  *      println(func(args))
+  *  }
   *  }}}
   */
 object EntryPoint {
