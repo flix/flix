@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation.{ToSuccess, mapN}
 
+// MATT overall docs
 object EntryPoint {
 
   /**
