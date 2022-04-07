@@ -218,6 +218,7 @@ object EntryPoint {
       // Case 2: No printing, but the result is Pure. Cast it.
       case EntryPointResultAction.Cast =>
         TypedAst.Expression.Cast(call, None, Some(Type.Impure), call.tpe, Type.Impure, SourceLocation.Unknown)
+      // Case 3: No action. Just return the original call.
       case EntryPointResultAction.Nothing => call
     }
 
