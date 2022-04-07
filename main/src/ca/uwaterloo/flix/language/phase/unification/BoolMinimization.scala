@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.Ast.VarText
 import ca.uwaterloo.flix.language.ast.SourceLocation.Unknown
-import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 object BoolMinimization {
@@ -30,7 +30,7 @@ object BoolMinimization {
     val formula = Formula.fromType(t)
     val nnf = Formula.toNNF(formula)
     val cnf = toCNF(nnf)
-    val res = FormulaNNF.toType(cnf)
+    val res = FormulaNNF.toType(cnf, t.loc)
     // TODO remove this
     val prints = false
     if (prints) {
@@ -275,22 +275,22 @@ object BoolMinimization {
       }
     }
 
-    def toType(f: FormulaNNF): Type = {
+    def toType(f: FormulaNNF, loc: SourceLocation): Type = {
       f match {
         case True => Type.True
         case False => Type.False
         case Var(v) => v
-        case NotVar(v) => Type.mkNot(v, Unknown)
+        case NotVar(v) => Type.mkNot(v, loc)
         case And(terms) => terms match {
           case Nil => Type.True
-          case fst :: rest => rest.foldLeft(toType(fst)) {
-            (acc, f) => Type.mkAnd(acc, toType(f), Unknown)
+          case fst :: rest => rest.foldLeft(toType(fst, loc)) {
+            (acc, f) => Type.mkAnd(acc, toType(f, loc), loc)
           }
         }
         case Or(terms) => terms match {
           case Nil => Type.True
-          case fst :: rest => rest.foldLeft(toType(fst)) {
-            (acc, f) => Type.mkOr(acc, toType(f), Unknown)
+          case fst :: rest => rest.foldLeft(toType(fst, loc)) {
+            (acc, f) => Type.mkOr(acc, toType(f, loc), loc)
           }
         }
       }
