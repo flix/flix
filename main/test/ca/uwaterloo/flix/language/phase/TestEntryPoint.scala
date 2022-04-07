@@ -22,8 +22,7 @@ import org.scalatest.FunSuite
 
 class TestEntryPoint extends FunSuite with TestUtils {
 
-  // MATT rename tests
-  test("Test.IllegalMain.01") {
+  test("Test.UnexpectedEntryPointArg.Main.01") {
     val input =
       """
         |def main(blah: Array[Char]): Int32 & Impure = ??? as & Impure
@@ -32,7 +31,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
     expectError[EntryPointError.UnexpectedEntryPointArg](result)
   }
 
-  test("Test.IllegalMain.02") {
+  test("Test.UnexpectedEntryPointArg.Main.02") {
     val input =
       """
         |def main(blah: Array[a]): Int32 & Impure = ??? as & Impure
@@ -41,7 +40,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
     expectError[EntryPointError.UnexpectedEntryPointArg](result)
   }
 
-  test("Test.IllegalMain.03") {
+  test("Test.UnexpectedEntryPointArg.Main.03") {
     val input =
       """
         |class C[a]
@@ -52,10 +51,38 @@ class TestEntryPoint extends FunSuite with TestUtils {
     expectError[EntryPointError.UnexpectedEntryPointArg](result)
   }
 
-  test("Test.IllegalMain.04") {
+  test("Test.TooManyEntryPointArgs.Main.01") {
+    val input =
+      """
+        |def main(arg1: Array[String], arg2: Array[String]): Unit = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[EntryPointError.TooManyEntryPointArgs](result)
+  }
+
+  test("Test.TooManyEntryPointArgs.Main.02") {
+    val input =
+      """
+        |def main(arg1: String, arg2: String): Unit = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[EntryPointError.TooManyEntryPointArgs](result)
+  }
+
+  test("Test.UnexpectedEntryPointResult.Main.01") {
     val input =
       """
         |def main(blah: Array[String]): a & Impure = ??? as & Impure
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[EntryPointError.UnexpectedEntryPointResult](result)
+  }
+
+  test("Test.UnexpectedEntryPointResult.Main.02") {
+    val input =
+      """
+        |enum E
+        |def main(blah: Array[String]): E = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.UnexpectedEntryPointResult](result)
