@@ -169,9 +169,9 @@ object Typer {
 
       for {
         // check the main signature before typechecking the def
-        _ <- checkMain(defn, root, classEnv)
         res <- typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv, sym.loc)
         (spec, exp) = res
+
       } yield TypedAst.Def(sym, spec, exp)
   }
 
@@ -188,6 +188,87 @@ object Typer {
     } else {
       ().toSuccess
     }
+  }
+
+  /**
+    * Checks that the given def is a valid entrypoint,
+    * and returns a new entrypoint that calls it.
+    *
+    * The new entrypoint should be added to the AST.
+    */
+  private def visitEntrypoint(defn: TypedAst.Def, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = defn match {
+
+  }
+
+  private def mkEntrypoint(oldEntrypoint: TypedAst.Def, useArgs: Boolean, printResult: Boolean, root: KindedAst.Root)(implicit flix: Flix): TypedAst.Def = {
+
+    // The formal parameter name must be marked as unused if we don't use it.
+    val argsName = if (useArgs) {
+      "args" + Flix.Delimiter
+    } else {
+      "_args" + Flix.Delimiter
+    }
+    val argsSym = Symbol.freshVarSym(argsName, Ast.BoundBy.FormalParam, SourceLocation.Unknown)
+
+    val stringArray = Type.mkArray(Type.Str, SourceLocation.Unknown)
+
+    val spec = TypedAst.Spec(
+      doc = Ast.Doc(Nil, SourceLocation.Unknown),
+      ann = Nil,
+      mod = Ast.Modifiers.Empty,
+      tparams = Nil,
+      fparams = List(TypedAst.FormalParam(argsSym, Ast.Modifiers.Empty, stringArray, SourceLocation.Unknown)),
+      declaredScheme = finalEntrypointScheme,
+      retTpe = Type.Unit,
+      eff = Type.Impure,
+      loc = SourceLocation.Unknown
+    )
+
+    // NB: Getting the type directly from the scheme assumes the function is not polymorphic.
+    // This is a valid assumption with the limitations we set on the entrypoint.
+    val func = TypedAst.Expression.Def(oldEntrypoint.sym, oldEntrypoint.spec.declaredScheme.base, SourceLocation.Unknown)
+
+    // Apply to the arguments if we use them, Unit if not.
+    val arg = if (useArgs) {
+      TypedAst.Expression.Var(argsSym, stringArray, SourceLocation.Unknown)
+    } else {
+      TypedAst.Expression.Unit(SourceLocation.Unknown)
+    }
+
+    // one of:
+    // - func(args)
+    // - func()
+    val call = TypedAst.Expression.Apply(func, List(arg), oldEntrypoint.spec.declaredScheme.base.arrowResultType, oldEntrypoint.spec.declaredScheme.base.arrowEffectType, SourceLocation.Unknown)
+
+    // one of:
+    // - println(func(args))
+    // - println(func())
+    // - func(args)
+    // - func()
+    // - func(args) as Impure
+    // - func() as Impure
+    val print = if (printResult) {
+      // Case 1: We need to print the result
+      val printSym = PredefinedClasses.lookupDefSym(Nil, "println", root)
+      val printTpe = Type.mkImpureArrow(oldEntrypoint.spec.declaredScheme.base.arrowResultType, Type.Unit, SourceLocation.Unknown)
+      val printFunc = TypedAst.Expression.Def(printSym, printTpe, SourceLocation.Unknown)
+      TypedAst.Expression.Apply(printFunc, List(call), Type.Unit, Type.Impure, SourceLocation.Unknown)
+    } else if (unifiesWith(oldEntrypoint.spec.declaredScheme.base.arrowEffectType, Type.Pure)) {
+      // Case 2: No printing, but the result is Pure. Cast it.
+      TypedAst.Expression.Cast(call, None, Some(Type.Impure), call.tpe, Type.Impure, SourceLocation.Unknown)
+    } else {
+      // Case 3: No printing and the result is already Impure. Keep it.
+      call
+    }
+
+    val impl = TypedAst.Impl(
+      exp = print,
+      inferredScheme = finalEntrypointScheme
+    )
+
+    val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
+
+    TypedAst.Def(sym, spec, impl)
   }
 
   private def transformEntrypoint(defn: TypedAst.Def, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = {
@@ -216,61 +297,6 @@ object Typer {
       case _ :: _ :: _ => ??? // MATT too many args
       case Nil => ??? // MATT impossible
     }
-
-    def transformResult(tpe: Type)(implicit flix: Flix): Validation[(Type, TransformFlag), TypeError] = {
-      val sc = Scheme.generalize(Nil, tpe)
-      val unit = Type.mkUnit(tpe.loc.asSynthetic)
-      val unitSc = Scheme.generalize(Nil, unit)
-
-      val toStringSc = {
-        val tvar = Type.freshVar(Kind.Star, tpe.loc.asSynthetic)
-        val toString = PredefinedClasses.lookupClassSym("ToString", root)
-        Scheme.generalize(List(Ast.TypeConstraint(toString, tvar, tpe.loc.asSynthetic)), tvar)
-      }
-
-      if (Scheme.equal(sc, unitSc, classEnv)) {
-        // Case 1: Unit return type. Keep it.
-        (tpe, NoAction).toSuccess
-      } else if (Scheme.lessThanEqual(sc, toStringSc, classEnv)) {
-        // Case 2: ToString return type. Replace with Unit.
-        (unit, Transform).toSuccess
-      } else {
-        // Case 3: Bad return type. Error
-        ??? // MATT error
-      }
-    }
-
-    def transformSpec(spec: TypedAst.Spec)(implicit flix: Flix): Validation[(TypedAst.Spec, TransformFlag), TypeError] = spec match {
-      case TypedAst.Spec(doc, ann, mod, tparams, fparams0, declaredScheme, retTpe0, eff, loc) =>
-        val fparamsVal = transformFormalParams(fparams0)
-        val retTpeVal = transformResult(retTpe0)
-
-        mapN(fparamsVal, retTpeVal) {
-          case (fparams, retTpe) =>
-        }
-    }
-
-    defn match {
-      case TypedAst.Def(sym, spec, impl) =>
-        // If this is not the entrypoint, no need to modify the def.
-        if (!root.entryPoint.contains(defn.sym)) {
-          return defn.toSuccess
-        }
-
-      // transform fparams
-      // transform return type
-      // if return type was transformed, transform expression
-
-
-    }
-  }
-
-  private def transformEntrypointFormalParams(fparams: List[TypedAst.FormalParam], root: KindedAst.Root)(implicit flix: Flix): Validation[List[TypedAst.FormalParam], TypeError] = fparams match {
-    case _ => ???
-  }
-
-  private def transformEntrypointResult(tpe: Type, root: KindedAst.Root)(implicit flix: Flix): Validation[Type, TypeError] = {
-
   }
 
   /**
