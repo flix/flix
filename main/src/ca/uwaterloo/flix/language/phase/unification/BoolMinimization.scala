@@ -29,6 +29,7 @@ object BoolMinimization {
     */
   def minimize(t: Type): Type = {
     val res = toType(toCNF(fromType(t)))
+    // TODO remove this
     val prints = false
     if (prints) {
       val before = t.size
