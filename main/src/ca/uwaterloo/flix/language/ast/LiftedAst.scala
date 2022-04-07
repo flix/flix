@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{Constructor, Field, Method}
-
 import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
 
 object LiftedAst {
 
@@ -35,6 +35,8 @@ object LiftedAst {
   sealed trait Expression {
     def tpe: Type
 
+    def purity : Purity
+
     def loc: SourceLocation
   }
 
@@ -42,155 +44,209 @@ object LiftedAst {
 
     case class Unit(loc: SourceLocation) extends LiftedAst.Expression {
       def tpe: Type = Type.Unit
+      def purity: Purity = Pure
     }
 
-    case class Null(tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Null(tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Pure
+    }
 
     case class True(loc: SourceLocation) extends LiftedAst.Expression {
       def tpe: Type = Type.Bool
+      def purity: Purity = Pure
     }
 
     case class False(loc: SourceLocation) extends LiftedAst.Expression {
       def tpe: Type = Type.Bool
+      def purity: Purity = Pure
     }
 
     case class Char(lit: scala.Char, loc: SourceLocation) extends LiftedAst.Expression {
       def tpe: Type = Type.Char
+      def purity: Purity = Pure
     }
 
     case class Float32(lit: scala.Float, loc: SourceLocation) extends LiftedAst.Expression {
       def tpe: Type = Type.Float32
+      def purity: Purity = Pure
     }
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends LiftedAst.Expression {
       def tpe: Type = Type.Float64
+      def purity: Purity = Pure
     }
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends LiftedAst.Expression {
       def tpe: Type = Type.Int8
+      def purity: Purity = Pure
     }
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends LiftedAst.Expression {
       def tpe: Type = Type.Int16
+      def purity: Purity = Pure
     }
 
     case class Int32(lit: scala.Int, loc: SourceLocation) extends LiftedAst.Expression {
       def tpe: Type = Type.Int32
+      def purity: Purity = Pure
     }
 
     case class Int64(lit: scala.Long, loc: SourceLocation) extends LiftedAst.Expression {
       def tpe: Type = Type.Int64
+      def purity: Purity = Pure
     }
 
     case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends LiftedAst.Expression {
       def tpe: Type = Type.BigInt
+      def purity: Purity = Pure
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends LiftedAst.Expression {
       def tpe: Type = Type.Str
+      def purity: Purity = Pure
     }
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Pure
+    }
 
-    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Pure
+    }
 
-    case class ApplyClo(exp: LiftedAst.Expression, args: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class ApplyClo(exp: LiftedAst.Expression, args: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class ApplyDef(sym: Symbol.DefnSym, args: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class ApplyDef(sym: Symbol.DefnSym, args: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class ApplyCloTail(exp: LiftedAst.Expression, args: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class ApplyCloTail(exp: LiftedAst.Expression, args: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class ApplyDefTail(sym: Symbol.DefnSym, args: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class ApplyDefTail(sym: Symbol.DefnSym, args: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[LiftedAst.FormalParam], actuals: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[LiftedAst.FormalParam], actuals: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Unary(sop: SemanticOperator, op: UnaryOperator, exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Unary(sop: SemanticOperator, op: UnaryOperator, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Binary(sop: SemanticOperator, op: BinaryOperator, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Binary(sop: SemanticOperator, op: BinaryOperator, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class IfThenElse(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, exp3: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class IfThenElse(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, exp3: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Branch(exp: Expression, branches: Map[Symbol.LabelSym, LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Branch(exp: Expression, branches: Map[Symbol.LabelSym, LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class JumpTo(sym: Symbol.LabelSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class JumpTo(sym: Symbol.LabelSym, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
     case class Let(sym: Symbol.VarSym, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Is(sym: Symbol.EnumSym, tag: Name.Tag, exp: LiftedAst.Expression, loc: SourceLocation) extends LiftedAst.Expression {
+    case class Is(sym: Symbol.EnumSym, tag: Name.Tag, exp: LiftedAst.Expression, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression {
       def tpe: Type = Type.Bool
     }
 
-    case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Tag(sym: Symbol.EnumSym, tag: Name.Tag, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Untag(sym: Symbol.EnumSym, tag: Name.Tag, exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Untag(sym: Symbol.EnumSym, tag: Name.Tag, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Index(base: LiftedAst.Expression, offset: scala.Int, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Index(base: LiftedAst.Expression, offset: scala.Int, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class Tuple(elms: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Tuple(elms: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class RecordEmpty(tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class RecordEmpty(tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Pure
+    }
 
-    case class RecordSelect(exp: LiftedAst.Expression, field: Name.Field, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class RecordSelect(exp: LiftedAst.Expression, field: Name.Field, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class RecordExtend(field: Name.Field, value: LiftedAst.Expression, rest: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class RecordExtend(field: Name.Field, value: LiftedAst.Expression, rest: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class RecordRestrict(field: Name.Field, rest: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class RecordRestrict(field: Name.Field, rest: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class ArrayLit(elms: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class ArrayLit(elms: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class ArrayNew(elm: LiftedAst.Expression, len: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class ArrayNew(elm: LiftedAst.Expression, len: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class ArrayLoad(base: LiftedAst.Expression, index: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class ArrayLoad(base: LiftedAst.Expression, index: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class ArrayStore(base: LiftedAst.Expression, index: LiftedAst.Expression, elm: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class ArrayStore(base: LiftedAst.Expression, index: LiftedAst.Expression, elm: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class ArrayLength(base: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class ArrayLength(base: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class ArraySlice(base: LiftedAst.Expression, beginIndex: LiftedAst.Expression, endIndex: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class ArraySlice(base: LiftedAst.Expression, beginIndex: LiftedAst.Expression, endIndex: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class Ref(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Ref(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class Deref(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Deref(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class Assign(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Assign(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class Cast(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Cast(exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class TryCatch(exp: LiftedAst.Expression, rules: List[LiftedAst.CatchRule], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class TryCatch(exp: LiftedAst.Expression, rules: List[LiftedAst.CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class InvokeConstructor(constructor: Constructor[_], args: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class InvokeConstructor(constructor: Constructor[_], args: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class InvokeMethod(method: Method, exp: LiftedAst.Expression, args: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class InvokeMethod(method: Method, exp: LiftedAst.Expression, args: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class InvokeStaticMethod(method: Method, args: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class InvokeStaticMethod(method: Method, args: List[LiftedAst.Expression], tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class GetField(field: Field, exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class GetField(field: Field, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class PutField(field: Field, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class PutField(field: Field, exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class GetStaticField(field: Field, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class GetStaticField(field: Field, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class PutStaticField(field: Field, exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class PutStaticField(field: Field, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
-    case class NewChannel(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class NewChannel(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class GetChannel(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class GetChannel(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class PutChannel(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class PutChannel(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class SelectChannel(rules: List[LiftedAst.SelectChannelRule], default: Option[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class SelectChannel(rules: List[LiftedAst.SelectChannelRule], default: Option[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class Spawn(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Spawn(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class Lazy(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Lazy(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression  {
+      def purity: Purity = Pure
+    }
 
-    case class Force(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class Force(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Pure
+    }
 
-    case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
-    case class MatchError(tpe: Type, loc: SourceLocation) extends LiftedAst.Expression
+    case class MatchError(tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Impure
+    }
 
   }
 

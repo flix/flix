@@ -65,37 +65,37 @@ object Tailrec {
        * If-Then-Else: Consequent and alternative are both in tail position.
        * (The condition is *not* in tail position).
        */
-      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e2 = visit(exp2)
         val e3 = visit(exp3)
-        Expression.IfThenElse(exp1, e2, e3, tpe, loc)
+        Expression.IfThenElse(exp1, e2, e3, tpe, purity, loc)
 
       /*
        * Branch: Each branch is in tail position.
        */
-      case Expression.Branch(e0, br0, tpe, loc) =>
+      case Expression.Branch(e0, br0, tpe, purity, loc) =>
         val br = br0 map {
           case (sym, exp) => sym -> visit(exp)
         }
-        Expression.Branch(e0, br, tpe, loc)
+        Expression.Branch(e0, br, tpe, purity, loc)
 
       /*
        * ApplyClo.
        */
-      case Expression.ApplyClo(exp, args, tpe, loc) =>
-        Expression.ApplyCloTail(exp, args, tpe, loc)
+      case Expression.ApplyClo(exp, args, tpe, purity, loc) =>
+        Expression.ApplyCloTail(exp, args, tpe, purity, loc)
 
       /*
        * ApplyDef.
        */
-      case Expression.ApplyDef(sym, args, tpe, loc) =>
+      case Expression.ApplyDef(sym, args, tpe, purity, loc) =>
         // Check whether this is a self recursive call.
         if (defn.sym != sym) {
           // Case 1: Tail recursive call.
-          Expression.ApplyDefTail(sym, args, tpe, loc)
+          Expression.ApplyDefTail(sym, args, tpe, purity, loc)
         } else {
           // Case 2: Self recursive call.
-          Expression.ApplySelfTail(sym, defn.fparams, args, tpe, loc)
+          Expression.ApplySelfTail(sym, defn.fparams, args, tpe, purity, loc)
         }
 
       case Expression.SelectChannel(rules, default, tpe, loc) =>
