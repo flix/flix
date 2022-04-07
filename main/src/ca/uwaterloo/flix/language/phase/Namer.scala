@@ -1121,7 +1121,7 @@ object Namer {
         NameError.SuspiciousTypeVarName(ident.name, loc).toFailure
       } else if (ident.isWild) {
         // Wild idents will not be in the environment. Create a tvar instead.
-        NamedAst.Type.Var(Symbol.freshUnkindedTypeVarSym(None, Rigidity.Flexible, loc), loc).toSuccess
+        NamedAst.Type.Var(Symbol.freshUnkindedTypeVarSym(Ast.VarText.Absent, Rigidity.Flexible, loc), loc).toSuccess
       } else {
         tenv0.get(ident.name) match {
           case None => NameError.UndefinedTypeVar(ident.name, loc).toFailure
@@ -1730,7 +1730,7 @@ object Namer {
     * Creates a flexible unkinded type variable symbol from the given ident.
     */
   private def mkTypeVarSym(ident: Name.Ident)(implicit flix: Flix): Symbol.UnkindedTypeVarSym = {
-    Symbol.freshUnkindedTypeVarSym(Some(ident.name), Rigidity.Flexible, ident.loc)
+    Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(ident.name), Rigidity.Flexible, ident.loc)
   }
 
 

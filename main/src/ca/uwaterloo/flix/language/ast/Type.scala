@@ -351,7 +351,7 @@ object Type {
     /**
       * Returns the same type variable with the given text.
       */
-    def withText(text: Option[String]): Var
+    def withText(text: Ast.VarText): Var
 
     /**
       * Returns the same type variable with the given rigidity.
@@ -387,7 +387,7 @@ object Type {
   @IntroducedBy(Kinder.getClass)
   case class KindedVar(sym: Symbol.KindedTypeVarSym, loc: SourceLocation) extends Type with Var with BaseType with Ordered[Type.KindedVar] {
 
-    override def withText(text: Option[String]): KindedVar = KindedVar(sym.withText(text), loc)
+    override def withText(text: Ast.VarText): KindedVar = KindedVar(sym.withText(text), loc)
 
     override def withRigidity(rigidity: Rigidity): KindedVar = KindedVar(sym.withRigidity(rigidity), loc)
 
@@ -416,7 +416,7 @@ object Type {
   @EliminatedBy(Kinder.getClass)
   case class UnkindedVar(sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends Type with Var with BaseType with Ordered[Type.UnkindedVar] {
 
-    override def withText(text: Option[String]): UnkindedVar = UnkindedVar(sym.withText(text), loc)
+    override def withText(text: Ast.VarText): UnkindedVar = UnkindedVar(sym.withText(text), loc)
 
     override def withRigidity(rigidity: Rigidity): UnkindedVar = UnkindedVar(sym.withRigidity(rigidity), loc)
 
@@ -522,7 +522,7 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.KindedVar = {
+  def freshVar(k: Kind, loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.KindedVar = {
     val sym = Symbol.freshKindedTypeVarSym(text, k, r, loc)
     Type.KindedVar(sym, loc)
   }
@@ -530,7 +530,7 @@ object Type {
   /**
     * Returns a fresh unkinded type variable of the given kind `k` and rigidity `r`.
     */
-  def freshUnkindedVar(loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.UnkindedVar = {
+  def freshUnkindedVar(loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.UnkindedVar = {
     val sym = Symbol.freshUnkindedTypeVarSym(text, r, loc)
     Type.UnkindedVar(sym, loc)
   }
