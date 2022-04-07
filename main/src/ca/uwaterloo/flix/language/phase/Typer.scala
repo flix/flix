@@ -39,31 +39,7 @@ object Typer {
     * The resulting scheme of the entry point function.
     * `Array[String] -> Int32`
     */
-  private val finalEntrypointScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str, SourceLocation.Unknown), Type.Int32, SourceLocation.Unknown))
-
-  /**
-    * The array-based generalized scheme of the entry point function.
-    * `Array[String] -> t with ToString[t] & e`
-    */
-  private def getArrayEntrypointScheme(root: KindedAst.Root)(implicit flix: Flix): Scheme = {
-    val tvar = Type.freshVar(Kind.Star, SourceLocation.Unknown) // MATT synthetic locs
-    val evar = Type.freshVar(Kind.Bool, SourceLocation.Unknown) // MATT synthetic locs
-    val arrow = Type.mkArrowWithEffect(Type.mkArray(Type.Str, SourceLocation.Unknown), evar, tvar, SourceLocation.Unknown)
-    val tconstr = Ast.TypeConstraint(PredefinedClasses.lookupClassSym("ToString", root), tvar, SourceLocation.Unknown)
-    Scheme(List(tvar.sym), List(tconstr), arrow)
-  }
-
-  /**
-    * The unit-based generalized scheme of the entry point function.
-    * `Unit -> t with ToString[t] & e`
-    */
-  private def getUnitEntrypointScheme(root: KindedAst.Root)(implicit flix: Flix): Scheme = {
-    val tvar = Type.freshVar(Kind.Star, SourceLocation.Unknown) // MATT synthetic locs
-    val evar = Type.freshVar(Kind.Bool, SourceLocation.Unknown) // MATT synthetic locs
-    val arrow = Type.mkArrowWithEffect(Type.Unit, evar, tvar, SourceLocation.Unknown)
-    val tconstr = Ast.TypeConstraint(PredefinedClasses.lookupClassSym("ToString", root), tvar, SourceLocation.Unknown)
-    Scheme(List(tvar.sym), List(tconstr), arrow)
-  }
+  private val entrypointScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str, SourceLocation.Unknown), Type.Int32, SourceLocation.Unknown))
 
   /**
     * Type checks the given AST root.
@@ -176,21 +152,6 @@ object Typer {
   }
 
   /**
-    * Checks that, if the function is a main function, it has the right type scheme.
-    */
-  private def checkMain(defn: KindedAst.Def, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, TypeError] = {
-    if (!root.entryPoint.contains(defn.sym)) {
-      return ().toSuccess
-    }
-
-    if (!Scheme.equal(defn.spec.sc, finalEntrypointScheme, classEnv)) {
-      TypeError.IllegalMain(declaredScheme = defn.spec.sc, expectedScheme = finalEntrypointScheme, defn.sym.loc).toFailure
-    } else {
-      ().toSuccess
-    }
-  }
-
-  /**
     * Checks that the given def is a valid entrypoint,
     * and returns a new entrypoint that calls it.
     *
@@ -271,7 +232,7 @@ object Typer {
       mod = Ast.Modifiers.Empty,
       tparams = Nil,
       fparams = List(TypedAst.FormalParam(argsSym, Ast.Modifiers.Empty, stringArray, SourceLocation.Unknown)),
-      declaredScheme = finalEntrypointScheme,
+      declaredScheme = entrypointScheme,
       retTpe = Type.Unit,
       eff = Type.Impure,
       loc = SourceLocation.Unknown
@@ -314,7 +275,7 @@ object Typer {
 
     val impl = TypedAst.Impl(
       exp = print,
-      inferredScheme = finalEntrypointScheme
+      inferredScheme = entrypointScheme
     )
 
     val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
