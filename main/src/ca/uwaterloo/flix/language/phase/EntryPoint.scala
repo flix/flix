@@ -19,8 +19,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
   * Processes the entry point of the program.
@@ -57,33 +57,51 @@ object EntryPoint {
     */
   private val EntryPointScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str, SourceLocation.Unknown), Type.Int32, SourceLocation.Unknown))
 
+  /**
+    * The default entry point in case none is specified. (`main`)
+    */
+  private val DefaultEntryPoint = Symbol.mkDefnSym("main")
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EntryPointError] = flix.phase("Typer") {
-    // MATT probably need to check that the entry point exists? But what location to give that?
-    root.entryPoint match {
-      // Case 1: There is an entry point. Wrap it.
-      case Some(sym) =>
-        val entrypoint0 = root.defs(sym)
-        mapN(visitEntrypoint(entrypoint0, root, root.classEnv)) {
-          entrypoint =>
+
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EntryPointError] = flix.phase("EntryPoint") {
+    flatMapN(findOriginalEntryPoint(root)) {
+      // Case 1: We have an entry point. Wrap it.
+      case Some(entryPoint0) =>
+        mapN(visitEntryPoint(entryPoint0, root, root.classEnv)) {
+          entryPoint =>
             root.copy(
-              defs = root.defs + (entrypoint.sym -> entrypoint),
-              entryPoint = Some(entrypoint.sym)
+              defs = root.defs + (entryPoint.sym -> entryPoint),
+              entryPoint = Some(entryPoint.sym)
             )
         }
-      // Case 2: No entry point. Return the AST unchanged.
+      )
+      // Case 2: No entry point. Don't touch anything.
       case None => root.toSuccess
+    }
+  }
+
+  // MATT docs
+  def findOriginalEntryPoint(root: TypedAst.Root)(implicit flix: Flix): Validation[Option[TypedAst.Def], EntryPointError] = {
+    root.entryPoint match {
+      case Some(sym) => root.defs.get(sym) match {
+        case Some(entryPoint) => Some(entryPoint).toSuccess
+        case None => ??? // MATT error: cannot find specified entry point
+      }
+      case None => root.defs.get(DefaultEntryPoint) match {
+        case Some(entryPoint) => Some(entryPoint).toSuccess
+        case None => None.toSuccess
+      }
     }
   }
 
 
   /**
-    * Checks that the given def is a valid entrypoint,
-    * and returns a new entrypoint that calls it.
+    * Checks that the given def is a valid entry point,
+    * and returns a new entry point that calls it.
     *
-    * The new entrypoint should be added to the AST.
+    * The new entry point should be added to the AST.
     */
-  private def visitEntrypoint(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, EntryPointError] = {
+  private def visitEntryPoint(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, EntryPointError] = {
     val argsActionVal = checkEntryPointArgs(defn, classEnv)
     val resultActionVal = checkEntryPointResult(defn, root, classEnv)
 
