@@ -196,18 +196,71 @@ object Typer {
     *
     * The new entrypoint should be added to the AST.
     */
-  private def visitEntrypoint(defn: TypedAst.Def, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = defn match {
+  private def visitEntrypoint(defn: TypedAst.Def, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Option[TypedAst.Def], TypeError] = defn match {
+    case TypedAst.Def(sym, spec, impl) =>
+      // Exit early if we're not looking at the entrypoint.
+      if (!root.entryPoint.contains(sym)) {
+        return None.toSuccess
+      }
 
+      val argsActionVal = checkEntrypointArgs(defn, root, classEnv)
+      val resultActionVal = checkEntrypointResult(defn, root, classEnv)
+
+      mapN(argsActionVal, resultActionVal) {
+        case (argsAction, resultAction) =>
+          Some(mkEntrypoint(defn, argsAction, resultAction, root))
+      }
   }
 
-  private def mkEntrypoint(oldEntrypoint: TypedAst.Def, useArgs: Boolean, printResult: Boolean, root: KindedAst.Root)(implicit flix: Flix): TypedAst.Def = {
+  // MATT docs
+  private def checkEntrypointArgs(defn: TypedAst.Def, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[EntrypointArgsAction, TypeError] = defn match {
+    case TypedAst.Def(sym, TypedAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, loc), impl) =>
+      val unitSc = Scheme.generalize(Nil, Type.Unit)
+      val argSc = Scheme.generalize(Nil, declaredScheme.base.arrowArgTypes.head) // MATT must check only one parameter
+      val stringArraySc = Scheme.generalize(Nil, Type.mkArray(Type.Str, SourceLocation.Unknown))
+
+      // MATT case docs
+      if (Scheme.equal(unitSc, argSc, classEnv)) {
+        EntrypointArgsAction.Ignore.toSuccess
+      } else if (Scheme.equal(argSc, stringArraySc, classEnv)) {
+        EntrypointArgsAction.Use.toSuccess
+      } else {
+        ??? // MATT throw error about bad args
+      }
+  }
+
+  // MATT docs
+  private def checkEntrypointResult(defn: TypedAst.Def, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[EntrypointResultAction, TypeError] = defn match {
+    case TypedAst.Def(sym, TypedAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, loc), impl) =>
+      val resultTpe = declaredScheme.base.arrowResultType
+      val unitSc = Scheme.generalize(Nil, Type.Unit)
+      val resultSc = Scheme.generalize(Nil, resultTpe)
+
+      val toString = PredefinedClasses.lookupClassSym("ToString", root)
+
+      // MATT case docs
+      if (Scheme.equal(unitSc, resultSc, classEnv)) {
+        if (declaredScheme.base.arrowEffectType == Type.Pure) {
+          EntrypointResultAction.Cast.toSuccess
+        } else {
+          EntrypointResultAction.Nothing.toSuccess
+        }
+      } else if (ClassEnvironment.holds(Ast.TypeConstraint(toString, resultTpe, SourceLocation.Unknown), classEnv)) {
+        EntrypointResultAction.Print.toSuccess
+      } else {
+        ??? // MATT throw error about bad result
+      }
+  }
+
+  // MATT docs
+  private def mkEntrypoint(oldEntrypoint: TypedAst.Def, argsAction: EntrypointArgsAction, resultAction: EntrypointResultAction, root: KindedAst.Root)(implicit flix: Flix): TypedAst.Def = {
 
     // The formal parameter name must be marked as unused if we don't use it.
-    val argsName = if (useArgs) {
-      "args" + Flix.Delimiter
-    } else {
-      "_args" + Flix.Delimiter
+    val argsName = argsAction match {
+      case EntrypointArgsAction.Use => "args" + Flix.Delimiter
+      case EntrypointArgsAction.Ignore => "_args" + Flix.Delimiter
     }
+
     val argsSym = Symbol.freshVarSym(argsName, Ast.BoundBy.FormalParam, SourceLocation.Unknown)
 
     val stringArray = Type.mkArray(Type.Str, SourceLocation.Unknown)
@@ -229,10 +282,9 @@ object Typer {
     val func = TypedAst.Expression.Def(oldEntrypoint.sym, oldEntrypoint.spec.declaredScheme.base, SourceLocation.Unknown)
 
     // Apply to the arguments if we use them, Unit if not.
-    val arg = if (useArgs) {
-      TypedAst.Expression.Var(argsSym, stringArray, SourceLocation.Unknown)
-    } else {
-      TypedAst.Expression.Unit(SourceLocation.Unknown)
+    val arg = argsAction match {
+      case EntrypointArgsAction.Use => TypedAst.Expression.Var(argsSym, stringArray, SourceLocation.Unknown)
+      case EntrypointArgsAction.Ignore => TypedAst.Expression.Unit(SourceLocation.Unknown)
     }
 
     // one of:
@@ -247,18 +299,17 @@ object Typer {
     // - func()
     // - func(args) as Impure
     // - func() as Impure
-    val print = if (printResult) {
+    val print = resultAction match {
       // Case 1: We need to print the result
-      val printSym = PredefinedClasses.lookupDefSym(Nil, "println", root)
-      val printTpe = Type.mkImpureArrow(oldEntrypoint.spec.declaredScheme.base.arrowResultType, Type.Unit, SourceLocation.Unknown)
-      val printFunc = TypedAst.Expression.Def(printSym, printTpe, SourceLocation.Unknown)
-      TypedAst.Expression.Apply(printFunc, List(call), Type.Unit, Type.Impure, SourceLocation.Unknown)
-    } else if (unifiesWith(oldEntrypoint.spec.declaredScheme.base.arrowEffectType, Type.Pure)) {
+      case EntrypointResultAction.Print =>
+        val printSym = PredefinedClasses.lookupDefSym(Nil, "println", root)
+        val printTpe = Type.mkImpureArrow(oldEntrypoint.spec.declaredScheme.base.arrowResultType, Type.Unit, SourceLocation.Unknown)
+        val printFunc = TypedAst.Expression.Def(printSym, printTpe, SourceLocation.Unknown)
+        TypedAst.Expression.Apply(printFunc, List(call), Type.Unit, Type.Impure, SourceLocation.Unknown)
       // Case 2: No printing, but the result is Pure. Cast it.
-      TypedAst.Expression.Cast(call, None, Some(Type.Impure), call.tpe, Type.Impure, SourceLocation.Unknown)
-    } else {
-      // Case 3: No printing and the result is already Impure. Keep it.
-      call
+      case EntrypointResultAction.Cast =>
+        TypedAst.Expression.Cast(call, None, Some(Type.Impure), call.tpe, Type.Impure, SourceLocation.Unknown)
+      case EntrypointResultAction.Nothing => call
     }
 
     val impl = TypedAst.Impl(
@@ -269,34 +320,6 @@ object Typer {
     val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
 
     TypedAst.Def(sym, spec, impl)
-  }
-
-  private def transformEntrypoint(defn: TypedAst.Def, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = {
-
-    sealed trait TransformFlag
-    object Transform extends TransformFlag
-    object NoAction extends TransformFlag
-
-    def transformFormalParams(fparams: List[TypedAst.FormalParam])(implicit flix: Flix): Validation[List[TypedAst.FormalParam], TypeError] = fparams match {
-      case TypedAst.FormalParam(sym0, mod, tpe, loc) :: Nil =>
-        val sc = Scheme.generalize(Nil, tpe)
-        val unitSc = Scheme.generalize(Nil, Type.Unit)
-        val stringArray = Type.mkArray(Type.mkString(loc.asSynthetic), loc.asSynthetic)
-        val stringArraySc = Scheme.generalize(Nil, stringArray)
-        if (Scheme.equal(sc, unitSc, classEnv)) {
-          // Case 1: Unit formal param. Transform it to Array[String].
-          val sym = Symbol.freshVarSym("_args", Ast.BoundBy.FormalParam, loc.asSynthetic)
-          List(TypedAst.FormalParam(sym, mod, stringArray, loc)).toSuccess
-        } else if (Scheme.equal(sc, stringArraySc, classEnv)) {
-          // Case 2: Array[String] formal param. Keep it.
-          fparams.toSuccess
-        } else {
-          // Case 3: Bad fparam type. Error
-          ??? // MATT bad arg
-        }
-      case _ :: _ :: _ => ??? // MATT too many args
-      case Nil => ??? // MATT impossible
-    }
   }
 
   /**
@@ -2470,6 +2493,20 @@ object Typer {
       t.mkRow(List(sym.toString, size, f"$mean%2.1f", median, total))
     }
     t.write(new PrintWriter(System.out))
+  }
+
+  // MATT docs for all of this
+  private sealed trait EntrypointArgsAction
+  private object EntrypointArgsAction {
+    case object Use extends EntrypointArgsAction
+    case object Ignore extends EntrypointArgsAction
+  }
+
+  private sealed trait EntrypointResultAction
+  private object EntrypointResultAction {
+    case object Print extends EntrypointResultAction
+    case object Cast extends EntrypointResultAction
+    case object Nothing extends EntrypointResultAction
   }
 
 }
