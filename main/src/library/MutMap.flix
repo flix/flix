@@ -232,7 +232,6 @@ namespace MutMap {
             case Some(v) => v
         }
 
-    // TODO: use regions r1 and r2 in `merge` functions.
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` in a left-biased manner.
     ///
