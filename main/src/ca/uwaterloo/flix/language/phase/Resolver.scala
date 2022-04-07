@@ -647,44 +647,50 @@ object Resolver {
           } yield ResolvedAst.Expression.Unary(sop, e, loc)
 
         case NamedAst.Expression.Binary(sop, exp1, exp2, loc) =>
-          for {
-            e1 <- visitExp(exp1, region)
-            e2 <- visitExp(exp2, region)
-          } yield ResolvedAst.Expression.Binary(sop, e1, e2, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.Binary(sop, e1, e2, loc)
+          }
 
         case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
-          for {
-            e1 <- visitExp(exp1, region)
-            e2 <- visitExp(exp2, region)
-            e3 <- visitExp(exp3, region)
-          } yield ResolvedAst.Expression.IfThenElse(e1, e2, e3, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          val e3Val = visitExp(exp3, region)
+          mapN(e1Val, e2Val, e3Val) {
+            case (e1, e2, e3) => ResolvedAst.Expression.IfThenElse(e1, e2, e3, loc)
+          }
 
         case NamedAst.Expression.Stm(exp1, exp2, loc) =>
-          for {
-            e1 <- visitExp(exp1, region)
-            e2 <- visitExp(exp2, region)
-          } yield ResolvedAst.Expression.Stm(e1, e2, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.Stm(e1, e2, loc)
+          }
 
         case NamedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
-          for {
-            e1 <- visitExp(exp1, region)
-            e2 <- visitExp(exp2, region)
-          } yield ResolvedAst.Expression.Let(sym, mod, e1, e2, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.Let(sym, mod, e1, e2, loc)
+          }
 
         case NamedAst.Expression.LetRec(sym, mod, exp1, exp2, loc) =>
-          for {
-            e1 <- visitExp(exp1, region)
-            e2 <- visitExp(exp2, region)
-          } yield ResolvedAst.Expression.LetRec(sym, mod, e1, e2, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.LetRec(sym, mod, e1, e2, loc)
+          }
 
         case NamedAst.Expression.Region(tpe, loc) =>
           ResolvedAst.Expression.Region(tpe, loc).toSuccess
 
         case NamedAst.Expression.Scope(sym, exp, loc) =>
           // Note: Here we update the current region.
-          for {
-            e <- visitExp(exp, Some(sym))
-          } yield ResolvedAst.Expression.Scope(sym, e, loc)
+          val eVal = visitExp(exp, Some(sym))
+          mapN(eVal) {
+            e => ResolvedAst.Expression.Scope(sym, e, loc)
+          }
 
         case NamedAst.Expression.Match(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
