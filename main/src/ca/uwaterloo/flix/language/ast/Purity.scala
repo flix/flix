@@ -32,4 +32,5 @@ object Purity {
    * Represents an impure expression (i.e. an expression that could potentially have side-effects).
    */
   case object Impure extends Purity
+
 }

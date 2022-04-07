@@ -18,6 +18,11 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur.DontInline
+import ca.uwaterloo.flix.language.ast.OccurrenceAst._
+import ca.uwaterloo.flix.language.ast.{OccurrenceAst, Purity, Symbol}
+import ca.uwaterloo.flix.language.phase.Optimizer.isTrivialExp
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
 import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Purity, Symbol}
@@ -141,7 +146,7 @@ object Inliner {
       val as = args.map(visitExp(_, subst0))
       val def1 = root.defs.apply(sym)
       // If `def1` is a single non-self call and its arguments are trivial, then inline the single non-self call, `e1`.
-      if (def1.context.isNonSelfCall) {
+      if (def1.context.isNonSelfCall && purity == Purity.Pure) {
         val e1 = convertTailCall(def1.exp)
         bindFormals(e1, def1.fparams.map(_.sym), as, Map.empty)
       } else {
@@ -157,7 +162,7 @@ object Inliner {
       val as = args.map(visitExp(_, subst0))
       val def1 = root.defs.apply(sym)
       // If `def1` is a single non-self call and its arguments are trivial, then inline the single non-self call, `e1`.
-      if (def1.context.isNonSelfCall) {
+      if (def1.context.isNonSelfCall && purity == Purity.Pure) {
         bindFormals(def1.exp, def1.fparams.map(_.sym), as, Map.empty)
       } else {
         LiftedAst.Expression.ApplyDefTail(sym, as, tpe, loc)
@@ -200,13 +205,13 @@ object Inliner {
       /// Case 1:
       /// If `sym` is never used (it is `Dead`)  and `exp1` is pure, so it has no side effects, then it is safe to remove `sym`
       /// Both code size and runtime are reduced
-      if (isDeadAndPure(occur, purity)) {
+      if (isDeadAndPure(occur, exp1.purity)) {
         visitExp(exp2, subst0)
       } else {
         /// Case 2:
         /// If `exp1` occurs once and it is pure, then it is safe to inline.
         /// There is a small decrease in code size and runtime.
-        val wantToPreInline = isUsedOnceAndPure(occur, purity)
+        val wantToPreInline = isUsedOnceAndPure(occur, exp1.purity)
         if (wantToPreInline) {
           val subst1 = subst0 + (sym -> Expression.OccurrenceExp(exp1))
           visitExp(exp2, subst1)
@@ -215,7 +220,7 @@ object Inliner {
           /// Case 3:
           /// If `e1` is trivial and pure, then it is safe to inline.
           // Code size and runtime are not impacted, because only trivial expressions are inlined
-          val wantToPostInline = isTrivialAndPure(e1, purity) && occur != DontInline
+          val wantToPostInline = isTrivialAndPure(e1, exp1.purity) && occur != DontInline
           if (wantToPostInline) {
             /// If `e1` is to be inlined:
             /// Add map `sym` to `e1` and return `e2` without constructing the let expression.
@@ -293,7 +298,8 @@ object Inliner {
 
     case OccurrenceAst.Expression.ArrayLength(base, tpe, loc) =>
       val b = visitExp(base, subst0)
-      LiftedAst.Expression.ArrayLength(b, tpe, loc)
+      val purity = b.purity
+      LiftedAst.Expression.ArrayLength(b, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
       val b = visitExp(base, subst0)
