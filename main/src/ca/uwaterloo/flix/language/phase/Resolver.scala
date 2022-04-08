@@ -1023,63 +1023,74 @@ object Resolver {
           }
 
         case NamedAst.Expression.Lazy(exp, loc) =>
-          for {
-            e <- visitExp(exp, region)
-          } yield ResolvedAst.Expression.Lazy(e, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.Lazy(e, loc)
+          }
 
         case NamedAst.Expression.Force(exp, loc) =>
-          for {
-            e <- visitExp(exp, region)
-          } yield ResolvedAst.Expression.Force(e, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.Force(e, loc)
+          }
 
         case NamedAst.Expression.FixpointConstraintSet(cs0, loc) =>
-          for {
-            cs <- traverse(cs0)(Constraints.resolve(_, taenv, ns0, root))
-          } yield ResolvedAst.Expression.FixpointConstraintSet(cs, loc)
+          val csVal = traverse(cs0)(Constraints.resolve(_, taenv, ns0, root))
+          mapN(csVal) {
+            cs => ResolvedAst.Expression.FixpointConstraintSet(cs, loc)
+          }
 
         case NamedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
-          for {
-            e1 <- visitExp(exp1, region)
-            e2 <- visitExp(exp2, region)
-          } yield ResolvedAst.Expression.FixpointMerge(e1, e2, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.FixpointMerge(e1, e2, loc)
+          }
 
         case NamedAst.Expression.FixpointSolve(exp, loc) =>
-          for {
-            e <- visitExp(exp, region)
-          } yield ResolvedAst.Expression.FixpointSolve(e, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.FixpointSolve(e, loc)
+          }
 
         case NamedAst.Expression.FixpointFilter(pred, exp, loc) =>
-          for {
-            e <- visitExp(exp, region)
-          } yield ResolvedAst.Expression.FixpointFilter(pred, e, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.FixpointFilter(pred, e, loc)
+          }
 
         case NamedAst.Expression.FixpointProjectIn(exp, pred, loc) =>
-          for {
-            e <- visitExp(exp, region)
-          } yield ResolvedAst.Expression.FixpointProjectIn(e, pred, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.FixpointProjectIn(e, pred, loc)
+          }
 
         case NamedAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) =>
-          for {
-            e1 <- visitExp(exp1, region)
-            e2 <- visitExp(exp2, region)
-          } yield ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, loc)
+          }
 
         case NamedAst.Expression.Reify(t0, loc) =>
-          for {
-            t <- resolveType(t0, taenv, ns0, root)
-          } yield ResolvedAst.Expression.Reify(t, loc)
+          val tVal = resolveType(t0, taenv, ns0, root)
+          mapN(tVal) {
+            t => ResolvedAst.Expression.Reify(t, loc)
+          }
 
         case NamedAst.Expression.ReifyType(t0, k, loc) =>
-          for {
-            t <- resolveType(t0, taenv, ns0, root)
-          } yield ResolvedAst.Expression.ReifyType(t, k, loc)
+          val tVal = resolveType(t0, taenv, ns0, root)
+          mapN(tVal) {
+            t => ResolvedAst.Expression.ReifyType(t, k, loc)
+          }
 
         case NamedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
-          for {
-            e1 <- visitExp(exp1, region)
-            e2 <- visitExp(exp2, region)
-            e3 <- visitExp(exp3, region)
-          } yield ResolvedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          val e3Val = visitExp(exp3, region)
+          mapN(e1Val, e2Val, e3Val) {
+            case (e1, e2, e3) => ResolvedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
+          }
 
       }
 
