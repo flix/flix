@@ -456,11 +456,6 @@ object Namer {
     case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
-      // TODO: we use tenv when getting the types from formal params first, before the explicit tparams have a chance to modify it
-      // This means that if an explicit type variable is shadowing, the outer scope variable will be used for some parts, and inner for others
-      // Resulting in a type error rather than a redundancy error (as redundancy checking happens later)
-      // To fix: require explicit kind annotations (getting rid of the formal-param-first logic)
-      // Or delay using the tenv until evaluating explicit tparams (could become complex)
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
 
