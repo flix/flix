@@ -75,11 +75,11 @@ object GenMainClass {
     * Emits code for the main method in the main class. The emitted (byte)code should satisfy the following signature for the method:
     * public static void main(String[])
     *
-    * The method itself needs simply invoke the m_main method which is in the root namespace.
+    * The method itself needs simply invoke the m_entry method which is in the root namespace.
     *
     * The emitted code for the method should correspond to:
     *
-    * Ns.m_main((Object)null);
+    * Ns.m_entry((Object)null);
     */
   private def compileMainMethod(sym: Symbol.DefnSym, visitor: ClassWriter, returnType: JvmType)(implicit root: Root, flix: Flix): Unit = {
 
@@ -94,16 +94,17 @@ object GenMainClass {
 
     main.visitCode()
 
-    //Get the root namespace in order to get the class type when invoking m_main
+    //Get the root namespace in order to get the class type when invoking m_<entry>
     val ns = JvmOps.getNamespace(sym)
 
-    // Call Ns.m_main(args)
+    // Call Ns.m_<entry>(args)
 
     // Push the args array on the stack.
     main.visitVarInsn(ALOAD, 0)
 
-    //Invoke m_main
-    main.visitMethodInsn(INVOKESTATIC, JvmOps.getNamespaceClassType(ns).name.toInternalName, "m_main",
+    //Invoke m_<entry>
+    main.visitMethodInsn(INVOKESTATIC, JvmOps.getNamespaceClassType(ns).name.toInternalName,
+      JvmOps.getDefMethodNameInNamespaceClass(sym),
       AsmOps.getMethodDescriptor(List(JvmType.Object), returnType), false)
 
     // The return value is ignored
