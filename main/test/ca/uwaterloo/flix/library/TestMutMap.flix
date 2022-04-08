@@ -88,41 +88,25 @@ namespace TestMutMap {
         MutMap.sameElements(m, m2)
     }
 
-    @test
-    def sameElements07(): Bool & Impure =
-        let m = MutMap.empty();
-        MutMap.put!(2, "b", m);
-        MutMap.put!(3, "c", m);
-        MutMap.put!(1, "a", m);
-
-        let m2 = MutMap.empty();
-        MutMap.put!(1, "a", m2);
-        MutMap.put!(2, "b", m2);
-        MutMap.put!(3, "c", m2);
-        MutMap.sameElements(m, m2)
-
-
     /////////////////////////////////////////////////////////////////////////////
     // mergeWithKey                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def merge01(): Bool = region r {
-        let m1 = new MutMap(r): MutMap[Int32, Int32, _];
-        let m2 = new MutMap(r): MutMap[Int32, Int32, _];
+    def merge01(): Bool & Impure =
+        let m1 = MutMap.empty(): MutMap[Int32, Int32, _];
+        let m2 = MutMap.empty(): MutMap[Int32, Int32, _];
         MutMap.mergeWithKey!((_, v, _) -> v, m1, m2);
         MutMap.isEmpty(m2)
-    }
 
     @test
-    def merge02(): Bool = region r {
-        let m1 = new MutMap(r);
-        let m2 = new MutMap(r);
+    def merge02(): Bool & Impure =
+        let m1 = MutMap.empty();
+        let m2 = MutMap.empty();
         let _ = MutMap.put!(1, 0, m1);
         let _ = MutMap.put!(2, 0, m2);
         MutMap.mergeWithKey!((_, v, _) -> v, m1, m2);
         MutMap.memberOf(1, m2) and MutMap.memberOf(2, m2)
-    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -471,4 +455,5 @@ namespace TestMutMap {
         let m = MutMap(ref Map#{1 => 2, 3 => 4, 5 => 6});
         MutMap.foldRightLazy((v, s) -> force s + v, 0, m) == 12
     }
+
 }
