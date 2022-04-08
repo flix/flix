@@ -205,8 +205,8 @@ object Regions {
       }
 
     case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
-      mapN(visitExp(exp1), visitExp(exp2), checkType(tpe, scope, loc)) {
-        case (e1, e2, _) => checkType(tpe, loc)
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => checkType(tpe, loc)
       }
 
     case Expression.Deref(exp, tpe, eff, loc) =>
