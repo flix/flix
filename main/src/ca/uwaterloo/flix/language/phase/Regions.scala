@@ -37,6 +37,8 @@ object Regions {
     }
   }
 
+  // TODO: Format params should be included in scope.
+
   private def visitDef(def0: Def)(implicit flix: Flix): Validation[Def, CompilationMessage] =
     mapN(visitExp(def0.impl.exp)(Nil, flix)) {
       case e => def0
