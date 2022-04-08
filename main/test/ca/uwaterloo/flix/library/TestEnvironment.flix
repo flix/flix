@@ -76,7 +76,7 @@ namespace TestEnvironment {
         Environment.getVirtualProcessors() > 0
 
     @test
-    def testGetArgs(): Bool =
+    def testGetArgs(): Bool & Impure =
         Environment.getArgs();
         true
 
