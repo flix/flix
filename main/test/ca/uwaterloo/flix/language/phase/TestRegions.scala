@@ -43,4 +43,24 @@ class TestRegions extends FunSuite with TestUtils {
     expectError[TypeError.RegionVarEscapes](result)
   }
 
+  test("RegionVarEscapes.02") {
+    val input =
+      """
+        |pub enum Option[t] {
+        |    case None,
+        |    case Some(t)
+        |}
+        |
+        |pub def f(): Unit & Impure =
+        |    let m = ref None;
+        |    region r {
+        |        let x = ref 123 @ r;
+        |        m := Some(_ -> x);
+        |        ()
+        |    }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.RegionVarEscapes](result)
+  }
+
 }
