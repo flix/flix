@@ -4,12 +4,10 @@ def main(_args: Array[String]): Int32 & Impure =
 
   // Check if the file 'README.md' exists.
   match File.exists(f) {
-    case Ok(readmeExists) => {
-      println("The file ${f} exists: ${readmeExists}.")
+    case Ok(exist) => {
+      println("The file ${f} exists: ${exist}.")
     }
-    case Err(msg)         => {
-      println("An error occurred. This is the message: ${msg}")
-    }
+    case Err(msg)  => println("An error occurred with message: ${msg}")
   };
 
   // Get statistics of the file 'README.md'.
@@ -19,7 +17,7 @@ def main(_args: Array[String]): Int32 & Impure =
       println("The size of ${f} is: ${stats.size}.");
       println("The creation time of ${f} is: ${stats.creationTime}.")
     }
-    case Err(_)    => println("An error occurred.")
+    case Err(msg)    => println("An error occurred with message: ${msg}")
   };
 
   0 // exit code
