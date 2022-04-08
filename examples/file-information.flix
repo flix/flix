@@ -1,7 +1,5 @@
 // Getting information on files with Flix.
-
 def main(_args: Array[String]): Int32 & Impure =
-
   let f = "README.md";
 
   // Check if the file 'README.md' exists.
