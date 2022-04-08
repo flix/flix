@@ -25,6 +25,12 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import scala.collection.immutable.SortedSet
 
+/**
+  * The region phase ensures that regions do not escape outside of their scope.
+  *
+  * It does so by keep tracking of every region variable in scope and ensure that every
+  * rigid Boolean type variable that occurs anywhere belongs is in scope.
+  */
 object Regions {
 
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Regions") {
@@ -36,8 +42,6 @@ object Regions {
       case ds => root.copy(defs = ds.toMap)
     }
   }
-
-  // TODO: Format params should be included in scope.
 
   private def visitDef(def0: Def)(implicit flix: Flix): Validation[Def, CompilationMessage] =
     mapN(visitExp(def0.impl.exp)(Nil, flix)) {
@@ -371,8 +375,6 @@ object Regions {
     // Return an error if a region variable escapes.
     if (escapes.nonEmpty) {
       val rvar = escapes.head
-      // TODO: Need Error message?
-      // TODO: Move Error message?
       return TypeError.RegionVarEscapes(rvar, tpe, loc).toFailure
     }
 
