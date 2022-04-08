@@ -558,7 +558,7 @@ object Monomorph {
         val e = visitExp(exp, env0)
         Expression.Force(e, subst0(tpe), eff, loc)
 
-      case Expression.Scope(_, _, _, _, loc) =>
+      case Expression.Scope(_, _, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
       case Expression.FixpointConstraintSet(_, _, _, loc) =>

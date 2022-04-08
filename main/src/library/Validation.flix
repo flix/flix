@@ -56,6 +56,30 @@ namespace Validation {
     }
 
     ///
+    /// Chain two functions, returns the product of their results.
+    ///
+    pub def product(fa: Validation[t1, e], fb: Validation[t2, e]): Validation[(t1, t2), e] =
+        ap(map((a, b) -> (a, b), fa), fb)
+
+    ///
+    /// Chain three functions, returns the product of their results.
+    ///
+    pub def product3(fa: Validation[t1, e], fb: Validation[t2, e], fc: Validation[t3, e]): Validation[(t1, t2, t3), e] =
+        ap(ap(map((a, b, c) -> (a, b, c), fa), fb), fc)
+
+    ///
+    /// Chain four functions, returns the product of their results.
+    ///
+    pub def product4(fa: Validation[t1, e], fb: Validation[t2, e], fc: Validation[t3, e], fd: Validation[t4, e]): Validation[(t1, t2, t3, t4), e] =
+        ap(ap(ap(map((a, b, c, d) -> (a, b, c, d), fa), fb), fc), fd)
+
+    ///
+    /// Chain five functions, returns the product of their results.
+    ///
+    pub def product5(fa: Validation[t1, e], fb: Validation[t2, e], fc: Validation[t3, e], fd: Validation[t4, e], fe: Validation[t5, e]): Validation[(t1, t2, t3, t4, t5), e] =
+        ap(ap(ap(ap(map((a, b, c, d, e) -> (a, b, c, d, e), fa), fb), fc), fd), fe)
+
+    ///
     /// Returns `t` if `v` is `Success(t).` Otherwise returns `d`.
     ///
     @Time(1) @Space(1)
