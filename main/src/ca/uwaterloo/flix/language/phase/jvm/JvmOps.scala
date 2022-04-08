@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst._
-import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Name, Rigidity, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, MonoType, Name, Rigidity, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Finalize
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -792,7 +792,7 @@ object JvmOps {
   private def hackType2MonoType(tpe: Type): MonoType = Finalize.visitType(tpe)
 
   // TODO: Remove
-  private def hackId2TypeVarSym(id: Int): Symbol.KindedTypeVarSym = new Symbol.KindedTypeVarSym(id, None, Kind.Wild, Rigidity.Flexible, SourceLocation.Unknown)
+  private def hackId2TypeVarSym(id: Int): Symbol.KindedTypeVarSym = new Symbol.KindedTypeVarSym(id, Ast.VarText.Absent, Kind.Wild, Rigidity.Flexible, SourceLocation.Unknown)
 
   /**
     * Returns the tag info for the given `tpe` and `tag`

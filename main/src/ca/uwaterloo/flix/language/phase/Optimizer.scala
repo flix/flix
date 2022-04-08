@@ -38,8 +38,7 @@ object Optimizer {
     for (_ <- 1 to 2) {
       val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(result)
       val afterInliner = Inliner.run(afterOccurrenceAnalyzer.get)
-      val afterReducer = Reducer.run(afterInliner.get)
-      result = afterReducer.get
+      result = afterInliner.get
     }
 
     // Print the ast if debugging is enabled.

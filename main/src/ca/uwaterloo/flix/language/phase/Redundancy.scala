@@ -359,7 +359,7 @@ object Redundancy {
       else
         (used ++ shadowedVar) - sym
 
-    case Expression.Scope(sym, exp, _, _, _) =>
+    case Expression.Scope(sym, _, exp, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
@@ -814,7 +814,7 @@ object Redundancy {
     * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
     */
   private def deadTypeVar(tvar: Symbol.KindedTypeVarSym, used: Set[Symbol.KindedTypeVarSym]): Boolean = {
-    !tvar.text.exists(_.startsWith("_")) &&
+    !tvar.isWild &&
       !used.contains(tvar)
   }
 
