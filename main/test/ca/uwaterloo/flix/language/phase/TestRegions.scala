@@ -26,12 +26,17 @@ class TestRegions extends FunSuite with TestUtils {
   test("RegionVarEscapes.01") {
     val input =
       """
+        |pub enum Option[t] {
+        |    case None,
+        |    case Some(t)
+        |}
+        |
         |pub def f(): Unit & Impure =
         |    let m = ref None;
         |    region r {
         |        let x = ref 123 @ r;
         |        m := Some(x);
-        |        println("Hello World!")
+        |        ()
         |    }
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
