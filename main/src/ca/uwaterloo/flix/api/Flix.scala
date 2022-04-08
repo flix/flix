@@ -467,7 +467,8 @@ class Flix {
       afterStatistics <- Statistics.run(afterTyper)
       afterInstances <- Instances.run(afterStatistics)
       afterStratifier <- Stratifier.run(afterInstances)
-      afterPatternExhaustiveness <- PatternExhaustiveness.run(afterStratifier)
+      afterRegions <- Regions.run(afterStratifier)
+      afterPatternExhaustiveness <- PatternExhaustiveness.run(afterRegions)
       afterRedundancy <- Redundancy.run(afterPatternExhaustiveness)
       afterSafety <- Safety.run(afterRedundancy)
     } yield {
