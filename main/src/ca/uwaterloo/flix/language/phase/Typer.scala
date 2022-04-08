@@ -1113,8 +1113,8 @@ object Typer {
       case KindedAst.Expression.ArrayLength(exp, loc) =>
         // Note: Experiment with named temporary type variables to generate better error messages.
         // Note: We probably want two types of text-- in particular these names should freely be overwritten.
-        val elmVar = Type.freshVar(Kind.Star, loc, text = Some("?elm"))
-        val regionVar = Type.freshVar(Kind.Bool, loc, text = Some("?region"))
+        val elmVar = Type.freshVar(Kind.Star, loc, text = Ast.VarText.SourceText("elm"))
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = Ast.VarText.SourceText("region"))
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           _ <- expectTypeM(Type.mkScopedArray(elmVar, regionVar, loc), tpe, exp.loc)
@@ -1636,11 +1636,11 @@ object Typer {
       case KindedAst.Expression.Region(tpe, loc) =>
         TypedAst.Expression.Unit(loc)
 
-      case KindedAst.Expression.Scope(sym, exp, evar, loc) =>
+      case KindedAst.Expression.Scope(sym, regionVar, exp, evar, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = e.tpe
         val eff = subst0(evar)
-        TypedAst.Expression.Scope(sym, e, tpe, eff, loc)
+        TypedAst.Expression.Scope(sym, regionVar, e, tpe, eff, loc)
 
       case KindedAst.Expression.Match(matchExp, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)

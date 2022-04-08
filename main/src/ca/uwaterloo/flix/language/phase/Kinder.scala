@@ -352,7 +352,7 @@ object Kinder {
 
     case ResolvedAst.Expression.Scope(sym, exp0, loc) =>
       // Introduce a rigid variable for the region of `exp`.
-      val regionVar = Type.freshVar(Kind.Bool, sym.loc, Rigidity.Rigid, Some(sym.text))
+      val regionVar = Type.freshVar(Kind.Bool, sym.loc, Rigidity.Rigid, Ast.VarText.SourceText(sym.text))
       for {
         exp <- visitExp(exp0, kenv, taenv, root)
       } yield KindedAst.Expression.Scope(sym,  regionVar, exp, Type.freshVar(Kind.Bool, loc.asSynthetic), loc)
