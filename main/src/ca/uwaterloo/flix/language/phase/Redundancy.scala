@@ -359,7 +359,7 @@ object Redundancy {
       else
         (used ++ shadowedVar) - sym
 
-    case Expression.Scope(sym, exp, _, _, _) =>
+    case Expression.Scope(sym, _, exp, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
