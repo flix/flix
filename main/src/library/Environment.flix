@@ -56,6 +56,7 @@ namespace Environment {
     ///
     /// Returns the arguments passed to the program via the command line.
     ///
+    @Experimental
     pub def getArgs(): Array[String] & Impure = []
 
     ///
