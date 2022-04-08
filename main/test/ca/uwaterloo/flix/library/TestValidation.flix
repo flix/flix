@@ -63,6 +63,150 @@ namespace TestValidation {
     def ap07(): Bool = Validation.ap(Failure(necOf2(1, 2)), (Failure(necOf2(3, 4)))): Validation[Unit, _] == Failure(necOf4(1, 2, 3, 4))
 
     /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool =
+    let p = Validation.product(Failure(singleton(1)), (Failure(singleton(2))));
+    match p {
+        case Success(_) => false
+        case Failure(v) => v == necOf2(1, 2)
+    }
+
+    @test
+    def product02(): Bool =
+        let p = Validation.product(Failure(singleton(1)), Success(2));
+        match p {
+            case Success(_) => false
+            case Failure(v) => v == singleton(1)
+        }
+
+    @test
+    def product03(): Bool =
+        let p = Validation.product(Success(1), Failure(singleton(2)));
+        match p {
+            case Success(_) => false
+            case Failure(v) => v == singleton(2)
+        }
+
+    @test
+    def product04(): Bool =
+        let p = Validation.product(Success(1), Success(2));
+        match p {
+            case Success(v) => v == (1, 2)
+            case Failure(_) => false
+        }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product3                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product301(): Bool =
+        let p = Validation.product3(Success(1), Success(2), Success(3));
+        match p {
+            case Success(v) => v == (1, 2, 3)
+            case Failure(_) => false
+        }
+
+    @test
+    def product302(): Bool =
+        let p = Validation.product3(Success(1), Failure(singleton(2)), Success(3));
+        match p {
+            case Success(_) => false
+            case Failure(v) => v == singleton(2)
+        }
+
+    @test
+    def product303(): Bool =
+        let p = Validation.product3(Failure(singleton(1)), Success(2), Failure(singleton(3)));
+        match p {
+            case Success(_) => false
+            case Failure(v) => v == necOf2(1, 3)
+        }
+
+    @test
+    def product304(): Bool =
+        let p = Validation.product3(Failure(singleton(1)), Failure(singleton(2)), Failure(singleton(3)));
+        match p {
+            case Success(_) => false
+            case Failure(v) => v == necOf3(1, 2, 3)
+        }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product4                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product401(): Bool =
+        let p = Validation.product4(Success(1), Success(2), Success(3), Success(4));
+        match p {
+            case Success(v) => v == (1, 2, 3, 4)
+            case Failure(_) => false
+        }
+
+    @test
+    def product402(): Bool =
+        let p = Validation.product4(Success(1), Failure(singleton(2)), Success(3), Success(4));
+        match p {
+            case Success(_) => false
+            case Failure(v) => v == singleton(2)
+        }
+
+    @test
+    def product403(): Bool =
+        let p = Validation.product4(Failure(singleton(1)), Success(2), Failure(singleton(3)), Success(4));
+        match p {
+            case Success(_) => false
+            case Failure(v) => v == necOf2(1, 3)
+        }
+
+    @test
+    def product404(): Bool =
+        let p = Validation.product4(Failure(singleton(1)), Failure(singleton(2)), Failure(singleton(3)), Failure(singleton(4)));
+        match p {
+            case Success(_) => false
+            case Failure(v) => v == necOf4(1, 2, 3, 4)
+        }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product5                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product501(): Bool =
+        let p = Validation.product5(Success(1), Success(2), Success(3), Success(4), Success(5));
+        match p {
+            case Success(v) => v == (1, 2, 3, 4, 5)
+            case Failure(_) => false
+        }
+
+    @test
+    def product502(): Bool =
+        let p = Validation.product5(Success(1), Failure(singleton(2)), Success(3), Success(4), Success(5));
+        match p {
+            case Success(_) => false
+            case Failure(v) => v == singleton(2)
+        }
+
+    @test
+    def product503(): Bool =
+        let p = Validation.product5(Failure(singleton(1)), Success(2), Failure(singleton(3)), Success(4), Failure(singleton(5)));
+        match p {
+            case Success(_) => false
+            case Failure(v) => v == necOf3(1, 3, 5)
+        }
+
+    @test
+    def product504(): Bool =
+        let p = Validation.product5(Failure(singleton(1)), Failure(singleton(2)), Failure(singleton(3)), Failure(singleton(4)), Failure(singleton(5)));
+        match p {
+            case Success(_) => false
+            case Failure(v) => v == necOf5(1, 2, 3, 4, 5)
+        }
+
+    /////////////////////////////////////////////////////////////////////////////
     // getWithDefault                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
