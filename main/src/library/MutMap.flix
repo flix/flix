@@ -237,19 +237,19 @@ namespace MutMap {
     ///
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
-    pub def merge!(m1: MutMap[k, v, Impure], m2: MutMap[k, v, Impure]): Unit & Impure with Order[k] =
+    pub def merge!(m1: MutMap[k, v, r], m2: MutMap[k, v, r]): Unit \ { Read(r), Write(r) } with Order[k] =
         mergeWithKey!((_, v1, _) -> v1, m1, m2)
 
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`.
     ///
-    pub def mergeWith!(f: (v, v) -> v & ef, m1: MutMap[k, v, Impure], m2: MutMap[k, v, Impure]): Unit & Impure with Order[k] =
+    pub def mergeWith!(f: (v, v) -> v & ef, m1: MutMap[k, v, r], m2: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
         mergeWithKey!(_ -> f, m1, m2)
 
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
-    pub def mergeWithKey!(f: (k, v, v) -> v & ef, m1: MutMap[k, v, Impure], m2: MutMap[k, v, Impure]): Unit & Impure with Order[k] =
+    pub def mergeWithKey!(f: (k, v, v) -> v & ef, m1: MutMap[k, v, r], m2: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
         let MutMap(mm1) = m1;
         let MutMap(mm2) = m2;
         mm2 := Map.unionWithKey(f, deref mm1, deref mm2)
