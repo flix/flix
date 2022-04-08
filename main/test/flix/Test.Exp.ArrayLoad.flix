@@ -200,7 +200,7 @@ namespace Test/Exp/ArrayLoad {
 
     @test
     def testArrayLoad34(): Int32 = region r {
-        let x = [[1, 2] @ r, [1, 2] @ r] @ r;
+        let x: ScopedArray[ScopedArray[Int32, Pure], Pure] = [[1, 2] @ r, [1, 2] @ r] @ r;
         x[1][0]
     }
 
@@ -463,7 +463,7 @@ namespace Test/Exp/ArrayLoad {
     }
 
     @test
-    def testArrayLoad79(): ScopedArray[List[Int32], Impure] = region r {
+    def testArrayLoad79(): ScopedArray[List[Int32], Impure] & Impure = region r {
         let x = [[1 :: Nil], [3 :: Nil]] @ r;
         x[0]
     }
