@@ -137,25 +137,30 @@ object Inliner {
       val e = visitExp(exp, subst0)
       val as = args.map(visitExp(_, subst0))
       e match {
-        case Expression.Closure(sym, _, _, _) =>
+        case LiftedAst.Expression.Closure(sym, _, _, _) =>
           val def1 = root.defs.apply(sym)
-          if (def1.context.isNonSelfCall) {
+          // If `def1` is a single non-self call or
+          // it is trivial
+          // then inline the body of `def1`
+          if (def1.context.isNonSelfCall || isTrivialExp(def1.exp)) {
             val e1 = convertTailCall(def1.exp)
             bindFormals(e1, def1.fparams.map(_.sym), as, Map.empty)
           } else {
-            Expression.ApplyClo(e, as, tpe, loc)
+            LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
           }
         case _ =>
           val as = args.map(visitExp(_, subst0))
-          Expression.ApplyClo(e, as, tpe, loc)
+          LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
       }
-      Expression.ApplyClo(e, as, tpe, loc)
+      LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
       val as = args.map(visitExp(_, subst0))
       val def1 = root.defs.apply(sym)
-      // If `def1` is a single non-self call and its arguments are trivial, then inline the single non-self call, `e1`.
-      if (def1.context.isNonSelfCall && purity == Purity.Pure) {
+      // If `def1` is a single non-self call or
+      // it is trivial
+      // then inline the body of `def1`
+      if (def1.context.isNonSelfCall || isTrivialExp(def1.exp)) {
         val e1 = convertTailCall(def1.exp)
         bindFormals(e1, def1.fparams.map(_.sym), as, Map.empty)
       } else {
@@ -166,24 +171,29 @@ object Inliner {
       val e = visitExp(exp, subst0)
       val as = args.map(visitExp(_, subst0))
       e match {
-        case Expression.Closure(sym, _, _, _) =>
+        case LiftedAst.Expression.Closure(sym, _, _, _) =>
           val def1 = root.defs.apply(sym)
-          if (def1.context.isNonSelfCall) {
+          // If `def1` is a single non-self call or
+          // it is trivial
+          // then inline the body of `def1`
+          if (def1.context.isNonSelfCall || isTrivialExp(def1.exp)) {
             bindFormals(def1.exp, def1.fparams.map(_.sym), as, Map.empty)
           } else {
-            Expression.ApplyCloTail(e, as, tpe, loc)
+            LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
           }
         case _ =>
           val as = args.map(visitExp(_, subst0))
-          Expression.ApplyCloTail(e, as, tpe, loc)
+          LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
       }
-      Expression.ApplyCloTail(e, as, tpe, loc)
+      LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) =>
       val as = args.map(visitExp(_, subst0))
       val def1 = root.defs.apply(sym)
-      // If `def1` is a single non-self call and its arguments are trivial, then inline the single non-self call, `e1`.
-      if (def1.context.isNonSelfCall && purity == Purity.Pure) {
+      // If `def1` is a single non-self call or
+      // it is trivial
+      // then inline the body of `def1`
+      if (def1.context.isNonSelfCall || isTrivialExp(def1.exp)) {
         bindFormals(def1.exp, def1.fparams.map(_.sym), as, Map.empty)
       } else {
         LiftedAst.Expression.ApplyDefTail(sym, as, tpe, purity, loc)
@@ -505,6 +515,32 @@ object Inliner {
     case LiftedAst.Expression.BigInt(_, _) => true
     case LiftedAst.Expression.Str(_, _) => true
     case LiftedAst.Expression.Var(_, _, _) => true
+    case _ => false
+  }
+
+  /**
+   * returns `true` if `exp0` is considered a trivial expression.
+   *
+   * An expression is trivial if:
+   * It is either a literal (float, string, int, bool, unit), or it is a variable.
+   *
+   * A pure and trivial expression can always be inlined even without duplicating work.
+   */
+  private def isTrivialExp(exp0: OccurrenceAst.Expression): Boolean = exp0 match {
+    case OccurrenceAst.Expression.Unit(_) => true
+    case OccurrenceAst.Expression.Null(_, _) => true
+    case OccurrenceAst.Expression.True(_) => true
+    case OccurrenceAst.Expression.False(_) => true
+    case OccurrenceAst.Expression.Char(_, _) => true
+    case OccurrenceAst.Expression.Float32(_, _) => true
+    case OccurrenceAst.Expression.Float64(_, _) => true
+    case OccurrenceAst.Expression.Int8(_, _) => true
+    case OccurrenceAst.Expression.Int16(_, _) => true
+    case OccurrenceAst.Expression.Int32(_, _) => true
+    case OccurrenceAst.Expression.Int64(_, _) => true
+    case OccurrenceAst.Expression.BigInt(_, _) => true
+    case OccurrenceAst.Expression.Str(_, _) => true
+    case OccurrenceAst.Expression.Var(_, _, _) => true
     case _ => false
   }
 

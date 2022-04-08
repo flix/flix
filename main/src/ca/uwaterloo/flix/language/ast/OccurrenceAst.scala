@@ -296,7 +296,7 @@ object OccurrenceAst {
    *  A def is `isTrivialNonSelfCall` if
    *  the expression consist of a single (non-self) call with trivial arguments
    */
-  case class DefContext(isNonSelfCall: Boolean, occur: Occur)
+  case class DefContext(isNonSelfCall: Boolean)
 
 }
 
