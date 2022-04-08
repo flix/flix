@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import java.lang.reflect.Method
+import java.lang.reflect.{InvocationTargetException, Method}
 
 /**
   * Loads all the generated classes into the JVM and decorates the AST.
@@ -14,7 +14,7 @@ object Bootstrap {
   /**
     * Loads all the generated classes into the JVM and decorates the AST.
     */
-  def bootstrap(classes: Map[JvmName, JvmClass])(implicit flix: Flix, root: Root): Unit = {
+  def bootstrap(classes: Map[JvmName, JvmClass])(implicit flix: Flix, root: Root): Option[Array[String] => Unit] = {
     //
     // Load each class into the JVM in a fresh class loader.
     //
@@ -63,6 +63,22 @@ object Bootstrap {
 
         // And finally assign the method object to the definition.
         defn.method = method
+      }
+      root.entryPoint.map { _ =>
+        val mainName = JvmOps.getMainClassType().name
+        val mainClass = loadedClasses.getOrElse(mainName, throw InternalCompilerException(s"Class not found: '${mainName.toInternalName}'."))
+        val mainMethods = allMethods.getOrElse(mainClass, throw InternalCompilerException(s"methods for '${mainName.toInternalName}' not found."))
+        val mainMethod = mainMethods.getOrElse("main", throw InternalCompilerException(s"Cannot find 'main' method of '${mainName.toInternalName}'"))
+        (args: Array[String]) => {
+          try {
+            // Call the method passing the argument array.
+            mainMethod.invoke(null, args)
+          } catch {
+            case e: InvocationTargetException =>
+              // Rethrow the underlying exception.
+              throw e.getTargetException
+          }
+        }
       }
     }
   }
