@@ -66,6 +66,8 @@ namespace TestValidation {
     // product                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
+    use Validation.product;
+
     @test
     def product01(): Bool =
         let p = product(Failure(singleton(1)), (Failure(singleton(2))));
@@ -101,6 +103,8 @@ namespace TestValidation {
     /////////////////////////////////////////////////////////////////////////////
     // product3                                                                //
     /////////////////////////////////////////////////////////////////////////////
+
+    use Validation.product3;
 
     @test
     def product301(): Bool =
@@ -138,6 +142,8 @@ namespace TestValidation {
     // product4                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
+    use Validation.product4;
+
     @test
     def product401(): Bool =
         let p = product4(Success(1), Success(2), Success(3), Success(4));
@@ -173,6 +179,8 @@ namespace TestValidation {
     /////////////////////////////////////////////////////////////////////////////
     // product5                                                                //
     /////////////////////////////////////////////////////////////////////////////
+
+    use Validation.product5;
 
     @test
     def product501(): Bool =
