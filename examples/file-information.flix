@@ -1,12 +1,17 @@
 // Getting information on files with Flix.
+
 def main(_args: Array[String]): Int32 & Impure =
 
   let f = "README.md";
 
   // Check if the file 'README.md' exists.
   match File.exists(f) {
-    case Ok(readmeExists) => println("The file ${f} exists: ${readmeExists}.")
-    case Err(_)           => println("An error occurred.")
+    case Ok(readmeExists) => {
+      println("The file ${f} exists: ${readmeExists}.")
+    }
+    case Err(msg)         => {
+      println("An error occurred. This is the message: ${msg}")
+    }
   };
 
   // Get statistics of the file 'README.md'.
