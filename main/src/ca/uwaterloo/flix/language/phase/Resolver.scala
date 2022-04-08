@@ -695,17 +695,19 @@ object Resolver {
         case NamedAst.Expression.Match(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.MatchRule(pat, guard, body) =>
-              for {
-                p <- Patterns.resolve(pat, ns0, root)
-                g <- visitExp(guard, region)
-                b <- visitExp(body, region)
-              } yield ResolvedAst.MatchRule(p, g, b)
+              val pVal = Patterns.resolve(pat, ns0, root)
+              val gVal = visitExp(guard, region)
+              val bVal = visitExp(body, region)
+              mapN(pVal, gVal, bVal) {
+                case (p, g, b) => ResolvedAst.MatchRule(p, g, b)
+              }
           }
 
-          for {
-            e <- visitExp(exp, region)
-            rs <- rulesVal
-          } yield ResolvedAst.Expression.Match(e, rs, loc)
+          val eVal = visitExp(exp, region)
+          val rsVal = rulesVal
+          mapN(eVal, rsVal) {
+            case (e, rs) => ResolvedAst.Expression.Match(e, rs, loc)
+          }
 
         case NamedAst.Expression.Choose(star, exps, rules, loc) =>
           val expsVal = traverse(exps)(visitExp(_, region))
@@ -762,10 +764,11 @@ object Resolver {
             }
           case Some(exp) =>
             // Case 2: The tag has an expression. Perform resolution on it.
-            for {
-              d <- lookupEnumByTag(enum, tag, ns0, root)
-              e <- visitExp(exp, region)
-            } yield ResolvedAst.Expression.Tag(d.sym, tag, e, loc)
+            val dVal = lookupEnumByTag(enum, tag, ns0, root)
+            val eVal = visitExp(exp, region)
+            mapN(dVal, eVal) {
+              case (d, e) => ResolvedAst.Expression.Tag(d.sym, tag, e, loc)
+            }
         }
 
         case NamedAst.Expression.Tuple(elms, loc) =>
@@ -883,11 +886,10 @@ object Resolver {
             case Some(f) => mapN(resolveType(f, taenv, ns0, root))(x => Some(x))
           }
 
-          for {
-            e <- visitExp(exp, region)
-            t <- expectedTypVal
-            f <- expectedEffVal
-          } yield ResolvedAst.Expression.Ascribe(e, t, f, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal, expectedTypVal, expectedEffVal) {
+            case (e, t, f) => ResolvedAst.Expression.Ascribe(e, t, f, loc)
+          }
 
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
 
@@ -900,26 +902,25 @@ object Resolver {
             case Some(f) => mapN(resolveType(f, taenv, ns0, root))(x => Some(x))
           }
 
-          for {
-            e <- visitExp(exp, region)
-            t <- declaredTypVal
-            f <- declaredEffVal
-          } yield ResolvedAst.Expression.Cast(e, t, f, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal, declaredTypVal, declaredEffVal) {
+            case (e, t, f) => ResolvedAst.Expression.Cast(e, t, f, loc)
+          }
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.CatchRule(sym, className, body) =>
-              for {
-                clazz <- lookupJvmClass(className, sym.loc)
-                exceptionType = Type.mkNative(clazz, loc)
-                b <- visitExp(body, region)
-              } yield ResolvedAst.CatchRule(sym, clazz, b)
+              val clazzVal = lookupJvmClass(className, sym.loc)
+              val bVal = visitExp(body, region)
+              mapN(clazzVal, bVal) {
+                case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b)
+              }
           }
 
-          for {
-            e <- visitExp(exp, region)
-            rs <- rulesVal
-          } yield ResolvedAst.Expression.TryCatch(e, rs, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal, rulesVal) {
+            case (e, rs) => ResolvedAst.Expression.TryCatch(e, rs, loc)
+          }
 
         case NamedAst.Expression.InvokeConstructor(className, args, sig, loc) =>
           val argsVal = traverse(args)(visitExp(_, region))
@@ -973,48 +974,53 @@ object Resolver {
           }
 
         case NamedAst.Expression.NewChannel(exp, tpe, loc) =>
-          for {
-            t <- resolveType(tpe, taenv, ns0, root)
-            e <- visitExp(exp, region)
-          } yield ResolvedAst.Expression.NewChannel(e, t, loc)
+          val tVal = resolveType(tpe, taenv, ns0, root)
+          val eVal = visitExp(exp, region)
+          mapN(tVal, eVal) {
+            case (t, e) => ResolvedAst.Expression.NewChannel(e, t, loc)
+          }
 
         case NamedAst.Expression.GetChannel(exp, loc) =>
-          for {
-            e <- visitExp(exp, region)
-          } yield ResolvedAst.Expression.GetChannel(e, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.GetChannel(e, loc)
+          }
 
         case NamedAst.Expression.PutChannel(exp1, exp2, loc) =>
-          for {
-            e1 <- visitExp(exp1, region)
-            e2 <- visitExp(exp2, region)
-          } yield ResolvedAst.Expression.PutChannel(e1, e2, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.PutChannel(e1, e2, loc)
+          }
 
         case NamedAst.Expression.SelectChannel(rules, default, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.SelectChannelRule(sym, chan, body) =>
-              for {
-                c <- visitExp(chan, region)
-                b <- visitExp(body, region)
-              } yield ResolvedAst.SelectChannelRule(sym, c, b)
+              val cVal = visitExp(chan, region)
+              val bVal = visitExp(body, region)
+              mapN(cVal, bVal) {
+                case (c, b) => ResolvedAst.SelectChannelRule(sym, c, b)
+              }
           }
 
           val defaultVal = default match {
             case Some(exp) =>
-              for {
-                e <- visitExp(exp, region)
-              } yield Some(e)
+              val eVal = visitExp(exp, region)
+              mapN(eVal) {
+                e => Some(e)
+              }
             case None => None.toSuccess
           }
 
-          for {
-            rs <- rulesVal
-            d <- defaultVal
-          } yield ResolvedAst.Expression.SelectChannel(rs, d, loc)
+          mapN(rulesVal, defaultVal) {
+            case (rs, d) => ResolvedAst.Expression.SelectChannel(rs, d, loc)
+          }
 
         case NamedAst.Expression.Spawn(exp, loc) =>
-          for {
-            e <- visitExp(exp, region)
-          } yield ResolvedAst.Expression.Spawn(e, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.Spawn(e, loc)
+          }
 
         case NamedAst.Expression.Lazy(exp, loc) =>
           for {
