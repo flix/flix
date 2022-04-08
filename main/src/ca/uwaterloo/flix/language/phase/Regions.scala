@@ -28,265 +28,267 @@ import scala.collection.immutable.SortedSet
 object Regions {
 
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Regions") {
-    val newDefs = Validation.sequence(ParOps.parMap(root.defs)(kv => visitDef(kv._2).map(d => kv._1 -> d)))
+    val defsVal = Validation.sequence(ParOps.parMap(root.defs)(kv => visitDef(kv._2).map(d => kv._1 -> d)))
 
-    mapN(newDefs) {
+    // TODO: Instances
+
+    mapN(defsVal) {
       case ds => root.copy(defs = ds.toMap)
     }
   }
 
   private def visitDef(def0: Def)(implicit flix: Flix): Validation[Def, CompilationMessage] =
     mapN(visitExp(def0.impl.exp)(Nil, flix)) {
-      case e => def0.copy(impl = def0.impl.copy(exp = e))
+      case e => def0
     }
 
-  private def visitExp(exp0: Expression)(implicit scope: List[Type.KindedVar], flix: Flix): Validation[Expression, CompilationMessage] = exp0 match {
-    case Expression.Unit(_) => exp0.toSuccess
+  private def visitExp(exp0: Expression)(implicit scope: List[Type.KindedVar], flix: Flix): Validation[Unit, CompilationMessage] = exp0 match {
+    case Expression.Unit(_) => ().toSuccess
 
-    case Expression.Null(_, _) => exp0.toSuccess
+    case Expression.Null(_, _) => ().toSuccess
 
-    case Expression.True(_) => exp0.toSuccess
+    case Expression.True(_) => ().toSuccess
 
-    case Expression.False(_) => exp0.toSuccess
+    case Expression.False(_) => ().toSuccess
 
-    case Expression.Char(_, _) => exp0.toSuccess
+    case Expression.Char(_, _) => ().toSuccess
 
-    case Expression.Float32(_, _) => exp0.toSuccess
+    case Expression.Float32(_, _) => ().toSuccess
 
-    case Expression.Float64(_, _) => exp0.toSuccess
+    case Expression.Float64(_, _) => ().toSuccess
 
-    case Expression.Int8(_, _) => exp0.toSuccess
+    case Expression.Int8(_, _) => ().toSuccess
 
-    case Expression.Int16(_, _) => exp0.toSuccess
+    case Expression.Int16(_, _) => ().toSuccess
 
-    case Expression.Int32(_, _) => exp0.toSuccess
+    case Expression.Int32(_, _) => ().toSuccess
 
-    case Expression.Int64(_, _) => exp0.toSuccess
+    case Expression.Int64(_, _) => ().toSuccess
 
-    case Expression.BigInt(_, _) => exp0.toSuccess
+    case Expression.BigInt(_, _) => ().toSuccess
 
-    case Expression.Str(_, _) => exp0.toSuccess
+    case Expression.Str(_, _) => ().toSuccess
 
-    case Expression.Default(_, _) => exp0.toSuccess
+    case Expression.Default(_, _) => ().toSuccess
 
-    case Expression.Wild(_, _) => exp0.toSuccess
+    case Expression.Wild(_, _) => ().toSuccess
 
-    case Expression.Var(_, _, _) => exp0.toSuccess
+    case Expression.Var(_, tpe, loc) => checkType(tpe, loc)
 
-    case Expression.Def(_, _, _) => exp0.toSuccess
+    case Expression.Def(_, _, _) => ().toSuccess
 
-    case Expression.Sig(_, _, _) => exp0.toSuccess
+    case Expression.Sig(_, _, _) => ().toSuccess
 
-    case Expression.Hole(_, _, _) => exp0.toSuccess
+    case Expression.Hole(_, _, _) => ().toSuccess
 
-    case Expression.Lambda(fparam, exp, tpe, loc) =>
+    case Expression.Lambda(_, exp, tpe, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Lambda(fparam, e, tpe, loc)
+        case e => checkType(tpe, loc)
       }
 
-    case Expression.Apply(exp, exps, tpe, eff, loc) =>
+    case Expression.Apply(exp, exps, tpe, _, loc) =>
       mapN(visitExp(exp), traverse(exps)(visitExp)) {
-        case (e, es) => Expression.Apply(e, es, tpe, eff, loc)
+        case (e, es) => checkType(tpe, loc)
       }
 
-    case Expression.Unary(sop, exp, tpe, eff, loc) =>
+    case Expression.Unary(_, exp, tpe, _, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Unary(sop, e, tpe, eff, loc)
+        case _ => checkType(tpe, loc)
       }
 
-    case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+    case Expression.Binary(_, exp1, exp2, tpe, _, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Binary(sop, e1, e2, tpe, eff, loc)
+        case (_, _) => checkType(tpe, loc)
       }
 
-    case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expression.Let(_, _, exp1, exp2, tpe, _, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Let(sym, mod, e1, e2, tpe, eff, loc)
+        case (e1, e2) => checkType(tpe, loc)
       }
 
-    case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expression.LetRec(_, _, exp1, exp2, tpe, _, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
+        case (e1, e2) => checkType(tpe, loc)
       }
 
-    case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
+    case Expression.Scope(_, regionVar, exp, tpe, _, loc) =>
       mapN(visitExp(exp)(regionVar :: scope, flix)) {
-        case e => Expression.Scope(sym, regionVar, e, tpe, eff, loc)
+        case e => checkType(tpe, loc)
       }
 
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
       mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
-        case (e1, e2, e3) => Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
+        case (e1, e2, e3) => checkType(tpe, loc)
       }
 
     case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Stm(e1, e2, tpe, eff, loc)
+        case (e1, e2) => checkType(tpe, loc)
       }
 
     case Expression.Match(exp, rules, tpe, eff, loc) =>
       val matchVal = visitExp(exp)
       val rulesVal = traverse(rules) {
         case MatchRule(pat, guard, body) => mapN(visitExp(guard), visitExp(body)) {
-          case (g, b) => MatchRule(pat, g, b)
+          case (g, b) => ()
         }
       }
       mapN(matchVal, rulesVal) {
-        case (m, rs) => Expression.Match(m, rs, tpe, eff, loc)
+        case (m, rs) => checkType(tpe, loc)
       }
 
     case Expression.Choose(exps, rules, tpe, eff, loc) =>
       val expsVal = traverse(exps)(visitExp)
       val rulesVal = traverse(rules) {
-        case ChoiceRule(pat, exp) => mapN(visitExp(exp))(ChoiceRule(pat, _))
+        case ChoiceRule(pat, exp) => mapN(visitExp(exp))(_ => ())
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => Expression.Choose(es, rs, tpe, eff, loc)
+        case (es, rs) => checkType(tpe, loc)
       }
 
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
-      mapN(visitExp(exp), checkType(tpe, scope, loc)) {
-        case (e, _) => Expression.Tag(sym, tag, e, tpe, eff, loc)
+      mapN(visitExp(exp)) {
+        case e => checkType(tpe, loc)
       }
 
     case Expression.Tuple(elms, tpe, eff, loc) =>
       mapN(traverse(elms)(visitExp)) {
-        case es => Expression.Tuple(es, tpe, eff, loc)
+        case es => checkType(tpe, loc)
       }
 
     case Expression.RecordEmpty(tpe, loc) =>
-      Expression.RecordEmpty(tpe, loc).toSuccess
+      ().toSuccess
 
     case Expression.RecordSelect(base, field, tpe, eff, loc) =>
       mapN(visitExp(base)) {
-        case b => Expression.RecordSelect(b, field, tpe, eff, loc)
+        case b => checkType(tpe, loc)
       }
 
     case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
       mapN(visitExp(value), visitExp(rest)) {
-        case (v, r) => Expression.RecordExtend(field, v, r, tpe, eff, loc)
+        case (v, r) => checkType(tpe, loc)
       }
 
     case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
       mapN(visitExp(rest)) {
-        case r => Expression.RecordRestrict(field, r, tpe, eff, loc)
+        case r => checkType(tpe, loc)
       }
 
     case Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
       mapN(traverse(exps)(visitExp), visitExp(exp)) {
-        case (es, e) => Expression.ArrayLit(es, e, tpe, eff, loc)
+        case (es, e) => checkType(tpe, loc)
       }
 
     case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
-        case (e1, e2, e3) => Expression.ArrayNew(e1, e2, e3, tpe, eff, loc)
+        case (e1, e2, e3) => checkType(tpe, loc)
       }
 
     case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
       mapN(visitExp(base), visitExp(index)) {
-        case (b, i) => Expression.ArrayLoad(b, i, tpe, eff, loc)
+        case (b, i) => checkType(tpe, loc)
       }
 
     case Expression.ArrayLength(base, eff, loc) =>
       mapN(visitExp(base)) {
-        case b => Expression.ArrayLength(b, eff, loc)
+        case b => ()
       }
 
     case Expression.ArrayStore(base, index, elm, loc) =>
       mapN(visitExp(base), visitExp(index), visitExp(elm)) {
-        case (b, i, e) => Expression.ArrayStore(b, i, e, loc)
+        case (b, i, e) => ()
       }
 
     case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
       mapN(visitExp(base), visitExp(beginIndex), visitExp(endIndex)) {
-        case (b, i1, i2) => Expression.ArraySlice(b, i1, i2, tpe, loc)
+        case (b, i1, i2) => checkType(tpe, loc)
       }
 
     case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2), checkType(tpe, scope, loc)) {
-        case (e1, e2, _) => Expression.Ref(e1, e2, tpe, eff, loc)
+        case (e1, e2, _) => checkType(tpe, loc)
       }
 
     case Expression.Deref(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Deref(e, tpe, eff, loc)
+        case e => checkType(tpe, loc)
       }
 
     case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Assign(e1, e2, tpe, eff, loc)
+        case (e1, e2) => checkType(tpe, loc)
       }
 
     case Expression.Ascribe(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Ascribe(e, tpe, eff, loc)
+        case e => checkType(tpe, loc)
       }
 
     case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Cast(e, declaredType, declaredEff, tpe, eff, loc)
+        case e => checkType(tpe, loc)
       }
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
       val rulesVal = traverse(rules) {
-        case CatchRule(sym, clazz, e) => visitExp(e).map(CatchRule(sym, clazz, _))
+        case CatchRule(sym, clazz, e) => visitExp(e).map(_ => ())
       }
       mapN(visitExp(exp), rulesVal) {
-        case (e, rs) => Expression.TryCatch(e, rs, tpe, eff, loc)
+        case (e, rs) => checkType(tpe, loc)
       }
 
     case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
       mapN(traverse(args)(visitExp)) {
-        case as => Expression.InvokeConstructor(constructor, as, tpe, eff, loc)
+        case as => checkType(tpe, loc)
       }
 
     case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
       mapN(visitExp(exp), traverse(args)(visitExp)) {
-        case (e, as) => Expression.InvokeMethod(method, e, as, tpe, eff, loc)
+        case (e, as) => checkType(tpe, loc)
       }
 
     case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
       mapN(traverse(args)(visitExp)) {
-        case as => Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
+        case as => checkType(tpe, loc)
       }
 
     case Expression.GetField(field, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.GetField(field, e, tpe, eff, loc)
+        case e => checkType(tpe, loc)
       }
 
     case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.PutField(field, e1, e2, tpe, eff, loc)
+        case (e1, e2) => checkType(tpe, loc)
       }
 
     case Expression.GetStaticField(field, tpe, eff, loc) =>
-      Expression.GetStaticField(field, tpe, eff, loc).toSuccess
+      ().toSuccess
 
     case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.PutStaticField(field, e, tpe, eff, loc)
+        case e => checkType(tpe, loc)
       }
 
     case Expression.NewChannel(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.NewChannel(e, tpe, eff, loc)
+        case e => checkType(tpe, loc)
       }
 
     case Expression.GetChannel(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.GetChannel(e, tpe, eff, loc)
+        case e => checkType(tpe, loc)
       }
 
     case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.PutChannel(e1, e2, tpe, eff, loc)
+        case (e1, e2) => checkType(tpe, loc)
       }
 
     case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
       val rulesVal = traverse(rules) {
         case SelectChannelRule(sym, chan, exp) => mapN(visitExp(chan), visitExp(exp)) {
-          case (c, e) => SelectChannelRule(sym, c, e)
+          case (c, e) => ()
         }
       }
 
@@ -298,74 +300,81 @@ object Regions {
       }
 
       mapN(rulesVal, defaultVal) {
-        case (rs, d) => Expression.SelectChannel(rs, d, tpe, eff, loc)
+        case (rs, d) => checkType(tpe, loc)
       }
 
     case Expression.Spawn(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Spawn(e, tpe, eff, loc)
+        case e => checkType(tpe, loc)
       }
 
     case Expression.Lazy(exp, tpe, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Lazy(e, tpe, loc)
+        case e => checkType(tpe, loc)
       }
 
     case Expression.Force(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Force(e, tpe, eff, loc)
+        case e => checkType(tpe, loc)
       }
 
     case Expression.FixpointConstraintSet(cs0, stf, tpe, loc) =>
-      Expression.FixpointConstraintSet(cs0, stf, tpe, loc).toSuccess
+      ().toSuccess // TODO
 
     case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.FixpointMerge(e1, e2, stf, tpe, eff, loc)
+        case (e1, e2) => checkType(tpe, loc)
       }
 
     case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.FixpointSolve(e, stf, tpe, eff, loc)
+        case e => checkType(tpe, loc)
       }
 
     case Expression.FixpointFilter(pred, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.FixpointFilter(pred, e, tpe, eff, loc)
+        case e => checkType(tpe, loc)
       }
 
     case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.FixpointProjectIn(e, pred, tpe, eff, loc)
+        case e => checkType(tpe, loc)
       }
 
     case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.FixpointProjectOut(pred, e, tpe, eff, loc)
+        case e => checkType(tpe, loc)
       }
 
     case Expression.Reify(t, tpe, eff, loc) =>
-      Expression.Reify(t, tpe, eff, loc).toSuccess
+      checkType(tpe, loc)
 
     case Expression.ReifyType(t, k, tpe, eff, loc) =>
-      Expression.ReifyType(t, k, tpe, eff, loc).toSuccess
+      checkType(tpe, loc)
 
     case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
-        case (e1, e2, e3) => Expression.ReifyEff(sym, e1, e2, e3, tpe, eff, loc)
+        case (e1, e2, e3) => checkType(tpe, loc)
       }
 
   }
 
-  private def checkType(tpe: Type, scope: List[Type.KindedVar], loc: SourceLocation): Validation[Unit, CompilationMessage] = {
-    val regionVars = regionVarsOf(tpe)
-    val diff = regionVars -- scope
+  /**
+    * Ensures that no region escapes inside `tpe`.
+    */
+  private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.KindedVar]): Validation[Unit, CompilationMessage] = {
+    // Compute the region variables that escape.
+    val escapes = regionVarsOf(tpe) -- scope
 
-    if (diff.nonEmpty) {
-      val rvar = diff.head
+    // Return an error if a region variable escapes.
+    if (escapes.nonEmpty) {
+      val rvar = escapes.head
+      // TODO: Need Error message?
+      // TODO: Move Error message?
       return TypeError.RegionVarEscapes(rvar, tpe, loc).toFailure
     }
 
+    // Otherwise return success.
     ().toSuccess
   }
 
