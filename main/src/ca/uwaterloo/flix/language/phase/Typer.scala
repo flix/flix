@@ -1090,21 +1090,23 @@ object Typer {
 
       case KindedAst.Expression.ArrayLit(exps, exp, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionType = Type.mkRegion(regionVar, loc)
         for {
           (constrs1, elmTypes, eff1) <- seqM(exps.map(visitExp)).map(_.unzip3)
-          (constrs2, regionType, eff2) <- visitExp(exp)
-          elementType <- unifyTypeAllowEmptyM(elmTypes, Kind.Star, loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
+          (constrs2, tpe2, eff2) <- visitExp(exp)
+          elmTyp <- unifyTypeAllowEmptyM(elmTypes, Kind.Star, loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkArray(elmTyp, loc), loc)
           resultEff <- unifyTypeM(evar, Type.mkAnd(Type.mkAnd(eff1, loc), eff2, regionVar, loc), loc)
         } yield (constrs1.flatten ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionType = Type.mkRegion(regionVar, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          (constrs3, regionType, eff3) <- visitExp(exp3)
-          _ <- unifyTypeM(regionType, Type.mkRegion(regionVar, loc), loc)
+          (constrs3, tpe3, eff3) <- visitExp(exp3)
+          _ <- expectTypeM(expected = regionType, actual = tpe3, loc)
           lenType <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
           resultTyp <- unifyTypeM(tvar, Type.mkScopedArray(tpe1, regionVar, loc), loc)
           resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, eff3, regionVar, loc), loc)
@@ -1165,11 +1167,11 @@ object Typer {
 
       case KindedAst.Expression.Ref(exp1, exp2, tvar, evar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc)
-        val refType = Type.mkRegion(regionVar, loc)
+        val regionType = Type.mkRegion(regionVar, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          _ <- unifyTypeM(tpe2, refType, loc)
+          _ <- unifyTypeM(tpe2, regionType, loc)
           resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(tpe1, regionVar, loc), loc)
           resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, regionVar, loc), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
