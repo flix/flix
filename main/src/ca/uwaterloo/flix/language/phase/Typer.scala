@@ -1050,7 +1050,7 @@ object Typer {
         // -------------------------
         //       r.field : tpe
         //
-        val freshRowVar = Type.freshVar(Kind.RecordRow, loc)
+        val freshRowVar = Type.freshVar(Kind.RecordRow, loc, text = FallbackText("row"))
         val expectedRowType = Type.mkRecordRowExtend(field, tvar, freshRowVar, loc)
         val expectedRecordType = Type.mkRecord(expectedRowType, loc)
         for {
@@ -1065,7 +1065,7 @@ object Typer {
         // ---------------------------------------------
         // { field = exp1 | exp2 } : { field  :: tpe | r }
         //
-        val restRow = Type.freshVar(Kind.RecordRow, loc)
+        val restRow = Type.freshVar(Kind.RecordRow, loc, text = FallbackText("row"))
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -1080,8 +1080,8 @@ object Typer {
         // -------------------------
         // { -field | exp } : {| r }
         //
-        val freshFieldType = Type.freshVar(Kind.Star, loc)
-        val freshRowVar = Type.freshVar(Kind.RecordRow, loc)
+        val freshFieldType = Type.freshVar(Kind.Star, loc, text = FallbackText("field"))
+        val freshRowVar = Type.freshVar(Kind.RecordRow, loc, text = FallbackText("row"))
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           recordType <- unifyTypeM(tpe, Type.mkRecord(Type.mkRecordRowExtend(field, freshFieldType, freshRowVar, loc), loc), loc)
@@ -1090,7 +1090,7 @@ object Typer {
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.ArrayLit(exps, exp, tvar, evar, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         val regionType = Type.mkRegion(regionVar, loc)
         for {
           (constrs1, elmTypes, eff1) <- seqM(exps.map(visitExp)).map(_.unzip3)
@@ -1102,7 +1102,7 @@ object Typer {
         } yield (constrs1.flatten ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         val regionType = Type.mkRegion(regionVar, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
@@ -1115,8 +1115,6 @@ object Typer {
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
       case KindedAst.Expression.ArrayLength(exp, loc) =>
-        // Note: Experiment with named temporary type variables to generate better error messages.
-        // Note: We probably want two types of text-- in particular these names should freely be overwritten.
         val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         for {
@@ -1129,7 +1127,7 @@ object Typer {
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -1139,8 +1137,8 @@ object Typer {
         } yield (constrs1 ++ constrs2, tvar, resultEff)
 
       case KindedAst.Expression.ArrayStore(exp1, exp2, exp3, loc) =>
-        val elmVar = Type.freshVar(Kind.Star, loc)
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         val arrayType = Type.mkScopedArray(elmVar, regionVar, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
@@ -1154,8 +1152,8 @@ object Typer {
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
       case KindedAst.Expression.ArraySlice(exp1, exp2, exp3, loc) =>
-        val elmVar = Type.freshVar(Kind.Star, loc)
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         val arrayType = Type.mkScopedArray(elmVar, regionVar, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
@@ -1168,7 +1166,7 @@ object Typer {
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
       case KindedAst.Expression.Ref(exp1, exp2, tvar, evar, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         val regionType = Type.mkRegion(regionVar, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
@@ -1179,8 +1177,8 @@ object Typer {
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.Deref(exp, tvar, evar, loc) =>
-        val elmVar = Type.freshVar(Kind.Star, loc, Rigidity.Flexible)
-        val regionVar = Type.freshVar(Kind.Bool, loc, Rigidity.Flexible)
+        val elmVar = Type.freshVar(Kind.Star, loc, Rigidity.Flexible, text = FallbackText("elm"))
+        val regionVar = Type.freshVar(Kind.Bool, loc, Rigidity.Flexible, text = FallbackText("region"))
         val refType = Type.mkScopedRef(elmVar, regionVar, loc)
 
         for {
