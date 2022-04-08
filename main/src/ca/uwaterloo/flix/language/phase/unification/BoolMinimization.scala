@@ -28,8 +28,8 @@ object BoolMinimization {
   def minimize(t: Type): Type = {
     val formula = Formula.fromType(t)
     val nnf = Formula.toNNF(formula)
-    val cnf = toCNF(nnf)
-    val res = FormulaNNF.toType(cnf, t.loc)
+    val cnf = FormulaNNF.toCNF(nnf)
+    val res = FormulaCNF.toType(cnf, t.loc)
     // TODO remove this
     val prints = false
     if (prints) {
@@ -170,6 +170,10 @@ object BoolMinimization {
       }
     }
 
+    /**
+      * Converts a type boolean formula `t` to a `Formula` formula.
+      * Throws exceptions for non-boolean or malformed types.
+      */
     def fromType(t: Type): Formula = {
       t match {
         case Type.True => True
@@ -209,7 +213,6 @@ object BoolMinimization {
       * A disjunction of terms. And empty list is `True`.
       */
     case class Or(terms: List[FormulaNNF]) extends FormulaNNF
-
 
     /**
       * Merges the conjunctions if arguments are conjunctions themselves and
@@ -274,7 +277,133 @@ object BoolMinimization {
       }
     }
 
-    def toType(f: FormulaNNF, loc: SourceLocation): Type = {
+    /**
+      * Transform `f` to an equivalent formula that is a conjunction of
+      * disjunctions of either variables or negated variables.
+      * Ex. `x ∧ (x ∨ y) ∧ (z ∨ ¬y ∨ ¬z)`
+      */
+    def toCNF(f: FormulaNNF): FormulaCNF = {
+      import FormulaCNF.{False => CNFFalse, True => CNFTrue, Var => CNFVar}
+      f match {
+        case True => CNFTrue
+        case False => CNFFalse
+        case Var(v) => CNFVar(v)
+        case NotVar(v) => FormulaCNF.NotVar(v)
+        case And(terms) => FormulaCNF.mkAnd(terms.map(toCNF))
+        case Or(terms) =>
+          val base: FormulaCNF = FormulaCNF.False
+          // Note: this code relies on the ordering of simple terms before conjunctions
+          //          terms.foldLeft(base)(
+          //            (cnf, term) => term match {
+          //              case True => FormulaCNF.mkOr(cnf, FormulaCNF.True)
+          //              case False => FormulaCNF.mkOr(cnf, FormulaCNF.False)
+          //              case Var(v) => FormulaCNF.mkOr(cnf, FormulaCNF.Var(v))
+          //              case NotVar(v) => FormulaCNF.mkOr(cnf, FormulaCNF.NotVar(v))
+          //              case And(terms0) =>
+          //                val asdf: List[FormulaNNF] = terms0.map(t => FormulaNNF.mkOr(cnf, t))
+          //                val asdfasdf = FormulaNNF.mkAnd(asdf)
+          //                toCNF(asdfasdf)
+          //              case Or(_) => throw InternalCompilerException(s"Found directly nested disjunction")
+          //            })
+          ???
+      }
+    }
+
+  }
+
+  private sealed trait FormulaCNF
+
+  private object FormulaCNF {
+
+    sealed trait SimpledDisjunction extends FormulaCNF
+
+    sealed trait SimpleFormula extends SimpledDisjunction
+
+    case object True extends SimpleFormula
+
+    case object False extends SimpleFormula
+
+    case class Var(v: Type.KindedVar) extends SimpleFormula
+
+    case class NotVar(v: Type.KindedVar) extends SimpleFormula
+
+    /**
+      * A conjunction of disjunctions. And empty list is `True`.
+      */
+    case class And(terms: List[SimpledDisjunction]) extends FormulaCNF
+
+    /**
+      * A disjunction of simple terms. And empty list is `True`.
+      */
+    case class Or(terms: List[SimpleFormula]) extends SimpledDisjunction
+
+    /**
+      * Merges the conjunctions if arguments are conjunctions themselves and
+      * performs shallow minimization along with unit propagation.
+      */
+    def mkAnd(f: FormulaCNF*): FormulaCNF = {
+      mkAnd(f.toList)
+    }
+
+    /**
+      * Merges the conjunctions in `f` into the new conjunction and performs
+      * shallow minimization.
+      */
+    def mkAnd(f: List[FormulaCNF]): FormulaCNF = {
+      val baseValue: Option[List[SimpledDisjunction]] = Some(Nil)
+      // TODO use something with constant time concat
+      val hoistedTerms = f.foldRight(baseValue) {
+        case (term, opt) => opt.flatMap(
+          acc => term match {
+            case True => Some(acc)
+            case False => None
+            case And(terms) => Some(terms ++ acc)
+            case t@Var(_) => Some(t :: acc)
+            case t@NotVar(_) => Some(t :: acc)
+            case t@Or(_) => Some(t :: acc)
+          }
+        )
+      }
+      hoistedTerms match {
+        case None => False
+        case Some(term :: Nil) => term
+        case Some(terms) => And(terms)
+      }
+    }
+
+    /**
+      * Merges the disjunctions if arguments are disjunctions themselves and
+      * performs shallow minimization.
+      */
+    def mkOr(f: SimpledDisjunction*): SimpledDisjunction = {
+      mkOr(f.toList)
+    }
+
+    /**
+      * Merges the disjunctions in `f` into the new disjunction and performs
+      * shallow minimization.
+      */
+    def mkOr(f: List[SimpledDisjunction]): SimpledDisjunction = {
+      val baseValue: Option[List[SimpleFormula]] = Some(Nil)
+      val hoistedTerms = f.foldRight(baseValue) {
+        case (term, opt) => opt.flatMap(
+          acc => term match {
+            case True => None
+            case False => Some(acc)
+            case Or(terms) => Some(terms ++ acc)
+            case t@Var(_) => Some(t :: acc)
+            case t@NotVar(_) => Some(t :: acc)
+          }
+        )
+      }
+      hoistedTerms match {
+        case None => True
+        case Some(term :: Nil) => term
+        case Some(terms) => Or(terms)
+      }
+    }
+
+    def toType(f: FormulaCNF, loc: SourceLocation): Type = {
       f match {
         case True => Type.True
         case False => Type.False
@@ -297,36 +426,6 @@ object BoolMinimization {
 
   }
 
-  /**
-    * Transform `f` to an equivalent formula that is a conjunction of
-    * disjunctions of either variables or negated variables.
-    * Ex. `x ∧ (x ∨ y) ∧ (z ∨ ¬y ∨ ¬z)`
-    */
-  private def toCNF(f: FormulaNNF): FormulaNNF = {
-    import FormulaNNF._
-    f match {
-      case True => True
-      case False => False
-      case Var(v) => Var(v)
-      case NotVar(v) => NotVar(v)
-      case And(terms) => mkAnd(terms.map(toCNF))
-      case Or(terms) =>
-        // Note: this code relies on the ordering of simple terms before conjunctions
-        terms.foldLeft(False: FormulaNNF)(
-          (cnf, term) => term match {
-            case True => mkOr(cnf, True)
-            case False => mkOr(cnf, False)
-            case Var(v) => mkOr(cnf, Var(v))
-            case NotVar(v) => mkOr(cnf, NotVar(v))
-            case And(terms0) => toCNF(mkAnd(terms0.map(t => mkOr(cnf, t))))
-            case Or(_) => throw InternalCompilerException(s"Found directly nested disjunction")
-          })
-    }
-  }
-
-  /**
-    * A couple tests for NNF and CNF
-    */
   def main(args: Array[String]): Unit = {
     import Formula._
     def mkVar(s: String): Var = Var(
@@ -375,7 +474,7 @@ object BoolMinimization {
       println(delim)
       println(f._2)
       println(show(f._1))
-      println(show(toCNF(toNNF(f._1))))
+      println(show(FormulaNNF.toCNF(toNNF(f._1))))
     })
     println(delim)
   }
@@ -415,6 +514,31 @@ object BoolMinimization {
       }
 
       import FormulaNNF._
+      f match {
+        case True => ("T", false)
+        case False => ("F", false)
+        case Var(v) => (show(v), false)
+        case NotVar(v) => (s"¬${show(v)}", false)
+        case And(terms) =>
+          val rep = terms.map(showTermBraces).mkString(" ∧ ")
+          (rep, true)
+        case Or(terms) =>
+          val rep = terms.map(showTermBraces).mkString(" ∨ ")
+          (rep, true)
+      }
+    }
+
+    showAux(f)._1
+  }
+
+  private def show(f: FormulaCNF): String = {
+    def showAux(f: FormulaCNF): (String, Boolean) = {
+      def showTermBraces(term: FormulaCNF): String = {
+        val (termStr, paran) = showAux(term)
+        if (paran) s"($termStr)" else termStr
+      }
+
+      import FormulaCNF._
       f match {
         case True => ("T", false)
         case False => ("F", false)
