@@ -66,19 +66,17 @@ namespace TestValidation {
     // product                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    use Validation.product;
-
     @test
     def product01(): Bool =
-        let p = product(Failure(singleton(1)), (Failure(singleton(2))));
-        match p {
-            case Success(_) => false
-            case Failure(v) => v == necOf2(1, 2)
-        }
+    let p = Validation.product(Failure(singleton(1)), (Failure(singleton(2))));
+    match p {
+        case Success(_) => false
+        case Failure(v) => v == necOf2(1, 2)
+    }
 
     @test
     def product02(): Bool =
-        let p = product(Failure(singleton(1)), Success(2));
+        let p = Validation.product(Failure(singleton(1)), Success(2));
         match p {
             case Success(_) => false
             case Failure(v) => v == singleton(1)
@@ -86,7 +84,7 @@ namespace TestValidation {
 
     @test
     def product03(): Bool =
-        let p = product(Success(1), Failure(singleton(2)));
+        let p = Validation.product(Success(1), Failure(singleton(2)));
         match p {
             case Success(_) => false
             case Failure(v) => v == singleton(2)
@@ -94,7 +92,7 @@ namespace TestValidation {
 
     @test
     def product04(): Bool =
-        let p = product(Success(1), Success(2));
+        let p = Validation.product(Success(1), Success(2));
         match p {
             case Success(v) => v == (1, 2)
             case Failure(_) => false
@@ -104,11 +102,9 @@ namespace TestValidation {
     // product3                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    use Validation.product3;
-
     @test
     def product301(): Bool =
-        let p = product3(Success(1), Success(2), Success(3));
+        let p = Validation.product3(Success(1), Success(2), Success(3));
         match p {
             case Success(v) => v == (1, 2, 3)
             case Failure(_) => false
@@ -116,7 +112,7 @@ namespace TestValidation {
 
     @test
     def product302(): Bool =
-        let p = product3(Success(1), Failure(singleton(2)), Success(3));
+        let p = Validation.product3(Success(1), Failure(singleton(2)), Success(3));
         match p {
             case Success(_) => false
             case Failure(v) => v == singleton(2)
@@ -124,7 +120,7 @@ namespace TestValidation {
 
     @test
     def product303(): Bool =
-        let p = product3(Failure(singleton(1)), Success(2), Failure(singleton(3)));
+        let p = Validation.product3(Failure(singleton(1)), Success(2), Failure(singleton(3)));
         match p {
             case Success(_) => false
             case Failure(v) => v == necOf2(1, 3)
@@ -132,7 +128,7 @@ namespace TestValidation {
 
     @test
     def product304(): Bool =
-        let p = product3(Failure(singleton(1)), Failure(singleton(2)), Failure(singleton(3)));
+        let p = Validation.product3(Failure(singleton(1)), Failure(singleton(2)), Failure(singleton(3)));
         match p {
             case Success(_) => false
             case Failure(v) => v == necOf3(1, 2, 3)
@@ -142,11 +138,9 @@ namespace TestValidation {
     // product4                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    use Validation.product4;
-
     @test
     def product401(): Bool =
-        let p = product4(Success(1), Success(2), Success(3), Success(4));
+        let p = Validation.product4(Success(1), Success(2), Success(3), Success(4));
         match p {
             case Success(v) => v == (1, 2, 3, 4)
             case Failure(_) => false
@@ -154,7 +148,7 @@ namespace TestValidation {
 
     @test
     def product402(): Bool =
-        let p = product4(Success(1), Failure(singleton(2)), Success(3), Success(4));
+        let p = Validation.product4(Success(1), Failure(singleton(2)), Success(3), Success(4));
         match p {
             case Success(_) => false
             case Failure(v) => v == singleton(2)
@@ -162,7 +156,7 @@ namespace TestValidation {
 
     @test
     def product403(): Bool =
-        let p = product4(Failure(singleton(1)), Success(2), Failure(singleton(3)), Success(4));
+        let p = Validation.product4(Failure(singleton(1)), Success(2), Failure(singleton(3)), Success(4));
         match p {
             case Success(_) => false
             case Failure(v) => v == necOf2(1, 3)
@@ -170,7 +164,7 @@ namespace TestValidation {
 
     @test
     def product404(): Bool =
-        let p = product4(Failure(singleton(1)), Failure(singleton(2)), Failure(singleton(3)), Failure(singleton(4)));
+        let p = Validation.product4(Failure(singleton(1)), Failure(singleton(2)), Failure(singleton(3)), Failure(singleton(4)));
         match p {
             case Success(_) => false
             case Failure(v) => v == necOf4(1, 2, 3, 4)
@@ -180,11 +174,9 @@ namespace TestValidation {
     // product5                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    use Validation.product5;
-
     @test
     def product501(): Bool =
-        let p = product5(Success(1), Success(2), Success(3), Success(4), Success(5));
+        let p = Validation.product5(Success(1), Success(2), Success(3), Success(4), Success(5));
         match p {
             case Success(v) => v == (1, 2, 3, 4, 5)
             case Failure(_) => false
@@ -192,7 +184,7 @@ namespace TestValidation {
 
     @test
     def product502(): Bool =
-        let p = product5(Success(1), Failure(singleton(2)), Success(3), Success(4), Success(5));
+        let p = Validation.product5(Success(1), Failure(singleton(2)), Success(3), Success(4), Success(5));
         match p {
             case Success(_) => false
             case Failure(v) => v == singleton(2)
@@ -200,7 +192,7 @@ namespace TestValidation {
 
     @test
     def product503(): Bool =
-        let p = product5(Failure(singleton(1)), Success(2), Failure(singleton(3)), Success(4), Failure(singleton(5)));
+        let p = Validation.product5(Failure(singleton(1)), Success(2), Failure(singleton(3)), Success(4), Failure(singleton(5)));
         match p {
             case Success(_) => false
             case Failure(v) => v == necOf3(1, 3, 5)
@@ -208,7 +200,7 @@ namespace TestValidation {
 
     @test
     def product504(): Bool =
-        let p = product5(Failure(singleton(1)), Failure(singleton(2)), Failure(singleton(3)), Failure(singleton(4)), Failure(singleton(5)));
+        let p = Validation.product5(Failure(singleton(1)), Failure(singleton(2)), Failure(singleton(3)), Failure(singleton(4)), Failure(singleton(5)));
         match p {
             case Success(_) => false
             case Failure(v) => v == necOf5(1, 2, 3, 4, 5)
