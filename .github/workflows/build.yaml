@@ -9,6 +9,9 @@ concurrency:
 
 jobs:
   build:
+    # Limit the build time
+    timeout-minutes: 9
+
     runs-on: ubuntu-latest
 
     steps:
