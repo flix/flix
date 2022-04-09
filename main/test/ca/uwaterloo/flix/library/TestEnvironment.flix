@@ -72,6 +72,12 @@ namespace TestEnvironment {
         not Option.isEmpty(Environment.getUserHomeDirectory())
 
     @test
-    def testgetVirtualProcessors(): Bool =
+    def testGetVirtualProcessors(): Bool =
         Environment.getVirtualProcessors() > 0
+
+    @test
+    def testGetArgs(): Bool =
+        let _ = Environment.getArgs();
+        true
+
 }
