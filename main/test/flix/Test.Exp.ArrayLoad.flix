@@ -1,5 +1,5 @@
 namespace Test/Exp/ArrayLoad {
-
+/*
     @test
     def testArrayLoad01(): Int32 = region r {
         let x = [1] @ r;
@@ -197,13 +197,14 @@ namespace Test/Exp/ArrayLoad {
         let x = [[1, 2, 3] @ r] @ r;
         x[0][1]
     }
+    */
 
     @test
-    def testArrayLoad34(): Int32 = region r {
+    def testArrayLoad34(): Int32 & Impure = region r {
         let x = [[1, 2] @ r, [1, 2] @ r] @ r;
         x[1][0]
     }
-
+/*
     @test
     def testArrayLoad35(): Int32 = region r {
         let x = [[1] @ r, [1, 2, 3, 4, 5, 6, 7, 8] @ r] @ r;
@@ -467,4 +468,5 @@ namespace Test/Exp/ArrayLoad {
         let x = [[1 :: Nil], [3 :: Nil]] @ r;
         x[0]
     }
+    */
 }
