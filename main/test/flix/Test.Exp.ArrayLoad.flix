@@ -463,8 +463,9 @@ namespace Test/Exp/ArrayLoad {
     }
 
     @test
-    def testArrayLoad79(): ScopedArray[List[Int32], Impure] & Impure = region r {
-        let x = [[1 :: Nil], [3 :: Nil]] @ r;
-        x[0]
+    def testArrayLoad79(): Unit = region r {
+        let x = [[1 :: Nil] @ r, [3 :: Nil] @ r] @ r;
+        let _ = x[0];
+        ()
     }
 }
