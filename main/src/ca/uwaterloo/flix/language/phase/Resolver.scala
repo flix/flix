@@ -687,11 +687,10 @@ object Resolver {
         case NamedAst.Expression.Region(tpe, loc) =>
           ResolvedAst.Expression.Region(tpe, loc).toSuccess
 
-        case NamedAst.Expression.Scope(sym, exp, loc) =>
-          // Note: Here we update the current region.
+        case NamedAst.Expression.Scope(sym, regionVar, exp, loc) =>
           val eVal = visitExp(exp, Some(sym))
           mapN(eVal) {
-            e => ResolvedAst.Expression.Scope(sym, e, loc)
+            e => ResolvedAst.Expression.Scope(sym, regionVar, e, loc)
           }
 
         case NamedAst.Expression.Match(exp, rules, loc) =>

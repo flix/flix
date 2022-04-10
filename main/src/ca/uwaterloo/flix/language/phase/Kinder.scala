@@ -350,12 +350,14 @@ object Kinder {
     case ResolvedAst.Expression.Region(tpe, loc) =>
       KindedAst.Expression.Region(tpe, loc).toSuccess
 
-    case ResolvedAst.Expression.Scope(sym, exp0, loc) =>
-      // Introduce a rigid variable for the region of `exp`.
-      val regionVar = Type.freshVar(Kind.Bool, sym.loc, Rigidity.Rigid, Ast.VarText.SourceText(sym.text))
+    case ResolvedAst.Expression.Scope(sym, regionVar, exp0, loc) =>
+      val rv = Type.KindedVar(regionVar.ascribedWith(Kind.Bool), loc)
+      val evar = Type.freshVar(Kind.Bool, loc.asSynthetic)
       for {
         exp <- visitExp(exp0, kenv, taenv, root)
-      } yield KindedAst.Expression.Scope(sym,  regionVar, exp, Type.freshVar(Kind.Bool, loc.asSynthetic), loc)
+      } yield {
+        KindedAst.Expression.Scope(sym, rv, exp, evar, loc)
+      }
 
     case ResolvedAst.Expression.Match(exp0, rules0, loc) =>
       for {
@@ -769,12 +771,12 @@ object Kinder {
           case Some(kind) => sym.ascribedWith(kind).toSuccess
           case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc = loc).toFailure
         }
+    }
   }
-}
 
 
-/**
-  * Performs kinding on the given type under the given kind environment, with `expectedKind` expected from context.
+  /**
+    * Performs kinding on the given type under the given kind environment, with `expectedKind` expected from context.
     * This is roughly analogous to the reassembly of expressions under a type environment, except that:
     * - Kind errors may be discovered here as they may not have been found during inference (or inference may not have happened at all).
     */
