@@ -624,10 +624,16 @@ object Namer {
       NamedAst.Expression.Region(tpe, loc).toSuccess
 
     case WeededAst.Expression.Scope(ident, exp, loc) =>
-      // make a fresh variable symbol for the local variable.
+      // Introduce a fresh variable symbol for the region.
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
-      mapN(visitExp(exp, env0 + (ident.name -> sym), uenv0, tenv0)) {
-        case e => NamedAst.Expression.Scope(sym, e, loc)
+
+      // Introduce a rigid region variable for the region.
+      val regionVar = Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(sym.text), Rigidity.Rigid, loc)
+
+      val env1 = env0 + (ident.name -> sym)
+      val tenv1 = tenv0 + (ident.name -> regionVar)
+      mapN(visitExp(exp, env1, uenv0, tenv1)) {
+        case e => NamedAst.Expression.Scope(sym, regionVar, e, loc)
       }
 
     case WeededAst.Expression.Match(exp, rules, loc) =>
