@@ -1097,7 +1097,7 @@ object Typer {
           (constrs2, tpe2, eff2) <- visitExp(exp)
           _ <- expectTypeM(expected = regionType, actual = tpe2, loc)
           elmTyp <- unifyTypeAllowEmptyM(elmTypes, Kind.Star, loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkArray(elmTyp, loc), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkScopedArray(elmTyp, regionVar, loc), loc)
           resultEff <- unifyTypeM(evar, Type.mkAnd(Type.mkAnd(eff1, loc), eff2, regionVar, loc), loc)
         } yield (constrs1.flatten ++ constrs2, resultTyp, resultEff)
 
