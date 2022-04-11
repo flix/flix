@@ -771,6 +771,20 @@ object Type {
   /**
     * Constructs a RecordExtend type.
     */
+  def mkRecordRowEmpty(loc: SourceLocation): Type = {
+    Type.Cst(TypeConstructor.RecordRowEmpty, loc)
+  }
+
+  /**
+    * Constructs a SchemaExtend type.
+    */
+  def mkSchemaRowEmpty(loc: SourceLocation): Type = {
+    Type.Cst(TypeConstructor.SchemaRowEmpty, loc)
+  }
+
+  /**
+    * Constructs a RecordExtend type.
+    */
   def mkRecordRowExtend(field: Name.Field, tpe: Type, rest: Type, loc: SourceLocation): Type = {
     mkApply(Type.Cst(TypeConstructor.RecordRowExtend(field), loc), List(tpe, rest), loc)
   }
