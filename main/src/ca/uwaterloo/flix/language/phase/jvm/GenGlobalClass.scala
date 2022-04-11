@@ -34,7 +34,7 @@ object GenGlobalClass {
     StaticField(JvmName.Global, "counter", JvmName.AtomicLong.toTpe)
 
   private val getArgsMethodName: String = "getArgs"
-  private val setArgsMethodName: String = "setArgs"
+  val SetArgsMethodName: String = "setArgs"
   private val argsField: StaticField = StaticField(JvmName.Global, "args",
     BackendType.Array(BackendObjType.String.toTpe))
 
@@ -57,7 +57,7 @@ object GenGlobalClass {
     cm.mkStaticMethod(genGetArgsMethod(), getArgsMethodName,
       MethodDescriptor(Nil, stringArrayType),
       IsPublic, IsFinal)
-    cm.mkStaticMethod(genSetArgsMethod(), setArgsMethodName,
+    cm.mkStaticMethod(genSetArgsMethod(), SetArgsMethodName,
       MethodDescriptor(List(stringArrayType), VoidableType.Void),
       IsPublic, IsFinal)
     cm.closeClassMaker()

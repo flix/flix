@@ -9,20 +9,18 @@ import java.util.concurrent.atomic.AtomicLong;
  * (the code here is never run).
  */
 public final class Global {
-    private static final AtomicLong counter = new AtomicLong();
-    private static String[] args = null;
+    private static final AtomicLong tCounter = null;
+    private static String[] tArgs = null;
 
     public static final long newId() {
-        return counter.getAndIncrement();
+        throw new RuntimeException("Global.newId should not be called on the mock class");
     }
 
     public static final String[] getArgs() {
-        String[] var0 = new String[args.length];
-        System.arraycopy(args, 0, var0, 0, args.length);
-        return var0;
+        throw new RuntimeException("Global.getArgs should not be called on the mock class");
     }
 
     public static final void setArgs(String[] var0) {
-        args = var0;
+        throw new RuntimeException("Global.setArgs should not be called on the mock class");
     }
 }
