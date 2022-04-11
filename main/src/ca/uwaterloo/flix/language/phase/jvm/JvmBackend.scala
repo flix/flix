@@ -226,30 +226,16 @@ object JvmBackend {
     } else {
       //
       // Loads all the generated classes into the JVM and decorates the AST.
+      // Returns the main of `Main.class` if it exists.
       //
-      Bootstrap.bootstrap(allClasses)
+      val main = Bootstrap.bootstrap(allClasses)
 
       //
       // Return the compilation result.
       //
-      new CompilationResult(root, getCompiledMain(root), getCompiledDefs(root), flix.getTotalTime, outputBytes).toSuccess
+      new CompilationResult(root, main, getCompiledDefs(root), flix.getTotalTime, outputBytes).toSuccess
     }
   }
-
-  /**
-    * Optionally returns a reference to main.
-    */
-  private def getCompiledMain(root: Root)(implicit flix: Flix): Option[Array[String] => Unit] =
-    root.entryPoint match {
-      case None => None
-      case Some(sym) => root.defs.get(sym) map { defn =>
-        (actualArgs: Array[String]) => {
-          val args: Array[AnyRef] = Array(actualArgs)
-          link(defn.sym, root).apply(args)
-          ()
-        }
-      }
-    }
 
   /**
     * Returns a map from definition symbols to executable functions (backed by JVM backend).
