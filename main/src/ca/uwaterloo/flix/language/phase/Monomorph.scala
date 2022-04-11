@@ -856,6 +856,10 @@ object Monomorph {
         throw ReifyTypeException(tpe, loc)
 
       case Some(tc) => tc match {
+        case TypeConstructor.Unit =>
+          val tag = Name.Tag("ReifiedUnit", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
         case TypeConstructor.Bool =>
           val tag = Name.Tag("ReifiedBool", loc)
           Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
