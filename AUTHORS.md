@@ -48,3 +48,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Patrick Lundvig](https://github.com/plun411)
 - [Christian Bonde](https://github.com/ChrBondi)
 - [Kengo TODA](http://github.com/KengoTODA/)
+- [Darius Tan](https://github.com/thinking-tower)
