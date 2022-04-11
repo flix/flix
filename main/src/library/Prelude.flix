@@ -173,3 +173,14 @@ pub def time(_: a -> Int32): Int32 = 1
 ///
 @Internal
 pub def space(_: a -> Int32): Int32 = 1
+
+///
+/// Prints the argument unless it is ().
+///
+@Internal
+pub def printUnlessUnit(x: a): Unit & Impure with ToString[a] = {
+    match (reifyType a) {
+        case ReifiedUnit => ()
+        case _ => println(x)
+    }
+}
