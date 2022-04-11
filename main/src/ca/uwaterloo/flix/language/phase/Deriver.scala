@@ -276,7 +276,12 @@ object Deriver {
       val lambdaParamVarSym = Symbol.freshVarSym("e", BoundBy.FormalParam, loc)
       val indexMatchRules = cases.values.zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
       val indexMatchExp = KindedAst.Expression.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules.toList, loc)
-      val lambda = KindedAst.Expression.Lambda(KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar.ascribedWith(Kind.Star), loc), indexMatchExp, Type.freshVar(Kind.Star, loc), loc)
+      val lambda = KindedAst.Expression.Lambda(
+        KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar.ascribedWith(Kind.Star), loc),
+        indexMatchExp,
+        Type.freshVar(Kind.Star, loc, text = FallbackText("indexOfType")),
+        loc
+      )
 
       // Create the main match expression
       val matchRules = cases.values.map(mkComparePairMatchRule(_, loc, root))
@@ -292,11 +297,19 @@ object Deriver {
             KindedAst.Expression.Apply(
               mkVarExpr(lambdaVarSym, loc),
               List(mkVarExpr(param1, loc)),
-              Type.freshVar(Kind.Star, loc, text = FallbackText), Type.freshVar(Kind.Bool, loc), loc),
-            KindedAst.Expression.Apply(mkVarExpr(lambdaVarSym, loc), List(mkVarExpr(param2, loc)), Type.freshVar(Kind.Star, loc), Type.freshVar(Kind.Bool, loc), loc),
+              Type.freshVar(Kind.Star, loc, text = FallbackText("xType")),
+              Type.freshVar(Kind.Bool, loc, text = FallbackText("xEff")),
+              loc
+            ),
+            KindedAst.Expression.Apply(
+              mkVarExpr(lambdaVarSym, loc),
+              List(mkVarExpr(param2, loc)),
+              Type.freshVar(Kind.Star, loc, text = FallbackText("yType")),
+              Type.freshVar(Kind.Bool, loc, text = FallbackText("yEff")),
+              loc),
           ),
-          Type.freshVar(Kind.Star, loc),
-          Type.freshVar(Kind.Bool, loc),
+          Type.freshVar(Kind.Star, loc, text = FallbackText("compareType")),
+          Type.freshVar(Kind.Bool, loc, text = FallbackText("compareEff")),
           loc
         )
       )
