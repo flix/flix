@@ -674,11 +674,12 @@ object Kinder {
     */
   private def visitMatchRule(rule0: ResolvedAst.MatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.MatchRule, KindError] = rule0 match {
     case ResolvedAst.MatchRule(pat0, guard0, exp0) =>
-      for {
-        pat <- visitPattern(pat0, kenv, root)
-        guard <- visitExp(guard0, kenv, taenv, root)
-        exp <- visitExp(exp0, kenv, taenv, root)
-      } yield KindedAst.MatchRule(pat, guard, exp)
+      val patVal = visitPattern(pat0, kenv, root)
+      val guardVal = visitExp(guard0, kenv, taenv, root)
+      val expVal = visitExp(exp0, kenv, taenv, root)
+      mapN(patVal, guardVal, expVal) {
+        case (pat, guard, exp) => KindedAst.MatchRule(pat, guard, exp)
+      }
   }
 
   /**
@@ -686,10 +687,11 @@ object Kinder {
     */
   private def visitChoiceRule(rule0: ResolvedAst.ChoiceRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.ChoiceRule, KindError] = rule0 match {
     case ResolvedAst.ChoiceRule(pat0, exp0) =>
-      for {
-        pat <- traverse(pat0)(visitChoicePattern(_, kenv, root))
-        exp <- visitExp(exp0, kenv, taenv, root)
-      } yield KindedAst.ChoiceRule(pat, exp)
+      val patVal = traverse(pat0)(visitChoicePattern(_, kenv, root))
+      val expVal = visitExp(exp0, kenv, taenv, root)
+      mapN(patVal, expVal) {
+        case (pat, exp) => KindedAst.ChoiceRule(pat, exp)
+      }
   }
 
   /**
@@ -697,9 +699,10 @@ object Kinder {
     */
   private def visitCatchRule(rule0: ResolvedAst.CatchRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.CatchRule, KindError] = rule0 match {
     case ResolvedAst.CatchRule(sym, clazz, exp0) =>
-      for {
-        exp <- visitExp(exp0, kenv, taenv, root)
-      } yield KindedAst.CatchRule(sym, clazz, exp)
+      val expVal = visitExp(exp0, kenv, taenv, root)
+      mapN(expVal) {
+        exp => KindedAst.CatchRule(sym, clazz, exp)
+      }
   }
 
   /**
@@ -707,10 +710,11 @@ object Kinder {
     */
   private def visitSelectChannelRule(rule0: ResolvedAst.SelectChannelRule, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.SelectChannelRule, KindError] = rule0 match {
     case ResolvedAst.SelectChannelRule(sym, chan0, exp0) =>
-      for {
-        chan <- visitExp(chan0, kenv, taenv, root)
-        exp <- visitExp(exp0, kenv, taenv, root)
-      } yield KindedAst.SelectChannelRule(sym, chan, exp)
+      val chanVal = visitExp(chan0, kenv, taenv, root)
+      val expVal = visitExp(exp0, kenv, taenv, root)
+      mapN(chanVal, expVal) {
+        case (chan, exp) => KindedAst.SelectChannelRule(sym, chan, exp)
+      }
   }
 
   /**
@@ -732,25 +736,30 @@ object Kinder {
     case ResolvedAst.Pattern.BigInt(lit, loc) => KindedAst.Pattern.BigInt(lit, loc).toSuccess
     case ResolvedAst.Pattern.Str(lit, loc) => KindedAst.Pattern.Str(lit, loc).toSuccess
     case ResolvedAst.Pattern.Tag(sym, tag, pat0, loc) =>
-      for {
-        pat <- visitPattern(pat0, kenv, root)
-      } yield KindedAst.Pattern.Tag(sym, tag, pat, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      val patVal = visitPattern(pat0, kenv, root)
+      mapN(patVal) {
+        pat => KindedAst.Pattern.Tag(sym, tag, pat, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      }
     case ResolvedAst.Pattern.Tuple(elms0, loc) =>
-      for {
-        elms <- traverse(elms0)(visitPattern(_, kenv, root))
-      } yield KindedAst.Pattern.Tuple(elms, loc)
+      val elmsVal = traverse(elms0)(visitPattern(_, kenv, root))
+      mapN(elmsVal) {
+        elms => KindedAst.Pattern.Tuple(elms, loc)
+      }
     case ResolvedAst.Pattern.Array(elms0, loc) =>
-      for {
-        elms <- traverse(elms0)(visitPattern(_, kenv, root))
-      } yield KindedAst.Pattern.Array(elms, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      val elmsVal = traverse(elms0)(visitPattern(_, kenv, root))
+      mapN(elmsVal) {
+        elms => KindedAst.Pattern.Array(elms, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      }
     case ResolvedAst.Pattern.ArrayTailSpread(elms0, sym, loc) =>
-      for {
-        elms <- traverse(elms0)(visitPattern(_, kenv, root))
-      } yield KindedAst.Pattern.ArrayTailSpread(elms, sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      val elmsVal = traverse(elms0)(visitPattern(_, kenv, root))
+      mapN(elmsVal) {
+        elms => KindedAst.Pattern.ArrayTailSpread(elms, sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      }
     case ResolvedAst.Pattern.ArrayHeadSpread(sym, elms0, loc) =>
-      for {
-        elms <- traverse(elms0)(visitPattern(_, kenv, root))
-      } yield KindedAst.Pattern.ArrayHeadSpread(sym, elms, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      val elmsVal = traverse(elms0)(visitPattern(_, kenv, root))
+      mapN(elmsVal) {
+        elms => KindedAst.Pattern.ArrayHeadSpread(sym, elms, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      }
   }
 
   /**
@@ -767,11 +776,12 @@ object Kinder {
     */
   private def visitConstraint(constraint0: ResolvedAst.Constraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Constraint, KindError] = constraint0 match {
     case ResolvedAst.Constraint(cparams0, head0, body0, loc) =>
-      for {
-        cparams <- traverse(cparams0)(visitConstraintParam(_, kenv, root))
-        head <- visitHeadPredicate(head0, kenv, taenv, root)
-        body <- traverse(body0)(visitBodyPredicate(_, kenv, taenv, root))
-      } yield KindedAst.Constraint(cparams, head, body, loc)
+      val cparamsVal = traverse(cparams0)(visitConstraintParam(_, kenv, root))
+      val headVal = visitHeadPredicate(head0, kenv, taenv, root)
+      val bodyVal = traverse(body0)(visitBodyPredicate(_, kenv, taenv, root))
+      mapN(cparamsVal, headVal, bodyVal) {
+        case (cparams, head, body) => KindedAst.Constraint(cparams, head, body, loc)
+      }
   }
 
   /**
@@ -787,9 +797,10 @@ object Kinder {
     */
   private def visitHeadPredicate(pred: ResolvedAst.Predicate.Head, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Predicate.Head, KindError] = pred match {
     case ResolvedAst.Predicate.Head.Atom(pred, den, terms0, loc) =>
-      for {
-        terms <- traverse(terms0)(visitExp(_, kenv, taenv, root))
-      } yield KindedAst.Predicate.Head.Atom(pred, den, terms, Type.freshVar(Kind.Predicate, loc.asSynthetic), loc)
+      val termsVal = traverse(terms0)(visitExp(_, kenv, taenv, root))
+      mapN(termsVal) {
+        terms => KindedAst.Predicate.Head.Atom(pred, den, terms, Type.freshVar(Kind.Predicate, loc.asSynthetic), loc)
+      }
   }
 
   /**
@@ -797,19 +808,22 @@ object Kinder {
     */
   private def visitBodyPredicate(pred: ResolvedAst.Predicate.Body, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Predicate.Body, KindError] = pred match {
     case ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms0, loc) =>
-      for {
-        terms <- traverse(terms0)(visitPattern(_, kenv, root))
-      } yield KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, Type.freshVar(Kind.Predicate, loc.asSynthetic), loc)
+      val termsVal = traverse(terms0)(visitPattern(_, kenv, root))
+      mapN(termsVal) {
+        terms => KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, Type.freshVar(Kind.Predicate, loc.asSynthetic), loc)
+      }
 
     case ResolvedAst.Predicate.Body.Guard(exp0, loc) =>
-      for {
-        exp <- visitExp(exp0, kenv, taenv, root)
-      } yield KindedAst.Predicate.Body.Guard(exp, loc)
+      val expVal = visitExp(exp0, kenv, taenv, root)
+      mapN(expVal) {
+        exp => KindedAst.Predicate.Body.Guard(exp, loc)
+      }
 
     case ResolvedAst.Predicate.Body.Loop(varSyms, exp0, loc) =>
-      for {
-        exp <- visitExp(exp0, kenv, taenv, root)
-      } yield KindedAst.Predicate.Body.Loop(varSyms, exp, loc)
+      val expVal = visitExp(exp0, kenv, taenv, root)
+      mapN(expVal) {
+        exp => KindedAst.Predicate.Body.Loop(varSyms, exp, loc)
+      }
   }
 
   /**
@@ -856,11 +870,15 @@ object Kinder {
           }
       }
     case Type.Apply(t10, t20, loc) =>
-      for {
-        t2 <- visitType(t20, Kind.Wild, kenv, taenv, root)
-        k1 = Kind.Arrow(t2.kind, expectedKind)
-        t1 <- visitType(t10, k1, kenv, taenv, root)
-      } yield Type.Apply(t1, t2, loc)
+      val t2Val = visitType(t20, Kind.Wild, kenv, taenv, root)
+      flatMapN(t2Val) {
+        t2 =>
+          val k1 = Kind.Arrow(t2.kind, expectedKind)
+          val t1Val = visitType(t10, k1, kenv, taenv, root)
+          mapN(t1Val) {
+            t1 => Type.Apply(t1, t2, loc)
+          }
+      }
     case Type.Ascribe(t, k, loc) =>
       unify(k, expectedKind) match {
         case Some(kind) => visitType(t, kind, kenv, taenv, root)
@@ -888,11 +906,12 @@ object Kinder {
     */
   private def visitScheme(sc: ResolvedAst.Scheme, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Scheme, KindError] = sc match {
     case ResolvedAst.Scheme(quantifiers0, constraints0, base0) =>
-      for {
-        quantifiers <- traverse(quantifiers0)(sym => visitTypeVarSym(sym, Kind.Wild, kenv, sym.loc))
-        constraints <- traverse(constraints0)(visitTypeConstraint(_, kenv, taenv, root))
-        base <- visitType(base0, Kind.Star, kenv, taenv, root)
-      } yield Scheme(quantifiers, constraints, base)
+      val quantifiersVal = traverse(quantifiers0)(sym => visitTypeVarSym(sym, Kind.Wild, kenv, sym.loc))
+      val constraintsVal = traverse(constraints0)(visitTypeConstraint(_, kenv, taenv, root))
+      val baseVal = visitType(base0, Kind.Star, kenv, taenv, root)
+      mapN(quantifiersVal, constraintsVal, baseVal) {
+        case (quantifiers, constraints, base) => Scheme(quantifiers, constraints, base)
+      }
   }
 
   /**
