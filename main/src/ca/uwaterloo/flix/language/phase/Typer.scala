@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, mapN, traverse}
 import ca.uwaterloo.flix.util._
 
 import java.io.PrintWriter
@@ -96,15 +96,19 @@ object Typer {
       }
     }
 
+  /**
+    * Reassembles a single class.
+    */
   private def visitClass(clazz: KindedAst.Class, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
-    case KindedAst.Class(doc, ann0, mod, sym, tparam, superClasses, sigs, laws0, loc) =>
+    case KindedAst.Class(doc, ann0, mod, sym, tparam, superClasses, sigs0, laws0, loc) =>
       val tparams = getTypeParams(List(tparam))
       val tconstr = Ast.TypeConstraint(sym, Type.KindedVar(tparam.sym, tparam.loc), sym.loc)
-      for {
-        ann <- visitAnnotations(ann0, root)
-        sigs <- Validation.traverse(sigs.values)(visitSig(_, List(tconstr), root, classEnv))
-        laws <- Validation.traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
-      } yield (sym, TypedAst.Class(doc, ann, mod, sym, tparams.head, superClasses, sigs, laws, loc))
+      val annVal = visitAnnotations(ann0, root)
+      val sigsVal = traverse(sigs0.values)(visitSig(_, List(tconstr), root, classEnv))
+      val lawsVal = traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
+      mapN(annVal, sigsVal, lawsVal) {
+        case (ann, sigs, laws) => (sym, TypedAst.Class(doc, ann, mod, sym, tparams.head, superClasses, sigs, laws, loc))
+      }
   }
 
   /**
@@ -125,9 +129,10 @@ object Typer {
     */
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Instance, TypeError] = inst match {
     case KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs0, ns, loc) =>
-      for {
-        defs <- Validation.traverse(defs0)(visitDefn(_, tconstrs, root, classEnv))
-      } yield TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
+      val defsVal = traverse(defs0)(visitDefn(_, tconstrs, root, classEnv))
+      mapN(defsVal) {
+        defs => TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
+      }
   }
 
   /**
@@ -388,7 +393,7 @@ object Typer {
     * Visits all annotations.
     */
   private def visitAnnotations(ann: List[KindedAst.Annotation], root: KindedAst.Root)(implicit flix: Flix): Validation[List[TypedAst.Annotation], TypeError] = {
-    Validation.traverse(ann)(inferAnnotation(_, root))
+    traverse(ann)(inferAnnotation(_, root))
   }
 
   /**
