@@ -226,6 +226,7 @@ object JvmBackend {
     } else {
       //
       // Loads all the generated classes into the JVM and decorates the AST.
+      // Returns the main of `Main.class` if it exists.
       //
       val main = Bootstrap.bootstrap(allClasses)
 
