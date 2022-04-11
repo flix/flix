@@ -22,6 +22,7 @@ pub enum ReifiedBool with Eq, Order, ToString {
 ///
 pub enum ReifiedType with Eq, Order, ToString {
     case ErasedType,
+    case ReifiedUnit,
     case ReifiedBool,
     case ReifiedChar,
     case ReifiedFloat32,
