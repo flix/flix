@@ -77,19 +77,19 @@ object GenGlobalClass {
         MethodDescriptor(Nil, BackendType.Int64)) ~
       LRETURN()
 
-  private def genGetArgsMethod()(implicit flix: Flix): InstructionSet = {
-    def arrayCopy(): InstructionSet = (f: F) => {
-      f.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
-        MethodDescriptor(List(
-          JvmName.Object.toTpe,
-          BackendType.Int32,
-          JvmName.Object.toTpe,
-          BackendType.Int32,
-          BackendType.Int32
-        ), VoidableType.Void))
-      f
-    }
+  private def arrayCopy(): InstructionSet = (f: F) => {
+    f.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
+      MethodDescriptor(List(
+        JvmName.Object.toTpe,
+        BackendType.Int32,
+        JvmName.Object.toTpe,
+        BackendType.Int32,
+        BackendType.Int32
+      ), VoidableType.Void))
+    f
+  }
 
+  private def genGetArgsMethod()(implicit flix: Flix): InstructionSet =
     argsField.getStaticField() ~
       ARRAYLENGTH() ~
       ANEWARRAY(BackendObjType.String.jvmName) ~
@@ -103,10 +103,19 @@ object GenGlobalClass {
       arrayCopy() ~
       ALOAD(0) ~
       ARETURN()
-  }
 
 
   private def genSetArgsMethod()(implicit flix: Flix): InstructionSet =
-    ALOAD(0) ~ argsField.putStaticField() ~ RETURN()
+    ALOAD(0) ~
+      ARRAYLENGTH() ~
+      ANEWARRAY(BackendObjType.String.jvmName) ~
+      ASTORE(1) ~
+      ALOAD(0) ~
+      ICONST_0() ~
+      ALOAD(1) ~
+      ICONST_0() ~
+      ALOAD(0) ~ ARRAYLENGTH() ~
+      arrayCopy() ~
+      ALOAD(1) ~ argsField.putStaticField() ~ RETURN()
 
 }
