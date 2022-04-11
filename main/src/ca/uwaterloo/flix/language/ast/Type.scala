@@ -522,7 +522,7 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Ast.VarText)(implicit flix: Flix): Type.KindedVar = {
+  def freshVar(k: Kind, loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.KindedVar = {
     val sym = Symbol.freshKindedTypeVarSym(text, k, r, loc)
     Type.KindedVar(sym, loc)
   }
