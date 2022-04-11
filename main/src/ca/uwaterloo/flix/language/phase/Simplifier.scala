@@ -287,7 +287,7 @@ object Simplifier {
 
       case TypedAst.Expression.Wild(_, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
-      case TypedAst.Expression.Scope(_, _, _, _, _) =>
+      case TypedAst.Expression.Scope(_, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case TypedAst.Expression.FixpointConstraintSet(_, _, _, _) =>
@@ -503,7 +503,7 @@ object Simplifier {
       val branch = SimplifiedAst.Expression.Branch(entry, branches.toMap + errorBranch, tpe, branchPurity, loc)
 
       // The purity of the match exp
-      val matchPurity = effectToPurity(exp0.eff)
+      val matchPurity = combine(matchExp.purity, branch.purity)
 
       // Wrap the branches inside a let-binding for the match variable.
       SimplifiedAst.Expression.Let(matchVar, matchExp, branch, tpe, matchPurity, loc)

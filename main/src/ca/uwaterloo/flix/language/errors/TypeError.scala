@@ -673,6 +673,10 @@ object TypeError {
          |  ${red(FormatType.formatWellKindedType(tpe))}
          |
          |which contains the region variable.
+         |
+         |The region variable was declared here:
+         |
+         |${code(rvar.loc, "region variable declared here.")}
          |""".stripMargin
     }
 
