@@ -64,11 +64,13 @@ object Bootstrap {
         // And finally assign the method object to the definition.
         defn.method = method
       }
-      root.entryPoint.map { _ =>
+      // These two lookups match the condition that genMainClass has for generation.
+      root.entryPoint.flatMap(root.defs.get).map { _ =>
         val mainName = JvmOps.getMainClassType().name
         val mainClass = loadedClasses.getOrElse(mainName, throw InternalCompilerException(s"Class not found: '${mainName.toInternalName}'."))
         val mainMethods = allMethods.getOrElse(mainClass, throw InternalCompilerException(s"methods for '${mainName.toInternalName}' not found."))
         val mainMethod = mainMethods.getOrElse("main", throw InternalCompilerException(s"Cannot find 'main' method of '${mainName.toInternalName}'"))
+        // This is a specialized version of the link function in JvmBackend
         (args: Array[String]) => {
           try {
             // Call the method passing the argument array.
