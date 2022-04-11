@@ -102,6 +102,8 @@ object GenMainClass {
     // Push the args array on the stack.
     main.visitVarInsn(ALOAD, 0)
 
+    // TODO: Save the args in `dev.flix.runtime.Global.setArgs(..)`
+
     //Invoke m_<entry>
     main.visitMethodInsn(INVOKESTATIC, JvmOps.getNamespaceClassType(ns).name.toInternalName,
       JvmOps.getDefMethodNameInNamespaceClass(sym),

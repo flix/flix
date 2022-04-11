@@ -169,9 +169,9 @@ object JvmBackend {
       val matchErrorClass = GenMatchErrorClass.gen()
 
       //
-      // Generate the GlobalCounter class.
+      // Generate the Global class.
       //
-      val globalCounterClass = GenGlobalCounterClass.gen()
+      val globalClass = GenGlobalClass.gen()
 
       //
       // Collect all the classes and interfaces together.
@@ -197,7 +197,7 @@ object JvmBackend {
         rslClass,
         holeErrorClass,
         matchErrorClass,
-        globalCounterClass
+        globalClass
       ).reduce(_ ++ _)
     }
 
