@@ -54,6 +54,12 @@ namespace Environment {
         }
 
     ///
+    /// Returns the arguments passed to the program via the command line.
+    ///
+    @Experimental
+    pub def getArgs(): List[String] = Nil
+
+    ///
     /// Returns the operating system name
     ///
     pub def getOsName(): Option[String] = getProp("os.name")

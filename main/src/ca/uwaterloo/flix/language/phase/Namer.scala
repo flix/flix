@@ -456,11 +456,6 @@ object Namer {
     case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
-      // TODO: we use tenv when getting the types from formal params first, before the explicit tparams have a chance to modify it
-      // This means that if an explicit type variable is shadowing, the outer scope variable will be used for some parts, and inner for others
-      // Resulting in a type error rather than a redundancy error (as redundancy checking happens later)
-      // To fix: require explicit kind annotations (getting rid of the formal-param-first logic)
-      // Or delay using the tenv until evaluating explicit tparams (could become complex)
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
 
@@ -629,10 +624,16 @@ object Namer {
       NamedAst.Expression.Region(tpe, loc).toSuccess
 
     case WeededAst.Expression.Scope(ident, exp, loc) =>
-      // make a fresh variable symbol for the local variable.
+      // Introduce a fresh variable symbol for the region.
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
-      mapN(visitExp(exp, env0 + (ident.name -> sym), uenv0, tenv0)) {
-        case e => NamedAst.Expression.Scope(sym, e, loc)
+
+      // Introduce a rigid region variable for the region.
+      val regionVar = Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(sym.text), Rigidity.Rigid, loc)
+
+      val env1 = env0 + (ident.name -> sym)
+      val tenv1 = tenv0 + (ident.name -> regionVar)
+      mapN(visitExp(exp, env1, uenv0, tenv1)) {
+        case e => NamedAst.Expression.Scope(sym, regionVar, e, loc)
       }
 
     case WeededAst.Expression.Match(exp, rules, loc) =>
