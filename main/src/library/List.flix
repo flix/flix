@@ -75,7 +75,7 @@ instance Monad[List] {
 
 instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: List[a]): b & ef = List.foldLeft(f, s, l)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef = List.foldRight(f, s, l)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef = List.foldRightOld(f, s, l)
 }
 
 instance Traversable[List] {
@@ -646,11 +646,23 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
+    pub def foldRightOld(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef =
+        def loop(ll, k) = match ll {
+            case Nil     => k(s)
+            case x :: xs => loop(xs, ks -> k(f(x, ks)))
+        };
+        loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
+                                  // but the intermediate continuations are effect polymorphic
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
     pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, l: List[a]): b & ef = match l {
         case Nil        => z
         case x :: xs    => f(x, _ -> foldRight(f, z, xs))
-    }   // NB: Cast required because the identity continuation is pure,
-        // but the intermediate continuations are effect polymorphic
+    }
 
     ///
     /// Lazily applies `f` to a start value `s` and all elements in `l` going from right to left.
@@ -1167,7 +1179,7 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMapWith(f: a -> b, l: List[a]): Map[a, b] with Order[a] =
-            List.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), l)
+            List.foldRight((x, m) -> Map.insert(x, f(x), m()), Map.empty(), l)
 
     ///
     /// Returns the list `l` as a mutable deque.
@@ -1382,7 +1394,7 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toDelayMap(l: List[(a, b)]): DelayMap[a, b] with Order[a] =
-        List.foldRight((x, m) -> DelayMap.insert(fst(x), snd(x), m), DelayMap.empty(), l)
+        List.foldRight((x, m) -> DelayMap.insert(fst(x), snd(x), m()), DelayMap.empty(), l)
 
     ///
     /// Helper function for `traverse` and `sequence`.
