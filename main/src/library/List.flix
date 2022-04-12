@@ -646,13 +646,11 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k(s)
-            case x :: xs => loop(xs, ks -> k(f(x, ks)))
-        };
-        loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
-                                  // but the intermediate continuations are effect polymorphic
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, l: List[a]): b & ef = match l {
+        case Nil        => z
+        case x :: xs    => f(x, _ -> foldRight(f, z, xs))
+    }   // NB: Cast required because the identity continuation is pure,
+        // but the intermediate continuations are effect polymorphic
 
     ///
     /// Lazily applies `f` to a start value `s` and all elements in `l` going from right to left.
