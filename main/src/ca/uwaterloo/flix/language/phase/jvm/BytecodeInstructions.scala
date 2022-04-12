@@ -130,6 +130,11 @@ object BytecodeInstructions {
     f
   }
 
+  def ARRAYLENGTH(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.ARRAYLENGTH)
+    f
+  }
+
   def ASTORE(index: Int): InstructionSet = f => {
     f.visitVarInstruction(Opcodes.ASTORE, index)
     f
