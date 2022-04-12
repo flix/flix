@@ -80,16 +80,28 @@ object EntryPoint {
   /**
     * Finds the entry point in the given `root`.
     */
-  def findOriginalEntryPoint(root: TypedAst.Root)(implicit flix: Flix): Validation[Option[TypedAst.Def], EntryPointError] = {
+  private def findOriginalEntryPoint(root: TypedAst.Root)(implicit flix: Flix): Validation[Option[TypedAst.Def], EntryPointError] = {
     root.entryPoint match {
       case None => root.defs.get(DefaultEntryPoint) match {
         case None => None.toSuccess
         case Some(entryPoint) => Some(entryPoint).toSuccess
       }
       case Some(sym) => root.defs.get(sym) match {
-        case None => ??? // MATT error: cannot find specified entry point
+        case None => EntryPointError.EntryPointNotFound(sym, getArbitrarySourceLocation(root)).toFailure
         case Some(entryPoint) => Some(entryPoint).toSuccess
       }
+    }
+  }
+
+  /**
+    * Retrieves an arbitrary source location from the root.
+    */
+  private def getArbitrarySourceLocation(root: TypedAst.Root)(implicit flix: Flix): SourceLocation = {
+    root.sources.headOption match {
+      // Case 1: Some arbitrary source. Use its location.
+      case Some((_, loc)) => loc
+      // Case 2: No inputs. Give up and use unknown.
+      case None => SourceLocation.Unknown
     }
   }
 
