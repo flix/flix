@@ -25,16 +25,9 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 /**
   * Processes the entry point of the program.
   *
-  * // MATT update all of this
-  *
   * The entry point is replaced by a new function (`main%`) that calls the old entry point (`func`).
   *
-  * If the argument to `func` has type `Array[String]`,
-  *   then the arguments are passed from `main%` to `func`.
-  * If the argument to `func` has type `Unit`,
-  *   then the arguments to `main%` are ignored.
-  * If the argument to `func` has some other type,
-  *   an error is raised.
+  * The argument to the `func` must have type `Unit`.
   *
   * If the result type of `func` has type `Unit`,
   *   then the result is returned from `main%` as normal.
@@ -43,10 +36,10 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
   * If the result type of `func` is some other type without a `ToString` instance,
   *   then an error is raised.
   *
-  *  For example, given an entry point `func` with type `Array[String] -> Float64`,
+  *  For example, given an entry point `func` with type `Unit -> Float64`,
   *  we produce:
   *  {{{
-  *  pub def main%(args: Array[String]): Unit = {
+  *  pub def main%(): Unit = {
   *      println(func(args))
   *  }
   *  }}}
@@ -162,7 +155,7 @@ object EntryPoint {
         // Case 1: XYZ -> Unit.
         ().toSuccess
       } else if (ClassEnvironment.holds(Ast.TypeConstraint(toString, resultTpe, SourceLocation.Unknown), classEnv)) {
-        // Case 2: XYZ -> a with ToString[a]/
+        // Case 2: XYZ -> a with ToString[a]
         ().toSuccess
       } else {
         // Case 3: Bad result type. Error.
