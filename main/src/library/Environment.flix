@@ -56,8 +56,9 @@ namespace Environment {
     ///
     /// Returns the arguments passed to the program via the command line.
     ///
-    @Experimental
-    pub def getArgs(): List[String] = Nil
+    pub def getArgs(): List[String] =
+        import static dev.flix.runtime.Global.getArgs(): Array[String] & Pure;
+        Array.toList(getArgs()) as & Pure
 
     ///
     /// Returns the operating system name
