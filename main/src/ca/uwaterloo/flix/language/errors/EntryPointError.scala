@@ -67,13 +67,15 @@ object EntryPointError {
          |>> The result type: '${red(FormatType.formatWellKindedType(tpe))}' is not a valid entry point result type.
          |
          |${code(loc, "unexpected entry point result type.")}
-         |
-         |The result type must be one of:
-         |  - ${FormatType.formatWellKindedType(Type.Unit)}
-         |  - a type with a ToString instance
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |The result type must be one of:
+         |  (1) ${FormatType.formatWellKindedType(Type.Unit)}
+         |  (2) a type with a ToString instance
+         |""".stripMargin
+    })
   }
 }
