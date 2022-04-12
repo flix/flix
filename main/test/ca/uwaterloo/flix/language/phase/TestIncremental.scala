@@ -46,7 +46,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileB,
       s"""
-         |def main(_args: Array[String]): Int32 & Impure =
+         |def main(): Int32 & Impure =
          |    println(f(true));
          |    println(C.cd(1) |> C.cda);
          |    0
@@ -100,7 +100,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileB,
       s"""
-         |def main(_args: Array[String]): Int32 & Impure =
+         |def main(): Int32 & Impure =
          |    println(f(123));
          |    0
          |""".stripMargin)
@@ -127,7 +127,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileB,
       s"""
-         |def main(_args: Array[String]): Int32 & Impure =
+         |def main(): Int32 & Impure =
          |    println(f("Hello World"));
          |    0
          |""".stripMargin)
@@ -182,7 +182,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileB,
       s"""
-         |def main(_args: Array[String]): Int32 & Impure =
+         |def main(): Int32 & Impure =
          |    println(f(1i64, 2i64));
          |    println(C.cd(1i64) |> C.cda);
          |    0
@@ -234,7 +234,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileB,
       s"""
-         |def main(_args: Array[String]): Int32 & Impure =
+         |def main(): Int32 & Impure =
          |    println(F.f(true));
          |    println(C.cd(1i8) |> C.cda);
          |    0

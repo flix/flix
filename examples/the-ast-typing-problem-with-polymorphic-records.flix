@@ -46,7 +46,7 @@ def typeCheck(e: Expr[()]): Expr[(tpe :: Type)] = match e {
 }
 
 /// We can now type check a simple expression:
-def main(_args: Array[String]): Int32 & Impure =
+def main(): Int32 & Impure =
     let e = Ite({exp1 = True,
                  exp2 = Cst({value = 123}),
                  exp3 = Cst({value = 456})});

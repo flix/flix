@@ -14,7 +14,7 @@ def setY(r: {y :: Int32 | a}, v: Int32): {y :: Int32 | a} =
     { y = v | r }
 
 /// Returns the value 0 + 1 + 3 = 4.
-def main(_args: Array[String]): Int32 & Impure =
+def main(): Int32 & Impure =
     let r1 = {x = 1, y = 2};
     let r2 = {x = 1, y = 2, z = 3};
     let r3 = setY(r1, 0);
