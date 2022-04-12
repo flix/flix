@@ -73,8 +73,35 @@ object EntryPointError {
     override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |The result type must be one of:
+         |
          |  (1) ${FormatType.formatWellKindedType(Type.Unit)}
          |  (2) a type with a ToString instance
+         |
+         |""".stripMargin
+    })
+  }
+
+  /**
+    * Error indicating the specified entry point is missing.
+    *
+    * @param sym the entry point function.
+    * @param loc the location where the error occurred.
+    */
+  case class EntryPointNotFound(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
+    override def summary: String = s"Entry point ${sym} not found."
+
+    override def message(formatter: Formatter): String = {
+      s""">> The entry point ${sym} cannot be found.
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Change the specified entry point to an existing function.
+         |  (2)  Add an entry point function ${sym}.
+         |
          |""".stripMargin
     })
   }
