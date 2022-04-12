@@ -58,6 +58,9 @@ object EntryPoint {
   private val DefaultEntryPoint = Symbol.mkDefnSym("main")
 
 
+  /**
+    * Introduces a new function `main%` which calls the entry point (if any).
+    */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EntryPointError] = flix.phase("EntryPoint") {
     flatMapN(findOriginalEntryPoint(root)) {
       // Case 1: We have an entry point. Wrap it.
