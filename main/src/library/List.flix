@@ -162,7 +162,7 @@ namespace List {
     ///
     @Time(length(l1)) @Space(length(l1))
     pub def append(l1: List[a], l2: List[a]): List[a] =
-        foldRight((x, acc) -> x :: acc, l2, l1)
+        foldRightOld((x, acc) -> x :: acc, l2, l1)
 
     ///
     /// Returns `true` if and only if `l` contains the element `x`.
@@ -1161,7 +1161,7 @@ namespace List {
     /// Returns the list `l` as a set.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def toSet(l: List[a]): Set[a] with Order[a] = foldRight(Set.insert, Set.empty(), l)
+    pub def toSet(l: List[a]): Set[a] with Order[a] = foldRight((x, acc) -> Set.insert(x, acc()), Set.empty(), l)
 
     ///
     /// Returns the association list `l` as a map.
