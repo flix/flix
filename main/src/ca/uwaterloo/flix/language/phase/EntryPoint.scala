@@ -39,7 +39,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
   *  For example, given an entry point `func` with type `Unit -> Float64`,
   *  we produce:
   *  {{{
-  *  pub def main%(): Unit = {
+  *  pub def main%(): Unit & Impure = {
   *      println(func(args))
   *  }
   *  }}}
@@ -47,7 +47,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 object EntryPoint {
 
   /**
-    * The resulting scheme of the entry point function.
+    * The scheme of the entry point function.
     * `Array[String] -> Unit`
     */
   private val EntryPointScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str, SourceLocation.Unknown), Type.Unit, SourceLocation.Unknown))
