@@ -71,11 +71,18 @@ object EntryPointError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |The result type must be one of:
+      s"""A ToString instance must be defined for the result type.
          |
-         |  (1) ${FormatType.formatWellKindedType(Type.Unit)}
-         |  (2) a type with a ToString instance
+         |To define a string representation of '${FormatType.formatWellKindedType(tpe)}', either:
+         |
+         |  (a) define an instance of ToString for '${FormatType.formatWellKindedType(tpe)}', or
+         |  (b) derive an instance of ToString for '${FormatType.formatWellKindedType(tpe)}'.
+         |
+         |To automatically derive an instance, you can write:
+         |
+         |  enum Color with ToString {
+         |    case Red, Green, Blue
+         |  }
          |
          |""".stripMargin
     })
