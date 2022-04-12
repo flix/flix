@@ -110,7 +110,7 @@ namespace Stratifier {
         "Output:\n${rs}\nExpected:\n${expected}" |> println
 }
 
-def main(_args: Array[String]): Int32 & Impure =
+def main(): Int32 & Impure =
         Stratifier.example01();
         println("");
         Stratifier.example02();

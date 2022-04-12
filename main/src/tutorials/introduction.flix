@@ -172,7 +172,7 @@ def isMaybeZero(e: Constant): Bool = match e {
     case Top    => true
 }
 
-pub def main(_: Array[String]): Int32 & Impure =
+pub def main(): Int32 & Impure =
     let p = #{
         //
         // We can now define the semantic rules of the analysis.
