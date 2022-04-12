@@ -82,13 +82,13 @@ object EntryPoint {
     */
   def findOriginalEntryPoint(root: TypedAst.Root)(implicit flix: Flix): Validation[Option[TypedAst.Def], EntryPointError] = {
     root.entryPoint match {
-      case Some(sym) => root.defs.get(sym) match {
-        case Some(entryPoint) => Some(entryPoint).toSuccess
-        case None => ??? // MATT error: cannot find specified entry point
-      }
       case None => root.defs.get(DefaultEntryPoint) match {
-        case Some(entryPoint) => Some(entryPoint).toSuccess
         case None => None.toSuccess
+        case Some(entryPoint) => Some(entryPoint).toSuccess
+      }
+      case Some(sym) => root.defs.get(sym) match {
+        case None => ??? // MATT error: cannot find specified entry point
+        case Some(entryPoint) => Some(entryPoint).toSuccess
       }
     }
   }
