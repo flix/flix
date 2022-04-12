@@ -90,6 +90,8 @@ object EntryPointError {
   case class EntryPointNotFound(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
     override def summary: String = s"Entry point ${sym} not found."
 
+    // NB: We do not print the source location,
+    // as it is arbitrary and not related to the error.
     override def message(formatter: Formatter): String = {
       s""">> The entry point ${sym} cannot be found.
          |""".stripMargin
