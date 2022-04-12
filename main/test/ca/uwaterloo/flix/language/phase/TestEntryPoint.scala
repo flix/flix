@@ -16,9 +16,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.util.Options
-import ca.uwaterloo.flix.language.ast.Symbol
 import org.scalatest.FunSuite
 
 class TestEntryPoint extends FunSuite with TestUtils {
@@ -107,14 +107,33 @@ class TestEntryPoint extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin.copy(entryPoint = Some(Symbol.mkDefnSym("f"))))
     expectError[EntryPointError.IllegalEntryPointResult](result)
   }
-    test("Test.ValidEntryPoint.Main.01") {
-      val input =
-        """
-          |def main(): Int32 & ef = ??? as & ef
-          |""".stripMargin
-      val result = compile(input, Options.TestWithLibMin)
-      expectSuccess(result)
-    }
+
+  test("Test.EntryPointNotFound.01") {
+    val input =
+      """
+        |def notF(): String = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin.copy(entryPoint = Some(Symbol.mkDefnSym("f"))))
+    expectError[EntryPointError.EntryPointNotFound](result)
+  }
+
+  test("Test.EntryPointNotFound.02") {
+    val input =
+      """
+        |def main(): String = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin.copy(entryPoint = Some(Symbol.mkDefnSym("f"))))
+    expectError[EntryPointError.EntryPointNotFound](result)
+  }
+
+  test("Test.ValidEntryPoint.Main.01") {
+    val input =
+      """
+        |def main(): Int32 & ef = ??? as & ef
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
 
     test("Test.ValidEntryPoint.Main.02") {
       val input =
