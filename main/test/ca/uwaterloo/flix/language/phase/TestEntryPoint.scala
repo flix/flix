@@ -18,20 +18,21 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.language.ast.Symbol
 import org.scalatest.FunSuite
 
 class TestEntryPoint extends FunSuite with TestUtils {
 
-  test("Test.UnexpectedEntryPointArg.Main.01") {
+  test("Test.IllegalEntryPointArg.Main.01") {
     val input =
       """
-        |def main(blah: Array[Char]): Int32 & Impure = ??? as & Impure
+        |def main(blah: Array[String]): Int32 & Impure = ??? as & Impure
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointArgs](result)
   }
 
-  test("Test.UnexpectedEntryPointArg.Main.02") {
+  test("Test.IllegalEntryPointArg.Main.02") {
     val input =
       """
         |def main(blah: Array[a]): Int32 & Impure = ??? as & Impure
@@ -40,7 +41,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
     expectError[EntryPointError.IllegalEntryPointArgs](result)
   }
 
-  test("Test.UnexpectedEntryPointArg.Main.03") {
+  test("Test.IllegalEntryPointArg.Main.03") {
     val input =
       """
         |class C[a]
@@ -51,68 +52,103 @@ class TestEntryPoint extends FunSuite with TestUtils {
     expectError[EntryPointError.IllegalEntryPointArgs](result)
   }
 
-  test("Test.TooManyEntryPointArgs.Main.01") {
+  test("Test.IllegalEntryPointArg.Main.04") {
     val input =
       """
         |def main(arg1: Array[String], arg2: Array[String]): Unit = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.TooManyEntryPointArgs](result)
+    expectError[EntryPointError.IllegalEntryPointArgs](result)
   }
 
-  test("Test.TooManyEntryPointArgs.Main.02") {
+  test("Test.IllegalEntryPointArgs.Main.05") {
     val input =
       """
         |def main(arg1: String, arg2: String): Unit = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.TooManyEntryPointArgs](result)
+    expectError[EntryPointError.IllegalEntryPointArgs](result)
   }
 
-  test("Test.UnexpectedEntryPointResult.Main.01") {
+  test("Test.IllegalEntryPointArgs.Other.01") {
     val input =
       """
-        |def main(blah: Array[String]): a & Impure = ??? as & Impure
+        |def f(x: Bool): Unit = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin.copy(entryPoint = Some(Symbol.mkDefnSym("f"))))
+    expectError[EntryPointError.IllegalEntryPointArgs](result)
+  }
+
+  test("Test.IllegalEntryPointResult.Main.01") {
+    val input =
+      """
+        |def main(): a & Impure = ??? as & Impure
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointResult](result)
   }
 
-  test("Test.UnexpectedEntryPointResult.Main.02") {
+  test("Test.IllegalEntryPointResult.Main.02") {
     val input =
       """
         |enum E
-        |def main(blah: Array[String]): E = ???
+        |def main(): E = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointResult](result)
   }
 
-  //  test("Test.IllegalMain.07") { // MATT ok
-  //    val input =
-  //      """
-  //        |def main(blah: Array[String]): Int32 & ef = ???
-  //        |""".stripMargin
-  //    val result = compile(input, Options.TestWithLibMin)
-  //  }
-  //
-  //  test("Test.IllegalMain.01") { // MATT move to happy test
-  //    val input =
-  //      """
-  //        |def main(blah: Array[String]): Int32 = ???
-  //        |""".stripMargin
-  //    val result = compile(input, Options.TestWithLibMin)
-  //    expectError[TypeError.IllegalMain](result)
-  //  }
-  //
-  //  test("Test.IllegalMain.03") { // MATT ok
-  //    val input =
-  //      """
-  //        |def main(blah: Array[String]): Int64 & Impure = ???
-  //        |""".stripMargin
-  //    val result = compile(input, Options.TestWithLibMin)
-  //    expectError[TypeError.IllegalMain](result)
-  //  }
+  test("Test.IllegalEntryPointResult.Other.01") {
+    val input =
+      """
+        |enum E
+        |def f(): E = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin.copy(entryPoint = Some(Symbol.mkDefnSym("f"))))
+    expectError[EntryPointError.IllegalEntryPointResult](result)
+  }
+    test("Test.ValidEntryPoint.Main.01") {
+      val input =
+        """
+          |def main(): Int32 & ef = ??? as & ef
+          |""".stripMargin
+      val result = compile(input, Options.TestWithLibMin)
+      expectSuccess(result)
+    }
 
+    test("Test.ValidEntryPoint.Main.02") {
+      val input =
+        """
+          |def main(): Int32 = ???
+          |""".stripMargin
+      val result = compile(input, Options.TestWithLibMin)
+      expectSuccess(result)
+    }
 
+    test("Test.ValidEntryPoint.Main.03") {
+      val input =
+        """
+          |def main(): Int64 & Impure = ??? as & Impure
+          |""".stripMargin
+      val result = compile(input, Options.TestWithLibMin)
+      expectSuccess(result)
+    }
+
+  test("Test.ValidEntryPoint.Main.04") {
+    val input =
+      """
+        |def main(): Unit = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("Test.ValidEntryPoint.Other.01") {
+    val input =
+      """
+        |def f(): Unit = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin.copy(entryPoint = Some(Symbol.mkDefnSym("f"))))
+    expectSuccess(result)
+  }
 }
