@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
-import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Purity, Symbol}
+import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Purity, SemanticOperator, Symbol}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -171,12 +171,22 @@ object Inliner {
 
     case OccurrenceAst.Expression.Unary(sop, op, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Unary(sop, op, e, tpe, purity, loc)
+      (sop, e) match {
+        case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.False(_)) => LiftedAst.Expression.True(loc)
+        case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.True(_)) => LiftedAst.Expression.False(loc)
+        case _ => LiftedAst.Expression.Unary(sop, op, e, tpe, purity, loc)
+      }
 
     case OccurrenceAst.Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
-      LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
+      (sop, e1, e2) match {
+        case (SemanticOperator.BoolOp.And, LiftedAst.Expression.False(_), _) => LiftedAst.Expression.False(loc)
+        case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.False(_)) => LiftedAst.Expression.False(loc)
+        case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.True(_), _) => LiftedAst.Expression.True(loc)
+        case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.True(_)) => LiftedAst.Expression.True(loc)
+        case _ => LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
+      }
 
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)

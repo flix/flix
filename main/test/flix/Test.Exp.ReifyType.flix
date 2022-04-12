@@ -1,6 +1,12 @@
 namespace Test/Exp/ReifyType {
 
     @test
+    def reifyUnit01(): Bool = reifyType Unit == ReifiedUnit
+
+    @test
+    def reifyUnit02(): Bool = reflect() == ReifiedUnit
+
+    @test
     def reifyBool01(): Bool = reifyType Bool == ReifiedBool
 
     @test
@@ -47,6 +53,12 @@ namespace Test/Exp/ReifyType {
 
     @test
     def reifyInt6402(): Bool = reflect(1i64) == ReifiedInt64
+
+    @test
+    def reifyArrayUnit3201(): Bool = reifyType Array[Unit] == ReifiedArray(ReifiedUnit)
+
+    @test
+    def reifyArrayUnit3202(): Bool & Impure = reflect([()]) == ReifiedArray(ReifiedUnit)
 
     @test
     def reifyArrayBool3201(): Bool = reifyType Array[Bool] == ReifiedArray(ReifiedBool)

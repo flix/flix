@@ -35,9 +35,14 @@ object GenMainClass {
     case Some(defn) =>
       val jvmType = JvmOps.getMainClassType()
       val jvmName = jvmType.name
-      // returnType and its use can be inlined if m_main return type is known
-      val returnType = JvmOps.getErasedJvmType(defn.tpe.asInstanceOf[MonoType.Arrow].result)
-      val bytecode = genByteCode(defn.sym, jvmType, returnType)
+      val arrowType = defn.tpe.asInstanceOf[MonoType.Arrow]
+      // returnType, giveArgs, and their use can be inlined if m_main return type is known
+      val giveArgs = arrowType.args.headOption match {
+        case None => false
+        case Some(_) => true // assume its array of string
+      }
+      val returnType = JvmOps.getErasedJvmType(arrowType.result)
+      val bytecode = genByteCode(defn.sym, jvmType, giveArgs, returnType)
       Map(jvmName -> JvmClass(jvmName, bytecode))
   }
 
@@ -51,7 +56,7 @@ object GenMainClass {
     }
   }
 
-  private def genByteCode(sym: Symbol.DefnSym, jvmType: JvmType.Reference, returnType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(sym: Symbol.DefnSym, jvmType: JvmType.Reference, giveArgs: Boolean, returnType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -65,7 +70,7 @@ object GenMainClass {
     visitor.visitSource(jvmType.name.toInternalName, null)
 
     // Emit the code for the main method
-    compileMainMethod(sym, visitor, returnType)
+    compileMainMethod(sym, visitor, giveArgs, returnType)
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -75,13 +80,13 @@ object GenMainClass {
     * Emits code for the main method in the main class. The emitted (byte)code should satisfy the following signature for the method:
     * public static void main(String[])
     *
-    * The method itself needs simply invoke the m_main method which is in the root namespace.
+    * The method itself needs simply invoke the m_entry method which is in the root namespace.
     *
     * The emitted code for the method should correspond to:
     *
-    * Ns.m_main((Object)null);
+    * Ns.m_entry((Object)null);
     */
-  private def compileMainMethod(sym: Symbol.DefnSym, visitor: ClassWriter, returnType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+  private def compileMainMethod(sym: Symbol.DefnSym, visitor: ClassWriter, giveArgs: Boolean, returnType: JvmType)(implicit root: Root, flix: Flix): Unit = {
 
     //Get the (argument) descriptor, since the main argument is of type String[], we need to get it's corresponding descriptor
     val argumentDescriptor = AsmOps.getArrayType(JvmType.String)
@@ -94,17 +99,30 @@ object GenMainClass {
 
     main.visitCode()
 
-    //Get the root namespace in order to get the class type when invoking m_main
+    //Get the root namespace in order to get the class type when invoking m_<entry>
     val ns = JvmOps.getNamespace(sym)
 
-    // Call Ns.m_main(args)
+    // Call Ns.m_<entry>(args)
 
     // Push the args array on the stack.
     main.visitVarInsn(ALOAD, 0)
 
-    //Invoke m_main
-    main.visitMethodInsn(INVOKESTATIC, JvmOps.getNamespaceClassType(ns).name.toInternalName, "m_main",
-      AsmOps.getMethodDescriptor(List(JvmType.Object), returnType), false)
+    // Save the args in `dev.flix.runtime.Global.setArgs(..)
+    main.visitMethodInsn(INVOKESTATIC, JvmName.Global.toInternalName, GenGlobalClass.SetArgsMethodName,
+      s"([${BackendObjType.String.toDescriptor})V", false)
+
+    val nsClassName = JvmOps.getNamespaceClassType(ns).name.toInternalName
+    val mainMethodName = JvmOps.getDefMethodNameInNamespaceClass(sym)
+    if (giveArgs) {
+      // give the args
+      main.visitVarInsn(ALOAD, 0)
+      main.visitMethodInsn(INVOKESTATIC, nsClassName, mainMethodName,
+        AsmOps.getMethodDescriptor(List(JvmType.Object), returnType), false)
+    } else {
+      // no args
+      main.visitMethodInsn(INVOKESTATIC, nsClassName, mainMethodName,
+        AsmOps.getMethodDescriptor(Nil, returnType), false)
+    }
 
     // The return value is ignored
 

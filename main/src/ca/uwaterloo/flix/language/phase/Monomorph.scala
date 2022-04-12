@@ -558,7 +558,7 @@ object Monomorph {
         val e = visitExp(exp, env0)
         Expression.Force(e, subst0(tpe), eff, loc)
 
-      case Expression.Scope(_, _, _, _, loc) =>
+      case Expression.Scope(_, _, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
       case Expression.FixpointConstraintSet(_, _, _, loc) =>
@@ -856,6 +856,10 @@ object Monomorph {
         throw ReifyTypeException(tpe, loc)
 
       case Some(tc) => tc match {
+        case TypeConstructor.Unit =>
+          val tag = Name.Tag("ReifiedUnit", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
         case TypeConstructor.Bool =>
           val tag = Name.Tag("ReifiedBool", loc)
           Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
