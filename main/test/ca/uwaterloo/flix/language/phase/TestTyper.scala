@@ -409,7 +409,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("MissingArrowInstance.01") {
     val input =
       s"""
-         |def main(_args: Array[String]): Int32 & Impure =
+         |def main(): Int32 & Impure =
          |    println(x -> x + 41i32);
          |    0
          |""".stripMargin
