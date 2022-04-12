@@ -29,26 +29,21 @@ object EntryPointError {
   private implicit val audience: Audience = Audience.External
 
   /**
-    * Error indicating an unexpected argument type to an entry point function.
+    * Error indicating one or more arguments to an entry point function.
     *
     * @param sym the entry point function.
-    * @param tpe the argument type.
     * @param loc the location where the error occurred.
     */
-  case class UnexpectedEntryPointArg(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends EntryPointError {
+  case class IllegalEntryPointArgs(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
 
-    override def summary: String = s"Unexpected entry point argument type: ${FormatType.formatWellKindedType(tpe)}."
+    override def summary: String = s"Unexpected entry point argument(s)."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> The argument type: '${red(FormatType.formatWellKindedType(tpe))}' is not a valid entry point argument type.
+         |>> Arguments to the entry point function are not permitted.
          |
-         |${code(loc, "unexpected entry point argument type.")}
-         |
-         |The argument type must be one of:
-         |  - ${FormatType.formatWellKindedType(Type.mkArray(Type.Str, SourceLocation.Unknown))}
-         |  - ${FormatType.formatWellKindedType(Type.Unit)}
+         |${code(loc, "unexpected entry point argument(s).")}
          |""".stripMargin
     }
 
@@ -56,13 +51,13 @@ object EntryPointError {
   }
 
   /**
-    * Error indicating an unexpected result type to an entry point function.
+    * Error indicating an illegal result type to an entry point function.
     *
     * @param sym the entry point function.
     * @param tpe the result type.
     * @param loc the location where the error occurred.
     */
-  case class UnexpectedEntryPointResult(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends EntryPointError {
+  case class IllegalEntryPointResult(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends EntryPointError {
 
     override def summary: String = s"Unexpected entry point result type: ${FormatType.formatWellKindedType(tpe)}."
 
@@ -81,31 +76,4 @@ object EntryPointError {
 
     override def explain(formatter: Formatter): Option[String] = None
   }
-
-  /**
-    * Error indicating too many arguments to an entry point function.
-    *
-    * @param sym the entry point function.
-    * @param loc the location where the error occurred.
-    */
-  case class TooManyEntryPointArgs(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
-
-    override def summary: String = s"Too many entry point arguments."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>>
-         |
-         |${code(loc, "too many entry point arguments.")}
-         |
-         |The argument type must be one of:
-         |  - ${FormatType.formatWellKindedType(Type.Unit)}
-         |  - a type with a ToString instance
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
 }

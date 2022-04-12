@@ -120,7 +120,7 @@ object EntryPoint {
         // Case 1: One arg. Ok :)
         case arg :: Nil => arg.toSuccess
         // Case 2: Multiple args. Error.
-        case _ :: _ :: _ => EntryPointError.TooManyEntryPointArgs(sym, sym.loc).toFailure // MATT merge into other error
+        case _ :: _ :: _ => EntryPointError.IllegalEntryPointArgs(sym, sym.loc).toFailure
         // Case 3: Empty arguments. Impossible since this is desugared to Unit.
         case Nil => throw InternalCompilerException("Unexpected empty argument list.")
       }
@@ -133,8 +133,8 @@ object EntryPoint {
             // Case 1: Unit -> XYZ. We can ignore the args.
             ().toSuccess
           } else {
-            // Case 3: Bad arguments. Error.
-            EntryPointError.UnexpectedEntryPointArg(sym, arg, sym.loc).toFailure
+            // Case 2: Bad arguments. Error.
+            EntryPointError.IllegalEntryPointArgs(sym, sym.loc).toFailure
           }
       }
   }
@@ -159,7 +159,7 @@ object EntryPoint {
         ().toSuccess
       } else {
         // Case 3: Bad result type. Error.
-        EntryPointError.UnexpectedEntryPointResult(sym, resultTpe, sym.loc).toFailure
+        EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc).toFailure
       }
   }
 

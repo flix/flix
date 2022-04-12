@@ -28,7 +28,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
         |def main(blah: Array[Char]): Int32 & Impure = ??? as & Impure
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.UnexpectedEntryPointArg](result)
+    expectError[EntryPointError.IllegalEntryPointArgs](result)
   }
 
   test("Test.UnexpectedEntryPointArg.Main.02") {
@@ -37,7 +37,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
         |def main(blah: Array[a]): Int32 & Impure = ??? as & Impure
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.UnexpectedEntryPointArg](result)
+    expectError[EntryPointError.IllegalEntryPointArgs](result)
   }
 
   test("Test.UnexpectedEntryPointArg.Main.03") {
@@ -48,7 +48,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
         |def main(blah: Array[a]): Int32 & Impure with C[a] = ??? as & Impure
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.UnexpectedEntryPointArg](result)
+    expectError[EntryPointError.IllegalEntryPointArgs](result)
   }
 
   test("Test.TooManyEntryPointArgs.Main.01") {
@@ -75,7 +75,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
         |def main(blah: Array[String]): a & Impure = ??? as & Impure
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.UnexpectedEntryPointResult](result)
+    expectError[EntryPointError.IllegalEntryPointResult](result)
   }
 
   test("Test.UnexpectedEntryPointResult.Main.02") {
@@ -85,7 +85,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
         |def main(blah: Array[String]): E = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.UnexpectedEntryPointResult](result)
+    expectError[EntryPointError.IllegalEntryPointResult](result)
   }
 
   //  test("Test.IllegalMain.07") { // MATT ok
