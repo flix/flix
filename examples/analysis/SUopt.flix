@@ -49,7 +49,7 @@ def filter(e: SULattice, p: String): Bool = match e {
   case SULattice.Top => true
 }
 
-def main(): Int32 & Impure =
+def main(): Unit & Impure =
     let p = #{
         // Rules
         // =========
@@ -96,5 +96,4 @@ def main(): Int32 & Impure =
         Kill(l;Top) :- Phi(l).
     };
     let m = solve p;
-    (m |> Fixpoint.unsafePrint) as & Impure;
-    0
+    (m |> Fixpoint.unsafePrint) as & Impure

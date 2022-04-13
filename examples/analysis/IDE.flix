@@ -325,7 +325,7 @@ namespace ConstantProp {
 ///
 /// Run the example.
 ///
-def main(): Int32 & Impure =
+def main(): Unit & Impure =
     println("Running IDE");
 
     // TODO: Magnus: Use sets?
@@ -401,5 +401,4 @@ def main(): Int32 & Impure =
         compose      = ConstantProp.compose
         });
 
-    println(result);
-    0
+    println(result)
