@@ -151,7 +151,7 @@ namespace GetOpt {
     ///
     pub def getOpt(ordering: ArgOrder[a],
                    optDescriptors: List[OptionDescr[a]],
-                   sourceArgs: Array[String]): Validation[{options :: List[a], nonOptions :: List[String]}, String] & Impure =
+                   sourceArgs: List[String]): Validation[{options :: List[a], nonOptions :: List[String]}, String] =
         let answers = getOpt1(ordering, optDescriptors, sourceArgs);
         match answers.errors ::: List.map(errUnrec, answers.unknowns) {
             case Nil => Success({options = answers.options, nonOptions = answers.nonOptions})
@@ -170,8 +170,8 @@ namespace GetOpt {
     ///
     pub def getOpt1(ordering: ArgOrder[a],
                     optDescriptors: List[OptionDescr[a]],
-                    sourceArgs: Array[String]): {options :: List[a], nonOptions :: List[String], unknowns :: List[String], errors :: List[String]} & Impure =
-        let (os, xs, us, es) = getOpt1Helper(ordering, optDescriptors, Array.toList(sourceArgs));
+                    sourceArgs: List[String]): {options :: List[a], nonOptions :: List[String], unknowns :: List[String], errors :: List[String]} =
+        let (os, xs, us, es) = getOpt1Helper(ordering, optDescriptors, sourceArgs);
         {options = os, nonOptions = xs, unknowns = us, errors = es}
 
 
@@ -365,14 +365,14 @@ namespace GetOpt {
     ///
     /// Preprocess the command line arguments before parsing them.
     ///
-    /// Arguments supplied as an `Array[String]` to main are simply derived from the input split on space.
+    /// Arguments supplied as an `List[String]` to main are simply derived from the input split on space.
     /// This does not account for, for example, Windows file names which may include space.
     ///
     /// `preprocess` is a simple function that can be used to "rejoin" command line arguments if they were
     /// joined by "quotation marks" in the user supplied string (quotations marks are configurable and do not
     /// have to be double quotes).
     ///
-    pub def preprocess(options: {quoteOpen :: String, quoteClose :: String, stripQuoteMarks :: Bool}, args: Array[String]): Array[String] & Impure =
+    pub def preprocess(options: {quoteOpen :: String, quoteClose :: String, stripQuoteMarks :: Bool}, args: List[String]): List[String] =
         let args1 = groupWhenQuoted(options.quoteOpen, options.quoteClose, args);
         if (options.stripQuoteMarks)
             removeQuoteMarks(options.quoteOpen, options.quoteClose, args1)
@@ -384,15 +384,15 @@ namespace GetOpt {
     ///
     /// Starts in the initial state, outside a quotation.
     ///
-    def groupWhenQuoted(quoteOpen: String, quoteClose: String, args: Array[String]): Array[String] & Impure =
-        groupWhenQuotedHelper(quoteOpen, quoteClose, Array.toList(args), ks -> List.toArray(ks))
+    def groupWhenQuoted(quoteOpen: String, quoteClose: String, args: List[String]): List[String] =
+        groupWhenQuotedHelper(quoteOpen, quoteClose, args, ks -> ks)
 
     ///
     /// Helper for `groupWhenQuoted`.
     ///
     /// Here we are in the initial state, outside a quotation.
     ///
-    def groupWhenQuotedHelper(quoteOpen: String, quoteClose: String, tokens: List[String], k: List[String] -> Array[String] & ef): Array[String] & ef =
+    def groupWhenQuotedHelper(quoteOpen: String, quoteClose: String, tokens: List[String], k: List[String] -> List[String] & ef): List[String] & ef =
         match tokens {
             case Nil => k(Nil)
             case x :: rest if String.contains({substr = quoteOpen}, x) and String.endsWith({suffix = quoteClose}, x) => groupWhenQuotedHelper(quoteOpen, quoteClose, rest, ks -> k(x :: ks))
@@ -405,7 +405,7 @@ namespace GetOpt {
     ///
     /// Here we are "inside" a quotation, stored so far as `acc`.
     ///
-    def groupWhenQuotedHelperInner(quoteOpen: String, quoteClose: String, tokens: List[String], acc: String, k: List[String] -> Array[String] & ef): Array[String] & ef =
+    def groupWhenQuotedHelperInner(quoteOpen: String, quoteClose: String, tokens: List[String], acc: String, k: List[String] -> List[String] & ef): List[String] & ef =
         match tokens {
             case Nil => k(acc :: Nil)
             case x :: rest if String.contains({substr = quoteClose}, x) => groupWhenQuotedHelper(quoteOpen, quoteClose, rest, ks -> k((acc + " " +  x) :: ks))
@@ -415,7 +415,7 @@ namespace GetOpt {
     ///
     /// Remove all quote marks from the array of tokens.
     ///
-    def removeQuoteMarks(quoteOpen: String, quoteClose: String, args: Array[String]): Array[String] & Impure =
-        args |> Array.map(String.replace({from = quoteOpen}, {to = ""}) >> String.replace({from = quoteClose}, {to = ""}))
+    def removeQuoteMarks(quoteOpen: String, quoteClose: String, args: List[String]): List[String] =
+        args |> List.map(String.replace({from = quoteOpen}, {to = ""}) >> String.replace({from = quoteClose}, {to = ""}))
 
 }
