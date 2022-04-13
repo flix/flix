@@ -73,5 +73,4 @@ def main(): Unit & Impure =
         Read(x,y) :- DebugStr(s), StrLetterAt(s,x,y).
 
     };
-    query lp <+> numLetters select (x, y) from Read(x, y) |> println;
-    0
+    query lp <+> numLetters select (x, y) from Read(x, y) |> println
