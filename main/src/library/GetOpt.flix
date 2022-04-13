@@ -15,7 +15,7 @@
  */
 
 ///
-/// Parse the array of command line options supplied to `main`.
+/// Parse the list of command line options supplied to the program.
 ///
 /// Acknowledgement: this is a port of Sven Panne's `System.Console.GetOpt` in the Haskell Base libraries.
 ///
@@ -138,13 +138,13 @@ namespace GetOpt {
     }
 
     ///
-    /// Decode the array of command line options supplied to `main`.
+    /// Decode the list of command line options supplied to the program.
     ///
     /// `ordering` mandates how processing of options and non-options is handled.
     ///
     /// `optDescriptors` is a list of processors for decoding individual options.
     ///
-    /// `sourceArgs` should be the array of command line arguments supplied to main.
+    /// `sourceArgs` should be the list of command line arguments supplied to the program.
     ///
     /// If successful, `getOpt` returns lists of decoded options and non-options. If unsuccessful it
     /// returns a non-empty list of error messages, with unknown options considered to be errors.
@@ -365,7 +365,7 @@ namespace GetOpt {
     ///
     /// Preprocess the command line arguments before parsing them.
     ///
-    /// Arguments supplied as an `List[String]` to main are simply derived from the input split on space.
+    /// Arguments supplied as an `List[String]` to the program are simply derived from the input split on space.
     /// This does not account for, for example, Windows file names which may include space.
     ///
     /// `preprocess` is a simple function that can be used to "rejoin" command line arguments if they were
@@ -413,7 +413,7 @@ namespace GetOpt {
         }
 
     ///
-    /// Remove all quote marks from the array of tokens.
+    /// Remove all quote marks from the list of tokens.
     ///
     def removeQuoteMarks(quoteOpen: String, quoteClose: String, args: List[String]): List[String] =
         args |> List.map(String.replace({from = quoteOpen}, {to = ""}) >> String.replace({from = quoteClose}, {to = ""}))
