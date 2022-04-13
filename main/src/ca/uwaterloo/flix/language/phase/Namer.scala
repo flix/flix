@@ -1531,7 +1531,7 @@ object Namer {
     case WeededAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val freshSym = if (ident.name == "_")
-        Symbol.freshVarSym("_", BoundBy.FormalParam, fparam.loc)
+        Symbol.freshVarSym("_", BoundBy.FormalParam, ident.loc)
       else
         Symbol.freshVarSym(ident, BoundBy.FormalParam)
 
