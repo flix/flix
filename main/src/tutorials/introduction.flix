@@ -172,7 +172,7 @@ def isMaybeZero(e: Constant): Bool = match e {
     case Top    => true
 }
 
-pub def main(): Unit & Impure =
+def main(): Unit & Impure =
     let p = #{
         //
         // We can now define the semantic rules of the analysis.
