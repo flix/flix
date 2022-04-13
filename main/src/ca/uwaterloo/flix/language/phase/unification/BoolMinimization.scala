@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.VarText
 import ca.uwaterloo.flix.language.ast.{Kind, Rigidity, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -25,11 +26,10 @@ object BoolMinimization {
   /**
     * Minimizes the Boolean formula given by `t`.
     */
-  def minimize(t: Type): Type = {
+  def minimize(t: Type)(implicit flix: Flix): Type = {
     // TODO remove this
-    val useMinimizer = false
     val outputSizeChange = false
-    if (useMinimizer) {
+    if (flix.options.xminimize) {
       val formula = Formula.fromType(t)
       val nnf = Formula.toNNF(formula)
       val cnf = FormulaNNF.toCNF(nnf)

@@ -40,7 +40,8 @@ object Options {
     loadClassFiles = true,
     xallowredundancies = false,
     xstatistics = false,
-    xstrictmono = false
+    xstrictmono = false,
+    xminimize = false
   )
 
   /**
@@ -99,6 +100,7 @@ case class Options(lib: LibLevel,
                    xallowredundancies: Boolean,
                    xstatistics: Boolean,
                    xstrictmono: Boolean,
+                   xminimize: Boolean,
                   )
 
 /**

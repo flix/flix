@@ -93,7 +93,8 @@ object Main {
       progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
       xstatistics = cmdOpts.xstatistics,
-      xstrictmono = cmdOpts.xstrictmono
+      xstrictmono = cmdOpts.xstrictmono,
+      xminimize = cmdOpts.xminimize
     )
 
     // Don't use progress bar if benchmarking.
@@ -277,6 +278,7 @@ object Main {
                      xdebug: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
+                     xminimize: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -429,6 +431,10 @@ object Main {
       // Xstrictmono
       opt[Unit]("Xstrictmono").action((_, c) => c.copy(xstrictmono = true)).
         text("[experimental] enable strict monomorphization.")
+
+      // Boolean Minimization
+      opt[Unit]("Xminimize").action((_, c) => c.copy(xminimize = true)).
+        text("[experimental] perfoms minimization on boolean fomulas")
 
       note("")
 
