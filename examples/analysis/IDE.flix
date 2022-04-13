@@ -325,7 +325,7 @@ namespace ConstantProp {
 ///
 /// Run the example.
 ///
-def main(_: Array[String]): Int32 & Impure =
+def main(): Int32 & Impure =
     println("Running IDE");
 
     // TODO: Magnus: Use sets?

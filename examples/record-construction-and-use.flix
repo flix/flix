@@ -19,7 +19,7 @@ def polyAreas(): List[Int32] =
     polyArea({x = 1, y = 2}) ::
     polyArea({x = 2, y = 3, z = 4}) :: Nil
 
-def main(_args: Array[String]): Int32 & Impure =
+def main(): Int32 & Impure =
     areas() |> println;
     polyAreas() |> println;
     0 // exit code

@@ -20,7 +20,7 @@ def merge(intervals: List[(Int32, Int32)]): Array[(Int32, Int32)] & Pure =
     };
     query i, lp select (a, b) from Representative(a, b)
 
-def main(_args: Array[String]): Int32 & Impure =
+def main(): Int32 & Impure =
     let intervals = (1, 3) :: (2, 6) :: (8, 10) :: (15, 18) :: Nil;
     merge(intervals) |> println; // [(1, 6), (8, 10), (15, 18)]
     0

@@ -133,7 +133,7 @@ object CompleteProvider {
       // NB: Please keep the list alphabetically sorted.
 
       // Declaration-based:
-      CompletionItem("main", "def main(_args: Array[String]): Int32 & Impure = \n    println(\"Hello World!\");\n    0", None, Some("snippet for Hello World Program"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
+      CompletionItem("main", "def main(): Unit & Impure = \n    println(\"Hello World!\")", None, Some("snippet for Hello World Program"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),
 
       // Expressed-based:
       CompletionItem("query", "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}", None, Some("snippet for query"), CompletionItemKind.Snippet, InsertTextFormat.Snippet, Nil),

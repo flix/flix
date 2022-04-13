@@ -29,7 +29,7 @@ def deduplicate(l: List[a]): List[a] with Order[a] =
 /// call `deduplicate` that returns a new list
 /// with only unique elements.
 ///
-def main(_args: Array[String]): Int32 & Impure =
+def main(): Int32 & Impure =
     let l = 1 :: 1 :: 2 :: 2 :: 3 :: 3 :: Nil;
     println(deduplicate(l));
     0

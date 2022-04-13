@@ -1,6 +1,6 @@
 // https://github.com/souffle-lang/souffle/tree/master/tests/example/2sat
 
-def main(_args: Array[String]): Int32 & Impure =
+def main(): Int32 & Impure =
 
     let clauses = #{
         Clause("Pos", "x0", "Pos", "x2").

@@ -36,11 +36,6 @@ import java.io.PrintWriter
 object Typer {
 
   /**
-    * The expected scheme of the `main` function.
-    */
-  private val mainScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str, SourceLocation.Unknown), Type.Int32, SourceLocation.Unknown))
-
-  /**
     * Type checks the given AST root.
     */
   def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Typer") {
@@ -144,25 +139,9 @@ object Typer {
 
       for {
         // check the main signature before typechecking the def
-        _ <- checkMain(defn, root, classEnv)
         res <- typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv, sym.loc)
         (spec, exp) = res
       } yield TypedAst.Def(sym, spec, exp)
-  }
-
-  /**
-    * Checks that, if the function is a main function, it has the right type scheme.
-    */
-  private def checkMain(defn: KindedAst.Def, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, TypeError] = {
-    if (!root.entryPoint.contains(defn.sym)) {
-      return ().toSuccess
-    }
-
-    if (!Scheme.equal(defn.spec.sc, mainScheme, classEnv)) {
-      TypeError.IllegalMain(declaredScheme = defn.spec.sc, expectedScheme = mainScheme, defn.sym.loc).toFailure
-    } else {
-      ().toSuccess
-    }
   }
 
   /**
@@ -2337,5 +2316,4 @@ object Typer {
     }
     t.write(new PrintWriter(System.out))
   }
-
 }
