@@ -1,6 +1,6 @@
 /// An example using Datalog constraints enriched with lattice semantics to
 /// compute the delivery date of a part based on delivery dates of its components.
-def main() : Unit & Impure =
+def main(): Unit & Impure =
     let p = #{
         /// Parts and the components they depend on.
         PartDepends("Car",       "Chassis").

@@ -26,7 +26,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
   test("Test.IllegalEntryPointArg.Main.01") {
     val input =
       """
-        |def main(blah: Array[String]): Int32 & Impure = ??? as & Impure
+        |def main(blah: Array[String]): Unit & Impure = ??? as & Impure
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointArgs](result)
@@ -35,7 +35,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
   test("Test.IllegalEntryPointArg.Main.02") {
     val input =
       """
-        |def main(blah: Array[a]): Int32 & Impure = ??? as & Impure
+        |def main(blah: Array[a]): Unit & Impure = ??? as & Impure
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointArgs](result)
@@ -46,7 +46,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
       """
         |class C[a]
         |
-        |def main(blah: Array[a]): Int32 & Impure with C[a] = ??? as & Impure
+        |def main(blah: Array[a]): Unit & Impure with C[a] = ??? as & Impure
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointArgs](result)
