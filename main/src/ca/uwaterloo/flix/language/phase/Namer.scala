@@ -1530,10 +1530,7 @@ object Namer {
   private def visitFormalParam(fparam: WeededAst.FormalParam, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError] = fparam match {
     case WeededAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
-      val freshSym = if (ident.name == "_")
-        Symbol.freshVarSym("_", BoundBy.FormalParam, ident.loc)
-      else
-        Symbol.freshVarSym(ident, BoundBy.FormalParam)
+      val freshSym = Symbol.freshVarSym(ident, BoundBy.FormalParam)
 
       // Compute the type of the formal parameter or use the type variable of the symbol.
       val tpeVal = optType match {
