@@ -63,7 +63,7 @@ pub def connectGraph(g: Graph[node]): #{ Edge(Set[node], Set[node]) | r } with B
     };
     solve connectedComponentRep(g), missingEdges project Edge
 
-pub def main(): Unit & Impure =
+def main(): Unit & Impure =
     let graph = {
         nodes = Set.range(0, 8),
         edges = Set#{(0, 4), (0, 7), (2, 3), (1, 6), (5, 6)}

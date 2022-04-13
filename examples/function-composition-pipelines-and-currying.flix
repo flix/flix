@@ -4,10 +4,9 @@
 
 /// Constructs a list with ten elements and performs
 /// various operations on it in a pipeline.
-def main(): Int32 & Impure =
+def main(): Unit & Impure =
     List.range(0, 10) |>
     List.map(x -> x * x) |>
     List.take(5) |>
     List.exists(x -> x == 1) |>
-    println;
-    0 // exit code
+    println

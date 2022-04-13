@@ -129,7 +129,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
   test("Test.ValidEntryPoint.Main.01") {
     val input =
       """
-        |def main(): Int32 & ef = ??? as & ef
+        |def main(): Unit & ef = ??? as & ef
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectSuccess(result)
@@ -138,7 +138,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
     test("Test.ValidEntryPoint.Main.02") {
       val input =
         """
-          |def main(): Int32 = ???
+          |def main(): Unit = ???
           |""".stripMargin
       val result = compile(input, Options.TestWithLibMin)
       expectSuccess(result)
