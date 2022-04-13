@@ -26,21 +26,24 @@ object BoolMinimization {
     * Minimizes the Boolean formula given by `t`.
     */
   def minimize(t: Type): Type = {
-    val formula = Formula.fromType(t)
-    val nnf = Formula.toNNF(formula)
-    val cnf = FormulaNNF.toCNF(nnf)
-    val res = FormulaCNF.toType(cnf, t.loc)
     // TODO remove this
-    val prints = false
-    if (prints) {
-      val before = t.size
-      val after = res.size
-      if (before > 9 || after > 9) {
-        val goodBad = if (after <= before) "+" else " "
-        println(s"$goodBad $before cnf'ed to $after")
+    val useMinimizer = true
+    val outputSizeChange = false
+    if (useMinimizer) {
+      val formula = Formula.fromType(t)
+      val nnf = Formula.toNNF(formula)
+      val cnf = FormulaNNF.toCNF(nnf)
+      val res = FormulaCNF.toType(cnf, t.loc)
+      if (outputSizeChange) {
+        val before = t.size
+        val after = res.size
+        if (before > 9 || after > 9) {
+          val goodBad = if (after <= before) "+" else " "
+          println(s"$goodBad $before cnf'ed to $after")
+        }
       }
-    }
-    res
+      res
+    } else t
   }
 
   private sealed trait Formula
