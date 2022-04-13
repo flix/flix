@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.ClassContext
-import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Symbol, Type}
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.annotation.tailrec
 
@@ -54,6 +54,16 @@ object ClassEnvironment {
   def entails(tconstr1: Ast.TypeConstraint, tconstr2: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext]): Boolean = {
     val superClasses = bySuper(tconstr1, classEnv)
     superClasses.contains(tconstr2)
+  }
+
+  /**
+    * Returns true iff the given type constraint holds under the given class environment.
+    */
+  def holds(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
+    byInst(tconstr, classEnv) match {
+      case Validation.Success(_) => true
+      case Validation.Failure(_) => false
+    }
   }
 
   /**

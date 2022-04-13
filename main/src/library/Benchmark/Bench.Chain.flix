@@ -126,7 +126,7 @@ pub def chainSuite(n: Int32): Array[Benchmark] & Impure =
         chainAppend(l)
     ]
 
-def main(_args: Array[String]) : Int32 & Impure =
+def main() : Int32 & Impure =
     let s1 = chainSuite(1000);
     Benchmark.runWithBudget(s1, 250_000_000_000i64);
     0

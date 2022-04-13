@@ -618,40 +618,6 @@ object TypeError {
   }
 
   /**
-    * An error indicating that the main function's scheme is incorrect.
-    *
-    * @param declaredScheme the erroneous function's scheme.
-    * @param expectedScheme the scheme the main function is expected to have.
-    * @param loc            the location where the error occurred.
-    */
-  case class IllegalMain(declaredScheme: Scheme, expectedScheme: Scheme, loc: SourceLocation) extends TypeError {
-    override def summary: String = "Illegal main."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> The main function has an unexpected type.
-         |
-         |${code(loc, s"unexpected type.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""The main function must have the form:
-         |
-         |  def main(args: Array[String]): Int32 & Impure = ...
-         |
-         |i.e.
-         |- it must return an integer which is the exit code, and
-         |- it must have a side-effect (such as printing to the screen).
-         |
-         |If the arguments `args` are not needed they can be replaced by an '_'.
-         |""".stripMargin
-    })
-  }
-
-  /**
     * An error indicating that a region variable escapes its scope.
     *
     * @param rvar the region variable.
@@ -673,6 +639,10 @@ object TypeError {
          |  ${red(FormatType.formatWellKindedType(tpe))}
          |
          |which contains the region variable.
+         |
+         |The region variable was declared here:
+         |
+         |${code(rvar.loc, "region variable declared here.")}
          |""".stripMargin
     }
 

@@ -22,7 +22,7 @@ def sieve(ps: DelayList[Int32]): DelayList[Int32] = match DelayList.head(ps) {
 }
 
 /// Returns the first 10 prime numbers
-def main(_args: Array[String]): Int32 & Impure =
+def main(): Int32 & Impure =
     println("Using 'primes'");
     DelayList.take(10, primes()) |> DelayList.toList |> println;
     println("Using 'primes2'");

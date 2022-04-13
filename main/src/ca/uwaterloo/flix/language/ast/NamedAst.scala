@@ -38,8 +38,10 @@ object NamedAst {
   case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Def], loc: SourceLocation)
 
   sealed trait DefOrSig
+
   object DefOrSig {
     case class Def(d: NamedAst.Def) extends NamedAst.DefOrSig
+
     case class Sig(s: NamedAst.Sig) extends NamedAst.DefOrSig
   }
 
@@ -127,7 +129,7 @@ object NamedAst {
 
     case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Scope(sym: Symbol.VarSym, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Scope(sym: Symbol.VarSym, regionVar: Symbol.UnkindedTypeVarSym, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], loc: SourceLocation) extends NamedAst.Expression
 
