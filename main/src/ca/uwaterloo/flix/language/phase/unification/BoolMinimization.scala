@@ -27,7 +27,7 @@ object BoolMinimization {
     */
   def minimize(t: Type): Type = {
     // TODO remove this
-    val useMinimizer = true
+    val useMinimizer = false
     val outputSizeChange = false
     if (useMinimizer) {
       val formula = Formula.fromType(t)
