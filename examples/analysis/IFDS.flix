@@ -112,4 +112,5 @@ def main(): Unit & Impure =
         PathEdge("zero","smain","zero").
     };
     let m = solve p;
-    (m |> Fixpoint.unsafePrint) as & Impure
+    (m |> Fixpoint.unsafePrint) as & Impure;
+    ()

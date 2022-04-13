@@ -233,7 +233,8 @@ def main(): Unit & Impure =
         DivStm("v", "w", "z"). // v = w / z
     };
     let m = solve p;
-    (m |> Fixpoint.unsafePrint) as & Impure
+    (m |> Fixpoint.unsafePrint) as & Impure;
+    ()
 
 //
 // We can now run our program with Flix and inspect the output!
