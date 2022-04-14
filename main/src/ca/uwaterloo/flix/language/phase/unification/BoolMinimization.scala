@@ -73,17 +73,17 @@ object BoolMinimization {
     case class Not(term: NonNegation) extends Negation
 
     /**
-      * A conjunction of terms. And empty list is `True`.
+      * A conjunction of terms. `terms` should not be empty.
       */
     case class And(terms: Vector[NonConjunction]) extends Conjunction
 
     /**
-      * A disjunction of terms. And empty list is `True`.
+      * A disjunction of terms. `terms` should not be empty.
       */
     case class Or(terms: Vector[NonDisjunction]) extends Disjunction
 
     /**
-      * Build `Not(f)` and performs shallow minimization.
+      * A negation of `f`.
       */
     def mkNot(f: Formula): Formula = {
       f match {
@@ -97,8 +97,7 @@ object BoolMinimization {
     }
 
     /**
-      * Merges the conjunctions if arguments are conjunctions themselves and
-      * performs shallow minimization along with unit propagation.
+      * Equivalent to `mkAnd(f.toVector)`.
       */
     def mkAnd(f: Formula*): Formula = {
       mkAnd(f.toVector)
@@ -106,7 +105,7 @@ object BoolMinimization {
 
     /**
       * Merges the conjunctions in `f` into the new conjunction and performs
-      * shallow minimization.
+      * shallow minimization regarding `True` and `False`.
       */
     def mkAnd(f: Vector[Formula]): Formula = {
       if (f.isEmpty) throw InternalCompilerException("Cannot be empty")
@@ -132,8 +131,7 @@ object BoolMinimization {
     }
 
     /**
-      * Merges the disjunctions if arguments are disjunctions themselves and
-      * performs shallow minimization.
+      * Equivalent to `mkOr(f.toVector)`.
       */
     def mkOr(f: Formula*): Formula = {
       mkOr(f.toVector)
@@ -141,7 +139,7 @@ object BoolMinimization {
 
     /**
       * Merges the disjunctions in `f` into the new disjunction and performs
-      * shallow minimization.
+      * shallow minimization regarding `True` and `False`.
       */
     def mkOr(f: Vector[Formula]): Formula = {
       if (f.isEmpty) throw InternalCompilerException("Cannot be empty")
@@ -167,8 +165,7 @@ object BoolMinimization {
     }
 
     /**
-      * Transform `f` to an equivalent formula where negation only appears
-      * on variables directly.
+      * Returns a formula in negative normal form (NNF) equivalent to `f`.
       */
     def toNNF(f: Formula): FormulaNNF = {
       f match {
@@ -194,7 +191,8 @@ object BoolMinimization {
     }
 
     /**
-      * Converts a type boolean formula `t` to a `Formula` formula.
+      * Converts a type boolean formula `t` to a boolean formula of type `Formula`.
+      * Source locations are not maintained.
       * Throws exceptions for non-boolean or malformed types.
       */
     def fromType(t: Type): Formula = {
@@ -234,18 +232,17 @@ object BoolMinimization {
     case class NotVar(v: Type.KindedVar) extends SimpleTerm
 
     /**
-      * A conjunction of terms. And empty list is `True`.
+      * A conjunction of terms. `terms` should not be empty.
       */
     case class And(terms: Vector[Disjunction]) extends Conjunction
 
     /**
-      * A disjunction of terms. And empty list is `True`.
+      * A disjunction of terms. `terms` should not be empty.
       */
     case class Or(terms: Vector[Conjunction]) extends Disjunction
 
     /**
-      * Merges the conjunctions if arguments are conjunctions themselves and
-      * performs shallow minimization along with unit propagation.
+      * Equivalent to `mkAnd(f.toVector)`.
       */
     def mkAnd(f: FormulaNNF*): FormulaNNF = {
       mkAnd(f.toVector)
@@ -253,7 +250,7 @@ object BoolMinimization {
 
     /**
       * Merges the conjunctions in `f` into the new conjunction and performs
-      * shallow minimization.
+      * shallow minimization regarding `True` and `False`.
       */
     def mkAnd(f: Vector[FormulaNNF]): FormulaNNF = {
       if (f.isEmpty) throw InternalCompilerException("Cannot be empty")
@@ -279,8 +276,7 @@ object BoolMinimization {
     }
 
     /**
-      * Merges the disjunctions if arguments are disjunctions themselves and
-      * performs shallow minimization.
+      * Equivalent to `mkOr(f.toVector)`.
       */
     def mkOr(f: FormulaNNF*): FormulaNNF = {
       mkOr(f.toVector)
@@ -288,7 +284,7 @@ object BoolMinimization {
 
     /**
       * Merges the disjunctions in `f` into the new disjunction and performs
-      * shallow minimization.
+      * shallow minimization regarding `True` and `False`.
       */
     def mkOr(f: Vector[FormulaNNF]): FormulaNNF = {
       if (f.isEmpty) throw InternalCompilerException("Cannot be empty")
@@ -314,9 +310,9 @@ object BoolMinimization {
     }
 
     /**
-      * Transform `f` to an equivalent formula that is a conjunction of
-      * disjunctions of either variables or negated variables.
-      * Ex. `x ∧ (x ∨ y) ∧ (z ∨ ¬y ∨ ¬z)`
+      * Returns a formula in conjunctive normal form (CNF) equivalent to `f`.
+      *
+      * Example: `x ∧ (x ∨ y) ∧ (z ∨ ¬y ∨ ¬z)`
       */
     def toCNF(f: FormulaNNF): FormulaCNF = {
       f match {
@@ -345,14 +341,14 @@ object BoolMinimization {
     /**
       * Split terms into simple terms and conjunctions.
       */
-    def split(terms: Vector[Conjunction]): (Vector[FormulaNNF.SimpleTerm], Vector[FormulaNNF.And]) = {
-      val base: (Vector[FormulaNNF.SimpleTerm], Vector[FormulaNNF.And]) = (Vector.empty, Vector.empty)
+    def split(terms: Vector[Conjunction]): (Vector[SimpleTerm], Vector[And]) = {
+      val base: (Vector[SimpleTerm], Vector[And]) = (Vector.empty, Vector.empty)
       terms.foldLeft(base) {
         case ((simples, conjunctions), conjunction) => conjunction match {
-          case True => (simples :+ FormulaNNF.True, conjunctions)
-          case False => (simples :+ FormulaNNF.False, conjunctions)
-          case Var(v) => (simples :+ FormulaNNF.Var(v), conjunctions)
-          case NotVar(v) => (simples :+ FormulaNNF.NotVar(v), conjunctions)
+          case True => (simples :+ True, conjunctions)
+          case False => (simples :+ False, conjunctions)
+          case Var(v) => (simples :+ Var(v), conjunctions)
+          case NotVar(v) => (simples :+ NotVar(v), conjunctions)
           case and@And(_) => (simples, conjunctions :+ and)
         }
       }
@@ -364,21 +360,22 @@ object BoolMinimization {
 
   private object FormulaCNF {
 
+    import FormulaNNF._
+
     sealed trait Disjunction extends FormulaCNF
 
     /**
-      * A conjunction of disjunctions. And empty list is `True`.
+      * A conjunction of disjunctions. `terms` should not be empty.
       */
     case class And(terms: Vector[Disjunction]) extends FormulaCNF
 
     /**
-      * A disjunction of simple terms. And empty list is `True`.
+      * A disjunction of simple terms. `terms` should not be empty.
       */
-    case class Or(terms: Set[FormulaNNF.SimpleTerm]) extends Disjunction
+    case class Or(terms: Set[SimpleTerm]) extends Disjunction
 
     /**
-      * Merges the conjunctions if arguments are conjunctions themselves and
-      * performs shallow minimization along with unit propagation.
+      * Equivalent to `mkAnd(f.toVector)`.
       */
     def mkAnd(f: FormulaCNF*): FormulaCNF = {
       mkAnd(f.toVector)
@@ -386,7 +383,7 @@ object BoolMinimization {
 
     /**
       * Merges the conjunctions in `f` into the new conjunction and performs
-      * shallow minimization.
+      * shallow minimization regarding `True` and `False`.
       */
     def mkAnd(f: Vector[FormulaCNF]): FormulaCNF = {
       if (f.isEmpty) throw InternalCompilerException("Cannot be empty")
@@ -394,26 +391,25 @@ object BoolMinimization {
       val hoistedTerms = f.foldLeft(baseValue) {
         case (opt, term) => opt.flatMap(
           acc => term match {
-            case FormulaNNF.True => Some(acc)
-            case FormulaNNF.False => None
+            case True => Some(acc)
+            case False => None
             case And(terms) => Some(acc ++ terms)
-            case t@FormulaNNF.Var(_) => Some(acc :+ t)
-            case t@FormulaNNF.NotVar(_) => Some(acc :+ t)
+            case t@Var(_) => Some(acc :+ t)
+            case t@NotVar(_) => Some(acc :+ t)
             case t@Or(_) => Some(acc :+ t)
           }
         )
       }
       hoistedTerms match {
-        case None => FormulaNNF.False
-        case Some(Vector()) => FormulaNNF.True // happens for input like True ∧ True
+        case None => False
+        case Some(Vector()) => True // happens for input like True ∧ True
         case Some(Vector(term)) => term
         case Some(terms) => And(terms)
       }
     }
 
     /**
-      * Merges the disjunctions if arguments are disjunctions themselves and
-      * performs shallow minimization.
+      * Equivalent to `mkOr(f.toVector)`.
       */
     def mkOr(f: Disjunction*): Disjunction = {
       mkOr(f.toVector)
@@ -421,36 +417,66 @@ object BoolMinimization {
 
     /**
       * Merges the disjunctions in `f` into the new disjunction and performs
-      * shallow minimization.
+      * shallow minimization regarding `True` and `False`.
       */
     def mkOr(f: Vector[Disjunction]): Disjunction = {
       if (f.isEmpty) throw InternalCompilerException("Cannot be empty")
-      val baseValue: Option[Set[FormulaNNF.SimpleTerm]] = Some(Set.empty)
+      val baseValue: Option[Set[SimpleTerm]] = Some(Set.empty)
       val hoistedTerms = f.foldLeft(baseValue) {
         case (opt, term) => opt.flatMap(
           acc => term match {
-            case FormulaNNF.True => None
-            case FormulaNNF.False => Some(acc)
+            case True => None
+            case False => Some(acc)
             case Or(terms) => Some(acc ++ terms)
-            case t@FormulaNNF.Var(_) => Some(acc + t)
-            case t@FormulaNNF.NotVar(_) => Some(acc + t)
+            case t@Var(_) => Some(acc + t)
+            case t@NotVar(_) => Some(acc + t)
           }
         )
       }
       hoistedTerms match {
-        case None => FormulaNNF.True
-        case Some(set) if set.isEmpty => FormulaNNF.False // happens for input like False ∨ False
+        case None => True
+        case Some(set) if set.isEmpty => False // happens for input like False ∨ False
         case Some(set) if set.size == 1 => set.head
         case Some(terms) => Or(terms)
       }
     }
 
+    /**
+      * Performs unit propagation, simplifying `x ∧ (a ∨ y)` into `a ∧ y`.
+      */
+    def unitPropagation(f: FormulaCNF): FormulaCNF = f match {
+      case True | False | Var(_) | NotVar(_) | Or(_) => f
+      case And(terms) => ???
+    }
+
+    /**
+      * Split terms into simple terms and disjunctions.
+      */
+    def split(terms: Vector[Disjunction]): (Vector[SimpleTerm], Vector[Or]) = {
+      val base: (Vector[SimpleTerm], Vector[Or]) = (Vector.empty, Vector.empty)
+      terms.foldLeft(base) {
+        case ((simples, disjunctions), conjunction) => conjunction match {
+          case True => (simples :+ True, disjunctions)
+          case False => (simples :+ False, disjunctions)
+          case Var(v) => (simples :+ Var(v), disjunctions)
+          case NotVar(v) => (simples :+ NotVar(v), disjunctions)
+          case or@Or(_) => (simples, disjunctions :+ or)
+        }
+      }
+    }
+
+    /**
+      * Converts a CNF boolean formula `f` to a type formula.
+      *  N-ary operations are combined left-to-right.
+      *
+      * Example: `x ∧ y ∧ z ∧ q` becomes `((x ∧ y) ∧ z) ∧ q`.
+      */
     def toType(f: FormulaCNF, loc: SourceLocation): Type = {
       f match {
-        case FormulaNNF.True => Type.mkTrue(loc)
-        case FormulaNNF.False => Type.mkFalse(loc)
-        case FormulaNNF.Var(v) => v
-        case FormulaNNF.NotVar(v) => Type.mkNot(v, loc)
+        case True => Type.mkTrue(loc)
+        case False => Type.mkFalse(loc)
+        case Var(v) => v
+        case NotVar(v) => Type.mkNot(v, loc)
         case And(terms) =>
           if (terms.isEmpty) throw InternalCompilerException("Cannot be empty")
           val (base, remaining) = (terms.head, terms.tail)
