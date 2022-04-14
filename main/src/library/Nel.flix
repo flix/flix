@@ -368,9 +368,14 @@ namespace Nel {
     /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
     /// The foldRightLazy function exists to allow early termination of a fold.
     ///
-    pub def foldRightLazy(f: (a, Lazy[b]) -> b, s: b, l: Nel[a]): b = match l {
-        case Nel(x, xs) => f(x, lazy List.foldRightLazyOld(f, s, xs))
-    }
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b, s: b, l: Nel[a]): b =
+        def loop(ll) = match ll {
+            case Nil     => s
+            case y :: ys => f(y, lazy loop(ys))
+        };
+        match l {
+            case Nel(x, xs) => f(x, lazy loop(xs))
+        }
 
     ///
     /// Left-associative reduction of a structure.
