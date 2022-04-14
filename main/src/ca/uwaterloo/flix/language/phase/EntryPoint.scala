@@ -48,9 +48,9 @@ object EntryPoint {
 
   /**
     * The scheme of the entry point function.
-    * `Array[String] -> Unit`
+    * `Unit -> Unit`
     */
-  private val EntryPointScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str, SourceLocation.Unknown), Type.Unit, SourceLocation.Unknown))
+  private val EntryPointScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.Unit, Type.Unit, SourceLocation.Unknown))
 
   /**
     * The default entry point in case none is specified. (`main`)
