@@ -75,7 +75,13 @@ instance Monad[List] {
 
 instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: List[a]): b & ef = List.foldLeft(f, s, l)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef = List.foldRightOld(f, s, l)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef =
+        def loop(ll, k) = match ll {
+            case Nil     => k(s)
+            case x :: xs => loop(xs, ks -> k(f(x, ks)))
+        };
+        loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
+                                  // but the intermediate continuations are effect polymorphic
 }
 
 instance Traversable[List] {
@@ -640,19 +646,6 @@ namespace List {
             case x :: xs => loop(xs, f(acc, x))
          };
          loop(l, s)
-
-    ///
-    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
-    ///
-    pub def foldRightOld(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k(s)
-            case x :: xs => loop(xs, ks -> k(f(x, ks)))
-        };
-        loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
-                                  // but the intermediate continuations are effect polymorphic
 
     ///
     /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
