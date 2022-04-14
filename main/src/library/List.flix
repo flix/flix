@@ -658,27 +658,12 @@ namespace List {
     /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    /// This function allows early termination of a fold.
     ///
     pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, l: List[a]): b & ef = match l {
         case Nil        => z
         case x :: xs    => f(x, _ -> foldRight(f, z, xs))
     }
-
-    ///
-    /// Lazily applies `f` to a start value `s` and all elements in `l` going from right to left.
-    /// The function f must be pure.
-    ///
-    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
-    /// The foldRightLazy function exists to allow early termination of a fold.
-    ///
-    @Experimental
-    @Lazy
-    pub def foldRightLazyOld(f: (a, Lazy[b]) -> b, s: b, l: List[a]): b =
-        def loop(ll) = match ll {
-            case Nil     => s
-            case y :: ys => f(y, lazy loop(ys))
-        };
-        loop(l)
 
     ///
     /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
