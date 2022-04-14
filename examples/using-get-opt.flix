@@ -41,7 +41,7 @@ def listen(x: String): Option[Flag] = match Int32.fromString(x) {
 /// been split on the Space character, we use `GetOpt.preprocess` to rejoin file names that were enclosed in
 /// single-quotes. The new array of arguments with file names rejoined is `args2`.
 def main(): Int32 & Impure =
-    let args = Environment.getArgs() |> List.toArray;
+    let args = Environment.getArgs();
     let args2 = GetOpt.preprocess({quoteOpen = "'", quoteClose = "'", stripQuoteMarks = false}, args);
     let header = "Usage: <program> [OPTION...] files...";
     let options1 = options();
