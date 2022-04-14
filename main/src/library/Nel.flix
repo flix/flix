@@ -369,7 +369,7 @@ namespace Nel {
     /// The foldRightLazy function exists to allow early termination of a fold.
     ///
     pub def foldRightLazy(f: (a, Lazy[b]) -> b, s: b, l: Nel[a]): b = match l {
-        case Nel(x, xs) => f(x, lazy List.foldRightLazy(f, s, xs))
+        case Nel(x, xs) => f(x, lazy List.foldRightLazyOld(f, s, xs))
     }
 
     ///

@@ -673,7 +673,7 @@ namespace List {
     ///
     @Experimental
     @Lazy
-    pub def foldRightLazy(f: (a, Lazy[b]) -> b, s: b, l: List[a]): b =
+    pub def foldRightLazyOld(f: (a, Lazy[b]) -> b, s: b, l: List[a]): b =
         def loop(ll) = match ll {
             case Nil     => s
             case y :: ys => f(y, lazy loop(ys))
