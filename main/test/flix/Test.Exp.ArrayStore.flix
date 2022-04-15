@@ -195,31 +195,31 @@ namespace Test/Exp/ArrayStore {
     @test
     def testArrayStore33(): Unit = region r {
         let x = [[1, 2, 3] @ r] @ r;
-        x[0] @ r[1] = 42
+        x[0][1] = 42
     }
 
     @test
     def testArrayStore34(): Unit = region r {
         let x = [[1, 2] @ r, [1, 2] @ r] @ r;
-        x[1] @ r[0] = 42
+        x[1][0] = 42
     }
 
     @test
     def testArrayStore35(): Unit = region r {
         let x = [[1] @ r, [1, 2, 3, 4, 5, 6, 7, 8] @ r] @ r;
-        x[1] @ r[5] = 42
+        x[1][5] = 42
     }
 
     @test
     def testArrayStore36(): Unit = region r {
         let x = [[1, 2, 3, 4, 5] @ r, [2] @ r] @ r;
-        x[0] @ r[3] = 42
+        x[0][3] = 42
     }
 
     @test
     def testArrayStore37(): Unit = region r {
         let x = [[1, 2, 3] @ r, [1, 2, 3] @ r, [1, 2, 3] @ r] @ r;
-        x[2] @ r[2] = 42
+        x[2][2] = 42
     }
 
     @test
