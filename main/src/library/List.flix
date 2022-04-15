@@ -162,7 +162,7 @@ namespace List {
     ///
     @Time(length(l1)) @Space(length(l1))
     pub def append(l1: List[a], l2: List[a]): List[a] =
-        foldRight((x, acc) -> x :: acc(), l2, l1)
+        foldRight((x, k) -> x :: k(), l2, l1)
 
     ///
     /// Returns `true` if and only if `l` contains the element `x`.
