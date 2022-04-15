@@ -1,442 +1,587 @@
 namespace Test/Exp/Match/Array {
 
     @test
-    def testMatchEmptyUnitArray01(): Bool & Impure = match ([]: Array[Unit]) {
-        case [] => true
-        case _  => false
+    def testMatchEmptyUnitArray01(): Bool = region r {
+        match ([] @ r: ScopedArray[Unit, Pure]) {
+            case [] => true
+            case _  => false
+        }
     }
 
     @test
-    def testMatchEmptyBoolArray01(): Bool & Impure = match ([]: Array[Bool]) {
-        case [] => true
-        case _  => false
+    def testMatchEmptyBoolArray01(): Bool = region r {
+        match ([] @ r: ScopedArray[Bool, Pure]) {
+            case [] => true
+            case _  => false
+        }
     }
 
     @test
-    def testMatchEmptyCharArray01(): Bool & Impure = match ([]: Array[Char]) {
-        case [] => true
-        case _  => false
+    def testMatchEmptyCharArray01(): Bool = region r {
+        match ([] @ r: ScopedArray[Char, Pure]) {
+            case [] => true
+            case _  => false
+        }
     }
 
     @test
-    def testMatchEmptyFloat32Array01(): Bool & Impure = match ([]: Array[Float32]) {
-        case [] => true
-        case _  => false
+    def testMatchEmptyFloat32Array01(): Bool = region r {
+        match ([] @ r: ScopedArray[Float32, Pure]) {
+            case [] => true
+            case _  => false
+        }
     }
 
     @test
-    def testMatchEmptyFloat64Array01(): Bool & Impure = match ([]: Array[Float64]) {
-        case [] => true
-        case _  => false
+    def testMatchEmptyFloat64Array01(): Bool = region r {
+        match ([] @ r: ScopedArray[Float64, Pure]) {
+            case [] => true
+            case _  => false
+        }
     }
 
     @test
-    def testMatchEmptyInt8Array01(): Bool & Impure = match ([]: Array[Int8]) {
-        case [] => true
-        case _  => false
+    def testMatchEmptyInt8Array01(): Bool = region r {
+        match ([] @ r: ScopedArray[Int8, Pure]) {
+            case [] => true
+            case _  => false
+        }
     }
 
     @test
-    def testMatchEmptyInt16Array01(): Bool & Impure = match ([]: Array[Int16]) {
-        case [] => true
-        case _  => false
+    def testMatchEmptyInt16Array01(): Bool = region r {
+        match ([] @ r: ScopedArray[Int16, Pure]) {
+            case [] => true
+            case _  => false
+        }
     }
 
     @test
-    def testMatchEmptyInt64Array01(): Bool & Impure = match ([]: Array[Int64]) {
-        case [] => true
-        case _  => false
+    def testMatchEmptyInt64Array01(): Bool = region r {
+        match ([] @ r: ScopedArray[Int64, Pure]) {
+            case [] => true
+            case _  => false
+        }
     }
 
     @test
-    def testMatchEmptyStringArray01(): Bool & Impure = match ([]: Array[String]) {
-        case [] => true
-        case _  => false
+    def testMatchEmptyStringArray01(): Bool = region r {
+        match ([] @ r: ScopedArray[String, Pure]) {
+            case [] => true
+            case _  => false
+        }
     }
 
     @test
-    def testMatchEmptyBigIntArray01(): Bool & Impure = match ([]: Array[BigInt]) {
-        case [] => true
-        case _  => false
+    def testMatchEmptyBigIntArray01(): Bool = region r {
+        match ([] @ r: ScopedArray[BigInt, Pure]) {
+            case [] => true
+            case _  => false
+        }
     }
 
     @test
-    def testMatchEmptyOptionIntArray01(): Bool & Impure = match ([]: Array[Option[Int32]]) {
-        case [] => true
-        case _  => false
+    def testMatchEmptyOptionIntArray01(): Bool = region r {
+        match ([] @ r: ScopedArray[Option[Int32], Pure]) {
+            case [] => true
+            case _  => false
+        }
     }
 
     @test
-    def testMatchEmptyResultArray01(): Bool & Impure = match ([]: Array[Result[Int32,String]]) {
-        case [] => true
-        case _  => false
+    def testMatchEmptyResultArray01(): Bool = region r {
+        match ([] @ r: ScopedArray[Result[Int32, String], Pure]) {
+            case [] => true
+            case _  => false
+        }
     }
 
     @test
-    def testMatchUnitArray01(): Bool & Impure = match [()] {
-        case [()] => true
-        case _    => false
+    def testMatchUnitArray01(): Bool = region r {
+        match [()] @ r {
+            case [()] => true
+            case _    => false
+        }
     }
 
     @test
-    def testMatchUnitArray02(): Bool & Impure = match [(), ()] {
-        case [(), ()] => true
-        case _        => false
+    def testMatchUnitArray02(): Bool = region r {
+        match [(), ()] @ r {
+            case [(), ()] => true
+            case _        => false
+        }
     }
 
     @test
-    def testMatchUnitArray03(): Bool & Impure = match [[()], [()]] {
-        case [[()], [()]] => true
-        case _            => false
+    def testMatchUnitArray03(): Bool = region r {
+        match [[()], [()]] @ r {
+            case [[()], [()]] => true
+            case _            => false
+        }
     }
 
     @test
-    def testMatchInt8Array1(): Bool & Impure = match [1i8] {
-        case [1i8] => true
-        case _ => false
+    def testMatchInt8Array1(): Bool = region r {
+        match [1i8] @ r {
+            case [1i8] => true
+            case _     => false
+        }
     }
 
     @test
-    def testMatchInt8Array2(): Bool & Impure = match [1i8] {
-        case [2i8] => false
-        case _ => true
+    def testMatchInt8Array2(): Bool = region r {
+        match [1i8] @ r {
+            case [2i8] => false
+            case _     => true
+        }
     }
 
     @test
-    def testMatchInt8Array3(): Bool & Impure = match [1i8,2i8] {
-        case [1i8,2i8] => true
-        case _ => false
+    def testMatchInt8Array3(): Bool = region r {
+        match [1i8, 2i8] @ r {
+            case [1i8, 2i8] => true
+            case _         => false
+        }
     }
 
     @test
-    def testMatchInt8Array4(): Bool & Impure = match [[1i8],[2i8]] {
-        case [[1i8],[2i8]] => true
-        case _ => false
+    def testMatchInt8Array4(): Bool = region r {
+        match [[1i8] @ r, [2i8] @ r] @ r {
+            case [[1i8], [2i8]] => true
+            case _              => false
+        }
     }
 
     @test
-    def testMatchInt16Array1(): Bool & Impure = match [1i16] {
-        case [1i16] => true
-        case _ => false
+    def testMatchInt16Array1(): Bool = region r {
+        match [1i16] @ r {
+            case [1i16] => true
+            case _      => false
+        }
     }
 
     @test
-    def testMatchInt16Array2(): Bool & Impure = match [1i16] {
-        case [2i16] => false
-        case _ => true
+    def testMatchInt16Array2(): Bool = region r {
+        match [1i16] @ r {
+            case [2i16] => false
+            case _      => true
+        }
     }
 
     @test
-    def testMatchInt16Array3(): Bool & Impure = match [1i16,2i16] {
-        case [1i16,2i16] => true
-        case _ => false
+    def testMatchInt16Array3(): Bool = region r {
+        match [1i16, 2i16] @ r {
+            case [1i16, 2i16] => true
+            case _            => false
+        }
     }
 
     @test
-    def testMatchInt16Array4(): Bool & Impure = match [[1i16],[2i16]] {
-        case [[1i16],[2i16]] => true
-        case _ => false
+    def testMatchInt16Array4(): Bool = region r {
+        match [[1i16] @ r, [2i16] @ r] @ r {
+            case [[1i16],[2i16]] => true
+            case _               => false
+        }
     }
 
-
     @test
-    def testMatchInt32Array1(): Bool & Impure = match [1] {
-        case [1] => true
-        case _ => false
+    def testMatchInt32Array1(): Bool = region r {
+        match [1] @ r {
+            case [1] => true
+            case _   => false
+        }
     }
 
     @test
-    def testMatchInt32Array2(): Bool & Impure = match [1,2] {
-        case [1] => false
-        case _ => true
+    def testMatchInt32Array2(): Bool = region r {
+        match [1, 2] @ r {
+            case [1] => false
+            case _   => true
+        }
     }
 
     @test
-    def testMatchInt32Array3(): Bool & Impure = match [1,2] {
-        case [1,2] => true
-        case _ => false
+    def testMatchInt32Array3(): Bool = region r {
+        match [1, 2] @ r {
+            case [1, 2] => true
+            case _      => false
+        }
     }
 
     @test
-    def testMatchInt32Array4(): Bool & Impure = match [1,2] {
-        case [1,_] => true
-        case _ => false
+    def testMatchInt32Array4(): Bool = region r {
+        match [1, 2] @ r {
+            case [1, _] => true
+            case _      => false
+        }
     }
 
     @test
-    def testMatchInt32Array5(): Bool & Impure = match [2,1] {
-        case [1,2] => false
-        case _ => true
+    def testMatchInt32Array5(): Bool = region r {
+        match [2, 1] @ r {
+            case [1, 2] => false
+            case _      => true
+        }
     }
 
     @test
-    def testMatchInt32Array6(): Bool & Impure = match [[1],[2]] {
-        case [[1],[2]] => true
-        case _ => false
+    def testMatchInt32Array6(): Bool = region r {
+        match [[1] @ r, [2] @ r] @ r {
+            case [[1], [2]] => true
+            case _          => false
+        }
     }
 
     @test
-    def testMatchInt32Array7(): Bool & Impure = match [[1],[2]] {
-        case [[1]] => false
-        case _ => true
+    def testMatchInt32Array7(): Bool = region r {
+        match [[1] @ r, [2] @ r] @ r {
+            case [[1]] => false
+            case _     => true
+        }
     }
 
     @test
-    def testMatchInt32Array8(): Bool & Impure = match [[1,2,3],[1,2,3]] {
-        case [[1,2,3],[1,2,3]] => true
-        case _ => false
+    def testMatchInt32Array8(): Bool = region r {
+        match [[1,2,3] @ r, [1,2,3] @ r] @ r {
+            case [[1,2,3], [1,2,3]] => true
+            case _                  => false
+        }
     }
 
     @test
-    def testMatchInt32Array9(): Bool & Impure = match [[[1]],[[2]]] {
-        case [[[1]],[[2]]] => true
-        case _ => false
+    def testMatchInt32Array9(): Bool = region r {
+        match [[[1] @ r] @ r, [[2] @ r] @ r] @ r {
+            case [[[1]], [[2]]] => true
+            case _              => false
+        }
     }
 
     @test
-    def testMatchInt64Array1(): Bool & Impure = match [1i64] {
-        case [1i64] => true
-        case _ => false
+    def testMatchInt64Array1(): Bool = region r {
+        match [1i64] @ r {
+            case [1i64] => true
+            case _      => false
+        }
     }
 
     @test
-    def testMatchInt64Array2(): Bool & Impure = match [1i64] {
-        case [2i64] => false
-        case _ => true
+    def testMatchInt64Array2(): Bool = region r {
+        match [1i64] @ r {
+            case [2i64] => false
+            case _      => true
+        }
     }
 
     @test
-    def testMatchInt64Array3(): Bool & Impure = match [1i64,2i64] {
-        case [1i64,2i64] => true
-        case _ => false
+    def testMatchInt64Array3(): Bool = region r {
+        match [1i64, 2i64] @ r {
+            case [1i64, 2i64] => true
+            case _            => false
+        }
     }
 
     @test
-    def testMatchInt64Array4(): Bool & Impure = match [[1i64],[2i64]] {
-        case [[1i64],[2i64]] => true
-        case _ => false
+    def testMatchInt64Array4(): Bool = region r {
+        match [[1i64] @ r, [2i64] @ r] @ r {
+            case [[1i64], [2i64]] => true
+            case _                => false
+        }
     }
 
     @test
-    def testMatchBigIntArray1(): Bool & Impure = match [1i8] {
-        case [1i8] => true
-        case _ => false
+    def testMatchBigIntArray1(): Bool = region r {
+        match [1i8] @ r {
+            case [1i8] => true
+            case _     => false
+        }
     }
 
     @test
-    def testMatchBigIntArray2(): Bool & Impure = match [1ii] {
-        case [2ii] => false
-        case _ => true
+    def testMatchBigIntArray2(): Bool = region r {
+        match [1ii] @ r {
+            case [2ii] => false
+            case _     => true
+        }
     }
 
     @test
-    def testMatchBigIntArray3(): Bool & Impure = match [1ii,2ii] {
-        case [1ii,2ii] => true
-        case _ => false
+    def testMatchBigIntArray3(): Bool = region r {
+        match [1ii, 2ii] @ r {
+            case [1ii, 2ii] => true
+            case _          => false
+        }
     }
 
     @test
-    def testMatchBigIntArray4(): Bool & Impure = match [[1ii],[2ii]] {
-        case [[1ii],[2ii]] => true
-        case _ => false
+    def testMatchBigIntArray4(): Bool = region r {
+        match [[1ii] @ r, [2ii] @ r] @ r {
+            case [[1ii],[2ii]] => true
+            case _             => false
+        }
     }
 
     @test
-    def testMatchStrArray1(): Bool & Impure = match ["one"] {
-        case ["one"] => true
-        case _ => false
+    def testMatchStrArray1(): Bool = region r {
+        match ["one"] @ r {
+            case ["one"] => true
+            case _       => false
+        }
     }
 
     @test
-    def testMatchStrArray2(): Bool & Impure = match ["one"] {
-        case ["one "] => false
-        case _ => true
+    def testMatchStrArray2(): Bool = region r {
+        match ["one"] @ r {
+            case ["one "] => false
+            case _        => true
+        }
     }
 
     @test
-    def testMatchStrArray3(): Bool & Impure = match ["one","two"] {
-        case ["one", "two"] => true
-        case _ => false
+    def testMatchStrArray3(): Bool = region r {
+        match ["one","two"] @ r {
+            case ["one", "two"] => true
+            case _              => false
+        }
     }
 
     @test
-    def testMatchStrArray4(): Bool & Impure = match [["one"],["two"]] {
-        case [["one"], ["two"]] => true
-        case _ => false
+    def testMatchStrArray4(): Bool = region r {
+        match [["one"] @ r, ["two"] @ r] @ r {
+            case [["one"], ["two"]] => true
+            case _                  => false
+        }
     }
 
     @test
-    def testMatchBoolArray1(): Bool & Impure = match [true] {
-        case [true] => true
-        case _ => false
+    def testMatchBoolArray1(): Bool = region r {
+        match [true] @ r {
+            case [true] => true
+            case _      => false
+        }
     }
 
     @test
-    def testMatchBoolArray2(): Bool & Impure = match [true] {
-        case [false] => false
-        case _ => true
+    def testMatchBoolArray2(): Bool = region r {
+        match [true] @ r {
+            case [false] => false
+            case _       => true
+        }
     }
 
     @test
-    def testMatchBoolArray3(): Bool & Impure = match [true,false] {
-        case [true,false] => true
-        case _ => true
+    def testMatchBoolArray3(): Bool = region r {
+        match [true, false] @ r {
+            case [true, false] => true
+            case _             => false
+        }
     }
 
     @test
-    def testMatchBoolArray4(): Bool & Impure = match [[false],[false]] {
-        case [[false],[false]] => true
-        case _ => true
+    def testMatchBoolArray4(): Bool = region r {
+        match [[false] @ r,[false] @ r] @ r {
+            case [[false], [false]] => true
+            case _                  => false
+        }
     }
 
     @test
-    def testMatchTupleArray1(): Bool & Impure = match [(1,"one")] {
-        case [(1,"one")] => true
-        case _ => false
+    def testMatchTupleArray1(): Bool = region r {
+        match [(1, "one")] @ r {
+            case [(1, "one")] => true
+            case _            => false
+        }
     }
 
     @test
-    def testMatchTupleArray2(): Bool & Impure = match [(1,"one")] {
-        case [(1,"one ")] => false
-        case _ => true
+    def testMatchTupleArray2(): Bool = region r {
+        match [(1, "one")] @ r {
+            case [(1, "one ")] => false // Note the whitespace in the string in the pattern
+            case _             => true
+        }
     }
 
     @test
-    def testMatchTupleArray3(): Bool & Impure = match [(1,"one")] {
-        case [(2,"one")] => false
-        case _ => true
+    def testMatchTupleArray3(): Bool = region r {
+        match [(1, "one")] @ r {
+            case [(2, "one")] => false
+            case _            => true
+        }
     }
 
     @test
-    def testMatchTupleArray4(): Bool & Impure = match [(1,"one"),(2,"two")] {
-        case [(1,"one"),(2,"two")] => true
-        case _ => true
+    def testMatchTupleArray4(): Bool = region r {
+        match [(1, "one"), (2, "two")] @ r {
+            case [(1, "one"), (2, "two")] => true
+            case _                        => false
+        }
     }
 
     @test
-    def testMatchTupleArray5(): Bool & Impure = match [[(1,"one")],[(2,"two")]] {
-        case [[(1,"one")],[(2,"two")]] => true
-        case _ => true
+    def testMatchTupleArray5(): Bool = region r {
+        match [[(1, "one")] @ r, [(2, "two")] @ r] @ r {
+            case [[(1, "one")], [(2, "two")]] => true
+            case _                            => false
+        }
     }
 
     @test
-    def testMatchFloatArray1(): Bool & Impure = match [1.1] {
-        case [1.1] => true
-        case _ => false
+    def testMatchFloatArray1(): Bool = region r {
+        match [1.1] @ r {
+            case [1.1] => true
+            case _     => false
+        }
     }
 
     @test
-    def testMatchFloatArray2(): Bool & Impure = match [1.1] {
-        case [1.2] => false
-        case _ => true
+    def testMatchFloatArray2(): Bool = region r {
+        match [1.1] @ r {
+            case [1.2] => false
+            case _     => true
+        }
     }
 
     @test
-    def testMatchFloatArray3(): Bool & Impure = match [1.1,2.2] {
-        case [1.1,2.2] => true
-        case _ => false
+    def testMatchFloatArray3(): Bool = region r {
+        match [1.1, 2.2] @ r {
+            case [1.1, 2.2] => true
+            case _         => false
+        }
     }
 
     @test
-    def testMatchFloatArray4(): Bool & Impure = match [[1.1],[2.2]] {
-        case [[1.1],[2.2]] => true
-        case _ => false
+    def testMatchFloatArray4(): Bool = region r {
+        match [[1.1] @ r, [2.2] @ r] @ r {
+            case [[1.1], [2.2]] => true
+            case _              => false
+        }
     }
 
     @test
-    def testMatchFloat32Array1(): Bool & Impure = match [1.1f32] {
-        case [1.1f32] => true
-        case _ => false
+    def testMatchFloat32Array1(): Bool = region r {
+        match [1.1f32] @ r {
+            case [1.1f32] => true
+            case _        => false
+        }
     }
 
     @test
-    def testMatchFloat32Array2(): Bool & Impure = match [1.1f32] {
-        case [1.0f32] => false
-        case _ => true
+    def testMatchFloat32Array2(): Bool = region r {
+        match [1.1f32] @ r {
+            case [1.0f32] => false
+            case _        => true
+        }
     }
 
     @test
-    def testMatchFloat32Array3(): Bool & Impure = match [1.1f32,2.2f32] {
-        case [1.1f32,2.2f32] => true
-        case _ => false
+    def testMatchFloat32Array3(): Bool = region r {
+        match [1.1f32, 2.2f32] @ r {
+            case [1.1f32, 2.2f32] => true
+            case _                => false
+        }
     }
 
     @test
-    def testMatchFloat32Array4(): Bool & Impure = match [[1.1f32],[2.2f32]] {
-        case [[1.1f32],[2.2f32]] => true
-        case _ => false
+    def testMatchFloat32Array4(): Bool = region r {
+        match [[1.1f32] @ r, [2.2f32] @ r] @ r {
+            case [[1.1f32], [2.2f32]] => true
+            case _                    => false
+        }
     }
 
     @test
-    def testMatchCharArray1(): Bool & Impure = match ['1'] {
-        case ['1'] => true
-        case _ => false
+    def testMatchCharArray1(): Bool = region r {
+        match ['1'] @ r {
+            case ['1'] => true
+            case _     => false
+        }
     }
 
     @test
-    def testMatchCharArray2(): Bool & Impure = match ['1'] {
-        case ['2'] => false
-        case _ => true
+    def testMatchCharArray2(): Bool = region r {
+        match ['1'] @ r {
+            case ['2'] => false
+            case _     => true
+        }
     }
 
     @test
-    def testMatchCharArray3(): Bool & Impure = match ['1','2'] {
-        case ['1','2'] => true
-        case _ => false
+    def testMatchCharArray3(): Bool = region r {
+        match ['1', '2'] @ r {
+            case ['1', '2'] => true
+            case _          => false
+        }
     }
 
     @test
-    def testMatchCharArray4(): Bool & Impure = match [['1'],['2']] {
-        case [['1'],['2']] => true
-        case _ => false
+    def testMatchCharArray4(): Bool = region r {
+        match [['1'] @ r, ['2'] @ r] @ r {
+            case [['1'], ['2']] => true
+            case _              => false
+        }
     }
 
     @test
-    def testMatchOptionArray1(): Bool & Impure = match [Some(1)] {
-        case [Some(1)] => true
-        case _ => false
+    def testMatchOptionArray1(): Bool = region r {
+        match [Some(1)] @ r {
+            case [Some(1)] => true
+            case _         => false
+        }
     }
 
     @test
-    def testMatchOptionArray2(): Bool & Impure = match [Some(1)] {
-        case [None] => false
-        case _ => true
+    def testMatchOptionArray2(): Bool = region r {
+        match [Some(1)] @ r {
+            case [None] => false
+            case _      => true
+        }
     }
 
     @test
-    def testMatchOptionArray3(): Bool & Impure = match [Some(1),Some(2)] {
-        case [Some(1),Some(2)] => true
-        case _ => false
+    def testMatchOptionArray3(): Bool = region r {
+        match [Some(1), Some(2)] @ r {
+            case [Some(1), Some(2)] => true
+            case _                  => false
+        }
     }
 
     @test
-    def testMatchOptionArray4(): Bool & Impure = match [[Some(1)],[Some(2)]] {
-        case [[Some(1)],[Some(2)]] => true
-        case _ => false
+    def testMatchOptionArray4(): Bool = region r {
+        match [[Some(1)] @ r, [Some(2)] @ r] @ r {
+            case [[Some(1)], [Some(2)]] => true
+            case _                      => false
+        }
     }
 
     @test
-    def testMatchResultArray1(): Bool & Impure = match [Ok(42)] {
-        case [Ok(42)]  => true
-        case _ => false
+    def testMatchResultArray1(): Bool = region r {
+        match [Ok(42)] @ r {
+            case [Ok(42)] => true
+            case _        => false
+        }
     }
 
     @test
-    def testMatchResultArray2(): Bool & Impure = match [Ok(42)] {
-        case [Err(23) ] => false
-        case _ => true
+    def testMatchResultArray2(): Bool = region r {
+        match [Ok(42)] @ r {
+            case [Err(23)] => false
+            case _         => true
+        }
     }
 
     @test
-    def testMatchResultArray3(): Bool & Impure = match [Ok(42),Err(23)] {
-        case [Ok(42),Err(23)]  => true
-        case _ => false
+    def testMatchResultArray3(): Bool = region r {
+        match [Ok(42), Err(23)] @ r {
+            case [Ok(42), Err(23)] => true
+            case _                 => false
+        }
     }
 
     @test
-    def testMatchResultArray4(): Bool & Impure = match [[Ok(42)],[Err(23)]] {
-        case [[Ok(42)],[Err(23)]]  => true
-        case _ => false
+    def testMatchResultArray4(): Bool = region r {
+        match [[Ok(42)] @ r, [Err(23)] @ r] @ r {
+            case [[Ok(42)], [Err(23)]] => true
+            case _                     => false
+        }
     }
 
     enum Option[t] {
