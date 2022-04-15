@@ -384,7 +384,7 @@ pub def biboudisSuite(n: Int32): Array[Benchmark] & Impure =
 
     ]
 
-def main(_args: Array[String]) : Int32 & Impure =
+def main() : Int32 & Impure =
     let s1 = biboudisSuite(100);
     Benchmark.runWithBudget(s1, 250_000_000_000i64);
     0

@@ -52,7 +52,7 @@ import scala.collection.mutable
   *
   * $ wscat -c ws://localhost:8000
   *
-  * > {"id": "1", "request": "api/addUri", "uri": "foo.flix", "src": "def main(_: Array[String]): Int32 & Impure = println(\"Hello World\"); 0"}
+  * > {"id": "1", "request": "api/addUri", "uri": "foo.flix", "src": "def main(): Unit & Impure = println(\"Hello World\")"}
   * > {"id": "2", "request": "lsp/check"}
   * > {"id": "3", "request": "lsp/hover", "uri": "foo.flix", "position": {"line": 1, "character": 25}}
   *

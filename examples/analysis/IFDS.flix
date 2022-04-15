@@ -20,7 +20,7 @@ rel Facts(fact: String)
 rel Id(node: String)
 
 // Rules
-def main(_: Array[String]): Int32 & Impure =
+def main(): Int32 & Impure =
     let p = #{
         // intraproc
         PathEdge(d1,m,d3) :-

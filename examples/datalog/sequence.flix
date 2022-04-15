@@ -1,6 +1,6 @@
 // https://github.com/souffle-lang/benchmarks/tree/master/benchmarks/sequences
 
-def main(_args: Array[String]): Int32 & Impure =
+def main(): Int32 & Impure =
 
     let numLetters = #{NumLetters(20).};
 

@@ -28,7 +28,7 @@ object Options {
     lib = LibLevel.All,
     debug = false,
     documentor = false,
-    entryPoint = Some(Symbol.mkDefnSym("main")),
+    entryPoint = None,
     explain = false,
     incremental = true,
     json = false,

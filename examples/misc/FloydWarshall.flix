@@ -66,7 +66,7 @@ def negativeDist(d: Dist): Bool = match d {
   case _ => false
 }
 
-def main(_: Array[String]): Int32 & Impure =
+def main(): Int32 & Impure =
     let p = #{
         // Copy input relation into the ShortestDist lattice
         ShortestDist(a, b; Dst(d)) :- Edge(a, b, d).

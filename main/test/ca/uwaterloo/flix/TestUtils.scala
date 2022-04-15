@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.{CompilationMessage, ast}
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{Options, Validation}
@@ -60,5 +60,16 @@ trait TestUtils {
 
       if (actuals.exists(rejected.isAssignableFrom(_)))
         fail(s"Unexpected an error of type ${rejected.getSimpleName}.")
+  }
+
+  /**
+    * Asserts that the validation is successful.
+    */
+  def expectSuccess(result: Validation[CompilationResult, CompilationMessage]): Unit = result match {
+    case Validation.Success(_) => ()
+    case Validation.Failure(errors) =>
+      val actuals = errors.map(_.getClass)
+
+      fail(s"Expected success, but found errors ${actuals.mkString(", ")}.")
   }
 }
