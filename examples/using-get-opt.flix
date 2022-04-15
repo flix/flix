@@ -47,5 +47,5 @@ def main(): Unit & Impure =
     let options1 = options();
     match getOpt(Permute, options1, args2) {
         case Success(opts)   => {println("Optionals: ${opts.options}"); println("Non-optionals: ${opts.nonOptions}")}
-        case Failure(errs)  => {println("Errors: ${errs}");  println(usageInfo(header, options1))}
+        case Failure(errs)   => {println("Errors: ${errs}");  println(usageInfo(header, options1))}
     }
