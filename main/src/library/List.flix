@@ -658,7 +658,7 @@ namespace List {
     /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
-    /// This function allows early termination of a fold.
+    /// A `foldRight` allows early termination by not calling the continuation.
     ///
     pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, l: List[a]): b & ef = match l {
         case Nil        => z
@@ -1146,7 +1146,7 @@ namespace List {
     /// Returns the list `l` as a set.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def toSet(l: List[a]): Set[a] with Order[a] = foldRight((x, acc) -> Set.insert(x, acc()), Set.empty(), l)
+    pub def toSet(l: List[a]): Set[a] with Order[a] = foldRight((x, k) -> Set.insert(x, k()), Set.empty(), l)
 
     ///
     /// Returns the association list `l` as a map.
@@ -1155,7 +1155,7 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def toMap(l: List[(a, b)]): Map[a, b] with Order[a] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m()), Map.empty(), l)
+    pub def toMap(l: List[(a, b)]): Map[a, b] with Order[a] = foldRight((x, k) -> Map.insert(fst(x), snd(x), k()), Map.empty(), l)
 
     ///
     /// Returns a map with elements of `s` as keys and `f` applied as values.
@@ -1164,7 +1164,7 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMapWith(f: a -> b, l: List[a]): Map[a, b] with Order[a] =
-            List.foldRight((x, m) -> Map.insert(x, f(x), m()), Map.empty(), l)
+            List.foldRight((x, k) -> Map.insert(x, f(x), k()), Map.empty(), l)
 
     ///
     /// Returns the list `l` as a mutable deque.
@@ -1379,7 +1379,7 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toDelayMap(l: List[(a, b)]): DelayMap[a, b] with Order[a] =
-        List.foldRight((x, m) -> DelayMap.insert(fst(x), snd(x), m()), DelayMap.empty(), l)
+        List.foldRight((x, k) -> DelayMap.insert(fst(x), snd(x), k()), DelayMap.empty(), l)
 
     ///
     /// Helper function for `traverse` and `sequence`.

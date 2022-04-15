@@ -58,7 +58,7 @@ namespace BenchmarkList {
     /// create a list of integers and compute its sum via foldRight.
     ///
     @benchmark
-    pub def benchmark10(): Bool = List.foldRight((x, y) -> x + y(), 0, List.range(0, 1000)) == 499500
+    pub def benchmark10(): Bool = List.foldRight((x, k) -> x + k(), 0, List.range(0, 1000)) == 499500
 
     ///
     /// create two lists of integers, zip them, and compute the length of the result.
