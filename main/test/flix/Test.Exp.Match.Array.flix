@@ -141,7 +141,7 @@ namespace Test/Exp/Match/Array {
     def testMatchInt8Array3(): Bool = region r {
         match [1i8, 2i8] @ r {
             case [1i8, 2i8] => true
-            case _         => false
+            case _          => false
         }
     }
 
