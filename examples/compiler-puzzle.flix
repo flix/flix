@@ -1,7 +1,7 @@
 /// We can use Datalog constraints to solve the following problem:
 /// Given a collection of compilers and interpreters, what source
 /// languages can be compiled to what target languages?
-def main(): Int32 & Impure =
+def main(): Unit & Impure =
     let facts = #{
         /// We have the following interpreters and compilers:
         Interpreter("x86").
@@ -29,5 +29,4 @@ def main(): Int32 & Impure =
             Interpreter(lang).
     };
     query facts, rules
-        select (src, dst) from Compiler(src, _, dst) |> println;
-    0 // exit code
+        select (src, dst) from Compiler(src, _, dst) |> println
