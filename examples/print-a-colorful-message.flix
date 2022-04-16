@@ -1,5 +1,5 @@
 /// Construct colorful messages.
-def main(_args: Array[String]): Int32 & Impure =
+def main(): Int32 & Impure =
   let s1 = "You can print message with " + Console.red("colored text");
   let s2 = " or " + Console.bgBlue("background") + ".";
   println(s1+s2);

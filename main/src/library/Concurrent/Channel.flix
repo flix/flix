@@ -108,7 +108,7 @@ namespace Concurrent/Channel {
     ///
     @Internal
     pub def new(bufferSize: Int32): Mpmc & Impure =
-        import static dev.flix.runtime.GlobalCounter.newId(): Int64 & Impure;
+        import static dev.flix.runtime.Global.newId(): Int64 & Impure;
         let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
         let unBuffered = bufferSize == 0;
         let reentrantLock = Concurrent/ReentrantLock.new(false);

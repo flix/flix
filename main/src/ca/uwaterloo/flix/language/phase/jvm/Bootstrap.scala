@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import java.lang.reflect.Method
+import java.lang.reflect.{InvocationTargetException, Method}
 
 /**
   * Loads all the generated classes into the JVM and decorates the AST.
@@ -13,8 +13,9 @@ object Bootstrap {
 
   /**
     * Loads all the generated classes into the JVM and decorates the AST.
+    * The main functions of `Main.class` is returned if it exists.
     */
-  def bootstrap(classes: Map[JvmName, JvmClass])(implicit flix: Flix, root: Root): Unit = {
+  def bootstrap(classes: Map[JvmName, JvmClass])(implicit flix: Flix, root: Root): Option[Array[String] => Unit] = {
     //
     // Load each class into the JVM in a fresh class loader.
     //
@@ -64,7 +65,34 @@ object Bootstrap {
         // And finally assign the method object to the definition.
         defn.method = method
       }
+
+      if (shouldMainExist) {
+        val mainName = JvmOps.getMainClassType().name
+        val mainClass = loadedClasses.getOrElse(mainName, throw InternalCompilerException(s"Class not found: '${mainName.toInternalName}'."))
+        val mainMethods = allMethods.getOrElse(mainClass, throw InternalCompilerException(s"methods for '${mainName.toInternalName}' not found."))
+        val mainMethod = mainMethods.getOrElse("main", throw InternalCompilerException(s"Cannot find 'main' method of '${mainName.toInternalName}'"))
+
+        // This is a specialized version of the link function in JvmBackend
+        def mainFunction(args: Array[String]): Unit = {
+          try {
+            // Call the method passing the argument array.
+            mainMethod.invoke(null, args)
+            ()
+          } catch {
+            case e: InvocationTargetException =>
+              // Rethrow the underlying exception.
+              throw e.getTargetException
+          }
+        }
+
+        Some(mainFunction)
+      } else None
     }
+  }
+
+  private def shouldMainExist(implicit root: Root): Boolean = {
+    // These two lookups match the condition that genMainClass has for generation.
+    root.entryPoint.flatMap(root.defs.get).isDefined
   }
 
   /**

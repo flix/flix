@@ -8,7 +8,7 @@ def withAge(r: {| a}, v: Int32): {age :: Int32 | a} =
 def withoutAge(r: {age :: Int32 | a}): {| a} = {-age | r}
 
 /// Construct several records and extend them with an age.
-def main(_: Array[String]): Int32 & Impure =
+def main(): Int32 & Impure =
     let r1 = withAge({fstName = "Julius", lstName = "Caesar"}, 55);
     let r2 = withAge({monument = "Flavian Amphitheatre"}, 2019 - 80);
     let r3 = withAge({country = "United States"}, 2019 - 1776);

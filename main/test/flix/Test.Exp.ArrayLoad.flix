@@ -1,237 +1,471 @@
 namespace Test/Exp/ArrayLoad {
 
     @test
-    def testArrayLoad01(): Int32 & Impure = let x = [1]; x[0]
+    def testArrayLoad01(): Int32 = region r {
+        let x = [1] @ r;
+        x[0]
+    }
 
     @test
-    def testArrayLoad02(): Int32 & Impure = let x = [1, 2, 3]; x[2]
+    def testArrayLoad02(): Int32 = region r {
+        let x = [1, 2, 3] @ r;
+        x[2]
+    }
 
     @test
-    def testArrayLoad03(): Int32 & Impure = let x = [1, 2, 3, 4]; x[2]
+    def testArrayLoad03(): Int32 = region r {
+        let x = [1, 2, 3, 4] @ r;
+        x[2]
+    }
 
     @test
-    def testArrayLoad04(): Int32 & Impure = let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]; x[10]
+    def testArrayLoad04(): Int32 = region r {
+        let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] @ r;
+        x[10]
+    }
 
     @test
-    def testArrayLoad05(): Int32 & Impure = let x = [1, 2]; x[1]
+    def testArrayLoad05(): Int32 = region r {
+        let x = [1, 2] @ r;
+        x[1]
+    }
 
     @test
-    def testArrayLoad06(): Bool & Impure = let x = [true]; x[0]
+    def testArrayLoad06(): Bool = region r {
+        let x = [true] @ r;
+        x[0]
+    }
 
     @test
-    def testArrayLoad07(): Bool & Impure = let x = [false]; not x[0]
+    def testArrayLoad07(): Bool = region r {
+        let x = [false] @ r;
+        not x[0]
+    }
 
     @test
-    def testArrayLoad08(): Bool & Impure = let x = [true, false]; not x[1]
+    def testArrayLoad08(): Bool = region r {
+        let x = [true, false] @ r;
+        not x[1]
+    }
 
     @test
-    def testArrayLoad9(): Bool & Impure = let x = [false, true, false]; not x[2]
+    def testArrayLoad9(): Bool = region r {
+        let x = [false, true, false] @ r;
+        not x[2]
+    }
 
     @test
-    def testArrayLoad10(): Bool & Impure = let x = [false, false, false, false, true]; not x[3]
+    def testArrayLoad10(): Bool = region r {
+        let x = [false, false, false, false, true] @ r;
+        not x[3]
+    }
 
     @test
-    def testArrayLoad11(): Char & Impure = let x = ['c']; x[0]
+    def testArrayLoad11(): Char = region r {
+        let x = ['c'] @ r;
+        x[0]
+    }
 
     @test
-    def testArrayLoad12(): Char & Impure = let x = ['a', 'b']; x[0]
+    def testArrayLoad12(): Char = region r {
+        let x = ['a', 'b'] @ r;
+        x[0]
+    }
 
     @test
-    def testArrayLoad13(): Char & Impure = let x = ['a', 'b', 'c']; x[1]
+    def testArrayLoad13(): Char = region r {
+        let x = ['a', 'b', 'c'] @ r;
+        x[1]
+    }
 
     @test
-    def testArrayLoad14(): Char & Impure = let x = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n']; x[9]
+    def testArrayLoad14(): Char = region r {
+        let x = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'] @ r;
+        x[9]
+    }
 
     @test
-    def testArrayLoad15(): Int8 & Impure = let x = [1i8]; x[0]
+    def testArrayLoad15(): Int8 = region r {
+        let x = [1i8] @ r;
+        x[0]
+    }
 
     @test
-    def testArrayLoad16(): Int8 & Impure = let x = [1i8, 2i8, 3i8]; x[1]
+    def testArrayLoad16(): Int8 = region r {
+        let x = [1i8, 2i8, 3i8] @ r;
+        x[1]
+    }
 
     @test
-    def testArrayLoad17(): Int8 & Impure = let x = [1i8, 2i8, 3i8, 4i8]; x[2]
+    def testArrayLoad17(): Int8 = region r {
+        let x = [1i8, 2i8, 3i8, 4i8] @ r;
+        x[2]
+    }
 
     @test
-    def testArrayLoad18(): Int16 & Impure = let x = [1i16]; x[0]
+    def testArrayLoad18(): Int16 = region r {
+        let x = [1i16] @ r;
+        x[0]
+    }
 
     @test
-    def testArrayLoad19(): Int16 & Impure = let x = [1i16, 2i16, 3i16]; x[1]
+    def testArrayLoad19(): Int16 = region r {
+        let x = [1i16, 2i16, 3i16] @ r;
+        x[1]
+    }
 
     @test
-    def testArrayLoad20(): Int16 & Impure = let x = [1i16, 2i16, 3i16, 4i16]; x[2]
+    def testArrayLoad20(): Int16 = region r {
+        let x = [1i16, 2i16, 3i16, 4i16] @ r;
+        x[2]
+    }
 
     @test
-    def testArrayLoad21(): Int64 & Impure = let x = [1i64]; x[0]
+    def testArrayLoad21(): Int64 = region r {
+        let x = [1i64] @ r;
+        x[0]
+    }
 
     @test
-    def testArrayLoad22(): Int64 & Impure = let x = [1i64, 2i64, 3i64]; x[1]
+    def testArrayLoad22(): Int64 = region r {
+        let x = [1i64, 2i64, 3i64] @ r;
+        x[1]
+    }
 
     @test
-    def testArrayLoad23(): Int64 & Impure = let x = [1i64, 2i64, 3i64, 4i64]; x[2]
+    def testArrayLoad23(): Int64 = region r {
+        let x = [1i64, 2i64, 3i64, 4i64] @ r;
+        x[2]
+    }
 
     @test
-    def testArrayLoad24(): Float32 & Impure = let x = [1.0f32]; x[0]
+    def testArrayLoad24(): Float32 = region r {
+        let x = [1.0f32] @ r;
+        x[0]
+    }
 
     @test
-    def testArrayLoad25(): Float32 & Impure = let x = [1.0f32, 2.0f32, 3.0f32]; x[1]
+    def testArrayLoad25(): Float32 = region r {
+        let x = [1.0f32, 2.0f32, 3.0f32] @ r;
+        x[1]
+    }
 
     @test
-    def testArrayLoad26(): Float32 & Impure = let x = [1.0f32, 2.0f32, 3.0f32, 4.0f32]; x[2]
+    def testArrayLoad26(): Float32 = region r {
+        let x = [1.0f32, 2.0f32, 3.0f32, 4.0f32] @ r;
+        x[2]
+    }
 
     @test
-    def testArrayLoad27(): Float64 & Impure = let x = [1.0f64]; x[0]
+    def testArrayLoad27(): Float64 = region r {
+        let x = [1.0f64] @ r;
+        x[0]
+    }
 
     @test
-    def testArrayLoad28(): Float64 & Impure = let x = [1.0f64, 2.0f64, 3.0f64]; x[1]
+    def testArrayLoad28(): Float64 = region r {
+        let x = [1.0f64, 2.0f64, 3.0f64] @ r;
+        x[1]
+    }
 
     @test
-    def testArrayLoad29(): Float64 & Impure = let x = [1.0f64, 2.0f64, 3.0f64, 4.0f64]; x[3]
+    def testArrayLoad29(): Float64 = region r {
+        let x = [1.0f64, 2.0f64, 3.0f64, 4.0f64] @ r;
+        x[3]
+    }
 
     @test
-    def testArrayLoad30(): String & Impure = let x = ["Hello"]; x[0]
+    def testArrayLoad30(): String = region r {
+        let x = ["Hello"] @ r;
+        x[0]
+    }
 
     @test
-    def testArrayLoad31(): String & Impure = let x = ["Hello", "World"]; x[1]
+    def testArrayLoad31(): String = region r {
+        let x = ["Hello", "World"] @ r;
+        x[1]
+    }
 
     @test
-    def testArrayLoad32(): String & Impure = let x = ["World", "Hello", "World"]; x[2]
+    def testArrayLoad32(): String = region r {
+        let x = ["World", "Hello", "World"] @ r;
+        x[2]
+    }
 
     @test
-    def testArrayLoad33(): Int32 & Impure = let x = [[1, 2, 3]]; x[0][1]
+    def testArrayLoad33(): Int32 = region r {
+        let x = [[1, 2, 3] @ r] @ r;
+        x[0][1]
+    }
 
     @test
-    def testArrayLoad34(): Int32 & Impure = let x = [[1, 2], [1, 2]]; x[1][0]
+    def testArrayLoad34(): Int32 = region r {
+        let x = [[1, 2] @ r, [1, 2] @ r] @ r;
+        x[1][0]
+    }
 
     @test
-    def testArrayLoad35(): Int32 & Impure = let x = [[1], [1, 2, 3, 4, 5, 6, 7, 8]]; x[1][5]
+    def testArrayLoad35(): Int32 = region r {
+        let x = [[1] @ r, [1, 2, 3, 4, 5, 6, 7, 8] @ r] @ r;
+        x[1][5]
+    }
 
     @test
-    def testArrayLoad36(): Int32 & Impure = let x = [[1, 2, 3, 4, 5], [2]]; x[0][3]
+    def testArrayLoad36(): Int32 = region r {
+        let x = [[1, 2, 3, 4, 5] @ r, [2] @ r] @ r;
+        x[0][3]
+    }
 
     @test
-    def testArrayLoad37(): Int32 & Impure = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[2][2]
+    def testArrayLoad37(): Int32 = region r {
+        let x = [[1, 2, 3] @ r, [1, 2, 3] @ r, [1, 2, 3] @ r] @ r;
+        x[2][2]
+    }
 
     @test
-    def testArrayLoad38(): Bool & Impure = let x = [[true, false, true]]; x[0] [2]
+    def testArrayLoad38(): Bool = region r {
+        let x = [[true, false, true] @ r] @ r;
+        x[0] [2]
+    }
 
     @test
-    def testArrayLoad39(): Bool & Impure = let x = [[true, true], [true, false]]; not x[1] [1]
+    def testArrayLoad39(): Bool = region r {
+        let x = [[true, true] @ r, [true, false] @ r] @ r;
+        not x[1] [1]
+    }
 
     @test
-    def testArrayLoad40(): Bool & Impure = let x = [[true], [true, false, true, false]]; x[1] [2]
+    def testArrayLoad40(): Bool = region r {
+        let x = [[true] @ r, [true, false, true, false] @ r] @ r;
+        x[1] [2]
+    }
 
     @test
-    def testArrayLoad41(): Bool & Impure = let x = [[true, false, true], [true, false, true], [true, false, true]]; x[2] [2]
+    def testArrayLoad41(): Bool = region r {
+        let x = [[true, false, true] @ r, [true, false, true] @ r, [true, false, true] @ r] @ r;
+        x[2] [2]
+    }
 
     @test
-    def testArrayLoad42(): Char & Impure = let x = [['a', 'b', 'c']]; x[0][1]
+    def testArrayLoad42(): Char = region r {
+        let x = [['a', 'b', 'c'] @ r] @ r;
+        x[0][1]
+    }
 
     @test
-    def testArrayLoad43(): Char & Impure = let x = [['a', 'b'], ['a', 'b']]; x[1][1]
+    def testArrayLoad43(): Char = region r {
+        let x = [['a', 'b'] @ r, ['a', 'b'] @ r] @ r;
+        x[1][1]
+    }
 
     @test
-    def testArrayLoad44(): Char & Impure = let x = [['a'], ['a', 'b', 'c', 'd', 'e']]; x[1][1]
+    def testArrayLoad44(): Char = region r {
+        let x = [['a'] @ r, ['a', 'b', 'c', 'd', 'e'] @ r] @ r;
+        x[1][1]
+    }
 
     @test
-    def testArrayLoad45(): Char & Impure = let x = [['a', 'b', 'c', 'd', 'e'], ['a']]; x[0][3]
+    def testArrayLoad45(): Char = region r {
+        let x = [['a', 'b', 'c', 'd', 'e'] @ r, ['a'] @ r] @ r;
+        x[0][3]
+    }
 
     @test
-    def testArrayLoad46(): Char & Impure = let x = [['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', 'c']]; x[2][1]
+    def testArrayLoad46(): Char = region r {
+        let x = [['a', 'b', 'c'] @ r, ['a', 'b', 'c'] @ r, ['a', 'b', 'c'] @ r] @ r;
+        x[2][1]
+    }
 
     @test
-    def testArrayLoad47(): Int8 & Impure = let x = [[1i8, 2i8, 3i8]]; x[0][1]
+    def testArrayLoad47(): Int8 = region r {
+        let x = [[1i8, 2i8, 3i8] @ r] @ r;
+        x[0][1]
+    }
 
     @test
-    def testArrayLoad48(): Int8 & Impure = let x = [[1i8, 2i8], [1i8, 2i8]]; x[1][0]
+    def testArrayLoad48(): Int8 = region r {
+        let x = [[1i8, 2i8] @ r, [1i8, 2i8] @ r] @ r;
+        x[1][0]
+    }
 
     @test
-    def testArrayLoad49(): Int8 & Impure = let x = [[1i8, 2i8, 3i8, 4i8],[1i8]]; x[0][3]
+    def testArrayLoad49(): Int8 = region r {
+        let x = [[1i8, 2i8, 3i8, 4i8] @ r,[1i8] @ r] @ r;
+        x[0][3]
+    }
 
     @test
-    def testArrayLoad50(): Int8 & Impure = let x = [[1i8], [1i8, 2i8, 3i8, 4i8]]; x[1][3]
+    def testArrayLoad50(): Int8 = region r {
+        let x = [[1i8] @ r, [1i8, 2i8, 3i8, 4i8] @ r] @ r;
+        x[1][3]
+    }
 
     @test
-    def testArrayLoad51(): Int8 & Impure = let x = [[1i8, 2i8, 3i8], [1i8, 2i8, 3i8], [1i8, 2i8, 3i8]]; x[2][2]
+    def testArrayLoad51(): Int8 = region r {
+        let x = [[1i8, 2i8, 3i8] @ r, [1i8, 2i8, 3i8] @ r, [1i8, 2i8, 3i8] @ r] @ r;
+        x[2][2]
+    }
 
     @test
-    def testArrayLoad52(): Int16 & Impure = let x = [[1i16, 2i16, 3i16]]; x[0][1]
+    def testArrayLoad52(): Int16 = region r {
+        let x = [[1i16, 2i16, 3i16] @ r] @ r;
+        x[0][1]
+    }
 
     @test
-    def testArrayLoad53(): Int16 & Impure = let x = [[1i16, 2i16], [1i16, 2i16]]; x[1][1]
+    def testArrayLoad53(): Int16 = region r {
+        let x = [[1i16, 2i16] @ r, [1i16, 2i16] @ r] @ r;
+        x[1][1]
+    }
 
     @test
-    def testArrayLoad54(): Int16 & Impure = let x = [[1i16, 2i16, 3i16, 4i16], [1i16]]; x[0][1]
+    def testArrayLoad54(): Int16 = region r {
+        let x = [[1i16, 2i16, 3i16, 4i16] @ r, [1i16] @ r] @ r;
+        x[0][1]
+    }
 
     @test
-    def testArrayLoad55(): Int16 & Impure = let x = [[1i16], [1i16, 2i16, 3i16, 4i16]]; x[1][1]
+    def testArrayLoad55(): Int16 = region r {
+        let x = [[1i16] @ r, [1i16, 2i16, 3i16, 4i16] @ r] @ r;
+        x[1][1]
+    }
 
     @test
-    def testArrayLoad56(): Int16 & Impure = let x = [[1i16, 2i16, 3i16], [1i16, 2i16, 3i16], [1i16, 2i16, 3i16]]; x[1][2]
+    def testArrayLoad56(): Int16 = region r {
+        let x = [[1i16, 2i16, 3i16] @ r, [1i16, 2i16, 3i16] @ r, [1i16, 2i16, 3i16] @ r] @ r;
+        x[1][2]
+    }
 
     @test
-    def testArrayLoad57(): Int64 & Impure = let x = [[1i64, 2i64, 3i64]]; x[0][2]
+    def testArrayLoad57(): Int64 = region r {
+        let x = [[1i64, 2i64, 3i64] @ r] @ r;
+        x[0][2]
+    }
 
     @test
-    def testArrayLoad58(): Int64 & Impure = let x = [[1i64, 2i64], [1i64, 2i64]]; x[1][1]
+    def testArrayLoad58(): Int64 = region r {
+        let x = [[1i64, 2i64] @ r, [1i64, 2i64] @ r] @ r;
+        x[1][1]
+    }
 
     @test
-    def testArrayLoad59(): Int64 & Impure = let x = [[1i64], [1i64, 2i64, 3i64, 4i64]]; x[1][2]
+    def testArrayLoad59(): Int64 = region r {
+        let x = [[1i64] @ r, [1i64, 2i64, 3i64, 4i64] @ r] @ r;
+        x[1][2]
+    }
 
     @test
-    def testArrayLoad60(): Int64 & Impure = let x = [[1i64, 2i64, 3i64, 4i64], [1i64]]; x[1][0]
+    def testArrayLoad60(): Int64 = region r {
+        let x = [[1i64, 2i64, 3i64, 4i64] @ r, [1i64] @ r] @ r;
+        x[1][0]
+    }
 
     @test
-    def testArrayLoad61(): Int64 & Impure = let x = [[1i64, 2i64, 3i64], [1i64, 2i64, 3i64], [1i64, 2i64, 3i64]]; x[2][0]
+    def testArrayLoad61(): Int64 = region r {
+        let x = [[1i64, 2i64, 3i64] @ r, [1i64, 2i64, 3i64] @ r, [1i64, 2i64, 3i64] @ r] @ r;
+        x[2][0]
+    }
 
     @test
-    def testArrayLoad62(): Float32 & Impure = let x = [[1.0f32, 2.0f32, 3.0f32]]; x[0][0]
+    def testArrayLoad62(): Float32 = region r {
+        let x = [[1.0f32, 2.0f32, 3.0f32] @ r] @ r;
+        x[0][0]
+    }
 
     @test
-    def testArrayLoad63(): Float32 & Impure = let x = [[1.0f32, 2.0f32], [1.0f32, 2.0f32]]; x[1][1]
+    def testArrayLoad63(): Float32 = region r {
+        let x = [[1.0f32, 2.0f32] @ r, [1.0f32, 2.0f32] @ r] @ r;
+        x[1][1]
+    }
 
     @test
-    def testArrayLoad64(): Float32 & Impure = let x = [[1.0f32], [1.0f32, 2.0f32, 3.0f32, 4.0f32]]; x[1][2]
+    def testArrayLoad64(): Float32 = region r {
+        let x = [[1.0f32] @ r, [1.0f32, 2.0f32, 3.0f32, 4.0f32] @ r] @ r;
+        x[1][2]
+    }
 
     @test
-    def testArrayLoad65(): Float32 & Impure = let x = [[1.0f32, 2.0f32, 3.0f32, 4.0f32], [1.0f32]]; x[0][2]
+    def testArrayLoad65(): Float32 = region r {
+        let x = [[1.0f32, 2.0f32, 3.0f32, 4.0f32] @ r, [1.0f32] @ r] @ r;
+        x[0][2]
+    }
 
     @test
-    def testArrayLoad66(): Float32 & Impure = let x = [[1.0f32, 2.0f32, 3.0f32], [1.0f32, 2.0f32, 3.0f32], [1.0f32, 2.0f32, 3.0f32]]; x[2][2]
+    def testArrayLoad66(): Float32 = region r {
+        let x = [[1.0f32, 2.0f32, 3.0f32] @ r, [1.0f32, 2.0f32, 3.0f32] @ r, [1.0f32, 2.0f32, 3.0f32] @ r] @ r;
+        x[2][2]
+    }
 
     @test
-    def testArrayLoad67(): Float64 & Impure = let x = [[1.0f64, 2.0f64, 3.0f64]]; x[0][0]
+    def testArrayLoad67(): Float64 = region r {
+        let x = [[1.0f64, 2.0f64, 3.0f64] @ r] @ r;
+        x[0][0]
+    }
 
     @test
-    def testArrayLoad68(): Float64 & Impure = let x = [[1.0f64, 2.0f64], [1.0f64, 2.0f64]]; x[1][1]
+    def testArrayLoad68(): Float64 = region r {
+        let x = [[1.0f64, 2.0f64] @ r, [1.0f64, 2.0f64] @ r] @ r;
+        x[1][1]
+    }
 
     @test
-    def testArrayLoad69(): Float64 & Impure = let x = [[1.0f64, 2.0f64, 3.0f64, 4.0f64], [1.0f64]]; x[0][1]
+    def testArrayLoad69(): Float64 = region r {
+        let x = [[1.0f64, 2.0f64, 3.0f64, 4.0f64] @ r, [1.0f64] @ r] @ r;
+        x[0][1]
+    }
 
     @test
-    def testArrayLoad70(): Float64 & Impure = let x = [[1.0f64, 2.0f64, 3.0f64], [1.0f64, 2.0f64, 3.0f64], [1.0f64, 2.0f64, 3.0f64]]; x[2][2]
+    def testArrayLoad70(): Float64 = region r {
+        let x = [[1.0f64, 2.0f64, 3.0f64] @ r, [1.0f64, 2.0f64, 3.0f64] @ r, [1.0f64, 2.0f64, 3.0f64] @ r] @ r;
+        x[2][2]
+    }
 
     @test
-    def testArrayLoad71(): String & Impure = let x = [["Hello", "Hello", "Hello"]]; x[0][0]
+    def testArrayLoad71(): String = region r {
+        let x = [["Hello", "Hello", "Hello"] @ r] @ r;
+        x[0][0]
+    }
 
     @test
-    def testArrayLoad72(): String & Impure = let x = [["Hello", "Hello"], ["World", "World"]]; x[1][1]
+    def testArrayLoad72(): String = region r {
+        let x = [["Hello", "Hello"] @ r, ["World", "World"] @ r] @ r;
+        x[1][1]
+    }
 
     @test
-    def testArrayLoad73(): String & Impure = let x = [["Hello"], ["World", "World", "World", "World"]]; x[1][3]
+    def testArrayLoad73(): String = region r {
+        let x = [["Hello"] @ r, ["World", "World", "World", "World"] @ r] @ r;
+        x[1][3]
+    }
 
     @test
-    def testArrayLoad74(): String & Impure = let x = [["World", "World", "World", "World"], ["Hello"]]; x[0][3]
+    def testArrayLoad74(): String = region r {
+        let x = [["World", "World", "World", "World"] @ r, ["Hello"] @ r] @ r;
+        x[0][3]
+    }
 
     @test
-    def testArrayLoad75(): String & Impure = let x = [["World", "World", "World"], ["World", "World", "World"], ["World", "World", "World"]]; x[1][2]
+    def testArrayLoad75(): String = region r {
+        let x = [["World", "World", "World"] @ r, ["World", "World", "World"] @ r, ["World", "World", "World"] @ r] @ r;
+        x[1][2]
+    }
 
     @test
-    def testArrayLoad77(): Option[Int32] & Impure = let x = [Some(5), Some(6), Some(7)]; x[1]
+    def testArrayLoad77(): Option[Int32] = region r {
+        let x = [Some(5), Some(6), Some(7)] @ r;
+        x[1]
+    }
 
     @test
-    def testArrayLoad78(): Option[Int32] & Impure = let x = [[None, Some(4), Some(999)], [Some(9), Some(5), None, None]]; x[1][2]
+    def testArrayLoad78(): Option[Int32] = region r {
+        let x = [[None, Some(4), Some(999)] @ r, [Some(9), Some(5), None, None] @ r] @ r;
+        x[1][2]
+    }
 
     @test
-    def testArrayLoad79(): Array[List[Int32]] & Impure = let x = [[1 :: Nil], [3 :: Nil]]; x[0]
-
+    def testArrayLoad79(): Unit = region r {
+        let x = [[1 :: Nil] @ r, [3 :: Nil] @ r] @ r;
+        let _ = x[0];
+        ()
+    }
 }

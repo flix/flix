@@ -1,7 +1,7 @@
 /// We can use Datalog constraints to solve the following problem:
 /// Given a collection of compilers and interpreters, what source
 /// languages can be compiled to what target languages?
-def main(_args: Array[String]): Int32 & Impure =
+def main(): Int32 & Impure =
     let facts = #{
         /// We have the following interpreters and compilers:
         Interpreter("x86").
