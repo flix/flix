@@ -1,5 +1,5 @@
 namespace Test/Exp/Match/Array {
-
+/*
     @test
     def testMatchEmptyUnitArray01(): Bool = region r {
         match ([]: ScopedArray[Unit, Pure] @ r) {
@@ -95,6 +95,7 @@ namespace Test/Exp/Match/Array {
             case _  => false
         }
     }
+*/
 
     @test
     def testMatchUnitArray01(): Bool = region r {
