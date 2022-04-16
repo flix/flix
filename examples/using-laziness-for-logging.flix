@@ -13,6 +13,5 @@ def log(_: Lazy[String]): Unit & Impure = () as & Impure
 
 /// Writes a message to the log.
 /// The slow function will not be evaluated.
-def main(): Int32 & Impure =
-    log(lazy "The computation returned ${slowFunction()}");
-    0 // exit code
+def main(): Unit & Impure =
+    log(lazy "The computation returned ${slowFunction()}")
