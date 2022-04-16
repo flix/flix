@@ -1,5 +1,5 @@
 // Working with files and directories in Flix.
-def main(): Int32 & Impure =
+def main(): Unit & Impure =
   let f = "README.md";
   let dir = "src";
 
@@ -16,6 +16,4 @@ def main(): Int32 & Impure =
       println("All files or directories in ${dir} is: '${subpaths}'.")
     }
     case Err(msg)     => println("An error occurred with message: ${msg}")
-  };
-
-  0 // exit code
+  }

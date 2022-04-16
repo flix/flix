@@ -1,5 +1,5 @@
 // Getting information on files with Flix.
-def main(): Int32 & Impure =
+def main(): Unit & Impure =
   let f = "README.md";
 
   // Check if the file 'README.md' exists.
@@ -18,6 +18,4 @@ def main(): Int32 & Impure =
       println("The creation time of ${f} is: ${stats.creationTime}.")
     }
     case Err(msg)    => println("An error occurred with message: ${msg}")
-  };
-
-  0 // exit code
+  }

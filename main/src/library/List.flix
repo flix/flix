@@ -75,7 +75,7 @@ instance Monad[List] {
 
 instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: List[a]): b & ef = List.foldLeft(f, s, l)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef = List.foldRight(f, s, l)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef = List.foldRightOld(f, s, l)
 }
 
 instance Traversable[List] {
@@ -162,7 +162,7 @@ namespace List {
     ///
     @Time(length(l1)) @Space(length(l1))
     pub def append(l1: List[a], l2: List[a]): List[a] =
-        foldRight((x, acc) -> x :: acc, l2, l1)
+        foldRight((x, k) -> x :: k(), l2, l1)
 
     ///
     /// Returns `true` if and only if `l` contains the element `x`.
@@ -646,7 +646,7 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef =
+    pub def foldRightOld(f: (a, b) -> b & ef, s: b, l: List[a]): b & ef =
         def loop(ll, k) = match ll {
             case Nil     => k(s)
             case x :: xs => loop(xs, ks -> k(f(x, ks)))
@@ -655,20 +655,15 @@ namespace List {
                                   // but the intermediate continuations are effect polymorphic
 
     ///
-    /// Lazily applies `f` to a start value `s` and all elements in `l` going from right to left.
-    /// The function f must be pure.
+    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
     ///
-    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
-    /// The foldRightLazy function exists to allow early termination of a fold.
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    @Experimental
-    @Lazy
-    pub def foldRightLazy(f: (a, Lazy[b]) -> b, s: b, l: List[a]): b =
-        def loop(ll) = match ll {
-            case Nil     => s
-            case y :: ys => f(y, lazy loop(ys))
-        };
-        loop(l)
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, l: List[a]): b & ef = match l {
+        case Nil        => z
+        case x :: xs    => f(x, _ -> foldRight(f, z, xs))
+    }
 
     ///
     /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -1151,7 +1146,7 @@ namespace List {
     /// Returns the list `l` as a set.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def toSet(l: List[a]): Set[a] with Order[a] = foldRight(Set.insert, Set.empty(), l)
+    pub def toSet(l: List[a]): Set[a] with Order[a] = foldRight((x, k) -> Set.insert(x, k()), Set.empty(), l)
 
     ///
     /// Returns the association list `l` as a map.
@@ -1160,7 +1155,7 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def toMap(l: List[(a, b)]): Map[a, b] with Order[a] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), l)
+    pub def toMap(l: List[(a, b)]): Map[a, b] with Order[a] = foldRight((x, k) -> Map.insert(fst(x), snd(x), k()), Map.empty(), l)
 
     ///
     /// Returns a map with elements of `s` as keys and `f` applied as values.
@@ -1169,7 +1164,7 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMapWith(f: a -> b, l: List[a]): Map[a, b] with Order[a] =
-            List.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), l)
+            List.foldRight((x, k) -> Map.insert(x, f(x), k()), Map.empty(), l)
 
     ///
     /// Returns the list `l` as a mutable deque.
@@ -1384,7 +1379,7 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toDelayMap(l: List[(a, b)]): DelayMap[a, b] with Order[a] =
-        List.foldRight((x, m) -> DelayMap.insert(fst(x), snd(x), m), DelayMap.empty(), l)
+        List.foldRight((x, k) -> DelayMap.insert(fst(x), snd(x), k()), DelayMap.empty(), l)
 
     ///
     /// Helper function for `traverse` and `sequence`.
