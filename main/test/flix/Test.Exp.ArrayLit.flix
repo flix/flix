@@ -1,524 +1,351 @@
 namespace Test/Exp/ArrayLit {
 
     @test
-    def testArrayLit01(): Unit = region r {
-        let _ = [];
-        ()
-    }
+    def testArrayLit01(): ScopedArray[Unit, Impure] & Impure =
+        []
 
     @test
-    def testArrayLit02(): Unit = region r {
-        let _ = [1];
-        ()
-    }
+    def testArrayLit02(): ScopedArray[Int32, Impure] & Impure =
+        [1]
 
     @test
-    def testArrayLit04(): Unit = region r {
-        let _ = [1, 2, 3, 4];
-        ()
-    }
+    def testArrayLit04(): ScopedArray[Int32, Impure] & Impure =
+        [1, 2, 3, 4]
 
     @test
-    def testArrayLit05(): Unit = region r {
-        let _ = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
-        ()
-    }
+    def testArrayLit05(): ScopedArray[Int32, Impure] & Impure =
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
     @test
-    def testArrayLit06(): Unit = region r {
-        let _ = [1, 2];
-        ()
-    }
+    def testArrayLit06(): ScopedArray[Int32, Impure] & Impure =
+        [1, 2]
 
     @test
-    def testArrayLit07(): Unit = region r {
-        let _ = [true];
-        ()
-    }
+    def testArrayLit07(): ScopedArray[Bool, Impure] & Impure =
+        [true]
 
     @test
-    def testArrayLit08(): Unit = region r {
-        let _ = [false];
-        ()
-    }
+    def testArrayLit08(): ScopedArray[Bool, Impure] & Impure =
+        [false]
 
     @test
-    def testArrayLit09(): Unit = region r {
-        let _ = [true, false];
-        ()
-    }
+    def testArrayLit09(): ScopedArray[Bool, Impure] & Impure =
+        [true, false]
 
     @test
-    def testArrayLit10(): Unit = region r {
-        let _ = [false, true, false];
-        ()
-    }
+    def testArrayLit10(): ScopedArray[Bool, Impure] & Impure =
+        [false, true, false]
 
     @test
-    def testArrayLit11(): Unit = region r {
-        let _ = [false, false, false, false, true];
-        ()
-    }
+    def testArrayLit11(): ScopedArray[Bool, Impure] & Impure =
+        [false, false, false, false, true]
 
     @test
-    def testArrayLit12(): Unit = region r {
-        let _ = ['c'];
-        ()
-    }
+    def testArrayLit12(): ScopedArray[Char, Impure] & Impure =
+        ['c']
 
     @test
-    def testArrayLit13(): Unit = region r {
-        let _ = ['a', 'b'];
-        ()
-    }
+    def testArrayLit13(): ScopedArray[Char, Impure] & Impure =
+        ['a', 'b']
 
     @test
-    def testArrayLit14(): Unit = region r {
-        let _ = ['a', 'b', 'c'];
-        ()
-    }
+    def testArrayLit14(): ScopedArray[Char, Impure] & Impure =
+        ['a', 'b', 'c']
 
     @test
-    def testArrayLit15(): Unit = region r {
-        let _ = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'];
-        ()
-    }
+    def testArrayLit15(): ScopedArray[Char, Impure] & Impure =
+        ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n']
 
     @test
-    def testArrayLit16(): Unit = region r {
-        let _ = [1i8];
-        ()
-    }
+    def testArrayLit16(): ScopedArray[Int8, Impure] & Impure =
+        [1i8]
 
     @test
-    def testArrayLit17(): Unit = region r {
-        let _ = [1i8, 2i8, 3i8];
-        ()
-    }
+    def testArrayLit17(): ScopedArray[Int8, Impure] & Impure =
+        [1i8, 2i8, 3i8]
 
     @test
-    def testArrayLit18(): Unit = region r {
-        let _ = [1i8, 2i8, 3i8, 4i8];
-        ()
-    }
+    def testArrayLit18(): ScopedArray[Int8, Impure] & Impure =
+        [1i8, 2i8, 3i8, 4i8]
 
     @test
-    def testArrayLit19(): Unit = region r {
-        let _ = [1i16];
-        ()
-    }
+    def testArrayLit19(): ScopedArray[Int16, Impure] & Impure =
+        [1i16]
 
     @test
-    def testArrayLit20(): Unit = region r {
-        let _ = [1i16, 2i16, 3i16];
-        ()
-    }
+    def testArrayLit20(): ScopedArray[Int16, Impure] & Impure =
+        [1i16, 2i16, 3i16]
 
     @test
-    def testArrayLit21(): Unit = region r {
-        let _ = [1i16, 2i16, 3i16, 4i16];
-        ()
-    }
+    def testArrayLit21(): ScopedArray[Int16, Impure] & Impure =
+        [1i16, 2i16, 3i16, 4i16]
 
     @test
-    def testArrayLit22(): Unit = region r {
-        let _ = [1i64];
-        ()
-    }
+    def testArrayLit22(): ScopedArray[Int64, Impure] & Impure =
+        [1i64]
 
     @test
-    def testArrayLit23(): Unit = region r {
-        let _ = [1i64, 2i64, 3i64];
-        ()
-    }
+    def testArrayLit23(): ScopedArray[Int64, Impure] & Impure =
+        [1i64, 2i64, 3i64]
 
     @test
-    def testArrayLit24(): Unit = region r {
-        let _ = [1i64, 2i64, 3i64, 4i64];
-        ()
-    }
+    def testArrayLit24(): ScopedArray[Int64, Impure] & Impure =
+        [1i64, 2i64, 3i64, 4i64]
 
     @test
-    def testArrayLit25(): Unit = region r {
-        let _ = [1.0f32];
-        ()
-    }
+    def testArrayLit25(): ScopedArray[Float32, Impure] & Impure =
+        [1.0f32]
 
     @test
-    def testArrayLit26(): Unit = region r {
-        let _ = [1.0f32, 2.0f32, 3.0f32];
-        ()
-    }
+    def testArrayLit26(): ScopedArray[Float32, Impure] & Impure =
+        [1.0f32, 2.0f32, 3.0f32]
 
     @test
-    def testArrayLit27(): Unit = region r {
-        let _ = [1.0f32, 2.0f32, 3.0f32, 4.0f32];
-        ()
-    }
+    def testArrayLit27(): ScopedArray[Float32, Impure] & Impure =
+        [1.0f32, 2.0f32, 3.0f32, 4.0f32]
 
     @test
-    def testArrayLit28(): Unit = region r {
-        let _ = [1.0f64];
-        ()
-    }
+    def testArrayLit28(): ScopedArray[Float64, Impure] & Impure =
+        [1.0f64]
 
     @test
-    def testArrayLit29(): Unit = region r {
-        let _ = [1.0f64, 2.0f64, 3.0f64];
-        ()
-    }
+    def testArrayLit29(): ScopedArray[Float64, Impure] & Impure =
+        [1.0f64, 2.0f64, 3.0f64]
 
     @test
-    def testArrayLit30(): Unit = region r {
-        let _ = [1.0f64, 2.0f64, 3.0f64, 4.0f64];
-        ()
-    }
+    def testArrayLit30(): ScopedArray[Float64, Impure] & Impure =
+        [1.0f64, 2.0f64, 3.0f64, 4.0f64]
 
     @test
-    def testArrayLit31(): Unit = region r {
-        let _ = ["Hello"];
-        ()
-    }
+    def testArrayLit31(): ScopedArray[String, Impure] & Impure =
+        ["Hello"]
 
     @test
-    def testArrayLit32(): Unit = region r {
-        let _ = ["Hello", "World"];
-        ()
-    }
+    def testArrayLit32(): ScopedArray[String, Impure] & Impure =
+        ["Hello", "World"]
 
     @test
-    def testArrayLit33(): Unit = region r {
-        let _ = ["World", "Hello", "World"];
-        ()
-    }
+    def testArrayLit33(): ScopedArray[String, Impure] & Impure =
+        ["World", "Hello", "World"]
 
     @test
-    def testArrayLit34(): Unit = region r {
-        let _ = [[1,2,3]];
-        ()
-    }
+    def testArrayLit34(): ScopedArray[ScopedArray[Int32, Impure], Impure] & Impure =
+        [[1,2,3]]
 
     @test
-    def testArrayLit35(): Unit = region r {
-        let _ = [[1, 2], [1, 2]];
-        ()
-    }
+    def testArrayLit35(): ScopedArray[ScopedArray[Int32, Impure], Impure] & Impure =
+        [[1, 2], [1, 2]]
 
     @test
-    def testArrayLit36(): Unit = region r {
-        let _ = [[1], [1, 2, 3, 4, 5, 6, 7, 8]];
-        ()
-    }
+    def testArrayLit36(): ScopedArray[ScopedArray[Int32, Impure], Impure] & Impure =
+        [[1], [1, 2, 3, 4, 5, 6, 7, 8]]
 
     @test
-    def testArrayLit37(): Unit = region r {
-        let _ = [[1, 2, 3, 4, 5], [2]];
-        ()
-    }
+    def testArrayLit37(): ScopedArray[ScopedArray[Int32, Impure], Impure] & Impure =
+        [[1, 2, 3, 4, 5], [2]]
 
     @test
-    def testArrayLit38(): Unit = region r {
-        let _ = [[1, 2, 3], [1, 2, 3], [1, 2, 3]];
-        ()
-    }
+    def testArrayLit38(): ScopedArray[ScopedArray[Int32, Impure], Impure] & Impure =
+        [[1, 2, 3], [1, 2, 3], [1, 2, 3]]
 
     @test
-    def testArrayLit39(): Unit = region r {
-        let _ = [[true, false]];
-        ()
-    }
+    def testArrayLit39(): ScopedArray[ScopedArray[Bool, Impure], Impure] & Impure =
+        [[true, false]]
 
     @test
-    def testArrayLit40(): Unit = region r {
-        let _ = [[true, false], [true, false]];
-        ()
-    }
+    def testArrayLit40(): ScopedArray[ScopedArray[Bool, Impure], Impure] & Impure =
+        [[true, false], [true, false]]
 
     @test
-    def testArrayLit41(): Unit = region r {
-        let _ = [[true], [true, true, false, false]];
-        ()
-    }
+    def testArrayLit41(): ScopedArray[ScopedArray[Bool, Impure], Impure] & Impure =
+        [[true], [true, true, false, false]]
 
     @test
-    def testArrayLit42(): Unit = region r {
-        let _ = [[true, false, true, false, true, false], [true]];
-        ()
-    }
+    def testArrayLit42(): ScopedArray[ScopedArray[Bool, Impure], Impure] & Impure =
+        [[true, false, true, false, true, false], [true]]
 
     @test
-    def testArrayLit43(): Unit = region r {
-        let _ = [[true, true, true], [false, false, false], [false, true, false]];
-        ()
-    }
+    def testArrayLit43(): ScopedArray[ScopedArray[Bool, Impure], Impure] & Impure =
+        [[true, true, true], [false, false, false], [false, true, false]]
 
     @test
-    def testArrayLit44(): Unit = region r {
-        let _ = [['a', 'b', 'c']];
-        ()
-    }
+    def testArrayLit44(): ScopedArray[ScopedArray[Char, Impure], Impure] & Impure =
+        [['a', 'b', 'c']]
 
     @test
-    def testArrayLit45(): Unit = region r {
-        let _ = [['a', 'b'], ['a', 'b']];
-        ()
-    }
+    def testArrayLit45(): ScopedArray[ScopedArray[Char, Impure], Impure] & Impure =
+        [['a', 'b'], ['a', 'b']]
 
     @test
-    def testArrayLit46(): Unit = region r {
-        let _ = [['a'], ['a', 'b', 'c', 'd', 'e']];
-        ()
-    }
+    def testArrayLit46(): ScopedArray[ScopedArray[Char, Impure], Impure] & Impure =
+        [['a'], ['a', 'b', 'c', 'd', 'e']]
 
     @test
-    def testArrayLit47(): Unit = region r {
-        let _ = [['a', 'b', 'c', 'd', 'e'], ['a']];
-        ()
-    }
+    def testArrayLit47(): ScopedArray[ScopedArray[Char, Impure], Impure] & Impure =
+        [['a', 'b', 'c', 'd', 'e'], ['a']]
 
     @test
-    def testArrayLit48(): Unit = region r {
-        let _ = [['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', 'c']];
-        ()
-    }
+    def testArrayLit48(): ScopedArray[ScopedArray[Char, Impure], Impure] & Impure =
+        [['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', 'c']]
 
     @test
-    def testArrayLit49(): Unit = region r {
-        let _ = [[1i8, 2i8, 3i8]];
-        ()
-    }
+    def testArrayLit49(): ScopedArray[ScopedArray[Int8, Impure], Impure] & Impure =
+        [[1i8, 2i8, 3i8]]
 
     @test
-    def testArrayLit50(): Unit = region r {
-        let _ = [[1i8, 2i8], [1i8, 2i8]];
-        ()
-    }
+    def testArrayLit50(): ScopedArray[ScopedArray[Int8, Impure], Impure] & Impure =
+        [[1i8, 2i8], [1i8, 2i8]]
 
     @test
-    def testArrayLit51(): Unit = region r {
-        let _ = [[1i8], [1i8, 2i8, 3i8, 4i8, 5i8, 6i8]];
-        ()
-    }
+    def testArrayLit51(): ScopedArray[ScopedArray[Int8, Impure], Impure] & Impure =
+        [[1i8], [1i8, 2i8, 3i8, 4i8, 5i8, 6i8]]
 
     @test
-    def testArrayLit52(): Unit = region r {
-        let _ = [[1i8, 2i8, 3i8, 4i8, 5i8, 6i8], [1i8]];
-        ()
-    }
+    def testArrayLit52(): ScopedArray[ScopedArray[Int8, Impure], Impure] & Impure =
+        [[1i8, 2i8, 3i8, 4i8, 5i8, 6i8], [1i8]]
 
     @test
-    def testArrayLit53(): Unit = region r {
-        let _ = [[1i8, 2i8, 3i8], [1i8, 2i8, 3i8], [1i8, 2i8, 3i8]];
-        ()
-    }
+    def testArrayLit53(): ScopedArray[ScopedArray[Int8, Impure], Impure] & Impure =
+        [[1i8, 2i8, 3i8], [1i8, 2i8, 3i8], [1i8, 2i8, 3i8]]
 
     @test
-    def testArrayLit54(): Unit = region r {
-        let _ = [[1i16, 2i16, 3i16]];
-        ()
-    }
+    def testArrayLit54(): ScopedArray[ScopedArray[Int16, Impure], Impure] & Impure =
+        [[1i16, 2i16, 3i16]]
 
     @test
-    def testArrayLit55(): Unit = region r {
-        let _ = [[1i16, 2i16], [1i16, 2i16]];
-        ()
-    }
+    def testArrayLit55(): ScopedArray[ScopedArray[Int16, Impure], Impure] & Impure =
+        [[1i16, 2i16], [1i16, 2i16]]
 
     @test
-    def testArrayLit56(): Unit = region r {
-        let _ = [[1i16], [1i16, 2i16, 3i16, 4i16, 5i16, 6i16]];
-        ()
-    }
+    def testArrayLit56(): ScopedArray[ScopedArray[Int16, Impure], Impure] & Impure =
+        [[1i16], [1i16, 2i16, 3i16, 4i16, 5i16, 6i16]]
 
     @test
-    def testArrayLit57(): Unit = region r {
-        let _ = [[1i16, 2i16, 3i16, 4i16, 5i16, 6i16], [1i16]];
-        ()
-    }
+    def testArrayLit57(): ScopedArray[ScopedArray[Int16, Impure], Impure] & Impure =
+        [[1i16, 2i16, 3i16, 4i16, 5i16, 6i16], [1i16]]
 
     @test
-    def testArrayLit58(): Unit = region r {
-        let _ = [[1i16, 2i16, 3i16], [1i16, 2i16, 3i16], [1i16, 2i16, 3i16]];
-        ()
-    }
+    def testArrayLit58(): ScopedArray[ScopedArray[Int16, Impure], Impure] & Impure =
+        [[1i16, 2i16, 3i16], [1i16, 2i16, 3i16], [1i16, 2i16, 3i16]]
 
     @test
-    def testArrayLit59(): Unit = region r {
-        let _ = [[1i64, 2i64, 3i64]];
-        ()
-    }
+    def testArrayLit59(): ScopedArray[ScopedArray[Int64, Impure], Impure] & Impure =
+        [[1i64, 2i64, 3i64]]
 
     @test
-    def testArrayLit60(): Unit = region r {
-        let _ = [[1i64, 2i64], [1i64, 2i64]];
-        ()
-    }
+    def testArrayLit60(): ScopedArray[ScopedArray[Int64, Impure], Impure] & Impure =
+        [[1i64, 2i64], [1i64, 2i64]]
 
     @test
-    def testArrayLit61(): Unit = region r {
-        let _ = [[1i64], [1i64, 2i64, 3i64, 4i64, 5i64, 6i64]];
-        ()
-    }
+    def testArrayLit61(): ScopedArray[ScopedArray[Int64, Impure], Impure] & Impure =
+        [[1i64], [1i64, 2i64, 3i64, 4i64, 5i64, 6i64]]
 
     @test
-    def testArrayLit62(): Unit = region r {
-        let _ = [[1i64, 2i64, 3i64, 4i64, 5i64, 6i64], [1i64]];
-        ()
-    }
+    def testArrayLit62(): ScopedArray[ScopedArray[Int64, Impure], Impure] & Impure =
+        [[1i64, 2i64, 3i64, 4i64, 5i64, 6i64], [1i64]]
 
     @test
-    def testArrayLit63(): Unit = region r {
-        let _ = [[1i64, 2i64, 3i64], [1i64, 2i64, 3i64], [1i64, 2i64, 3i64]];
-        ()
-    }
+    def testArrayLit63(): ScopedArray[ScopedArray[Int64, Impure], Impure] & Impure =
+        [[1i64, 2i64, 3i64], [1i64, 2i64, 3i64], [1i64, 2i64, 3i64]]
 
     @test
-    def testArrayLit64(): Unit = region r {
-        let _ = [[1.0f32, 2.0f32, 3.0f32]];
-        ()
-    }
+    def testArrayLit64(): ScopedArray[ScopedArray[Float32, Impure], Impure] & Impure =
+        [[1.0f32, 2.0f32, 3.0f32]]
 
     @test
-    def testArrayLit65(): Unit = region r {
-        let _ = [[1.0f32, 2.0f32], [1.0f32, 2.0f32]];
-        ()
-    }
+    def testArrayLit65(): ScopedArray[ScopedArray[Float32, Impure], Impure] & Impure =
+        [[1.0f32, 2.0f32], [1.0f32, 2.0f32]]
 
     @test
-    def testArrayLit66(): Unit = region r {
-        let _ = [[1.0f32], [1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32]];
-        ()
-    }
+    def testArrayLit66(): ScopedArray[ScopedArray[Float32, Impure], Impure] & Impure =
+        [[1.0f32], [1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32]]
 
     @test
-    def testArrayLit67(): Unit = region r {
-        let _ = [[1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32], [1.0f32]];
-        ()
-    }
+    def testArrayLit67(): ScopedArray[ScopedArray[Float32, Impure], Impure] & Impure =
+        [[1.0f32, 2.0f32, 3.0f32, 4.0f32, 5.0f32, 6.0f32], [1.0f32]]
 
     @test
-    def testArrayLit68(): Unit = region r {
-        let _ = [[1.0f64, 2.0f64, 3.0f64]];
-        ()
-    }
+    def testArrayLit68(): ScopedArray[ScopedArray[Float64, Impure], Impure] & Impure =
+        [[1.0f64, 2.0f64, 3.0f64]]
 
     @test
-    def testArrayLit69(): Unit = region r {
-        let _ = [[1.0f64, 2.0f64], [3.0f64, 4.0f64]];
-        ()
-    }
+    def testArrayLit69(): ScopedArray[ScopedArray[Float64, Impure], Impure] & Impure =
+        [[1.0f64, 2.0f64], [3.0f64, 4.0f64]]
 
     @test
-    def testArrayLit70(): Unit = region r {
-        let _ = [[1.0f64], [1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64]];
-        ()
-    }
+    def testArrayLit70(): ScopedArray[ScopedArray[Float64, Impure], Impure] & Impure =
+        [[1.0f64], [1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64]]
 
     @test
-    def testArrayLit71(): Unit = region r {
-        let _ = [[1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64], [1.0f64]];
-        ()
-    }
+    def testArrayLit71(): ScopedArray[ScopedArray[Float64, Impure], Impure] & Impure =
+        [[1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64], [1.0f64]]
 
     @test
-    def testArrayLit72(): Unit = region r {
-        let _ = [[1.0f64, 2.0f64, 3.0f64], [1.0f64, 2.0f64, 3.0f64], [1.0f64, 2.0f64, 3.0f64]];
-        ()
-    }
+    def testArrayLit72(): ScopedArray[ScopedArray[Float64, Impure], Impure] & Impure =
+        [[1.0f64, 2.0f64, 3.0f64], [1.0f64, 2.0f64, 3.0f64], [1.0f64, 2.0f64, 3.0f64]]
 
     @test
-    def testArrayLit73(): Unit = region r {
-        let _ = [["Hello"]];
-        ()
-    }
+    def testArrayLit73(): ScopedArray[ScopedArray[String, Impure], Impure] & Impure =
+        [["Hello"]]
 
     @test
-    def testArrayLit74(): Unit = region r {
-        let _ = [["Hello"], ["World"]];
-        ()
-    }
+    def testArrayLit74(): ScopedArray[ScopedArray[String, Impure], Impure] & Impure =
+        [["Hello"], ["World"]]
 
     @test
-    def testArrayLit75(): Unit = region r {
-        let _ = [["Hello"], ["Hello", "World", "World", "Hello"]];
-        ()
-    }
+    def testArrayLit75(): ScopedArray[ScopedArray[String, Impure], Impure] & Impure =
+        [["Hello"], ["Hello", "World", "World", "Hello"]]
 
     @test
-    def testArrayLit76(): Unit = region r {
-        let _ = [["Hello", "World", "World", "Hello"], ["Hello"]];
-        ()
-    }
+    def testArrayLit76(): ScopedArray[ScopedArray[String, Impure], Impure] & Impure =
+        [["Hello", "World", "World", "Hello"] ,["Hello"]]
 
     @test
-    def testArrayLit77(): Unit = region r {
-        let _ = [(12, 42)];
-        ()
-    }
+    def testArrayLit77(): ScopedArray[(Int32, Int32), Impure] & Impure =
+        [(12, 42)]
 
     @test
-    def testArrayLit78(): Unit = region r {
-        let _ = [(12, 42, 34), (12, 42, 34)];
-        ()
-    }
+    def testArrayLit78(): ScopedArray[(Int32, Int32, Int32), Impure] & Impure =
+        [(12, 42, 34), (12, 42, 34)]
 
     @test
-    def testArrayLit79(): Unit = region r {
-        let _ = [(12, 42, 12), (12, 23, 12), (12,12,12)];
-        ()
-    }
+    def testArrayLit79(): ScopedArray[(Int32, Int32, Int32), Impure] & Impure =
+        [(12, 42, 12), (12, 23, 12), (12,12,12)]
 
     @test
-    def testArrayLit80(): Unit = region r {
-        let _ = [(12, 42, 12, 12), (12, 23, 12, 12), (12,12,12, 31)];
-        ()
-    }
+    def testArrayLit80(): ScopedArray[(Int32, Int32, Int32, Int32), Impure] & Impure =
+        [(12, 42, 12, 12), (12, 23, 12, 12), (12,12,12, 31)]
 
     @test
-    def testArrayLit81(): Unit = region r {
-        let _ = [(1,1), (1,1), (2,2), (3,3), (1,1), (2,1), (5,5)];
-        ()
-    }
+    def testArrayLit81(): ScopedArray[(Int32, Int32), Impure] & Impure =
+        [(1,1), (1,1), (2,2), (3,3), (1,1), (2,1), (5,5)]
 
     @test
-    def testArrayLit82(): Unit = region r {
-        let _ = [(true, true)];
-        ()
-    }
+    def testArrayLit82(): ScopedArray[(Bool, Bool), Impure] & Impure =
+        [(true, true)]
 
     @test
-    def testArrayLit83(): Unit = region r {
-        let _ = [(true, true, true), (true, true, true)];
-        ()
-    }
+    def testArrayLit83(): ScopedArray[(Bool, Bool, Bool), Impure] & Impure =
+        [(true, true, true), (true, true, true)]
 
     @test
-    def testArrayLit84(): Unit = region r {
-        let _ = [(true, true, true), (true, false, false), (true, true, false)];
-        ()
-    }
+    def testArrayLit84(): ScopedArray[(Bool, Bool, Bool), Impure] & Impure =
+        [(true, true, true), (true, false, false), (true, true, false)]
 
     @test
-    def testArrayLit85(): Unit = region r {
-        let _ = [(Nil)];
-        ()
-    }
+    def testArrayLit85(): ScopedArray[(List[Int32]), Impure] & Impure =
+        [(Nil)]
 
     @test
-    def testArrayLit86(): Unit = region r {
-        let _ = [(1 :: Nil)];
-        ()
-    }
+    def testArrayLit86(): ScopedArray[(List[Int32]), Impure] & Impure =
+        [(1 :: Nil)]
 
     @test
-    def testArrayLit88(): Unit = region r {
-        let _ = [Some("Hello World")];
-        ()
-    }
+    def testArrayLit88(): ScopedArray[Option[String], Impure] & Impure =
+        [Some("Hello World")]
 
     @test
-    def testArrayLit89(): Unit = region r {
-        let _ = [Some(1), Some(2), None];
-        ()
-    }
+    def testArrayLit89(): ScopedArray[Option[Int32], Impure] & Impure =
+        [Some(1), Some(2), None]
+
 }
