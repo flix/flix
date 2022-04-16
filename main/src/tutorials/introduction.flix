@@ -172,7 +172,7 @@ def isMaybeZero(e: Constant): Bool = match e {
     case Top    => true
 }
 
-pub def main(): Int32 & Impure =
+def main(): Unit & Impure =
     let p = #{
         //
         // We can now define the semantic rules of the analysis.
@@ -234,7 +234,7 @@ pub def main(): Int32 & Impure =
     };
     let m = solve p;
     (m |> Fixpoint.unsafePrint) as & Impure;
-    0
+    ()
 
 //
 // We can now run our program with Flix and inspect the output!
