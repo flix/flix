@@ -40,12 +40,12 @@ def listen(x: String): Option[Flag] = match Int32.fromString(x) {
 /// Note in this case we want to allow file names to contain spaces - the initial array `args` has
 /// been split on the Space character, we use `GetOpt.preprocess` to rejoin file names that were enclosed in
 /// single-quotes. The new array of arguments with file names rejoined is `args2`.
-def main(): Int32 & Impure =
+def main(): Unit & Impure =
     let args = Environment.getArgs();
     let args2 = GetOpt.preprocess({quoteOpen = "'", quoteClose = "'", stripQuoteMarks = false}, args);
     let header = "Usage: <program> [OPTION...] files...";
     let options1 = options();
     match getOpt(Permute, options1, args2) {
-        case Success(opts)   => {println("Optionals: ${opts.options}"); println("Non-optionals: ${opts.nonOptions}"); 0}
-        case Failure(errs)  => {println("Errors: ${errs}");  println(usageInfo(header, options1)); 1}
+        case Success(opts)   => {println("Optionals: ${opts.options}"); println("Non-optionals: ${opts.nonOptions}")}
+        case Failure(errs)   => {println("Errors: ${errs}");  println(usageInfo(header, options1))}
     }
