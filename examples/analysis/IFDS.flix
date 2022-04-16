@@ -20,7 +20,7 @@ rel Facts(fact: String)
 rel Id(node: String)
 
 // Rules
-def main(): Int32 & Impure =
+def main(): Unit & Impure =
     let p = #{
         // intraproc
         PathEdge(d1,m,d3) :-
@@ -113,4 +113,4 @@ def main(): Int32 & Impure =
     };
     let m = solve p;
     (m |> Fixpoint.unsafePrint) as & Impure;
-    0
+    ()
