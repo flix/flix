@@ -1,4 +1,4 @@
-def main(): Int32 & Impure =
+def main(): Unit & Impure =
     // Test an input word and print the output
     def trial(input) = {
         let res = input |>
@@ -11,9 +11,7 @@ def main(): Int32 & Impure =
     trial("ABBAIsCool");
     trial("Hello");
     trial("YaddaYaddaYadda");
-    trial("abammabba");
-
-    0
+    trial("abammabba")
 
 ///
 /// Finds one of the longest palindrome sequences of `s` and return the interval (both ends inclusive).

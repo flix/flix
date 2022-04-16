@@ -75,9 +75,8 @@ def evalBExp(e: BExp): Bool = match e {
 }
 
 /// We can now run it!
-def main(): Int32 & Impure =
+def main(): Unit & Impure =
     let r = evalAExp(
         IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21))
     );
-    r |> println;
-    0 // exit code
+    r |> println
