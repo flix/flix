@@ -1,4 +1,4 @@
-def main(_args: Array[String]): Int32 & Impure =
+def main(): Int32 & Impure =
     // Test an input word and print the output
     def trial(input) = {
         let res = input |>

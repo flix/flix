@@ -1,5 +1,10 @@
 on: [pull_request]
 
+# Cancel previous runs if the PR is updated
+concurrency:
+  cancel-in-progress: true
+  group: community-build-${{ github.ref }}
+
 jobs:
   community-build:
 

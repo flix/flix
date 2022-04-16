@@ -1636,7 +1636,7 @@ object Resolver {
       }
 
     case NamedAst.Type.RecordRowEmpty(loc) =>
-      Type.RecordRowEmpty.toSuccess
+      Type.mkRecordRowEmpty(loc).toSuccess
 
     case NamedAst.Type.RecordRowExtend(field, value, rest, loc) =>
       val vVal = semiResolveType(value, ns0, root)
@@ -1652,7 +1652,7 @@ object Resolver {
       }
 
     case NamedAst.Type.SchemaRowEmpty(loc) =>
-      Type.SchemaRowEmpty.toSuccess
+      Type.mkSchemaRowEmpty(loc).toSuccess
 
     case NamedAst.Type.SchemaRowExtendWithAlias(qname, targs, rest, loc) =>
       // Lookup the type alias.

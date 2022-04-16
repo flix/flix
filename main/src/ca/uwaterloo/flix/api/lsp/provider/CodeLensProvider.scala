@@ -16,17 +16,12 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Index, Range}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Root, Spec}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Root, Spec}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.{JArray, JObject, JString}
 import org.json4s.JsonDSL._
 
 object CodeLensProvider {
-
-  /**
-    * Represents an entry point.
-    */
-  case class EntryPoint(defn: Def, hasArgs: Boolean)
 
   /**
     * Processes a codelens request.
@@ -43,51 +38,37 @@ object CodeLensProvider {
     if (root == null) {
       return Nil
     }
-
     getEntryPoints(uri).flatMap {
-      case EntryPoint(defn, hasArgs) =>
-        val args = List(JString(defn.sym.toString))
+      case sym =>
+        val args = List(JString(sym.toString))
         val runMain = Command("Run", "flix.runMain", args)
         val runMainWithArgs = Command("Run with args...", "flix.runMainWithArgs", args)
         val runMainNewTerminal = Command("Run (in new terminal)", "flix.runMainNewTerminal", args)
         val runMainNewTerminalWithArgs = Command("Run with args... (in new terminal)", "flix.runMainNewTerminalWithArgs", args)
-        val range = Range.from(defn.sym.loc)
+        val range = Range.from(sym.loc)
 
-        if (!hasArgs)
-          List(
-            CodeLens(range, Some(runMain)),
-            CodeLens(range, Some(runMainNewTerminal)),
-          )
-        else
-          List(
-            CodeLens(range, Some(runMainWithArgs)),
-            CodeLens(range, Some(runMainNewTerminalWithArgs))
-          )
+        List(
+          CodeLens(range, Some(runMain)),
+          CodeLens(range, Some(runMainWithArgs)),
+          CodeLens(range, Some(runMainNewTerminal)),
+          CodeLens(range, Some(runMainNewTerminalWithArgs))
+        )
     }
   }
 
   /**
     * Returns all entry points in the given `uri`.
     */
-  private def getEntryPoints(uri: String)(implicit root: Root): List[EntryPoint] = root.defs.foldLeft(List.empty[EntryPoint]) {
-    case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPointNoArgs(defn.spec) => EntryPoint(defn, hasArgs = false) :: acc
-    case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPointWithArgs(defn.spec) => EntryPoint(defn, hasArgs = true) :: acc
+  private def getEntryPoints(uri: String)(implicit root: Root): List[Symbol.DefnSym] = root.defs.foldLeft(List.empty[Symbol.DefnSym]) {
+    case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPoint(defn.spec) => defn.sym :: acc
     case (acc, _) => acc
   }
 
   /**
-    * Returns `true` if the given `spec` is an entry point and takes no arguments.
+    * Returns `true` if the given `spec` is an entry point.
     */
-  private def isEntryPointNoArgs(s: Spec): Boolean = s.fparams match {
+  private def isEntryPoint(s: Spec): Boolean = s.fparams match {
     case fparam :: Nil => isUnitType(fparam.tpe)
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if the given `spec` is an entry point and takes arguments.
-    */
-  private def isEntryPointWithArgs(s: Spec): Boolean = s.fparams match {
-    case fparam :: Nil => isStringArrayType(fparam.tpe)
     case _ => false
   }
 
@@ -96,14 +77,6 @@ object CodeLensProvider {
     */
   private def isUnitType(tpe: Type): Boolean = tpe.typeConstructor match {
     case Some(TypeConstructor.Unit) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if the given type `tpe` is the Array[String] type.
-    */
-  private def isStringArrayType(tpe: Type): Boolean = tpe.typeConstructor match {
-    case Some(TypeConstructor.ScopedArray) => true
     case _ => false
   }
 
