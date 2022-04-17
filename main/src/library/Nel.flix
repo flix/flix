@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/// test
+///
 /// The NonEmptyList type.
 ///
 pub enum Nel[a] {
