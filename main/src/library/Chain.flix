@@ -56,7 +56,7 @@ instance Monad[Chain] {
 
 instance Foldable[Chain] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldLeft(f, s, c)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRight(f, s, c)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRightOld(f, s, c)
 }
 
 instance Traversable[Chain] {
@@ -476,6 +476,18 @@ namespace Chain {
         def loop(cc, acc) = match viewLeft(cc) {
             case NoneLeft        => acc
             case SomeLeft(a, rs) => loop(rs, f(acc, a))
+        };
+        loop(c, s)
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `c` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRightOld(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef =
+        def loop(cc, acc) = match viewRight(cc) {
+            case NoneRight        => acc
+            case SomeRight(rs, a) => loop(rs, f(a, acc))
         };
         loop(c, s)
 
