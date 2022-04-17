@@ -179,7 +179,7 @@ namespace Chain {
     ///
     /// Returns the length of `c`.
     ///
-    pub def length(c: Chain[a]): Int32 = foldRight((_, acc) -> acc + 1, 0, c)
+    pub def length(c: Chain[a]): Int32 = foldRight((_, k) -> k() + 1, 0, c)
 
     ///
     /// Returns a new chain formed by appending the chains `c1` and `c2`.
@@ -712,7 +712,7 @@ namespace Chain {
     /// Returns `c` as a list.
     ///
     pub def toList(c: Chain[a]): List[a] =
-        foldRight((x, acc) -> x :: acc, Nil, c)
+        foldRight((x, k) -> x :: k(), Nil, c)
 
     ///
     /// Returns `c` as a mutable list.
@@ -724,8 +724,7 @@ namespace Chain {
     /// Returns the list `c` as a set.
     ///
     pub def toSet(c: Chain[a]): Set[a] with Order[a] =
-        foldRight(Set.insert, Set.empty(), c)
-
+        foldRight((x, k) -> Set.insert(x, k()), Set.empty(), c)
 
     ///
     /// Returns the chain of pairs `c` that represents an association list as a map.
@@ -734,7 +733,7 @@ namespace Chain {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMap(c: Chain[(a, b)]): Map[a, b] with Order[a] =
-        foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), c)
+        foldRight((x, k) -> Map.insert(fst(x), snd(x), k()), Map.empty(), c)
 
 
     ///
