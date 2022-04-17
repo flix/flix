@@ -46,10 +46,9 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileB,
       s"""
-         |def main(): Int32 & Impure =
+         |def main(): Unit & Impure =
          |    println(f(true));
-         |    println(C.cd(1) |> C.cda);
-         |    0
+         |    println(C.cd(1) |> C.cda)
          |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
@@ -100,9 +99,8 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileB,
       s"""
-         |def main(): Int32 & Impure =
-         |    println(f(123));
-         |    0
+         |def main(): Unit & Impure =
+         |    println(f(123))
          |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
@@ -127,9 +125,8 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileB,
       s"""
-         |def main(): Int32 & Impure =
-         |    println(f("Hello World"));
-         |    0
+         |def main(): Unit & Impure =
+         |    println(f("Hello World"))
          |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
@@ -182,10 +179,9 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileB,
       s"""
-         |def main(): Int32 & Impure =
+         |def main(): Unit & Impure =
          |    println(f(1i64, 2i64));
-         |    println(C.cd(1i64) |> C.cda);
-         |    0
+         |    println(C.cd(1i64) |> C.cda)
          |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
@@ -234,10 +230,9 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileB,
       s"""
-         |def main(): Int32 & Impure =
+         |def main(): Unit & Impure =
          |    println(F.f(true));
-         |    println(C.cd(1i8) |> C.cda);
-         |    0
+         |    println(C.cd(1i8) |> C.cda)
          |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
