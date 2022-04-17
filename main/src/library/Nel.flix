@@ -67,7 +67,9 @@ instance Monad[Nel] {
 
 instance Foldable[Nel] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldLeft(f, s, l)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldRight(f, s, l)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, l: Nel[a]): b & ef = match l {
+        case Nel(x, xs) => f(x, List.foldRightOld(f, s, xs))
+    }
 }
 
 instance Traversable[Nel] {
@@ -356,26 +358,11 @@ namespace Nel {
     /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, l: Nel[a]): b & ef = match l {
-        case Nel(x, xs) => f(x, List.foldRightOld(f, s, xs))
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, l: Nel[a]): b & ef = match l {
+        case Nel(x, xs) => f(x, _ -> List.foldRight(f, z, xs))
     }
-
-    ///
-    /// Lazily applies `f` to a start value `s` and all elements in `l` going from right to left.
-    /// The function f must be pure.
-    ///
-    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
-    /// The foldRightLazy function exists to allow early termination of a fold.
-    ///
-    pub def foldRightLazy(f: (a, Lazy[b]) -> b, s: b, l: Nel[a]): b =
-        def loop(ll) = match ll {
-            case Nil     => s
-            case y :: ys => f(y, lazy loop(ys))
-        };
-        match l {
-            case Nel(x, xs) => f(x, lazy loop(xs))
-        }
 
     ///
     /// Left-associative reduction of a structure.
@@ -627,7 +614,7 @@ namespace Nel {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMapWith(f: a -> b, l: Nel[a]): Map[a, b] with Order[a] =
-        Nel.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), l)
+        Nel.foldRight((x, k) -> Map.insert(x, f(x), k()), Map.empty(), l)
 
     ///
     /// Returns the concatenation of the string representation
