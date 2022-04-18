@@ -13,6 +13,7 @@ class LangSuite extends Suites(
   // Declarations.
   //
   new FlixTest("Test.Dec.Class", "main/test/flix/Test.Dec.Class.flix"),
+  new FlixTest("Test.Dec.Effect", "main/test/flix/Test.Dec.Effect.flix"),
   new FlixTest("Test.Dec.Enum", "main/test/flix/Test.Dec.Enum.flix"),
   new FlixTest("Test.Dec.Namespace", "main/test/flix/Test.Dec.Namespace.flix"),
   new FlixTest("Test.Dec.OpaqueType", "main/test/flix/Test.Dec.OpaqueType.flix"),
