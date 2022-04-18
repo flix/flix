@@ -237,6 +237,24 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
+    def Effect: Rule1[ParsedAst.Declaration] = {
+      def Head = rule {
+        Documentation ~ Modifiers ~ SP ~ keyword("eff") ~ WS ~ Names.Effect ~ optWS ~ TypeParams
+      }
+
+      def EmptyBody = namedRule("EffectBody") {
+        push(Nil) ~ SP
+      }
+
+      def NonEmptyBody = namedRule("EffectBody") {
+        optWS ~ "{" ~ zeroOrMore(Declarations.Def) ~ optWS ~ "}" ~ SP
+      }
+
+      rule {
+        Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Effect
+      }
+    }
+
     def TypeParam: Rule1[ParsedAst.TypeParam] = rule {
       SP ~ Names.Variable ~ optional(optWS ~ ":" ~ optWS ~ Kind) ~ SP ~> ParsedAst.TypeParam
     }
