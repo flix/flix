@@ -912,21 +912,32 @@ object ParsedAst {
     /**
       * Try Expression.
       *
-      * @param sp1   the position of the first character in the expression.
-      * @param exp   the guarded expression.
-      * @param end   the end of the try expression. // MATT weird name
-      * @param sp2   the position of the last character in the expression.
+      * @param sp1         the position of the first character in the expression.
+      * @param exp         the guarded expression.
+      * @param catchOrWith the handler (catch/with) of the try expression.
+      * @param sp2         the position of the last character in the expression.
       */
-    case class Try(sp1: SourcePosition, exp: ParsedAst.Expression, end: TryEnd, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Try(sp1: SourcePosition, exp: ParsedAst.Expression, catchOrWith: CatchOrWith, sp2: SourcePosition) extends ParsedAst.Expression
 
-    // MATT docs
-    // MATT weird name
-    sealed trait TryEnd
+    /**
+      * An enum representing the handler of a `try` expression.
+      */
+    sealed trait CatchOrWith
 
-    object TryEnd {
-      case class Catch(rules: Seq[ParsedAst.CatchRule]) extends TryEnd
+    object CatchOrWith {
+      /**
+        * A `catch` expression for handling Java exceptions.
+        *
+        * @param rules the catch rules.
+        */
+      case class Catch(rules: Seq[ParsedAst.CatchRule]) extends CatchOrWith
 
-      case class With(rules: Seq[ParsedAst.WithRule]) extends TryEnd
+      /**
+        * A `with` expression for handling Flix effects.
+        *
+        * @param rules the handler rules.
+        */
+      case class With(rules: Seq[ParsedAst.WithRule]) extends CatchOrWith
     }
 
     /**

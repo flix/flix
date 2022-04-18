@@ -843,19 +843,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         keyword("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ atomic("##") ~ Names.JavaName ~ WS ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.CatchRule
       }
 
-      def CatchBody: Rule1[ParsedAst.Expression.TryEnd] = rule {
-        keyword("catch") ~ optWS ~ "{" ~ optWS ~ oneOrMore(CatchRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.Expression.TryEnd.Catch
+      def CatchBody: Rule1[ParsedAst.Expression.CatchOrWith] = rule {
+        keyword("catch") ~ optWS ~ "{" ~ optWS ~ oneOrMore(CatchRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.Expression.CatchOrWith.Catch
       }
 
       def WithRule: Rule1[ParsedAst.WithRule] = rule {
         keyword("case") ~ WS ~ Names.QualifiedEffect ~ FormalParamList ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.WithRule
       }
 
-      def WithBody: Rule1[ParsedAst.Expression.TryEnd] = rule {
-        keyword("with") ~ optWS ~ "{" ~ optWS ~ oneOrMore(WithRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.Expression.TryEnd.With
+      def WithBody: Rule1[ParsedAst.Expression.CatchOrWith] = rule {
+        keyword("with") ~ optWS ~ "{" ~ optWS ~ oneOrMore(WithRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.Expression.CatchOrWith.With
       }
 
-      def Body: Rule1[ParsedAst.Expression.TryEnd] = rule {
+      def Body: Rule1[ParsedAst.Expression.CatchOrWith] = rule {
         CatchBody | WithBody
       }
 

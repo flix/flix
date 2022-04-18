@@ -1300,7 +1300,7 @@ object Weeder {
         case e => WeededAst.Expression.Cast(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
-    case ParsedAst.Expression.Try(sp1, exp, ParsedAst.Expression.TryEnd.Catch(rules), sp2) =>
+    case ParsedAst.Expression.Try(sp1, exp, ParsedAst.Expression.CatchOrWith.Catch(rules), sp2) =>
       val expVal = visitExp(exp)
       val rulesVal = traverse(rules) {
         case ParsedAst.CatchRule(ident, fqn, body) =>
@@ -1314,7 +1314,7 @@ object Weeder {
       }
 
       // not handling these rules yet
-    case ParsedAst.Expression.Try(sp1, exp, ParsedAst.Expression.TryEnd.With(rules), sp2) =>
+    case ParsedAst.Expression.Try(sp1, exp, ParsedAst.Expression.CatchOrWith.With(rules), sp2) =>
       WeededAst.Expression.Hole(None, mkSL(sp1, sp2)).toSuccess
 
     // TODO SJ: Rewrite to Ascribe(newch, Channel[Int32]), to remove the tpe (and get tvar like everything else)
