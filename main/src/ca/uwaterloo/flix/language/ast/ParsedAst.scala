@@ -466,6 +466,13 @@ object ParsedAst {
       */
     case class Default(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Literal
 
+    /**
+      * Resume Literal.
+      *
+      * @param sp1 the position of the first character in the literal.
+      * @param sp2 the position of the last character in the literal.
+      */
+    case class Resume(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Literal
   }
 
   /**

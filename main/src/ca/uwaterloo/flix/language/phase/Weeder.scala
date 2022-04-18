@@ -1313,7 +1313,7 @@ object Weeder {
         case (e, rs) => WeededAst.Expression.TryCatch(e, rs, mkSL(sp1, sp2))
       }
 
-      // not handling these rules yet
+    // not handling these rules yet
     case ParsedAst.Expression.Try(sp1, exp, ParsedAst.Expression.CatchOrWith.With(rules), sp2) =>
       WeededAst.Expression.Hole(None, mkSL(sp1, sp2)).toSuccess
 
@@ -1750,6 +1750,10 @@ object Weeder {
 
     case ParsedAst.Literal.Default(sp1, sp2) =>
       WeededAst.Expression.Default(mkSL(sp1, sp2)).toSuccess
+
+    // ignoring resume expression for now
+    case ParsedAst.Literal.Resume(sp1, sp2) =>
+      WeededAst.Expression.Hole(None, mkSL(sp1, sp2)).toSuccess
   }
 
   /**
@@ -1799,6 +1803,9 @@ object Weeder {
       }
     case ParsedAst.Literal.Default(sp1, sp2) =>
       throw InternalCompilerException(s"Illegal default pattern near: ${mkSL(sp1, sp2).format}")
+    case ParsedAst.Literal.Resume(sp1, sp2) =>
+      throw InternalCompilerException(s"Illegal resume pattern near: ${mkSL(sp1, sp2).format}")
+      // TODO: turn into a real error
   }
 
   /**

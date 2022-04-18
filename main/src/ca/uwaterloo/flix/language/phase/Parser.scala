@@ -358,7 +358,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    Literals.Null | Literals.Bool | Literals.Char | Literals.Str | Literals.Default | Literals.Float | Literals.Int
+    Literals.Null | Literals.Bool | Literals.Char | Literals.Str | Literals.Default | Literals.Float | Literals.Int | Literals.Resume
   }
 
   object Literals {
@@ -437,6 +437,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Default: Rule1[ParsedAst.Literal.Default] = rule {
       SP ~ keyword("$DEFAULT$") ~ SP ~> ParsedAst.Literal.Default
+    }
+
+    def Resume: Rule1[ParsedAst.Literal.Resume] = rule {
+      SP ~ keyword("resume") ~ SP ~> ParsedAst.Literal.Resume
     }
 
     def Sign: Rule1[Boolean] = rule {
