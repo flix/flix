@@ -137,6 +137,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("law") ~ WS ~ Names.Definition ~ optWS ~ ":" ~ optWS ~ keyword("forall") ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ OptTypeConstraintList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
     }
 
+    def Op: Rule1[ParsedAst.Declaration.Op] = rule {
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndPurity ~ OptTypeConstraintList ~ SP ~> ParsedAst.Declaration.Op
+    }
+
     def Enum: Rule1[ParsedAst.Declaration.Enum] = {
       def Case: Rule1[ParsedAst.Case] = {
         def CaseWithUnit: Rule1[ParsedAst.Case] = namedRule("Case") {
@@ -247,7 +251,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def NonEmptyBody = namedRule("EffectBody") {
-        optWS ~ "{" ~ zeroOrMore(Declarations.Def) ~ optWS ~ "}" ~ SP
+        optWS ~ "{" ~ zeroOrMore(Declarations.Op) ~ optWS ~ "}" ~ SP
       }
 
       rule {
