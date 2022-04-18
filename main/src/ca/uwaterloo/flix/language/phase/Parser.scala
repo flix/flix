@@ -107,7 +107,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Relation |
       Declarations.Lattice |
       Declarations.Class |
-      Declarations.Instance
+      Declarations.Instance |
+      Declarations.Effect
   }
 
   def UseDeclarations: Rule1[Seq[ParsedAst.Use]] = rule {
@@ -1611,7 +1612,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName
 
-    def Effect: Rule1[Name.Ident] = LowerCaseName
+    def Effect: Rule1[Name.Ident] = UpperCaseName
 
     def Field: Rule1[Name.Ident] = LowerCaseName
 
