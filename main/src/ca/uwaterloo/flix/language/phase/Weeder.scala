@@ -1511,7 +1511,7 @@ object Weeder {
       val t = visitType(t0)
       WeededAst.Expression.ReifyType(t, Kind.Star, mkSL(sp1, sp2)).toSuccess
 
-    case ParsedAst.Expression.ReifyPur(sp1, exp1, ident, exp2, exp3, sp2) =>
+    case ParsedAst.Expression.ReifyPurity(sp1, exp1, ident, exp2, exp3, sp2) =>
       mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (e1, e2, e3) =>
           WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
@@ -2652,7 +2652,7 @@ object Weeder {
     case ParsedAst.Expression.Reify(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyBool(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyType(sp1, _, _) => sp1
-    case ParsedAst.Expression.ReifyPur(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.ReifyPurity(sp1, _, _, _, _, _) => sp1
   }
 
   /**

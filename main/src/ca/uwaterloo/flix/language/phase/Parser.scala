@@ -24,8 +24,6 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import org.parboiled2._
 
-import scala.collection.immutable.Seq
-
 /**
   * A phase to transform source files into abstract syntax trees.
   */
@@ -647,7 +645,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
-        ReifyType | ReifyPur | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
+        ReifyType | ReifyPurity | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointProject | FixpointSolveWithProject |
@@ -693,7 +691,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("reifyType") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.ReifyType
     }
 
-    def ReifyPur: Rule1[ParsedAst.Expression.ReifyPur] = {
+    def ReifyPurity: Rule1[ParsedAst.Expression.ReifyPurity] = {
       def ThenBranch: Rule2[Name.Ident, ParsedAst.Expression] = rule {
         keyword("case") ~ WS ~ keyword("Pure") ~ "(" ~ Names.Variable ~ ")" ~ WS ~ keyword("=>") ~ WS ~ Expression
       }
@@ -703,7 +701,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ keyword("reifyEff") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ "{" ~ optWS ~ ThenBranch ~ WS ~ ElseBranch ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.ReifyPur
+        SP ~ keyword("reifyEff") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ "{" ~ optWS ~ ThenBranch ~ WS ~ ElseBranch ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.ReifyPurity
       }
     }
 
@@ -1591,7 +1589,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName
 
-    def Pur: Rule1[Name.Ident] = LowerCaseName
+    def Effect: Rule1[Name.Ident] = LowerCaseName
 
     def Field: Rule1[Name.Ident] = LowerCaseName
 
