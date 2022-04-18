@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
-import ca.uwaterloo.flix.language.ast.ParsedAst.{Effect, RecordFieldType}
+import ca.uwaterloo.flix.language.ast.ParsedAst.{Purity, RecordFieldType}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -28,7 +28,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
 import java.math.BigInteger
 import scala.annotation.tailrec
-import scala.collection.immutable.Seq
 import scala.collection.mutable
 
 /**
@@ -1512,7 +1511,7 @@ object Weeder {
       val t = visitType(t0)
       WeededAst.Expression.ReifyType(t, Kind.Star, mkSL(sp1, sp2)).toSuccess
 
-    case ParsedAst.Expression.ReifyEff(sp1, exp1, ident, exp2, exp3, sp2) =>
+    case ParsedAst.Expression.ReifyPurity(sp1, exp1, ident, exp2, exp3, sp2) =>
       mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (e1, e2, e3) =>
           WeededAst.Expression.ReifyEff(ident, e1, e2, e3, mkSL(sp1, sp2))
@@ -2198,11 +2197,11 @@ object Weeder {
   /**
     * Returns the given read or write effect as a WeededAst type.
     */
-  private def visitReadOrWrite(rw: ParsedAst.Effect, loc: SourceLocation): WeededAst.Type = rw match {
-    case Effect.Var(sp1, ident, sp2) =>
+  private def visitReadOrWrite(rw: ParsedAst.Purity, loc: SourceLocation): WeededAst.Type = rw match {
+    case Purity.Var(sp1, ident, sp2) =>
       WeededAst.Type.Var(ident, mkSL(sp1, sp2))
 
-    case Effect.Read(idents) =>
+    case Purity.Read(idents) =>
       if (idents.isEmpty)
         WeededAst.Type.True(loc)
       else {
@@ -2212,7 +2211,7 @@ object Weeder {
         }
       }
 
-    case Effect.Write(idents) =>
+    case Purity.Write(idents) =>
       if (idents.isEmpty)
         WeededAst.Type.True(loc)
       else {
@@ -2653,7 +2652,7 @@ object Weeder {
     case ParsedAst.Expression.Reify(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyBool(sp1, _, _) => sp1
     case ParsedAst.Expression.ReifyType(sp1, _, _) => sp1
-    case ParsedAst.Expression.ReifyEff(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.ReifyPurity(sp1, _, _, _, _, _) => sp1
   }
 
   /**
