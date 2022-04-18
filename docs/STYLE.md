@@ -10,9 +10,6 @@
 
 ## Flix-specific
 
-- Variable names are typical one letter; `o` for Option, `l` for `List`.
-- Type variable names are typically `a`, `b`, `c`.
-- Effect variables are called `ef` or `ef1`, `ef2`...
 - Type class instances declarations should appear just below a type declaration.
   - Instances should appear in the order: Eq, Order, ToString.
 - Argument lists should have the subject last to support `|>`.
@@ -28,19 +25,29 @@
   - e.g. keep the base case(s) before the inductive case(s).
 - Doc comments should use triple slashes ///.
 
+### Naming
+- Variable names are typical one letter; `o` for Option, `l` for `List`.
+- Type variable names are typically `a`, `b`, `c`.
+- Effect variables are called `ef` or `ef1`, `ef2`...
+
 ## Scala-specific
 
 - No shadowed variables.
 - No unused local variables.
-- Common methods are `visitExp`, `visitExps`, `visitPat`, etc.
 - When using monads like `Validation` use `mapN` over `for ... yield` whenever possible
 - Write single-variable `mapN` cases open to additional variables with `mapN ... { case ... => ... }`
-- Prefer to name expressions just `exp1`, `exp2`, `exp3`.
-  - Names such as `beginExp` etc. quickly get outdated.
 - Never use toString for anything other than debugging.
 - Leave the code in better state than you found it in.
 - Avoid inheritance. Prefer algebraic data types and functions on them.
 - Think towards self-hosting: Don't use features that cannot easily be ported to Flix.
+
+### Naming
+- Common methods are `visitExp`, `visitExps`, `visitPat`, etc.
+- Long variable names should be abbreviated (`eff`, `tparam`)
+- Constructor names should generally not be abbreviated (`Effect`)
+  - Some exceptions: `TypeParam`, `Sig`, `Def`
+- Prefer to name expressions just `exp1`, `exp2`, `exp3`.
+  - Names such as `beginExp` etc. quickly get outdated.
 
 ## JVM Bytecode Generation Policy
 
