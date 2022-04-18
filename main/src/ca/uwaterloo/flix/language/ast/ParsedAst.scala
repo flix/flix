@@ -226,13 +226,13 @@ object ParsedAst {
     /**
       * Effect Declaration.
       *
-      * @param doc          the optional comment associated with the declaration.
-      * @param mod          the associated modifiers.
-      * @param sp1          the position of the first character in the declaration.
-      * @param ident        the name of the definition.
-      * @param tparams      the type parameters.
-      * @param ops          the operations of the class.
-      * @param sp2          the position of the last character in the declaration.
+      * @param doc     the optional comment associated with the declaration.
+      * @param mod     the associated modifiers.
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the definition.
+      * @param tparams the type parameters.
+      * @param ops     the operations of the class.
+      * @param sp2     the position of the last character in the declaration.
       */
     case class Effect(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, ops: Seq[ParsedAst.Declaration.Op], sp2: SourcePosition) extends ParsedAst.Declaration
 
@@ -910,14 +910,24 @@ object ParsedAst {
     case class Cast(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], pur: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Try Catch Expression.
+      * Try Expression.
       *
       * @param sp1   the position of the first character in the expression.
       * @param exp   the guarded expression.
-      * @param rules the catch rules.
+      * @param end   the end of the try expression. // MATT weird name
       * @param sp2   the position of the last character in the expression.
       */
-    case class TryCatch(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.CatchRule], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Try(sp1: SourcePosition, exp: ParsedAst.Expression, end: TryEnd, sp2: SourcePosition) extends ParsedAst.Expression
+
+    // MATT docs
+    // MATT weird name
+    sealed trait TryEnd
+
+    object TryEnd {
+      case class Catch(rules: Seq[ParsedAst.CatchRule]) extends TryEnd
+
+      case class With(rules: Seq[ParsedAst.WithRule]) extends TryEnd
+    }
 
     /**
       * NewChannel Expression.
@@ -1658,6 +1668,15 @@ object ParsedAst {
     * @param exp   the body expression.
     */
   case class CatchRule(ident: Name.Ident, fqn: Seq[String], exp: ParsedAst.Expression)
+
+  /**
+    * Effect handler rule.
+    *
+    * @param name    the operation name.
+    * @param fparams the operation parameters.
+    * @param exp     the body expression.
+    */
+  case class WithRule(name: Name.QName, fparams: Seq[FormalParam], exp: ParsedAst.Expression)
 
   /**
     * A choice pattern match rule.
