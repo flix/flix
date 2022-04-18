@@ -72,6 +72,7 @@ object ParsedAst {
       * @param tparams    the type parameters.
       * @param fparamsOpt the formal parameters.
       * @param tpe        the declared type.
+      * @param pur        the declared purity.
       * @param exp        the expression.
       * @param tconstrs   the type constraints.
       * @param sp2        the position of the last character in the declaration.
@@ -89,6 +90,7 @@ object ParsedAst {
       * @param tparams    the type parameters.
       * @param fparamsOpt the formal parameters.
       * @param tpe        the declared type.
+      * @param pur        the declared purity.
       * @param tconstrs   the type constraints.
       * @param exp        the optional expression.
       * @param sp2        the position of the last character in the declaration.
@@ -1714,6 +1716,8 @@ object ParsedAst {
       *
       * @param fqn   the fully-qualified name of the constructor.
       * @param sig   the types of the formal parameters.
+      * @param tpe   the return type of the constructor.
+      * @param pur   the purity of the constructor.
       * @param ident the name given to the imported constructor.
       */
     case class Constructor(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, pur: Type, ident: Name.Ident) extends JvmOp
@@ -1723,6 +1727,8 @@ object ParsedAst {
       *
       * @param fqn   the fully-qualified name of the method.
       * @param sig   the types of the formal parameters.
+      * @param tpe   the return type of the imported method.
+      * @param pur   the purity of the imported method.
       * @param ident the optional name given to the imported method.
       */
     case class Method(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, pur: Type, ident: Option[Name.Ident]) extends JvmOp
@@ -1732,6 +1738,8 @@ object ParsedAst {
       *
       * @param fqn   the fully-qualified name of the static method.
       * @param sig   the declared types of the formal parameters.
+      * @param tpe   the return type of the imported method.
+      * @param pur   the purity of the imported method.
       * @param ident the optional name given to the imported method.
       */
     case class StaticMethod(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, pur: Type, ident: Option[Name.Ident]) extends JvmOp
@@ -1740,6 +1748,8 @@ object ParsedAst {
       * Get Object Field.
       *
       * @param fqn   the fully-qualified name of the field.
+      * @param tpe   the return type of the generated function.
+      * @param pur   the purity of the generated function.
       * @param ident the name given to the imported field.
       */
     case class GetField(fqn: Seq[String], tpe: Type, pur: Type, ident: Name.Ident) extends JvmOp
@@ -1748,6 +1758,8 @@ object ParsedAst {
       * Put ObjectField.
       *
       * @param fqn   the fully-qualified name of the field.
+      * @param tpe   the return type of the generated function.
+      * @param pur   the purity of the generated function.
       * @param ident the name given to the imported field.
       */
     case class PutField(fqn: Seq[String], tpe: Type, pur: Type, ident: Name.Ident) extends JvmOp
@@ -1756,6 +1768,8 @@ object ParsedAst {
       * Get Static Field.
       *
       * @param fqn   the fully-qualified name of the field.
+      * @param tpe   the return type of the generated function.
+      * @param pur   the purity of the generated function.
       * @param ident the name given to the imported field.
       */
     case class GetStaticField(fqn: Seq[String], tpe: Type, pur: Type, ident: Name.Ident) extends JvmOp
@@ -1764,6 +1778,8 @@ object ParsedAst {
       * Put Static Field.
       *
       * @param fqn   the fully-qualified name of the field.
+      * @param tpe   the return type of the generated function.
+      * @param pur   the purity of the generated function.
       * @param ident the name given to the imported field.
       */
     case class PutStaticField(fqn: Seq[String], tpe: Type, pur: Type, ident: Name.Ident) extends JvmOp
