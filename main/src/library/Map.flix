@@ -463,8 +463,8 @@ namespace Map {
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
-    pub def foldRightOld(f: (v, Unit -> b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
-        foldRightWithKey((_, v, k) -> f(v, k), z, m)
+    pub def foldRightOld(f: (v, b) -> b & ef, s: b, m: Map[k, v]): b & ef =
+        foldRightWithKeyOld((_, v, acc) -> f(v, acc), s, m)
 
     ///
     /// Applies `f` to a start value `s` and all values in `m` going from right to left.
@@ -479,6 +479,16 @@ namespace Map {
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
+    ///
+    pub def foldRightWithKeyOld(f: (k, v, b) -> b & ef, s: b, m: Map[k, v]): b & ef =
+        let Map(t) = m;
+        RedBlackTree.foldRightOld(f, s, t)
+
+    ///
+    /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
+    /// A `foldRightWithKey` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithKey(f: (k, v, Unit -> b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
         let Map(t) = m;
