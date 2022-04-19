@@ -107,7 +107,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Relation |
       Declarations.Lattice |
       Declarations.Class |
-      Declarations.Instance
+      Declarations.Instance |
+      Declarations.Effect
   }
 
   def UseDeclarations: Rule1[Seq[ParsedAst.Use]] = rule {
@@ -135,6 +136,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
       Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("law") ~ WS ~ Names.Definition ~ optWS ~ ":" ~ optWS ~ keyword("forall") ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ OptTypeConstraintList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
+    }
+
+    def Op: Rule1[ParsedAst.Declaration.Op] = rule {
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndPurity ~ OptTypeConstraintList ~ SP ~> ParsedAst.Declaration.Op
     }
 
     def Enum: Rule1[ParsedAst.Declaration.Enum] = {
@@ -203,7 +208,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def NonEmptyBody = namedRule("ClassBody") {
-        optWS ~ "{" ~ zeroOrMore(Declarations.Law | Declarations.Sig) ~ optWS ~ "}" ~ SP
+        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Law | Declarations.Sig) ~ optWS ~ "}" ~ SP
       }
 
       rule {
@@ -229,11 +234,29 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def NonEmptyBody = namedRule("InstanceBody") {
-        optWS ~ "{" ~ zeroOrMore(Declarations.Def) ~ optWS ~ "}" ~ SP
+        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Def) ~ optWS ~ "}" ~ SP
       }
 
       rule {
         Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Instance
+      }
+    }
+
+    def Effect: Rule1[ParsedAst.Declaration] = {
+      def Head = rule {
+        Documentation ~ Modifiers ~ SP ~ keyword("eff") ~ WS ~ Names.Effect ~ optWS ~ TypeParams
+      }
+
+      def EmptyBody = namedRule("EffectBody") {
+        push(Nil) ~ SP
+      }
+
+      def NonEmptyBody = namedRule("EffectBody") {
+        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Op) ~ optWS ~ "}" ~ SP
+      }
+
+      rule {
+        Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Effect
       }
     }
 
@@ -1589,7 +1612,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName
 
-    def Effect: Rule1[Name.Ident] = LowerCaseName
+    def Effect: Rule1[Name.Ident] = UpperCaseName
 
     def Field: Rule1[Name.Ident] = LowerCaseName
 
