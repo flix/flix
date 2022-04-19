@@ -291,7 +291,7 @@ namespace Map {
     ///
     @Time(size(m)) @Space(size(m))
     pub def valuesOf(m: Map[k, v]): List[v] =
-        foldRight((v, acc) -> v :: acc, Nil, m)
+        foldRight((v, c) -> v :: c(), Nil, m)
 
     ///
     /// Updates `m` with `k => v`.
@@ -695,7 +695,7 @@ namespace Map {
     @Time(time(f) * size(m1) * Int32.log2(size(m2))) @Space(space(f) * size(m1) *  Int32.log2(size(m2)))
     pub def intersectionWithKey(f: (k, v, v) -> v & ef, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & ef with Order[k] =
         let intersect = filterWithKey((k, _) -> memberOf(k, m1), m2);
-        foldRightWithKey((k, v, m) -> adjustWithKey((key, v1) -> f(key, v, v1), k, m), intersect, m1)
+        foldRightWithKey((k, v, c) -> adjustWithKey((key, v1) -> f(key, v, v1), k, c()), intersect, m1)
 
     ///
     /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
@@ -727,15 +727,15 @@ namespace Map {
     @Time(size(f) * size(m2) * Int32.log2(size(m1))) @Space(space(f) * size(m2) * Int32.log2(size(m1)))
     pub def differenceWithKey(f: (k, v, v) -> Option[v] & ef, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & ef with Order[k] =
         let diff = filterWithKey((k, _) -> not memberOf(k, m2), m1);
-        let g = (k, v, m) -> if (memberOf(k, m1))
+        let g = (k, v, c) -> if (memberOf(k, m1))
                                 match get(k, m1) {
                                     case Some(v1) => match f(k, v1, v) {
-                                        case None => m
-                                        case Some(w) => insert(k, w, m)
+                                        case None => c()
+                                        case Some(w) => insert(k, w, c())
                                     }
                                     case None => unreachable!()
                                 }
-                             else m;
+                             else c();
         foldRightWithKey(g, diff, m2)
 
     ///
@@ -773,7 +773,7 @@ namespace Map {
     /// Returns the map `m` as a `DelayList` of key-value pairs.
     ///
     pub def toDelayList(m: Map[k, v]): DelayList[(k, v)] =
-        foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
+        foldRightWithKey((k, v, c) -> ECons((k, v), c()), ENil, m)
 
     ///
     /// Returns the map `m` as a chain of key-value pairs.
