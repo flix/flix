@@ -45,7 +45,7 @@ instance Hash[Set[a]] with Hash[a] {
 
 instance ToString[Set[a]] with ToString[a] {
     pub def toString(s: Set[a]): String =
-        let st = Set.foldRight((x, acc) -> "${x}, ${acc()}", "", s);
+        let st = Set.foldRight((x, k) -> "${x}, ${k()}", "", s);
         "Set#{${String.dropRight(2, st)}}"
 }
 
@@ -292,9 +292,11 @@ namespace Set {
         RedBlackTree.foldLeft((acc, k, _) -> f(acc, k), s, t)
 
     ///
-    /// Old `foldRight`. Will soon be deleted.
+    /// Applies `f` to a start value `s` and all elements in `s` going from right to left.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef =
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRightOld(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef =
         let Set(t) = s1;
         RedBlackTree.foldRight((k, _, acc) -> f(k, acc), s, t)
 
