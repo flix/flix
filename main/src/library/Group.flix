@@ -54,7 +54,7 @@ namespace Group {
     ///
     /// Returns `y` subtracted from `x` using a group subtraction.
     ///
-    pub def remove(x: a, y: a): a =
+    pub def remove(x: a, y: a): a with Group[a] =
         Group.combine(x, Group.inverse(y))
 
 }
