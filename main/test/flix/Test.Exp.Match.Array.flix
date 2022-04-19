@@ -2,7 +2,7 @@ namespace Test/Exp/Match/Array {
 
     @test
     def testMatchEmptyUnitArray01(): Bool = region r {
-        match ([]: ScopedArray[Unit] @ r) {
+        match ([]: ScopedArray[Unit, r] @ r) {
             case [] => true
             case _  => false
         }
@@ -10,7 +10,7 @@ namespace Test/Exp/Match/Array {
 
     @test
     def testMatchEmptyBoolArray01(): Bool = region r {
-        match ([]: ScopedArray[Bool] @ r) {
+        match ([]: ScopedArray[Bool, r] @ r) {
             case [] => true
             case _  => false
         }
@@ -18,7 +18,7 @@ namespace Test/Exp/Match/Array {
 
     @test
     def testMatchEmptyCharArray01(): Bool = region r {
-        match ([]: ScopedArray[Char] @ r) {
+        match ([]: ScopedArray[Char, r] @ r) {
             case [] => true
             case _  => false
         }
@@ -26,7 +26,7 @@ namespace Test/Exp/Match/Array {
 
     @test
     def testMatchEmptyFloat32Array01(): Bool = region r {
-        match ([]: ScopedArray[Float32] @ r) {
+        match ([]: ScopedArray[Float32, r] @ r) {
             case [] => true
             case _  => false
         }
@@ -34,7 +34,7 @@ namespace Test/Exp/Match/Array {
 
     @test
     def testMatchEmptyFloat64Array01(): Bool = region r {
-        match ([]: ScopedArray[Float64] @ r) {
+        match ([]: ScopedArray[Float64, r] @ r) {
             case [] => true
             case _  => false
         }
@@ -42,7 +42,7 @@ namespace Test/Exp/Match/Array {
 
     @test
     def testMatchEmptyInt8Array01(): Bool = region r {
-        match ([]: ScopedArray[Int8] @ r) {
+        match ([]: ScopedArray[Int8, r] @ r) {
             case [] => true
             case _  => false
         }
@@ -50,7 +50,7 @@ namespace Test/Exp/Match/Array {
 
     @test
     def testMatchEmptyInt16Array01(): Bool = region r {
-        match ([]: ScopedArray[Int16] @ r) {
+        match ([]: ScopedArray[Int16, r] @ r) {
             case [] => true
             case _  => false
         }
@@ -58,7 +58,7 @@ namespace Test/Exp/Match/Array {
 
     @test
     def testMatchEmptyInt64Array01(): Bool = region r {
-        match ([]: ScopedArray[Int64] @ r) {
+        match ([]: ScopedArray[Int64, r] @ r) {
             case [] => true
             case _  => false
         }
@@ -66,7 +66,7 @@ namespace Test/Exp/Match/Array {
 
     @test
     def testMatchEmptyStringArray01(): Bool = region r {
-        match ([]: ScopedArray[String] @ r) {
+        match ([]: ScopedArray[String, r] @ r) {
             case [] => true
             case _  => false
         }
@@ -74,7 +74,7 @@ namespace Test/Exp/Match/Array {
 
     @test
     def testMatchEmptyBigIntArray01(): Bool = region r {
-        match ([]: ScopedArray[BigInt] @ r) {
+        match ([]: ScopedArray[BigInt, r] @ r) {
             case [] => true
             case _  => false
         }
@@ -82,7 +82,7 @@ namespace Test/Exp/Match/Array {
 
     @test
     def testMatchEmptyOptionIntArray01(): Bool = region r {
-        match ([]: ScopedArray[Option[Int32]] @ r) {
+        match ([]: ScopedArray[Option[Int32], r] @ r) {
             case [] => true
             case _  => false
         }
@@ -90,7 +90,7 @@ namespace Test/Exp/Match/Array {
 
     @test
     def testMatchEmptyResultArray01(): Bool = region r {
-        match ([]: ScopedArray[Result[Int32, String]] @ r) {
+        match ([]: ScopedArray[Result[Int32, String], r] @ r) {
             case [] => true
             case _  => false
         }
