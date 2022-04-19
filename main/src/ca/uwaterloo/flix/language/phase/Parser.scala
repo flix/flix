@@ -1394,7 +1394,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   object Effects {
-    def Var: Rule1[ParsedAst.Effect]
+    def Var: Rule1[ParsedAst.Effect] = rule {
+      SP ~ Names.Variable ~ SP ~> ParsedAst.Effect.Var
+    }
+
+    def Read: Rule1[ParsedAst.Effect] = rule {
+      SP ~ keyword("Read") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Purity.Read
+    }
+
+    def Write: Rule1[ParsedAst.Effect] = rule {
+      SP ~ keyword("Write") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Purity.Write
+    }
+
+    def Plus: Rule1[ParsedAst.Effect]
   }
 
   /////////////////////////////////////////////////////////////////////////////
