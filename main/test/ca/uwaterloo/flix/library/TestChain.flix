@@ -869,16 +869,16 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldRight01(): Bool = Chain.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Chain.empty()) == 100
+    def foldRight01(): Bool = Chain.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Chain.empty()) == 100
 
     @test
-    def foldRight02(): Bool = Chain.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Chain.singleton(1)) == 198
+    def foldRight02(): Bool = Chain.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Chain.singleton(1)) == 198
 
     @test
-    def foldRight03(): Bool = Chain.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, List.toChain(1 :: 2 :: Nil)) == 194
+    def foldRight03(): Bool = Chain.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, List.toChain(1 :: 2 :: Nil)) == 194
 
     @test
-    def foldRight04(): Bool = Chain.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 382
+    def foldRight04(): Bool = Chain.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 382
 
     /////////////////////////////////////////////////////////////////////////////
     // dropLeft                                                                //
