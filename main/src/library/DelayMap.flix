@@ -545,7 +545,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def foldRight(f: (v, b) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
-        foldRightWithKey((_, v, acc) -> f(v, acc, s, m)
+        foldRightWithKey((_, v, acc) -> f(v, acc), s, m)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
@@ -742,7 +742,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def toDelayList(m: DelayMap[k, v]): DelayList[(k, v)] =
-        foldRightWithKey((k, v, acc) -> ECons((k, v), acc, ENil, m)
+        foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
 
     ///
     /// Returns an iterator over all key-value pairs in `m`.
