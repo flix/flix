@@ -544,13 +544,13 @@ namespace Set {
     ///
     @Time(size(s)) @Space(size(s))
     pub def toMap(s: Set[(a, b)]): Map[a, b] with Order[a] =
-        foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc), Map#{}, s)
+        foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc()), Map#{}, s)
 
     ///
     /// Returns a map with elements of `s` as keys and `f` applied as values.
     ///
     pub def toMapWith(f: a -> b, s: Set[a]): Map[a, b] with Order[a] =
-        Set.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
+        Set.foldRight((x, k) -> Map.insert(x, f(x), k()), Map.empty(), s)
     ///
     /// Returns the set `s` as a `MutSet`.
     ///
@@ -598,7 +598,7 @@ namespace Set {
     /// Returns the set `s` as a `DelayList`.
     ///
     pub def toDelayList(s: Set[a]): DelayList[a] =
-        foldRight((x, acc) -> ECons(x, acc), ENil, s)
+        foldRight((x, k) -> ECons(x, k()), ENil, s)
 
     ///
     /// Returns an iterator over `s`.
