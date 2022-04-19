@@ -54,3 +54,8 @@ pub class Group[a] with Monoid[a] {
     law rightInvertible: forall(x: a) with Eq[a] . Group.combine(x, Group.inverse(x)) == Group.empty()
 
 }
+
+///
+/// Alias for `Group.remove`.
+///
+pub def ~~(x: a, y: a): a with Group[a] = Group.remove(x, y)
