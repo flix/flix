@@ -364,25 +364,4 @@ namespace TestMutMap {
         Map#{0 => "1", 1 => "2", 2 => "2"} |> Map.toMutMap |>
             MutMap.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
 
-
-    /////////////////////////////////////////////////////////////////////////////
-    // foldRightLazy                                                           //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def foldRightLazy01(): Bool & Impure = MutMap.foldRightLazy((v, s) -> force s + v, 0, MutMap.empty()) == 0
-
-    @test
-    def foldRightLazy02(): Bool & Impure = MutMap.foldRightLazy((v, s) -> force s + v, 0, MutMap.singleton(1, 2)) == 2
-
-    @test
-    def foldRightLazy03(): Bool & Impure =
-        let m = MutMap(ref Map#{1 => 2, 3 => 4});
-        MutMap.foldRightLazy((v, s) -> force s + v, 0, m) == 6
-
-    @test
-    def foldRightLazy04(): Bool & Impure =
-        let m = MutMap(ref Map#{1 => 2, 3 => 4, 5 => 6});
-        MutMap.foldRightLazy((v, s) -> force s + v, 0, m) == 12
-
 }

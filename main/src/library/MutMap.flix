@@ -373,31 +373,22 @@ namespace MutMap {
         Map.foldLeftWithKey(f, i, deref mm)
 
     ///
-    /// Applies `f` to a start value `i` and all values in the mutable map `m` going from right to left.
+    /// Applies `f` to a start value `z` and all values in the mutable map `m` going from right to left.
     ///
-    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, i)))`.
+    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
+    /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (v, b) -> b & ef, i: b, m: MutMap[k, v]): b & Impure =
-        foldRightWithKey((_, v, b) -> f(v, b), i, m)
+    pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, z: b, m: MutMap[k, v]): b & Impure =
+        foldRightWithKey((_, v, b) -> f(v, b), z, m)
 
     ///
-    /// Applies `f` to a start value `i` and all key-value pairs in the mutable map `m` going from right to left.
+    /// Applies `f` to a start value `z` and all key-value pairs in the mutable map `m` going from right to left.
     ///
-    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, i)))`.
+    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, z)))`.
     ///
-    pub def foldRightWithKey(f: (k, v, b) -> b & ef, i: b, m: MutMap[k, v]): b & Impure =
+    pub def foldRightWithKey(f: (k, v, Unit -> b & ef) -> b & ef, z: b, m: MutMap[k, v]): b & Impure =
         let MutMap(mm) = m;
-        Map.foldRightWithKey(f, i, deref mm)
-
-    ///
-    /// Lazily applies `f` to a start value `s` and all elements in `m` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
-    /// The foldRightLazy function exists to allow early termination of a fold.
-    ///
-    pub def foldRightLazy(f: (v, Lazy[b]) -> b, i: b, m: MutMap[k, v]): b & Impure =
-        let MutMap(mm) = m;
-        Map.foldRightLazy(f, i, deref mm)
+        Map.foldRightWithKey(f, z, deref mm)
 
     ///
     /// Applies `f` to all values in the mutable map `m` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
