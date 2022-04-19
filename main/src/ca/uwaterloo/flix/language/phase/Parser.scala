@@ -856,7 +856,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def HandlerRule: Rule1[ParsedAst.HandlerRule] = rule {
-        keyword("case") ~ WS ~ Names.QualifiedEffect ~ FormalParamList ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.HandlerRule
+        keyword("def") ~ WS ~ Names.QualifiedEffect ~ FormalParamList ~ optWS ~ atomic("=") ~ optWS ~ Expression ~> ParsedAst.HandlerRule
       }
 
       def HandlerBody: Rule1[ParsedAst.Expression.CatchOrHandler] = rule {

@@ -5,14 +5,24 @@ namespace Test/Exp/Effect {
     // @test
     pub def handleEff01(): Bool = {
         try true with {
-            case Fail.fail(_) => false
+            def Fail.fail(_) = false
         }
     }
 
     // @test
     pub def handleEff02(): Bool = {
         try true with {
-            case Fail.fail(_) => resume(false)
+            def Fail.fail(_) = resume(false)
+        }
+    }
+
+    pub def perform01(): Bool = {
+        do Fail.fail(":(")
+    }
+
+    pub def handlePerform01(): Bool = {
+        try do Fail.fail("rats") with {
+            def Fail.fail(_) => true
         }
     }
 
