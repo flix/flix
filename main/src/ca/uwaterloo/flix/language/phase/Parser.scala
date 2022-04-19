@@ -1394,19 +1394,39 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   object Effects {
+
+    // MATT match Arrow pattern
+    def Effect: Rule1[ParsedAst.Effect] = rule {
+      Plus | Minus | SimpleEffect
+    }
+
     def Var: Rule1[ParsedAst.Effect] = rule {
       SP ~ Names.Variable ~ SP ~> ParsedAst.Effect.Var
     }
 
     def Read: Rule1[ParsedAst.Effect] = rule {
-      SP ~ keyword("Read") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Purity.Read
+      SP ~ keyword("Read") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Effect.Read
     }
 
     def Write: Rule1[ParsedAst.Effect] = rule {
-      SP ~ keyword("Write") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Purity.Write
+      SP ~ keyword("Write") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Effect.Write
     }
 
-    def Plus: Rule1[ParsedAst.Effect]
+    def Eff: Rule1[ParsedAst.Effect] = rule {
+      SP ~ Names.QualifiedEffect ~ SP ~> ParsedAst.Effect.Eff
+    }
+
+    def SimpleEffect: Rule1[ParsedAst.Effect] = rule {
+      Var | Read | Write | Eff
+    }
+
+    def Plus: Rule1[ParsedAst.Effect] = rule {
+      SP ~ SimpleEffect ~ optWS ~ operatorX("+") ~ optWS ~ Effect ~> ParsedAst.Effect.Plus
+    }
+
+    def Minus: Rule1[ParsedAst.Effect] = rule {
+      SP ~ SimpleEffect ~ optWS ~ operatorX("-") ~ optWS ~ Effect ~> ParsedAst.Effect.Minus
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
