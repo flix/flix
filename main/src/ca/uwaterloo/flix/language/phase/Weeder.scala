@@ -1300,6 +1300,14 @@ object Weeder {
         case e => WeededAst.Expression.Cast(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
+    // ignoring Do for now
+    case ParsedAst.Expression.Do(sp1, op, args, sp2) =>
+      WeededAst.Expression.Hole(None, mkSL(sp1, sp2)).toSuccess
+
+    // ignoring Resume for now
+    case ParsedAst.Expression.Resume(sp1, args, sp2) =>
+      WeededAst.Expression.Hole(None, mkSL(sp1, sp2)).toSuccess
+
     case ParsedAst.Expression.Try(sp1, exp, ParsedAst.Expression.CatchOrHandler.Catch(rules), sp2) =>
       val expVal = visitExp(exp)
       val rulesVal = traverse(rules) {
@@ -1750,10 +1758,6 @@ object Weeder {
 
     case ParsedAst.Literal.Default(sp1, sp2) =>
       WeededAst.Expression.Default(mkSL(sp1, sp2)).toSuccess
-
-    // ignoring resume expression for now
-    case ParsedAst.Literal.Resume(sp1, sp2) =>
-      WeededAst.Expression.Hole(None, mkSL(sp1, sp2)).toSuccess
   }
 
   /**
@@ -1803,9 +1807,6 @@ object Weeder {
       }
     case ParsedAst.Literal.Default(sp1, sp2) =>
       throw InternalCompilerException(s"Illegal default pattern near: ${mkSL(sp1, sp2).format}")
-    case ParsedAst.Literal.Resume(sp1, sp2) =>
-      throw InternalCompilerException(s"Illegal resume pattern near: ${mkSL(sp1, sp2).format}")
-      // TODO: turn into a real error
   }
 
   /**
@@ -2650,6 +2651,8 @@ object Weeder {
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Cast(e1, _, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.Do(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Resume(sp1, _, _) => sp1
     case ParsedAst.Expression.Try(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NewChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.GetChannel(sp1, _, _) => sp1
