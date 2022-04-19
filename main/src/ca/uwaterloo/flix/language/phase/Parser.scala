@@ -358,7 +358,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    Literals.Null | Literals.Bool | Literals.Char | Literals.Str | Literals.Default | Literals.Float | Literals.Int | Literals.Resume
+    Literals.Null | Literals.Bool | Literals.Char | Literals.Str | Literals.Default | Literals.Float | Literals.Int
   }
 
   object Literals {
@@ -437,10 +437,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Default: Rule1[ParsedAst.Literal.Default] = rule {
       SP ~ keyword("$DEFAULT$") ~ SP ~> ParsedAst.Literal.Default
-    }
-
-    def Resume: Rule1[ParsedAst.Literal.Resume] = rule {
-      SP ~ keyword("resume") ~ SP ~> ParsedAst.Literal.Resume
     }
 
     def Sign: Rule1[Boolean] = rule {
@@ -840,6 +836,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SP ~ ChooseKind ~ WS ~ (MatchMany | MatchOne) ~ optWS ~ "{" ~ optWS ~ oneOrMore(CaseMany | CaseOne).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Choose
       }
+    }
+
+    def Do: Rule1[ParsedAst.Expression] = {
+      SP ~ keyword("do") ~ WS ~ Names.QualifiedEffect ~ ArgumentList ~ SP ~> ParsedAst.Expression.Do
+    }
+
+    def Resume: Rule1[ParsedAst.Expression] = {
+      SP ~ keyword("resume") ~ ArgumentList ~ SP ~> Resume
     }
 
     def Try: Rule1[ParsedAst.Expression] = {
