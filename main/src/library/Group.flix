@@ -31,6 +31,12 @@ pub class Group[a] with Monoid[a] {
     pub def inverse(x: a): a
 
     ///
+    /// Returns `y` subtracted from `x` using a group subtraction.
+    ///
+    pub def remove(x: a, y: a): a =
+        Group.combine(x, Group.invert(y))
+
+    ///
     /// Returns the result of combining `x` and `y` using Monoid's combine.
     ///
     pub def combine(x: a, y: a): a =
