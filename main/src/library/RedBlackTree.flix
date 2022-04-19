@@ -62,7 +62,7 @@ namespace RedBlackTree {
 
     instance Foldable[RedBlackTree[k]] {
         pub def foldLeft(f: (b, v) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldLeft((acc, _, v) -> f(acc, v), s, t)
-        pub def foldRight(f: (v, b) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRight((_, v, acc) -> f(v, acc), s, t)
+        pub def foldRight(f: (v, b) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRightOld((_, v, acc) -> f(v, acc), s, t)
     }
 
     instance Traversable[RedBlackTree[k]] {
@@ -228,6 +228,17 @@ namespace RedBlackTree {
     ///
     pub def foldLeft(f: (b, k, v) -> b & ef, s: b, tree: RedBlackTree[k, v]): b & ef = match tree {
         case Node(_, a, k, v, b) => foldLeft(f, f(foldLeft(f, s, a), k, v), b)
+        case _ => s
+    }
+
+    ///
+    /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
+    /// A `foldRight` allows early termination by not calling the continuation.
+    ///
+    pub def foldRightOld(f: (k, v, b) -> b & ef, s: b, tree: RedBlackTree[k, v]): b & ef = match tree {
+        case Node(_, a, k, v, b) => foldRight(f, f(k, v, foldRight(f, s, b)), a)
         case _ => s
     }
 
@@ -811,7 +822,7 @@ namespace RedBlackTree {
     /// Returns the tree `t` as a list. Elements are ordered from smallest (left) to largest (right).
     ///
     pub def toList(t: RedBlackTree[k, v]): List[(k, v)] =
-        RedBlackTree.foldRight((k, v, xs) -> (k, v) :: xs, Nil, t)
+        RedBlackTree.foldRight((k, v, xs) -> (k, v) :: xs(), Nil, t)
 
     ///
     /// Build a node applicatively.
