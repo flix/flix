@@ -28,7 +28,7 @@ pub class Group[a] with Monoid[a] {
     ///
     /// Returns the inverse element of `x`.
     ///
-    pub def invert(x: a): a
+    pub def inverse(x: a): a
 
     ///
     /// Returns the result of combining `x` and `y` using Monoid's combine.
@@ -43,8 +43,8 @@ pub class Group[a] with Monoid[a] {
 
     law associative: forall(x: a, y: a, z: a) with Eq[a] . Group.combine(Group.combine(x, y), z) == Group.combine(x, Group.combine(y, z))
 
-    law leftInvertible: forall(x: a) with Eq[a] . Group.combine(Group.invert(x), x) == Group.empty()
+    law leftInvertible: forall(x: a) with Eq[a] . Group.combine(Group.inverse(x), x) == Group.empty()
 
-    law rightInvertible: forall(x: a) with Eq[a] . Group.combine(x, Group.invert(x)) == Group.empty()
+    law rightInvertible: forall(x: a) with Eq[a] . Group.combine(x, Group.inverse(x)) == Group.empty()
 
 }
