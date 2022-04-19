@@ -298,7 +298,7 @@ namespace Set {
     ///
     pub def foldRightOld(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef =
         let Set(t) = s1;
-        RedBlackTree.foldRight((k, _, acc) -> f(k, acc), s, t)
+        RedBlackTree.foldRightOld((k, _, acc) -> f(k, acc), s, t)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `s` going from right to left.
@@ -532,7 +532,7 @@ namespace Set {
     ///
     @Time(size(s)) @Space(size(s))
     pub def toMap(s: Set[(a, b)]): Map[a, b] with Order[a] =
-        foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc()), Map#{}, s)
+        foldRight((x, k) -> let (k, v) = x; Map.insert(k, v, k()), Map#{}, s)
 
     ///
     /// Returns a map with elements of `s` as keys and `f` applied as values.
