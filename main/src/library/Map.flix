@@ -463,17 +463,17 @@ namespace Map {
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
-    pub def foldRight(f: (v, b) -> b & ef, s: b, m: Map[k, v]): b & ef =
-        foldRightWithKey((_, v, acc) -> f(v, acc), s, m)
+    pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
+        foldRightWithKey((_, v, k) -> f(v, k, z, m)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
-    pub def foldRightWithKey(f: (k, v, b) -> b & ef, s: b, m: Map[k, v]): b & ef =
+    pub def foldRightWithKey(f: (k, v, Unit -> b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
         let Map(t) = m;
-        RedBlackTree.foldRight(f, s, t)
+        RedBlackTree.foldRight(f, z, t)
 
     ///
     /// Lazily applies `f` to a start value `s` and all elements in `m` going from right to left.
