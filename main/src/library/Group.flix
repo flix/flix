@@ -17,7 +17,7 @@
 ///
 /// A type class for types that form a group.
 ///
-pub class Group[a] with Monoid[a] {
+pub lawful class Group[a] with Monoid[a] {
 
     ///
     /// Returns a neutral element.
@@ -29,12 +29,6 @@ pub class Group[a] with Monoid[a] {
     /// Returns the inverse element of `x`.
     ///
     pub def inverse(x: a): a
-
-    ///
-    /// Returns `y` subtracted from `x` using a group subtraction.
-    ///
-    pub def remove(x: a, y: a): a =
-        Group.combine(x, Group.inverse(y))
 
     ///
     /// Returns the result of combining `x` and `y` using Monoid's combine.
@@ -55,7 +49,17 @@ pub class Group[a] with Monoid[a] {
 
 }
 
+namespace Group {
+
+    ///
+    /// Returns `y` subtracted from `x` using a group subtraction.
+    ///
+    pub def remove(x: a, y: a): a =
+        Group.combine(x, Group.inverse(y))
+
+}
+
 ///
 /// Alias for `Group.remove`.
 ///
-pub def ~~(x: a, y: a): a with Group[a] = Group.remove(x, y)
+// pub def ~~(x: a, y: a): a with Group[a] = Group.remove(x, y)
