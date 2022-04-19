@@ -20,7 +20,7 @@ def hiss(c: Channel[String], n: Int32): Unit & Impure =
     }
 
 /// Start the animal farm...
-def main(): Int32 & Impure = {
+def main(): Unit & Impure = {
     let c1 = chan String 1;
     let c2 = chan String 1;
     let c3 = chan String 1;
@@ -31,6 +31,5 @@ def main(): Int32 & Impure = {
         case m <- c1 => m |> println
         case m <- c2 => m |> println
         case m <- c3 => m |> println
-    };
-    0 // exit code
+    }
 }

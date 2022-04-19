@@ -1,4 +1,4 @@
-def main(): Int32 & Impure =
+def main(): Unit & Impure =
     // Introduce some facts for colored paths.
     let f1 = #{
         ColorEdge(1, "blue", 2).
@@ -23,6 +23,4 @@ def main(): Int32 & Impure =
     let exists = (query m2 select true from ColorlessPath(1, 3) |> Array.length) != 0;
 
     // Print a result.
-    println(if (exists) "Path exists!" else "Path does not exist!");
-
-    0 // exit code
+    println(if (exists) "Path exists!" else "Path does not exist!")

@@ -1,6 +1,6 @@
 /// An example using Datalog constraints enriched with lattice semantics to
 /// compute the delivery date of a part based on delivery dates of its components.
-def main() : Int32 & Impure =
+def main(): Unit & Impure =
     let p = #{
         /// Parts and the components they depend on.
         PartDepends("Car",       "Chassis").
@@ -32,7 +32,4 @@ def main() : Int32 & Impure =
     let m = query p select (c, d) from ReadyDate(c; d) |> Array.toMap;
 
     // Looks up the delivery date for the car and prints it.
-    Map.getWithDefault("Car", 0, m) |> println;
-
-    // Exit code
-    0
+    Map.getWithDefault("Car", 0, m) |> println
