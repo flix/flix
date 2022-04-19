@@ -482,7 +482,7 @@ namespace Map {
     ///
     pub def foldRightWithKey(f: (k, v, Unit -> b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
         let Map(t) = m;
-        RedBlackTree.foldRight2(f, z, t)
+        RedBlackTree.foldRight(f, z, t)
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
