@@ -665,7 +665,7 @@ namespace Map {
     ///
     @Time(time(f) * size(m1) * Int32.log2(size(m2))) @Space(space(f) * size(m1) *  Int32.log2(size(m2)))
     pub def unionWithKey(f: (k, v, v) -> v & ef, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & ef with Order[k] =
-        use RedBlackTree.{blackHeight, foldRight, insertWith};
+        use RedBlackTree.{blackHeight, foldRightOld, insertWith};
         let Map(t1) = m1;
         let Map(t2) = m2;
         if (blackHeight(t1) < blackHeight(t2))
