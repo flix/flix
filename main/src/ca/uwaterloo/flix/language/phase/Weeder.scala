@@ -116,7 +116,11 @@ object Weeder {
 
     case d: ParsedAst.Declaration.Instance => visitInstance(d)
 
+    case _: ParsedAst.Declaration.Effect => Nil.toSuccess // ignoring effect declarations for now
+
     case _: ParsedAst.Declaration.Sig => throw InternalCompilerException(s"Unexpected declaration")
+
+    case _: ParsedAst.Declaration.Op => throw InternalCompilerException(s"Unexpected declaration")
   }
 
   /**

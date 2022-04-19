@@ -113,6 +113,22 @@ object ParsedAst {
     case class Law(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparams: Seq[ParsedAst.FormalParam], tconstrs: Seq[ParsedAst.TypeConstraint], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
 
     /**
+      * Effect Operation Declaration.
+      *
+      * @param doc        the optional comment associated with the definition.
+      * @param ann        the associated annotations.
+      * @param mod        the associated modifiers.
+      * @param sp1        the position of the first character in the declaration.
+      * @param ident      the name of the definition.
+      * @param tparams    the type parameters.
+      * @param fparamsOpt the formal parameters.
+      * @param tpe        the declared type.
+      * @param tconstrs   the type constraints.
+      * @param sp2        the position of the last character in the declaration.
+      */
+    case class Op(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, pur: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], sp2: SourcePosition) extends ParsedAst.Declaration
+
+    /**
       * Enum Declaration.
       *
       * @param doc     the optional comment associated with the declaration.
@@ -206,6 +222,19 @@ object ParsedAst {
       * @param sp2   the position of the last character in the declaration.
       */
     case class Instance(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, constraints: Seq[ParsedAst.TypeConstraint], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
+
+    /**
+      * Effect Declaration.
+      *
+      * @param doc          the optional comment associated with the declaration.
+      * @param mod          the associated modifiers.
+      * @param sp1          the position of the first character in the declaration.
+      * @param ident        the name of the definition.
+      * @param tparams      the type parameters.
+      * @param ops          the operations of the class.
+      * @param sp2          the position of the last character in the declaration.
+      */
+    case class Effect(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, ops: Seq[ParsedAst.Declaration.Op], sp2: SourcePosition) extends ParsedAst.Declaration
 
   }
 
