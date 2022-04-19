@@ -917,32 +917,32 @@ object ParsedAst {
     /**
       * Try Expression.
       *
-      * @param sp1         the position of the first character in the expression.
-      * @param exp         the guarded expression.
-      * @param catchOrWith the handler (catch/with) of the try expression.
-      * @param sp2         the position of the last character in the expression.
+      * @param sp1            the position of the first character in the expression.
+      * @param exp            the guarded expression.
+      * @param catchOrHandler the handler (catch/with) of the try expression.
+      * @param sp2            the position of the last character in the expression.
       */
-    case class Try(sp1: SourcePosition, exp: ParsedAst.Expression, catchOrWith: CatchOrWith, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Try(sp1: SourcePosition, exp: ParsedAst.Expression, catchOrHandler: CatchOrHandler, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * An enum representing the handler of a `try` expression.
       */
-    sealed trait CatchOrWith
+    sealed trait CatchOrHandler
 
-    object CatchOrWith {
+    object CatchOrHandler {
       /**
         * A `catch` expression for handling Java exceptions.
         *
         * @param rules the catch rules.
         */
-      case class Catch(rules: Seq[ParsedAst.CatchRule]) extends CatchOrWith
+      case class Catch(rules: Seq[ParsedAst.CatchRule]) extends CatchOrHandler
 
       /**
         * A `with` expression for handling Flix effects.
         *
         * @param rules the handler rules.
         */
-      case class With(rules: Seq[ParsedAst.WithRule]) extends CatchOrWith
+      case class Handler(rules: Seq[ParsedAst.HandlerRule]) extends CatchOrHandler
     }
 
     /**
@@ -1692,7 +1692,7 @@ object ParsedAst {
     * @param fparams the operation parameters.
     * @param exp     the body expression.
     */
-  case class WithRule(name: Name.QName, fparams: Seq[FormalParam], exp: ParsedAst.Expression)
+  case class HandlerRule(name: Name.QName, fparams: Seq[FormalParam], exp: ParsedAst.Expression)
 
   /**
     * A choice pattern match rule.
