@@ -45,7 +45,7 @@ instance Hash[Set[a]] with Hash[a] {
 
 instance ToString[Set[a]] with ToString[a] {
     pub def toString(s: Set[a]): String =
-        let st = Set.foldRight((x, acc) -> "${x}, ${acc}", "", s);
+        let st = Set.foldRight((x, acc) -> "${x}, ${acc()}", "", s);
         "Set#{${String.dropRight(2, st)}}"
 }
 
@@ -67,7 +67,9 @@ instance MeetLattice[Set[a]] with Order[a] {
 
 instance Foldable[Set] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldLeft(f, s, s1)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRight(f, s, s1)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef =
+        let Set(t) = s1;
+        Set.foldRight(f, s, s1)
 }
 
 instance SemiGroup[Set[a]] with Order[a] {
@@ -295,10 +297,11 @@ namespace Set {
     /// Applies `f` to a start value `s` and all elements in `s` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef =
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, s1: Set[a]): b & ef =
         let Set(t) = s1;
-        RedBlackTree.foldRight((k, _, acc) -> f(k, acc), s, t)
+        RedBlackTree.foldRight((k, _, acc) -> f(k, acc()), z, t)
 
     ///
     /// Lazily applies `f` to a start value `s` and all elements in `s` going from right to left.
