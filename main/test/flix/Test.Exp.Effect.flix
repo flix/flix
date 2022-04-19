@@ -22,7 +22,7 @@ namespace Test/Exp/Effect {
 
     pub def handlePerform01(): Bool = {
         try do Fail.fail("rats") with {
-            def Fail.fail(_) => true
+            def Fail.fail(_) = true
         }
     }
 
