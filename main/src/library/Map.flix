@@ -57,7 +57,7 @@ instance Functor[Map[k]] {
 
 instance Foldable[Map[k]] {
     pub def foldLeft(f: (b, v) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldLeft((acc, v) -> f(acc, v), s, m)
-    pub def foldRight(f: (v, b) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRight((v, acc) -> f(v, acc), s, m)
+    pub def foldRight(f: (v, b) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRightOld((v, acc) -> f(v, acc), s, m)
 }
 
 instance Traversable[Map[k]] {
@@ -462,6 +462,15 @@ namespace Map {
     /// Applies `f` to a start value `s` and all values in `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
+    ///
+    pub def foldRightOld(f: (v, Unit -> b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
+        foldRightWithKey((_, v, k) -> f(v, k), z, m)
+
+    ///
+    /// Applies `f` to a start value `s` and all values in `m` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
+    /// A `foldRight` allows early termination by not calling the continuation.
     ///
     pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
         foldRightWithKey((_, v, k) -> f(v, k), z, m)
