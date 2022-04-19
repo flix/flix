@@ -308,7 +308,7 @@ namespace Set {
     ///
     pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, s1: Set[a]): b & ef =
         let Set(t) = s1;
-        RedBlackTree.foldRight((k, _, acc) -> f(k, acc()), z, t)
+        RedBlackTree.foldRight((k, _, c) -> f(k, c), z, t)
 
     ///
     /// Applies `f` to all elements in `s` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
