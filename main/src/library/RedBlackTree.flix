@@ -288,7 +288,7 @@ namespace RedBlackTree {
     /// Returns `None` if `tree` is the empty tree.
     ///
     pub def reduceRight(f: (k, v, k, v) -> (k, v) & ef, tree: RedBlackTree[k, v]): Option[(k, v)] & ef =
-        foldRight((k1, v1, k) -> match k() {
+        foldRight((k1, v1, c) -> match c() {
             case Some((k2, v2)) => Some(f(k1, v1, k2, v2))
             case None => Some(k1, v1)
         }, None, tree)
@@ -820,7 +820,7 @@ namespace RedBlackTree {
     /// Returns the tree `t` as a list. Elements are ordered from smallest (left) to largest (right).
     ///
     pub def toList(t: RedBlackTree[k, v]): List[(k, v)] =
-        RedBlackTree.foldRight((k, v, xs) -> (k, v) :: xs(), Nil, t)
+        RedBlackTree.foldRight((k, v, c) -> (k, v) :: c(), Nil, t)
 
     ///
     /// Build a node applicatively.
