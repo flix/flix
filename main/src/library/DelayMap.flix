@@ -483,20 +483,20 @@ namespace DelayMap {
     ///
     @Lazy
     def unionWithKeyL(f: (k, v, v) -> v, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
-        use RedBlackTree.{blackHeight, foldRight, insertWith};
+        use RedBlackTree.{blackHeight, foldRightOld, insertWith};
         let DMap(xs) = m1;
         let DMap(ys) = m2;
         let f1 = (k, v1, v2) -> lazy (f(k, force v1, force v2));
         if (blackHeight(xs) < blackHeight(ys))
-            DMap(foldRight((k, v) -> insertWith(f1, k, v), ys, xs))
+            DMap(foldRightOld((k, v) -> insertWith(f1, k, v), ys, xs))
         else
-            DMap(foldRight((k, v) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v), xs, ys))
+            DMap(foldRightOld((k, v) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v), xs, ys))
 
     ///
     /// Helper function for `unionWithKey`. Applies `f` eagerly.
     ///
     def unionWithKeyE(f: (k, v, v) -> v & ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
-        use RedBlackTree.{blackHeight, foldRight, insertWith};
+        use RedBlackTree.{blackHeight, foldRightOld, insertWith};
         let DMap(xs) = m1;
         let DMap(ys) = m2;
         let f1 = (k, v1, v2) -> {
@@ -505,10 +505,10 @@ namespace DelayMap {
             };
         if (blackHeight(xs) < blackHeight(ys))
             let _ = parallelForce(m1);
-            DMap(foldRight((k, v) -> insertWith(f1, k, v), ys, xs))
+            DMap(foldRightOld((k, v) -> insertWith(f1, k, v), ys, xs))
         else
             let _ = parallelForce(m2);
-            DMap(foldRight((k, v) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v), xs, ys))
+            DMap(foldRightOld((k, v) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v), xs, ys))
 
     ///
     /// Returns the map `m` as a list of key-value pairs.
@@ -557,7 +557,7 @@ namespace DelayMap {
         let _ = parallelForce(m);
         let DMap(t) = m;
         let f1 = (k1, v1, b1) -> f(k1, force v1, b1);
-        RedBlackTree.foldRight(f1, s, t)
+        RedBlackTree.foldRightOld(f1, s, t)
 
     ///
     /// Applies `f` to a start value `s` and all values in `m` going from right to left.
@@ -581,7 +581,7 @@ namespace DelayMap {
         let _ = parallelForce(m);
         let DMap(t) = m;
         let f1 = (k1, v1, b1) -> f(k1, force v1, b1);
-        RedBlackTree.foldRightLazy(f1, s, t)
+        RedBlackTree.foldRightLazyOld(f1, s, t)
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.

@@ -1215,6 +1215,7 @@ namespace TestDelayMap {
         Map#{1 => 2, 3 => 4, 5 => 6} |> Map.toDelayMap |>
             DelayMap.foldRight((v, s) -> s + v, 0) == 12
 
+
     /////////////////////////////////////////////////////////////////////////////
     // foldRightLazy                                                           //
     /////////////////////////////////////////////////////////////////////////////
@@ -1239,6 +1240,7 @@ namespace TestDelayMap {
         Map#{1 => 2, 3 => 4, 5 => 6} |> Map.toDelayMap |>
             DelayMap.foldRightLazy((v, s) -> force s + v, 0) == 12
 
+
     /////////////////////////////////////////////////////////////////////////////
     // foldRightWithKey                                                        //
     /////////////////////////////////////////////////////////////////////////////
@@ -1262,6 +1264,7 @@ namespace TestDelayMap {
     def foldRightWithKey04(): Bool =
         Map#{1 => 2, 3 => 4, 5 => 6} |> Map.toDelayMap |>
             DelayMap.foldRightWithKey((k, v, s) -> k + s + v, 0) == 21
+
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
