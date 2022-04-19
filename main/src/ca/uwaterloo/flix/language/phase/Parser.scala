@@ -1393,6 +1393,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   }
 
+  object Effects {
+    def Var: Rule1[ParsedAst.Effect]
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Kinds                                                                   //
   /////////////////////////////////////////////////////////////////////////////
