@@ -301,7 +301,7 @@ namespace Fixpoint {
     /// (3) is a function call that computes the expression `x > 0`.
     ///
     def compileBody(env: Map[VarSym, RamTerm[v]], body: Array[(BodyPredicate[v], RowVar)]): List[BoolExp[v]] & Impure =
-        Array.foldRightOld(match (atom, rowVar) -> acc ->
+        Array.foldRight(match (atom, rowVar) -> k ->
             let compileBodyTerm = term -> j -> match term {
                 case BodyTerm.Wild      => RamTerm.RowLoad(rowVar, j)
                 case BodyTerm.Var(var)  => unwrap(Map.get(var, env))
@@ -318,38 +318,38 @@ namespace Fixpoint {
                             else
                                 BoolExp.Leq(leq, t, RamTerm.LoadLatVar(rowVar))
                     }) |>
-                    Array.foldRightOld(x -> xs -> x :: xs, acc)
+                    Array.foldRight(x -> k2 -> x :: k2(), k())
                 case BodyAtom(PredSym(pred), denotation, Polarity.Negative, _, terms) =>
                     let ramTerms = Array.mapWithIndex(compileBodyTerm, terms);
                     let arity = Array.length(ramTerms);
-                    BoolExp.NotMemberOf(ramTerms, RamSym.Full(pred, arity, denotation)) :: acc
+                    BoolExp.NotMemberOf(ramTerms, RamSym.Full(pred, arity, denotation)) :: k()
                 case Guard0(f) =>
-                    BoolExp.Guard0(f) :: acc
+                    BoolExp.Guard0(f) :: k()
                 case Guard1(f, v) =>
                     let t = unwrap(Map.get(v, env));
-                    BoolExp.Guard1(f, t) :: acc
+                    BoolExp.Guard1(f, t) :: k()
                 case Guard2(f, v1, v2) =>
                     let t1 = unwrap(Map.get(v1, env));
                     let t2 = unwrap(Map.get(v2, env));
-                    BoolExp.Guard2(f, t1, t2) :: acc
+                    BoolExp.Guard2(f, t1, t2) :: k()
                 case Guard3(f, v1, v2, v3) =>
                     let t1 = unwrap(Map.get(v1, env));
                     let t2 = unwrap(Map.get(v2, env));
                     let t3 = unwrap(Map.get(v3, env));
-                    BoolExp.Guard3(f, t1, t2, t3) :: acc
+                    BoolExp.Guard3(f, t1, t2, t3) :: k()
                 case Guard4(f, v1, v2, v3, v4) =>
                     let t1 = unwrap(Map.get(v1, env));
                     let t2 = unwrap(Map.get(v2, env));
                     let t3 = unwrap(Map.get(v3, env));
                     let t4 = unwrap(Map.get(v4, env));
-                    BoolExp.Guard4(f, t1, t2, t3, t4) :: acc
+                    BoolExp.Guard4(f, t1, t2, t3, t4) :: k()
                 case Guard5(f, v1, v2, v3, v4, v5) =>
                     let t1 = unwrap(Map.get(v1, env));
                     let t2 = unwrap(Map.get(v2, env));
                     let t3 = unwrap(Map.get(v3, env));
                     let t4 = unwrap(Map.get(v4, env));
                     let t5 = unwrap(Map.get(v5, env));
-                    BoolExp.Guard5(f, t1, t2, t3, t4, t5) :: acc
+                    BoolExp.Guard5(f, t1, t2, t3, t4, t5) :: k()
                 case Loop1(_) =>
                     ??? // TODO
             }, Nil, body)
