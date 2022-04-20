@@ -12,7 +12,14 @@ object BoolTable {
   type Variable = Int
 
   sealed trait Term {
-
+    override def toString: String = this match {
+      case Term.True => "true"
+      case Term.False => "false"
+      case Term.Var(x) => s"x$x"
+      case Term.Neg(t) => s"not $t"
+      case Term.Conj(t1, t2) => s"($t1 and $t2)"
+      case Term.Disj(t1, t2) => s"($t1 or $t2)"
+    }
   }
 
   object Term {
@@ -59,7 +66,9 @@ object BoolTable {
 
     cache.get(semantic) match {
       case None => toType(t, reverseTypeVarMap)
-      case Some(min) => toType(min, reverseTypeVarMap)
+      case Some(min) =>
+
+        toType(t, reverseTypeVarMap)
     }
   }
 
@@ -117,7 +126,7 @@ object BoolTable {
     var result = 0
     for ((c, position) <- key.zipWithIndex) {
       if (c == 'T') {
-        result = result | (1 << position)
+        result = result | (1 << (position - 1))
       }
     }
     result
