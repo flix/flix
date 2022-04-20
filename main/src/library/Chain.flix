@@ -499,8 +499,8 @@ namespace Chain {
     ///
     pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Chain[a]): b & ef =
         def loop(cc) = match viewLeft(cc) {
-            case Chain/ViewLeft.NoneLeft        => z
-            case Chain/ViewLeft.SomeLeft(x, rs) => f(x, _ -> loop(rs))
+            case NoneLeft        => z
+            case SomeLeft(x, rs) => f(x, _ -> loop(rs))
         };
         loop(c)
 
