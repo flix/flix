@@ -162,23 +162,39 @@ object BoolTable {
       l | r
   }
 
+  /**
+    * Evaluates the given formula `f` to a Boolean value under the given environment `env`.
+    *
+    * The environment must bind *all* variables in `f`.
+    */
   private def eval(f: Formula, env: Map[Variable, Boolean]): Boolean = f match {
     case Formula.True => true
     case Formula.False => false
-    case Formula.Var(sym) => env(sym)
+    case Formula.Var(x) => env.get(x) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
+      case Some(b) => b
+    }
     case Formula.Neg(t) => !eval(t, env)
     case Formula.Conj(t1, t2) => eval(t1, env) && eval(t2, env)
     case Formula.Disj(t1, t2) => eval(t1, env) || eval(t2, env)
   }
 
-  private def fromType(tpe0: Type, m: Map[Symbol.KindedTypeVarSym, Variable]): Formula = tpe0 match {
-    case Type.KindedVar(sym, _) => Formula.Var(m(sym))
+  /**
+    * Converts the given type `tpe` to a Boolean formula under the given variable substitution map `m`.
+    *
+    * That is, `m` must bind each free type variable in `tpe` to a Boolean variable.
+    */
+  private def fromType(tpe: Type, m: Map[Symbol.KindedTypeVarSym, Variable]): Formula = tpe match {
+    case Type.KindedVar(sym, _) => m.get(sym) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
+      case Some(x) => Formula.Var(x)
+    }
     case Type.True => Formula.True
     case Type.False => Formula.False
-    case Type.Apply(Type.Cst(TypeConstructor.Not, _), t, _) => Formula.Neg(fromType(t, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), t1, _), t2, _) => Formula.Conj(fromType(t1, m), fromType(t2, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), t1, _), t2, _) => Formula.Disj(fromType(t1, m), fromType(t2, m))
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+    case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => Formula.Neg(fromType(tpe1, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => Formula.Conj(fromType(tpe1, m), fromType(tpe2, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => Formula.Disj(fromType(tpe1, m), fromType(tpe2, m))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
   def toType(t0: Formula, m: Map[Variable, Symbol.KindedTypeVarSym]): Type = t0 match {
