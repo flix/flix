@@ -839,7 +839,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Do: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("do") ~ WS ~ Names.QualifiedEffect ~ ArgumentList ~ SP ~> ParsedAst.Expression.Do
+      SP ~ keyword("do") ~ WS ~ Names.QualifiedOperation ~ ArgumentList ~ SP ~> ParsedAst.Expression.Do
     }
 
     def Resume: Rule1[ParsedAst.Expression] = rule {
@@ -856,11 +856,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def HandlerRule: Rule1[ParsedAst.HandlerRule] = rule {
-        keyword("def") ~ WS ~ Names.QualifiedEffect ~ FormalParamList ~ optWS ~ atomic("=") ~ optWS ~ Expression ~> ParsedAst.HandlerRule
+        keyword("def") ~ WS ~ Names.Operation ~ FormalParamList ~ optWS ~ atomic("=") ~ optWS ~ Expression ~> ParsedAst.HandlerRule
       }
 
       def HandlerBody: Rule1[ParsedAst.CatchOrHandler] = rule {
-        keyword("with") ~ optWS ~ "{" ~ optWS ~ zeroOrMore(HandlerRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.CatchOrHandler.Handler
+        keyword("with") ~ optWS ~ Names.QualifiedEffect ~ optional(optWS ~ "{" ~ optWS ~ zeroOrMore(HandlerRule).separatedBy(CaseSeparator) ~ optWS ~ "}") ~> ParsedAst.CatchOrHandler.Handler
       }
 
       def Body: Rule1[ParsedAst.CatchOrHandler] = rule {
@@ -1634,7 +1634,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Effect: Rule1[Name.Ident] = UpperCaseName
 
-    def QualifiedEffect: Rule1[Name.QName] = LowerCaseQName
+    def QualifiedEffect: Rule1[Name.QName] = UpperCaseQName
+
+    def Operation: Rule1[Name.Ident] = LowerCaseName
+
+    def QualifiedOperation: Rule1[Name.QName] = LowerCaseQName
 
     def Field: Rule1[Name.Ident] = LowerCaseName
 
