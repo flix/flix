@@ -308,13 +308,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ "{" ~ optWS ~ zeroOrMore(Var | Read | Write).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Union
     }
 
-    rule {
-      WS ~ "\\" ~ WS ~ (Single | Union)
+    // unused for now
+    def EffectAlt: Rule1[ParsedAst.EffectSet] = rule {
+      optWS ~ "\\" ~ optWS ~ Effects.EffectSet
     }
 
-    def EffectAlt: Rule1[ParsedAst.EffectSet] = rule {
-      // MATT change back to \\ when ready
-      optWS ~ "|" ~ optWS ~ Effects.EffectSet
+    rule {
+      WS ~ "\\" ~ WS ~ (Single | Union)
     }
 
   }
