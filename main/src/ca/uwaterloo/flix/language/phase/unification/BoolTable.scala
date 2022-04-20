@@ -22,11 +22,11 @@ object BoolTable {
     case class Disj(t1: Term, t2: Term) extends Term
   }
 
-  def semanticFunction(t0: Term, fvs: List[Symbol.KindedTypeVarSym], binding: Map[Symbol.KindedTypeVarSym, Boolean], index: Int): Int = fvs match {
-    case Nil => if (eval(t0, binding)) 1 << index else 0
+  def semanticFunction(position: Int, t0: Term, fvs: List[Symbol.KindedTypeVarSym], binding: Map[Symbol.KindedTypeVarSym, Boolean]): Int = fvs match {
+    case Nil => if (eval(t0, binding)) 1 << position else 0
     case x :: xs =>
-      val l = semanticFunction(t0, xs, binding + (x -> true), index)
-      val r = semanticFunction(t0, xs, binding + (x -> false), index + (1 << (fvs.length - 1)))
+      val l = semanticFunction(position, t0, xs, binding + (x -> true))
+      val r = semanticFunction(position + (1 << (fvs.length - 1)), t0, xs, binding + (x -> false))
       l | r
   }
 
@@ -41,7 +41,7 @@ object BoolTable {
     val t = fromType(tpe)
     val freeVars = tvars.toList.map(_.sym)
 
-    val semantic = semanticFunction(t, freeVars, Map.empty, 0)
+    val semantic = semanticFunction(freeVars.length, t, freeVars, Map.empty)
 
 
     val fmtFormula = FormatType.formatWellKindedType(tpe)(Audience.External).take(80)
