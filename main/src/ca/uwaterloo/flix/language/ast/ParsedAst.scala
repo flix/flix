@@ -1496,6 +1496,8 @@ object ParsedAst {
     case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Effect
     case class Minus(sp1: SourcePosition, eff1: ParsedAst.Effect, eff2: ParsedAst.Effect, sp2: SourcePosition) extends ParsedAst.Effect
     case class Plus(sp1: SourcePosition, eff1: ParsedAst.Effect, eff2: ParsedAst.Effect, sp2: SourcePosition) extends ParsedAst.Effect
+    case class Intersect(sp1: SourcePosition, eff1: ParsedAst.Effect, eff2: ParsedAst.Effect, sp2: SourcePosition) extends ParsedAst.Effect
+    case class Complement(sp1: SourcePosition, eff: ParsedAst.Effect, sp2: SourcePosition) extends ParsedAst.Effect
     case class Read(sp1: SourcePosition, regs: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst.Effect
     case class Write(sp1: SourcePosition, regs: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst.Effect
     case class Eff(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Effect
