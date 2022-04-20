@@ -908,10 +908,23 @@ object ParsedAst {
       */
     case class Cast(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], pur: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Expression
 
-    // MATT docs
+    /**
+      * Do Expression.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param op   the effect operation.
+      * @param args the arguments to the operation.
+      * @param sp2  the position of the last character in the expression.
+      */
     case class Do(sp1: SourcePosition, op: Name.QName, args: Seq[ParsedAst.Argument], sp2: SourcePosition) extends Expression
 
-    // MATT docs
+    /**
+      * Resume Expression.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param args the arguments to the continuation.
+      * @param sp2  the position of the last character in the expression.
+      */
     case class Resume(sp1: SourcePosition, args: Seq[ParsedAst.Argument], sp2: SourcePosition) extends Expression
 
     /**
