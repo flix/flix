@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -33,14 +33,26 @@ object BoolTable {
     *
     * The table is pre-computed and initialized when this class is loaded.
     */
-  private val cache: Map[Int, Formula] = Map.empty
+  private lazy val cache: Map[Int, Formula] = buildTable()
 
   /**
     * A common super-type for Boolean formulas.
     */
   private sealed trait Formula {
 
-
+    /**
+      * Returns the size of `this` formulas.
+      *
+      * The size is the number of conjunctions and disjunctions.
+      */
+    final def size: Int = this match {
+      case Formula.True => 0
+      case Formula.False => 0
+      case Formula.Var(_) => 0
+      case Formula.Neg(t) => t.size
+      case Formula.Conj(t1, t2) => t1.size + t2.size + 1
+      case Formula.Disj(t1, t2) => t1.size + t2.size + 1
+    }
 
     /**
       * Returns a human-readable fully parenthesized string representation of `this` term.
@@ -53,24 +65,56 @@ object BoolTable {
       case Formula.Conj(t1, t2) => s"($t1 and $t2)"
       case Formula.Disj(t1, t2) => s"($t1 or $t2)"
     }
+
   }
 
   private object Formula {
+    /**
+      * Represents the constant True.
+      */
     case object True extends Formula
 
+    /**
+      * Represents the constant False.
+      */
     case object False extends Formula
 
+    /**
+      * Represents a vairable.
+      */
     case class Var(x: Variable) extends Formula
 
+    /**
+      * Represents the negation of the formula `t`.
+      */
     case class Neg(t: Formula) extends Formula
 
+    /**
+      * Represents the conjunction (logical and) of `t1` and `t2`.
+      */
     case class Conj(t1: Formula, t2: Formula) extends Formula
 
+    /**
+      * Represents the disjunction (logical or) of `t1` and `t2`.
+      */
     case class Disj(t1: Formula, t2: Formula) extends Formula
   }
 
-
+  /**
+    * Attempts to minimize the given Boolean formulas `tpe`.
+    *
+    * Returns the same formula or a smaller formula that is equivalent.
+    *
+    * @param tpe the formulas to minimize. Must have kind `Bool`.
+    */
   def minimize(tpe: Type): Type = {
+    //
+    // Check that the given type argument is a Boolean formula.
+    //
+    if (tpe.kind != Kind.Bool) {
+      throw InternalCompilerException(s"Unexpected non-Bool kind: '${tpe.kind}'.")
+    }
+
     val tvars = tpe.typeVars.map(_.sym).toList
     if (tpe.size < 8 || tvars.size > 5) {
       return tpe
@@ -93,10 +137,10 @@ object BoolTable {
     cache.get(semantic) match {
       case None => toType(t, reverseTypeVarMap)
       case Some(result) =>
-        val minimal = toType(result, reverseTypeVarMap)
+        val currentSize = t.size
+        val minimalSize = result.size
 
-        val minimalSize = minimal.size
-        val currentSize = tpe.size
+        val minimal = toType(result, reverseTypeVarMap)
         if (minimalSize < currentSize) {
           implicit val audience: Audience = Audience.Internal
           println(s"Replace: ${FormatType.formatWellKindedType(tpe)}")
@@ -118,13 +162,13 @@ object BoolTable {
       l | r
   }
 
-  def eval(t0: Formula, binding: Map[Variable, Boolean]): Boolean = t0 match {
+  private def eval(f: Formula, env: Map[Variable, Boolean]): Boolean = f match {
     case Formula.True => true
     case Formula.False => false
-    case Formula.Var(sym) => binding(sym)
-    case Formula.Neg(t) => !eval(t, binding)
-    case Formula.Conj(t1, t2) => eval(t1, binding) && eval(t2, binding)
-    case Formula.Disj(t1, t2) => eval(t1, binding) || eval(t2, binding)
+    case Formula.Var(sym) => env(sym)
+    case Formula.Neg(t) => !eval(t, env)
+    case Formula.Conj(t1, t2) => eval(t1, env) && eval(t2, env)
+    case Formula.Disj(t1, t2) => eval(t1, env) || eval(t2, env)
   }
 
   private def fromType(tpe0: Type, m: Map[Symbol.KindedTypeVarSym, Variable]): Formula = tpe0 match {
