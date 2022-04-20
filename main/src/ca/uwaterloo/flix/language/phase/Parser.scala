@@ -668,11 +668,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
-        ReifyType | ReifyPurity | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
+        ReifyType | ReifyPurity | Choose | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointProject | FixpointSolveWithProject |
-        FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal |
+        FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         UnaryLambda | FName | Tag | Hole
     }
 
@@ -838,17 +838,37 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def TryCatch: Rule1[ParsedAst.Expression] = {
+    def Do: Rule1[ParsedAst.Expression] = rule {
+      SP ~ keyword("do") ~ WS ~ Names.QualifiedEffect ~ ArgumentList ~ SP ~> ParsedAst.Expression.Do
+    }
+
+    def Resume: Rule1[ParsedAst.Expression] = rule {
+      SP ~ keyword("resume") ~ ArgumentList ~ SP ~> ParsedAst.Expression.Resume
+    }
+
+    def Try: Rule1[ParsedAst.Expression] = {
       def CatchRule: Rule1[ParsedAst.CatchRule] = rule {
         keyword("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ atomic("##") ~ Names.JavaName ~ WS ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.CatchRule
       }
 
-      def CatchBody: Rule1[Seq[ParsedAst.CatchRule]] = rule {
-        "{" ~ optWS ~ oneOrMore(CatchRule).separatedBy(CaseSeparator) ~ optWS ~ "}"
+      def CatchBody: Rule1[ParsedAst.CatchOrHandler] = rule {
+        keyword("catch") ~ optWS ~ "{" ~ optWS ~ oneOrMore(CatchRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.CatchOrHandler.Catch
+      }
+
+      def HandlerRule: Rule1[ParsedAst.HandlerRule] = rule {
+        keyword("def") ~ WS ~ Names.QualifiedEffect ~ FormalParamList ~ optWS ~ atomic("=") ~ optWS ~ Expression ~> ParsedAst.HandlerRule
+      }
+
+      def HandlerBody: Rule1[ParsedAst.CatchOrHandler] = rule {
+        keyword("with") ~ optWS ~ "{" ~ optWS ~ zeroOrMore(HandlerRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.CatchOrHandler.Handler
+      }
+
+      def Body: Rule1[ParsedAst.CatchOrHandler] = rule {
+        CatchBody | HandlerBody
       }
 
       rule {
-        SP ~ keyword("try") ~ WS ~ Expression ~ optWS ~ keyword("catch") ~ optWS ~ CatchBody ~ SP ~> ParsedAst.Expression.TryCatch
+        SP ~ keyword("try") ~ WS ~ Expression ~ optWS ~ Body ~ SP ~> ParsedAst.Expression.Try
       }
     }
 
@@ -1613,6 +1633,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName
 
     def Effect: Rule1[Name.Ident] = UpperCaseName
+
+    def QualifiedEffect: Rule1[Name.QName] = LowerCaseQName
 
     def Field: Rule1[Name.Ident] = LowerCaseName
 
