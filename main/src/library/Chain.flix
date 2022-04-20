@@ -497,10 +497,12 @@ namespace Chain {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Chain[a]): b & ef = match viewLeft(c) {
-        case Chain/ViewLeft.NoneLeft        => z
-        case Chain/ViewLeft.SomeLeft(x, rs) => f(x, _ -> foldRight(f, z, rs))
-    }
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Chain[a]): b & ef =
+        def loop(cc) = match viewLeft(cc) {
+            case Chain/ViewLeft.NoneLeft        => z
+            case Chain/ViewLeft.SomeLeft(x, rs) => f(x, _ -> loop(rs))
+        };
+        loop(c)
 
     ///
     /// Returns `c` without the first `n` elements.
