@@ -137,14 +137,16 @@ object Inliner {
       val e = visitExp(exp, subst0)
       val as = args.map(visitExp(_, subst0))
       e match {
-        case LiftedAst.Expression.Closure(sym, _, _, _) =>
+        case LiftedAst.Expression.Closure(sym, freevars, _, _) =>
           val def1 = root.defs.apply(sym)
           // If `def1` is a single non-self call or
           // it is trivial
           // then inline the body of `def1`
           if (def1.context.isNonSelfCall || isTrivialExp(def1.exp)) {
             val e1 = convertTailCall(def1.exp)
-            bindFormals(e1, def1.fparams.map(_.sym), as, Map.empty)
+            // Map for substituting formal parameters of a function with the freevars currently in scope
+            val env = def1.fparams.map(_.sym).zip(freevars.map(_.sym)).toMap
+            bindFormals(e1, def1.fparams.drop(freevars.length).map(_.sym), as, env)
           } else {
             LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
           }
@@ -152,7 +154,6 @@ object Inliner {
           val as = args.map(visitExp(_, subst0))
           LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
       }
-      LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc) =>
       val as = args.map(visitExp(_, subst0))
@@ -171,13 +172,15 @@ object Inliner {
       val e = visitExp(exp, subst0)
       val as = args.map(visitExp(_, subst0))
       e match {
-        case LiftedAst.Expression.Closure(sym, _, _, _) =>
+        case LiftedAst.Expression.Closure(sym, freevars, _, _) =>
           val def1 = root.defs.apply(sym)
           // If `def1` is a single non-self call or
           // it is trivial
           // then inline the body of `def1`
           if (def1.context.isNonSelfCall || isTrivialExp(def1.exp)) {
-            bindFormals(def1.exp, def1.fparams.map(_.sym), as, Map.empty)
+            // Map for substituting formal parameters of a function with the freevars currently in scope
+            val env = def1.fparams.map(_.sym).zip(freevars.map(_.sym)).toMap
+            bindFormals(def1.exp, def1.fparams.drop(freevars.length).map(_.sym), as, env)
           } else {
             LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
           }
@@ -185,7 +188,6 @@ object Inliner {
           val as = args.map(visitExp(_, subst0))
           LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
       }
-      LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) =>
       val as = args.map(visitExp(_, subst0))
