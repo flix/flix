@@ -226,13 +226,13 @@ object ParsedAst {
     /**
       * Effect Declaration.
       *
-      * @param doc          the optional comment associated with the declaration.
-      * @param mod          the associated modifiers.
-      * @param sp1          the position of the first character in the declaration.
-      * @param ident        the name of the definition.
-      * @param tparams      the type parameters.
-      * @param ops          the operations of the class.
-      * @param sp2          the position of the last character in the declaration.
+      * @param doc     the optional comment associated with the declaration.
+      * @param mod     the associated modifiers.
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the definition.
+      * @param tparams the type parameters.
+      * @param ops     the operations of the class.
+      * @param sp2     the position of the last character in the declaration.
       */
     case class Effect(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, ops: Seq[ParsedAst.Declaration.Op], sp2: SourcePosition) extends ParsedAst.Declaration
 
@@ -465,7 +465,6 @@ object ParsedAst {
       * @param sp2 the position of the last character in the literal.
       */
     case class Default(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Literal
-
   }
 
   /**
@@ -910,14 +909,33 @@ object ParsedAst {
     case class Cast(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], pur: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Try Catch Expression.
+      * Do Expression.
       *
-      * @param sp1   the position of the first character in the expression.
-      * @param exp   the guarded expression.
-      * @param rules the catch rules.
-      * @param sp2   the position of the last character in the expression.
+      * @param sp1  the position of the first character in the expression.
+      * @param op   the effect operation.
+      * @param args the arguments to the operation.
+      * @param sp2  the position of the last character in the expression.
       */
-    case class TryCatch(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.CatchRule], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Do(sp1: SourcePosition, op: Name.QName, args: Seq[ParsedAst.Argument], sp2: SourcePosition) extends Expression
+
+    /**
+      * Resume Expression.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param args the arguments to the continuation.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Resume(sp1: SourcePosition, args: Seq[ParsedAst.Argument], sp2: SourcePosition) extends Expression
+
+    /**
+      * Try Expression.
+      *
+      * @param sp1            the position of the first character in the expression.
+      * @param exp            the guarded expression.
+      * @param catchOrHandler the handler (catch/with) of the try expression.
+      * @param sp2            the position of the last character in the expression.
+      */
+    case class Try(sp1: SourcePosition, exp: ParsedAst.Expression, catchOrHandler: CatchOrHandler, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * NewChannel Expression.
@@ -1660,6 +1678,15 @@ object ParsedAst {
   case class CatchRule(ident: Name.Ident, fqn: Seq[String], exp: ParsedAst.Expression)
 
   /**
+    * Effect handler rule.
+    *
+    * @param name    the operation name.
+    * @param fparams the operation parameters.
+    * @param exp     the body expression.
+    */
+  case class HandlerRule(name: Name.QName, fparams: Seq[FormalParam], exp: ParsedAst.Expression)
+
+  /**
     * A choice pattern match rule.
     *
     * @param sp1 the position of the first character in the rule.
@@ -1705,6 +1732,27 @@ object ParsedAst {
     * @param sp2   the position of the last character in the annotation.
     */
   case class Annotation(sp1: SourcePosition, ident: Name.Ident, args: Option[Seq[ParsedAst.Argument]], sp2: SourcePosition)
+
+  /**
+    * An enum representing the handler of a `try` expression.
+    */
+  sealed trait CatchOrHandler
+
+  object CatchOrHandler {
+    /**
+      * A `catch` block for handling Java exceptions.
+      *
+      * @param rules the catch rules.
+      */
+    case class Catch(rules: Seq[ParsedAst.CatchRule]) extends CatchOrHandler
+
+    /**
+      * A `with` block for handling Flix effects.
+      *
+      * @param rules the handler rules.
+      */
+    case class Handler(rules: Seq[ParsedAst.HandlerRule]) extends CatchOrHandler
+  }
 
   /**
     * String Interpolation Part.

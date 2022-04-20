@@ -1300,7 +1300,15 @@ object Weeder {
         case e => WeededAst.Expression.Cast(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
-    case ParsedAst.Expression.TryCatch(sp1, exp, rules, sp2) =>
+    // ignoring Do for now
+    case ParsedAst.Expression.Do(sp1, op, args, sp2) =>
+      WeededAst.Expression.Hole(None, mkSL(sp1, sp2)).toSuccess
+
+    // ignoring Resume for now
+    case ParsedAst.Expression.Resume(sp1, args, sp2) =>
+      WeededAst.Expression.Hole(None, mkSL(sp1, sp2)).toSuccess
+
+    case ParsedAst.Expression.Try(sp1, exp, ParsedAst.CatchOrHandler.Catch(rules), sp2) =>
       val expVal = visitExp(exp)
       val rulesVal = traverse(rules) {
         case ParsedAst.CatchRule(ident, fqn, body) =>
@@ -1312,6 +1320,10 @@ object Weeder {
       mapN(expVal, rulesVal) {
         case (e, rs) => WeededAst.Expression.TryCatch(e, rs, mkSL(sp1, sp2))
       }
+
+    // not handling these rules yet
+    case ParsedAst.Expression.Try(sp1, exp, ParsedAst.CatchOrHandler.Handler(rules), sp2) =>
+      WeededAst.Expression.Hole(None, mkSL(sp1, sp2)).toSuccess
 
     // TODO SJ: Rewrite to Ascribe(newch, Channel[Int32]), to remove the tpe (and get tvar like everything else)
     // TODO SJ: Also do not allow function types (Arrow) when rewriting
@@ -2639,7 +2651,9 @@ object Weeder {
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Cast(e1, _, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.TryCatch(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Do(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Resume(sp1, _, _) => sp1
+    case ParsedAst.Expression.Try(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NewChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.GetChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
