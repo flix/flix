@@ -1395,6 +1395,23 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   object Effects {
 
+    def EffectSet: Rule1[ParsedAst.EffectSet] = rule {
+      // NB: Pure must come before Set since they overlap
+      Pure | Set | Singleton
+    }
+
+    def Pure: Rule1[ParsedAst.EffectSet] = rule {
+      SP ~ "{" ~ optWS ~ keyword("Pure") ~ optWS ~ "}" ~ SP ~> ParsedAst.EffectSet.Pure
+    }
+
+    def Set: Rule1[ParsedAst.EffectSet] = rule {
+      SP ~ "{" ~ optWS ~ oneOrMore(Effect).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.EffectSet.Set
+    }
+
+    def Singleton: Rule1[ParsedAst.EffectSet] = rule {
+      SP ~ Effect ~ SP ~> ParsedAst.EffectSet.Singleton
+    }
+
     def Effect: Rule1[ParsedAst.Effect] = rule {
       Binary | SimpleEffect
     }
@@ -1428,7 +1445,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def SimpleEffect: Rule1[ParsedAst.Effect] = rule {
-      Var | Read | Write | Eff | Complement | Parens
+      Var | Impure | Read | Write | Eff | Complement | Parens
     }
 
     // We only allow chains of like operators.
