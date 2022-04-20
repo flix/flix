@@ -41,12 +41,12 @@ object BoolTable {
     val t = fromType(tpe)
     val freeVars = tvars.toList.map(_.sym)
 
-    val semantic = semanticFunction(freeVars.length, t, freeVars, Map.empty)
+    val semantic = semanticFunction(0, t, freeVars, Map.empty)
 
 
-    val fmtFormula = FormatType.formatWellKindedType(tpe)(Audience.External).take(80)
-    val fmtBinary = semantic.toBinaryString
-    println(s"$fmtFormula:  $fmtBinary")
+    //val fmtFormula = FormatType.formatWellKindedType(tpe)(Audience.External).take(80)
+    //val fmtBinary = semantic.toBinaryString
+    //println(s"$fmtFormula:  $fmtBinary")
 
     toType(t)
   }
