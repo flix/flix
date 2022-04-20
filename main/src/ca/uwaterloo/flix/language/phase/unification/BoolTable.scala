@@ -25,8 +25,8 @@ object BoolTable {
   def semanticFunction(t0: Term, fvs: List[Symbol.KindedTypeVarSym], binding: Map[Symbol.KindedTypeVarSym, Boolean], index: Int): Int = fvs match {
     case Nil => if (eval(t0, binding)) 1 << index else 0
     case x :: xs =>
-      val l = semanticFunction(t0, xs, binding + (x -> true), 0)
-      val r = semanticFunction(t0, xs, binding + (x -> false), 1 << xs.length)
+      val l = semanticFunction(t0, xs, binding + (x -> true), index)
+      val r = semanticFunction(t0, xs, binding + (x -> false), index + (1 << (fvs.length - 1)))
       l | r
   }
 
@@ -36,15 +36,17 @@ object BoolTable {
       return tpe
     }
 
+    //println(s"type vars: ${tvars.size}")
+
     val t = fromType(tpe)
     val freeVars = tvars.toList.map(_.sym)
 
     val semantic = semanticFunction(t, freeVars, Map.empty, 0)
 
 
-    //val fmtFormula = FormatType.formatWellKindedType(tpe)(Audience.External).take(80)
-    //val fmtBinary = semantic.toBinaryString
-    //println(s"$fmtFormula:  $fmtBinary")
+    val fmtFormula = FormatType.formatWellKindedType(tpe)(Audience.External).take(80)
+    val fmtBinary = semantic.toBinaryString
+    println(s"$fmtFormula:  $fmtBinary")
 
     toType(t)
   }
