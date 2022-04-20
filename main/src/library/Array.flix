@@ -789,15 +789,16 @@ namespace Array {
     /// Applies `f` to a start value `z` and all elements in `a` going from right to left.
     ///
     /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], z))...)`.
+    /// A `foldRight` allows early termination by not calling the continuation.
     ///
     pub def foldRight(f: (a, Unit -> b & Impure) -> b & ef, z: b, arr: Array[a]): b & Impure =
         def loop(i) = {
-            if (i < 0)
+            if (i == length(arr))
                 z
             else
-                f(arr[i], _ -> loop(i - 1))
+                f(arr[i], _ -> loop(i + 1))
         };
-        loop(length(arr) - 1)
+        loop(0)
 
     ///
     /// Applies `f` to all elements in `a` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
