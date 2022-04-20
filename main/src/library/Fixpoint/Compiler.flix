@@ -37,7 +37,7 @@ namespace Fixpoint {
         case Datalog(facts, rules) =>
             let stmts = MutList.new();
             Array.foreach(compileRule(stmts), facts);
-            Array.foldRight(rule -> match rule {
+            Array.foldRightOld(rule -> match rule {
                 case Constraint(HeadAtom(p, _, _), _) =>
                     let ruleStratum = Map.getWithDefault(p, 0, strat);
                     Map.insertWith(List.append, ruleStratum, rule :: Nil)
@@ -66,7 +66,7 @@ namespace Fixpoint {
     /// and Eval-Rule-Incr is the code emitted by `compileRuleIncr`.
     ///
     def compileStratum(stmts: MutList[RamStmt[v]], stratum: Array[Constraint[v]]): Unit & Impure with ToString[v] =
-        let idb = Array.foldRight(match Constraint(HeadAtom(pred, den, terms), _) -> {
+        let idb = Array.foldRightOld(match Constraint(HeadAtom(pred, den, terms), _) -> {
             let arity = Array.length(terms);
             Map.insert(pred, (arity, den))
         }, Map#{}, stratum);
@@ -128,7 +128,7 @@ namespace Fixpoint {
             let join = compileBody(env, augBody);
             let loopBody = RelOp.If(join, projection);
             let insert =
-                Array.foldRight(match (atom, rowVar) -> acc -> match atom {
+                Array.foldRightOld(match (atom, rowVar) -> acc -> match atom {
                     case BodyAtom(PredSym(pred), den, Polarity.Positive, _, terms) =>
                         let arity = Array.length(terms);
                         RelOp.Search(rowVar, RamSym.Full(pred, arity, den), acc)
@@ -181,7 +181,7 @@ namespace Fixpoint {
             let loopBody = RelOp.If(BoolExp.NotMemberOf(ramTerms, RamSym.Full(headPred, arity, headDen)) :: join, projection);
             let compile = delta -> { // `delta` designates the focused atom.
                 let insert =
-                    Array.foldRight(match (atom, rowVar) -> acc -> match atom {
+                    Array.foldRightOld(match (atom, rowVar) -> acc -> match atom {
                         case BodyAtom(PredSym(pred), den, Polarity.Positive, _, terms) =>
                             let arity = Array.length(terms);
                             let ramSym = if (rowVar == delta) {
@@ -268,7 +268,7 @@ namespace Fixpoint {
         Array.foldLeft(acc -> match (atom, rowVar) -> match atom {
             case BodyAtom(_, denotation, Polarity.Positive, _, terms) =>
                 Array.mapWithIndex(term -> i -> (term, i), terms) |>
-                Array.foldRight(match (term, i) -> match term {
+                Array.foldRightOld(match (term, i) -> match term {
                     case BodyTerm.Var(var) => match denotation {
                         case Denotation.Relational =>
                             Map.insertWith(_ -> t -> t, var, RamTerm.RowLoad(rowVar, i))
@@ -301,7 +301,7 @@ namespace Fixpoint {
     /// (3) is a function call that computes the expression `x > 0`.
     ///
     def compileBody(env: Map[VarSym, RamTerm[v]], body: Array[(BodyPredicate[v], RowVar)]): List[BoolExp[v]] & Impure =
-        Array.foldRight(match (atom, rowVar) -> acc ->
+        Array.foldRightOld(match (atom, rowVar) -> acc ->
             let compileBodyTerm = term -> j -> match term {
                 case BodyTerm.Wild      => RamTerm.RowLoad(rowVar, j)
                 case BodyTerm.Var(var)  => unwrap(Map.get(var, env))
@@ -318,7 +318,7 @@ namespace Fixpoint {
                             else
                                 BoolExp.Leq(leq, t, RamTerm.LoadLatVar(rowVar))
                     }) |>
-                    Array.foldRight(x -> xs -> x :: xs, acc)
+                    Array.foldRightOld(x -> xs -> x :: xs, acc)
                 case BodyAtom(PredSym(pred), denotation, Polarity.Negative, _, terms) =>
                     let ramTerms = Array.mapWithIndex(compileBodyTerm, terms);
                     let arity = Array.length(ramTerms);
