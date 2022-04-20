@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 object BoolTable {
@@ -25,7 +26,7 @@ object BoolTable {
     case Nil => if (eval(t0, binding)) 1 << index else 0
     case x :: xs =>
       val l = semanticFunction(t0, xs, binding + (x -> true), 0)
-      val r = semanticFunction(t0, xs, binding + (x -> false), 1 << index)
+      val r = semanticFunction(t0, xs, binding + (x -> false), 1 << xs.length)
       l | r
   }
 
@@ -39,6 +40,11 @@ object BoolTable {
     val freeVars = tvars.toList.map(_.sym)
 
     val semantic = semanticFunction(t, freeVars, Map.empty, 0)
+
+
+    //val fmtFormula = FormatType.formatWellKindedType(tpe)(Audience.External).take(80)
+    //val fmtBinary = semantic.toBinaryString
+    //println(s"$fmtFormula:  $fmtBinary")
 
     toType(t)
   }
