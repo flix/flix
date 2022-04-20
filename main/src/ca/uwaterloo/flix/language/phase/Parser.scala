@@ -311,6 +311,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     rule {
       WS ~ "\\" ~ WS ~ (Single | Union)
     }
+
+    def EffectAlt: Rule1[ParsedAst.EffectSet] = rule {
+      // MATT change back to \\ when ready
+      optWS ~ "|" ~ optWS ~ Effects.EffectSet
+    }
+
   }
 
   /////////////////////////////////////////////////////////////////////////////
