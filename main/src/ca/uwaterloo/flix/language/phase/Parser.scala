@@ -1395,9 +1395,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   object Effects {
 
-    // MATT match Arrow pattern
     def Effect: Rule1[ParsedAst.Effect] = rule {
-      Plus | Minus | SimpleEffect
+      Binary | SimpleEffect
     }
 
     def Var: Rule1[ParsedAst.Effect] = rule {
@@ -1405,27 +1404,51 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Read: Rule1[ParsedAst.Effect] = rule {
-      SP ~ keyword("Read") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Effect.Read
+      SP ~ keyword("Read") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Effect.Read
     }
 
     def Write: Rule1[ParsedAst.Effect] = rule {
-      SP ~ keyword("Write") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Effect.Write
+      SP ~ keyword("Write") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Effect.Write
     }
 
     def Eff: Rule1[ParsedAst.Effect] = rule {
       SP ~ Names.QualifiedEffect ~ SP ~> ParsedAst.Effect.Eff
     }
 
+    def Complement: Rule1[ParsedAst.Effect] = rule {
+      SP ~ operatorX("~") ~ optWS ~ SimpleEffect ~ SP ~> ParsedAst.Effect.Complement
+    }
+
+    def Parens: Rule1[ParsedAst.Effect] = rule {
+      "(" ~ Effect ~ ")"
+    }
+
     def SimpleEffect: Rule1[ParsedAst.Effect] = rule {
-      Var | Read | Write | Eff
+      Var | Read | Write | Eff | Complement | Parens
     }
 
-    def Plus: Rule1[ParsedAst.Effect] = rule {
-      SP ~ SimpleEffect ~ optWS ~ operatorX("+") ~ optWS ~ Effect ~> ParsedAst.Effect.Plus
+    // We only allow chains of like operators.
+    // Unlike operators must be parenthesized.
+    // Illegal: a + b + c - d + e
+    // Legal: ((a + b + c) - d) + e
+    def Binary: Rule1[ParsedAst.Effect] = rule {
+      SimpleEffect ~ optional(optWS ~ BinaryTail)
     }
 
-    def Minus: Rule1[ParsedAst.Effect] = rule {
-      SP ~ SimpleEffect ~ optWS ~ operatorX("-") ~ optWS ~ Effect ~> ParsedAst.Effect.Minus
+    def PlusTail = rule {
+      operatorX("+") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "+" ~ optWS) ~> ParsedAst.Effect.Plus
+    }
+
+    def MinusTail = rule {
+      operatorX("-") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "-" ~ optWS) ~> ParsedAst.Effect.Minus
+    }
+
+    def IntersectTail = rule {
+        operatorX("&") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "&" ~ optWS) ~> ParsedAst.Effect.Intersect
+    }
+
+    def BinaryTail = rule {
+      PlusTail | MinusTail | IntersectTail
     }
   }
 
