@@ -1001,14 +1001,18 @@ namespace List {
     ///
     /// If any one of `l1`, `l2` or `l3` become depleted, then no further elements are added to the resulting list.
     ///
-    pub def zipWith3(f: (a, b, c) -> d & ef, l1: List[a], l2: List[b], l3: List[c]): List[d] & ef =
-        def loop(ll1, ll2, ll3, k) = match (ll1, ll2, ll3) {
-            case (x :: xs, y :: ys, z :: zs) =>
-                let r = f(x, y, z);
-                loop(xs, ys, zs, ks -> k(r :: ks))
-            case _ => k(Nil)
-        };
-        loop(l1, l2, l3, identity)
+    // TODO: BROKEN???
+    pub def zipWith3(f: (a, b, c) -> d & ef, l1: List[a], l2: List[b], l3: List[c]): List[d] & ef = ??? as & ef
+
+
+//    pub def zipWith3(f: (a, b, c) -> d & ef, l1: List[a], l2: List[b], l3: List[c]): List[d] & ef =
+//        def loop(ll1, ll2, ll3, k) = match (ll1, ll2, ll3) {
+//            case (x :: xs, y :: ys, z :: zs) =>
+//                let r = f(x, y, z);
+//                loop(xs, ys, zs, ks -> k(r :: ks))
+//            case _ => k(Nil)
+//        };
+//        loop(l1, l2, l3, identity)
 
     ///
     /// Returns a triple of lists, the first containing all first components in `l`

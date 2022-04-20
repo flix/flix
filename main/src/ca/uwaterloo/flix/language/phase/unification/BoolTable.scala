@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable.ListBuffer
@@ -66,9 +67,20 @@ object BoolTable {
 
     cache.get(semantic) match {
       case None => toType(t, reverseTypeVarMap)
-      case Some(min) =>
+      case Some(result) =>
+        val minimal = toType(result, reverseTypeVarMap)
 
-        toType(t, reverseTypeVarMap)
+        val minimalSize = minimal.size
+        val currentSize = tpe.size
+        if (minimalSize < currentSize) {
+          implicit val audience: Audience = Audience.Internal
+          println(s"Replace: ${FormatType.formatWellKindedType(tpe)}")
+          println(s"     By: ${FormatType.formatWellKindedType(minimal)}")
+          println(s" Reduct: $currentSize -> $minimalSize")
+          println()
+        }
+
+        minimal
     }
   }
 
@@ -103,10 +115,10 @@ object BoolTable {
   def buildTable(): Unit = {
     val table = ExpressionParser.parse(table3)
     cache = parseTable(table)
-    prettyPrint()
+    // prettyPrintLookupTable()
   }
 
-  def prettyPrint(): Unit = {
+  def prettyPrintLookupTable(): Unit = {
     for ((key, term) <- cache) {
       println(s"${key.toBinaryString.padTo(8, '0')}: $term")
     }
