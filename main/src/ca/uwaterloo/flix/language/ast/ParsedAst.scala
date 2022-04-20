@@ -1501,6 +1501,7 @@ object ParsedAst {
     case class Read(sp1: SourcePosition, regs: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst.Effect
     case class Write(sp1: SourcePosition, regs: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst.Effect
     case class Eff(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Effect
+    case class Impure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Effect
   }
 
   /**

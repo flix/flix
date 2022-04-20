@@ -1403,6 +1403,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ Names.Variable ~ SP ~> ParsedAst.Effect.Var
     }
 
+    def Impure: Rule1[ParsedAst.Effect] = rule {
+      SP ~ keyword("Impure") ~ SP ~> ParsedAst.Effect.Impure
+    }
+
     def Read: Rule1[ParsedAst.Effect] = rule {
       SP ~ keyword("Read") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Effect.Read
     }
