@@ -851,19 +851,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         keyword("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ atomic("##") ~ Names.JavaName ~ WS ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.CatchRule
       }
 
-      def CatchBody: Rule1[ParsedAst.Expression.CatchOrHandler] = rule {
-        keyword("catch") ~ optWS ~ "{" ~ optWS ~ oneOrMore(CatchRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.Expression.CatchOrHandler.Catch
+      def CatchBody: Rule1[ParsedAst.CatchOrHandler] = rule {
+        keyword("catch") ~ optWS ~ "{" ~ optWS ~ oneOrMore(CatchRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.CatchOrHandler.Catch
       }
 
       def HandlerRule: Rule1[ParsedAst.HandlerRule] = rule {
         keyword("def") ~ WS ~ Names.QualifiedEffect ~ FormalParamList ~ optWS ~ atomic("=") ~ optWS ~ Expression ~> ParsedAst.HandlerRule
       }
 
-      def HandlerBody: Rule1[ParsedAst.Expression.CatchOrHandler] = rule {
-        keyword("with") ~ optWS ~ "{" ~ optWS ~ oneOrMore(HandlerRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.Expression.CatchOrHandler.Handler
+      def HandlerBody: Rule1[ParsedAst.CatchOrHandler] = rule {
+        keyword("with") ~ optWS ~ "{" ~ optWS ~ zeroOrMore(HandlerRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.CatchOrHandler.Handler
       }
 
-      def Body: Rule1[ParsedAst.Expression.CatchOrHandler] = rule {
+      def Body: Rule1[ParsedAst.CatchOrHandler] = rule {
         CatchBody | HandlerBody
       }
 
