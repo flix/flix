@@ -128,11 +128,11 @@ namespace Fixpoint {
             let join = compileBody(env, augBody);
             let loopBody = RelOp.If(join, projection);
             let insert =
-                Array.foldRightOld(match (atom, rowVar) -> acc -> match atom {
+                Array.foldRight(match (atom, rowVar) -> k -> match atom {
                     case BodyAtom(PredSym(pred), den, Polarity.Positive, _, terms) =>
                         let arity = Array.length(terms);
-                        RelOp.Search(rowVar, RamSym.Full(pred, arity, den), acc)
-                    case _ => acc
+                        RelOp.Search(rowVar, RamSym.Full(pred, arity, den), k())
+                    case _ => k()
                 }, loopBody, augBody) |>
                 RamStmt.Insert;
             if (enableDebugging()) {
@@ -181,7 +181,7 @@ namespace Fixpoint {
             let loopBody = RelOp.If(BoolExp.NotMemberOf(ramTerms, RamSym.Full(headPred, arity, headDen)) :: join, projection);
             let compile = delta -> { // `delta` designates the focused atom.
                 let insert =
-                    Array.foldRightOld(match (atom, rowVar) -> acc -> match atom {
+                    Array.foldRight(match (atom, rowVar) -> k -> match atom {
                         case BodyAtom(PredSym(pred), den, Polarity.Positive, _, terms) =>
                             let arity = Array.length(terms);
                             let ramSym = if (rowVar == delta) {
@@ -189,8 +189,8 @@ namespace Fixpoint {
                             } else {
                                 RamSym.Full(pred, arity, den)
                             };
-                            RelOp.Search(rowVar, ramSym, acc)
-                        case _ => acc
+                            RelOp.Search(rowVar, ramSym, k())
+                        case _ => k()
                     }, loopBody, augBody) |>
                     RamStmt.Insert;
                 MutList.push!(insert, stmts)
