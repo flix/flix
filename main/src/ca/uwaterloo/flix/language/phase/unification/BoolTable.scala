@@ -10,6 +10,8 @@ object BoolTable {
 
   val cache: mutable.Map[Int, Term] = mutable.Map.empty
 
+  type Variable = Int
+
   sealed trait Term
 
   object Term {
@@ -17,7 +19,7 @@ object BoolTable {
 
     case object False extends Term
 
-    case class Var(sym: Symbol.KindedTypeVarSym) extends Term
+    case class Var(x: Variable) extends Term
 
     case class Neg(t: Term) extends Term
 
@@ -26,7 +28,7 @@ object BoolTable {
     case class Disj(t1: Term, t2: Term) extends Term
   }
 
-  def semanticFunction(position: Int, t0: Term, fvs: List[Symbol.KindedTypeVarSym], binding: Map[Symbol.KindedTypeVarSym, Boolean]): Int = fvs match {
+  def semanticFunction(position: Int, t0: Term, fvs: List[Variable], binding: Map[Variable, Boolean]): Int = fvs match {
     case Nil => if (eval(t0, binding)) 1 << position else 0
     case x :: xs =>
       val l = semanticFunction(position, t0, xs, binding + (x -> true))
@@ -35,16 +37,19 @@ object BoolTable {
   }
 
   def minimize(tpe: Type): Type = {
-    val tvars = tpe.typeVars
+    val tvars = tpe.typeVars.map(_.sym).toList
     if (tpe.size < 8 || tvars.size > 5) {
       return tpe
     }
 
+    val typeVarMap = tvars.zipWithIndex.toMap
+    val reverseTypeVarMap = typeVarMap.map(_.swap).toMap
+
     //println(s"type vars: ${tvars.size}")
 
-    val t = fromType(tpe)
-    val freeVars = tvars.toList.map(_.sym)
+    val t = fromType(tpe, typeVarMap)
 
+    val freeVars = tvars.indices.toList
     val semantic = semanticFunction(0, t, freeVars, Map.empty)
 
     //val fmtFormula = FormatType.formatWellKindedType(tpe)(Audience.External).take(80)
@@ -52,12 +57,12 @@ object BoolTable {
     //println(s"$fmtFormula:  $fmtBinary")
 
     cache.get(semantic) match {
-      case None => toType(t)
-      case Some(min) => toType(min)
+      case None => toType(t, reverseTypeVarMap)
+      case Some(min) => toType(min, reverseTypeVarMap)
     }
   }
 
-  def eval(t0: Term, binding: Map[Symbol.KindedTypeVarSym, Boolean]): Boolean = t0 match {
+  def eval(t0: Term, binding: Map[Variable, Boolean]): Boolean = t0 match {
     case Term.True => true
     case Term.False => false
     case Term.Var(sym) => binding(sym)
@@ -66,39 +71,53 @@ object BoolTable {
     case Term.Disj(t1, t2) => eval(t1, binding) || eval(t2, binding)
   }
 
-  def fromType(tpe: Type): Term = tpe match {
-    case Type.KindedVar(sym, _) => Term.Var(sym)
+  def fromType(tpe0: Type, m: Map[Symbol.KindedTypeVarSym, Variable]): Term = tpe0 match {
+    case Type.KindedVar(sym, _) => Term.Var(m(sym))
     case Type.True => Term.True
     case Type.False => Term.False
-    case Type.Apply(Type.Cst(TypeConstructor.Not, _), x, _) => Term.Neg(fromType(x))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), x, _), y, _) => Term.Conj(fromType(x), fromType(y))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _), y, _) => Term.Disj(fromType(x), fromType(y))
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    case Type.Apply(Type.Cst(TypeConstructor.Not, _), t, _) => Term.Neg(fromType(t, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), t1, _), t2, _) => Term.Conj(fromType(t1, m), fromType(t2, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), t1, _), t2, _) => Term.Disj(fromType(t1, m), fromType(t2, m))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
   }
 
-  def toType(t0: Term): Type = t0 match {
+  def toType(t0: Term, m: Map[Variable, Symbol.KindedTypeVarSym]): Type = t0 match {
     case Term.True => Type.True
     case Term.False => Type.False
-    case Term.Var(sym) => Type.KindedVar(sym, SourceLocation.Unknown)
-    case Term.Neg(t) => Type.mkNot(toType(t), SourceLocation.Unknown)
-    case Term.Conj(t1, t2) => Type.mkAnd(toType(t1), toType(t2), SourceLocation.Unknown)
-    case Term.Disj(t1, t2) => Type.mkOr(toType(t1), toType(t2), SourceLocation.Unknown)
+    case Term.Var(x) => Type.KindedVar(m(x), SourceLocation.Unknown)
+    case Term.Neg(t) => Type.mkNot(toType(t, m), SourceLocation.Unknown)
+    case Term.Conj(t1, t2) => Type.mkAnd(toType(t1, m), toType(t2, m), SourceLocation.Unknown)
+    case Term.Disj(t1, t2) => Type.mkOr(toType(t1, m), toType(t2, m), SourceLocation.Unknown)
   }
 
   def buildTable(): Unit = {
     val table = ExpressionParser.parse(table3)
-    println(table)
     val result = parseTable(table)
+    for (kv <- result) {
+      //println(kv)
+    }
   }
 
-  def parseTable(l: SList): Unit = l.values.tail.map(parseKeyValue)
-
-  def parseKeyValue(elm: Element): Unit = elm match {
-    case SList(List(Atom(str), Atom(formula))) => parseFormula(formula)
-    case _ => throw InternalCompilerException("Parse Error")
+  def parseTable(l: SList): List[(String, Term)] = l match {
+    case SList(elms) => elms.tail.map(parseKeyValue)
   }
 
-  def parseFormula(str: String): Unit = ()
+  def parseKeyValue(elm: Element): (String, Term) = elm match {
+    case SList(List(Atom(key), formula)) => key -> parseFormula(formula)
+    case _ => throw InternalCompilerException(s"Parse Error. Unexpected element: '$elm'.")
+  }
+
+  def parseFormula(elm: Element): Term = elm match {
+    case Atom("T") => Term.True
+    case Atom("F") => Term.False
+    case Atom("x0") => Term.Var(0)
+    case Atom("x1") => Term.Var(1)
+    case Atom("x2") => Term.Var(2)
+    case SList(List(Atom("not"), x)) => Term.Neg(parseFormula(x))
+    case SList(List(Atom("and"), x, y)) => Term.Conj(parseFormula(x), parseFormula(y))
+    case SList(List(Atom("or"), x, y)) => Term.Disj(parseFormula(x), parseFormula(y))
+    case _ => throw InternalCompilerException(s"Parse Error. Unexpected element: '$elm'.")
+  }
 
   // https://github.com/ZenBowman/sexpr
   // The MIT License (MIT)
