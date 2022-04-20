@@ -938,27 +938,6 @@ object ParsedAst {
     case class Try(sp1: SourcePosition, exp: ParsedAst.Expression, catchOrHandler: CatchOrHandler, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * An enum representing the handler of a `try` expression.
-      */
-    sealed trait CatchOrHandler
-
-    object CatchOrHandler {
-      /**
-        * A `catch` expression for handling Java exceptions.
-        *
-        * @param rules the catch rules.
-        */
-      case class Catch(rules: Seq[ParsedAst.CatchRule]) extends CatchOrHandler
-
-      /**
-        * A `with` expression for handling Flix effects.
-        *
-        * @param rules the handler rules.
-        */
-      case class Handler(rules: Seq[ParsedAst.HandlerRule]) extends CatchOrHandler
-    }
-
-    /**
       * NewChannel Expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -1753,6 +1732,27 @@ object ParsedAst {
     * @param sp2   the position of the last character in the annotation.
     */
   case class Annotation(sp1: SourcePosition, ident: Name.Ident, args: Option[Seq[ParsedAst.Argument]], sp2: SourcePosition)
+
+  /**
+    * An enum representing the handler of a `try` expression.
+    */
+  sealed trait CatchOrHandler
+
+  object CatchOrHandler {
+    /**
+      * A `catch` block for handling Java exceptions.
+      *
+      * @param rules the catch rules.
+      */
+    case class Catch(rules: Seq[ParsedAst.CatchRule]) extends CatchOrHandler
+
+    /**
+      * A `with` block for handling Flix effects.
+      *
+      * @param rules the handler rules.
+      */
+    case class Handler(rules: Seq[ParsedAst.HandlerRule]) extends CatchOrHandler
+  }
 
   /**
     * String Interpolation Part.
