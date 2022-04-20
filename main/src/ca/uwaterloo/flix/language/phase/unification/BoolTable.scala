@@ -3,16 +3,17 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 object BoolTable {
 
-  val cache: mutable.Map[Int, Term] = mutable.Map.empty
+  var cache: Map[Int, Term] = Map.empty
 
   type Variable = Int
 
-  sealed trait Term
+  sealed trait Term {
+
+  }
 
   object Term {
     case object True extends Term
@@ -92,19 +93,34 @@ object BoolTable {
 
   def buildTable(): Unit = {
     val table = ExpressionParser.parse(table3)
-    val result = parseTable(table)
-    for (kv <- result) {
-      //println(kv)
+    cache = parseTable(table)
+    prettyPrint()
+  }
+
+  def prettyPrint(): Unit = {
+    for ((key, term) <- cache) {
+      println(s"${key.toBinaryString.padTo(8, '0')}: $term")
     }
+    println(s"size = ${cache.size}")
   }
 
-  def parseTable(l: SList): List[(String, Term)] = l match {
-    case SList(elms) => elms.tail.map(parseKeyValue)
+  def parseTable(l: SList): Map[Int, Term] = l match {
+    case SList(elms) => elms.tail.map(parseKeyValue).toMap
   }
 
-  def parseKeyValue(elm: Element): (String, Term) = elm match {
-    case SList(List(Atom(key), formula)) => key -> parseFormula(formula)
+  def parseKeyValue(elm: Element): (Int, Term) = elm match {
+    case SList(List(Atom(key), formula)) => parseKey(key) -> parseFormula(formula)
     case _ => throw InternalCompilerException(s"Parse Error. Unexpected element: '$elm'.")
+  }
+
+  def parseKey(key: String): Int = {
+    var result = 0
+    for ((c, position) <- key.zipWithIndex) {
+      if (c == 'T') {
+        result = result | (1 << position)
+      }
+    }
+    result
   }
 
   def parseFormula(elm: Element): Term = elm match {
