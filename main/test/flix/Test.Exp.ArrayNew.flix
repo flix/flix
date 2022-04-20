@@ -1,66 +1,128 @@
 namespace Test/Exp/ArrayNew {
 
     @test
-    def testArrayNew01(): Array[Int32] & Impure = [10; 0]
+    def testArrayNew01(): Unit = region r {
+        [10; 0] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew02(): Array[Int32] & Impure = [1; 1]
+    def testArrayNew02(): Unit = region r {
+        [1; 1] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew03(): Array[Int32] & Impure = [0; 2]
+    def testArrayNew03(): Unit = region r {
+        [0; 2] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew04(): Array[Int32] & Impure = [0; 113]
+    def testArrayNew04(): Unit = region r {
+        [0; 113] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew05(): Array[Int32] & Impure = [0; 500]
+    def testArrayNew05(): Unit = region r {
+        [0; 500] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew06(): Array[Unit] & Impure = [(); 5]
+    def testArrayNew06(): Unit = region r {
+        [(); 5] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew07(): Array[Bool] & Impure = [true; 5]
+    def testArrayNew07(): Unit = region r {
+        [true; 5] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew08(): Array[Bool] & Impure = [false; 5]
+    def testArrayNew08(): Unit = region r {
+        [false; 5] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew09(): Array[Char] & Impure = ['a'; 5]
+    def testArrayNew09(): Unit = region r {
+        ['a'; 5] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew10(): Array[Int8] & Impure = [10i8; 5]
+    def testArrayNew10(): Unit = region r {
+        [10i8; 5] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew11(): Array[Int16] & Impure = [10i16; 5]
+    def testArrayNew11(): Unit = region r {
+        [10i16; 5] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew12(): Array[Int32] & Impure = [10; 5]
+    def testArrayNew12(): Unit = region r {
+        [10; 5] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew13(): Array[Int64] & Impure = [10i64; 5]
+    def testArrayNew13(): Unit = region r {
+        [10i64; 5] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew14(): Array[BigInt] & Impure = [10ii; 5]
+    def testArrayNew14(): Unit = region r {
+        [10ii; 5] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew15(): Array[Float32] & Impure= [3.0f32; 5]
+    def testArrayNew15(): Unit = region r {
+        [3.0f32; 5] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew16(): Array[Float64] & Impure = [3.0f64; 5]
+    def testArrayNew16(): Unit = region r {
+        [3.0f64; 5] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew17(): Array[String] & Impure = ["foo"; 5]
+    def testArrayNew17(): Unit = region r {
+        ["foo"; 5] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew18(): Array[Array[Int32]] & Impure = [[10; 10]; 5]
+    def testArrayNew18(): Unit = region r {
+        [[10; 10] @ r; 5] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew19(): Array[(Int32, Int32)] & Impure = [(1, 2); 5]
+    def testArrayNew19(): Unit = region r {
+        [(1, 2); 5] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew20(): Array[(List[Int32])] & Impure = [(1 :: Nil); 5]
+    def testArrayNew20(): Unit = region r {
+        [(1 :: Nil); 5] @ r;
+        ()
+    }
 
     @test
-    def testArrayNew21(): Array[Option[Int32]] & Impure = [None; 1]
-
+    def testArrayNew21(): Unit = region r {
+        [None; 1] @ r;
+        ()
+    }
 }

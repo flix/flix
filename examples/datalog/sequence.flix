@@ -1,6 +1,6 @@
 // https://github.com/souffle-lang/benchmarks/tree/master/benchmarks/sequences
 
-def main(_args: Array[String]): Int32 & Impure =
+def main(): Unit & Impure =
 
     let numLetters = #{NumLetters(20).};
 
@@ -73,5 +73,4 @@ def main(_args: Array[String]): Int32 & Impure =
         Read(x,y) :- DebugStr(s), StrLetterAt(s,x,y).
 
     };
-    query lp <+> numLetters select (x, y) from Read(x, y) |> println;
-    0
+    query lp <+> numLetters select (x, y) from Read(x, y) |> println
