@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 Magnus Madsen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
@@ -8,42 +23,52 @@ import scala.collection.mutable.ListBuffer
 
 object BoolTable {
 
-  var cache: Map[Int, Term] = Map.empty
+  /**
+    * A Boolean variable is represented by a unique number.
+    */
+  private type Variable = Int
 
-  type Variable = Int
+  /**
+    * A table that maps Boolean semantic functions to their minimal formulas.
+    *
+    * The table is pre-computed and initialized when this class is loaded.
+    */
+  private val cache: Map[Int, Formula] = Map.empty
 
-  sealed trait Term {
+  /**
+    * A common super-type for Boolean formulas.
+    */
+  private sealed trait Formula {
+
+
+
+    /**
+      * Returns a human-readable fully parenthesized string representation of `this` term.
+      */
     override def toString: String = this match {
-      case Term.True => "true"
-      case Term.False => "false"
-      case Term.Var(x) => s"x$x"
-      case Term.Neg(t) => s"not $t"
-      case Term.Conj(t1, t2) => s"($t1 and $t2)"
-      case Term.Disj(t1, t2) => s"($t1 or $t2)"
+      case Formula.True => "true"
+      case Formula.False => "false"
+      case Formula.Var(x) => s"x$x"
+      case Formula.Neg(t) => s"not $t"
+      case Formula.Conj(t1, t2) => s"($t1 and $t2)"
+      case Formula.Disj(t1, t2) => s"($t1 or $t2)"
     }
   }
 
-  object Term {
-    case object True extends Term
+  private object Formula {
+    case object True extends Formula
 
-    case object False extends Term
+    case object False extends Formula
 
-    case class Var(x: Variable) extends Term
+    case class Var(x: Variable) extends Formula
 
-    case class Neg(t: Term) extends Term
+    case class Neg(t: Formula) extends Formula
 
-    case class Conj(t1: Term, t2: Term) extends Term
+    case class Conj(t1: Formula, t2: Formula) extends Formula
 
-    case class Disj(t1: Term, t2: Term) extends Term
+    case class Disj(t1: Formula, t2: Formula) extends Formula
   }
 
-  def semanticFunction(position: Int, t0: Term, fvs: List[Variable], binding: Map[Variable, Boolean]): Int = fvs match {
-    case Nil => if (eval(t0, binding)) 1 << position else 0
-    case x :: xs =>
-      val l = semanticFunction(position, t0, xs, binding + (x -> true))
-      val r = semanticFunction(position + (1 << (fvs.length - 1)), t0, xs, binding + (x -> false))
-      l | r
-  }
 
   def minimize(tpe: Type): Type = {
     val tvars = tpe.typeVars.map(_.sym).toList
@@ -84,37 +109,46 @@ object BoolTable {
     }
   }
 
-  def eval(t0: Term, binding: Map[Variable, Boolean]): Boolean = t0 match {
-    case Term.True => true
-    case Term.False => false
-    case Term.Var(sym) => binding(sym)
-    case Term.Neg(t) => !eval(t, binding)
-    case Term.Conj(t1, t2) => eval(t1, binding) && eval(t2, binding)
-    case Term.Disj(t1, t2) => eval(t1, binding) || eval(t2, binding)
+
+  private def semanticFunction(position: Int, t0: Formula, fvs: List[Variable], binding: Map[Variable, Boolean]): Int = fvs match {
+    case Nil => if (eval(t0, binding)) 1 << position else 0
+    case x :: xs =>
+      val l = semanticFunction(position, t0, xs, binding + (x -> true))
+      val r = semanticFunction(position + (1 << (fvs.length - 1)), t0, xs, binding + (x -> false))
+      l | r
   }
 
-  def fromType(tpe0: Type, m: Map[Symbol.KindedTypeVarSym, Variable]): Term = tpe0 match {
-    case Type.KindedVar(sym, _) => Term.Var(m(sym))
-    case Type.True => Term.True
-    case Type.False => Term.False
-    case Type.Apply(Type.Cst(TypeConstructor.Not, _), t, _) => Term.Neg(fromType(t, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), t1, _), t2, _) => Term.Conj(fromType(t1, m), fromType(t2, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), t1, _), t2, _) => Term.Disj(fromType(t1, m), fromType(t2, m))
+  def eval(t0: Formula, binding: Map[Variable, Boolean]): Boolean = t0 match {
+    case Formula.True => true
+    case Formula.False => false
+    case Formula.Var(sym) => binding(sym)
+    case Formula.Neg(t) => !eval(t, binding)
+    case Formula.Conj(t1, t2) => eval(t1, binding) && eval(t2, binding)
+    case Formula.Disj(t1, t2) => eval(t1, binding) || eval(t2, binding)
+  }
+
+  private def fromType(tpe0: Type, m: Map[Symbol.KindedTypeVarSym, Variable]): Formula = tpe0 match {
+    case Type.KindedVar(sym, _) => Formula.Var(m(sym))
+    case Type.True => Formula.True
+    case Type.False => Formula.False
+    case Type.Apply(Type.Cst(TypeConstructor.Not, _), t, _) => Formula.Neg(fromType(t, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), t1, _), t2, _) => Formula.Conj(fromType(t1, m), fromType(t2, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), t1, _), t2, _) => Formula.Disj(fromType(t1, m), fromType(t2, m))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
   }
 
-  def toType(t0: Term, m: Map[Variable, Symbol.KindedTypeVarSym]): Type = t0 match {
-    case Term.True => Type.True
-    case Term.False => Type.False
-    case Term.Var(x) => Type.KindedVar(m(x), SourceLocation.Unknown)
-    case Term.Neg(t) => Type.mkNot(toType(t, m), SourceLocation.Unknown)
-    case Term.Conj(t1, t2) => Type.mkAnd(toType(t1, m), toType(t2, m), SourceLocation.Unknown)
-    case Term.Disj(t1, t2) => Type.mkOr(toType(t1, m), toType(t2, m), SourceLocation.Unknown)
+  def toType(t0: Formula, m: Map[Variable, Symbol.KindedTypeVarSym]): Type = t0 match {
+    case Formula.True => Type.True
+    case Formula.False => Type.False
+    case Formula.Var(x) => Type.KindedVar(m(x), SourceLocation.Unknown)
+    case Formula.Neg(t) => Type.mkNot(toType(t, m), SourceLocation.Unknown)
+    case Formula.Conj(t1, t2) => Type.mkAnd(toType(t1, m), toType(t2, m), SourceLocation.Unknown)
+    case Formula.Disj(t1, t2) => Type.mkOr(toType(t1, m), toType(t2, m), SourceLocation.Unknown)
   }
 
-  def buildTable(): Unit = {
+  private def buildTable(): Map[Int, Formula] = {
     val table = ExpressionParser.parse(table3)
-    cache = parseTable(table)
+    parseTable(table)
     // prettyPrintLookupTable()
   }
 
@@ -125,11 +159,11 @@ object BoolTable {
     println(s"size = ${cache.size}")
   }
 
-  def parseTable(l: SList): Map[Int, Term] = l match {
+  private def parseTable(l: SList): Map[Int, Formula] = l match {
     case SList(elms) => elms.tail.map(parseKeyValue).toMap
   }
 
-  def parseKeyValue(elm: Element): (Int, Term) = elm match {
+  private def parseKeyValue(elm: Element): (Int, Formula) = elm match {
     case SList(List(Atom(key), formula)) => parseKey(key) -> parseFormula(formula)
     case _ => throw InternalCompilerException(s"Parse Error. Unexpected element: '$elm'.")
   }
@@ -144,15 +178,15 @@ object BoolTable {
     result
   }
 
-  def parseFormula(elm: Element): Term = elm match {
-    case Atom("T") => Term.True
-    case Atom("F") => Term.False
-    case Atom("x0") => Term.Var(0)
-    case Atom("x1") => Term.Var(1)
-    case Atom("x2") => Term.Var(2)
-    case SList(List(Atom("not"), x)) => Term.Neg(parseFormula(x))
-    case SList(List(Atom("and"), x, y)) => Term.Conj(parseFormula(x), parseFormula(y))
-    case SList(List(Atom("or"), x, y)) => Term.Disj(parseFormula(x), parseFormula(y))
+  private def parseFormula(elm: Element): Formula = elm match {
+    case Atom("T") => Formula.True
+    case Atom("F") => Formula.False
+    case Atom("x0") => Formula.Var(0)
+    case Atom("x1") => Formula.Var(1)
+    case Atom("x2") => Formula.Var(2)
+    case SList(List(Atom("not"), x)) => Formula.Neg(parseFormula(x))
+    case SList(List(Atom("and"), x, y)) => Formula.Conj(parseFormula(x), parseFormula(y))
+    case SList(List(Atom("or"), x, y)) => Formula.Disj(parseFormula(x), parseFormula(y))
     case _ => throw InternalCompilerException(s"Parse Error. Unexpected element: '$elm'.")
   }
 
