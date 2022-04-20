@@ -143,10 +143,10 @@ object BoolTable {
         val minimal = toType(result, reverseTypeVarMap)
         if (minimalSize < currentSize) {
           implicit val audience: Audience = Audience.Internal
-          println(s"Replace: ${FormatType.formatWellKindedType(tpe)}")
-          println(s"     By: ${FormatType.formatWellKindedType(minimal)}")
-          println(s" Reduct: $currentSize -> $minimalSize")
-          println()
+//          println(s"Replace: ${FormatType.formatWellKindedType(tpe)}")
+//          println(s"     By: ${FormatType.formatWellKindedType(minimal)}")
+//          println(s" Reduct: $currentSize -> $minimalSize")
+//          println()
         }
 
         minimal
