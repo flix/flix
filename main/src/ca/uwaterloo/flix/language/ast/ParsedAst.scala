@@ -1480,27 +1480,116 @@ object ParsedAst {
 
   }
 
-  // MATT docs
+  /**
+    * Effect Set
+    */
   sealed trait EffectSet
 
   object EffectSet {
+    /**
+      * Singleton effect set.
+      *
+      * @param sp1 the position of the first character in the set.
+      * @param eff the effect.
+      * @param sp2 the position of the last character in the set.
+      */
     case class Singleton(sp1: SourcePosition, eff: Effect, sp2: SourcePosition) extends EffectSet
+
+    /**
+      * Pure effect set.
+      *
+      * @param sp1 the position of the first character in the set.
+      * @param sp2 the position of the last character in the set.
+      */
     case class Pure(sp1: SourcePosition, sp2: SourcePosition) extends EffectSet
+
+    /**
+      * A set of effects.
+      *
+      * @param sp1  the position of the first character in the set.
+      * @param effs the effects.
+      * @param sp2  the position of the last character in the set.
+      */
     case class Set(sp1: SourcePosition, effs: Seq[Effect], sp2: SourcePosition) extends EffectSet
   }
 
-  // MATT docs
+  /**
+    * A single effect.
+    */
   sealed trait Effect
 
   object Effect {
+    /**
+      * Effect variable.
+      *
+      * @param sp1   the position of the first character in the effect.
+      * @param ident the name of the variable.
+      * @param sp2   the position of the last character in the effect.
+      */
     case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Effect
+
+    /**
+      * Effect set subtraction.
+      *
+      * @param eff1 the first effect.
+      * @param effs the other effects.
+      */
     case class Minus(eff1: ParsedAst.Effect, effs: Seq[ParsedAst.Effect]) extends ParsedAst.Effect
+
+    /**
+      * Effect set addition.
+      *
+      * @param eff1 the first effect.
+      * @param effs the other effects.
+      */
     case class Plus(eff1: ParsedAst.Effect, effs: Seq[ParsedAst.Effect]) extends ParsedAst.Effect
+
+    /**
+      * Effect set intersection.
+      *
+      * @param eff1 the first effect.
+      * @param effs the other effects.
+      */
     case class Intersect(eff1: ParsedAst.Effect, effs: Seq[ParsedAst.Effect]) extends ParsedAst.Effect
+
+    /**
+      * Effect set complement.
+      *
+      * @param sp1 the position of the first character in the effect.
+      * @param eff the complemented effect.
+      * @param sp2 the position of the last character in the effect.
+      */
     case class Complement(sp1: SourcePosition, eff: ParsedAst.Effect, sp2: SourcePosition) extends ParsedAst.Effect
+
+    /**
+      * Represents a read of the region variables `regs`.
+      *
+      * @param regs the region variables that are read.
+      */
     case class Read(sp1: SourcePosition, regs: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst.Effect
+
+    /**
+      * Represents a write of the region variables `regs`.
+      *
+      * @param regs the region variables that are written.
+      */
+
     case class Write(sp1: SourcePosition, regs: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst.Effect
+
+    /**
+      * A reference to an declared effect.
+      *
+      * @param sp1  the position of the first character in the effect.
+      * @param name the declared effect.
+      * @param sp2  the position of the last character in the effect.
+      */
     case class Eff(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Effect
+
+    /**
+      * The Impure effect.
+      * @param sp1  the position of the first character in the effect.
+      * @param sp2  the position of the last character in the effect.
+      */
     case class Impure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Effect
   }
 
