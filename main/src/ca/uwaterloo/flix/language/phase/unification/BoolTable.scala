@@ -21,13 +21,35 @@ object BoolTable {
     case class Disj(t1: Term, t2: Term) extends Term
   }
 
+  def semanticFunction(t0: Term, fvs: List[Symbol.KindedTypeVarSym], binding: Map[Symbol.KindedTypeVarSym, Boolean], index: Int): Int = fvs match {
+    case Nil => if (eval(t0, binding)) 1 << index else 0
+    case x :: xs =>
+      val l = semanticFunction(t0, xs, binding + (x -> true), 0)
+      val r = semanticFunction(t0, xs, binding + (x -> false), 1 << index)
+      l | r
+  }
+
   def minimize(tpe: Type): Type = {
+    val tvars = tpe.typeVars
+    if (tpe.size < 8 || tvars.size > 5) {
+      return tpe
+    }
+
     val t = fromType(tpe)
+    val freeVars = tvars.toList.map(_.sym)
 
-    val freeVars = tpe.typeVars.toList
-
+    val semantic = semanticFunction(t, freeVars, Map.empty, 0)
 
     toType(t)
+  }
+
+  def eval(t0: Term, binding: Map[Symbol.KindedTypeVarSym, Boolean]): Boolean = t0 match {
+    case Term.True => true
+    case Term.False => false
+    case Term.Var(sym) => binding(sym)
+    case Term.Neg(t) => !eval(t, binding)
+    case Term.Conj(t1, t2) => eval(t1, binding) && eval(t2, binding)
+    case Term.Disj(t1, t2) => eval(t1, binding) || eval(t2, binding)
   }
 
   def fromType(tpe: Type): Term = tpe match {
