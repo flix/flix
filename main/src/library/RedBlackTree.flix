@@ -241,6 +241,7 @@ namespace RedBlackTree {
         case _ => s
     }
 
+
     ///
     /// Lazily applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left.
     ///
