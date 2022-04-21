@@ -310,7 +310,7 @@ object BoolTable {
     //
     // Computes the semantic function of `f`.
     //
-    val semantic = semanticFunction(0, f, List(0, 1, 2), Map.empty)
+    val semantic = computeSemanticFunction(f, List(0, 1, 2), 0, new Array[Boolean](3)) // TODO: Use MaxVars
 
     //
     // Lookup the semantic function in the table.
@@ -318,19 +318,21 @@ object BoolTable {
     Table(semantic)
   }
 
-  // TODO: DOC
-  // TODO: Replace fvs by number
-  // TODO: Replace binding by array.
-  private def semanticFunction(position: Int, t0: Formula, fvs: List[Variable], binding: Map[Variable, Boolean]): Int = fvs match {
+  /**
+    * Computes the semantic function of the given formula `f` under the given environment `m`.
+    */
+  private def computeSemanticFunction(f: Formula, fvs: List[Variable], position: Int, m: Array[Boolean]): Int = fvs match {
     case Nil =>
-      val m = new Array[Boolean](binding.size)
-      for ((k, v) <- binding) {
-        m(k) = v
-      }
-      if (eval(t0, m)) 1 << position else 0
+      if (eval(f, m)) 1 << position else 0
+
     case x :: xs =>
-      val l = semanticFunction(position, t0, xs, binding + (x -> true))
-      val r = semanticFunction(position + (1 << (fvs.length - 1)), t0, xs, binding + (x -> false))
+      val ml = m.clone()
+      val mr = m.clone()
+      ml(x) = true
+      mr(x) = false
+
+      val l = computeSemanticFunction(f, xs, position, ml)
+      val r = computeSemanticFunction(f, xs, position + (1 << (fvs.length - 1)), mr)
       l | r
   }
 
