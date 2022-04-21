@@ -214,7 +214,8 @@ object BoolTable {
     //
     if (f.freeVars.size > NumberOfVariables) {
       if (Debug) {
-        println(s"minimize: Formula has too many variables: ${f.freeVars.size}. Skipping.")
+        println(s"Formula has too many variables: ${f.freeVars.size}. Skipping formula of size: ${f.size}")
+        println(s"Formula: $f.")
         println()
       }
       return f
