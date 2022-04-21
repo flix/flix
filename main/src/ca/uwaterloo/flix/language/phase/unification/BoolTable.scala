@@ -134,6 +134,8 @@ object BoolTable {
       throw InternalCompilerException(s"Unexpected non-Bool kind: '${tpe.kind}'.")
     }
 
+    // TODO: Can only handle free vars < 3
+
     val tvars = tpe.typeVars.map(_.sym).toList
     if (tpe.size < 8 || tvars.size > 5) {
       return tpe
@@ -153,26 +155,15 @@ object BoolTable {
     * Attempts to minimize the given Boolean formulas `f`.
     */
   def minimize(f: Formula): Formula = {
-    //
-    // Compute the free variables of `f` once.
-    //
-    val freeVars = f.freeVars.toList
-
-    //
-    // Special Case: If `f` has no free variables we simply reduce it to a value.
-    //
-    if (freeVars.isEmpty) {
-      if (eval(f, Map.empty)) {
-        return Formula.True
-      } else {
-        return Formula.False
-      }
+    // TODO: Can only handle free vars < 3
+    if (f.freeVars.size > 3) {
+      return f
     }
 
     //
     // Computes the semantic function of `f`.
     //
-    val semantic = semanticFunction(0, f, freeVars, Map.empty)
+    val semantic = semanticFunction(0, f, List(0, 1, 2), Map.empty)
 
     cache.get(semantic) match {
       case None => f
