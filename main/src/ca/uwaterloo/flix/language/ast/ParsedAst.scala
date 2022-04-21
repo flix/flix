@@ -1561,30 +1561,6 @@ object ParsedAst {
     case class Eff(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Effect
 
     /**
-      * Effect set subtraction.
-      *
-      * @param eff1 the first effect.
-      * @param effs the other effects.
-      */
-    case class Minus(eff1: ParsedAst.Effect, effs: Seq[ParsedAst.Effect]) extends ParsedAst.Effect
-
-    /**
-      * Effect set addition.
-      *
-      * @param eff1 the first effect.
-      * @param effs the other effects.
-      */
-    case class Plus(eff1: ParsedAst.Effect, effs: Seq[ParsedAst.Effect]) extends ParsedAst.Effect
-
-    /**
-      * Effect set intersection.
-      *
-      * @param eff1 the first effect.
-      * @param effs the other effects.
-      */
-    case class Intersect(eff1: ParsedAst.Effect, effs: Seq[ParsedAst.Effect]) extends ParsedAst.Effect
-
-    /**
       * Effect set complement.
       *
       * @param sp1 the position of the first character in the effect.
@@ -1592,6 +1568,30 @@ object ParsedAst {
       * @param sp2 the position of the last character in the effect.
       */
     case class Complement(sp1: SourcePosition, eff: ParsedAst.Effect, sp2: SourcePosition) extends ParsedAst.Effect
+
+    /**
+      * Effect set addition.
+      *
+      * @param eff1 the first effect.
+      * @param effs the other effects.
+      */
+    case class Union(eff1: ParsedAst.Effect, effs: Seq[ParsedAst.Effect]) extends ParsedAst.Effect
+
+    /**
+      * Effect set intersection.
+      *
+      * @param eff1 the first effect.
+      * @param effs the other effects.
+      */
+    case class Intersection(eff1: ParsedAst.Effect, effs: Seq[ParsedAst.Effect]) extends ParsedAst.Effect
+
+    /**
+      * Effect set subtraction.
+      *
+      * @param eff1 the first effect.
+      * @param effs the other effects.
+      */
+    case class Difference(eff1: ParsedAst.Effect, effs: Seq[ParsedAst.Effect]) extends ParsedAst.Effect
   }
 
   /**
