@@ -1684,7 +1684,7 @@ object ParsedAst {
     * @param fparams the operation parameters.
     * @param exp     the body expression.
     */
-  case class HandlerRule(name: Name.QName, fparams: Seq[FormalParam], exp: ParsedAst.Expression)
+  case class HandlerRule(name: Name.Ident, fparams: Seq[FormalParam], exp: ParsedAst.Expression)
 
   /**
     * A choice pattern match rule.
@@ -1749,9 +1749,10 @@ object ParsedAst {
     /**
       * A `with` block for handling Flix effects.
       *
+      * @param eff   the effect to be handled.
       * @param rules the handler rules.
       */
-    case class Handler(rules: Seq[ParsedAst.HandlerRule]) extends CatchOrHandler
+    case class Handler(eff: Name.QName, rules: Option[Seq[ParsedAst.HandlerRule]]) extends CatchOrHandler
   }
 
   /**
