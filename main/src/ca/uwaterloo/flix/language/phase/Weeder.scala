@@ -2201,50 +2201,11 @@ object Weeder {
       val t2 = visitType(tpe2)
       WeededAst.Type.Or(t1, t2, mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Union(sp1, efs, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      if (efs.isEmpty)
-        WeededAst.Type.True(loc)
-      else {
-        val zero = visitReadOrWrite(efs.head, loc)
-        efs.tail.foldLeft(zero) {
-          case (acc, rw) => WeededAst.Type.And(acc, visitReadOrWrite(rw, loc), loc)
-        }
-      }
-
     case ParsedAst.Type.Ascribe(tpe, kind, sp2) =>
       val sp1 = leftMostSourcePosition(tpe)
       val t = visitType(tpe)
       val k = visitKind(kind)
       WeededAst.Type.Ascribe(t, k, mkSL(sp1, sp2))
-  }
-
-  /**
-    * Returns the given read or write effect as a WeededAst type.
-    */
-  private def visitReadOrWrite(rw: ParsedAst.Purity, loc: SourceLocation): WeededAst.Type = rw match {
-    case Purity.Var(sp1, ident, sp2) =>
-      WeededAst.Type.Var(ident, mkSL(sp1, sp2))
-
-    case Purity.Read(idents) =>
-      if (idents.isEmpty)
-        WeededAst.Type.True(loc)
-      else {
-        val zero: WeededAst.Type = WeededAst.Type.Var(idents.head, idents.head.loc)
-        idents.tail.foldLeft(zero) {
-          case (acc, ident) => WeededAst.Type.And(acc, WeededAst.Type.Var(ident, ident.loc), loc)
-        }
-      }
-
-    case Purity.Write(idents) =>
-      if (idents.isEmpty)
-        WeededAst.Type.True(loc)
-      else {
-        val zero: WeededAst.Type = WeededAst.Type.Var(idents.head, idents.head.loc)
-        idents.tail.foldLeft(zero) {
-          case (acc, ident) => WeededAst.Type.And(acc, WeededAst.Type.Var(ident, ident.loc), loc)
-        }
-      }
   }
 
   /**

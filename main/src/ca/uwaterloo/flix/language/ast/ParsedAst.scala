@@ -1469,15 +1469,6 @@ object ParsedAst {
     case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Represents a union of purities.
-      *
-      * @param sp1  the position of the first character in the type.
-      * @param purs the purities.
-      * @param sp2  the position of the last character in the type.
-      */
-    case class Union(sp1: SourcePosition, purs: Seq[ParsedAst.Purity], sp2: SourcePosition) extends Type
-
-    /**
       * Kind Ascription.
       *
       * @param tpe  the ascribed type.
