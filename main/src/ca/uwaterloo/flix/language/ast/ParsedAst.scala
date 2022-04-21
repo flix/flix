@@ -1487,7 +1487,7 @@ object ParsedAst {
 
   object EffectSet {
     /**
-      * Singleton effect set.
+      * Represents and effect set with a single effect.
       *
       * @param sp1 the position of the first character in the set.
       * @param eff the effect.
@@ -1496,7 +1496,7 @@ object ParsedAst {
     case class Singleton(sp1: SourcePosition, eff: Effect, sp2: SourcePosition) extends EffectSet
 
     /**
-      * Pure effect set.
+      * Represents the empty effect set. Written as `{ }` or `{ Pure ` depending on the syntactic context.
       *
       * @param sp1 the position of the first character in the set.
       * @param sp2 the position of the last character in the set.
@@ -1504,7 +1504,7 @@ object ParsedAst {
     case class Pure(sp1: SourcePosition, sp2: SourcePosition) extends EffectSet
 
     /**
-      * A set of effects.
+      * Represents a set of effects.
       *
       * @param sp1  the position of the first character in the set.
       * @param effs the effects.
@@ -1573,22 +1573,23 @@ object ParsedAst {
       *
       * @param regs the region variables that are written.
       */
-
     case class Write(sp1: SourcePosition, regs: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst.Effect
 
     /**
       * A reference to an declared effect.
       *
       * @param sp1  the position of the first character in the effect.
-      * @param name the declared effect.
+      * @param name the fully qualified name of the effect.
       * @param sp2  the position of the last character in the effect.
       */
     case class Eff(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Effect
 
     /**
-      * The Impure effect.
-      * @param sp1  the position of the first character in the effect.
-      * @param sp2  the position of the last character in the effect.
+      * Represents the Impure effect.
+      * This is the "top" effect, i.e., the set of all effects.
+      *
+      * @param sp1 the position of the first character in the effect.
+      * @param sp2 the position of the last character in the effect.
       */
     case class Impure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Effect
   }
