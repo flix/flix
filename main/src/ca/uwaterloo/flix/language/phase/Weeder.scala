@@ -2319,7 +2319,16 @@ object Weeder {
       s match {
         case EffectSet.Singleton(sp1, eff, sp2) => visitSingleEffect(eff).toSuccess
         case EffectSet.Pure(sp1, sp2) => WeededAst.Type.True(mkSL(sp1, sp2)).toSuccess
-        case EffectSet.Set(sp1, Seq(), sp2) => WeededAst.Type.True(mkSL(sp1, sp2)).toSuccess
+        case EffectSet.Set(sp1, effs, sp2) =>
+          val loc = mkSL(sp1, sp2)
+          effs match {
+            case Nil => WeededAst.Type.True(loc).toSuccess
+            case hd :: tl =>
+              val tpe = tl.foldLeft(visitSingleEffect(hd)) {
+                case (acc, eff) => WeededAst.Type.And(acc, visitSingleEffect(eff), loc)
+              }
+              tpe.toSuccess
+          }
         case EffectSet.Set(sp1, eff0 +: effs0, sp2) =>
           val loc = mkSL(sp1, sp2)
           val tpe = effs0.foldLeft(visitSingleEffect(eff0)) {
