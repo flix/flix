@@ -21,6 +21,9 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable.ListBuffer
 
+/**
+  * A Boolean minimzation techniques that relies on pre-computed tables.
+  */
 object BoolTable {
 
   /**
@@ -33,12 +36,13 @@ object BoolTable {
     *
     * The table is pre-computed and initialized when this class is loaded.
     */
+  // TODO: Replace by array.
   private lazy val cache: Map[Int, Formula] = buildTable()
 
   /**
     * A common super-type for Boolean formulas.
     */
-  private sealed trait Formula {
+  sealed trait Formula {
 
     /**
       * Returns the size of `this` formulas.
@@ -68,7 +72,8 @@ object BoolTable {
 
   }
 
-  private object Formula {
+  object Formula {
+
     /**
       * Represents the constant True.
       */
@@ -80,24 +85,25 @@ object BoolTable {
     case object False extends Formula
 
     /**
-      * Represents a vairable.
+      * Represents a variable.
       */
     case class Var(x: Variable) extends Formula
 
     /**
       * Represents the negation of the formula `t`.
       */
-    case class Neg(t: Formula) extends Formula
+    case class Neg(f: Formula) extends Formula
 
     /**
-      * Represents the conjunction (logical and) of `t1` and `t2`.
+      * Represents the conjunction (logical and) of `f1` and `f2`.
       */
-    case class Conj(t1: Formula, t2: Formula) extends Formula
+    case class Conj(f1: Formula, f2: Formula) extends Formula
 
     /**
-      * Represents the disjunction (logical or) of `t1` and `t2`.
+      * Represents the disjunction (logical or) of `f1` and `f2`.
       */
-    case class Disj(t1: Formula, t2: Formula) extends Formula
+    case class Disj(f1: Formula, f2: Formula) extends Formula
+
   }
 
   /**
@@ -143,16 +149,19 @@ object BoolTable {
         val minimal = toType(result, reverseTypeVarMap)
         if (minimalSize < currentSize) {
           implicit val audience: Audience = Audience.Internal
-//          println(s"Replace: ${FormatType.formatWellKindedType(tpe)}")
-//          println(s"     By: ${FormatType.formatWellKindedType(minimal)}")
-//          println(s" Reduct: $currentSize -> $minimalSize")
-//          println()
+          //          println(s"Replace: ${FormatType.formatWellKindedType(tpe)}")
+          //          println(s"     By: ${FormatType.formatWellKindedType(minimal)}")
+          //          println(s" Reduct: $currentSize -> $minimalSize")
+          //          println()
         }
 
         minimal
     }
   }
 
+  def minimize(f: Formula): Formula = {
+    ???
+  }
 
   private def semanticFunction(position: Int, t0: Formula, fvs: List[Variable], binding: Map[Variable, Boolean]): Int = fvs match {
     case Nil => if (eval(t0, binding)) 1 << position else 0
@@ -174,9 +183,9 @@ object BoolTable {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
       case Some(b) => b
     }
-    case Formula.Neg(t) => !eval(t, env)
-    case Formula.Conj(t1, t2) => eval(t1, env) && eval(t2, env)
-    case Formula.Disj(t1, t2) => eval(t1, env) || eval(t2, env)
+    case Formula.Neg(f) => !eval(f, env)
+    case Formula.Conj(f1, f2) => eval(f1, env) && eval(f2, env)
+    case Formula.Disj(f1, f2) => eval(f1, env) || eval(f2, env)
   }
 
   /**
@@ -197,11 +206,11 @@ object BoolTable {
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
-  def toType(t0: Formula, m: Map[Variable, Symbol.KindedTypeVarSym]): Type = t0 match {
+  def toType(f: Formula, m: Map[Variable, Symbol.KindedTypeVarSym]): Type = f match {
     case Formula.True => Type.True
     case Formula.False => Type.False
     case Formula.Var(x) => Type.KindedVar(m(x), SourceLocation.Unknown)
-    case Formula.Neg(t) => Type.mkNot(toType(t, m), SourceLocation.Unknown)
+    case Formula.Neg(f1) => Type.mkNot(toType(f1, m), SourceLocation.Unknown)
     case Formula.Conj(t1, t2) => Type.mkAnd(toType(t1, m), toType(t2, m), SourceLocation.Unknown)
     case Formula.Disj(t1, t2) => Type.mkOr(toType(t1, m), toType(t2, m), SourceLocation.Unknown)
   }
