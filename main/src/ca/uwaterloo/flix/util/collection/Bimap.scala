@@ -51,4 +51,9 @@ case class Bimap[A, B](m1: Map[A, B], m2: Map[B, A]) {
     */
   def getBackward(b: B): Option[A] = m2.get(b)
 
+  /**
+    * Returns the same map but swapped.
+    */
+  def swap: Bimap[B, A] = Bimap(m2, m1)
+
 }

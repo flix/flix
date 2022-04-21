@@ -32,7 +32,7 @@ object BoolTable {
   /**
     * A flag used to control whether to print debug information.
     */
-  private val Debug: Boolean = false
+  private val Debug: Boolean = true
 
   /**
     * The number of variables that the minimization table uses.
@@ -62,9 +62,6 @@ object BoolTable {
     * A common super-type for Boolean formulas.
     */
   sealed trait Formula {
-
-    // TODO: Do not use freeVars?
-    // TODO: Store size in formula itself?
 
     /**
       * Returns the free variables in `this` formula.
@@ -222,31 +219,62 @@ object BoolTable {
   // TODO: Return SortedSet.
   // TODO: When the union of the sorted set "overflows" then minimize the two subformlas.
   // TODO: Do this by substitution.
-  private def simplify(f: Formula): (Formula, Int) = f match {
-    case Formula.True => (Formula.True, -1)
+  private def simplify(f: Formula): (Formula, SortedSet[Variable]) = f match {
+    case Formula.True => (Formula.True, SortedSet.empty)
 
-    case Formula.False => (Formula.False, -1)
+    case Formula.False => (Formula.False, SortedSet.empty)
 
-    case Formula.Var(x) => (Formula.Var(x), x)
+    case Formula.Var(x) => (Formula.Var(x), SortedSet(x))
 
-    case Formula.Neg(f1) =>
-      val (inner, n) = simplify(f1)
-      (Formula.Neg(inner), n)
+    case Formula.Neg(formula) =>
+      val (f, fvs) = simplify(formula)
+      (Formula.Neg(f), fvs)
 
-    case Formula.Conj(f1, f2) =>
-      val (inner1, n1) = simplify(f1)
-      val (inner2, n2) = simplify(f2)
-      val innera = if (n1 == 2) lookup(inner1) else inner1
-      val innerb = if (n2 == 2) lookup(inner2) else inner2
-      (Formula.Conj(innera, inner2), math.max(n1, n2))
+    case Formula.Conj(formula1, formula2) =>
+      val (f1, fvs1) = simplify(formula1)
+      val (f2, fvs2) = simplify(formula2)
+      val fvs = fvs1 ++ fvs2
 
-    case Formula.Disj(f1, f2) =>
-      val (inner1, n1) = simplify(f1)
-      val (inner2, n2) = simplify(f2)
-      (Formula.Disj(inner1, inner2), math.max(n1, n2))
+      if (fvs.size <= NumberOfVariables) {
+        (Formula.Conj(f1, f2), fvs)
+      } else {
+        val minf1 = alphaRenameAndLookup(f1)
+        val minf2 = alphaRenameAndLookup(f2)
+        (Formula.Conj(minf1, minf2), fvs)
+      }
+
+    case Formula.Disj(formula1, formula2) =>
+      val (f1, fvs1) = simplify(formula1)
+      val (f2, fvs2) = simplify(formula2)
+      val fvs = fvs1 ++ fvs2
+
+      if (fvs.size <= NumberOfVariables) {
+        (Formula.Disj(f1, f2), fvs)
+      } else {
+        val minf1 = alphaRenameAndLookup(f1)
+        val minf2 = alphaRenameAndLookup(f2)
+        (Formula.Disj(minf1, minf2), fvs)
+      }
+
   }
 
+  // TODO: Rename variables and lookup
+  private def alphaRenameAndLookup(f: Formula): Formula = {
+    val m = f.freeVars.toList.zipWithIndex.foldLeft(Bimap.empty[Variable, Variable]) {
+      case (macc, (k, v)) => macc + (k -> v)
+    }
+    substitute(lookup(substitute(f, m)), m.swap)
+  }
 
+  // TODO: DOC
+  private def substitute(f: Formula, m: Bimap[Variable, Variable]): Formula = f match {
+    case Formula.True => Formula.True
+    case Formula.False => Formula.False
+    case Formula.Var(x) => Formula.Var(m.getForward(x).get)
+    case Formula.Neg(f1) => Formula.Neg(substitute(f1, m))
+    case Formula.Conj(f1, f2) => Formula.Conj(substitute(f1, m), substitute(f2, m))
+    case Formula.Disj(f1, f2) => Formula.Disj(substitute(f1, m), substitute(f2, m))
+  }
 
   /**
     * Attempts to minimize the given Boolean formulas `f`.
