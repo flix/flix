@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
-import ca.uwaterloo.flix.language.ast.ParsedAst.{Purity, RecordFieldType}
+import ca.uwaterloo.flix.language.ast.ParsedAst.{Effect, EffectSet, Purity, RecordFieldType}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -2311,9 +2311,58 @@ object Weeder {
   /**
     * Weeds the given parsed optional effect `effOpt`.
     */
-  private def visitEff(effOpt: Option[ParsedAst.Type], loc: SourceLocation)(implicit flix: Flix): Validation[WeededAst.Type, WeederError] = effOpt match {
+  private def visitEff(effOpt: Option[ParsedAst.EffectSetOrBool], loc: SourceLocation)(implicit flix: Flix): Validation[WeededAst.Type, WeederError] = effOpt match {
     case None => WeededAst.Type.True(loc.asSynthetic).toSuccess
-    case Some(tpe) => visitType(tpe).toSuccess
+    case Some(ParsedAst.EffectSetOrBool.Bool(tpe)) => visitType(tpe).toSuccess
+    case Some(ParsedAst.EffectSetOrBool.Set(s)) =>
+      // for now just pull out the reads and vars and convert them to types
+      s match {
+        case EffectSet.Singleton(sp1, eff, sp2) => visitSingleEffect(eff).toSuccess
+        case EffectSet.Pure(sp1, sp2) => WeededAst.Type.True(mkSL(sp1, sp2)).toSuccess
+        case EffectSet.Set(sp1, Seq(), sp2) => WeededAst.Type.True(mkSL(sp1, sp2)).toSuccess
+        case EffectSet.Set(sp1, eff0 +: effs0, sp2) =>
+          val loc = mkSL(sp1, sp2)
+          val tpe = effs0.foldLeft(visitSingleEffect(eff0)) {
+            case (acc, eff) => WeededAst.Type.And(acc, visitSingleEffect(eff), loc)
+          }
+          tpe.toSuccess
+      }
+  }
+
+  /**
+    * Weeds the given single effect.
+    * Currently only handles Reads, Writes, and Vars
+    *
+    * @param eff the effect
+    */
+  private def visitSingleEffect(eff: ParsedAst.Effect): WeededAst.Type = eff match {
+    case Effect.Var(sp1, ident, sp2) =>
+      WeededAst.Type.Var(ident, mkSL(sp1, sp2))
+
+    case Effect.Read(sp1, idents, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      if (idents.isEmpty)
+        WeededAst.Type.True(loc)
+      else {
+        val zero: WeededAst.Type = WeededAst.Type.Var(idents.head, idents.head.loc)
+        idents.tail.foldLeft(zero) {
+          case (acc, ident) => WeededAst.Type.And(acc, WeededAst.Type.Var(ident, ident.loc), loc)
+        }
+      }
+
+    case Effect.Write(sp1, idents, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      if (idents.isEmpty)
+        WeededAst.Type.True(loc)
+      else {
+        val zero: WeededAst.Type = WeededAst.Type.Var(idents.head, idents.head.loc)
+        idents.tail.foldLeft(zero) {
+          case (acc, ident) => WeededAst.Type.And(acc, WeededAst.Type.Var(ident, ident.loc), loc)
+        }
+      }
+
+    // not handling set logic yet
+    case _ => WeededAst.Type.True(SourceLocation.Unknown)
   }
 
   /**

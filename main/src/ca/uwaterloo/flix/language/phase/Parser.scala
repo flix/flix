@@ -127,11 +127,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndPurity ~ OptTypeConstraintList ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ OptTypeConstraintList ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
     }
 
     def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndPurity ~ OptTypeConstraintList ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ OptTypeConstraintList ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
@@ -139,7 +139,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Op: Rule1[ParsedAst.Declaration.Op] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndPurity ~ OptTypeConstraintList ~ SP ~> ParsedAst.Declaration.Op
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ OptTypeConstraintList ~ SP ~> ParsedAst.Declaration.Op
     }
 
     def Enum: Rule1[ParsedAst.Declaration.Enum] = {
@@ -283,40 +283,22 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     SP ~ Names.Attribute ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Attribute
   }
 
-  def TypeAndPurity: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = rule {
-    Type ~ optional((WS ~ "&" ~ WS ~ Type) | PurityAlt)
+  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.EffectSetOrBool]] = rule {
+    Type ~ optional(optWS ~ EffectSetOrBool)
   }
 
-  def PurityAlt: Rule1[ParsedAst.Type] = {
-    def Var: Rule1[ParsedAst.Purity.Var] = rule {
-      SP ~ Names.Variable ~ SP ~> ParsedAst.Purity.Var
+  def EffectSetOrBool: Rule1[ParsedAst.EffectSetOrBool] = {
+    def Set: Rule1[ParsedAst.EffectSetOrBool] = rule {
+      "\\" ~ optWS ~ Effects.EffectSet ~> ParsedAst.EffectSetOrBool.Set
     }
 
-    def Read: Rule1[ParsedAst.Purity.Read] = rule {
-      keyword("Read") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Purity.Read
-    }
-
-    def Write: Rule1[ParsedAst.Purity.Write] = rule {
-      keyword("Write") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Purity.Write
-    }
-
-    def Single: Rule1[ParsedAst.Type] = rule {
-      SP ~ (Var | Read | Write) ~ SP ~> ((sp1: SourcePosition, pur: ParsedAst.Purity, sp2: SourcePosition) => ParsedAst.Type.Union(sp1, Seq(pur), sp2))
-    }
-
-    def Union: Rule1[ParsedAst.Type] = rule {
-      SP ~ "{" ~ optWS ~ zeroOrMore(Var | Read | Write).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Union
-    }
-
-    // unused for now
-    def EffectAlt: Rule1[ParsedAst.EffectSet] = rule {
-      optWS ~ "\\" ~ optWS ~ Effects.EffectSet
+    def Bool: Rule1[ParsedAst.EffectSetOrBool] = rule {
+      "&" ~ optWS ~ Type ~> ParsedAst.EffectSetOrBool.Bool
     }
 
     rule {
-      WS ~ "\\" ~ WS ~ (Single | Union)
+      Set | Bool
     }
-
   }
 
   /////////////////////////////////////////////////////////////////////////////
