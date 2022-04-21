@@ -2282,7 +2282,7 @@ object Weeder {
         case EffectSet.Pure(sp1, sp2) => WeededAst.Type.True(mkSL(sp1, sp2)).toSuccess
         case EffectSet.Set(sp1, effs, sp2) =>
           val loc = mkSL(sp1, sp2)
-          effs match {
+          effs.toList match {
             case Nil => WeededAst.Type.True(loc).toSuccess
             case hd :: tl =>
               val tpe = tl.foldLeft(visitSingleEffect(hd)) {
