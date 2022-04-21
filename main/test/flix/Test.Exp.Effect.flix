@@ -100,6 +100,17 @@ namespace Test/Exp/Effect {
         }
     }
 
+    pub def singleEffect(): Bool \ Empty = ???
+
+    pub def complementEffect(): Bool \ ~Empty = ???
+
+    pub def unionEffect(): Bool \ Empty + Fail = ???
+
+    pub def intersectionEffect(): Bool \ Empty & Fail = ???
+
+    pub def differenceEffect(): Bool \ Empty - Fail = ???
+
+
     eff Empty
 
     eff Fail {

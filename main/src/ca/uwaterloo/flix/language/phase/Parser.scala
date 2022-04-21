@@ -1437,15 +1437,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def UnionTail = rule {
-      operatorX("+") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "+" ~ optWS) ~> ParsedAst.Effect.Union
+      operatorX("+") ~ optWS ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "+" ~ optWS) ~> ParsedAst.Effect.Union
     }
 
     def IntersectionTail = rule {
-      operatorX("&") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "&" ~ optWS) ~> ParsedAst.Effect.Intersection
+      operatorX("&") ~ optWS ~  oneOrMore(SimpleEffect).separatedBy(optWS ~ "&" ~ optWS) ~> ParsedAst.Effect.Intersection
     }
 
     def DifferenceTail = rule {
-      operatorX("-") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "-" ~ optWS) ~> ParsedAst.Effect.Difference
+      operatorX("-") ~ optWS ~  oneOrMore(SimpleEffect).separatedBy(optWS ~ "-" ~ optWS) ~> ParsedAst.Effect.Difference
     }
 
     def BinaryTail = rule {
