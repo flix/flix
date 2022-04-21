@@ -186,6 +186,10 @@ object BoolTable {
     // If the formula has more than three variables we cannot minimize it.
     //
     if (f.freeVars.size > 3) {
+      if (Debug) {
+        println(s"minimize: Formula has too many variables: ${f.freeVars.size}. Skipping.")
+        println()
+      }
       return f
     }
 
