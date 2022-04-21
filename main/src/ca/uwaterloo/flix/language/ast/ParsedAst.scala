@@ -1552,7 +1552,7 @@ object ParsedAst {
     case class Impure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Effect
 
     /**
-      * A reference to an declared effect.
+      * Represents a reference to an declared effect.
       *
       * @param sp1  the position of the first character in the effect.
       * @param name the fully qualified name of the effect.
@@ -1561,7 +1561,7 @@ object ParsedAst {
     case class Eff(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Effect
 
     /**
-      * Effect set complement.
+      * Represents the complement of an effect set.
       *
       * @param sp1 the position of the first character in the effect.
       * @param eff the complemented effect.
@@ -1570,7 +1570,7 @@ object ParsedAst {
     case class Complement(sp1: SourcePosition, eff: ParsedAst.Effect, sp2: SourcePosition) extends ParsedAst.Effect
 
     /**
-      * Effect set addition.
+      * Represents the union of effect sets.
       *
       * @param eff1 the first effect.
       * @param effs the other effects.
@@ -1578,7 +1578,7 @@ object ParsedAst {
     case class Union(eff1: ParsedAst.Effect, effs: Seq[ParsedAst.Effect]) extends ParsedAst.Effect
 
     /**
-      * Effect set intersection.
+      * Represents the intersection of effect sets.
       *
       * @param eff1 the first effect.
       * @param effs the other effects.
@@ -1586,7 +1586,7 @@ object ParsedAst {
     case class Intersection(eff1: ParsedAst.Effect, effs: Seq[ParsedAst.Effect]) extends ParsedAst.Effect
 
     /**
-      * Effect set subtraction.
+      * Represents the difference of effect sets.
       *
       * @param eff1 the first effect.
       * @param effs the other effects.
