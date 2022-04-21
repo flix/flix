@@ -299,15 +299,43 @@ object BoolTable {
     if (Debug) {
       println("== Minimization Table ==")
       println()
-      for ((key, term) <- table) {
-        println(s"  ${key.toBinaryString.padTo(8, '0')}: $term")
+      for ((key, f) <- table) {
+        println(s"  ${toBinaryString(key, 1 << NumberOfVariables)}: $f")
       }
       println(s"Total Table Size = ${table.size}")
       println()
     }
 
+    // If there are n variables, the table has size 2^(2^3).
+    val array = new Array[Formula](1 << (1 << NumberOfVariables))
+    for ((key, f) <- table) {
+      array(key) = f
+    }
+
+    if (Debug) {
+      println("== Minimization Array ==")
+      println()
+      for (i <- array.indices) {
+        println(s"  ${toBinaryString(i, 1 << NumberOfVariables)}: ${array(i)}")
+      }
+      println(s"Total Array Size = ${array.length}")
+      println()
+    }
+
     table
   }
+
+  /**
+    * Formats the given int `i` as a bit string with `n` bits.
+    */
+  private def toBinaryString(i: Int, n: Int): String =
+    leftPad(i.toBinaryString, n, ' ')
+
+  /**
+    * Left pads `s` with `c` to reach length `len`.
+    */
+  private def leftPad(s: String, len: Int, c: Char): String =
+    c.toString * (len - s.length()) + s
 
   /**
     * Parses the given S-expression `sexp` into a map from semantic functions to their minimal formulas.
