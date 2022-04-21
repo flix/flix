@@ -2329,12 +2329,6 @@ object Weeder {
               }
               tpe.toSuccess
           }
-        case EffectSet.Set(sp1, eff0 +: effs0, sp2) =>
-          val loc = mkSL(sp1, sp2)
-          val tpe = effs0.foldLeft(visitSingleEffect(eff0)) {
-            case (acc, eff) => WeededAst.Type.And(acc, visitSingleEffect(eff), loc)
-          }
-          tpe.toSuccess
       }
   }
 
