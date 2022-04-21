@@ -73,7 +73,7 @@ object BoolUnification {
     val query = mkEq(tpe1, tpe2)
 
     // The free and flexible type variables in the query.
-    val freeVars = query.typeVars.toList.filter(_.sym.rigidity == Rigidity.Flexible)
+    val freeVars = variableOrder(query.typeVars.toList.filter(_.sym.rigidity == Rigidity.Flexible))
 
     // Eliminate all variables.
     try {
@@ -92,6 +92,21 @@ object BoolUnification {
     } catch {
       case BooleanUnificationException => Err(UnificationError.MismatchedBools(tpe1, tpe2))
     }
+  }
+
+  /**
+    * A heuristic uses to determine the variable order.
+    *
+    * The order of variables in SVE is semantically immaterial, but can impact performance.
+    *
+    * We use the following observation: We want to have "synthetic / fresh variables" expressed
+    * in terms of "real" variables that occur in the actual source. To achieve this, we eliminate
+    * all synthetic variables *first*.
+    */
+  private def variableOrder(l: List[Type.KindedVar]): List[Type.KindedVar] = {
+    val realVars = l.filter(_.sym.isReal)
+    val synthVars = l.filterNot(_.sym.isReal)
+    synthVars ::: realVars
   }
 
   /**
