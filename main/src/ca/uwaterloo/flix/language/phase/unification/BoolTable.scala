@@ -32,7 +32,7 @@ object BoolTable {
   /**
     * A flag used to control whether to print debug information.
     */
-  private val Debug: Boolean = true
+  private val Debug: Boolean = false
 
   /**
     * The number of variables that the minimization table uses.
@@ -147,57 +147,54 @@ object BoolTable {
     *
     * @param tpe the formulas to minimize. Must have kind `Bool`.
     */
-  def minimize(tpe: Type)(implicit flix: Flix): Type = {
-    //
+  def minimizeType(tpe: Type)(implicit flix: Flix): Type = {
     // Check whether minimization via tabling is disabled.
-    //
     if (flix.options.xnobooltable) {
       return tpe
     }
 
-    //
     // Check that the type `tpe` argument is a Boolean formula.
-    //
     if (tpe.kind != Kind.Bool) {
       throw InternalCompilerException(s"Unexpected non-Bool kind: '${tpe.kind}'.")
     }
 
-    //
     // Compute the size of the type `tpe`.
-    //
     val currentSize = tpe.size
 
-    //
     // Heuristically, we do not minimize formulas if they are small.
-    //
     if (currentSize < Threshold) {
       return tpe
     }
 
-    // TODO: Cleanup
-
+    // Compute the (free) type variables in `tpe`.
     val tvars = tpe.typeVars.map(_.sym).toList
 
-    val bimap = tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Variable]) {
+    // Construct a bi-directional map from type variables to indices.
+    val m = tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Variable]) {
       case (macc, (sym, x)) => macc + (sym -> x)
     }
 
-    val input = fromType(tpe, bimap)
-    val output = toType(minimize(input), bimap, tpe.loc)
+    // Convert the type `tpe` to a formula.
+    val input = fromType(tpe, m)
 
-    val minimalSize = output.size
+    // Minimize the formula and convert it back to a type.
+    val result = toType(minimize(input), m, tpe.loc)
 
     if (Debug) {
+      // Compute the size of the result type.
+      val minimalSize = result.size
+
+      // Debugging.
       if (minimalSize < currentSize) {
         implicit val audience: Audience = Audience.Internal
         println(s"Replace: ${FormatType.formatWellKindedType(tpe)}")
-        println(s"     By: ${FormatType.formatWellKindedType(output)}")
-        println(s" Reduct: $currentSize -> $minimalSize")
+        println(s"     By: ${FormatType.formatWellKindedType(result)}")
+        println(s" Change: $currentSize -> $minimalSize")
         println()
       }
     }
 
-    output
+    result
   }
 
   // TODO: DOC
@@ -266,7 +263,11 @@ object BoolTable {
     substitute(lookup(substitute(f, m)), m.swap)
   }
 
-  // TODO: DOC
+  /**
+    * Substitutes all variables in `f` using the substitution map `m`.
+    *
+    * The map `m` must bind each free variable in `f` to a type variable.
+    */
   private def substitute(f: Formula, m: Bimap[Variable, Variable]): Formula = f match {
     case Formula.True => Formula.True
     case Formula.False => Formula.False
