@@ -308,9 +308,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ "{" ~ optWS ~ zeroOrMore(Var | Read | Write).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Union
     }
 
+    // unused for now
+    def EffectAlt: Rule1[ParsedAst.EffectSet] = rule {
+      optWS ~ "\\" ~ optWS ~ Effects.EffectSet
+    }
+
     rule {
       WS ~ "\\" ~ WS ~ (Single | Union)
     }
+
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1391,6 +1397,86 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       "[" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
     }
 
+  }
+
+  object Effects {
+
+    def EffectSet: Rule1[ParsedAst.EffectSet] = rule {
+      // NB: Pure must come before Set since they overlap
+      Pure | Set | Singleton
+    }
+
+    def Singleton: Rule1[ParsedAst.EffectSet] = rule {
+      SP ~ Effect ~ SP ~> ParsedAst.EffectSet.Singleton
+    }
+
+    def Pure: Rule1[ParsedAst.EffectSet] = rule {
+      SP ~ "{" ~ optWS ~ keyword("Pure") ~ optWS ~ "}" ~ SP ~> ParsedAst.EffectSet.Pure
+    }
+
+    def Set: Rule1[ParsedAst.EffectSet] = rule {
+      SP ~ "{" ~ optWS ~ oneOrMore(Effect).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.EffectSet.Set
+    }
+
+    def Effect: Rule1[ParsedAst.Effect] = rule {
+      Binary | SimpleEffect
+    }
+
+    def Var: Rule1[ParsedAst.Effect] = rule {
+      SP ~ Names.Variable ~ SP ~> ParsedAst.Effect.Var
+    }
+
+    def Read: Rule1[ParsedAst.Effect] = rule {
+      SP ~ keyword("Read") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Effect.Read
+    }
+
+    def Write: Rule1[ParsedAst.Effect] = rule {
+      SP ~ keyword("Write") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Effect.Write
+    }
+
+    def Impure: Rule1[ParsedAst.Effect] = rule {
+      SP ~ keyword("Impure") ~ SP ~> ParsedAst.Effect.Impure
+    }
+
+    def Eff: Rule1[ParsedAst.Effect] = rule {
+      SP ~ Names.QualifiedEffect ~ SP ~> ParsedAst.Effect.Eff
+    }
+
+    def Complement: Rule1[ParsedAst.Effect] = rule {
+      SP ~ operatorX("~") ~ optWS ~ SimpleEffect ~ SP ~> ParsedAst.Effect.Complement
+    }
+
+    def UnionTail = rule {
+      operatorX("+") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "+" ~ optWS) ~> ParsedAst.Effect.Union
+    }
+
+    def IntersectionTail = rule {
+      operatorX("&") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "&" ~ optWS) ~> ParsedAst.Effect.Intersection
+    }
+
+    def DifferenceTail = rule {
+      operatorX("-") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "-" ~ optWS) ~> ParsedAst.Effect.Difference
+    }
+
+    def BinaryTail = rule {
+      UnionTail | DifferenceTail | IntersectionTail
+    }
+
+    // We only allow chains of like operators.
+    // Unlike operators must be parenthesized.
+    // Illegal: a + b + c - d + e
+    // Legal: ((a + b + c) - d) + e
+    def Binary: Rule1[ParsedAst.Effect] = rule {
+      SimpleEffect ~ optional(optWS ~ BinaryTail)
+    }
+
+    def SimpleEffect: Rule1[ParsedAst.Effect] = rule {
+      Var | Impure | Read | Write | Eff | Complement | Parens
+    }
+
+    def Parens: Rule1[ParsedAst.Effect] = rule {
+      "(" ~ Effect ~ ")"
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
