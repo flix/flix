@@ -24,7 +24,7 @@ import scala.collection.immutable.SortedSet
 import scala.collection.mutable.ListBuffer
 
 /**
-  * A Boolean minimization technique that relies on pre-computed tables of minimal formulas.
+  * A Boolean minimization technique that uses on pre-computed tables of minimal formulas.
   */
 object BoolTable {
 
@@ -36,9 +36,9 @@ object BoolTable {
   /**
     * The number of variables that the minimization table uses.
     *
-    * Warning: If this number is set incorrectly, the results will be wrong!!
+    * Warning: If the number is set incorrectly minimization will be wrong!
     */
-  private val NumberOfVariables: Int = 3
+  private val MaxVars: Int = 3
 
   /**
     * The size a type must have before we try to minimize it.
@@ -190,18 +190,18 @@ object BoolTable {
     */
   def minimizeFormula(f: Formula): Formula = {
     // Compute the number of free variables.
-    val freeVars = f.freeVars.size
+    val numVars = f.freeVars.size
 
-    val result = if (freeVars <= NumberOfVariables) {
+    val result = if (numVars <= MaxVars) {
       // Case 1: The number of free variables is less than those in the table.
       // We can immediately lookup the minimal formula in the table.
-      if (Debug) println(s"Minimize by lookup ($freeVars variables)")
+      if (Debug) println(s"Minimize by lookup ($numVars variables)")
       lookup(f)
     } else {
       // Case 2: The formula has more variables than the table.
       // We try to recursively minimize each sub-formula.
       // This does not guarantee that we arrive at a minimal formula, but it is better than nothing.
-      if (Debug) println(s"Minimize by recursion ($freeVars variables)")
+      if (Debug) println(s"Minimize by recursion ($numVars variables)")
       minimizeFormulaRecursively(f)._1
     }
 
@@ -219,8 +219,6 @@ object BoolTable {
 
   /**
     * Returns a pair of a formula and its free variables.
-    *
-    * At each conjunction or disjunction, we
     */
   private def minimizeFormulaRecursively(f: Formula): (Formula, SortedSet[Variable]) = f match {
     case Formula.True => (Formula.True, SortedSet.empty)
@@ -242,7 +240,7 @@ object BoolTable {
       val fvs = fvs1 ++ fvs2
 
       // Determine if we must minimize.
-      if (fvs.size <= NumberOfVariables) {
+      if (fvs.size <= MaxVars) {
         // The number of free variables does not (yet) exceed the number of variables in the table.
         // Consequence we do not yet minimize.
         (Formula.Conj(f1, f2), fvs)
@@ -261,7 +259,7 @@ object BoolTable {
       val (f2, fvs2) = minimizeFormulaRecursively(formula2)
       val fvs = fvs1 ++ fvs2
 
-      if (fvs.size <= NumberOfVariables) {
+      if (fvs.size <= MaxVars) {
         (Formula.Disj(f1, f2), fvs)
       } else {
         val minf1 = alphaRenameAndLookup(f1)
@@ -300,21 +298,16 @@ object BoolTable {
     * Attempts to minimize the given Boolean formulas `f`.
     */
   private def lookup(f: Formula): Formula = {
-    //
-    // If the formula has more than three variables we cannot minimize it.
-    //
-    if (f.freeVars.size > NumberOfVariables) {
+    // If the formula `f` has more variables than `f` then we cannot use the table.
+    // If so, we simply return the formula unchanged.
+    if (f.freeVars.size > MaxVars) {
       return f
     }
 
-    //
     // Computes the semantic function of `f`.
-    //
-    val semantic = computeSemanticFunction(f, List(0, 1, 2), 0, new Array[Boolean](3)) // TODO: Use MaxVars
+    val semantic = computeSemanticFunction(f, (0 until MaxVars).toList, 0, new Array[Boolean](MaxVars))
 
-    //
     // Lookup the semantic function in the table.
-    //
     Table(semantic)
   }
 
@@ -398,14 +391,14 @@ object BoolTable {
       println("== Minimization Table ==")
       println()
       for ((key, f) <- table) {
-        println(s"  ${toBinaryString(key, 1 << NumberOfVariables)}: $f")
+        println(s"  ${toBinaryString(key, 1 << MaxVars)}: $f")
       }
       println(s"Total Table Size = ${table.size}")
       println()
     }
 
     // If there are n variables, the table has size 2^(2^3).
-    val array = new Array[Formula](1 << (1 << NumberOfVariables))
+    val array = new Array[Formula](1 << (1 << MaxVars))
     for ((key, f) <- table) {
       array(key) = f
     }
@@ -414,7 +407,7 @@ object BoolTable {
       println("== Minimization Array ==")
       println()
       for (i <- array.indices) {
-        println(s"  ${toBinaryString(i, 1 << NumberOfVariables)}: ${array(i)}")
+        println(s"  ${toBinaryString(i, 1 << MaxVars)}: ${array(i)}")
       }
       println(s"Total Array Size = ${array.length}")
       println()
