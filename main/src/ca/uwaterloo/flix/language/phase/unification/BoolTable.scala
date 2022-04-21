@@ -32,7 +32,7 @@ object BoolTable {
   /**
     * A flag used to control whether to print debug information.
     */
-  private val Debug: Boolean = true
+  private val Debug: Boolean = false
 
   /**
     * The number of variables that the minimization table uses.
@@ -143,8 +143,6 @@ object BoolTable {
 
   }
 
-  // TODO: Introduce smart constructors?
-
   /**
     * Attempts to minimize the given Boolean formulas `tpe`.
     *
@@ -205,19 +203,59 @@ object BoolTable {
     output
   }
 
+  // TODO: DOC
+  // Two cases: Few variables we just do a look up, otherwise we recursively simplify.,
+  def minimize(f: Formula): Formula = {
+    val freeVars = f.freeVars.size
+
+    if (freeVars <= NumberOfVariables) {
+      lookup(f)
+    } else {
+      simplify(f)._1
+    }
+  }
+
+  // TODO: DOC
+  // TODO: Rebuild the formula bottom and minimize when you hit 3 variables.
+  // TODO: Returns the maximum variable seen (we only deal with the first 3 variables).
+  // TODO: Later we need an ability to substitute variables.
+  // TODO: Return SortedSet.
+  // TODO: When the union of the sorted set "overflows" then minimize the two subformlas.
+  // TODO: Do this by substitution.
+  private def simplify(f: Formula): (Formula, Int) = f match {
+    case Formula.True => (Formula.True, -1)
+
+    case Formula.False => (Formula.False, -1)
+
+    case Formula.Var(x) => (Formula.Var(x), x)
+
+    case Formula.Neg(f1) =>
+      val (inner, n) = simplify(f1)
+      (Formula.Neg(inner), n)
+
+    case Formula.Conj(f1, f2) =>
+      val (inner1, n1) = simplify(f1)
+      val (inner2, n2) = simplify(f2)
+      val innera = if (n1 == 2) lookup(inner1) else inner1
+      val innerb = if (n2 == 2) lookup(inner2) else inner2
+      (Formula.Conj(innera, inner2), math.max(n1, n2))
+
+    case Formula.Disj(f1, f2) =>
+      val (inner1, n1) = simplify(f1)
+      val (inner2, n2) = simplify(f2)
+      (Formula.Disj(inner1, inner2), math.max(n1, n2))
+  }
+
+
+
   /**
     * Attempts to minimize the given Boolean formulas `f`.
     */
-  def minimize(f: Formula): Formula = {
+  private def lookup(f: Formula): Formula = {
     //
     // If the formula has more than three variables we cannot minimize it.
     //
     if (f.freeVars.size > NumberOfVariables) {
-      if (Debug) {
-        println(s"Formula has too many variables: ${f.freeVars.size}. Skipping formula of size: ${f.size}")
-        println(s"Formula: $f.")
-        println()
-      }
       return f
     }
 
@@ -248,7 +286,7 @@ object BoolTable {
     *
     * The environment must bind *all* variables in `f`.
     */
-    // TODO: Replace env by array.
+  // TODO: Replace env by array.
   private def eval(f: Formula, env: Map[Variable, Boolean]): Boolean = f match {
     case Formula.True => true
     case Formula.False => false
@@ -260,6 +298,7 @@ object BoolTable {
     case Formula.Conj(f1, f2) => eval(f1, env) && eval(f2, env)
     case Formula.Disj(f1, f2) => eval(f1, env) || eval(f2, env)
   }
+
 
   /**
     * Converts the given type `tpe` to a Boolean formula under the given variable substitution map `m`.
