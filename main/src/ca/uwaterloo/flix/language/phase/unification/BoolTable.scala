@@ -31,7 +31,7 @@ object BoolTable {
   /**
     * A flag used to control whether to print debug information.
     */
-  private val Debug: Boolean = true
+  private val Debug: Boolean = false
 
   /**
     * The size a type must have before we try to minimize it.
@@ -89,9 +89,9 @@ object BoolTable {
       case Formula.True => "true"
       case Formula.False => "false"
       case Formula.Var(x) => s"x$x"
-      case Formula.Neg(t) => s"not $t"
-      case Formula.Conj(t1, t2) => s"($t1 and $t2)"
-      case Formula.Disj(t1, t2) => s"($t1 or $t2)"
+      case Formula.Neg(t) => s"neg $t"
+      case Formula.Conj(t1, t2) => s"(conj $t1 $t2)"
+      case Formula.Disj(t1, t2) => s"(disj $t1 $t2)"
     }
 
   }
@@ -156,7 +156,6 @@ object BoolTable {
     if (currentSize < Threshold) {
       return tpe
     }
-
 
     val tvars = tpe.typeVars.map(_.sym).toList
 
