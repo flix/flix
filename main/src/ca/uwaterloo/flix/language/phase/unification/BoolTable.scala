@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -31,7 +32,7 @@ object BoolTable {
   /**
     * A flag used to control whether to print debug information.
     */
-  private val Debug: Boolean = false
+  private val Debug: Boolean = true
 
   /**
     * The number of variables that the minimization table uses.
@@ -147,7 +148,14 @@ object BoolTable {
     *
     * @param tpe the formulas to minimize. Must have kind `Bool`.
     */
-  def minimize(tpe: Type): Type = {
+  def minimize(tpe: Type)(implicit flix: Flix): Type = {
+    //
+    // Check whether minimization via tabling is disabled.
+    //
+    if (flix.options.xnobooltable) {
+      return tpe
+    }
+
     //
     // Check that the type `tpe` argument is a Boolean formula.
     //
