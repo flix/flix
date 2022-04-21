@@ -79,7 +79,6 @@ object OccurrenceAnalyzer {
    */
   private def visitDefs(defs0: Map[DefnSym, LiftedAst.Def])(implicit flix: Flix): Map[DefnSym, OccurrenceAst.Def] = {
     val (d1, os) = ParOps.parMap(defs0.values)((d: LiftedAst.Def) => visitDef(d)).unzip
-    //val (d1, os) = defs0.values.map(visitDef).unzip
     val defOccur = os.foldLeft[Map[DefnSym, Occur]](Map.empty){
       case (acc, occurInfo) => combineMaps(acc, occurInfo.defOccurrence, combineSeq)
     }
