@@ -57,7 +57,7 @@ object BoolTable {
     * The table is pre-computed and initialized when this class is loaded.
     */
   // TODO: Replace by array.
-  private lazy val cache: Map[Int, Formula] = buildTable()
+  private lazy val cache: Map[Int, Formula] = initTable()
 
   /**
     * A common super-type for Boolean formulas.
@@ -286,33 +286,44 @@ object BoolTable {
     case Formula.Disj(t1, t2) => Type.mkOr(toType(t1, m, loc), toType(t2, m, loc), loc)
   }
 
-  // TODO: DOC
-  private def buildTable(): Map[Int, Formula] = {
-    val table = ExpressionParser.parse(Table3Vars)
-    parseTable(table)
-    // prettyPrintLookupTable()
-  }
+  /**
+    * Parses the built-in table into an S-expression and then into an in-memory table.
+    */
+  private def initTable(): Map[Int, Formula] = {
+    val parsedTable = ExpressionParser.parse(Table3Vars)
+    val table = parseTable(parsedTable)
 
-  // TODO: DOC
-  private def prettyPrintLookupTable(): Unit = {
-    for ((key, term) <- cache) {
-      println(s"${key.toBinaryString.padTo(8, '0')}: $term")
+    if (Debug) {
+      println("== Minimization Table ==")
+      println()
+      for ((key, term) <- table) {
+        println(s"  ${key.toBinaryString.padTo(8, '0')}: $term")
+      }
+      println(s"Total Table Size = ${table.size}")
+      println()
     }
-    println(s"size = ${cache.size}")
+
+    table
   }
 
-  // TODO: DOC
-  private def parseTable(l: SList): Map[Int, Formula] = l match {
+  /**
+    * Parses the given S-expression `sexp` into a map from semantic functions to their minimal formulas.
+    */
+  private def parseTable(sexp: SList): Map[Int, Formula] = sexp match {
     case SList(elms) => elms.tail.map(parseKeyValue).toMap
   }
 
-  // TODO: DOC
-  private def parseKeyValue(elm: Element): (Int, Formula) = elm match {
+  /**
+    * Parses the given S-expression `sexp` into a pair of a semantic function and a formula.
+    */
+  private def parseKeyValue(sexp: Element): (Int, Formula) = sexp match {
     case SList(List(Atom(key), formula)) => parseKey(key) -> parseFormula(formula)
-    case _ => throw InternalCompilerException(s"Parse Error. Unexpected element: '$elm'.")
+    case _ => throw InternalCompilerException(s"Unexpected S-expression: '$sexp'.")
   }
 
-  // TODO: DOC
+  /**
+    * Parses the given `key` into a semantic function.
+    */
   private def parseKey(key: String): Int = {
     var result = 0
     for ((c, position) <- key.zipWithIndex) {
@@ -323,8 +334,10 @@ object BoolTable {
     result
   }
 
-  // TODO: DOC
-  private def parseFormula(elm: Element): Formula = elm match {
+  /**
+    * Parses the given S-expression `sexp` into a formula.
+    */
+  private def parseFormula(sexp: Element): Formula = sexp match {
     case Atom("T") => Formula.True
     case Atom("F") => Formula.False
     case Atom("x0") => Formula.Var(0)
@@ -333,7 +346,7 @@ object BoolTable {
     case SList(List(Atom("not"), x)) => Formula.Neg(parseFormula(x))
     case SList(List(Atom("and"), x, y)) => Formula.Conj(parseFormula(x), parseFormula(y))
     case SList(List(Atom("or"), x, y)) => Formula.Disj(parseFormula(x), parseFormula(y))
-    case _ => throw InternalCompilerException(s"Parse Error. Unexpected element: '$elm'.")
+    case _ => throw InternalCompilerException(s"Unexpected S-expression: '$sexp'.")
   }
 
   /**
