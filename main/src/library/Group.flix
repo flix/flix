@@ -64,11 +64,7 @@ namespace Group {
 ///
 /// Alias for `Group.remove`.
 ///
-// pub def ~~(x: a, y: a): a with Group[a] = Group.remove(x, y)
-
-instance Group[Unit] {
-    pub def inverse(_: Unit): Unit = ()
-}
+pub def --(x: a, y: a): a with Group[a] = Group.remove(x, y)
 
 instance Group[Int8] {
     pub def inverse(x: Int8): Int8 = -x
@@ -97,12 +93,6 @@ instance Group[Float32] {
 instance Group[Float64] {
     pub def inverse(x: Float64): Float64 = -x
 }
-
-/*
-instance Group[String] {
-    pub def inverse(x: String): String = ???
-}
-*/
 
 instance Group[(a1, a2)] with Group[a1], Group[a2] {
     pub def inverse(x: (a1, a2)): (a1, a2) = match x {
