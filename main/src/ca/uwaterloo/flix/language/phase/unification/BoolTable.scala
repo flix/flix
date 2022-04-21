@@ -149,13 +149,20 @@ object BoolTable {
 
   }
 
+  /**
+    * Attempts to minimize the given Boolean formulas `f`.
+    */
   def minimize(f: Formula): Formula = {
+    ///
+    /// Computes the semantic function of `f`.
+    ///
     val semantic = semanticFunction(0, f, f.freeVars.toList, Map.empty)
+
     cache.get(semantic) match {
-      case None =>  f
-      case Some(result) =>
+      case None => f
+      case Some(minimal) =>
         val currentSize = f.size
-        val minimalSize = result.size
+        val minimalSize = minimal.size
 
         if (minimalSize < currentSize) {
           implicit val audience: Audience = Audience.Internal
@@ -164,7 +171,7 @@ object BoolTable {
           //          println(s" Reduct: $currentSize -> $minimalSize")
           //          println()
         }
-        result
+        minimal
     }
   }
 

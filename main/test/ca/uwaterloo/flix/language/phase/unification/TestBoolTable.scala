@@ -6,19 +6,23 @@ import BoolTable.Formula._
 
 class TestBoolTable extends FunSuite {
 
-  ignore("Minimize.01") {
+  test("Minimize.01") {
     assertResult(expected = True)(actual = minimize(True))
   }
 
-  ignore("Minimize.02") {
-    assertResult(expected = True)(actual = minimize(Conj(True, True)))
+  test("Minimize.02") {
+    assertResult(expected = False)(actual = minimize(False))
   }
 
   test("Minimize.03") {
+    assertResult(expected = True)(actual = minimize(Conj(True, True)))
+  }
+
+  test("Minimize.04") {
     assertResult(expected = False)(actual = minimize(Conj(True, False)))
   }
 
-  ignore("Minimize.04") {
+  test("Minimize.05") {
     assertResult(expected = Var(0))(actual = minimize(Var(0)))
   }
 
