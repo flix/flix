@@ -178,7 +178,7 @@ object BoolTable {
     val input = fromType(tpe, m)
 
     // Minimize the formula and convert it back to a type.
-    val result = toType(minimize(input), m, tpe.loc)
+    val result = toType(minimizeFormula(input), m, tpe.loc)
 
     if (Debug) {
       // Compute the size of the result type.
@@ -197,26 +197,33 @@ object BoolTable {
     result
   }
 
-  // TODO: DOC
-  // Two cases: Few variables we just do a look up, otherwise we recursively simplify.,
-  def minimize(f: Formula): Formula = {
+  /**
+    * Attempts to minimize the given formula `f`.
+    *
+    * Returns the same formula or a smaller formula.
+    */
+  def minimizeFormula(f: Formula): Formula = {
+    // Compute the number of free variables.
     val freeVars = f.freeVars.size
 
     if (freeVars <= NumberOfVariables) {
+      // Case 1: The number of free variables is less than those in the table.
+      // We can immediately lookup the minimal formula in the table.
       lookup(f)
     } else {
-      simplify(f)._1
+      // Case 2: The formula has more variables than the table.
+      // We try to recursively minimize each sub-formula.
+      // This does not guarantee that we arrive at a minimal formula, but it is better than nothing.
+      minimizeFormulaRecursively(f)._1
     }
   }
 
-  // TODO: DOC
-  // TODO: Rebuild the formula bottom and minimize when you hit 3 variables.
-  // TODO: Returns the maximum variable seen (we only deal with the first 3 variables).
-  // TODO: Later we need an ability to substitute variables.
-  // TODO: Return SortedSet.
-  // TODO: When the union of the sorted set "overflows" then minimize the two subformlas.
-  // TODO: Do this by substitution.
-  private def simplify(f: Formula): (Formula, SortedSet[Variable]) = f match {
+  /**
+    * Returns a pair of a formula and its free variables.
+    *
+    * At each conjunction or disjunction, we
+    */
+  private def minimizeFormulaRecursively(f: Formula): (Formula, SortedSet[Variable]) = f match {
     case Formula.True => (Formula.True, SortedSet.empty)
 
     case Formula.False => (Formula.False, SortedSet.empty)
@@ -224,25 +231,35 @@ object BoolTable {
     case Formula.Var(x) => (Formula.Var(x), SortedSet(x))
 
     case Formula.Neg(formula) =>
-      val (f, fvs) = simplify(formula)
+      val (f, fvs) = minimizeFormulaRecursively(formula)
       (Formula.Neg(f), fvs)
 
     case Formula.Conj(formula1, formula2) =>
-      val (f1, fvs1) = simplify(formula1)
-      val (f2, fvs2) = simplify(formula2)
+      // Recursive minimize each sub-formula.
+      val (f1, fvs1) = minimizeFormulaRecursively(formula1)
+      val (f2, fvs2) = minimizeFormulaRecursively(formula2)
+
+      // Compute all the variables that occur in the left and right sub-formulas.
       val fvs = fvs1 ++ fvs2
 
+      // Determine if we must minimize.
       if (fvs.size <= NumberOfVariables) {
+        // The number of free variables does not (yet) exceed the number of variables in the table.
+        // Consequence we do not yet minimize.
         (Formula.Conj(f1, f2), fvs)
       } else {
+        // The number of variables exceeds the number of variables in the table.
+        // We minimize both the left and right sub-formulas and then construct the conjunction.
+        // Note: We have to recompute the variables (since a variable could get eliminated).
         val minf1 = alphaRenameAndLookup(f1)
         val minf2 = alphaRenameAndLookup(f2)
-        (Formula.Conj(minf1, minf2), fvs)
+        (Formula.Conj(minf1, minf2), minf1.freeVars ++ minf2.freeVars)
       }
 
     case Formula.Disj(formula1, formula2) =>
-      val (f1, fvs1) = simplify(formula1)
-      val (f2, fvs2) = simplify(formula2)
+      // This case is similar to the above case.
+      val (f1, fvs1) = minimizeFormulaRecursively(formula1)
+      val (f2, fvs2) = minimizeFormulaRecursively(formula2)
       val fvs = fvs1 ++ fvs2
 
       if (fvs.size <= NumberOfVariables) {
@@ -250,16 +267,19 @@ object BoolTable {
       } else {
         val minf1 = alphaRenameAndLookup(f1)
         val minf2 = alphaRenameAndLookup(f2)
-        (Formula.Disj(minf1, minf2), fvs)
+        (Formula.Disj(minf1, minf2), minf1.freeVars ++ minf2.freeVars)
       }
-
   }
 
-  // TODO: Rename variables and lookup
+  /**
+    * Renames every variable in the given formula `f` and looks it up in the minimal table.
+    */
   private def alphaRenameAndLookup(f: Formula): Formula = {
+    // Compute a renaming.
     val m = f.freeVars.toList.zipWithIndex.foldLeft(Bimap.empty[Variable, Variable]) {
       case (macc, (k, v)) => macc + (k -> v)
     }
+    // Rename all variables, lookup the minimal formula, and then rename everything back.
     substitute(lookup(substitute(f, m)), m.swap)
   }
 
