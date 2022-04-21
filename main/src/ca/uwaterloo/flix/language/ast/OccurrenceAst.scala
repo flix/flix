@@ -295,8 +295,10 @@ object OccurrenceAst {
    * `OccurDef` contains information that indicates whether or not a def should be inlined
    *  A def is `isTrivialNonSelfCall` if
    *  the expression consist of a single (non-self) call with trivial arguments
+   *  `occur` represents the amount of time a def is called in the entire program
+   *  `codeSize` denotes the cumulative weight of each expression in the body of the def
    */
-  case class DefContext(isNonSelfCall: Boolean)
+  case class DefContext(isNonSelfCall: Boolean, occur: Occur, codeSize: Int)
 
 }
 
