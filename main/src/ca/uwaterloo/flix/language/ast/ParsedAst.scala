@@ -1487,7 +1487,7 @@ object ParsedAst {
 
   object EffectSet {
     /**
-      * Represents and effect set with a single effect.
+      * Represents an effect set with a single effect.
       *
       * @param sp1 the position of the first character in the set.
       * @param eff the effect.
