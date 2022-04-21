@@ -32,7 +32,7 @@ object BoolTable {
   /**
     * A flag used to control whether to print debug information.
     */
-  private val Debug: Boolean = false
+  private val Debug: Boolean = true
 
   /**
     * The number of variables that the minimization table uses.
@@ -143,6 +143,8 @@ object BoolTable {
 
   }
 
+  // TODO: Introduce smart constructors?
+
   /**
     * Attempts to minimize the given Boolean formulas `tpe`.
     *
@@ -176,6 +178,8 @@ object BoolTable {
     if (currentSize < Threshold) {
       return tpe
     }
+
+    // TODO: Cleanup
 
     val tvars = tpe.typeVars.map(_.sym).toList
 
@@ -228,6 +232,8 @@ object BoolTable {
   }
 
   // TODO: DOC
+  // TODO: Replace fvs by number
+  // TODO: Replace binding by array.
   private def semanticFunction(position: Int, t0: Formula, fvs: List[Variable], binding: Map[Variable, Boolean]): Int = fvs match {
     case Nil => if (eval(t0, binding)) 1 << position else 0
     case x :: xs =>
@@ -241,6 +247,7 @@ object BoolTable {
     *
     * The environment must bind *all* variables in `f`.
     */
+    // TODO: Replace env by array.
   private def eval(f: Formula, env: Map[Variable, Boolean]): Boolean = f match {
     case Formula.True => true
     case Formula.False => false
@@ -328,13 +335,13 @@ object BoolTable {
     * Formats the given int `i` as a bit string with `n` bits.
     */
   private def toBinaryString(i: Int, n: Int): String =
-    leftPad(i.toBinaryString, n, ' ')
+    leftPad(i.toBinaryString, n)
 
   /**
     * Left pads `s` with `c` to reach length `len`.
     */
-  private def leftPad(s: String, len: Int, c: Char): String =
-    c.toString * (len - s.length()) + s
+  private def leftPad(s: String, len: Int): String =
+    ' '.toString * (len - s.length()) + s
 
   /**
     * Parses the given S-expression `sexp` into a map from semantic functions to their minimal formulas.
