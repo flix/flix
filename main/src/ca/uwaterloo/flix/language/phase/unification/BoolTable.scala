@@ -31,7 +31,7 @@ object BoolTable {
   /**
     * A flag used to control whether to print debug information.
     */
-  private val Debug: Boolean = true
+  private val Debug: Boolean = false
 
   /**
     * The number of variables that the minimization table uses.
