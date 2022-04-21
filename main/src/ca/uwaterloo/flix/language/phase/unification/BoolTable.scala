@@ -30,7 +30,12 @@ object BoolTable {
   /**
     * A flag used to control whether to print debug information.
     */
-  private val Debug: Boolean = false
+  private val Debug: Boolean = true
+
+  /**
+    * The size a type must have before we try to minimize it.
+    */
+  private val Threshold: Int = 10
 
   /**
     * A Boolean variable is represented by a unique number.
@@ -139,20 +144,25 @@ object BoolTable {
       throw InternalCompilerException(s"Unexpected non-Bool kind: '${tpe.kind}'.")
     }
 
-    // TODO: Can only handle free vars < 3
+    //
+    // Compute the size of the type `tpe`.
+    //
+    val currentSize = tpe.size
 
-    val tvars = tpe.typeVars.map(_.sym).toList
-    if (tpe.size < 8 || tvars.size > 5) {
+    //
+    // Heuristically, we do not minimize formulas if they are small.
+    //
+    if (currentSize < Threshold) {
       return tpe
     }
 
+
+    val tvars = tpe.typeVars.map(_.sym).toList
     val typeVarMap = tvars.zipWithIndex.toMap
     val reverseTypeVarMap = typeVarMap.map(_.swap).toMap
-
     val input = fromType(tpe, typeVarMap)
     val output = toType(minimize(input), reverseTypeVarMap)
 
-    val currentSize = tpe.size
     val minimalSize = output.size
 
     if (Debug) {
