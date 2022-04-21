@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeC
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import scala.collection.immutable.SortedSet
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -43,6 +44,18 @@ object BoolTable {
     * A common super-type for Boolean formulas.
     */
   sealed trait Formula {
+
+    /**
+      * Returns the free variables in `this` formula.
+      */
+    final def freeVars: SortedSet[Int] = this match {
+      case Formula.True => SortedSet.empty
+      case Formula.False => SortedSet.empty
+      case Formula.Var(x) => SortedSet(x)
+      case Formula.Neg(f) => f.freeVars
+      case Formula.Conj(f1, f2) => f1.freeVars ++ f2.freeVars
+      case Formula.Disj(f1, f2) => f1.freeVars ++ f2.freeVars
+    }
 
     /**
       * Returns the size of `this` formulas.
@@ -90,7 +103,7 @@ object BoolTable {
     case class Var(x: Variable) extends Formula
 
     /**
-      * Represents the negation of the formula `t`.
+      * Represents the negation of the formula `f`.
       */
     case class Neg(f: Formula) extends Formula
 
@@ -115,7 +128,7 @@ object BoolTable {
     */
   def minimize(tpe: Type): Type = {
     //
-    // Check that the given type argument is a Boolean formula.
+    // Check that the type `tpe` argument is a Boolean formula.
     //
     if (tpe.kind != Kind.Bool) {
       throw InternalCompilerException(s"Unexpected non-Bool kind: '${tpe.kind}'.")
@@ -129,24 +142,21 @@ object BoolTable {
     val typeVarMap = tvars.zipWithIndex.toMap
     val reverseTypeVarMap = typeVarMap.map(_.swap).toMap
 
-    //println(s"type vars: ${tvars.size}")
-
     val t = fromType(tpe, typeVarMap)
 
-    val freeVars = tvars.indices.toList
-    val semantic = semanticFunction(0, t, freeVars, Map.empty)
+    toType(minimize(t), reverseTypeVarMap)
 
-    //val fmtFormula = FormatType.formatWellKindedType(tpe)(Audience.External).take(80)
-    //val fmtBinary = semantic.toBinaryString
-    //println(s"$fmtFormula:  $fmtBinary")
 
+  }
+
+  def minimize(f: Formula): Formula = {
+    val semantic = semanticFunction(0, f, f.freeVars.toList, Map.empty)
     cache.get(semantic) match {
-      case None => toType(t, reverseTypeVarMap)
+      case None =>  f
       case Some(result) =>
-        val currentSize = t.size
+        val currentSize = f.size
         val minimalSize = result.size
 
-        val minimal = toType(result, reverseTypeVarMap)
         if (minimalSize < currentSize) {
           implicit val audience: Audience = Audience.Internal
           //          println(s"Replace: ${FormatType.formatWellKindedType(tpe)}")
@@ -154,13 +164,8 @@ object BoolTable {
           //          println(s" Reduct: $currentSize -> $minimalSize")
           //          println()
         }
-
-        minimal
+        result
     }
-  }
-
-  def minimize(f: Formula): Formula = {
-    ???
   }
 
   private def semanticFunction(position: Int, t0: Formula, fvs: List[Variable], binding: Map[Variable, Boolean]): Int = fvs match {
