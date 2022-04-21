@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.Bimap
 
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable.ListBuffer
@@ -158,10 +159,13 @@ object BoolTable {
 
 
     val tvars = tpe.typeVars.map(_.sym).toList
-    val typeVarMap = tvars.zipWithIndex.toMap
-    val reverseTypeVarMap = typeVarMap.map(_.swap).toMap
-    val input = fromType(tpe, typeVarMap)
-    val output = toType(minimize(input), reverseTypeVarMap)
+
+    val bimap = tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Variable]) {
+      case (macc, (sym, x)) => macc + (sym -> x)
+    }
+
+    val input = fromType(tpe, bimap)
+    val output = toType(minimize(input), bimap)
 
     val minimalSize = output.size
 
@@ -204,6 +208,7 @@ object BoolTable {
     cache.getOrElse(semantic, f)
   }
 
+  // TODO: DOC
   private def semanticFunction(position: Int, t0: Formula, fvs: List[Variable], binding: Map[Variable, Boolean]): Int = fvs match {
     case Nil => if (eval(t0, binding)) 1 << position else 0
     case x :: xs =>
@@ -234,8 +239,8 @@ object BoolTable {
     *
     * That is, `m` must bind each free type variable in `tpe` to a Boolean variable.
     */
-  private def fromType(tpe: Type, m: Map[Symbol.KindedTypeVarSym, Variable]): Formula = tpe match {
-    case Type.KindedVar(sym, _) => m.get(sym) match {
+  private def fromType(tpe: Type, m: Bimap[Symbol.KindedTypeVarSym, Variable]): Formula = tpe match {
+    case Type.KindedVar(sym, _) => m.getForward(sym) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
       case Some(x) => Formula.Var(x)
     }
@@ -248,10 +253,13 @@ object BoolTable {
   }
 
   // TODO: DOC
-  def toType(f: Formula, m: Map[Variable, Symbol.KindedTypeVarSym]): Type = f match {
+  def toType(f: Formula, m: Bimap[Symbol.KindedTypeVarSym, Variable]): Type = f match {
     case Formula.True => Type.True
     case Formula.False => Type.False
-    case Formula.Var(x) => Type.KindedVar(m(x), SourceLocation.Unknown)
+    case Formula.Var(x) => m.getBackward(x) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
+      case Some(sym) => Type.KindedVar(sym, SourceLocation.Unknown)
+    }
     case Formula.Neg(f1) => Type.mkNot(toType(f1, m), SourceLocation.Unknown)
     case Formula.Conj(t1, t2) => Type.mkAnd(toType(t1, m), toType(t2, m), SourceLocation.Unknown)
     case Formula.Disj(t1, t2) => Type.mkOr(toType(t1, m), toType(t2, m), SourceLocation.Unknown)

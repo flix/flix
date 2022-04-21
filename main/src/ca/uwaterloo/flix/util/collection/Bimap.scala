@@ -37,6 +37,11 @@ case class Bimap[A, B](m1: Map[A, B], m2: Map[B, A]) {
   def +(a: A, b: B): Bimap[A, B] = Bimap(m1 + (a -> b), m2 + (b -> a))
 
   /**
+    * Alias for [[+]].
+    */
+  def +(p: (A, B)): Bimap[A, B] = this + (p._1, p._2)
+
+  /**
     * Optionally returns the value `a` is mapped to.
     */
   def getForward(a: A): Option[B] = m1.get(a)
