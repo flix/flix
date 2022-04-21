@@ -2074,10 +2074,20 @@ object ParsedAst {
 
   }
 
-  // MATT docs
+  /**
+    * Represents an effect represented either as a set or a boolean formula.
+    */
   sealed trait EffectSetOrBool
+
   object EffectSetOrBool {
+    /**
+      * Represents an effect implemented as a set.
+      */
     case class Set(s: EffectSet) extends EffectSetOrBool
+
+    /**
+      * Represents an effect implemented as a boolean formula.
+      */
     case class Bool(b: Type) extends EffectSetOrBool
   }
 
