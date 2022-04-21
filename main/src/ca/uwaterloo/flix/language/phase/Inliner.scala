@@ -219,9 +219,9 @@ object Inliner {
       val e2 = visitExp(exp2, subst0)
       (sop, e1, e2) match {
         case (SemanticOperator.BoolOp.And, LiftedAst.Expression.False(_), _) => LiftedAst.Expression.False(loc)
-        case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.False(_)) => LiftedAst.Expression.False(loc)
+        case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.False(_)) if e1.purity == Pure => LiftedAst.Expression.False(loc)
         case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.True(_), _) => LiftedAst.Expression.True(loc)
-        case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.True(_)) => LiftedAst.Expression.True(loc)
+        case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.True(_)) if e1.purity == Pure => LiftedAst.Expression.True(loc)
         case _ => LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
       }
 

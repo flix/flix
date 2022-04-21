@@ -1322,7 +1322,7 @@ object Weeder {
       }
 
     // not handling these rules yet
-    case ParsedAst.Expression.Try(sp1, exp, ParsedAst.CatchOrHandler.Handler(rules), sp2) =>
+    case ParsedAst.Expression.Try(sp1, exp, ParsedAst.CatchOrHandler.Handler(eff, rules), sp2) =>
       WeededAst.Expression.Hole(None, mkSL(sp1, sp2)).toSuccess
 
     // TODO SJ: Rewrite to Ascribe(newch, Channel[Int32]), to remove the tpe (and get tvar like everything else)
