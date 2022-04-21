@@ -277,6 +277,11 @@ object Symbol {
   final class KindedTypeVarSym(val id: Int, val text: Ast.VarText, val kind: Kind, val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym with Ordered[KindedTypeVarSym] {
 
     /**
+      * Returns `true` if `this` variable is non-synthetic.
+      */
+    def isReal: Boolean = text.isInstanceOf[Ast.VarText.SourceText]
+
+    /**
       * Returns the same symbol with the given kind.
       */
     def withKind(newKind: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, newKind, rigidity, loc)
