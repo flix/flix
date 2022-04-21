@@ -110,6 +110,13 @@ namespace Test/Exp/Effect {
 
     pub def differenceEffect(): Bool \ Empty - Fail = ???
 
+    pub def effectSet01(): Bool \ { Empty } = ???
+
+//    pub def effectSet02(): Bool \ { Empty, Fail } = ???
+
+//    pub def effectSet03(): Bool \ { Empty, Fail, Console } = ???
+
+//    pub def effectSet04(): Bool \ {} = ???
 
     eff Empty
 

@@ -284,12 +284,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.EffectOrPurity]] = rule {
-    Type ~ optional(optWS ~ EffectSetOrBool)
+    Type ~ optional(optWS ~ EffectOrPurity)
   }
 
-  def EffectSetOrBool: Rule1[ParsedAst.EffectOrPurity] = {
+  def EffectOrPurity: Rule1[ParsedAst.EffectOrPurity] = {
     def Set: Rule1[ParsedAst.EffectOrPurity] = rule {
-      "\\" ~ optWS ~ Effects.EffectSet ~> ParsedAst.EffectOrPurity.Effect
+      "\\" ~ optWS ~ Effects.EffectSetOrEmpty ~> ParsedAst.EffectOrPurity.Effect
     }
 
     def Bool: Rule1[ParsedAst.EffectOrPurity] = rule {
@@ -1390,6 +1390,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   object Effects {
+
+    // This should only be used where the effect is unambiguously an effect.
+    // NOT where it might be some other type, since this overlaps with the empty record type.
+    def EffectSetOrEmpty: Rule1[ParsedAst.EffectSet] = {
+      def Empty: Rule1[ParsedAst.EffectSet] = rule {
+        SP ~ "{" ~ optWS ~ "}" ~ SP ~> ParsedAst.EffectSet.Pure
+      }
+
+      rule {
+        Empty | EffectSet
+      }
+    }
 
     def EffectSet: Rule1[ParsedAst.EffectSet] = rule {
       // NB: Pure must come before Set since they overlap
