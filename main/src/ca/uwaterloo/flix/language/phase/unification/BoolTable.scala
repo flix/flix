@@ -100,9 +100,12 @@ object BoolTable {
       case Formula.True => "true"
       case Formula.False => "false"
       case Formula.Var(x) => s"x$x"
-      case Formula.Neg(t) => s"neg $t"
-      case Formula.Conj(t1, t2) => s"(conj $t1 $t2)"
-      case Formula.Disj(t1, t2) => s"(disj $t1 $t2)"
+      case Formula.Neg(f) => f match {
+        case Formula.Var(x) => s"!x$x"
+        case _ => s"!($f)"
+      }
+      case Formula.Conj(f1, f2) => s"(and $f1 $f2)"
+      case Formula.Disj(f1, f2) => s"(or $f1 $f2)"
     }
 
   }
