@@ -153,10 +153,26 @@ object BoolTable {
     * Attempts to minimize the given Boolean formulas `f`.
     */
   def minimize(f: Formula): Formula = {
-    ///
-    /// Computes the semantic function of `f`.
-    ///
-    val semantic = semanticFunction(0, f, f.freeVars.toList, Map.empty)
+    //
+    // Compute the free variables of `f` once.
+    //
+    val freeVars = f.freeVars.toList
+
+    //
+    // Special Case: If `f` has no free variables we simply reduce it to a value.
+    //
+    if (freeVars.isEmpty) {
+      if (eval(f, Map.empty)) {
+        return Formula.True
+      } else {
+        return Formula.False
+      }
+    }
+
+    //
+    // Computes the semantic function of `f`.
+    //
+    val semantic = semanticFunction(0, f, freeVars, Map.empty)
 
     cache.get(semantic) match {
       case None => f

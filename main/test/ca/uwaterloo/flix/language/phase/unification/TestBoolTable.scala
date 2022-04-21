@@ -26,4 +26,8 @@ class TestBoolTable extends FunSuite {
     assertResult(expected = Var(0))(actual = minimize(Var(0)))
   }
 
+  test("Minimize.06") {
+    assertResult(expected = Var(0))(actual = minimize(Conj(Var(0), Var(0))))
+  }
+
 }
