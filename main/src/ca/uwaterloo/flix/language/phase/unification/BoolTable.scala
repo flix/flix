@@ -23,7 +23,7 @@ import scala.collection.immutable.SortedSet
 import scala.collection.mutable.ListBuffer
 
 /**
-  * A Boolean minimzation techniques that relies on pre-computed tables.
+  * A Boolean minimization technique that relies on pre-computed tables of minimal formulas.
   */
 object BoolTable {
 
@@ -172,7 +172,9 @@ object BoolTable {
     * Attempts to minimize the given Boolean formulas `f`.
     */
   def minimize(f: Formula): Formula = {
-    // TODO: Can only handle free vars < 3
+    //
+    // If the formula has more than three variables we cannot minimize it.
+    //
     if (f.freeVars.size > 3) {
       return f
     }
@@ -182,12 +184,10 @@ object BoolTable {
     //
     val semantic = semanticFunction(0, f, List(0, 1, 2), Map.empty)
 
-    cache.get(semantic) match {
-      case None => f
-      case Some(minimal) =>
-
-        minimal
-    }
+    //
+    // Lookup the semantic function in the table.
+    //
+    cache.getOrElse(semantic, f)
   }
 
   private def semanticFunction(position: Int, t0: Formula, fvs: List[Variable], binding: Map[Variable, Boolean]): Int = fvs match {
@@ -233,6 +233,7 @@ object BoolTable {
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
+  // TODO: DOC
   def toType(f: Formula, m: Map[Variable, Symbol.KindedTypeVarSym]): Type = f match {
     case Formula.True => Type.True
     case Formula.False => Type.False
@@ -242,12 +243,14 @@ object BoolTable {
     case Formula.Disj(t1, t2) => Type.mkOr(toType(t1, m), toType(t2, m), SourceLocation.Unknown)
   }
 
+  // TODO: DOC
   private def buildTable(): Map[Int, Formula] = {
     val table = ExpressionParser.parse(table3)
     parseTable(table)
     // prettyPrintLookupTable()
   }
 
+  // TODO: DOC
   def prettyPrintLookupTable(): Unit = {
     for ((key, term) <- cache) {
       println(s"${key.toBinaryString.padTo(8, '0')}: $term")
@@ -255,15 +258,18 @@ object BoolTable {
     println(s"size = ${cache.size}")
   }
 
+  // TODO: DOC
   private def parseTable(l: SList): Map[Int, Formula] = l match {
     case SList(elms) => elms.tail.map(parseKeyValue).toMap
   }
 
+  // TODO: DOC
   private def parseKeyValue(elm: Element): (Int, Formula) = elm match {
     case SList(List(Atom(key), formula)) => parseKey(key) -> parseFormula(formula)
     case _ => throw InternalCompilerException(s"Parse Error. Unexpected element: '$elm'.")
   }
 
+  // TODO: DOC
   def parseKey(key: String): Int = {
     var result = 0
     for ((c, position) <- key.zipWithIndex) {
@@ -274,6 +280,7 @@ object BoolTable {
     result
   }
 
+  // TODO: DOC
   private def parseFormula(elm: Element): Formula = elm match {
     case Atom("T") => Formula.True
     case Atom("F") => Formula.False
@@ -285,6 +292,8 @@ object BoolTable {
     case SList(List(Atom("or"), x, y)) => Formula.Disj(parseFormula(x), parseFormula(y))
     case _ => throw InternalCompilerException(s"Parse Error. Unexpected element: '$elm'.")
   }
+
+  // TODO: DOC
 
   // https://github.com/ZenBowman/sexpr
   // The MIT License (MIT)
