@@ -32,7 +32,7 @@ object BoolTable {
   /**
     * A flag used to control whether to print debug information.
     */
-  private val Debug: Boolean = false
+  private val Debug: Boolean = true
 
   /**
     * The number of variables that the minimization table uses.
@@ -177,24 +177,11 @@ object BoolTable {
     // Convert the type `tpe` to a formula.
     val input = fromType(tpe, m)
 
-    // Minimize the formula and convert it back to a type.
-    val result = toType(minimizeFormula(input), m, tpe.loc)
+    // Minimize the formula.
+    val minimized = minimizeFormula(input)
 
-    if (Debug) {
-      // Compute the size of the result type.
-      val minimalSize = result.size
-
-      // Debugging.
-      if (minimalSize < currentSize) {
-        implicit val audience: Audience = Audience.Internal
-        println(s"Replace: ${FormatType.formatWellKindedType(tpe)}")
-        println(s"     By: ${FormatType.formatWellKindedType(result)}")
-        println(s" Change: $currentSize -> $minimalSize")
-        println()
-      }
-    }
-
-    result
+    // Convert the formula back to a type.
+    toType(minimized, m, tpe.loc)
   }
 
   /**
@@ -206,16 +193,29 @@ object BoolTable {
     // Compute the number of free variables.
     val freeVars = f.freeVars.size
 
-    if (freeVars <= NumberOfVariables) {
+    val result = if (freeVars <= NumberOfVariables) {
       // Case 1: The number of free variables is less than those in the table.
       // We can immediately lookup the minimal formula in the table.
+      if (Debug) println(s"Minimize by lookup ($freeVars variables)")
       lookup(f)
     } else {
       // Case 2: The formula has more variables than the table.
       // We try to recursively minimize each sub-formula.
       // This does not guarantee that we arrive at a minimal formula, but it is better than nothing.
+      if (Debug) println(s"Minimize by recursion ($freeVars variables)")
       minimizeFormulaRecursively(f)._1
     }
+
+    // Debugging.
+    if (Debug) {
+      println(s"  Replace: $f")
+      println(s"       By: $result")
+      println(s"   Change: ${f.size} -> ${result.size}")
+      println()
+    }
+
+    // Return the result.
+    result
   }
 
   /**
