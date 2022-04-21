@@ -28,6 +28,11 @@ import scala.collection.mutable.ListBuffer
 object BoolTable {
 
   /**
+    * A flag used to control whether to print debug information.
+    */
+  private val Debug: Boolean = false
+
+  /**
     * A Boolean variable is represented by a unique number.
     */
   private type Variable = Int
@@ -144,11 +149,23 @@ object BoolTable {
     val typeVarMap = tvars.zipWithIndex.toMap
     val reverseTypeVarMap = typeVarMap.map(_.swap).toMap
 
-    val t = fromType(tpe, typeVarMap)
+    val input = fromType(tpe, typeVarMap)
+    val output = toType(minimize(input), reverseTypeVarMap)
 
-    toType(minimize(t), reverseTypeVarMap)
+    val currentSize = tpe.size
+    val minimalSize = output.size
 
+    if (Debug) {
+      if (minimalSize < currentSize) {
+        implicit val audience: Audience = Audience.Internal
+        println(s"Replace: ${FormatType.formatWellKindedType(tpe)}")
+        println(s"     By: ${FormatType.formatWellKindedType(output)}")
+        println(s" Reduct: $currentSize -> $minimalSize")
+        println()
+      }
+    }
 
+    output
   }
 
   /**
@@ -168,16 +185,7 @@ object BoolTable {
     cache.get(semantic) match {
       case None => f
       case Some(minimal) =>
-        val currentSize = f.size
-        val minimalSize = minimal.size
 
-        if (minimalSize < currentSize) {
-          implicit val audience: Audience = Audience.Internal
-          //          println(s"Replace: ${FormatType.formatWellKindedType(tpe)}")
-          //          println(s"     By: ${FormatType.formatWellKindedType(minimal)}")
-          //          println(s" Reduct: $currentSize -> $minimalSize")
-          //          println()
-        }
         minimal
     }
   }
