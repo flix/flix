@@ -635,13 +635,13 @@ object Type {
     * Returns the type `ScopedArray[tpe, reg]` with the given source location `loc`.
     */
   def mkScopedArray(tpe: Type, reg: Type, loc: SourceLocation): Type =
-    Apply(Apply(Type.Cst(TypeConstructor.ScopedArray, loc), tpe, loc), reg, loc)
+    Apply(Apply(Cst(TypeConstructor.ScopedArray, loc), tpe, loc), reg, loc)
 
   /**
     * Returns the type `ScopedRef[tpe, reg]` with the given source location `loc`.
     */
-  def mkScopedRef(tpe1: Type, reg: Type, loc: SourceLocation): Type =
-    Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedRef, loc), tpe1, loc), reg, loc)
+  def mkScopedRef(tpe: Type, reg: Type, loc: SourceLocation): Type =
+    Apply(Apply(Cst(TypeConstructor.ScopedRef, loc), tpe, loc), reg, loc)
 
   /**
     * Constructs the pure arrow type A -> B.
@@ -767,6 +767,20 @@ object Type {
     * Constructs the a native type.
     */
   def mkNative(clazz: Class[_], loc: SourceLocation): Type = Type.Cst(TypeConstructor.Native(clazz), loc)
+
+  /**
+    * Constructs a RecordExtend type.
+    */
+  def mkRecordRowEmpty(loc: SourceLocation): Type = {
+    Type.Cst(TypeConstructor.RecordRowEmpty, loc)
+  }
+
+  /**
+    * Constructs a SchemaExtend type.
+    */
+  def mkSchemaRowEmpty(loc: SourceLocation): Type = {
+    Type.Cst(TypeConstructor.SchemaRowEmpty, loc)
+  }
 
   /**
     * Constructs a RecordExtend type.

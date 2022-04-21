@@ -56,7 +56,7 @@ pub def arrayNeighbourhood(default: Int32, values: List[(Int32, Int32)], paramet
     };
     solve input, p project Neighbourhood
 
-pub def main(_args: Array[String]): Int32 & Impure =
+def main(): Unit & Impure =
     let values = (1, 13) :: (2, 21) :: (3, 34) :: (5, 55) :: (8, 89) :: Nil;
     let length = 10;
     let default = 0;
@@ -76,5 +76,4 @@ pub def main(_args: Array[String]): Int32 & Impure =
     println("This is shown as '..., N(i-1), N(i), N(i+1), ...");
     neighbourhood |>
         Array.map(match (i, l, c, r) -> "${i}: ..., ${l}, ${c}, ${r}, ...") |>
-        Array.foreach(println);
-    0
+        Array.foreach(println)
