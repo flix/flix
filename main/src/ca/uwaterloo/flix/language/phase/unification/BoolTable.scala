@@ -32,7 +32,7 @@ object BoolTable {
   /**
     * A flag used to control whether to print debug information.
     */
-  private val Debug: Boolean = true
+  private val Debug: Boolean = false
 
   /**
     * The number of variables that the minimization table uses.
@@ -56,8 +56,7 @@ object BoolTable {
     *
     * The table is pre-computed and initialized when this class is loaded.
     */
-  // TODO: Replace by array.
-  private lazy val cache: Map[Int, Formula] = initTable()
+  private lazy val Table: Array[Formula] = initTable()
 
   /**
     * A common super-type for Boolean formulas.
@@ -225,7 +224,7 @@ object BoolTable {
     //
     // Lookup the semantic function in the table.
     //
-    cache.getOrElse(semantic, f)
+    Table(semantic)
   }
 
   // TODO: DOC
@@ -292,7 +291,7 @@ object BoolTable {
   /**
     * Parses the built-in table into an S-expression and then into an in-memory table.
     */
-  private def initTable(): Map[Int, Formula] = {
+  private def initTable(): Array[Formula] = {
     val parsedTable = ExpressionParser.parse(Table3Vars)
     val table = parseTable(parsedTable)
 
@@ -322,7 +321,7 @@ object BoolTable {
       println()
     }
 
-    table
+    array
   }
 
   /**
