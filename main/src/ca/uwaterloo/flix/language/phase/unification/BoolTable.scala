@@ -322,7 +322,12 @@ object BoolTable {
   // TODO: Replace fvs by number
   // TODO: Replace binding by array.
   private def semanticFunction(position: Int, t0: Formula, fvs: List[Variable], binding: Map[Variable, Boolean]): Int = fvs match {
-    case Nil => if (eval(t0, binding)) 1 << position else 0
+    case Nil =>
+      val m = new Array[Boolean](binding.size)
+      for ((k, v) <- binding) {
+        m(k) = v
+      }
+      if (eval(t0, m)) 1 << position else 0
     case x :: xs =>
       val l = semanticFunction(position, t0, xs, binding + (x -> true))
       val r = semanticFunction(position + (1 << (fvs.length - 1)), t0, xs, binding + (x -> false))
@@ -333,20 +338,17 @@ object BoolTable {
     * Evaluates the given formula `f` to a Boolean value under the given environment `env`.
     *
     * The environment must bind *all* variables in `f`.
+    *
+    * The environment maps the variable with index i to true or false.
     */
-  // TODO: Replace env by array.
-  private def eval(f: Formula, env: Map[Variable, Boolean]): Boolean = f match {
+  private def eval(f: Formula, env: Array[Boolean]): Boolean = f match {
     case Formula.True => true
     case Formula.False => false
-    case Formula.Var(x) => env.get(x) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
-      case Some(b) => b
-    }
+    case Formula.Var(x) => env(x)
     case Formula.Neg(f) => !eval(f, env)
     case Formula.Conj(f1, f2) => eval(f1, env) && eval(f2, env)
     case Formula.Disj(f1, f2) => eval(f1, env) || eval(f2, env)
   }
-
 
   /**
     * Converts the given type `tpe` to a Boolean formula under the given variable substitution map `m`.
