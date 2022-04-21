@@ -63,6 +63,9 @@ object BoolTable {
     */
   sealed trait Formula {
 
+    // TODO: Do not use freeVars?
+    // TODO: Store size in formula itself?
+
     /**
       * Returns the free variables in `this` formula.
       */
@@ -263,7 +266,7 @@ object BoolTable {
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  def toType(f: Formula, m: Bimap[Symbol.KindedTypeVarSym, Variable], loc: SourceLocation): Type = f match {
+  private def toType(f: Formula, m: Bimap[Symbol.KindedTypeVarSym, Variable], loc: SourceLocation): Type = f match {
     case Formula.True => Type.True
     case Formula.False => Type.False
     case Formula.Var(x) => m.getBackward(x) match {
@@ -283,7 +286,7 @@ object BoolTable {
   }
 
   // TODO: DOC
-  def prettyPrintLookupTable(): Unit = {
+  private def prettyPrintLookupTable(): Unit = {
     for ((key, term) <- cache) {
       println(s"${key.toBinaryString.padTo(8, '0')}: $term")
     }
@@ -302,7 +305,7 @@ object BoolTable {
   }
 
   // TODO: DOC
-  def parseKey(key: String): Int = {
+  private def parseKey(key: String): Int = {
     var result = 0
     for ((c, position) <- key.zipWithIndex) {
       if (c == 'T') {
@@ -618,15 +621,15 @@ object BoolTable {
   //  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
   //  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-  class InvalidSExpressionException extends Exception
+  private class InvalidSExpressionException extends Exception
 
-  sealed trait Element
+  private sealed trait Element
 
-  case class Atom(symbol: String) extends Element
+  private case class Atom(symbol: String) extends Element
 
-  case class SList(values: List[Element]) extends Element
+  private case class SList(values: List[Element]) extends Element
 
-  object ExpressionParser {
+  private object ExpressionParser {
     private var remainingTokens: List[String] = List()
 
     def tokenize(expression: String): List[String] = {
