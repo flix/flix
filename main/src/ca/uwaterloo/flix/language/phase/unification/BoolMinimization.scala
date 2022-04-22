@@ -223,13 +223,15 @@ object BoolMinimization {
 
     sealed trait SimpleTerm extends Conjunction with Disjunction with FormulaCNF.Disjunction
 
+    sealed trait Variable extends SimpleTerm
+
     case object True extends SimpleTerm
 
     case object False extends SimpleTerm
 
-    case class Var(v: Type.KindedVar) extends SimpleTerm
+    case class Var(v: Type.KindedVar) extends Variable
 
-    case class NotVar(v: Type.KindedVar) extends SimpleTerm
+    case class NotVar(v: Type.KindedVar) extends Variable
 
     /**
       * A conjunction of terms. `terms` should not be empty.
@@ -444,23 +446,40 @@ object BoolMinimization {
     /**
       * Performs unit propagation, simplifying `x ∧ (a ∨ y)` into `a ∧ y`.
       */
-    def unitPropagation(f: FormulaCNF): FormulaCNF = f match {
-      case True | False | Var(_) | NotVar(_) | Or(_) => f
-      case And(terms) => ???
+    def unitPropagation(f: FormulaCNF): FormulaCNF = {
+      def aux(simples: Set[Variable], ors: Vector[Or]): FormulaCNF = {
+        // Idea: all simples must be true, use this to simplify `ors` until a
+        // fixpoint is reached.
+        ???
+      }
+
+      f match {
+        case True | False | Var(_) | NotVar(_) | Or(_) => f
+        case And(terms) =>
+          split(terms) match {
+            case None => False
+            case Some((simples, ors)) if simples.isEmpty && ors.isEmpty => True
+            case Some((simples, ors)) => aux(simples, ors)
+          }
+      }
     }
 
     /**
-      * Split terms into simple terms and disjunctions.
+      * Split terms into simple terms and disjunctions. `None` is returned if
+      * `terms` contain `False` and both lists can be empty for terms like
+      * `True ∧ True`
       */
-    def split(terms: Vector[Disjunction]): (Vector[SimpleTerm], Vector[Or]) = {
-      val base: (Vector[SimpleTerm], Vector[Or]) = (Vector.empty, Vector.empty)
+    def split(terms: Vector[Disjunction]): Option[(Set[Variable], Vector[Or])] = {
+      val base: Option[(Set[Variable], Vector[Or])] = Some((Set.empty, Vector.empty))
       terms.foldLeft(base) {
-        case ((simples, disjunctions), conjunction) => conjunction match {
-          case True => (simples :+ True, disjunctions)
-          case False => (simples :+ False, disjunctions)
-          case Var(v) => (simples :+ Var(v), disjunctions)
-          case NotVar(v) => (simples :+ NotVar(v), disjunctions)
-          case or@Or(_) => (simples, disjunctions :+ or)
+        case (acc, conjunction) => acc.flatMap {
+          case (simples, disjunctions) => conjunction match {
+            case True => Some((simples, disjunctions))
+            case False => None
+            case Var(v) => Some((simples + Var(v), disjunctions))
+            case NotVar(v) => Some((simples + NotVar(v), disjunctions))
+            case or@Or(_) => Some((simples, disjunctions :+ or))
+          }
         }
       }
     }
