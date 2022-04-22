@@ -195,15 +195,15 @@ class TestBoolTable extends FunSuite {
   }
 
   test("Minimize.Var1AndVar2AndVar3.01") {
-    assertResult(expected = Conj(Conj(Var(0), Var(1)), Var(2)))(actual = Conj(Conj(Var(0), Var(1)), Var(2)))
+    assertResult(expected = Conj(Conj(Var(0), Var(1)), Var(2)))(actual = minimizeFormula(Conj(Conj(Var(0), Var(1)), Var(2))))
   }
 
   test("Minimize.Var1AndVar2AndVar3.02") {
-    assertResult(expected = Conj(Conj(Var(2), Var(1)), Var(0)))(actual = Conj(Conj(Var(2), Var(1)), Var(0)))
+    assertResult(expected = Conj(Conj(Var(2), Var(1)), Var(0)))(actual = minimizeFormula(Conj(Conj(Var(2), Var(1)), Var(0))))
   }
 
   test("Minimize.Var1AndVar2AndVar3AndVar4.01") {
-    assertResult(expected = Conj(Conj(Var(0), Var(1)), Conj(Var(2), Var(3))))(actual = Conj(Conj(Var(0), Var(1)), Conj(Var(2), Var(3))))
+    assertResult(expected = Conj(Conj(Var(0), Var(1)), Conj(Var(2), Var(3))))(actual = minimizeFormula(Conj(Conj(Var(0), Var(1)), Conj(Var(2), Var(3)))))
   }
 
 }
