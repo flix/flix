@@ -254,4 +254,20 @@ class TestBoolTable extends FunSuite {
     assertResult(expected = Conj(Conj(Var(0), Var(1)), Conj(Var(2), Var(3))))(actual = minimizeFormula(Conj(Conj(Var(0), Var(1)), Conj(Var(2), Var(3)))))
   }
 
+  test("Minimize.Var1AndVar2AndVar3AndVar4.02") {
+    assertResult(expected = Conj(Conj(Var(2), Var(3)), Conj(Var(0), Var(1))))(actual = minimizeFormula(Conj(Conj(Var(3), Var(2)), Conj(Var(0), Var(1)))))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3AndVar4.03") {
+    assertResult(expected = Disj(Disj(Var(0), Var(1)), Disj(Var(2), Var(3))))(actual = minimizeFormula(Disj(Disj(Var(0), Var(1)), Disj(Var(2), Var(3)))))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3AndVar4.04") {
+    assertResult(expected = Disj(Disj(Var(0), Var(1)), Disj(Var(2), Var(3))))(actual = minimizeFormula(Neg(Neg(Disj(Disj(Var(0), Var(1)), Disj(Var(2), Var(3)))))))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3AndVar4.05") {
+    assertResult(expected = Neg(Disj(Conj(Var(0), Var(1)), Conj(Var(2), Var(3)))))(actual = minimizeFormula(Neg(Disj(Conj(Neg(Neg(Var(0))), Neg(Neg(Var(1)))), Conj(Neg(Neg(Var(2))), Neg(Neg(Var(3))))))))
+  }
+
 }
