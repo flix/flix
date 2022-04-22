@@ -92,6 +92,7 @@ object Main {
       output = cmdOpts.output.map(s => Paths.get(s)),
       progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
+      xnobooltable = cmdOpts.xnobooltable,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono
     )
@@ -275,6 +276,7 @@ object Main {
                      xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
+                     xnobooltable: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
                      files: Seq[File] = Seq())
@@ -421,6 +423,10 @@ object Main {
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
+
+      // Xno-bool-table
+      opt[Unit]("Xno-bool-table").action((_, c) => c.copy(xnobooltable = true)).
+        text("[experimental] disables Boolean minimization via tabling.")
 
       // Xstatistics
       opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
