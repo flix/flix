@@ -38,13 +38,13 @@ pub lawful class Group[a] with Monoid[a] {
     pub def combine(x: a, y: a): a =
         Monoid.combine(x, y)
 
-
-    law leftIdentity: forall(x: a) with Eq[a] . Group.combine(Group.empty(), x) == x
-
-    law rightIdentity: forall(x: a) with Eq[a] . Group.combine(x, Group.empty()) == x
-
-    law associative: forall(x: a, y: a, z: a) with Eq[a] . Group.combine(Group.combine(x, y), z) == Group.combine(x, Group.combine(y, z))
-
+    ///
+    /// Combining the inverse of `x` with `x` yields the neutral element in the group.
+    ///
+    /// The operation is commutative i.e. if `y` is the inverse of `x` and `e` is the
+    /// identity (neutral element) then
+    /// `combine(x, y) == combine(y, x) == e`
+    ///
     law leftInvertible: forall(x: a) with Eq[a] . Group.combine(Group.inverse(x), x) == Group.empty()
 
     law rightInvertible: forall(x: a) with Eq[a] . Group.combine(x, Group.inverse(x)) == Group.empty()
