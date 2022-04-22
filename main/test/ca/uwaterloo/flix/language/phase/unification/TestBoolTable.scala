@@ -202,6 +202,46 @@ class TestBoolTable extends FunSuite {
     assertResult(expected = Conj(Var(0), Conj(Var(1), Var(2))))(actual = minimizeFormula(Conj(Conj(Var(2), Var(1)), Var(0))))
   }
 
+  test("Minimize.Var1AndVar2AndVar3.03") {
+    assertResult(expected = Disj(Var(0), Disj(Var(1), Var(2))))(actual = minimizeFormula(Disj(Disj(Var(0), Var(1)), Var(2))))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3.04") {
+    assertResult(expected = Disj(Var(0), Disj(Var(1), Var(2))))(actual = minimizeFormula(Disj(Disj(Var(2), Var(1)), Var(0))))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3.05") {
+    assertResult(expected = Conj(Var(0), Conj(Var(1), Var(2))))(actual = minimizeFormula(Conj(Conj(Conj(Var(0), Var(1)), Var(2)), Conj(Conj(Var(0), Var(1)), Var(2)))))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3.06") {
+    assertResult(expected = Conj(Var(0), Conj(Var(1), Var(2))))(actual = minimizeFormula(Conj(Conj(Conj(Var(2), Var(1)), Var(0)), Conj(Conj(Var(0), Var(1)), Var(2)))))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3.07") {
+    assertResult(expected = False)(actual = minimizeFormula(Conj(Conj(Conj(Var(2), Var(1)), Var(0)), Neg(Conj(Conj(Var(0), Var(1)), Var(2))))))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3.08") {
+    assertResult(expected = True)(actual = minimizeFormula(Disj(Conj(Conj(Var(2), Var(1)), Var(0)), Neg(Conj(Conj(Var(0), Var(1)), Var(2))))))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3.09") {
+    assertResult(expected = Conj(Var(0), Conj(Var(1), Var(2))))(actual = minimizeFormula(Conj(Conj(Conj(Var(2), Var(1)), Var(0)), Disj(Var(2), Conj(Var(2), Var(2))))))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3.10") {
+    assertResult(expected = Disj(Var(0), Disj(Var(1), Var(2))))(actual = minimizeFormula(Disj(Var(0), Disj(Var(1), Disj(Var(2), Disj(Var(0), Disj(Var(1), Var(2))))))))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3.11") {
+    assertResult(expected = True)(actual = minimizeFormula(Disj(Neg(Var(0)), Disj(Var(1), Disj(Var(2), Disj(Var(0), Disj(Var(1), Var(2))))))))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3.12") {
+    assertResult(expected = Disj(Var(0), Disj(Var(1), Var(2))))(actual = minimizeFormula(Disj(Disj(Var(2), Disj(Var(1), Var(0))), Conj(Var(0), Conj(Var(0), Conj(Var(2), Disj(Var(0), Disj(Var(1), Var(2)))))))))
+  }
+
   test("Minimize.Var1AndVar2AndVar3AndVar4.01") {
     assertResult(expected = Conj(Conj(Var(0), Var(1)), Conj(Var(2), Var(3))))(actual = minimizeFormula(Conj(Conj(Var(0), Var(1)), Conj(Var(2), Var(3)))))
   }
