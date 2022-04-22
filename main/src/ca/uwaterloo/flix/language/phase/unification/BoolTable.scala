@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
@@ -266,41 +266,6 @@ object BoolTable {
     case Neg(f) => !eval(f, env)
     case Conj(f1, f2) => eval(f1, env) && eval(f2, env)
     case Disj(f1, f2) => eval(f1, env) || eval(f2, env)
-  }
-
-  /**
-    * Converts the given type `tpe` to a Boolean formula under the given variable substitution map `m`.
-    *
-    * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
-    */
-  private def fromType(tpe: Type, m: Bimap[Symbol.KindedTypeVarSym, Variable]): BoolFormula = tpe match {
-    case Type.KindedVar(sym, _) => m.getForward(sym) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
-      case Some(x) => Var(x)
-    }
-    case Type.True => True
-    case Type.False => False
-    case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => Neg(fromType(tpe1, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => Conj(fromType(tpe1, m), fromType(tpe2, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => Disj(fromType(tpe1, m), fromType(tpe2, m))
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-  }
-
-  /**
-    * Converts the given formula `f` back to a type under the given variable substitution map `m`.
-    *
-    * The map `m` must bind each free variable in `f` to a type variable.
-    */
-  private def toType(f: BoolFormula, m: Bimap[Symbol.KindedTypeVarSym, Variable], loc: SourceLocation): Type = f match {
-    case True => Type.True
-    case False => Type.False
-    case Var(x) => m.getBackward(x) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
-      case Some(sym) => Type.KindedVar(sym, loc)
-    }
-    case Neg(f1) => Type.mkNot(toType(f1, m, loc), loc)
-    case Conj(t1, t2) => Type.mkAnd(toType(t1, m, loc), toType(t2, m, loc), loc)
-    case Disj(t1, t2) => Type.mkOr(toType(t1, m, loc), toType(t2, m, loc), loc)
   }
 
   /**

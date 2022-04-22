@@ -15,6 +15,10 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.Bimap
+
 import scala.collection.immutable.SortedSet
 
 /**
@@ -49,7 +53,7 @@ sealed trait BoolFormula {
   }
 
   /**
-    * Returns a human-readable fully parenthesized string representation of `this` term.
+    * Returns a human-readable string representation of `this` formula.
     */
   override def toString: String = this match {
     case BoolFormula.True => "true"
@@ -78,9 +82,7 @@ object BoolFormula {
   case object False extends BoolFormula
 
   /**
-    * Represents a variable.
-    *
-    * Variables are numbered by integers.
+    * Represents a variable. Variables are numbered by integers.
     */
   case class Var(x: Int) extends BoolFormula
 
@@ -98,5 +100,40 @@ object BoolFormula {
     * Represents the disjunction (logical or) of `f1` and `f2`.
     */
   case class Disj(f1: BoolFormula, f2: BoolFormula) extends BoolFormula
+
+  /**
+    * Converts the given type `tpe` to a Boolean formula under the given variable substitution map `m`.
+    *
+    * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
+    */
+  def fromType(tpe: Type, m: Bimap[Symbol.KindedTypeVarSym, Int]): BoolFormula = tpe match {
+    case Type.KindedVar(sym, _) => m.getForward(sym) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
+      case Some(x) => Var(x)
+    }
+    case Type.True => True
+    case Type.False => False
+    case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => Neg(fromType(tpe1, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => Conj(fromType(tpe1, m), fromType(tpe2, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => Disj(fromType(tpe1, m), fromType(tpe2, m))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  }
+
+  /**
+    * Converts the given formula `f` back to a type under the given variable substitution map `m`.
+    *
+    * The map `m` must bind each free variable in `f` to a type variable.
+    */
+  def toType(f: BoolFormula, m: Bimap[Symbol.KindedTypeVarSym, Int], loc: SourceLocation): Type = f match {
+    case True => Type.True
+    case False => Type.False
+    case Var(x) => m.getBackward(x) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
+      case Some(sym) => Type.KindedVar(sym, loc)
+    }
+    case Neg(f1) => Type.mkNot(toType(f1, m, loc), loc)
+    case Conj(t1, t2) => Type.mkAnd(toType(t1, m, loc), toType(t2, m, loc), loc)
+    case Disj(t1, t2) => Type.mkOr(toType(t1, m, loc), toType(t2, m, loc), loc)
+  }
 
 }
