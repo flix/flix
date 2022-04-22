@@ -26,6 +26,11 @@ import scala.collection.mutable.ListBuffer
 
 /**
   * A Boolean minimization technique that uses on pre-computed tables of minimal formulas.
+  *
+  * We pre-compute (offline) a table of all formulas of up to `MaxVars` variables and
+  * enumerate their minimal formula.
+  *
+  * We use this table to lookup the minimal formula of a given formula.
   */
 object BoolTable {
 
@@ -42,7 +47,7 @@ object BoolTable {
   private val MaxVars: Int = 3
 
   /**
-    * The size a type must have before we try to minimize it.
+    * The size a formula (but represented as a type) must have before we try to minimize it.
     */
   private val Threshold: Int = 10
 
@@ -58,13 +63,10 @@ object BoolTable {
     */
   private lazy val Table: Array[BoolFormula] = initTable()
 
-
   /**
-    * Attempts to minimize the given Boolean formulas `tpe`.
+    * Attempts to minimize the given Boolean formula `tpe`.
     *
     * Returns the same formula or a smaller formula that is equivalent.
-    *
-    * @param tpe the formulas to minimize. Must have kind `Bool`.
     */
   def minimizeType(tpe: Type)(implicit flix: Flix): Type = {
     // Check whether minimization via tabling is disabled.
@@ -72,31 +74,32 @@ object BoolTable {
       return tpe
     }
 
-    // Check that the type `tpe` argument is a Boolean formula.
+    // Check that the `tpe` argument is a Boolean formula.
     if (tpe.kind != Kind.Bool) {
       throw InternalCompilerException(s"Unexpected non-Bool kind: '${tpe.kind}'.")
     }
 
-    // Compute the size of the type `tpe`.
+    // Compute the size of  `tpe`.
     val currentSize = tpe.size
 
-    // Heuristically, we do not minimize formulas if they are small.
+    // Return `tpe` immediately if it is "small".
     if (currentSize < Threshold) {
       return tpe
     }
 
-    // Compute the (free) type variables in `tpe`.
+    // Compute the variables in `tpe`.
     val tvars = tpe.typeVars.map(_.sym).toList
 
     // Construct a bi-directional map from type variables to indices.
+    // The idea is that the first variable becomes x0, the next x1, and so forth.
     val m = tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Variable]) {
       case (macc, (sym, x)) => macc + (sym -> x)
     }
 
-    // Convert the type `tpe` to a formula.
+    // Convert the type `tpe` to a Boolean formula.
     val input = fromType(tpe, m)
 
-    // Minimize the formula.
+    // Minimize the Boolean formula.
     val minimized = minimizeFormula(input)
 
     // Convert the formula back to a type.
