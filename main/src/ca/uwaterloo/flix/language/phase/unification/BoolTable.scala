@@ -213,14 +213,14 @@ object BoolTable {
     // Rename all variables, lookup the minimal formula, and then rename everything back.
     substitute(lookup(substitute(f, m)), m.swap)
   }
-  
+
   /**
-    * Attempts to minimize the given Boolean formulas `f`.
+    * Attempts to minimize the given Boolean formula `f` using the table.
     */
   private def lookup(f: BoolFormula): BoolFormula = {
     // If the formula `f` has more variables than `f` then we cannot use the table.
-    // If so, we simply return the formula unchanged.
     if (f.freeVars.size > MaxVars) {
+      // Return the same formula.
       return f
     }
 
@@ -233,19 +233,29 @@ object BoolTable {
 
   /**
     * Computes the semantic function of the given formula `f` under the given environment `m`.
+    *
+    * @param f        the Boolean formula.
+    * @param fvs      the list of free variables.
+    * @param position the position in the bitvector where to store the result (true/false).
+    * @param env      the environment which binds each variable to true or false.
     */
-  private def computeSemanticFunction(f: BoolFormula, fvs: List[Variable], position: Int, m: Array[Boolean]): Int = fvs match {
+  private def computeSemanticFunction(f: BoolFormula, fvs: List[Variable], position: Int, env: Array[Boolean]): Int = fvs match {
     case Nil =>
-      if (eval(f, m)) 1 << position else 0
+      if (eval(f, env)) 1 << position else 0
 
     case x :: xs =>
-      val ml = m.clone()
-      val mr = m.clone()
-      ml(x) = true
-      mr(x) = false
+      // The environment is modified in both recursive calls, hence we copy it.
+      // We could probably safely re-use the original array, but we choose not to.
+      val ml = env.clone()
+      val mr = env.clone()
+      ml(x) = true // Bind x to true.
+      mr(x) = false // Bind x to false.
 
+      // Recurse on both environments.
       val l = computeSemanticFunction(f, xs, position, ml)
       val r = computeSemanticFunction(f, xs, position + (1 << (fvs.length - 1)), mr)
+
+      // The result is the bitwise union.
       l | r
   }
 
