@@ -66,6 +66,7 @@ jar {
     
     from('main') {
         include '**/*.flix'
+        include '**/*.txt'
     }
 
     duplicatesStrategy = 'exclude'
