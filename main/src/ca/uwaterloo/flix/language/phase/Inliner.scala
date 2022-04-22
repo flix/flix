@@ -181,7 +181,7 @@ object Inliner {
           // then inline the body of `def1`
           if (inlineDef(def1, sym0)) {
             // Map for substituting formal parameters of a function with the freevars currently in scope
-            val e1 = convertSelfTailCall(def1.exp)(isDef = false)
+            val e1 = convertSelfTailCall(def1.exp)
             val env = def1.fparams.map(_.sym).zip(freevars.map(_.sym)).toMap
             bindFormals(e1, def1.fparams.drop(freevars.length).map(_.sym), as, env)
           } else {
@@ -200,7 +200,7 @@ object Inliner {
       // then inline the body of `def1`
       if (inlineDef(def1, sym0)) {
         // ApplySelfTail -> ApplyTDefTail
-        val e = convertSelfTailCall(def1.exp)(isDef = true)
+        val e = convertSelfTailCall(def1.exp)
         bindFormals(e, def1.fparams.map(_.sym), as, Map.empty)
       } else {
         LiftedAst.Expression.ApplyDefTail(sym, as, tpe, purity, loc)
@@ -541,7 +541,7 @@ object Inliner {
   /**
    * Convert a given selftailCall expression `exp0` to a non tail call
    */
-  private def convertSelfTailCall(exp0: OccurrenceAst.Expression)(implicit isDef: Boolean): OccurrenceAst.Expression = exp0 match {
+  private def convertSelfTailCall(exp0: OccurrenceAst.Expression): OccurrenceAst.Expression = exp0 match {
     case OccurrenceAst.Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
       val e2 = convertSelfTailCall(exp2)
       OccurrenceAst.Expression.Let(sym, exp1, e2, occur, tpe, purity, loc)
