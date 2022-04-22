@@ -70,6 +70,10 @@ class TestBoolTable extends FunSuite {
     assertResult(expected = True)(actual = minimizeFormula(Disj(Neg(False), Neg(False))))
   }
 
+  test("Minimize.False.11") {
+    assertResult(expected = False)(actual = minimizeFormula(Neg(Neg(False))))
+  }
+
   test("Minimize.Var1.01") {
     assertResult(expected = Var(0))(actual = minimizeFormula(Var(0)))
   }
