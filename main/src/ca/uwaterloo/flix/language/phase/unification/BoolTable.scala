@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Kind, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
-import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource}
+import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, StreamOps}
 import ca.uwaterloo.flix.util.collection.Bimap
 
 import scala.collection.immutable.SortedSet
@@ -37,7 +37,12 @@ object BoolTable {
   /**
     * A flag used to control whether to print debug information.
     */
-  private val Debug: Boolean = true
+  private val Debug: Boolean = false
+
+  /**
+    * The path to the table.
+    */
+  private val Path: String = "/src/ca/uwaterloo/flix/language/phase/unification/Table3.txt"
 
   /**
     * The number of variables that the minimization table uses.
@@ -323,12 +328,16 @@ object BoolTable {
     ' '.toString * (len - s.length()) + s
 
   /**
-    * Parses the given S-expression `sexp` into a map from semantic functions to their minimal formulas.
+    * Loads the table of minimal Boolean formulas from the disk.
     */
   private def loadTable(): Map[Int, BoolFormula] = {
-    val lines = LocalResource.get("/src/ca/uwaterloo/flix/language/phase/unification/Table3.txt")
+    val inputStream = LocalResource.getInputStream(Path)
+    val allLines = StreamOps.readAll(inputStream)
+    inputStream.close()
 
-    lines.split("\n").map(parseLine).zipWithIndex.foldLeft(Map.empty[Int, BoolFormula]) {
+    val lines = allLines.split("\n")
+
+    lines.map(parseLine).zipWithIndex.foldLeft(Map.empty[Int, BoolFormula]) {
       case (macc, (formula, int)) => macc + (int -> formula)
     }
   }
