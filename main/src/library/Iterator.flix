@@ -177,7 +177,7 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toList(iter: Iterator[a]): List[a] & Impure =
-        foldRight((a, acc) -> a :: acc, Nil, iter)
+        foldRight((a, k) -> a :: k(), Nil, iter)
 
     ///
     /// Returns the contents of `iter` as a map.
@@ -207,7 +207,7 @@ namespace Iterator {
             case None      => Some(Nec.singleton(x))
             case Some(nec) => Some(Nec.cons(x, nec))
         };
-        foldRight(f, None, iter)
+        foldRightOld(f, None, iter)
 
     ///
     /// Returns the contents of `iter` as a set. Consumes the entire iterator.
@@ -435,7 +435,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, iter: Iterator[a]): b & Impure =
+    pub def foldRightOld(f: (a, b) -> b & ef, s: b, iter: Iterator[a]): b & Impure =
         let Iterator(done, next) = iter;
         def loop(k) = {
             if (done())
@@ -447,6 +447,27 @@ namespace Iterator {
         };
         loop(ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
                                // but the intermediate continuations are effect polymorphic
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `iter` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    /// A `foldRight` allows early termination by not calling the continuation.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def foldRight(f: (a, Unit -> b & Impure) -> b & ef, z: b, iter: Iterator[a]): b & Impure =
+        let Iterator(done, next) = iter;
+        def loop() = {
+            if (done())
+                z
+            else {
+                let x = next();
+                f(x, _ -> loop())
+            }
+        };
+        loop()
+
     ///
     /// Applies `f` to all elements in `iter` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     ///
