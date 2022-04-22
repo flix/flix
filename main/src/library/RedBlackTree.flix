@@ -828,7 +828,7 @@ namespace RedBlackTree {
             case Node(color, left, key, v, right) => loop(left, kl -> loop(right, kr -> k(nodeA(color, kl, key, f(key, v), kr))))
             case _                                => k(Applicative.point(Leaf))
         };
-        loop(t, identity)
+        loop(t, ks -> ks as & ef)
 
     ///
     /// Applies `cmp` over the tree `t` in parallel and optionally returns the lowest
