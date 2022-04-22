@@ -1,5 +1,5 @@
 /// Construct colorful messages.
-def main(): Int32 & Impure =
+def main(): Unit & Impure =
   let s1 = "You can print message with " + Console.red("colored text");
   let s2 = " or " + Console.bgBlue("background") + ".";
   println(s1+s2);
@@ -17,5 +17,4 @@ def main(): Int32 & Impure =
 
   let s6 = Console.bold("This message is bold.");
   let s7 = Console.hex("#b891eb", " And this is a custom hex color.");
-  println(s6 + s7);
-  0 // exit code
+  println(s6 + s7)

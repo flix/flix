@@ -80,7 +80,15 @@ object OccurrenceAnalyzer {
       case OccurrenceAst.Expression.ApplyDefTail(sym, _, _, _, _) =>
         val isNonSelfCall = sym != defn.sym
         DefContext(isNonSelfCall)
+      case OccurrenceAst.Expression.ApplyClo(clo, _, _, _, _) =>
+        clo match {
+          case OccurrenceAst.Expression.Closure(sym, _, _, _) =>
+            val isNonSelfCall = sym != defn.sym
+            DefContext(isNonSelfCall)
+          case _ => DefContext(false)
+        }
       case _ => DefContext(false)
+
     }
 
     OccurrenceAst.Def(defn.ann, defn.mod, defn.sym, fparams, e, defContext, defn.tpe, defn.loc)
