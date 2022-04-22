@@ -172,6 +172,12 @@ class TestMain extends FunSuite {
     assert(opts.xlib == LibLevel.All)
   }
 
+  test("--Xno-bool-table") {
+    val args = Array("--Xno-bool-table")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnobooltable)
+  }
+
   test("--Xstrictmono") {
     val args = Array("--Xstrictmono")
     val opts = Main.parseCmdOpts(args).get
