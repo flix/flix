@@ -33,16 +33,20 @@ object BoolMinimization {
     val outputSizeChange = false
     if (flix.options.xminimize) {
       val formula = Formula.fromType(t)
+      val inputSize = Formula.size(formula)
+      if (outputSizeChange && inputSize > 100) {
+        println(inputSize.toString + " " + t.loc)
+      }
       val nnf = Formula.toNNF(formula)
       val cnf = FormulaNNF.toCNF(nnf)
       val unitProp = FormulaCNF.unitPropagation(cnf)
       val res = FormulaCNF.toType(unitProp, t.loc)
       if (outputSizeChange) {
-        val before = t.size
-        val after = res.size
-        if (before > 9 || after > 9) {
+        val before = inputSize
+        val after = FormulaCNF.size(unitProp)
+        if (before != 1) {
           val goodBad = if (after <= before) "+" else " "
-          println(s"$goodBad $before cnf'ed to $after")
+          println(f"$goodBad input $before%4d nnf to ${FormulaNNF.size(nnf)}%4d cnf to ${FormulaCNF.size(cnf)}%4d uni to $after%4d")
         }
       }
       res
@@ -163,6 +167,15 @@ object BoolMinimization {
         case Some(Vector(term)) => term
         case Some(terms) => Or(terms)
       }
+    }
+
+    def size(f: Formula): Int = f match {
+      case True => 1
+      case False => 1
+      case Var(_) => 1
+      case Not(t) => size(t) + 1
+      case And(terms) => terms.map(size).sum + 1
+      case Or(terms) => terms.map(size).sum + 1
     }
 
     /**
@@ -312,6 +325,15 @@ object BoolMinimization {
       }
     }
 
+    def size(f: FormulaNNF): Int = f match {
+      case True => 1
+      case False => 1
+      case Var(_) => 1
+      case NotVar(_) => 1
+      case And(terms) => terms.map(size).sum + 1
+      case Or(terms) => terms.map(size).sum + 1
+    }
+
     /**
       * Returns a formula in conjunctive normal form (CNF) equivalent to `f`.
       *
@@ -456,6 +478,15 @@ object BoolMinimization {
         case Some(set) if set.size == 1 => set.head
         case Some(terms) => Or(terms)
       }
+    }
+
+    def size(f: FormulaCNF): Int = f match {
+      case True => 1
+      case False => 1
+      case Var(_) => 1
+      case NotVar(_) => 1
+      case And(terms) => terms.map(size).sum + 1
+      case Or(terms) => terms.map(size).sum + 1
     }
 
     /**
@@ -785,7 +816,7 @@ object BoolMinimization {
   }
 
   private def show(v: Type.KindedVar): String = v.sym.text match {
-    case VarText.Absent => "???"
+    case VarText.Absent => v.toString
     case VarText.SourceText(s) => s
     case VarText.FallbackText(s) => s
   }
