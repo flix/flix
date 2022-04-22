@@ -66,6 +66,10 @@ namespace Group {
 ///
 pub def --(x: a, y: a): a with Group[a] = Group.remove(x, y)
 
+instance Group[Unit] {
+    pub def inverse(x: Unit): Unit = ()
+}
+
 instance Group[Int8] {
     pub def inverse(x: Int8): Int8 = -x
 }
