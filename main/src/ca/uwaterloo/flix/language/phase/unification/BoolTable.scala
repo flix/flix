@@ -119,23 +119,22 @@ object BoolTable {
     val result = if (numVars <= MaxVars) {
       // Case 1: The number of variables in the formula is less than those of the table.
       // We can immediately lookup the minimal formula in the table.
-      //if (Debug) println(s"Minimize by lookup ($numVars variables)")
+      if (Debug) println(s"Minimize by lookup ($numVars variables)")
       lookup(f)
     } else {
       // Case 2: The formula has more variables than the table.
       // We try to recursively minimize each sub-formula.
       // This does not guarantee that we arrive at a minimal formula, but it is better than nothing.
-      //if (Debug) println(s"Minimize by recursion ($numVars variables)")
+      if (Debug) println(s"Minimize by recursion ($numVars variables)")
       minimizeFormulaRecursively(f)._1
     }
 
     // Debugging.
     if (Debug) {
-      //println(s"  Replace: $f")
-      //println(s"       By: $result")
-      //println(s"   Change: ${f.size} -> ${result.size}")
-      //println()
-      println(s"${f.size}, ${result.size}")
+      println(s"  Replace: $f")
+      println(s"       By: $result")
+      println(s"   Change: ${f.size} -> ${result.size}")
+      println()
     }
 
     // Return the result.
@@ -280,7 +279,7 @@ object BoolTable {
     * Parses the built-in table into an S-expression and then into an in-memory table.
     */
   private def initTable(): Array[BoolFormula] = {
-    val table = parseTable()
+    val table = loadTable()
 
     if (Debug) {
       println("== Minimization Table ==")
@@ -326,46 +325,27 @@ object BoolTable {
   /**
     * Parses the given S-expression `sexp` into a map from semantic functions to their minimal formulas.
     */
-  private def parseTableOLD(sexp: SList): Map[Int, BoolFormula] = sexp match {
-    case SList(elms) => elms.tail.map(parseKeyValue).toMap
-  }
+  private def loadTable(): Map[Int, BoolFormula] = {
+    val lines = LocalResource.get("/src/ca/uwaterloo/flix/language/phase/unification/Table3.txt")
 
-
-  /**
-    * Parses the given S-expression `sexp` into a map from semantic functions to their minimal formulas.
-    */
-  // TODO
-  private def parseTable(): Map[Int, BoolFormula] =
-    Table3Vars.split("\n").map(parseLine).zipWithIndex.foldLeft(Map.empty[Int, BoolFormula]) {
+    lines.split("\n").map(parseLine).zipWithIndex.foldLeft(Map.empty[Int, BoolFormula]) {
       case (macc, (formula, int)) => macc + (int -> formula)
     }
-
-  // TODO
-  private def parseLine(l: String): BoolFormula = {
-    val line = if (l(0) != '(') "(" + l + ")" else l
-    val parsed = ExpressionParser.parse(line)
-    parseFormula(parsed)
   }
 
   /**
-    * Parses the given S-expression `sexp` into a pair of a semantic function and a formula.
+    * Parses the given line `l` into a Boolean formula.
     */
-  private def parseKeyValue(sexp: Element): (Int, BoolFormula) = sexp match {
-    case SList(List(Atom(key), formula)) => parseKey(key) -> parseFormula(formula)
-    case _ => throw InternalCompilerException(s"Unexpected S-expression: '$sexp'.")
-  }
-
-  /**
-    * Parses the given `key` into a semantic function.
-    */
-  private def parseKey(key: String): Int = {
-    var result = 0
-    for ((c, position) <- key.zipWithIndex) {
-      if (c == 'T') {
-        result = result | (1 << (position - 1))
-      }
-    }
-    result
+  private def parseLine(l: String): BoolFormula = l.trim match {
+    case "T" => True
+    case "F" => False
+    case "x0" => Var(0)
+    case "x1" => Var(1)
+    case "x2" => Var(2)
+    case "x3" => Var(3)
+    case _ =>
+      val sexp = ExpressionParser.parse(l)
+      parseFormula(sexp)
   }
 
   /**
@@ -378,281 +358,11 @@ object BoolTable {
     case Atom("x1") => Var(1)
     case Atom("x2") => Var(2)
     case Atom("x3") => Var(3)
-    case SList(List(Atom("T")) )=> True
-    case SList(List(Atom("F")) )=> False
-    case SList(List(Atom("x0"))) => Var(0)
-    case SList(List(Atom("x1"))) => Var(1)
-    case SList(List(Atom("x2"))) => Var(2)
-    case SList(List(Atom("x3"))) => Var(3)
     case SList(List(Atom("not"), x)) => Neg(parseFormula(x))
     case SList(List(Atom("and"), x, y)) => Conj(parseFormula(x), parseFormula(y))
     case SList(List(Atom("or"), x, y)) => Disj(parseFormula(x), parseFormula(y))
     case _ => throw InternalCompilerException(s"Unexpected S-expression: '$sexp'.")
   }
-
-  private val Table3Vars: String = LocalResource.get("/src/ca/uwaterloo/flix/language/phase/unification/Table3.txt")
-
-  /**
-    * The table of minimal Boolean formulas of three variables.
-    */
-  private val Table3VarsOLDNOTUSED: String =
-    """F
-      |(and x0 (and x1 x2))
-      |(and x0 (and x1 (not x2)))
-      |(and x0 x1)
-      |(and x0 (and (not x1) x2))
-      |(and x0 x2)
-      |(and x0 (and (or x1 x2) (or (not x1) (not x2))))
-      |(and x0 (or x1 x2))
-      |(and x0 (and (not x1) (not x2)))
-      |(and x0 (or (and x1 x2) (and (not x1) (not x2))))
-      |(and x0 (not x2))
-      |(and x0 (or x1 (not x2)))
-      |(and x0 (not x1))
-      |(and x0 (or (not x1) x2))
-      |(and x0 (or (not x1) (not x2)))
-      |x0
-      |(and (not x0) (and x1 x2))
-      |(and x1 x2)
-      |(and x1 (and (or x0 x2) (or (not x0) (not x2))))
-      |(and x1 (or x0 x2))
-      |(and x2 (and (or x0 x1) (or (not x0) (not x1))))
-      |(and x2 (or x0 x1))
-      |(and (or x0 x1) (or (and x0 (and x1 (not x2))) (and x2 (or (not x0) (not x1)))))
-      |(or (and x0 x1) (and x2 (or x0 x1)))
-      |(and (or x0 x1) (or (and (not x0) x2) (and (not x1) (not x2))))
-      |(or (and x1 x2) (and x0 (and (not x1) (not x2))))
-      |(and (or x0 x2) (or (not x2) (and (not x0) x1)))
-      |(and (or x0 x2) (or x1 (not x2)))
-      |(and (or x0 x1) (or (not x1) (and (not x0) x2)))
-      |(and (or x0 x1) (or (not x1) x2))
-      |(and (or x0 (and x1 x2)) (or (not x0) (or (not x1) (not x2))))
-      |(or x0 (and x1 x2))
-      |(and (not x0) (and x1 (not x2)))
-      |(and x1 (or (and x0 x2) (and (not x0) (not x2))))
-      |(and x1 (not x2))
-      |(and x1 (or x0 (not x2)))
-      |(and (or x0 x1) (and (or (not x0) x2) (or (not x1) (not x2))))
-      |(or (and x0 x2) (and (not x0) (and x1 (not x2))))
-      |(and (or x1 x2) (or (not x2) (and x0 (not x1))))
-      |(or (and x0 x2) (and x1 (not x2)))
-      |(and (not x2) (and (or x0 x1) (or (not x0) (not x1))))
-      |(and (or x0 x1) (or (and x0 (and x1 x2)) (and (not x2) (or (not x0) (not x1)))))
-      |(and (not x2) (or x0 x1))
-      |(or (and x0 x1) (and (not x2) (or x0 x1)))
-      |(and (or x0 x1) (or (not x1) (and (not x0) (not x2))))
-      |(and (or x0 (and x1 (not x2))) (or (not x0) (or (not x1) x2)))
-      |(and (or x0 x1) (or (not x1) (not x2)))
-      |(or x0 (and x1 (not x2)))
-      |(and (not x0) x1)
-      |(and x1 (or (not x0) x2))
-      |(and x1 (or (not x0) (not x2)))
-      |x1
-      |(and (or x0 x1) (or (not x0) (and (not x1) x2)))
-      |(and (or x0 x1) (or (not x0) x2))
-      |(or (and x0 (and (not x1) x2)) (and x1 (or (not x0) (not x2))))
-      |(or x1 (and x0 x2))
-      |(and (or x0 x1) (or (not x0) (and (not x1) (not x2))))
-      |(or (and x0 (and (not x1) (not x2))) (and x1 (or (not x0) x2)))
-      |(and (or x0 x1) (or (not x0) (not x2)))
-      |(or x1 (and x0 (not x2)))
-      |(and (or x0 x1) (or (not x0) (not x1)))
-      |(and (or x0 x1) (or (not x0) (or (not x1) x2)))
-      |(and (or x0 x1) (or (not x0) (or (not x1) (not x2))))
-      |(or x0 x1)
-      |(and (not x0) (and (not x1) x2))
-      |(and x2 (or (and x0 x1) (and (not x0) (not x1))))
-      |(and (or x0 (not x1)) (or (and (not x0) x2) (and x1 (not x2))))
-      |(or (and x0 x1) (and (not x0) (and (not x1) x2)))
-      |(and (not x1) x2)
-      |(and x2 (or x0 (not x1)))
-      |(and (or x1 x2) (or (not x1) (and x0 (not x2))))
-      |(or (and x0 x1) (and (not x1) x2))
-      |(and (not x1) (and (or x0 x2) (or (not x0) (not x2))))
-      |(and (or x0 (not x1)) (or (and x0 (and (not x1) (not x2))) (and x2 (or (not x0) x1))))
-      |(and (or x0 x2) (or (not x2) (and (not x0) (not x1))))
-      |(or (and x0 (or x1 (not x2))) (and (not x0) (and (not x1) x2)))
-      |(and (not x1) (or x0 x2))
-      |(or (and x0 (not x1)) (and x2 (or x0 (not x1))))
-      |(and (or x0 x2) (or (not x1) (not x2)))
-      |(or x0 (and (not x1) x2))
-      |(and (not x0) x2)
-      |(and x2 (or (not x0) x1))
-      |(and (or x0 x2) (or (not x0) (and x1 (not x2))))
-      |(or (and x0 x1) (and (not x0) x2))
-      |(and x2 (or (not x0) (not x1)))
-      |x2
-      |(or (and x0 (and x1 (not x2))) (and x2 (or (not x0) (not x1))))
-      |(or x2 (and x0 x1))
-      |(and (or x0 x2) (or (not x0) (and (not x1) (not x2))))
-      |(or (and x0 (and (not x1) (not x2))) (and x2 (or (not x0) x1)))
-      |(and (or x0 x2) (or (not x0) (not x2)))
-      |(and (or x0 x2) (or (not x0) (or x1 (not x2))))
-      |(or (and x0 (not x1)) (and (not x0) x2))
-      |(or x2 (and x0 (not x1)))
-      |(and (or x0 x2) (or (not x0) (or (not x1) (not x2))))
-      |(or x0 x2)
-      |(and (not x0) (and (or x1 x2) (or (not x1) (not x2))))
-      |(and (or (not x0) x1) (and (or x0 (or (not x1) (not x2))) (or x2 (and (not x0) x1))))
-      |(and (or x1 x2) (or (not x2) (and (not x0) (not x1))))
-      |(and (or x0 (or (not x1) (not x2))) (or x1 (and (not x0) x2)))
-      |(and (or x1 x2) (or (not x1) (and (not x0) (not x2))))
-      |(and (or x0 (or (not x1) (not x2))) (or x2 (and (not x0) x1)))
-      |(and (or x1 x2) (or (not x1) (not x2)))
-      |(and (or x1 x2) (or x0 (or (not x1) (not x2))))
-      |(and (or (not x0) (not x1)) (and (or x0 (or x1 x2)) (or (not x2) (and (not x0) (not x1)))))
-      |(or (and x0 (or (and x1 x2) (and (not x1) (not x2)))) (and (not x0) (and (or x1 x2) (or (not x1) (not x2)))))
-      |(and (or x0 (or x1 x2)) (or (not x2) (and (not x0) (not x1))))
-      |(or (and x0 x1) (and (or x0 (or x1 x2)) (or (not x2) (and (not x0) (not x1)))))
-      |(and (or x0 (or x1 x2)) (or (not x1) (and (not x0) (not x2))))
-      |(or (and x0 (not x1)) (and (or x0 (or (not x1) (not x2))) (or x2 (and (not x0) x1))))
-      |(or (and x1 (not x2)) (and (not x1) (or x0 x2)))
-      |(or x0 (and (or x1 x2) (or (not x1) (not x2))))
-      |(and (not x0) (or x1 x2))
-      |(or (and (not x0) x1) (and x2 (or (not x0) x1)))
-      |(or (and (not x0) x2) (and x1 (not x2)))
-      |(or x1 (and (not x0) x2))
-      |(or (and (not x0) x1) (and (not x1) x2))
-      |(or x2 (and (not x0) x1))
-      |(and (or x1 x2) (or (not x0) (or (not x1) (not x2))))
-      |(or x1 x2)
-      |(and (or x0 (or x1 x2)) (or (not x0) (and (not x1) (not x2))))
-      |(or (and (not x0) x1) (or (and x0 (and (not x1) (not x2))) (and x2 (or (not x0) x1))))
-      |(or (and x0 (not x2)) (and (not x0) (or x1 x2)))
-      |(or x1 (and (or x0 x2) (or (not x0) (not x2))))
-      |(or (and x0 (not x1)) (and (not x0) (or x1 x2)))
-      |(or x2 (and (or x0 x1) (or (not x0) (not x1))))
-      |(or (and x0 (not x1)) (or (and (not x0) x2) (and x1 (not x2))))
-      |(or x0 (or x1 x2))
-      |(and (not x0) (and (not x1) (not x2)))
-      |(and (or x0 (not x1)) (and (or (not x0) x2) (or x1 (not x2))))
-      |(and (not x2) (or (and x0 x1) (and (not x0) (not x1))))
-      |(or (and x0 x1) (and (not x0) (and (not x1) (not x2))))
-      |(and (not x1) (or (and x0 x2) (and (not x0) (not x2))))
-      |(or (and x0 x2) (and (not x0) (and (not x1) (not x2))))
-      |(and (or x0 (not x1)) (or (and x0 (and (not x1) x2)) (and (not x2) (or (not x0) x1))))
-      |(or (and x0 (or x1 x2)) (and (not x0) (and (not x1) (not x2))))
-      |(and (not x1) (not x2))
-      |(and (or x1 (not x2)) (or (not x1) (and x0 x2)))
-      |(and (not x2) (or x0 (not x1)))
-      |(or (and x0 x1) (and (not x1) (not x2)))
-      |(and (not x1) (or x0 (not x2)))
-      |(or (and x0 x2) (and (not x1) (not x2)))
-      |(or (and x0 (not x1)) (and (not x2) (or x0 (not x1))))
-      |(or x0 (and (not x1) (not x2)))
-      |(and (not x0) (or (and x1 x2) (and (not x1) (not x2))))
-      |(or (and x1 x2) (and (not x0) (and (not x1) (not x2))))
-      |(and (or (not x0) x1) (and (or x0 (or (not x1) x2)) (or (not x2) (and (not x0) x1))))
-      |(and (or x0 (or (not x1) x2)) (or x1 (and (not x0) (not x2))))
-      |(and (or (not x0) (not x1)) (and (or x0 (or x1 (not x2))) (or x2 (and (not x0) (not x1)))))
-      |(and (or x0 (or x1 (not x2))) (or x2 (and (not x0) (not x1))))
-      |(and (or x0 (or (and x1 x2) (and (not x1) (not x2)))) (or (not x0) (and (or x1 x2) (or (not x1) (not x2)))))
-      |(or (and x0 x1) (and (or x0 (or x1 (not x2))) (or x2 (and (not x0) (not x1)))))
-      |(and (or x1 (not x2)) (or (not x1) (and (not x0) x2)))
-      |(or (and x1 x2) (and (not x1) (not x2)))
-      |(and (or x0 (or (not x1) x2)) (or (not x2) (and (not x0) x1)))
-      |(or (and x1 x2) (and (not x2) (or x0 (not x1))))
-      |(and (or x0 (or x1 (not x2))) (or (not x1) (and (not x0) x2)))
-      |(or (and x1 x2) (and (not x1) (or x0 (not x2))))
-      |(or (and x0 (not x1)) (and (or x0 (or (not x1) x2)) (or (not x2) (and (not x0) x1))))
-      |(or x0 (or (and x1 x2) (and (not x1) (not x2))))
-      |(and (not x0) (not x2))
-      |(and (or x0 (not x2)) (or (not x0) (and x1 x2)))
-      |(and (not x2) (or (not x0) x1))
-      |(or (and x0 x1) (and (not x0) (not x2)))
-      |(and (or x0 (not x2)) (or (not x0) (and (not x1) x2)))
-      |(or (and x0 x2) (and (not x0) (not x2)))
-      |(or (and x0 (and (not x1) x2)) (and (not x2) (or (not x0) x1)))
-      |(or (and x0 x2) (and (not x2) (or (not x0) x1)))
-      |(and (not x2) (or (not x0) (not x1)))
-      |(or (and x0 (and x1 x2)) (and (not x2) (or (not x0) (not x1))))
-      |(not x2)
-      |(or (not x2) (and x0 x1))
-      |(or (and x0 (not x1)) (and (not x0) (not x2)))
-      |(or (and x0 x2) (and (not x2) (or (not x0) (not x1))))
-      |(or (not x2) (and x0 (not x1)))
-      |(or x0 (not x2))
-      |(and (not x0) (or x1 (not x2)))
-      |(and (or (not x0) x2) (or x1 (not x2)))
-      |(or (and (not x0) x1) (and (not x2) (or (not x0) x1)))
-      |(or x1 (and (not x0) (not x2)))
-      |(and (or x0 (or x1 (not x2))) (or (not x0) (and (not x1) x2)))
-      |(or (and x0 x2) (and (not x0) (or x1 (not x2))))
-      |(or (and (not x0) x1) (or (and x0 (and (not x1) x2)) (and (not x2) (or (not x0) x1))))
-      |(or x1 (or (and x0 x2) (and (not x0) (not x2))))
-      |(or (and (not x0) x1) (and (not x1) (not x2)))
-      |(or (and x1 x2) (and (not x2) (or (not x0) (not x1))))
-      |(or (not x2) (and (not x0) x1))
-      |(or x1 (not x2))
-      |(or (and x0 (not x1)) (and (not x0) (or x1 (not x2))))
-      |(or (and x0 (not x1)) (and (or (not x0) x2) (or x1 (not x2))))
-      |(or (not x2) (and (or x0 x1) (or (not x0) (not x1))))
-      |(or x0 (or x1 (not x2)))
-      |(and (not x0) (not x1))
-      |(and (or x0 (not x1)) (or (not x0) (and x1 x2)))
-      |(and (or x0 (not x1)) (or (not x0) (and x1 (not x2))))
-      |(or (and x0 x1) (and (not x0) (not x1)))
-      |(and (not x1) (or (not x0) x2))
-      |(and (or x0 (not x1)) (or (not x0) x2))
-      |(or (and x0 (and x1 (not x2))) (and (not x1) (or (not x0) x2)))
-      |(or (and x0 x1) (and (not x1) (or (not x0) x2)))
-      |(and (not x1) (or (not x0) (not x2)))
-      |(or (and x0 (and x1 x2)) (and (not x1) (or (not x0) (not x2))))
-      |(and (or x0 (not x1)) (or (not x0) (not x2)))
-      |(or (and x0 x1) (and (not x1) (or (not x0) (not x2))))
-      |(not x1)
-      |(or (not x1) (and x0 x2))
-      |(or (not x1) (and x0 (not x2)))
-      |(or x0 (not x1))
-      |(and (not x0) (or (not x1) x2))
-      |(and (or (not x0) x1) (or (not x1) x2))
-      |(or (and x0 (and x1 (not x2))) (and (not x0) (or (not x1) x2)))
-      |(or (and x0 x1) (and (not x0) (or (not x1) x2)))
-      |(or (and (not x0) (not x1)) (and x2 (or (not x0) (not x1))))
-      |(or x2 (and (not x0) (not x1)))
-      |(or (and (not x0) (not x1)) (or (and x0 (and x1 (not x2))) (and x2 (or (not x0) (not x1)))))
-      |(or x2 (or (and x0 x1) (and (not x0) (not x1))))
-      |(or (and (not x0) x2) (and (not x1) (not x2)))
-      |(or (and x1 x2) (and (not x1) (or (not x0) (not x2))))
-      |(or (and x0 (not x2)) (and (not x0) (or (not x1) x2)))
-      |(or (and x0 x1) (or (and (not x0) x2) (and (not x1) (not x2))))
-      |(or (not x1) (and (not x0) x2))
-      |(or (not x1) x2)
-      |(or (not x1) (and (or x0 x2) (or (not x0) (not x2))))
-      |(or x0 (or (not x1) x2))
-      |(and (not x0) (or (not x1) (not x2)))
-      |(or (and x0 (and x1 x2)) (and (not x0) (or (not x1) (not x2))))
-      |(and (or (not x0) x1) (or (not x1) (not x2)))
-      |(or (and x0 x1) (and (not x0) (or (not x1) (not x2))))
-      |(and (or (not x0) x2) (or (not x1) (not x2)))
-      |(or (and x0 x2) (and (not x0) (or (not x1) (not x2))))
-      |(or (and x1 (not x2)) (and (not x1) (or (not x0) x2)))
-      |(or (and x0 x1) (and (or (not x0) x2) (or (not x1) (not x2))))
-      |(or (and (not x0) (not x1)) (and (not x2) (or (not x0) (not x1))))
-      |(or (and (not x0) (not x1)) (or (and x0 (and x1 x2)) (and (not x2) (or (not x0) (not x1)))))
-      |(or (not x2) (and (not x0) (not x1)))
-      |(or (not x2) (or (and x0 x1) (and (not x0) (not x1))))
-      |(or (not x1) (and (not x0) (not x2)))
-      |(or (not x1) (or (and x0 x2) (and (not x0) (not x2))))
-      |(or (not x1) (not x2))
-      |(or x0 (or (not x1) (not x2)))
-      |(not x0)
-      |(or (not x0) (and x1 x2))
-      |(or (not x0) (and x1 (not x2)))
-      |(or (not x0) x1)
-      |(or (not x0) (and (not x1) x2))
-      |(or (not x0) x2)
-      |(or (not x0) (and (or x1 x2) (or (not x1) (not x2))))
-      |(or (not x0) (or x1 x2))
-      |(or (not x0) (and (not x1) (not x2)))
-      |(or (not x0) (or (and x1 x2) (and (not x1) (not x2))))
-      |(or (not x0) (not x2))
-      |(or (not x0) (or x1 (not x2)))
-      |(or (not x0) (not x1))
-      |(or (not x0) (or (not x1) x2))
-      |(or (not x0) (or (not x1) (not x2)))
-      |T
-      |""".stripMargin
 
   //
   // S-Expression Parser by Zen Bowman.
