@@ -194,6 +194,13 @@ class TestBoolTable extends FunSuite {
     assertResult(expected = Neg(Var(0)))(actual = minimizeFormula(Neg(Disj(Var(0), Conj(Var(1), Var(0))))))
   }
 
+  test("Minimize.Var1AndVar2AndVar3.01") {
+    assertResult(expected = Conj(Conj(Var(0), Var(1)), Var(2)))(actual = Conj(Conj(Var(0), Var(1)), Var(2)))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3.02") {
+    assertResult(expected = Conj(Conj(Var(1), Var(2)), Var(0)))(actual = Conj(Conj(Var(2), Var(1)), Var(0)))
+  }
 
   // TODO: Add tests with up to 3-4 variables.
 
