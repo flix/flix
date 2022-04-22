@@ -1,8 +1,8 @@
 package ca.uwaterloo.flix.language.phase.unification
 
-import org.scalatest.FunSuite
-import BoolTable._
 import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
+import ca.uwaterloo.flix.language.phase.unification.BoolTable._
+import org.scalatest.FunSuite
 
 class TestBoolTable extends FunSuite {
 
@@ -30,7 +30,29 @@ class TestBoolTable extends FunSuite {
     assertResult(expected = True)(actual = minimizeFormula(Disj(False, True)))
   }
 
-  // TODO: Add more tests that follow the same structure, but for false.
+  test("Minimize.False.01") {
+    assertResult(expected = False)(actual = minimizeFormula(False))
+  }
+
+  test("Minimize.False.02") {
+    assertResult(expected = True)(actual = minimizeFormula(Neg(False)))
+  }
+
+  test("Minimize.False.03") {
+    assertResult(expected = False)(actual = minimizeFormula(Conj(False, False)))
+  }
+
+  test("Minimize.False.04") {
+    assertResult(expected = False)(actual = minimizeFormula(Conj(Neg(False), False)))
+  }
+
+  test("Minimize.False.05") {
+    assertResult(expected = False)(actual = minimizeFormula(Conj(False, Neg(False))))
+  }
+
+  test("Minimize.False.06") {
+    assertResult(expected = True)(actual = minimizeFormula(Conj(Neg(False), Neg(False))))
+  }
 
   test("Minimize.Var1.01") {
     assertResult(expected = Var(0))(actual = minimizeFormula(Var(0)))
