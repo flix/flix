@@ -1278,7 +1278,8 @@ namespace Array {
     /// Returns the array `a` as a set.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toSet(a: Array[a]): Set[a] & Impure with Order[a] = foldRightOld(Set.insert, Set.empty(), a)
+    pub def toSet(a: Array[a]): Set[a] & Impure with Order[a] =
+        foldRight((x, k) -> Set.insert(x, k()), Set.empty(), a)
 
     ///
     /// Returns the association list `xs` as a map.
@@ -1288,7 +1289,7 @@ namespace Array {
     ///
     @Time(length(a)) @Space(length(a))
     pub def toMap(a: Array[(a, b)]): Map[a, b] & Impure with Order[a] =
-        foldRightOld((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
+        foldRight((x, k) -> Map.insert(fst(x), snd(x), k()), Map.empty(), a)
 
     ///
     /// Returns the array `a` as a MutList.
