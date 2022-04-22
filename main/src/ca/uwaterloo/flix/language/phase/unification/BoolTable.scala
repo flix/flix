@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -55,89 +56,8 @@ object BoolTable {
     *
     * The table is pre-computed and initialized when this class is loaded.
     */
-  private lazy val Table: Array[Formula] = initTable()
+  private lazy val Table: Array[BoolFormula] = initTable()
 
-  /**
-    * A common super-type for Boolean formulas.
-    */
-  sealed trait Formula {
-
-    /**
-      * Returns the free variables in `this` formula.
-      */
-    final def freeVars: SortedSet[Int] = this match {
-      case Formula.True => SortedSet.empty
-      case Formula.False => SortedSet.empty
-      case Formula.Var(x) => SortedSet(x)
-      case Formula.Neg(f) => f.freeVars
-      case Formula.Conj(f1, f2) => f1.freeVars ++ f2.freeVars
-      case Formula.Disj(f1, f2) => f1.freeVars ++ f2.freeVars
-    }
-
-    /**
-      * Returns the size of `this` formulas.
-      *
-      * The size is the number of conjunctions and disjunctions.
-      */
-    final def size: Int = this match {
-      case Formula.True => 0
-      case Formula.False => 0
-      case Formula.Var(_) => 0
-      case Formula.Neg(t) => t.size
-      case Formula.Conj(t1, t2) => t1.size + t2.size + 1
-      case Formula.Disj(t1, t2) => t1.size + t2.size + 1
-    }
-
-    /**
-      * Returns a human-readable fully parenthesized string representation of `this` term.
-      */
-    override def toString: String = this match {
-      case Formula.True => "true"
-      case Formula.False => "false"
-      case Formula.Var(x) => s"x$x"
-      case Formula.Neg(f) => f match {
-        case Formula.Var(x) => s"!x$x"
-        case _ => s"!($f)"
-      }
-      case Formula.Conj(f1, f2) => s"(and $f1 $f2)"
-      case Formula.Disj(f1, f2) => s"(or $f1 $f2)"
-    }
-
-  }
-
-  object Formula {
-
-    /**
-      * Represents the constant True.
-      */
-    case object True extends Formula
-
-    /**
-      * Represents the constant False.
-      */
-    case object False extends Formula
-
-    /**
-      * Represents a variable.
-      */
-    case class Var(x: Variable) extends Formula
-
-    /**
-      * Represents the negation of the formula `f`.
-      */
-    case class Neg(f: Formula) extends Formula
-
-    /**
-      * Represents the conjunction (logical and) of `f1` and `f2`.
-      */
-    case class Conj(f1: Formula, f2: Formula) extends Formula
-
-    /**
-      * Represents the disjunction (logical or) of `f1` and `f2`.
-      */
-    case class Disj(f1: Formula, f2: Formula) extends Formula
-
-  }
 
   /**
     * Attempts to minimize the given Boolean formulas `tpe`.
@@ -188,7 +108,7 @@ object BoolTable {
     *
     * Returns the same formula or a smaller formula.
     */
-  def minimizeFormula(f: Formula): Formula = {
+  def minimizeFormula(f: BoolFormula): BoolFormula = {
     // Compute the number of free variables.
     val numVars = f.freeVars.size
 
@@ -220,18 +140,18 @@ object BoolTable {
   /**
     * Returns a pair of a formula and its free variables.
     */
-  private def minimizeFormulaRecursively(f: Formula): (Formula, SortedSet[Variable]) = f match {
-    case Formula.True => (Formula.True, SortedSet.empty)
+  private def minimizeFormulaRecursively(f: BoolFormula): (BoolFormula, SortedSet[Variable]) = f match {
+    case True => (True, SortedSet.empty)
 
-    case Formula.False => (Formula.False, SortedSet.empty)
+    case False => (False, SortedSet.empty)
 
-    case Formula.Var(x) => (Formula.Var(x), SortedSet(x))
+    case Var(x) => (Var(x), SortedSet(x))
 
-    case Formula.Neg(formula) =>
+    case Neg(formula) =>
       val (f, fvs) = minimizeFormulaRecursively(formula)
-      (Formula.Neg(f), fvs)
+      (Neg(f), fvs)
 
-    case Formula.Conj(formula1, formula2) =>
+    case Conj(formula1, formula2) =>
       // Recursive minimize each sub-formula.
       val (f1, fvs1) = minimizeFormulaRecursively(formula1)
       val (f2, fvs2) = minimizeFormulaRecursively(formula2)
@@ -243,35 +163,35 @@ object BoolTable {
       if (fvs.size <= MaxVars) {
         // The number of free variables does not (yet) exceed the number of variables in the table.
         // Consequence we do not yet minimize.
-        (Formula.Conj(f1, f2), fvs)
+        (Conj(f1, f2), fvs)
       } else {
         // The number of variables exceeds the number of variables in the table.
         // We minimize both the left and right sub-formulas and then construct the conjunction.
         // Note: We have to recompute the variables (since a variable could get eliminated).
         val minf1 = alphaRenameAndLookup(f1)
         val minf2 = alphaRenameAndLookup(f2)
-        (Formula.Conj(minf1, minf2), minf1.freeVars ++ minf2.freeVars)
+        (Conj(minf1, minf2), minf1.freeVars ++ minf2.freeVars)
       }
 
-    case Formula.Disj(formula1, formula2) =>
+    case Disj(formula1, formula2) =>
       // This case is similar to the above case.
       val (f1, fvs1) = minimizeFormulaRecursively(formula1)
       val (f2, fvs2) = minimizeFormulaRecursively(formula2)
       val fvs = fvs1 ++ fvs2
 
       if (fvs.size <= MaxVars) {
-        (Formula.Disj(f1, f2), fvs)
+        (Disj(f1, f2), fvs)
       } else {
         val minf1 = alphaRenameAndLookup(f1)
         val minf2 = alphaRenameAndLookup(f2)
-        (Formula.Disj(minf1, minf2), minf1.freeVars ++ minf2.freeVars)
+        (Disj(minf1, minf2), minf1.freeVars ++ minf2.freeVars)
       }
   }
 
   /**
     * Renames every variable in the given formula `f` and looks it up in the minimal table.
     */
-  private def alphaRenameAndLookup(f: Formula): Formula = {
+  private def alphaRenameAndLookup(f: BoolFormula): BoolFormula = {
     // Compute a renaming.
     val m = f.freeVars.toList.zipWithIndex.foldLeft(Bimap.empty[Variable, Variable]) {
       case (macc, (k, v)) => macc + (k -> v)
@@ -285,19 +205,19 @@ object BoolTable {
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  private def substitute(f: Formula, m: Bimap[Variable, Variable]): Formula = f match {
-    case Formula.True => Formula.True
-    case Formula.False => Formula.False
-    case Formula.Var(x) => Formula.Var(m.getForward(x).get)
-    case Formula.Neg(f1) => Formula.Neg(substitute(f1, m))
-    case Formula.Conj(f1, f2) => Formula.Conj(substitute(f1, m), substitute(f2, m))
-    case Formula.Disj(f1, f2) => Formula.Disj(substitute(f1, m), substitute(f2, m))
+  private def substitute(f: BoolFormula, m: Bimap[Variable, Variable]): BoolFormula = f match {
+    case True => True
+    case False => False
+    case Var(x) => Var(m.getForward(x).get)
+    case Neg(f1) => Neg(substitute(f1, m))
+    case Conj(f1, f2) => Conj(substitute(f1, m), substitute(f2, m))
+    case Disj(f1, f2) => Disj(substitute(f1, m), substitute(f2, m))
   }
 
   /**
     * Attempts to minimize the given Boolean formulas `f`.
     */
-  private def lookup(f: Formula): Formula = {
+  private def lookup(f: BoolFormula): BoolFormula = {
     // If the formula `f` has more variables than `f` then we cannot use the table.
     // If so, we simply return the formula unchanged.
     if (f.freeVars.size > MaxVars) {
@@ -314,7 +234,7 @@ object BoolTable {
   /**
     * Computes the semantic function of the given formula `f` under the given environment `m`.
     */
-  private def computeSemanticFunction(f: Formula, fvs: List[Variable], position: Int, m: Array[Boolean]): Int = fvs match {
+  private def computeSemanticFunction(f: BoolFormula, fvs: List[Variable], position: Int, m: Array[Boolean]): Int = fvs match {
     case Nil =>
       if (eval(f, m)) 1 << position else 0
 
@@ -336,13 +256,13 @@ object BoolTable {
     *
     * The environment maps the variable with index i to true or false.
     */
-  private def eval(f: Formula, env: Array[Boolean]): Boolean = f match {
-    case Formula.True => true
-    case Formula.False => false
-    case Formula.Var(x) => env(x)
-    case Formula.Neg(f) => !eval(f, env)
-    case Formula.Conj(f1, f2) => eval(f1, env) && eval(f2, env)
-    case Formula.Disj(f1, f2) => eval(f1, env) || eval(f2, env)
+  private def eval(f: BoolFormula, env: Array[Boolean]): Boolean = f match {
+    case True => true
+    case False => false
+    case Var(x) => env(x)
+    case Neg(f) => !eval(f, env)
+    case Conj(f1, f2) => eval(f1, env) && eval(f2, env)
+    case Disj(f1, f2) => eval(f1, env) || eval(f2, env)
   }
 
   /**
@@ -350,16 +270,16 @@ object BoolTable {
     *
     * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
     */
-  private def fromType(tpe: Type, m: Bimap[Symbol.KindedTypeVarSym, Variable]): Formula = tpe match {
+  private def fromType(tpe: Type, m: Bimap[Symbol.KindedTypeVarSym, Variable]): BoolFormula = tpe match {
     case Type.KindedVar(sym, _) => m.getForward(sym) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
-      case Some(x) => Formula.Var(x)
+      case Some(x) => Var(x)
     }
-    case Type.True => Formula.True
-    case Type.False => Formula.False
-    case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => Formula.Neg(fromType(tpe1, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => Formula.Conj(fromType(tpe1, m), fromType(tpe2, m))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => Formula.Disj(fromType(tpe1, m), fromType(tpe2, m))
+    case Type.True => True
+    case Type.False => False
+    case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => Neg(fromType(tpe1, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => Conj(fromType(tpe1, m), fromType(tpe2, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => Disj(fromType(tpe1, m), fromType(tpe2, m))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
@@ -368,22 +288,22 @@ object BoolTable {
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  private def toType(f: Formula, m: Bimap[Symbol.KindedTypeVarSym, Variable], loc: SourceLocation): Type = f match {
-    case Formula.True => Type.True
-    case Formula.False => Type.False
-    case Formula.Var(x) => m.getBackward(x) match {
+  private def toType(f: BoolFormula, m: Bimap[Symbol.KindedTypeVarSym, Variable], loc: SourceLocation): Type = f match {
+    case True => Type.True
+    case False => Type.False
+    case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
       case Some(sym) => Type.KindedVar(sym, loc)
     }
-    case Formula.Neg(f1) => Type.mkNot(toType(f1, m, loc), loc)
-    case Formula.Conj(t1, t2) => Type.mkAnd(toType(t1, m, loc), toType(t2, m, loc), loc)
-    case Formula.Disj(t1, t2) => Type.mkOr(toType(t1, m, loc), toType(t2, m, loc), loc)
+    case Neg(f1) => Type.mkNot(toType(f1, m, loc), loc)
+    case Conj(t1, t2) => Type.mkAnd(toType(t1, m, loc), toType(t2, m, loc), loc)
+    case Disj(t1, t2) => Type.mkOr(toType(t1, m, loc), toType(t2, m, loc), loc)
   }
 
   /**
     * Parses the built-in table into an S-expression and then into an in-memory table.
     */
-  private def initTable(): Array[Formula] = {
+  private def initTable(): Array[BoolFormula] = {
     val parsedTable = ExpressionParser.parse(Table3Vars)
     val table = parseTable(parsedTable)
 
@@ -398,7 +318,7 @@ object BoolTable {
     }
 
     // If there are n variables, the table has size 2^(2^3).
-    val array = new Array[Formula](1 << (1 << MaxVars))
+    val array = new Array[BoolFormula](1 << (1 << MaxVars))
     for ((key, f) <- table) {
       array(key) = f
     }
@@ -431,14 +351,14 @@ object BoolTable {
   /**
     * Parses the given S-expression `sexp` into a map from semantic functions to their minimal formulas.
     */
-  private def parseTable(sexp: SList): Map[Int, Formula] = sexp match {
+  private def parseTable(sexp: SList): Map[Int, BoolFormula] = sexp match {
     case SList(elms) => elms.tail.map(parseKeyValue).toMap
   }
 
   /**
     * Parses the given S-expression `sexp` into a pair of a semantic function and a formula.
     */
-  private def parseKeyValue(sexp: Element): (Int, Formula) = sexp match {
+  private def parseKeyValue(sexp: Element): (Int, BoolFormula) = sexp match {
     case SList(List(Atom(key), formula)) => parseKey(key) -> parseFormula(formula)
     case _ => throw InternalCompilerException(s"Unexpected S-expression: '$sexp'.")
   }
@@ -459,15 +379,15 @@ object BoolTable {
   /**
     * Parses the given S-expression `sexp` into a formula.
     */
-  private def parseFormula(sexp: Element): Formula = sexp match {
-    case Atom("T") => Formula.True
-    case Atom("F") => Formula.False
-    case Atom("x0") => Formula.Var(0)
-    case Atom("x1") => Formula.Var(1)
-    case Atom("x2") => Formula.Var(2)
-    case SList(List(Atom("not"), x)) => Formula.Neg(parseFormula(x))
-    case SList(List(Atom("and"), x, y)) => Formula.Conj(parseFormula(x), parseFormula(y))
-    case SList(List(Atom("or"), x, y)) => Formula.Disj(parseFormula(x), parseFormula(y))
+  private def parseFormula(sexp: Element): BoolFormula = sexp match {
+    case Atom("T") => True
+    case Atom("F") => False
+    case Atom("x0") => Var(0)
+    case Atom("x1") => Var(1)
+    case Atom("x2") => Var(2)
+    case SList(List(Atom("not"), x)) => Neg(parseFormula(x))
+    case SList(List(Atom("and"), x, y)) => Conj(parseFormula(x), parseFormula(y))
+    case SList(List(Atom("or"), x, y)) => Disj(parseFormula(x), parseFormula(y))
     case _ => throw InternalCompilerException(s"Unexpected S-expression: '$sexp'.")
   }
 

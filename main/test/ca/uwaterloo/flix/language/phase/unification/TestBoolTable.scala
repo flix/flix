@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import org.scalatest.FunSuite
 import BoolTable._
-import BoolTable.Formula._
+import BoolTable.BoolFormula._
 
 class TestBoolTable extends FunSuite {
 
