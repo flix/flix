@@ -203,11 +203,11 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toNec(iter: Iterator[a]): Option[Nec[a]] & Impure =
-        let f = (x, acc) -> match acc {
+        let f = (x, k) -> match k() {
             case None      => Some(Nec.singleton(x))
             case Some(nec) => Some(Nec.cons(x, nec))
         };
-        foldRightOld(f, None, iter)
+        foldRight(f, None, iter)
 
     ///
     /// Returns the contents of `iter` as a set. Consumes the entire iterator.
@@ -427,26 +427,6 @@ namespace Iterator {
                 loop(f(acc, next()))
         };
         loop(s)
-
-    ///
-    /// Applies `f` to a start value `s` and all elements in `iter` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def foldRightOld(f: (a, b) -> b & ef, s: b, iter: Iterator[a]): b & Impure =
-        let Iterator(done, next) = iter;
-        def loop(k) = {
-            if (done())
-                k(s)
-            else {
-                let x = next();
-                loop(ks -> k(f(x, ks)))
-            }
-        };
-        loop(ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
-                               // but the intermediate continuations are effect polymorphic
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from right to left.
