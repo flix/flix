@@ -17,9 +17,8 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
-import ca.uwaterloo.flix.language.ast.Type.eraseAliases
+import ca.uwaterloo.flix.language.ast.Type.{Bool, eraseAliases}
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -39,22 +38,22 @@ object BoolUnification {
     }
 
     tpe1 match {
-      case x: Type.KindedVar if x.rigidity eq Rigidity.Flexible =>
+      case x: Type.KindedVar if x.sym.rigidity eq Rigidity.Flexible =>
         if (tpe2 eq Type.True)
-          return Ok(Substitution.singleton(x, Type.True))
+          return Ok(Substitution.singleton(x.sym, Type.True))
         if (tpe2 eq Type.False)
-          return Ok(Substitution.singleton(x, Type.False))
+          return Ok(Substitution.singleton(x.sym, Type.False))
 
       case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
       case _ => // nop
     }
 
     tpe2 match {
-      case y: Type.KindedVar if y.rigidity eq Rigidity.Flexible =>
+      case y: Type.KindedVar if y.sym.rigidity eq Rigidity.Flexible =>
         if (tpe1 eq Type.True)
-          return Ok(Substitution.singleton(y, Type.True))
+          return Ok(Substitution.singleton(y.sym, Type.True))
         if (tpe1 eq Type.False)
-          return Ok(Substitution.singleton(y, Type.False))
+          return Ok(Substitution.singleton(y.sym, Type.False))
 
       case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable")
       case _ => // nop
@@ -73,8 +72,14 @@ object BoolUnification {
     // The boolean expression we want to show is 0.
     val query = mkEq(tpe1, tpe2)
 
-    // The free and flexible type variables in the query.
-    val freeVars = query.typeVars.toList.filter(_.rigidity == Rigidity.Flexible)
+    // Compute the variables in the query.
+    val typeVars = query.typeVars.toList
+
+    // Compute the flexible variables.
+    val flexibleTypeVars = typeVars.filter(_.sym.rigidity == Rigidity.Flexible)
+
+    // Determine the order in which to eliminate the variables.
+    val freeVars = computeVariableOrder(flexibleTypeVars)
 
     // Eliminate all variables.
     try {
@@ -96,25 +101,44 @@ object BoolUnification {
   }
 
   /**
+    * A heuristic used to determine the order in which to eliminate variable.
+    *
+    * Semantically the order of variables is immaterial. Changing the order may
+    * yield different unifiers, but they are all equivalent. However, changing
+    * the can lead to significant speed-ups / slow-downs.
+    *
+    * We make the following observation:
+    *
+    * We want to have synthetic variables (i.e. fresh variables introduced during
+    * type inference) expressed in terms of real variables (i.e. variables that
+    * actually occur in the source code). We can ensure this by eliminating the
+    * synthetic variables first.
+    */
+  private def computeVariableOrder(l: List[Type.KindedVar]): List[Type.KindedVar] = {
+    val realVars = l.filter(_.sym.isReal)
+    val synthVars = l.filterNot(_.sym.isReal)
+    synthVars ::: realVars
+  }
+
+  /**
     * Performs success variable elimination on the given boolean expression `f`.
     */
   private def successiveVariableElimination(f: Type, fvs: List[Type.KindedVar])(implicit flix: Flix): Substitution = fvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
-      val (_, q) = Scheme.instantiate(Scheme(f.typeVars.toList, List.empty, f), InstantiateMode.Flexible)
+      val (_, q) = Scheme.instantiate(Scheme(f.typeVars.toList.map(_.sym), List.empty, f), InstantiateMode.Flexible)
       if (!satisfiable(q))
         Substitution.empty
       else
         throw BooleanUnificationException
 
     case x :: xs =>
-      val t0 = Substitution.singleton(x, Type.False)(f)
-      val t1 = Substitution.singleton(x, Type.True)(f)
+      val t0 = Substitution.singleton(x.sym, Type.False)(f)
+      val t1 = Substitution.singleton(x.sym, Type.True)(f)
       val se = successiveVariableElimination(mkAnd(t0, t1), xs)
 
-      // Investigate impact on Monomorph semantics:
-      val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(x, mkNot(se(t1)))))
-      //val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshVar(Kind.Bool, f.loc), mkNot(se(t1)))))
+      val f1 = BoolTable.minimizeType(mkOr(se(t0), mkAnd(x, mkNot(se(t1)))))
+      val st = Substitution.singleton(x.sym, f1)
       st ++ se
   }
 
@@ -131,7 +155,7 @@ object BoolUnification {
     case Type.False => false
     case _ =>
       // Make all variables flexible.
-      val f1 = f.map(tvar => tvar.copy(rigidity = Rigidity.Flexible))
+      val f1 = f.map(tvar => tvar.withRigidity(Rigidity.Flexible))
       val q = mkEq(f1, Type.True)
       try {
         successiveVariableElimination(q, q.typeVars.toList)

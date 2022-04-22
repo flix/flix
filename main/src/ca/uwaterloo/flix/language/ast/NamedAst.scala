@@ -27,18 +27,21 @@ object NamedAst {
                   instances: Map[Name.NName, Map[String, List[NamedAst.Instance]]],
                   defsAndSigs: Map[Name.NName, Map[String, NamedAst.DefOrSig]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
-                  typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
+                  typeAliases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
+                  entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   // TODO change laws to NamedAst.Law
-  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Sig], laws: List[NamedAst.Def], loc: SourceLocation)
+  case class Class(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Sig], laws: List[NamedAst.Def], loc: SourceLocation)
 
   case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Def], loc: SourceLocation)
 
   sealed trait DefOrSig
+
   object DefOrSig {
     case class Def(d: NamedAst.Def) extends NamedAst.DefOrSig
+
     case class Sig(s: NamedAst.Sig) extends NamedAst.DefOrSig
   }
 
@@ -126,7 +129,7 @@ object NamedAst {
 
     case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Scope(sym: Symbol.VarSym, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Scope(sym: Symbol.VarSym, regionVar: Symbol.UnkindedTypeVarSym, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], loc: SourceLocation) extends NamedAst.Expression
 
@@ -144,9 +147,11 @@ object NamedAst {
 
     case class RecordRestrict(field: Name.Field, rest: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArrayLit(elms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
+    case class New(qname: Name.QName, exp: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArrayNew(elm: NamedAst.Expression, len: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class ArrayLit(exps: List[NamedAst.Expression], exp: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
+
+    case class ArrayNew(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
     case class ArrayLoad(base: NamedAst.Expression, index: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
@@ -156,7 +161,7 @@ object NamedAst {
 
     case class ArraySlice(base: NamedAst.Expression, beginIndex: NamedAst.Expression, endIndex: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Ref(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Ref(exp1: NamedAst.Expression, exp2: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
     case class Deref(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
@@ -306,7 +311,7 @@ object NamedAst {
 
   object Type {
 
-    case class Var(tvar: ast.Type.UnkindedVar, loc: SourceLocation) extends NamedAst.Type
+    case class Var(tvar: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends NamedAst.Type
 
     case class Ambiguous(name: Name.QName, loc: SourceLocation) extends NamedAst.Type
 
@@ -354,7 +359,7 @@ object NamedAst {
 
   }
 
-  case class Scheme(quantifiers: List[ast.Type.UnkindedVar], tconstrs: List[NamedAst.TypeConstraint], base: NamedAst.Type)
+  case class Scheme(quantifiers: List[Symbol.UnkindedTypeVarSym], tconstrs: List[NamedAst.TypeConstraint], base: NamedAst.Type)
 
   sealed trait TypeParams {
     val tparams: List[NamedAst.TypeParam]
@@ -401,16 +406,16 @@ object NamedAst {
   sealed trait TypeParam {
     def name: Name.Ident
 
-    def tpe: ast.Type.UnkindedVar
+    def sym: Symbol.UnkindedTypeVarSym
 
     def loc: SourceLocation
   }
 
   object TypeParam {
 
-    case class Kinded(name: Name.Ident, tpe: ast.Type.UnkindedVar, kind: Kind, loc: SourceLocation) extends TypeParam
+    case class Kinded(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, kind: Kind, loc: SourceLocation) extends TypeParam
 
-    case class Unkinded(name: Name.Ident, tpe: ast.Type.UnkindedVar, loc: SourceLocation) extends TypeParam
+    case class Unkinded(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends TypeParam
 
   }
 

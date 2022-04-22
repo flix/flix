@@ -18,6 +18,7 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
@@ -74,16 +75,24 @@ object Main {
       System.exit(0)
     }
 
+    // compute the main entry point
+    val entryPoint = cmdOpts.entryPoint match {
+      case None => Options.Default.entryPoint
+      case Some(s) => Some(Symbol.mkDefnSym(s))
+    }
+
     // construct flix options.
     var options = Options.Default.copy(
       lib = cmdOpts.xlib,
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
+      entryPoint = entryPoint,
       explain = cmdOpts.explain,
       json = cmdOpts.json,
       output = cmdOpts.output.map(s => Paths.get(s)),
       progress = true,
       threads = cmdOpts.threads.getOrElse(Runtime.getRuntime.availableProcessors()),
+      xnobooltable = cmdOpts.xnobooltable,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono
     )
@@ -252,6 +261,7 @@ object Main {
                      args: Option[String] = None,
                      benchmark: Boolean = false,
                      documentor: Boolean = false,
+                     entryPoint: Option[String] = None,
                      explain: Boolean = false,
                      interactive: Boolean = false,
                      json: Boolean = false,
@@ -266,6 +276,7 @@ object Main {
                      xbenchmarkThroughput: Boolean = false,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
+                     xnobooltable: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
                      files: Seq[File] = Seq())
@@ -342,56 +353,47 @@ object Main {
 
       note("")
 
-      // Listen.
       opt[String]("args").action((s, c) => c.copy(args = Some(s))).
         valueName("<a1, a2, ...>").
         text("arguments passed to main. Must be a single quoted string.")
 
-      // Benchmark.
       opt[Unit]("benchmark").action((_, c) => c.copy(benchmark = true)).
         text("runs benchmarks.")
 
-      // Doc.
       opt[Unit]("doc").action((_, c) => c.copy(documentor = true)).
         text("generates HTML documentation.")
+
+      opt[String]("entrypoint").action((s, c) => c.copy(entryPoint = Some(s))).
+        text("specifies the main entry point.")
 
       opt[Unit]("explain").action((_, c) => c.copy(explain = true)).
         text("provides suggestions on how to solve a problem")
 
-      // Help.
       help("help").text("prints this usage information.")
 
-      // Interactive.
       opt[Unit]("interactive").action((_, c) => c.copy(interactive = true)).
         text("enables interactive mode.")
 
-      // Json.
       opt[Unit]("json").action((_, c) => c.copy(json = true)).
         text("enables json output.")
 
-      // Listen.
       opt[Int]("listen").action((s, c) => c.copy(listen = Some(s))).
         valueName("<port>").
         text("starts the socket server and listens on the given port.")
 
-      // LSP.
       opt[Int]("lsp").action((s, c) => c.copy(lsp = Some(s))).
         valueName("<port>").
         text("starts the LSP server and listens on the given port.")
 
-      // Output.
       opt[String]("output").action((s, c) => c.copy(output = Some(s))).
         text("specifies the output directory for JVM bytecode.")
 
-      // Test.
       opt[Unit]("test").action((_, c) => c.copy(test = true)).
         text("runs unit tests.")
 
-      // Threads.
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
 
-      // Version.
       version("version").text("prints the version number.")
 
       // Experimental options:
@@ -403,7 +405,7 @@ object Main {
         text("[experimental] benchmarks the size of the generated JVM files.")
 
       // Xbenchmark-incremental
-      opt[Unit]("Xbenchmark-incremental").action((_, c) => c.copy(xbenchmarkIncremental=true)).
+      opt[Unit]("Xbenchmark-incremental").action((_, c) => c.copy(xbenchmarkIncremental = true)).
         text("[experimental] benchmarks the performance of each compiler phase in incremental mode.")
 
       // Xbenchmark-phases
@@ -421,6 +423,10 @@ object Main {
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
+
+      // Xno-bool-table
+      opt[Unit]("Xno-bool-table").action((_, c) => c.copy(xnobooltable = true)).
+        text("[experimental] disables Boolean minimization via tabling.")
 
       // Xstatistics
       opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).

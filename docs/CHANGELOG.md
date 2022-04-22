@@ -1,5 +1,21 @@
 # Changelog
 
+Version 0.27.0:
+- Incrementalized large parts of the front-end, including: 
+  - `Parser`, `Weeder`, `Kinder`, and `Typer` (thanks Magnus and Matt!).
+- Added `CommutativeSemiGroup` and `CommutativeMonoid` (Thanks Jakob!)
+- Added `++` and `|+|` operators for `SemiGroup` and `CommutativeSemiGroup` (thanks Magnus!)
+- Added `Foldable.joinWith` (thanks Jakob!)
+- Added `sumWith` and `productWith` functions (thanks Jakob!)
+- Added Identity `Functor` / `Monad` (thanks Stephen!)
+- Added `fix` keyword for using lattice values in relations (thanks Jonathan!) 
+- Added various extensions to `Foldable` and `Reducible` (thanks Jakob!)
+- Added support for annotations on classes and enums (thanks Nicola!)
+- Improved Find References support in LSP (thanks Nicola!)
+- Refactored various `replace` methods to use record arguments (thanks Nina!)
+- Updated online documentation and home page (thanks Nina!)
+- Fixed an issue with entailment checking (thanks Matt!)
+
 Version 0.26.0:
 
 - Released a completely revamped version of https://api.flix.dev/ (thanks Magnus!)
@@ -263,3 +279,4 @@ HEAD (in progress, not released):
 - Added `foldRightLazy` operations (thanks Nicola!)
 - Added automatic parallelization of certain `Set` and `Map` operations (thanks Jakob!)
 - Improved stratification algorithm (thanks Jonathan!)
+- Regions.

@@ -409,9 +409,8 @@ class TestTyper extends FunSuite with TestUtils {
   test("MissingArrowInstance.01") {
     val input =
       s"""
-         |def main(_args: Array[String]): Int32 & Impure =
-         |    println(x -> x + 41i32);
-         |    0
+         |def main(): Unit & Impure =
+         |    println(x -> x + 41i32)
          |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingArrowInstance](result)
@@ -1143,71 +1142,6 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedBools](result)
-  }
-
-  test("Test.IllegalMain.01") {
-    val input =
-      """
-        |def main(blah: Array[String]): Int32 = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.IllegalMain](result)
-  }
-
-  test("Test.IllegalMain.02") {
-    val input =
-      """
-        |def main(blah: Array[Char]): Int32 & Impure = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.IllegalMain](result)
-  }
-
-  test("Test.IllegalMain.03") {
-    val input =
-      """
-        |def main(blah: Array[String]): Int64 & Impure = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.IllegalMain](result)
-  }
-
-  test("Test.IllegalMain.04") {
-    val input =
-      """
-        |def main(blah: Array[a]): Int32 & Impure = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.IllegalMain](result)
-  }
-
-  test("Test.IllegalMain.05") {
-    val input =
-      """
-        |class C[a]
-        |
-        |def main(blah: Array[a]): Int32 & Impure with C[a] = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.IllegalMain](result)
-  }
-
-  test("Test.IllegalMain.06") {
-    val input =
-      """
-        |def main(blah: Array[String]): a & Impure = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.IllegalMain](result)
-  }
-
-  test("Test.IllegalMain.07") {
-    val input =
-      """
-        |def main(blah: Array[String]): Int32 & ef = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.IllegalMain](result)
   }
 
   test("Test.ImpureDeclaredAsPure.01") {

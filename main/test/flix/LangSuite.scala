@@ -13,10 +13,12 @@ class LangSuite extends Suites(
   // Declarations.
   //
   new FlixTest("Test.Dec.Class", "main/test/flix/Test.Dec.Class.flix"),
+  new FlixTest("Test.Dec.Effect", "main/test/flix/Test.Dec.Effect.flix"),
   new FlixTest("Test.Dec.Enum", "main/test/flix/Test.Dec.Enum.flix"),
   new FlixTest("Test.Dec.Namespace", "main/test/flix/Test.Dec.Namespace.flix"),
   new FlixTest("Test.Dec.OpaqueType", "main/test/flix/Test.Dec.OpaqueType.flix"),
   new FlixTest("Test.Dec.RelAlias", "main/test/flix/Test.Dec.RelAlias.flix")(Options.TestWithLibAll),
+  new FlixTest("Test.Dec.TopLevel", "main/test/flix/Test.Dec.TopLevel.flix"),
   new FlixTest("Test.Dec.TypeAlias", "main/test/flix/Test.Dec.TypeAlias.flix"),
 
   //
@@ -131,6 +133,11 @@ class LangSuite extends Suites(
   // Default.
   //
   new FlixTest("Test.Exp.Default", "main/test/flix/Test.Exp.Default.flix"),
+
+  //
+  // Effects
+  //
+  new FlixTest("Test.Exp.Effect", "main/test/flix/Test.Exp.Effect.flix"),
 
   //
   // Floats.
@@ -268,15 +275,11 @@ class LangSuite extends Suites(
   //
   // Reference.
   //
-  new FlixTest("Test.Exp.Reference", List(
-    "main/test/flix/Test.Exp.Reference.Assign.flix",
-    "main/test/flix/Test.Exp.Reference.Ref.flix",
-    "main/test/flix/Test.Exp.Reference.Deref.flix",
-    "main/test/flix/Test.Exp.Reference.Precedence.flix",
-  ), Options.TestWithLibAll),
-
-  new FlixTest("Test.Exp.ScopedReference", List(
-    "main/test/flix/Test.Exp.ScopedReference.flix"
+  new FlixTest("Test.Exp.Ref", List(
+    "main/test/flix/Test.Exp.Ref.Assign.flix",
+    "main/test/flix/Test.Exp.Ref.Ref.flix",
+    "main/test/flix/Test.Exp.Ref.Deref.flix",
+    "main/test/flix/Test.Exp.Ref.Precedence.flix",
   ), Options.TestWithLibAll),
 
   //

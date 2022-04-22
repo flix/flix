@@ -17,7 +17,7 @@
 ///
 /// A type class for remainder.
 ///
-pub lawless class Rem[a] {
+pub class Rem[a] {
     ///
     /// Returns the remainder of `x / n`.
     ///

@@ -169,9 +169,9 @@ object JvmBackend {
       val matchErrorClass = GenMatchErrorClass.gen()
 
       //
-      // Generate the GlobalCounter class.
+      // Generate the Global class.
       //
-      val globalCounterClass = GenGlobalCounterClass.gen()
+      val globalClass = GenGlobalClass.gen()
 
       //
       // Collect all the classes and interfaces together.
@@ -197,7 +197,7 @@ object JvmBackend {
         rslClass,
         holeErrorClass,
         matchErrorClass,
-        globalCounterClass
+        globalClass
       ).reduce(_ ++ _)
     }
 
@@ -226,27 +226,16 @@ object JvmBackend {
     } else {
       //
       // Loads all the generated classes into the JVM and decorates the AST.
+      // Returns the main of `Main.class` if it exists.
       //
-      Bootstrap.bootstrap(allClasses)
+      val main = Bootstrap.bootstrap(allClasses)
 
       //
       // Return the compilation result.
       //
-      new CompilationResult(root, getCompiledMain(root), getCompiledDefs(root), flix.getTotalTime, outputBytes).toSuccess
+      new CompilationResult(root, main, getCompiledDefs(root), flix.getTotalTime, outputBytes).toSuccess
     }
   }
-
-  /**
-    * Optionally returns a reference to main.
-    */
-  private def getCompiledMain(root: Root)(implicit flix: Flix): Option[Array[String] => Unit] =
-    root.defs.get(Symbol.Main) map { defn =>
-      (actualArgs: Array[String]) => {
-        val args: Array[AnyRef] = Array(actualArgs)
-        link(defn.sym, root).apply(args)
-        ()
-      }
-    }
 
   /**
     * Returns a map from definition symbols to executable functions (backed by JVM backend).

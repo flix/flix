@@ -29,10 +29,11 @@ object KindedAst {
                   defs: Map[Symbol.DefnSym, KindedAst.Def],
                   enums: Map[Symbol.EnumSym, KindedAst.Enum],
                   typeAliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias],
+                  entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: KindedAst.TypeParam, superClasses: List[Ast.TypeConstraint], sigs: Map[Symbol.SigSym, KindedAst.Sig], laws: List[KindedAst.Def], loc: SourceLocation)
+  case class Class(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: KindedAst.TypeParam, superClasses: List[Ast.TypeConstraint], sigs: Map[Symbol.SigSym, KindedAst.Sig], laws: List[KindedAst.Def], loc: SourceLocation)
 
   case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.InstanceSym, tpe: Type, tconstrs: List[Ast.TypeConstraint], defs: List[KindedAst.Def], ns: Name.NName, loc: SourceLocation)
 
@@ -108,7 +109,7 @@ object KindedAst {
 
     case class Region(tpe: Type, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Scope(sym: Symbol.VarSym, exp1: KindedAst.Expression, evar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class Scope(sym: Symbol.VarSym, regionVar: Type.KindedVar, exp1: KindedAst.Expression, evar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class Match(exp: KindedAst.Expression, rules: List[KindedAst.MatchRule], loc: SourceLocation) extends KindedAst.Expression
 
@@ -118,7 +119,7 @@ object KindedAst {
 
     case class Tuple(elms: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 
-    case class RecordEmpty(tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class RecordEmpty(loc: SourceLocation) extends KindedAst.Expression
 
     case class RecordSelect(exp: KindedAst.Expression, field: Name.Field, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
@@ -126,9 +127,9 @@ object KindedAst {
 
     case class RecordRestrict(field: Name.Field, rest: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class ArrayLit(elms: List[KindedAst.Expression], tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class ArrayLit(exps: List[KindedAst.Expression], exp: KindedAst.Expression, tvar: Type.KindedVar, evar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class ArrayNew(elm: KindedAst.Expression, len: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class ArrayNew(exp1: KindedAst.Expression, exp2: KindedAst.Expression, exp3: KindedAst.Expression, tvar: Type.KindedVar, evar: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class ArrayLoad(base: KindedAst.Expression, index: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
@@ -312,5 +313,5 @@ object KindedAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: KindedAst.Expression, exp: KindedAst.Expression)
 
-  case class TypeParam(name: Name.Ident, tpe: Type.KindedVar, loc: SourceLocation)
+  case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 }

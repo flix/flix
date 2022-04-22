@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOperator, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Validation.ToSuccess
@@ -126,7 +127,7 @@ object Deriver {
 
       // create a default rule
       // `case _ => false`
-      val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), KindedAst.Expression.True(loc), KindedAst.Expression.False(loc))
+      val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc, text = FallbackText("wild")), loc), KindedAst.Expression.True(loc), KindedAst.Expression.False(loc))
 
       // group the match rules in an expression
       KindedAst.Expression.Match(
@@ -149,7 +150,7 @@ object Deriver {
         tparams = tparams,
         fparams = List(KindedAst.FormalParam(param1, Ast.Modifiers.Empty, sc.base, loc), KindedAst.FormalParam(param2, Ast.Modifiers.Empty, sc.base, loc)),
         sc = Scheme(
-          tparams.map(_.tpe),
+          tparams.map(_.sym),
           List(Ast.TypeConstraint(eqClassSym, sc.base, loc)),
           Type.mkPureUncurriedArrow(List(sc.base, sc.base), Type.mkBool(loc), loc)
         ),
@@ -179,13 +180,13 @@ object Deriver {
       val eqs = varSyms1.zip(varSyms2).map {
         case (varSym1, varSym2) =>
           KindedAst.Expression.Apply(
-            KindedAst.Expression.Sig(eqSym, Type.freshVar(Kind.Star, loc), loc),
+            KindedAst.Expression.Sig(eqSym, Type.freshVar(Kind.Star, loc, text = FallbackText("eq")), loc),
             List(
               mkVarExpr(varSym1, loc),
               mkVarExpr(varSym2, loc)
             ),
-            Type.freshVar(Kind.Star, loc),
-            Type.freshVar(Kind.Bool, loc),
+            Type.freshVar(Kind.Star, loc, text = FallbackText("eqType")),
+            Type.freshVar(Kind.Bool, loc, text = FallbackText("eqEff")),
             loc
           )
       }
@@ -197,7 +198,7 @@ object Deriver {
         case Nil => KindedAst.Expression.True(loc)
         // Case 2: at least one argument: join everything with `and`
         case head :: tail => tail.foldLeft(head: KindedAst.Expression) {
-          case (acc, eq) => KindedAst.Expression.Binary(SemanticOperator.BoolOp.And, acc, eq, Type.freshVar(Kind.Star, loc), loc)
+          case (acc, eq) => KindedAst.Expression.Binary(SemanticOperator.BoolOp.And, acc, eq, Type.freshVar(Kind.Star, loc, text = FallbackText("and")), loc)
         }
       }
 
@@ -275,7 +276,12 @@ object Deriver {
       val lambdaParamVarSym = Symbol.freshVarSym("e", BoundBy.FormalParam, loc)
       val indexMatchRules = cases.values.zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
       val indexMatchExp = KindedAst.Expression.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules.toList, loc)
-      val lambda = KindedAst.Expression.Lambda(KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar.ascribedWith(Kind.Star), loc), indexMatchExp, Type.freshVar(Kind.Star, loc), loc)
+      val lambda = KindedAst.Expression.Lambda(
+        KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar.ascribedWith(Kind.Star), loc),
+        indexMatchExp,
+        Type.freshVar(Kind.Star, loc, text = FallbackText("indexOfType")),
+        loc
+      )
 
       // Create the main match expression
       val matchRules = cases.values.map(mkComparePairMatchRule(_, loc, root))
@@ -283,16 +289,27 @@ object Deriver {
       // Create the default rule:
       // `case _ => compare(indexOf(x), indexOf(y))`
       val defaultMatchRule = KindedAst.MatchRule(
-        KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc),
+        KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc, text = FallbackText("wild")), loc),
         KindedAst.Expression.True(loc),
         KindedAst.Expression.Apply(
-          KindedAst.Expression.Sig(compareSigSym, Type.freshVar(Kind.Star, loc), loc),
+          KindedAst.Expression.Sig(compareSigSym, Type.freshVar(Kind.Star, loc, text = FallbackText("compare")), loc),
           List(
-            KindedAst.Expression.Apply(mkVarExpr(lambdaVarSym, loc), List(mkVarExpr(param1, loc)), Type.freshVar(Kind.Star, loc), Type.freshVar(Kind.Bool, loc), loc),
-            KindedAst.Expression.Apply(mkVarExpr(lambdaVarSym, loc), List(mkVarExpr(param2, loc)), Type.freshVar(Kind.Star, loc), Type.freshVar(Kind.Bool, loc), loc),
+            KindedAst.Expression.Apply(
+              mkVarExpr(lambdaVarSym, loc),
+              List(mkVarExpr(param1, loc)),
+              Type.freshVar(Kind.Star, loc, text = FallbackText("xType")),
+              Type.freshVar(Kind.Bool, loc, text = FallbackText("xEff")),
+              loc
+            ),
+            KindedAst.Expression.Apply(
+              mkVarExpr(lambdaVarSym, loc),
+              List(mkVarExpr(param2, loc)),
+              Type.freshVar(Kind.Star, loc, text = FallbackText("yType")),
+              Type.freshVar(Kind.Bool, loc, text = FallbackText("yEff")),
+              loc),
           ),
-          Type.freshVar(Kind.Star, loc),
-          Type.freshVar(Kind.Bool, loc),
+          Type.freshVar(Kind.Star, loc, text = FallbackText("compareType")),
+          Type.freshVar(Kind.Bool, loc, text = FallbackText("compareEff")),
           loc
         )
       )
@@ -323,7 +340,7 @@ object Deriver {
         tparams = tparams,
         fparams = List(KindedAst.FormalParam(param1, Ast.Modifiers.Empty, sc.base, loc), KindedAst.FormalParam(param2, Ast.Modifiers.Empty, sc.base, loc)),
         sc = Scheme(
-          tparams.map(_.tpe),
+          tparams.map(_.sym),
           List(Ast.TypeConstraint(orderClassSym, sc.base, loc)),
           Type.mkPureUncurriedArrow(List(sc.base, sc.base), Type.mkEnum(comparisonEnumSym, Kind.Star, loc), loc)
         ),
@@ -340,7 +357,7 @@ object Deriver {
   private def mkCompareIndexMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation)(implicit Flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(_, _, _, sc) =>
       val TypeConstructor.Tag(sym, tag) = getTagConstructor(sc.base)
-      val pat = KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), Type.freshVar(Kind.Star, loc), loc)
+      val pat = KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc, text = FallbackText("wild")), loc), Type.freshVar(Kind.Star, loc, text = FallbackText("tag")), loc)
       val guard = KindedAst.Expression.True(loc)
       val exp = KindedAst.Expression.Int32(index, loc)
       KindedAst.MatchRule(pat, guard, exp)
@@ -370,13 +387,13 @@ object Deriver {
       val compares = varSyms1.zip(varSyms2).map {
         case (varSym1, varSym2) =>
           KindedAst.Expression.Apply(
-            KindedAst.Expression.Sig(compareSigSym, Type.freshVar(Kind.Star, loc), loc),
+            KindedAst.Expression.Sig(compareSigSym, Type.freshVar(Kind.Star, loc, text = FallbackText("compare")), loc),
             List(
               mkVarExpr(varSym1, loc),
               mkVarExpr(varSym2, loc)
             ),
-            Type.freshVar(Kind.Star, loc),
-            Type.freshVar(Kind.Bool, loc),
+            Type.freshVar(Kind.Star, loc, text = FallbackText("compareType")),
+            Type.freshVar(Kind.Bool, loc, text = FallbackText("compareEff")),
             loc
           )
       }
@@ -387,13 +404,13 @@ object Deriver {
         */
       def thenCompare(exp1: KindedAst.Expression, exp2: KindedAst.Expression): KindedAst.Expression = {
         KindedAst.Expression.Apply(
-          KindedAst.Expression.Def(thenCompareDefSym, Type.freshVar(Kind.Star, loc), loc),
+          KindedAst.Expression.Def(thenCompareDefSym, Type.freshVar(Kind.Star, loc, text = FallbackText("thenCompare")), loc),
           List(
             exp1,
             KindedAst.Expression.Lazy(exp2, loc)
           ),
-          Type.freshVar(Kind.Star, loc),
-          Type.freshVar(Kind.Bool, loc),
+          Type.freshVar(Kind.Star, loc, text = FallbackText("thenCompareType")),
+          Type.freshVar(Kind.Bool, loc, text = FallbackText("thenCompareEff")),
           loc
         )
       }
@@ -402,7 +419,7 @@ object Deriver {
       // ```compare(x0, y0) `thenCompare` lazy compare(x1, y1)```
       val exp = compares match {
         // Case 1: no variables to compare; just return true
-        case Nil => KindedAst.Expression.Tag(comparisonEnumSym, equalToTag, KindedAst.Expression.Unit(loc), Type.freshVar(Kind.Star, loc), loc)
+        case Nil => KindedAst.Expression.Tag(comparisonEnumSym, equalToTag, KindedAst.Expression.Unit(loc), Type.freshVar(Kind.Star, loc, text = FallbackText("tag")), loc)
         // Case 2: multiple comparisons to be done; wrap them in Order.thenCompare
         case cmps => cmps.reduceRight(thenCompare)
       }
@@ -488,7 +505,7 @@ object Deriver {
         tparams = tparams,
         fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, sc.base, loc)),
         sc = Scheme(
-          tparams.map(_.tpe),
+          tparams.map(_.sym),
           List(Ast.TypeConstraint(toStringClassSym, sc.base, loc)),
           Type.mkPureArrow(sc.base, Type.mkString(loc), loc)
         ),
@@ -519,10 +536,10 @@ object Deriver {
       val toStrings = varSyms.map {
         varSym =>
           KindedAst.Expression.Apply(
-            KindedAst.Expression.Sig(toStringSym, Type.freshVar(Kind.Star, loc), loc),
+            KindedAst.Expression.Sig(toStringSym, Type.freshVar(Kind.Star, loc, text = FallbackText("toString")), loc),
             List(mkVarExpr(varSym, loc)),
-            Type.freshVar(Kind.Star, loc),
-            Type.freshVar(Kind.Bool, loc),
+            Type.freshVar(Kind.Star, loc, text = FallbackText("toStringType")),
+            Type.freshVar(Kind.Bool, loc, text = FallbackText("toStringEff")),
             loc
           )
       }
@@ -624,7 +641,7 @@ object Deriver {
         tparams = tparams,
         fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, sc.base, loc)),
         sc = Scheme(
-          tparams.map(_.tpe),
+          tparams.map(_.sym),
           List(Ast.TypeConstraint(hashClassSym, sc.base, loc)),
           Type.mkPureArrow(sc.base, Type.mkInt32(loc), loc)
         ),
@@ -659,17 +676,17 @@ object Deriver {
               SemanticOperator.Int32Op.Mul,
               acc,
               KindedAst.Expression.Int32(31, loc),
-              Type.freshVar(Kind.Star, loc),
+              Type.freshVar(Kind.Star, loc, text = FallbackText("product")),
               loc
             ),
             KindedAst.Expression.Apply(
-              KindedAst.Expression.Sig(hashSigSym, Type.freshVar(Kind.Star, loc), loc),
+              KindedAst.Expression.Sig(hashSigSym, Type.freshVar(Kind.Star, loc, text = FallbackText("hash")), loc),
               List(mkVarExpr(varSym, loc)),
-              Type.freshVar(Kind.Star, loc),
-              Type.freshVar(Kind.Bool, loc),
+              Type.freshVar(Kind.Star, loc, text = FallbackText("hashType")),
+              Type.freshVar(Kind.Bool, loc, text = FallbackText("hashEff")),
               loc
             ),
-            Type.freshVar(Kind.Star, loc),
+            Type.freshVar(Kind.Star, loc, text = FallbackText("sum")),
             loc
           )
       }
@@ -720,7 +737,7 @@ object Deriver {
     * Filters out non-star type parameters and wild type parameters.
     */
   private def getTypeConstraintsForTypeParams(tparams: List[KindedAst.TypeParam], clazz: Symbol.ClassSym, loc: SourceLocation): List[Ast.TypeConstraint] = tparams.collect {
-    case tparam if tparam.tpe.kind == Kind.Star && !tparam.name.isWild => Ast.TypeConstraint(clazz, tparam.tpe, loc)
+    case tparam if tparam.sym.kind == Kind.Star && !tparam.name.isWild => Ast.TypeConstraint(clazz, Type.KindedVar(tparam.sym, loc), loc)
   }
 
   /**
@@ -737,7 +754,7 @@ object Deriver {
     * Builds a string concatenation expression from the given expressions.
     */
   private def concat(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation)(implicit flix: Flix): KindedAst.Expression = {
-    KindedAst.Expression.Binary(SemanticOperator.StringOp.Concat, exp1, exp2, Type.freshVar(Kind.Star, loc), loc)
+    KindedAst.Expression.Binary(SemanticOperator.StringOp.Concat, exp1, exp2, Type.freshVar(Kind.Star, loc, text = FallbackText("concat")), loc)
   }
 
   /**
@@ -786,14 +803,14 @@ object Deriver {
   private def mkPattern(tpe: Type, varPrefix: String, loc: SourceLocation)(implicit flix: Flix): (KindedAst.Pattern, List[Symbol.VarSym]) = tpe.typeConstructor match {
     case Some(TypeConstructor.Tag(sym, tag)) =>
       getTagArguments(tpe) match {
-        case Nil => (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Unit(loc), Type.freshVar(Kind.Star, loc), loc), Nil)
+        case Nil => (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Unit(loc), Type.freshVar(Kind.Star, loc, text = FallbackText("tag")), loc), Nil)
         case _ :: Nil =>
           val varSym = Symbol.freshVarSym(s"${varPrefix}0", BoundBy.Pattern, loc)
-          (KindedAst.Pattern.Tag(sym, tag, mkVarPattern(varSym, loc), Type.freshVar(Kind.Star, loc), loc), List(varSym))
+          (KindedAst.Pattern.Tag(sym, tag, mkVarPattern(varSym, loc), Type.freshVar(Kind.Star, loc, text = FallbackText("elm")), loc), List(varSym))
         case tpes =>
           val varSyms = tpes.zipWithIndex.map { case (_, index) => Symbol.freshVarSym(s"$varPrefix$index", BoundBy.Pattern, loc) }
           val subPats = varSyms.map(varSym => mkVarPattern(varSym, loc))
-          (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Tuple(subPats, loc), Type.freshVar(Kind.Star, loc), loc), varSyms)
+          (KindedAst.Pattern.Tag(sym, tag, KindedAst.Pattern.Tuple(subPats, loc), Type.freshVar(Kind.Star, loc, text = FallbackText("tuple")), loc), varSyms)
       }
     case _ => throw InternalCompilerException("Unexpected non-tag type.")
   }

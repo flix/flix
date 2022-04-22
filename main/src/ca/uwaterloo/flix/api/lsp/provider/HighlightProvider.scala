@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{DocumentHighlight, DocumentHighlightKind, Entity, Index, Position, Range}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.{JArray, JObject}
 import org.json4s.JsonDSL._
 
@@ -58,10 +58,14 @@ object HighlightProvider {
 
         case Entity.LocalVar(sym, _) => highlightVar(sym)
 
-        case Entity.TypeCon(tc, loc) => tc match {
-          case TypeConstructor.RecordRowExtend(field) => highlightField(field)
-          case TypeConstructor.SchemaRowExtend(pred) => highlightPred(pred)
-          case TypeConstructor.KindedEnum(sym, _) => highlightEnum(sym)
+        case Entity.Type(t) => t match {
+          case Type.Cst(tc, _) => tc match {
+            case TypeConstructor.RecordRowExtend(field) => highlightField(field)
+            case TypeConstructor.SchemaRowExtend(pred) => highlightPred(pred)
+            case TypeConstructor.KindedEnum(sym, _) => highlightEnum(sym)
+            case _ => mkNotFound(uri, pos)
+          }
+          case Type.KindedVar(sym, loc) => highlightTypeVar(sym)
           case _ => mkNotFound(uri, pos)
         }
 
@@ -117,6 +121,12 @@ object HighlightProvider {
   }
 
   private def highlightVar(sym: Symbol.VarSym)(implicit index: Index, root: Root): JObject = {
+    val write = (sym.loc, DocumentHighlightKind.Write)
+    val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
+    highlight(write :: reads)
+  }
+
+  private def highlightTypeVar(sym: Symbol.KindedTypeVarSym)(implicit index: Index, root: Root): JObject = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(write :: reads)

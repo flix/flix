@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, Location, Position}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -61,10 +61,14 @@ object FindReferencesProvider {
 
         case Entity.LocalVar(sym, _) => findVarReferences(sym)
 
-        case Entity.TypeCon(tc, loc) => tc match {
-          case TypeConstructor.RecordRowExtend(field) => findFieldReferences(field)
-          case TypeConstructor.SchemaRowExtend(pred) => findPredReferences(pred)
-          case TypeConstructor.KindedEnum(sym, _) => findEnumReferences(sym)
+        case Entity.Type(t) => t match {
+          case Type.KindedVar(sym, loc) => findTypeVarReferences(sym)
+          case Type.Cst(tc, _) => tc match {
+            case TypeConstructor.RecordRowExtend(field) => findFieldReferences(field)
+            case TypeConstructor.SchemaRowExtend(pred) => findPredReferences(pred)
+            case TypeConstructor.KindedEnum(sym, _) => findEnumReferences(sym)
+            case _ => mkNotFound(uri, pos)
+          }
           case _ => mkNotFound(uri, pos)
         }
 
@@ -124,6 +128,13 @@ object FindReferencesProvider {
   }
 
   private def findVarReferences(sym: Symbol.VarSym)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(sym.loc)
+    val useSites = index.usesOf(sym)
+    val locs = defSite :: useSites.toList.map(Location.from)
+    ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+  }
+
+  private def findTypeVarReferences(sym: Symbol.KindedTypeVarSym)(implicit index: Index, root: Root): JObject = {
     val defSite = Location.from(sym.loc)
     val useSites = index.usesOf(sym)
     val locs = defSite :: useSites.toList.map(Location.from)

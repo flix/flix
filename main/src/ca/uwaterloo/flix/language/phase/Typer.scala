@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast._
@@ -27,17 +28,12 @@ import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, mapN, traverse}
 import ca.uwaterloo.flix.util._
 
 import java.io.PrintWriter
 
 object Typer {
-
-  /**
-    * The expected scheme of the `main` function.
-    */
-  private val mainScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.mkArray(Type.Str, SourceLocation.Unknown), Type.Int32, SourceLocation.Unknown))
 
   /**
     * Type checks the given AST root.
@@ -53,7 +49,7 @@ object Typer {
     Validation.mapN(classesVal, instancesVal, defsVal, enumsVal) {
       case (classes, instances, defs, enums) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
-        TypedAst.Root(classes, instances, sigs, defs, enums, typeAliases, root.reachable, root.sources, classEnv)
+        TypedAst.Root(classes, instances, sigs, defs, enums, typeAliases, root.entryPoint, root.reachable, root.sources, classEnv)
     }
   }
 
@@ -95,14 +91,19 @@ object Typer {
       }
     }
 
+  /**
+    * Reassembles a single class.
+    */
   private def visitClass(clazz: KindedAst.Class, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
-    case KindedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws0, loc) =>
+    case KindedAst.Class(doc, ann0, mod, sym, tparam, superClasses, sigs0, laws0, loc) =>
       val tparams = getTypeParams(List(tparam))
-      val tconstr = Ast.TypeConstraint(sym, tparam.tpe, sym.loc)
-      for {
-        sigs <- Validation.traverse(sigs.values)(visitSig(_, List(tconstr), root, classEnv))
-        laws <- Validation.traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
-      } yield (sym, TypedAst.Class(doc, mod, sym, tparams.head, superClasses, sigs, laws, loc))
+      val tconstr = Ast.TypeConstraint(sym, Type.KindedVar(tparam.sym, tparam.loc), sym.loc)
+      val annVal = visitAnnotations(ann0, root)
+      val sigsVal = traverse(sigs0.values)(visitSig(_, List(tconstr), root, classEnv))
+      val lawsVal = traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
+      mapN(annVal, sigsVal, lawsVal) {
+        case (ann, sigs, laws) => (sym, TypedAst.Class(doc, ann, mod, sym, tparams.head, superClasses, sigs, laws, loc))
+      }
   }
 
   /**
@@ -123,9 +124,10 @@ object Typer {
     */
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Instance, TypeError] = inst match {
     case KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs0, ns, loc) =>
-      for {
-        defs <- Validation.traverse(defs0)(visitDefn(_, tconstrs, root, classEnv))
-      } yield TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
+      val defsVal = traverse(defs0)(visitDefn(_, tconstrs, root, classEnv))
+      mapN(defsVal) {
+        defs => TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
+      }
   }
 
   /**
@@ -137,25 +139,9 @@ object Typer {
 
       for {
         // check the main signature before typechecking the def
-        _ <- checkMain(defn, classEnv)
         res <- typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv, sym.loc)
         (spec, exp) = res
       } yield TypedAst.Def(sym, spec, exp)
-  }
-
-  /**
-    * Checks that, if the function is a main function, it has the right type scheme.
-    */
-  private def checkMain(defn: KindedAst.Def, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, TypeError] = {
-    if (!defn.sym.isMain) {
-      return ().toSuccess
-    }
-
-    if (!Scheme.equal(defn.spec.sc, mainScheme, classEnv)) {
-      TypeError.IllegalMain(declaredScheme = defn.spec.sc, expectedScheme = mainScheme, defn.sym.loc).toFailure
-    } else {
-      ().toSuccess
-    }
   }
 
   /**
@@ -241,7 +227,12 @@ object Typer {
           val initialSubst = getSubstFromParams(fparams0)
 
           run(initialSubst) match {
-            case Ok((subst, (partialTconstrs, partialType))) =>
+            case Ok((subst0, (partialTconstrs, partialType))) =>
+              ///
+              /// Propagate type variables *names* in the substitution.
+              ///
+              val subst = subst0.propagate
+
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.
               ///
@@ -321,7 +312,7 @@ object Typer {
               /// However, we require an even stronger property for the implementation to work. The inferred type scheme used in the rest of the
               /// compiler must *use the same type variables* in the scheme as in the body expression. Otherwise monomorphization et al. will break.
               ///
-              val inferredScheme = Scheme(inferredType.typeVars.toList, inferredConstrs, inferredType)
+              val inferredScheme = Scheme(inferredType.typeVars.toList.map(_.sym), inferredConstrs, inferredType)
 
               specVal map {
                 spec => (spec, TypedAst.Impl(exp, inferredScheme))
@@ -381,7 +372,7 @@ object Typer {
     * Visits all annotations.
     */
   private def visitAnnotations(ann: List[KindedAst.Annotation], root: KindedAst.Root)(implicit flix: Flix): Validation[List[TypedAst.Annotation], TypeError] = {
-    Validation.traverse(ann)(inferAnnotation(_, root))
+    traverse(ann)(inferAnnotation(_, root))
   }
 
   /**
@@ -418,7 +409,7 @@ object Typer {
       */
     def visitExp(e0: KindedAst.Expression): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = e0 match {
 
-      case KindedAst.Expression.Wild(tvar, loc) =>
+      case KindedAst.Expression.Wild(tvar, _) =>
         liftM(List.empty, tvar, Type.Pure)
 
       case KindedAst.Expression.Var(sym, tpe, loc) =>
@@ -443,49 +434,49 @@ object Typer {
           tconstrs = tconstrs0.map(_.copy(loc = loc))
         } yield (tconstrs, resultTyp, Type.Pure)
 
-      case KindedAst.Expression.Hole(sym, tvar, loc) =>
+      case KindedAst.Expression.Hole(sym, tvar, _) =>
         liftM(List.empty, tvar, Type.Pure)
 
-      case KindedAst.Expression.Unit(loc) =>
+      case KindedAst.Expression.Unit(_) =>
         liftM(List.empty, Type.Unit, Type.Pure)
 
-      case KindedAst.Expression.Null(loc) =>
+      case KindedAst.Expression.Null(_) =>
         liftM(List.empty, Type.Null, Type.Pure)
 
-      case KindedAst.Expression.True(loc) =>
+      case KindedAst.Expression.True(_) =>
         liftM(List.empty, Type.Bool, Type.Pure)
 
-      case KindedAst.Expression.False(loc) =>
+      case KindedAst.Expression.False(_) =>
         liftM(List.empty, Type.Bool, Type.Pure)
 
-      case KindedAst.Expression.Char(lit, loc) =>
+      case KindedAst.Expression.Char(lit, _) =>
         liftM(List.empty, Type.Char, Type.Pure)
 
-      case KindedAst.Expression.Float32(lit, loc) =>
+      case KindedAst.Expression.Float32(lit, _) =>
         liftM(List.empty, Type.Float32, Type.Pure)
 
-      case KindedAst.Expression.Float64(lit, loc) =>
+      case KindedAst.Expression.Float64(lit, _) =>
         liftM(List.empty, Type.Float64, Type.Pure)
 
-      case KindedAst.Expression.Int8(lit, loc) =>
+      case KindedAst.Expression.Int8(lit, _) =>
         liftM(List.empty, Type.Int8, Type.Pure)
 
-      case KindedAst.Expression.Int16(lit, loc) =>
+      case KindedAst.Expression.Int16(lit, _) =>
         liftM(List.empty, Type.Int16, Type.Pure)
 
-      case KindedAst.Expression.Int32(lit, loc) =>
+      case KindedAst.Expression.Int32(lit, _) =>
         liftM(List.empty, Type.Int32, Type.Pure)
 
-      case KindedAst.Expression.Int64(lit, loc) =>
+      case KindedAst.Expression.Int64(lit, _) =>
         liftM(List.empty, Type.Int64, Type.Pure)
 
-      case KindedAst.Expression.BigInt(lit, loc) =>
+      case KindedAst.Expression.BigInt(lit, _) =>
         liftM(List.empty, Type.BigInt, Type.Pure)
 
-      case KindedAst.Expression.Str(lit, loc) =>
+      case KindedAst.Expression.Str(lit, _) =>
         liftM(List.empty, Type.Str, Type.Pure)
 
-      case KindedAst.Expression.Default(tvar, loc) =>
+      case KindedAst.Expression.Default(tvar, _) =>
         liftM(List.empty, tvar, Type.Pure)
 
       case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
@@ -498,8 +489,8 @@ object Typer {
         } yield (constrs, resultTyp, Type.Pure)
 
       case KindedAst.Expression.Apply(exp, exps, tvar, evar, loc) =>
-        val lambdaBodyType = Type.freshVar(Kind.Star, loc)
-        val lambdaBodyEff = Type.freshVar(Kind.Bool, loc)
+        val lambdaBodyType = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
+        val lambdaBodyEff = Type.freshVar(Kind.Bool, loc, text = FallbackText("eff"))
         for {
           (constrs1, tpe, eff) <- visitExp(exp)
           (constrs2, tpes, effs) <- seqM(exps.map(visitExp)).map(_.unzip3)
@@ -514,56 +505,56 @@ object Typer {
         case SemanticOperator.BoolOp.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Bool, loc)
+            resultTyp <- expectTypeM(expected = Type.Bool, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.Float32Op.Neg =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Float32, loc)
+            resultTyp <- expectTypeM(expected = Type.Float32, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.Float64Op.Neg =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Float64, loc)
+            resultTyp <- expectTypeM(expected = Type.Float64, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.Int8Op.Neg | SemanticOperator.Int8Op.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Int8, loc)
+            resultTyp <- expectTypeM(expected = Type.Int8, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.Int16Op.Neg | SemanticOperator.Int16Op.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Int16, loc)
+            resultTyp <- expectTypeM(expected = Type.Int16, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.Int32Op.Neg | SemanticOperator.Int32Op.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Int32, loc)
+            resultTyp <- expectTypeM(expected = Type.Int32, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.Int64Op.Neg | SemanticOperator.Int64Op.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.Int64, loc)
+            resultTyp <- expectTypeM(expected = Type.Int64, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
         case SemanticOperator.BigIntOp.Neg | SemanticOperator.BigIntOp.Not =>
           for {
             (constrs, tpe, eff) <- visitExp(exp)
-            resultTyp <- unifyTypeM(tvar, tpe, Type.BigInt, loc)
+            resultTyp <- expectTypeM(expected = Type.BigInt, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
 
@@ -576,16 +567,20 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultType <- unifyTypeM(tvar, tpe1, tpe2, Type.Bool, loc)
+            lhs <- expectTypeM(expected = Type.Bool, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.Bool, actual = tpe2, exp2.loc)
+            resultTyp <- unifyTypeM(tvar, Type.Bool, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
-          } yield (constrs1 ++ constrs2, resultType, resultEff)
+          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
         case SemanticOperator.Float32Op.Add | SemanticOperator.Float32Op.Sub | SemanticOperator.Float32Op.Mul | SemanticOperator.Float32Op.Div
              | SemanticOperator.Float32Op.Exp =>
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, Type.Float32, tpe1, tpe2, loc)
+            lhs <- expectTypeM(expected = Type.Float32, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.Float32, actual = tpe2, exp2.loc)
+            resultTyp <- unifyTypeM(tvar, Type.Float32, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -594,7 +589,9 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, Type.Float64, tpe1, tpe2, loc)
+            lhs <- expectTypeM(expected = Type.Float64, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.Float64, actual = tpe2, exp2.loc)
+            resultTyp <- unifyTypeM(tvar, Type.Float64, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -604,7 +601,9 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, Type.Int8, tpe1, tpe2, loc)
+            lhs <- expectTypeM(expected = Type.Int8, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.Int8, actual = tpe2, exp2.loc)
+            resultTyp <- unifyTypeM(tvar, Type.Int8, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -614,7 +613,9 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, Type.Int16, tpe1, tpe2, loc)
+            lhs <- expectTypeM(expected = Type.Int16, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.Int16, actual = tpe2, exp2.loc)
+            resultTyp <- unifyTypeM(tvar, Type.Int16, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -624,7 +625,9 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, Type.Int32, tpe1, tpe2, loc)
+            lhs <- expectTypeM(expected = Type.Int32, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+            resultTyp <- unifyTypeM(tvar, Type.Int32, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -634,7 +637,9 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, Type.Int64, tpe1, tpe2, loc)
+            lhs <- expectTypeM(expected = Type.Int64, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.Int64, actual = tpe2, exp2.loc)
+            resultTyp <- unifyTypeM(tvar, Type.Int64, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -644,7 +649,9 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, Type.BigInt, tpe1, tpe2, loc)
+            lhs <- expectTypeM(expected = Type.BigInt, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.BigInt, actual = tpe2, exp2.loc)
+            resultTyp <- unifyTypeM(tvar, Type.BigInt, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -656,10 +663,10 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            lhsType <- unifyTypeM(tvar, tpe1, loc)
-            rhsType <- unifyTypeM(tpe2, Type.Int32, loc)
+            lhs <- unifyTypeM(tvar, tpe1, loc)
+            rhs <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
-          } yield (constrs1 ++ constrs2, lhsType, resultEff)
+          } yield (constrs1 ++ constrs2, lhs, resultEff)
 
         case SemanticOperator.BoolOp.Eq | SemanticOperator.BoolOp.Neq
              | SemanticOperator.CharOp.Eq | SemanticOperator.CharOp.Neq
@@ -699,7 +706,9 @@ object Typer {
           for {
             (constrs1, tpe1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, eff2) <- visitExp(exp2)
-            resultTyp <- unifyTypeM(tvar, Type.Str, tpe1, tpe2, loc)
+            lhs <- expectTypeM(expected = Type.Str, actual = tpe1, exp1.loc)
+            rhs <- expectTypeM(expected = Type.Str, actual = tpe2, exp2.loc)
+            resultTyp <- unifyTypeM(tvar, Type.Str, loc)
             resultEff = Type.mkAnd(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -711,7 +720,7 @@ object Typer {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           (constrs3, tpe3, eff3) <- visitExp(exp3)
-          condType <- unifyTypeM(Type.Bool, tpe1, loc)
+          condType <- expectTypeM(expected = Type.Bool, actual = tpe1, exp1.loc)
           resultTyp <- unifyTypeM(tpe2, tpe3, loc)
           resultEff = Type.mkAnd(eff1, eff2, eff3, loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
@@ -725,19 +734,21 @@ object Typer {
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
+        // Note: The call to unify on sym.tvar occurs immediately after we have inferred the type of exp1.
+        // This ensures that uses of sym inside exp2 are type checked according to this type.
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
-          (constrs2, tpe2, eff2) <- visitExp(exp2)
           boundVar <- unifyTypeM(sym.tvar.ascribedWith(Kind.Star), tpe1, loc)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
           resultTyp = tpe2
           resultEff = Type.mkAnd(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.LetRec(sym, mod, exp1, exp2, loc) =>
         // Ensure that `exp1` is a lambda.
-        val a = Type.freshVar(Kind.Star, loc)
-        val b = Type.freshVar(Kind.Star, loc)
-        val ef = Type.freshVar(Kind.Bool, loc)
+        val a = Type.freshVar(Kind.Star, loc, text = FallbackText("arg"))
+        val b = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
+        val ef = Type.freshVar(Kind.Bool, loc, text = FallbackText("eff"))
         val expectedType = Type.mkArrowWithEffect(a, ef, b, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
@@ -748,12 +759,10 @@ object Typer {
           resultEff = Type.mkAnd(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.Region(tpe, loc) =>
+      case KindedAst.Expression.Region(tpe, _) =>
         liftM(Nil, tpe, Type.Pure)
 
-      case KindedAst.Expression.Scope(sym, exp, evar, loc) =>
-        // Introduce a rigid variable for the region of `exp`.
-        val regionVar = Type.freshVar(Kind.Bool, sym.loc, Rigidity.Rigid, Some(sym.text))
+      case KindedAst.Expression.Scope(sym, regionVar, exp, evar, loc) =>
         for {
           _ <- unifyTypeM(sym.tvar.ascribedWith(Kind.Star), Type.mkRegion(regionVar, loc), loc)
           (constrs, tpe, eff) <- visitExp(exp)
@@ -788,7 +797,7 @@ object Typer {
           */
         def visitMatchExps(exps: List[KindedAst.Expression], isAbsentVars: List[Type.KindedVar], isPresentVars: List[Type.KindedVar]): InferMonad[(List[List[Ast.TypeConstraint]], List[Type], List[Type])] = {
           def visitMatchExp(exp: KindedAst.Expression, isAbsentVar: Type.KindedVar, isPresentVar: Type.KindedVar): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
-            val freshElmVar = Type.freshVar(Kind.Star, loc)
+            val freshElmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
             for {
               (constrs, tpe, eff) <- visitExp(exp)
               _ <- unifyTypeM(tpe, Type.mkChoice(freshElmVar, isAbsentVar, isPresentVar, loc), loc)
@@ -822,9 +831,9 @@ object Typer {
           def visitRuleBody(r: KindedAst.ChoiceRule, resultType: Type): InferMonad[(Type, Type, Type)] = r match {
             case KindedAst.ChoiceRule(r, exp0) =>
               val cond = mkOverApprox(isAbsentVars, isPresentVars, r)
-              val innerType = Type.freshVar(Kind.Star, exp0.loc)
-              val isAbsentVar = Type.freshVar(Kind.Bool, exp0.loc)
-              val isPresentVar = Type.freshVar(Kind.Bool, exp0.loc)
+              val innerType = Type.freshVar(Kind.Star, exp0.loc, text = FallbackText("inner"))
+              val isAbsentVar = Type.freshVar(Kind.Bool, exp0.loc, text = FallbackText("isAbs"))
+              val isPresentVar = Type.freshVar(Kind.Bool, exp0.loc, text = FallbackText("isPres"))
               for {
                 choiceType <- unifyTypeM(resultType, Type.mkChoice(innerType, isAbsentVar, isPresentVar, loc), loc)
               } yield (Type.mkAnd(cond, isAbsentVar, loc), Type.mkAnd(cond, isPresentVar, loc), innerType)
@@ -921,12 +930,12 @@ object Typer {
         //
         // Introduce an isAbsent variable for each match expression in `exps`.
         //
-        val isAbsentVars = exps0.map(exp0 => Type.freshVar(Kind.Bool, exp0.loc))
+        val isAbsentVars = exps0.map(exp0 => Type.freshVar(Kind.Bool, exp0.loc, text = FallbackText("isAbs")))
 
         //
         // Introduce an isPresent variable for each math expression in `exps`.
         //
-        val isPresentVars = exps0.map(exp0 => Type.freshVar(Kind.Bool, exp0.loc))
+        val isPresentVars = exps0.map(exp0 => Type.freshVar(Kind.Bool, exp0.loc, text = FallbackText("isPres")))
 
         //
         // Extract the choice pattern match matrix.
@@ -963,9 +972,9 @@ object Typer {
           //
           if (tag.name == "Absent") {
             // Case 1.1: Absent Tag.
-            val elmVar = Type.freshVar(Kind.Star, loc)
+            val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
             val isAbsent = Type.True
-            val isPresent = Type.freshVar(Kind.Bool, loc)
+            val isPresent = Type.freshVar(Kind.Bool, loc, text = FallbackText("isPres"))
             for {
               resultTyp <- unifyTypeM(tvar, Type.mkChoice(elmVar, isAbsent, isPresent, loc), loc)
               resultEff = Type.Pure
@@ -973,7 +982,7 @@ object Typer {
           }
           else if (tag.name == "Present") {
             // Case 1.2: Present Tag.
-            val isAbsent = Type.freshVar(Kind.Bool, loc)
+            val isAbsent = Type.freshVar(Kind.Bool, loc, text = FallbackText("isAbs"))
             val isPresent = Type.True
             for {
               (constrs, tpe, eff) <- visitExp(exp)
@@ -1016,14 +1025,8 @@ object Typer {
           resultEff = Type.mkAnd(elementEffects, loc)
         } yield (elementConstrs.flatten, Type.mkTuple(elementTypes, loc), resultEff)
 
-      case KindedAst.Expression.RecordEmpty(tvar, loc) =>
-        //
-        //  ---------
-        //  { } : { }
-        //
-        for {
-          resultType <- unifyTypeM(tvar, Type.mkRecord(Type.RecordRowEmpty, loc), loc)
-        } yield (List.empty, resultType, Type.Pure)
+      case KindedAst.Expression.RecordEmpty(loc) =>
+        liftM(List.empty, Type.mkRecord(Type.RecordRowEmpty, loc), Type.Pure)
 
       case KindedAst.Expression.RecordSelect(exp, field, tvar, loc) =>
         //
@@ -1031,7 +1034,7 @@ object Typer {
         // -------------------------
         //       r.field : tpe
         //
-        val freshRowVar = Type.freshVar(Kind.RecordRow, loc)
+        val freshRowVar = Type.freshVar(Kind.RecordRow, loc, text = FallbackText("row"))
         val expectedRowType = Type.mkRecordRowExtend(field, tvar, freshRowVar, loc)
         val expectedRecordType = Type.mkRecord(expectedRowType, loc)
         for {
@@ -1046,7 +1049,7 @@ object Typer {
         // ---------------------------------------------
         // { field = exp1 | exp2 } : { field  :: tpe | r }
         //
-        val restRow = Type.freshVar(Kind.RecordRow, loc)
+        val restRow = Type.freshVar(Kind.RecordRow, loc, text = FallbackText("row"))
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -1061,8 +1064,8 @@ object Typer {
         // -------------------------
         // { -field | exp } : {| r }
         //
-        val freshFieldType = Type.freshVar(Kind.Star, loc)
-        val freshRowVar = Type.freshVar(Kind.RecordRow, loc)
+        val freshFieldType = Type.freshVar(Kind.Star, loc, text = FallbackText("field"))
+        val freshRowVar = Type.freshVar(Kind.RecordRow, loc, text = FallbackText("row"))
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           recordType <- unifyTypeM(tpe, Type.mkRecord(Type.mkRecordRowExtend(field, freshFieldType, freshRowVar, loc), loc), loc)
@@ -1070,129 +1073,125 @@ object Typer {
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.ArrayLit(elms, tvar, loc) =>
-        //
-        //  e1 : t ... en: t
-        //  --------------------------------
-        //  [e1,..., en] : Array[t] @ Impure
-        //
-        if (elms.isEmpty) {
-          val elmTypeVar = Type.freshVar(Kind.Star, loc)
-          for {
-            resultTyp <- unifyTypeM(tvar, Type.mkArray(elmTypeVar, loc), loc)
-            resultEff = Type.Impure
-            _ <- unbindVar(elmTypeVar)
-          } yield (List.empty, resultTyp, resultEff)
-        } else {
-          for {
-            (constrs, elementTypes, _) <- seqM(elms.map(visitExp)).map(_.unzip3)
-            elementType <- unifyTypeM(elementTypes, loc)
-            resultTyp <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
-            resultEff = Type.Impure
-          } yield (constrs.flatten, resultTyp, resultEff)
-        }
-
-      case KindedAst.Expression.ArrayNew(exp1, exp2, tvar, loc) =>
-        //
-        //  exp1 : t @ _    exp2: Int @ _
-        //  ---------------------------------
-        //  [exp1 ; exp2] : Array[t] @ Impure
-        //
+      case KindedAst.Expression.ArrayLit(exps, exp, tvar, evar, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
+        val regionType = Type.mkRegion(regionVar, loc)
         for {
-          (constrs1, tpe1, _) <- visitExp(exp1)
-          (constrs2, tpe2, _) <- visitExp(exp2)
-          lengthType <- unifyTypeM(tpe2, Type.Int32, loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkArray(tpe1, loc), loc)
-          resultEff = Type.Impure
-        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+          (constrs1, elmTypes, eff1) <- seqM(exps.map(visitExp)).map(_.unzip3)
+          (constrs2, tpe2, eff2) <- visitExp(exp)
+          _ <- expectTypeM(expected = regionType, actual = tpe2, loc)
+          elmTyp <- unifyTypeAllowEmptyM(elmTypes, Kind.Star, loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkScopedArray(elmTyp, regionVar, loc), loc)
+          resultEff <- unifyTypeM(evar, Type.mkAnd(Type.mkAnd(eff1, loc), eff2, regionVar, loc), loc)
+        } yield (constrs1.flatten ++ constrs2, resultTyp, resultEff)
 
-      case KindedAst.Expression.ArrayLength(exp, loc) =>
-        val elmVar = Type.freshVar(Kind.Star, loc)
-        val regionVar = Type.freshVar(Kind.Bool, loc)
-        for {
-          (constrs, tpe, eff) <- visitExp(exp)
-          _ <- unifyTypeM(tpe, Type.mkScopedArray(elmVar, regionVar, loc), loc)
-          resultEff = Type.Pure
-          _ <- unbindVar(elmVar)
-          _ <- unbindVar(regionVar)
-        } yield (constrs, Type.Int32, resultEff)
-
-      case KindedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+      case KindedAst.Expression.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
+        val regionType = Type.mkRegion(regionVar, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          arrayType <- unifyTypeM(tpe1, Type.mkScopedArray(tvar, regionVar, loc), loc)
-          indexType <- unifyTypeM(tpe2, Type.Int32, loc)
+          (constrs3, tpe3, eff3) <- visitExp(exp3)
+          _ <- expectTypeM(expected = regionType, actual = tpe3, loc)
+          lenType <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkScopedArray(tpe1, regionVar, loc), loc)
+          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, eff3, regionVar, loc), loc)
+        } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
+
+      case KindedAst.Expression.ArrayLength(exp, loc) =>
+        val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
+        for {
+          (constrs, tpe, eff) <- visitExp(exp)
+          _ <- expectTypeM(Type.mkScopedArray(elmVar, regionVar, loc), tpe, exp.loc)
+          resultTyp = Type.Int32
+          resultEff = Type.Pure
+          _ <- unbindVar(elmVar)
+          _ <- unbindVar(regionVar)
+        } yield (constrs, resultTyp, resultEff)
+
+      case KindedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
+        for {
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          arrayType <- expectTypeM(expected = Type.mkScopedArray(tvar, regionVar, loc), actual = tpe1, exp1.loc)
+          indexType <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
           resultEff = Type.mkAnd(regionVar, eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, tvar, resultEff)
 
       case KindedAst.Expression.ArrayStore(exp1, exp2, exp3, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
+        val arrayType = Type.mkScopedArray(elmVar, regionVar, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           (constrs3, tpe3, eff3) <- visitExp(exp3)
-          arrayType <- unifyTypeM(tpe1, Type.mkScopedArray(tpe3, regionVar, loc), loc)
-          indexType <- unifyTypeM(tpe2, Type.Int32, loc)
+          _ <- expectTypeM(expected = arrayType, actual = tpe1, exp1.loc)
+          _ <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+          _ <- expectTypeM(expected = elmVar, actual = tpe3, exp3.loc)
+          resultTyp = Type.Unit
           resultEff = Type.mkAnd(List(regionVar, eff1, eff2, eff3), loc)
-        } yield (constrs1 ++ constrs2 ++ constrs3, Type.Unit, resultEff)
+        } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
       case KindedAst.Expression.ArraySlice(exp1, exp2, exp3, loc) =>
-        val elmVar = Type.freshVar(Kind.Star, loc)
-        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
+        val arrayType = Type.mkScopedArray(elmVar, regionVar, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
           (constrs3, tpe3, eff3) <- visitExp(exp3)
-          fstIndexType <- unifyTypeM(tpe2, Type.Int32, loc)
-          lstIndexType <- unifyTypeM(tpe3, Type.Int32, loc)
-          resultTyp <- unifyTypeM(tpe1, Type.mkScopedArray(elmVar, regionVar, loc), loc)
+          _ <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+          _ <- expectTypeM(expected = Type.Int32, actual = tpe3, exp3.loc)
+          resultTyp <- expectTypeM(expected = arrayType, actual = tpe1, exp1.loc)
           resultEff = Type.mkAnd(List(regionVar, eff1, eff2, eff3), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultEff)
 
       case KindedAst.Expression.Ref(exp1, exp2, tvar, evar, loc) =>
-        val regionVar = Type.freshVar(Kind.Bool, loc, Rigidity.Flexible, Some("l"))
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
+        val regionType = Type.mkRegion(regionVar, loc)
         for {
-          (constrs1, elmType, eff1) <- visitExp(exp1)
-          (constrs2, regionType, eff2) <- visitExp(exp2)
-          _ <- unifyTypeM(regionType, Type.mkRegion(regionVar, loc), loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(elmType, regionVar, loc), loc)
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, eff2) <- visitExp(exp2)
+          _ <- unifyTypeM(tpe2, regionType, loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkScopedRef(tpe1, regionVar, loc), loc)
           resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, regionVar, loc), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.Deref(exp, tvar, evar, loc) =>
-        // Introduce a fresh type variable for element type.
-        val elmTypeVar = Type.freshVar(Kind.Star, loc, Rigidity.Flexible, Some("t"))
+        val elmVar = Type.freshVar(Kind.Star, loc, Rigidity.Flexible, text = FallbackText("elm"))
+        val regionVar = Type.freshVar(Kind.Bool, loc, Rigidity.Flexible, text = FallbackText("region"))
+        val refType = Type.mkScopedRef(elmVar, regionVar, loc)
 
-        // Introduce a flexible variable for the region variable.
-        // This variable will become unified with the rigid variable.
-        val regionVar = Type.freshVar(Kind.Bool, loc, Rigidity.Flexible, Some("l"))
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          refType <- unifyTypeM(tpe, Type.mkScopedRef(elmTypeVar, regionVar, loc), loc)
-          resultTyp <- unifyTypeM(tvar, elmTypeVar, loc)
+          _ <- expectTypeM(expected = refType, actual = tpe, exp.loc)
+          resultTyp <- unifyTypeM(tvar, elmVar, loc)
           resultEff <- unifyTypeM(evar, Type.mkAnd(eff, regionVar, loc), loc)
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.Assign(exp1, exp2, evar, loc) =>
-        // Introduce a flexible variable for the lifetime.
-        // This variable will become unified with the rigid variable.
-        val lifetimeVar = Type.freshVar(Kind.Bool, loc, Rigidity.Flexible, Some("l"))
+        val elmVar = Type.freshVar(Kind.Star, loc, Rigidity.Flexible, text = FallbackText("elm"))
+        val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
+        val refType = Type.mkScopedRef(elmVar, regionVar, loc)
+
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
-          refType <- unifyTypeM(tpe1, Type.mkScopedRef(tpe2, lifetimeVar, loc), loc)
+          _ <- expectTypeM(expected = refType, actual = tpe1, exp1.loc)
+          _ <- expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
           resultTyp = Type.Unit
-          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1 :: eff2 :: lifetimeVar :: Nil, loc), loc)
+          resultEff <- unifyTypeM(evar, Type.mkAnd(eff1, eff2, regionVar, loc), loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.Ascribe(exp, expectedTyp, expectedEff, tvar, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
         for {
           (constrs, actualTyp, actualEff) <- visitExp(exp)
-          resultTyp <- unifyTypeM(tvar, actualTyp, expectedTyp.getOrElse(tvar), loc)
-          resultEff <- unifyBoolM(actualEff, expectedEff.getOrElse(Type.freshVar(Kind.Bool, loc)), loc)
+          resultTyp <- expectTypeM(expected = expectedTyp.getOrElse(Type.freshVar(Kind.Star, loc, text = FallbackText("tpe"))), actual = actualTyp, bind = tvar, loc)
+          resultEff <- expectTypeM(expected = expectedEff.getOrElse(Type.freshVar(Kind.Bool, loc, text = FallbackText("eff"))), actual = actualEff, loc)
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.Cast(exp, declaredTyp, declaredEff, tvar, loc) =>
@@ -1248,23 +1247,23 @@ object Typer {
         val fieldType = getFlixType(field.getType)
         val classType = getFlixType(field.getDeclaringClass)
         for {
-          (baseConstrs, baseTyp, _) <- visitExp(exp)
-          objectTyp <- unifyTypeM(baseTyp, classType, loc)
+          (constrs, tpe, _) <- visitExp(exp)
+          objectTyp <- expectTypeM(expected = classType, actual = tpe, exp.loc)
           resultTyp = fieldType
           resultEff = Type.Impure
-        } yield (baseConstrs, resultTyp, resultEff)
+        } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.PutField(field, exp1, exp2, loc) =>
         val fieldType = getFlixType(field.getType)
         val classType = getFlixType(field.getDeclaringClass)
         for {
-          (baseConstrs, baseTyp, _) <- visitExp(exp1)
-          (valueConstrs, valueType, _) <- visitExp(exp2)
-          objectTyp <- unifyTypeM(baseTyp, classType, loc)
-          valueTyp <- unifyTypeM(valueType, fieldType, loc)
+          (constrs1, tpe1, _) <- visitExp(exp1)
+          (constrs2, tpe2, _) <- visitExp(exp2)
+          _ <- expectTypeM(expected = classType, actual = tpe1, exp1.loc)
+          _ <- expectTypeM(expected = fieldType, actual = tpe2, exp2.loc)
           resultTyp = Type.Unit
           resultEff = Type.Impure
-        } yield (baseConstrs ++ valueConstrs, resultTyp, resultEff)
+        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expression.GetStaticField(field, loc) =>
         val fieldType = getFlixType(field.getType)
@@ -1275,38 +1274,40 @@ object Typer {
       case KindedAst.Expression.PutStaticField(field, exp, loc) =>
         for {
           (valueConstrs, valueTyp, _) <- visitExp(exp)
-          fieldTyp <- unifyTypeM(getFlixType(field.getType), valueTyp, loc)
+          fieldTyp <- expectTypeM(expected = getFlixType(field.getType), actual = valueTyp, exp.loc)
           resultTyp = Type.Unit
           resultEff = Type.Impure
         } yield (valueConstrs, resultTyp, resultEff)
 
       case KindedAst.Expression.NewChannel(exp, declaredType, loc) =>
-        //
-        //  exp: Int @ _
-        //  ---------------------------------
-        //  channel exp : Channel[t] @ Impure
-        //
         for {
           (constrs, tpe, _) <- visitExp(exp)
-          lengthType <- unifyTypeM(tpe, Type.Int32, loc)
+          _ <- expectTypeM(expected = Type.Int32, actual = tpe, exp.loc)
           resultTyp <- liftM(Type.mkChannel(declaredType, loc))
           resultEff = Type.Impure
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.GetChannel(exp, tvar, loc) =>
-        val elementType = Type.freshVar(Kind.Star, loc)
+        val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
+        val channelType = Type.mkChannel(elmVar, loc)
+
         for {
           (constrs, tpe, _) <- visitExp(exp)
-          channelType <- unifyTypeM(tpe, Type.mkChannel(elementType, loc), loc)
-          resultTyp <- unifyTypeM(tvar, elementType, loc)
+          _ <- expectTypeM(expected = channelType, actual = tpe, exp.loc)
+          resultTyp <- unifyTypeM(tvar, elmVar, loc)
           resultEff = Type.Impure
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
+        val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
+        val channelType = Type.mkChannel(elmVar, loc)
+
         for {
           (constrs1, tpe1, _) <- visitExp(exp1)
           (constrs2, tpe2, _) <- visitExp(exp2)
-          resultTyp <- unifyTypeM(tvar, tpe1, Type.mkChannel(tpe2, loc), loc)
+          _ <- expectTypeM(expected = channelType, actual = tpe1, exp1.loc)
+          _ <- expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
+          resultTyp <- unifyTypeM(tvar, channelType, loc)
           resultEff = Type.Impure
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -1332,7 +1333,7 @@ object Typer {
           */
         def inferDefaultRule(exp0: Option[KindedAst.Expression]): InferMonad[(List[Ast.TypeConstraint], Type, Type)] =
           exp0 match {
-            case None => liftM(Nil, Type.freshVar(Kind.Star, loc), Type.Pure)
+            case None => liftM(Nil, Type.freshVar(Kind.Star, loc, text = FallbackText("default")), Type.Pure)
             case Some(exp) => visitExp(exp)
           }
 
@@ -1352,26 +1353,16 @@ object Typer {
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.Lazy(exp, loc) =>
-        //
-        //  exp: t & Pure
-        //  -------------------------
-        //  lazy exp : Lazy[t] @ Pure
-        //
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           resultTyp = Type.mkLazy(tpe, loc)
-          resultEff <- unifyTypeM(Type.Pure, eff, loc)
+          resultEff <- expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expression.Force(exp, tvar, loc) =>
-        //
-        //  exp: Lazy[t] @ e
-        //  -------------------------
-        //  force exp : t @ e
-        //
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          lazyTyp <- unifyTypeM(tpe, Type.mkLazy(tvar, loc), loc)
+          lazyTyp <- expectTypeM(expected = Type.mkLazy(tvar, loc), actual = tpe, exp.loc)
           resultTyp = tvar
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
@@ -1414,9 +1405,9 @@ object Typer {
         //  -------------------------------------------
         //  project P exp2 : #{ P : a | c }
         //
-        val freshPredicateTypeVar = Type.freshVar(Kind.Predicate, loc)
-        val freshRestSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc)
-        val freshResultSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc)
+        val freshPredicateTypeVar = Type.freshVar(Kind.Predicate, loc, text = FallbackText("pred"))
+        val freshRestSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row"))
+        val freshResultSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("result"))
 
         for {
           (constrs, tpe, eff) <- visitExp(exp)
@@ -1431,10 +1422,9 @@ object Typer {
         //  -------------------------------------------
         //  project exp into A: #{A(freshElmType) | freshRestSchemaType}
         //
-        val freshTypeConstructorVar = Type.freshVar(Kind.Star ->: Kind.Star, loc)
-        val freshElmTypeVar = Type.freshVar(Kind.Star, loc)
-        val freshPredicateTypeVar = Type.freshVar(Kind.Predicate, loc)
-        val freshRestSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc)
+        val freshTypeConstructorVar = Type.freshVar(Kind.Star ->: Kind.Star, loc, text = FallbackText("tycon"))
+        val freshElmTypeVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
+        val freshRestSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row"))
 
         // Require Boxable and Foldable instances.
         val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
@@ -1456,9 +1446,9 @@ object Typer {
         //  --------------------------------------------------------------------
         //  FixpointQuery pred, exp1, exp2 : Array[freshTupleVar]
         //
-        val freshRelOrLat = Type.freshVar(Kind.Star ->: Kind.Predicate, loc)
-        val freshTupleVar = Type.freshVar(Kind.Star, loc)
-        val freshRestSchemaVar = Type.freshVar(Kind.SchemaRow, loc)
+        val freshRelOrLat = Type.freshVar(Kind.Star ->: Kind.Predicate, loc, text = FallbackText("pred"))
+        val freshTupleVar = Type.freshVar(Kind.Star, loc, text = FallbackText("tuple"))
+        val freshRestSchemaVar = Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row"))
         val expectedSchemaType = Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.Apply(freshRelOrLat, freshTupleVar, loc), freshRestSchemaVar, loc), loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
@@ -1487,9 +1477,9 @@ object Typer {
         }
 
       case KindedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
-        val a = Type.freshVar(Kind.Star, loc)
-        val b = Type.freshVar(Kind.Star, loc)
-        val ef = Type.freshVar(Kind.Bool, loc)
+        val a = Type.freshVar(Kind.Star, loc, text = FallbackText("arg"))
+        val b = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
+        val ef = Type.freshVar(Kind.Bool, loc, text = FallbackText("eff"))
         val polyLambdaType = Type.mkArrowWithEffect(a, ef, b, loc)
         val pureLambdaType = Type.mkPureArrow(a, b, loc)
         for {
@@ -1631,11 +1621,11 @@ object Typer {
       case KindedAst.Expression.Region(tpe, loc) =>
         TypedAst.Expression.Unit(loc)
 
-      case KindedAst.Expression.Scope(sym, exp, evar, loc) =>
+      case KindedAst.Expression.Scope(sym, regionVar, exp, evar, loc) =>
         val e = visitExp(exp, subst0)
         val tpe = e.tpe
         val eff = subst0(evar)
-        TypedAst.Expression.Scope(sym, e, tpe, eff, loc)
+        TypedAst.Expression.Scope(sym, regionVar, e, tpe, eff, loc)
 
       case KindedAst.Expression.Match(matchExp, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)
@@ -1678,8 +1668,8 @@ object Typer {
         val eff = Type.mkAnd(es.map(_.eff), loc)
         TypedAst.Expression.Tuple(es, tpe, eff, loc)
 
-      case KindedAst.Expression.RecordEmpty(tvar, loc) =>
-        TypedAst.Expression.RecordEmpty(subst0(tvar), loc)
+      case KindedAst.Expression.RecordEmpty(loc) =>
+        TypedAst.Expression.RecordEmpty(Type.mkRecord(Type.RecordRowEmpty, loc), loc)
 
       case KindedAst.Expression.RecordSelect(exp, field, tvar, loc) =>
         val e = visitExp(exp, subst0)
@@ -1697,16 +1687,20 @@ object Typer {
         val eff = r.eff
         TypedAst.Expression.RecordRestrict(field, r, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.ArrayLit(elms, tvar, loc) =>
-        val es = elms.map(e => visitExp(e, subst0))
-        val eff = Type.Impure
-        TypedAst.Expression.ArrayLit(es, subst0(tvar), eff, loc)
+      case KindedAst.Expression.ArrayLit(exps, exp, tvar, evar, loc) =>
+        val es = exps.map(visitExp(_, subst0))
+        val e = visitExp(exp, subst0)
+        val tpe = subst0(tvar)
+        val eff = subst0(evar)
+        TypedAst.Expression.ArrayLit(es, e, tpe, eff, loc)
 
-      case KindedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
-        val e = visitExp(elm, subst0)
-        val ln = visitExp(len, subst0)
-        val eff = Type.Impure
-        TypedAst.Expression.ArrayNew(e, ln, subst0(tvar), eff, loc)
+      case KindedAst.Expression.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        val e3 = visitExp(exp3, subst0)
+        val tpe = subst0(tvar)
+        val eff = subst0(evar)
+        TypedAst.Expression.ArrayNew(e1, e2, e3, tpe, eff, loc)
 
       case KindedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
         val e1 = visitExp(exp1, subst0)
@@ -2103,7 +2097,7 @@ object Typer {
   private def inferHeadPredicate(head: KindedAst.Predicate.Head, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = head match {
     case KindedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
       // Adds additional type constraints if the denotation is a lattice.
-      val restRow = Type.freshVar(Kind.SchemaRow, loc)
+      val restRow = Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row"))
       for {
         (termConstrs, termTypes, termEffects) <- seqM(terms.map(inferExp(_, root))).map(_.unzip3)
         pureTermEffects <- unifyBoolM(Type.Pure, Type.mkAnd(termEffects, loc), loc)
@@ -2126,7 +2120,7 @@ object Typer {
     */
   private def inferBodyPredicate(body0: KindedAst.Predicate.Body, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = body0 match {
     case KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, tvar, loc) =>
-      val restRow = Type.freshVar(Kind.SchemaRow, loc)
+      val restRow = Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row"))
       for {
         termTypes <- seqM(terms.map(inferPattern(_, root)))
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
@@ -2232,7 +2226,7 @@ object Typer {
     val declaredTypes = params.map(_.tpe)
     (params zip declaredTypes).foldLeft(Substitution.empty) {
       case (macc, (KindedAst.FormalParam(sym, _, _, _), declaredType)) =>
-        macc ++ Substitution.singleton(sym.tvar.ascribedWith(Kind.Star), declaredType)
+        macc ++ Substitution.singleton(sym.tvar.sym.ascribedWith(Kind.Star), declaredType)
     }
   }
 
@@ -2240,7 +2234,7 @@ object Typer {
     * Returns the typed version of the given type parameters `tparams0`.
     */
   private def getTypeParams(tparams0: List[KindedAst.TypeParam]): List[TypedAst.TypeParam] = tparams0.map {
-    case KindedAst.TypeParam(name, tpe, loc) => TypedAst.TypeParam(name, tpe, loc)
+    case KindedAst.TypeParam(name, sym, loc) => TypedAst.TypeParam(name, sym, loc)
   }
 
   /**
@@ -2253,7 +2247,7 @@ object Typer {
   /**
     * Returns an open schema type.
     */
-  private def mkAnySchemaRowType(loc: SourceLocation)(implicit flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
+  private def mkAnySchemaRowType(loc: SourceLocation)(implicit flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row"))
 
   /**
     * Returns the Flix Type of a Java Class
@@ -2322,5 +2316,4 @@ object Typer {
     }
     t.write(new PrintWriter(System.out))
   }
-
 }

@@ -1012,31 +1012,28 @@ def foldLeft04(): Bool = List.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, 1 :
 // foldRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRight01(): Bool = List.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Nil) == 100
+def foldRight01(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Nil) == 100
 
 @test
-def foldRight02(): Bool = List.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, 1 :: Nil) == 198
+def foldRight02(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: Nil) == 198
 
 @test
-def foldRight03(): Bool = List.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
+def foldRight03(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
 
 @test
-def foldRight04(): Bool = List.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
-
-/////////////////////////////////////////////////////////////////////////////
-// foldRightLazy                                                           //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def foldRightLazy01(): Bool = List.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, Nil) == 100
+def foldRight04(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
 
 @test
-def foldRightLazy02(): Bool = List.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, 1 :: Nil) == 198
+def foldRight05(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Nil) == 100
 
 @test
-def foldRightLazy03(): Bool = List.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
+def foldRight06(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: Nil) == 198
 
 @test
-def foldRightLazy04(): Bool = List.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
+def foldRight07(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
+
+@test
+def foldRight08(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
@@ -1479,6 +1476,30 @@ def takeWhile07(): Bool = List.takeWhile(i -> i > 3, 5 :: 8 :: Nil) == 5 :: 8 ::
 @test
 def takeWhile08(): Bool = List.takeWhile(i -> i > 3, 4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) ==
                         4 :: 6 :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// splitAt                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def splitAt01(): Bool =
+    let xs = Nil: List[Int32];
+    List.splitAt(0, xs) == (Nil, Nil)
+
+@test
+def splitAt02(): Bool =
+    let xs = 1 :: 5 :: 19 :: 3 :: Nil;
+    List.splitAt(3, xs) == (1 :: 5 :: 19 :: Nil, 3 :: Nil)
+
+@test
+def splitAt03(): Bool =
+    let xs = 1 :: 5 :: 19 :: 3 :: Nil;
+    List.splitAt(-3, xs) == (Nil, xs)
+
+@test
+def splitAt04(): Bool =
+    let xs = 1 :: 5 :: 19 :: 3 :: Nil;
+    List.splitAt(5, xs) == (xs, Nil)
 
 /////////////////////////////////////////////////////////////////////////////
 // groupBy                                                                 //
@@ -2599,5 +2620,45 @@ def distinctWith09(): Bool =
     @test
     def toMutDeque05(): Bool & Impure =
         List.toMutDeque(1 :: 2 :: 3 :: Nil) |> MutDeque.toList == 1 :: 2 :: 3 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // merge                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def merge01(): Bool =
+        let l1 = Nil: List[Int32];
+        let l2 = Nil: List[Int32];
+        List.merge(l1, l2) == Nil
+
+    @test
+    def merge02(): Bool =
+        let l1 = 1 :: Nil;
+        let l2 = Nil: List[Int32];
+        List.merge(l1, l2) == 1 :: Nil
+
+    @test
+    def merge03(): Bool =
+        let l1 = 1 :: Nil;
+        let l2 = 2 :: Nil;
+        List.merge(l1, l2) == 1 :: 2 :: Nil
+
+    @test
+    def merge04(): Bool =
+        let l1 = 2 :: Nil;
+        let l2 = 1 :: Nil;
+        List.merge(l1, l2) == 1 :: 2 :: Nil
+
+    @test
+    def merge05(): Bool =
+        let l1 = 1 :: 4 :: 8 :: 10 :: Nil;
+        let l2 = 2 :: 3 :: 8 :: 9 :: Nil;
+        List.merge(l1, l2) == 1 :: 2 :: 3 :: 4 :: 8 :: 8 :: 9 :: 10 :: Nil
+
+    @test
+    def merge06(): Bool =
+        let l1 = 4 :: 5 :: Nil;
+        let l2 = 2 :: 3 :: 6 :: 7 :: Nil;
+        List.merge(l1, l2) == 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: Nil
 
 }

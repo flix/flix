@@ -103,7 +103,7 @@ object Safety {
     case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.Scope(_, exp, _, _, _) =>
+    case Expression.Scope(_, _, exp, _, _, _) =>
       visitExp(exp)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -137,11 +137,11 @@ object Safety {
     case Expression.RecordRestrict(_, rest, _, _, _) =>
       visitExp(rest)
 
-    case Expression.ArrayLit(elms, _, _, _) =>
-      elms.flatMap(visitExp)
+    case Expression.ArrayLit(elms, exp, _, _, _) =>
+      elms.flatMap(visitExp) ::: visitExp(exp)
 
-    case Expression.ArrayNew(elm, _, _, _, _) =>
-      visitExp(elm)
+    case Expression.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
 
     case Expression.ArrayLoad(base, index, _, _, _) =>
       visitExp(base) ::: visitExp(index)

@@ -514,13 +514,6 @@ namespace Set {
             s)
 
     ///
-    /// Returns `s` as a mutable set.
-    ///
-    @Time(1) @Space(1)
-    pub def toMutSet(s: Set[a]): MutSet[a] & Impure =
-        MutSet(ref s)
-
-    ///
     /// Returns the set `s` as a list.
     ///
     @Time(size(s)) @Space(size(s))
@@ -548,6 +541,11 @@ namespace Set {
     ///
     pub def toMapWith(f: a -> b, s: Set[a]): Map[a, b] with Order[a] =
         Set.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
+    ///
+    /// Returns the set `s` as a `MutSet`.
+    ///
+    pub def toMutSet(s: Set[a]): MutSet[a, Impure] & Impure =
+        MutSet(ref s)
 
     ///
     /// Applies `f` to every element of `s`.

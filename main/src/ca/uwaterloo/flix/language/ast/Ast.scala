@@ -256,10 +256,16 @@ object Ast {
     * A sequence of modifiers.
     */
   case class Modifiers(mod: List[Modifier]) {
+
     /**
-      * Returns `true` if these modifiers contain the lawless modifier.
+      * Returns a new modifier sequence with `pub` added.
       */
-    def isLawless: Boolean = mod contains Modifier.Lawless
+    def asPublic: Modifiers = if (isPublic) this else Modifiers(Modifier.Public :: mod)
+
+    /**
+      * Returns `true` if these modifiers contain the lawful modifier.
+      */
+    def isLawful: Boolean = mod contains Modifier.Lawful
 
     /**
       * Returns `true` if these modifiers contain the override modifier.
@@ -291,9 +297,9 @@ object Ast {
   object Modifier {
 
     /**
-      * The lawless modifier.
+      * The lawful modifier.
       */
-    case object Lawless extends Modifier
+    case object Lawful extends Modifier
 
     /**
       * The override modifier.
@@ -314,11 +320,6 @@ object Ast {
       * The synthetic modifier.
       */
     case object Synthetic extends Modifier
-
-    /**
-      * The unlawful modifier.
-      */
-    case object Unlawful extends Modifier
 
   }
 
@@ -529,6 +530,46 @@ object Ast {
       */
     case object Constraint extends BoundBy
 
+  }
+
+  /**
+    * Represents the text of a variable.
+    */
+  sealed trait VarText {
+
+    /**
+      * A measure of precision of the text.
+      */
+    private def precision: Int = this match {
+      case VarText.Absent => 0
+      case VarText.FallbackText(_) => 1
+      case VarText.SourceText(_) => 2
+    }
+
+    /**
+      * Returns true if `this` VarText is less precise than `that` VarText.
+      *
+      * More precise text should be preferred when choosing a text to use when substituting.
+      *
+      */
+    def isStrictlyLessPreciseThan(that: VarText): Boolean = this.precision < that.precision
+  }
+
+  object VarText {
+    /**
+      * The variable has no associated text.
+      */
+    case object Absent extends VarText
+
+    /**
+      * The variable is associated with the string `s` taken directly from the source code.
+      */
+    case class SourceText(s: String) extends VarText
+
+    /**
+      * The variable is associated string `s`, used as a fallback since no source text is available.
+      */
+    case class FallbackText(s: String) extends VarText
   }
 
 }

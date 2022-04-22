@@ -78,7 +78,7 @@ object Monomorph {
       val t = s(tpe0)
 
       t.map {
-        case Type.KindedVar(_, Kind.Bool, loc, _, _) =>
+        case Type.KindedVar(sym, loc) if sym.kind == Kind.Bool =>
           // TODO: In strict mode we demand that there are no free (uninstantiated) Boolean variables.
           // TODO: In the future we need to decide what should actually happen if such variables occur.
           // TODO: In particular, it seems there are two cases.
@@ -88,8 +88,8 @@ object Monomorph {
             throw UnexpectedNonConstBool(tpe0, loc)
           else
             Type.True
-        case Type.KindedVar(_, Kind.RecordRow, _, _, _) => Type.RecordRowEmpty
-        case Type.KindedVar(_, Kind.SchemaRow, _, _, _) => Type.SchemaRowEmpty
+        case Type.KindedVar(sym, _) if sym.kind == Kind.RecordRow => Type.RecordRowEmpty
+        case Type.KindedVar(sym, _) if sym.kind == Kind.SchemaRow => Type.SchemaRowEmpty
         case _ => Type.Unit
       }
     }
@@ -423,14 +423,16 @@ object Monomorph {
         val r = visitExp(rest, env0)
         Expression.RecordRestrict(field, r, subst0(tpe), eff, loc)
 
-      case Expression.ArrayLit(elms, tpe, eff, loc) =>
-        val es = elms.map(e => visitExp(e, env0))
-        Expression.ArrayLit(es, subst0(tpe), eff, loc)
+      case Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
+        val es = exps.map(visitExp(_, env0))
+        val e = visitExp(exp, env0)
+        Expression.ArrayLit(es, e, subst0(tpe), eff, loc)
 
-      case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
-        val e = visitExp(elm, env0)
-        val ln = visitExp(len, env0)
-        Expression.ArrayNew(e, ln, subst0(tpe), eff, loc)
+      case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+        val e1 = visitExp(exp1, env0)
+        val e2 = visitExp(exp2, env0)
+        val e3 = visitExp(exp3, env0)
+        Expression.ArrayNew(e1, e2, e3, subst0(tpe), eff, loc)
 
       case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
         val b = visitExp(base, env0)
@@ -556,7 +558,7 @@ object Monomorph {
         val e = visitExp(exp, env0)
         Expression.Force(e, subst0(tpe), eff, loc)
 
-      case Expression.Scope(_, _, _, _, loc) =>
+      case Expression.Scope(_, _, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression near: ${loc.format}.")
 
       case Expression.FixpointConstraintSet(_, _, _, loc) =>
@@ -854,6 +856,10 @@ object Monomorph {
         throw ReifyTypeException(tpe, loc)
 
       case Some(tc) => tc match {
+        case TypeConstructor.Unit =>
+          val tag = Name.Tag("ReifiedUnit", loc)
+          Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
+
         case TypeConstructor.Bool =>
           val tag = Name.Tag("ReifiedBool", loc)
           Expression.Tag(sym, tag, Expression.Unit(loc), resultTpe, resultEff, loc)
@@ -920,7 +926,7 @@ object Monomorph {
     * Flix does not erase normal types, but it does erase Boolean formulas.
     */
   private def eraseType(tpe: Type)(implicit flix: Flix): Type = tpe match {
-    case Type.KindedVar(_, _, loc, _, _) =>
+    case Type.KindedVar(_, loc) =>
       if (flix.options.xstrictmono)
         throw UnexpectedNonConstBool(tpe, loc)
       else {
@@ -940,7 +946,7 @@ object Monomorph {
       val t = eraseType(tpe)
       Type.Alias(sym, as, t, loc)
 
-    case Type.UnkindedVar(_, loc, _, _) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
+    case Type.UnkindedVar(_, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
 
     case Type.Ascribe(_, _, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
   }

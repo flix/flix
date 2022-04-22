@@ -17,7 +17,7 @@
 ///
 /// A type class for partially ordered types that have a lower bound.
 ///
-pub lawless class LowerBound[a] {
+pub class LowerBound[a] {
     ///
     /// Returns the smallest value of `a`.
     ///

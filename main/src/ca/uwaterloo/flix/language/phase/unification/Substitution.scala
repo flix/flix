@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -30,10 +30,12 @@ object Substitution {
   /**
     * Returns the singleton substitution mapping the type variable `x` to `tpe`.
     */
-  def singleton(x: Type.KindedVar, tpe: Type): Substitution = {
+  def singleton(x: Symbol.TypeVarSym, tpe: Type): Substitution = {
     // Ensure that we do not add any x -> x mappings.
     tpe match {
-      case y: Type.Var if x.id == y.asKinded.id => empty
+      case y: Type.Var if x.id == y.sym.id => empty
+      case y: Type.Var if y.sym.text isStrictlyLessPreciseThan x.text => Substitution(Map(x -> y.withText(x.text)))
+      case y: Type.Var if x.text isStrictlyLessPreciseThan y.sym.text => Substitution(Map(x.withText(y.sym.text) -> y))
       case _ => Substitution(Map(x -> tpe))
     }
   }
@@ -43,7 +45,7 @@ object Substitution {
 /**
   * A substitution is a map from type variables to types.
   */
-case class Substitution(m: Map[Type.Var, Type]) {
+case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
 
   /**
     * Returns `true` if `this` is the empty substitution.
@@ -57,15 +59,7 @@ case class Substitution(m: Map[Type.Var, Type]) {
     // NB: The order of cases has been determined by code coverage analysis.
     def visit(t: Type): Type =
       t match {
-        case x: Type.Var => m.get(x) match {
-          case None => x
-          case Some(t0) => t0 match {
-            // NB: This small trick is used to propagate variable names.
-            case tr: Type.KindedVar => tr.copy(text = x.text)
-            case tr: Type.UnkindedVar => tr.copy(text = x.text)
-            case tr => tr
-          }
-        }
+        case x: Type.Var => m.getOrElse(x.sym, x)
         case Type.Cst(tc, _) => t
         case Type.Apply(t1, t2, loc) =>
           val y = visit(t2)
@@ -113,7 +107,7 @@ case class Substitution(m: Map[Type.Var, Type]) {
   /**
     * Removes the binding for the given type variable `tvar` (if it exists).
     */
-  def unbind(tvar: Type.KindedVar): Substitution = Substitution(m - tvar)
+  def unbind(tvar: Symbol.TypeVarSym): Substitution = Substitution(m - tvar)
 
   /**
     * Returns the left-biased composition of `this` substitution with `that` substitution.
@@ -148,7 +142,7 @@ case class Substitution(m: Map[Type.Var, Type]) {
 
     // NB: Use of mutability improve performance.
     import scala.collection.mutable
-    val newTypeMap = mutable.Map.empty[Type.Var, Type]
+    val newTypeMap = mutable.Map.empty[Symbol.TypeVarSym, Type]
 
     // Add all bindings in `that`. (Applying the current substitution).
     for ((x, t) <- that.m) {
@@ -163,6 +157,65 @@ case class Substitution(m: Map[Type.Var, Type]) {
     }
 
     Substitution(newTypeMap.toMap) ++ this
+  }
+
+  /**
+    * Propagates type variable *names* within a substitution.
+    *
+    * During type inference we may construct bindings such as:
+    *
+    * x -> y
+    * u -> v
+    *
+    * Here `x` may have a name ("text") but `y` may not.
+    * Conversely, `v` may have a name ("text"), but not `u`.
+    *
+    * The idea is to propagate these names across these bindings.
+    *
+    * This process does *not* have to be transitive, because the substitution
+    * (if computed by inference) should already be transitive.
+    */
+  def propagate: Substitution = {
+    ///
+    /// A map from type variables (without a name) to a string name ("text").
+    ///
+    var replacement = Map.empty[Symbol.TypeVarSym, Ast.VarText]
+
+    //
+    // Compute all bindings where there is a name to be propagated.
+    //
+    for ((tvar1, tpe) <- m) {
+      tpe match {
+        case tvar2: Type.KindedVar =>
+          (tvar1.text, tvar2.sym.text) match {
+            case (text1, text2) if text1 isStrictlyLessPreciseThan text2 =>
+              replacement = replacement + (tvar1 -> text2)
+            case (text1, text2) if text2 isStrictlyLessPreciseThan text1 =>
+              replacement = replacement + (tvar2.sym -> text1)
+            case _ => // nop
+          }
+        case _ => // nop
+      }
+    }
+
+    /**
+      * A utility function to replace the text in `tvar` using the computed map.
+      */
+    def replace(tvar: Type.KindedVar): Type = replacement.get(tvar.sym) match {
+      case None => tvar
+      case Some(text) => tvar.withText(text)
+    }
+
+    ///
+    /// Computes the new substitution. It is equivalent to the old one, but with updated names.
+    ///
+    val m2 = m.foldLeft(Map.empty[Symbol.TypeVarSym, Type]) {
+      case (acc, (tvar, tpe)) =>
+        val t = tpe.map(replace)
+        acc + (tvar -> t)
+    }
+
+    Substitution(m2)
   }
 
 }

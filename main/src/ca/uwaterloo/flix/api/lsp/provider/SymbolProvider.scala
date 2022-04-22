@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.{DocumentSymbol, Location, Range, SymbolInformation, SymbolKind}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.debug.FormatKind.formatKind
+import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
 
 object SymbolProvider {
 
@@ -60,7 +60,7 @@ object SymbolProvider {
     * Returns an Interface SymbolInformation from a Class node.
     */
   private def mkClassSymbolInformation(c: TypedAst.Class) = c match {
-    case TypedAst.Class(_, _, sym, _, _, _, _, _) => SymbolInformation(
+    case TypedAst.Class(_, _, _, sym, _, _, _, _, _) => SymbolInformation(
       sym.name, SymbolKind.Interface, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
     )
   }
@@ -70,7 +70,7 @@ object SymbolProvider {
     * It navigates the AST and adds Sig and TypeParam of c and as children DocumentSymbols.
     */
   private def mkClassDocumentSymbol(c: TypedAst.Class): DocumentSymbol = c match {
-    case TypedAst.Class(doc, _, sym, tparam, _, signatures, _, _) => DocumentSymbol(
+    case TypedAst.Class(doc, _, _, sym, tparam, _, signatures, _, _) => DocumentSymbol(
       sym.name,
       Some(doc.text),
       SymbolKind.Interface,

@@ -17,7 +17,7 @@
 ///
 /// A type class for types with a total order.
 ///
-pub class Order[a] with Eq[a] {
+pub lawful class Order[a] with Eq[a] {
 
     ///
     /// Returns `LessThan` if `x` < `y`, `Equal` if `x` == `y` or `GreaterThan` `if `x` > `y`.

@@ -17,7 +17,7 @@
 ///
 /// A type class for data structures that can be traversed with an applicative functor.
 ///
-pub lawless class Traversable[t : Type -> Type] with Functor[t], Foldable[t] {
+pub class Traversable[t : Type -> Type] with Functor[t], Foldable[t] {
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the

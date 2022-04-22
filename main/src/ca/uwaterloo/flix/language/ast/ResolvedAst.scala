@@ -27,13 +27,14 @@ object ResolvedAst {
                   instances: Map[Symbol.ClassSym, List[ResolvedAst.Instance]],
                   defs: Map[Symbol.DefnSym, ResolvedAst.Def],
                   enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
-                  typealiases: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias],
+                  typeAliases: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias],
                   taOrder: List[Symbol.TypeAliasSym],
+                  entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   // TODO use ResolvedAst.Law for laws
-  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[ResolvedAst.TypeConstraint], sigs: Map[Symbol.SigSym, ResolvedAst.Sig], laws: List[ResolvedAst.Def], loc: SourceLocation)
+  case class Class(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[ResolvedAst.TypeConstraint], sigs: Map[Symbol.SigSym, ResolvedAst.Sig], laws: List[ResolvedAst.Def], loc: SourceLocation)
 
   case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.InstanceSym, tpe: Type, tconstrs: List[ResolvedAst.TypeConstraint], defs: List[ResolvedAst.Def], ns: Name.NName, loc: SourceLocation)
 
@@ -109,7 +110,7 @@ object ResolvedAst {
 
     case class Region(tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Scope(sym: Symbol.VarSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Scope(sym: Symbol.VarSym, regionVar: Symbol.UnkindedTypeVarSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -127,9 +128,9 @@ object ResolvedAst {
 
     case class RecordRestrict(field: Name.Field, rest: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArrayLit(elms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
+    case class ArrayLit(exps: List[ResolvedAst.Expression], exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArrayNew(elm: ResolvedAst.Expression, len: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ArrayNew(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, exp3: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class ArrayLoad(base: ResolvedAst.Expression, index: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -285,7 +286,7 @@ object ResolvedAst {
 
   }
 
-  case class Scheme(quantifiers: List[Type.UnkindedVar], constraints: List[ResolvedAst.TypeConstraint], base: Type)
+  case class Scheme(quantifiers: List[Symbol.UnkindedTypeVarSym], constraints: List[ResolvedAst.TypeConstraint], base: Type)
 
   sealed trait TypeParams {
     val tparams: List[ResolvedAst.TypeParam]
@@ -328,14 +329,14 @@ object ResolvedAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 
   sealed trait TypeParam {
-    val tpe: Type.UnkindedVar
+    val sym: Symbol.UnkindedTypeVarSym
   }
 
   object TypeParam {
 
-    case class Kinded(name: Name.Ident, tpe: Type.UnkindedVar, kind: Kind, loc: SourceLocation) extends TypeParam
+    case class Kinded(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, kind: Kind, loc: SourceLocation) extends TypeParam
 
-    case class Unkinded(name: Name.Ident, tpe: Type.UnkindedVar, loc: SourceLocation) extends TypeParam
+    case class Unkinded(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends TypeParam
 
   }
 

@@ -75,6 +75,19 @@ class TestMain extends FunSuite {
     assert(opts.documentor)
   }
 
+  test("--explain foo") {
+    val args = Array("--explain", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.explain)
+  }
+
+
+  test("--entrypoint foo") {
+    val args = Array("--entrypoint", "foo", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.entryPoint.nonEmpty)
+  }
+
   test("--interactive") {
     val args = Array("--interactive", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -157,6 +170,12 @@ class TestMain extends FunSuite {
     val args = Array("--Xlib", "all", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xlib == LibLevel.All)
+  }
+
+  test("--Xno-bool-table") {
+    val args = Array("--Xno-bool-table")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnobooltable)
   }
 
   test("--Xstrictmono") {

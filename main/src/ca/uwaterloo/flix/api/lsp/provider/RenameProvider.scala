@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, Position, Range, TextEdit, WorkspaceEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -57,9 +57,13 @@ object RenameProvider {
 
         case Entity.LocalVar(sym, _) => renameVar(sym, newName)
 
-        case Entity.TypeCon(tc, _) => tc match {
-          case TypeConstructor.RecordRowExtend(field) => renameField(field, newName)
-          case TypeConstructor.SchemaRowExtend(pred) => renamePred(pred, newName)
+        case Entity.Type(t) => t match {
+          case Type.Cst(tc, _) => tc match {
+            case TypeConstructor.RecordRowExtend(field) => renameField(field, newName)
+            case TypeConstructor.SchemaRowExtend(pred) => renamePred(pred, newName)
+            case _ => mkNotFound(uri, pos)
+          }
+          case Type.KindedVar(sym, loc) => renameTypeVar(sym, newName)
           case _ => mkNotFound(uri, pos)
         }
 
@@ -120,6 +124,12 @@ object RenameProvider {
   private def renameTag(sym: Symbol.EnumSym, tag: Name.Tag, newName: String)(implicit index: Index, root: Root): JObject = {
     val defn = root.enums(sym).cases(tag).tag.loc
     val uses = index.usesOf(sym, tag)
+    rename(newName, uses + defn)
+  }
+
+  private def renameTypeVar(sym: Symbol.KindedTypeVarSym, newName: String)(implicit index: Index, root: Root): JObject = {
+    val defn = sym.loc
+    val uses = index.usesOf(sym)
     rename(newName, uses + defn)
   }
 

@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Modifier, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.debug.{Audience, FormatType}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import org.json4s.JsonAST._
@@ -64,7 +64,12 @@ object Documentor {
     //
     val classesByNS = root.classes.values.groupBy(getNameSpace).flatMap {
       case (ns, decls) =>
-        val filtered = decls.filter(_.mod.isPublic).toList
+        def isInternal(clazz: TypedAst.Class): Boolean =
+          clazz.ann.exists(a => a.name match {
+            case Ast.Annotation.Internal(_) => true
+            case _ => false
+          })
+        val filtered = decls.filter(clazz => clazz.mod.isPublic && !isInternal(clazz)).toList
         val sorted = filtered.sortBy(_.sym.name)
         if (sorted.isEmpty)
           None
@@ -100,7 +105,7 @@ object Documentor {
     //
     // Type Aliases.
     //
-    val typeAliasesByNS = root.typealiases.values.groupBy(getNameSpace).flatMap {
+    val typeAliasesByNS = root.typeAliases.values.groupBy(getNameSpace).flatMap {
       case (ns, decls) =>
         val filtered = decls.filter(_.mod.isPublic).toList
         val sorted = filtered.sortBy(_.sym.name)
@@ -217,8 +222,8 @@ object Documentor {
       ("name" -> defn0.sym.name) ~
       ("tparams" -> defn0.spec.tparams.map(visitTypeParam)) ~
       ("fparams" -> defn0.spec.fparams.map(visitFormalParam)) ~
-      ("tpe" -> FormatType.formatType(defn0.spec.retTpe)) ~
-      ("eff" -> FormatType.formatType(defn0.spec.eff)) ~
+      ("tpe" -> FormatType.formatWellKindedType(defn0.spec.retTpe)) ~
+      ("eff" -> FormatType.formatWellKindedType(defn0.spec.eff)) ~
       ("tcs" -> defn0.spec.declaredScheme.constraints.map(visitTypeConstraint)) ~
       ("loc" -> visitSourceLocation(defn0.spec.loc))
   }
@@ -237,7 +242,7 @@ object Documentor {
   /**
     * Returns the given type `tpe` as a JSON value.
     */
-  private def visitType(tpe: Type): JString = JString(FormatType.formatType(tpe))
+  private def visitType(tpe: Type): JString = JString(FormatType.formatWellKindedType(tpe))
 
   /**
     * Returns the given type constraint `tc` as a JSON value.
@@ -330,12 +335,11 @@ object Documentor {
     * Returns the given Modifier `mod` as a JSON value.
     */
   private def visitModifier(mod: Ast.Modifiers): JArray = JArray(mod.mod.map {
-    case Modifier.Lawless => "lawless"
+    case Modifier.Lawful => "lawful"
     case Modifier.Override => "override"
     case Modifier.Public => "public"
     case Modifier.Sealed => "sealed"
     case Modifier.Synthetic => "synthetic"
-    case Modifier.Unlawful => "unlawful"
   })
 
   /**
@@ -346,7 +350,7 @@ object Documentor {
       ("doc" -> visitDoc(doc)) ~
         ("sym" -> visitTypeAliasSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
-        ("tpe" -> FormatType.formatType(tpe)) ~
+        ("tpe" -> FormatType.formatWellKindedType(tpe)) ~
         ("loc" -> visitSourceLocation(loc))
   }
 
@@ -388,7 +392,7 @@ object Documentor {
   private def visitEnum(enum0: Enum, instances: Map[Symbol.EnumSym, List[Instance]]): JObject = enum0 match {
     case Enum(doc, ann, _, sym, tparams, derives, cases, _, _, loc) =>
       ("doc" -> visitDoc(doc)) ~
-        ("ann" -> visitAnnotations(ann))
+        ("ann" -> visitAnnotations(ann)) ~
         ("sym" -> visitEnumSym(sym)) ~
         ("tparams" -> tparams.map(visitTypeParam)) ~
         ("cases" -> cases.values.toList.sortBy(_.loc).map(visitCase)) ~
@@ -402,7 +406,7 @@ object Documentor {
     */
   private def visitCase(caze: Case): JObject = caze match {
     case Case(_, tag, _, _, _) =>
-      val tpe = FormatType.formatType(caze.tpeDeprecated)
+      val tpe = FormatType.formatWellKindedType(caze.tpeDeprecated)
       ("tag" -> tag.name) ~ ("tpe" -> tpe)
   }
 
@@ -410,7 +414,7 @@ object Documentor {
     * Return the given class `clazz` as a JSON value.
     */
   private def visitClass(cla: Class)(implicit root: Root): JObject = cla match {
-    case Class(doc, mod, sym, tparam, superClasses, signatures0, _, loc) =>
+    case Class(doc, ann, mod, sym, tparam, superClasses, signatures0, _, loc) =>
       val (sigs0, defs0) = signatures0.partition(_.impl.isEmpty)
 
       val sigs = sigs0.sortBy(_.sym.name).map(visitSig)
@@ -419,6 +423,7 @@ object Documentor {
 
       ("sym" -> visitClassSym(sym)) ~
         ("doc" -> visitDoc(doc)) ~
+        ("ann" -> visitAnnotations(ann)) ~
         ("mod" -> visitModifier(mod)) ~
         ("tparam" -> visitTypeParam(tparam)) ~
         ("superClasses" -> superClasses.map(visitTypeConstraint)) ~

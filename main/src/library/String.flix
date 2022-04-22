@@ -65,9 +65,9 @@ namespace String {
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
-    pub def split(regex: {regex :: String}, s: String): List[String] & Impure =
-        import java.lang.String.split(String): Array[String] & Impure;
-        Array.toList(split(s, regex.regex))
+    pub def split(regex: {regex :: String}, s: String): List[String] =
+        import java.lang.String.split(String): Array[String] & Pure;
+        Array.toList(split(s, regex.regex)) as & Pure
 
     ///
     /// Returns the lower case version of the string `s`.
@@ -130,20 +130,17 @@ namespace String {
             ""
         else {
             let sb = StringBuilder.new();
-            initWorker(sb, f, len, 0);
+            def loop(i) = {
+                if (i >= len)
+                    ()
+                else {
+                    let c = f(i);
+                    StringBuilder.append!(c, sb);
+                    loop(i+1)
+                }
+            };
+            loop(0);
             StringBuilder.toString(sb)
-        }
-
-    ///
-    /// Helper function for `init`.
-    ///
-    def initWorker(sb: StringBuilder, f: Int32 -> Char & ef, len: Int32, i: Int32): Unit & Impure =
-        if (i >= len)
-            ()
-        else {
-            let c = f(i);
-            StringBuilder.append!(c, sb);
-            initWorker(sb, f, len, i+1)
         }
 
     ///
@@ -345,20 +342,18 @@ namespace String {
     ///
     @Time(time(f) * length(s)) @Space(space(f))
     pub def findIndexOfLeft(f: Char -> Bool, s: String): Option[Int32] =
-        let i = findIndexOfLeftHelper(f, s, length(s), 0);
-        if (i < 0) None else Some(i)
-
-    ///
-    /// Helper function for `findIndexOfLeft`.
-    ///
-    def findIndexOfLeftHelper(f: Char -> Bool, s: String, len: Int32, i: Int32): Int32 =
-        if (i >= len)
-            -1
-        else
-            if (f(charAt(i, s)))
-                i
+        let len = length(s);
+        def loop(i) = {
+            if (i >= len)
+                -1
             else
-                findIndexOfLeftHelper(f, s, len, i+1)
+                if (f(charAt(i, s)))
+                    i
+                else
+                    loop(i+1)
+        };
+        let i = loop(0);
+        if (i < 0) None else Some(i)
 
     ///
     /// Optionally return the position of the first character in `s` satisfying `f`, reading right to left.
@@ -367,21 +362,18 @@ namespace String {
     ///
     @Time(time(f) * length(s)) @Space(space(f))
     pub def findIndexOfRight(f: Char -> Bool, s: String): Option[Int32] =
-        let end = length(s) - 1;
-        let i = findIndexOfRightHelper(f, s, end);
-        if (i < 0) None else Some(i)
-
-    ///
-    /// Helper function for `findIndexOfRight`.
-    ///
-    def findIndexOfRightHelper(f: Char -> Bool, s: String, i: Int32): Int32 =
-        if (i < 0)
-            -1
-        else
-            if (f(charAt(i, s)))
-                i
+        def loop(i) = {
+            if (i < 0)
+                -1
             else
-                findIndexOfRightHelper(f, s, i-1)
+                if (f(charAt(i, s)))
+                    i
+                else
+                    loop(i-1)
+        };
+        let end = length(s) - 1;
+        let i = loop(end);
+        if (i < 0) None else Some(i)
 
     ///
     /// Returns the positions of the all the elements in `s` satisfying `f`.
@@ -390,18 +382,16 @@ namespace String {
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
     pub def findIndices(f: Char -> Bool, s: String): List[Int32] =
-        findIndicesHelper(f, s, length(s), 0)
-
-    ///
-    /// Helper function for `findIndices`.
-    ///
-    def findIndicesHelper(f: Char -> Bool, s: String, len: Int32, i: Int32): List[Int32] =
-        if (i >= len)
-            Nil
-        else {
-            let r = findIndicesHelper(f, s, len, i+1);
-            if (f(charAt(i, s))) i :: r else r
-        }
+        let len = length(s);
+        def loop(i, k) = {
+            if (i >= len)
+                k(Nil)
+            else if (f(charAt(i, s)))
+                loop(i+1, ks -> k(i :: ks))
+            else
+                loop(i+1, k)
+        };
+        loop(0, identity)
 
     ///
     /// Returns the positions of the all the occurences of `substr` in `s`.
@@ -576,36 +566,30 @@ namespace String {
     ///
     pub def foldLeft(f: (b, Char) -> b & ef, x: b, s: String): b & ef =
         let len = length(s);
-        foldLeftHelper(f, x, len, s, 0)
-
-    ///
-    /// Helper function for `foldLeft`.
-    ///
-    def foldLeftHelper(f: (b, Char) -> b & ef, x: b, len: Int32, s: String, i: Int32): b & ef =
-        if (i >= len)
-            x
-        else {
-            let x1 = f(x, charAt(i, s));
-            foldLeftHelper(f, x1, len, s, i+1)
-        }
+        def loop(acc, i) = {
+            if (i >= len)
+                acc
+            else {
+                let acc1 = f(acc, charAt(i, s));
+                loop(acc1, i+1)
+            }
+        };
+        loop(x, 0)
 
     ///
     /// Applies `f` to a start value `x and all elements in `s` going from right to left.
     ///
     pub def foldRight(f: (Char, b) -> b & ef, x: b, s: String): b &  ef =
+        def loop(acc, i) = {
+            if (i < 0)
+                acc
+            else {
+                let acc1 = f(charAt(i, s), acc);
+                loop(acc1, i-1)
+            }
+        };
         let end = length(s) - 1;
-        foldRightHelper(f, x, s, end)
-
-    ///
-    /// Helper function for `foldRight`.
-    ///
-    def foldRightHelper(f: (Char, b) -> b & ef, x: b, s: String, i: Int32): b & ef =
-        if (i < 0)
-            x
-        else {
-            let x1 = f(charAt(i, s), x);
-            foldRightHelper(f, x1, s, i-1)
-        }
+        loop(x, end)
 
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `s` and `t`
@@ -613,18 +597,15 @@ namespace String {
     ///
     pub def foldLeft2(f: (b, Char, Char) -> b & ef, x: b, s: String, t: String): b & ef =
         let len = Int32.min(length(s), length(t));
-        foldLeft2Helper(f, x, len, s, t, 0)
-
-    ///
-    /// Helper function for `foldLeft2`.
-    ///
-    def foldLeft2Helper(f: (b, Char, Char) -> b & ef, x: b, len: Int32, s: String, t: String, i: Int32): b & ef =
-        if (i >= len)
-            x
-        else {
-            let x1 = f(x, charAt(i, s), charAt(i, t));
-            foldLeft2Helper(f, x1, len, s, t, i+1)
-        }
+        def loop(acc, i) = {
+            if (i >= len)
+                acc
+            else {
+                let acc1 = f(acc, charAt(i, s), charAt(i, t));
+                loop(acc1, i+1)
+            }
+        };
+        loop(x, 0)
 
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `s` and `t`
@@ -633,38 +614,32 @@ namespace String {
     pub def foldRight2(f: (Char, Char, b) -> b & ef, x: b, s: String, t: String): b &  ef =
         let sn = length(s) - 1;
         let tn = length(t) - 1;
-        foldRight2Helper(f, x, s, t, sn, tn)
-
-    ///
-    /// Helper function for `foldRight2`.
-    ///
-    def foldRight2Helper(f: (Char, Char, b) -> b & ef, x: b, s: String, t: String, i: Int32, j: Int32) : b & ef =
-        if (i < 0 or j < 0 )
-            x
-        else {
-            let x1 = f(charAt(i, s), charAt(j, t), x);
-            foldRight2Helper(f, x1, s, t, i-1, j-1)
-        }
+        def loop(acc, i, j) = {
+            if (i < 0 or j < 0)
+                acc
+            else {
+                let acc1 = f(charAt(i, s), charAt(j, t), acc);
+                loop(acc1, i-1, j-1)
+            }
+        };
+        loop(x, sn, tn)
 
     ///
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
     ///
-    pub def unfold(f: b -> Option[(Char, b)] & ef, x: b) : String & ef =
+    pub def unfold(f: b -> Option[(Char, b)] & ef, x: b): String & ef =
         let sb = StringBuilder.new() as & ef;
-        unfoldHelper(f, sb, x) as & ef
-
-    ///
-    /// Helper function for `unfold`.
-    ///
-    def unfoldHelper(f: b -> Option[(Char, b)] & ef, sb: StringBuilder, x: b) : String & Impure =
-        let a1 = f(x) as & Impure;
-        match a1 {
-            case None => StringBuilder.toString(sb)
-            case Some(c, st1) => {
-                StringBuilder.append!(c, sb);
-                unfoldHelper(f, sb, st1)
+        def loop(a) = {
+            let a1 = f(a);
+            match a1 {
+                case None         => StringBuilder.toString(sb)
+                case Some(c, st1) => {
+                    StringBuilder.append!(c, sb);
+                    loop(st1)
+                }
             }
-        }
+        };
+        loop(x) as & ef
 
     ///
     /// Build a string by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -674,20 +649,18 @@ namespace String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldWithIter(f: Unit -> Option[Char] & ef): String =
+    pub def unfoldWithIter(f: Unit -> Option[Char] & ef): String & ef =
         let sb = StringBuilder.new() as & Pure;
-        unfoldWithIterHelper(f, sb) as & Pure
-
-    ///
-    /// Helper function for `unfoldWithIter`.
-    ///
-    def unfoldWithIterHelper(next: Unit -> Option[Char] & ef, sb: StringBuilder): String & Impure = match next() {
-        case None => StringBuilder.toString(sb)
-        case Some(c) => {
-            StringBuilder.append!(c, sb);
-            unfoldWithIterHelper(next, sb)
-        }
-    }
+        def loop() = {
+            match f() {
+                case None    => StringBuilder.toString(sb)
+                case Some(c) => {
+                    StringBuilder.append!(c, sb);
+                    loop()
+                }
+            }
+        };
+        loop() as & ef
 
     ///
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
@@ -696,20 +669,17 @@ namespace String {
     ///
     pub def unfoldString(f: b -> Option[(String, b)] & ef, x: b) : String & ef =
         let sb = StringBuilder.new() as & ef;
-        unfoldStringHelper(f, sb, x) as & ef
-
-    ///
-    /// Helper function for `unfoldString`.
-    ///
-    def unfoldStringHelper(f: b -> Option[(String, b)] & ef, sb: StringBuilder, x: b) : String & Impure =
-        let a = f(x) as & Impure;
-        match a {
-            case None => StringBuilder.toString(sb)
-            case Some(s, st1) => {
-                StringBuilder.appendString!(s, sb);
-                unfoldStringHelper(f, sb, st1)
+        def loop(a) = {
+            let a1 = f(a);
+            match a1 {
+                case None         => StringBuilder.toString(sb)
+                case Some(s, st1) => {
+                    StringBuilder.appendString!(s, sb);
+                    loop(st1)
+                }
             }
-        }
+        };
+        loop(x) as & ef
 
     ///
     /// Build a string by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -721,18 +691,16 @@ namespace String {
     ///
     pub def unfoldStringWithIter(f: Unit -> Option[String] & ef): String & ef =
         let sb = StringBuilder.new() as & Pure;
-        unfoldStringWithIterHelper(f, sb) as & ef
-
-    ///
-    /// Helper function for `unfoldStringWithIter`.
-    ///
-    def unfoldStringWithIterHelper(next: Unit -> Option[String] & ef, sb: StringBuilder): String & Impure = match next() {
-        case None => StringBuilder.toString(sb)
-        case Some(s) => {
-            StringBuilder.appendString!(s, sb);
-            unfoldStringWithIterHelper(next, sb)
-        }
-    }
+        def loop() = {
+            match f() {
+                case None    => StringBuilder.toString(sb)
+                case Some(s) => {
+                    StringBuilder.appendString!(s, sb);
+                    loop()
+                }
+            }
+        };
+        loop() as & ef
 
     ///
     /// Returns `true` if and only if at least one char in `s` satisfies the predicate `f`.
@@ -932,26 +900,20 @@ namespace String {
     def stripIndentHelper(n: Int32, s: String): String & Impure =
         let sb = StringBuilder.new();
         let limit = Int32.min(n, length(s));
+        def loop(s1, ix) = {
+            if (ix >= limit)
+                sliceRight(ix, s1)
+            else if (not Char.isWhiteSpace(charAt(ix, s1)))
+                sliceRight(ix, s1)
+            else
+                loop(s1, ix+1)
+        };
         let step = s1 -> {
-            let line = stripIndentDropWhiteSpace(s1, limit, 0);
+            let line = loop(s1, 0);
             StringBuilder.appendLine!(line, sb)
         };
         List.foreach(step, lines(s));
         StringBuilder.toString(sb)
-
-    ///
-    /// Helper function for `stripIndent`.
-    ///
-    /// Tab is counted as a single space like Java's `strip`.
-    ///
-    def stripIndentDropWhiteSpace(s: String, limit: Int32, ix: Int32): String =
-        if (ix >= limit)
-            sliceRight(ix, s)
-        else
-            if (not Char.isWhiteSpace(charAt(ix, s)))
-                sliceRight(ix, s)
-            else
-                stripIndentDropWhiteSpace(s, limit, ix+1)
 
     ///
     /// Split the string `s` into an array of lines, breaking on newline.
@@ -964,7 +926,7 @@ namespace String {
         if (isEmpty(s))
             Nil
         else
-            split({regex = "\\R"}, s) as & Pure
+            split({regex = "\\R"}, s)
 
     ///
     /// Join the array of strings `a` separating each pair of strings and
@@ -988,7 +950,7 @@ namespace String {
     @Time(length(s)) @Space(length(s))
     pub def words(s: String): List[String] = match trim(s) {
         case s1 if isEmpty(s1) => Nil
-        case s1 => split({regex = "\\s+"}, s1) as & Pure
+        case s1 => split({regex = "\\s+"}, s1)
     }
 
     ///
@@ -1070,22 +1032,21 @@ namespace String {
     ///
     @Time(Int32.min(length(s1), length(s2))) @Space(Int32.min(length(s1), length(s2)))
     pub def commonPrefix(s1: String, s2: String): String =
-        commonPrefixHelper(s1, s2, length(s1), length(s2), 0)
-
-    ///
-    /// Helper function for `commonPrefix`.
-    ///
-    def commonPrefixHelper(s1: String, s2: String, len1: Int32, len2: Int32, ix: Int32): String =
-        if (ix >= len1 or ix >= len2)
-            takeLeft(ix, s1)
-        else {
-            let c1 = charAt(ix, s1);
-            let c2 = charAt(ix, s2);
-            if (c1 != c2)
+        let len1 = length(s1);
+        let len2 = length(s2);
+        def loop(ix) = {
+            if (ix >= len1 or ix >= len2)
                 takeLeft(ix, s1)
-            else
-                commonPrefixHelper(s1, s2, len1, len2, ix+1)
-        }
+            else {
+                let c1 = charAt(ix, s1);
+                let c2 = charAt(ix, s2);
+                if (c1 != c2)
+                    takeLeft(ix, s1)
+                else
+                    loop(ix+1)
+            }
+        };
+        loop(0)
 
     ///
     /// Return the common suffix of strings `s1` and `s2`.
@@ -1094,26 +1055,23 @@ namespace String {
     ///
     @Time(Int32.min(length(s1), length(s2))) @Space(Int32.min(length(s1), length(s2)))
     pub def commonSuffix(s1: String, s2: String): String =
-        let start1 = length(s1) - 1;
-        let start2 = length(s2) - 1;
-        commonSuffixHelper(s1, s2, start1, start2, 0)
-
-    ///
-    /// Helper function for `commonSuffix`.
-    ///
-    def commonSuffixHelper(s1: String, s2: String, ix1: Int32, ix2: Int32, ac: Int32): String =
-        if (ix1 < 0)
-            s1
-        else if (ix2 < 0)
-            s2
-        else {
-            let c1 = charAt(ix1, s1);
-            let c2 = charAt(ix2, s2);
-            if (c1 != c2)
-                takeRight(ac, s1)
-            else
-                commonSuffixHelper(s1, s2, ix1-1, ix2-1, ac+1)
-       }
+            def loop(i, j, acc) = {
+                if (i < 0)
+                    s1
+                else if (j < 0)
+                    s2
+                else {
+                    let c1 = charAt(i, s1);
+                    let c2 = charAt(j, s2);
+                    if (c1 != c2)
+                        takeRight(acc, s1)
+                    else
+                        loop(i-1, j-1, acc+1)
+                }
+            };
+            let start1 = length(s1) - 1;
+            let start2 = length(s2) - 1;
+            loop(start1, start2, 0)
 
     ///
     /// Abbreviate the string `s` if it exceeds the width `w`.
@@ -1325,19 +1283,16 @@ namespace String {
     ///
     pub def countSubstring(substr: {substr :: String}, s: String): Int32 =
         let sublen = length(substr.substr);
+        def loop(offset, count) = {
+            match indexOfLeftWithOffset({substr = substr.substr}, {offset = offset}, s) {
+            case None    => count
+            case Some(i) => loop(i + sublen, count + 1)
+            }
+        };
         if (sublen <= 0)
             0
         else
-            countSubstringHelper(substr.substr, sublen, s, 0, 0)
-
-    ///
-    /// Helper function for `count``.
-    ///
-    def countSubstringHelper(sub: String, sublen: Int32, s: String, offset: Int32, count: Int32): Int32 =
-        match indexOfLeftWithOffset({substr = sub}, {offset = offset}, s) {
-            case None => count
-            case Some(i) => countSubstringHelper(sub, sublen, s, i + sublen, count + 1)
-        }
+            loop(0, 0)
 
     ///
     /// Returns `Some(suffix)` of string `s` if its prefix matches `substr`.

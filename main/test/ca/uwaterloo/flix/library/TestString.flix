@@ -97,11 +97,11 @@ def length02(): Bool = String.length("0123456789") == 10
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def split01(): Bool & Impure =
+def split01(): Bool =
    String.split({regex = "\\s+"}, "") == "" :: Nil
 
 @test
-def split02(): Bool & Impure =
+def split02(): Bool =
     List.length(String.split({regex = "\\s+"}, "1 3")) == 2
 
 /////////////////////////////////////////////////////////////////////////////

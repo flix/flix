@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, Symbol, Type, TypeCons
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 object Instances {
@@ -43,11 +43,11 @@ object Instances {
   private def visitClasses(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, InstanceError] = {
 
     /**
-      * Checks that all signatures in `class0` are used in laws, unless `class0` is marked `lawless`.
+      * Checks that all signatures in `class0` are used in laws if `class0` is marked `lawful`.
       */
     def checkLawApplication(class0: TypedAst.Class): Validation[Unit, InstanceError] = class0 match {
-      case TypedAst.Class(_, mod, _, _, _, _, _, _) if mod.isLawless => ().toSuccess
-      case TypedAst.Class(_, _, _, _, _, sigs, laws, _) =>
+      // Case 1: lawful class
+      case TypedAst.Class(_, _, mod, _, _, _, sigs, laws, _) if mod.isLawful =>
         val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
           case (acc, TypedAst.Def(_, _, TypedAst.Impl(exp, _))) => acc ++ TypedAstOps.sigSymsOf(exp)
         }
@@ -55,6 +55,8 @@ object Instances {
         Validation.traverseX(unusedSigs) {
           sig => InstanceError.UnlawfulSignature(sig, sig.loc).toFailure
         }
+      // Case 2: non-lawful class
+      case TypedAst.Class(_, _, mod, _, _, _, _, _, _) => ().toSuccess
     }
 
     /**
@@ -170,7 +172,7 @@ object Instances {
             case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => InstanceError.UnmarkedOverride(defn.sym, defn.sym.loc).toFailure
             // Case 5: there is an implementation with the right modifier
             case (Some(defn), _) =>
-              val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, clazz.tparam.tpe, inst.tpe)
+              val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, clazz.tparam.sym, inst.tpe)
               if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.classEnv)) {
                 // Case 5.1: the schemes match. Success!
                 ().toSuccess
@@ -243,7 +245,7 @@ object Instances {
       Validation.traverseX(checks) {
         case inst :: unchecked =>
           // check that the instance is on a valid type, suppressing other errors if not
-          checkSimple(inst) flatMap {
+          flatMapN(checkSimple(inst)) {
             _ =>
               Validation.sequenceX(List(
                 Validation.traverse(unchecked)(checkOverlap(_, inst)),

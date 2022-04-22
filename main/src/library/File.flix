@@ -840,4 +840,280 @@ namespace File {
                 Err(getMessage(ex))
         }
 
+    ///
+    /// Returns a list naming the files and directories in the directory `f`.
+    /// The full paths of the files and directories are specified.
+    ///
+    /// Does not recursively traverse the directory.
+    ///
+    pub def list(f: String): Result[List[String], String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.listFiles(): Array[##java.io.File] & Impure;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import java.nio.file.Path.toString(): String & Impure as pathToString;
+
+            let javaList = f |> newFile |> listFiles;
+
+            if (not Object.isNull(javaList)) {
+                let paths = javaList |> Array.map(toPath) |> Array.map(pathToString);
+                Ok(Array.toList(paths))
+            } else {
+                Err("An error occurred when trying to list the file: '${f}'.")
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns an Iterator naming the files and directories in the directory `f`.
+    /// The full paths of the files and directories are specified.
+    ///
+    /// Does not recursively traverse the directory.
+    ///
+    pub def listWithIter(f: String): Result[Iterator[String], String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.newDirectoryStream(##java.nio.file.Path): ##java.nio.file.DirectoryStream & Impure;
+            import java.nio.file.DirectoryStream.iterator(): ##java.util.Iterator & Impure;
+            import java.nio.file.Path.toString(): String & Pure as pathToString;
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let javaStream = newDirectoryStream(javaPath);
+            let javaIter = iterator(javaStream);
+
+            let iter = fromJavaIter(javaIter);
+            Ok(Iterator.mapL(pathToString, iter))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Returns an Iterator over the files and directories recursively under the path `f`, including `f` itself.
+    /// The full paths of the files and directories are specified.
+    ///
+    /// Recursively traverses the directory.
+    ///
+    pub def walk(f: String): Result[Iterator[String], String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.walk(##java.nio.file.Path, Array[##java.nio.file.FileVisitOption]): ##java.util.stream.Stream & Impure;
+            import java.util.stream.BaseStream.iterator(): ##java.util.Iterator & Impure;
+            import java.nio.file.Path.toString(): String & Pure as pathToString;
+
+            let javaFile = newFile(f);
+            let javaPath = toPath(javaFile);
+            let javaStream = walk(javaPath, []);
+            let javaIter = iterator(javaStream as ##java.util.stream.BaseStream);
+
+            let iter = fromJavaIter(javaIter);
+            Ok(Iterator.mapL(pathToString, iter))
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Converts a Java iterator to a Flix Iterator.
+    ///
+    def fromJavaIter(iter: ##java.util.Iterator): Iterator[a] =
+        import java.util.Iterator.hasNext(): Bool & Impure;
+        import java.util.Iterator.next(): a & Impure as getNext;
+
+        let done = () -> not hasNext(iter);
+        let next = () -> {
+            if(hasNext(iter)) {
+                getNext(iter)
+            } else {
+                bug!("Empty iterator.")
+            }
+        };
+        Iterator(done, next)
+
+    ///
+    /// Moves a file or directory from path `src` to path `dst`.
+    ///
+    /// Returns `Ok(())` if `src` was moved, and `dst` did not already exist.
+    /// Returns `Err(msg)` if `src` was not moved because:
+    /// - `dst` already exists, or
+    /// - `dst` is a subpath of `src`, or
+    /// - an I/O error occurred.
+    ///
+    pub def move(src: {src :: String} , dst: String): Result[Unit, String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.move(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption]): ##java.nio.file.Path & Impure;
+
+            let srcFile = newFile(src.src);
+            let srcPath = toPath(srcFile);
+            let dstFile = newFile(dst);
+            let dstPath = toPath(dstFile);
+            move(srcPath, dstPath, []);
+            Ok()
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Moves a file or directory from path `src` to directory `dst`.
+    ///
+    /// Returns `Ok(())` if `src` was moved, and `dst` is a directory.
+    /// Returns `Err(msg)` if:
+    /// - `src` was not moved, or
+    /// - `dst` is a subpath of `src`, or
+    /// - `dst` is not a directory, or
+    /// - an I/O error occurred.
+    ///
+    pub def moveInto(src: {src :: String} , dst: String): Result[Unit, String] & Impure =
+        try {
+            match File.isDirectory(dst) {
+                case Ok(true)  => {
+                    import new java.io.File(String): ##java.io.File & Impure as newFile;
+                    import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+                    import java.nio.file.Path.getFileName(): ##java.nio.file.Path & Impure;
+                    import java.nio.file.Path.toString(): String & Impure as pathToString;
+
+                    let javaFile = newFile(src.src);
+                    let javaPath = toPath(javaFile);
+                    let name = pathToString(getFileName(javaPath));
+                    let newDst = dst / name;
+
+                    move(src = src.src, newDst)
+                }
+                case Ok(false) => Err("dst is not a directory.")
+                case Err(msg)  => Err(msg)
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Moves a file or directory from path `src` to path `dst`. Overwrites if `dst` already exists.
+    ///
+    /// Returns `Ok(())` if `src` was moved.
+    /// Returns `Err(msg)` if `src` was not moved, or an I/O error occurred.
+    ///
+    pub def moveOver(src: {src :: String}, dst: String): Result[Unit, String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.move(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption]): ##java.nio.file.Path & Impure;
+            import static get java.nio.file.StandardCopyOption.REPLACE_EXISTING: ##java.nio.file.StandardCopyOption & Impure as getOverwrite;
+
+            let dstFile = newFile(dst);
+            let dstPath = toPath(dstFile);
+
+            let srcFile = newFile(src.src);
+            let srcPath = toPath(srcFile);
+            move(srcPath, dstPath, [getOverwrite() as ##java.nio.file.CopyOption]);
+
+            Ok()
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Copies a file or directory from path `src` to path `dst`.
+    ///
+    /// Returns `Ok(())` if `src` was copied, and `dst` did not already exist.
+    /// Returns `Err(msg)` if `src` was not copied because:
+    /// - `dst` already exists, or
+    /// - `dst` is a subpath of `src`, or
+    /// - an I/O error occurred.
+    ///
+    pub def copy(src: {src :: String} , dst: String): Result[Unit, String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.copy(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption]): ##java.nio.file.Path & Impure;
+
+            let srcFile = newFile(src.src);
+            let srcPath = toPath(srcFile);
+            let dstFile = newFile(dst);
+            let dstPath = toPath(dstFile);
+            copy(srcPath, dstPath, []);
+            Ok()
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Copies a file or directory from path `src` to directory `dst`.
+    ///
+    /// Returns `Ok(())` if `src` was copied, and `dst` is a directory.
+    /// Returns `Err(msg)` if:
+    /// - `src` was not copied, or
+    /// - `dst` is a subpath of `src`, or
+    /// - `dst` is not a directory, or
+    /// - an I/O error occurred.
+    ///
+    pub def copyInto(src: {src :: String} , dst: String): Result[Unit, String] & Impure =
+        try {
+            match File.isDirectory(dst) {
+                case Ok(true)  => {
+                    import new java.io.File(String): ##java.io.File & Impure as newFile;
+                    import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+                    import java.nio.file.Path.getFileName(): ##java.nio.file.Path & Impure;
+                    import java.nio.file.Path.toString(): String & Impure as pathToString;
+
+                    let javaFile = newFile(src.src);
+                    let javaPath = toPath(javaFile);
+                    let name = pathToString(getFileName(javaPath));
+                    let newDst = dst / name;
+
+                    copy(src = src.src, newDst)
+                }
+                case Ok(false) => Err("dst is not a directory.")
+                case Err(msg)  => Err(msg)
+            }
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
+
+    ///
+    /// Copies a file or directory from path `src` to path `dst`. Overwrites if `dst` already exists.
+    ///
+    /// Returns `Ok(())` if `src` was copied.
+    /// Returns `Err(msg)` if `src` was not copied, or an I/O error occurred.
+    ///
+    pub def copyOver(src: {src :: String}, dst: String): Result[Unit, String] & Impure =
+        try {
+            import new java.io.File(String): ##java.io.File & Impure as newFile;
+            import java.io.File.toPath(): ##java.nio.file.Path & Impure;
+            import static java.nio.file.Files.copy(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption]): ##java.nio.file.Path & Impure;
+            import static get java.nio.file.StandardCopyOption.REPLACE_EXISTING: ##java.nio.file.StandardCopyOption & Impure as getOverwrite;
+
+            let dstFile = newFile(dst);
+            let dstPath = toPath(dstFile);
+
+            let srcFile = newFile(src.src);
+            let srcPath = toPath(srcFile);
+            copy(srcPath, dstPath, [getOverwrite() as ##java.nio.file.CopyOption]);
+
+            Ok()
+        } catch {
+            case ex: ##java.io.IOException =>
+                import java.lang.Throwable.getMessage(): String & Impure;
+                Err(getMessage(ex))
+        }
+
 }

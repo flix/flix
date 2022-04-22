@@ -8,7 +8,7 @@ def genEdges(n: Int32): #{Edge(Int32, Int32) | _} = {
     } <+> genEdges(n-1)
 }
 
-def main(_args: Array[String]): Int32 & Impure =
+def main(): Unit & Impure =
 
     let edges = genEdges(20);
 
@@ -58,6 +58,4 @@ def main(_args: Array[String]): Int32 & Impure =
             not IndicesPlusOne(x, i).
     };
 
-    query lp <+> edges select (x, i) from Index(x, i) |> println;
-
-    0
+    query lp <+> edges select (x, i) from Index(x, i) |> println

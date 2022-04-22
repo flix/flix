@@ -17,10 +17,10 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.debug.{Audience, FormatScheme}
+import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme}
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 object Scheme {
 
@@ -51,7 +51,7 @@ object Scheme {
   /**
     * Instantiate one of the variables in the scheme, adding new quantifiers as needed.
     */
-  def partiallyInstantiate(sc: Scheme, quantifier: Type.KindedVar, value: Type)(implicit flix: Flix): Scheme = sc match {
+  def partiallyInstantiate(sc: Scheme, quantifier: Symbol.KindedTypeVarSym, value: Type)(implicit flix: Flix): Scheme = sc match {
     case Scheme(quantifiers, constraints, base) =>
       if (!quantifiers.contains(quantifier)) {
         throw InternalCompilerException("Quantifier not in scheme.")
@@ -82,23 +82,23 @@ object Scheme {
           case InstantiateMode.Rigid => Rigidity.Rigid
           case InstantiateMode.Mixed => Rigidity.Flexible
         }
-        macc + (tvar.id -> Type.freshVar(tvar.kind, tvar.loc, rigidity, tvar.text))
+        macc + (tvar.id -> Type.freshVar(tvar.kind, tvar.loc, rigidity, Ast.VarText.Absent))
     }
 
     /**
       * Replaces every variable occurrence in the given type using `freeVars`. Updates the rigidity.
       */
     def visitTvar(t: Type.KindedVar): Type.KindedVar = t match {
-      case Type.KindedVar(x, k, loc, rigidity, text) =>
-        freshVars.get(x) match {
+      case Type.KindedVar(sym, loc) =>
+        freshVars.get(sym.id) match {
           case None =>
             // Determine the rigidity of the free type variable.
             val newRigidity = mode match {
-              case InstantiateMode.Flexible => rigidity
+              case InstantiateMode.Flexible => sym.rigidity
               case InstantiateMode.Rigid => Rigidity.Rigid
               case InstantiateMode.Mixed => Rigidity.Rigid
             }
-            Type.KindedVar(x, k, loc, newRigidity, text)
+            Type.KindedVar(sym.withRigidity(newRigidity), loc)
           case Some(tvar) => tvar
         }
     }
@@ -119,7 +119,7 @@ object Scheme {
     */
   def generalize(tconstrs: List[Ast.TypeConstraint], tpe0: Type): Scheme = {
     val quantifiers = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars)
-    Scheme(quantifiers.toList, tconstrs, tpe0)
+    Scheme(quantifiers.toList.map(_.sym), tconstrs, tpe0)
   }
 
   /**
@@ -127,15 +127,21 @@ object Scheme {
     */
   // TODO can optimize?
   def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
-    Validation.sequence(List(checkLessThanEqual(sc1, sc2, classEnv), checkLessThanEqual(sc2, sc1, classEnv))) match {
-      case Validation.Success(_) => true
-      case Validation.Failure(_) => false
-
-    }
+    lessThanEqual(sc1, sc2, classEnv) && lessThanEqual(sc2, sc1, classEnv)
   }
 
   /**
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
+    */
+  def lessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
+    checkLessThanEqual(sc1, sc2, classEnv) match {
+      case Validation.Success(_) => true
+      case Validation.Failure(_) => false
+    }
+  }
+
+  /**
+    * Returns `Success` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
   def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, UnificationError] = {
 
@@ -170,7 +176,7 @@ object Scheme {
 /**
   * Representation of polytypes.
   */
-case class Scheme(quantifiers: List[Type.KindedVar], constraints: List[Ast.TypeConstraint], base: Type) {
+case class Scheme(quantifiers: List[Symbol.KindedTypeVarSym], constraints: List[Ast.TypeConstraint], base: Type) {
 
   /**
     * Returns a human readable representation of the polytype.

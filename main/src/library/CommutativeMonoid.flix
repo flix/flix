@@ -17,7 +17,7 @@
 ///
 /// A type class for types that form a commutative monoid.
 ///
-pub class CommutativeMonoid[a] with Monoid[a] {
+pub lawful class CommutativeMonoid[a] with Monoid[a] {
 
     ///
     /// Returns a neutral element.

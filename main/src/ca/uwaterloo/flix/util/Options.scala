@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.language.ast.Symbol
+
 import java.nio.file.Path
 
 object Options {
@@ -26,6 +28,7 @@ object Options {
     lib = LibLevel.All,
     debug = false,
     documentor = false,
+    entryPoint = None,
     explain = false,
     incremental = true,
     json = false,
@@ -36,6 +39,7 @@ object Options {
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
     xallowredundancies = false,
+    xnobooltable = false,
     xstatistics = false,
     xstrictmono = false
   )
@@ -67,6 +71,8 @@ object Options {
   * @param lib                selects the level of libraries to include.
   * @param debug              enables the emission of debugging information.
   * @param documentor         enables generation of flixdoc.
+  * @param entryPoint         specifies the main entry point.
+  * @param explain            enables additional explanations.
   * @param json               enable json output.
   * @param output             the optional output directory where to place JVM bytecode.
   * @param progress           print progress during compilation.
@@ -75,12 +81,14 @@ object Options {
   * @param threads            selects the number of threads to use.
   * @param loadClassFiles     loads the generated class files into the JVM.
   * @param xallowredundancies disables the redundancy checker.
+  * @param xnobooltable       disable Boolean minimization via tabling.
   * @param xstatistics        enables statistics collection.
   * @param xstrictmono        enables strict monomorphization.
   */
 case class Options(lib: LibLevel,
                    debug: Boolean,
                    documentor: Boolean,
+                   entryPoint: Option[Symbol.DefnSym],
                    explain: Boolean,
                    incremental: Boolean,
                    json: Boolean,
@@ -91,6 +99,7 @@ case class Options(lib: LibLevel,
                    threads: Int,
                    loadClassFiles: Boolean,
                    xallowredundancies: Boolean,
+                   xnobooltable: Boolean,
                    xstatistics: Boolean,
                    xstrictmono: Boolean,
                   )

@@ -55,7 +55,7 @@ object Resolver {
   def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-    resolveTypeAliases(root.typealiases, root) flatMap {
+    flatMapN(resolveTypeAliases(root.typeAliases, root)) {
       case (taenv, taOrder) =>
 
         val classesVal = resolveClasses(root, taenv, oldRoot, changeSet)
@@ -68,7 +68,7 @@ object Resolver {
           }
         }
 
-        val definitionsVal = resolveDefs(root, taenv, oldRoot, changeSet)
+        val defsVal = resolveDefs(root, taenv, oldRoot, changeSet)
 
         val enumsVal = root.enums.flatMap {
           case (ns0, enums) => enums.map {
@@ -78,17 +78,13 @@ object Resolver {
           }
         }
 
-        for {
-          classes <- classesVal
-          instances <- sequence(instancesVal)
-          definitions <- definitionsVal
-          enums <- sequence(enumsVal)
-          _ <- checkSuperClassDag(classes)
-        } yield ResolvedAst.Root(
-          classes, combine(instances), definitions, enums.toMap, taenv, taOrder, root.reachable, root.sources
-        )
+        flatMapN(classesVal, sequence(instancesVal), defsVal, sequence(enumsVal)) {
+          case (classes, instances, defs, enums) =>
+            mapN(checkSuperClassDag(classes)) {
+              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, taenv, taOrder, root.entryPoint, root.reachable, root.sources)
+            }
+        }
     }
-
   }
 
   /**
@@ -129,7 +125,7 @@ object Resolver {
     * Returns a pair:
     *   - a map of type alias symbols to their AST nodes
     *   - a list of the aliases in a processing order,
-    *       such that any alias only depends on those earlier in the list
+    *     such that any alias only depends on those earlier in the list
     */
   private def resolveTypeAliases(aliases0: Map[Name.NName, Map[String, NamedAst.TypeAlias]], root: NamedAst.Root)(implicit flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
 
@@ -203,31 +199,37 @@ object Resolver {
     }
 
     // Extract all the aliases and namespaces from the map.
-    val aliases1 = for {
+    val aliasesMap0 = for {
       (ns, aliasesInNs) <- aliases0
       (_, alias) <- aliasesInNs
     } yield (alias, ns)
 
-    for {
-      // Partially resolve the aliases
-      aliases1 <- traverse(aliases1) {
-        case (alias, ns) => semiResolveTypeAlias(alias, ns)
-      }
+    // Partially resolve the aliases
+    val semiAliasesVal = traverse(aliasesMap0) {
+      case (alias, ns) => semiResolveTypeAlias(alias, ns)
+    }
 
+    flatMapN(semiAliasesVal) {
       // Get the resolution order
-      sortedSyms <- findResolutionOrder(aliases1)
+      semiAliases =>
+        flatMapN(findResolutionOrder(semiAliases)) {
+          sortedSyms =>
+            // Create mapping for the partially resolved aliases
+            val semiAliasEnv = semiAliases.map(alias => alias.sym -> alias).toMap
 
-      // Create mapping for the partially resolved aliases
-      semiAliasEnv = aliases1.map(alias => alias.sym -> alias).toMap
+            // Get the sorted aliases from the mapping
+            val sortedAliases = sortedSyms.map(semiAliasEnv)
 
-      // Get the sorted aliases from the mapping
-      sortedAliases = sortedSyms.map(semiAliasEnv)
+            // Resolve the sorted aliases
+            val aliasesVal = finishResolveTypeAliases(sortedAliases)
 
-      // Resolve the sorted aliases
-      aliases <- finishResolveTypeAliases(sortedAliases)
-    } yield (aliases, sortedSyms)
+            mapN(aliasesVal) {
+              aliases => (aliases, sortedSyms)
+            }
+
+        }
+    }
   }
-
 
 
   object Constraints {
@@ -235,19 +237,21 @@ object Resolver {
     /**
       * Performs name resolution on the given `constraints` in the given namespace `ns0`.
       */
-    def resolve(constraints: List[NamedAst.Constraint], tenv0: Map[Symbol.VarSym, Type], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Constraint], ResolutionError] = {
-      traverse(constraints)(c => resolve(c, tenv0, taenv, ns0, root))
+    def resolve(constraints: List[NamedAst.Constraint], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Constraint], ResolutionError] = {
+      traverse(constraints)(c => resolve(c, taenv, ns0, root))
     }
 
     /**
       * Performs name resolution on the given constraint `c0` in the given namespace `ns0`.
       */
-    def resolve(c0: NamedAst.Constraint, tenv0: Map[Symbol.VarSym, Type], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Constraint, ResolutionError] = {
-      for {
-        ps <- traverse(c0.cparams)(p => Params.resolve(p, ns0, root))
-        h <- Predicates.Head.resolve(c0.head, tenv0, taenv, ns0, root)
-        bs <- traverse(c0.body)(b => Predicates.Body.resolve(b, tenv0, taenv, ns0, root))
-      } yield ResolvedAst.Constraint(ps, h, bs, c0.loc)
+    def resolve(c0: NamedAst.Constraint, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Constraint, ResolutionError] = c0 match {
+      case NamedAst.Constraint(cparams0, head0, body0, loc) =>
+        val cparamsVal = traverse(cparams0)(p => Params.resolve(p, ns0, root))
+        val headVal = Predicates.Head.resolve(head0, taenv, ns0, root)
+        val bodyVal = traverse(body0)(Predicates.Body.resolve(_, taenv, ns0, root))
+        mapN(cparamsVal, headVal, bodyVal) {
+          case (cparams, head, body) => ResolvedAst.Constraint(cparams, head, body, loc)
+        }
     }
 
   }
@@ -280,15 +284,18 @@ object Resolver {
     * Resolves all the classes in the given root.
     */
   def resolveClass(c0: NamedAst.Class, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
-    case NamedAst.Class(doc, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
+    case NamedAst.Class(doc, ann0, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
       val tparam = Params.resolveTparam(tparam0)
-      for {
-        sigsList <- traverse(signatures)(resolveSig(_, taenv, ns0, root))
-        // ignore the parameter of the super class; we don't use it
-        superClasses <- traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, taenv, ns0, root))
-        laws <- traverse(laws0)(resolveDef(_, taenv, ns0, root))
-        sigs = sigsList.map(sig => (sig.sym, sig)).toMap
-      } yield ResolvedAst.Class(doc, mod, sym, tparam, superClasses, sigs, laws, loc)
+      val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
+      val sigsListVal = traverse(signatures)(resolveSig(_, taenv, ns0, root))
+      // ignore the parameter of the super class; we don't use it
+      val superClassesVal = traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, taenv, ns0, root))
+      val lawsVal = traverse(laws0)(resolveDef(_, taenv, ns0, root))
+      mapN(annVal, sigsListVal, superClassesVal, lawsVal) {
+        case (ann, sigsList, superClasses, laws) =>
+          val sigs = sigsList.map(sig => (sig.sym, sig)).toMap
+          ResolvedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
+      }
   }
 
   /**
@@ -296,13 +303,15 @@ object Resolver {
     */
   def resolveInstance(i0: NamedAst.Instance, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Instance, ResolutionError] = i0 match {
     case NamedAst.Instance(doc, mod, clazz0, tpe0, tconstrs0, defs0, loc) =>
-      for {
-        clazz <- lookupClassForImplementation(clazz0, ns0, root)
-        tpe <- resolveType(tpe0, taenv, ns0, root)
-        tconstrs <- traverse(tconstrs0)(resolveTypeConstraint(_, taenv, ns0, root))
-        defs <- traverse(defs0)(resolveDef(_, taenv, ns0, root))
-        sym = Symbol.freshInstanceSym(clazz.sym, clazz0.loc)
-      } yield ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns0, loc)
+      val clazzVal = lookupClassForImplementation(clazz0, ns0, root)
+      val tpeVal = resolveType(tpe0, taenv, ns0, root)
+      val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, taenv, ns0, root))
+      val defsVal = traverse(defs0)(resolveDef(_, taenv, ns0, root))
+      mapN(clazzVal, tpeVal, tconstrsVal, defsVal) {
+        case (clazz, tpe, tconstrs, defs) =>
+          val sym = Symbol.freshInstanceSym(clazz.sym, clazz0.loc)
+          ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns0, loc)
+      }
   }
 
   /**
@@ -310,13 +319,11 @@ object Resolver {
     */
   def resolveSig(s0: NamedAst.Sig, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Sig, ResolutionError] = s0 match {
     case NamedAst.Sig(sym, spec0, exp0) =>
-      val fparam = spec0.fparams.head
-
-      for {
-        fparamType <- resolveType(fparam.tpe, taenv, ns0, root)
-        exp <- traverse(exp0)(Expressions.resolve(_, Map(fparam.sym -> fparamType), taenv, ns0, root))
-        spec <- resolveSpec(spec0, taenv, ns0, root)
-      } yield ResolvedAst.Sig(sym, spec, exp.headOption)
+      val specVal = resolveSpec(spec0, taenv, ns0, root)
+      val expVal = traverse(exp0)(Expressions.resolve(_, taenv, ns0, root))
+      mapN(specVal, expVal) {
+        case (spec, exp) => ResolvedAst.Sig(sym, spec, exp.headOption)
+      }
   }
 
   /**
@@ -355,13 +362,11 @@ object Resolver {
     case NamedAst.Def(sym, spec0, exp0) =>
       flix.subtask(sym.toString, sample = true)
 
-      val fparam = spec0.fparams.head
-
-      for {
-        fparamType <- resolveType(fparam.tpe, taenv, ns0, root)
-        exp <- Expressions.resolve(exp0, Map(fparam.sym -> fparamType), taenv, ns0, root)
-        spec <- resolveSpec(spec0, taenv, ns0, root)
-      } yield ResolvedAst.Def(sym, spec, exp)
+      val specVal = resolveSpec(spec0, taenv, ns0, root)
+      val expVal = Expressions.resolve(exp0, taenv, ns0, root)
+      mapN(specVal, expVal) {
+        case (spec, exp) => ResolvedAst.Def(sym, spec, exp)
+      }
   }
 
   /**
@@ -386,33 +391,35 @@ object Resolver {
   /**
     * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
     */
-  def resolveEnum(e0: NamedAst.Enum, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Enum, ResolutionError] = {
-    val tparams = resolveTypeParams(e0.tparams, ns0, root)
-    val tconstrs = Nil
-    val derivesVal = resolveDerivations(e0.derives, ns0, root)
-    val annVal = traverse(e0.ann)(visitAnnotation(_, taenv, ns0, root))
-    val casesVal = traverse(e0.cases) {
-      case (name, NamedAst.Case(enum, tag, tpe)) =>
-        for {
-          t <- resolveType(tpe, taenv, ns0, root)
-        } yield {
-          val freeVars = e0.tparams.tparams.map(_.tpe)
-          val caseType = t
-          val enumType = mkUnkindedEnum(e0.sym, freeVars, e0.sym.loc)
-          val base = Type.mkTag(e0.sym, tag, caseType, enumType, tpe.loc)
-          val sc = ResolvedAst.Scheme(freeVars, tconstrs, base)
-          name -> ResolvedAst.Case(enum, tag, t, sc)
-        }
-    }
-    for {
-      ann <- annVal
-      cases <- casesVal
-      tpe <- resolveType(e0.tpe, taenv, ns0, root)
-      derives <- derivesVal
-    } yield {
-      val sc = ResolvedAst.Scheme(tparams.tparams.map(_.tpe), tconstrs, tpe)
-      ResolvedAst.Enum(e0.doc, ann, e0.mod, e0.sym, tparams, derives, cases.toMap, tpe, sc, e0.loc)
-    }
+  def resolveEnum(e0: NamedAst.Enum, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Enum, ResolutionError] = e0 match {
+    case NamedAst.Enum(doc, ann0, mod, sym, tparams0, derives0, cases0, tpe0, loc) =>
+      val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
+      val tparams = resolveTypeParams(tparams0, ns0, root)
+      val derivesVal = resolveDerivations(derives0, ns0, root)
+      val casesVal = traverse(cases0)(resolveCase(_, e0, taenv, ns0, root))
+      val tpeVal = resolveType(tpe0, taenv, ns0, root)
+      mapN(annVal, derivesVal, casesVal, tpeVal) {
+        case (ann, derives, cases, tpe) =>
+          val sc = ResolvedAst.Scheme(tparams.tparams.map(_.sym), Nil, tpe)
+          ResolvedAst.Enum(doc, ann, mod, sym, tparams, derives, cases.toMap, tpe, sc, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given case `caze0` in the given namespace `ns0`.
+    */
+  private def resolveCase(caze0: (Name.Tag, NamedAst.Case), enum0: NamedAst.Enum, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix) = (enum0, caze0) match {
+    case (NamedAst.Enum(doc, ann, mod, sym, tparams, _, _, _, loc), (name, NamedAst.Case(enumIdent, tag, tpe0))) =>
+      val tpeVal = resolveType(tpe0, taenv, ns0, root)
+      mapN(tpeVal) {
+        tpe =>
+          val freeVars = tparams.tparams.map(_.sym)
+          val caseType = tpe
+          val enumType = mkUnkindedEnum(sym, freeVars, sym.loc)
+          val base = Type.mkTag(sym, tag, caseType, enumType, tpe.loc)
+          val sc = ResolvedAst.Scheme(freeVars, Nil, base)
+          name -> ResolvedAst.Case(enumIdent, tag, tpe, sc)
+      }
   }
 
   /**
@@ -428,9 +435,10 @@ object Resolver {
     * Performs name resolution on the given annotation `a0` in the given namespace `ns0`.
     */
   private def visitAnnotation(a0: NamedAst.Annotation, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Annotation, ResolutionError] = {
-    for {
-      args <- traverse(a0.args)(Expressions.resolve(_, Map.empty, taenv, ns0, root))
-    } yield ResolvedAst.Annotation(a0.name, args, a0.loc)
+    val argsVal = traverse(a0.args)(Expressions.resolve(_, taenv, ns0, root))
+    mapN(argsVal) {
+      args => ResolvedAst.Annotation(a0.name, args, a0.loc)
+    }
   }
 
   object Expressions {
@@ -438,8 +446,7 @@ object Resolver {
     /**
       * Performs name resolution on the given expression `exp0` in the namespace `ns0`.
       */
-    // TODO: Why is this tenv here?
-    def resolve(exp0: NamedAst.Expression, tenv0: Map[Symbol.VarSym, Type], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Expression, ResolutionError] = {
+    def resolve(exp0: NamedAst.Expression, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Expression, ResolutionError] = {
 
       /**
         * Creates `arity` fresh fparams for use in a curried def or sig application.
@@ -507,66 +514,64 @@ object Resolver {
       /**
         * Resolve the application expression, performing currying over the subexpressions.
         */
-      def visitApply(exp: NamedAst.Expression.Apply): Validation[ResolvedAst.Expression, ResolutionError] = exp match {
-        case NamedAst.Expression.Apply(exp, exps, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-            es <- traverse(exps)(visit(_, tenv0))
-          } yield {
-            es.foldLeft(e) {
-              case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), loc.asSynthetic)
-            }
+      def visitApply(exp: NamedAst.Expression.Apply, region: Option[Symbol.VarSym]): Validation[ResolvedAst.Expression, ResolutionError] = exp match {
+        case NamedAst.Expression.Apply(exp0, exps0, loc) =>
+          val expVal = visitExp(exp0, region)
+          val expsVal = traverse(exps0)(visitExp(_, region))
+          mapN(expVal, expsVal) {
+            case (e, es) =>
+              es.foldLeft(e) {
+                case (acc, a) => ResolvedAst.Expression.Apply(acc, List(a), loc.asSynthetic)
+              }
           }
       }
 
       /**
         * Resolve the application expression, applying `defn` to `exps`.
         */
-      def visitApplyDef(app: NamedAst.Expression.Apply, defn: NamedAst.Def, exps: List[NamedAst.Expression], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
+      def visitApplyDef(app: NamedAst.Expression.Apply, defn: NamedAst.Def, exps: List[NamedAst.Expression], region: Option[Symbol.VarSym], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
         if (defn.spec.fparams.length == exps.length) {
           // Case 1: Hooray! We can call the function directly.
-          for {
-            es <- traverse(exps)(visit(_, tenv0))
-          } yield {
-            val base = ResolvedAst.Expression.Def(defn.sym, innerLoc)
-            ResolvedAst.Expression.Apply(base, es, outerLoc)
+          val esVal = traverse(exps)(visitExp(_, region))
+          mapN(esVal) {
+            es =>
+              val base = ResolvedAst.Expression.Def(defn.sym, innerLoc)
+              ResolvedAst.Expression.Apply(base, es, outerLoc)
           }
         } else {
           // Case 2: We have to curry. (See below).
-          visitApply(app)
+          visitApply(app, region)
         }
       }
 
       /**
         * Resolve the application expression, applying `sig` to `exps`.
         */
-      def visitApplySig(app: NamedAst.Expression.Apply, sig: NamedAst.Sig, exps: List[NamedAst.Expression], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
+      def visitApplySig(app: NamedAst.Expression.Apply, sig: NamedAst.Sig, exps: List[NamedAst.Expression], region: Option[Symbol.VarSym], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
         if (sig.spec.fparams.length == exps.length) {
           // Case 1: Hooray! We can call the function directly.
-          for {
-            es <- traverse(exps)(visit(_, tenv0))
-          } yield {
-            val base = ResolvedAst.Expression.Sig(sig.sym, innerLoc)
-            ResolvedAst.Expression.Apply(base, es, outerLoc)
+          val esVal = traverse(exps)(visitExp(_, region))
+          mapN(esVal) {
+            case (es) =>
+              val base = ResolvedAst.Expression.Sig(sig.sym, innerLoc)
+              ResolvedAst.Expression.Apply(base, es, outerLoc)
           }
         } else {
           // Case 2: We have to curry. (See below).
-          visitApply(app)
+          visitApply(app, region)
         }
       }
 
       /**
         * Local visitor.
         */
-      def visit(e0: NamedAst.Expression, tenv0: Map[Symbol.VarSym, Type]): Validation[ResolvedAst.Expression, ResolutionError] = e0 match {
+      def visitExp(e0: NamedAst.Expression, region: Option[Symbol.VarSym]): Validation[ResolvedAst.Expression, ResolutionError] = e0 match {
 
         case NamedAst.Expression.Wild(loc) =>
           ResolvedAst.Expression.Wild(loc).toSuccess
 
-        case NamedAst.Expression.Var(sym, loc) => tenv0.get(sym) match {
-          case None => ResolvedAst.Expression.Var(sym, sym.tvar, loc).toSuccess
-          case Some(tpe) => ResolvedAst.Expression.Var(sym, tpe, loc).toSuccess
-        }
+        case NamedAst.Expression.Var(sym, loc) =>
+          ResolvedAst.Expression.Var(sym, sym.tvar, loc).toSuccess
 
         case NamedAst.Expression.DefOrSig(qname, loc) =>
           mapN(lookupDefOrSig(qname, ns0, root)) {
@@ -585,13 +590,13 @@ object Resolver {
           // Lookup the used name to ensure that it exists.
           use match {
             case NamedAst.Use.UseDefOrSig(qname, _, _) =>
-              flatMapN(lookupDefOrSig(qname, ns0, root))(_ => visit(exp, tenv0))
+              flatMapN(lookupDefOrSig(qname, ns0, root))(_ => visitExp(exp, region))
 
             case NamedAst.Use.UseTypeOrClass(qname, _, _) =>
-              flatMapN(resolveType(NamedAst.Type.Ambiguous(qname, loc), taenv, ns0, root))(_ => visit(exp, tenv0))
+              flatMapN(resolveType(NamedAst.Type.Ambiguous(qname, loc), taenv, ns0, root))(_ => visitExp(exp, region))
 
             case NamedAst.Use.UseTag(qname, tag, _, _) =>
-              flatMapN(lookupEnumByTag(Some(qname), tag, ns0, root))(_ => visit(exp, tenv0))
+              flatMapN(lookupEnumByTag(Some(qname), tag, ns0, root))(_ => visitExp(exp, region))
           }
 
         case NamedAst.Expression.Unit(loc) => ResolvedAst.Expression.Unit(loc).toSuccess
@@ -624,80 +629,89 @@ object Resolver {
 
         case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qname, innerLoc), exps, outerLoc) =>
           flatMapN(lookupDefOrSig(qname, ns0, root)) {
-            case NamedAst.DefOrSig.Def(defn) => visitApplyDef(app, defn, exps, innerLoc, outerLoc)
-            case NamedAst.DefOrSig.Sig(sig) => visitApplySig(app, sig, exps, innerLoc, outerLoc)
+            case NamedAst.DefOrSig.Def(defn) => visitApplyDef(app, defn, exps, region, innerLoc, outerLoc)
+            case NamedAst.DefOrSig.Sig(sig) => visitApplySig(app, sig, exps, region, innerLoc, outerLoc)
           }
 
-        case app@NamedAst.Expression.Apply(_, _, _) => visitApply(app)
+        case app@NamedAst.Expression.Apply(_, _, _) => visitApply(app, region)
 
         case NamedAst.Expression.Lambda(fparam, exp, loc) =>
-          for {
-            paramType <- resolveType(fparam.tpe, taenv, ns0, root)
-            e <- visit(exp, tenv0 + (fparam.sym -> paramType))
-            p <- Params.resolve(fparam, taenv, ns0, root)
-          } yield ResolvedAst.Expression.Lambda(p, e, loc)
+          val pVal = Params.resolve(fparam, taenv, ns0, root)
+          val eVal = visitExp(exp, region)
+          mapN(pVal, eVal) {
+            case (p, e) => ResolvedAst.Expression.Lambda(p, e, loc)
+          }
 
         case NamedAst.Expression.Unary(sop, exp, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Unary(sop, e, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.Unary(sop, e, loc)
+          }
 
         case NamedAst.Expression.Binary(sop, exp1, exp2, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Binary(sop, e1, e2, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.Binary(sop, e1, e2, loc)
+          }
 
         case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-            e3 <- visit(exp3, tenv0)
-          } yield ResolvedAst.Expression.IfThenElse(e1, e2, e3, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          val e3Val = visitExp(exp3, region)
+          mapN(e1Val, e2Val, e3Val) {
+            case (e1, e2, e3) => ResolvedAst.Expression.IfThenElse(e1, e2, e3, loc)
+          }
 
         case NamedAst.Expression.Stm(exp1, exp2, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Stm(e1, e2, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.Stm(e1, e2, loc)
+          }
 
         case NamedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Let(sym, mod, e1, e2, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.Let(sym, mod, e1, e2, loc)
+          }
 
         case NamedAst.Expression.LetRec(sym, mod, exp1, exp2, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.LetRec(sym, mod, e1, e2, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.LetRec(sym, mod, e1, e2, loc)
+          }
 
         case NamedAst.Expression.Region(tpe, loc) =>
           ResolvedAst.Expression.Region(tpe, loc).toSuccess
 
-        case NamedAst.Expression.Scope(sym, exp, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Scope(sym, e, loc)
+        case NamedAst.Expression.Scope(sym, regionVar, exp, loc) =>
+          val eVal = visitExp(exp, Some(sym))
+          mapN(eVal) {
+            e => ResolvedAst.Expression.Scope(sym, regionVar, e, loc)
+          }
 
         case NamedAst.Expression.Match(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.MatchRule(pat, guard, body) =>
-              for {
-                p <- Patterns.resolve(pat, ns0, root)
-                g <- visit(guard, tenv0)
-                b <- visit(body, tenv0)
-              } yield ResolvedAst.MatchRule(p, g, b)
+              val pVal = Patterns.resolve(pat, ns0, root)
+              val gVal = visitExp(guard, region)
+              val bVal = visitExp(body, region)
+              mapN(pVal, gVal, bVal) {
+                case (p, g, b) => ResolvedAst.MatchRule(p, g, b)
+              }
           }
 
-          for {
-            e <- visit(exp, tenv0)
-            rs <- rulesVal
-          } yield ResolvedAst.Expression.Match(e, rs, loc)
+          val eVal = visitExp(exp, region)
+          val rsVal = rulesVal
+          mapN(eVal, rsVal) {
+            case (e, rs) => ResolvedAst.Expression.Match(e, rs, loc)
+          }
 
         case NamedAst.Expression.Choose(star, exps, rules, loc) =>
-          val expsVal = traverse(exps)(visit(_, tenv0))
+          val expsVal = traverse(exps)(visitExp(_, region))
           val rulesVal = traverse(rules) {
             case NamedAst.ChoiceRule(pat0, exp0) =>
               val p = pat0.map {
@@ -705,7 +719,7 @@ object Resolver {
                 case NamedAst.ChoicePattern.Absent(loc) => ResolvedAst.ChoicePattern.Absent(loc)
                 case NamedAst.ChoicePattern.Present(sym, loc) => ResolvedAst.ChoicePattern.Present(sym, loc)
               }
-              mapN(visit(exp0, tenv0)) {
+              mapN(visitExp(exp0, region)) {
                 case e => ResolvedAst.ChoiceRule(p, e)
               }
           }
@@ -751,88 +765,127 @@ object Resolver {
             }
           case Some(exp) =>
             // Case 2: The tag has an expression. Perform resolution on it.
-            for {
-              d <- lookupEnumByTag(enum, tag, ns0, root)
-              e <- visit(exp, tenv0)
-            } yield ResolvedAst.Expression.Tag(d.sym, tag, e, loc)
+            val dVal = lookupEnumByTag(enum, tag, ns0, root)
+            val eVal = visitExp(exp, region)
+            mapN(dVal, eVal) {
+              case (d, e) => ResolvedAst.Expression.Tag(d.sym, tag, e, loc)
+            }
         }
 
         case NamedAst.Expression.Tuple(elms, loc) =>
-          for {
-            es <- traverse(elms)(e => visit(e, tenv0))
-          } yield ResolvedAst.Expression.Tuple(es, loc)
+          val esVal = traverse(elms)(e => visitExp(e, region))
+          mapN(esVal) {
+            es => ResolvedAst.Expression.Tuple(es, loc)
+          }
 
         case NamedAst.Expression.RecordEmpty(loc) =>
           ResolvedAst.Expression.RecordEmpty(loc).toSuccess
 
         case NamedAst.Expression.RecordSelect(base, field, loc) =>
-          for {
-            b <- visit(base, tenv0)
-          } yield ResolvedAst.Expression.RecordSelect(b, field, loc)
+          val bVal = visitExp(base, region)
+          mapN(bVal) {
+            b => ResolvedAst.Expression.RecordSelect(b, field, loc)
+          }
 
         case NamedAst.Expression.RecordExtend(field, value, rest, loc) =>
-          for {
-            v <- visit(value, tenv0)
-            r <- visit(rest, tenv0)
-          } yield ResolvedAst.Expression.RecordExtend(field, v, r, loc)
+          val vVal = visitExp(value, region)
+          val rVal = visitExp(rest, region)
+          mapN(vVal, rVal) {
+            case (v, r) => ResolvedAst.Expression.RecordExtend(field, v, r, loc)
+          }
 
         case NamedAst.Expression.RecordRestrict(field, rest, loc) =>
-          for {
-            r <- visit(rest, tenv0)
-          } yield ResolvedAst.Expression.RecordRestrict(field, r, loc)
+          val rVal = visitExp(rest, region)
+          mapN(rVal) {
+            r => ResolvedAst.Expression.RecordRestrict(field, r, loc)
+          }
 
-        case NamedAst.Expression.ArrayLit(elms, loc) =>
-          for {
-            es <- traverse(elms)(e => visit(e, tenv0))
-          } yield ResolvedAst.Expression.ArrayLit(es, loc)
+        case NamedAst.Expression.New(qname, exp, loc) =>
+          val erVal = traverse(exp)(visitExp(_, region)).map(_.headOption)
+          mapN(erVal) {
+            er =>
+              ///
+              /// Translate [[new Foo(r)]] => Newable.new(r)
+              /// Translate [[new Foo()]]  => Newable.new(currentRegion)
+              ///
+              val sp1 = qname.sp1
+              val sp2 = qname.sp2
+              val classSym = Symbol.mkClassSym(Name.RootNS, Name.Ident(sp1, "Newable", sp2))
+              val sigSym = Symbol.mkSigSym(classSym, Name.Ident(sp1, "new", sp2))
+              val newExp = ResolvedAst.Expression.Sig(sigSym, loc)
+              val reg = getExplicitOrImplicitRegion(er, region, loc)
+              ResolvedAst.Expression.Apply(newExp, List(reg), loc)
+          }
 
-        case NamedAst.Expression.ArrayNew(elm, len, loc) =>
-          for {
-            e <- visit(elm, tenv0)
-            ln <- visit(len, tenv0)
-          } yield ResolvedAst.Expression.ArrayNew(e, ln, loc)
+        case NamedAst.Expression.ArrayLit(exps, exp, loc) =>
+          val esVal = traverse(exps)(visitExp(_, region))
+          val erVal = traverse(exp)(visitExp(_, region)).map(_.headOption)
+          mapN(esVal, erVal) {
+            case (es, er) =>
+              val reg = getExplicitOrImplicitRegion(er, region, loc)
+              ResolvedAst.Expression.ArrayLit(es, reg, loc)
+          }
+
+        case NamedAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          val erVal = traverse(exp3)(visitExp(_, region)).map(_.headOption)
+          mapN(e1Val, e2Val, erVal) {
+            case (e1, e2, er) =>
+              val reg = getExplicitOrImplicitRegion(er, region, loc)
+              ResolvedAst.Expression.ArrayNew(e1, e2, reg, loc)
+          }
 
         case NamedAst.Expression.ArrayLoad(base, index, loc) =>
-          for {
-            b <- visit(base, tenv0)
-            i <- visit(index, tenv0)
-          } yield ResolvedAst.Expression.ArrayLoad(b, i, loc)
+          val bVal = visitExp(base, region)
+          val iVal = visitExp(index, region)
+          mapN(bVal, iVal) {
+            case (b, i) => ResolvedAst.Expression.ArrayLoad(b, i, loc)
+          }
 
         case NamedAst.Expression.ArrayStore(base, index, elm, loc) =>
-          for {
-            b <- visit(base, tenv0)
-            i <- visit(index, tenv0)
-            e <- visit(elm, tenv0)
-          } yield ResolvedAst.Expression.ArrayStore(b, i, e, loc)
+          val bVal = visitExp(base, region)
+          val iVal = visitExp(index, region)
+          val eVal = visitExp(elm, region)
+          mapN(bVal, iVal, eVal) {
+            case (b, i, e) => ResolvedAst.Expression.ArrayStore(b, i, e, loc)
+          }
 
         case NamedAst.Expression.ArrayLength(base, loc) =>
-          for {
-            b <- visit(base, tenv0)
-          } yield ResolvedAst.Expression.ArrayLength(b, loc)
+          val bVal = visitExp(base, region)
+          mapN(bVal) {
+            b => ResolvedAst.Expression.ArrayLength(b, loc)
+          }
 
         case NamedAst.Expression.ArraySlice(base, startIndex, endIndex, loc) =>
-          for {
-            b <- visit(base, tenv0)
-            i1 <- visit(startIndex, tenv0)
-            i2 <- visit(endIndex, tenv0)
-          } yield ResolvedAst.Expression.ArraySlice(b, i1, i2, loc)
+          val bVal = visitExp(base, region)
+          val i1Val = visitExp(startIndex, region)
+          val i2Val = visitExp(endIndex, region)
+          mapN(bVal, i1Val, i2Val) {
+            case (b, i1, i2) => ResolvedAst.Expression.ArraySlice(b, i1, i2, loc)
+          }
 
         case NamedAst.Expression.Ref(exp1, exp2, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Ref(e1, e2, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = traverse(exp2)(visitExp(_, region)).map(_.headOption)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) =>
+              val reg = getExplicitOrImplicitRegion(e2, region, loc)
+              ResolvedAst.Expression.Ref(e1, reg, loc)
+          }
 
         case NamedAst.Expression.Deref(exp, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Deref(e, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.Deref(e, loc)
+          }
 
         case NamedAst.Expression.Assign(exp1, exp2, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.Assign(e1, e2, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.Assign(e1, e2, loc)
+          }
 
         case NamedAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
           val expectedTypVal = expectedType match {
@@ -844,11 +897,10 @@ object Resolver {
             case Some(f) => mapN(resolveType(f, taenv, ns0, root))(x => Some(x))
           }
 
-          for {
-            e <- visit(exp, tenv0)
-            t <- expectedTypVal
-            f <- expectedEffVal
-          } yield ResolvedAst.Expression.Ascribe(e, t, f, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal, expectedTypVal, expectedEffVal) {
+            case (e, t, f) => ResolvedAst.Expression.Ascribe(e, t, f, loc)
+          }
 
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
 
@@ -861,29 +913,28 @@ object Resolver {
             case Some(f) => mapN(resolveType(f, taenv, ns0, root))(x => Some(x))
           }
 
-          for {
-            e <- visit(exp, tenv0)
-            t <- declaredTypVal
-            f <- declaredEffVal
-          } yield ResolvedAst.Expression.Cast(e, t, f, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal, declaredTypVal, declaredEffVal) {
+            case (e, t, f) => ResolvedAst.Expression.Cast(e, t, f, loc)
+          }
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.CatchRule(sym, className, body) =>
-              for {
-                clazz <- lookupJvmClass(className, sym.loc)
-                exceptionType = Type.mkNative(clazz, loc)
-                b <- visit(body, tenv0 + (sym -> exceptionType))
-              } yield ResolvedAst.CatchRule(sym, clazz, b)
+              val clazzVal = lookupJvmClass(className, sym.loc)
+              val bVal = visitExp(body, region)
+              mapN(clazzVal, bVal) {
+                case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b)
+              }
           }
 
-          for {
-            e <- visit(exp, tenv0)
-            rs <- rulesVal
-          } yield ResolvedAst.Expression.TryCatch(e, rs, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal, rulesVal) {
+            case (e, rs) => ResolvedAst.Expression.TryCatch(e, rs, loc)
+          }
 
         case NamedAst.Expression.InvokeConstructor(className, args, sig, loc) =>
-          val argsVal = traverse(args)(visit(_, tenv0))
+          val argsVal = traverse(args)(visitExp(_, region))
           val sigVal = traverse(sig)(resolveType(_, taenv, ns0, root))
           flatMapN(sigVal, argsVal) {
             case (ts, as) =>
@@ -893,8 +944,8 @@ object Resolver {
           }
 
         case NamedAst.Expression.InvokeMethod(className, methodName, exp, args, sig, loc) =>
-          val expVal = visit(exp, tenv0)
-          val argsVal = traverse(args)(visit(_, tenv0))
+          val expVal = visitExp(exp, region)
+          val argsVal = traverse(args)(visitExp(_, region))
           val sigVal = traverse(sig)(resolveType(_, taenv, ns0, root))
           flatMapN(sigVal, expVal, argsVal) {
             case (ts, e, as) =>
@@ -904,7 +955,7 @@ object Resolver {
           }
 
         case NamedAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) =>
-          val argsVal = traverse(args)(visit(_, tenv0))
+          val argsVal = traverse(args)(visitExp(_, region))
           val sigVal = traverse(sig)(resolveType(_, taenv, ns0, root))
           flatMapN(sigVal, argsVal) {
             case (ts, as) =>
@@ -914,12 +965,12 @@ object Resolver {
           }
 
         case NamedAst.Expression.GetField(className, fieldName, exp, loc) =>
-          mapN(lookupJvmField(className, fieldName, static = false, loc), visit(exp, tenv0)) {
+          mapN(lookupJvmField(className, fieldName, static = false, loc), visitExp(exp, region)) {
             case (field, e) => ResolvedAst.Expression.GetField(field, e, loc)
           }
 
         case NamedAst.Expression.PutField(className, fieldName, exp1, exp2, loc) =>
-          mapN(lookupJvmField(className, fieldName, static = false, loc), visit(exp1, tenv0), visit(exp2, tenv0)) {
+          mapN(lookupJvmField(className, fieldName, static = false, loc), visitExp(exp1, region), visitExp(exp2, region)) {
             case (field, e1, e2) => ResolvedAst.Expression.PutField(field, e1, e2, loc)
           }
 
@@ -929,116 +980,132 @@ object Resolver {
           }
 
         case NamedAst.Expression.PutStaticField(className, fieldName, exp, loc) =>
-          mapN(lookupJvmField(className, fieldName, static = true, loc), visit(exp, tenv0)) {
+          mapN(lookupJvmField(className, fieldName, static = true, loc), visitExp(exp, region)) {
             case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, loc)
           }
 
         case NamedAst.Expression.NewChannel(exp, tpe, loc) =>
-          for {
-            t <- resolveType(tpe, taenv, ns0, root)
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.NewChannel(e, t, loc)
+          val tVal = resolveType(tpe, taenv, ns0, root)
+          val eVal = visitExp(exp, region)
+          mapN(tVal, eVal) {
+            case (t, e) => ResolvedAst.Expression.NewChannel(e, t, loc)
+          }
 
         case NamedAst.Expression.GetChannel(exp, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.GetChannel(e, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.GetChannel(e, loc)
+          }
 
         case NamedAst.Expression.PutChannel(exp1, exp2, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.PutChannel(e1, e2, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.PutChannel(e1, e2, loc)
+          }
 
         case NamedAst.Expression.SelectChannel(rules, default, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.SelectChannelRule(sym, chan, body) =>
-              for {
-                c <- visit(chan, tenv0)
-                b <- visit(body, tenv0)
-              } yield ResolvedAst.SelectChannelRule(sym, c, b)
+              val cVal = visitExp(chan, region)
+              val bVal = visitExp(body, region)
+              mapN(cVal, bVal) {
+                case (c, b) => ResolvedAst.SelectChannelRule(sym, c, b)
+              }
           }
 
           val defaultVal = default match {
             case Some(exp) =>
-              for {
-                e <- visit(exp, tenv0)
-              } yield Some(e)
+              val eVal = visitExp(exp, region)
+              mapN(eVal) {
+                e => Some(e)
+              }
             case None => None.toSuccess
           }
 
-          for {
-            rs <- rulesVal
-            d <- defaultVal
-          } yield ResolvedAst.Expression.SelectChannel(rs, d, loc)
+          mapN(rulesVal, defaultVal) {
+            case (rs, d) => ResolvedAst.Expression.SelectChannel(rs, d, loc)
+          }
 
         case NamedAst.Expression.Spawn(exp, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Spawn(e, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.Spawn(e, loc)
+          }
 
         case NamedAst.Expression.Lazy(exp, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Lazy(e, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.Lazy(e, loc)
+          }
 
         case NamedAst.Expression.Force(exp, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Force(e, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.Force(e, loc)
+          }
 
         case NamedAst.Expression.FixpointConstraintSet(cs0, loc) =>
-          for {
-            cs <- traverse(cs0)(Constraints.resolve(_, tenv0, taenv, ns0, root))
-          } yield ResolvedAst.Expression.FixpointConstraintSet(cs, loc)
+          val csVal = traverse(cs0)(Constraints.resolve(_, taenv, ns0, root))
+          mapN(csVal) {
+            cs => ResolvedAst.Expression.FixpointConstraintSet(cs, loc)
+          }
 
         case NamedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.FixpointMerge(e1, e2, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.FixpointMerge(e1, e2, loc)
+          }
 
         case NamedAst.Expression.FixpointSolve(exp, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.FixpointSolve(e, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.FixpointSolve(e, loc)
+          }
 
         case NamedAst.Expression.FixpointFilter(pred, exp, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.FixpointFilter(pred, e, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.FixpointFilter(pred, e, loc)
+          }
 
         case NamedAst.Expression.FixpointProjectIn(exp, pred, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.FixpointProjectIn(e, pred, loc)
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.FixpointProjectIn(e, pred, loc)
+          }
 
         case NamedAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.FixpointProjectOut(pred, e1, e2, loc)
+          }
 
         case NamedAst.Expression.Reify(t0, loc) =>
-          for {
-            t <- resolveType(t0, taenv, ns0, root)
-          } yield ResolvedAst.Expression.Reify(t, loc)
+          val tVal = resolveType(t0, taenv, ns0, root)
+          mapN(tVal) {
+            t => ResolvedAst.Expression.Reify(t, loc)
+          }
 
         case NamedAst.Expression.ReifyType(t0, k, loc) =>
-          for {
-            t <- resolveType(t0, taenv, ns0, root)
-          } yield ResolvedAst.Expression.ReifyType(t, k, loc)
+          val tVal = resolveType(t0, taenv, ns0, root)
+          mapN(tVal) {
+            t => ResolvedAst.Expression.ReifyType(t, k, loc)
+          }
 
         case NamedAst.Expression.ReifyEff(sym, exp1, exp2, exp3, loc) =>
-          for {
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-            e3 <- visit(exp3, tenv0)
-          } yield ResolvedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          val e3Val = visitExp(exp3, region)
+          mapN(e1Val, e2Val, e3Val) {
+            case (e1, e2, e3) => ResolvedAst.Expression.ReifyEff(sym, e1, e2, e3, loc)
+          }
 
       }
 
-      visit(exp0, Map.empty)
+      visitExp(exp0, None)
     }
 
   }
@@ -1080,30 +1147,35 @@ object Resolver {
         case NamedAst.Pattern.Str(lit, loc) => ResolvedAst.Pattern.Str(lit, loc).toSuccess
 
         case NamedAst.Pattern.Tag(enum, tag, pat, loc) =>
-          for {
-            d <- lookupEnumByTag(enum, tag, ns0, root)
-            p <- visit(pat)
-          } yield ResolvedAst.Pattern.Tag(d.sym, tag, p, loc)
+          val dVal = lookupEnumByTag(enum, tag, ns0, root)
+          val pVal = visit(pat)
+          mapN(dVal, pVal) {
+            case (d, p) => ResolvedAst.Pattern.Tag(d.sym, tag, p, loc)
+          }
 
         case NamedAst.Pattern.Tuple(elms, loc) =>
-          for {
-            es <- traverse(elms)(visit)
-          } yield ResolvedAst.Pattern.Tuple(es, loc)
+          val esVal = traverse(elms)(visit)
+          mapN(esVal) {
+            es => ResolvedAst.Pattern.Tuple(es, loc)
+          }
 
         case NamedAst.Pattern.Array(elms, loc) =>
-          for {
-            es <- traverse(elms)(visit)
-          } yield ResolvedAst.Pattern.Array(es, loc)
+          val esVal = traverse(elms)(visit)
+          mapN(esVal) {
+            es => ResolvedAst.Pattern.Array(es, loc)
+          }
 
         case NamedAst.Pattern.ArrayTailSpread(elms, sym, loc) =>
-          for {
-            es <- traverse(elms)(visit)
-          } yield ResolvedAst.Pattern.ArrayTailSpread(es, sym, loc)
+          val esVal = traverse(elms)(visit)
+          mapN(esVal) {
+            es => ResolvedAst.Pattern.ArrayTailSpread(es, sym, loc)
+          }
 
         case NamedAst.Pattern.ArrayHeadSpread(sym, elms, loc) =>
-          for {
-            es <- traverse(elms)(visit)
-          } yield ResolvedAst.Pattern.ArrayHeadSpread(sym, es, loc)
+          val esVal = traverse(elms)(visit)
+          mapN(esVal) {
+            es => ResolvedAst.Pattern.ArrayHeadSpread(sym, es, loc)
+          }
       }
 
       visit(pat0)
@@ -1117,11 +1189,12 @@ object Resolver {
       /**
         * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
         */
-      def resolve(h0: NamedAst.Predicate.Head, tenv0: Map[Symbol.VarSym, Type], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
+      def resolve(h0: NamedAst.Predicate.Head, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
         case NamedAst.Predicate.Head.Atom(pred, den, terms, loc) =>
-          for {
-            ts <- traverse(terms)(t => Expressions.resolve(t, tenv0, taenv, ns0, root))
-          } yield ResolvedAst.Predicate.Head.Atom(pred, den, ts, loc)
+          val tsVal = traverse(terms)(t => Expressions.resolve(t, taenv, ns0, root))
+          mapN(tsVal) {
+            ts => ResolvedAst.Predicate.Head.Atom(pred, den, ts, loc)
+          }
       }
     }
 
@@ -1129,21 +1202,24 @@ object Resolver {
       /**
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
-      def resolve(b0: NamedAst.Predicate.Body, tenv0: Map[Symbol.VarSym, Type], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
+      def resolve(b0: NamedAst.Predicate.Body, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
         case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
-          for {
-            ts <- traverse(terms)(t => Patterns.resolve(t, ns0, root))
-          } yield ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
+          val tsVal = traverse(terms)(t => Patterns.resolve(t, ns0, root))
+          mapN(tsVal) {
+            ts => ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
+          }
 
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
-          for {
-            e <- Expressions.resolve(exp, tenv0, taenv, ns0, root)
-          } yield ResolvedAst.Predicate.Body.Guard(e, loc)
+          val eVal = Expressions.resolve(exp, taenv, ns0, root)
+          mapN(eVal) {
+            e => ResolvedAst.Predicate.Body.Guard(e, loc)
+          }
 
         case NamedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
-          for {
-            e <- Expressions.resolve(exp, tenv0, taenv, ns0, root)
-          } yield ResolvedAst.Predicate.Body.Loop(varSyms, e, loc)
+          val eVal = Expressions.resolve(exp, taenv, ns0, root)
+          mapN(eVal) {
+            e => ResolvedAst.Predicate.Body.Loop(varSyms, e, loc)
+          }
       }
     }
 
@@ -1163,17 +1239,18 @@ object Resolver {
       * Performs name resolution on the given formal parameter `fparam0` in the given namespace `ns0`.
       */
     def resolve(fparam0: NamedAst.FormalParam, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.FormalParam, ResolutionError] = {
-      for {
-        t <- resolveType(fparam0.tpe, taenv, ns0, root)
-      } yield ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
+      val tVal = resolveType(fparam0.tpe, taenv, ns0, root)
+      mapN(tVal) {
+        t => ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
+      }
     }
 
     /**
       * Performs name resolution on the given type parameter `tparam0` in the given namespace `ns0`.
       */
     def resolveTparam(tparam0: NamedAst.TypeParam): ResolvedAst.TypeParam = tparam0 match {
-        case tparam: NamedAst.TypeParam.Kinded => resolveKindedTparam(tparam)
-        case tparam: NamedAst.TypeParam.Unkinded => resolveUnkindedTparam(tparam)
+      case tparam: NamedAst.TypeParam.Kinded => resolveKindedTparam(tparam)
+      case tparam: NamedAst.TypeParam.Unkinded => resolveUnkindedTparam(tparam)
     }
 
     /**
@@ -1214,10 +1291,11 @@ object Resolver {
     * Performs name resolution on the given scheme `sc0`.
     */
   def resolveScheme(sc0: NamedAst.Scheme, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Scheme, ResolutionError] = {
-    for {
-      base <- resolveType(sc0.base, taenv, ns0, root)
-      tconstrs <- sequence(sc0.tconstrs.map(resolveTypeConstraint(_, taenv, ns0, root)))
-    } yield ResolvedAst.Scheme(sc0.quantifiers, tconstrs, base)
+    val baseVal = resolveType(sc0.base, taenv, ns0, root)
+    val tconstrsVal = sequence(sc0.tconstrs.map(resolveTypeConstraint(_, taenv, ns0, root)))
+    mapN(baseVal, tconstrsVal) {
+      case (base, tconstrs) => ResolvedAst.Scheme(sc0.quantifiers, tconstrs, base)
+    }
   }
 
   /**
@@ -1285,10 +1363,13 @@ object Resolver {
     * Performs name resolution on the given of derivation `derive0`.
     */
   def resolveDerivation(derive0: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[Ast.Derivation, ResolutionError] = {
-    for {
-      clazz <- lookupClass(derive0, ns0, root)
-      _ <- checkDerivable(clazz.sym, derive0.loc)
-    } yield Ast.Derivation(clazz.sym, derive0.loc)
+    val clazzVal = lookupClass(derive0, ns0, root)
+    flatMapN(clazzVal) {
+      clazz =>
+        mapN(checkDerivable(clazz.sym, derive0.loc)) {
+          _ => Ast.Derivation(clazz.sym, derive0.loc)
+        }
+    }
   }
 
   /**
@@ -1504,7 +1585,7 @@ object Resolver {
     * Type aliases are given temporary placeholders.
     */
   private def semiResolveType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Type, ResolutionError] = tpe0 match {
-    case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
+    case NamedAst.Type.Var(sym, loc) => Type.UnkindedVar(sym, loc).toSuccess
 
     case NamedAst.Type.Unit(loc) => Type.mkUnit(loc).toSuccess
 
@@ -1549,28 +1630,29 @@ object Resolver {
       mkUnkindedEnum(sym, loc).toSuccess
 
     case NamedAst.Type.Tuple(elms0, loc) =>
-      for {
-        elms <- traverse(elms0)(tpe => semiResolveType(tpe, ns0, root))
-        tup = Type.mkTuple(elms, loc)
-      } yield tup
+      val elmsVal = traverse(elms0)(tpe => semiResolveType(tpe, ns0, root))
+      mapN(elmsVal) {
+        elms => Type.mkTuple(elms, loc)
+      }
 
     case NamedAst.Type.RecordRowEmpty(loc) =>
-      Type.RecordRowEmpty.toSuccess
+      Type.mkRecordRowEmpty(loc).toSuccess
 
     case NamedAst.Type.RecordRowExtend(field, value, rest, loc) =>
-      for {
-        v <- semiResolveType(value, ns0, root)
-        r <- semiResolveType(rest, ns0, root)
-        rec = Type.mkRecordRowExtend(field, v, r, loc)
-      } yield rec
+      val vVal = semiResolveType(value, ns0, root)
+      val rVal = semiResolveType(rest, ns0, root)
+      mapN(vVal, rVal) {
+        case (v, r) => Type.mkRecordRowExtend(field, v, r, loc)
+      }
 
     case NamedAst.Type.Record(row, loc) =>
-      for {
-        r <- semiResolveType(row, ns0, root)
-      } yield Type.mkRecord(r, loc)
+      val rVal = semiResolveType(row, ns0, root)
+      mapN(rVal) {
+        r => Type.mkRecord(r, loc)
+      }
 
     case NamedAst.Type.SchemaRowEmpty(loc) =>
-      Type.SchemaRowEmpty.toSuccess
+      Type.mkSchemaRowEmpty(loc).toSuccess
 
     case NamedAst.Type.SchemaRowExtendWithAlias(qname, targs, rest, loc) =>
       // Lookup the type alias.
@@ -1578,41 +1660,44 @@ object Resolver {
         case None =>
           // Case 1: The type alias was not found. Report an error.
           ResolutionError.UndefinedName(qname, ns0, loc).toFailure
-        case Some(typealias) =>
+        case Some(typeAlias) =>
           // Case 2: The type alias was found. Use it.
-          for {
-            t <- getTypeAliasTypeIfAccessible(typealias, ns0, root, loc)
-            ts <- traverse(targs)(semiResolveType(_, ns0, root))
-            r <- semiResolveType(rest, ns0, root)
-            app = Type.mkApply(t, ts, loc)
-            schema = Type.mkSchemaRowExtend(Name.mkPred(qname.ident), app, r, loc)
-          } yield schema
+          val tVal = getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
+          val tsVal = traverse(targs)(semiResolveType(_, ns0, root))
+          val rVal = semiResolveType(rest, ns0, root)
+          mapN(tVal, tsVal, rVal) {
+            case (t, ts, r) =>
+              val app = Type.mkApply(t, ts, loc)
+              Type.mkSchemaRowExtend(Name.mkPred(qname.ident), app, r, loc)
+          }
       }
 
     case NamedAst.Type.SchemaRowExtendWithTypes(ident, den, tpes, rest, loc) =>
-      for {
-        ts <- traverse(tpes)(semiResolveType(_, ns0, root))
-        r <- semiResolveType(rest, ns0, root)
-        pred = mkPredicate(den, ts, loc)
-        schema = Type.mkSchemaRowExtend(Name.mkPred(ident), pred, r, loc)
-      } yield schema
+      val tsVal = traverse(tpes)(semiResolveType(_, ns0, root))
+      val rVal = semiResolveType(rest, ns0, root)
+      mapN(tsVal, rVal) {
+        case (ts, r) =>
+          val pred = mkPredicate(den, ts, loc)
+          Type.mkSchemaRowExtend(Name.mkPred(ident), pred, r, loc)
+      }
 
     case NamedAst.Type.Schema(row, loc) =>
-      for {
-        r <- semiResolveType(row, ns0, root)
-      } yield Type.mkSchema(r, loc)
+      val rVal = semiResolveType(row, ns0, root)
+      mapN(rVal) {
+        r => Type.mkSchema(r, loc)
+      }
 
     case NamedAst.Type.Relation(tpes, loc) =>
-      for {
-        ts <- traverse(tpes)(semiResolveType(_, ns0, root))
-        rel = Type.mkRelation(ts, loc)
-      } yield rel
+      val tsVal = traverse(tpes)(semiResolveType(_, ns0, root))
+      mapN(tsVal) {
+        ts => Type.mkRelation(ts, loc)
+      }
 
     case NamedAst.Type.Lattice(tpes, loc) =>
-      for {
-        ts <- traverse(tpes)(semiResolveType(_, ns0, root))
-        lat = Type.mkLattice(ts, loc)
-      } yield lat
+      val tsVal = traverse(tpes)(semiResolveType(_, ns0, root))
+      mapN(tsVal) {
+        ts => Type.mkLattice(ts, loc)
+      }
 
     case NamedAst.Type.Native(fqn, loc) =>
       fqn match {
@@ -1624,18 +1709,19 @@ object Resolver {
       }
 
     case NamedAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
-      for {
-        tparams <- traverse(tparams0)(semiResolveType(_, ns0, root))
-        tresult <- semiResolveType(tresult0, ns0, root)
-        eff <- semiResolveType(eff0, ns0, root)
-      } yield Type.mkUncurriedArrowWithEffect(tparams, eff, tresult, loc)
+      val tparamsVal = traverse(tparams0)(semiResolveType(_, ns0, root))
+      val tresultVal = semiResolveType(tresult0, ns0, root)
+      val effVal = semiResolveType(eff0, ns0, root)
+      mapN(tparamsVal, tresultVal, effVal) {
+        case (tparams, tresult, eff) => Type.mkUncurriedArrowWithEffect(tparams, eff, tresult, loc)
+      }
 
     case NamedAst.Type.Apply(base0, targ0, loc) =>
-      for {
-        tpe1 <- semiResolveType(base0, ns0, root)
-        tpe2 <- semiResolveType(targ0, ns0, root)
-        app = Type.Apply(tpe1, tpe2, loc)
-      } yield app
+      val tpe1Val = semiResolveType(base0, ns0, root)
+      val tpe2Val = semiResolveType(targ0, ns0, root)
+      mapN(tpe1Val, tpe2Val) {
+        case (tpe1, tpe2) => Type.Apply(tpe1, tpe2, loc)
+      }
 
     case NamedAst.Type.True(loc) =>
       Type.mkTrue(loc).toSuccess
@@ -1677,7 +1763,7 @@ object Resolver {
       * The list of arguments must be the same length as the alias's parameters.
       */
     def applyAlias(alias: ResolvedAst.TypeAlias, args: List[Type], cstLoc: SourceLocation): Type = {
-      val map = alias.tparams.tparams.map(_.tpe).zip(args).toMap[Type.Var, Type]
+      val map = alias.tparams.tparams.map(_.sym).zip(args).toMap[Symbol.TypeVarSym, Type]
       val subst = Substitution(map)
       val tpe = subst(alias.tpe)
       val cst = Type.AliasConstructor(alias.sym, cstLoc)
@@ -1715,10 +1801,10 @@ object Resolver {
     * Performs name resolution on the given type `tpe0` in the given namespace `ns0`.
     */
   def resolveType(tpe0: NamedAst.Type, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Type, ResolutionError] = {
-    for {
-      t <- semiResolveType(tpe0, ns0, root)
-      tpe <- finishResolveType(t, taenv)
-    } yield tpe
+    val tVal = semiResolveType(tpe0, ns0, root)
+    flatMapN(tVal) {
+      t => finishResolveType(t, taenv)
+    }
   }
 
   /**
@@ -1764,7 +1850,7 @@ object Resolver {
       */
     def lookupIn(ns: Name.NName): EnumOrTypeAliasLookupResult = {
       val enumsInNamespace = root.enums.getOrElse(ns, Map.empty)
-      val aliasesInNamespace = root.typealiases.getOrElse(ns, Map.empty)
+      val aliasesInNamespace = root.typeAliases.getOrElse(ns, Map.empty)
       (enumsInNamespace.get(qname.ident.name), aliasesInNamespace.get(qname.ident.name)) match {
         case (None, None) =>
           // Case 1: name not found
@@ -1817,15 +1903,15 @@ object Resolver {
   private def lookupTypeAlias(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.TypeAlias] = {
     if (qname.isUnqualified) {
       // Case 1: The name is unqualified. Lookup in the current namespace.
-      val typeAliasesInNamespace = root.typealiases.getOrElse(ns0, Map.empty)
+      val typeAliasesInNamespace = root.typeAliases.getOrElse(ns0, Map.empty)
       typeAliasesInNamespace.get(qname.ident.name) orElse {
         // Case 1.1: The name was not found in the current namespace. Try the root namespace.
-        val typeAliasesInRootNS = root.typealiases.getOrElse(Name.RootNS, Map.empty)
+        val typeAliasesInRootNS = root.typeAliases.getOrElse(Name.RootNS, Map.empty)
         typeAliasesInRootNS.get(qname.ident.name)
       }
     } else {
       // Case 2: The name is qualified. Look it up in its namespace.
-      root.typealiases.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+      root.typeAliases.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }
 
@@ -2169,7 +2255,10 @@ object Resolver {
   /**
     * Construct the enum type `Sym[ts]`.
     */
-  def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.UnkindedEnum(sym), loc), ts, loc)
+  def mkUnkindedEnum(sym: Symbol.EnumSym, ts: List[Symbol.UnkindedTypeVarSym], loc: SourceLocation): Type = {
+    val args = ts.map(sym => Type.UnkindedVar(sym, sym.loc))
+    Type.mkApply(Type.Cst(TypeConstructor.UnkindedEnum(sym), loc), args, loc)
+  }
 
   /**
     * Construct the type alias type constructor for the given symbol `sym` with the given kind `k`.
@@ -2202,6 +2291,26 @@ object Resolver {
     * Returns the type `Or(tpe1, tpe2)`.
     */
   private def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, loc), tpe1, loc), tpe2, loc)
+
+  /**
+    * Returns either the explicit region (if present), the current region (if present), or the global region.
+    */
+  private def getExplicitOrImplicitRegion(explicitRegion: Option[ResolvedAst.Expression], currentRegion: Option[Symbol.VarSym], loc: SourceLocation): ResolvedAst.Expression = explicitRegion match {
+    case Some(result) =>
+      // Case 1: The region is explicitly given.
+      result
+    case None =>
+      // Case 2: The region is absent. Either use the current region or the global region.
+      currentRegion match {
+        case Some(sym) =>
+          // Case 2.1: Use the current region.
+          ResolvedAst.Expression.Var(sym, sym.tvar, sym.loc)
+        case None =>
+          // Case 2.2: Use the global region.
+          val tpe = Type.mkRegion(Type.False, loc)
+          ResolvedAst.Expression.Region(tpe, loc)
+      }
+  }
 
   /**
     * Enum describing the extent to which a class is accessible.
