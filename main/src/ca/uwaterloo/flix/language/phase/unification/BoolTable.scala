@@ -115,8 +115,9 @@ object BoolTable {
     // Compute the number of free variables.
     val numVars = f.freeVars.size
 
+    // Determine whether to minimize once or recursively.
     val result = if (numVars <= MaxVars) {
-      // Case 1: The number of free variables is less than those in the table.
+      // Case 1: The number of variables in the formula is less than those of the table.
       // We can immediately lookup the minimal formula in the table.
       if (Debug) println(s"Minimize by lookup ($numVars variables)")
       lookup(f)
@@ -141,7 +142,16 @@ object BoolTable {
   }
 
   /**
-    * Returns a pair of a formula and its free variables.
+    * Tries to recursively minimize the formula `f`.
+    *
+    * Each call returns a pair of a formula and its free variables.
+    *
+    * Bottom-up reconstructs a formula. Whenever we construct a conjunction or disjunction we
+    * check whether we the number of free variables exceed those of the table. If so, we
+    * minimize the two sub-formulas before constructing the conjunction / disjunction.
+    *
+    * This is not guaranteed to give a minimal representation. However, it does allow us to
+    * use the tabling approach even when a formula overall has more variables than the table.
     */
   private def minimizeFormulaRecursively(f: BoolFormula): (BoolFormula, SortedSet[Variable]) = f match {
     case True => (True, SortedSet.empty)
@@ -165,7 +175,8 @@ object BoolTable {
       // Determine if we must minimize.
       if (fvs.size <= MaxVars) {
         // The number of free variables does not (yet) exceed the number of variables in the table.
-        // Consequence we do not yet minimize.
+        // Consequence we do not yet minimize. We do not yet minimize in attempt to avoid a
+        // potential quadratic blow-up where we would minimize at every level.
         (Conj(f1, f2), fvs)
       } else {
         // The number of variables exceeds the number of variables in the table.
@@ -195,28 +206,14 @@ object BoolTable {
     * Renames every variable in the given formula `f` and looks it up in the minimal table.
     */
   private def alphaRenameAndLookup(f: BoolFormula): BoolFormula = {
-    // Compute a renaming.
+    // Compute a renaming. The first variable is x0, the next is x1, and so forth.
     val m = f.freeVars.toList.zipWithIndex.foldLeft(Bimap.empty[Variable, Variable]) {
       case (macc, (k, v)) => macc + (k -> v)
     }
     // Rename all variables, lookup the minimal formula, and then rename everything back.
     substitute(lookup(substitute(f, m)), m.swap)
   }
-
-  /**
-    * Substitutes all variables in `f` using the substitution map `m`.
-    *
-    * The map `m` must bind each free variable in `f` to a type variable.
-    */
-  private def substitute(f: BoolFormula, m: Bimap[Variable, Variable]): BoolFormula = f match {
-    case True => True
-    case False => False
-    case Var(x) => Var(m.getForward(x).get)
-    case Neg(f1) => Neg(substitute(f1, m))
-    case Conj(f1, f2) => Conj(substitute(f1, m), substitute(f2, m))
-    case Disj(f1, f2) => Disj(substitute(f1, m), substitute(f2, m))
-  }
-
+  
   /**
     * Attempts to minimize the given Boolean formulas `f`.
     */

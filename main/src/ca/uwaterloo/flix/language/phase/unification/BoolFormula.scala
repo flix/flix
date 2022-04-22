@@ -102,6 +102,23 @@ object BoolFormula {
   case class Disj(f1: BoolFormula, f2: BoolFormula) extends BoolFormula
 
   /**
+    * Substitutes all variables in `f` using the substitution map `m`.
+    *
+    * The map `m` must bind each free variable in `f` to a (new) variable.
+    */
+  def substitute(f: BoolFormula, m: Bimap[Int, Int]): BoolFormula = f match {
+    case True => True
+    case False => False
+    case Var(x) => m.getForward(x) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: 'x$x'.")
+      case Some(y) => Var(y)
+    }
+    case Neg(f1) => Neg(substitute(f1, m))
+    case Conj(f1, f2) => Conj(substitute(f1, m), substitute(f2, m))
+    case Disj(f1, f2) => Disj(substitute(f1, m), substitute(f2, m))
+  }
+
+  /**
     * Converts the given type `tpe` to a Boolean formula under the given variable substitution map `m`.
     *
     * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
