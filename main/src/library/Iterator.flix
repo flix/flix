@@ -436,7 +436,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, iter: Iterator[a]): b & Impure =
+    pub def foldRight(f: (a, Unit -> b & Impure) -> b & ef, z: b, iter: Iterator[a]): b & Impure =
         let Iterator(done, next) = iter;
         def loop() = {
             if (done())
