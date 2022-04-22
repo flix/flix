@@ -72,8 +72,14 @@ object BoolUnification {
     // The boolean expression we want to show is 0.
     val query = mkEq(tpe1, tpe2)
 
-    // The free and flexible type variables in the query.
-    val freeVars = query.typeVars.toList.filter(_.sym.rigidity == Rigidity.Flexible)
+    // Compute the variables in the query.
+    val typeVars = query.typeVars.toList
+
+    // Compute the flexible variables.
+    val flexibleTypeVars = typeVars.filter(_.sym.rigidity == Rigidity.Flexible)
+
+    // Determine the order in which to eliminate the variables.
+    val freeVars = computeVariableOrder(flexibleTypeVars)
 
     // Eliminate all variables.
     try {
@@ -92,6 +98,26 @@ object BoolUnification {
     } catch {
       case BooleanUnificationException => Err(UnificationError.MismatchedBools(tpe1, tpe2))
     }
+  }
+
+  /**
+    * A heuristic used to determine the order in which to eliminate variable.
+    *
+    * Semantically the order of variables is immaterial. Changing the order may
+    * yield different unifiers, but they are all equivalent. However, changing
+    * the can lead to significant speed-ups / slow-downs.
+    *
+    * We make the following observation:
+    *
+    * We want to have synthetic variables (i.e. fresh variables introduced during
+    * type inference) expressed in terms of real variables (i.e. variables that
+    * actually occur in the source code). We can ensure this by eliminating the
+    * synthetic variables first.
+    */
+  private def computeVariableOrder(l: List[Type.KindedVar]): List[Type.KindedVar] = {
+    val realVars = l.filter(_.sym.isReal)
+    val synthVars = l.filterNot(_.sym.isReal)
+    synthVars ::: realVars
   }
 
   /**

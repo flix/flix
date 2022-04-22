@@ -4,16 +4,21 @@ namespace Test/Exp/Effect {
     // just making it public for redundancy purposes
     // @test
     pub def handleEff01(): Bool = {
-        try true with {
-            def Fail.fail(_) = false
+        try true with Fail {
+            def fail(_) = false
         }
     }
 
     // @test
     pub def handleEff02(): Bool = {
-        try true with {
-            def Fail.fail(_) = resume(false)
+        try true with Fail {
+            def fail(_) = resume(false)
         }
+    }
+
+    // @test
+    pub def handleEff03(): Bool = {
+        try true with Empty
     }
 
     // @test
@@ -27,16 +32,16 @@ namespace Test/Exp/Effect {
             let x = do Console.readln();
             let y = do Console.readln();
             x == y
-        } with {
-            def Console.readln() = resume("hello")
-            def Console.println(_) = resume()
+        } with Console {
+            def readln() = resume("hello")
+            def println(_) = resume()
         }
     }
 
     // @test
     pub def handlePerform01(): Bool = {
-        try do Fail.fail("rats") with {
-            def Fail.fail(_) = true
+        try do Fail.fail("rats") with Fail {
+            def fail(_) = true
         }
     }
 
@@ -45,9 +50,9 @@ namespace Test/Exp/Effect {
         try {
             let _ = do Console.readln();
             true
-        } with {
-            def Console.readln() = "read"
-            def Console.println(_) = resume()
+        } with Console {
+            def readln() = "read"
+            def println(_) = resume()
         }
     }
 
@@ -62,11 +67,11 @@ namespace Test/Exp/Effect {
                 } else {
                     do Flip.flip()
                 }
-            } with {
-                def Flip.flip() = resume(true)
+            } with Flip {
+                def flip() = resume(true)
             }
-        } with {
-            def Fail.fail(_) = false
+        } with Fail {
+            def fail(_) = false
         }
     }
 
@@ -77,8 +82,8 @@ namespace Test/Exp/Effect {
             try {
                 try {
                     do Fail.fail("oh no!")
-                } with {
-                    def Fail.fail(msg) = {
+                } with Fail {
+                    def fail(msg) = {
                         let reallyFail = do Flip.flip();
                         if (reallyFail) {
                             do Fail.fail(msg)
@@ -87,13 +92,15 @@ namespace Test/Exp/Effect {
                         }
                     }
                 }
-            } with {
-                def Flip.flip() = resume(false)
+            } with Flip {
+                def flip() = resume(false)
             }
-        } with {
-            def Fail.fail(_) = false
+        } with Fail {
+            def fail(_) = false
         }
     }
+
+    eff Empty
 
     eff Fail {
         def fail(x: String): Unit
