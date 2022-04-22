@@ -967,11 +967,11 @@ namespace Array {
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def partition(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) & Impure =
-        let step = { (x, ac) ->
-            let (a1,a2) = ac;
+        let step = { (x, k) ->
+            let (a1, a2) = k();
             if (f(x)) (x :: a1, a2) else (a1, x :: a2)
         };
-        let (xs,ys) = foldRightOld(step, (Nil,Nil), a);
+        let (xs, ys) = foldRight(step, (Nil, Nil), a);
         (List.toArray(xs), List.toArray(ys))
 
     ///
