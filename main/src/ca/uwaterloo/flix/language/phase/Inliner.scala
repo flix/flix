@@ -144,7 +144,7 @@ object Inliner {
           // If `def1` is a single non-self call or
           // it is trivial
           // then inline the body of `def1`
-          if (def1.context.isNonSelfCall || isTrivialExp(def1.exp)) {
+          if (inlineDef(def1, sym0)) {
             val e1 = convertTailCall(def1.exp)
             // Map for substituting formal parameters of a function with the freevars currently in scope
             val env = def1.fparams.map(_.sym).zip(freevars.map(_.sym)).toMap
@@ -163,7 +163,7 @@ object Inliner {
       // If `def1` is a single non-self call or
       // it is trivial
       // then inline the body of `def1`
-      if (def1.context.isNonSelfCall || isTrivialExp(def1.exp)) {
+      if (inlineDef(def1, sym0)) {
         val e1 = convertTailCall(def1.exp)
         bindFormals(e1, def1.fparams.map(_.sym), as, Map.empty)
       } else {
@@ -179,10 +179,11 @@ object Inliner {
           // If `def1` is a single non-self call or
           // it is trivial
           // then inline the body of `def1`
-          if (def1.context.isNonSelfCall || isTrivialExp(def1.exp)) {
+          if (inlineDef(def1, sym0)) {
             // Map for substituting formal parameters of a function with the freevars currently in scope
+            val e1 = convertSelfTailCall(def1.exp)(isDef = false)
             val env = def1.fparams.map(_.sym).zip(freevars.map(_.sym)).toMap
-            bindFormals(def1.exp, def1.fparams.drop(freevars.length).map(_.sym), as, env)
+            bindFormals(e1, def1.fparams.drop(freevars.length).map(_.sym), as, env)
           } else {
             LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
           }
@@ -197,8 +198,10 @@ object Inliner {
       // If `def1` is a single non-self call or
       // it is trivial
       // then inline the body of `def1`
-      if (def1.context.isNonSelfCall || isTrivialExp(def1.exp) || (def1.context.codeSize < inlineThreshold && sym != sym0)) {
-        bindFormals(def1.exp, def1.fparams.map(_.sym), as, Map.empty)
+      if (inlineDef(def1, sym0)) {
+        // ApplySelfTail -> ApplyTDefTail
+        val e = convertSelfTailCall(def1.exp)(isDef = true)
+        bindFormals(e, def1.fparams.map(_.sym), as, Map.empty)
       } else {
         LiftedAst.Expression.ApplyDefTail(sym, as, tpe, purity, loc)
       }
@@ -446,6 +449,10 @@ object Inliner {
     case OccurrenceAst.Expression.MatchError(tpe, loc) => LiftedAst.Expression.MatchError(tpe, loc)
   }
 
+  private def inlineDef(def0: OccurrenceAst.Def, sym0: Symbol.DefnSym): Boolean = {
+     def0.context.isNonSelfCall || isTrivialExp(def0.exp) || (def0.context.codeSize < inlineThreshold && def0.sym != sym0)
+  }
+
   /**
    * Checks if `occur` is Dead and purity is `Pure`
    */
@@ -525,6 +532,39 @@ object Inliner {
     case OccurrenceAst.Expression.ApplyCloTail(exp, args, tpe, purity, loc) => OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, actuals, tpe, purity, loc)
+
+    case _ => exp0
+  }
+
+  /**
+   * Convert a given selftailCall expression `exp0` to a non tail call
+   */
+  private def convertSelfTailCall(exp0: OccurrenceAst.Expression)(implicit isDef: Boolean): OccurrenceAst.Expression = exp0 match {
+    case OccurrenceAst.Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
+      val e2 = convertSelfTailCall(exp2)
+      OccurrenceAst.Expression.Let(sym, exp1, e2, occur, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
+      val e2 = convertSelfTailCall(exp2)
+      val e3 = convertSelfTailCall(exp3)
+      OccurrenceAst.Expression.IfThenElse(exp1, e2, e3, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.Branch(e0, br0, tpe, purity, loc) =>
+      val br = br0 map {
+        case (sym, exp) => sym -> convertSelfTailCall(exp)
+      }
+      OccurrenceAst.Expression.Branch(e0, br, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.SelectChannel(rules, default, tpe, loc) =>
+      val rs = rules map {
+        case OccurrenceAst.SelectChannelRule(sym, chan, exp) => OccurrenceAst.SelectChannelRule(sym, chan, convertSelfTailCall(exp))
+      }
+      val d = default.map(exp => convertSelfTailCall(exp))
+      OccurrenceAst.Expression.SelectChannel(rs, d, tpe, loc)
+
+    case OccurrenceAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDefTail(sym, actuals, tpe, purity, loc)
 
     case _ => exp0
   }
