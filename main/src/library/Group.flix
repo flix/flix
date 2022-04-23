@@ -22,7 +22,7 @@
 pub lawful class Group[a] with Monoid[a] {
 
     ///
-    /// Returns a neutral element.
+    /// Returns the neutral element.
     ///
     pub def empty(): a =
         Monoid.empty()
@@ -33,7 +33,7 @@ pub lawful class Group[a] with Monoid[a] {
     pub def inverse(x: a): a
 
     ///
-    /// Returns the result of combining `x` and `y` using Monoid's combine.
+    /// Returns the result of combining `x` and `y` using `Monoid`'s combine.
     ///
     pub def combine(x: a, y: a): a =
         Monoid.combine(x, y)
