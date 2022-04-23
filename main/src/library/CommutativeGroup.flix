@@ -20,7 +20,7 @@
 ///
 /// The default instances for number define the additive inverse in the real numbers.
 ///
-pub lawful class CommutativeCommutativeGroup[a] with Group[a], CommutativeMonoid[a] {}
+pub lawful class CommutativeGroup[a] with Group[a], CommutativeMonoid[a] {}
 
 instance CommutativeGroup[Unit]
 
