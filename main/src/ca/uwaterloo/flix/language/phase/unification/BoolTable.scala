@@ -288,32 +288,45 @@ object BoolTable {
     val table = loadTable()
 
     if (Debug) {
-      println("== Minimization Table ==")
-      println()
-      for ((key, f) <- table) {
-        println(s"  ${toBinaryString(key, 1 << MaxVars)}: $f")
-      }
-      println(s"Total Table Size = ${table.size}")
-      println()
-    }
-
-    // If there are n variables, the table has size 2^(2^3).
-    val array = new Array[BoolFormula](1 << (1 << MaxVars))
-    for ((key, f) <- table) {
-      array(key) = f
-    }
-
-    if (Debug) {
       println("== Minimization Array ==")
       println()
-      for (i <- array.indices) {
-        println(s"  ${toBinaryString(i, 1 << MaxVars)}: ${array(i)}")
+      for (i <- table.indices) {
+        println(s"  ${toBinaryString(i, 1 << MaxVars)}: ${table(i)}")
       }
-      println(s"Total Array Size = ${array.length}")
+      println(s"Total Array Size = ${table.length}")
       println()
     }
 
-    array
+    table
+  }
+
+  /**
+    * Loads the table of minimal Boolean formulas from the disk.
+    */
+  private def loadTable(): Array[BoolFormula] = try {
+    // Read in the entire file as a string.
+    val inputStream = LocalResource.getInputStream(Path)
+    val allLines = StreamOps.readAll(inputStream)
+    inputStream.close()
+
+    // Split the string into lines.
+    val lines = allLines.split("\n")
+
+    // Parse each line into a formula.
+    val formulas = lines.map(parseLine)
+
+    // Allocate the result table. The table has size 2^(2^MaxVars).
+    val table = new Array[BoolFormula](1 << (1 << MaxVars))
+
+    // Fill the table.
+    for ((f, i) <- formulas.zipWithIndex) {
+      table(i) = f
+    }
+
+    // Return the table.
+    table
+  } catch {
+    case ex: IOException => throw InternalCompilerException(s"Unable to load Boolean minimization table: '$Path'.")
   }
 
   /**
@@ -327,26 +340,6 @@ object BoolTable {
     */
   private def leftPad(s: String, len: Int): String =
     ' '.toString * (len - s.length()) + s
-
-  /**
-    * Loads the table of minimal Boolean formulas from the disk.
-    */
-  private def loadTable(): Map[Int, BoolFormula] = try {
-    // Read in the entire file as a string.
-    val inputStream = LocalResource.getInputStream(Path)
-    val allLines = StreamOps.readAll(inputStream)
-    inputStream.close()
-
-    // Split the string into lines.
-    val lines = allLines.split("\n")
-
-    // Parse each line into a formula.
-    lines.map(parseLine).zipWithIndex.foldLeft(Map.empty[Int, BoolFormula]) {
-      case (macc, (formula, int)) => macc + (int -> formula)
-    }
-  } catch {
-    case ex: IOException => throw InternalCompilerException(s"Unable to load Boolean minimization table: '$Path'.")
-  }
 
   /**
     * Parses the given line `l` into a Boolean formula.
