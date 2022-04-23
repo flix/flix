@@ -17,8 +17,7 @@ def sum(t: Tree[Int32]): Int32 = match t {
     case Node(l, r) => sum(l) + sum(r)
 }
 
-def main(_args: Array[String]): Int32 & Impure =
+def main(): Unit & Impure =
     let t1 = Node(Leaf("Hello"), Leaf("World"));
     let t2 = map(String.length, t1);
-    println(sum(t2));
-    0 // exit code
+    println(sum(t2))

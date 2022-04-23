@@ -347,34 +347,43 @@ object Namer {
     * Performs naming on the given class `clazz`.
     */
   private def visitClass(clazz: WeededAst.Declaration.Class, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = clazz match {
-    case WeededAst.Declaration.Class(doc, ann, mod0, ident, tparams0, superClasses0, signatures, laws0, loc) =>
+    case WeededAst.Declaration.Class(doc, ann0, mod0, ident, tparams0, superClasses0, signatures, laws0, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparam = getTypeParam(tparams0)
       val tenv = tenv0 ++ getTypeEnv(List(tparam))
       val tconstr = NamedAst.TypeConstraint(Name.mkQName(ident), NamedAst.Type.Var(tparam.sym, tparam.loc.asSynthetic), sym.loc.asSynthetic)
-      for {
-        ann <- traverse(ann)(visitAnnotation(_, Map.empty, uenv0, tenv))
-        superClasses <- traverse(superClasses0)(visitTypeConstraint(_, uenv0, tenv, ns0))
-        sigs <- traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam))
-        laws <- traverse(laws0)(visitDef(_, uenv0, tenv, ns0, List(tconstr), List(tparam.sym)))
-      } yield NamedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
+
+      val annVal = traverse(ann0)(visitAnnotation(_, Map.empty, uenv0, tenv))
+      val superClassesVal = traverse(superClasses0)(visitTypeConstraint(_, uenv0, tenv, ns0))
+      val sigsVal = traverse(signatures)(visitSig(_, uenv0, tenv, ns0, ident, sym, tparam))
+      val lawsVal = traverse(laws0)(visitDef(_, uenv0, tenv, ns0, List(tconstr), List(tparam.sym)))
+
+      mapN(annVal, superClassesVal, sigsVal, lawsVal) {
+        case (ann, superClasses, sigs, laws) =>
+          NamedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
+      }
   }
 
   /**
     * Performs naming on the given instance `instance`.
     */
   private def visitInstance(instance: WeededAst.Declaration.Instance, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Instance, NameError] = instance match {
-    case WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, tconstrs, defs0, loc) =>
+    case WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, tconstrs0, defs0, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe0))
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
-      for {
-        tpe <- visitType(tpe0, uenv0, tenv)
-        tconstrs <- traverse(tconstrs)(visitTypeConstraint(_, uenv0, tenv, ns0))
-        qualifiedClass = getClass(clazz, uenv0)
-        instTconstr = NamedAst.TypeConstraint(qualifiedClass, tpe, clazz.loc)
-        defs <- traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr), tparams.tparams.map(_.sym)))
-      } yield NamedAst.Instance(doc, mod, qualifiedClass, tpe, tconstrs, defs, loc)
+
+      val tpeVal = visitType(tpe0, uenv0, tenv)
+      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
+      flatMapN(tpeVal, tconstrsVal) {
+        case (tpe, tconstrs) =>
+          val qualifiedClass = getClass(clazz, uenv0)
+          val instTconstr = NamedAst.TypeConstraint(qualifiedClass, tpe, clazz.loc)
+          val defsVal = traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr), tparams.tparams.map(_.sym)))
+          mapN(defsVal) {
+            defs => NamedAst.Instance(doc, mod, qualifiedClass, tpe, tconstrs, defs, loc)
+          }
+      }
   }
 
 
@@ -447,11 +456,6 @@ object Namer {
     case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
-      // TODO: we use tenv when getting the types from formal params first, before the explicit tparams have a chance to modify it
-      // This means that if an explicit type variable is shadowing, the outer scope variable will be used for some parts, and inner for others
-      // Resulting in a type error rather than a redundancy error (as redundancy checking happens later)
-      // To fix: require explicit kind annotations (getting rid of the formal-param-first logic)
-      // Or delay using the tenv until evaluating explicit tparams (could become complex)
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
 
@@ -620,10 +624,16 @@ object Namer {
       NamedAst.Expression.Region(tpe, loc).toSuccess
 
     case WeededAst.Expression.Scope(ident, exp, loc) =>
-      // make a fresh variable symbol for the local variable.
+      // Introduce a fresh variable symbol for the region.
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
-      mapN(visitExp(exp, env0 + (ident.name -> sym), uenv0, tenv0)) {
-        case e => NamedAst.Expression.Scope(sym, e, loc)
+
+      // Introduce a rigid region variable for the region.
+      val regionVar = Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(sym.text), Rigidity.Rigid, loc)
+
+      val env1 = env0 + (ident.name -> sym)
+      val tenv1 = tenv0 + (ident.name -> regionVar)
+      mapN(visitExp(exp, env1, uenv0, tenv1)) {
+        case e => NamedAst.Expression.Scope(sym, regionVar, e, loc)
       }
 
     case WeededAst.Expression.Match(exp, rules, loc) =>
@@ -1112,7 +1122,7 @@ object Namer {
         NameError.SuspiciousTypeVarName(ident.name, loc).toFailure
       } else if (ident.isWild) {
         // Wild idents will not be in the environment. Create a tvar instead.
-        NamedAst.Type.Var(Symbol.freshUnkindedTypeVarSym(None, Rigidity.Flexible, loc), loc).toSuccess
+        NamedAst.Type.Var(Symbol.freshUnkindedTypeVarSym(Ast.VarText.Absent, Rigidity.Flexible, loc), loc).toSuccess
       } else {
         tenv0.get(ident.name) match {
           case None => NameError.UndefinedTypeVar(ident.name, loc).toFailure
@@ -1520,10 +1530,7 @@ object Namer {
   private def visitFormalParam(fparam: WeededAst.FormalParam, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError] = fparam match {
     case WeededAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
-      val freshSym = if (ident.name == "_")
-        Symbol.freshVarSym("_", BoundBy.FormalParam, fparam.loc)
-      else
-        Symbol.freshVarSym(ident, BoundBy.FormalParam)
+      val freshSym = Symbol.freshVarSym(ident, BoundBy.FormalParam)
 
       // Compute the type of the formal parameter or use the type variable of the symbol.
       val tpeVal = optType match {
@@ -1721,7 +1728,7 @@ object Namer {
     * Creates a flexible unkinded type variable symbol from the given ident.
     */
   private def mkTypeVarSym(ident: Name.Ident)(implicit flix: Flix): Symbol.UnkindedTypeVarSym = {
-    Symbol.freshUnkindedTypeVarSym(Some(ident.name), Rigidity.Flexible, ident.loc)
+    Symbol.freshUnkindedTypeVarSym(Ast.VarText.SourceText(ident.name), Rigidity.Flexible, ident.loc)
   }
 
 

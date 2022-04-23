@@ -82,7 +82,7 @@ object Scheme {
           case InstantiateMode.Rigid => Rigidity.Rigid
           case InstantiateMode.Mixed => Rigidity.Flexible
         }
-        macc + (tvar.id -> Type.freshVar(tvar.kind, tvar.loc, rigidity, None))
+        macc + (tvar.id -> Type.freshVar(tvar.kind, tvar.loc, rigidity, Ast.VarText.Absent))
     }
 
     /**
@@ -127,15 +127,21 @@ object Scheme {
     */
   // TODO can optimize?
   def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
-    Validation.sequence(List(checkLessThanEqual(sc1, sc2, classEnv), checkLessThanEqual(sc2, sc1, classEnv))) match {
-      case Validation.Success(_) => true
-      case Validation.Failure(_) => false
-
-    }
+    lessThanEqual(sc1, sc2, classEnv) && lessThanEqual(sc2, sc1, classEnv)
   }
 
   /**
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
+    */
+  def lessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
+    checkLessThanEqual(sc1, sc2, classEnv) match {
+      case Validation.Success(_) => true
+      case Validation.Failure(_) => false
+    }
+  }
+
+  /**
+    * Returns `Success` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
   def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, UnificationError] = {
 

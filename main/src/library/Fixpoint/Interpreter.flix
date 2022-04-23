@@ -39,7 +39,7 @@ namespace Fixpoint {
             Array.compare(a, b) as & Pure
     }
 
-    type alias Database[v] = MutMap[RamSym[v], MutMap[Tuple[v], v]]
+    type alias Database[v] = MutMap[RamSym[v], MutMap[Tuple[v], v, Impure], Impure]
     type alias SearchEnv[v] = (Array[Tuple[v]], Array[v])
 
     def interpret(stmt: RamStmt[v]): Database[v] & Impure with Order[v], ToString[v] =

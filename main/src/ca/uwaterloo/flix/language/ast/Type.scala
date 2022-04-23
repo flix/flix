@@ -351,7 +351,7 @@ object Type {
     /**
       * Returns the same type variable with the given text.
       */
-    def withText(text: Option[String]): Var
+    def withText(text: Ast.VarText): Var
 
     /**
       * Returns the same type variable with the given rigidity.
@@ -387,7 +387,7 @@ object Type {
   @IntroducedBy(Kinder.getClass)
   case class KindedVar(sym: Symbol.KindedTypeVarSym, loc: SourceLocation) extends Type with Var with BaseType with Ordered[Type.KindedVar] {
 
-    override def withText(text: Option[String]): KindedVar = KindedVar(sym.withText(text), loc)
+    override def withText(text: Ast.VarText): KindedVar = KindedVar(sym.withText(text), loc)
 
     override def withRigidity(rigidity: Rigidity): KindedVar = KindedVar(sym.withRigidity(rigidity), loc)
 
@@ -416,7 +416,7 @@ object Type {
   @EliminatedBy(Kinder.getClass)
   case class UnkindedVar(sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends Type with Var with BaseType with Ordered[Type.UnkindedVar] {
 
-    override def withText(text: Option[String]): UnkindedVar = UnkindedVar(sym.withText(text), loc)
+    override def withText(text: Ast.VarText): UnkindedVar = UnkindedVar(sym.withText(text), loc)
 
     override def withRigidity(rigidity: Rigidity): UnkindedVar = UnkindedVar(sym.withRigidity(rigidity), loc)
 
@@ -522,7 +522,7 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.KindedVar = {
+  def freshVar(k: Kind, loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.KindedVar = {
     val sym = Symbol.freshKindedTypeVarSym(text, k, r, loc)
     Type.KindedVar(sym, loc)
   }
@@ -530,7 +530,7 @@ object Type {
   /**
     * Returns a fresh unkinded type variable of the given kind `k` and rigidity `r`.
     */
-  def freshUnkindedVar(loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Option[String] = None)(implicit flix: Flix): Type.UnkindedVar = {
+  def freshUnkindedVar(loc: SourceLocation, r: Rigidity = Rigidity.Flexible, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.UnkindedVar = {
     val sym = Symbol.freshUnkindedTypeVarSym(text, r, loc)
     Type.UnkindedVar(sym, loc)
   }
@@ -635,13 +635,13 @@ object Type {
     * Returns the type `ScopedArray[tpe, reg]` with the given source location `loc`.
     */
   def mkScopedArray(tpe: Type, reg: Type, loc: SourceLocation): Type =
-    Apply(Apply(Type.Cst(TypeConstructor.ScopedArray, loc), tpe, loc), reg, loc)
+    Apply(Apply(Cst(TypeConstructor.ScopedArray, loc), tpe, loc), reg, loc)
 
   /**
     * Returns the type `ScopedRef[tpe, reg]` with the given source location `loc`.
     */
-  def mkScopedRef(tpe1: Type, reg: Type, loc: SourceLocation): Type =
-    Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedRef, loc), tpe1, loc), reg, loc)
+  def mkScopedRef(tpe: Type, reg: Type, loc: SourceLocation): Type =
+    Apply(Apply(Cst(TypeConstructor.ScopedRef, loc), tpe, loc), reg, loc)
 
   /**
     * Constructs the pure arrow type A -> B.
@@ -767,6 +767,20 @@ object Type {
     * Constructs the a native type.
     */
   def mkNative(clazz: Class[_], loc: SourceLocation): Type = Type.Cst(TypeConstructor.Native(clazz), loc)
+
+  /**
+    * Constructs a RecordExtend type.
+    */
+  def mkRecordRowEmpty(loc: SourceLocation): Type = {
+    Type.Cst(TypeConstructor.RecordRowEmpty, loc)
+  }
+
+  /**
+    * Constructs a SchemaExtend type.
+    */
+  def mkSchemaRowEmpty(loc: SourceLocation): Type = {
+    Type.Cst(TypeConstructor.SchemaRowEmpty, loc)
+  }
 
   /**
     * Constructs a RecordExtend type.

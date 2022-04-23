@@ -36,7 +36,7 @@ class FlixClassLoader(classes: Map[String, JvmClass])(implicit flix: Flix) exten
   /**
     * Finds the class with the given binary `name`.
     */
-  override def findClass(name: String): Class[_] = try {
+  override def loadClass(name: String): Class[_] = try {
     // Lookup the internal name in the cache to see if the class was already defined.
     cache.get(name) match {
       case None =>
@@ -44,7 +44,17 @@ class FlixClassLoader(classes: Map[String, JvmClass])(implicit flix: Flix) exten
         classes.get(name) match {
           case None =>
             // Case 1.1: The internal name does not exist. Try the external JAR loader.
-            flix.jarLoader.loadClass(name)
+            try {
+              val clazz = flix.jarLoader.loadClass(name)
+              cache.put(name, clazz)
+              clazz
+            } catch {
+              case _: ClassNotFoundException =>
+                // Case 1.1.1: Last attempt, use the VM
+                val clazz = super.loadClass(name)
+                cache.put(name, clazz)
+                clazz
+            }
           case Some(jvmClass) =>
             // Case 1.2: The internal name was found. Define the class using its byte code.
             val clazz = defineClass(name, jvmClass.bytecode, 0, jvmClass.bytecode.length)

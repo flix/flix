@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -73,14 +73,14 @@ object Symbol {
   /**
     * Returns a fresh type variable symbol with the given text.
     */
-  def freshKindedTypeVarSym(text: Option[String], kind: Kind, rigidity: Rigidity, loc: SourceLocation)(implicit flix: Flix): KindedTypeVarSym = {
+  def freshKindedTypeVarSym(text: Ast.VarText, kind: Kind, rigidity: Rigidity, loc: SourceLocation)(implicit flix: Flix): KindedTypeVarSym = {
     new KindedTypeVarSym(flix.genSym.freshId(), text, kind, rigidity, loc)
   }
 
   /**
     * Returns a fresh type variable symbol with the given text.
     */
-  def freshUnkindedTypeVarSym(text: Option[String], rigidity: Rigidity, loc: SourceLocation)(implicit flix: Flix): UnkindedTypeVarSym = {
+  def freshUnkindedTypeVarSym(text: Ast.VarText, rigidity: Rigidity, loc: SourceLocation)(implicit flix: Flix): UnkindedTypeVarSym = {
     new UnkindedTypeVarSym(flix.genSym.freshId(), text, rigidity, loc)
   }
 
@@ -181,7 +181,7 @@ object Symbol {
     private var stackOffset: Option[Int] = None
 
     /**
-      * Returns `true`if `this` symbol is a wildcard.
+      * Returns `true` if `this` symbol is a wildcard.
       */
     def isWild: Boolean = text.startsWith("_")
 
@@ -225,14 +225,24 @@ object Symbol {
 
   trait TypeVarSym extends Locatable with Sourceable {
     val id: Int
-    val text: Option[String]
+    val text: Ast.VarText
     val loc: SourceLocation
     val rigidity: Rigidity
+
+
+    /**
+      * Returns `true` if `this` symbol is a wildcard.
+      */
+    def isWild: Boolean = text match {
+      case VarText.Absent => false
+      case VarText.SourceText(s) => s.startsWith("_")
+      case VarText.FallbackText(s) => s.startsWith("_")
+    }
 
     /**
       * Returns the same symbol with the given text.
       */
-    def withText(text: Option[String]): TypeVarSym
+    def withText(text: Ast.VarText): TypeVarSym
 
     /**
       * Returns the same symbol with the given rigidity.
@@ -251,20 +261,32 @@ object Symbol {
     /**
       * Returns a string representation of the symbol.
       */
-    override def toString: String = text.getOrElse("tvar") + Flix.Delimiter + id
+    override def toString: String = {
+      val string = text match {
+        case VarText.Absent => "tvar"
+        case VarText.SourceText(s) => s
+        case VarText.FallbackText(s) => s
+      }
+      string + Flix.Delimiter + id
+    }
   }
 
   /**
     * Kinded type variable symbol.
     */
-  final class KindedTypeVarSym(val id: Int, val text: Option[String], val kind: Kind, val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym with Ordered[KindedTypeVarSym] {
+  final class KindedTypeVarSym(val id: Int, val text: Ast.VarText, val kind: Kind, val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym with Ordered[KindedTypeVarSym] {
+
+    /**
+      * Returns `true` if `this` variable is non-synthetic.
+      */
+    def isReal: Boolean = text.isInstanceOf[Ast.VarText.SourceText]
 
     /**
       * Returns the same symbol with the given kind.
       */
     def withKind(newKind: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, newKind, rigidity, loc)
 
-    override def withText(newText: Option[String]): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, rigidity, loc)
+    override def withText(newText: Ast.VarText): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, rigidity, loc)
 
     override def withRigidity(newRigidity: Rigidity): KindedTypeVarSym = new KindedTypeVarSym(id, text, kind, newRigidity, loc)
 
@@ -274,9 +296,9 @@ object Symbol {
   /**
     * Unkinded type variable symbol.
     */
-  final class UnkindedTypeVarSym(val id: Int, val text: Option[String], val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym with Ordered[UnkindedTypeVarSym] {
+  final class UnkindedTypeVarSym(val id: Int, val text: Ast.VarText, val rigidity: Rigidity, val loc: SourceLocation) extends TypeVarSym with Ordered[UnkindedTypeVarSym] {
 
-    override def withText(newText: Option[String]): UnkindedTypeVarSym = new UnkindedTypeVarSym(id, newText, rigidity, loc)
+    override def withText(newText: Ast.VarText): UnkindedTypeVarSym = new UnkindedTypeVarSym(id, newText, rigidity, loc)
 
     override def withRigidity(newRigidity: Rigidity): UnkindedTypeVarSym = new UnkindedTypeVarSym(id, text, newRigidity, loc)
 

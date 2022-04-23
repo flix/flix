@@ -28,7 +28,7 @@ object Options {
     lib = LibLevel.All,
     debug = false,
     documentor = false,
-    entryPoint = Some(Symbol.mkDefnSym("main")),
+    entryPoint = None,
     explain = false,
     incremental = true,
     json = false,
@@ -39,6 +39,7 @@ object Options {
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
     xallowredundancies = false,
+    xnobooltable = false,
     xstatistics = false,
     xstrictmono = false
   )
@@ -80,6 +81,7 @@ object Options {
   * @param threads            selects the number of threads to use.
   * @param loadClassFiles     loads the generated class files into the JVM.
   * @param xallowredundancies disables the redundancy checker.
+  * @param xnobooltable       disable Boolean minimization via tabling.
   * @param xstatistics        enables statistics collection.
   * @param xstrictmono        enables strict monomorphization.
   */
@@ -97,6 +99,7 @@ case class Options(lib: LibLevel,
                    threads: Int,
                    loadClassFiles: Boolean,
                    xallowredundancies: Boolean,
+                   xnobooltable: Boolean,
                    xstatistics: Boolean,
                    xstrictmono: Boolean,
                   )

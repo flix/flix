@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.fmt.FormatType.formatWellKindedType
 import ca.uwaterloo.flix.language.fmt._
 import ca.uwaterloo.flix.util.Formatter
 
@@ -170,12 +171,12 @@ object TypeError {
     * @param loc      the location of the inferred type.
     */
   case class UnexpectedType(expected: Type, inferred: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Expected type '$expected' but found type: '$inferred'."
+    def summary: String = s"Expected type '${formatWellKindedType(expected)}' but found type: '${formatWellKindedType(inferred)}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Expected type: '${red(FormatType.formatWellKindedType(expected))}' but found type: '${red(FormatType.formatWellKindedType(inferred))}'.
+         |>> Expected type: '${red(formatWellKindedType(expected))}' but found type: '${red(formatWellKindedType(inferred))}'.
          |
          |${code(loc, "expression has unexpected type.")}
          |""".stripMargin
@@ -194,17 +195,17 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Unable to unify the types '$fullType1' and '$fullType2'."
+    def summary: String = s"Unable to unify the types '${formatWellKindedType(fullType1)}' and '${formatWellKindedType(fullType2)}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unable to unify the types: '${red(FormatType.formatWellKindedType(baseType1))}' and '${red(FormatType.formatWellKindedType(baseType2))}'.
+         |>> Unable to unify the types: '${red(formatWellKindedType(baseType1))}' and '${red(formatWellKindedType(baseType2))}'.
          |
          |${code(loc, "mismatched types.")}
          |
-         |Type One: ${FormatType.formatWellKindedType(fullType1)}
-         |Type Two: ${FormatType.formatWellKindedType(fullType2)}
+         |Type One: ${formatWellKindedType(fullType1)}
+         |Type Two: ${formatWellKindedType(fullType2)}
          |""".stripMargin
     }
 
@@ -220,17 +221,17 @@ object TypeError {
     * @param loc            the location where the error occurred.
     */
   case class OverApplied(excessArgument: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Over-applied function. Excess argument of type: '${FormatType.formatWellKindedType(excessArgument)}'."
+    def summary: String = s"Over-applied function. Excess argument of type: '${formatWellKindedType(excessArgument)}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Over-applied function. Excess argument of type: '${red(FormatType.formatWellKindedType(excessArgument))}'.
+         |>> Over-applied function. Excess argument of type: '${red(formatWellKindedType(excessArgument))}'.
          |
          |${code(loc, "over-applied function.")}
          |
-         |Type One: ${FormatType.formatWellKindedType(fullType1)}
-         |Type Two: ${FormatType.formatWellKindedType(fullType2)}
+         |Type One: ${formatWellKindedType(fullType1)}
+         |Type Two: ${formatWellKindedType(fullType2)}
          |""".stripMargin
     }
 
@@ -246,17 +247,17 @@ object TypeError {
     * @param loc             the location where the error occurred.
     */
   case class UnderApplied(missingArgument: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Under-applied function. Missing argument of type: '${FormatType.formatWellKindedType(missingArgument)}'."
+    def summary: String = s"Under-applied function. Missing argument of type: '${formatWellKindedType(missingArgument)}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Under-applied function. Missing argument of type: '${red(FormatType.formatWellKindedType(missingArgument))}'.
+         |>> Under-applied function. Missing argument of type: '${red(formatWellKindedType(missingArgument))}'.
          |
          |${code(loc, "under-applied function.")}
          |
-         |Type One: ${FormatType.formatWellKindedType(fullType1)}
-         |Type Two: ${FormatType.formatWellKindedType(fullType2)}
+         |Type One: ${formatWellKindedType(fullType1)}
+         |Type Two: ${formatWellKindedType(fullType2)}
          |""".stripMargin
     }
 
@@ -273,12 +274,12 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class MismatchedBools(baseType1: Type, baseType2: Type, fullType1: Option[Type], fullType2: Option[Type], loc: SourceLocation) extends TypeError {
-    def summary: String = s"Unable to unify the Boolean formulas '$baseType1' and '$baseType2'."
+    def summary: String = s"Unable to unify the Boolean formulas '${formatWellKindedType(baseType1)}' and '${formatWellKindedType(baseType2)}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unable to unify the Boolean formulas: '${red(FormatType.formatWellKindedType(baseType1))}' and '${red(FormatType.formatWellKindedType(baseType2))}'.
+         |>> Unable to unify the Boolean formulas: '${red(formatWellKindedType(baseType1))}' and '${red(formatWellKindedType(baseType2))}'.
          |
          |${code(loc, "mismatched boolean formulas.")}
          |
@@ -289,8 +290,8 @@ object TypeError {
     private def appendMismatchedBooleans(formatter: Formatter): String = (fullType1, fullType2) match {
       case (Some(ft1), Some(ft2)) =>
         import formatter._
-        s"""Type One: ${cyan(FormatType.formatWellKindedType(ft1))}
-           |Type Two: ${magenta(FormatType.formatWellKindedType(ft2))}
+        s"""Type One: ${cyan(formatWellKindedType(ft1))}
+           |Type Two: ${magenta(formatWellKindedType(ft2))}
            |""".stripMargin
       case _ => "" // nop
     }
@@ -318,12 +319,12 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class MismatchedArity(tpe1: Type, tpe2: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Unable to unify the types '$tpe1' and '$tpe2'."
+    def summary: String = s"Unable to unify the types '${formatWellKindedType(tpe1)}' and '${formatWellKindedType(tpe2)}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unable to unify the types: '${red(FormatType.formatWellKindedType(tpe1))}' and '${red(FormatType.formatWellKindedType(tpe2))}'.
+         |>> Unable to unify the types: '${red(formatWellKindedType(tpe1))}' and '${red(formatWellKindedType(tpe2))}'.
          |
          |${code(loc, "mismatched arity of types.")}
          |
@@ -348,14 +349,14 @@ object TypeError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unable to unify the type variable '${red(baseVar.toString)}' with the type '${red(FormatType.formatWellKindedType(baseType))}'.
+         |>> Unable to unify the type variable '${red(formatWellKindedType(baseVar))}' with the type '${red(formatWellKindedType(baseType))}'.
          |
          |>> The type variable occurs recursively within the type.
          |
          |${code(loc, "mismatched types.")}
          |
-         |Type One: ${FormatType.formatWellKindedType(fullType1)}
-         |Type Two: ${FormatType.formatWellKindedType(fullType2)}
+         |Type One: ${formatWellKindedType(fullType1)}
+         |Type Two: ${formatWellKindedType(fullType2)}
          |""".stripMargin
     }
 
@@ -376,15 +377,15 @@ object TypeError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Missing field '${red(field.name)}' of type '${cyan(FormatType.formatWellKindedType(fieldType))}'.
+         |>> Missing field '${red(field.name)}' of type '${cyan(formatWellKindedType(fieldType))}'.
          |
          |${code(loc, "missing field.")}
          |
          |The record type:
          |
-         |  ${FormatType.formatWellKindedType(recordType)}
+         |  ${formatWellKindedType(recordType)}
          |
-         |does not contain the field '${red(field.name)}' of type ${cyan(FormatType.formatWellKindedType(fieldType))}.
+         |does not contain the field '${red(field.name)}' of type ${cyan(formatWellKindedType(fieldType))}.
          |""".stripMargin
     }
 
@@ -405,15 +406,15 @@ object TypeError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Missing predicate '${red(pred.name)}' of type '${cyan(FormatType.formatWellKindedType(predType))}'.
+         |>> Missing predicate '${red(pred.name)}' of type '${cyan(formatWellKindedType(predType))}'.
          |
          |${code(loc, "missing predicate.")}
          |
          |The schema type:
          |
-         |  ${FormatType.formatWellKindedType(schemaType)}
+         |  ${formatWellKindedType(schemaType)}
          |
-         |does not contain the predicate '${red(pred.name)}' of type ${cyan(FormatType.formatWellKindedType(predType))}.
+         |does not contain the predicate '${red(pred.name)}' of type ${cyan(formatWellKindedType(predType))}.
          |""".stripMargin
     }
 
@@ -432,7 +433,7 @@ object TypeError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unexpected non-record type: '${red(FormatType.formatWellKindedType(tpe))}'.
+         |>> Unexpected non-record type: '${red(formatWellKindedType(tpe))}'.
          |
          |${code(loc, "unexpected non-record type.")}
          |""".stripMargin
@@ -453,7 +454,7 @@ object TypeError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unexpected non-schema type: '${red(FormatType.formatWellKindedType(tpe))}'.
+         |>> Unexpected non-schema type: '${red(formatWellKindedType(tpe))}'.
          |
          |${code(loc, "unexpected non-schema type.")}
          |
@@ -471,12 +472,12 @@ object TypeError {
     * @param loc   the location where the error occurred.
     */
   case class MissingArrowInstance(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"No instance of the '$clazz' class for the function type '${FormatType.formatWellKindedType(tpe)}'."
+    def summary: String = s"No instance of the '$clazz' class for the function type '${formatWellKindedType(tpe)}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> No instance of the '${cyan(clazz.toString)}' class for the ${magenta("function")} type '${red(FormatType.formatWellKindedType(tpe))}'.
+         |>> No instance of the '${cyan(clazz.toString)}' class for the ${magenta("function")} type '${red(formatWellKindedType(tpe))}'.
          |
          |>> Did you forget to apply the function to all of its arguments?
          |
@@ -496,12 +497,12 @@ object TypeError {
     * @param loc   the location where the error occurred.
     */
   case class MissingInstance(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"No instance of the '$clazz' class for the type '${FormatType.formatWellKindedType(tpe)}'."
+    def summary: String = s"No instance of the '$clazz' class for the type '${formatWellKindedType(tpe)}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> No instance of the '${cyan(clazz.toString)}' class for the type '${red(FormatType.formatWellKindedType(tpe))}'.
+         |>> No instance of the '${cyan(clazz.toString)}' class for the type '${red(formatWellKindedType(tpe))}'.
          |
          |${code(loc, s"missing instance")}
          |
@@ -518,12 +519,12 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class MissingEq(tpe: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Equality is not defined on '${FormatType.formatWellKindedType(tpe)}'. Define or derive instance of Eq."
+    def summary: String = s"Equality is not defined on '${formatWellKindedType(tpe)}'. Define or derive instance of Eq."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Equality is not defined on ${red(FormatType.formatWellKindedType(tpe))}. Define or derive an instance of Eq.
+         |>> Equality is not defined on ${red(formatWellKindedType(tpe))}. Define or derive an instance of Eq.
          |
          |${code(loc, s"missing Eq instance")}
          |
@@ -531,10 +532,10 @@ object TypeError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      s"""To define equality on '${FormatType.formatWellKindedType(tpe)}', either:
+      s"""To define equality on '${formatWellKindedType(tpe)}', either:
          |
-         |  (a) define an instance of Eq for '${FormatType.formatWellKindedType(tpe)}', or
-         |  (b) derive an instance of Eq for '${FormatType.formatWellKindedType(tpe)}'.
+         |  (a) define an instance of Eq for '${formatWellKindedType(tpe)}', or
+         |  (b) derive an instance of Eq for '${formatWellKindedType(tpe)}'.
          |
          |To automatically derive an instance, you can write:
          |
@@ -553,12 +554,12 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class MissingOrder(tpe: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Order is not defined on '${FormatType.formatWellKindedType(tpe)}'. Define or derive instance of Order."
+    def summary: String = s"Order is not defined on '${formatWellKindedType(tpe)}'. Define or derive instance of Order."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Order is not defined on ${red(FormatType.formatWellKindedType(tpe))}. Define or derive an instance of Order.
+         |>> Order is not defined on ${red(formatWellKindedType(tpe))}. Define or derive an instance of Order.
          |
          |${code(loc, s"missing Order instance")}
          |
@@ -566,10 +567,10 @@ object TypeError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      s"""To define an order on '${FormatType.formatWellKindedType(tpe)}', either:
+      s"""To define an order on '${formatWellKindedType(tpe)}', either:
          |
-         |  (a) define an instance of Order for '${FormatType.formatWellKindedType(tpe)}', or
-         |  (b) derive an instance of Order for '${FormatType.formatWellKindedType(tpe)}'.
+         |  (a) define an instance of Order for '${formatWellKindedType(tpe)}', or
+         |  (b) derive an instance of Order for '${formatWellKindedType(tpe)}'.
          |
          |To automatically derive an instance, you can write:
          |
@@ -589,12 +590,12 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class MissingToString(tpe: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"ToString is not defined for '${FormatType.formatWellKindedType(tpe)}'. Define or derive instance of ToString."
+    def summary: String = s"ToString is not defined for '${formatWellKindedType(tpe)}'. Define or derive instance of ToString."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> ToString is not defined on ${red(FormatType.formatWellKindedType(tpe))}. Define or derive an instance of ToString.
+         |>> ToString is not defined on ${red(formatWellKindedType(tpe))}. Define or derive an instance of ToString.
          |
          |${code(loc, s"missing ToString instance")}
          |
@@ -602,10 +603,10 @@ object TypeError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      s"""To define a string representation of '${FormatType.formatWellKindedType(tpe)}', either:
+      s"""To define a string representation of '${formatWellKindedType(tpe)}', either:
          |
-         |  (a) define an instance of ToString for '${FormatType.formatWellKindedType(tpe)}', or
-         |  (b) derive an instance of ToString for '${FormatType.formatWellKindedType(tpe)}'.
+         |  (a) define an instance of ToString for '${formatWellKindedType(tpe)}', or
+         |  (b) derive an instance of ToString for '${formatWellKindedType(tpe)}'.
          |
          |To automatically derive an instance, you can write:
          |
@@ -618,40 +619,6 @@ object TypeError {
   }
 
   /**
-    * An error indicating that the main function's scheme is incorrect.
-    *
-    * @param declaredScheme the erroneous function's scheme.
-    * @param expectedScheme the scheme the main function is expected to have.
-    * @param loc            the location where the error occurred.
-    */
-  case class IllegalMain(declaredScheme: Scheme, expectedScheme: Scheme, loc: SourceLocation) extends TypeError {
-    override def summary: String = "Illegal main."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> The main function has an unexpected type.
-         |
-         |${code(loc, s"unexpected type.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""The main function must have the form:
-         |
-         |  def main(args: Array[String]): Int32 & Impure = ...
-         |
-         |i.e.
-         |- it must return an integer which is the exit code, and
-         |- it must have a side-effect (such as printing to the screen).
-         |
-         |If the arguments `args` are not needed they can be replaced by an '_'.
-         |""".stripMargin
-    })
-  }
-
-  /**
     * An error indicating that a region variable escapes its scope.
     *
     * @param rvar the region variable.
@@ -659,20 +626,24 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class RegionVarEscapes(rvar: Type.KindedVar, tpe: Type, loc: SourceLocation) extends TypeError {
-    def summary: String = s"Region variable '${FormatType.formatWellKindedType(rvar)}' escapes its scope."
+    def summary: String = s"Region variable '${formatWellKindedType(rvar)}' escapes its scope."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> The region variable '${red(FormatType.formatWellKindedType(rvar))}' escapes its scope.
+         |>> The region variable '${red(formatWellKindedType(rvar))}' escapes its scope.
          |
          |${code(loc, "region variable escapes.")}
          |
          |The escaping expression has type:
          |
-         |  ${red(FormatType.formatWellKindedType(tpe))}
+         |  ${red(formatWellKindedType(tpe))}
          |
          |which contains the region variable.
+         |
+         |The region variable was declared here:
+         |
+         |${code(rvar.loc, "region variable declared here.")}
          |""".stripMargin
     }
 

@@ -16,6 +16,13 @@
 namespace Environment {
 
     ///
+    /// Returns the arguments passed to the program via the command line.
+    ///
+    pub def getArgs(): List[String] =
+        import static dev.flix.runtime.Global.getArgs(): Array[String] & Impure;
+        Array.toList(getArgs()) as & Pure
+
+    ///
     /// Returns an map of the current system environment.
     ///
     pub def getEnv(): Map[String, String] =
