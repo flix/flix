@@ -17,7 +17,7 @@
 ///
 /// A type class for types that form a group.
 ///
-/// The default instances define the additive inverse in the whole numbers.
+/// The default instances for numbers define the additive inverse in the real numbers.
 ///
 pub lawful class Group[a] with Monoid[a] {
 
