@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
 import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, StreamOps}
 import ca.uwaterloo.flix.util.collection.Bimap
 
+import java.io.IOException
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable.ListBuffer
 
@@ -330,16 +331,21 @@ object BoolTable {
   /**
     * Loads the table of minimal Boolean formulas from the disk.
     */
-  private def loadTable(): Map[Int, BoolFormula] = {
+  private def loadTable(): Map[Int, BoolFormula] = try {
+    // Read in the entire file as a string.
     val inputStream = LocalResource.getInputStream(Path)
     val allLines = StreamOps.readAll(inputStream)
     inputStream.close()
 
+    // Split the string into lines.
     val lines = allLines.split("\n")
 
+    // Parse each line into a formula.
     lines.map(parseLine).zipWithIndex.foldLeft(Map.empty[Int, BoolFormula]) {
       case (macc, (formula, int)) => macc + (int -> formula)
     }
+  } catch {
+    case ex: IOException => throw InternalCompilerException(s"Unable to load Boolean minimization table: '$Path'.")
   }
 
   /**
