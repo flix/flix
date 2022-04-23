@@ -279,7 +279,7 @@ object Symbol {
     /**
       * Returns `true` if `this` variable is non-synthetic.
       */
-    def isReal: Boolean = text.isInstanceOf[Ast.VarText.SourceText]
+    def isReal: Boolean = loc.locationKind == SourceKind.Real
 
     /**
       * Returns the same symbol with the given kind.
