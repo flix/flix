@@ -1666,6 +1666,10 @@ namespace Array {
                 let arr = a as Array[##java.lang.Object];
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32): Array[##java.lang.Object] & Impure as copy;
                 copy(arr, b, e) as Array[a]
+            case ReifiedUnit =>
+                let arr = a as Array[Unit];
+                import static java.util.Arrays.copyOfRange(Array[Unit], Int32, Int32): Array[Unit] & Impure as copy;
+                copy(arr, b, e) as Array[a]
             case ReifiedBool =>
                 let arr = a as Array[Bool];
                 import static java.util.Arrays.copyOfRange(Array[Bool], Int32, Int32): Array[Bool] & Impure as copy;

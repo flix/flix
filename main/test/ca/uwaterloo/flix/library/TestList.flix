@@ -1012,31 +1012,28 @@ def foldLeft04(): Bool = List.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, 1 :
 // foldRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRight01(): Bool = List.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Nil) == 100
+def foldRight01(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Nil) == 100
 
 @test
-def foldRight02(): Bool = List.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, 1 :: Nil) == 198
+def foldRight02(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: Nil) == 198
 
 @test
-def foldRight03(): Bool = List.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
+def foldRight03(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
 
 @test
-def foldRight04(): Bool = List.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
-
-/////////////////////////////////////////////////////////////////////////////
-// foldRightLazy                                                           //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def foldRightLazy01(): Bool = List.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, Nil) == 100
+def foldRight04(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
 
 @test
-def foldRightLazy02(): Bool = List.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, 1 :: Nil) == 198
+def foldRight05(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Nil) == 100
 
 @test
-def foldRightLazy03(): Bool = List.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
+def foldRight06(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: Nil) == 198
 
 @test
-def foldRightLazy04(): Bool = List.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
+def foldRight07(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
+
+@test
+def foldRight08(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //

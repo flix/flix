@@ -90,6 +90,7 @@ object JvmName {
   val Runnable: JvmName = JvmName(JavaLang, "Runnable")
   val Short: JvmName = JvmName(JavaLang, "Short")
   val StringBuilder: JvmName = JvmName(JavaLang, "StringBuilder")
+  val System: JvmName = JvmName(JavaLang, "System")
   val UnsupportedOperationException: JvmName = JvmName(JavaLang, "UnsupportedOperationException")
 
   //
@@ -100,7 +101,7 @@ object JvmName {
 
   // TODO: These could be BackendObjType objects to allow method/field objects
   val FlixError: JvmName = JvmName(DevFlixRuntime, "FlixError")
-  val GlobalCounter: JvmName = JvmName(DevFlixRuntime, "GlobalCounter")
+  val Global: JvmName = JvmName(DevFlixRuntime, "Global")
   val HoleError: JvmName = JvmName(DevFlixRuntime, "HoleError")
   val MatchError: JvmName = JvmName(DevFlixRuntime, "MatchError")
   val ProxyObject: JvmName = JvmName(DevFlixRuntime, "ProxyObject")
