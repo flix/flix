@@ -334,7 +334,12 @@ namespace MutDeque {
     pub def sameElements(d1: MutDeque[t, r1], d2: MutDeque[t, r2]): Bool \ Read(r1, r2) with Eq[t] =
         let MutDeque(a1, f1, b1) = d1;
         let MutDeque(a2, f2, b2) = d2;
-        if (Array.sameElements(deref a1, deref a2))
+        let c1 = capacity(d1);
+        let c2 = capacity(d2);
+        let e = Int32.max(c1, c2);
+        let aa1 = Array.copyOfRange(0, e, deref a1);
+        let aa2 = Array.copyOfRange(0, e, deref a2);
+        if (Array.sameElements(aa1, aa2))
             (deref f1) == (deref f2) and (deref b1) == (deref b2)
         else
             false

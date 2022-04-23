@@ -349,63 +349,63 @@ namespace TestMutDeque {
 
     @test
     def sameElements01(): Bool = region r {
-        let d = new MutDeque(r): MutDeque[Int32, _];
+        let d1 = new MutDeque(r): MutDeque[Int32, _];
         let d2 = new MutDeque(r): MutDeque[Int32, _];
-        MutDeque.sameElements(d, d2)
+        MutDeque.sameElements(d1, d2)
     }
 
     @test
     def sameElements02(): Bool = region r {
-        let d = new MutDeque(r);
-        MutDeque.pushBack(1, d);
+        let d1 = new MutDeque(r);
+        MutDeque.pushBack(1, d1);
 
         let d2 = new MutDeque(r);
         MutDeque.pushFront(1, d2);
 
-        MutDeque.sameElements(d, d2)
+        MutDeque.sameElements(d1, d2)
     }
 
     @test
     def sameElements03(): Bool = region r {
-        let d = new MutDeque(r);
-        MutDeque.pushBack(1, d);
-        MutDeque.pushBack(2, d);
+        let d1 = new MutDeque(r);
+        MutDeque.pushBack(1, d1);
+        MutDeque.pushBack(2, d1);
 
         let d2 = new MutDeque(r);
         MutDeque.pushFront(1, d2);
         MutDeque.pushFront(2, d2);
 
-        not MutDeque.sameElements(d, d2)
+        not MutDeque.sameElements(d1, d2)
     }
 
     @test
     def sameElements04(): Bool = region r {
-        let d = new MutDeque(r);
-        MutDeque.pushBack("a", d);
-        MutDeque.pushBack("b", d);
-        MutDeque.pushBack("c", d);
+        let d1 = new MutDeque(r);
+        MutDeque.pushBack("a", d1);
+        MutDeque.pushBack("b", d1);
+        MutDeque.pushBack("c", d1);
 
         let d2 = new MutDeque(r);
         MutDeque.pushFront("b", d2);
         MutDeque.pushBack("c", d2);
         MutDeque.pushFront("a", d2);
 
-        MutDeque.sameElements(d, d2)
+        MutDeque.sameElements(d1, d2)
     }
 
     @test
     def sameElements05(): Bool = region r {
-        let d = new MutDeque(r);
-        MutDeque.pushBack("a", d);
-        MutDeque.pushBack("b", d);
-        MutDeque.pushBack("c", d);
+        let d1 = new MutDeque(r);
+        MutDeque.pushBack("a", d1);
+        MutDeque.pushBack("b", d1);
+        MutDeque.pushBack("c", d1);
 
         let d2 = new MutDeque(r);
         MutDeque.pushFront("a", d2);
         MutDeque.pushFront("b", d2);
         MutDeque.pushBack("c", d2);
 
-        not MutDeque.sameElements(d, d2)
+        not MutDeque.sameElements(d1, d2)
     }
 
 
