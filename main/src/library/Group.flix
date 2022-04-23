@@ -19,7 +19,7 @@
 ///
 /// The default instances for numbers define the additive inverse in the real numbers.
 ///
-pub lawful class Group[a] with Monoid[a] {
+pub class Group[a] with Monoid[a] {
 
     ///
     /// Returns the neutral element.
@@ -37,6 +37,14 @@ pub lawful class Group[a] with Monoid[a] {
     ///
     pub def combine(x: a, y: a): a =
         Monoid.combine(x, y)
+
+    ///
+    /// Returns `y` removed from `x`.
+    ///
+    /// Equivalent to `Group.combine(x, Group.inverse(y))`
+    ///
+    pub def remove(x: a, y: a): a =
+        Group.combine(x, Group.inverse(y))
 
     ///
     /// Combining the inverse of `x` with `x` yields the neutral element in the group.
@@ -58,46 +66,43 @@ pub lawful class Group[a] with Monoid[a] {
 
 }
 
-namespace Group {
-
-    ///
-    /// Returns `y` subtracted from `x` using a group subtraction.
-    ///
-    pub def remove(x: a, y: a): a with Group[a] =
-        Group.combine(x, Group.inverse(y))
-
-}
-
 instance Group[Unit] {
     pub def inverse(_: Unit): Unit = ()
 }
 
 instance Group[Int8] {
     pub def inverse(x: Int8): Int8 = -x
+    override pub def remove(x: Int8, y: Int8): Int8 = x - y
 }
 
 instance Group[Int16] {
     pub def inverse(x: Int16): Int16 = -x
+    override pub def remove(x: Int16, y: Int16): Int16 = x - y
 }
 
 instance Group[Int32] {
     pub def inverse(x: Int32): Int32 = -x
+    override pub def remove(x: Int32, y: Int32): Int32 = x - y
 }
 
 instance Group[Int64] {
     pub def inverse(x: Int64): Int64 = -x
+    override pub def remove(x: Int64, y: Int64): Int64 = x - y
 }
 
 instance Group[BigInt] {
     pub def inverse(x: BigInt): BigInt = -x
+    override pub def remove(x: BigInt, y: BigInt): BigInt = x - y
 }
 
 instance Group[Float32] {
     pub def inverse(x: Float32): Float32 = -x
+    override pub def remove(x: Float32, y: Float32): Float32 = x - y
 }
 
 instance Group[Float64] {
     pub def inverse(x: Float64): Float64 = -x
+    override pub def remove(x: Float64, y: Float64): Float64 = x - y
 }
 
 instance Group[(a1, a2)] with Group[a1], Group[a2] {
