@@ -329,18 +329,23 @@ namespace MutDeque {
         Array.length(deref a)
 
     ///
-    /// Returns `true` if `MutDeque`s `d1` and `d2` have the same elements, i.e. are structurally equal.
+    /// Returns `true` if `MutDeque`s `a` and `b` have the same elements, i.e. are structurally equal.
     ///
     pub def sameElements(d1: MutDeque[t, r1], d2: MutDeque[t, r2]): Bool \ Read(r1, r2) with Eq[t] =
-        let MutDeque(a1, f1, b1) = d1;
-        let MutDeque(a2, f2, b2) = d2;
-        let c1 = capacity(d1);
-        let c2 = capacity(d2);
-        let e = Int32.max(c1, c2);
-        let aa1 = Array.copyOfRange(0, e, deref a1);
-        let aa2 = Array.copyOfRange(0, e, deref a2);
-        if (Array.sameElements(aa1, aa2))
-            (deref f1) == (deref f2) and (deref b1) == (deref b2)
+        let aSize = size(d1);
+        let bSize = size(d2);
+        if (aSize == bSize)
+            let MutDeque(aArray, aFront, aBack) = d1;
+            let aCap = capacity(d1);
+            let MutDeque(bArray, bFront, bBack) = d2;
+            let bCap = capacity(d2);
+            region r {
+                let a1 = [$DEFAULT$; aCap] @ r;
+                let b1 = [$DEFAULT$; bCap] @ r;
+                copyElements!(deref aFront, deref aBack, deref aArray, a1);
+                copyElements!(deref bFront, deref bBack, deref bArray, b1);
+                Array.sameElements(a1, b1)
+            }
         else
             false
 
