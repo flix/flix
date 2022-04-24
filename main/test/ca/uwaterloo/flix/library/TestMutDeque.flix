@@ -716,21 +716,21 @@ namespace TestMutDeque {
 
     @test
     def foldRight01(): Bool = region r {
-        MutDeque.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, new MutDeque(r)) == 100
+        MutDeque.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, new MutDeque(r)) == 100
     }
 
     @test
     def foldRight02(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushBack(1, d);
-        MutDeque.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, d) == 198
+        MutDeque.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, d) == 198
     }
 
     @test
     def foldRight03(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushFront(1, d);
-        MutDeque.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, d) == 198
+        MutDeque.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, d) == 198
     }
 
     @test
@@ -738,7 +738,7 @@ namespace TestMutDeque {
         let d = new MutDeque(r);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
-        MutDeque.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, d) == 194
+        MutDeque.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, d) == 194
     }
 
     @test
@@ -747,7 +747,7 @@ namespace TestMutDeque {
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushFront(1, d);
-        MutDeque.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, d) == 382
+        MutDeque.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, d) == 382
     }
 
 

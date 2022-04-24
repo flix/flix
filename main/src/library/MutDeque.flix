@@ -175,24 +175,24 @@ namespace MutDeque {
         loop(front, back, s)
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `d` going from right to left.
+    /// Applies `f` to a start value `z` and all elements in `d` going from right to left.
     ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
+    /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, d: MutDeque[a, r]): b \ { ef, Read(r) } =
+    pub def foldRight(f: (a, Unit -> b & ef and r) -> b & ef and r, s: b, d: MutDeque[a, r]): b \ { ef, Read(r) } =
         let MutDeque(ar_, front_, back_) = d;
         let ar = deref ar_;
         let front = deref front_;
         let back = deref back_;
         let c = capacity(d) - 1;
-        def loop(i, e, acc) =
+        def loop(i, e) =
             if (i == e)
-                acc
+                s
             else {
-                let j = (i - 1) &&& c;
-                loop(j, e, f(ar[j], acc))
+                f(ar[i], _ -> loop((i + 1) &&& c, e))
             };
-        loop(back, front, s)
+        loop(front, back)
 
     ///
     /// Returns `Some(x)` where `x` is the element at the front. Returns `None` if `d` is empty.
@@ -351,7 +351,7 @@ namespace MutDeque {
     /// Returns `d` as a `List`.
     ///
     pub def toList(d: MutDeque[a, r]): List[a] \ Read(r) =
-        foldRight((x, acc) -> x :: acc, Nil, d)
+        foldRight((x, k) -> x :: k(), Nil, d)
 
     ///
     /// Returns the concatenation of the string representation
