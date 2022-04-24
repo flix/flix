@@ -1354,7 +1354,7 @@ namespace TestChain {
 
     @test
     def toMutList01(): Bool & Impure =
-        Chain.toMutList(Chain.empty(): Chain[Int32]) `MutList.sameElements` List.toMutList(Nil): MutList[Int32]
+        Chain.toMutList(Chain.empty(): Chain[Int32]) `MutList.sameElements` List.toMutList(Nil): MutList[Int32, Impure]
 
     @test
     def toMutList02(): Bool & Impure =

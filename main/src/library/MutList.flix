@@ -599,14 +599,13 @@ namespace MutList {
         }
         else
             ()
-/*
+
     ///
-    /// Inserts all the elements in the collection `t` into the mutable list `v`.
+    /// Appends `v2` to `v1` i.e. inserts all elements from `v2` into the end of `v1`.
     ///
-    pub def append!(t: t[a], v: MutList[a, r]): Unit \ { Read(r), Write(r) } with Iterable[t] =
-        let iter = Iterable.iterator(t);
-        Iterator.foreach(x -> MutList.push!(x, v), iter)
-*/
+    pub def append!(v1: MutList[a, r1], v2: MutList[a, r2]): Unit \ { Read(r1, r2), Write(r2) } =
+        foreach(x -> push!(x, v2), v1)
+
     ///
     /// Removes all elements from the given mutable list `v` that do not satisfy the given predicate `f`.
     ///
