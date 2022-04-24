@@ -1606,7 +1606,7 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWithin!(cmp: (a,a) -> Comparison, lo: Int32, hi: Int32, a: Array[a]): Unit & Impure =
+    pub def sortWithin!(cmp: (a,a) -> Comparison, lo: Int32, hi: Int32, a: ScopedArray[a, r]): Unit \ { Read(r), Write(r) }=
         if (lo >= hi)
             ()
         else {
@@ -1620,7 +1620,7 @@ namespace Array {
     ///
     /// Precondition: `i` and `j` are within bounds.
     ///
-    def swap!(a: Array[a], i: Int32, j: Int32): Unit & Impure =
+    def swap!(a: ScopedArray[a, r], i: Int32, j: Int32): Unit \ { Read(r), Write(r) } =
         let x = a[i];
         let y = a[j];
         a[i] = y;
@@ -1630,7 +1630,7 @@ namespace Array {
     ///
     /// Partition step of the Quicksort algorithm.
     ///
-    def quicksortPartition(cmp: (a,a) -> Comparison, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
+    def quicksortPartition(cmp: (a,a) -> Comparison, a: ScopedArray[a, r], lo: Int32, hi: Int32): Int32 \ { Read(r), Write(r) } =
         let pivot = a[hi];
         let i = forWithAccum(lo, hi, lo, (j,ix) ->
             if (cmp(a[j], pivot) == LessThan) {
