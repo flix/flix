@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, StreamO
 import ca.uwaterloo.flix.util.collection.Bimap
 
 import java.io.IOException
-import java.io.FileInputStream
 import java.util.zip.ZipInputStream
 
 import scala.annotation.tailrec
