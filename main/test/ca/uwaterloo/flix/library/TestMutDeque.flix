@@ -849,63 +849,6 @@ namespace TestMutDeque {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // iterator                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-/*
-    @test
-    def iterator01(): Bool = region r {
-        match new MutDeque(r) |> Iterable.iterator {
-            case Iterator(done, _) => done() == true
-        }
-    }
-
-    @test
-    def iterator02(): Bool = region r {
-        let m = new MutDeque(r);
-        MutDeque.pushBack(1, m);
-        MutDeque.pushBack(2, m);
-
-        match m |> Iterable.iterator {
-            case Iterator(done, _) => done() == false
-        }
-    }
-
-    @test
-    def iterator03(): Bool = region r {
-        let m = new MutDeque(r);
-        MutDeque.pushBack(1, m);
-
-        match m |> Iterable.iterator {
-            case Iterator(_, next) => next() == 1
-        }
-    }
-
-    @test
-    def iterator04(): Bool = region r {
-        let m = new MutDeque(r);
-        MutDeque.pushBack(1, m);
-
-        match m |> Iterable.iterator {
-            case Iterator(done, next) =>
-                next();
-                done() == true
-        }
-    }
-
-    @test
-    def iterator05(): Bool = region r {
-        let m = new MutDeque(r);
-        MutDeque.pushFront(2, m);
-        MutDeque.pushFront(1, m);
-
-        match m |> Iterable.iterator {
-            case Iterator(_, next) =>
-                next();
-                next() == 2
-        }
-    }
-*/
-    /////////////////////////////////////////////////////////////////////////////
     // foreach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

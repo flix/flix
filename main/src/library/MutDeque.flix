@@ -40,33 +40,6 @@ instance Scoped[MutDeque[a]] {
     pub def regionOf(_: MutDeque[a, r]): Region[r] = () as Region[r]
 }
 
-// Find fix for this
-/*
-instance Iterable[MutDeque] {
-    pub def iterator(t: MutDeque[a, r]): Iterator[a] \ Read(r) =
-        let MutDeque(a, f, b) = t;
-        let len = Array.length(deref a);
-        let copy = deref a;
-        let i = f;
-
-        let done = () -> (deref i) == deref b;
-        let next = () -> {
-            if (deref i != deref b) {
-                let j = {
-                    if (deref i == len) 0
-                    else deref i
-                };
-                let x = copy[j];
-                i := j + 1;
-                x
-            } else {
-                bug!("Empty Iterator!")
-            }
-        };
-        Iterator(done, next)
-}
-*/
-
 namespace MutDeque {
 
     ///
