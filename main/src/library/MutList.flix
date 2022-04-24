@@ -894,7 +894,7 @@ namespace MutList {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, v: MutList[a, r]): MutList[a, r] \ { Read(r), Write(r) } =
-        let vCopy = copy(v) @ Scoped.regionOf(v);
+        let vCopy = copy(v);
         sortWith!(cmp, vCopy);
         vCopy
 
