@@ -264,32 +264,42 @@ namespace TestMutList {
 
     @test
     def productWith01(): Bool = region r {
-        List.toMutList(Nil) |> MutList.productWith(x -> x + 1) == 0
+        new MutList(r) |> MutList.productWith(x -> x + 1) == 0
     }
 
     @test
     def productWith02(): Bool = region r {
-        List.toMutList(1 :: Nil) |> MutList.productWith(x -> x + 1) == 2
+        let d = new MutList(r);
+        let r = 1 :: Nil;
+        MutList.productWith(x -> x + 1, l) == 2
     }
 
     @test
     def productWith03(): Bool = region r {
-        List.toMutList(1 :: 2 :: 3 :: Nil) |> MutList.productWith(x -> x + 1) == 24
+        let d = new MutList(r);
+        let r = 1 :: 2 :: 3 :: Nil;
+        MutList.productWith(x -> x + 1, l) == 24
     }
 
     @test
     def productWith04(): Bool = region r {
-        List.toMutList(1 :: 2 :: 3 :: -3 :: Nil) |> MutList.productWith(x -> x + 1) == -48
+        let d = new MutList(r);
+        let r = 1 :: 2 :: 3 :: -3 :: Nil;
+        MutList.productWith(x -> x + 1, l) == -48
     }
 
     @test
     def productWith05(): Bool = region r {
-        List.toMutList(-2 :: -3 :: -4 :: -5 :: Nil) |> MutList.productWith(x -> x + 1) == 24
+        let d = new MutList(r);
+        let r = -2 :: -3 :: -4 :: -5 :: Nil;
+        MutList.productWith(x -> x +, l 1) == 24
     }
 
     @test
     def productWith06(): Bool = region r {
-        List.toMutList(10 :: -10 :: Nil) |> MutList.productWith(x -> x + 1) == -99
+        let d = new MutList(r);
+        let r = 10 :: -10 :: Nil;
+        MutList.productWith(x -> x + 1, l) == -99
     }
 
 
