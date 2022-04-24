@@ -464,7 +464,7 @@ namespace Map {
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
     pub def foldRightOld(f: (v, b) -> b & ef, s: b, m: Map[k, v]): b & ef =
-        foldRightWithKeyOld((_, v, c) -> f(v, c()), s, m)
+        foldRightWithKeyOld((_, v, c) -> f(v, c), s, m)
 
     ///
     /// Applies `f` to a start value `s` and all values in `m` going from right to left.
@@ -473,7 +473,7 @@ namespace Map {
     /// A `foldRight` allows early termination by not calling the continuation.
     ///
     pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
-        foldRightWithKey((_, v, c) -> f(v, c()), z, m)
+        foldRightWithKey((_, v, c) -> f(v, c), z, m)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
