@@ -22,9 +22,11 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, StreamO
 import ca.uwaterloo.flix.util.collection.Bimap
 
 import java.io.IOException
+import java.io.FileInputStream
+import java.util.zip.ZipInputStream
+
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
-import scala.collection.mutable.ListBuffer
 
 /**
   * A Boolean minimization technique that uses on pre-computed tables of minimal formulas.
@@ -44,7 +46,7 @@ object BoolTable {
   /**
     * The path to the table.
     */
-  private val Path: String = "/src/ca/uwaterloo/flix/language/phase/unification/Table4.pn.txt"
+  private val Path: String = "/src/ca/uwaterloo/flix/language/phase/unification/Table4.pn.zip"
 
   /**
     * The number of variables that the minimization table uses.
@@ -305,10 +307,7 @@ object BoolTable {
     * Loads the table of minimal Boolean formulas from the disk.
     */
   private def loadTable(): Array[BoolFormula] = try {
-    // Read in the entire file as a string.
-    val inputStream = LocalResource.getInputStream(Path)
-    val allLines = StreamOps.readAll(inputStream)
-    inputStream.close()
+    val allLines = readTableFromZip(Path)
 
     // Split the string into lines.
     val lines = allLines.split("\n")
@@ -331,16 +330,16 @@ object BoolTable {
   }
 
   /**
-    * Formats the given int `i` as a bit string with `n` bits.
+    * Attempts to read the given `path` as a local resource which is a zip-file.
+    *
+    * Returns the first zip-entry as a string.
     */
-  private def toBinaryString(i: Int, n: Int): String =
-    leftPad(i.toBinaryString, n)
-
-  /**
-    * Left pads `s` with `c` to reach length `len`.
-    */
-  private def leftPad(s: String, len: Int): String =
-    ' '.toString * (len - s.length()) + s
+  private def readTableFromZip(path: String): String = {
+    val inputStream = LocalResource.getInputStream(path)
+    val zipIn = new ZipInputStream(inputStream)
+    val entry = zipIn.getNextEntry
+    StreamOps.readAll(zipIn)
+  }
 
   /**
     * Parses the given line `l` into a Boolean formula.
@@ -371,5 +370,17 @@ object BoolTable {
 
     parse(l.trim().toList, Nil)
   }
+
+  /**
+    * Formats the given int `i` as a bit string with `n` bits.
+    */
+  private def toBinaryString(i: Int, n: Int): String =
+    leftPad(i.toBinaryString, n)
+
+  /**
+    * Left pads `s` with `c` to reach length `len`.
+    */
+  private def leftPad(s: String, len: Int): String =
+    ' '.toString * (len - s.length()) + s
 
 }
