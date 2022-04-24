@@ -238,7 +238,7 @@ namespace RedBlackTree {
     /// A `foldRight` allows early termination by not calling the continuation.
     ///
     pub def foldRightOld(f: (k, v, b) -> b & ef, s: b, tree: RedBlackTree[k, v]): b & ef = match tree {
-        case Node(_, a, k, v, b) => foldRight(f, f(k, v, foldRight(f, s, b)), a)
+        case Node(_, a, k, v, b) => foldRightOld(f, f(k, v, foldRightOld(f, s, b)), a)
         case _ => s
     }
 
