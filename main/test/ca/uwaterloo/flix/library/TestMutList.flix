@@ -1698,7 +1698,7 @@ namespace TestMutList {
         a `sameElements` Array.toMutList([0])
 
     @test
-    def sortWith03(): Bool & Impure
+    def sortWith03(): Bool & Impure =
         let a = MutList.sortWith(cmp, Array.toMutList([0,1]));
         a `sameElements` Array.toMutList([0,1])
 
@@ -1713,13 +1713,12 @@ namespace TestMutList {
         a `sameElements` Array.toMutList([1,1])
 
     @test
-    def sortWith06(): Bool = region r {
+    def sortWith06(): Bool & Impure =
         let a = MutList.sortWith(cmp, Array.toMutList([0,1,2,3,4,5]));
         a `sameElements` Array.toMutList([0,1,2,3,4,5])
-    }
 
     @test
-    def sortWith07(): Bool & Impure
+    def sortWith07(): Bool & Impure =
         let a = MutList.sortWith(cmp, Array.toMutList([5,4,3,2,1,0]));
         a `sameElements` Array.toMutList([0,1,2,3,4,5])
 
@@ -1729,10 +1728,9 @@ namespace TestMutList {
         a `sameElements` Array.toMutList([0,1,2,3,4,5])
 
     @test
-    def sortWith09(): Bool = region r {
+    def sortWith09(): Bool & Impure =
         let a = MutList.sortWith(cmp, Array.toMutList([2,3,0,4,1,2]));
         a `sameElements` Array.toMutList([0,1,2,2,3,4])
-    }
 
     @test
     def sortWith10(): Bool & Impure =
@@ -1764,7 +1762,7 @@ namespace TestMutList {
 
     @test
     def sort01(): Bool & Impure =
-        testSortVsSortWith(Array.toMutList([]: ScopedArray[Int32, _] ))
+        testSortVsSortWith(Array.toMutList([]: ScopedArray[Int32, _]))
 
     @test
     def sort02(): Bool & Impure =
@@ -1939,39 +1937,39 @@ namespace TestMutList {
         (MutList.sortBy(x -> -x, a) `sameElements` MutList.sortWith(flip(cmp),a))
 
     @test
-    def sortBy01(): Bool & Impure
+    def sortBy01(): Bool & Impure =
         testSortByVsSort(Array.toMutList([]: ScopedArray[Int32, _]))
 
     @test
-    def sortBy02(): Bool & Impure
+    def sortBy02(): Bool & Impure =
         testSortByVsSort(Array.toMutList([0]))
 
     @test
-    def sortBy03(): Bool & Impure
+    def sortBy03(): Bool & Impure =
         testSortByVsSort(Array.toMutList([0,1]))
 
     @test
-    def sortBy04(): Bool & Impure
+    def sortBy04(): Bool & Impure =
         testSortByVsSort(Array.toMutList([1,0]))
 
     @test
-    def sortBy05(): Bool & Impure
+    def sortBy05(): Bool & Impure =
         testSortByVsSort(Array.toMutList([1,1]))
 
     @test
-    def sortBy06(): Bool & Impure
+    def sortBy06(): Bool & Impure =
         testSortByVsSort(Array.toMutList([0,1,2,3,4,5]))
 
     @test
-    def sortBy07(): Bool & Impure
+    def sortBy07(): Bool & Impure =
         testSortByVsSort(Array.toMutList([5,4,3,2,1,0]))
 
     @test
-    def sortBy08(): Bool & Impure
+    def sortBy08(): Bool & Impure =
         testSortByVsSort(Array.toMutList([5,3,0,4,1,2]))
 
     @test
-    def sortBy09(): Bool & Impure
+    def sortBy09(): Bool & Impure =
         testSortByVsSort(Array.toMutList([2,3,0,4,1,2]))
 
     enum R {
@@ -2045,39 +2043,32 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sum01(): Bool = region r {
+    def sum01(): Bool & Impure =
         List.toMutList(Nil) |> MutList.sum == 0
-    }
 
     @test
-    def sum02(): Bool = region r {
+    def sum02(): Bool & Impure =
         List.toMutList(1 :: Nil) |> MutList.sum == 1
-    }
 
     @test
-    def sum03(): Bool = region r {
+    def sum03(): Bool & Impure =
         List.toMutList(1 :: 2 :: 3 :: Nil) |> MutList.sum == 6
-    }
 
     @test
-    def sum04(): Bool = region r {
+    def sum04(): Bool & Impure =
         List.toMutList(1 :: 2 :: 3 :: -3 :: Nil) |> MutList.sum == 3
-    }
 
     @test
-    def sum05(): Bool = region r {
+    def sum05(): Bool & Impure =
         List.toMutList(-1 :: -2 :: -3 :: -4 :: Nil) |> MutList.sum == -10
-    }
 
     @test
-    def sum06(): Bool = region r {
+    def sum06(): Bool & Impure =
         List.toMutList(10 :: -10 :: Nil) |> MutList.sum == 0
-    }
 
     @test
-    def sum07(): Bool = region r {
+    def sum07(): Bool & Impure =
         List.range(1, 101) |> List.toMutList |> MutList.sum == 5050
-    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2085,34 +2076,28 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sumWith01(): Bool = region r {
+    def sumWith01(): Bool & Impure =
         List.toMutList(Nil) |> MutList.sumWith(x -> x + 1) == 0
-    }
 
     @test
-    def sumWith02(): Bool = region r {
+    def sumWith02(): Bool & Impure =
         List.toMutList(1 :: Nil) |> MutList.sumWith(x -> x + 1) == 2
-    }
 
     @test
-    def sumWith03(): Bool = region r {
+    def sumWith03(): Bool & Impure =
         List.toMutList(1 :: 2 :: 3 :: Nil) |> MutList.sumWith(x -> x + 1) == 9
-    }
 
     @test
-    def sumWith04(): Bool = region r {
+    def sumWith04(): Bool & Impure =
         List.toMutList(1 :: 2 :: 3 :: -3 :: Nil) |> MutList.sumWith(x -> x + 1) == 7
-    }
 
     @test
-    def sumWith05(): Bool = region r {
+    def sumWith05(): Bool & Impure =
         List.toMutList(-1 :: -2 :: -3 :: -4 :: Nil) |> MutList.sumWith(x -> x + 1) == -6
-    }
 
     @test
-    def sumWith06(): Bool = region r {
+    def sumWith06(): Bool & Impure =
         List.toMutList(10 :: -10 :: Nil) |> MutList.sumWith(x -> x + 1) == 2
-    }
 
 
     /////////////////////////////////////////////////////////////////////////////
