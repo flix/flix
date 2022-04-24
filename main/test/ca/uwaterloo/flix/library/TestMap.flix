@@ -762,16 +762,16 @@ def foldRight04(): Bool = Map.foldRight((v, k) -> k() + v, 0, Map#{1 => 2, 3 => 
 // foldRightWithKey                                                        //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRightWithKey01(): Bool = Map.foldRightWithKey((k, v, s) -> k + s() + v, 0, Map#{}) == 0
+def foldRightWithKey01(): Bool = Map.foldRightWithKey((k, v, c) -> k + c() + v, 0, Map#{}) == 0
 
 @test
-def foldRightWithKey02(): Bool = Map.foldRightWithKey((k, v, s) -> k + s() + v, 0, Map#{1 => 2}) == 3
+def foldRightWithKey02(): Bool = Map.foldRightWithKey((k, v, c) -> k + c() + v, 0, Map#{1 => 2}) == 3
 
 @test
-def foldRightWithKey03(): Bool = Map.foldRightWithKey((k, v, s) -> k + s() + v, 0, Map#{1 => 2, 3 => 4}) == 10
+def foldRightWithKey03(): Bool = Map.foldRightWithKey((k, v, c) -> k + c() + v, 0, Map#{1 => 2, 3 => 4}) == 10
 
 @test
-def foldRightWithKey04(): Bool = Map.foldRightWithKey((k, v, s) -> k + s() + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}) == 21
+def foldRightWithKey04(): Bool = Map.foldRightWithKey((k, v, c) -> k + c() + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}) == 21
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
