@@ -683,7 +683,7 @@ namespace MutList {
             let minCap = minCapacity();
             let c = Order.max(l, minCap);
             l0 := l;
-            Array.updateSequence!(0, deref a, [$DEFAULT$, c] @ Scoped.regionOf(v))
+            Array.updateSequence!(0, deref a, [$DEFAULT$; c] @ Scoped.regionOf(v))
         }
         else
             ()
