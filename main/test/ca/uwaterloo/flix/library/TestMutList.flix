@@ -296,7 +296,7 @@ namespace TestMutList {
         let l = new MutList(r);
         let xs = -2 :: -3 :: -4 :: -5 :: Nil;
         List.foreach(x -> MutList.push!(x, l), xs);
-        MutList.productWith(x -> x + 1, l 1) == 24
+        MutList.productWith(x -> x + 1, l) == 24
     }
 
     @test
