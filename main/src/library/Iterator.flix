@@ -429,9 +429,9 @@ namespace Iterator {
         loop(s)
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `iter` going from right to left.
+    /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.
     ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     /// A `foldRight` allows early termination by not calling the continuation.
     ///
     /// Consumes the entire iterator.
