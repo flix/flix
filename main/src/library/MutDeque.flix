@@ -334,19 +334,17 @@ namespace MutDeque {
     pub def sameElements(d1: MutDeque[t, r1], d2: MutDeque[t, r2]): Bool \ Read(r1, r2) with Eq[t] =
         let aSize = size(d1);
         let bSize = size(d2);
-        if (aSize == bSize)
+        if (aSize == bSize) {
             let MutDeque(aArray, aFront, aBack) = d1;
             let aCap = capacity(d1);
             let MutDeque(bArray, bFront, bBack) = d2;
             let bCap = capacity(d2);
-            region r {
-                let a1 = [$DEFAULT$; aCap] @ r;
-                let b1 = [$DEFAULT$; bCap] @ r;
-                copyElements!(deref aFront, deref aBack, deref aArray, a1);
-                copyElements!(deref bFront, deref bBack, deref bArray, b1);
-                Array.sameElements(a1, b1)
-            }
-        else
+            let a1 = [$DEFAULT$; aCap] @ Scoped.regionOf(d1);
+            let b1 = [$DEFAULT$; bCap] @ Scoped.regionOf(d2);
+            copyElements!(deref aFront, deref aBack, deref aArray, a1);
+            copyElements!(deref bFront, deref bBack, deref bArray, b1);
+            Array.sameElements(a1, b1)
+        } else
             false
 
     ///
