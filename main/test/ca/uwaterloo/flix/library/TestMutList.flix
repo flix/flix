@@ -1638,16 +1638,18 @@ namespace TestMutList {
     }
 
     @test
-    def toList02(): Bool & Impure =
-        let ml = List.range(0, 1000) |> List.toMutList;
+    def toList02(): Bool = region r {
+        let ml = MutList.range(0, 1000);
         ml |> MutList.toList == List.range(0, 1000) and
             not (MutList.isEmpty(ml))
+    }
 
     @test
-    def toList03(): Bool & Impure =
-        let ml = List.range(0, 1000) |> List.toMutList;
+    def toList03(): Bool = region r {
+        let ml = MutList.range(0, 1000);
         ml |> MutList.toList == List.range(0, 1000) and
-           ml `sameElements` (List.range(0, 1000) |> List.toMutList)
+           ml `sameElements` MutList.range(0, 1000)
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
