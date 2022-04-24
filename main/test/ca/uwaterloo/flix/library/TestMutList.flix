@@ -214,32 +214,47 @@ namespace TestMutList {
 
     @test
     def product01(): Bool = region r {
-        List.toMutList(Nil) |> MutList.product == 0
+        new MutList(r) |> MutList.product == 0
     }
 
     @test
     def product02(): Bool = region r {
-        List.toMutList(1 :: Nil) |> MutList.product == 1
+        let l = new MutList(r);
+        let r = 1 :: Nil;
+        List.foreach(x -> MutList.push!(x, l));
+        MutList.product(l) == 1
     }
 
     @test
     def product03(): Bool = region r {
-        List.toMutList(1 :: 2 :: 3 :: Nil) |> MutList.product == 6
+        let l = new MutList(r);
+        let r = 1 :: 2 :: 3 :: Nil;
+        List.foreach(x -> MutList.push!(x, l));
+        MutList.product(l) == 6
     }
 
     @test
     def product04(): Bool = region r {
-        List.toMutList(1 :: 2 :: 3 :: -3 :: Nil) |> MutList.product == -18
+        let l = new MutList(r);
+        let r = 1 :: 2 :: 3 :: -3 :: Nil;
+        List.foreach(x -> MutList.push!(x, l));
+        MutList.product(l) == -18
     }
 
     @test
     def product05(): Bool = region r {
-        List.toMutList(-1 :: -2 :: -3 :: -4 :: Nil) |> MutList.product == 24
+        let l = new MutList(r);
+        let r = -1 :: -2 :: -3 :: -4 :: Nil;
+        List.foreach(x -> MutList.push!(x, l));
+        MutList.product(l) == 24
     }
 
     @test
     def product06(): Bool = region r {
-        List.toMutList(10 :: -10 :: Nil) |> MutList.product == -100
+        let l = new MutList(r);
+        let r = 10 :: -10 :: Nil;
+        List.foreach(x -> MutList.push!(x, l));
+        MutList.product(l) == -100
     }
 
 
