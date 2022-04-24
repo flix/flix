@@ -1278,7 +1278,7 @@ namespace Array {
     ///
     /// Returns the array `a` as a MutList.
     ///
-    pub def toMutList(a: Array[a]): MutList[a] & Impure =
+    pub def toMutList(a: Array[a]): MutList[a, Impure] & Impure =
         let minCap = MutList.minCapacity();
         let len = length(a);
         if (len < minCap)
@@ -1339,7 +1339,7 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def findIndices(f: a -> Bool & ef, a: Array[a]): Array[Int32] & Impure =
         let len = length(a);
-        let l = MutList.new();
+        let l = MutList.empty();
         def loop(i) = {
             if (i >= len)
                 Nil

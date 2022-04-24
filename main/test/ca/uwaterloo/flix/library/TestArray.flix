@@ -4582,26 +4582,26 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def toMutList01(): Bool & Impure =
-        MutList.sameElements(Array.toMutList([]: Array[Int32]), MutList.new())
+        MutList.sameElements(Array.toMutList([]: Array[Int32]), MutList.empty())
 
     @test
     def toMutList02(): Bool & Impure =
-        let v = MutList.new();
+        let v = MutList.empty();
         MutList.push!(1, v);
         MutList.sameElements(Array.toMutList([1]), v)
 
     @test
     def toMutList03(): Bool & Impure =
-        let v = MutList.new();
+        let v = MutList.empty();
         MutList.push!(1, v);
         MutList.push!(2, v);
         MutList.push!(3, v);
         MutList.sameElements(Array.toMutList([1, 2, 3]), v)
-
+/*
     @test
     def toMutList04(): Bool & Impure =
         MutList.sameElements(Array.range(0, 100) |> Array.toMutList, MutList.range(0, 100))
-
+*/
     @test
     def toMutList05(): Bool & Impure =
         let v = Array.toMutList([1, 2, 3]);

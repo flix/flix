@@ -35,7 +35,7 @@ namespace Fixpoint {
     ///
     def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] & Impure with ToString[v] = match d {
         case Datalog(facts, rules) =>
-            let stmts = MutList.new();
+            let stmts = MutList.empty();
             Array.foreach(compileRule(stmts), facts);
             Array.foldRight(rule -> match rule {
                 case Constraint(HeadAtom(p, _, _), _) =>
@@ -65,12 +65,12 @@ namespace Fixpoint {
     /// Note that Eval-Rule is the code emitted by `compileRule`
     /// and Eval-Rule-Incr is the code emitted by `compileRuleIncr`.
     ///
-    def compileStratum(stmts: MutList[RamStmt[v]], stratum: Array[Constraint[v]]): Unit & Impure with ToString[v] =
+    def compileStratum(stmts: MutList[RamStmt[v], Impure], stratum: Array[Constraint[v]]): Unit & Impure with ToString[v] =
         let idb = Array.foldRight(match Constraint(HeadAtom(pred, den, terms), _) -> {
             let arity = Array.length(terms);
             Map.insert(pred, (arity, den))
         }, Map#{}, stratum);
-        let loopBody = MutList.new();
+        let loopBody = MutList.empty();
         Array.foreach(compileRule(stmts), stratum);
         Map.foreach(match PredSym(relName) -> match (arity, den) -> {
             let full = RamSym.Full(relName, arity, den);
@@ -118,7 +118,7 @@ namespace Fixpoint {
     ///         end
     ///     end
     ///
-    def compileRule(stmts: MutList[RamStmt[v]], rule: Constraint[v]): Unit & Impure with ToString[v] = match rule {
+    def compileRule(stmts: MutList[RamStmt[v], Impure], rule: Constraint[v]): Unit & Impure with ToString[v] = match rule {
         case Constraint(HeadAtom(PredSym(headPred), headDen, headTerms), body) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
@@ -170,7 +170,7 @@ namespace Fixpoint {
     /// Note that there are two join loops, because there are two positive atoms.
     /// Also note how in the first loop, `B` is the focused atom and `C` is focused in the second loop.
     ///
-    def compileRuleIncr(stmts: MutList[RamStmt[v]], rule: Constraint[v]): Unit & Impure with ToString[v] = match rule {
+    def compileRuleIncr(stmts: MutList[RamStmt[v], Impure], rule: Constraint[v]): Unit & Impure with ToString[v] = match rule {
         case Constraint(HeadAtom(PredSym(headPred), headDen, headTerms), body) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);

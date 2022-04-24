@@ -167,7 +167,7 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toArray(iter: Iterator[a]): Array[a] & Impure =
-        let m = MutList.new();
+        let m = MutList.empty();
         foreach(a -> MutList.push!(a, m), iter);
         MutList.toArray(m)
 

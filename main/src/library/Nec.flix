@@ -712,8 +712,8 @@ namespace Nec {
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(c: Nec[a]): MutList[a] & Impure =
-        MutList(ref toArray(c), ref length(c))
+    pub def toMutList(c: Nec[a]): MutList[a, Impure] & Impure =
+        toArray(c) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
 
     ///
     /// Returns the list `c` as a set.

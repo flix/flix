@@ -74,7 +74,7 @@ namespace Concurrent/Channel {
             Bool, // unBuffered
             Int32, // maxQueueSize
             MutDeque[Boxed], // elementDeque
-            MutList[(Concurrent/ReentrantLock.ReentrantLock, Concurrent/Condition.Condition)], // waitingGetters
+            MutList[(Concurrent/ReentrantLock.ReentrantLock, Concurrent/Condition.Condition), Impure], // waitingGetters
             Concurrent/Condition.Condition // waitingPutters
         )
     }
