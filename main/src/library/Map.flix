@@ -669,9 +669,9 @@ namespace Map {
         let Map(t1) = m1;
         let Map(t2) = m2;
         if (blackHeight(t1) < blackHeight(t2))
-            Map(foldRight((k, v) -> insertWith(f, k, v), t2, t1))
+            Map(foldRightOld((k, v) -> insertWith(f, k, v), t2, t1))
         else
-            Map(foldRight((k, v) -> insertWith((_, v1, v2) -> f(k, v2, v1), k, v), t1, t2))
+            Map(foldRightOld((k, v) -> insertWith((_, v1, v2) -> f(k, v2, v1), k, v), t1, t2))
 
     ///
     /// Returns the left-biased intersection of `m1` and `m2`.
