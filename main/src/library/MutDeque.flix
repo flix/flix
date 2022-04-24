@@ -157,24 +157,25 @@ namespace MutDeque {
         loop(front, back, s)
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `d` going from right to left.
+    /// Applies `f` to a start value `z` and all elements in `d` going from right to left.
     ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
+    /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, d: MutDeque[a]): b & Impure =
+    pub def foldRight(f: (a, Unit -> b & Impure) -> b & ef, z: b, d: MutDeque[a]): b & Impure =
         let MutDeque(ar_, front_, back_) = d;
         let ar = deref ar_;
         let front = deref front_;
         let back = deref back_;
         let c = capacity(d) - 1;
-        def loop(i, e, acc) =
+        def loop(i, e) =
             if (i == e)
-                acc
+                z
             else {
-                let j = (i - 1) &&& c;
-                loop(j, e, f(ar[j], acc))
+                let j = (i + 1) &&& c;
+                f(ar[j], _ -> loop(j, e))
             };
-        loop(back, front, s)
+        loop(front, back)
 
     ///
     /// Returns `Some(x)` where `x` is the element at the front. Returns `None` if `d` is empty.
