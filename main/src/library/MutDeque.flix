@@ -338,7 +338,7 @@ namespace MutDeque {
     /// Returns `d` as a `List`.
     ///
     pub def toList(d: MutDeque[a]): List[a] & Impure =
-        foldRight((x, acc) -> x :: acc, Nil, d)
+        foldRight((x, k) -> x :: k(), Nil, d)
 
     ///
     /// Returns the concatenation of the string representation
