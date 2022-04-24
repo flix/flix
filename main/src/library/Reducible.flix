@@ -249,7 +249,7 @@ pub class Reducible[t: Type -> Type] {
     /// Returns `t` as an array.
     ///
     pub def toArray(t: t[a]): Array[a] & Impure =
-        let v = new MutList(static)();
+        let v = new MutList(static);
         Reducible.foldLeft((_, a) -> MutList.push!(a, v), (), t);
         MutList.toArray(v)
 

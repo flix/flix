@@ -1342,7 +1342,7 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def findIndices(f: a -> Bool & ef, a: Array[a]): Array[Int32] & Impure =
         let len = length(a);
-        let l = MutList.empty();
+        let l = new MutList(static);
         def loop(i) = {
             if (i >= len)
                 Nil
@@ -1358,7 +1358,7 @@ namespace Array {
     /// Build an array of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init(static, r: Region[r], f: Int32 -> a & ef, len: Int32): ScopedArray[a, r] \ { ef, Write(r) } =
+    pub def init(r: Region[r], f: Int32 -> a & ef, len: Int32): ScopedArray[a, r] \ { ef, Write(r) } =
         if (len <= 0)
             [] @ r
         else {
