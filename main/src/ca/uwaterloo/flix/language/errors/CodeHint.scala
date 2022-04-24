@@ -61,7 +61,7 @@ object CodeHint {
   case class Lazy(loc: SourceLocation) extends CodeHint {
     def summary: String = s"Uses lazy evaluation."
 
-    def severity: Severity = Severity.Info
+    def severity: Severity = Severity.Hint
   }
 
   /**
@@ -84,7 +84,7 @@ object CodeHint {
   case class Parallel(loc: SourceLocation) extends CodeHint {
     def summary: String = s"Uses parallel evaluation."
 
-    def severity: Severity = Severity.Info
+    def severity: Severity = Severity.Hint
   }
 
   /**
