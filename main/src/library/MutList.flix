@@ -509,7 +509,7 @@ namespace MutList {
     ///
     pub def clear!(v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
         let MutList(a, l) = v;
-        a := [$DEFAULT$; (deref a).length] @ Scoped.regionOf(v);
+        a := [$DEFAULT$; Array.length(deref a)] @ Scoped.regionOf(v);
         l := 0
 
     ///
