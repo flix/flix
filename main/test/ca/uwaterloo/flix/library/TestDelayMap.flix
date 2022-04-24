@@ -1198,22 +1198,22 @@ namespace TestDelayMap {
     @test
     def foldRight01(): Bool =
         Map#{} |> Map.toDelayMap |>
-            DelayMap.foldRight((v, s) -> s + v, 0) == 0
+            DelayMap.foldRight((v, c) -> c() + v, 0) == 0
 
     @test
     def foldRight02(): Bool =
         Map#{1 => 2} |> Map.toDelayMap |>
-            DelayMap.foldRight((v, s) -> s + v, 0) == 2
+            DelayMap.foldRight((v, c) -> c() + v, 0) == 2
 
     @test
     def foldRight03(): Bool =
         Map#{1 => 2, 3 => 4} |> Map.toDelayMap |>
-            DelayMap.foldRight((v, s) -> s + v, 0) == 6
+            DelayMap.foldRight((v, c) -> c() + v, 0) == 6
 
     @test
     def foldRight04(): Bool =
         Map#{1 => 2, 3 => 4, 5 => 6} |> Map.toDelayMap |>
-            DelayMap.foldRight((v, s) -> s + v, 0) == 12
+            DelayMap.foldRight((v, c) -> c() + v, 0) == 12
 
 
     /////////////////////////////////////////////////////////////////////////////
