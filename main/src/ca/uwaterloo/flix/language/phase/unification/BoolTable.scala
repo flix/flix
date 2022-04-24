@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, StreamO
 import ca.uwaterloo.flix.util.collection.Bimap
 
 import java.io.IOException
+import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable.ListBuffer
 
@@ -43,14 +44,14 @@ object BoolTable {
   /**
     * The path to the table.
     */
-  private val Path: String = "/src/ca/uwaterloo/flix/language/phase/unification/Table3.txt"
+  private val Path: String = "/src/ca/uwaterloo/flix/language/phase/unification/Table4.pn.txt"
 
   /**
     * The number of variables that the minimization table uses.
     *
     * Warning: If the number is set incorrectly minimization will be wrong!
     */
-  private val MaxVars: Int = 3
+  private val MaxVars: Int = 4
 
   /**
     * The size a formula (but represented as a type) must have before we try to minimize it.
@@ -343,106 +344,32 @@ object BoolTable {
 
   /**
     * Parses the given line `l` into a Boolean formula.
+    *
+    * The format is in reverse polish notation:
+    *
+    * 301a2oa should be interpreted as:
+    *
+    * x3 x0 x1 and x2 or and, that is:
+    * and(x3,or(and(x0,x1),x2))
+    *
     */
-  private def parseLine(l: String): BoolFormula = l.trim match {
-    case "T" => True
-    case "F" => False
-    case "x0" => Var(0)
-    case "x1" => Var(1)
-    case "x2" => Var(2)
-    case "x3" => Var(3)
-    case _ =>
-      val sexp = ExpressionParser.parse(l)
-      parseFormula(sexp)
-  }
-
-  /**
-    * Parses the given S-expression `sexp` into a formula.
-    */
-  private def parseFormula(sexp: Element): BoolFormula = sexp match {
-    case Atom("T") => True
-    case Atom("F") => False
-    case Atom("x0") => Var(0)
-    case Atom("x1") => Var(1)
-    case Atom("x2") => Var(2)
-    case Atom("x3") => Var(3)
-    case SList(List(Atom("not"), x)) => Neg(parseFormula(x))
-    case SList(List(Atom("and"), x, y)) => Conj(parseFormula(x), parseFormula(y))
-    case SList(List(Atom("or"), x, y)) => Disj(parseFormula(x), parseFormula(y))
-    case _ => throw InternalCompilerException(s"Unexpected S-expression: '$sexp'.")
-  }
-
-  //
-  // S-Expression Parser by Zen Bowman.
-  //
-  // https://github.com/ZenBowman/sexpr/
-  //
-
-  //
-  //  The MIT License (MIT)
-  //
-  //  Copyright (c) 2013 ZenBowman
-  //
-  //  Permission is hereby granted, free of charge, to any person obtaining a copy of
-  //  this software and associated documentation files (the "Software"), to deal in
-  //  the Software without restriction, including without limitation the rights to
-  //  use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-  //  the Software, and to permit persons to whom the Software is furnished to do so,
-  //  subject to the following conditions:
-  //
-  //    The above copyright notice and this permission notice shall be included in all
-  //    copies or substantial portions of the Software.
-  //
-  //  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  //  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-  //  FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-  //  COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-  //  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-  //  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-  private class InvalidSExpressionException extends Exception
-
-  private sealed trait Element
-
-  private case class Atom(symbol: String) extends Element
-
-  private case class SList(values: List[Element]) extends Element
-
-  private object ExpressionParser {
-    private var remainingTokens: List[String] = List()
-
-    def tokenize(expression: String): List[String] = {
-      expression.replace("(", " ( ").replace(")", " ) ").trim().split("\\s+").toList
+  private def parseLine(l: String): BoolFormula = {
+    @tailrec
+    def parse(input: List[Char], stack: List[BoolFormula]): BoolFormula = (input, stack) match {
+      case (Nil, formula :: Nil) => formula
+      case ('T' :: rest, stack) => parse(rest, True :: stack)
+      case ('F' :: rest, stack) => parse(rest, False :: stack)
+      case ('0' :: rest, stack) => parse(rest, Var(0) :: stack)
+      case ('1' :: rest, stack) => parse(rest, Var(1) :: stack)
+      case ('2' :: rest, stack) => parse(rest, Var(2) :: stack)
+      case ('3' :: rest, stack) => parse(rest, Var(3) :: stack)
+      case ('n' :: rest, f :: stack) => parse(rest, Neg(f) :: stack)
+      case ('a' :: rest, f1 :: f2 :: stack) => parse(rest, Conj(f1, f2) :: stack)
+      case ('o' :: rest, f1 :: f2 :: stack) => parse(rest, Disj(f1, f2) :: stack)
+      case _ => throw InternalCompilerException(s"Parse Error. input = ${input.mkString(" :: ")}, stack = $stack.")
     }
 
-    def parse(expression: String): SList = {
-      remainingTokens = tokenize(expression)
-      parseTokens()
-    }
-
-    def parseTokens(): SList = {
-      val elements = new ListBuffer[Element]
-
-      while (remainingTokens.nonEmpty) {
-        val first = remainingTokens.head
-        remainingTokens = remainingTokens.tail
-        if (first == "(") {
-          val element = parseTokens()
-          elements.append(element)
-        }
-        else if (first == ")") {
-          return SList(elements.toList)
-        } else {
-          elements.append(Atom(first))
-        }
-      }
-
-      try {
-        elements.head.asInstanceOf[SList]
-      } catch {
-        case _: Exception => throw new InvalidSExpressionException
-      }
-    }
+    parse(l.trim().toList, Nil)
   }
 
 }
