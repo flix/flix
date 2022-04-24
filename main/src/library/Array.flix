@@ -77,7 +77,8 @@ namespace Array {
     /// Equivalent to the expression `a[i] = x`.
     ///
     @Time(1) @Space(1)
-    pub def put(x: a, i: Int32, a: Array[a]): Array[a] & Impure = a[i] = x; a
+    pub def put(x: a, i: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ Write(r) =
+        a[i] = x; a
 
     ///
     /// Returns `true` if the given array `a` is empty.
