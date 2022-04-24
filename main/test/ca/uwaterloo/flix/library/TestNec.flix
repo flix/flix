@@ -1019,19 +1019,19 @@ namespace TestNec {
     @test
     def toMutList01(): Bool & Impure =
         let m1 = Nec.toMutList(singleton(1));
-        let m2 = MutList.range(1, 2);
+        let m2 = MutList.range(static, 1, 2);
         MutList.sameElements(m1, m2)
 
     @test
     def toMutList02(): Bool & Impure =
         let m1 = Nec.toMutList(necOf2(1, 2));
-        let m2 = MutList.range(1, 3);
+        let m2 = MutList.range(static, 1, 3);
         MutList.sameElements(m1, m2)
 
     @test
     def toMutList03(): Bool & Impure =
         let m1 = Nec.toMutList(necOf3(1, 2, 3));
-        let m2 = MutList.range(1, 4);
+        let m2 = MutList.range(static, 1, 4);
         MutList.sameElements(m1, m2)
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
