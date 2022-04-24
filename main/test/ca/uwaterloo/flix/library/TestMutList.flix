@@ -2236,7 +2236,7 @@ namespace TestMutList {
 
     @test
     def join01(): Bool = region r {
-        (new MutList(r): MutList:[Int32, _]) |> MutList.join(",", l) == ""
+        (new MutList(r): MutList[Int32, _]) |> MutList.join(",", l) == ""
     }
 
     @test
