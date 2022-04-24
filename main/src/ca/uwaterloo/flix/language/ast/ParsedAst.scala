@@ -1426,14 +1426,6 @@ object ParsedAst {
     case class Apply(base: ParsedAst.Type, tparams: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * The Static Region type constructor.
-      *
-      * @param sp1 the position of the first character in the type.
-      * @param sp2 the position of the last character in the type.
-      */
-    case class StaticRegion(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
       * The True type constructor.
       *
       * @param sp1 the position of the first character in the type.
