@@ -609,7 +609,7 @@ namespace Fixpoint {
                     Map.foreach(match Tuple(tuple) -> _ -> MutList.push!(f(tuple), pFacts), rel)
                 case Denotation.Latticenal(_) =>
                     Map.foreach(match Tuple(tuple) -> lat -> {
-                        let vs = Array.init(i -> {
+                        let vs = Array.init(static, i -> {
                             if (i < Array.length(tuple))
                                 tuple[i]
                             else

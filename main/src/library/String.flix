@@ -114,7 +114,7 @@ namespace String {
     ///
     @Time(length(s)) @Space(length(s))
     pub def toArray(s: String): Array[Char] & Impure =
-        Array.init(i -> charAt(i, s), length(s))
+        Array.init(static, i -> charAt(i, s), length(s))
 
     ///
     /// Build a string of length `len` by applying `f` to the successive indices.
@@ -1165,7 +1165,7 @@ namespace String {
     @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
     pub def zip(a: String, b: String): Array[(Char, Char)] & Impure =
         let len = Int32.min(length(a), length(b));
-        Array.init(i -> (charAt(i, a), charAt(i, b)), len)
+        Array.init(static, i -> (charAt(i, a), charAt(i, b)), len)
 
     ///
     /// Returns a string where the element at index `i` is `f(x, y)` where

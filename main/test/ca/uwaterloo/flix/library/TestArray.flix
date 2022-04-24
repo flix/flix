@@ -3365,27 +3365,27 @@ def findIndices07(): Bool & Impure =
 
 @test
 def init01(): Bool & Impure =
-    let a = Array.init(x -> x, 0);
+    let a = Array.init(static, x -> x, 0);
     Array.sameElements(a, []: Array[Int32])
 
 @test
 def init02(): Bool & Impure =
-    let a = Array.init(x -> x, -1);
+    let a = Array.init(static, x -> x, -1);
     Array.sameElements(a, []: Array[Int32])
 
 @test
 def init03(): Bool & Impure =
-    let a = Array.init(x -> x, 1);
+    let a = Array.init(static, x -> x, 1);
     Array.sameElements(a, [0])
 
 @test
 def init04(): Bool & Impure =
-    let a = Array.init(x -> x, 2);
+    let a = Array.init(static, x -> x, 2);
     Array.sameElements(a, [0,1])
 
 @test
 def init05(): Bool & Impure =
-    let a = Array.init(x -> x, 50);
+    let a = Array.init(static, x -> x, 50);
     Array.length(a) == 50
 
 /////////////////////////////////////////////////////////////////////////////

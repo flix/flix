@@ -56,7 +56,7 @@ namespace MutList {
         let minCap = minCapacity();
         if (e - b < minCap)
             let f = i -> if (b + i < e) b + i else $DEFAULT$;
-            MutList(ref Array.init(f, minCap), ref (e - b))
+            MutList(ref Array.init(static, f, minCap), ref (e - b))
         else
             MutList(ref Array.range(b, e), ref (e - b))
 
