@@ -57,6 +57,19 @@ namespace MutList {
         MutList(ref [$DEFAULT$; minCapacity()] @ r @ r, ref 0 @ r)
 
     ///
+    /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
+    ///
+    /// Returns an empty mutable list if `b >= e`.
+    ///
+    pub def range(b: Int32, e: Int32): MutList[Int32, Impure] & Impure =
+        let minCap = minCapacity();
+        if (e - b < minCap)
+            let f = i -> if (b + i < e) b + i else $DEFAULT$;
+            MutList(ref Array.init(f, minCap), ref (e - b))
+        else
+            MutList(ref Array.range(b, e), ref (e - b))
+
+    ///
     /// Returns the element at position `i` in the mutable list `v`.
     ///
     pub def get(i: Int32, v: MutList[a, r]): a \ Read(r) =

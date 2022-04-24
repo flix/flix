@@ -1638,42 +1638,37 @@ namespace TestMutList {
     }
 
     @test
-    def toList02(): Bool = region r {
-        let ml = MutList.range(0, 1000);
+    def toList02(): Bool & Impure =
+        let ml = List.range(0, 1000) |> List.toMutList;
         ml |> MutList.toList == List.range(0, 1000) and
             not (MutList.isEmpty(ml))
-    }
 
     @test
-    def toList03(): Bool = region r {
-        let ml = MutList.range(0, 1000);
+    def toList03(): Bool & Impure =
+        let ml = List.range(0, 1000) |> List.toMutList;
         ml |> MutList.toList == List.range(0, 1000) and
-           ml `sameElements` MutList.range(0, 1000)
-    }
+           ml `sameElements` (List.range(0, 1000) |> List.toMutList)
+
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toChain01(): Bool = region r {
+    def toChain01(): Bool & Impure =
         MutList.toChain(List.toMutList(Nil): MutList[Int32, _]) == Chain.empty(): Chain[Int32]
-    }
 
     @test
-    def toChain02(): Bool = region r {
+    def toChain02(): Bool & Impure =
         MutList.toChain(List.toMutList(1 :: Nil)) == Chain.singleton(1)
-    }
 
     @test
-    def toChain03(): Bool = region r {
+    def toChain03(): Bool & Impure =
         MutList.toChain(List.toMutList(1 :: 2 :: Nil)) == List.toChain(1 :: 2 :: Nil)
-    }
 
     @test
-    def toChain04(): Bool = region r {
+    def toChain04(): Bool & Impure =
         MutList.toChain(List.toMutList(1 :: 2 :: 3 :: Nil)) == List.toChain(1 :: 2 :: 3 :: Nil)
-    }
 
 
     /////////////////////////////////////////////////////////////////////////////
