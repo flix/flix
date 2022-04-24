@@ -40,6 +40,10 @@
 - Leave the code in better state than you found it in.
 - Avoid inheritance. Prefer algebraic data types and functions on them.
 - Think towards self-hosting: Don't use features that cannot easily be ported to Flix.
+- ASTs should generally be ordered as:
+  - Variable-like nodes
+  - Constant-like nodes
+  - Compound nodes
 
 ### Naming
 - Common methods are `visitExp`, `visitExps`, `visitPat`, etc.
