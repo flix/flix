@@ -556,8 +556,8 @@ namespace DelayMap {
     pub def foldRightWithKey(f: (k, v, b) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
         let _ = parallelForce(m);
         let DMap(t) = m;
-        let f1 = (k1, v1, b1) -> f(k1, force v1, b1);
-        RedBlackTree.foldRightOld(f1, s, t)
+        let f1 = (k1, v1, c) -> f(k1, force v1, c());
+        RedBlackTree.foldRight(f1, s, t)
 
     ///
     /// Applies `f` to a start value `s` and all values in `m` going from right to left.
