@@ -1010,7 +1010,7 @@ namespace List {
                 loop(xs, ys, zs, ks -> k(r :: ks))
             case _ => k(Nil)
         };
-        loop(l1, l2, l3, identity)
+        loop(l1, l2, l3, identity) as & ef // TODO: Why this cast?
 
     ///
     /// Returns a triple of lists, the first containing all first components in `l`
