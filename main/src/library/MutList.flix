@@ -470,7 +470,7 @@ namespace MutList {
     /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
     /// The foldRightLazy function exists to allow early termination of a fold.
     ///
-    pub def foldRightLazy(f: (a, Lazy[b]) -> b & ef, s: b, v: MutList[a, r]): b \ Read(r) =
+    pub def foldRightLazy(f: (a, Lazy[b]) -> b & ef and r, s: b, v: MutList[a, r]): b \ {ef, Read(r)} =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
