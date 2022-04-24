@@ -32,8 +32,8 @@ namespace TestMutList {
 
     @test
     def sameElements01(): Bool = region r {
-        let u: MutList[Int32] = new MutList(r);
-        let v: MutList[Int32] = new MutList(r);
+        let u: MutList[Int32, _] = new MutList(r);
+        let v: MutList[Int32, _] = new MutList(r);
         u `sameElements` v
     }
 
@@ -346,7 +346,7 @@ namespace TestMutList {
 
     @test
     def head02(): Bool = region r {
-        MutList.head(new MutList(r): MutList[Unit]) == None
+        MutList.head(new MutList(r): MutList[Unit, _]) == None
     }
 
     @test
@@ -364,7 +364,7 @@ namespace TestMutList {
 
     @test
     def last01(): Bool = region r {
-        MutList.last(new MutList(r): MutList[Unit]) == None
+        MutList.last(new MutList(r): MutList[Unit, _]) == None
     }
 
     @test
@@ -569,7 +569,7 @@ namespace TestMutList {
 
     @test
     def map03(): Bool = region r {
-        let v = MutList.map(identity, new MutList(r): MutList[Unit]);
+        let v = MutList.map(identity, new MutList(r): MutList[Unit, _]);
         MutList.sameElements(v, new MutList(r))
     }
 
@@ -600,7 +600,7 @@ namespace TestMutList {
 
     @test
     def transform!03(): Bool = region r {
-        let v: MutList[Unit] = new MutList(r);
+        let v: MutList[Unit, _] = new MutList(r);
         MutList.transform!(identity, v);
         MutList.sameElements(v, new MutList(r))
     }
@@ -761,7 +761,7 @@ namespace TestMutList {
 
     @test
     def reduceLeft01(): Bool = region r {
-        MutList.reduceLeft((x, y) -> x + y, new MutList(r): MutList[Int32]) == None
+        MutList.reduceLeft((x, y) -> x + y, new MutList(r): MutList[Int32, _]) == None
     }
 
     @test
@@ -786,7 +786,7 @@ namespace TestMutList {
 
     @test
     def reduceRight01(): Bool = region r {
-        MutList.reduceRight((x, y) -> x + y, new MutList(r): MutList[Int32]) == None
+        MutList.reduceRight((x, y) -> x + y, new MutList(r): MutList[Int32, _]) == None
     }
 
     @test
@@ -892,7 +892,7 @@ namespace TestMutList {
 
     @test
     def pop02(): Bool = region r {
-        let v: MutList[Unit] = new MutList(r);
+        let v: MutList[Unit, _] = new MutList(r);
         MutList.pop!(v) == None
     }
 
@@ -1032,7 +1032,7 @@ namespace TestMutList {
 
     @test
     def remove!01(): Bool = region r {
-        let v: MutList[Unit] = new MutList(r);
+        let v: MutList[Unit, _] = new MutList(r);
         MutList.remove!(0, v);
         MutList.sameElements(v, new MutList(r))
     }
@@ -1121,8 +1121,8 @@ namespace TestMutList {
 
     @test
     def append!04(): Bool = region r {
-        let v1: MutList[Unit] = new MutList(r);
-        let v2: MutList[Unit] = new MutList(r);
+        let v1: MutList[Unit, _] = new MutList(r);
+        let v2: MutList[Unit, _] = new MutList(r);
         MutList.append!(v2, v1);
         MutList.sameElements(v1, new MutList(r))
     }
@@ -1222,7 +1222,7 @@ namespace TestMutList {
 
     @test
     def reverse01!(): Bool = region r {
-        let v: MutList[Unit] = new MutList(r);
+        let v: MutList[Unit, _] = new MutList(r);
         MutList.reverse!(v);
         MutList.sameElements(v, new MutList(r))
     }
@@ -1302,7 +1302,7 @@ namespace TestMutList {
 
     @test
     def truncate!01(): Bool = region r {
-        let v: MutList[Unit] = new MutList(r);
+        let v: MutList[Unit, _] = new MutList(r);
         MutList.truncate!(0, v);
         MutList.sameElements(v, new MutList(r))
     }
@@ -1542,7 +1542,7 @@ namespace TestMutList {
 
     @test
     def minimumBy01(): Bool = region r {
-        MutList.minimumBy((x, y) -> x <=> y, new MutList(r): MutList[Int32]) == None
+        MutList.minimumBy((x, y) -> x <=> y, new MutList(r): MutList[Int32, _]) == None
     }
 
     @test
@@ -1576,7 +1576,7 @@ namespace TestMutList {
 
     @test
     def maximumBy01(): Bool = region r {
-        MutList.maximumBy((x, y) -> x <=> y, new MutList(r): MutList[Int32]) == None
+        MutList.maximumBy((x, y) -> x <=> y, new MutList(r): MutList[Int32, _]) == None
     }
 
     @test
@@ -1634,7 +1634,7 @@ namespace TestMutList {
 
     @test
     def toList01(): Bool = region r {
-        new MutList(r): MutList[Int32] |> MutList.toList == Nil: List[Int32]
+        new MutList(r): MutList[Int32, _] |> MutList.toList == Nil: List[Int32]
     }
 
     @test
@@ -1657,7 +1657,7 @@ namespace TestMutList {
 
     @test
     def toChain01(): Bool = region r {
-        MutList.toChain(List.toMutList(Nil): MutList[Int32]) == Chain.empty(): Chain[Int32]
+        MutList.toChain(List.toMutList(Nil): MutList[Int32, _]) == Chain.empty(): Chain[Int32]
     }
 
     @test
@@ -1688,34 +1688,29 @@ namespace TestMutList {
         else GreaterThan
 
     @test
-    def sortWith01(): Bool = region r {
-        let a = MutList.sortWith(cmp, Array.toMutList([]: ScopedArray[Int32, _] @ r));
-        a `sameElements` Array.toMutList([]: ScopedArray[Int32, _] @ r)
-    }
+    def sortWith01(): Bool & Impure =
+        let a = MutList.sortWith(cmp, Array.toMutList([]: ScopedArray[Int32, _] ));
+        a `sameElements` Array.toMutList([]: ScopedArray[Int32, _])
 
     @test
-    def sortWith02(): Bool = region r {
+    def sortWith02(): Bool & Impure =
         let a = MutList.sortWith(cmp, Array.toMutList([0]));
         a `sameElements` Array.toMutList([0])
-    }
 
     @test
-    def sortWith03(): Bool = region r {
+    def sortWith03(): Bool & Impure
         let a = MutList.sortWith(cmp, Array.toMutList([0,1]));
         a `sameElements` Array.toMutList([0,1])
-    }
 
     @test
-    def sortWith04(): Bool = region r {
+    def sortWith04(): Bool & Impure =
         let a = MutList.sortWith(cmp, Array.toMutList([1,0]));
         a `sameElements` Array.toMutList([0,1])
-    }
 
     @test
-    def sortWith05(): Bool = region r {
+    def sortWith05(): Bool & Impure
         let a = MutList.sortWith(cmp, Array.toMutList([1,1]));
         a `sameElements` Array.toMutList([1,1])
-    }
 
     @test
     def sortWith06(): Bool = region r {
@@ -1724,16 +1719,14 @@ namespace TestMutList {
     }
 
     @test
-    def sortWith07(): Bool = region r {
+    def sortWith07(): Bool & Impure
         let a = MutList.sortWith(cmp, Array.toMutList([5,4,3,2,1,0]));
         a `sameElements` Array.toMutList([0,1,2,3,4,5])
-    }
 
     @test
-    def sortWith08(): Bool = region r {
+    def sortWith08(): Bool & Impure =
         let a = MutList.sortWith(cmp, Array.toMutList([5,3,0,4,1,2]));
         a `sameElements` Array.toMutList([0,1,2,3,4,5])
-    }
 
     @test
     def sortWith09(): Bool = region r {
@@ -1742,29 +1735,25 @@ namespace TestMutList {
     }
 
     @test
-    def sortWith10(): Bool = region r {
+    def sortWith10(): Bool & Impure =
         let a = MutList.sortWith(flip(cmp), Array.toMutList([0,1,2,3,4,5]));
         a `sameElements` Array.toMutList([5,4,3,2,1,0])
-    }
 
     @test
-    def sortWith11(): Bool = region r {
+    def sortWith11(): Bool & Impure =
         let a = MutList.sortWith(flip(cmp), Array.toMutList([5,4,3,2,1,0]));
         a `sameElements` Array.toMutList([5,4,3,2,1,0])
-    }
 
     @test
-    def sortWith12(): Bool = region r {
+    def sortWith12(): Bool & Impure =
         let a = MutList.sortWith(flip(cmp), Array.toMutList([5,3,0,4,1,2]));
         a `sameElements` Array.toMutList([5,4,3,2,1,0])
-    }
-
 
     @test
-    def sortWith13(): Bool = region r {
+    def sortWith13(): Bool & Impure =
         let a = MutList.sortWith(flip(cmp), Array.toMutList([2,3,0,4,1,2]));
         a `sameElements` Array.toMutList([4,3,2,2,1,0])
-    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // sort                                                                    //
@@ -1774,143 +1763,123 @@ namespace TestMutList {
         MutList.sort(a) `sameElements` MutList.sortWith(cmp, a)
 
     @test
-    def sort01(): Bool = region r {
-        testSortVsSortWith(Array.toMutList([]: ScopedArray[Int32, _] @ r))
-    }
+    def sort01(): Bool & Impure =
+        testSortVsSortWith(Array.toMutList([]: ScopedArray[Int32, _] ))
 
     @test
-    def sort02(): Bool = region r {
+    def sort02(): Bool & Impure =
         testSortVsSortWith(Array.toMutList([0]))
-    }
 
     @test
-    def sort03(): Bool = region r {
+    def sort03(): Bool & Impure =
         testSortVsSortWith(Array.toMutList([0,1]))
-    }
 
     @test
-    def sort04(): Bool = region r {
+    def sort04(): Bool & Impure =
         testSortVsSortWith(Array.toMutList([1,0]))
-    }
 
     @test
-    def sort05(): Bool = region r {
+    def sort05(): Bool & Impure =
         testSortVsSortWith(Array.toMutList([1,1]))
-    }
 
     @test
-    def sort06(): Bool = region r {
+    def sort06(): Bool & Impure =
         testSortVsSortWith(Array.toMutList([0,1,2,3,4,5]))
-    }
 
     @test
-    def sort07(): Bool = region r {
+    def sort07(): Bool & Impure =
         testSortVsSortWith(Array.toMutList([5,4,3,2,1,0]))
-    }
 
     @test
-    def sort08(): Bool = region r {
+    def sort08(): Bool & Impure =
         testSortVsSortWith(Array.toMutList([5,3,0,4,1,2]))
-    }
 
     @test
-    def sort09(): Bool = region r {
+    def sort09(): Bool & Impure =
         testSortVsSortWith(Array.toMutList([2,3,0,4,1,2]))
-    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // sortWith!                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sortWith01!(): Bool = region r {
-        let a = Array.toMutList([]: ScopedArray[Int32, _] @ r);
+    def sortWith01!(): Bool & Impure =
+        let a = Array.toMutList([]: ScopedArray[Int32, _]);
         MutList.sortWith(cmp, a);
-        a `sameElements` Array.toMutList([]: ScopedArray[Int32, _] @ r)
-    }
+        a `sameElements` Array.toMutList([]: ScopedArray[Int32, _])
 
     @test
-    def sortWith02!(): Bool = region r {
+    def sortWith02!(): Bool & Impure =
         let a = Array.toMutList([0]);
         MutList.sortWith!(cmp, a);
         a `sameElements` Array.toMutList([0])
-    }
 
     @test
-    def sortWith03!(): Bool = region r {
+    def sortWith03!(): Bool & Impure =
         let a = Array.toMutList([0,1]);
         MutList.sortWith!(cmp, a);
         a `sameElements` Array.toMutList([0,1])
-    }
 
     @test
-    def sortWith04!(): Bool = region r {
+    def sortWith04!(): Bool & Impure =
         let a = Array.toMutList([1,0]);
         MutList.sortWith!(cmp, a);
         a `sameElements` Array.toMutList([0,1])
-    }
     @test
-    def sortWith05!(): Bool = region r {
+    def sortWith05!(): Bool & Impure =
         let a = Array.toMutList([1,1]);
         MutList.sortWith!(cmp, a);
         a `sameElements` Array.toMutList([1,1])
-    }
 
     @test
-    def sortWith06!(): Bool = region r {
+    def sortWith06!(): Bool & Impure =
         let a = Array.toMutList([0,1,2,3,4,5]);
         MutList.sortWith!(cmp, a);
         a `sameElements` Array.toMutList([0,1,2,3,4,5])
-    }
 
     @test
-    def sortWith07!(): Bool = region r {
+    def sortWith07!(): Bool & Impure =
         let a = Array.toMutList([5,4,3,2,1,0]);
         MutList.sortWith!(cmp, a);
         a `sameElements` Array.toMutList([0,1,2,3,4,5])
-    }
 
     @test
-    def sortWith08!(): Bool = region r {
+    def sortWith08!(): Bool & Impure =
         let a = Array.toMutList([5,3,0,4,1,2]);
         MutList.sortWith!(cmp, a);
         a `sameElements` Array.toMutList([0,1,2,3,4,5])
-    }
 
     @test
-    def sortWith09!(): Bool = region r {
+    def sortWith09!(): Bool & Impure =
         let a = Array.toMutList([2,3,0,4,1,2]);
         MutList.sortWith!(cmp, a);
         a `sameElements` Array.toMutList([0,1,2,2,3,4])
-    }
 
     @test
-    def sortWith10!(): Bool = region r {
+    def sortWith10!(): Bool & Impure =
         let a = Array.toMutList([0,1,2,3,4,5]);
         MutList.sortWith!(flip(cmp), a);
         a `sameElements` Array.toMutList([5,4,3,2,1,0])
-    }
 
     @test
-    def sortWith11!(): Bool = region r {
+    def sortWith11!(): Bool & Impure =
         let a = Array.toMutList([5,4,3,2,1,0]);
         MutList.sortWith!(flip(cmp), a);
         a `sameElements` Array.toMutList([5,4,3,2,1,0])
-    }
 
     @test
-    def sortWith12!(): Bool = region r {
+    def sortWith12!(): Bool & Impure =
         let a = Array.toMutList([5,3,0,4,1,2]);
         MutList.sortWith!(flip(cmp), a);
         a `sameElements` Array.toMutList([5,4,3,2,1,0])
-    }
 
     @test
-    def sortWith13!(): Bool = region r {
+    def sortWith13!(): Bool & Impure =
         let a = Array.toMutList([2,3,0,4,1,2]);
         MutList.sortWith!(flip(cmp), a);
         a `sameElements` Array.toMutList([4,3,2,2,1,0])
-    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // sort!                                                                   //
@@ -1924,49 +1893,40 @@ namespace TestMutList {
         b `sameElements` c
 
     @test
-    def sort!01(): Bool = region r {
-        testSort!VsSortWith!(Array.toMutList([]: ScopedArray[Int32, _] @ r))
-    }
+    def sort!01(): Bool & Impure =
+        testSort!VsSortWith!(Array.toMutList([]: ScopedArray[Int32, _]))
 
     @test
-    def sort!02(): Bool = region r {
+    def sort!02(): Bool & Impure =
         testSort!VsSortWith!(Array.toMutList([0]))
-    }
 
     @test
-    def sort!03(): Bool = region r {
+    def sort!03(): Bool & Impure =
         testSort!VsSortWith!(Array.toMutList([0,1]))
-    }
 
     @test
-    def sort!04(): Bool = region r {
+    def sort!04(): Bool & Impure =
         testSort!VsSortWith!(Array.toMutList([1,0]))
-    }
 
     @test
-    def sort!05(): Bool = region r {
+    def sort!05(): Bool & Impure =
         testSort!VsSortWith!(Array.toMutList([1,1]))
-    }
 
     @test
-    def sort!06(): Bool = region r {
+    def sort!06(): Bool & Impure =
         testSort!VsSortWith!(Array.toMutList([0,1,2,3,4,5]))
-    }
 
     @test
-    def sort!07(): Bool = region r {
+    def sort!07(): Bool & Impure =
         testSort!VsSortWith!(Array.toMutList([5,4,3,2,1,0]))
-    }
 
     @test
-    def sort!08(): Bool = region r {
+    def sort!08(): Bool & Impure =
         testSort!VsSortWith!(Array.toMutList([5,3,0,4,1,2]))
-    }
 
     @test
-    def sort!09(): Bool = region r {
+    def sort!09(): Bool & Impure =
         testSort!VsSortWith!(Array.toMutList([2,3,0,4,1,2]))
-    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1979,49 +1939,40 @@ namespace TestMutList {
         (MutList.sortBy(x -> -x, a) `sameElements` MutList.sortWith(flip(cmp),a))
 
     @test
-    def sortBy01(): Bool = region r {
-        testSortByVsSort(Array.toMutList([]: ScopedArray[Int32, _] @ r))
-    }
+    def sortBy01(): Bool & Impure
+        testSortByVsSort(Array.toMutList([]: ScopedArray[Int32, _]))
 
     @test
-    def sortBy02(): Bool = region r {
-        testSortByVsSort(Array.toMutList([0] @ r))
-    }
+    def sortBy02(): Bool & Impure
+        testSortByVsSort(Array.toMutList([0]))
 
     @test
-    def sortBy03(): Bool = region r {
-        testSortByVsSort(Array.toMutList([0,1] @ r))
-    }
+    def sortBy03(): Bool & Impure
+        testSortByVsSort(Array.toMutList([0,1]))
 
     @test
-    def sortBy04(): Bool = region r {
-        testSortByVsSort(Array.toMutList([1,0] @ r))
-    }
+    def sortBy04(): Bool & Impure
+        testSortByVsSort(Array.toMutList([1,0]))
 
     @test
-    def sortBy05(): Bool = region r {
-        testSortByVsSort(Array.toMutList([1,1] @ r))
-    }
+    def sortBy05(): Bool & Impure
+        testSortByVsSort(Array.toMutList([1,1]))
 
     @test
-    def sortBy06(): Bool = region r {
-        testSortByVsSort(Array.toMutList([0,1,2,3,4,5] @ r))
-    }
+    def sortBy06(): Bool & Impure
+        testSortByVsSort(Array.toMutList([0,1,2,3,4,5]))
 
     @test
-    def sortBy07(): Bool = region r {
-        testSortByVsSort(Array.toMutList([5,4,3,2,1,0] @ r))
-    }
+    def sortBy07(): Bool & Impure
+        testSortByVsSort(Array.toMutList([5,4,3,2,1,0]))
 
     @test
-    def sortBy08(): Bool = region r {
-        testSortByVsSort(Array.toMutList([5,3,0,4,1,2] @ r))
-    }
+    def sortBy08(): Bool & Impure
+        testSortByVsSort(Array.toMutList([5,3,0,4,1,2]))
 
     @test
-    def sortBy09(): Bool = region r {
-        testSortByVsSort(Array.toMutList([2,3,0,4,1,2] @ r))
-    }
+    def sortBy09(): Bool & Impure
+        testSortByVsSort(Array.toMutList([2,3,0,4,1,2]))
 
     enum R {
         case R({i :: Int32, s :: String})
@@ -2035,10 +1986,9 @@ namespace TestMutList {
     }
 
     @test
-    def sortBy10(): Bool = region r {
-        MutList.sortBy(r -> let R(x) = r; x.i, Array.toMutList([R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})] @ r))
-        `sameElements` Array.toMutList([R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})] @ r)
-    }
+    def sortBy10(): Bool & Impure =
+        MutList.sortBy(r -> let R(x) = r; x.i, Array.toMutList([R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})]))
+        `sameElements` Array.toMutList([R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})])
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2054,74 +2004,40 @@ namespace TestMutList {
         (c `sameElements` MutList.sortBy(identity, a))
 
     @test
-    def sortBy!01(): Bool = region r {
-        testSortBy!VsSortBy(Array.toMutList([]: ScopedArray[Int32, _] @ r))
-    }
+    def sortBy!01(): Bool & Impure =
+        testSortBy!VsSortBy(Array.toMutList([]: ScopedArray[Int32, _]))
 
     @test
-    def sortBy!02(): Bool = region r {
-        testSortBy!VsSortBy(Array.toMutList([0] @ r))
-    }
+    def sortBy!02(): Bool & Impure =
+        testSortBy!VsSortBy(Array.toMutList([0]))
 
     @test
-    def sortBy!03(): Bool = region r {
-        testSortBy!VsSortBy(Array.toMutList([0,1] @ r))
-    }
+    def sortBy!03(): Bool & Impure =
+        testSortBy!VsSortBy(Array.toMutList([0,1]))
 
     @test
-    def sortBy!04(): Bool = region r {
-        testSortBy!VsSortBy(Array.toMutList([1,0] @ r))
-    }
+    def sortBy!04(): Bool & Impure =
+        testSortBy!VsSortBy(Array.toMutList([1,0]))
 
     @test
-    def sortBy!05(): Bool = region r {
-        testSortBy!VsSortBy(Array.toMutList([1,1] @ r))
-    }
+    def sortBy!05(): Bool & Impure =
+        testSortBy!VsSortBy(Array.toMutList([1,1]))
 
     @test
-    def sortBy!06(): Bool = region r {
-        testSortBy!VsSortBy(Array.toMutList([0,1,2,3,4,5] @ r))
-    }
+    def sortBy!06(): Bool & Impure =
+        testSortBy!VsSortBy(Array.toMutList([0,1,2,3,4,5]))
 
     @test
-    def sortBy!07(): Bool = region r {
-        testSortBy!VsSortBy(Array.toMutList([5,4,3,2,1,0] @ r))
-    }
+    def sortBy!07(): Bool & Impure =
+        testSortBy!VsSortBy(Array.toMutList([5,4,3,2,1,0]))
 
     @test
-    def sortBy!08(): Bool = region r {
-        testSortBy!VsSortBy(Array.toMutList([5,3,0,4,1,2] @ r))
-    }
+    def sortBy!08(): Bool & Impure =
+        testSortBy!VsSortBy(Array.toMutList([5,3,0,4,1,2]))
 
     @test
-    def sortBy!09(): Bool = region r {
-        testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,2] @ r))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // range                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def range01(): Bool = region r {
-        let v1 = MutList.range(1, 4) |> MutList.toArray;
-        let v2 = MutList.range(0, 5) |> MutList.toArray;
-        let arr1 = [1, 2, 3] @ r;
-        let arr2 = [0, 1, 2, 3, 4] @ r;
-        (v1 `Array.sameElements` arr1) and (v2 `Array.sameElements` arr2)
-    }
-
-    @test
-    def range02(): Bool = region r {
-        let v = MutList.range(-1, 3) |> MutList.toArray;
-        let arr = [-1, 0, 1, 2] @ r;
-        (v `Array.sameElements` arr)
-    }
-
-    @test
-    def range03(): Bool = region r {
-        MutList.range(0, 1000) |> MutList.toList == List.range(0, 1000)
-    }
+    def sortBy!09(): Bool & Impure =
+        testSortBy!VsSortBy(Array.toMutList([2,3,0,4,1,2]))
 
 
     /////////////////////////////////////////////////////////////////////////////
