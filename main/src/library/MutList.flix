@@ -25,26 +25,6 @@ pub enum MutList[a: Type, r: Region] {
     case MutList(ScopedRef[ScopedArray[a, r], r], ScopedRef[Int32, r])
 }
 
-/*
-instance Iterable[MutList] {
-    pub def iterator(t: MutList[a, r]): Iterator[a] & Impure =
-        let MutList(a, l) = t;
-        let i = ref 0;
-        let done = () -> deref i == deref l;
-        let next = () -> {
-                if (deref i != deref l) {
-                    let elem = Array.get(deref i, deref a);
-                    i := deref i + 1;
-                    elem
-                }
-                else {
-                    bug!("Empty Iterator!")
-                }
-            };
-        Iterator(done, next)
-}
-*/
-
 instance Newable[MutList[a]] {
     pub def new(r: Region[r]): MutList[a, r] \ Write(r) = MutList.new(r)
 }
@@ -52,13 +32,6 @@ instance Newable[MutList[a]] {
 instance Scoped[MutList[a]] {
     pub def regionOf(_: MutList[a, r]): Region[r] = () as Region[r]
 }
-
-// Array functions to be refactored
-// - head
-// - new
-// - put
-// - copyOfRange
-// - sortWithin
 
 namespace MutList {
 
@@ -82,21 +55,6 @@ namespace MutList {
     ///
     pub def new(r: Region[r]): MutList[a, r] \ Write(r) =
         MutList(ref [$DEFAULT$; minCapacity()] @ r @ r, ref 0 @ r)
-
-    /*
-    ///
-    /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
-    ///
-    /// Returns an empty mutable list if `b >= e`.
-    ///
-    pub def range(b: Int32, e: Int32): MutList[Int32, r] & Impure =
-        let minCap = minCapacity();
-        if (e - b < minCap)
-            let f = i -> if (b + i < e) b + i else $DEFAULT$;
-            MutList(ref Array.init(f, minCap), ref (e - b))
-        else
-            MutList(ref Array.range(b, e), ref (e - b))
-    */
 
     ///
     /// Returns the element at position `i` in the mutable list `v`.
