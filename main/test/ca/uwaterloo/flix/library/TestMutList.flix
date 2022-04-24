@@ -220,40 +220,40 @@ namespace TestMutList {
     @test
     def product02(): Bool = region r {
         let l = new MutList(r);
-        let r = 1 :: Nil;
-        List.foreach(x -> MutList.push!(x, l));
+        let xs = 1 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
         MutList.product(l) == 1
     }
 
     @test
     def product03(): Bool = region r {
         let l = new MutList(r);
-        let r = 1 :: 2 :: 3 :: Nil;
-        List.foreach(x -> MutList.push!(x, l));
+        let xs = 1 :: 2 :: 3 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
         MutList.product(l) == 6
     }
 
     @test
     def product04(): Bool = region r {
         let l = new MutList(r);
-        let r = 1 :: 2 :: 3 :: -3 :: Nil;
-        List.foreach(x -> MutList.push!(x, l));
+        let xs = 1 :: 2 :: 3 :: -3 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
         MutList.product(l) == -18
     }
 
     @test
     def product05(): Bool = region r {
         let l = new MutList(r);
-        let r = -1 :: -2 :: -3 :: -4 :: Nil;
-        List.foreach(x -> MutList.push!(x, l));
+        let xs = -1 :: -2 :: -3 :: -4 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
         MutList.product(l) == 24
     }
 
     @test
     def product06(): Bool = region r {
         let l = new MutList(r);
-        let r = 10 :: -10 :: Nil;
-        List.foreach(x -> MutList.push!(x, l));
+        let xs = 10 :: -10 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
         MutList.product(l) == -100
     }
 
@@ -269,36 +269,41 @@ namespace TestMutList {
 
     @test
     def productWith02(): Bool = region r {
-        let d = new MutList(r);
-        let r = 1 :: Nil;
+        let l = new MutList(r);
+        let xs = 1 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
         MutList.productWith(x -> x + 1, l) == 2
     }
 
     @test
     def productWith03(): Bool = region r {
-        let d = new MutList(r);
-        let r = 1 :: 2 :: 3 :: Nil;
+        let l = new MutList(r);
+        let xs = 1 :: 2 :: 3 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
         MutList.productWith(x -> x + 1, l) == 24
     }
 
     @test
     def productWith04(): Bool = region r {
-        let d = new MutList(r);
-        let r = 1 :: 2 :: 3 :: -3 :: Nil;
+        let l = new MutList(r);
+        let xs = 1 :: 2 :: 3 :: -3 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
         MutList.productWith(x -> x + 1, l) == -48
     }
 
     @test
     def productWith05(): Bool = region r {
-        let d = new MutList(r);
-        let r = -2 :: -3 :: -4 :: -5 :: Nil;
+        let l = new MutList(r);
+        let xs = -2 :: -3 :: -4 :: -5 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
         MutList.productWith(x -> x +, l 1) == 24
     }
 
     @test
     def productWith06(): Bool = region r {
-        let d = new MutList(r);
-        let r = 10 :: -10 :: Nil;
+        let l = new MutList(r);
+        let xs = 10 :: -10 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
         MutList.productWith(x -> x + 1, l) == -99
     }
 
@@ -2122,32 +2127,57 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sum01(): Bool & Impure =
-        List.toMutList(Nil) |> MutList.sum == 0
+    def sum01(): Bool = region r {
+        new MutList(r) |> MutList.sum == 0
+    }
 
     @test
-    def sum02(): Bool & Impure =
-        List.toMutList(1 :: Nil) |> MutList.sum == 1
+    def sum02(): Bool = region r {
+        let l = new MutList(r);
+        let xs = 1 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
+        MutList.sum(l) == 1
+    }
 
     @test
-    def sum03(): Bool & Impure =
-        List.toMutList(1 :: 2 :: 3 :: Nil) |> MutList.sum == 6
+    def sum03(): Bool = region r {
+        let l = new MutList(r);
+        let xs = 1 :: 2 :: 3 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
+        MutList.sum(l) == 6
+    }
 
     @test
-    def sum04(): Bool & Impure =
-        List.toMutList(1 :: 2 :: 3 :: -3 :: Nil) |> MutList.sum == 3
+    def sum04(): Bool = region r {
+        let l = new MutList(r);
+        let xs = 1 :: 2 :: 3 :: -3 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
+        MutList.sum(l) == 3
+    }
 
     @test
-    def sum05(): Bool & Impure =
-        List.toMutList(-1 :: -2 :: -3 :: -4 :: Nil) |> MutList.sum == -10
+    def sum05(): Bool = region r {
+        let l = new MutList(r);
+        let xs = -1 :: -2 :: -3 :: -4 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
+        MutList.sum(l) == -10
+    }
 
     @test
-    def sum06(): Bool & Impure =
-        List.toMutList(10 :: -10 :: Nil) |> MutList.sum == 0
+    def sum06(): Bool = region r {
+        let l = new MutList(r);
+        let xs = 10 :: -10 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
+        MutList.sum(l) == 0
+    }
 
     @test
-    def sum07(): Bool & Impure =
-        List.range(1, 101) |> List.toMutList |> MutList.sum == 5050
+    def sum07(): Bool = region r {
+        let l = new MutList(r);
+        let xs = List.range(1, 101);
+        List.foreach(x -> MutList.push!(x, l), xs);
+        MutList.sum(l) == 5050
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2155,28 +2185,49 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sumWith01(): Bool & Impure =
-        List.toMutList(Nil) |> MutList.sumWith(x -> x + 1) == 0
+    def sumWith01(): Bool = region r {
+        new MutList(r) |> MutList.sumWith(x -> x + 1) == 0
+    }
 
     @test
-    def sumWith02(): Bool & Impure =
-        List.toMutList(1 :: Nil) |> MutList.sumWith(x -> x + 1) == 2
+    def sumWith02(): Bool = region r {
+        let l = new MutList(r);
+        let xs = 1 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
+        MutList.sumWith(x -> x + 1, l) == 2
+    }
 
     @test
-    def sumWith03(): Bool & Impure =
-        List.toMutList(1 :: 2 :: 3 :: Nil) |> MutList.sumWith(x -> x + 1) == 9
+    def sumWith03(): Bool = region r {
+        let l = new MutList(r);
+        let xs = 1 :: 2 :: 3 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
+        MutList.sumWith(x -> x + 1, l) == 9
+    }
 
     @test
-    def sumWith04(): Bool & Impure =
-        List.toMutList(1 :: 2 :: 3 :: -3 :: Nil) |> MutList.sumWith(x -> x + 1) == 7
+    def sumWith04(): Bool = region r {
+        let l = new MutList(r);
+        let xs = 1 :: 2 :: 3 :: -3 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
+        MutList.sumWith(x -> x + 1, l) == 7
+    }
 
     @test
-    def sumWith05(): Bool & Impure =
-        List.toMutList(-1 :: -2 :: -3 :: -4 :: Nil) |> MutList.sumWith(x -> x + 1) == -6
+    def sumWith05(): Bool = region r {
+        let l = new MutList(r);
+        let xs = -1 :: -2 :: -3 :: -4 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
+        MutList.sumWith(x -> x + 1, l) == -6
+    }
 
     @test
-    def sumWith06(): Bool & Impure =
-        List.toMutList(10 :: -10 :: Nil) |> MutList.sumWith(x -> x + 1) == 2
+    def sumWith06(): Bool = region r {
+        let l = new MutList(r);
+        let xs = 10 :: -10 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
+        MutList.sumWith(x -> x + 1, l) == 2
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2184,24 +2235,35 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def join01(): Bool & Impure =
-        (Nil: List[Int32]) |> List.toMutList |>
-            MutList.join(",") == ""
+    def join01(): Bool = region r {
+        (new MutList(r): MutList:[Int32, _]) |> MutList.join(",", l) == ""
+    }
 
     @test
-    def join02(): Bool & Impure =
-        (1 :: Nil) |> List.toMutList |>
-            MutList.join(",") == "1"
+    def join02(): Bool = region r {
+        let l = new MutList(r);
+        let xs = 1 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
+        MutList.join(",", l) == "1"
+    }
+
 
     @test
-    def join03(): Bool & Impure =
-        (1 :: 2 :: 3 :: Nil) |> List.toMutList |>
-            MutList.join(",") == "1,2,3"
+    def join03(): Bool = region r {
+        let l = new MutList(r);
+        let xs = 1 :: 2 :: 3 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
+        MutList.join(",", l) == "1,2,3"
+    }
+
 
     @test
-    def join04(): Bool & Impure =
-        ("1" :: "2" :: "3" :: Nil) |> List.toMutList |>
-            MutList.join(",") == "1,2,3"
+    def join04(): Bool = region r {
+        let l = new MutList(r);
+        let xs = "1" :: "2" :: "3" :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
+        MutList.join(",", l) == "1,2,3"
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2209,19 +2271,32 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def joinWith01(): Bool & Impure =
-        List.toMutList(Nil: List[Int32]) |> MutList.joinWith(x -> "${x + 1}", ",") == ""
+    def joinWith01(): Bool = region r {
+        (new MutList(r): MutList[Int32, _]) |> MutList.joinWith(x -> "${x + 1}", ",") == ""
+    }
 
     @test
-    def joinWith02(): Bool & Impure =
-        List.toMutList(1 :: Nil) |> MutList.joinWith(x -> "${x + 1}", ",") == "2"
+    def joinWith02(): Bool = region r {
+        let l = new MutList(r);
+        let xs = 1 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
+        MutList.joinWith(x -> "${x + 1}", ",", l) == "2"
+    }
 
     @test
-    def joinWith03(): Bool & Impure =
-        List.toMutList(1 :: 2 :: 3 :: Nil) |> MutList.joinWith(x -> "${x + 1}", ",") == "2,3,4"
+    def joinWith03(): Bool = region r {
+        let l = new MutList(r);
+        let xs = 1 :: 2 :: 3 :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
+        MutList.joinWith(x -> "${x + 1}", ",", l) == "2,3,4"
+    }
 
     @test
-    def joinWith04(): Bool & Impure =
-        List.toMutList("1" :: "2" :: "3" :: Nil) |> MutList.joinWith(x -> x + x, ",") == "11,22,33"
+    def joinWith04(): Bool = region r {
+        let l = new MutList(r);
+        let xs = "1" :: "2" :: "3" :: Nil;
+        List.foreach(x -> MutList.push!(x, l), xs);
+        MutList.joinWith(x -> x + x, ",", l) == "11,22,33"
+    }
 
 }
