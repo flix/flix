@@ -362,8 +362,8 @@ object BoolTable {
       case ('2' :: rest, stack) => parse(rest, Var(2) :: stack)
       case ('3' :: rest, stack) => parse(rest, Var(3) :: stack)
       case ('n' :: rest, f :: stack) => parse(rest, Neg(f) :: stack)
-      case ('a' :: rest, f1 :: f2 :: stack) => parse(rest, Conj(f1, f2) :: stack)
-      case ('o' :: rest, f1 :: f2 :: stack) => parse(rest, Disj(f1, f2) :: stack)
+      case ('a' :: rest, f2 :: f1 :: stack) => parse(rest, Conj(f1, f2) :: stack)
+      case ('o' :: rest, f2 :: f1 :: stack) => parse(rest, Disj(f1, f2) :: stack)
       case _ => throw InternalCompilerException(s"Parse Error. input = ${input.mkString(" :: ")}, stack = $stack.")
     }
 
