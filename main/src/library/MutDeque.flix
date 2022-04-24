@@ -175,7 +175,7 @@ namespace MutDeque {
                 let j = (i + 1) &&& c;
                 f(ar[j], _ -> loop(j, e))
             };
-        loop(front, back)
+        loop(front - 1, back)
 
     ///
     /// Returns `Some(x)` where `x` is the element at the front. Returns `None` if `d` is empty.
