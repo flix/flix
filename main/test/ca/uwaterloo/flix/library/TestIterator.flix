@@ -857,22 +857,22 @@ namespace TestIterator {
     @test
     def foldRight01(): Bool & Impure =
         let iter = List.toIterator(Nil);
-        Iterator.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, iter) == 100
+        Iterator.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 100
 
     @test
     def foldRight02(): Bool & Impure =
         let iter = List.toIterator(1 :: Nil);
-        Iterator.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, iter) == 198
+        Iterator.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 198
 
     @test
     def foldRight03(): Bool & Impure =
         let iter = List.toIterator(1 :: 2 :: Nil);
-        Iterator.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, iter) == 194
+        Iterator.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 194
 
     @test
     def foldRight04(): Bool & Impure =
         let iter = List.toIterator(1 :: 2 :: 3 :: Nil);
-        Iterator.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, iter) == 382
+        Iterator.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 382
 
 
     /////////////////////////////////////////////////////////////////////////////
