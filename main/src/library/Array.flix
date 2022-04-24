@@ -150,7 +150,7 @@ namespace Array {
     /// Returns `None` if `a` is empty.
     ///
     @Time(1) @Space(1)
-    pub def head(a: Array[a]): Option[a] & Impure =
+    pub def head(a: ScopedArray[a, r]): Option[a] \ Read(r) =
         if (length(a) > 0) Some(a[0]) else None
 
     ///
