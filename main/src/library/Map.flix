@@ -29,7 +29,7 @@ instance Boxable[Map[k, v]] with Boxable[k], Boxable[v]
 
 instance ToString[Map[k, v]] with ToString[k], ToString[v] {
     pub def toString(m: Map[k, v]): String =
-        let s = Map.foldRightWithKey((k, v, acc) -> "${k} => ${v}, ${acc}", "", m);
+        let s = Map.foldRightWithKey((k, v, c) -> "${k} => ${v}, ${c()}", "", m);
         "Map#{${String.dropRight(2, s)}}"
 }
 
@@ -464,7 +464,7 @@ namespace Map {
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
     pub def foldRightOld(f: (v, b) -> b & ef, s: b, m: Map[k, v]): b & ef =
-        foldRightWithKeyOld((_, v, acc) -> f(v, acc), s, m)
+        foldRightWithKeyOld((_, v, c) -> f(v, c()), s, m)
 
     ///
     /// Applies `f` to a start value `s` and all values in `m` going from right to left.
@@ -473,7 +473,7 @@ namespace Map {
     /// A `foldRight` allows early termination by not calling the continuation.
     ///
     pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
-        foldRightWithKey((_, v, k) -> f(v, k), z, m)
+        foldRightWithKey((_, v, c) -> f(v, c()), z, m)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
@@ -760,7 +760,7 @@ namespace Map {
     ///
     @Time(size(m)) @Space(size(m))
     pub def toList(m: Map[k, v]): List[(k, v)] =
-        foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
+        foldRightWithKey((k, v, c) -> (k, v) :: c(), Nil, m)
 
     ///
     /// Returns the map `m` as a set of key-value pairs.

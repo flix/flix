@@ -532,7 +532,7 @@ namespace Set {
     ///
     @Time(size(s)) @Space(size(s))
     pub def toMap(s: Set[(a, b)]): Map[a, b] with Order[a] =
-        foldRight((x, k) -> let (k, v) = x; Map.insert(k, v, k()), Map#{}, s)
+        foldRight((x, c) -> let (k, v) = x; Map.insert(k, v, c()), Map#{}, s)
 
     ///
     /// Returns a map with elements of `s` as keys and `f` applied as values.
