@@ -1422,40 +1422,36 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foreach01(): Bool = region r {
-        let v = new MutList(r);
+    def foreach01(): Bool & Impure =
+        let v = new MutList(static);
         let sb = StringBuilder.new();
         let f = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == ""
-    }
 
     @test
-    def foreach02(): Bool = region r {
-        let v = MutList.range(r, 0, 5);
+    def foreach02(): Bool & Impure =
+        let v = MutList.range(static, 0, 5);
         let sb = StringBuilder.new();
         let f = x -> if (x rem 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == "TFTFT"
-    }
 
     @test
-    def foreach03(): Bool = region r {
-        let v = MutList.range(r, 0, 2);
+    def foreach03(): Bool & Impure =
+        let v = MutList.range(static, 0, 2);
         let sb = StringBuilder.new();
         let f = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == "FT"
-    }
 
     @test
-    def foreach04(): Bool = region r {
-        let v = MutList.range(r, 0, 2);
+    def foreach04(): Bool & Impure =
+        let v = MutList.range(static, 0, 2);
         let sb = StringBuilder.new();
         let f = x -> if (x < 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == "FF"
-    }
 
 
     /////////////////////////////////////////////////////////////////////////////

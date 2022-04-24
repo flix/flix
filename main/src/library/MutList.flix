@@ -54,11 +54,10 @@ namespace MutList {
     ///
     pub def range(r: Region[r], b: Int32, e: Int32): MutList[Int32, r] \ Write(r) =
         let minCap = minCapacity();
-        if (e - b < minCap)
-            let f = i -> if (b + i < e) b + i else $DEFAULT$;
-            MutList(ref Array.init(r, f, minCap) @ r, ref (e - b) @ r)
-        else
-            MutList(ref Array.range(r, b, e) @ r, ref (e - b) @ r)
+        let d = e - b;
+        let c = Order.max(d, minCap);
+        let f = i -> { let x = b + i; if (x < e) x else $DEFAULT$ };
+        MutList(ref Array.init(r, f, c) @ r, ref d @ r)
 
     ///
     /// Returns the element at position `i` in the mutable list `v`.
