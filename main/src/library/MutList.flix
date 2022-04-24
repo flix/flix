@@ -52,13 +52,13 @@ namespace MutList {
     ///
     /// Returns an empty mutable list if `b >= e`.
     ///
-    pub def range(b: Int32, e: Int32): MutList[Int32, Impure] & Impure =
+    pub def range(r: Region[r], b: Int32, e: Int32): MutList[Int32, r] \ Write(r) =
         let minCap = minCapacity();
         if (e - b < minCap)
             let f = i -> if (b + i < e) b + i else $DEFAULT$;
-            MutList(ref Array.init(static, f, minCap), ref (e - b))
+            MutList(ref Array.init(r, f, minCap) @ r, ref (e - b) @ r)
         else
-            MutList(ref Array.range(b, e), ref (e - b))
+            MutList(ref Array.range(r, b, e) @ r, ref (e - b) @ r)
 
     ///
     /// Returns the element at position `i` in the mutable list `v`.

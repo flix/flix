@@ -109,7 +109,7 @@ pub def chainAppend(l: Array[Int32]): Benchmark =
 /// Chain Suite                                                             ///
 ///////////////////////////////////////////////////////////////////////////////
 pub def chainSuite(n: Int32): Array[Benchmark] & Impure =
-    let l = Array.range(1, n);
+    let l = Array.range(static, 1, n);
     [
         // Consing and Array.toList / Array.toChain should be pretty much the same
 

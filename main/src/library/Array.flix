@@ -306,12 +306,12 @@ namespace Array {
     /// Returns `[]` if `b >= e`.
     ///
     @Time(e - b) @Space(e - b)
-    pub def range(b: Int32, e: Int32): Array[Int32] & Impure =
+    pub def range(r: Region[r], b: Int32, e: Int32): ScopedArray[Int32, r] \ Write(r) =
         if (b >= e)
-            []
+            [] @ r
         else {
             let f = x -> x + b;
-            init(static, f, e-b)
+            init(r, f, e - b)
         }
 
     ///
