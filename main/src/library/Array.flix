@@ -1488,7 +1488,7 @@ namespace Array {
     /// Update the mutable array `a` with the elements starting at index `i` replaced by `sub`.
     ///
     @Time(length(a)) @Space(1)
-    pub def updateSequence!(i: Int32, sub: ScopedArray[a, r], a: ScopedArray[a, r]): Unit \ { Read(r), Write(r) } =
+    pub def updateSequence!(i: Int32, sub: ScopedArray[a, r1], a: ScopedArray[a, r2]): Unit \ { Read(r1), Write(r2) } =
         let end = i + length(sub);
         let f = { (_,ix) ->
             if (ix >= i and ix < end)
