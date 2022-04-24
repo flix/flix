@@ -35,7 +35,7 @@ namespace Fixpoint {
     ///
     def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] & Impure with ToString[v] = match d {
         case Datalog(facts, rules) =>
-            let stmts = MutList.empty();
+            let stmts = new MutList(static)();
             Array.foreach(compileRule(stmts), facts);
             Array.foldRight(rule -> match rule {
                 case Constraint(HeadAtom(p, _, _), _) =>
@@ -70,7 +70,7 @@ namespace Fixpoint {
             let arity = Array.length(terms);
             Map.insert(pred, (arity, den))
         }, Map#{}, stratum);
-        let loopBody = MutList.empty();
+        let loopBody = new MutList(static)();
         Array.foreach(compileRule(stmts), stratum);
         Map.foreach(match PredSym(relName) -> match (arity, den) -> {
             let full = RamSym.Full(relName, arity, den);

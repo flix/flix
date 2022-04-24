@@ -118,7 +118,7 @@ namespace Concurrent/Channel {
             unBuffered,
             if (unBuffered) 1 else bufferSize,
             MutDeque.empty(),
-            MutList.empty(),
+            new MutList(static)(),
             Concurrent/ReentrantLock.newCondition(reentrantLock)
         )
 

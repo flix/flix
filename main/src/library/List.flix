@@ -1140,7 +1140,7 @@ namespace List {
     /// Returns `l` as a mutable list.
     ///
     pub def toMutList(l: List[a]): MutList[a, Impure] & Impure =
-        let v = MutList.empty();
+        let v = new MutList(static)();
         foreach(x -> MutList.push!(x, v), l);
         v
 
