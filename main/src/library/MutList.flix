@@ -917,7 +917,7 @@ namespace MutList {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy!(f: a -> b, v: MutList[a, r]): Unit\ { Read(r), Write(r) } with Order[b] =
+    pub def sortBy!(f: a -> b, v: MutList[a, r]): Unit \ { Read(r), Write(r) } with Order[b] =
         sortWith!(Order.compare `on` f, v)
 
     ///
