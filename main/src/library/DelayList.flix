@@ -82,7 +82,7 @@ instance Traversable[DelayList] {
 
 instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldLeft(f, s, l)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRight(f, s, l)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRightOld(f, s, l)
 }
 
 instance Iterable[DelayList] {
@@ -594,7 +594,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def foldRight(f: (a, b) -> b & ef, s: b, l: DelayList[a]): b & ef =
+    pub def foldRightOld(f: (a, b) -> b & ef, s: b, l: DelayList[a]): b & ef =
         def loop(ll, k) = match ll {
             case ENil         => k(s)
             case ECons(x, xs) => loop(      xs, ks -> k(f(x, ks)))
@@ -605,20 +605,20 @@ namespace DelayList {
                                   // but the intermediate continuations are effect polymorphic.
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
+    /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
     ///
-    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     ///
-    /// Forces elements from the list only as needed by `f`.
+    /// Forces the entire list `l`.
+    /// A `foldRight` allows early termination by not calling the continuation.
     ///
     @Experimental
-    @Lazy
-    pub def foldRightLazy(f: (a, Lazy[b]) -> b, s: b, l: DelayList[a]): b =
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, l: DelayList[a]): b & ef =
         def loop(ll) = match ll {
-           case ENil         => s
-           case ECons(x, xs) => f(x, lazy loop(xs))
-           case LCons(x, xs) => f(x, lazy loop(force xs))
-           case LList(xs)    => loop(force xs)
+            case ENil         => z
+            case ECons(x, xs) => f(x, _ -> loop(xs))
+            case LCons(x, xs) => f(x, _ -> loop(force xs))
+            case LList(xs)    =>           loop(force xs)
         };
         loop(l)
 
