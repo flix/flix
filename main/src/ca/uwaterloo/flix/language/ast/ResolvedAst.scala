@@ -340,5 +340,8 @@ object ResolvedAst {
 
   }
 
-  case class TypeConstraint(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation)
+  case object TypeConstraint {
+    case class Head(clazz: Symbol.ClassSym, loc: SourceLocation)
+  }
+  case class TypeConstraint(head: ResolvedAst.TypeConstraint.Head, tpe: Type, loc: SourceLocation)
 }
