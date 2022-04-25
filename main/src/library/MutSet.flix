@@ -220,23 +220,14 @@ namespace MutSet {
         Set.foldLeft(f, i, deref ms)
 
     ///
-    /// Applies `f` to a start value `i` and all elements in the mutable set `s` going from right to left.
+    /// Applies `f` to a start value `z` and all elements in the mutable set `s` going from right to left.
     ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, i))...)`.
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
+    /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, i: b, s: MutSet[a, r]): b \ { ef, Read(r) } =
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, s: MutSet[a, r]): b \ { ef, Read(r) } =
         let MutSet(ms) = s;
-        Set.foldRight(f, i, deref ms)
-
-    ///
-    /// Lazily applies `f` to a start value `s` and all elements in `s` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
-    /// The foldRightLazy function exists to allow early termination of a fold.
-    ///
-    pub def foldRightLazy(f: (a, Lazy[b]) -> b, i: b, s: MutSet[a, r]): b \ { Read(r) } =
-        let MutSet(ms) = s;
-        Set.foldRightLazy(f, i, deref ms)
+        Set.foldRight(f, z, deref ms)
 
     ///
     /// Applies `f` to all elements in the mutable set `s` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
