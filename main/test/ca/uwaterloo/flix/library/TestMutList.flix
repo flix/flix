@@ -538,7 +538,7 @@ namespace TestMutList {
     def foldLeft04(): Bool & Impure = MutList.foldLeft((acc, x) -> acc - x, 0, MutList.range(0, 100)) == -4950
 
     @test
-    def foldLeft05(): Bool & Impure = MutList.foldRight((k, x) -> k() + x, 42, MutList.new()) == 42
+    def foldLeft05(): Bool & Impure = MutList.foldLeft((acc, x) -> acc + x, 42, MutList.new()) == 42
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
