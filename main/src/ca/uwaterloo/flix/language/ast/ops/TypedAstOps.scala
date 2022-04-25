@@ -77,6 +77,9 @@ object TypedAstOps {
         val env1 = env0 + (sym -> exp1.tpe)
         visitExp(exp1, env1) ++ visitExp(exp2, env1)
 
+      case Expression.Region(_, _) =>
+        Map.empty
+
       case Expression.Scope(_, _, exp, _, _, _) =>
         visitExp(exp, env0)
 
@@ -355,6 +358,7 @@ object TypedAstOps {
     case Expression.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Let(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.LetRec(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.Region(_, _) => Set.empty
     case Expression.Scope(_, _, exp, _, _, _) => sigSymsOf(exp)
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expression.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -489,6 +493,9 @@ object TypedAstOps {
 
     case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - sym
+
+    case Expression.Region(_, _) =>
+      Map.empty
 
     case Expression.Scope(sym, _, exp, _, _, _) =>
       freeVars(exp) - sym

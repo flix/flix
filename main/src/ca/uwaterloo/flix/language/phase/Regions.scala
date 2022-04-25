@@ -117,6 +117,9 @@ object Regions {
         case (e1, e2) => checkType(tpe, loc)
       }
 
+    case Expression.Region(_, _) =>
+      ().toSuccess
+
     case Expression.Scope(_, regionVar, exp, tpe, _, loc) =>
       flatMapN(visitExp(exp)(regionVar :: scope, flix)) {
         case e => checkType(tpe, loc)
