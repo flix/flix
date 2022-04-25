@@ -498,8 +498,8 @@ namespace Chain {
     /// A `foldRight` allows early termination by not calling the continuation.
     ///
     pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Chain[a]): b & ef = match viewLeft(c) {
-        case Chain/ViewLeft.NoneLeft        => z
-        case Chain/ViewLeft.SomeLeft(x, rs) => f(x, _ -> foldRight(f, z, rs))
+        case NoneLeft        => z
+        case SomeLeft(x, rs) => f(x, _ -> foldRight(f, z, rs))
     }
 
     ///

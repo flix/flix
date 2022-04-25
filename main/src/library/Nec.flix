@@ -77,7 +77,7 @@ instance Monad[Nec] {
 
 instance Foldable[Nec] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldLeft(f, s, c)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldRight(f, s, c)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldRightOld(f, s, c)
 }
 
 instance Traversable[Nec] {
@@ -558,6 +558,19 @@ namespace Nec {
         case SomeLeft(x, rs) => {
             let b = f(acc, x);
             foldLeft(f, b, rs)
+        }
+    }
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `c` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRightOld(f: (a, b) -> b & ef, acc: b, c: Nec[a]): b & ef = match viewRight(c) {
+        case OneRight(x)      => f(x, acc)
+        case SomeRight(rs, x) => {
+            let b = f(x, acc);
+            foldRight(f, b, rs)
         }
     }
 
