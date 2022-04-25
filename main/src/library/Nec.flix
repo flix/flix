@@ -570,7 +570,7 @@ namespace Nec {
         case OneRight(x)      => f(x, acc)
         case SomeRight(rs, x) => {
             let b = f(x, acc);
-            foldRight(f, b, rs)
+            foldRightOld(f, b, rs)
         }
     }
 
