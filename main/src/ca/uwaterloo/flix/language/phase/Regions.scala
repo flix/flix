@@ -130,12 +130,12 @@ object Regions {
         case (e1, e2, e3) => checkType(tpe, loc)
       }
 
-    case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+    case Expression.Stm(exp1, exp2, tpe, _, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => checkType(tpe, loc)
       }
 
-    case Expression.Match(exp, rules, tpe, eff, loc) =>
+    case Expression.Match(exp, rules, tpe, _, loc) =>
       val matchVal = visitExp(exp)
       val rulesVal = traverse(rules) {
         case MatchRule(pat, guard, body) => flatMapN(visitExp(guard), visitExp(body)) {
@@ -146,7 +146,7 @@ object Regions {
         case (m, rs) => checkType(tpe, loc)
       }
 
-    case Expression.Choose(exps, rules, tpe, eff, loc) =>
+    case Expression.Choose(exps, rules, tpe, _, loc) =>
       val expsVal = traverse(exps)(visitExp)
       val rulesVal = traverse(rules) {
         case ChoiceRule(pat, exp) => flatMapN(visitExp(exp))(_ => ().toSuccess)
@@ -155,90 +155,90 @@ object Regions {
         case (es, rs) => checkType(tpe, loc)
       }
 
-    case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
+    case Expression.Tag(sym, _, exp, tpe, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.Tuple(elms, tpe, eff, loc) =>
+    case Expression.Tuple(elms, tpe, _, loc) =>
       flatMapN(traverse(elms)(visitExp)) {
         case es => checkType(tpe, loc)
       }
 
-    case Expression.RecordEmpty(tpe, loc) =>
+    case Expression.RecordEmpty(_, _) =>
       ().toSuccess
 
-    case Expression.RecordSelect(base, field, tpe, eff, loc) =>
-      flatMapN(visitExp(base)) {
+    case Expression.RecordSelect(exp, _, tpe, _, loc) =>
+      flatMapN(visitExp(exp)) {
         case b => checkType(tpe, loc)
       }
 
-    case Expression.RecordExtend(field, value, rest, tpe, eff, loc) =>
-      flatMapN(visitExp(value), visitExp(rest)) {
+    case Expression.RecordExtend(_, exp1, exp2, tpe, _, loc) =>
+      flatMapN(visitExp(exp1), visitExp(exp2)) {
         case (v, r) => checkType(tpe, loc)
       }
 
-    case Expression.RecordRestrict(field, rest, tpe, eff, loc) =>
-      flatMapN(visitExp(rest)) {
+    case Expression.RecordRestrict(_, exp, tpe, _, loc) =>
+      flatMapN(visitExp(exp)) {
         case r => checkType(tpe, loc)
       }
 
-    case Expression.ArrayLit(exps, exp, tpe, eff, loc) =>
+    case Expression.ArrayLit(exps, exp, tpe, _, loc) =>
       flatMapN(traverse(exps)(visitExp), visitExp(exp)) {
         case (es, e) => checkType(tpe, loc)
       }
 
-    case Expression.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expression.ArrayNew(exp1, exp2, exp3, tpe, _, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (e1, e2, e3) => checkType(tpe, loc)
       }
 
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
-      flatMapN(visitExp(base), visitExp(index)) {
+    case Expression.ArrayLoad(exp1, exp2, tpe, _, loc) =>
+      flatMapN(visitExp(exp1), visitExp(exp2)) {
         case (b, i) => checkType(tpe, loc)
       }
 
-    case Expression.ArrayLength(base, eff, loc) =>
-      flatMapN(visitExp(base)) {
+    case Expression.ArrayLength(exp, _, loc) =>
+      flatMapN(visitExp(exp)) {
         case b => ().toSuccess
       }
 
-    case Expression.ArrayStore(base, index, elm, loc) =>
-      flatMapN(visitExp(base), visitExp(index), visitExp(elm)) {
+    case Expression.ArrayStore(exp1, exp2, exp3, loc) =>
+      flatMapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (b, i, e) => ().toSuccess
       }
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-      flatMapN(visitExp(base), visitExp(beginIndex), visitExp(endIndex)) {
+    case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) =>
+      flatMapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (b, i1, i2) => checkType(tpe, loc)
       }
 
-    case Expression.Ref(exp1, exp2, tpe, eff, loc) =>
+    case Expression.Ref(exp1, exp2, tpe, _, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => checkType(tpe, loc)
       }
 
-    case Expression.Deref(exp, tpe, eff, loc) =>
+    case Expression.Deref(exp, tpe, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
+    case Expression.Assign(exp1, exp2, tpe, _, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => checkType(tpe, loc)
       }
 
-    case Expression.Ascribe(exp, tpe, eff, loc) =>
+    case Expression.Ascribe(exp, tpe, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+    case Expression.Cast(exp, _, _, tpe, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+    case Expression.TryCatch(exp, rules, tpe, _, loc) =>
       val rulesVal = traverse(rules) {
         case CatchRule(sym, clazz, e) => visitExp(e).map(_ => ())
       }
@@ -246,55 +246,55 @@ object Regions {
         case (e, rs) => checkType(tpe, loc)
       }
 
-    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
-      flatMapN(traverse(args)(visitExp)) {
+    case Expression.InvokeConstructor(_, exps, tpe, _, loc) =>
+      flatMapN(traverse(exps)(visitExp)) {
         case as => checkType(tpe, loc)
       }
 
-    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
-      flatMapN(visitExp(exp), traverse(args)(visitExp)) {
+    case Expression.InvokeMethod(_, exp, exps, tpe, _, loc) =>
+      flatMapN(visitExp(exp), traverse(exps)(visitExp)) {
         case (e, as) => checkType(tpe, loc)
       }
 
-    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
-      flatMapN(traverse(args)(visitExp)) {
+    case Expression.InvokeStaticMethod(_, exps, tpe, _, loc) =>
+      flatMapN(traverse(exps)(visitExp)) {
         case as => checkType(tpe, loc)
       }
 
-    case Expression.GetField(field, exp, tpe, eff, loc) =>
+    case Expression.GetField(_, exp, tpe, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+    case Expression.PutField(_, exp1, exp2, tpe, _, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => checkType(tpe, loc)
       }
 
-    case Expression.GetStaticField(field, tpe, eff, loc) =>
+    case Expression.GetStaticField(_, tpe, _, loc) =>
       ().toSuccess
 
-    case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+    case Expression.PutStaticField(_, exp, tpe, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.NewChannel(exp, tpe, eff, loc) =>
+    case Expression.NewChannel(exp, tpe, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.GetChannel(exp, tpe, eff, loc) =>
+    case Expression.GetChannel(exp, tpe, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+    case Expression.PutChannel(exp1, exp2, tpe, _, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => checkType(tpe, loc)
       }
 
-    case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+    case Expression.SelectChannel(rules, default, tpe, _, loc) =>
       val rulesVal = traverse(rules) {
         case SelectChannelRule(sym, chan, exp) => flatMapN(visitExp(chan), visitExp(exp)) {
           case (c, e) => ().toSuccess
@@ -312,7 +312,7 @@ object Regions {
         case (rs, d) => checkType(tpe, loc)
       }
 
-    case Expression.Spawn(exp, tpe, eff, loc) =>
+    case Expression.Spawn(exp, tpe, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
@@ -322,46 +322,46 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.Force(exp, tpe, eff, loc) =>
+    case Expression.Force(exp, tpe, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.FixpointConstraintSet(cs0, stf, tpe, loc) =>
+    case Expression.FixpointConstraintSet(cs0, _, tpe, loc) =>
       ().toSuccess // TODO
 
-    case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
+    case Expression.FixpointMerge(exp1, exp2, _, tpe, _, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => checkType(tpe, loc)
       }
 
-    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
+    case Expression.FixpointSolve(exp, _, tpe, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.FixpointFilter(pred, exp, tpe, eff, loc) =>
+    case Expression.FixpointFilter(_, exp, tpe, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.FixpointProjectIn(exp, pred, tpe, eff, loc) =>
+    case Expression.FixpointProjectIn(exp, _, tpe, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.FixpointProjectOut(pred, exp, tpe, eff, loc) =>
+    case Expression.FixpointProjectOut(_, exp, tpe, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.Reify(t, tpe, eff, loc) =>
+    case Expression.Reify(_, tpe, _, loc) =>
       checkType(tpe, loc)
 
-    case Expression.ReifyType(t, k, tpe, eff, loc) =>
+    case Expression.ReifyType(_, k, tpe, _, loc) =>
       checkType(tpe, loc)
 
-    case Expression.ReifyEff(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expression.ReifyEff(_, exp1, exp2, exp3, tpe, _, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (e1, e2, e3) => checkType(tpe, loc)
       }
