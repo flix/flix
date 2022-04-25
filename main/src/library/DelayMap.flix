@@ -483,20 +483,20 @@ namespace DelayMap {
     ///
     @Lazy
     def unionWithKeyL(f: (k, v, v) -> v, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] with Order[k] =
-        use RedBlackTree.{blackHeight, foldRightOld, insertWith};
+        use RedBlackTree.{blackHeight, foldRight, insertWith};
         let DMap(xs) = m1;
         let DMap(ys) = m2;
         let f1 = (k, v1, v2) -> lazy (f(k, force v1, force v2));
         if (blackHeight(xs) < blackHeight(ys))
-            DMap(foldRightOld((k, v) -> insertWith(f1, k, v), ys, xs))
+            DMap(foldRight((k, v, c) -> insertWith(f1, k, v, c), ys, xs))
         else
-            DMap(foldRightOld((k, v) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v), xs, ys))
+            DMap(foldRight((k, v, c) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v, c()), xs, ys))
 
     ///
     /// Helper function for `unionWithKey`. Applies `f` eagerly.
     ///
     def unionWithKeyE(f: (k, v, v) -> v & ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] & ef with Order[k] =
-        use RedBlackTree.{blackHeight, foldRightOld, insertWith};
+        use RedBlackTree.{blackHeight, foldRight, insertWith};
         let DMap(xs) = m1;
         let DMap(ys) = m2;
         let f1 = (k, v1, v2) -> {
@@ -505,10 +505,10 @@ namespace DelayMap {
             };
         if (blackHeight(xs) < blackHeight(ys))
             let _ = parallelForce(m1);
-            DMap(foldRightOld((k, v) -> insertWith(f1, k, v), ys, xs))
+            DMap(foldRight((k, v, c) -> insertWith(f1, k, v, c), ys, xs))
         else
             let _ = parallelForce(m2);
-            DMap(foldRightOld((k, v) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v), xs, ys))
+            DMap(foldRight((k, v, c) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v, c()), xs, ys))
 
     ///
     /// Returns the map `m` as a list of key-value pairs.
