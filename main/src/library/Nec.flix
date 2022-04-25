@@ -898,7 +898,7 @@ namespace Nec {
     ///
     pub def reduceRight(f: (a, a) -> a & ef, c: Nec[a]): a & ef = match viewRight(c) {
         case OneRight(x)      => x
-        case SomeRight(xs, x) => foldRightOld(f, x, xs)
+        case SomeRight(xs, x) => foldRight((a, k) -> f(a, k()), x, xs)
     }
 
     ///
@@ -918,7 +918,7 @@ namespace Nec {
     ///
     pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, c: Nec[a]): b & (ef1 and ef2) = match viewRight(c) {
         case OneRight(x)      => g(x)
-        case SomeRight(xs, x) => foldRightOld(f, g(x), xs)
+        case SomeRight(xs, x) => foldRight((a, k) -> f(a, k()), g(x), xs)
     }
 
     ///
