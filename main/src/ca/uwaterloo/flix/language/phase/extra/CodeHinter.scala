@@ -144,6 +144,8 @@ object CodeHinter {
     case Expression.LetRec(_, _, exp1, exp2, _, eff, loc) =>
       visitExp(exp1) ++ visitExp(exp2)
 
+    case Expression.Region(_, _) => Nil
+
     case Expression.Scope(_, _, exp, _, _, _) =>
       visitExp(exp)
 

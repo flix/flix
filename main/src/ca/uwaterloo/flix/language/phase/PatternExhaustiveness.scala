@@ -174,6 +174,8 @@ object PatternExhaustiveness {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)
         } yield tast
+        case Expression.Region(_, _) =>
+          tast.toSuccess
         case Expression.Scope(_, _, exp, _, _, _) =>
           for {
             _ <- checkPats(exp, root)
