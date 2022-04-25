@@ -1619,7 +1619,7 @@ object Typer {
         TypedAst.Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
 
       case KindedAst.Expression.Region(tpe, loc) =>
-        TypedAst.Expression.Unit(loc)
+        TypedAst.Expression.Region(tpe, loc)
 
       case KindedAst.Expression.Scope(sym, regionVar, exp, evar, loc) =>
         val e = visitExp(exp, subst0)

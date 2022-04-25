@@ -324,6 +324,10 @@ object Lowering {
       val t = visitType(tpe)
       Expression.LetRec(sym, mod, e1, e2, t, eff, loc)
 
+    case Expression.Region(_, loc) =>
+      // Introduce a Unit value to represent the Region value.
+      Expression.Unit(loc)
+
     case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       // Introduce a Unit value to represent the Region value.
       val mod = Ast.Modifiers.Empty
@@ -1339,6 +1343,9 @@ object Lowering {
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
       Expression.LetRec(s, mod, e1, e2, tpe, eff, loc)
+
+    case Expression.Region(tpe, loc) =>
+      Expression.Region(tpe, loc)
 
     case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)

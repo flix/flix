@@ -2153,7 +2153,7 @@ object Weeder {
       val t2 = visitType(tpe2)
       val eff = effOpt match {
         // NB: If there is no explicit effect then the arrow is pure.
-        case None => WeededAst.Type.True(loc)
+        case None => WeededAst.Type.True(loc.asSynthetic)
         case Some(f) => visitType(f)
       }
       mkArrow(t1, eff, t2, loc)
@@ -2164,7 +2164,7 @@ object Weeder {
       val tr = visitType(tresult)
       val eff = effOpt match {
         // NB: If there is no explicit effect then the arrow is pure.
-        case None => WeededAst.Type.True(loc)
+        case None => WeededAst.Type.True(loc.asSynthetic)
         case Some(f) => visitType(f)
       }
       mkCurriedArrow(ts, eff, tr, loc)
