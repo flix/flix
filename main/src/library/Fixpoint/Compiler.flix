@@ -66,7 +66,7 @@ namespace Fixpoint {
     /// and Eval-Rule-Incr is the code emitted by `compileRuleIncr`.
     ///
     def compileStratum(stmts: MutList[RamStmt[v]], stratum: Array[Constraint[v]]): Unit & Impure with ToString[v] =
-        let idb = Array.foldRightOld(match Constraint(HeadAtom(pred, den, terms), _) -> k -> {
+        let idb = Array.foldRight(match Constraint(HeadAtom(pred, den, terms), _) -> k -> {
             let arity = Array.length(terms);
             Map.insert(pred, (arity, den), k())
         }, Map#{}, stratum);
