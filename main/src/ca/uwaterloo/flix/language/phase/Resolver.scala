@@ -112,7 +112,7 @@ object Resolver {
     }
 
     val classSyms = classes.values.map(_.sym)
-    val getSuperClasses = (clazz: Symbol.ClassSym) => classes(clazz).superClasses.map(_.head.clazz)
+    val getSuperClasses = (clazz: Symbol.ClassSym) => classes(clazz).superClasses.map(_.head.sym)
     Graph.topologicalSort(classSyms, getSuperClasses) match {
       case Graph.TopologicalSort.Cycle(path) => mkCycleErrors(path)
       case Graph.TopologicalSort.Sorted(_) => ().toSuccess
@@ -1308,7 +1308,7 @@ object Resolver {
 
       mapN(classVal, tpeVal) {
         case (clazz, tpe) =>
-          val head = ResolvedAst.TypeConstraint.Head(clazz.sym, clazz0.loc)
+          val head = Ast.TypeConstraint.Head(clazz.sym, clazz0.loc)
           ResolvedAst.TypeConstraint(head, tpe, loc)
       }
   }
@@ -1323,7 +1323,7 @@ object Resolver {
 
       mapN(classVal, tpeVal) {
         case (clazz, tpe) =>
-          val head = ResolvedAst.TypeConstraint.Head(clazz.sym, clazz0.loc)
+          val head = Ast.TypeConstraint.Head(clazz.sym, clazz0.loc)
           ResolvedAst.TypeConstraint(head, tpe, loc)
       }
   }
