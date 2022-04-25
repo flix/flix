@@ -458,7 +458,7 @@ object OccurrenceAnalyzer {
    */
   private def combineAll(o1: OccurInfo, o2: OccurInfo, combine: (Occur, Occur) => Occur): OccurInfo = {
       val varMap = combineMaps(o1.varOccurrence, o2.varOccurrence, combine)
-      val defMap = combineMaps(o1.defOccurrence, o2.defOccurrence, combine)
+      val defMap = Map[DefnSym, Occur]()
       val codeSize = o1.codeSize + o2.codeSize
       OccurInfo(varMap, defMap, codeSize)
   }
