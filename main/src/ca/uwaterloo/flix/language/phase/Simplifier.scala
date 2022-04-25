@@ -287,6 +287,9 @@ object Simplifier {
 
       case TypedAst.Expression.Wild(_, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
+      case TypedAst.Expression.Region(_, _) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
       case TypedAst.Expression.Scope(_, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
@@ -497,7 +500,7 @@ object Simplifier {
       val entry = SimplifiedAst.Expression.JumpTo(ruleLabels.head, tpe, jumpPurity, loc)
 
       // The purity of the branch
-      val branchPurity = combineAll((errorBranch :: branches).map{case (_, exp) => exp.purity})
+      val branchPurity = combineAll(branches.map{case (_, exp) => exp.purity})
 
       // Assemble all the branches together.
       val branch = SimplifiedAst.Expression.Branch(entry, branches.toMap + errorBranch, tpe, branchPurity, loc)

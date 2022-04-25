@@ -248,8 +248,8 @@ object Documentor {
     * Returns the given type constraint `tc` as a JSON value.
     */
   private def visitTypeConstraint(tc: TypeConstraint): JObject = tc match {
-    case TypeConstraint(sym, tpe, _) =>
-      ("sym" -> visitClassSym(sym)) ~ ("tpe" -> visitType(tpe))
+    case TypeConstraint(head, tpe, _) =>
+      ("sym" -> visitClassSym(head.sym)) ~ ("tpe" -> visitType(tpe))
   }
 
   /**

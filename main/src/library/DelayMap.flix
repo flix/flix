@@ -287,7 +287,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def valuesOf(m: DelayMap[k, v]): List[v] =
-        foldRight((v, acc) -> v :: acc, Nil, m)
+        foldRight((v, c) -> v :: c(), Nil, m)
 
     ///
     /// Removes the mapping `k` from the map `m`.
@@ -488,9 +488,9 @@ namespace DelayMap {
         let DMap(ys) = m2;
         let f1 = (k, v1, v2) -> lazy (f(k, force v1, force v2));
         if (blackHeight(xs) < blackHeight(ys))
-            DMap(foldRight((k, v) -> insertWith(f1, k, v), ys, xs))
+            DMap(foldRight((k, v, c) -> insertWith(f1, k, v, c()), ys, xs))
         else
-            DMap(foldRight((k, v) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v), xs, ys))
+            DMap(foldRight((k, v, c) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v, c()), xs, ys))
 
     ///
     /// Helper function for `unionWithKey`. Applies `f` eagerly.
@@ -505,17 +505,17 @@ namespace DelayMap {
             };
         if (blackHeight(xs) < blackHeight(ys))
             let _ = parallelForce(m1);
-            DMap(foldRight((k, v) -> insertWith(f1, k, v), ys, xs))
+            DMap(foldRight((k, v, c) -> insertWith(f1, k, v, c()), ys, xs))
         else
             let _ = parallelForce(m2);
-            DMap(foldRight((k, v) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v), xs, ys))
+            DMap(foldRight((k, v, c) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v, c()), xs, ys))
 
     ///
     /// Returns the map `m` as a list of key-value pairs.
     ///
     @Experimental
     pub def toList(m: DelayMap[k, v]): List[(k, v)] =
-        foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
+        foldRightWithKey((k, v, c) -> (k, v) :: c(), Nil, m)
 
     ///
     /// Applies `f` to a start value `s` and all values in `m` going from left to right.
@@ -539,13 +539,14 @@ namespace DelayMap {
         RedBlackTree.foldLeft(f1, s, t)
 
     ///
-    /// Applies `f` to a start value `s` and all values in `m` going from right to left.
+    /// Applies `f` to a start value `z` and all values in `m` going from right to left.
     ///
-    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
+    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
+    /// A `foldRight` allows early termination by not calling the continuation.
     ///
     @Experimental
-    pub def foldRight(f: (v, b) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
-        foldRightWithKey((_, v, acc) -> f(v, acc), s, m)
+    pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, z: b, m: DelayMap[k, v]): b & ef =
+        foldRightWithKey((_, v, c) -> f(v, c), z, m)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
@@ -553,35 +554,11 @@ namespace DelayMap {
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
     @Experimental
-    pub def foldRightWithKey(f: (k, v, b) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
+    pub def foldRightWithKey(f: (k, v, Unit -> b & ef) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
         let _ = parallelForce(m);
         let DMap(t) = m;
-        let f1 = (k1, v1, b1) -> f(k1, force v1, b1);
+        let f1 = (k1, v1, c) -> f(k1, force v1, c);
         RedBlackTree.foldRight(f1, s, t)
-
-    ///
-    /// Applies `f` to a start value `s` and all values in `m` going from right to left.
-    /// The function f must be pure.
-    ///
-    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
-    ///
-    @Experimental
-    @Lazy
-    pub def foldRightLazy(f: (v, Lazy[b]) -> b, s: b, m: DelayMap[k, v]): b =
-        foldRightLazyWithKey((_, v, acc) -> f(v, acc), s, m)
-
-    ///
-    /// Lazily applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(k1, v1, ... lazy f(kn-1, vn-1, lazy f(kn, vn, s)))`.
-    ///
-    @Experimental
-    @Lazy
-    pub def foldRightLazyWithKey(f: (k, v, Lazy[b]) -> b, s: b, m: DelayMap[k, v]): b =
-        let _ = parallelForce(m);
-        let DMap(t) = m;
-        let f1 = (k1, v1, b1) -> f(k1, force v1, b1);
-        RedBlackTree.foldRightLazy(f1, s, t)
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -727,8 +704,8 @@ namespace DelayMap {
     /// Returns `m` as a mutable set.
     ///
     @Experimental @Parallel
-    pub def toMutMap(m: DelayMap[k, v]): MutMap[k, v] & Impure =
-        MutMap(ref toMap(m))
+    pub def toMutMap(m: DelayMap[k, v]): MutMap[k, v, Impure] & Impure =
+        MutMap(ref toMap(m)) as MutMap[k, v, Impure]
 
     ///
     /// Returns the map `m` as a set of key-value pairs.
@@ -742,7 +719,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def toDelayList(m: DelayMap[k, v]): DelayList[(k, v)] =
-        foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
+        foldRightWithKey((k, v, c) -> ECons((k, v), c()), ENil, m)
 
     ///
     /// Returns an iterator over all key-value pairs in `m`.

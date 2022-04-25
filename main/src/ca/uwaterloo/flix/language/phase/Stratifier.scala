@@ -163,6 +163,9 @@ object Stratifier {
         case (e1, e2) => Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
       }
 
+    case Expression.Region(_, _) =>
+      exp0.toSuccess
+
     case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Scope(sym, regionVar, e, tpe, eff, loc)
@@ -512,6 +515,9 @@ object Stratifier {
 
     case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+
+    case Expression.Region(_, _) =>
+      LabelledGraph.empty
 
     case Expression.Scope(_, _, exp, _, _, _) =>
       labelledGraphOfExp(exp)
