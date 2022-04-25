@@ -37,10 +37,10 @@ namespace Fixpoint {
         case Datalog(facts, rules) =>
             let stmts = MutList.new();
             Array.foreach(compileRule(stmts), facts);
-            Array.foldRightOld(rule -> match rule {
+            Array.foldRight(rule -> k -> match rule {
                 case Constraint(HeadAtom(p, _, _), _) =>
                     let ruleStratum = Map.getWithDefault(p, 0, strat);
-                    Map.insertWith(List.append, ruleStratum, rule :: Nil)
+                    Map.insertWith(List.append, ruleStratum, rule :: Nil, k())
             }, Map#{}, rules) |>
             Map.foreach(_ -> List.toArray >> compileStratum(stmts));
             RamStmt.Seq(MutList.toArray(stmts))
