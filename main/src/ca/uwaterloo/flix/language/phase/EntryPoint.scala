@@ -169,7 +169,7 @@ object EntryPoint {
       if (Scheme.equal(unitSc, resultSc, classEnv)) {
         // Case 1: XYZ -> Unit.
         ().toSuccess
-      } else if (ClassEnvironment.holds(Ast.TypeConstraint(toString, resultTpe, SourceLocation.Unknown), classEnv)) {
+      } else if (ClassEnvironment.holds(Ast.TypeConstraint(Ast.TypeConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), classEnv)) {
         // Case 2: XYZ -> a with ToString[a]
         ().toSuccess
       } else {

@@ -199,9 +199,9 @@ object Lowering {
     * Lowers the given type constraint `tconstr0`.
     */
   private def visitTypeConstraint(tconstr0: Ast.TypeConstraint)(implicit root: Root, flix: Flix): Ast.TypeConstraint = tconstr0 match {
-    case Ast.TypeConstraint(sym, tpe0, loc) =>
+    case Ast.TypeConstraint(head, tpe0, loc) =>
       val tpe = visitType(tpe0)
-      Ast.TypeConstraint(sym, tpe, loc)
+      Ast.TypeConstraint(head, tpe, loc)
   }
 
   /**
