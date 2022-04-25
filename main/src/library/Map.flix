@@ -671,7 +671,7 @@ namespace Map {
         if (blackHeight(t1) < blackHeight(t2))
             Map(foldRight((k, v, c) -> insertWith(f, k, v, c()), t2, t1))
         else
-            Map(foldRightOld((k, v, c) -> insertWith((_, v1, v2) -> f(k, v2, v1), k, v, c()), t1, t2))
+            Map(foldRight((k, v, c) -> insertWith((_, v1, v2) -> f(k, v2, v1), k, v, c()), t1, t2))
 
     ///
     /// Returns the left-biased intersection of `m1` and `m2`.
