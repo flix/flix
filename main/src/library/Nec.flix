@@ -219,7 +219,7 @@ namespace Nec {
     ///
     /// Returns the length of `c`.
     ///
-    pub def length(c: Nec[a]): Int32 = foldRight((_, acc) -> acc + 1, 0, c)
+    pub def length(c: Nec[a]): Int32 = foldRight((_, k) -> k() + 1, 0, c)
 
     ///
     /// Returns a new Nec formed by appending the Necs `c1` and `c2`.
@@ -582,22 +582,8 @@ namespace Nec {
     ///
     pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Nec[a]): b & ef = match viewLeft(c) {
         case OneLeft(x)      => f(x, _ -> z as & ef)
-        case SomeLeft(x, rs) => f(x, _ -> foldRightNew(f, z, rs))
+        case SomeLeft(x, rs) => f(x, _ -> foldRight(f, z, rs))
     }
-
-    ///
-    /// Lazily applies `f` to a start value `s` and all elements in `c` going from right to left.
-    /// The function f must be pure.
-    ///
-    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
-    /// The foldRightLazy function exists to allow early termination of a fold.
-    ///
-    pub def foldRightLazy(f: (a, Lazy[b]) -> b, s: b, c: Nec[a]): b =
-        def loop(l2) = match viewLeft(l2) {
-            case OneLeft(x)      => f(x, lazy s)
-            case SomeLeft(y, ys) => f(y, lazy loop(ys))
-        };
-        loop(c)
 
     ///
     /// Collects the results of applying the partial function `f` to every element in `c`.
@@ -718,7 +704,7 @@ namespace Nec {
     /// Returns `c` as a list.
     ///
     pub def toList(c: Nec[a]): List[a] =
-        foldRight((x, acc) -> x :: acc, Nil, c)
+        foldRight((x, k) -> x :: k(), Nil, c)
 
     ///
     /// Returns `c` as a mutable list.
@@ -729,7 +715,7 @@ namespace Nec {
     ///
     /// Returns the list `c` as a set.
     ///
-    pub def toSet(c: Nec[a]): Set[a] with Order[a] = foldRight(Set.insert, Set.empty(), c)
+    pub def toSet(c: Nec[a]): Set[a] with Order[a] = foldRight((x, k) -> Set.insert(x, k()), Set.empty(), c)
 
 
     ///
@@ -738,7 +724,7 @@ namespace Nec {
     /// If `c` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
-    pub def toMap(c: Nec[(a, b)]): Map[a, b] with Order[a] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), c)
+    pub def toMap(c: Nec[(a, b)]): Map[a, b] with Order[a] = foldRight((x, k) -> Map.insert(fst(x), snd(x), k()), Map.empty(), c)
 
     ///
     /// Returns a map with elements of `l` as keys and `f` applied as values.
@@ -747,7 +733,7 @@ namespace Nec {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMapWith(f: a -> b, l: Nec[a]): Map[a, b] with Order[a] =
-        foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), l)
+        foldRight((x, k) -> Map.insert(x, f(x), k()), Map.empty(), l)
 
     ///
     /// Returns the Nec `c` as an array.
@@ -912,7 +898,7 @@ namespace Nec {
     ///
     pub def reduceRight(f: (a, a) -> a & ef, c: Nec[a]): a & ef = match viewRight(c) {
         case OneRight(x)      => x
-        case SomeRight(xs, x) => foldRight(f, x, xs)
+        case SomeRight(xs, x) => foldRightOld(f, x, xs)
     }
 
     ///
@@ -932,7 +918,7 @@ namespace Nec {
     ///
     pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, c: Nec[a]): b & (ef1 and ef2) = match viewRight(c) {
         case OneRight(x)      => g(x)
-        case SomeRight(xs, x) => foldRight(f, g(x), xs)
+        case SomeRight(xs, x) => foldRightOld(f, g(x), xs)
     }
 
     ///
