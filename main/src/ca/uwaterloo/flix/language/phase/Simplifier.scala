@@ -287,6 +287,9 @@ object Simplifier {
 
       case TypedAst.Expression.Wild(_, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
+      case TypedAst.Expression.Region(_, _) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
       case TypedAst.Expression.Scope(_, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 

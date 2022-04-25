@@ -191,6 +191,9 @@ object Indexer {
     case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
+    case Expression.Region(_, _) =>
+      Index.occurrenceOf(exp0)
+
     case Expression.Scope(sym, _, exp, _, _, loc) =>
       val tpe = Type.mkRegion(sym.tvar.ascribedWith(Kind.Bool), loc)
       Index.occurrenceOf(sym, tpe) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -444,10 +447,17 @@ object Indexer {
   }
 
   /**
-    * Returns a reverse index for the given type constraint `tpe0`.
+    * Returns a reverse index for the given type constraint `tconstr0`.
     */
   private def visitTypeConstraint(tconstr0: Ast.TypeConstraint): Index = tconstr0 match {
-    case Ast.TypeConstraint(sym, arg, loc) => Index.useOf(sym, loc) ++ visitType(arg)
+    case Ast.TypeConstraint(head, arg, _) => visitTypeConstraintHead(head) ++ visitType(arg)
+  }
+
+  /**
+    * Returns a reverse index for the given type constraint `head`.
+    */
+  private def visitTypeConstraintHead(head0: Ast.TypeConstraint.Head): Index = head0 match {
+    case Ast.TypeConstraint.Head(sym, loc) => Index.useOf(sym, loc)
   }
 
 }
