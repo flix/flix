@@ -37,7 +37,7 @@ object Inliner {
     case class OccurrenceExp(exp: OccurrenceAst.Expression) extends Expression
   }
 
-  private val inlineThreshold = 16
+  private val inlineThreshold = 8
 
   /**
    * Performs inlining on the given AST `root`.
