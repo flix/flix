@@ -655,15 +655,17 @@ namespace List {
                                   // but the intermediate continuations are effect polymorphic
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
+    /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
     ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, l: List[a]): b & ef = match l {
-        case Nil        => z
-        case x :: xs    => f(x, _ -> foldRight(f, z, xs))
-    }
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, l: List[a]): b & ef =
+        def loop(ll) = match ll {
+            case Nil        => z
+            case x :: xs    => f(x, _ -> loop(xs))
+        };
+        loop(l)
 
     ///
     /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -1008,7 +1010,7 @@ namespace List {
                 loop(xs, ys, zs, ks -> k(r :: ks))
             case _ => k(Nil)
         };
-        loop(l1, l2, l3, identity)
+        loop(l1, l2, l3, identity) as & ef // TODO: Why this cast?
 
     ///
     /// Returns a triple of lists, the first containing all first components in `l`
@@ -1165,14 +1167,6 @@ namespace List {
     ///
     pub def toMapWith(f: a -> b, l: List[a]): Map[a, b] with Order[a] =
             List.foldRight((x, k) -> Map.insert(x, f(x), k()), Map.empty(), l)
-
-    ///
-    /// Returns the list `l` as a mutable deque.
-    ///
-    pub def toMutDeque(l: List[a]): MutDeque[a] & Impure =
-        let d = MutDeque.new();
-        List.foreach(x -> MutDeque.pushBack(x, d), l);
-        d
 
     ///
     /// Applies `f` to every element of `l`.

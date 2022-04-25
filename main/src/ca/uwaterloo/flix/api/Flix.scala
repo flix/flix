@@ -163,11 +163,13 @@ class Flix {
     "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
 
     "Applicative.flix" -> LocalResource.get("/src/library/Applicative.flix"),
+    "CommutativeGroup.flix" -> LocalResource.get("/src/library/CommutativeGroup.flix"),
     "CommutativeMonoid.flix" -> LocalResource.get("/src/library/CommutativeMonoid.flix"),
     "CommutativeSemiGroup.flix" -> LocalResource.get("/src/library/CommutativeSemiGroup.flix"),
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
+    "Group.flix" -> LocalResource.get("/src/library/Group.flix"),
     "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
     "Monad.flix" -> LocalResource.get("/src/library/Monad.flix"),
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),

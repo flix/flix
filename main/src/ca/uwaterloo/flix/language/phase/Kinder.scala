@@ -918,10 +918,10 @@ object Kinder {
     * Performs kinding on the given type constraint under the given kind environment.
     */
   private def visitTypeConstraint(tconstr: ResolvedAst.TypeConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.TypeConstraint, KindError] = tconstr match {
-    case ResolvedAst.TypeConstraint(clazz, tpe0, loc) =>
-      val classKind = getClassKind(root.classes(clazz))
+    case ResolvedAst.TypeConstraint(head, tpe0, loc) =>
+      val classKind = getClassKind(root.classes(head.sym))
       mapN(visitType(tpe0, classKind, kenv, taenv, root)) {
-        tpe => Ast.TypeConstraint(clazz, tpe, loc)
+        tpe => Ast.TypeConstraint(head, tpe, loc)
       }
   }
 
@@ -1017,8 +1017,8 @@ object Kinder {
     * Infers a kind environment from the given type constraint.
     */
   private def inferTconstr(tconstr: ResolvedAst.TypeConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = tconstr match {
-    case ResolvedAst.TypeConstraint(clazz, tpe, loc) =>
-      val kind = getClassKind(root.classes(clazz))
+    case ResolvedAst.TypeConstraint(head, tpe, loc) =>
+      val kind = getClassKind(root.classes(head.sym))
       inferType(tpe, kind, kenv: KindEnv, taenv, root)
   }
 

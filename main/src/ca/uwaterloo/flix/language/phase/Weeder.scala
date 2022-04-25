@@ -943,6 +943,11 @@ object Weeder {
           }
       }
 
+    case ParsedAst.Expression.Static(sp1, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val tpe = Type.mkRegion(Type.False, loc)
+      WeededAst.Expression.Region(tpe, loc).toSuccess
+
     case ParsedAst.Expression.Scope(sp1, ident, exp, sp2) =>
       mapN(visitExp(exp)) {
         case e => WeededAst.Expression.Scope(ident, e, mkSL(sp1, sp2))
@@ -1026,7 +1031,7 @@ object Weeder {
           val fieldVal = visitFieldName(ident)
 
           mapN(expVal, fieldVal) {
-            case (e, _) => (ident -> e)
+            case (e, _) => ident -> e
           }
       }
 
@@ -1322,7 +1327,7 @@ object Weeder {
       }
 
     // not handling these rules yet
-    case ParsedAst.Expression.Try(sp1, exp, ParsedAst.CatchOrHandler.Handler(rules), sp2) =>
+    case ParsedAst.Expression.Try(sp1, exp, ParsedAst.CatchOrHandler.Handler(eff, rules), sp2) =>
       WeededAst.Expression.Hole(None, mkSL(sp1, sp2)).toSuccess
 
     // TODO SJ: Rewrite to Ascribe(newch, Channel[Int32]), to remove the tpe (and get tvar like everything else)
@@ -2118,7 +2123,11 @@ object Weeder {
   private def visitType(tpe: ParsedAst.Type): WeededAst.Type = tpe match {
     case ParsedAst.Type.Unit(sp1, sp2) => WeededAst.Type.Unit(mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Var(sp1, ident, sp2) => WeededAst.Type.Var(ident, mkSL(sp1, sp2))
+    case ParsedAst.Type.Var(sp1, ident, sp2) =>
+      if (ident.name == "static")
+        WeededAst.Type.False(mkSL(sp1, sp2))
+      else
+        WeededAst.Type.Var(ident, mkSL(sp1, sp2))
 
     case ParsedAst.Type.Ambiguous(sp1, qname, sp2) => WeededAst.Type.Ambiguous(qname, mkSL(sp1, sp2))
 
@@ -2144,7 +2153,7 @@ object Weeder {
       val t2 = visitType(tpe2)
       val eff = effOpt match {
         // NB: If there is no explicit effect then the arrow is pure.
-        case None => WeededAst.Type.True(loc)
+        case None => WeededAst.Type.True(loc.asSynthetic)
         case Some(f) => visitType(f)
       }
       mkArrow(t1, eff, t2, loc)
@@ -2155,7 +2164,7 @@ object Weeder {
       val tr = visitType(tresult)
       val eff = effOpt match {
         // NB: If there is no explicit effect then the arrow is pure.
-        case None => WeededAst.Type.True(loc)
+        case None => WeededAst.Type.True(loc.asSynthetic)
         case Some(f) => visitType(f)
       }
       mkCurriedArrow(ts, eff, tr, loc)
@@ -2625,6 +2634,7 @@ object Weeder {
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Static(sp1, _) => sp1
     case ParsedAst.Expression.Scope(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Choose(sp1, _, _, _, _) => sp1
