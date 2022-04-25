@@ -113,7 +113,7 @@ object ClassEnvironment {
     * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the constraints on available instances.
     */
   private def byInst(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
-    val matchingInstances = classEnv.get(tconstr.sym).map(_.instances).getOrElse(Nil)
+    val matchingInstances = classEnv.get(tconstr.head.sym).map(_.instances).getOrElse(Nil)
     val tconstrSc = Scheme.generalize(Nil, tconstr.arg)
 
     def tryInst(inst: Ast.Instance): Validation[List[Ast.TypeConstraint], UnificationError] = {
@@ -159,13 +159,13 @@ object ClassEnvironment {
   private def bySuper(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext]): List[Ast.TypeConstraint] = {
 
     // Get the classes that are directly superclasses of the class in `tconstr`
-    val directSupers = classEnv.get(tconstr.sym).map(_.superClasses).getOrElse(Nil)
+    val directSupers = classEnv.get(tconstr.head.sym).map(_.superClasses).getOrElse(Nil)
 
     // Walk the super class tree.
     // There may be duplicates, but this will terminate since super classes must be acyclic.
     tconstr :: directSupers.flatMap {
       // recurse on the superclasses of each direct superclass
-      superClass => bySuper(Ast.TypeConstraint(superClass, tconstr.arg, tconstr.loc), classEnv)
+      superClass => bySuper(Ast.TypeConstraint(Ast.TypeConstraint.Head(superClass, tconstr.loc), tconstr.arg, tconstr.loc), classEnv)
     }
   }
 
