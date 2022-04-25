@@ -665,13 +665,13 @@ namespace Map {
     ///
     @Time(time(f) * size(m1) * Int32.log2(size(m2))) @Space(space(f) * size(m1) *  Int32.log2(size(m2)))
     pub def unionWithKey(f: (k, v, v) -> v & ef, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & ef with Order[k] =
-        use RedBlackTree.{blackHeight, foldRightOld, insertWith};
+        use RedBlackTree.{blackHeight, foldRight, insertWith};
         let Map(t1) = m1;
         let Map(t2) = m2;
         if (blackHeight(t1) < blackHeight(t2))
-            Map(foldRightOld((k, v) -> insertWith(f, k, v), t2, t1))
+            Map(foldRight((k, v, c) -> insertWith(f, k, v, c()), t2, t1))
         else
-            Map(foldRightOld((k, v) -> insertWith((_, v1, v2) -> f(k, v2, v1), k, v), t1, t2))
+            Map(foldRightOld((k, v, c) -> insertWith((_, v1, v2) -> f(k, v2, v1), k, v, c()), t1, t2))
 
     ///
     /// Returns the left-biased intersection of `m1` and `m2`.
