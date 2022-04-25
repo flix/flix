@@ -427,33 +427,4 @@ namespace TestMutMap {
             MutMap.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
     }
 
-
-    /////////////////////////////////////////////////////////////////////////////
-    // foldRightLazy                                                           //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def foldRightLazy01(): Bool = region r {
-        MutMap.foldRightLazy((v, s) -> force s + v, 0, new MutMap(r)) == 0
-    }
-
-    @test
-    def foldRightLazy02(): Bool = region r {
-        let m = new MutMap(r);
-        MutMap.put!(1, 2, m);
-        MutMap.foldRightLazy((v, s) -> force s + v, 0, m) == 2
-    }
-
-    @test
-    def foldRightLazy03(): Bool = region r {
-        let m = MutMap(ref Map#{1 => 2, 3 => 4});
-        MutMap.foldRightLazy((v, s) -> force s + v, 0, m) == 6
-    }
-
-    @test
-    def foldRightLazy04(): Bool = region r {
-        let m = MutMap(ref Map#{1 => 2, 3 => 4, 5 => 6});
-        MutMap.foldRightLazy((v, s) -> force s + v, 0, m) == 12
-    }
-
 }
