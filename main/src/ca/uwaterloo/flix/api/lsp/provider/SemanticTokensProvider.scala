@@ -610,11 +610,18 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given type constraint `tc0`.
     */
   private def visitTypeConstraint(tc0: TypeConstraint): Iterator[SemanticToken] = tc0 match {
-    case TypeConstraint(_, arg, loc) =>
-      // TODO: We need a source location, not for the entire constraint, just for the class name.
+    case TypeConstraint(head, arg, _) =>
+      visitTypeConstraintHead(head) ++ visitType(arg)
+  }
+
+  /**
+    * Returns all semantic tokens in the given type constraint head `head0`.
+    */
+  private def visitTypeConstraintHead(head0: TypeConstraint.Head): Iterator[SemanticToken] = head0 match {
+    case TypeConstraint.Head(_, loc) =>
       val o = SemanticTokenType.Class
       val t = SemanticToken(o, Nil, loc)
-      Iterator(t) ++ visitType(arg)
+      Iterator(t)
   }
 
   /**

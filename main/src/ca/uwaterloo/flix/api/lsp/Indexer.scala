@@ -444,10 +444,17 @@ object Indexer {
   }
 
   /**
-    * Returns a reverse index for the given type constraint `tpe0`.
+    * Returns a reverse index for the given type constraint `tconstr0`.
     */
   private def visitTypeConstraint(tconstr0: Ast.TypeConstraint): Index = tconstr0 match {
-    case Ast.TypeConstraint(sym, arg, loc) => Index.useOf(sym, loc) ++ visitType(arg)
+    case Ast.TypeConstraint(head, arg, _) => visitTypeConstraintHead(head) ++ visitType(arg)
+  }
+
+  /**
+    * Returns a reverse index for the given type constraint `head`.
+    */
+  private def visitTypeConstraintHead(head0: Ast.TypeConstraint.Head): Index = head0 match {
+    case Ast.TypeConstraint.Head(sym, loc) => Index.useOf(sym, loc)
   }
 
 }

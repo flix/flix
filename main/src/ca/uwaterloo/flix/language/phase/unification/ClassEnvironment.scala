@@ -91,7 +91,7 @@ object ClassEnvironment {
     */
   def reduce(tconstrs0: List[Ast.TypeConstraint], classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
     val tconstrs1 = tconstrs0.map {
-      case Ast.TypeConstraint(clazz, tpe, loc) => Ast.TypeConstraint(clazz, Type.eraseAliases(tpe), loc)
+      case Ast.TypeConstraint(head, tpe, loc) => Ast.TypeConstraint(head, Type.eraseAliases(tpe), loc)
     }
     for {
       tconstrs <- Validation.sequence(tconstrs1.map(toHeadNormalForm(_, classEnv)))
