@@ -1002,6 +1002,8 @@ object Namer {
           m += (id.name -> sym)
           NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, loc)
       }
+
+      case WeededAst.Pattern.Record(elms, loc) => NamedAst.Pattern.Record(elms map visit, loc)
     }
 
     (visit(pat0), m.toMap)

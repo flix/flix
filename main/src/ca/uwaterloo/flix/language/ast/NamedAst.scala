@@ -265,6 +265,7 @@ object NamedAst {
 
     case class ArrayHeadSpread(sym: Symbol.VarSym, elms: scala.List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Pattern
 
+    case class Record(elms: List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Pattern
   }
 
   sealed trait ChoicePattern
