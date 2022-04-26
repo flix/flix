@@ -195,6 +195,8 @@ namespace Result {
     ///
     /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
+    /// A `foldRight` allows early termination by not calling the continuation.
+    ///
     @Time(time(f)) @Space(space(f))
     pub def foldRight(f: (t, Unit -> a & ef) -> a & ef, z: a, r: Result[t, e]): a & ef = match r {
         case Ok(v)  => f(v, _ -> z as & ef)
