@@ -259,6 +259,7 @@ object WeededAst {
 
     case class ArrayHeadSpread(ident: Option[Name.Ident], elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
+    case class Record(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
   }
 
   sealed trait ChoicePattern
