@@ -243,6 +243,7 @@ object KindedAst {
 
     case class ArrayHeadSpread(sym: Symbol.VarSym, elms: scala.List[KindedAst.Pattern], tvar: ast.Type.KindedVar, loc: SourceLocation) extends KindedAst.Pattern
 
+    case class Record(elms: List[KindedAst.Pattern], loc: SourceLocation) extends KindedAst.Pattern
   }
 
   sealed trait ChoicePattern {
