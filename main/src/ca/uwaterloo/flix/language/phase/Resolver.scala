@@ -1176,6 +1176,12 @@ object Resolver {
           mapN(esVal) {
             es => ResolvedAst.Pattern.ArrayHeadSpread(sym, es, loc)
           }
+
+        case NamedAst.Pattern.Record(elms, loc) =>
+          val esVal = traverse(elms)(visit)
+          mapN(esVal) {
+            es => ResolvedAst.Pattern.Record(es, loc)
+          }
       }
 
       visit(pat0)

@@ -244,6 +244,7 @@ object ResolvedAst {
 
     case class ArrayHeadSpread(sym: Symbol.VarSym, elms: scala.List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Pattern
 
+    case class Record(elms: List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Pattern
   }
 
   sealed trait ChoicePattern {
