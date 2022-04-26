@@ -197,15 +197,15 @@ namespace TestReducible {
 
     @test
     def foldRight04(): Bool =
-        Reducible.foldRight((a, k) -> (k() - a) * (a rem 2) + 1, 100, Nel(1, Nil)) == 198
+        Reducible.foldRight((a, k) -> (k() - a) * ((a rem 2) + 1), 100, Nel(1, Nil)) == 198
 
     @test
     def foldRight05(): Bool =
-        Reducible.foldRight((a, k) -> (k() - a) * (a rem 2) + 1, 100, Nel(1, 2 :: Nil)) == 194
+        Reducible.foldRight((a, k) -> (k() - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: Nil)) == 194
 
     @test
     def foldRight06(): Bool =
-        Reducible.foldRight((a, k) -> (k() - a) * (a rem 2) + 1, 100, Nel(1, 2 :: 3 :: Nil)) == 382
+        Reducible.foldRight((a, k) -> (k() - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: 3 :: Nil)) == 382
 
     @test
     def foldRight07(): Bool & Impure =
