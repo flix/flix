@@ -186,7 +186,7 @@ pub class Reducible[t: Type -> Type] {
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from right to left.
     ///
     pub def findRight(f: a -> Bool & ef, t: t[a]): Option[a] & ef =
-        Reducible.foldRight((a, acc) -> Option.withDefault(default = if (f(a)) Some(a) else None, acc), None, t)
+        Reducible.foldRight((a, k) -> Option.withDefault(default = if (f(a)) Some(a) else None, k()), None, t)
 
     ///
     /// Returns `true` if and only if the element `a` is in `t`.
@@ -266,7 +266,7 @@ pub class Reducible[t: Type -> Type] {
     /// Returns `t` as a list.
     ///
     pub def toList(t: t[a]): List[a] =
-        Reducible.foldRight((a, acc) -> a :: acc, Nil, t)
+        Reducible.foldRight((a, k) -> a :: k(), Nil, t)
 
     ///
     /// Returns `t` as a map.
