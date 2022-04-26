@@ -1922,6 +1922,12 @@ object Weeder {
             WeededAst.Pattern.Tag(None, tag, pat, loc)
         }
 
+      case ParsedAst.Pattern.RecordField(sp1, ident, pattern, sp2) => pattern match {
+        case Some(pat0) => visitPattern(pat0) map (pat =>
+            WeededAst.Pattern.RecordField(ident, Some(pat), mkSL(sp1, sp2)))
+        case None => WeededAst.Pattern.RecordField(ident, None, mkSL(sp1, sp2)).toSuccess
+      }
+
       case ParsedAst.Pattern.Record(sp1, fields, sp2) =>
         traverse(fields)(visit) map (elems =>
           WeededAst.Pattern.Record(elems, mkSL(sp1, sp2)))

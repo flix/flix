@@ -1128,6 +1128,7 @@ object ParsedAst {
       case Pattern.ArrayTailSpread(sp1, _, _, _) => sp1
       case Pattern.FNil(sp1, _) => sp1
       case Pattern.FCons(hd, _, _, _) => hd.leftMostSourcePosition
+      case Pattern.RecordField(sp1, _, _, _) => sp1
       case Pattern.Record(sp1, _, _) => sp1
     }
 
@@ -1199,13 +1200,23 @@ object ParsedAst {
     case class FCons(hd: ParsedAst.Pattern, sp1: SourcePosition, sp2: SourcePosition, tl: ParsedAst.Pattern) extends ParsedAst.Pattern
 
     /**
+      * Record Field Pattern.
+      *
+      * @param sp1      the position of the first character in the pattern.
+      * @param name     the name of the field.
+      * @param pattern  optional pattern associated to this field.
+      * @param sp2      the position of the last character in the pattern.
+      */
+    case class RecordField(sp1: SourcePosition, name: Name.Ident, pattern: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
+
+    /**
       * Record Pattern.
       *
-      * @param sp1  the position of the first character in the pattern.
-      * @param elms the elements of the record, at least one.
-      * @param sp2  the position of the last character in the pattern.
+      * @param sp1    the position of the first character in the pattern.
+      * @param fields the fields of the record.
+      * @param sp2    the position of the last character in the pattern.
       */
-    case class Record(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
+    case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.Pattern.RecordField], sp2: SourcePosition) extends ParsedAst.Pattern
 
   }
 

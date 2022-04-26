@@ -1149,7 +1149,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Patterns {
 
     def Simple: Rule1[ParsedAst.Pattern] = rule {
-      FNil | Tag | Lit | Tuple | Array | ArrayTailSpread | ArrayHeadSpread | Var
+      FNil | Tag | Lit | Tuple | Array | ArrayTailSpread | ArrayHeadSpread | Var | Record
     }
 
     def Var: Rule1[ParsedAst.Pattern.Var] = rule {
@@ -1188,8 +1188,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Simple ~ optional(optWS ~ SP ~ operatorX("::") ~ SP ~ optWS ~ Pattern ~> ParsedAst.Pattern.FCons)
     }
 
-    def Record: Rule1[ParsedAst.Pattern] = rule {
-      SP ~ "{" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.Record
+    def RecordField: Rule1[ParsedAst.Pattern] = rule {
+      SP ~ (Names.Field ~ optional(optWS ~ "=" ~ optWS ~ Pattern)) ~ SP ~> ParsedAst.Pattern.RecordField
+    }
+
+    def Record: Rule1[ParsedAst.Pattern.Record] = rule {
+      SP ~ "{" ~ optWS ~ zeroOrMore(RecordField).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.Record
     }
 
   }
