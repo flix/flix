@@ -316,7 +316,7 @@ namespace Result {
     /// Returns a map with elements of `s` as keys and `f` applied as values.
     ///
     pub def toMapWith(f: a -> b, s: Result[a, a]): Map[a, b] with Order[a] =
-        Result.foldRight((x, k) -> Map.insert(x, f(x), k), s, Map.empty())
+        Result.foldRight((x, k) -> Map.insert(x, f(x), k()), s, Map.empty())
 
     ///
     /// Returns `Some(v)` if `r` is `Ok(v)`. Otherwise returns `None`.
