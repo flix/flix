@@ -238,7 +238,7 @@ def foldLeft05(): Bool = Result.foldLeft((b, i) -> if (i == 2 and b) true else f
 // foldRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRight01(): Bool = Result.foldRight((i, k) -> if (i == 2 and k()) true else false, Err(-1ii), false) == false
+def foldRight01(): Bool = Result.foldRight((i, k) -> if (i == 2 and k()) true else false, false, Err(-1ii)) == false
 
 @test
 def foldRight02(): Bool = Result.foldRight((i, k) -> if (i == 2 and k()) true else false, false, Ok(1)) == false
