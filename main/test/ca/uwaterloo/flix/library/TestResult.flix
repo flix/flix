@@ -241,16 +241,16 @@ def foldLeft05(): Bool = Result.foldLeft((b, i) -> if (i == 2 and b) true else f
 def foldRight01(): Bool = Result.foldRight((i, k) -> if (i == 2 and k()) true else false, Err(-1ii), false) == false
 
 @test
-def foldRight02(): Bool = Result.foldRight((i, k) -> if (i == 2 and k()) true else false, Ok(1), false) == false
+def foldRight02(): Bool = Result.foldRight((i, k) -> if (i == 2 and k()) true else false, false, Ok(1)) == false
 
 @test
-def foldRight03(): Bool = Result.foldRight((i, k) -> if (i == 2 and k()) true else false, Ok(1), true) == false
+def foldRight03(): Bool = Result.foldRight((i, k) -> if (i == 2 and k()) true else false, true, Ok(1)) == false
 
 @test
-def foldRight04(): Bool = Result.foldRight((i, k) -> if (i == 2 and k()) true else false, Ok(2), false) == false
+def foldRight04(): Bool = Result.foldRight((i, k) -> if (i == 2 and k()) true else false, false, Ok(2)) == false
 
 @test
-def foldRight05(): Bool = Result.foldRight((i, k) -> if (i == 2 and k()) true else false, Ok(2), true) == true
+def foldRight05(): Bool = Result.foldRight((i, k) -> if (i == 2 and k()) true else false, true, Ok(2)) == true
 
 
 /////////////////////////////////////////////////////////////////////////////
