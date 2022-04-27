@@ -27,6 +27,8 @@ import ca.uwaterloo.flix.util._
 import java.io.{File, PrintWriter}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
+import java.util.Calendar
+import java.util.GregorianCalendar
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
 import scala.collection.mutable
 import scala.util.{Failure, Success, Using}
@@ -264,7 +266,7 @@ object Packager {
       addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
 
       // Add all class files.
-      for (buildFile <- getAllFiles(getBuildDirectory(p))) {
+      for (buildFile <- getAllFiles(getBuildDirectory(p)).sorted) {
         val fileName = getBuildDirectory(p).relativize(buildFile).toString
         val fileNameWithSlashes = fileName.replace('\\', '/')
         addToZip(zip, fileNameWithSlashes, buildFile)
@@ -302,7 +304,7 @@ object Packager {
       addToZip(zip, "README.md", getReadmeFile(p))
 
       // Add all source files.
-      for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
+      for (sourceFile <- getAllFiles(getSourceDirectory(p)).sorted) {
         val name = p.relativize(sourceFile).toString
         addToZip(zip, name, sourceFile)
       }
@@ -481,11 +483,14 @@ object Packager {
     addToZip(zip, name, Files.readAllBytes(p))
   }
 
+  private val CONSTANT_TIME_FOR_ZIP_ENTRIES: Long = new GregorianCalendar(1980, Calendar.FEBRUARY, 1, 0, 0, 0).getTimeInMillis
+
   /**
     * Adds an entry to the given zip file.
     */
   private def addToZip(zip: ZipOutputStream, name: String, d: Array[Byte]): Unit = {
     val entry = new ZipEntry(name)
+    entry.setTime(CONSTANT_TIME_FOR_ZIP_ENTRIES)
     zip.putNextEntry(entry)
     zip.write(d)
     zip.closeEntry()
