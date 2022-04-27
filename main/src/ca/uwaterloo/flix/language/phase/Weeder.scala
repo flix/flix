@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
-import ca.uwaterloo.flix.language.ast.ParsedAst.{Effect, EffectSet, Purity, RecordFieldType}
+import ca.uwaterloo.flix.language.ast.ParsedAst.{Effect, EffectSet, RecordFieldType}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -2123,11 +2123,7 @@ object Weeder {
   private def visitType(tpe: ParsedAst.Type): WeededAst.Type = tpe match {
     case ParsedAst.Type.Unit(sp1, sp2) => WeededAst.Type.Unit(mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Var(sp1, ident, sp2) =>
-      if (ident.name == "static")
-        WeededAst.Type.False(mkSL(sp1, sp2))
-      else
-        WeededAst.Type.Var(ident, mkSL(sp1, sp2))
+    case ParsedAst.Type.Var(sp1, ident, sp2) => visitEffectIdent(ident)
 
     case ParsedAst.Type.Ambiguous(sp1, qname, sp2) => WeededAst.Type.Ambiguous(qname, mkSL(sp1, sp2))
 
@@ -2301,7 +2297,7 @@ object Weeder {
     */
   private def visitSingleEffect(eff: ParsedAst.Effect): WeededAst.Type = eff match {
     case Effect.Var(sp1, ident, sp2) =>
-      WeededAst.Type.Var(ident, mkSL(sp1, sp2))
+      visitEffectIdent(ident)
 
     case Effect.Read(sp1, idents, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -2310,7 +2306,7 @@ object Weeder {
       else {
         val zero: WeededAst.Type = WeededAst.Type.Var(idents.head, idents.head.loc)
         idents.tail.foldLeft(zero) {
-          case (acc, ident) => WeededAst.Type.And(acc, WeededAst.Type.Var(ident, ident.loc), loc)
+          case (acc, ident) => WeededAst.Type.And(acc, visitEffectIdent(ident), loc)
         }
       }
 
@@ -2321,7 +2317,7 @@ object Weeder {
       else {
         val zero: WeededAst.Type = WeededAst.Type.Var(idents.head, idents.head.loc)
         idents.tail.foldLeft(zero) {
-          case (acc, ident) => WeededAst.Type.And(acc, WeededAst.Type.Var(ident, ident.loc), loc)
+          case (acc, ident) => WeededAst.Type.And(acc, visitEffectIdent(ident), loc)
         }
       }
 
@@ -2488,6 +2484,17 @@ object Weeder {
     } else {
       ().toSuccess
     }
+  }
+
+  /**
+    * Performs weeding on the given effect `ident`.
+    * Checks whether it is actually the keyword `static`.
+    */
+  private def visitEffectIdent(ident: Name.Ident): WeededAst.Type = {
+    if (ident.name == "static")
+      WeededAst.Type.False(ident.loc)
+    else
+      WeededAst.Type.Var(ident, ident.loc)
   }
 
   /**
