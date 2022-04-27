@@ -37,7 +37,7 @@ object Inliner {
     case class OccurrenceExp(exp: OccurrenceAst.Expression) extends Expression
   }
 
-  private val inlineThreshold = 16
+  private val inlineThreshold = 32
 
   /**
    * Performs inlining on the given AST `root`.
@@ -181,9 +181,8 @@ object Inliner {
           // then inline the body of `def1`
           if (inlineDef(def1, sym0)) {
             // Map for substituting formal parameters of a function with the freevars currently in scope
-            val e1 = convertSelfTailCall(def1.exp)(isDef = false)
             val env = def1.fparams.map(_.sym).zip(freevars.map(_.sym)).toMap
-            bindFormals(e1, def1.fparams.drop(freevars.length).map(_.sym), as, env)
+            bindFormals(def1.exp, def1.fparams.drop(freevars.length).map(_.sym), as, env)
           } else {
             LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
           }
@@ -450,7 +449,8 @@ object Inliner {
   }
 
   private def inlineDef(def0: OccurrenceAst.Def, sym0: Symbol.DefnSym): Boolean = {
-     def0.context.isNonSelfCall || isTrivialExp(def0.exp) || (def0.context.codeSize < inlineThreshold && def0.sym != sym0)
+     //def0.context.isNonSelfCall || isTrivialExp(def0.exp) ||
+       (def0.context.codeSize < inlineThreshold && def0.sym != sym0)
   }
 
   /**
@@ -489,7 +489,7 @@ object Inliner {
         val env1 = env0 + (sym -> freshVar)
         val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env1)
         val purity = combine(e1.purity, nextLet.purity)
-        LiftedAst.Expression.Let(freshVar, e1, nextLet, exp0.tpe, purity, exp0.loc)
+        LiftedAst.Expression.Let(freshVar, e1, nextLet, nextLet.tpe, purity, exp0.loc)
       case _ => substituteExp(exp0, env0)
     }
   }
@@ -533,7 +533,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, actuals, tpe, purity, loc)
+    case OccurrenceAst.Expression.ApplySelfTail(sym, _, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, actuals, tpe, purity, loc)
 
     case _ => exp0
   }
@@ -564,7 +564,7 @@ object Inliner {
       val d = default.map(exp => convertSelfTailCall(exp))
       OccurrenceAst.Expression.SelectChannel(rs, d, tpe, loc)
 
-    case OccurrenceAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDefTail(sym, actuals, tpe, purity, loc)
+    case OccurrenceAst.Expression.ApplySelfTail(sym, _, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, actuals, tpe, purity, loc)
 
     case _ => exp0
   }

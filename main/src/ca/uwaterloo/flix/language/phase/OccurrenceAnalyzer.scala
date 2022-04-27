@@ -253,7 +253,7 @@ object OccurrenceAnalyzer {
 
     case Expression.Is(sym, tag, exp, purity, loc) =>
       val (e, o) = visitExp(exp)
-      (OccurrenceAst.Expression.Is(sym, tag, e, purity, loc), o.copy(codeSize = o.codeSize+1))
+      (OccurrenceAst.Expression.Is(sym, tag, e, purity, loc), o.copy(codeSize = o.codeSize+100))
 
     case Expression.Tag(sym, tag, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(exp)
@@ -348,7 +348,7 @@ object OccurrenceAnalyzer {
           (OccurrenceAst.CatchRule(sym, clazz, e), o3)
       }.unzip
       val o4 = o2.foldLeft(o1)((acc, o5) => combineAllSeq(acc, o5))
-      (OccurrenceAst.Expression.TryCatch(e, rs, tpe, purity, loc), o4.copy(codeSize = o4.codeSize+1))
+      (OccurrenceAst.Expression.TryCatch(e, rs, tpe, purity, loc), o4.copy(codeSize = o4.codeSize+100))
 
     case Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
       val (as, o) = visitExps(args)
