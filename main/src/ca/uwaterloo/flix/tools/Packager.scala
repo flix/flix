@@ -266,7 +266,7 @@ object Packager {
       addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
 
       // Add all class files.
-      for (buildFile <- getAllFiles(getBuildDirectory(p)).sorted) {
+      for (buildFile <- getAllFiles(getBuildDirectory(p)).sorted) { // FIXME this sort() is platform specific
         val fileName = getBuildDirectory(p).relativize(buildFile).toString
         val fileNameWithSlashes = fileName.replace('\\', '/')
         addToZip(zip, fileNameWithSlashes, buildFile)
@@ -304,7 +304,7 @@ object Packager {
       addToZip(zip, "README.md", getReadmeFile(p))
 
       // Add all source files.
-      for (sourceFile <- getAllFiles(getSourceDirectory(p)).sorted) {
+      for (sourceFile <- getAllFiles(getSourceDirectory(p)).sorted) { // FIXME this sort() is platform specific
         val name = p.relativize(sourceFile).toString
         addToZip(zip, name, sourceFile)
       }
