@@ -82,7 +82,7 @@ instance Traversable[DelayList] {
 
 instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldLeft(f, s, l)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRightOld(f, s, l)
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRight(f, s, l)
 }
 
 instance Iterable[DelayList] {

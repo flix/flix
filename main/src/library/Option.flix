@@ -55,7 +55,7 @@ instance Monad[Option] {
 
 instance Foldable[Option] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldLeft(f, s, o)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRightOld(f, o, s)
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)
 }
 
 instance Traversable[Option] {
