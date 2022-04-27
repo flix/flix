@@ -213,7 +213,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns `t` as a map.
     ///
     pub def toMap(t: t[(k, v)]): Map[k, v] with Order[k] =
-        Foldable.foldRight((x, k) -> let (k, v) = x; Map.insert(k, v, k()), Map.empty(), t)
+        Foldable.foldRight((x, c) -> let (k, v) = x; Map.insert(k, v, c()), Map.empty(), t)
 
     ///
     /// Returns a map with elements of `s` as keys and `f` applied as values.
@@ -245,7 +245,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns an immutable list of all the elements in `t` that satisfy the predicate `f`.
     ///
     pub def filter(f: a -> Bool, t: t[a]): List[a] =
-        Foldable.foldRight((x, k) -> if (f(x)) x :: k() else acc, Nil, t)
+        Foldable.foldRight((x, k) -> if (f(x)) x :: k() else k(), Nil, t)
 
     ///
     /// Applies `f` to each element in `t`.
