@@ -2272,10 +2272,10 @@ object Weeder {
   /**
     * Weeds the given parsed optional effect `effOpt`.
     */
-  private def visitEff(effOpt: Option[ParsedAst.EffectSetOrBool], loc: SourceLocation)(implicit flix: Flix): Validation[WeededAst.Type, WeederError] = effOpt match {
+  private def visitEff(effOpt: Option[ParsedAst.EffectOrPurity], loc: SourceLocation)(implicit flix: Flix): Validation[WeededAst.Type, WeederError] = effOpt match {
     case None => WeededAst.Type.True(loc.asSynthetic).toSuccess
-    case Some(ParsedAst.EffectSetOrBool.Bool(tpe)) => visitType(tpe).toSuccess
-    case Some(ParsedAst.EffectSetOrBool.Set(s)) =>
+    case Some(ParsedAst.EffectOrPurity.Purity(tpe)) => visitType(tpe).toSuccess
+    case Some(ParsedAst.EffectOrPurity.Effect(s)) =>
       // for now just pull out the reads and vars and convert them to types
       s match {
         case EffectSet.Singleton(sp1, eff, sp2) => visitSingleEffect(eff).toSuccess
