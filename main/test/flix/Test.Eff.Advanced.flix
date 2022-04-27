@@ -48,9 +48,6 @@ namespace Test/Eff/Advanced {
     /// A pure function from Unit -> Unit.
     def pure(): Unit = ()
 
-    /// A (redundantly) pure function from Unit -> Unit.
-    def doublePure(): Unit & Pure and Pure = ()
-
     /// An impure function from Unit -> Unit.
     def impure(): Unit & Impure = [1, 2, 3]; ()
 
