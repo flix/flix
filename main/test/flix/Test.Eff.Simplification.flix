@@ -12,10 +12,10 @@ namespace Test/Eff/Simplification {
     def testPureOrPure(): Unit & Pure or Pure = pure()
 
     @test
-    def testPureOrImpure(): Unit & Pure and Impure = pure()
+    def testPureOrImpure(): Unit & Pure or Impure = pure()
 
     @test
-    def testImpureOrImpure(): Unit & Impure and Impure = impure()
+    def testImpureOrImpure(): Unit & Impure or Impure = impure()
 
     /// a pure function
     def pure(): Unit & Pure = ()
