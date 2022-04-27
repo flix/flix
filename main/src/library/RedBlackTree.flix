@@ -237,17 +237,6 @@ namespace RedBlackTree {
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    pub def foldRightOld(f: (k, v, b) -> b & ef, s: b, tree: RedBlackTree[k, v]): b & ef = match tree {
-        case Node(_, a, k, v, b) => foldRightOld(f, f(k, v, foldRightOld(f, s, b)), a)
-        case _ => s
-    }
-
-    ///
-    /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
-    /// A `foldRight` allows early termination by not calling the continuation.
-    ///
     pub def foldRight(f: (k, v, Unit -> b & ef) -> b & ef, z: b, tree: RedBlackTree[k, v]): b & ef = match tree {
         case Node(_, a, k, v, b) => foldRight(f, f(k, v, _ -> foldRight(f, z, b)), a)
         case _ => z

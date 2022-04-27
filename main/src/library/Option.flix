@@ -278,14 +278,6 @@ namespace Option {
     ///
     /// Returns `f(v, z)` if `o` is `Some(v)`. Otherwise returns `z`.
     ///
-    pub def foldRightOld(f: (a, b) -> b & ef, o: Option[a], z: b): b & ef = match o {
-        case None    => z
-        case Some(v) => f(v, z)
-    }
-
-    ///
-    /// Returns `f(v, z)` if `o` is `Some(v)`. Otherwise returns `z`.
-    ///
     /// A `foldRight` allows early termination by not calling the continuation.
     ///
     pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, o: Option[a], z: b): b & ef = match o {

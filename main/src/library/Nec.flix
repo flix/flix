@@ -562,19 +562,6 @@ namespace Nec {
     }
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `c` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
-    ///
-    pub def foldRightOld(f: (a, b) -> b & ef, acc: b, c: Nec[a]): b & ef = match viewRight(c) {
-        case OneRight(x)      => f(x, acc)
-        case SomeRight(rs, x) => {
-            let b = f(x, acc);
-            foldRightOld(f, b, rs)
-        }
-    }
-
-    ///
     /// Applies `f` to a start value `z` and all elements in `c` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.

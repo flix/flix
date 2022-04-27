@@ -295,15 +295,6 @@ namespace Set {
     /// Applies `f` to a start value `s` and all elements in `s` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
-    ///
-    pub def foldRightOld(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef =
-        let Set(t) = s1;
-        RedBlackTree.foldRightOld((k, _, acc) -> f(k, acc), s, t)
-
-    ///
-    /// Applies `f` to a start value `s` and all elements in `s` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     /// A `foldRight` allows early termination by not calling the continuation.
     ///
     pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, s1: Set[a]): b & ef =
