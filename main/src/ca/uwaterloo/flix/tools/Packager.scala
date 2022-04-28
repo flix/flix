@@ -27,8 +27,10 @@ import ca.uwaterloo.flix.util._
 import java.io.{File, PrintWriter}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
+import java.util.{Calendar, GregorianCalendar, Objects}
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Using}
 
 /**
@@ -264,7 +266,7 @@ object Packager {
       addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
 
       // Add all class files.
-      for (buildFile <- getAllFiles(getBuildDirectory(p))) {
+      for (buildFile <- getAllFiles(getBuildDirectory(p)).sorted(new PathComparator())) {
         val fileName = getBuildDirectory(p).relativize(buildFile).toString
         val fileNameWithSlashes = fileName.replace('\\', '/')
         addToZip(zip, fileNameWithSlashes, buildFile)
@@ -302,7 +304,7 @@ object Packager {
       addToZip(zip, "README.md", getReadmeFile(p))
 
       // Add all source files.
-      for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
+      for (sourceFile <- getAllFiles(getSourceDirectory(p)).sorted(new PathComparator())) {
         val name = p.relativize(sourceFile).toString
         addToZip(zip, name, sourceFile)
       }
@@ -482,10 +484,21 @@ object Packager {
   }
 
   /**
+    * To support DOS time, Java 8+ treats dates before the 1980 January in special way.
+    * Here we use 1980 February to avoid the complexity introduced by this hack.
+    *
+    * @see <a href="https://bugs.openjdk.java.net/browse/JDK-4759491">JDK-4759491 that introduced the hack around 1980 January from Java 8+</a>
+    * @see <a href="https://bugs.openjdk.java.net/browse/JDK-6303183">JDK-6303183 that explains why the second should be even to create ZIP files in non platform specific way</a>
+    * @see <a href="https://github.com/gradle/gradle/blob/445deb9aa988e506120b7918bf91acb421e429ba/subprojects/core/src/main/java/org/gradle/api/internal/file/archive/ZipCopyAction.java#L42-L57">A similar case from Gradle</a>
+    */
+  private val ENOUGH_OLD_CONSTANT_TIME: Long = new GregorianCalendar(1980, Calendar.FEBRUARY, 1, 0, 0, 0).getTimeInMillis
+
+  /**
     * Adds an entry to the given zip file.
     */
   private def addToZip(zip: ZipOutputStream, name: String, d: Array[Byte]): Unit = {
     val entry = new ZipEntry(name)
+    entry.setTime(ENOUGH_OLD_CONSTANT_TIME)
     zip.putNextEntry(entry)
     zip.write(d)
     zip.closeEntry()
@@ -545,6 +558,39 @@ object Packager {
     override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
       result += file
       FileVisitResult.CONTINUE
+    }
+  }
+
+  /**
+    * The comparator which compares Path objects by a non platform specific way.
+    * @see <a href="https://reproducible-builds.org/">Reproducible Builds</a>
+    */
+  class PathComparator extends Ordering[Path] {
+    /**
+      * Create an iterator that iterates name of path elements.
+      * e.g. `iterate(Paths.get("path/to/file"))` returns an iterator that iterates `["path", "to", "file"]`.
+      *
+      * @param p Path instance to iterate
+      * @return non-null iterator
+      */
+    private def iterate(p: Path): Iterator[String] =
+      p.iterator.asScala.map(
+        // Convert Path to String, to compare the name of path elements by a non platform specific way.
+        // According to Javadoc, the implementation of `Path.compareTo(Path)` is platform specific.
+        Objects.toString
+      )
+
+    override def compare(l: Path, r: Path): Int = {
+      require(l.isAbsolute == r.isAbsolute)
+
+      for (e <- iterate(l).zipAll(iterate(r), null, null)) e match {
+        case (null, _) => return 1
+        case (_, null) => return -1
+        case (el, er) =>
+          val r = el.compareTo(er)
+          if (r != 0) return r
+      }
+      0
     }
   }
 }
