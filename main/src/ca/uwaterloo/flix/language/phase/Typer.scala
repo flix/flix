@@ -340,7 +340,7 @@ object Typer {
   /**
     * Performs type resolution on the given enum and its cases.
     */
-  private def visitEnum(enum: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): Validation[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum match {
+  private def visitEnum(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): Validation[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum0 match {
     case KindedAst.Enum(doc, ann, mod, enumSym, tparams0, derives, cases0, tpeDeprecated, sc, loc) =>
       val annVal = visitAnnotations(ann, root)
       val tparams = getTypeParams(tparams0)
@@ -1374,27 +1374,26 @@ object Typer {
           resultTyp <- unifyTypeM(tvar, Type.mkSchema(schemaRow, loc), loc)
         } yield (constrs.flatten, resultTyp, Type.Pure)
 
-      case KindedAst.Expression.FixpointLambda(preds, exp, loc) =>
-        def mkRowExtend(pred: Name.Pred, restRow: (Type, Type)): (Type, Type) = {
-          val freshPredicateTypeVar = Type.freshVar(Kind.Predicate, loc, text = FallbackText("pred"))
-          val one = Type.mkSchema(Type.mkSchemaRowExtend(pred, freshPredicateTypeVar, restRow._1, loc), loc)
-          val two = Type.mkSchema(Type.mkSchemaRowExtend(pred, freshPredicateTypeVar, restRow._2, loc), loc)
-          (one, two)
+      case KindedAst.Expression.FixpointLambda(preds, exp, tvar, loc) =>
+        val predsWithType = preds.map(pred => (pred, Type.freshVar(Kind.Predicate, loc, text = FallbackText(pred.name))))
+
+        def mkRowExtend(p: (Name.Pred, Type), restRow: Type): Type = {
+          val (pred, tpe) = p
+          Type.mkSchemaRowExtend(pred, tpe, restRow, loc)
         }
 
-        def mkRow(baseRow1: Type, baseRow2: Type): (Type, Type) = preds.foldRight(baseRow1, baseRow2)(mkRowExtend)
+        def mkFullRow(baseRow: Type): Type = predsWithType.foldRight(baseRow)(mkRowExtend)
 
-        val one = Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row"))
-        val two = Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row"))
-        val (expected, result) = mkRow(one, two)
+        val expectedRowType = mkFullRow(Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row")))
+        val resultRowType = mkFullRow(Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row")))
 
-        println(expected)
-        println(result)
-        ???
+        println(expectedRowType)
+        println(resultRowType)
 
         for {
           (constrs, tpe, eff) <- visitExp(exp)
-          resultTyp <- unifyTypeM(tpe, expected, loc)
+          _ <- unifyTypeM(tpe, Type.mkSchema(expectedRowType, loc), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkSchema(resultRowType, loc), loc)
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
@@ -1888,6 +1887,12 @@ object Typer {
       case KindedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
         val cs = cs0.map(visitConstraint)
         TypedAst.Expression.FixpointConstraintSet(cs, Stratification.empty, subst0(tvar), loc)
+
+      case KindedAst.Expression.FixpointLambda(preds, exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val tpe = subst0(tvar)
+        val eff = e.eff
+        TypedAst.Expression.FixpointLambda(preds, e, Stratification.empty, tpe, eff, loc)
 
       case KindedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)

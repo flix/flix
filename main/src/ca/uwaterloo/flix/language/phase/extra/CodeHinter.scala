@@ -43,12 +43,12 @@ object CodeHinter {
   /**
     * Computes code quality hints for the given enum `enum`.
     */
-  private def visitEnum(enum: TypedAst.Enum)(implicit root: Root, index: Index): List[CodeHint] = {
-    val tagUses = enum.cases.keys.flatMap(tag => index.usesOf(enum.sym, tag))
-    val enumUses = index.usesOf(enum.sym)
+  private def visitEnum(enum0: TypedAst.Enum)(implicit root: Root, index: Index): List[CodeHint] = {
+    val tagUses = enum0.cases.keys.flatMap(tag => index.usesOf(enum0.sym, tag))
+    val enumUses = index.usesOf(enum0.sym)
     val uses = enumUses ++ tagUses
-    val isDeprecated = enum.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
-    val isExperimental = enum.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Experimental])
+    val isDeprecated = enum0.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
+    val isExperimental = enum0.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Experimental])
     val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated) else Nil
     val experimental = if (isExperimental) uses.map(CodeHint.Experimental) else Nil
     (deprecated ++ experimental).toList

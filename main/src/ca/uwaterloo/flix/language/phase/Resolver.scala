@@ -1837,7 +1837,7 @@ object Resolver {
     /**
       * The result is an enum.
       */
-    case class Enum(enum: NamedAst.Enum) extends EnumOrTypeAliasLookupResult
+    case class Enum(enum0: NamedAst.Enum) extends EnumOrTypeAliasLookupResult
 
     /**
       * The result is a type alias.

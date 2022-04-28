@@ -48,7 +48,7 @@ object Deriver {
   /**
     * Builds the instances derived from this enum.
     */
-  private def getDerivedInstances(enum: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): List[KindedAst.Instance] = enum match {
+  private def getDerivedInstances(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): List[KindedAst.Instance] = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, derives, _, _, _, _) =>
       // lazy so that in we don't try a lookup if there are no derivations (important for Nix Lib)
       lazy val eqSym = PredefinedClasses.lookupClassSym("Eq", root)
@@ -57,11 +57,11 @@ object Deriver {
       lazy val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
       lazy val hashSym = PredefinedClasses.lookupClassSym("Hash", root)
       derives.map {
-        case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum, loc, root)
-        case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum, loc, root)
-        case Ast.Derivation(sym, loc) if sym == toStringSym => mkToStringInstance(enum, loc, root)
-        case Ast.Derivation(sym, loc) if sym == boxableSym => mkBoxableInstance(enum, loc, root)
-        case Ast.Derivation(sym, loc) if sym == hashSym => mkHashInstance(enum, loc, root)
+        case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum0, loc, root)
+        case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum0, loc, root)
+        case Ast.Derivation(sym, loc) if sym == toStringSym => mkToStringInstance(enum0, loc, root)
+        case Ast.Derivation(sym, loc) if sym == boxableSym => mkBoxableInstance(enum0, loc, root)
+        case Ast.Derivation(sym, loc) if sym == hashSym => mkHashInstance(enum0, loc, root)
         case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym")
       }
   }
