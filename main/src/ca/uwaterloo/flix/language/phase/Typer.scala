@@ -1387,9 +1387,6 @@ object Typer {
         val expectedRowType = mkFullRow(Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row")))
         val resultRowType = mkFullRow(Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row")))
 
-        println(expectedRowType)
-        println(resultRowType)
-
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           _ <- unifyTypeM(tpe, Type.mkSchema(expectedRowType, loc), loc)

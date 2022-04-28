@@ -447,6 +447,9 @@ object SemanticTokensProvider {
         case (acc, c) => acc ++ visitConstraint(c)
       }
 
+    case Expression.FixpointLambda(_, exp, _, _, _, _) =>
+      visitExp(exp)
+
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 

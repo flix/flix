@@ -92,7 +92,7 @@ object Indexer {
       val idx3 = traverse(cases) {
         case (_, caze) => Index.occurrenceOf(caze)
       }
-    idx0 ++ idx1 ++ idx2 ++ idx3
+      idx0 ++ idx1 ++ idx2 ++ idx3
   }
 
   /**
@@ -325,6 +325,8 @@ object Indexer {
 
     case Expression.FixpointConstraintSet(cs, _, _, _) => traverse(cs)(visitConstraint)
 
+    case Expression.FixpointLambda(_, exp, _, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
