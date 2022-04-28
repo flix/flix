@@ -37,7 +37,7 @@ object Inliner {
     case class OccurrenceExp(exp: OccurrenceAst.Expression) extends Expression
   }
 
-  val inlineThreshold = 32
+  val inlineThreshold = 8
 
   /**
    * Performs inlining on the given AST `root`.
@@ -448,8 +448,14 @@ object Inliner {
     case OccurrenceAst.Expression.MatchError(tpe, loc) => LiftedAst.Expression.MatchError(tpe, loc)
   }
 
+  /**
+   * A def can be inlined if
+   * Its body consist of a single non self call
+   * Its body has a codesize below the inline threshold and its not being inlined into itself
+   * It only occurs once in the entire program
+   */
   private def inlineDef(def0: OccurrenceAst.Def, sym0: Symbol.DefnSym): Boolean = {
-     def0.context.isNonSelfCall || (def0.context.codeSize < inlineThreshold && def0.sym != sym0)
+     def0.context.isNonSelfCall || (def0.context.codeSize < inlineThreshold && def0.sym != sym0) || def0.context.occur == Once
   }
 
   /**
