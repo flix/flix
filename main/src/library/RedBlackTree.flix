@@ -62,7 +62,7 @@ namespace RedBlackTree {
 
     instance Foldable[RedBlackTree[k]] {
         pub def foldLeft(f: (b, v) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldLeft((acc, _, v) -> f(acc, v), s, t)
-        pub def foldRight(f: (v, b) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRight((_, v, acc) -> f(v, acc), s, t)
+        pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRight((_, v, acc) -> f(v, acc), s, t)
     }
 
     instance Traversable[RedBlackTree[k]] {
@@ -235,28 +235,12 @@ namespace RedBlackTree {
     /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
+    /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (k, v, b) -> b & ef, s: b, tree: RedBlackTree[k, v]): b & ef = match tree {
-        case Node(_, a, k, v, b) => foldRight(f, f(k, v, foldRight(f, s, b)), a)
-        case _ => s
+    pub def foldRight(f: (k, v, Unit -> b & ef) -> b & ef, z: b, tree: RedBlackTree[k, v]): b & ef = match tree {
+        case Node(_, a, k, v, b) => foldRight(f, f(k, v, _ -> foldRight(f, z, b)), a)
+        case _ => z
     }
-
-
-    ///
-    /// Lazily applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(k1, v1, ... lazy f(kn-1, vn-1, lazy f(kn, vn, s)))`.
-    /// The foldRightLazy function exists to allow early termination of a fold.
-    ///
-    @Experimental
-    @Lazy
-    pub def foldRightLazy(f: (k, v, Lazy[b]) -> b, s: b, tree: RedBlackTree[k, v]): b =
-        def loop(s2: b, tree2: RedBlackTree[k, v]) = match tree2 {
-            case Node(_, a, k, v, b) => loop(f(k, v, lazy loop(s2, b)), a)
-            case _ => s2
-        };
-        loop(s, tree)
-
 
     /// Applies `f` to all key-value pairs in `tree` going from left to right until a single pair `(k, v)` is obtained.
     ///
@@ -278,7 +262,7 @@ namespace RedBlackTree {
     /// Returns `None` if `tree` is the empty tree.
     ///
     pub def reduceRight(f: (k, v, k, v) -> (k, v) & ef, tree: RedBlackTree[k, v]): Option[(k, v)] & ef =
-        foldRight((k1, v1, x) -> match x {
+        foldRight((k1, v1, c) -> match c() {
             case Some((k2, v2)) => Some(f(k1, v1, k2, v2))
             case None => Some(k1, v1)
         }, None, tree)
@@ -810,7 +794,7 @@ namespace RedBlackTree {
     /// Returns the tree `t` as a list. Elements are ordered from smallest (left) to largest (right).
     ///
     pub def toList(t: RedBlackTree[k, v]): List[(k, v)] =
-        RedBlackTree.foldRight((k, v, xs) -> (k, v) :: xs, Nil, t)
+        RedBlackTree.foldRight((k, v, c) -> (k, v) :: c(), Nil, t)
 
     ///
     /// Build a node applicatively.

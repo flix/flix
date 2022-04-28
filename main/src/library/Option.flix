@@ -55,7 +55,7 @@ instance Monad[Option] {
 
 instance Foldable[Option] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldLeft(f, s, o)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)
 }
 
 instance Traversable[Option] {
@@ -278,19 +278,11 @@ namespace Option {
     ///
     /// Returns `f(v, z)` if `o` is `Some(v)`. Otherwise returns `z`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, o: Option[a], z: b): b & ef = match o {
+    /// A `foldRight` allows early termination by not calling the continuation.
+    ///
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, o: Option[a], z: b): b & ef = match o {
         case None    => z
-        case Some(v) => f(v, z)
-    }
-
-    ///
-    /// Returns `f(v, lazy z)` if `o` is `Some(v)`. Otherwise returns `z`.
-    ///
-    /// The function f must be pure.
-    ///
-    pub def foldRightLazy(f: (a, Lazy[b]) -> b, o: Option[a], z: b): b = match o {
-        case None    => z
-        case Some(v) => f(v, lazy z)
+        case Some(v) => f(v, _ -> z as & ef)
     }
 
     ///
@@ -405,7 +397,7 @@ namespace Option {
     /// Returns a map with elements of `s` as keys and `f` applied as values.
     ///
     pub def toMapWith(f: a -> b, s: Option[a]): Map[a, b] with Order[a] =
-        Option.foldRight((x, m) -> Map.insert(x, f(x), m), s, Map.empty())
+        Option.foldRight((x, k) -> Map.insert(x, f(x), k()), s, Map.empty())
 
     ///
     /// Returns the Option value `Ok(v)` if `o` is `Some(v)`. Otherwise returns `Err(e)`.
