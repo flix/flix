@@ -1524,7 +1524,7 @@ object Weeder {
           }
 
           // Extract the tuples of the result predicate.
-          WeededAst.Expression.FixpointProjectOut(pred, queryExp, dbExp, loc.asReal)
+          WeededAst.Expression.FixpointProjectOut(pred, queryExp, dbExp, loc)
       }
 
     case ParsedAst.Expression.Reify(sp1, t0, sp2) =>
