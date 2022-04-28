@@ -4,6 +4,10 @@ import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 import java.nio.file.Files
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.zip.ZipFile
+import scala.jdk.CollectionConverters.EnumerationHasAsScala
 
 class TestPackager extends FunSuite {
 
@@ -40,6 +44,21 @@ class TestPackager extends FunSuite {
     assert(jarPath.getFileName.toString.startsWith(ProjectPrefix))
   }
 
+  test("build-jar generates ZIP entries with fixed time") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Packager.init(p, DefaultOptions)
+    Packager.buildJar(p, DefaultOptions)
+
+    val packageName = p.getFileName.toString
+    val packagePath = p.resolve(packageName + ".jar")
+    val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    for (e <- new ZipFile(packagePath.toFile).entries().asScala) {
+      val time = new Date(e.getTime)
+      val formatted = format.format(time)
+      assert(formatted.equals("1980-02-01 00:00:00"))
+    }
+  }
+
   test("build-pkg") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Packager.init(p, DefaultOptions)
@@ -49,6 +68,21 @@ class TestPackager extends FunSuite {
     val packagePath = p.resolve(packageName + ".fpkg")
     assert(Files.exists(packagePath))
     assert(packagePath.getFileName.toString.startsWith(ProjectPrefix))
+  }
+
+  test("build-pkg generates ZIP entries with fixed time") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Packager.init(p, DefaultOptions)
+    Packager.buildPkg(p, DefaultOptions)
+
+    val packageName = p.getFileName.toString
+    val packagePath = p.resolve(packageName + ".fpkg")
+    val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    for (e <- new ZipFile(packagePath.toFile).entries().asScala) {
+      val time = new Date(e.getTime)
+      val formatted = format.format(time)
+      assert(formatted.equals("1980-02-01 00:00:00"))
+    }
   }
 
   test("benchmark") {
