@@ -17,21 +17,22 @@
 package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
 
 class TestFlixErrors extends FunSuite with TestUtils {
 
-  test("HoleError.01") {
-    val input = "def main(): Unit = ???"
-    val result = compile(input, Options.TestWithLibNix)
-    expectSuccess(result)
-    result match {
+  def expectRuntimeError(v: Validation[CompilationResult, CompilationMessage], name: String): Unit = {
+    expectSuccess(v)
+    v match {
       case Validation.Success(t) => t.getMain match {
         case Some(main) => try {
           main.apply(Array.empty)
         } catch {
-          case _: java.lang.Error => ()
+          case e: java.lang.Throwable if e.getClass.getSimpleName == name =>
+            ()
+          case e: java.lang.Throwable => fail(e)
         }
         case None => fail("Could not find main")
       }
@@ -39,9 +40,16 @@ class TestFlixErrors extends FunSuite with TestUtils {
     }
   }
 
+  test("HoleError.01") {
+    val input = "def main(): Unit = ???"
+    val result = compile(input, Options.TestWithLibMin)
+    expectRuntimeError(result, "HoleError")
+  }
+
   test("HoleError.02") {
     val input = "def main(): Unit = ?namedHole"
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
+    expectRuntimeError(result, "HoleError")
   }
 
 }
