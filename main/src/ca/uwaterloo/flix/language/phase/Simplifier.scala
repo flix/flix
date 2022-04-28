@@ -296,6 +296,9 @@ object Simplifier {
       case TypedAst.Expression.FixpointConstraintSet(_, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
+      case TypedAst.Expression.FixpointLambda(_, _, _, _, _, _) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
       case TypedAst.Expression.FixpointMerge(_, _, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.")
 

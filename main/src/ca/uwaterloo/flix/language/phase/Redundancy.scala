@@ -613,6 +613,9 @@ object Redundancy {
         case (used, con) => used ++ visitConstraint(con, env0, rc: RecursionContext)
       }
 
+    case Expression.FixpointLambda(_, exp, _, _, _, _) =>
+      visitExp(exp, env0, rc)
+
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)

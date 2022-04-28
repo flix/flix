@@ -536,6 +536,10 @@ object Lowering {
     case Expression.FixpointConstraintSet(cs, _, _, loc) =>
       mkDatalog(cs, loc)
 
+    case Expression.FixpointLambda(preds, exp, _, _, eff, loc) =>
+      // TODO
+      exp
+
     case Expression.FixpointMerge(exp1, exp2, _, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Merge)
       val defExp = Expression.Def(defn.sym, Types.MergeType, loc)
@@ -1506,6 +1510,10 @@ object Lowering {
     case Expression.Force(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.Force(e, tpe, eff, loc)
+
+    case Expression.FixpointLambda(preds, exp, stf, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.FixpointLambda(preds, e, stf, tpe, eff, loc)
 
     case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)

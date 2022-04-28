@@ -342,6 +342,11 @@ object PatternExhaustiveness {
             _ <- traverse(cs)(visitConstraint(_, root))
           } yield tast
 
+        case Expression.FixpointLambda(_, exp, stf, tpe, eff, loc) =>
+          for {
+            _ <- checkPats(exp, root)
+          } yield tast
+
         case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
           for {
             _ <- checkPats(exp1, root)
