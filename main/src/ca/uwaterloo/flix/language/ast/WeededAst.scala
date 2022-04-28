@@ -18,8 +18,6 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
 
-import scala.collection.immutable.List
-
 object WeededAst {
 
   case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym], reachable: Set[Symbol.DefnSym])
@@ -196,6 +194,8 @@ object WeededAst {
     case class Force(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointConstraintSet(cs: List[WeededAst.Constraint], loc: SourceLocation) extends WeededAst.Expression
+
+    case class FixpointLambda(idents: List[Name.Pred], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointMerge(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 

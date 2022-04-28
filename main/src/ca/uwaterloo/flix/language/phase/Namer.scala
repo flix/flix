@@ -907,6 +907,11 @@ object Namer {
           NamedAst.Expression.FixpointConstraintSet(cs, loc)
       }
 
+    case WeededAst.Expression.FixpointLambda(preds, exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, tenv0)) {
+        case e => NamedAst.Expression.FixpointLambda(preds, e, loc)
+      }
+
     case WeededAst.Expression.FixpointMerge(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, uenv0, tenv0), visitExp(exp2, env0, uenv0, tenv0)) {
         case (e1, e2) => NamedAst.Expression.FixpointMerge(e1, e2, loc)
