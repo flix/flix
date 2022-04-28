@@ -82,7 +82,7 @@ instance Traversable[DelayList] {
 
 instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldLeft(f, s, l)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRightOld(f, s, l)
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, l: DelayList[a]): b & ef = DelayList.foldRight(f, s, l)
 }
 
 instance Iterable[DelayList] {
@@ -585,24 +585,6 @@ namespace DelayList {
             case LList(xs)    => loop(force xs, acc)
         };
         loop(l, s)
-
-    ///
-    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def foldRightOld(f: (a, b) -> b & ef, s: b, l: DelayList[a]): b & ef =
-        def loop(ll, k) = match ll {
-            case ENil         => k(s)
-            case ECons(x, xs) => loop(      xs, ks -> k(f(x, ks)))
-            case LCons(x, xs) => loop(force xs, ks -> k(f(x, ks)))
-            case LList(xs)    => loop(force xs, k)
-        };
-        loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
-                                  // but the intermediate continuations are effect polymorphic.
 
     ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
