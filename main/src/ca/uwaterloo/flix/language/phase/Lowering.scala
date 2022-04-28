@@ -537,8 +537,9 @@ object Lowering {
       mkDatalog(cs, loc)
 
     case Expression.FixpointLambda(preds, exp, _, _, eff, loc) =>
+      val e = visitExp(exp)
       // TODO
-      exp
+      e
 
     case Expression.FixpointMerge(exp1, exp2, _, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Merge)
