@@ -37,7 +37,7 @@ object Inliner {
     case class OccurrenceExp(exp: OccurrenceAst.Expression) extends Expression
   }
 
-  private val inlineThreshold = 32
+  val inlineThreshold = 32
 
   /**
    * Performs inlining on the given AST `root`.
@@ -449,8 +449,7 @@ object Inliner {
   }
 
   private def inlineDef(def0: OccurrenceAst.Def, sym0: Symbol.DefnSym): Boolean = {
-     //def0.context.isNonSelfCall || isTrivialExp(def0.exp) ||
-       (def0.context.codeSize < inlineThreshold && def0.sym != sym0)
+     def0.context.isNonSelfCall || (def0.context.codeSize < inlineThreshold && def0.sym != sym0)
   }
 
   /**

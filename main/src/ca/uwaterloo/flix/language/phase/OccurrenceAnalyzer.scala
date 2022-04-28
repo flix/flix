@@ -26,6 +26,8 @@ import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
+import scala.collection.mutable
+
 /**
  * The occurrence analyzer collects information on variable and function usage and calculates the weight of the expressions
  * Marks a variable or function as Dead if it is not used, Once if it is used exactly once and Many otherwise
@@ -34,9 +36,11 @@ object OccurrenceAnalyzer {
 
   case class OccurInfo(varOccurrence: Map[VarSym, OccurrenceAst.Occur], defOccurrence: Map[DefnSym, OccurrenceAst.Occur], codeSize: Int)
 
-  val emptyOccur: OccurInfo = OccurInfo(Map.empty, Map.empty, 0)
+  private val emptyOccur: OccurInfo = OccurInfo(Map.empty, Map.empty, 0)
 
-  val baseOccur: OccurInfo = OccurInfo(Map.empty, Map.empty, 1)
+  private val baseOccur: OccurInfo = OccurInfo(Map.empty, Map.empty, 1)
+
+  private val dontInline = Inliner.inlineThreshold + 1
 
   /**
    * Performs occurrence analysis on the given AST `root`.
@@ -79,11 +83,13 @@ object OccurrenceAnalyzer {
    */
   private def visitDefs(defs0: Map[DefnSym, LiftedAst.Def])(implicit flix: Flix): Map[DefnSym, OccurrenceAst.Def] = {
     val (d1, os) = ParOps.parMap(defs0.values)((d: LiftedAst.Def) => visitDef(d)).unzip
-    val defOccur = os.foldLeft[Map[DefnSym, Occur]](Map.empty){
-      case (acc, occurInfo) => combineMaps(acc, occurInfo.defOccurrence, combineSeq)
+
+    var baseMap = collection.mutable.Map[DefnSym, Occur]()
+    for (m <- os) {
+      combineDefMaps(baseMap, m.defOccurrence)
     }
     d1.map { kv =>
-        val o = defOccur.getOrElse(kv.sym, Dead)
+        val o = baseMap.getOrElse(kv.sym, Dead)
         val c = kv.context.copy(occur = o)
         val d2 = kv.copy(context = c)
         kv.sym -> d2
@@ -253,7 +259,10 @@ object OccurrenceAnalyzer {
 
     case Expression.Is(sym, tag, exp, purity, loc) =>
       val (e, o) = visitExp(exp)
-      (OccurrenceAst.Expression.Is(sym, tag, e, purity, loc), o.copy(codeSize = o.codeSize+100))
+      if (sym.name == "Choice")
+        (OccurrenceAst.Expression.Is(sym, tag, e, purity, loc), o.copy(codeSize = dontInline))
+      else
+        (OccurrenceAst.Expression.Is(sym, tag, e, purity, loc), o.copy(codeSize = o.codeSize+1))
 
     case Expression.Tag(sym, tag, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(exp)
@@ -348,7 +357,7 @@ object OccurrenceAnalyzer {
           (OccurrenceAst.CatchRule(sym, clazz, e), o3)
       }.unzip
       val o4 = o2.foldLeft(o1)((acc, o5) => combineAllSeq(acc, o5))
-      (OccurrenceAst.Expression.TryCatch(e, rs, tpe, purity, loc), o4.copy(codeSize = o4.codeSize+100))
+      (OccurrenceAst.Expression.TryCatch(e, rs, tpe, purity, loc), o4.copy(codeSize = dontInline))
 
     case Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
       val (as, o) = visitExps(args)
@@ -458,7 +467,7 @@ object OccurrenceAnalyzer {
    */
   private def combineAll(o1: OccurInfo, o2: OccurInfo, combine: (Occur, Occur) => Occur): OccurInfo = {
       val varMap = combineMaps(o1.varOccurrence, o2.varOccurrence, combine)
-      val defMap = Map[DefnSym, Occur]()
+      val defMap = combineMaps(o1.defOccurrence, o2.defOccurrence, combine)
       val codeSize = o1.codeSize + o2.codeSize
       OccurInfo(varMap, defMap, codeSize)
   }
@@ -471,6 +480,17 @@ object OccurrenceAnalyzer {
       case (acc, k) =>
         val occur = combine(m1.getOrElse(k, Dead), m2.getOrElse(k, Dead))
         acc + (k -> occur)
+    }
+  }
+
+  /**
+   * Combines the 2 maps `acc` and `m2` of the type (A -> Occur) into a single map.
+   */
+  private def combineDefMaps[A](acc: mutable.Map[A, Occur], m: Map[A, Occur]): Unit = {
+    m.foreach {
+      case (k,v) =>
+        val o = combineSeq(acc.getOrElse(k,Dead), v)
+        acc += (k -> o)
     }
   }
 
