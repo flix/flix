@@ -37,7 +37,10 @@ object Inliner {
     case class OccurrenceExp(exp: OccurrenceAst.Expression) extends Expression
   }
 
-  val inlineThreshold = 8
+  /**
+   * Candidates for inlining are functions with fewer than `InlineThreshold` expressions
+   */
+  private val InlineThreshold = 8
 
   /**
    * Performs inlining on the given AST `root`.
@@ -455,7 +458,7 @@ object Inliner {
    * It only occurs once in the entire program
    */
   private def canInlineDef(def0: OccurrenceAst.Def, sym0: Symbol.DefnSym): Boolean = {
-    def0.context.occur != DontInline && (def0.context.isNonSelfCall || (def0.context.codeSize < inlineThreshold && def0.sym != sym0) || def0.context.occur == Once)
+    def0.context.occur != DontInline && (def0.context.isNonSelfCall || (def0.context.codeSize < InlineThreshold && def0.sym != sym0) || def0.context.occur == Once)
   }
 
   /**
@@ -597,32 +600,6 @@ object Inliner {
     case LiftedAst.Expression.BigInt(_, _) => true
     case LiftedAst.Expression.Str(_, _) => true
     case LiftedAst.Expression.Var(_, _, _) => true
-    case _ => false
-  }
-
-  /**
-   * returns `true` if `exp0` is considered a trivial expression.
-   *
-   * An expression is trivial if:
-   * It is either a literal (float, string, int, bool, unit), or it is a variable.
-   *
-   * A pure and trivial expression can always be inlined even without duplicating work.
-   */
-  private def isTrivialExp(exp0: OccurrenceAst.Expression): Boolean = exp0 match {
-    case OccurrenceAst.Expression.Unit(_) => true
-    case OccurrenceAst.Expression.Null(_, _) => true
-    case OccurrenceAst.Expression.True(_) => true
-    case OccurrenceAst.Expression.False(_) => true
-    case OccurrenceAst.Expression.Char(_, _) => true
-    case OccurrenceAst.Expression.Float32(_, _) => true
-    case OccurrenceAst.Expression.Float64(_, _) => true
-    case OccurrenceAst.Expression.Int8(_, _) => true
-    case OccurrenceAst.Expression.Int16(_, _) => true
-    case OccurrenceAst.Expression.Int32(_, _) => true
-    case OccurrenceAst.Expression.Int64(_, _) => true
-    case OccurrenceAst.Expression.BigInt(_, _) => true
-    case OccurrenceAst.Expression.Str(_, _) => true
-    case OccurrenceAst.Expression.Var(_, _, _) => true
     case _ => false
   }
 
