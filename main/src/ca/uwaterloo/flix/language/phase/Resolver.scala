@@ -1051,6 +1051,12 @@ object Resolver {
             cs => ResolvedAst.Expression.FixpointConstraintSet(cs, loc)
           }
 
+        case NamedAst.Expression.FixpointLambda(preds, exp, loc) =>
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            case e => ResolvedAst.Expression.FixpointLambda(preds, e, loc)
+          }
+
         case NamedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
           val e1Val = visitExp(exp1, region)
           val e2Val = visitExp(exp2, region)

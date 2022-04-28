@@ -615,6 +615,12 @@ object Kinder {
         cs => KindedAst.Expression.FixpointConstraintSet(cs, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
+    case ResolvedAst.Expression.FixpointLambda(preds, exp, loc) =>
+      val expVal = visitExp(exp, kenv, taenv, root)
+      mapN(expVal) {
+        case e => KindedAst.Expression.FixpointLambda(preds, e, loc)
+      }
+
     case ResolvedAst.Expression.FixpointMerge(exp10, exp20, loc) =>
       val exp1Val = visitExp(exp10, kenv, taenv, root)
       val exp2Val = visitExp(exp20, kenv, taenv, root)

@@ -1374,6 +1374,30 @@ object Typer {
           resultTyp <- unifyTypeM(tvar, Type.mkSchema(schemaRow, loc), loc)
         } yield (constrs.flatten, resultTyp, Type.Pure)
 
+      case KindedAst.Expression.FixpointLambda(preds, exp, loc) =>
+        def mkRowExtend(pred: Name.Pred, restRow: (Type, Type)): (Type, Type) = {
+          val freshPredicateTypeVar = Type.freshVar(Kind.Predicate, loc, text = FallbackText("pred"))
+          val one = Type.mkSchema(Type.mkSchemaRowExtend(pred, freshPredicateTypeVar, restRow._1, loc), loc)
+          val two = Type.mkSchema(Type.mkSchemaRowExtend(pred, freshPredicateTypeVar, restRow._2, loc), loc)
+          (one, two)
+        }
+
+        def mkRow(baseRow1: Type, baseRow2: Type): (Type, Type) = preds.foldRight(baseRow1, baseRow2)(mkRowExtend)
+
+        val one = Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row"))
+        val two = Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row"))
+        val (expected, result) = mkRow(one, two)
+
+        println(expected)
+        println(result)
+        ???
+
+        for {
+          (constrs, tpe, eff) <- visitExp(exp)
+          resultTyp <- unifyTypeM(tpe, expected, loc)
+          resultEff = eff
+        } yield (constrs, resultTyp, resultEff)
+
       case KindedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
         //
         //  exp1 : #{...}    exp2 : #{...}

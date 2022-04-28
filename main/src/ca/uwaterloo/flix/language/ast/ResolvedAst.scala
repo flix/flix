@@ -182,6 +182,8 @@ object ResolvedAst {
 
     case class FixpointConstraintSet(cs: List[ResolvedAst.Constraint], loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class FixpointLambda(preds: List[Name.Pred], exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class FixpointMerge(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class FixpointSolve(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
