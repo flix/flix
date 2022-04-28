@@ -40,8 +40,6 @@ object OccurrenceAnalyzer {
 
   private val baseOccur: OccurInfo = OccurInfo(Map.empty, Map.empty, 1)
 
-  private val aboveThreshold = Inliner.inlineThreshold + 1
-
   /**
    * Performs occurrence analysis on the given AST `root`.
    */
@@ -84,6 +82,7 @@ object OccurrenceAnalyzer {
   private def visitDefs(defs0: Map[DefnSym, LiftedAst.Def])(implicit flix: Flix): Map[DefnSym, OccurrenceAst.Def] = {
     val (d1, os) = ParOps.parMap(defs0.values)((d: LiftedAst.Def) => visitDef(d)).unzip
 
+    // Combine all defOccurrences into 1 map
     val baseMap = collection.mutable.Map[DefnSym, Occur]()
     os.foreach(o => combineDefMaps(baseMap, o.defOccurrence))
 
@@ -259,7 +258,7 @@ object OccurrenceAnalyzer {
     case Expression.Is(sym, tag, exp, purity, loc) =>
       val (e, o) = visitExp(exp)
       if (sym.name == "Choice")
-        (OccurrenceAst.Expression.Is(sym, tag, e, purity, loc), o.copy(defOccurrence = o.defOccurrence + (sym0 -> DontInline), codeSize = aboveThreshold))
+        (OccurrenceAst.Expression.Is(sym, tag, e, purity, loc), o.copy(defOccurrence = o.defOccurrence + (sym0 -> DontInline), codeSize = o.codeSize + 1))
       else
         (OccurrenceAst.Expression.Is(sym, tag, e, purity, loc), o.copy(codeSize = o.codeSize + 1))
 
@@ -356,7 +355,7 @@ object OccurrenceAnalyzer {
           (OccurrenceAst.CatchRule(sym, clazz, e), o3)
       }.unzip
       val o4 = o2.foldLeft(o1)((acc, o5) => combineAllSeq(acc, o5))
-      (OccurrenceAst.Expression.TryCatch(e, rs, tpe, purity, loc), o4.copy(defOccurrence = o4.defOccurrence + (sym0 -> DontInline), codeSize = aboveThreshold))
+      (OccurrenceAst.Expression.TryCatch(e, rs, tpe, purity, loc), o4.copy(defOccurrence = o4.defOccurrence + (sym0 -> DontInline), codeSize = o4.codeSize + 1))
 
     case Expression.InvokeConstructor(constructor, args, tpe, purity, loc) =>
       val (as, o) = visitExps(args)

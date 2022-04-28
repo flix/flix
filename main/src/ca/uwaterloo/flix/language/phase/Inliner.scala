@@ -144,7 +144,7 @@ object Inliner {
           // If `def1` is a single non-self call or
           // it is trivial
           // then inline the body of `def1`
-          if (inlineDef(def1, sym0)) {
+          if (canInlineDef(def1, sym0)) {
             val e1 = convertTailCall(def1.exp)
             // Map for substituting formal parameters of a function with the freevars currently in scope
             val env = def1.fparams.map(_.sym).zip(freevars.map(_.sym)).toMap
@@ -163,7 +163,7 @@ object Inliner {
       // If `def1` is a single non-self call or
       // it is trivial
       // then inline the body of `def1`
-      if (inlineDef(def1, sym0)) {
+      if (canInlineDef(def1, sym0)) {
         val e1 = convertTailCall(def1.exp)
         bindFormals(e1, def1.fparams.map(_.sym), as, Map.empty)
       } else {
@@ -179,7 +179,7 @@ object Inliner {
           // If `def1` is a single non-self call or
           // it is trivial
           // then inline the body of `def1`
-          if (inlineDef(def1, sym0)) {
+          if (canInlineDef(def1, sym0)) {
             // Map for substituting formal parameters of a function with the freevars currently in scope
             val env = def1.fparams.map(_.sym).zip(freevars.map(_.sym)).toMap
             bindFormals(def1.exp, def1.fparams.drop(freevars.length).map(_.sym), as, env)
@@ -197,7 +197,7 @@ object Inliner {
       // If `def1` is a single non-self call or
       // it is trivial
       // then inline the body of `def1`
-      if (inlineDef(def1, sym0)) {
+      if (canInlineDef(def1, sym0)) {
         // ApplySelfTail -> ApplyTDefTail
         val e = convertSelfTailCall(def1.exp)
         bindFormals(e, def1.fparams.map(_.sym), as, Map.empty)
@@ -450,12 +450,12 @@ object Inliner {
 
   /**
    * A def can be inlined if
-   * Its body consist of a single non self call
-   * Its body has a codesize below the inline threshold and its not being inlined into itself
+   * Its body consist of a single non self call or
+   * Its body has a codesize below the inline threshold and its not being inlined into itself or
    * It only occurs once in the entire program
    */
-  private def inlineDef(def0: OccurrenceAst.Def, sym0: Symbol.DefnSym): Boolean = {
-     def0.context.isNonSelfCall || (def0.context.codeSize < inlineThreshold && def0.sym != sym0) || def0.context.occur == Once
+  private def canInlineDef(def0: OccurrenceAst.Def, sym0: Symbol.DefnSym): Boolean = {
+    def0.context.occur != DontInline && (def0.context.isNonSelfCall || (def0.context.codeSize < inlineThreshold && def0.sym != sym0) || def0.context.occur == Once)
   }
 
   /**
