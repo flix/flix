@@ -494,7 +494,7 @@ object Inliner {
         val env1 = env0 + (sym -> freshVar)
         val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env1)
         val purity = combine(e1.purity, nextLet.purity)
-        LiftedAst.Expression.Let(freshVar, e1, nextLet, nextLet.tpe, purity, exp0.loc)
+        LiftedAst.Expression.Let(freshVar, e1, nextLet, exp0.tpe, purity, exp0.loc)
       case _ => substituteExp(exp0, env0)
     }
   }
@@ -544,7 +544,7 @@ object Inliner {
   }
 
   /**
-   * Convert a given selftailCall expression `exp0` to a non tail call
+   * Convert a given ApplySelfTail expression `exp0` to a ApplyDefTail
    */
   private def convertSelfTailCall(exp0: OccurrenceAst.Expression): OccurrenceAst.Expression = exp0 match {
     case OccurrenceAst.Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
@@ -569,7 +569,7 @@ object Inliner {
       val d = default.map(exp => convertSelfTailCall(exp))
       OccurrenceAst.Expression.SelectChannel(rs, d, tpe, loc)
 
-    case OccurrenceAst.Expression.ApplySelfTail(sym, _, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, actuals, tpe, purity, loc)
+    case OccurrenceAst.Expression.ApplySelfTail(sym, _, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDefTail(sym, actuals, tpe, purity, loc)
 
     case _ => exp0
   }
