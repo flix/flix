@@ -164,17 +164,20 @@ object EntryPoint {
       val unitSc = Scheme.generalize(Nil, Type.Unit)
       val resultSc = Scheme.generalize(Nil, resultTpe)
 
-      val toString = root.classes(new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)).sym
 
       if (Scheme.equal(unitSc, resultSc, classEnv)) {
         // Case 1: XYZ -> Unit.
         ().toSuccess
-      } else if (ClassEnvironment.holds(Ast.TypeConstraint(Ast.TypeConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), classEnv)) {
-        // Case 2: XYZ -> a with ToString[a]
-        ().toSuccess
       } else {
-        // Case 3: Bad result type. Error.
-        EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc).toFailure
+        // Delay ToString resolution if main has return type unit for testing with lib nix.
+        val toString = root.classes(new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)).sym
+        if (ClassEnvironment.holds(Ast.TypeConstraint(Ast.TypeConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), classEnv)) {
+          // Case 2: XYZ -> a with ToString[a]
+          ().toSuccess
+        } else {
+          // Case 3: Bad result type. Error.
+          EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc).toFailure
+        }
       }
   }
 
