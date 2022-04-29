@@ -76,7 +76,7 @@ object Index {
   /**
     * Returns an index for the given atom `a0`.
     */
-  def occurrenceOf(pred: Name.Pred): Index = empty + Entity.Pred(pred)
+  def occurrenceOf(pred: Name.Pred, tpe0: Type): Index = empty + Entity.Pred(pred, tpe0)
 
   /**
     * Returns an index for the given type `t`.

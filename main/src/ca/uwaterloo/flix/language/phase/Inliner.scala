@@ -77,12 +77,12 @@ object Inliner {
   /**
    * Converts enum from OccurrenceAst to LiftedAst
    */
-  private def visitEnum(enum: OccurrenceAst.Enum): LiftedAst.Enum = {
-    val cases = enum.cases.map {
+  private def visitEnum(enum0: OccurrenceAst.Enum): LiftedAst.Enum = {
+    val cases = enum0.cases.map {
       case (tag, caze) =>
         tag -> LiftedAst.Case(caze.sym, tag, caze.tpeDeprecated, caze.loc)
     }
-    LiftedAst.Enum(enum.ann, enum.mod, enum.sym, cases, enum.tpeDeprecated, enum.loc)
+    LiftedAst.Enum(enum0.ann, enum0.mod, enum0.sym, cases, enum0.tpeDeprecated, enum0.loc)
   }
 
   /**
