@@ -830,9 +830,9 @@ namespace RedBlackTree {
     /// the threads.
     ///
     @Parallel
-    def parLimitBy(n: Int32, selector: (k, v, k, v) -> (k, v), t: RedBlackTree[k, v]): Option[(k, v)] & Impure =
+    def parLimitBy(n: Int32, cmp: (k, v, k, v) -> (k, v), t: RedBlackTree[k, v]): Option[(k, v)] & Impure =
         if (n <= 0)
-            seqLimitBy(selector, t)
+            seqLimitBy(cmp, t)
         else
             match t {
                 case Leaf                => None
@@ -840,19 +840,19 @@ namespace RedBlackTree {
                 case Node(_, a, k, v, b) =>
                     let chanL = chan Option[(k, v)] 1;
                     let chanR = chan Option[(k, v)] 1;
-                    spawn (chanL <- parLimitBy((n - 2) / 2, selector, a));
-                    spawn (chanR <- parLimitBy((n - 2) / 2, selector, b));
+                    spawn (chanL <- parLimitBy((n - 2) / 2, cmp, a));
+                    spawn (chanR <- parLimitBy((n - 2) / 2, cmp, b));
                     let a1 = <- chanL;
                     let res = match a1 {
                         case None         => (k, v)
-                        case Some(kl, vl) => selector(kl, vl, k, v)
+                        case Some(kl, vl) => cmp(kl, vl, k, v)
                     };
                     let b1 = <- chanR;
                     match b1 {
                         case None         => Some(res)
                         case Some(kr, vr) =>
                             let (ks, vs) = res;
-                            Some(selector(ks, vs, kr, vr))
+                            Some(cmp(ks, vs, kr, vr))
                     }
             }
 
@@ -860,23 +860,20 @@ namespace RedBlackTree {
     /// Applies `cmp` over the tree `t` sequentially and optionally returns the lowest
     /// element according to `cmp`.
     ///
-    def seqLimitBy(selector: (k, v, k, v) -> (k, v) & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
-        def loop(tt) = match tt {
-            case Leaf                   => None
-            case DoubleBlackLeaf        => None
-            case Node(_, a, k, v, b)    =>
-                let res = match loop(a) {
-                    case None         => (k, v)
-                    case Some(kl, vl) => selector(kl, vl, k, v)
-                };
-                match loop(b) {
-                    case None         => Some(res)
-                    case Some(kr, vr) =>
-                        let (ks, vs) = res;
-                        Some(selector(ks, vs, kr, vr))
-                }
-        };
-        loop(t)
+    def seqLimitBy(cmp: (k, v, k, v) -> (k, v) & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef = match t {
+        case Node(_, a, k, v, b) =>
+            let res = match seqLimitBy(cmp, a) {
+                case None         => (k, v)
+                case Some(kl, vl) => cmp(kl, vl, k, v)
+            };
+            match seqLimitBy(cmp, b) {
+                case None         => Some(res)
+                case Some(kr, vr) =>
+                    let (ks, vs) = res;
+                    Some(cmp(ks, vs, kr, vr))
+            }
+        case _ => None
+    }
 
     ///
     /// Returns the concatenation of the string representation of each key `k`
