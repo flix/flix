@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, FormalParam, FreeVar, Root}
+import ca.uwaterloo.flix.language.ast.ErasedAst.{Def, Expression, FormalParam, Root}
 import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
@@ -46,7 +46,7 @@ object GenClosureClasses {
   }
 
   /**
-    * Returns the byte code for the closure with the given symbol `sym` and free variables `freeVars`.
+    * Returns the byte code for the closure.
     *
     * For example, given the symbol `mkAdder` with type (Int32, Int32) -> Int32 and the free variable `x`, we create:
     *
@@ -86,21 +86,21 @@ object GenClosureClasses {
       functionInterface.name.toInternalName, null)
 
     // Generate a field for each captured variable.
-    for ((freeVar, index) <- closure.freeVars.zipWithIndex) {
-      // `JvmType` of `freeVar`
-      val varType = JvmOps.getErasedJvmType(freeVar.tpe)
+    for ((arg, index) <- closure.closureArgs.zipWithIndex) {
+      // `JvmType` of `arg`
+      val argType = JvmOps.getErasedJvmType(arg.tpe)
 
       // `clo$index` field
-      AsmOps.compileField(visitor, s"clo$index", varType, isStatic = false, isPrivate = false)
+      AsmOps.compileField(visitor, s"clo$index", argType, isStatic = false, isPrivate = false)
     }
 
     val defn = root.defs(closure.sym)
 
     // Invoke method of the class
-    compileInvokeMethod(visitor, classType, defn, closure.freeVars, tresult)
+    compileInvokeMethod(visitor, classType, defn, closure.closureArgs, tresult)
 
     // getUniqueThreadClosure method of the class
-    compileGetUniqueThreadClosureMethod(visitor, classType, defn, closure.freeVars)
+    compileGetUniqueThreadClosureMethod(visitor, classType, defn, closure.closureArgs)
 
     // Constructor of the class
     compileConstructor(visitor, functionInterface)
@@ -113,7 +113,7 @@ object GenClosureClasses {
     * Invoke method for the given `defn`, `classType`, and `resultType`.
     */
   private def compileInvokeMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def,
-                                  freeVars: List[FreeVar], resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
+                                  closureArgs: List[Expression], resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
     // Continuation class
     val continuationType = JvmOps.getContinuationInterfaceType(defn.tpe)
     val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(resultType))
@@ -124,26 +124,26 @@ object GenClosureClasses {
     invokeMethod.visitCode()
 
     // Free variables
-    val frees = defn.formals.take(freeVars.length).map(x => FreeVar(x.sym, x.tpe))
+    val closureFormals = defn.formals.take(closureArgs.length)
 
     // Function parameters
-    val params = defn.formals.takeRight(defn.formals.length - freeVars.length)
+    val params = defn.formals.takeRight(defn.formals.length - closureArgs.length)
 
     // Enter label
     val enterLabel = new Label()
 
-    // Saving free variables on variable stack
-    for ((FreeVar(sym, tpe), ind) <- frees.zipWithIndex) {
-      // Erased type of the free variable
-      val erasedType = JvmOps.getErasedJvmType(tpe)
+    // Saving closure args variables on variable stack
+    for ((f, ind) <- closureFormals.zipWithIndex) {
+      // Erased type of the closure variable
+      val erasedType = JvmOps.getErasedJvmType(f.tpe)
 
-      // Getting the free variable from IFO
+      // Getting the closure variable from IFO
       invokeMethod.visitVarInsn(ALOAD, 0)
       invokeMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"clo$ind", erasedType.toDescriptor)
 
-      // Saving the free variable on variable stack
+      // Saving the closure variable on variable stack
       val iSTORE = AsmOps.getStoreInstruction(erasedType)
-      invokeMethod.visitVarInsn(iSTORE, sym.getStackOffset + 1)
+      invokeMethod.visitVarInsn(iSTORE, f.sym.getStackOffset + 1)
     }
 
     // Saving parameters on variable stack
@@ -186,7 +186,7 @@ object GenClosureClasses {
   }
 
   private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def,
-                                                  freeVars: List[FreeVar])(implicit root: Root, flix: Flix): Unit = {
+                                                  closureArgs: List[Expression])(implicit root: Root, flix: Flix): Unit = {
 
     val closureAbstractClass = JvmOps.getClosureAbstractClassType(defn.tpe)
 
@@ -198,9 +198,9 @@ object GenClosureClasses {
     m.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
 
     // transfer the closure arguments
-    for ((f, i) <- freeVars.zipWithIndex) {
+    for ((arg, i) <- closureArgs.zipWithIndex) {
       m.visitInsn(DUP)
-      val fieldDescriptor = JvmOps.getErasedJvmType(f.tpe).toDescriptor
+      val fieldDescriptor = JvmOps.getErasedJvmType(arg.tpe).toDescriptor
       m.visitIntInsn(ALOAD, 0)
       m.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"clo$i", fieldDescriptor)
       m.visitFieldInsn(PUTFIELD, classType.name.toInternalName, s"clo$i", fieldDescriptor)
