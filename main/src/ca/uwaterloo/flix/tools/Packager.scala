@@ -488,7 +488,7 @@ object Packager {
     * Here we use 1980 February to avoid the complexity introduced by this hack.
     *
     * @see <a href="https://bugs.openjdk.java.net/browse/JDK-4759491">JDK-4759491 that introduced the hack around 1980 January from Java 8+</a>
-    * @see <a href="https://bugs.openjdk.java.net/browse/JDK-6303183">JDK-6303183 that explains why the second should be even to create ZIP files in non platform specific way</a>
+    * @see <a href="https://bugs.openjdk.java.net/browse/JDK-6303183">JDK-6303183 that explains why the second should be even to create ZIP files in platform-independent way</a>
     * @see <a href="https://github.com/gradle/gradle/blob/445deb9aa988e506120b7918bf91acb421e429ba/subprojects/core/src/main/java/org/gradle/api/internal/file/archive/ZipCopyAction.java#L42-L57">A similar case from Gradle</a>
     */
   private val ENOUGH_OLD_CONSTANT_TIME: Long = new GregorianCalendar(1980, Calendar.FEBRUARY, 1, 0, 0, 0).getTimeInMillis
@@ -562,7 +562,7 @@ object Packager {
   }
 
   /**
-    * The comparator which compares Path objects by a non platform specific way.
+    * The comparator which compares Path objects by a non platform-specific way.
     * @see <a href="https://reproducible-builds.org/">Reproducible Builds</a>
     */
   class PathComparator extends Ordering[Path] {
@@ -575,8 +575,8 @@ object Packager {
       */
     private def iterate(p: Path): Iterator[String] =
       p.iterator.asScala.map(
-        // Convert Path to String, to compare the name of path elements by a non platform specific way.
-        // According to Javadoc, the implementation of `Path.compareTo(Path)` is platform specific.
+        // Convert Path to String, to compare the name of path elements by a platform-independent way.
+        // According to Javadoc, the implementation of `Path.compareTo(Path)` is platform-specific.
         Objects.toString
       )
 
