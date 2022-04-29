@@ -16,10 +16,13 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Index.traverse
+import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, Impl, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule, Sig, Spec, TypeParam}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
+
+import scala.annotation.tailrec
 
 object Indexer {
 
@@ -92,7 +95,7 @@ object Indexer {
       val idx3 = traverse(cases) {
         case (_, caze) => Index.occurrenceOf(caze)
       }
-    idx0 ++ idx1 ++ idx2 ++ idx3
+      idx0 ++ idx1 ++ idx2 ++ idx3
   }
 
   /**
@@ -325,6 +328,10 @@ object Indexer {
 
     case Expression.FixpointConstraintSet(cs, _, _, _) => traverse(cs)(visitConstraint)
 
+    case Expression.FixpointLambda(preds, exp, _, tpe, _, _) =>
+      val i0 = traverse(preds)(pred => Index.occurrenceOf(pred, getPredicateType(pred, tpe)))
+      val i1 = traverse(preds)(pred => Index.defOf(pred))
+      i0 ++ i1 ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
@@ -400,16 +407,37 @@ object Indexer {
     * Returns a reverse index for the given head predicate `h0`.
     */
   private def visitHead(h0: Predicate.Head): Index = h0 match {
-    case Head.Atom(pred, _, terms, _, _) => Index.occurrenceOf(pred) ++ Index.defOf(pred) ++ visitExps(terms)
+    case Head.Atom(pred, _, terms, tpe, _) => Index.occurrenceOf(pred, tpe) ++ Index.defOf(pred) ++ visitExps(terms)
   }
 
   /**
     * Returns a reverse index for the given body predicate `b0`.
     */
   private def visitBody(b0: Predicate.Body): Index = b0 match {
-    case Body.Atom(pred, _, _, _, terms, _, _) => Index.occurrenceOf(pred) ++ Index.useOf(pred) ++ visitPats(terms)
+    case Body.Atom(pred, _, _, _, terms, tpe, _) => Index.occurrenceOf(pred, tpe) ++ Index.useOf(pred) ++ visitPats(terms)
     case Body.Guard(exp, _) => visitExp(exp)
     case Body.Loop(_, exp, _) => visitExp(exp)
+  }
+
+  /**
+    * Returns the type of the given predicate `pred` inside the given type `tpe`.
+    */
+  private def getPredicateType(pred: Name.Pred, tpe: Type): Type = eraseAliases(tpe) match {
+    case Type.Apply(Type.Cst(TypeConstructor.Schema, _), row, loc) => getPredicateTypeFromRow(pred, row)
+    case _ => throw InternalCompilerException(s"Unexpected non-schema type: '$tpe'.")
+  }
+
+  /**
+    * Returns the type of the given predicate `pred` inside the given row type `tpe`.
+    */
+  @tailrec
+  private def getPredicateTypeFromRow(pred: Name.Pred, row: Type): Type = row match {
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(currentPred), _), predType, _), restRow, _) =>
+      if (pred == currentPred)
+        predType
+      else
+        getPredicateTypeFromRow(pred, restRow)
+    case _ => throw InternalCompilerException(s"Unexpected non-row type: '$row'.")
   }
 
   /**

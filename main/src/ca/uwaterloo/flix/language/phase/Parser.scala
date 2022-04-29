@@ -659,7 +659,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         ReifyType | ReifyPurity | Choose | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | New | ArrayLit | ArrayNew |
-        FNil | FSet | FMap | ConstraintSet | FixpointProject | FixpointSolveWithProject |
+        FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         UnaryLambda | FName | Tag | Hole
     }
@@ -1054,6 +1054,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def ConstraintSet: Rule1[ParsedAst.Expression] = rule {
       SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Constraint) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.FixpointConstraintSet
+    }
+
+    def FixpointLambda: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("#(") ~ optWS ~ oneOrMore(Names.Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ keyword("=>") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointLambda
     }
 
     def FixpointProject: Rule1[ParsedAst.Expression] = {

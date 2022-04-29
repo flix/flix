@@ -57,7 +57,7 @@ object FindReferencesProvider {
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.Pred(pred) => findPredReferences(pred)
+        case Entity.Pred(pred, _) => findPredReferences(pred)
 
         case Entity.LocalVar(sym, _) => findVarReferences(sym)
 
