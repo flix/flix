@@ -608,7 +608,9 @@ namespace Map {
     ///
     /// Returns `false` if `m` is the empty map.
     ///
-    @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
+    ///
+    @ParallelWhenPure @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
     pub def exists(f: (k, v) -> Bool & ef, m: Map[k, v]): Bool & ef =
         let Map(t) = m;
         def e() = RedBlackTree.exists(f, t);
@@ -626,9 +628,9 @@ namespace Map {
     ///
     /// Returns `true` if `m` is the empty map.
     ///
-    /// The function `f` must be pure.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
+    @ParallelWhenPure @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
     pub def forall(f: (k, v) -> Bool & ef, m: Map[k, v]): Bool & ef =
         let Map(t) = m;
         def fa() = RedBlackTree.forall(f, t);
