@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
@@ -14,7 +15,7 @@ import ca.uwaterloo.flix.util.Validation._
 import scala.annotation.tailrec
 
 /**
-  * Performs safety and well-formedness.
+  * Performs safety and well-formedness of Datalog constraints.
   */
 object Safety {
 
@@ -261,7 +262,17 @@ object Safety {
     //
     val posVars = positivelyDefinedVariables(c0)
 
-    val (latVars, relVars) = denotatedVariablesOf(c0)
+    // The variables that are used in a non-fixed lattice position
+    val latVars0 = latticenalVariablesOf(c0)
+    // the variables that are used in a fixed position
+    val fixedLatVars0 = fixedLatticenalVariablesOf(c0)
+
+    // The variables that are used in lattice position, either fixed or non-fixed.
+    val latVars = latVars0 union fixedLatVars0
+    // The lattice variables that are always fixed can be used in the head.
+    val safeLatVars = fixedLatVars0 -- latVars0
+    // The lattice variables that cannot be used relationally in the head.
+    val unsafeLatVars = latVars -- safeLatVars
 
     //
     // Compute the quantified variables in the constraint.
@@ -279,7 +290,7 @@ object Safety {
     //
     // Check that the free relational variables in the head atom are not lattice variables.
     //
-    val err2 = checkHeadPredicate(c0.head, latVars)
+    val err2 = checkHeadPredicate(c0.head, unsafeLatVars)
 
     err1 concat err2
   }
@@ -354,32 +365,37 @@ object Safety {
   }
 
   /**
+    * Computes the free variables that occur in lattice position in
+    * atoms that are marked with fix.
+    */
+  private def fixedLatticenalVariablesOf(c0: Constraint): Set[Symbol.VarSym] =
+    c0.body.flatMap(fixedLatticenalVariablesOf).toSet
+
+  /**
+    * Computes the lattice variables of `p0` if it is a fixed atom.
+    */
+  private def fixedLatticenalVariablesOf(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
+    case Body.Atom(_, Denotation.Latticenal, _, Fixity.Fixed, terms, _, _) =>
+      terms.lastOption.map(freeVarsOf).getOrElse(Set.empty)
+
+    case _ => Set.empty
+  }
+
+  /**
     * Computes the free variables that occur in a lattice position in
     * atoms that are not marked with fix.
     */
-  private def denotatedVariablesOf(c0: Constraint): (Set[Symbol.VarSym], Set[Symbol.VarSym]) =
-    c0.body.map(denotatedVariablesOf).reduce((p1, p2) => (p1._1 union p2._1, p1._2 union p2._2))
+  private def latticenalVariablesOf(c0: Constraint): Set[Symbol.VarSym] =
+    c0.body.flatMap(latticenalVariablesOf).toSet
 
   /**
     * Computes the lattice variables of `p0` if it is not a fixed atom.
     */
-  private def denotatedVariablesOf(p0: Predicate.Body): (Set[Symbol.VarSym], Set[Symbol.VarSym]) = p0 match {
-    case Predicate.Body.Atom(_, Denotation.Latticenal, _, _, terms, _, _) =>
-      // This atom is not fixed so the last term is latticenal - all its
-      // free variables are returned
-      val latVars = terms.lastOption.map(freeVarsOf).getOrElse(Set.empty)
-      ???
-    case Predicate.Body.Atom(_, Denotation.Latticenal, _, Fixity.Fixed, terms, _, _) =>
-      // This atom is not fixed so the last term is latticenal - all its
-      // free variables are returned
+  private def latticenalVariablesOf(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
+    case Predicate.Body.Atom(_, Denotation.Latticenal, _, Fixity.Loose, terms, _, _) =>
       terms.lastOption.map(freeVarsOf).getOrElse(Set.empty)
-      ???
-    case _ =>
-      // This case includes lattice atoms that are fixed among other things.
-      // The fix enforces stratification which means that the lattice variables
-      // can be used freely.
-      Set.empty
-      ???
+
+    case _ => Set.empty
   }
 
   /**

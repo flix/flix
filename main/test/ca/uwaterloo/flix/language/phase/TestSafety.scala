@@ -172,7 +172,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("UseOfLatticeVariable.05") {
     val input =
       """
-        |pub def f(): #{A(Int32, Int32), B(Int32; Int32), C(Int32; Int32) } = #{
+        |pub def f(): #{A(Int32), B(Int32, Int32), C(Int32; Int32) } = #{
         |    A(12) :- B(12, l), fix C(12; l).
         |}
         |""".stripMargin
