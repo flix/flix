@@ -52,7 +52,7 @@ namespace MutList {
     ///
     /// Returns an empty mutable list if `b >= e`.
     ///
-    pub def range(r: Region[r], b: Int32, e: Int32): MutList[Int32, r] \ Write(r) =
+    pub def range(b: Int32, e: Int32, r: Region[r]): MutList[Int32, r] \ Write(r) =
         let minCap = minCapacity();
         let d = e - b;
         let c = Order.max(d, minCap);
