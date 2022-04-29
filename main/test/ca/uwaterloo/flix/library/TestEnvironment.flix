@@ -76,7 +76,6 @@ namespace TestEnvironment {
         Environment.getVirtualProcessors() > 0
 
     @test
-    def testGetArgs(): List[String] =
-        Environment.getArgs();
+    def testGetArgs(): List[String] = Environment.getArgs()
 
 }
