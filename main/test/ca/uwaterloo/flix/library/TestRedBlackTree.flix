@@ -324,6 +324,24 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // parExists                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def parExists01(): Bool & Impure =
+        let l = List.range(1, 2001);
+        let Map(t) = List.zip(l, l) |> List.toMap;
+        RedBlackTree.parExists(threads() - 1, (k, v) -> k == 1002 and v == 1002, t)
+
+    @test
+    def parExists02(): Bool & Impure =
+        let l1 = List.range(1, 2001);
+        let l2 = List.range(-2000, 0);
+        let Map(t) = List.zip(l1, l2) |> List.toMap;
+        RedBlackTree.parExists(threads() - 1, (k, v) -> k == 1002 and v == -999, t)
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // sumValues                                                               //
     /////////////////////////////////////////////////////////////////////////////
 

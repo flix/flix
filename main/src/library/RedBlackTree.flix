@@ -339,7 +339,41 @@ namespace RedBlackTree {
             case Node(_, a, k, v, b) => if (f(k, v)) true else loop(a) or loop(b)
             case _                   => false
         };
-        loop(t)
+        if (useParallelEvaluation(t))
+            parExists(threads() - 1, f, t) as & Pure
+        else
+            loop(t)
+
+    ///
+    ///
+    ///
+    pub def parExists(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool & Impure =
+        if (n <= 1)
+            seqExists(f, t)
+        else
+            match t {
+                case Node(_, a, k, v, b) =>
+                    let chanL = chan Bool 1;
+                    let chanR = chan Bool 1;
+                    if (f(k, v))
+                        true
+                    else {
+                        spawn (chanL <- parExists((n - 2) / 2, f, a)); // We divide the rest of the threads as follows:
+                        spawn (chanR <- parExists((n - 2) / 2, f, b)); // We spawn two new threads leaving us with n - 2
+                        let a1 = <- chanL;                             // that we distribute over the two spanned threads.
+                        let b1 = <- chanR;
+                        a1 or b1
+                    }
+                case _ => false
+            }
+
+    ///
+    ///
+    ///
+    def seqExists(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool = match t {
+        case Node(_, a, k, v, b) => if (f(k, v)) true else seqExists(f, a) or seqExists(f, b)
+        case _                   => false
+    }
 
     ///
     /// Returns `true` if and only if all key-value pairs in `t` satisfy the predicate `f`.
