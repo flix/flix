@@ -263,9 +263,9 @@ object Safety {
     val posVars = positivelyDefinedVariables(c0)
 
     // The variables that are used in a non-fixed lattice position
-    val latVars0 = latticenalVariablesOf(c0)
+    val latVars0 = nonFixedLatticeVariablesOf(c0)
     // the variables that are used in a fixed position
-    val fixedLatVars0 = fixedLatticenalVariablesOf(c0)
+    val fixedLatVars0 = fixedLatticeVariablesOf(c0)
 
     // The variables that are used in lattice position, either fixed or non-fixed.
     val latVars = latVars0 union fixedLatVars0
@@ -368,7 +368,7 @@ object Safety {
     * Computes the free variables that occur in lattice position in
     * atoms that are marked with fix.
     */
-  private def fixedLatticenalVariablesOf(c0: Constraint): Set[Symbol.VarSym] =
+  private def fixedLatticeVariablesOf(c0: Constraint): Set[Symbol.VarSym] =
     c0.body.flatMap(fixedLatticenalVariablesOf).toSet
 
   /**
@@ -385,7 +385,7 @@ object Safety {
     * Computes the free variables that occur in a lattice position in
     * atoms that are not marked with fix.
     */
-  private def latticenalVariablesOf(c0: Constraint): Set[Symbol.VarSym] =
+  private def nonFixedLatticeVariablesOf(c0: Constraint): Set[Symbol.VarSym] =
     c0.body.flatMap(latticenalVariablesOf).toSet
 
   /**
