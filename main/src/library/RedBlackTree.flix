@@ -331,18 +331,11 @@ namespace RedBlackTree {
     ///
     /// Returns `false` if `t` is the empty tree.
     ///
-    /// The function `f` must be pure.
-    ///
     @Parallel @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def exists(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool =
-        def loop(tt) = match tt {
-            case Node(_, a, k, v, b) => if (f(k, v)) true else loop(a) or loop(b)
-            case _                   => false
-        };
-        if (useParallelEvaluation(t))
-            parExists(threads() - 1, f, t) as & Pure
-        else
-            loop(t)
+    pub def exists(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Bool = match t {
+        case Node(_, a, k, v, b) => if (f(k, v)) true else exists(f, a) or exists(f, b)
+        case _                   => false
+    }
 
     ///
     /// Returns `true` if and only if at least one key-value pair in `t` satisfies the predicate `f`.
