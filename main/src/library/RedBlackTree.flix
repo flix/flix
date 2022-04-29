@@ -331,8 +331,8 @@ namespace RedBlackTree {
     ///
     /// Returns `false` if `t` is the empty tree.
     ///
-    @Parallel @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def exists(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Bool = match t {
+    @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
+    pub def exists(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Bool & ef = match t {
         case Node(_, a, k, v, b) => if (f(k, v)) true else exists(f, a) or exists(f, b)
         case _                   => false
     }
@@ -346,6 +346,7 @@ namespace RedBlackTree {
     ///
     /// Traverses the tree `t` in parallel.
     ///
+    @Parallel
     pub def parExists(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool & Impure =
         if (n <= 1)
             seqExists(f, t)
@@ -386,15 +387,56 @@ namespace RedBlackTree {
     ///
     /// Returns `true` if `t` is the empty tree.
     ///
+    @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
+    pub def forall(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Bool & ef = match t {
+        case Node(_, a, k, v, b) => if (f(k, v)) forall(f, a) and forall(f, b) else false
+        case _                   => true
+    }
+
+    ///
+    /// Returns `true` if and only if all key-value pairs in `t` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `t` is the empty tree.
+    ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def forall(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool =
-        def loop(tt) = match tt {
-            case Node(_, a, k, v, b) => if (f(k, v)) loop(a) and loop(b) else false
-            case _                   => true
-        };
-        loop(t)
+    /// Traverses the tree `t` in parallel.
+    ///
+    @Parallel
+    pub def parForall(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool & Impure =
+        if (n <= 1)
+            seqForall(f, t)
+        else
+            match t {
+                case Node(_, a, k, v, b) =>
+                    let chanL = chan Bool 1;
+                    let chanR = chan Bool 1;
+                    if (not f(k, v))
+                        false
+                    else {
+                        spawn (chanL <- parForall((n - 2) / 2, f, a)); // We divide the rest of the threads as follows:
+                        spawn (chanR <- parForall((n - 2) / 2, f, b)); // We spawn two new threads leaving us with n - 2
+                        let a1 = <- chanL;                             // that we distribute over the two spanned threads.
+                        let b1 = <- chanR;
+                        a1 and b1
+                    }
+                case _ => false
+            }
+
+    ///
+    /// Returns `true` if and only if all key-value pairs in `t` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `t` is the empty tree.
+    ///
+    /// The function `f` must be pure.
+    ///
+    /// Note that this is equivalent to `exists` but for performance reasons -- to avoid
+    /// megamorphic calls -- we use a copy here.
+    ///
+    def seqForall(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool = match t {
+        case Node(_, a, k, v, b) => if (f(k, v)) seqForall(f, a) and seqForall(f, b) else false
+        case _                   => true
+    }
 
     ///
     /// Applies `f` to every key-value pair of `t`.
