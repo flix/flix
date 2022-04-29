@@ -306,7 +306,7 @@ namespace Array {
     /// Returns `[]` if `b >= e`.
     ///
     @Time(e - b) @Space(e - b)
-    pub def range(r: Region[r], b: Int32, e: Int32): ScopedArray[Int32, r] \ Write(r) =
+    pub def range(b: Int32, e: Int32, r: Region[r]): ScopedArray[Int32, r] \ Write(r) =
         if (b >= e)
             [] @ r
         else {

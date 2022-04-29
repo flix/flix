@@ -402,32 +402,32 @@ def findRight07(): Bool & Impure = Array.findRight(i -> i > 2, [6,7]) == Some(7)
 
 @test
 def range01(): Bool & Impure =
-    let a = Array.range(static, 1, 0);
+    let a = Array.range(1, 0, static);
     Array.sameElements(a, []: Array[Int32])
 
 @test
 def range02(): Bool & Impure =
-    let a = Array.range(static, 1, 1);
+    let a = Array.range(1, 1, static);
     Array.sameElements(a, []: Array[Int32])
 
 @test
 def range03(): Bool & Impure =
-    let a = Array.range(static, 1, 2);
+    let a = Array.range(1, 2, static);
     Array.sameElements(a, [1])
 
 @test
 def range04(): Bool & Impure =
-    let a = Array.range(static, 1, 3);
+    let a = Array.range(1, 3, static);
     Array.sameElements(a, [1,2])
 
 @test
 def range05(): Bool & Impure =
-    let a = Array.range(static, 1, 4);
+    let a = Array.range(1, 4, static);
     Array.sameElements(a, [1,2,3])
 
 @test
 def range06(): Bool & Impure =
-    let a = Array.range(static, -1, 3);
+    let a = Array.range(-1, 3, static);
     Array.sameElements(a, [-1,0,1,2])
 
 /////////////////////////////////////////////////////////////////////////////
@@ -4227,14 +4227,14 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def minimumBy01(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, []: Array[Int32]) == None
 
     @test
-    def minimumBy02(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, Array.range(static, 0, 5)) == Some(0)
+    def minimumBy02(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, Array.range(0, 5, static)) == Some(0)
 
     @test
-    def minimumBy03(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, Array.range(static, 4, 10)) == Some(4)
+    def minimumBy03(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, Array.range(4, 10, static)) == Some(4)
 
     @test
     def minimumBy04(): Bool & Impure =
-        let a = Array.range(static, 10, 20);
+        let a = Array.range(10, 20, static);
         a[5] = -22;
         Array.minimumBy((x, y) -> x <=> y, a) == Some(-22)
 
@@ -4246,14 +4246,14 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def maximumBy01(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, []: Array[Int32]) == None
 
     @test
-    def maximumBy02(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, Array.range(static, 0, 5)) == Some(4)
+    def maximumBy02(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, Array.range(0, 5, static)) == Some(4)
 
     @test
-    def maximumBy03(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, Array.range(static, 4, 10)) == Some(9)
+    def maximumBy03(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, Array.range(4, 10, static)) == Some(9)
 
     @test
     def maximumBy04(): Bool & Impure =
-        let a = Array.range(static, 10, 20);
+        let a = Array.range(10, 20, static);
         a[5] = 42;
         Array.maximumBy((x, y) -> x <=> y, a) == Some(42)
 
@@ -4287,7 +4287,7 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def sum07(): Bool & Impure =
-        Array.range(static, 1, 101) |> Array.sum == 5050
+        Array.range(1, 101, static) |> Array.sum == 5050
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4333,11 +4333,11 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def toDelayList03(): Bool & Impure =
-        Array.range(static, -1000, 1000) |> Array.toDelayList == DelayList.range(-1000, 1000)
+        Array.range(-1000, 1000, static) |> Array.toDelayList == DelayList.range(-1000, 1000)
 
     @test
     def toDelayList04(): Bool & Impure =
-        Array.range(static, -1000, 1000) |> Array.toDelayList |> DelayList.toArray `sameElements` Array.range(static, -1000, 1000)
+        Array.range(-1000, 1000, static) |> Array.toDelayList |> DelayList.toArray `sameElements` Array.range(-1000, 1000, static)
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
@@ -4523,7 +4523,7 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def toIterator04(): Bool & Impure =
-        Array.range(static, -100, 100) |> Array.toIterator |> Iterator.toArray `sameElements` Array.range(static, -100, 100)
+        Array.range(-100, 100, static) |> Array.toIterator |> Iterator.toArray `sameElements` Array.range(-100, 100, static)
 
     @test
     def toIterator05(): Bool & Impure = {
@@ -4597,11 +4597,7 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
         MutList.push!(2, v);
         MutList.push!(3, v);
         MutList.sameElements(Array.toMutList([1, 2, 3]), v)
-/*
-    @test
-    def toMutList04(): Bool & Impure =
-        MutList.sameElements(Array.range(static, 0, 100) |> Array.toMutList, MutList.range(0, 100))
-*/
+
     @test
     def toMutList05(): Bool & Impure =
         let v = Array.toMutList([1, 2, 3]);

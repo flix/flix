@@ -270,7 +270,7 @@ namespace TestIterator {
 
     @test
     def toArray04(): Bool & Impure =
-        Iterator.range(-100, 200) |> Iterator.toArray `Array.sameElements` Array.range(static, -100, 200)
+        Iterator.range(-100, 200) |> Iterator.toArray `Array.sameElements` Array.range(-100, 200, static)
 
 
     /////////////////////////////////////////////////////////////////////////////
