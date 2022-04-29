@@ -333,7 +333,7 @@ namespace RedBlackTree {
     ///
     /// The function `f` must be pure.
     ///
-    @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
+    @Parallel @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
     pub def exists(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool =
         def loop(tt) = match tt {
             case Node(_, a, k, v, b) => if (f(k, v)) true else loop(a) or loop(b)
@@ -345,7 +345,13 @@ namespace RedBlackTree {
             loop(t)
 
     ///
+    /// Returns `true` if and only if at least one key-value pair in `t` satisfies the predicate `f`.
     ///
+    /// Returns `false` if `t` is the empty tree.
+    ///
+    /// The function `f` must be pure.
+    ///
+    /// Traverses the tree `t` in parallel.
     ///
     pub def parExists(n: Int32, f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool & Impure =
         if (n <= 1)
@@ -368,7 +374,14 @@ namespace RedBlackTree {
             }
 
     ///
+    /// Returns `true` if and only if at least one key-value pair in `t` satisfies the predicate `f`.
     ///
+    /// Returns `false` if `t` is the empty tree.
+    ///
+    /// The function `f` must be pure.
+    ///
+    /// Note that this is equivalent to `exists` but for performance reasons -- to avoid
+    /// megamorphic calls -- we use a copy here.
     ///
     def seqExists(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Bool = match t {
         case Node(_, a, k, v, b) => if (f(k, v)) true else seqExists(f, a) or seqExists(f, b)
