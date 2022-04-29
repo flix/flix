@@ -565,17 +565,15 @@ namespace RedBlackTree {
     ///
     /// Sequentially maps `f` over the tree `t`.
     ///
-    def seqMapWithKey(f: (k, v1) -> v2 & ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & ef =
-        def loop(tt) = match tt {
-            case Leaf                   => Leaf
-            case DoubleBlackLeaf        => DoubleBlackLeaf
-            case Node(c, a, k, v, b)    =>
-                let a1 = loop(a);
-                let v1 = f(k, v);
-                let b1 = loop(b);
-                Node(c, a1, k, v1, b1)
-        };
-        loop(t)
+    def seqMapWithKey(f: (k, v1) -> v2 & ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] & ef = match t {
+        case Leaf                => Leaf
+        case DoubleBlackLeaf     => DoubleBlackLeaf
+        case Node(c, a, k, v, b) =>
+            let a1 = seqMapWithKey(f, a);
+            let v1 = f(k, v);
+            let b1 = seqMapWithKey(f, b);
+            Node(c, a1, k, v1, b1)
+    }
 
     ///
     /// Applies `f` over the tree `t` in parallel and returns the number of elements
@@ -609,17 +607,15 @@ namespace RedBlackTree {
     /// Applies `f` over the tree `t` sequentially from left to right and returns the number of elements
     /// that satisfy the predicate `f`.
     ///
-    def seqCount(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 =
-        def loop(tt) = match tt {
-            case Leaf                   => 0
-            case DoubleBlackLeaf        => 0
-            case Node(_, a, k, v, b)    =>
-                let a1 = loop(a);
-                let v1 = if (f(k, v)) 1 else 0;
-                let b1 = loop(b);
-                a1 + v1 + b1
-        };
-        loop(t)
+    def seqCount(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Int32 = match t {
+        case Leaf                => 0
+        case DoubleBlackLeaf     => 0
+        case Node(_, a, k, v, b) =>
+            let a1 = seqCount(f, a);
+            let v1 = if (f(k, v)) 1 else 0;
+            let b1 = seqCount(f, b);
+            a1 + v1 + b1
+    }
 
     ///
     /// Returns the sum of all keys in the tree `t`.
@@ -637,17 +633,15 @@ namespace RedBlackTree {
     /// Returns the sum of all key-value pairs `k => v` in the tree `t`
     /// according to the function `f`.
     ///
-    pub def sumWith(f: (k, v) -> Int32 & ef, t: RedBlackTree[k, v]): Int32 & ef =
-        def loop(tt) = match tt {
-            case Leaf                => 0
-            case DoubleBlackLeaf     => 0
-            case Node(_, a, k, v, b) =>
-                let x = loop(a);
-                let y = f(k, v);
-                let z = loop(b);
-                x + y + z
-        };
-        loop(t)
+    pub def sumWith(f: (k, v) -> Int32 & ef, t: RedBlackTree[k, v]): Int32 & ef = match t {
+        case Leaf                => 0
+        case DoubleBlackLeaf     => 0
+        case Node(_, a, k, v, b) =>
+            let x = sumWith(f, a);
+            let y = f(k, v);
+            let z = sumWith(f, b);
+            x + y + z
+    }
 
     ///
     /// Returns the sum of all key-value pairs `k => v` in the tree `t`
@@ -684,17 +678,15 @@ namespace RedBlackTree {
     /// Note that this is equivalent to `sumWith` but for performance reasons -- to avoid
     /// megamorphic calls -- we use a copy here.
     ///
-    def seqSumWith(f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 =
-        def loop(tt) = match tt {
-            case Leaf                => 0
-            case DoubleBlackLeaf     => 0
-            case Node(_, a, k, v, b) =>
-                let x = loop(a);
-                let y = f(k, v);
-                let z = loop(b);
-                x + y + z
-        };
-        loop(t)
+    def seqSumWith(f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 = match t {
+        case Leaf                => 0
+        case DoubleBlackLeaf     => 0
+        case Node(_, a, k, v, b) =>
+            let x = seqSumWith(f, a);
+            let y = f(k, v);
+            let z = seqSumWith(f, b);
+            x + y + z
+    }
 
     ///
     /// Returns the product of all keys in the tree `t`.
