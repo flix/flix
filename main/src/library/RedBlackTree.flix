@@ -274,12 +274,10 @@ namespace RedBlackTree {
     ///
     /// That is, the result is of the form: `f(...f(f(s, k1, v1), k2, v2)..., vn)`.
     ///
-    pub def foldLeft(f: (b, k, v) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef =
-        def loop(tt, acc) = match tt {
-            case Node(_, a, k, v, b) => loop(b, f(loop(a, acc), k, v))
-            case _                   => acc
-        };
-        loop(t, s)
+    pub def foldLeft(f: (b, k, v) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = match t {
+        case Node(_, a, k, v, b) => foldLeft(f, f(foldLeft(f, s, a), k, v), b)
+        case _                   => s
+    }
 
     ///
     /// Applies `f` to a start value `z` and all key-value pairs in `t` going from right to left.
