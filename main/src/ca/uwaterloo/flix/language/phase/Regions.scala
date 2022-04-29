@@ -330,6 +330,11 @@ object Regions {
     case Expression.FixpointConstraintSet(cs0, _, tpe, loc) =>
       ().toSuccess // TODO
 
+    case Expression.FixpointLambda(_, exp, _, tpe, _, loc) =>
+      flatMapN(visitExp(exp)) {
+        case e => checkType(tpe, loc)
+      }
+
     case Expression.FixpointMerge(exp1, exp2, _, tpe, _, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => checkType(tpe, loc)
