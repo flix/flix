@@ -15,12 +15,13 @@
  */
 
 use Fixpoint/Ast.Denotation;
+use Fixpoint/Shared.PredSym;
 
 namespace Fixpoint/Ram {
     pub enum RamSym[v] {
-        case Full(String, Int32, Denotation[v])
-        case Delta(String, Int32, Denotation[v])
-        case New(String, Int32, Denotation[v])
+        case Full(PredSym, Int32, Denotation[v])
+        case Delta(PredSym, Int32, Denotation[v])
+        case New(PredSym, Int32, Denotation[v])
     }
 
     instance Eq[RamSym[v]] {
@@ -52,9 +53,9 @@ namespace Fixpoint/Ram {
 
     instance ToString[RamSym[v]] {
         pub def toString(ramSym: RamSym[v]): String = match ramSym {
-            case Full(name, _, _) => name
-            case Delta(name, _, _) => "Δ${name}"
-            case New(name, _, _) => "Δ${name}'"
+            case Full(sym, _, _)    => "${sym}"
+            case Delta(sym, _, _)   => "Δ${sym}"
+            case New(sym, _, _)     => "Δ${sym}'"
         }
     }
 
