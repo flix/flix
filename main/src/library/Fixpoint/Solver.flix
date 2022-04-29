@@ -15,13 +15,14 @@
  */
 
 use Boxable.{box, unbox};
-use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, PredSym, Denotation};
+use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, Denotation};
 use Fixpoint/Ast.Datalog.{Datalog, Model, Join};
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
-use Fixpoint/Ast.PredSym.PredSym;
 use Fixpoint/Ast.Denotation.{Relational, Latticenal};
 use Fixpoint/Ram.RamSym;
+use Fixpoint/Shared.PredSym;
+use Fixpoint/Shared.PredSym.PredSym;
 
 use Fixpoint.Tuple.Tuple;
 
