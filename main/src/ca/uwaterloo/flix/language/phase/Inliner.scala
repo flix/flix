@@ -67,7 +67,7 @@ object Inliner {
    * Converts definition from OccurrenceAst to LiftedAst.
    */
   private def visitDef(def0: OccurrenceAst.Def)(implicit flix: Flix, root: Root): LiftedAst.Def = {
-    val convertedExp = visitExp(def0.exp, Map.empty)(root, flix, def0.sym)
+    val convertedExp = visitExp(def0.exp, Map.empty)(root, flix)
     val fparams = def0.fparams.map {
       case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
     }
@@ -89,7 +89,7 @@ object Inliner {
    * Performs inlining operations on the expression `exp0` of type OccurrenceAst.Expression.
    * Returns an expression of type Expression
    */
-  private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Expression])(implicit root: Root, flix: Flix, sym0: Symbol.DefnSym): LiftedAst.Expression = exp0 match {
+  private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Expression])(implicit root: Root, flix: Flix): LiftedAst.Expression = exp0 match {
     case OccurrenceAst.Expression.Unit(loc) => LiftedAst.Expression.Unit(loc)
 
     case OccurrenceAst.Expression.Null(tpe, loc) => LiftedAst.Expression.Null(tpe, loc)
@@ -147,8 +147,8 @@ object Inliner {
           // If `def1` is a single non-self call or
           // it is trivial
           // then inline the body of `def1`
-          if (canInlineDef(def1, sym0)) {
-            val e1 = convertTailCall(def1.exp)
+          if (canInlineDef(def1)) {
+            val e1 = rewriteTailCalls(def1.exp)
             // Map for substituting formal parameters of a function with the freevars currently in scope
             val env = def1.fparams.map(_.sym).zip(freevars.map(_.sym)).toMap
             bindFormals(e1, def1.fparams.drop(freevars.length).map(_.sym), as, env)
@@ -166,8 +166,8 @@ object Inliner {
       // If `def1` is a single non-self call or
       // it is trivial
       // then inline the body of `def1`
-      if (canInlineDef(def1, sym0)) {
-        val e1 = convertTailCall(def1.exp)
+      if (canInlineDef(def1)) {
+        val e1 = rewriteTailCalls(def1.exp)
         bindFormals(e1, def1.fparams.map(_.sym), as, Map.empty)
       } else {
         LiftedAst.Expression.ApplyDef(sym, as, tpe, purity, loc)
@@ -182,7 +182,7 @@ object Inliner {
           // If `def1` is a single non-self call or
           // it is trivial
           // then inline the body of `def1`
-          if (canInlineDef(def1, sym0)) {
+          if (canInlineDef(def1)) {
             // Map for substituting formal parameters of a function with the freevars currently in scope
             val env = def1.fparams.map(_.sym).zip(freevars.map(_.sym)).toMap
             bindFormals(def1.exp, def1.fparams.drop(freevars.length).map(_.sym), as, env)
@@ -200,10 +200,8 @@ object Inliner {
       // If `def1` is a single non-self call or
       // it is trivial
       // then inline the body of `def1`
-      if (canInlineDef(def1, sym0)) {
-        // ApplySelfTail -> ApplyTDefTail
-        val e = convertSelfTailCall(def1.exp)
-        bindFormals(e, def1.fparams.map(_.sym), as, Map.empty)
+      if (canInlineDef(def1)) {
+        bindFormals(def1.exp, def1.fparams.map(_.sym), as, Map.empty)
       } else {
         LiftedAst.Expression.ApplyDefTail(sym, as, tpe, purity, loc)
       }
@@ -455,10 +453,15 @@ object Inliner {
    * A def can be inlined if
    * Its body consist of a single non self call or
    * Its body has a codesize below the inline threshold and its not being inlined into itself or
-   * It only occurs once in the entire program
+   * It only occurs once in the entire program and
+   * It does not contain a reference to itself
    */
-  private def canInlineDef(def0: OccurrenceAst.Def, sym0: Symbol.DefnSym): Boolean = {
-    def0.context.occur != DontInline && (def0.context.isNonSelfCall || (def0.context.codeSize < InlineThreshold && def0.sym != sym0) || def0.context.occur == Once)
+  private def canInlineDef(def0: OccurrenceAst.Def): Boolean = {
+    val mayInline = def0.context.occur != DontInline && !def0.context.isSelfRecursive
+    val isBelowInlineThreshold = def0.context.size < InlineThreshold
+    val occursOnce = def0.context.occur == Once
+    val canInline = def0.context.isDirectCall || isBelowInlineThreshold || occursOnce
+    mayInline && canInline
   }
 
   /**
@@ -512,29 +515,29 @@ object Inliner {
   }
 
   /**
-   * Convert a given tailCall expression `exp0` to a non tail call
+   * Converts all tail calls in `exp0` to non-tail calls.
    */
-  private def convertTailCall(exp0: OccurrenceAst.Expression): OccurrenceAst.Expression = exp0 match {
+  private def rewriteTailCalls(exp0: OccurrenceAst.Expression): OccurrenceAst.Expression = exp0 match {
     case OccurrenceAst.Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
-      val e2 = convertTailCall(exp2)
+      val e2 = rewriteTailCalls(exp2)
       OccurrenceAst.Expression.Let(sym, exp1, e2, occur, tpe, purity, loc)
 
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
-      val e2 = convertTailCall(exp2)
-      val e3 = convertTailCall(exp3)
+      val e2 = rewriteTailCalls(exp2)
+      val e3 = rewriteTailCalls(exp3)
       OccurrenceAst.Expression.IfThenElse(exp1, e2, e3, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Branch(e0, br0, tpe, purity, loc) =>
       val br = br0 map {
-        case (sym, exp) => sym -> convertTailCall(exp)
+        case (sym, exp) => sym -> rewriteTailCalls(exp)
       }
       OccurrenceAst.Expression.Branch(e0, br, tpe, purity, loc)
 
     case OccurrenceAst.Expression.SelectChannel(rules, default, tpe, loc) =>
       val rs = rules map {
-        case OccurrenceAst.SelectChannelRule(sym, chan, exp) => OccurrenceAst.SelectChannelRule(sym, chan, convertTailCall(exp))
+        case OccurrenceAst.SelectChannelRule(sym, chan, exp) => OccurrenceAst.SelectChannelRule(sym, chan, rewriteTailCalls(exp))
       }
-      val d = default.map(exp => convertTailCall(exp))
+      val d = default.map(exp => rewriteTailCalls(exp))
       OccurrenceAst.Expression.SelectChannel(rs, d, tpe, loc)
 
     case OccurrenceAst.Expression.ApplyCloTail(exp, args, tpe, purity, loc) => OccurrenceAst.Expression.ApplyClo(exp, args, tpe, purity, loc)
@@ -542,37 +545,6 @@ object Inliner {
     case OccurrenceAst.Expression.ApplyDefTail(sym, args, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, args, tpe, purity, loc)
 
     case OccurrenceAst.Expression.ApplySelfTail(sym, _, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, actuals, tpe, purity, loc)
-
-    case _ => exp0
-  }
-
-  /**
-   * Convert a given ApplySelfTail expression `exp0` to a ApplyDefTail
-   */
-  private def convertSelfTailCall(exp0: OccurrenceAst.Expression): OccurrenceAst.Expression = exp0 match {
-    case OccurrenceAst.Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
-      val e2 = convertSelfTailCall(exp2)
-      OccurrenceAst.Expression.Let(sym, exp1, e2, occur, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
-      val e2 = convertSelfTailCall(exp2)
-      val e3 = convertSelfTailCall(exp3)
-      OccurrenceAst.Expression.IfThenElse(exp1, e2, e3, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.Branch(e0, br0, tpe, purity, loc) =>
-      val br = br0 map {
-        case (sym, exp) => sym -> convertSelfTailCall(exp)
-      }
-      OccurrenceAst.Expression.Branch(e0, br, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.SelectChannel(rules, default, tpe, loc) =>
-      val rs = rules map {
-        case OccurrenceAst.SelectChannelRule(sym, chan, exp) => OccurrenceAst.SelectChannelRule(sym, chan, convertSelfTailCall(exp))
-      }
-      val d = default.map(exp => convertSelfTailCall(exp))
-      OccurrenceAst.Expression.SelectChannel(rs, d, tpe, loc)
-
-    case OccurrenceAst.Expression.ApplySelfTail(sym, _, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDefTail(sym, actuals, tpe, purity, loc)
 
     case _ => exp0
   }
