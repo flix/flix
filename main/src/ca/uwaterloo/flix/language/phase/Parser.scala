@@ -127,11 +127,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndPurity ~ OptTypeConstraintList ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ OptTypeConstraintList ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
     }
 
     def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndPurity ~ OptTypeConstraintList ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ OptTypeConstraintList ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
@@ -139,7 +139,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Op: Rule1[ParsedAst.Declaration.Op] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndPurity ~ OptTypeConstraintList ~ SP ~> ParsedAst.Declaration.Op
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ OptTypeConstraintList ~ SP ~> ParsedAst.Declaration.Op
     }
 
     def Enum: Rule1[ParsedAst.Declaration.Enum] = {
@@ -283,40 +283,22 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     SP ~ Names.Attribute ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Attribute
   }
 
-  def TypeAndPurity: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = rule {
-    Type ~ optional((WS ~ "&" ~ WS ~ Type) | PurityAlt)
+  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.EffectOrPurity]] = rule {
+    Type ~ optional(optWS ~ EffectSetOrBool)
   }
 
-  def PurityAlt: Rule1[ParsedAst.Type] = {
-    def Var: Rule1[ParsedAst.Purity.Var] = rule {
-      SP ~ Names.Variable ~ SP ~> ParsedAst.Purity.Var
+  def EffectSetOrBool: Rule1[ParsedAst.EffectOrPurity] = {
+    def Set: Rule1[ParsedAst.EffectOrPurity] = rule {
+      "\\" ~ optWS ~ Effects.EffectSet ~> ParsedAst.EffectOrPurity.Effect
     }
 
-    def Read: Rule1[ParsedAst.Purity.Read] = rule {
-      keyword("Read") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Purity.Read
-    }
-
-    def Write: Rule1[ParsedAst.Purity.Write] = rule {
-      keyword("Write") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Purity.Write
-    }
-
-    def Single: Rule1[ParsedAst.Type] = rule {
-      SP ~ (Var | Read | Write) ~ SP ~> ((sp1: SourcePosition, pur: ParsedAst.Purity, sp2: SourcePosition) => ParsedAst.Type.Union(sp1, Seq(pur), sp2))
-    }
-
-    def Union: Rule1[ParsedAst.Type] = rule {
-      SP ~ "{" ~ optWS ~ zeroOrMore(Var | Read | Write).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Union
-    }
-
-    // unused for now
-    def EffectAlt: Rule1[ParsedAst.EffectSet] = rule {
-      optWS ~ "\\" ~ optWS ~ Effects.EffectSet
+    def Bool: Rule1[ParsedAst.EffectOrPurity] = rule {
+      "&" ~ optWS ~ Type ~> ParsedAst.EffectOrPurity.Purity
     }
 
     rule {
-      WS ~ "\\" ~ WS ~ (Single | Union)
+      Set | Bool
     }
-
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -677,7 +659,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         ReifyType | ReifyPurity | Choose | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | New | ArrayLit | ArrayNew |
-        FNil | FSet | FMap | ConstraintSet | FixpointProject | FixpointSolveWithProject |
+        FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         UnaryLambda | FName | Tag | Hole
     }
@@ -1072,6 +1054,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def ConstraintSet: Rule1[ParsedAst.Expression] = rule {
       SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Constraint) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.FixpointConstraintSet
+    }
+
+    def FixpointLambda: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("#(") ~ optWS ~ oneOrMore(Names.Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ keyword("=>") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointLambda
     }
 
     def FixpointProject: Rule1[ParsedAst.Expression] = {

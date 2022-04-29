@@ -15,17 +15,19 @@
  */
 
 use Boxable.{box, unbox};
-use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, PredSym, Denotation};
+use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, Denotation};
 use Fixpoint/Ast.Datalog.{Datalog, Model, Join};
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
-use Fixpoint/Ast.PredSym.PredSym;
 use Fixpoint/Ast.Denotation.{Relational, Latticenal};
 use Fixpoint/Ram.RamSym;
+use Fixpoint/Shared.PredSym;
+use Fixpoint/Shared.PredSym.PredSym;
 
 use Fixpoint.Tuple.Tuple;
 
 namespace Fixpoint {
+
     ///
     /// Returns the minimal model of the given Datalog program `d`.
     /// The minimal model is given by the model semantics for Datalog programs with stratified negation.
@@ -107,6 +109,13 @@ namespace Fixpoint {
             Model
         case Join(d1, d2) => union(project(p, d1), project(p, d2))
     } as & Pure
+
+    ///
+    /// Returns the given Datalog program `d` with all predicates except `preds` renamed.
+    ///
+    @Internal
+    pub def rename(_preds: Array[PredSym], d: Datalog[v]): Datalog[v] with Order[v], ToString[v] =
+        d
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.

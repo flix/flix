@@ -728,13 +728,13 @@ object JvmOps {
   def getTagsOf(tpe: MonoType)(implicit root: Root, flix: Flix): Set[TagInfo] = tpe match {
     case enumType@MonoType.Enum(_, args) =>
       // Retrieve the enum.
-      val enum = root.enums(enumType.sym)
+      val enum0 = root.enums(enumType.sym)
 
       // Compute the tag info.
-      enum.cases.foldLeft(Set.empty[TagInfo]) {
+      enum0.cases.foldLeft(Set.empty[TagInfo]) {
         case (sacc, (_, Case(enumSym, tagName, uninstantiatedTagType, _))) =>
           // TODO: Magnus: It would be nice if this information could be stored somewhere...
-          val subst = Unification.unifyTypes(hackMonoType2Type(enum.tpeDeprecated), hackMonoType2Type(tpe)).get
+          val subst = Unification.unifyTypes(hackMonoType2Type(enum0.tpeDeprecated), hackMonoType2Type(tpe)).get
           val tagType = subst(hackMonoType2Type(uninstantiatedTagType))
 
           sacc + TagInfo(enumSym, tagName.name, args, tpe, hackType2MonoType(tagType))

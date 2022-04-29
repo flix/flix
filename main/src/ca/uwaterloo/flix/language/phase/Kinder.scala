@@ -83,7 +83,7 @@ object Kinder {
   /**
     * Performs kinding on the given enum.
     */
-  private def visitEnum(enum: ResolvedAst.Enum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Enum, KindError] = enum match {
+  private def visitEnum(enum0: ResolvedAst.Enum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Enum, KindError] = enum0 match {
     case ResolvedAst.Enum(doc, ann, mod, sym, tparams0, derives, cases0, tpeDeprecated0, sc0, loc) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams0)
 
@@ -615,6 +615,12 @@ object Kinder {
         cs => KindedAst.Expression.FixpointConstraintSet(cs, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
+    case ResolvedAst.Expression.FixpointLambda(preds, exp, loc) =>
+      val expVal = visitExp(exp, kenv, taenv, root)
+      mapN(expVal) {
+        case e => KindedAst.Expression.FixpointLambda(preds, e, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      }
+
     case ResolvedAst.Expression.FixpointMerge(exp10, exp20, loc) =>
       val exp1Val = visitExp(exp10, kenv, taenv, root)
       val exp2Val = visitExp(exp20, kenv, taenv, root)
@@ -876,7 +882,7 @@ object Kinder {
           val k1 = Kind.Arrow(t2.kind, expectedKind)
           val t1Val = visitType(t10, k1, kenv, taenv, root)
           mapN(t1Val) {
-            t1 => Type.Apply(t1, t2, loc)
+            t1 => mkApply(t1, t2, loc)
           }
       }
     case Type.Ascribe(t, k, loc) =>
@@ -918,10 +924,10 @@ object Kinder {
     * Performs kinding on the given type constraint under the given kind environment.
     */
   private def visitTypeConstraint(tconstr: ResolvedAst.TypeConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.TypeConstraint, KindError] = tconstr match {
-    case ResolvedAst.TypeConstraint(clazz, tpe0, loc) =>
-      val classKind = getClassKind(root.classes(clazz))
+    case ResolvedAst.TypeConstraint(head, tpe0, loc) =>
+      val classKind = getClassKind(root.classes(head.sym))
       mapN(visitType(tpe0, classKind, kenv, taenv, root)) {
-        tpe => Ast.TypeConstraint(clazz, tpe, loc)
+        tpe => Ast.TypeConstraint(head, tpe, loc)
       }
   }
 
@@ -1017,8 +1023,8 @@ object Kinder {
     * Infers a kind environment from the given type constraint.
     */
   private def inferTconstr(tconstr: ResolvedAst.TypeConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = tconstr match {
-    case ResolvedAst.TypeConstraint(clazz, tpe, loc) =>
-      val kind = getClassKind(root.classes(clazz))
+    case ResolvedAst.TypeConstraint(head, tpe, loc) =>
+      val kind = getClassKind(root.classes(head.sym))
       inferType(tpe, kind, kenv: KindEnv, taenv, root)
   }
 
@@ -1131,7 +1137,7 @@ object Kinder {
   /**
     * Gets the kind of the enum.
     */
-  private def getEnumKind(enum: ResolvedAst.Enum)(implicit flix: Flix): Kind = enum match {
+  private def getEnumKind(enum0: ResolvedAst.Enum)(implicit flix: Flix): Kind = enum0 match {
     case ResolvedAst.Enum(_, _, _, _, tparams, _, _, _, _, _) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams)
       tparams.tparams.foldRight(Kind.Star: Kind) {
@@ -1158,11 +1164,13 @@ object Kinder {
   }
 
   /**
-    * Asserts that the type variable is unkinded.
+    * Creates the type application `t1[t2]`, while simplifying trivial boolean formulas.
     */
-  private def assertUnkindedVar(tvar: Type.Var): Type.UnkindedVar = tvar match {
-    case unkinded: Type.UnkindedVar => unkinded
-    case kinded: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable.")
+  private def mkApply(t1: Type, t2: Type, loc: SourceLocation): Type = t1 match {
+    case Type.Apply(Type.Cst(TypeConstructor.And, _), arg, _) => Type.mkAnd(arg, t2, loc)
+    case Type.Apply(Type.Cst(TypeConstructor.Or, _), arg, _) => Type.mkOr(arg, t2, loc)
+    case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(t2, loc)
+    case t => Type.Apply(t, t2, loc)
   }
 
   /**

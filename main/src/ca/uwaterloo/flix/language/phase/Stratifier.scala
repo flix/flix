@@ -163,6 +163,9 @@ object Stratifier {
         case (e1, e2) => Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
       }
 
+    case Expression.Region(_, _) =>
+      exp0.toSuccess
+
     case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Scope(sym, regionVar, e, tpe, eff, loc)
@@ -380,6 +383,13 @@ object Stratifier {
           Expression.FixpointConstraintSet(cs, s, tpe, loc)
       }
 
+    case Expression.FixpointLambda(preds, exp, _, tpe, eff, loc) =>
+      // Compute the stratification.
+      val stf = stratify(g, tpe, loc)
+      mapN(stf) {
+        case s => Expression.FixpointLambda(preds, exp, s, tpe, eff, loc)
+      }
+
     case Expression.FixpointMerge(exp1, exp2, _, tpe, eff, loc) =>
       // Compute the stratification.
       val stf = stratify(g, tpe, loc)
@@ -512,6 +522,9 @@ object Stratifier {
 
     case Expression.LetRec(_, _, exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+
+    case Expression.Region(_, _) =>
+      LabelledGraph.empty
 
     case Expression.Scope(_, _, exp, _, _, _) =>
       labelledGraphOfExp(exp)
@@ -656,6 +669,9 @@ object Stratifier {
       cs.foldLeft(LabelledGraph.empty) {
         case (dg, c) => dg + labelledGraphOfConstraint(c)
       }
+
+    case Expression.FixpointLambda(_, exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
 
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)

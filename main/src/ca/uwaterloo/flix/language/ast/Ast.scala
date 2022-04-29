@@ -465,17 +465,24 @@ object Ast {
     */
   case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
 
+  case object TypeConstraint {
+    /**
+      * Represents the head (located class) of a type constraint.
+      */
+    case class Head(sym: Symbol.ClassSym, loc: SourceLocation)
+  }
+
   /**
     * Represents that the type `arg` must belong to class `sym`.
     */
-  case class TypeConstraint(sym: Symbol.ClassSym, arg: Type, loc: SourceLocation) {
+  case class TypeConstraint(head: TypeConstraint.Head, arg: Type, loc: SourceLocation) {
     override def equals(o: Any): Boolean = o match {
       case that: TypeConstraint =>
-        this.sym == that.sym && this.arg == that.arg
+        this.head.sym == that.head.sym && this.arg == that.arg
       case _ => false
     }
 
-    override def hashCode(): Int = Objects.hash(sym, arg)
+    override def hashCode(): Int = Objects.hash(head.sym, arg)
   }
 
   /**

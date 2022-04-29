@@ -58,9 +58,9 @@ instance Foldable[Identity] {
         let Identity(x1) = x;
         f(s, x1)
 
-    pub def foldRight(f: (a, b) -> b & ef, s: b, x: Identity[a]): b & ef =
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, x: Identity[a]): b & ef =
         let Identity(x1) = x;
-        f(x1, s)
+        f(x1, _ -> s as & ef)
 }
 
 instance Traversable[Identity] {

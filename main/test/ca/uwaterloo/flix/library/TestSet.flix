@@ -393,31 +393,16 @@ def foldLeft04(): Bool = Set.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, Set#
 // foldRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRight01(): Bool = Set.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Set#{}) == 100
+def foldRight01(): Bool = Set.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Set#{}) == 100
 
 @test
-def foldRight02(): Bool = Set.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Set#{1}) == 198
+def foldRight02(): Bool = Set.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Set#{1}) == 198
 
 @test
-def foldRight03(): Bool = Set.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Set#{2, 1}) == 194
+def foldRight03(): Bool = Set.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Set#{2, 1}) == 194
 
 @test
-def foldRight04(): Bool = Set.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Set#{3, 2, 1}) == 382
-
-/////////////////////////////////////////////////////////////////////////////
-// foldRightLazy                                                           //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def foldRightLazy01(): Bool = Set.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, Set#{}) == 100
-
-@test
-def foldRightLazy02(): Bool = Set.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, Set#{1}) == 198
-
-@test
-def foldRightLazy03(): Bool = Set.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, Set#{2, 1}) == 194
-
-@test
-def foldRightLazy04(): Bool = Set.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, Set#{3, 2, 1}) == 382
+def foldRight04(): Bool = Set.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Set#{3, 2, 1}) == 382
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //

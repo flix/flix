@@ -177,6 +177,10 @@ object TypedAst {
 
     case class LetRec(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class Region(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+      def eff: Type = Type.Pure
+    }
+
     case class Scope(sym: Symbol.VarSym, regionVar: Type.KindedVar, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -266,6 +270,8 @@ object TypedAst {
     case class FixpointConstraintSet(cs: List[TypedAst.Constraint], stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def eff: Type = Type.Pure
     }
+
+    case class FixpointLambda(preds: List[Name.Pred], exp: TypedAst.Expression, stf: Ast.Stratification, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class FixpointMerge(exp1: TypedAst.Expression, exp2: TypedAst.Expression, stf: Ast.Stratification, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 

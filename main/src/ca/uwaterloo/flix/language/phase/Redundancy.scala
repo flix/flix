@@ -359,6 +359,9 @@ object Redundancy {
       else
         (used ++ shadowedVar) - sym
 
+    case Expression.Region(_, _) =>
+      Used.empty
+
     case Expression.Scope(sym, _, exp, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
@@ -609,6 +612,9 @@ object Redundancy {
       cs.foldLeft(Used.empty) {
         case (used, con) => used ++ visitConstraint(con, env0, rc: RecursionContext)
       }
+
+    case Expression.FixpointLambda(_, exp, _, _, _, _) =>
+      visitExp(exp, env0, rc)
 
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)

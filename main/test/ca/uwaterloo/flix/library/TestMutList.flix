@@ -720,16 +720,21 @@ namespace TestMutList {
     }
 
     @test
+<<<<<<< HEAD
     def foldLeft05(): Bool = region r {
         MutList.foldRight((acc, x) -> acc + x, 42, new MutList(r)) == 42
     }
 
+=======
+    def foldLeft05(): Bool & Impure = MutList.foldLeft((acc, x) -> acc + x, 42, MutList.new()) == 42
+>>>>>>> main
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
+<<<<<<< HEAD
     def foldRight01(): Bool = region r {
         MutList.foldRight((x, acc) -> acc + x, 0, MutList.range(r, 1, 5)) == 10
     }
@@ -760,28 +765,28 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldRightLazy01(): Bool = region r {
-        MutList.foldRightLazy((x, acc) -> force acc + x, 0, MutList.range(r, 1, 5)) == 10
+    def foldRight01(): Bool = region r {
+        MutList.foldRight((x, k) -> k() + x, 0, MutList.range(r, 1, 5)) == 10
     }
 
     @test
-    def foldRightLazy02(): Bool = region r {
-        MutList.foldRightLazy((x, acc) -> Int32.toString(x) + force acc, "", MutList.range(r, 3, 8)) == "34567"
+    def foldRight02(): Bool = region r {
+        MutList.foldRight((x, k) -> Int32.toString(x) + k(), "", MutList.range(r, 3, 8)) == "34567"
     }
 
     @test
-    def foldRightLazy03(): Bool = region r {
-        MutList.foldRightLazy((x, acc) -> x :: force acc, Nil, MutList.range(r, 0, 6)) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+    def foldRight03(): Bool = region r {
+        MutList.foldRight((x, k) -> x :: k(), Nil, MutList.range(r, 0, 6)) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
     }
 
     @test
-    def foldRightLazy04(): Bool = region r {
-        MutList.foldRightLazy((x, acc) -> x - force acc, 0, MutList.range(r, 0, 100)) == -50
+    def foldRight04(): Bool = region r {
+        MutList.foldRight((x, k) -> x - k(), 0, MutList.range(r, 0, 100)) == -50
     }
 
     @test
-    def foldRightLazy05(): Bool = region r {
-        MutList.foldRightLazy((x, acc) -> x + force acc, 42, new MutList(r)) == 42
+    def foldRight05(): Bool = region r {
+        MutList.foldRight((x, k) -> x + k(), 42, new MutList(r)) == 42
     }
 
 
