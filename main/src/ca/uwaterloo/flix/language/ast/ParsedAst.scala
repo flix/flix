@@ -1029,6 +1029,16 @@ object ParsedAst {
     case class FixpointConstraintSet(sp1: SourcePosition, cs: Seq[Constraint], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Fixpoint Lambda expression.
+      *
+      * @param sp1    the position of the first character in the expression.
+      * @param idents the input and output predicates.
+      * @param exp    the constraint expression.
+      * @param sp2    the position of the last character in the expression.
+      */
+    case class FixpointLambda(sp1: SourcePosition, idents: Seq[Name.Ident], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Fixpoint Compose expression.
       *
       * @param exp1 the first constraint expression.
