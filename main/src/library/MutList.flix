@@ -57,7 +57,7 @@ namespace MutList {
         let d = e - b;
         let c = Order.max(d, minCap);
         let f = i -> { let x = b + i; if (x < e) x else $DEFAULT$ };
-        MutList(ref Array.init(r, f, c) @ r, ref d @ r)
+        MutList(ref Array.init(f, c, r) @ r, ref d @ r)
 
     ///
     /// Returns the element at position `i` in the mutable list `v`.

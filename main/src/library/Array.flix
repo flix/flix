@@ -311,7 +311,7 @@ namespace Array {
             [] @ r
         else {
             let f = x -> x + b;
-            init(r, f, e - b)
+            init(f, e - b, r)
         }
 
     ///
@@ -379,7 +379,7 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def map(f: a -> b & ef, a: Array[a]): Array[b] & Impure =
         let len = length(a);
-        init(static, i -> f(a[i]), len)
+        init(i -> f(a[i]), len, static)
 
     ///
     /// Apply `f` to every element in array `arr`. Array `arr` is mutated.
@@ -405,7 +405,7 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def mapWithIndex(f: (a, Int32) -> b & ef, a: Array[a]): Array[b] & Impure =
         let len = length(a);
-        init(static, i -> f(a[i], i), len)
+        init(i -> f(a[i], i), len, static)
 
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
@@ -429,7 +429,7 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def flatMap(f: a -> Array[b] & ef, a: Array[a]): Array[b] & Impure =
         let len = length(a);
-        init(static, i -> f(a[i]), len) |> flatten
+        init(i -> f(a[i]), len, static) |> flatten
 
     ///
     /// Returns the reverse of `a`.
@@ -438,7 +438,7 @@ namespace Array {
     pub def reverse(a: Array[a]): Array[a] & Impure =
         let len = length(a);
         let end = len - 1;
-        init(static, i -> a[end - i], len)
+        init(i -> a[end - i], len, static)
 
     ///
     /// Reverse the array `arr`, mutating it in place.
@@ -484,7 +484,7 @@ namespace Array {
     def rotateLeftHelper(n: Int32, arr: Array[a]): Array[a] & Impure =
         let len = length(arr);
         let f = i -> { let i1 = n + i; arr[i1 rem len] };
-        init(static, f, len)
+        init(f, len, static)
 
     ///
     /// Rotate the contents of array `arr` by `n` steps to the right.
@@ -511,7 +511,7 @@ namespace Array {
         let n1 = n rem len;
         let start = len - n1;
         let f = i -> { let i1 = start + i; a[i1 rem len]};
-        init(static, f, len)
+        init(f, len, static)
 
     ///
     /// Returns a copy of `a` with the element at index `i` replaced by `x`.
@@ -521,7 +521,7 @@ namespace Array {
     @Time(length(a)) @Space(length(a))
     pub def update(i: Int32, x: a, a: Array[a]): Array[a] & Impure =
         let f = ix -> if (ix == i) x else a[ix];
-        init(static, f, length(a))
+        init(f, length(a), static)
 
     ///
     /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
@@ -660,7 +660,7 @@ namespace Array {
             if (jlen == 0 or uniformHelper(a, jlen))
                 a
             else
-                init(static, i -> init(static, j -> a[j][i], ilen), jlen)
+                init(i -> init(j -> a[j][i], ilen, static), jlen, static)
         }
 
     ///
@@ -1175,7 +1175,7 @@ namespace Array {
     @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
     pub def zip(a: Array[a], b: Array[b]): Array[(a,b)] & Impure =
         let len = Int32.min(length(a), length(b));
-        init(static, i -> (a[i], b[i]), len)
+        init(i -> (a[i], b[i]), len, static)
 
     ///
     /// Returns an array where the element at index `i` is `f(x, y)` where
@@ -1186,7 +1186,7 @@ namespace Array {
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
     pub def zipWith(f: (a, b) -> c & ef, a: Array[a], b: Array[b]): Array[c] & Impure =
         let len = Int32.min(length(a), length(b));
-        init(static, i -> f(a[i], b[i]), len)
+        init(i -> f(a[i], b[i]), len, static)
 
     ///
     /// Returns a pair of arrays, the first containing all first components in `a`
@@ -1358,7 +1358,7 @@ namespace Array {
     /// Build an array of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init(r: Region[r], f: Int32 -> a & ef, len: Int32): ScopedArray[a, r] \ { ef, Write(r) } =
+    pub def init(f: Int32 -> a & ef, len: Int32, r: Region[r]): ScopedArray[a, r] \ { ef, Write(r) } =
         if (len <= 0)
             [] @ r
         else {
@@ -1480,7 +1480,7 @@ namespace Array {
     pub def updateSequence(i: Int32, sub: Array[a], a: Array[a]): Array[a] & Impure =
         let end = i + length(sub);
         let f = ix -> if (ix >= i and ix < end) sub[ix - i] else a[ix];
-        init(static, f, length(a))
+        init(f, length(a), static)
 
     ///
     /// Update the mutable array `a` with the elements starting at index `i` replaced by `sub`.
