@@ -76,8 +76,7 @@ namespace TestEnvironment {
         Environment.getVirtualProcessors() > 0
 
     @test
-    def testGetArgs(): Bool =
-        let _ = Environment.getArgs();
-        true
+    def testGetArgs(): List[String] =
+        Environment.getArgs();
 
 }
