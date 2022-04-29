@@ -219,31 +219,27 @@ namespace RedBlackTree {
     /// Otherwise returns `None`.
     ///
     @Time(Int32.log2(size(t))) @Space(1)
-    pub def get(k: k, t: RedBlackTree[k, v]): Option[v] with Order[k] =
-        def loop(tt) = match tt {
-            case Node(_, a, k1, v, b) => match k <=> k1 {
-                case LessThan    => loop(a)
-                case EqualTo     => Some(v)
-                case GreaterThan => loop(b)
-            }
-            case _ => None
-        };
-        loop(t)
+    pub def get(k: k, t: RedBlackTree[k, v]): Option[v] with Order[k] = match t {
+        case Node(_, a, k1, v, b) => match k <=> k1 {
+            case LessThan    => get(k, a)
+            case EqualTo     => Some(v)
+            case GreaterThan => get(k, b)
+        }
+        case _ => None
+    }
 
     ///
     /// Returns `true` if and only if `t` contains the key `k`.
     ///
     @Time(Int32.log2(size(t))) @Space(1)
-    pub def memberOf(k: k, t: RedBlackTree[k, v]): Bool with Order[k] =
-        def loop(tt) = match tt {
-            case Node(_, a, k1, _, b) => match k <=> k1 {
-                case LessThan    => loop(a)
-                case EqualTo     => true
-                case GreaterThan => loop(b)
-            }
-            case _ => false
-        };
-        loop(t)
+    pub def memberOf(k: k, t: RedBlackTree[k, v]): Bool with Order[k] = match t {
+        case Node(_, a, k1, _, b) => match k <=> k1 {
+           case LessThan    => memberOf(k, a)
+           case EqualTo     => true
+           case GreaterThan => memberOf(k, b)
+        }
+        case _ => false
+    }
 
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from left to right.
