@@ -47,6 +47,7 @@ object Lowering {
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.solve")
     lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.union")
     lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.project")
+    lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.rename")
 
     lazy val Lift1: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift1")
     lazy val Lift2: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift2")
@@ -73,7 +74,7 @@ object Lowering {
     lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadTerm")
     lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyTerm")
 
-    lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.PredSym")
+    lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Shared.PredSym")
     lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.VarSym")
 
     lazy val Denotation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Denotation")
@@ -125,6 +126,7 @@ object Lowering {
     lazy val SolveType: Type = Type.mkPureArrow(Datalog, Datalog, SourceLocation.Unknown)
     lazy val MergeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog, SourceLocation.Unknown)
     lazy val FilterType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog, SourceLocation.Unknown)
+    lazy val RenameType: Type = Type.mkPureUncurriedArrow(List(Type.mkArray(PredSym, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
   }
 
   /**
@@ -199,9 +201,9 @@ object Lowering {
     * Lowers the given type constraint `tconstr0`.
     */
   private def visitTypeConstraint(tconstr0: Ast.TypeConstraint)(implicit root: Root, flix: Flix): Ast.TypeConstraint = tconstr0 match {
-    case Ast.TypeConstraint(sym, tpe0, loc) =>
+    case Ast.TypeConstraint(head, tpe0, loc) =>
       val tpe = visitType(tpe0)
-      Ast.TypeConstraint(sym, tpe, loc)
+      Ast.TypeConstraint(head, tpe, loc)
   }
 
   /**
@@ -323,6 +325,10 @@ object Lowering {
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
       Expression.LetRec(sym, mod, e1, e2, t, eff, loc)
+
+    case Expression.Region(_, loc) =>
+      // Introduce a Unit value to represent the Region value.
+      Expression.Unit(loc)
 
     case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       // Introduce a Unit value to represent the Region value.
@@ -531,6 +537,14 @@ object Lowering {
 
     case Expression.FixpointConstraintSet(cs, _, _, loc) =>
       mkDatalog(cs, loc)
+
+    case Expression.FixpointLambda(preds, exp, _, _, eff, loc) =>
+      val defn = Defs.lookup(Defs.Rename)
+      val defExp = Expression.Def(defn.sym, Types.RenameType, loc)
+      val predExps = mkArray(preds.map(mkPredSym), Type.mkArray(Types.PredSym, loc), loc)
+      val argExps = predExps :: visitExp(exp) :: Nil
+      val resultType = Types.Datalog
+      Expression.Apply(defExp, argExps, resultType, eff, loc)
 
     case Expression.FixpointMerge(exp1, exp2, _, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Merge)
@@ -1340,6 +1354,9 @@ object Lowering {
       val e2 = substExp(exp2, subst)
       Expression.LetRec(s, mod, e1, e2, tpe, eff, loc)
 
+    case Expression.Region(tpe, loc) =>
+      Expression.Region(tpe, loc)
+
     case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)
       val e = substExp(exp, subst)
@@ -1499,6 +1516,10 @@ object Lowering {
     case Expression.Force(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.Force(e, tpe, eff, loc)
+
+    case Expression.FixpointLambda(preds, exp, stf, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.FixpointLambda(preds, e, stf, tpe, eff, loc)
 
     case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)

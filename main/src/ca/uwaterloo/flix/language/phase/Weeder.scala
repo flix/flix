@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
-import ca.uwaterloo.flix.language.ast.ParsedAst.{Purity, RecordFieldType}
+import ca.uwaterloo.flix.language.ast.ParsedAst.{Effect, EffectSet, RecordFieldType}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -943,6 +943,11 @@ object Weeder {
           }
       }
 
+    case ParsedAst.Expression.Static(sp1, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val tpe = Type.mkRegion(Type.False, loc)
+      WeededAst.Expression.Region(tpe, loc).toSuccess
+
     case ParsedAst.Expression.Scope(sp1, ident, exp, sp2) =>
       mapN(visitExp(exp)) {
         case e => WeededAst.Expression.Scope(ident, e, mkSL(sp1, sp2))
@@ -1026,7 +1031,7 @@ object Weeder {
           val fieldVal = visitFieldName(ident)
 
           mapN(expVal, fieldVal) {
-            case (e, _) => (ident -> e)
+            case (e, _) => ident -> e
           }
       }
 
@@ -1389,6 +1394,13 @@ object Weeder {
         case cs => WeededAst.Expression.FixpointConstraintSet(cs, loc)
       }
 
+    case ParsedAst.Expression.FixpointLambda(sp1, idents, exp, sp2) =>
+      val preds = idents.map(Name.mkPred).toList
+      val loc = mkSL(sp1, sp2)
+      mapN(visitExp(exp)) {
+        case e => WeededAst.Expression.FixpointLambda(preds, e, loc)
+      }
+
     case ParsedAst.Expression.FixpointCompose(exp1, exp2, sp2) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) =>
@@ -1512,7 +1524,7 @@ object Weeder {
           }
 
           // Extract the tuples of the result predicate.
-          WeededAst.Expression.FixpointProjectOut(pred, queryExp, dbExp, loc.asSynthetic.asReal)
+          WeededAst.Expression.FixpointProjectOut(pred, queryExp, dbExp, loc)
       }
 
     case ParsedAst.Expression.Reify(sp1, t0, sp2) =>
@@ -2118,7 +2130,7 @@ object Weeder {
   private def visitType(tpe: ParsedAst.Type): WeededAst.Type = tpe match {
     case ParsedAst.Type.Unit(sp1, sp2) => WeededAst.Type.Unit(mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Var(sp1, ident, sp2) => WeededAst.Type.Var(ident, mkSL(sp1, sp2))
+    case ParsedAst.Type.Var(sp1, ident, sp2) => visitEffectIdent(ident)
 
     case ParsedAst.Type.Ambiguous(sp1, qname, sp2) => WeededAst.Type.Ambiguous(qname, mkSL(sp1, sp2))
 
@@ -2144,7 +2156,7 @@ object Weeder {
       val t2 = visitType(tpe2)
       val eff = effOpt match {
         // NB: If there is no explicit effect then the arrow is pure.
-        case None => WeededAst.Type.True(loc)
+        case None => WeededAst.Type.True(loc.asSynthetic)
         case Some(f) => visitType(f)
       }
       mkArrow(t1, eff, t2, loc)
@@ -2155,7 +2167,7 @@ object Weeder {
       val tr = visitType(tresult)
       val eff = effOpt match {
         // NB: If there is no explicit effect then the arrow is pure.
-        case None => WeededAst.Type.True(loc)
+        case None => WeededAst.Type.True(loc.asSynthetic)
         case Some(f) => visitType(f)
       }
       mkCurriedArrow(ts, eff, tr, loc)
@@ -2192,50 +2204,11 @@ object Weeder {
       val t2 = visitType(tpe2)
       WeededAst.Type.Or(t1, t2, mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Union(sp1, efs, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      if (efs.isEmpty)
-        WeededAst.Type.True(loc)
-      else {
-        val zero = visitReadOrWrite(efs.head, loc)
-        efs.tail.foldLeft(zero) {
-          case (acc, rw) => WeededAst.Type.And(acc, visitReadOrWrite(rw, loc), loc)
-        }
-      }
-
     case ParsedAst.Type.Ascribe(tpe, kind, sp2) =>
       val sp1 = leftMostSourcePosition(tpe)
       val t = visitType(tpe)
       val k = visitKind(kind)
       WeededAst.Type.Ascribe(t, k, mkSL(sp1, sp2))
-  }
-
-  /**
-    * Returns the given read or write effect as a WeededAst type.
-    */
-  private def visitReadOrWrite(rw: ParsedAst.Purity, loc: SourceLocation): WeededAst.Type = rw match {
-    case Purity.Var(sp1, ident, sp2) =>
-      WeededAst.Type.Var(ident, mkSL(sp1, sp2))
-
-    case Purity.Read(idents) =>
-      if (idents.isEmpty)
-        WeededAst.Type.True(loc)
-      else {
-        val zero: WeededAst.Type = WeededAst.Type.Var(idents.head, idents.head.loc)
-        idents.tail.foldLeft(zero) {
-          case (acc, ident) => WeededAst.Type.And(acc, WeededAst.Type.Var(ident, ident.loc), loc)
-        }
-      }
-
-    case Purity.Write(idents) =>
-      if (idents.isEmpty)
-        WeededAst.Type.True(loc)
-      else {
-        val zero: WeededAst.Type = WeededAst.Type.Var(idents.head, idents.head.loc)
-        idents.tail.foldLeft(zero) {
-          case (acc, ident) => WeededAst.Type.And(acc, WeededAst.Type.Var(ident, ident.loc), loc)
-        }
-      }
   }
 
   /**
@@ -2302,9 +2275,61 @@ object Weeder {
   /**
     * Weeds the given parsed optional effect `effOpt`.
     */
-  private def visitEff(effOpt: Option[ParsedAst.Type], loc: SourceLocation)(implicit flix: Flix): Validation[WeededAst.Type, WeederError] = effOpt match {
+  private def visitEff(effOpt: Option[ParsedAst.EffectOrPurity], loc: SourceLocation)(implicit flix: Flix): Validation[WeededAst.Type, WeederError] = effOpt match {
     case None => WeededAst.Type.True(loc.asSynthetic).toSuccess
-    case Some(tpe) => visitType(tpe).toSuccess
+    case Some(ParsedAst.EffectOrPurity.Purity(tpe)) => visitType(tpe).toSuccess
+    case Some(ParsedAst.EffectOrPurity.Effect(s)) =>
+      // for now just pull out the reads and vars and convert them to types
+      s match {
+        case EffectSet.Singleton(sp1, eff, sp2) => visitSingleEffect(eff).toSuccess
+        case EffectSet.Pure(sp1, sp2) => WeededAst.Type.True(mkSL(sp1, sp2)).toSuccess
+        case EffectSet.Set(sp1, effs, sp2) =>
+          val loc = mkSL(sp1, sp2)
+          effs.toList match {
+            case Nil => WeededAst.Type.True(loc).toSuccess
+            case hd :: tl =>
+              val tpe = tl.foldLeft(visitSingleEffect(hd)) {
+                case (acc, eff) => WeededAst.Type.And(acc, visitSingleEffect(eff), loc)
+              }
+              tpe.toSuccess
+          }
+      }
+  }
+
+  /**
+    * Weeds the given single effect.
+    * Currently only handles Reads, Writes, and Vars
+    *
+    * @param eff the effect
+    */
+  private def visitSingleEffect(eff: ParsedAst.Effect): WeededAst.Type = eff match {
+    case Effect.Var(sp1, ident, sp2) =>
+      visitEffectIdent(ident)
+
+    case Effect.Read(sp1, idents, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      if (idents.isEmpty)
+        WeededAst.Type.True(loc)
+      else {
+        val zero: WeededAst.Type = WeededAst.Type.Var(idents.head, idents.head.loc)
+        idents.tail.foldLeft(zero) {
+          case (acc, ident) => WeededAst.Type.And(acc, visitEffectIdent(ident), loc)
+        }
+      }
+
+    case Effect.Write(sp1, idents, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      if (idents.isEmpty)
+        WeededAst.Type.True(loc)
+      else {
+        val zero: WeededAst.Type = WeededAst.Type.Var(idents.head, idents.head.loc)
+        idents.tail.foldLeft(zero) {
+          case (acc, ident) => WeededAst.Type.And(acc, visitEffectIdent(ident), loc)
+        }
+      }
+
+    // not handling set logic yet
+    case _ => WeededAst.Type.True(SourceLocation.Unknown)
   }
 
   /**
@@ -2469,6 +2494,17 @@ object Weeder {
   }
 
   /**
+    * Performs weeding on the given effect `ident`.
+    * Checks whether it is actually the keyword `static`.
+    */
+  private def visitEffectIdent(ident: Name.Ident): WeededAst.Type = {
+    if (ident.name == "static")
+      WeededAst.Type.False(ident.loc)
+    else
+      WeededAst.Type.Var(ident, ident.loc)
+  }
+
+  /**
     * Returns true iff the type is composed only of type variables possibly applied to other type variables.
     */
   private def isAllVars(tpe: WeededAst.Type): Boolean = tpe match {
@@ -2625,6 +2661,7 @@ object Weeder {
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Static(sp1, _) => sp1
     case ParsedAst.Expression.Scope(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Choose(sp1, _, _, _, _) => sp1
@@ -2663,6 +2700,7 @@ object Weeder {
     case ParsedAst.Expression.Force(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointConstraint(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointConstraintSet(sp1, _, _) => sp1
+    case ParsedAst.Expression.FixpointLambda(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.FixpointProjectInto(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
@@ -2695,7 +2733,6 @@ object Weeder {
     case ParsedAst.Type.Not(sp1, _, _) => sp1
     case ParsedAst.Type.And(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Or(tpe1, _, _) => leftMostSourcePosition(tpe1)
-    case ParsedAst.Type.Union(sp1, _, _) => sp1
     case ParsedAst.Type.Ascribe(tpe, _, _) => leftMostSourcePosition(tpe)
   }
 

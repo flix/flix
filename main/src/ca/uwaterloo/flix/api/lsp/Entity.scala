@@ -62,7 +62,7 @@ object Entity {
     def loc: SourceLocation = e.loc
   }
 
-  case class Pred(e: Name.Pred) extends Entity {
+  case class Pred(e: Name.Pred, tpe: ast.Type) extends Entity {
     def loc: SourceLocation = e.loc
   }
 

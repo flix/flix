@@ -47,6 +47,8 @@ object HoverProvider {
 
         case Entity.Pattern(pat) => hoverType(pat.tpe, pat.loc)
 
+        case Entity.Pred(pred, tpe) => hoverType(tpe, pred.loc)
+
         case Entity.LocalVar(sym, tpe) => hoverType(tpe, sym.loc)
 
         case Entity.Type(t) => hoverKind(t)

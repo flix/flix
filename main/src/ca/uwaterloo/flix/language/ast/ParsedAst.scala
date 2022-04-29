@@ -77,7 +77,7 @@ object ParsedAst {
       * @param tconstrs   the type constraints.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, pur: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, pur: Option[ParsedAst.EffectOrPurity], tconstrs: Seq[ParsedAst.TypeConstraint], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Signature Declaration.
@@ -95,7 +95,7 @@ object ParsedAst {
       * @param exp        the optional expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, pur: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
+    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, pur: Option[ParsedAst.EffectOrPurity], tconstrs: Seq[ParsedAst.TypeConstraint], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
 
     /**
       * Law Declaration.
@@ -126,7 +126,7 @@ object ParsedAst {
       * @param tconstrs   the type constraints.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Op(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, pur: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Op(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, pur: Option[ParsedAst.EffectOrPurity], tconstrs: Seq[ParsedAst.TypeConstraint], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Enum Declaration.
@@ -659,6 +659,14 @@ object ParsedAst {
     case class LetImport(sp1: SourcePosition, op: ParsedAst.JvmOp, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Static Region Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Static(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Scope Expression.
       *
       * @param sp1   the position of the first character in the expression.
@@ -1019,6 +1027,16 @@ object ParsedAst {
       * @param sp2 the position of the last character in the expression.
       */
     case class FixpointConstraintSet(sp1: SourcePosition, cs: Seq[Constraint], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Fixpoint Lambda expression.
+      *
+      * @param sp1    the position of the first character in the expression.
+      * @param idents the input and output predicates.
+      * @param exp    the constraint expression.
+      * @param sp2    the position of the last character in the expression.
+      */
+    case class FixpointLambda(sp1: SourcePosition, idents: Seq[Name.Ident], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Compose expression.
@@ -1459,15 +1477,6 @@ object ParsedAst {
       * @param sp2  the position of the last character in the type.
       */
     case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
-      * Represents a union of purities.
-      *
-      * @param sp1  the position of the first character in the type.
-      * @param purs the purities.
-      * @param sp2  the position of the last character in the type.
-      */
-    case class Union(sp1: SourcePosition, purs: Seq[ParsedAst.Purity], sp2: SourcePosition) extends Type
 
     /**
       * Kind Ascription.
@@ -2073,6 +2082,23 @@ object ParsedAst {
       */
     case class LatPredicateWithTypes(sp1: SourcePosition, name: Name.Ident, tpes: Seq[ParsedAst.Type], tpe: ParsedAst.Type, sp2: SourcePosition) extends PredicateType
 
+  }
+
+  /**
+    * Represents an effect represented either as a set or a boolean formula.
+    */
+  sealed trait EffectOrPurity
+
+  object EffectOrPurity {
+    /**
+      * Represents an effect implemented as a set.
+      */
+    case class Effect(s: EffectSet) extends EffectOrPurity
+
+    /**
+      * Represents an effect implemented as a boolean formula.
+      */
+    case class Purity(b: Type) extends EffectOrPurity
   }
 
 }
