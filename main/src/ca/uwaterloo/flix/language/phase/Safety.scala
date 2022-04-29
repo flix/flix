@@ -258,7 +258,7 @@ object Safety {
     //
     val posVars = positivelyDefinedVariables(c0)
 
-    val latVars = nonFixedLatticeVariablesOf(c0)
+    val (latVars, relVars) = denotatedVariablesOf(c0)
 
     //
     // Compute the quantified variables in the constraint.
@@ -268,9 +268,10 @@ object Safety {
     val quantVars = c0.cparams.map(_.sym).toSet
 
     //
-    // Check that all negative atoms only use positively defined variable symbols.
+    // Check that all negative atoms only use positively defined variable symbols
+    // and that lattice variables are not used in relational position.
     //
-    val err1 = c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars))
+    val err1 = c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars, latVars))
 
     //
     // Check that the free relational variables in the head atom are not lattice variables.
@@ -284,9 +285,33 @@ object Safety {
     * Performs safety and well-formedness checks on the given body predicate `p0`
     * with the given positively defined variable symbols `posVars`.
     */
-  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym]): List[CompilationMessage] = p0 match {
-    case Predicate.Body.Atom(_, _, polarity, _, terms, _, loc) =>
-      checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
+  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym]): List[CompilationMessage] = p0 match {
+    case Predicate.Body.Atom(_, den, polarity, _, terms, _, loc) =>
+      // check for non-positively bound negative variables.
+      val err1 = polarity match {
+        case Polarity.Positive => Nil
+        case Polarity.Negative =>
+          // Compute the free variables in the terms which are *not* bound by the lexical scope.
+          val freeVars = terms.flatMap(freeVarsOf).toSet intersect quantVars
+          val wildcardNegErrors = visitPats(terms, loc)
+
+          // Check if any free variables are not positively bound.
+          val variableNegErrors = ((freeVars -- posVars) map (makeIllegalNonPositivelyBoundVariableError(_, loc))).toList
+          wildcardNegErrors ++ variableNegErrors
+      }
+      // check for relational use of lattice variables. We still look at fixed
+      // atoms since latVars (which means that they occur non-fixed) cannot be
+      // in another fixed atom.
+      val relTerms = den match {
+        case Denotation.Relational => terms
+        case Denotation.Latticenal => terms.dropRight(1)
+      }
+      val err2 = relTerms.flatMap(freeVarsOf).filter(latVars.contains).map(
+        s => IllegalRelationalUseOfLatticeVariable(s, loc)
+      )
+
+      // Combine the messages
+      err1 ++ err2
 
     case Predicate.Body.Guard(exp, _) => visitExp(exp)
 
@@ -300,23 +325,6 @@ object Safety {
     */
   private def makeIllegalNonPositivelyBoundVariableError(sym: Symbol.VarSym, loc: SourceLocation): SafetyError =
     if (sym.isWild) IllegalNegativelyBoundWildVariable(sym, loc) else IllegalNonPositivelyBoundVariable(sym, loc)
-
-  /**
-    * Performs safety and well-formedness checks on an atom with the given polarity, terms, and positive variables.
-    */
-  private def checkBodyAtomPredicate(polarity: Polarity, terms: List[Pattern], posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], loc: SourceLocation): List[CompilationMessage] = {
-    polarity match {
-      case Polarity.Positive => Nil
-      case Polarity.Negative =>
-        // Compute the free variables in the terms which are *not* bound by the lexical scope.
-        val freeVars = terms.flatMap(freeVarsOf).toSet intersect quantVars
-        val wildcardNegErrors = visitPats(terms, loc)
-
-        // Check if any free variables are not positively bound.
-        val variableNegErrors = ((freeVars -- posVars) map (makeIllegalNonPositivelyBoundVariableError(_, loc))).toList
-        wildcardNegErrors ++ variableNegErrors
-    }
-  }
 
   /**
     * Returns all the positively defined variable symbols in the given constraint `c0`.
@@ -346,22 +354,29 @@ object Safety {
     * Computes the free variables that occur in a lattice position in
     * atoms that are not marked with fix.
     */
-  private def nonFixedLatticeVariablesOf(c0: Constraint): Set[Symbol.VarSym] =
-    c0.body.flatMap(nonFixedLatticeVariablesOf).toSet
+  private def denotatedVariablesOf(c0: Constraint): (Set[Symbol.VarSym], Set[Symbol.VarSym]) =
+    c0.body.map(denotatedVariablesOf).reduce((p1, p2) => (p1._1 union p2._1, p1._2 union p2._2))
 
   /**
     * Computes the lattice variables of `p0` if it is not a fixed atom.
     */
-  private def nonFixedLatticeVariablesOf(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
-    case Predicate.Body.Atom(_, Denotation.Latticenal, _, Fixity.Loose, terms, _, _) =>
+  private def denotatedVariablesOf(p0: Predicate.Body): (Set[Symbol.VarSym], Set[Symbol.VarSym]) = p0 match {
+    case Predicate.Body.Atom(_, Denotation.Latticenal, _, _, terms, _, _) =>
+      // This atom is not fixed so the last term is latticenal - all its
+      // free variables are returned
+      val latVars = terms.lastOption.map(freeVarsOf).getOrElse(Set.empty)
+      ???
+    case Predicate.Body.Atom(_, Denotation.Latticenal, _, Fixity.Fixed, terms, _, _) =>
       // This atom is not fixed so the last term is latticenal - all its
       // free variables are returned
       terms.lastOption.map(freeVarsOf).getOrElse(Set.empty)
+      ???
     case _ =>
       // This case includes lattice atoms that are fixed among other things.
       // The fix enforces stratification which means that the lattice variables
       // can be used freely.
       Set.empty
+      ???
   }
 
   /**
