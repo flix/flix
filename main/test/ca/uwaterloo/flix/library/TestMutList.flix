@@ -720,48 +720,13 @@ namespace TestMutList {
     }
 
     @test
-<<<<<<< HEAD
     def foldLeft05(): Bool = region r {
         MutList.foldRight((acc, x) -> acc + x, 42, new MutList(r)) == 42
     }
 
-=======
-    def foldLeft05(): Bool & Impure = MutList.foldLeft((acc, x) -> acc + x, 42, MutList.new()) == 42
->>>>>>> main
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-<<<<<<< HEAD
-    def foldRight01(): Bool = region r {
-        MutList.foldRight((x, acc) -> acc + x, 0, MutList.range(r, 1, 5)) == 10
-    }
-
-    @test
-    def foldRight02(): Bool = region r {
-        MutList.foldRight((x, acc) -> Int32.toString(x) + acc, "", MutList.range(r, 3, 8)) == "34567"
-    }
-
-    @test
-    def foldRight03(): Bool = region r {
-        MutList.foldRight((x, acc) -> x :: acc, Nil, MutList.range(r, 0, 6)) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
-    }
-
-    @test
-    def foldRight04(): Bool = region r {
-        MutList.foldRight((x, acc) -> x - acc, 0, MutList.range(r, 0, 100)) == -50
-    }
-
-    @test
-    def foldRight05(): Bool = region r {
-        MutList.foldRight((x, acc) -> x + acc, 42, new MutList(r)) == 42
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // foldRightLazy                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
