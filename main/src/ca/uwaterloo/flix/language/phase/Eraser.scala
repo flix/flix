@@ -107,11 +107,8 @@ object Eraser {
     case FinalAst.Expression.Var(sym, tpe, loc) =>
       ErasedAst.Expression.Var(sym, tpe, loc)
 
-    case FinalAst.Expression.Closure(sym, freeVars, fnMonoType, tpe, loc) =>
-      val newFreeVars = freeVars.map {
-        case FinalAst.FreeVar(freeSym, freeTpe) => ???
-      }
-      ErasedAst.Expression.Closure(sym, ???, fnMonoType, tpe, loc)
+    case FinalAst.Expression.Closure(sym, closureArgs, fnMonoType, tpe, loc) =>
+      ErasedAst.Expression.Closure(sym, closureArgs.map(visitExp), fnMonoType, tpe, loc)
 
     case FinalAst.Expression.ApplyClo(exp, args, tpe, loc) =>
       ErasedAst.Expression.ApplyClo(visitExp(exp), args.map(visitExp), tpe, loc)

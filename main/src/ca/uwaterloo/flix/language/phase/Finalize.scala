@@ -108,9 +108,9 @@ object Finalize {
         FinalAst.Expression.Var(sym, t, loc)
 
       case LiftedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
-        val fvs = freeVars.map(visitFreeVar)
         val t = visitType(tpe)
-        FinalAst.Expression.Closure(sym, fvs, getFunctionTypeTemporaryToBeRemoved(fvs, t), t, loc)
+        val fnMonoType = getFunctionTypeTemporaryToBeRemoved(freeVars, t)
+        FinalAst.Expression.Closure(sym, ???, fnMonoType, t, loc)
 
       case LiftedAst.Expression.ApplyClo(exp, args, tpe, _, loc) =>
         val as = args map visit
@@ -387,11 +387,6 @@ object Finalize {
     FinalAst.FormalParam(p0.sym, tpe)
   }
 
-  private def visitFreeVar(v0: LiftedAst.FreeVar): FinalAst.FreeVar = {
-    val tpe = visitType(v0.tpe)
-    FinalAst.FreeVar(v0.sym, tpe)
-  }
-
   // TODO: Should be private
 
   /**
@@ -502,9 +497,9 @@ object Finalize {
   }
 
   // TODO: Deprecated
-  private def getFunctionTypeTemporaryToBeRemoved(fvs: List[FinalAst.FreeVar], tpe: MonoType): MonoType = tpe match {
+  private def getFunctionTypeTemporaryToBeRemoved(fvs: List[LiftedAst.FreeVar], tpe: MonoType): MonoType = tpe match {
     case MonoType.Arrow(targs, tresult) =>
-      val freeArgs = fvs.map(_.tpe)
+      val freeArgs = fvs.map(_.tpe).map(visitType)
       MonoType.Arrow(freeArgs ::: targs, tresult)
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
