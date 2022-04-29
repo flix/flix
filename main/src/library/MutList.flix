@@ -458,7 +458,7 @@ namespace MutList {
         let l = deref rl;
         def loop(i) = {
             if (i >= l)
-                z
+                s
             else {
                 f(a[i], _ -> loop(i + 1))
             }
