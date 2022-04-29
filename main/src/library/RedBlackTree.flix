@@ -247,15 +247,13 @@ namespace RedBlackTree {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def findLeft(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Option[(k, v)] =
-        def loop(tt) = match tt {
-            case Node(_, a, k, v, b) => match loop(a) {
-                case None         => if (f(k, v)) Some(k, v) else loop(b)
-                case Some(k1, v1) => Some(k1, v1)
-            }
-            case _ => None
-        };
-        loop(t)
+    pub def findLeft(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Option[(k, v)] = match t {
+        case Node(_, a, k, v, b) => match findLeft(f, a) {
+            case None         => if (f(k, v)) Some(k, v) else findLeft(f, b)
+            case Some(k1, v1) => Some(k1, v1)
+        }
+        case _ => None
+    }
 
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from right to left.
@@ -263,15 +261,13 @@ namespace RedBlackTree {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def findRight(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Option[(k, v)] =
-        def loop(tt) = match tt {
-            case Node(_, a, k, v, b) => match loop(b) {
-                case None         => if (f(k, v)) Some(k, v) else loop(a)
-                case Some(k1, v1) => Some(k1, v1)
-            }
-            case _ => None
-        };
-        loop(t)
+    pub def findRight(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Option[(k, v)] = match t {
+        case Node(_, a, k, v, b) => match findRight(f, b) {
+            case None         => if (f(k, v)) Some(k, v) else findRight(f, a)
+            case Some(k1, v1) => Some(k1, v1)
+        }
+        case _ => None
+    }
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `t` going from left to right.
