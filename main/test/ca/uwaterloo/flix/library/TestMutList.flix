@@ -721,7 +721,7 @@ namespace TestMutList {
 
     @test
     def foldLeft05(): Bool = region r {
-        MutList.foldRight((acc, x) -> acc + x, 42, new MutList(r)) == 42
+        MutList.foldLeft((acc, x) -> acc + x, 42, new MutList(r)) == 42
     }
 
 
