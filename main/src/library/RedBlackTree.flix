@@ -268,16 +268,14 @@ namespace RedBlackTree {
         }, None, tree)
 
     ///
-    /// Returns `true` if and only if at least one key-value pair in `tree` satisfies the predicate `f`.
+    /// Returns `true` if and only if at least one key-value pair in `t` satisfies the predicate `f`.
     ///
-    /// Returns `false` if `tree` is the empty tree.
+    /// Returns `false` if `t` is the empty tree.
     ///
-    /// The function `f` must be pure.
-    ///
-    @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
-    pub def exists(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Bool = match tree {
-        case Node(_, a, k, v, b) => f(k, v) or exists(f, a) or exists(f, b)
-        case _ => false
+    @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
+    pub def exists(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Bool & ef = match t {
+        case Node(_, a, k, v, b) => if (f(k, v)) true else exists(f, a) or exists(f, b)
+        case _                   => false
     }
 
     ///
@@ -326,16 +324,14 @@ namespace RedBlackTree {
     }
 
     ///
-    /// Returns `true` if and only if all key-value pairs in `tree` satisfy the predicate `f`.
+    /// Returns `true` if and only if all key-value pairs in `t` satisfy the predicate `f`.
     ///
-    /// Returns `true` if `tree` is the empty tree.
+    /// Returns `true` if `t` is the empty tree.
     ///
-    /// The function `f` must be pure.
-    ///
-    @Time(time(f) * size(tree)) @Space(space(f) * Int32.log2(size(tree)))
-    pub def forall(f: (k, v) -> Bool, tree: RedBlackTree[k, v]): Bool = match tree {
-        case Node(_, a, k, v, b) => f(k, v) and forall(f, a) and forall(f, b)
-        case _ => true
+    @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
+    pub def forall(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Bool & ef = match t {
+        case Node(_, a, k, v, b) => if (f(k, v)) forall(f, a) and forall(f, b) else false
+        case _                   => true
     }
 
     ///
