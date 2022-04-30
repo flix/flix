@@ -104,17 +104,17 @@ namespace Test/Exp/Effect {
 
     pub def complementEffect(): Bool \ ~Empty = ???
 
-    pub def unionEffect(): Bool \ ef + Fail = ???
+    pub def unionEffect(): Bool \ Flip + Fail = ???
 
-    pub def intersectionEffect(): Bool \ ef & Fail = ???
+    pub def intersectionEffect(): Bool \ Flip & Fail = ???
 
-    pub def differenceEffect(): Bool \ ef - Fail = ???
+    pub def differenceEffect(): Bool \ Flip - Fail = ???
 
     pub def effectSet01(): Bool \ { Fail } = ???
 
-    pub def effectSet02(): Bool \ { ef , Fail } = ???
+    pub def effectSet02(): Bool \ { Flip, Fail } = ???
 
-    pub def effectSet03(): Bool \ { ef , Fail, Console } = ???
+    pub def effectSet03(): Bool \ { Flip, Fail, Console } = ???
 
     pub def effectSet04(): Bool \ {} = ???
 
