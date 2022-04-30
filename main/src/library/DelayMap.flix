@@ -542,10 +542,19 @@ namespace DelayMap {
     /// Applies `f` to a start value `z` and all values in `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
-    /// A `foldRight` allows early termination by not calling the continuation.
     ///
     @Experimental
     pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, z: b, m: DelayMap[k, v]): b & ef =
+        foldRightWithKey((_, v, c) -> f(v, c), z, m)
+
+    ///
+    /// Applies `f` to a start value `z` and all values in `m` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
+    /// A `foldRight` allows early termination by not calling the continuation.
+    ///
+    @Experimental
+    pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, z: b, m: DelayMap[k, v]): b & ef =
         foldRightWithKey((_, v, c) -> f(v, c), z, m)
 
     ///
