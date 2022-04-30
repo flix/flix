@@ -67,7 +67,8 @@ object GenGlobalClass {
     NEW(JvmName.AtomicLong) ~
       DUP() ~ invokeConstructor(JvmName.AtomicLong) ~
       counterField.putStaticField() ~
-      ACONST_NULL() ~
+      ICONST_0() ~
+      ANEWARRAY(BackendObjType.String.jvmName) ~
       argsField.putStaticField() ~
       RETURN()
 
