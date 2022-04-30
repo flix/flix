@@ -447,6 +447,11 @@ object SemanticTokensProvider {
         case (acc, c) => acc ++ visitConstraint(c)
       }
 
+    case Expression.FixpointLambda(preds, exp, _, _, _, _) =>
+      preds.foldLeft(visitExp(exp)) {
+        case (acc, pred) => acc ++ Iterator(SemanticToken(SemanticTokenType.EnumMember, Nil, pred.loc))
+      }
+
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 

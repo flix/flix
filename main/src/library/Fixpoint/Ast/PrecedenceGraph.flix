@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+use Fixpoint/Shared.PredSym;
+
 namespace Fixpoint/Ast {
     pub opaque type PrecedenceGraph = Set[PrecedenceEdge]
 
