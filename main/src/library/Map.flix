@@ -613,11 +613,12 @@ namespace Map {
     @ParallelWhenPure @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
     pub def exists(f: (k, v) -> Bool & ef, m: Map[k, v]): Bool & ef =
         let Map(t) = m;
+        let f1 = match (k, v) -> f(k, v);
         def e() = RedBlackTree.exists(f, t);
-        reifyEff(f) {
+        reifyEff(f1) {
             case Pure(g) =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parExists(threads() - 1, g, t) as & Pure
+                    RedBlackTree.parExists(threads() - 1, (k, v) -> g((k, v)), t) as & Pure
                 else
                     e()
             case _ => e()
@@ -633,11 +634,12 @@ namespace Map {
     @ParallelWhenPure @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
     pub def forall(f: (k, v) -> Bool & ef, m: Map[k, v]): Bool & ef =
         let Map(t) = m;
+        let f1 = match (k, v) -> f(k, v);
         def fa() = RedBlackTree.forall(f, t);
-        reifyEff(f) {
+        reifyEff(f1) {
             case Pure(g) =>
                 if (useParallelEvaluation(m))
-                    RedBlackTree.parForall(threads() - 1, g, t) as & Pure
+                    RedBlackTree.parForall(threads() - 1, (k, v) -> g((k, v)), t) as & Pure
                 else
                     fa()
             case _ => fa()
