@@ -318,7 +318,7 @@ namespace Fixpoint {
                             else
                                 BoolExp.Leq(leq, t, RamTerm.LoadLatVar(rowVar))
                     }) |>
-                    Array.foldRight(x -> xs -> x :: xs, acc
+                    Array.foldRight(x -> xs -> x :: xs, acc)
                 case BodyAtom(PredSym(pred), denotation, Polarity.Negative, _, terms) =>
                     let ramTerms = Array.mapWithIndex(compileBodyTerm, terms);
                     let arity = Array.length(ramTerms);
