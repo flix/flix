@@ -1254,9 +1254,9 @@ namespace Array {
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def filterMap(f: a -> Option[b] & ef, a: Array[a]): Array[b] & Impure =
-        foldRight((x, acc) -> match f(x) {
-            case None => k()
-            case Some(b) => b :: acc }, Nil, a) |> List.toArray
+        foldRight((x, xs) -> match f(x) {
+            case None => xs
+            case Some(b) => b :: xs }, Nil, a) |> List.toArray
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `xs`.
