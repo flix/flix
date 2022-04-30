@@ -118,6 +118,10 @@ namespace Test/Exp/Effect {
 
     pub def effectSet04(): Bool \ {} = ???
 
+    pub def polyEffectSet01[ef: Effect](): Bool \ ef = ???
+
+    pub def polyEffectSet02[ef: Effect](): Bool \ { ef, Fail } = ???
+
     eff Empty
 
     eff Fail {
