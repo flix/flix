@@ -1658,6 +1658,11 @@ object ParsedAst {
     case class Region(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
 
     /**
+      * The Effect kind.
+      */
+    case class Effect(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+
+    /**
       * The Record Row kind.
       */
     case class RecordRow(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind

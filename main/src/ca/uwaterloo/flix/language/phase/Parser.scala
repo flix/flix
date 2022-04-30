@@ -1510,6 +1510,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("Region") ~ SP ~> ParsedAst.Kind.Region
     }
 
+    def Effect: Rule1[ParsedAst.Kind.Effect] = rule {
+      SP ~ keyword("Effect") ~ SP ~> ParsedAst.Kind.Effect
+    }
+
     def Record: Rule1[ParsedAst.Kind.RecordRow] = rule {
       SP ~ keyword("RecordRow") ~ SP ~> ParsedAst.Kind.RecordRow
     }
