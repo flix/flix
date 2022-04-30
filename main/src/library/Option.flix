@@ -55,7 +55,7 @@ instance Monad[Option] {
 
 instance Foldable[Option] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldLeft(f, s, o)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRightOld(f, o, s)
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, o: Option[a]): b & ef = Option.foldRight(f, o, s)
 }
 
 instance Traversable[Option] {
@@ -273,14 +273,6 @@ namespace Option {
     pub def foldLeft(f: (b, a) -> b & ef, z: b, o: Option[a]): b & ef = match o {
         case None    => z
         case Some(v) => f(z, v)
-    }
-
-    ///
-    /// Returns `f(v, z)` if `o` is `Some(v)`. Otherwise returns `z`.
-    ///
-    pub def foldRightOld(f: (a, b) -> b & ef, o: Option[a], z: b): b & ef = match o {
-        case None    => z
-        case Some(v) => f(v, z)
     }
 
     ///

@@ -15,17 +15,19 @@
  */
 
 use Boxable.{box, unbox};
-use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, PredSym, Denotation};
+use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, Denotation};
 use Fixpoint/Ast.Datalog.{Datalog, Model, Join};
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
-use Fixpoint/Ast.PredSym.PredSym;
 use Fixpoint/Ast.Denotation.{Relational, Latticenal};
 use Fixpoint/Ram.RamSym;
+use Fixpoint/Shared.PredSym;
+use Fixpoint/Shared.PredSym.PredSym;
 
 use Fixpoint.Tuple.Tuple;
 
 namespace Fixpoint {
+
     ///
     /// Returns the minimal model of the given Datalog program `d`.
     /// The minimal model is given by the model semantics for Datalog programs with stratified negation.
@@ -95,9 +97,8 @@ namespace Fixpoint {
             let pFacts = Array.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
             Datalog(pFacts, [])
         case Model(db) =>
-            let PredSym(key) = p;
             Map.query(ramSym -> match ramSym {
-                case RamSym.Full(relName, _, _) => match relName <=> key {
+                case RamSym.Full(predSym, _, _) => match predSym <=> p {
                     case EqualTo => EqualTo
                     case cmp => cmp
                 }
@@ -107,6 +108,13 @@ namespace Fixpoint {
             Model
         case Join(d1, d2) => union(project(p, d1), project(p, d2))
     } as & Pure
+
+    ///
+    /// Returns the given Datalog program `d` with all predicates except `preds` renamed.
+    ///
+    @Internal
+    pub def rename(_preds: Array[PredSym], d: Datalog[v]): Datalog[v] with Order[v], ToString[v] =
+        d
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -439,12 +447,11 @@ namespace Fixpoint {
         , p, ts) as & Pure
 
     def projectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> Array[Boxed] & ef, p: PredSym, ts: f[t]): Datalog[Boxed] & Impure with Foldable[f] =
-        let PredSym(relName) = p;
         let db = MutMap.empty();
         Foldable.foldLeft(() -> t -> {
             let vs = f(t);
             let arity = Array.length(vs);
-            let ramSym = RamSym.Full(relName, arity, Denotation.Relational);
+            let ramSym = RamSym.Full(p, arity, Denotation.Relational);
             let rel = MutMap.getOrElsePut!(ramSym, MutMap.empty(), db);
             MutMap.put!(Tuple(vs), $DEFAULT$, rel)
         }, (), ts);
@@ -596,9 +603,8 @@ namespace Fixpoint {
         case Model(db) =>
             use Fixpoint/Ram.toDenotation;
             let pFacts = MutList.new();
-            let PredSym(key) = p;
             let query = ramSym -> match ramSym {
-                case RamSym.Full(relName, _, _) => match relName <=> key {
+                case RamSym.Full(predSym, _, _) => match predSym <=> p {
                     case EqualTo => EqualTo
                     case cmp => cmp
                 }
