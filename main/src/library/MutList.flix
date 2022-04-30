@@ -45,7 +45,7 @@ namespace MutList {
     /// Returns a new empty mutable list with a default capacity.
     ///
     pub def new(r: Region[r]): MutList[a, r] \ Write(r) =
-        MutList(ref [$DEFAULT$; minCapacity()] @ r @ r, ref 0 @ r)
+        MutList(ref ([$DEFAULT$; minCapacity()] @ r) @ r, ref 0 @ r)
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
