@@ -2452,6 +2452,7 @@ object Weeder {
     case ParsedAst.Kind.Star(_, _) => Kind.Star
     case ParsedAst.Kind.Bool(_, _) => Kind.Bool
     case ParsedAst.Kind.Region(_, _) => Kind.Bool
+    case ParsedAst.Kind.Effect(_, _) => Kind.Bool
     case ParsedAst.Kind.RecordRow(_, _) => Kind.RecordRow
     case ParsedAst.Kind.SchemaRow(_, _) => Kind.SchemaRow
     case ParsedAst.Kind.Predicate(_, _) => Kind.Predicate
@@ -2744,6 +2745,7 @@ object Weeder {
     case ParsedAst.Kind.Star(sp1, _) => sp1
     case ParsedAst.Kind.Bool(sp1, _) => sp1
     case ParsedAst.Kind.Region(sp1, _) => sp1
+    case ParsedAst.Kind.Effect(sp1, _) => sp1
     case ParsedAst.Kind.RecordRow(sp1, _) => sp1
     case ParsedAst.Kind.SchemaRow(sp1, _) => sp1
     case ParsedAst.Kind.Predicate(sp1, _) => sp1
