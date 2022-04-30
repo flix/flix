@@ -780,7 +780,7 @@ namespace Array {
     ///
     /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], s))...)`.
     ///
-    pub def foldRightOld(f: (a, b) -> b & ef, s: b, arr: Array[a]): b & Impure =
+    pub def foldRight(f: (a, b) -> b & ef, s: b, arr: Array[a]): b & Impure =
         def loop(i, acc) = {
             if (i < 0)
                 acc
@@ -795,7 +795,7 @@ namespace Array {
     /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], z))...)`.
     /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, Unit -> b & Impure) -> b & ef, z: b, arr: Array[a]): b & Impure =
+    pub def foldRightWithCont(f: (a, Unit -> b & Impure) -> b & ef, z: b, arr: Array[a]): b & Impure =
         def loop(i) = {
             if (i == length(arr))
                 z
@@ -971,8 +971,8 @@ namespace Array {
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def partition(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) & Impure =
-        let step = { (x, k) ->
-            let (a1, a2) = k();
+        let step = { (x, acc) ->
+            let (a1, a2) = acc;
             if (f(x)) (x :: a1, a2) else (a1, x :: a2)
         };
         let (xs, ys) = foldRight(step, (Nil, Nil), a);
@@ -1254,9 +1254,9 @@ namespace Array {
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def filterMap(f: a -> Option[b] & ef, a: Array[a]): Array[b] & Impure =
-        foldRight((x, k) -> match f(x) {
+        foldRight((x, acc) -> match f(x) {
             case None => k()
-            case Some(b) => b :: k() }, Nil, a) |> List.toArray
+            case Some(b) => b :: acc }, Nil, a) |> List.toArray
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `xs`.
@@ -1282,8 +1282,7 @@ namespace Array {
     /// Returns the array `a` as a set.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toSet(a: Array[a]): Set[a] & Impure with Order[a] =
-        foldRight((x, k) -> Set.insert(x, k()), Set.empty(), a)
+    pub def toSet(a: Array[a]): Set[a] & Impure with Order[a] = foldRight(Set.insert, Set.empty(), a)
 
     ///
     /// Returns the association list `xs` as a map.
@@ -1293,7 +1292,7 @@ namespace Array {
     ///
     @Time(length(a)) @Space(length(a))
     pub def toMap(a: Array[(a, b)]): Map[a, b] & Impure with Order[a] =
-        foldRight((x, k) -> Map.insert(fst(x), snd(x), k()), Map.empty(), a)
+        foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
 
     ///
     /// Returns the array `a` as a MutList.
