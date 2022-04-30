@@ -22,5 +22,6 @@ import org.scalatest.Suites
 
 class LanguageSuite extends Suites(
   new PhaseSuite,
+  new TestFlixErrors,
   new TestFormatType
 )
