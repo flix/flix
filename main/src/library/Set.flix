@@ -67,7 +67,7 @@ instance MeetLattice[Set[a]] with Order[a] {
 
 instance Foldable[Set] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldLeft(f, s, s1)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRightOld(f, s, s1)
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRight(f, s, s1)
 }
 
 instance SemiGroup[Set[a]] with Order[a] {
@@ -290,15 +290,6 @@ namespace Set {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, s1: Set[a]): b & ef =
         let Set(t) = s1;
         RedBlackTree.foldLeft((acc, k, _) -> f(acc, k), s, t)
-
-    ///
-    /// Applies `f` to a start value `s` and all elements in `s` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
-    ///
-    pub def foldRightOld(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef =
-        let Set(t) = s1;
-        RedBlackTree.foldRightOld((k, _, acc) -> f(k, acc), s, t)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `s` going from right to left.

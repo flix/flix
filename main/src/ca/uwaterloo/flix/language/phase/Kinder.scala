@@ -876,7 +876,7 @@ object Kinder {
           val k1 = Kind.Arrow(t2.kind, expectedKind)
           val t1Val = visitType(t10, k1, kenv, taenv, root)
           mapN(t1Val) {
-            t1 => Type.Apply(t1, t2, loc)
+            t1 => mkApply(t1, t2, loc)
           }
       }
     case Type.Ascribe(t, k, loc) =>
@@ -1158,11 +1158,13 @@ object Kinder {
   }
 
   /**
-    * Asserts that the type variable is unkinded.
+    * Creates the type application `t1[t2]`, while simplifying trivial boolean formulas.
     */
-  private def assertUnkindedVar(tvar: Type.Var): Type.UnkindedVar = tvar match {
-    case unkinded: Type.UnkindedVar => unkinded
-    case kinded: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable.")
+  private def mkApply(t1: Type, t2: Type, loc: SourceLocation): Type = t1 match {
+    case Type.Apply(Type.Cst(TypeConstructor.And, _), arg, _) => Type.mkAnd(arg, t2, loc)
+    case Type.Apply(Type.Cst(TypeConstructor.Or, _), arg, _) => Type.mkOr(arg, t2, loc)
+    case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(t2, loc)
+    case t => Type.Apply(t, t2, loc)
   }
 
   /**
