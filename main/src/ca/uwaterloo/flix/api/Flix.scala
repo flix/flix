@@ -198,6 +198,7 @@ class Flix {
     "Fixpoint/IndexSelection.flix" -> LocalResource.get("/src/library/Fixpoint/IndexSelection.flix"),
     "Fixpoint/Interpreter.flix" -> LocalResource.get("/src/library/Fixpoint/Interpreter.flix"),
     "Fixpoint/Options.flix" -> LocalResource.get("/src/library/Fixpoint/Options.flix"),
+    "Fixpoint/PredSymsOf.flix" -> LocalResource.get("/src/library/Fixpoint/PredSymsOf.flix"),
     "Fixpoint/Simplifier.flix" -> LocalResource.get("/src/library/Fixpoint/Simplifier.flix"),
     "Fixpoint/Solver.flix" -> LocalResource.get("/src/library/Fixpoint/Solver.flix"),
     "Fixpoint/Stratifier.flix" -> LocalResource.get("/src/library/Fixpoint/Stratifier.flix"),

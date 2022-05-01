@@ -21,6 +21,8 @@ use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.Denotation.{Relational, Latticenal};
 use Fixpoint/Ram.RamSym;
+use Fixpoint.PredSymsOf;
+use Fixpoint/PredSymsOf.predSymsOf;
 use Fixpoint/Shared.PredSym;
 use Fixpoint/Shared.PredSym.PredSym;
 
@@ -114,6 +116,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def rename(_preds: Array[PredSym], d: Datalog[v]): Datalog[v] with Order[v], ToString[v] =
+        let _predSyms = predSymsOf(d);
         d
 
     ///
