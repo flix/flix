@@ -223,11 +223,20 @@ namespace MutSet {
     /// Applies `f` to a start value `z` and all elements in the mutable set `s` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, s: MutSet[a, r]): b \ { ef, Read(r) } =
+    pub def foldRight(f: (a, b & ef) -> b & ef, z: b, s: MutSet[a, r]): b \ { ef, Read(r) } =
         let MutSet(ms) = s;
         Set.foldRight(f, z, deref ms)
+
+    ///
+    /// Applies `f` to a start value `z` and all elements in the mutable set `s` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
+    ///
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, s: MutSet[a, r]): b \ { ef, Read(r) } =
+        let MutSet(ms) = s;
+        Set.foldRightWithCont(f, z, deref ms)
 
     ///
     /// Applies `f` to all elements in the mutable set `s` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
