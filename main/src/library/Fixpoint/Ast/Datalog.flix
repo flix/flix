@@ -13,16 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-use Fixpoint/Ram.RamSym;
+use Fixpoint.PredSymsOf;
+use Fixpoint/PredSymsOf.predSymsOf;
 use Fixpoint.Tuple;
 use Fixpoint.Tuple.Tuple;
+use Fixpoint/Shared.PredSym;
+use Fixpoint/Ram.RamSym;
 
 namespace Fixpoint/Ast {
     pub enum Datalog[v] {
         case Datalog(Array[Constraint[v]], Array[Constraint[v]])
         case Model(Map[RamSym[v], Map[Tuple[v], v]])
         case Join(Datalog[v], Datalog[v])
+    }
+
+    instance PredSymsOf[Datalog[v]] {
+        pub def predSymsOf(x: Datalog[v]): Set[PredSym] = match x {
+            case Datalog(facts, rules) =>
+                let factSyms = facts |> Array.map(predSymsOf) |> Array.toList |> Monoid.fold;
+                let ruleSyms = rules |> Array.map(predSymsOf) |> Array.toList |> Monoid.fold;
+                factSyms ++ ruleSyms
+            case Model(m)              => Map.keysOf(m) |> Set.toList |> List.map(predSymsOf) |> Monoid.fold
+            case Join(v1, v2)          => predSymsOf(v1) ++ predSymsOf(v2)
+        } as & Pure
     }
 
     instance ToString[Datalog[v]] with ToString[v] {
