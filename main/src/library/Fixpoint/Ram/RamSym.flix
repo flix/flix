@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+use Fixpoint.PredSymsOf;
 use Fixpoint/Ast.Denotation;
 use Fixpoint/Shared.PredSym;
 
@@ -48,6 +49,14 @@ namespace Fixpoint/Ram {
                 case New(s2, _, _) => s1 <=> s2
                 case _ => LessThan
             }
+        }
+    }
+
+    instance PredSymsOf[RamSym[v]] {
+        pub def predSymsOf(x: RamSym[v]): Set[PredSym] = match x {
+            case Full(predSym, _, _)    => Set.singleton(predSym)
+            case Delta(predSym, _, _)   => Set.singleton(predSym)
+            case New(predSym, _, _)     => Set.singleton(predSym)
         }
     }
 

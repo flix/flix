@@ -608,24 +608,42 @@ namespace Map {
     ///
     /// Returns `false` if `m` is the empty map.
     ///
-    /// The function `f` must be pure.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
-    pub def exists(f: (k, v) -> Bool, m: Map[k, v]): Bool =
+    @ParallelWhenPure @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
+    pub def exists(f: (k, v) -> Bool & ef, m: Map[k, v]): Bool & ef =
         let Map(t) = m;
-        RedBlackTree.exists(f, t)
+        let f1 = match (k, v) -> f(k, v);
+        def e() = RedBlackTree.exists(f, t);
+        reifyEff(f1) {
+            case Pure(g) =>
+                if (useParallelEvaluation(m))
+                    RedBlackTree.parExists(threads() - 1, (k, v) -> g((k, v)), t) as & Pure
+                else
+                    e()
+            case _ => e()
+        }
 
     ///
     /// Returns `true` if and only if all mappings in `m` satisfy the predicate `f`.
     ///
     /// Returns `true` if `m` is the empty map.
     ///
-    /// The function `f` must be pure.
+    /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
-    pub def forall(f: (k, v) -> Bool, m: Map[k, v]): Bool =
+    @ParallelWhenPure @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
+    pub def forall(f: (k, v) -> Bool & ef, m: Map[k, v]): Bool & ef =
         let Map(t) = m;
-        RedBlackTree.forall(f, t)
+        let f1 = match (k, v) -> f(k, v);
+        def fa() = RedBlackTree.forall(f, t);
+        reifyEff(f1) {
+            case Pure(g) =>
+                if (useParallelEvaluation(m))
+                    RedBlackTree.parForall(threads() - 1, (k, v) -> g((k, v)), t) as & Pure
+                else
+                    fa()
+            case _ => fa()
+        }
 
     ///
     /// Returns the left-biased union of `m1` and `m2`.

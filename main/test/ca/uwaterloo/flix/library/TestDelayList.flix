@@ -721,7 +721,7 @@ namespace TestDelayList {
 
     @test
     def toArray03(): Bool & Impure =
-    	DelayList.range(-100, 1000) |> DelayList.toArray `Array.sameElements` Array.range(-100, 1000)
+    	DelayList.range(-100, 1000) |> DelayList.toArray `Array.sameElements` Array.range(-100, 1000, static)
 
     @test
     def toArray04(): Bool & Impure =

@@ -1172,7 +1172,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toMutList(l: DelayList[a]): MutList[a] & Impure =
+    pub def toMutList(l: DelayList[a]): MutList[a, Impure] & Impure =
         toArray(l) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`.
 
     ///
