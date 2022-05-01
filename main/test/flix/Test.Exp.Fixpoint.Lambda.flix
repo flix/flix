@@ -92,4 +92,33 @@ namespace Test/Exp/Fixpoint/Lambda {
         query p3 select x from R(x) |> Array.memberOf(42)
     }
 
+    pub def testStratification01(): Bool =
+        let p1 = #(A) => #{
+            Q(1).
+            A(x) :- Q(x), not B(x).
+        };
+        let p2 = #(B) => #{
+            Q(2).
+            B(x) :- Q(x), not A(x).
+        };
+        not (query p1, p2 select (x, y) from A(x), B(y) |> Array.isEmpty)
+
+    pub def testPolymorphism01(): Bool & Impure =
+        query poly(123), poly("abc") select x from R(x) |> Array.memberOf("OK")
+
+    pub def testPolymorphism02(): Bool & Impure =
+        query poly(123), poly(456) select x from R(x) |> Array.memberOf("OK")
+
+    pub def testPolymorphism03(): Bool & Impure =
+        query poly(123), poly("abc") select x from R(x) |> Array.memberOf("OK")
+
+    pub def testPolymorphism04(): Bool & Impure =
+        query poly(123), poly("abc"), poly(true) select x from R(x) |> Array.memberOf("OK")
+
+    def poly(x: a): #{ R(String) } with Boxable[a] =
+        #(R) => #{
+            A(x).
+            R("OK") :- A(x).
+        }
+
 }
