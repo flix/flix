@@ -579,7 +579,7 @@ namespace DelayMap {
         let _ = parallelForce(m);
         let DMap(t) = m;
         let f1 = (k1, v1, c) -> f(k1, force v1, c);
-        RedBlackTree.foldRight(f1, s, t)
+        RedBlackTree.foldRightWithCont(f1, s, t)
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
