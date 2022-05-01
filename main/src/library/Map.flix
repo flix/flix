@@ -462,7 +462,6 @@ namespace Map {
     /// Applies `f` to a start value `s` and all values in `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
-    /// A `foldRight` allows early termination by not calling the continuation.
     ///
     pub def foldRight(f: (v, b) -> b & ef, s: b, m: Map[k, v]): b & ef =
         foldRightWithKey((_, v, acc) -> f(v, acc), s, m)
