@@ -106,7 +106,7 @@ namespace Fixpoint {
                         MutMap.put!(tuple, $DEFAULT$, rel)
                     case Denotation.Latticenal(bot, leq, lub, _) =>
                         let len = Array.length(terms);
-                        let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1));
+                        let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1, static));
                         let lat = evalTerm(env, terms[len - 1]);
                         if (lat `leq` bot)
                             ()
@@ -145,7 +145,7 @@ namespace Fixpoint {
                         not MutMap.memberOf(tuple, rel)
                     case Denotation.Latticenal(bot, leq, _, _) =>
                         let len = Array.length(terms);
-                        let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1));
+                        let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1, static));
                         let lat = evalTerm(env, terms[len - 1]);
                         not (lat `leq` MutMap.getWithDefault(key, bot, rel))
                 }
