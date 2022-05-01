@@ -791,17 +791,17 @@ namespace TestMutDeque {
 
     @test
     def join01(): Bool & Impure =
-        MutDeque.empty(): MutDeque[Int32, _] |> MutDeque.join(",") == ""
+        new MutDeque(static): MutDeque[Int32, _] |> MutDeque.join(",") == ""
 
     @test
     def join02(): Bool & Impure =
-        let d = MutDeque.empty();
+        let d = new MutDeque(static);
         MutDeque.pushBack(1, d);
         MutDeque.join(",", d) == "1"
 
     @test
     def join03(): Bool & Impure =
-        let d = MutDeque.empty();
+        let d = new MutDeque(static);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -809,7 +809,7 @@ namespace TestMutDeque {
 
     @test
     def join04(): Bool & Impure =
-        let d = MutDeque.empty();
+        let d = new MutDeque(static);
         MutDeque.pushBack("1", d);
         MutDeque.pushBack("2", d);
         MutDeque.pushBack("3", d);
@@ -822,18 +822,18 @@ namespace TestMutDeque {
 
     @test
     def joinWith01(): Bool & Impure =
-        let d = MutDeque.empty();
+        let d = new MutDeque(static);
         MutDeque.joinWith(x -> "${x + 1}", ",", d) == ""
 
     @test
     def joinWith02(): Bool & Impure =
-        let d = MutDeque.empty();
+        let d = new MutDeque(static);
         MutDeque.pushBack(1, d);
         MutDeque.joinWith(x -> "${x + 1}", ",", d) == "2"
 
     @test
     def joinWith03(): Bool & Impure =
-        let d = MutDeque.empty();
+        let d = new MutDeque(static);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -841,7 +841,7 @@ namespace TestMutDeque {
 
     @test
     def joinWith04(): Bool & Impure =
-        let d = MutDeque.empty();
+        let d = new MutDeque(static);
         MutDeque.pushBack("1", d);
         MutDeque.pushBack("2", d);
         MutDeque.pushBack("3", d);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Benjamin Dahse
+ * Copyright 2022 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Fixpoint/Shared {
+use Fixpoint/Shared.PredSym;
 
-    pub enum PredSym with Eq, Order {
-        case PredSym(String, Int64)
+namespace Fixpoint {
+    ///
+    /// A type class for types that contain predicate symbols.
+    ///
+    pub class PredSymsOf[t] {
+        pub def predSymsOf(x: t): Set[PredSym]
     }
-
-    instance ToString[PredSym] {
-        pub def toString(predSym: PredSym): String = match predSym {
-            case PredSym(name, id) => if (id == 0i64) name else "${name}%${id}"
-        }
-    }
-
 }
