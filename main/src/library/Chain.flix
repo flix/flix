@@ -719,8 +719,8 @@ namespace Chain {
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(c: Chain[a]): MutList[a, Impure] & Impure =
-        toArray(c) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(c: Chain[a], r: Region[r]): MutList[a, r] \ { Read(r), Write(r) } =
+        toArray(c, r) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
 
     ///
     /// Returns the list `c` as a set.
@@ -741,10 +741,10 @@ namespace Chain {
     ///
     /// Returns the chain `c` as an array.
     ///
-    pub def toArray(c: Chain[a]) : Array[a] & Impure = match head(c) {
-        case None => []
+    pub def toArray(c: Chain[a], r: Region[r]) : ScopedArray[a, r] \ Write(r) = match head(c) {
+        case None => [] @ r
         case Some(x) =>
-            let arr = Array.new(x, length(c));
+            let arr = [x; length(c)] @ r;
             let f = (i, b) -> { arr[i] = b; i + 1 };
             foldLeft(f, 0, c);
             arr
@@ -771,8 +771,9 @@ namespace Chain {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(c: Chain[a]): Chain[a] with Order[a] =
-        (c |> toArray |> Array.sort |> Array.toChain) as & Pure
+    pub def sort(c: Chain[a]): Chain[a] with Order[a] = region r {
+        toArray(c, r) |> Array.sort |> Array.toChain
+    }
 
     /// Sort chain `c` so that elements are ordered from low to high according to the `Order` instance
     /// for the values obtained by applying `f` to each element.
@@ -781,8 +782,9 @@ namespace Chain {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, c: Chain[a]): Chain[a] with Order[b] =
-        (c |> toArray |> Array.sortBy(f) |> Array.toChain) as & Pure
+    pub def sortBy(f: a -> b, c: Chain[a]): Chain[a] with Order[b] = region r {
+        toArray(c, r) |> Array.sortBy(f) |> Array.toChain
+    }
 
     ///
     /// Sort chain `c` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -791,8 +793,9 @@ namespace Chain {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, c: Chain[a]): Chain[a] =
-        (c |> toArray |> Array.sortWith(cmp) |> Array.toChain) as & Pure
+    pub def sortWith(cmp: (a,a) -> Comparison, c: Chain[a]): Chain[a] = region r {
+        toArray(c, r) |> Array.sortWith(cmp) |> Array.toChain
+    }
 
     ///
     /// Helper function for `traverse` and `sequence`.
