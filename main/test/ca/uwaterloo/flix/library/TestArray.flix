@@ -1863,16 +1863,16 @@ def foldRight04(): Bool & Impure = Array.foldRight((e, i) -> (i - e) * (e rem 2 
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def foldRight01(): Bool & Impure = Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, []) == 100
+def foldRightWithCont01(): Bool & Impure = Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, []) == 100
 
 @test
-def foldRight02(): Bool & Impure = Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, [1]) == 198
+def foldRightWithCont02(): Bool & Impure = Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, [1]) == 198
 
 @test
-def foldRight03(): Bool & Impure = Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, [1,2]) == 194
+def foldRightWithCont03(): Bool & Impure = Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, [1,2]) == 194
 
 @test
-def foldRight04(): Bool & Impure = Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, [1,2,3]) == 382
+def foldRightWithCont04(): Bool & Impure = Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, [1,2,3]) == 382
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
