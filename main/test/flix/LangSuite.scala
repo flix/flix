@@ -150,8 +150,9 @@ class LangSuite extends Suites(
   // Fixpoint.
   //
   new FlixTest("Test.Exp.Fixpoint", List(
-    "main/test/flix/Test.Exp.Fixpoint.Constraint.flix",
     "main/test/flix/Test.Exp.Fixpoint.Compose.flix",
+    "main/test/flix/Test.Exp.Fixpoint.Constraint.flix",
+    "main/test/flix/Test.Exp.Fixpoint.Lambda.flix",
     "main/test/flix/Test.Exp.Fixpoint.Project.flix",
     "main/test/flix/Test.Exp.Fixpoint.Query.flix",
     "main/test/flix/Test.Exp.Fixpoint.Solve.flix",

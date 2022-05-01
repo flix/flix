@@ -16,12 +16,12 @@
 namespace Fixpoint/Shared {
 
     pub enum PredSym with Eq, Order {
-        case PredSym(String, Int32)
+        case PredSym(String, Int64)
     }
 
     instance ToString[PredSym] {
         pub def toString(predSym: PredSym): String = match predSym {
-            case PredSym(name, id) => "${name}%${id}"
+            case PredSym(name, id) => if (id == 0i64) name else "${name}%${id}"
         }
     }
 
