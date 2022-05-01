@@ -292,13 +292,13 @@ namespace Set {
         RedBlackTree.foldLeft((acc, k, _) -> f(acc, k), s, t)
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `s` going from right to left.
+    /// Applies `f` to a start value `s` and all elements in `s1` going from right to left.
     ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, z: b, s1: Set[a]): b & ef =
+    pub def foldRight(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef =
         let Set(t) = s1;
-        RedBlackTree.foldRight((k, _, c) -> f(k, c), z, t)
+        RedBlackTree.foldRight((k, _, c) -> f(k, c), s, t)
 
     ///
     /// Applies `f` to a start value `z` and all elements in `s` going from right to left.
@@ -306,8 +306,8 @@ namespace Set {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, s1: Set[a]): b & ef =
-        let Set(t) = s1;
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, s: Set[a]): b & ef =
+        let Set(t) = s;
         RedBlackTree.foldRightWithCont((k, _, c) -> f(k, c), z, t)
 
     ///
