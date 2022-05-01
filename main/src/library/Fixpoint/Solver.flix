@@ -131,14 +131,24 @@ namespace Fixpoint {
             } else {
                 // Case 2: Introduce a fresh name (index) for the prediate symbol.
                 let PredSym(name, _) = predSym;
-                let newPredSym = PredSym(name, newId());
+                let newPredSym = PredSym(name, newId() + 1i64); // We add one because the counter starts at zero.
                 Map.insert(predSym, newPredSym, macc)
             }
         };
         let s = Set.foldLeft(f, Map.empty(), predSyms);
 
         // Apply the computed substitution to the Datalog program `d`.
-        substitute(d, s)
+        let r = substitute(d, s);
+
+        // Debugging
+        if (enableDebugging()) {
+            println(s);
+            println(d);
+            println(r)
+        } else ();
+
+        // Return the result.
+        r
     } as & Pure
 
     ///
