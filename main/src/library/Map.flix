@@ -29,7 +29,7 @@ instance Boxable[Map[k, v]] with Boxable[k], Boxable[v]
 
 instance ToString[Map[k, v]] with ToString[k], ToString[v] {
     pub def toString(m: Map[k, v]): String =
-        let s = Map.foldRightWithKey((k, v, c) -> "${k} => ${v}, ${c()}", "", m);
+        let s = Map.foldRightWithKey((k, v, acc) -> "${k} => ${v}, ${acc}", "", m);
         "Map#{${String.dropRight(2, s)}}"
 }
 
@@ -484,7 +484,7 @@ namespace Map {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
-        foldRightWithKey((_, v, c) -> f(v, c), z, m)
+        foldRightWithKeyCont((_, v, c) -> f(v, c), z, m)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
@@ -715,7 +715,7 @@ namespace Map {
     @Time(time(f) * size(m1) * Int32.log2(size(m2))) @Space(space(f) * size(m1) *  Int32.log2(size(m2)))
     pub def intersectionWithKey(f: (k, v, v) -> v & ef, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & ef with Order[k] =
         let intersect = filterWithKey((k, _) -> memberOf(k, m1), m2);
-        foldRightWithKey((k, v, c) -> adjustWithKey((key, v1) -> f(key, v, v1), k, c()), intersect, m1)
+        foldRightWithKey((k, v, acc) -> adjustWithKey((key, v1) -> f(key, v, v1), k, acc), intersect, m1)
 
     ///
     /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
@@ -780,7 +780,7 @@ namespace Map {
     ///
     @Time(size(m)) @Space(size(m))
     pub def toList(m: Map[k, v]): List[(k, v)] =
-        foldRightWithKey((k, v, c) -> (k, v) :: c(), Nil, m)
+        foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
 
     ///
     /// Returns the map `m` as a set of key-value pairs.
@@ -793,7 +793,7 @@ namespace Map {
     /// Returns the map `m` as a `DelayList` of key-value pairs.
     ///
     pub def toDelayList(m: Map[k, v]): DelayList[(k, v)] =
-        foldRightWithKey((k, v, c) -> ECons((k, v), c()), ENil, m)
+        foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
 
     ///
     /// Returns the map `m` as a chain of key-value pairs.
