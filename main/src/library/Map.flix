@@ -464,7 +464,7 @@ namespace Map {
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (v, b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
+    pub def foldRight(f: (v, b) -> b & ef, z: b, m: Map[k, v]): b & ef =
         foldRightWithKey((_, v, acc) -> f(v, acc), z, m)
 
     ///
@@ -473,7 +473,7 @@ namespace Map {
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     /// A `foldRightWithKey` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithKey(f: (k, v, b & ef) -> b & ef, z: b, m: Map[k, v]): b & ef =
+    pub def foldRightWithKey(f: (k, v, b) -> b & ef, z: b, m: Map[k, v]): b & ef =
         let Map(t) = m;
         RedBlackTree.foldRight(f, z, t)
 

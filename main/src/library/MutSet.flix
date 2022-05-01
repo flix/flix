@@ -224,7 +224,7 @@ namespace MutSet {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     ///
-    pub def foldRight(f: (a, b & ef) -> b & ef, z: b, s: MutSet[a, r]): b \ { ef, Read(r) } =
+    pub def foldRight(f: (a, b) -> b & ef, z: b, s: MutSet[a, r]): b \ { ef, Read(r) } =
         let MutSet(ms) = s;
         Set.foldRight(f, z, deref ms)
 

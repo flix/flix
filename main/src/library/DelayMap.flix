@@ -544,7 +544,7 @@ namespace DelayMap {
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
     @Experimental
-    pub def foldRight(f: (v, b & ef) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
+    pub def foldRight(f: (v, b) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
         foldRightWithKey((_, v, acc) -> f(v, acc), s, m)
 
     ///
@@ -553,7 +553,7 @@ namespace DelayMap {
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
     @Experimental
-    pub def foldRightWithKey(f: (k, v, b & ef) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
+    pub def foldRightWithKey(f: (k, v, b) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
         let _ = parallelForce(m);
         let DMap(t) = m;
         let f1 = (k1, v1, b1) -> f(k1, force v1, b1);

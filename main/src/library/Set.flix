@@ -296,7 +296,7 @@ namespace Set {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     ///
-    pub def foldRight(f: (a, b & ef) -> b & ef, z: b, s1: Set[a]): b & ef =
+    pub def foldRight(f: (a, b) -> b & ef, z: b, s1: Set[a]): b & ef =
         let Set(t) = s1;
         RedBlackTree.foldRight((k, _, c) -> f(k, c), z, t)
 
