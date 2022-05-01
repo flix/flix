@@ -781,7 +781,7 @@ namespace Array {
     ///
     /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, arr: Array[a]): b & Impure =
+    pub def foldRight(f: (a, b) -> b & ef, s: b, arr: ScopedArray[a, r]): b \ Read(r) =
         def loop(i, acc) = {
             if (i < 0)
                 acc
@@ -956,13 +956,14 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def partition(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) & Impure =
+    pub def partition(f: a -> Bool, a: ScopedArray[a, r]): (ScopedArray[a, r], ScopedArray[a, r]) \ { Read(r), Write(r) } =
         let step = { (x, ac) ->
             let (a1,a2) = ac;
             if (f(x)) (x :: a1, a2) else (a1, x :: a2)
         };
-        let (xs,ys) = foldRight(step, (Nil,Nil), a);
-        (List.toArray(xs), List.toArray(ys))
+        let (xs, ys) = foldRight(step, (Nil, Nil), a);
+        let r = Scoped.regionOf(a);
+        (List.toArray(xs, r), List.toArray(ys, r))
 
     ///
     /// Returns a pair of arrays `(a1, a2)`.
@@ -1124,34 +1125,35 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a) * length(a)) @Space(space(f) * length(a))
-    pub def groupBy(f: (a, a) -> Bool, a: Array[a]): Array[Array[a]] & Impure =
+    pub def groupBy(f: (a, a) -> Bool, a: ScopedArray[a, r]): ScopedArray[ScopedArray[a, r], r] \ Write(r) =
         let xs = toList(a);
-        groupByHelper(f, xs, Nil) |> List.toArray
+        let r = Scoped.regionOf(a);
+        List.toArray(groupByHelper(f, xs, Nil, r), r)
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[Array[a]]): List[Array[a]] & Impure = match xs {
+    def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[ScopedArray[a, r]], r: Region[r]): List[ScopedArray[a, r]] \ Write(r) = match xs {
         case Nil => List.reverse(ac)
         case x :: rs =>
-            let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil);
-            groupByHelper(f, r2, r1 :: ac)
+            let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil, r);
+            groupByHelper(f, r2, r1 :: ac, r)
     }
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Array[a], List[a]) & Impure = match xs {
+    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a], r: Region[r]): (ScopedArray[a, r], List[a]) \ Write(r) = match xs {
         case Nil => {
-            let a = List.toArray(ps);
+            let a = List.toArray(ps, r);
             reverse!(a);
             (a, List.reverse(ns))
         }
         case x :: rs =>
             if (agreeHelper(f, x, ps))
-                extractHelper(f, rs, x :: ps, ns)
+                extractHelper(f, rs, x :: ps, ns, r)
             else
-                extractHelper(f, rs, ps, x :: ns)
+                extractHelper(f, rs, ps, x :: ns, r)
     }
 
     ///

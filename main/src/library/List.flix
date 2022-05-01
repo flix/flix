@@ -1170,10 +1170,10 @@ namespace List {
     /// Returns the list `l` as an array.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def toArray(l: List[a]) : Array[a] & Impure = match head(l) {
-        case None    => []
+    pub def toArray(l: List[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = match head(l) {
+        case None    => [] @ r
         case Some(x) =>
-            let a = Array.new(x, length(l));
+            let a = [x; length(l)] @ r;
             let f = (i, b) -> { a[i] = b; i + 1 };
             foldLeft(f, 0, l);
             a
