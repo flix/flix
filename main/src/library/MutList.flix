@@ -447,12 +447,33 @@ namespace MutList {
         loop(0, s)
 
     ///
+    /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
+    ///
+    /// The implementation is tail recursive.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, v: MutList[a]): b & Impure =
+        let MutList(ra, rl) = v;
+        let a = deref ra;
+        let l = deref rl;
+        def loop(i, acc) = {
+            if (i < 0)
+                acc
+            else {
+                let s1 = f(a[i], acc);
+                loop(i - 1, s1)
+            }
+        };
+        loop(l - 1, s)
+
+    ///
     /// Applies `f` to a start value `z` and all elements in `a` going from left to right.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRight` allows early termination by not calling the continuation.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, Unit -> b & ef and r) -> b & ef and r, z: b, v: MutList[a, r]): b \ { ef, Read(r) } =
+    pub def foldRightWithCont(f: (a, Unit -> b & ef and r) -> b & ef and r, z: b, v: MutList[a, r]): b \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
@@ -481,7 +502,7 @@ namespace MutList {
     /// Returns `None` if `v` is empty.
     ///
     pub def reduceRight(f: (a, a) -> a & ef, v: MutList[a, r]): Option[a] \ { ef, Read(r) } =
-        foldRight((x, k) -> match k() {
+        foldRight((x, acc) -> match acc {
             case Some(y) => Some(f(x, y))
             case None => Some(x)
         }, None, v)
@@ -684,7 +705,7 @@ namespace MutList {
     /// Returns `v` as an immutable list.
     ///
     pub def toList(v: MutList[a, r]): List[a] \ Read(r) =
-        foldRight((x, k) -> x :: k(), Nil, v)
+        foldRight((x, acc) -> x :: acc, Nil, v)
 
     ///
     /// Returns `v` as an array.
