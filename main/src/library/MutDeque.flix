@@ -70,12 +70,6 @@ namespace MutDeque {
     ///
     /// Returns an empty MutDeque.
     ///
-    pub def empty(): MutDeque[a, Impure] & Impure =
-        MutDeque(ref [$DEFAULT$; minCapacity()], ref 0, ref 0)
-
-    ///
-    /// Returns an empty MutDeque.
-    ///
     pub def new(r: Region[r]): MutDeque[a, r] \ Write(r) =
         MutDeque(ref [$DEFAULT$; minCapacity()] @ r @ r, ref 0 @ r, ref 0 @ r)
 

@@ -482,12 +482,12 @@ namespace Fixpoint {
         , p, ts) as & Pure
 
     def projectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> Array[Boxed] & ef, p: PredSym, ts: f[t]): Datalog[Boxed] & Impure with Foldable[f] =
-        let db = MutMap.empty();
+        let db = new MutMap(static);
         Foldable.foldLeft(() -> t -> {
             let vs = f(t);
             let arity = Array.length(vs);
             let ramSym = RamSym.Full(p, arity, Denotation.Relational);
-            let rel = MutMap.getOrElsePut!(ramSym, MutMap.empty(), db);
+            let rel = MutMap.getOrElsePut!(ramSym, new MutMap(static), db);
             MutMap.put!(Tuple(vs), $DEFAULT$, rel)
         }, (), ts);
         toModel(db)
