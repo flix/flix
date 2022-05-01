@@ -57,7 +57,7 @@ instance Functor[Map[k]] {
 
 instance Foldable[Map[k]] {
     pub def foldLeft(f: (b, v) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldLeft((acc, v) -> f(acc, v), s, m)
-    pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRight(f, s, m)
+    pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, s: b, m: Map[k, v]): b & ef = Map.foldRightWithCont(f, s, m)
 }
 
 instance Traversable[Map[k]] {
@@ -671,9 +671,9 @@ namespace Map {
         let Map(t1) = m1;
         let Map(t2) = m2;
         if (blackHeight(t1) < blackHeight(t2))
-            Map(foldRight((k, v, c) -> insertWith(f, k, v, c()), t2, t1))
+            Map(foldRight((k, v, acc) -> insertWith(f, k, v, acc), t2, t1))
         else
-            Map(foldRight((k, v, c) -> insertWith((_, v1, v2) -> f(k, v2, v1), k, v, c()), t1, t2))
+            Map(foldRight((k, v, acc) -> insertWith((_, v1, v2) -> f(k, v2, v1), k, v, acc), t1, t2))
 
     ///
     /// Returns the left-biased intersection of `m1` and `m2`.
