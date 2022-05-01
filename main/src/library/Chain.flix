@@ -56,7 +56,7 @@ instance Monad[Chain] {
 
 instance Foldable[Chain] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldLeft(f, s, c)
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRight(f, s, c)
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRightWithCont(f, s, c)
 }
 
 instance Traversable[Chain] {
@@ -179,7 +179,7 @@ namespace Chain {
     ///
     /// Returns the length of `c`.
     ///
-    pub def length(c: Chain[a]): Int32 = foldRight((_, k) -> k() + 1, 0, c)
+    pub def length(c: Chain[a]): Int32 = foldRight((_, acc) -> acc + 1, 0, c)
 
     ///
     /// Returns a new chain formed by appending the chains `c1` and `c2`.
@@ -480,12 +480,24 @@ namespace Chain {
         loop(c, s)
 
     ///
+    /// Applies `f` to a start value `s` and all elements in `c` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef =
+        def loop(cc, acc) = match viewRight(cc) {
+            case NoneRight        => acc
+            case SomeRight(rs, a) => loop(rs, f(a, acc))
+        };
+        loop(c, s)
+
+    ///
     /// Applies `f` to a start value `z` and all elements in `c` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRight` allows early termination by not calling the continuation.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Chain[a]): b & ef =
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Chain[a]): b & ef =
         def loop(cc) = match viewLeft(cc) {
             case NoneLeft        => z
             case SomeLeft(x, rs) => f(x, _ -> loop(rs))
@@ -714,7 +726,7 @@ namespace Chain {
     /// Returns `c` as a list.
     ///
     pub def toList(c: Chain[a]): List[a] =
-        foldRight((x, k) -> x :: k(), Nil, c)
+        foldRight((x, acc) -> x :: acc, Nil, c)
 
     ///
     /// Returns `c` as a mutable list.
@@ -726,7 +738,7 @@ namespace Chain {
     /// Returns the list `c` as a set.
     ///
     pub def toSet(c: Chain[a]): Set[a] with Order[a] =
-        foldRight((x, k) -> Set.insert(x, k()), Set.empty(), c)
+        foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), c)
 
     ///
     /// Returns the chain of pairs `c` that represents an association list as a map.
@@ -735,7 +747,7 @@ namespace Chain {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMap(c: Chain[(a, b)]): Map[a, b] with Order[a] =
-        foldRight((x, k) -> Map.insert(fst(x), snd(x), k()), Map.empty(), c)
+        foldRight((x, acc) -> Map.insert(fst(x), snd(x), acc), Map.empty(), c)
 
 
     ///
