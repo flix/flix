@@ -137,9 +137,6 @@ namespace Fixpoint {
         };
         let s = Set.foldLeft(f, Map.empty(), predSyms);
 
-        // TODO: Debugging
-        println(s);
-
         // Apply the computed substitution to the Datalog program `d`.
         substitute(d, s)
     } as & Pure
