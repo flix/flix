@@ -393,31 +393,16 @@ def foldLeft04(): Bool = Set.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, Set#
 // foldRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRight01(): Bool = Set.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Set#{}) == 100
+def foldRight01(): Bool = Set.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Set#{}) == 100
 
 @test
-def foldRight02(): Bool = Set.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Set#{1}) == 198
+def foldRight02(): Bool = Set.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Set#{1}) == 198
 
 @test
-def foldRight03(): Bool = Set.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Set#{2, 1}) == 194
+def foldRight03(): Bool = Set.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Set#{2, 1}) == 194
 
 @test
-def foldRight04(): Bool = Set.foldRight((e, i) -> (i - e)*(e rem 2 + 1), 100, Set#{3, 2, 1}) == 382
-
-/////////////////////////////////////////////////////////////////////////////
-// foldRightLazy                                                           //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def foldRightLazy01(): Bool = Set.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, Set#{}) == 100
-
-@test
-def foldRightLazy02(): Bool = Set.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, Set#{1}) == 198
-
-@test
-def foldRightLazy03(): Bool = Set.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, Set#{2, 1}) == 194
-
-@test
-def foldRightLazy04(): Bool = Set.foldRightLazy((e, i) -> (force i - e) * (e rem 2 + 1), 100, Set#{3, 2, 1}) == 382
+def foldRight04(): Bool = Set.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Set#{3, 2, 1}) == 382
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
@@ -483,8 +468,8 @@ def count07(): Bool = Set.count(i -> i > 3, Set#{7, 6}) == 2
 def count08(): Bool & Impure =
     let range = List.range(0, 2000);
     let s = range |> List.toSet;
-    let a = MutList.new();
-    Set.count(x -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(b, a); true }, s);
+    let a = new MutList(static);
+    Set.count(x -> { let b = new MutList(static); MutList.push!(x, b); MutList.append!(b, a); true }, s);
     MutList.toList(a) == range
 
 
@@ -553,8 +538,8 @@ def count08(): Bool & Impure =
     def sumWith08(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = range |> List.toSet;
-        let a = MutList.new();
-        Set.sumWith(k -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
+        let a = new MutList(static);
+        Set.sumWith(k -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
         MutList.toList(a) == range
 
 
@@ -619,8 +604,8 @@ def count08(): Bool & Impure =
     def productWith08(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = range |> List.toSet;
-        let a = MutList.new();
-        Set.productWith(k -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
+        let a = new MutList(static);
+        Set.productWith(k -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
         MutList.toList(a) == range
 
 
@@ -973,8 +958,8 @@ def map15(): Bool = Set.map(x -> x rem 9, Set#{0, 5, 1, 10, 7, 19, 28, 2}) == Se
 def map16(): Bool & Impure =
     let range = List.range(0, 2000);
     let s = List.toSet(range);
-    let a = MutList.new();
-    Set.map(x -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(b, a); x }, s);
+    let a = new MutList(static);
+    Set.map(x -> { let b = new MutList(static); MutList.push!(x, b); MutList.append!(b, a); x }, s);
     MutList.toList(a) == range
 
 
@@ -1409,8 +1394,8 @@ def unfoldWithIter06(): Bool & Impure =
     @test
     def minimumBy05(): Bool & Impure =
         let s = List.range(0, 2000) |> List.toSet;
-        let a = MutList.new();
-        Set.minimumBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, s);
+        let a = new MutList(static);
+        Set.minimumBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, s);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 

@@ -839,26 +839,14 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldRight01(): Bool = Nec.foldRight((x, acc) -> acc - x, 0, singleton(1)) == -1
+    def foldRight01(): Bool = Nec.foldRight((x, k) -> k() - x, 0, singleton(1)) == -1
 
     @test
-    def foldRight02(): Bool = Nec.foldRight((x, acc) -> acc - x, 0, necOf2(1, 2)) == -3
+    def foldRight02(): Bool = Nec.foldRight((x, k) -> k() - x, 0, necOf2(1, 2)) == -3
 
     @test
-    def foldRight03(): Bool = Nec.foldRight((x, acc) -> acc - x, 0, necOf3(1, 2, 3)) == -6
+    def foldRight03(): Bool = Nec.foldRight((x, k) -> k() - x, 0, necOf3(1, 2, 3)) == -6
 
-    /////////////////////////////////////////////////////////////////////////////
-    // foldRightLazy                                                           //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def foldRightLazy01(): Bool = Nec.foldRightLazy((x, acc) -> force acc - x, 0, singleton(1)) == -1
-
-    @test
-    def foldRightLazy02(): Bool = Nec.foldRightLazy((x, acc) -> force acc - x, 0, necOf2(1, 2)) == -3
-
-    @test
-    def foldRightLazy03(): Bool = Nec.foldRightLazy((x, acc) -> force acc - x, 0, necOf3(1, 2, 3)) == -6
 
     /////////////////////////////////////////////////////////////////////////////
     // filterMap                                                               //
@@ -1019,19 +1007,19 @@ namespace TestNec {
     @test
     def toMutList01(): Bool & Impure =
         let m1 = Nec.toMutList(singleton(1));
-        let m2 = MutList.range(1, 2);
+        let m2 = MutList.range(1, 2, static);
         MutList.sameElements(m1, m2)
 
     @test
     def toMutList02(): Bool & Impure =
         let m1 = Nec.toMutList(necOf2(1, 2));
-        let m2 = MutList.range(1, 3);
+        let m2 = MutList.range(1, 3, static);
         MutList.sameElements(m1, m2)
 
     @test
     def toMutList03(): Bool & Impure =
         let m1 = Nec.toMutList(necOf3(1, 2, 3));
-        let m2 = MutList.range(1, 4);
+        let m2 = MutList.range(1, 4, static);
         MutList.sameElements(m1, m2)
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //

@@ -51,7 +51,7 @@ object RenameProvider {
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.Pred(pred) => renamePred(pred, newName)
+        case Entity.Pred(pred, _) => renamePred(pred, newName)
 
         case Entity.FormalParam(fparam) => renameVar(fparam.sym, newName)
 

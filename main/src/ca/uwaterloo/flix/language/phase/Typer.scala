@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, mapN, traverse}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, mapN, traverse}
 import ca.uwaterloo.flix.util._
 
 import java.io.PrintWriter
@@ -65,7 +65,7 @@ object Typer {
             case KindedAst.Instance(_, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
           }
           // ignore the super class parameters since they should all be the same as the class param
-          val superClasses = clazz.superClasses.map(_.sym)
+          val superClasses = clazz.superClasses.map(_.head.sym)
           (classSym, Ast.ClassContext(superClasses, envInsts))
       }
     }
@@ -97,7 +97,7 @@ object Typer {
   private def visitClass(clazz: KindedAst.Class, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
     case KindedAst.Class(doc, ann0, mod, sym, tparam, superClasses, sigs0, laws0, loc) =>
       val tparams = getTypeParams(List(tparam))
-      val tconstr = Ast.TypeConstraint(sym, Type.KindedVar(tparam.sym, tparam.loc), sym.loc)
+      val tconstr = Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), Type.KindedVar(tparam.sym, tparam.loc), sym.loc)
       val annVal = visitAnnotations(ann0, root)
       val sigsVal = traverse(sigs0.values)(visitSig(_, List(tconstr), root, classEnv))
       val lawsVal = traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
@@ -252,16 +252,16 @@ object Typer {
                     case UnificationError.NoMatchingInstance(tconstr) =>
                       tconstr.arg.typeConstructor match {
                         case Some(tc: TypeConstructor.Arrow) =>
-                          TypeError.MissingArrowInstance(tconstr.sym, tconstr.arg, tconstr.loc)
+                          TypeError.MissingArrowInstance(tconstr.head.sym, tconstr.arg, tconstr.loc)
                         case _ =>
-                          if (tconstr.sym.name == "Eq")
+                          if (tconstr.head.sym.name == "Eq")
                             TypeError.MissingEq(tconstr.arg, tconstr.loc)
-                          else if (tconstr.sym.name == "Order")
+                          else if (tconstr.head.sym.name == "Order")
                             TypeError.MissingOrder(tconstr.arg, tconstr.loc)
-                          else if (tconstr.sym.name == "ToString")
+                          else if (tconstr.head.sym.name == "ToString")
                             TypeError.MissingToString(tconstr.arg, tconstr.loc)
                           else
-                            TypeError.MissingInstance(tconstr.sym, tconstr.arg, tconstr.loc)
+                            TypeError.MissingInstance(tconstr.head.sym, tconstr.arg, tconstr.loc)
                       }
                   }
                   // Case 2: non instance error
@@ -340,7 +340,7 @@ object Typer {
   /**
     * Performs type resolution on the given enum and its cases.
     */
-  private def visitEnum(enum: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): Validation[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum match {
+  private def visitEnum(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): Validation[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum0 match {
     case KindedAst.Enum(doc, ann, mod, enumSym, tparams0, derives, cases0, tpeDeprecated, sc, loc) =>
       val annVal = visitAnnotations(ann, root)
       val tparams = getTypeParams(tparams0)
@@ -1374,6 +1374,26 @@ object Typer {
           resultTyp <- unifyTypeM(tvar, Type.mkSchema(schemaRow, loc), loc)
         } yield (constrs.flatten, resultTyp, Type.Pure)
 
+      case KindedAst.Expression.FixpointLambda(preds, exp, tvar, loc) =>
+        val predsWithType = preds.map(pred => (pred, Type.freshVar(Kind.Predicate, loc, text = FallbackText(pred.name))))
+
+        def mkRowExtend(p: (Name.Pred, Type), restRow: Type): Type = {
+          val (pred, tpe) = p
+          Type.mkSchemaRowExtend(pred, tpe, restRow, loc)
+        }
+
+        def mkFullRow(baseRow: Type): Type = predsWithType.foldRight(baseRow)(mkRowExtend)
+
+        val expectedRowType = mkFullRow(Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row")))
+        val resultRowType = mkFullRow(Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row")))
+
+        for {
+          (constrs, tpe, eff) <- visitExp(exp)
+          _ <- unifyTypeM(tpe, Type.mkSchema(expectedRowType, loc), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkSchema(resultRowType, loc), loc)
+          resultEff = eff
+        } yield (constrs, resultTyp, resultEff)
+
       case KindedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
         //
         //  exp1 : #{...}    exp2 : #{...}
@@ -1429,8 +1449,8 @@ object Typer {
         // Require Boxable and Foldable instances.
         val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
         val foldableSym = PredefinedClasses.lookupClassSym("Foldable", root)
-        val boxable = Ast.TypeConstraint(boxableSym, freshElmTypeVar, loc)
-        val foldable = Ast.TypeConstraint(foldableSym, freshTypeConstructorVar, loc)
+        val boxable = Ast.TypeConstraint(Ast.TypeConstraint.Head(boxableSym, loc), freshElmTypeVar, loc)
+        val foldable = Ast.TypeConstraint(Ast.TypeConstraint.Head(foldableSym, loc), freshTypeConstructorVar, loc)
 
         for {
           (constrs, tpe, eff) <- visitExp(exp)
@@ -1619,7 +1639,7 @@ object Typer {
         TypedAst.Expression.LetRec(sym, mod, e1, e2, tpe, eff, loc)
 
       case KindedAst.Expression.Region(tpe, loc) =>
-        TypedAst.Expression.Unit(loc)
+        TypedAst.Expression.Region(tpe, loc)
 
       case KindedAst.Expression.Scope(sym, regionVar, exp, evar, loc) =>
         val e = visitExp(exp, subst0)
@@ -1864,6 +1884,12 @@ object Typer {
       case KindedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
         val cs = cs0.map(visitConstraint)
         TypedAst.Expression.FixpointConstraintSet(cs, Stratification.empty, subst0(tvar), loc)
+
+      case KindedAst.Expression.FixpointLambda(preds, exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val tpe = subst0(tvar)
+        val eff = e.eff
+        TypedAst.Expression.FixpointLambda(preds, e, Stratification.empty, tpe, eff, loc)
 
       case KindedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
@@ -2190,7 +2216,7 @@ object Typer {
       PredefinedClasses.lookupClassSym("Eq", root),
       PredefinedClasses.lookupClassSym("ToString", root),
     )
-    classes.map(Ast.TypeConstraint(_, tpe, loc))
+    classes.map(clazz => Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), tpe, loc))
   }
 
   /**
@@ -2206,7 +2232,7 @@ object Typer {
       PredefinedClasses.lookupClassSym("JoinLattice", root),
       PredefinedClasses.lookupClassSym("MeetLattice", root),
     )
-    classes.map(Ast.TypeConstraint(_, tpe, loc))
+    classes.map(clazz => Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), tpe, loc))
   }
 
   /**

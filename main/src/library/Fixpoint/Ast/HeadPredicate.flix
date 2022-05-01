@@ -13,9 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+use Fixpoint.PredSymsOf;
+use Fixpoint.SubstitutePredSym;
+use Fixpoint/Shared.PredSym;
+
 namespace Fixpoint/Ast {
     pub enum HeadPredicate[v] {
         case HeadAtom(PredSym, Denotation[v], Array[HeadTerm[v]])
+    }
+
+    instance PredSymsOf[HeadPredicate[v]] {
+        pub def predSymsOf(x: HeadPredicate[v]): Set[PredSym] = match x {
+            case HeadAtom(predSym, _, _ ) => Set.singleton(predSym)
+        }
+    }
+
+    instance SubstitutePredSym[HeadPredicate[v]] {
+        pub def substitute(x: HeadPredicate[v], s: Map[PredSym, PredSym]): HeadPredicate[v] = match x {
+            case HeadAtom(predSym, den, terms) =>
+                let newSym = Map.getWithDefault(predSym, predSym, s);
+                HeadAtom(newSym, den, terms)
+        }
     }
 
     instance ToString[HeadPredicate[v]] with ToString[v] {

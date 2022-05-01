@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+instance Scoped[ScopedArray[a]] {
+    pub def regionOf(_: ScopedArray[a, r]): Region[r] = () as Region[r]
+}
+
 namespace Array {
 
     ///
@@ -65,7 +69,7 @@ namespace Array {
     /// Equivalent to the expression `a[i]`.
     ///
     @Time(1) @Space(1)
-    pub def get(i: Int32, a: Array[a]): a & Impure = a[i]
+    pub def get(i: Int32, a: ScopedArray[a, r]): a \ Read(r) = a[i]
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.
@@ -73,7 +77,8 @@ namespace Array {
     /// Equivalent to the expression `a[i] = x`.
     ///
     @Time(1) @Space(1)
-    pub def put(x: a, i: Int32, a: Array[a]): Array[a] & Impure = a[i] = x; a
+    pub def put(x: a, i: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ Write(r) =
+        a[i] = x; a
 
     ///
     /// Returns `true` if the given array `a` is empty.
@@ -85,7 +90,7 @@ namespace Array {
     /// Returns the length of the array `a`.
     ///
     @Time(1) @Space(1)
-    pub def length(a: Array[a]): Int32 = a.length
+    pub def length(a: ScopedArray[a, r]): Int32 = a.length
 
     ///
     /// Returns a fresh array with the elements from the array `a` from index `b` (inclusive) until index `e` (exclusive).
@@ -145,7 +150,7 @@ namespace Array {
     /// Returns `None` if `a` is empty.
     ///
     @Time(1) @Space(1)
-    pub def head(a: Array[a]): Option[a] & Impure =
+    pub def head(a: ScopedArray[a, r]): Option[a] \ Read(r) =
         if (length(a) > 0) Some(a[0]) else None
 
     ///
@@ -301,12 +306,12 @@ namespace Array {
     /// Returns `[]` if `b >= e`.
     ///
     @Time(e - b) @Space(e - b)
-    pub def range(b: Int32, e: Int32): Array[Int32] & Impure =
+    pub def range(b: Int32, e: Int32, r: Region[r]): ScopedArray[Int32, r] \ Write(r) =
         if (b >= e)
-            []
+            [] @ r
         else {
             let f = x -> x + b;
-            init(f, e-b)
+            init(f, e - b, r)
         }
 
     ///
@@ -374,7 +379,7 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def map(f: a -> b & ef, a: Array[a]): Array[b] & Impure =
         let len = length(a);
-        init(i -> f(a[i]), len)
+        init(i -> f(a[i]), len, static)
 
     ///
     /// Apply `f` to every element in array `arr`. Array `arr` is mutated.
@@ -400,7 +405,7 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def mapWithIndex(f: (a, Int32) -> b & ef, a: Array[a]): Array[b] & Impure =
         let len = length(a);
-        init(i -> f(a[i], i), len)
+        init(i -> f(a[i], i), len, static)
 
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
@@ -424,7 +429,7 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def flatMap(f: a -> Array[b] & ef, a: Array[a]): Array[b] & Impure =
         let len = length(a);
-        init(i -> f(a[i]), len) |> flatten
+        init(i -> f(a[i]), len, static) |> flatten
 
     ///
     /// Returns the reverse of `a`.
@@ -433,7 +438,7 @@ namespace Array {
     pub def reverse(a: Array[a]): Array[a] & Impure =
         let len = length(a);
         let end = len - 1;
-        init(i -> a[end - i], len)
+        init(i -> a[end - i], len, static)
 
     ///
     /// Reverse the array `arr`, mutating it in place.
@@ -479,7 +484,7 @@ namespace Array {
     def rotateLeftHelper(n: Int32, arr: Array[a]): Array[a] & Impure =
         let len = length(arr);
         let f = i -> { let i1 = n + i; arr[i1 rem len] };
-        init(f, len)
+        init(f, len, static)
 
     ///
     /// Rotate the contents of array `arr` by `n` steps to the right.
@@ -506,7 +511,7 @@ namespace Array {
         let n1 = n rem len;
         let start = len - n1;
         let f = i -> { let i1 = start + i; a[i1 rem len]};
-        init(f, len)
+        init(f, len, static)
 
     ///
     /// Returns a copy of `a` with the element at index `i` replaced by `x`.
@@ -516,7 +521,7 @@ namespace Array {
     @Time(length(a)) @Space(length(a))
     pub def update(i: Int32, x: a, a: Array[a]): Array[a] & Impure =
         let f = ix -> if (ix == i) x else a[ix];
-        init(f, length(a))
+        init(f, length(a), static)
 
     ///
     /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
@@ -655,7 +660,7 @@ namespace Array {
             if (jlen == 0 or uniformHelper(a, jlen))
                 a
             else
-                init(i -> init(j -> a[j][i], ilen), jlen)
+                init(i -> init(j -> a[j][i], ilen, static), jlen, static)
         }
 
     ///
@@ -1170,7 +1175,7 @@ namespace Array {
     @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
     pub def zip(a: Array[a], b: Array[b]): Array[(a,b)] & Impure =
         let len = Int32.min(length(a), length(b));
-        init(i -> (a[i], b[i]), len)
+        init(i -> (a[i], b[i]), len, static)
 
     ///
     /// Returns an array where the element at index `i` is `f(x, y)` where
@@ -1181,7 +1186,7 @@ namespace Array {
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
     pub def zipWith(f: (a, b) -> c & ef, a: Array[a], b: Array[b]): Array[c] & Impure =
         let len = Int32.min(length(a), length(b));
-        init(i -> f(a[i], b[i]), len)
+        init(i -> f(a[i], b[i]), len, static)
 
     ///
     /// Returns a pair of arrays, the first containing all first components in `a`
@@ -1278,13 +1283,11 @@ namespace Array {
     ///
     /// Returns the array `a` as a MutList.
     ///
-    pub def toMutList(a: Array[a]): MutList[a] & Impure =
+    pub def toMutList(a: ScopedArray[a, r]): MutList[a, r] \ { Read(r), Write(r) } =
         let minCap = MutList.minCapacity();
         let len = length(a);
-        if (len < minCap)
-            MutList(ref copyOfRange(0, minCap, a), ref len)
-        else
-            MutList(ref a, ref length(a))
+        let c = Order.max(len, minCap);
+        MutList(ref copyOfRange(0, c, a) @ Scoped.regionOf(a), ref len @ Scoped.regionOf(a))
 
     ///
     /// Alias for `findIndexOfLeft`.
@@ -1339,7 +1342,7 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def findIndices(f: a -> Bool & ef, a: Array[a]): Array[Int32] & Impure =
         let len = length(a);
-        let l = MutList.new();
+        let l = new MutList(static);
         def loop(i) = {
             if (i >= len)
                 Nil
@@ -1355,12 +1358,12 @@ namespace Array {
     /// Build an array of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init(f: Int32 -> a & ef, len: Int32): Array[a] & Impure =
+    pub def init(f: Int32 -> a & ef, len: Int32, r: Region[r]): ScopedArray[a, r] \ { ef, Write(r) } =
         if (len <= 0)
-            []
+            [] @ r
         else {
             let x = f(0);
-            let a = new(x, len);
+            let a = [x; len] @ r;
             def loop(i) = {
                 if (i < len) {
                     a[i] = f(i);
@@ -1400,7 +1403,7 @@ namespace Array {
     /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
     ///
     @Time(length(a)) @Space(1)
-    pub def sameElements(a: Array[a], b: Array[a]): Bool & Impure with Eq[a] =
+    pub def sameElements(a: ScopedArray[a, r1], b: ScopedArray[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
         let alen = length(a);
         let blen = length(b);
         def loop(i) = {
@@ -1440,7 +1443,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, a: Array[a]): Unit & Impure =
+    pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, a: ScopedArray[a, r]): Unit \ { ef, Read(r), Write(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)
@@ -1477,13 +1480,13 @@ namespace Array {
     pub def updateSequence(i: Int32, sub: Array[a], a: Array[a]): Array[a] & Impure =
         let end = i + length(sub);
         let f = ix -> if (ix >= i and ix < end) sub[ix - i] else a[ix];
-        init(f, length(a))
+        init(f, length(a), static)
 
     ///
     /// Update the mutable array `a` with the elements starting at index `i` replaced by `sub`.
     ///
     @Time(length(a)) @Space(1)
-    pub def updateSequence!(i: Int32, sub: Array[a], a: Array[a]): Unit & Impure =
+    pub def updateSequence!(i: Int32, sub: ScopedArray[a, r1], a: ScopedArray[a, r2]): Unit \ { Read(r1), Write(r2) } =
         let end = i + length(sub);
         let f = { (_,ix) ->
             if (ix >= i and ix < end)
@@ -1601,7 +1604,7 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWithin!(cmp: (a,a) -> Comparison, lo: Int32, hi: Int32, a: Array[a]): Unit & Impure =
+    pub def sortWithin!(cmp: (a,a) -> Comparison, lo: Int32, hi: Int32, a: ScopedArray[a, r]): Unit \ { Read(r), Write(r) }=
         if (lo >= hi)
             ()
         else {
@@ -1615,7 +1618,7 @@ namespace Array {
     ///
     /// Precondition: `i` and `j` are within bounds.
     ///
-    def swap!(a: Array[a], i: Int32, j: Int32): Unit & Impure =
+    def swap!(a: ScopedArray[a, r], i: Int32, j: Int32): Unit \ { Read(r), Write(r) } =
         let x = a[i];
         let y = a[j];
         a[i] = y;
@@ -1625,7 +1628,7 @@ namespace Array {
     ///
     /// Partition step of the Quicksort algorithm.
     ///
-    def quicksortPartition(cmp: (a,a) -> Comparison, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
+    def quicksortPartition(cmp: (a,a) -> Comparison, a: ScopedArray[a, r], lo: Int32, hi: Int32): Int32 \ { Read(r), Write(r) } =
         let pivot = a[hi];
         let i = forWithAccum(lo, hi, lo, (j,ix) ->
             if (cmp(a[j], pivot) == LessThan) {
@@ -1660,52 +1663,52 @@ namespace Array {
     /// If the range is valid and greater than the length of `a`, the resulting array with have the length of the range
     /// and include the specified range of `a`.
     ///
-    pub def copyOfRange(b: Int32, e: Int32, a: Array[a]): Array[a] & Impure =
+    pub def copyOfRange(b: Int32, e: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         match (reifyType a) {
             case ErasedType =>
                 let arr = a as Array[##java.lang.Object];
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32): Array[##java.lang.Object] & Impure as copy;
-                copy(arr, b, e) as Array[a]
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32): ScopedArray[##java.lang.Object, r] & r as copy;
+                copy(arr, b, e) as ScopedArray[a, r]
             case ReifiedUnit =>
                 let arr = a as Array[Unit];
-                import static java.util.Arrays.copyOfRange(Array[Unit], Int32, Int32): Array[Unit] & Impure as copy;
-                copy(arr, b, e) as Array[a]
+                import static java.util.Arrays.copyOfRange(Array[Unit], Int32, Int32): ScopedArray[Unit, r] & r as copy;
+                copy(arr, b, e) as ScopedArray[a, r]
             case ReifiedBool =>
                 let arr = a as Array[Bool];
-                import static java.util.Arrays.copyOfRange(Array[Bool], Int32, Int32): Array[Bool] & Impure as copy;
-                copy(arr, b, e) as Array[a]
+                import static java.util.Arrays.copyOfRange(Array[Bool], Int32, Int32): ScopedArray[Bool, r] & r as copy;
+                copy(arr, b, e) as ScopedArray[a, r]
             case ReifiedChar =>
                 let arr = a as Array[Char];
-                import static java.util.Arrays.copyOfRange(Array[Char], Int32, Int32): Array[Char] & Impure as copy;
-                copy(arr, b, e) as Array[a]
+                import static java.util.Arrays.copyOfRange(Array[Char], Int32, Int32): ScopedArray[Char, r] & r as copy;
+                copy(arr, b, e) as ScopedArray[a, r]
             case ReifiedFloat32 =>
                 let arr = a as Array[Float32];
-                import static java.util.Arrays.copyOfRange(Array[Float32], Int32, Int32): Array[Float32] & Impure as copy;
-                copy(arr, b, e) as Array[a]
+                import static java.util.Arrays.copyOfRange(Array[Float32], Int32, Int32): ScopedArray[Float32, r] & r as copy;
+                copy(arr, b, e) as ScopedArray[a, r]
             case ReifiedFloat64 =>
                 let arr = a as Array[Float64];
-                import static java.util.Arrays.copyOfRange(Array[Float64], Int32, Int32): Array[Float64] & Impure as copy;
-                copy(arr, b, e) as Array[a]
+                import static java.util.Arrays.copyOfRange(Array[Float64], Int32, Int32): ScopedArray[Float64, r] & r as copy;
+                copy(arr, b, e) as ScopedArray[a, r]
             case ReifiedInt8 =>
                 let arr = a as Array[Int8];
-                import static java.util.Arrays.copyOfRange(Array[Int8], Int32, Int32): Array[Int8] & Impure as copy;
-                copy(arr, b, e) as Array[a]
+                import static java.util.Arrays.copyOfRange(Array[Int8], Int32, Int32): ScopedArray[Int8, r] & r as copy;
+                copy(arr, b, e) as ScopedArray[a, r]
             case ReifiedInt16 =>
                 let arr = a as Array[Int16];
-                import static java.util.Arrays.copyOfRange(Array[Int16], Int32, Int32): Array[Int16] & Impure as copy;
-                copy(arr, b, e) as Array[a]
+                import static java.util.Arrays.copyOfRange(Array[Int16], Int32, Int32): ScopedArray[Int16, r] & r as copy;
+                copy(arr, b, e) as ScopedArray[a, r]
             case ReifiedInt32 =>
                 let arr = a as Array[Int32];
-                import static java.util.Arrays.copyOfRange(Array[Int32], Int32, Int32): Array[Int32] & Impure as copy;
-                copy(arr, b, e) as Array[a]
+                import static java.util.Arrays.copyOfRange(Array[Int32], Int32, Int32): ScopedArray[Int32, r] & r as copy;
+                copy(arr, b, e) as ScopedArray[a, r]
             case ReifiedInt64 =>
                 let arr = a as Array[Int64];
-                import static java.util.Arrays.copyOfRange(Array[Int64], Int32, Int32): Array[Int64] & Impure as copy;
-                copy(arr, b, e) as Array[a]
+                import static java.util.Arrays.copyOfRange(Array[Int64], Int32, Int32): ScopedArray[Int64, r] & r as copy;
+                copy(arr, b, e) as ScopedArray[a, r]
             case ReifiedArray(_) =>
                 let arr = a as Array[##java.lang.Object];
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32): Array[##java.lang.Object] & Impure as copy;
-                copy(arr, b, e) as Array[a]
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32): ScopedArray[##java.lang.Object, r] & r as copy;
+                copy(arr, b, e) as ScopedArray[a, r]
         }
 
    ///

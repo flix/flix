@@ -39,7 +39,7 @@ namespace Fixpoint {
             Array.compare(a, b) as & Pure
     }
 
-    type alias Database[v] = MutMap[RamSym[v], MutMap[Tuple[v], v]]
+    type alias Database[v] = MutMap[RamSym[v], MutMap[Tuple[v], v, Impure], Impure]
     type alias SearchEnv[v] = (Array[Tuple[v]], Array[v])
 
     def interpret(stmt: RamStmt[v]): Database[v] & Impure with Order[v], ToString[v] =
@@ -106,7 +106,7 @@ namespace Fixpoint {
                         MutMap.put!(tuple, $DEFAULT$, rel)
                     case Denotation.Latticenal(bot, leq, lub, _) =>
                         let len = Array.length(terms);
-                        let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1));
+                        let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1, static));
                         let lat = evalTerm(env, terms[len - 1]);
                         if (lat `leq` bot)
                             ()
@@ -145,7 +145,7 @@ namespace Fixpoint {
                         not MutMap.memberOf(tuple, rel)
                     case Denotation.Latticenal(bot, leq, _, _) =>
                         let len = Array.length(terms);
-                        let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1));
+                        let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1, static));
                         let lat = evalTerm(env, terms[len - 1]);
                         not (lat `leq` MutMap.getWithDefault(key, bot, rel))
                 }

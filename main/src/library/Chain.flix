@@ -56,7 +56,7 @@ instance Monad[Chain] {
 
 instance Foldable[Chain] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldLeft(f, s, c)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRightOld(f, s, c)
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRight(f, s, c)
 }
 
 instance Traversable[Chain] {
@@ -480,27 +480,17 @@ namespace Chain {
         loop(c, s)
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `c` going from right to left.
+    /// Applies `f` to a start value `z` and all elements in `c` going from right to left.
     ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
-    ///
-    pub def foldRightOld(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef =
-        def loop(cc, acc) = match viewRight(cc) {
-            case NoneRight        => acc
-            case SomeRight(rs, a) => loop(rs, f(a, acc))
-        };
-        loop(c, s)
-
-    ///
-    /// Applies `f` to a start value `s` and all elements in `c` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Chain[a]): b & ef = match viewLeft(c) {
-        case Chain/ViewLeft.NoneLeft        => z
-        case Chain/ViewLeft.SomeLeft(x, rs) => f(x, _ -> foldRight(f, z, rs))
-    }
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Chain[a]): b & ef =
+        def loop(cc) = match viewLeft(cc) {
+            case NoneLeft        => z
+            case SomeLeft(x, rs) => f(x, _ -> loop(rs))
+        };
+        loop(c)
 
     ///
     /// Returns `c` without the first `n` elements.
@@ -729,8 +719,8 @@ namespace Chain {
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(c: Chain[a]): MutList[a] & Impure =
-        toArray(c) |> Array.toMutList    // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(c: Chain[a]): MutList[a, Impure] & Impure =
+        toArray(c) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
 
     ///
     /// Returns the list `c` as a set.

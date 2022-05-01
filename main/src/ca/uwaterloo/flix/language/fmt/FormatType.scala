@@ -264,7 +264,7 @@ object FormatType {
           case Audience.External => text match {
             case VarText.Absent => string
             case VarText.SourceText(s) => s
-            case VarText.FallbackText(s) => s
+            case VarText.FallbackText(s) => "?" + s + id.toString
           }
         }
 

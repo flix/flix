@@ -45,7 +45,7 @@ instance Hash[Set[a]] with Hash[a] {
 
 instance ToString[Set[a]] with ToString[a] {
     pub def toString(s: Set[a]): String =
-        let st = Set.foldRight((x, acc) -> "${x}, ${acc}", "", s);
+        let st = Set.foldRight((x, k) -> "${x}, ${k()}", "", s);
         "Set#{${String.dropRight(2, st)}}"
 }
 
@@ -67,7 +67,7 @@ instance MeetLattice[Set[a]] with Order[a] {
 
 instance Foldable[Set] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldLeft(f, s, s1)
-    pub def foldRight(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRight(f, s, s1)
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRight(f, s, s1)
 }
 
 instance SemiGroup[Set[a]] with Order[a] {
@@ -295,22 +295,11 @@ namespace Set {
     /// Applies `f` to a start value `s` and all elements in `s` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef =
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, s1: Set[a]): b & ef =
         let Set(t) = s1;
-        RedBlackTree.foldRight((k, _, acc) -> f(k, acc), s, t)
-
-    ///
-    /// Lazily applies `f` to a start value `s` and all elements in `s` going from right to left.
-    /// The function f must be pure.
-    ///
-    /// That is, the result is of the form: `f(x1, ...lazy f(xn-1, lazy f(xn, s))...)`.
-    /// The foldRightLazy function exists to allow early termination of a fold.
-    ///
-    @Experimental @Lazy
-    pub def foldRightLazy(f: (a, Lazy[b]) -> b, i: b, s: Set[a]): b =
-        let Set(es) = s;
-        RedBlackTree.foldRightLazy((k, _, acc) -> f(k, acc), i, es)
+        RedBlackTree.foldRight((k, _, c) -> f(k, c), z, t)
 
     ///
     /// Applies `f` to all elements in `s` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -534,13 +523,13 @@ namespace Set {
     ///
     @Time(size(s)) @Space(size(s))
     pub def toMap(s: Set[(a, b)]): Map[a, b] with Order[a] =
-        foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc), Map#{}, s)
+        foldRight((x, c) -> let (k, v) = x; Map.insert(k, v, c()), Map#{}, s)
 
     ///
     /// Returns a map with elements of `s` as keys and `f` applied as values.
     ///
     pub def toMapWith(f: a -> b, s: Set[a]): Map[a, b] with Order[a] =
-        Set.foldRight((x, m) -> Map.insert(x, f(x), m), Map.empty(), s)
+        Set.foldRight((x, k) -> Map.insert(x, f(x), k()), Map.empty(), s)
     ///
     /// Returns the set `s` as a `MutSet`.
     ///
@@ -588,7 +577,7 @@ namespace Set {
     /// Returns the set `s` as a `DelayList`.
     ///
     pub def toDelayList(s: Set[a]): DelayList[a] =
-        foldRight((x, acc) -> ECons(x, acc), ENil, s)
+        foldRight((x, k) -> ECons(x, k()), ENil, s)
 
     ///
     /// Returns an iterator over `s`.

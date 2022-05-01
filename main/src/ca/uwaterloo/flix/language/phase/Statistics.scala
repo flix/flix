@@ -105,6 +105,7 @@ object Statistics {
       case Expression.Binary(sop, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Let(sym, mod, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.Region(tpe, loc) => Counter.empty
       case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) => visitExp(exp)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
       case Expression.Stm(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
@@ -143,6 +144,7 @@ object Statistics {
       case Expression.Lazy(exp, tpe, loc) => visitExp(exp)
       case Expression.Force(exp, tpe, eff, loc) => visitExp(exp)
       case Expression.FixpointConstraintSet(cs, stf, tpe, loc) => Counter.merge(cs.map(visitConstraint))
+      case Expression.FixpointLambda(preds, exp, stf, tpe, eff, loc) => visitExp(exp)
       case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => visitExp(exp)
       case Expression.FixpointFilter(pred, exp, tpe, eff, loc) => visitExp(exp)

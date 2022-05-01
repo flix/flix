@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
+use Fixpoint.PredSymsOf;
+use Fixpoint.SubstitutePredSym;
 use Fixpoint/Ast.Denotation;
+use Fixpoint/Shared.PredSym;
 
 namespace Fixpoint/Ram {
     pub enum RamSym[v] {
-        case Full(String, Int32, Denotation[v])
-        case Delta(String, Int32, Denotation[v])
-        case New(String, Int32, Denotation[v])
+        case Full(PredSym, Int32, Denotation[v])
+        case Delta(PredSym, Int32, Denotation[v])
+        case New(PredSym, Int32, Denotation[v])
     }
 
     instance Eq[RamSym[v]] {
@@ -50,11 +53,35 @@ namespace Fixpoint/Ram {
         }
     }
 
+    instance PredSymsOf[RamSym[v]] {
+        pub def predSymsOf(x: RamSym[v]): Set[PredSym] = match x {
+            case Full(predSym, _, _)    => Set.singleton(predSym)
+            case Delta(predSym, _, _)   => Set.singleton(predSym)
+            case New(predSym, _, _)     => Set.singleton(predSym)
+        }
+    }
+
+    instance SubstitutePredSym[RamSym[v]] {
+        pub def substitute(x: RamSym[v], s: Map[PredSym, PredSym]): RamSym[v] = match x {
+            case Full(predSym, arity, den)  =>
+                let newSym = Map.getWithDefault(predSym, predSym, s);
+                Full(newSym, arity, den)
+
+            case Delta(predSym, arity, den) =>
+                let newSym = Map.getWithDefault(predSym, predSym, s);
+                Delta(newSym, arity, den)
+
+            case New(predSym, arity, den)   =>
+                let newSym = Map.getWithDefault(predSym, predSym, s);
+                New(newSym, arity, den)
+        }
+    }
+
     instance ToString[RamSym[v]] {
         pub def toString(ramSym: RamSym[v]): String = match ramSym {
-            case Full(name, _, _) => name
-            case Delta(name, _, _) => "Δ${name}"
-            case New(name, _, _) => "Δ${name}'"
+            case Full(sym, _, _)    => "${sym}"
+            case Delta(sym, _, _)   => "Δ${sym}"
+            case New(sym, _, _)     => "Δ${sym}'"
         }
     }
 

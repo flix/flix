@@ -15,14 +15,15 @@
  */
 
 use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar};
-use Fixpoint/Ast.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Denotation, Polarity, PredSym, VarSym};
+use Fixpoint/Ast.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Denotation, Polarity, VarSym};
 use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.BodyPredicate.{BodyAtom};
 use Fixpoint/Ast.BodyPredicate.{Guard0, Guard1, Guard2, Guard3, Guard4, Guard5};
 use Fixpoint/Ast.BodyPredicate.{Loop1};
-use Fixpoint/Ast.PredSym.PredSym;
+use Fixpoint/Shared.PredSym;
+use Fixpoint/Shared.PredSym.PredSym;
 
 namespace Fixpoint {
     ///
@@ -35,7 +36,7 @@ namespace Fixpoint {
     ///
     def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] & Impure with ToString[v] = match d {
         case Datalog(facts, rules) =>
-            let stmts = MutList.new();
+            let stmts = new MutList(static);
             Array.foreach(compileRule(stmts), facts);
             Array.foldRight(rule -> match rule {
                 case Constraint(HeadAtom(p, _, _), _) =>
@@ -65,39 +66,39 @@ namespace Fixpoint {
     /// Note that Eval-Rule is the code emitted by `compileRule`
     /// and Eval-Rule-Incr is the code emitted by `compileRuleIncr`.
     ///
-    def compileStratum(stmts: MutList[RamStmt[v]], stratum: Array[Constraint[v]]): Unit & Impure with ToString[v] =
+    def compileStratum(stmts: MutList[RamStmt[v], Impure], stratum: Array[Constraint[v]]): Unit & Impure with ToString[v] =
         let idb = Array.foldRight(match Constraint(HeadAtom(pred, den, terms), _) -> {
             let arity = Array.length(terms);
             Map.insert(pred, (arity, den))
         }, Map#{}, stratum);
-        let loopBody = MutList.new();
+        let loopBody = new MutList(static);
         Array.foreach(compileRule(stmts), stratum);
-        Map.foreach(match PredSym(relName) -> match (arity, den) -> {
-            let full = RamSym.Full(relName, arity, den);
-            let delta = RamSym.Delta(relName, arity, den);
+        Map.foreach(predSym -> match (arity, den) -> {
+            let full = RamSym.Full(predSym, arity, den);
+            let delta = RamSym.Delta(predSym, arity, den);
             let mergeDelta = RamStmt.Merge(full, delta);
             MutList.push!(mergeDelta, stmts)
         }, idb);
-        Map.foreach(match PredSym(relName) -> match (arity, den) -> {
-            let purge = RamStmt.Purge(RamSym.New(relName, arity, den));
+        Map.foreach(predSym -> match (arity, den) -> {
+            let purge = RamStmt.Purge(RamSym.New(predSym, arity, den));
             MutList.push!(purge, loopBody)
         }, idb);
         Array.foreach(compileRuleIncr(loopBody), stratum);
-        Map.foreach(match PredSym(relName) -> match (arity, den) -> {
-            let new = RamSym.New(relName, arity, den);
-            let full = RamSym.Full(relName, arity, den);
+        Map.foreach(predSym -> match (arity, den) -> {
+            let new = RamSym.New(predSym, arity, den);
+            let full = RamSym.Full(predSym, arity, den);
             let mergeNew = RamStmt.Merge(new, full);
             MutList.push!(mergeNew, loopBody)
         }, idb);
-        Map.foreach(match PredSym(relName) -> match (arity, den) -> {
-            let delta = RamSym.Delta(relName, arity, den);
-            let new = RamSym.New(relName, arity, den);
+        Map.foreach(predSym -> match (arity, den) -> {
+            let delta = RamSym.Delta(predSym, arity, den);
+            let new = RamSym.New(predSym, arity, den);
             let assign = RamStmt.Assign(delta, new);
             MutList.push!(assign, loopBody)
         }, idb);
         let loopTest =
-            Map.mapWithKey(match PredSym(relName) -> match (arity, den) -> {
-                BoolExp.Empty(RamSym.Delta(relName, arity, den))
+            Map.mapWithKey(predSym -> match (arity, den) -> {
+                BoolExp.Empty(RamSym.Delta(predSym, arity, den))
             }, idb) |>
             Map.valuesOf;
         let untilBody = RamStmt.Seq(MutList.toArray(loopBody));
@@ -118,20 +119,20 @@ namespace Fixpoint {
     ///         end
     ///     end
     ///
-    def compileRule(stmts: MutList[RamStmt[v]], rule: Constraint[v]): Unit & Impure with ToString[v] = match rule {
-        case Constraint(HeadAtom(PredSym(headPred), headDen, headTerms), body) =>
+    def compileRule(stmts: MutList[RamStmt[v], Impure], rule: Constraint[v]): Unit & Impure with ToString[v] = match rule {
+        case Constraint(HeadAtom(headSym, headDen, headTerms), body) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
             let ramTerms = Array.map(compileHeadTerm(env), headTerms);
             let arity = Array.length(ramTerms);
-            let projection = RelOp.Project(ramTerms, RamSym.Full(headPred, arity, headDen));
+            let projection = RelOp.Project(ramTerms, RamSym.Full(headSym, arity, headDen));
             let join = compileBody(env, augBody);
             let loopBody = RelOp.If(join, projection);
             let insert =
                 Array.foldRight(match (atom, rowVar) -> acc -> match atom {
-                    case BodyAtom(PredSym(pred), den, Polarity.Positive, _, terms) =>
+                    case BodyAtom(bodySym, den, Polarity.Positive, _, terms) =>
                         let arity = Array.length(terms);
-                        RelOp.Search(rowVar, RamSym.Full(pred, arity, den), acc)
+                        RelOp.Search(rowVar, RamSym.Full(bodySym, arity, den), acc)
                     case _ => acc
                 }, loopBody, augBody) |>
                 RamStmt.Insert;
@@ -170,24 +171,24 @@ namespace Fixpoint {
     /// Note that there are two join loops, because there are two positive atoms.
     /// Also note how in the first loop, `B` is the focused atom and `C` is focused in the second loop.
     ///
-    def compileRuleIncr(stmts: MutList[RamStmt[v]], rule: Constraint[v]): Unit & Impure with ToString[v] = match rule {
-        case Constraint(HeadAtom(PredSym(headPred), headDen, headTerms), body) =>
+    def compileRuleIncr(stmts: MutList[RamStmt[v], Impure], rule: Constraint[v]): Unit & Impure with ToString[v] = match rule {
+        case Constraint(HeadAtom(headSym, headDen, headTerms), body) =>
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
             let ramTerms = Array.map(compileHeadTerm(env), headTerms);
             let arity = Array.length(ramTerms);
-            let projection = RelOp.Project(ramTerms, RamSym.New(headPred, arity, headDen));
+            let projection = RelOp.Project(ramTerms, RamSym.New(headSym, arity, headDen));
             let join = compileBody(env, augBody);
-            let loopBody = RelOp.If(BoolExp.NotMemberOf(ramTerms, RamSym.Full(headPred, arity, headDen)) :: join, projection);
+            let loopBody = RelOp.If(BoolExp.NotMemberOf(ramTerms, RamSym.Full(headSym, arity, headDen)) :: join, projection);
             let compile = delta -> { // `delta` designates the focused atom.
                 let insert =
                     Array.foldRight(match (atom, rowVar) -> acc -> match atom {
-                        case BodyAtom(PredSym(pred), den, Polarity.Positive, _, terms) =>
+                        case BodyAtom(bodySym, den, Polarity.Positive, _, terms) =>
                             let arity = Array.length(terms);
                             let ramSym = if (rowVar == delta) {
-                                RamSym.Delta(pred, arity, den)
+                                RamSym.Delta(bodySym, arity, den)
                             } else {
-                                RamSym.Full(pred, arity, den)
+                                RamSym.Full(bodySym, arity, den)
                             };
                             RelOp.Search(rowVar, ramSym, acc)
                         case _ => acc
@@ -319,10 +320,10 @@ namespace Fixpoint {
                                 BoolExp.Leq(leq, t, RamTerm.LoadLatVar(rowVar))
                     }) |>
                     Array.foldRight(x -> xs -> x :: xs, acc)
-                case BodyAtom(PredSym(pred), denotation, Polarity.Negative, _, terms) =>
+                case BodyAtom(bodySym, denotation, Polarity.Negative, _, terms) =>
                     let ramTerms = Array.mapWithIndex(compileBodyTerm, terms);
                     let arity = Array.length(ramTerms);
-                    BoolExp.NotMemberOf(ramTerms, RamSym.Full(pred, arity, denotation)) :: acc
+                    BoolExp.NotMemberOf(ramTerms, RamSym.Full(bodySym, arity, denotation)) :: acc
                 case Guard0(f) =>
                     BoolExp.Guard0(f) :: acc
                 case Guard1(f, v) =>

@@ -112,7 +112,7 @@ object Resolver {
     }
 
     val classSyms = classes.values.map(_.sym)
-    val getSuperClasses = (clazz: Symbol.ClassSym) => classes(clazz).superClasses.map(_.clazz)
+    val getSuperClasses = (clazz: Symbol.ClassSym) => classes(clazz).superClasses.map(_.head.sym)
     Graph.topologicalSort(classSyms, getSuperClasses) match {
       case Graph.TopologicalSort.Cycle(path) => mkCycleErrors(path)
       case Graph.TopologicalSort.Sorted(_) => ().toSuccess
@@ -1051,6 +1051,12 @@ object Resolver {
             cs => ResolvedAst.Expression.FixpointConstraintSet(cs, loc)
           }
 
+        case NamedAst.Expression.FixpointLambda(preds, exp, loc) =>
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            case e => ResolvedAst.Expression.FixpointLambda(preds, e, loc)
+          }
+
         case NamedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
           val e1Val = visitExp(exp1, region)
           val e2Val = visitExp(exp2, region)
@@ -1307,7 +1313,9 @@ object Resolver {
       val tpeVal = resolveType(tpe0, taenv, ns0, root)
 
       mapN(classVal, tpeVal) {
-        case (clazz, tpe) => ResolvedAst.TypeConstraint(clazz.sym, tpe, loc)
+        case (clazz, tpe) =>
+          val head = Ast.TypeConstraint.Head(clazz.sym, clazz0.loc)
+          ResolvedAst.TypeConstraint(head, tpe, loc)
       }
   }
 
@@ -1320,7 +1328,9 @@ object Resolver {
       val tpeVal = resolveType(tpe0, taenv, ns0, root)
 
       mapN(classVal, tpeVal) {
-        case (clazz, tpe) => ResolvedAst.TypeConstraint(clazz.sym, tpe, loc)
+        case (clazz, tpe) =>
+          val head = Ast.TypeConstraint.Head(clazz.sym, clazz0.loc)
+          ResolvedAst.TypeConstraint(head, tpe, loc)
       }
   }
 
@@ -1827,7 +1837,7 @@ object Resolver {
     /**
       * The result is an enum.
       */
-    case class Enum(enum: NamedAst.Enum) extends EnumOrTypeAliasLookupResult
+    case class Enum(enum0: NamedAst.Enum) extends EnumOrTypeAliasLookupResult
 
     /**
       * The result is a type alias.

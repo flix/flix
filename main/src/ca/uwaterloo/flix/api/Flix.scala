@@ -163,11 +163,13 @@ class Flix {
     "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
 
     "Applicative.flix" -> LocalResource.get("/src/library/Applicative.flix"),
+    "CommutativeGroup.flix" -> LocalResource.get("/src/library/CommutativeGroup.flix"),
     "CommutativeMonoid.flix" -> LocalResource.get("/src/library/CommutativeMonoid.flix"),
     "CommutativeSemiGroup.flix" -> LocalResource.get("/src/library/CommutativeSemiGroup.flix"),
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
+    "Group.flix" -> LocalResource.get("/src/library/Group.flix"),
     "Identity.flix" -> LocalResource.get("/src/library/Identity.flix"),
     "Monad.flix" -> LocalResource.get("/src/library/Monad.flix"),
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
@@ -196,9 +198,11 @@ class Flix {
     "Fixpoint/IndexSelection.flix" -> LocalResource.get("/src/library/Fixpoint/IndexSelection.flix"),
     "Fixpoint/Interpreter.flix" -> LocalResource.get("/src/library/Fixpoint/Interpreter.flix"),
     "Fixpoint/Options.flix" -> LocalResource.get("/src/library/Fixpoint/Options.flix"),
+    "Fixpoint/PredSymsOf.flix" -> LocalResource.get("/src/library/Fixpoint/PredSymsOf.flix"),
     "Fixpoint/Simplifier.flix" -> LocalResource.get("/src/library/Fixpoint/Simplifier.flix"),
     "Fixpoint/Solver.flix" -> LocalResource.get("/src/library/Fixpoint/Solver.flix"),
     "Fixpoint/Stratifier.flix" -> LocalResource.get("/src/library/Fixpoint/Stratifier.flix"),
+    "Fixpoint/SubstitutePredSym.flix" -> LocalResource.get("/src/library/Fixpoint/SubstitutePredSym.flix"),
     "Fixpoint/ToString.flix" -> LocalResource.get("/src/library/Fixpoint/ToString.flix"),
     "Fixpoint/VarsToIndices.flix" -> LocalResource.get("/src/library/Fixpoint/VarsToIndices.flix"),
 
@@ -212,7 +216,6 @@ class Flix {
     "Fixpoint/Ast/HeadTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/HeadTerm.flix"),
     "Fixpoint/Ast/Polarity.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Polarity.flix"),
     "Fixpoint/Ast/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/PrecedenceGraph.flix"),
-    "Fixpoint/Ast/PredSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/PredSym.flix"),
     "Fixpoint/Ast/VarSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/VarSym.flix"),
 
     "Fixpoint/Ram/BoolExp.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/BoolExp.flix"),
@@ -221,6 +224,8 @@ class Flix {
     "Fixpoint/Ram/RamTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RamTerm.flix"),
     "Fixpoint/Ram/RelOp.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RelOp.flix"),
     "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
+
+    "Fixpoint/Shared/PredSym.flix" -> LocalResource.get("/src/library/Fixpoint/Shared/PredSym.flix"),
   )
 
   /**

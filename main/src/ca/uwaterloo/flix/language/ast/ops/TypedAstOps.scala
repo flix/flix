@@ -77,6 +77,9 @@ object TypedAstOps {
         val env1 = env0 + (sym -> exp1.tpe)
         visitExp(exp1, env1) ++ visitExp(exp2, env1)
 
+      case Expression.Region(_, _) =>
+        Map.empty
+
       case Expression.Scope(_, _, exp, _, _, _) =>
         visitExp(exp, env0)
 
@@ -220,6 +223,9 @@ object TypedAstOps {
           case (macc, c) => macc ++ visitConstraint(c, env0)
         }
 
+      case Expression.FixpointLambda(preds, exp, stf, tpe, eff, loc) =>
+        visitExp(exp, env0)
+
       case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
@@ -355,6 +361,7 @@ object TypedAstOps {
     case Expression.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Let(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.LetRec(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.Region(_, _) => Set.empty
     case Expression.Scope(_, _, exp, _, _, _) => sigSymsOf(exp)
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expression.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -393,6 +400,7 @@ object TypedAstOps {
     case Expression.Lazy(exp, _, _) => sigSymsOf(exp)
     case Expression.Force(exp, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointConstraintSet(_, _, _, _) => Set.empty
+    case Expression.FixpointLambda(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.FixpointSolve(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointFilter(_, exp, _, _, _) => sigSymsOf(exp)
@@ -489,6 +497,9 @@ object TypedAstOps {
 
     case Expression.LetRec(sym, _, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - sym
+
+    case Expression.Region(_, _) =>
+      Map.empty
 
     case Expression.Scope(sym, _, exp, _, _, _) =>
       freeVars(exp) - sym
@@ -627,6 +638,9 @@ object TypedAstOps {
       cs.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, c) => acc ++ freeVars(c)
       }
+
+    case Expression.FixpointLambda(_, exp, _, _, _, _) =>
+      freeVars(exp)
 
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)

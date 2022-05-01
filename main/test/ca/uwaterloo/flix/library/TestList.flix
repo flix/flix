@@ -2584,44 +2584,6 @@ def distinctWith09(): Bool =
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toMutDeque                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def toMutDeque01(): Bool & Impure =
-        let d0: MutDeque[Int32] = List.toMutDeque(Nil);
-        let d1: MutDeque[Int32] = MutDeque.new();
-        MutDeque.sameElements(d0, d1)
-
-    @test
-    def toMutDeque02(): Bool & Impure =
-        let d0 = List.toMutDeque(1 :: Nil);
-        let d1 = MutDeque.new();
-        MutDeque.pushBack(1, d1);
-        MutDeque.sameElements(d0, d1)
-
-    @test
-    def toMutDeque03(): Bool & Impure =
-        let d0 = List.toMutDeque(1 :: 2 :: Nil);
-        let d1 = MutDeque.new();
-        MutDeque.pushBack(1, d1);
-        MutDeque.pushBack(2, d1);
-        MutDeque.sameElements(d0, d1)
-
-    @test
-    def toMutDeque04(): Bool & Impure =
-        let d0 = List.toMutDeque(1 :: 2 :: 3 :: Nil);
-        let d1 = MutDeque.new();
-        MutDeque.pushFront(2, d1);
-        MutDeque.pushFront(1, d1);
-        MutDeque.pushBack(3, d1);
-        MutDeque.sameElements(d0, d1)
-
-    @test
-    def toMutDeque05(): Bool & Impure =
-        List.toMutDeque(1 :: 2 :: 3 :: Nil) |> MutDeque.toList == 1 :: 2 :: 3 :: Nil
-
-    /////////////////////////////////////////////////////////////////////////////
     // merge                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 

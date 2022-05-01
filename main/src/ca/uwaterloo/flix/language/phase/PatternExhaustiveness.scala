@@ -174,6 +174,8 @@ object PatternExhaustiveness {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)
         } yield tast
+        case Expression.Region(_, _) =>
+          tast.toSuccess
         case Expression.Scope(_, _, exp, _, _, _) =>
           for {
             _ <- checkPats(exp, root)
@@ -338,6 +340,11 @@ object PatternExhaustiveness {
         case Expression.FixpointConstraintSet(cs, stf, tpe, loc) =>
           for {
             _ <- traverse(cs)(visitConstraint(_, root))
+          } yield tast
+
+        case Expression.FixpointLambda(_, exp, stf, tpe, eff, loc) =>
+          for {
+            _ <- checkPats(exp, root)
           } yield tast
 
         case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>

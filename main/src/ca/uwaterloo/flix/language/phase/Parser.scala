@@ -127,11 +127,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndPurity ~ OptTypeConstraintList ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ OptTypeConstraintList ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
     }
 
     def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndPurity ~ OptTypeConstraintList ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ OptTypeConstraintList ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
@@ -139,7 +139,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Op: Rule1[ParsedAst.Declaration.Op] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndPurity ~ OptTypeConstraintList ~ SP ~> ParsedAst.Declaration.Op
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ OptTypeConstraintList ~ SP ~> ParsedAst.Declaration.Op
     }
 
     def Enum: Rule1[ParsedAst.Declaration.Enum] = {
@@ -283,33 +283,21 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     SP ~ Names.Attribute ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Attribute
   }
 
-  def TypeAndPurity: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = rule {
-    Type ~ optional((WS ~ "&" ~ WS ~ Type) | PurityAlt)
+  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.EffectOrPurity]] = rule {
+    Type ~ optional(optWS ~ EffectSetOrBool)
   }
 
-  def PurityAlt: Rule1[ParsedAst.Type] = {
-    def Var: Rule1[ParsedAst.Purity.Var] = rule {
-      SP ~ Names.Variable ~ SP ~> ParsedAst.Purity.Var
+  def EffectSetOrBool: Rule1[ParsedAst.EffectOrPurity] = {
+    def Set: Rule1[ParsedAst.EffectOrPurity] = rule {
+      "\\" ~ optWS ~ Effects.EffectSet ~> ParsedAst.EffectOrPurity.Effect
     }
 
-    def Read: Rule1[ParsedAst.Purity.Read] = rule {
-      keyword("Read") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Purity.Read
-    }
-
-    def Write: Rule1[ParsedAst.Purity.Write] = rule {
-      keyword("Write") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.Purity.Write
-    }
-
-    def Single: Rule1[ParsedAst.Type] = rule {
-      SP ~ (Var | Read | Write) ~ SP ~> ((sp1: SourcePosition, pur: ParsedAst.Purity, sp2: SourcePosition) => ParsedAst.Type.Union(sp1, Seq(pur), sp2))
-    }
-
-    def Union: Rule1[ParsedAst.Type] = rule {
-      SP ~ "{" ~ optWS ~ zeroOrMore(Var | Read | Write).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Union
+    def Bool: Rule1[ParsedAst.EffectOrPurity] = rule {
+      "&" ~ optWS ~ Type ~> ParsedAst.EffectOrPurity.Purity
     }
 
     rule {
-      WS ~ "\\" ~ WS ~ (Single | Union)
+      Set | Bool
     }
   }
 
@@ -667,12 +655,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
-        ReifyType | ReifyPurity | Choose | Match | LambdaMatch | TryCatch | Lambda | Tuple |
+      Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse | Reify | ReifyBool |
+        ReifyType | ReifyPurity | Choose | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | New | ArrayLit | ArrayNew |
-        FNil | FSet | FMap | ConstraintSet | FixpointProject | FixpointSolveWithProject |
-        FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal |
+        FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
+        FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         UnaryLambda | FName | Tag | Hole
     }
 
@@ -742,6 +730,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def LetUse: Rule1[ParsedAst.Expression.Use] = rule {
       SP ~ Use ~ optWS ~ ";" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Expression.Use
+    }
+
+    def Static: Rule1[ParsedAst.Expression.Static] = rule {
+      SP ~ keyword("static") ~ SP ~> ParsedAst.Expression.Static
     }
 
     def Scope: Rule1[ParsedAst.Expression.Scope] = rule {
@@ -838,17 +830,37 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def TryCatch: Rule1[ParsedAst.Expression] = {
+    def Do: Rule1[ParsedAst.Expression] = rule {
+      SP ~ keyword("do") ~ WS ~ Names.QualifiedOperation ~ ArgumentList ~ SP ~> ParsedAst.Expression.Do
+    }
+
+    def Resume: Rule1[ParsedAst.Expression] = rule {
+      SP ~ keyword("resume") ~ ArgumentList ~ SP ~> ParsedAst.Expression.Resume
+    }
+
+    def Try: Rule1[ParsedAst.Expression] = {
       def CatchRule: Rule1[ParsedAst.CatchRule] = rule {
         keyword("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ atomic("##") ~ Names.JavaName ~ WS ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.CatchRule
       }
 
-      def CatchBody: Rule1[Seq[ParsedAst.CatchRule]] = rule {
-        "{" ~ optWS ~ oneOrMore(CatchRule).separatedBy(CaseSeparator) ~ optWS ~ "}"
+      def CatchBody: Rule1[ParsedAst.CatchOrHandler] = rule {
+        keyword("catch") ~ optWS ~ "{" ~ optWS ~ oneOrMore(CatchRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.CatchOrHandler.Catch
+      }
+
+      def HandlerRule: Rule1[ParsedAst.HandlerRule] = rule {
+        keyword("def") ~ WS ~ Names.Operation ~ FormalParamList ~ optWS ~ atomic("=") ~ optWS ~ Expression ~> ParsedAst.HandlerRule
+      }
+
+      def HandlerBody: Rule1[ParsedAst.CatchOrHandler] = rule {
+        keyword("with") ~ optWS ~ Names.QualifiedEffect ~ optional(optWS ~ "{" ~ optWS ~ zeroOrMore(HandlerRule).separatedBy(CaseSeparator) ~ optWS ~ "}") ~> ParsedAst.CatchOrHandler.Handler
+      }
+
+      def Body: Rule1[ParsedAst.CatchOrHandler] = rule {
+        CatchBody | HandlerBody
       }
 
       rule {
-        SP ~ keyword("try") ~ WS ~ Expression ~ optWS ~ keyword("catch") ~ optWS ~ CatchBody ~ SP ~> ParsedAst.Expression.TryCatch
+        SP ~ keyword("try") ~ WS ~ Expression ~ optWS ~ Body ~ SP ~> ParsedAst.Expression.Try
       }
     }
 
@@ -1042,6 +1054,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def ConstraintSet: Rule1[ParsedAst.Expression] = rule {
       SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Constraint) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.FixpointConstraintSet
+    }
+
+    def FixpointLambda: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("#(") ~ optWS ~ oneOrMore(Names.Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ keyword("=>") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointLambda
     }
 
     def FixpointProject: Rule1[ParsedAst.Expression] = {
@@ -1373,6 +1389,86 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   }
 
+  object Effects {
+
+    def EffectSet: Rule1[ParsedAst.EffectSet] = rule {
+      // NB: Pure must come before Set since they overlap
+      Pure | Set | Singleton
+    }
+
+    def Singleton: Rule1[ParsedAst.EffectSet] = rule {
+      SP ~ Effect ~ SP ~> ParsedAst.EffectSet.Singleton
+    }
+
+    def Pure: Rule1[ParsedAst.EffectSet] = rule {
+      SP ~ "{" ~ optWS ~ keyword("Pure") ~ optWS ~ "}" ~ SP ~> ParsedAst.EffectSet.Pure
+    }
+
+    def Set: Rule1[ParsedAst.EffectSet] = rule {
+      SP ~ "{" ~ optWS ~ oneOrMore(Effect).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.EffectSet.Set
+    }
+
+    def Effect: Rule1[ParsedAst.Effect] = rule {
+      Binary | SimpleEffect
+    }
+
+    def Var: Rule1[ParsedAst.Effect] = rule {
+      SP ~ Names.Variable ~ SP ~> ParsedAst.Effect.Var
+    }
+
+    def Read: Rule1[ParsedAst.Effect] = rule {
+      SP ~ keyword("Read") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Effect.Read
+    }
+
+    def Write: Rule1[ParsedAst.Effect] = rule {
+      SP ~ keyword("Write") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Effect.Write
+    }
+
+    def Impure: Rule1[ParsedAst.Effect] = rule {
+      SP ~ keyword("Impure") ~ SP ~> ParsedAst.Effect.Impure
+    }
+
+    def Eff: Rule1[ParsedAst.Effect] = rule {
+      SP ~ Names.QualifiedEffect ~ SP ~> ParsedAst.Effect.Eff
+    }
+
+    def Complement: Rule1[ParsedAst.Effect] = rule {
+      SP ~ operatorX("~") ~ optWS ~ SimpleEffect ~ SP ~> ParsedAst.Effect.Complement
+    }
+
+    def UnionTail = rule {
+      operatorX("+") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "+" ~ optWS) ~> ParsedAst.Effect.Union
+    }
+
+    def IntersectionTail = rule {
+      operatorX("&") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "&" ~ optWS) ~> ParsedAst.Effect.Intersection
+    }
+
+    def DifferenceTail = rule {
+      operatorX("-") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "-" ~ optWS) ~> ParsedAst.Effect.Difference
+    }
+
+    def BinaryTail = rule {
+      UnionTail | DifferenceTail | IntersectionTail
+    }
+
+    // We only allow chains of like operators.
+    // Unlike operators must be parenthesized.
+    // Illegal: a + b + c - d + e
+    // Legal: ((a + b + c) - d) + e
+    def Binary: Rule1[ParsedAst.Effect] = rule {
+      SimpleEffect ~ optional(optWS ~ BinaryTail)
+    }
+
+    def SimpleEffect: Rule1[ParsedAst.Effect] = rule {
+      Var | Impure | Read | Write | Eff | Complement | Parens
+    }
+
+    def Parens: Rule1[ParsedAst.Effect] = rule {
+      "(" ~ Effect ~ ")"
+    }
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Kinds                                                                   //
   /////////////////////////////////////////////////////////////////////////////
@@ -1613,6 +1709,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName
 
     def Effect: Rule1[Name.Ident] = UpperCaseName
+
+    def QualifiedEffect: Rule1[Name.QName] = UpperCaseQName
+
+    def Operation: Rule1[Name.Ident] = LowerCaseName
+
+    def QualifiedOperation: Rule1[Name.QName] = LowerCaseQName
 
     def Field: Rule1[Name.Ident] = LowerCaseName
 

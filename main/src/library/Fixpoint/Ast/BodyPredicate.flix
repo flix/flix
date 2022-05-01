@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+use Fixpoint.PredSymsOf;
+use Fixpoint.SubstitutePredSym;
+use Fixpoint/Shared.PredSym;
 
 namespace Fixpoint/Ast {
     pub enum BodyPredicate[v] {
@@ -24,6 +27,22 @@ namespace Fixpoint/Ast {
         case Guard4(v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym)
         case Guard5(v -> v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym, VarSym)
         case Loop1(v -> Array[v])
+    }
+
+    instance PredSymsOf[BodyPredicate[v]] {
+        pub def predSymsOf(x: BodyPredicate[v]): Set[PredSym] = match x {
+            case BodyAtom(predSym, _, _, _, _) => Set.singleton(predSym)
+            case _                             => Set.empty()
+        }
+    }
+
+    instance SubstitutePredSym[BodyPredicate[v]] {
+        pub def substitute(x: BodyPredicate[v], s: Map[PredSym, PredSym]): BodyPredicate[v] = match x {
+            case BodyAtom(predSym, den, polarity, fixity, terms) =>
+                let newSym = Map.getWithDefault(predSym, predSym, s);
+                BodyAtom(newSym, den, polarity, fixity, terms)
+            case _                             => x
+        }
     }
 
     instance ToString[BodyPredicate[v]] with ToString[v] {
