@@ -539,19 +539,31 @@ namespace DelayMap {
         RedBlackTree.foldLeft(f1, s, t)
 
     ///
-    /// Applies `f` to a start value `z` and all values in `m` going from right to left.
+    /// Applies `f` to a start value `s` and all values in `m` going from right to left.
     ///
-    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
+    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
     @Experimental
-    pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, z: b, m: DelayMap[k, v]): b & ef =
-        foldRightWithKey((_, v, c) -> f(v, c), z, m)
+    pub def foldRight(f: (v, b & ef) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
+        foldRightWithKey((_, v, acc) -> f(v, acc), s, m)
+
+    ///
+    /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
+    ///
+    @Experimental
+    pub def foldRightWithKey(f: (k, v, b & ef) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
+        let _ = parallelForce(m);
+        let DMap(t) = m;
+        let f1 = (k1, v1, b1) -> f(k1, force v1, b1);
+        RedBlackTree.foldRight(f1, s, t)
 
     ///
     /// Applies `f` to a start value `z` and all values in `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
-    /// A `foldRight` allows early termination by not calling the continuation.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     @Experimental
     pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, z: b, m: DelayMap[k, v]): b & ef =
@@ -563,7 +575,7 @@ namespace DelayMap {
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
     @Experimental
-    pub def foldRightWithKey(f: (k, v, Unit -> b & ef) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
+    pub def foldRightWithKeyCont(f: (k, v, Unit -> b & ef) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
         let _ = parallelForce(m);
         let DMap(t) = m;
         let f1 = (k1, v1, c) -> f(k1, force v1, c);
