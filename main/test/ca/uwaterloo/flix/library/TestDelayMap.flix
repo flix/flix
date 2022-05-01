@@ -158,8 +158,8 @@ namespace TestDelayMap {
     def count08(): Bool & Impure =
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
-    let a = MutList.new();
-    DelayMap.count((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); true }, m);
+    let a = new MutList(static);
+    DelayMap.count((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); true }, m);
     MutList.toList(a) == range
 
 
@@ -1775,8 +1775,8 @@ namespace TestDelayMap {
     def sumWith07(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
-        let a = MutList.new();
-        DelayMap.sumWith((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); 0 }, m);
+        let a = new MutList(static);
+        DelayMap.sumWith((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); 0 }, m);
         MutList.toList(a) == range
 
 
@@ -1885,8 +1885,8 @@ namespace TestDelayMap {
     def productWith07(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
-        let a = MutList.new();
-        DelayMap.productWith((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
+        let a = new MutList(static);
+        DelayMap.productWith((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
         MutList.toList(a) == range
 
 
