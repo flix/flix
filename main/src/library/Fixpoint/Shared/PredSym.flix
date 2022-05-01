@@ -16,7 +16,7 @@
 namespace Fixpoint/Shared {
 
     pub enum PredSym with Eq, Order {
-        case PredSym(String, Int32)
+        case PredSym(String, Int64)
     }
 
     instance ToString[PredSym] {
