@@ -393,16 +393,31 @@ def foldLeft04(): Bool = Set.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, Set#
 // foldRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRight01(): Bool = Set.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Set#{}) == 100
+def foldRight01(): Bool = Set.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, Set#{}) == 100
 
 @test
-def foldRight02(): Bool = Set.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Set#{1}) == 198
+def foldRight02(): Bool = Set.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, Set#{1}) == 198
 
 @test
-def foldRight03(): Bool = Set.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Set#{2, 1}) == 194
+def foldRight03(): Bool = Set.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, Set#{2, 1}) == 194
 
 @test
-def foldRight04(): Bool = Set.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Set#{3, 2, 1}) == 382
+def foldRight04(): Bool = Set.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, Set#{3, 2, 1}) == 382
+
+/////////////////////////////////////////////////////////////////////////////
+// foldRightWithCont                                                       //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldRightWithCont01(): Bool = Set.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, Set#{}) == 100
+
+@test
+def foldRightWithCont02(): Bool = Set.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, Set#{1}) == 198
+
+@test
+def foldRightWithCont03(): Bool = Set.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, Set#{2, 1}) == 194
+
+@test
+def foldRightWithCont04(): Bool = Set.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, Set#{3, 2, 1}) == 382
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
