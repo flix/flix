@@ -567,7 +567,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, z: b, m: DelayMap[k, v]): b & ef =
-        foldRightWithKey((_, v, c) -> f(v, c), z, m)
+        foldRightWithKeyCont((_, v, c) -> f(v, c), z, m)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
