@@ -574,15 +574,13 @@ object Packager {
       * @return non-null iterator
       */
     private def iterate(p: Path): Iterator[String] =
-      p.iterator.asScala.map(
+      p.toAbsolutePath.normalize.iterator.asScala.map(
         // Convert Path to String, to compare the name of path elements by a platform-independent way.
         // According to Javadoc, the implementation of `Path.compareTo(Path)` is platform-specific.
         Objects.toString
       )
 
     override def compare(l: Path, r: Path): Int = {
-      require(l.isAbsolute == r.isAbsolute)
-
       for (e <- iterate(l).zipAll(iterate(r), null, null)) e match {
         case (null, _) => return 1
         case (_, null) => return -1
