@@ -67,9 +67,7 @@ instance Monad[Nel] {
 
 instance Foldable[Nel] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, l: Nel[a]): b & ef = Nel.foldLeft(f, s, l)
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, l: Nel[a]): b & ef = match l {
-        case Nel(x, xs) => f(x, _ -> List.foldRight(f, s, xs))
-    }
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, l: Nel[a]): b & ef = foldRightWithCont(f, s, l)
 }
 
 instance Traversable[Nel] {
@@ -355,13 +353,22 @@ namespace Nel {
     }
 
     ///
+    /// Applies `f` to a start value `s` and all elements in `l` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, s: b, l: Nel[a]): b & ef = match l {
+        case Nel(x, xs) => f(x, _ -> List.foldRight(f, s, xs))
+    }
+
+    ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRight` allows early termination by not calling the continuation.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, l: Nel[a]): b & ef = match l {
-        case Nel(x, xs) => f(x, _ -> List.foldRight(f, z, xs))
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, l: Nel[a]): b & ef = match l {
+        case Nel(x, xs) => f(x, _ -> List.foldRightWithCont(f, z, xs))
     }
 
     ///
@@ -614,7 +621,7 @@ namespace Nel {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMapWith(f: a -> b, l: Nel[a]): Map[a, b] with Order[a] =
-        Nel.foldRight((x, k) -> Map.insert(x, f(x), k()), Map.empty(), l)
+        Nel.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), l)
 
     ///
     /// Returns the concatenation of the string representation
