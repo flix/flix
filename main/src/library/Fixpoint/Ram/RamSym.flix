@@ -15,6 +15,7 @@
  */
 
 use Fixpoint.PredSymsOf;
+use Fixpoint.SubstitutePredSym;
 use Fixpoint/Ast.Denotation;
 use Fixpoint/Shared.PredSym;
 
@@ -57,6 +58,22 @@ namespace Fixpoint/Ram {
             case Full(predSym, _, _)    => Set.singleton(predSym)
             case Delta(predSym, _, _)   => Set.singleton(predSym)
             case New(predSym, _, _)     => Set.singleton(predSym)
+        }
+    }
+
+    instance SubstitutePredSym[RamSym[v]] {
+        pub def substitute(x: RamSym[v], s: Map[PredSym, PredSym]): RamSym[v] = match x {
+            case Full(predSym, arity, den)  =>
+                let newSym = Map.getWithDefault(predSym, predSym, s);
+                Full(newSym, arity, den)
+
+            case Delta(predSym, arity, den) =>
+                let newSym = Map.getWithDefault(predSym, predSym, s);
+                Delta(newSym, arity, den)
+
+            case New(predSym, arity, den)   =>
+                let newSym = Map.getWithDefault(predSym, predSym, s);
+                New(newSym, arity, den)
         }
     }
 
