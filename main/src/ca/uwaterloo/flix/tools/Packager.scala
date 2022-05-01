@@ -567,28 +567,27 @@ object Packager {
     */
   object PathComparator extends Ordering[Path] {
     /**
-      * Create an iterator that iterates name of path elements.
-      * e.g. `iterate(Paths.get("path/to/file"))` returns an iterator that iterates `["path", "to", "file"]`.
+      * Create a Seq that lists names of path elements.
+      * e.g. `seq(Paths.get("path/to/file"))` returns a Seq that lists `["path", "to", "file"]`.
       *
       * @param p Path instance to iterate
-      * @return non-null iterator
+      * @return non-null Seq
       */
-    private def iterate(p: Path): Iterator[String] =
+    private def seq(p: Path): Seq[String] =
       p.toAbsolutePath.normalize.iterator.asScala.map(
         // Convert Path to String, to compare the name of path elements by a platform-independent way.
         // According to Javadoc, the implementation of `Path.compareTo(Path)` is platform-specific.
         Objects.toString
-      )
+      ).toSeq
 
     override def compare(l: Path, r: Path): Int = {
-      for (e <- iterate(l).zipAll(iterate(r), null, null)) e match {
-        case (null, _) => return 1
-        case (_, null) => return -1
-        case (el, er) =>
-          val r = el.compareTo(er)
-          if (r != 0) return r
-      }
-      0
+      val sl = seq(l)
+      val sr = seq(r)
+      sl.zip(sr).map {
+        case (el, er) => el.compare(er)
+      }.find {
+        _ != 0
+      }.getOrElse(sl.length.compare(sr.length))
     }
   }
 }
