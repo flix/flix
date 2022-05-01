@@ -429,14 +429,14 @@ namespace TestMutSet {
 
     @test
     def foldRight01(): Bool = region r {
-        MutSet.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, new MutSet(r)) == 100
+        MutSet.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, new MutSet(r)) == 100
     }
 
     @test
     def foldRight02(): Bool = region r {
         let s = new MutSet(r);
         MutSet.add!(1, s);
-        MutSet.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, s) == 198
+        MutSet.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, s) == 198
     }
 
     @test
@@ -444,7 +444,7 @@ namespace TestMutSet {
         let s = new MutSet(r);
         MutSet.add!(2, s);
         MutSet.add!(1, s);
-        MutSet.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, s) == 194
+        MutSet.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, s) == 194
     }
 
     @test
@@ -453,7 +453,40 @@ namespace TestMutSet {
         MutSet.add!(3, s);
         MutSet.add!(2, s);
         MutSet.add!(1, s);
-        MutSet.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, s) == 382
+        MutSet.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, s) == 382
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightWithCont                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightWithCont01(): Bool = region r {
+        MutSet.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, new MutSet(r)) == 100
+    }
+
+    @test
+    def foldRightWithCont02(): Bool = region r {
+        let s = new MutSet(r);
+        MutSet.add!(1, s);
+        MutSet.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, s) == 198
+    }
+
+    @test
+    def foldRightWithCont03(): Bool = region r {
+        let s = new MutSet(r);
+        MutSet.add!(2, s);
+        MutSet.add!(1, s);
+        MutSet.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, s) == 194
+    }
+
+    @test
+    def foldRightWithCont04(): Bool = region r {
+        let s = new MutSet(r);
+        MutSet.add!(3, s);
+        MutSet.add!(2, s);
+        MutSet.add!(1, s);
+        MutSet.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, s) == 382
     }
 
 }
