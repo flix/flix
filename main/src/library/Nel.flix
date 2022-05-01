@@ -358,7 +358,7 @@ namespace Nel {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
     pub def foldRight(f: (a, b) -> b & ef, s: b, l: Nel[a]): b & ef = match l {
-        case Nel(x, xs) => f(x, _ -> List.foldRight(f, s, xs))
+        case Nel(x, xs) => f(x, List.foldRight(f, s, xs))
     }
 
     ///
