@@ -13,10 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+use Fixpoint.PredSymsOf;
+use Fixpoint/PredSymsOf.predSymsOf;
+use Fixpoint/Shared.PredSym;
 
 namespace Fixpoint/Ast {
     pub enum Constraint[v] {
         case Constraint(HeadPredicate[v], Array[BodyPredicate[v]])
+    }
+
+    instance PredSymsOf[Constraint[v]] {
+        pub def predSymsOf(x: Constraint[v]): Set[PredSym] = match x {
+            case Constraint(head, body) =>
+                let headSyms = predSymsOf(head);
+                let bodySyms = Array.map(predSymsOf, body) |> Array.toList;
+                headSyms ++ Monoid.fold(bodySyms)
+        } as & Pure
     }
 
     instance ToString[Constraint[v]] with ToString[v] {

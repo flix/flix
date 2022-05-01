@@ -1051,7 +1051,9 @@ object Lowering {
   private def mkPredSym(pred: Name.Pred): Expression = pred match {
     case Name.Pred(sym, loc) =>
       val nameExp = Expression.Str(sym, loc)
-      mkTag(Enums.PredSym, "PredSym", nameExp, Types.PredSym, loc)
+      val idExp = Expression.Int32(0, loc)
+      val inner = mkTuple(List(nameExp, idExp), loc)
+      mkTag(Enums.PredSym, "PredSym", inner, Types.PredSym, loc)
   }
 
   /**

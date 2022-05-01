@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+use Fixpoint.PredSymsOf;
 use Fixpoint/Shared.PredSym;
 
 namespace Fixpoint/Ast {
@@ -25,6 +26,13 @@ namespace Fixpoint/Ast {
         case Guard4(v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym)
         case Guard5(v -> v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym, VarSym)
         case Loop1(v -> Array[v])
+    }
+
+    instance PredSymsOf[BodyPredicate[v]] {
+        pub def predSymsOf(x: BodyPredicate[v]): Set[PredSym] = match x {
+            case BodyAtom(predSym, _, _, _, _) => Set.singleton(predSym)
+            case _                             => Set.empty()
+        }
     }
 
     instance ToString[BodyPredicate[v]] with ToString[v] {
