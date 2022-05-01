@@ -573,6 +573,7 @@ namespace DelayMap {
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
+    /// A `foldRightWithKeyCont` allows early termination by not calling the continuation.
     ///
     @Experimental
     pub def foldRightWithKeyCont(f: (k, v, Unit -> b & ef) -> b & ef, s: b, m: DelayMap[k, v]): b & ef =
