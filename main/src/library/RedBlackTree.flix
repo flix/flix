@@ -295,6 +295,8 @@ namespace RedBlackTree {
     ///
     pub def foldRight(f: (k, v, b) -> b & ef, s: b, tree: RedBlackTree[k, v]): b & ef = match tree {
         case Node(_, a, k, v, b) => foldRight(f, f(k, v, foldRight(f, s, b)), a)
+        case _ => z
+    }
 
     ///
     /// Applies `f` to a start value `z` and all key-value pairs in `t` going from right to left.
