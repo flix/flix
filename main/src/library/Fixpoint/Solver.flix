@@ -21,8 +21,6 @@ use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.Denotation.{Relational, Latticenal};
 use Fixpoint/Ram.RamSym;
-use Fixpoint.PredSymsOf;
-use Fixpoint/PredSymsOf.predSymsOf;
 use Fixpoint/Shared.PredSym;
 use Fixpoint/Shared.PredSym.PredSym;
 
@@ -112,12 +110,39 @@ namespace Fixpoint {
     } as & Pure
 
     ///
-    /// Returns the given Datalog program `d` with all predicates except `preds` renamed.
+    /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
     ///
     @Internal
-    pub def rename(_preds: Array[PredSym], d: Datalog[v]): Datalog[v] with Order[v], ToString[v] =
-        let _predSyms = predSymsOf(d);
-        d
+    pub def rename(preds: Array[PredSym], d: Datalog[v]): Datalog[v] with Order[v], ToString[v] = {
+        use Fixpoint/PredSymsOf.predSymsOf;
+        use Fixpoint/SubstitutePredSym.substitute;
+
+        // Import a function that can create new ids.
+        import static dev.flix.runtime.Global.newId(): Int64 & Impure;
+
+        /// Determine all the predicate symbols in `d`.
+        let predSyms = predSymsOf(d);
+
+        /// Compute a substitition that assignes fresh names to all predicates except those in `preds`.
+        def f(macc, predSym) = {
+            if (Array.memberOf(predSym, preds)) {
+                // Case 1: Do not rename. Do not extend the map.
+                macc
+            } else {
+                // Case 2: Introduce a fresh name (index) for the prediate symbol.
+                let PredSym(name, _) = predSym;
+                let newPredSym = PredSym(name, newId());
+                Map.insert(predSym, newPredSym, macc)
+            }
+        };
+        let s = Set.foldLeft(f, Map.empty(), predSyms);
+
+        // TODO: Debugging
+        println(s);
+
+        // Apply the computed substitution to the Datalog program `d`.
+        substitute(d, s)
+    } as & Pure
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
