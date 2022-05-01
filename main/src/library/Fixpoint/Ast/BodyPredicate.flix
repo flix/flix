@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 use Fixpoint.PredSymsOf;
+use Fixpoint.SubstitutePredSym;
 use Fixpoint/Shared.PredSym;
 
 namespace Fixpoint/Ast {
@@ -32,6 +33,15 @@ namespace Fixpoint/Ast {
         pub def predSymsOf(x: BodyPredicate[v]): Set[PredSym] = match x {
             case BodyAtom(predSym, _, _, _, _) => Set.singleton(predSym)
             case _                             => Set.empty()
+        }
+    }
+
+    instance SubstitutePredSym[BodyPredicate[v]] {
+        pub def substitute(x: BodyPredicate[v], s: Map[PredSym, PredSym]): BodyPredicate[v] = match x {
+            case BodyAtom(predSym, den, polarity, fixity, terms) =>
+                let newSym = Map.getWithDefault(predSym, predSym, s);
+                BodyAtom(newSym, den, polarity, fixity, terms)
+            case _                             => x
         }
     }
 
