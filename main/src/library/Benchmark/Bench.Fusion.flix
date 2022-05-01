@@ -337,8 +337,8 @@ pub def streamCartesian(l: Array[Int32]): Benchmark =
 /// Returns a list of `n` concatenated lists with elements from `1` to `1_000`.
 ///
 pub def input(n: Int32): Array[Int32] & Impure =
-    Array.range(1, n) |>
-    Array.flatMap(_ -> Array.range(1, 1_000))
+    Array.range(1, n, static) |>
+    Array.flatMap(_ -> Array.range(1, 1_000, static))
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Biboudis Suite                                                          ///
