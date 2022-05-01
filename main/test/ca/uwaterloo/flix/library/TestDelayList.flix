@@ -659,7 +659,7 @@ namespace TestDelayList {
 
     @test
     def foldRight06(): Bool =
-    	DelayList.foldRight((x, k) -> x :: k(), Nil, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == 1 :: 2 :: 3 :: Nil
+    	DelayList.foldRight((x, acc) -> x :: acc, Nil, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == 1 :: 2 :: 3 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRightWithCont                                                       //
