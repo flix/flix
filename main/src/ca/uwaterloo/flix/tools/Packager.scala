@@ -266,7 +266,7 @@ object Packager {
       addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
 
       // Add all class files.
-      for (buildFile <- getAllFiles(getBuildDirectory(p)).sorted(new PathComparator())) {
+      for (buildFile <- getAllFiles(getBuildDirectory(p)).sorted(PathComparator)) {
         val fileName = getBuildDirectory(p).relativize(buildFile).toString
         val fileNameWithSlashes = fileName.replace('\\', '/')
         addToZip(zip, fileNameWithSlashes, buildFile)
@@ -304,7 +304,7 @@ object Packager {
       addToZip(zip, "README.md", getReadmeFile(p))
 
       // Add all source files.
-      for (sourceFile <- getAllFiles(getSourceDirectory(p)).sorted(new PathComparator())) {
+      for (sourceFile <- getAllFiles(getSourceDirectory(p)).sorted(PathComparator)) {
         val name = p.relativize(sourceFile).toString
         addToZip(zip, name, sourceFile)
       }
@@ -565,7 +565,7 @@ object Packager {
     * The comparator which compares Path objects by a non platform-specific way.
     * @see <a href="https://reproducible-builds.org/">Reproducible Builds</a>
     */
-  class PathComparator extends Ordering[Path] {
+  object PathComparator extends Ordering[Path] {
     /**
       * Create an iterator that iterates name of path elements.
       * e.g. `iterate(Paths.get("path/to/file"))` returns an iterator that iterates `["path", "to", "file"]`.

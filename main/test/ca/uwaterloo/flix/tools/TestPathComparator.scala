@@ -7,7 +7,7 @@ import java.nio.file.Paths
 
 class TestPathComparator extends FunSuite {
   test("order by file name") {
-    val comparator = new PathComparator()
+    val comparator = PathComparator
     val list = Array(
       Paths.get("b.txt"),
       Paths.get("a.txt"),
@@ -19,7 +19,7 @@ class TestPathComparator extends FunSuite {
   }
 
   test("order by folder name") {
-    val comparator = new PathComparator()
+    val comparator = PathComparator
     val list = Array(
       Paths.get("b", "child.txt"),
       Paths.get("a", "child.txt")
@@ -31,7 +31,7 @@ class TestPathComparator extends FunSuite {
   }
 
   test("order by child file name") {
-    val comparator = new PathComparator()
+    val comparator = PathComparator
     val list = Array(
       Paths.get("parent", "b.txt"),
       Paths.get("parent", "a.txt"),
@@ -45,7 +45,7 @@ class TestPathComparator extends FunSuite {
   }
 
   test("complex case") {
-    val comparator = new PathComparator()
+    val comparator = PathComparator
     val list = Array(
       Paths.get("2", "d.txt"),
       Paths.get("1", "c.txt"),
