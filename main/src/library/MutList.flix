@@ -453,7 +453,7 @@ namespace MutList {
     ///
     /// The implementation is tail recursive.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, v: MutList[a, r]): b \ { ef, Read(r) } =
+    pub def foldRight(f: (a, b) -> b & ef and r, s: b, v: MutList[a, r]): b \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;
