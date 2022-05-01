@@ -287,7 +287,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def valuesOf(m: DelayMap[k, v]): List[v] =
-        foldRight((v, c) -> v :: c(), Nil, m)
+        foldRight((v, acc) -> v :: acc, Nil, m)
 
     ///
     /// Removes the mapping `k` from the map `m`.
@@ -488,9 +488,9 @@ namespace DelayMap {
         let DMap(ys) = m2;
         let f1 = (k, v1, v2) -> lazy (f(k, force v1, force v2));
         if (blackHeight(xs) < blackHeight(ys))
-            DMap(foldRight((k, v, c) -> insertWith(f1, k, v, c()), ys, xs))
+            DMap(foldRight((k, v, acc) -> insertWith(f1, k, v, acc), ys, xs))
         else
-            DMap(foldRight((k, v, c) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v, c()), xs, ys))
+            DMap(foldRight((k, v, acc) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v, acc), xs, ys))
 
     ///
     /// Helper function for `unionWithKey`. Applies `f` eagerly.
@@ -505,10 +505,10 @@ namespace DelayMap {
             };
         if (blackHeight(xs) < blackHeight(ys))
             let _ = parallelForce(m1);
-            DMap(foldRight((k, v, c) -> insertWith(f1, k, v, c()), ys, xs))
+            DMap(foldRight((k, v, acc) -> insertWith(f1, k, v, acc), ys, xs))
         else
             let _ = parallelForce(m2);
-            DMap(foldRight((k, v, c) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v, c()), xs, ys))
+            DMap(foldRight((k, v, acc) -> insertWith((_, v1, v2) -> f1(k, v2, v1), k, v, acc), xs, ys))
 
     ///
     /// Returns the map `m` as a list of key-value pairs.

@@ -1198,22 +1198,22 @@ namespace TestDelayMap {
     @test
     def foldRight01(): Bool =
         Map#{} |> Map.toDelayMap |>
-            DelayMap.foldRight((v, c) -> c() + v, 0) == 0
+            DelayMap.foldRight((v, acc) -> acc + v, 0) == 0
 
     @test
     def foldRight02(): Bool =
         Map#{1 => 2} |> Map.toDelayMap |>
-            DelayMap.foldRight((v, c) -> c() + v, 0) == 2
+            DelayMap.foldRight((v, acc) -> acc + v, 0) == 2
 
     @test
     def foldRight03(): Bool =
         Map#{1 => 2, 3 => 4} |> Map.toDelayMap |>
-            DelayMap.foldRight((v, c) -> c() + v, 0) == 6
+            DelayMap.foldRight((v, acc) -> acc + v, 0) == 6
 
     @test
     def foldRight04(): Bool =
         Map#{1 => 2, 3 => 4, 5 => 6} |> Map.toDelayMap |>
-            DelayMap.foldRight((v, c) -> c() + v, 0) == 12
+            DelayMap.foldRight((v, acc) -> acc + v, 0) == 12
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1223,22 +1223,71 @@ namespace TestDelayMap {
     @test
     def foldRightWithKey01(): Bool =
         Map#{} |> Map.toDelayMap |>
-            DelayMap.foldRightWithKey((k, v, c) -> k + c() + v, 0) == 0
+            DelayMap.foldRightWithKey((k, v, acc) -> k + acc + v, 0) == 0
 
     @test
     def foldRightWithKey02(): Bool =
         Map#{1 => 2} |> Map.toDelayMap |>
-            DelayMap.foldRightWithKey((k, v, c) -> k + c() + v, 0) == 3
+            DelayMap.foldRightWithKey((k, v, acc) -> k + acc + v, 0) == 3
 
     @test
     def foldRightWithKey03(): Bool =
         Map#{1 => 2, 3 => 4} |> Map.toDelayMap |>
-            DelayMap.foldRightWithKey((k, v, c) -> k + c() + v, 0) == 10
+            DelayMap.foldRightWithKey((k, v, acc) -> k + acc + v, 0) == 10
 
     @test
     def foldRightWithKey04(): Bool =
         Map#{1 => 2, 3 => 4, 5 => 6} |> Map.toDelayMap |>
-            DelayMap.foldRightWithKey((k, v, c) -> k + c() + v, 0) == 21
+            DelayMap.foldRightWithKey((k, v, acc) -> k + acc + v, 0) == 21
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightWithCont                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightWithCont01(): Bool =
+        Map#{} |> Map.toDelayMap |>
+            DelayMap.foldRightWithCont((v, c) -> c() + v, 0) == 0
+
+    @test
+    def foldRightWithCont02(): Bool =
+        Map#{1 => 2} |> Map.toDelayMap |>
+            DelayMap.foldRightWithCont((v, c) -> c() + v, 0) == 2
+
+    @test
+    def foldRightWithCont03(): Bool =
+        Map#{1 => 2, 3 => 4} |> Map.toDelayMap |>
+            DelayMap.foldRightWithCont((v, c) -> c() + v, 0) == 6
+
+    @test
+    def foldRightWithCont04(): Bool =
+        Map#{1 => 2, 3 => 4, 5 => 6} |> Map.toDelayMap |>
+            DelayMap.foldRightWithCont((v, c) -> c() + v, 0) == 12
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightWithKeyCont                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightWithKeyCont01(): Bool =
+        Map#{} |> Map.toDelayMap |>
+            DelayMap.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0) == 0
+
+    @test
+    def foldRightWithKeyCont02(): Bool =
+        Map#{1 => 2} |> Map.toDelayMap |>
+            DelayMap.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0) == 3
+
+    @test
+    def foldRightWithKeyCont03(): Bool =
+        Map#{1 => 2, 3 => 4} |> Map.toDelayMap |>
+            DelayMap.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0) == 10
+
+    @test
+    def foldRightWithKeyCont04(): Bool =
+        Map#{1 => 2, 3 => 4, 5 => 6} |> Map.toDelayMap |>
+            DelayMap.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0) == 21
 
 
     /////////////////////////////////////////////////////////////////////////////
