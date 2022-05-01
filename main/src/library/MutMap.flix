@@ -383,9 +383,8 @@ namespace MutMap {
     /// Applies `f` to a start value `z` and all values in the mutable map `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
-    /// A `foldRight` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, z: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
+    pub def foldRight(f: (v, b) -> b & ef, z: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
         foldRightWithKey((_, v, b) -> f(v, b), z, m)
 
     ///
@@ -393,9 +392,28 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, z)))`.
     ///
-    pub def foldRightWithKey(f: (k, v, Unit -> b & ef) -> b & ef, z: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
+    pub def foldRightWithKey(f: (k, v, b) -> b & ef, z: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.foldRightWithKey(f, z, deref mm)
+
+    ///
+    /// Applies `f` to a start value `z` and all values in the mutable map `m` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
+    ///
+    pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, z: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
+        foldRightWithKeyCont((_, v, b) -> f(v, b), z, m)
+
+    ///
+    /// Applies `f` to a start value `z` and all key-value pairs in the mutable map `m` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, z)))`.
+    /// A `foldRightWithKeyCont` allows early termination by not calling the continuation.
+    ///
+    pub def foldRightWithKeyCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
+        let MutMap(mm) = m;
+        Map.foldRightWithKeyCont(f, z, deref mm)
 
     ///
     /// Applies `f` to all values in the mutable map `m` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
