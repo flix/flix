@@ -747,15 +747,15 @@ namespace Map {
     @Time(size(f) * size(m2) * Int32.log2(size(m1))) @Space(space(f) * size(m2) * Int32.log2(size(m1)))
     pub def differenceWithKey(f: (k, v, v) -> Option[v] & ef, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & ef with Order[k] =
         let diff = filterWithKey((k, _) -> not memberOf(k, m2), m1);
-        let g = (k, v, c) -> if (memberOf(k, m1))
+        let g = (k, v, acc) -> if (memberOf(k, m1))
                                 match get(k, m1) {
                                     case Some(v1) => match f(k, v1, v) {
-                                        case None => c()
-                                        case Some(w) => insert(k, w, c())
+                                        case None => acc
+                                        case Some(w) => insert(k, w, acc)
                                     }
                                     case None => unreachable!()
                                 }
-                             else c();
+                             else acc;
         foldRightWithKey(g, diff, m2)
 
     ///
