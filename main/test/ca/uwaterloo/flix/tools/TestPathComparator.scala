@@ -17,6 +17,7 @@ class TestPathComparator extends FunSuite {
       Paths.get("b.txt")
     )))
   }
+
   test("order by folder name") {
     val comparator = new PathComparator()
     val list = Array(
@@ -28,6 +29,7 @@ class TestPathComparator extends FunSuite {
       Paths.get("b", "child.txt")
     )))
   }
+
   test("order by child file name") {
     val comparator = new PathComparator()
     val list = Array(
@@ -41,6 +43,7 @@ class TestPathComparator extends FunSuite {
       Paths.get("parent", "c.txt")
     )))
   }
+
   test("complex case") {
     val comparator = new PathComparator()
     val list = Array(
