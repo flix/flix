@@ -291,7 +291,7 @@ namespace Map {
     ///
     @Time(size(m)) @Space(size(m))
     pub def valuesOf(m: Map[k, v]): List[v] =
-        foldRight((v, c) -> v :: c(), Nil, m)
+        foldRight((v, acc) -> v :: acc, Nil, m)
 
     ///
     /// Updates `m` with `k => v`.
