@@ -1544,7 +1544,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def PredicateParam: Rule1[ParsedAst.PredicateParam] = rule {
-    SP ~ Modifiers ~ Names.Predicate ~ SP ~> ParsedAst.PredicateParam
+    SP ~ Names.Predicate ~ SP ~> ParsedAst.PredicateParam
   }
 
   def Argument: Rule1[ParsedAst.Argument] = {
