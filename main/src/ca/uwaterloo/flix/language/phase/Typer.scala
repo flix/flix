@@ -231,14 +231,33 @@ object Typer {
               ///
               /// Propagate type variables *names* in the substitution.
               ///
-              val subst = subst0.propagate
+              val substBeforeHacks = subst0.propagate
 
               ////////////// hacking begins
-              val boolTvars = tparams0.map(_.sym).filter(sym => sym.kind == Kind.Bool)
-              boolTvars match {
-                case tvar :: Nil => // do the thing
-                case _ => // don't do it
+              val boolTparams = tparams0.filter(tparam => tparam.sym.kind == Kind.Bool)
+              val substSuffix = boolTparams match {
+                // Case 1: exactly one Boolean tparam: do some magic
+                case tparam :: Nil =>
+                  val tpe = substBeforeHacks.m(tparam.sym) // MATT what happens if it's not in there?
+                  val newSym = tparam.sym.withRigidity(Rigidity.Rigid)
+                  unifyTypes(Type.KindedVar(newSym, tparam.loc), tpe) match {
+                    case Ok(subst) =>
+                      // de-rigidify the substitution
+                      val m = subst.m.map {
+                        case (k, v) =>
+                          val v2 = v.map {
+                            case Type.KindedVar(sym, loc) if sym == newSym => Type.KindedVar(newSym.withRigidity(Rigidity.Flexible), loc)
+                          }
+                          (k, v2)
+                      }
+                      Substitution(m)
+                    case Err(_) => throw InternalCompilerException("asf") // MATT
+                  }
+                // Case 2: Zero or multiple Boolean tparams: don't do any magic
+                case _ => Substitution.empty
               }
+
+              val subst = substBeforeHacks @@ substSuffix
               ////////////// hacking ends
 
               ///
