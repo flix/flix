@@ -538,10 +538,10 @@ object Lowering {
     case Expression.FixpointConstraintSet(cs, _, _, loc) =>
       mkDatalog(cs, loc)
 
-    case Expression.FixpointLambda(preds, exp, _, _, eff, loc) =>
+    case Expression.FixpointLambda(pparams, exp, _, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Rename)
       val defExp = Expression.Def(defn.sym, Types.RenameType, loc)
-      val predExps = mkArray(preds.map(mkPredSym), Type.mkArray(Types.PredSym, loc), loc)
+      val predExps = mkArray(pparams.map(pparam => mkPredSym(pparam.pred)), Type.mkArray(Types.PredSym, loc), loc)
       val argExps = predExps :: visitExp(exp) :: Nil
       val resultType = Types.Datalog
       Expression.Apply(defExp, argExps, resultType, eff, loc)

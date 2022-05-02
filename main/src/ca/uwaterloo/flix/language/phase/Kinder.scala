@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse}
@@ -617,8 +618,11 @@ object Kinder {
 
     case ResolvedAst.Expression.FixpointLambda(preds, exp, loc) =>
       val expVal = visitExp(exp, kenv, taenv, root)
+      val pparams = preds.map {
+        case pred => KindedAst.PredicateParam(pred, Type.freshVar(Kind.Predicate, loc, text = FallbackText(pred.name)), pred.loc)
+      }
       mapN(expVal) {
-        case e => KindedAst.Expression.FixpointLambda(preds, e, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        case e => KindedAst.Expression.FixpointLambda(pparams, e, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.FixpointMerge(exp10, exp20, loc) =>
