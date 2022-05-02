@@ -195,10 +195,19 @@ namespace Result {
     ///
     /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
-    /// A `foldRight` allows early termination by not calling the continuation.
+    @Time(time(f)) @Space(space(f))
+    pub def foldRight(f: (t, a) -> a & ef, r: Result[t, e], z: a): a & ef = match r {
+        case Ok(v)  => f(v, z)
+        case Err(_) => z
+    }
+
+    ///
+    /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
+    ///
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foldRight(f: (t, Unit -> a & ef) -> a & ef, z: a, r: Result[t, e]): a & ef = match r {
+    pub def foldRightWithCont(f: (t, Unit -> a & ef) -> a & ef, z: a, r: Result[t, e]): a & ef = match r {
         case Ok(v)  => f(v, _ -> z as & ef)
         case Err(_) => z
     }
@@ -316,7 +325,7 @@ namespace Result {
     /// Returns a map with elements of `s` as keys and `f` applied as values.
     ///
     pub def toMapWith(f: a -> b, s: Result[a, a]): Map[a, b] with Order[a] =
-        Result.foldRight((x, k) -> Map.insert(x, f(x), k()), Map.empty(), s)
+        Result.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
 
     ///
     /// Returns `Some(v)` if `r` is `Ok(v)`. Otherwise returns `None`.
