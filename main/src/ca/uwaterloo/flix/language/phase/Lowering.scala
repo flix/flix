@@ -1519,9 +1519,9 @@ object Lowering {
       val e = substExp(exp, subst)
       Expression.Force(e, tpe, eff, loc)
 
-    case Expression.FixpointLambda(preds, exp, stf, tpe, eff, loc) =>
+    case Expression.FixpointLambda(pparams, exp, stf, tpe, eff, loc) =>
       val e = substExp(exp, subst)
-      Expression.FixpointLambda(preds, e, stf, tpe, eff, loc)
+      Expression.FixpointLambda(pparams, e, stf, tpe, eff, loc)
 
     case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)
