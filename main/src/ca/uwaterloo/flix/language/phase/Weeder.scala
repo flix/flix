@@ -115,7 +115,7 @@ object Weeder {
 
     case d: ParsedAst.Declaration.Instance => visitInstance(d)
 
-    case _: ParsedAst.Declaration.Effect => Nil.toSuccess // ignoring effect declarations for now
+    case d: ParsedAst.Declaration.Effect => visitEffect(d)
   }
 
   /**
@@ -250,6 +250,8 @@ object Weeder {
           List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, retTpe, WeededAst.Type.True(ident.loc), tconstrs, mkSL(sp1, sp2)))
       }
   }
+
+  private def visitEffect(d0: ParsedAst.Declaration.Effect)(implicit flix: Flix): Validaiton[List[WeededAst.Declaration.Effect], WeederError] =
 
   /**
     * Performs weeding on the given enum declaration `d0`.

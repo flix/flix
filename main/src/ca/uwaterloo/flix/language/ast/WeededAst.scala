@@ -45,6 +45,10 @@ object WeededAst {
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
 
+    case class Effect(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, ops: Seq[WeededAst.Declaration.Op], loc: SourceLocation) extends WeededAst.Declaration
+
+    case class Op(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.KindedTypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, retTpe: WeededAst.Type, eff: WeededAst.Type, tconstrs: List[WeededAst.TypeConstraint], loc: SourceLocation) extends WeededAst.Declaration
+
   }
 
   sealed trait Use
