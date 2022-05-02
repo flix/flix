@@ -77,7 +77,7 @@ instance Monad[Nec] {
 
 instance Foldable[Nec] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldLeft(f, s, c)
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldRight(f, s, c)
+    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, c: Nec[a]): b & ef = Nec.foldRightWithCont(f, s, c)
 }
 
 instance Traversable[Nec] {
@@ -219,7 +219,7 @@ namespace Nec {
     ///
     /// Returns the length of `c`.
     ///
-    pub def length(c: Nec[a]): Int32 = foldRight((_, k) -> k() + 1, 0, c)
+    pub def length(c: Nec[a]): Int32 = foldRight((_, acc) -> acc + 1, 0, c)
 
     ///
     /// Returns a new Nec formed by appending the Necs `c1` and `c2`.
@@ -562,14 +562,27 @@ namespace Nec {
     }
 
     ///
+    /// Applies `f` to a start value `s` and all elements in `c` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b & ef, acc: b, c: Nec[a]): b & ef = match viewRight(c) {
+        case OneRight(x)      => f(x, acc)
+        case SomeRight(rs, x) => {
+            let b = f(x, acc);
+            foldRight(f, b, rs)
+        }
+    }
+
+    ///
     /// Applies `f` to a start value `z` and all elements in `c` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRight` allows early termination by not calling the continuation.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Nec[a]): b & ef = match viewLeft(c) {
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, c: Nec[a]): b & ef = match viewLeft(c) {
         case OneLeft(x)      => f(x, _ -> z as & ef)
-        case SomeLeft(x, rs) => f(x, _ -> foldRight(f, z, rs))
+        case SomeLeft(x, rs) => f(x, _ -> foldRightWithCont(f, z, rs))
     }
 
     ///
@@ -691,7 +704,7 @@ namespace Nec {
     /// Returns `c` as a list.
     ///
     pub def toList(c: Nec[a]): List[a] =
-        foldRight((x, k) -> x :: k(), Nil, c)
+        foldRight((x, acc) -> x :: acc, Nil, c)
 
     ///
     /// Returns `c` as a mutable list.
@@ -702,7 +715,7 @@ namespace Nec {
     ///
     /// Returns the list `c` as a set.
     ///
-    pub def toSet(c: Nec[a]): Set[a] with Order[a] = foldRight((x, k) -> Set.insert(x, k()), Set.empty(), c)
+    pub def toSet(c: Nec[a]): Set[a] with Order[a] = foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), c)
 
 
     ///
@@ -711,7 +724,7 @@ namespace Nec {
     /// If `c` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
-    pub def toMap(c: Nec[(a, b)]): Map[a, b] with Order[a] = foldRight((x, k) -> Map.insert(fst(x), snd(x), k()), Map.empty(), c)
+    pub def toMap(c: Nec[(a, b)]): Map[a, b] with Order[a] = foldRight((x, acc) -> Map.insert(fst(x), snd(x), acc), Map.empty(), c)
 
     ///
     /// Returns a map with elements of `l` as keys and `f` applied as values.
@@ -720,7 +733,7 @@ namespace Nec {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMapWith(f: a -> b, l: Nec[a]): Map[a, b] with Order[a] =
-        foldRight((x, k) -> Map.insert(x, f(x), k()), Map.empty(), l)
+        foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), l)
 
     ///
     /// Returns the Nec `c` as an array.
@@ -885,7 +898,7 @@ namespace Nec {
     ///
     pub def reduceRight(f: (a, a) -> a & ef, c: Nec[a]): a & ef = match viewRight(c) {
         case OneRight(x)      => x
-        case SomeRight(xs, x) => foldRight((a, k) -> f(a, k()), x, xs)
+        case SomeRight(xs, x) => foldRight((a, acc) -> f(a, acc), x, xs)
     }
 
     ///
@@ -905,7 +918,7 @@ namespace Nec {
     ///
     pub def reduceRightTo(f: (a, b) -> b & ef1, g: a -> b & ef2, c: Nec[a]): b & (ef1 and ef2) = match viewRight(c) {
         case OneRight(x)      => g(x)
-        case SomeRight(xs, x) => foldRight((a, k) -> f(a, k()), g(x), xs)
+        case SomeRight(xs, x) => foldRight((a, acc) -> f(a, acc), g(x), xs)
     }
 
     ///
