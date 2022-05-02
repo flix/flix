@@ -233,6 +233,14 @@ object Typer {
               ///
               val subst = subst0.propagate
 
+              ////////////// hacking begins
+              val boolTvars = tparams0.map(_.sym).filter(sym => sym.kind == Kind.Bool)
+              boolTvars match {
+                case tvar :: Nil => // do the thing
+                case _ => // don't do it
+              }
+              ////////////// hacking ends
+
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.
               ///
