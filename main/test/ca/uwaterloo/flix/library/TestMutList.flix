@@ -731,27 +731,56 @@ namespace TestMutList {
 
     @test
     def foldRight01(): Bool = region r {
-        MutList.foldRight((x, k) -> k() + x, 0, MutList.range(1, 5, r)) == 10
+        MutList.foldRight((x, acc) -> acc + x, 0, MutList.range(1, 5, r)) == 10
     }
 
     @test
     def foldRight02(): Bool = region r {
-        MutList.foldRight((x, k) -> Int32.toString(x) + k(), "", MutList.range(3, 8, r)) == "34567"
+        MutList.foldRight((x, acc) -> Int32.toString(x) + acc, "", MutList.range(3, 8, r)) == "34567"
     }
 
     @test
     def foldRight03(): Bool = region r {
-        MutList.foldRight((x, k) -> x :: k(), Nil, MutList.range(0, 6, r)) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+        MutList.foldRight((x, acc) -> x :: acc, Nil, MutList.range(0, 6, r)) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
     }
 
     @test
     def foldRight04(): Bool = region r {
-        MutList.foldRight((x, k) -> x - k(), 0, MutList.range(0, 100, r)) == -50
+        MutList.foldRight((x, acc) -> x - acc, 0, MutList.range(0, 100, r)) == -50
     }
 
     @test
     def foldRight05(): Bool = region r {
-        MutList.foldRight((x, k) -> x + k(), 42, new MutList(r)) == 42
+        MutList.foldRight((x, acc) -> x + acc, 42, new MutList(r)) == 42
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightWithCont                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightWithCont01(): Bool = region r {
+        MutList.foldRightWithCont((x, k) -> k() + x, 0, MutList.range(1, 5, r)) == 10
+    }
+
+    @test
+    def foldRightWithCont02(): Bool = region r {
+        MutList.foldRightWithCont((x, k) -> Int32.toString(x) + k(), "", MutList.range(3, 8, r)) == "34567"
+    }
+
+    @test
+    def foldRightWithCont03(): Bool = region r {
+        MutList.foldRightWithCont((x, k) -> x :: k(), Nil, MutList.range(0, 6, r)) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+    }
+
+    @test
+    def foldRightWithCont04(): Bool = region r {
+        MutList.foldRightWithCont((x, k) -> x - k(), 0, MutList.range(0, 100, r)) == -50
+    }
+
+    @test
+    def foldRightWithCont05(): Bool = region r {
+        MutList.foldRightWithCont((x, k) -> x + k(), 42, new MutList(r)) == 42
     }
 
 

@@ -360,13 +360,26 @@ namespace TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldRight01(): Bool = Nel.foldRight((x, k) -> k() - x, 0, Nel(1, Nil)) == -1
+    def foldRight01(): Bool = Nel.foldRight((x, acc) -> acc - x, 0, Nel(1, Nil)) == -1
 
     @test
-    def foldRight02(): Bool = Nel.foldRight((x, k) -> k() - x, 0, Nel(1, 2 :: Nil)) == -3
+    def foldRight02(): Bool = Nel.foldRight((x, acc) -> acc - x, 0, Nel(1, 2 :: Nil)) == -3
 
     @test
-    def foldRight03(): Bool = Nel.foldRight((x, k) -> k() - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
+    def foldRight03(): Bool = Nel.foldRight((x, acc) -> acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightWithCont                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightWithCont01(): Bool = Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, Nil)) == -1
+
+    @test
+    def foldRightWithCont02(): Bool = Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, 2 :: Nil)) == -3
+
+    @test
+    def foldRightWithCont03(): Bool = Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
 
     /////////////////////////////////////////////////////////////////////////////
     // reduce                                                                  //

@@ -639,27 +639,55 @@ namespace TestDelayList {
 
     @test
     def foldRight01(): Bool =
-    	DelayList.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, ENil) == 100
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, ENil) == 100
 
     @test
     def foldRight02(): Bool =
-    	DelayList.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, LList(lazy ENil)) == 100
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, LList(lazy ENil)) == 100
 
     @test
     def foldRight03(): Bool =
-    	DelayList.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
 
     @test
     def foldRight04(): Bool =
-    	DelayList.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
 
     @test
     def foldRight05(): Bool =
-    	DelayList.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
 
     @test
     def foldRight06(): Bool =
-    	DelayList.foldRight((x, k) -> x :: k(), Nil, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == 1 :: 2 :: 3 :: Nil
+    	DelayList.foldRight((x, acc) -> x :: acc, Nil, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == 1 :: 2 :: 3 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightWithCont                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightWithCont01(): Bool =
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, ENil) == 100
+
+    @test
+    def foldRightWithCont02(): Bool =
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, LList(lazy ENil)) == 100
+
+    @test
+    def foldRightWithCont03(): Bool =
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
+
+    @test
+    def foldRightWithCont04(): Bool =
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
+
+    @test
+    def foldRightWithCont05(): Bool =
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
+
+    @test
+    def foldRightWithCont06(): Bool =
+    	DelayList.foldRightWithCont((x, k) -> x :: k(), Nil, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == 1 :: 2 :: 3 :: Nil
 
 
     /////////////////////////////////////////////////////////////////////////////

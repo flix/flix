@@ -791,6 +791,21 @@ namespace Array {
         loop(length(arr) - 1, s)
 
     ///
+    /// Applies `f` to a start value `z` and all elements in `a` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], z))...)`.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
+    ///
+    pub def foldRightWithCont(f: (a, Unit -> b & Impure) -> b & ef, z: b, arr: Array[a]): b & Impure =
+        def loop(i) = {
+            if (i == length(arr))
+                z
+            else
+                f(arr[i], _ -> loop(i + 1))
+        };
+        loop(0)
+
+    ///
     /// Applies `f` to all elements in `a` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     ///
     /// Returns `None` if `a` is empty.
@@ -957,11 +972,11 @@ namespace Array {
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def partition(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) & Impure =
-        let step = { (x, ac) ->
-            let (a1,a2) = ac;
+        let step = { (x, acc) ->
+            let (a1, a2) = acc;
             if (f(x)) (x :: a1, a2) else (a1, x :: a2)
         };
-        let (xs,ys) = foldRight(step, (Nil,Nil), a);
+        let (xs, ys) = foldRight(step, (Nil, Nil), a);
         (List.toArray(xs), List.toArray(ys))
 
     ///
@@ -1240,7 +1255,7 @@ namespace Array {
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def filterMap(f: a -> Option[b] & ef, a: Array[a]): Array[b] & Impure =
-        foldRight((x,xs) -> match f(x) {
+        foldRight((x, xs) -> match f(x) {
             case None => xs
             case Some(b) => b :: xs }, Nil, a) |> List.toArray
 

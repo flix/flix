@@ -106,7 +106,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val effectType = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Bool, Rigidity.Rigid, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType, loc)
 
-    val expected = "t0! ->{b2!} t1!"
+    val expected = "t0! -> t1! & b2!"
     val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -117,7 +117,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val returnType = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Rigid, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, Type.Impure, returnType, loc)
 
-    val expected = "t0! ->{Impure} t1!"
+    val expected = "t0! -> t1! & Impure"
     val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -126,7 +126,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatType.Arrow.External.04") {
     val tpe = Type.mkImpureUncurriedArrow(Type.Int8 :: Type.Int16 :: Nil, Type.Int32, loc)
 
-    val expected = "Int8 -> (Int16 ->{Impure} Int32)"
+    val expected = "Int8 -> (Int16 -> Int32 & Impure)"
     val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -136,7 +136,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val eff = Type.mkAnd(Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Bool, Rigidity.Flexible, loc), loc), Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Bool, Rigidity.Flexible, loc), loc), loc)
     val tpe = Type.mkArrowWithEffect(Type.BigInt, eff, Type.Bool, loc)
 
-    val expected = "BigInt ->{b1 and b2} Bool"
+    val expected = "BigInt -> Bool & b1 and b2"
     val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -275,7 +275,7 @@ class TestFormatType extends FunSuite with TestUtils {
     val effectType = Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Bool, Rigidity.Rigid, loc), loc)
     val tpe = Type.mkArrowWithEffect(paramType, effectType, returnType, loc)
 
-    val expected = "t0! ->{b2!} t1!"
+    val expected = "t0! -> t1! & b2!"
     val actual = FormatType.formatWellKindedType(tpe)(Audience.Internal)
 
     assert(actual == expected)
@@ -393,7 +393,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatPartialType.Arrow.External.02") {
     val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(3), loc), List(Type.Impure, Type.Str), loc)
 
-    val expected = "String -> (? ->{Impure} ?)"
+    val expected = "String -> (? -> ? & Impure)"
     val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
@@ -402,7 +402,7 @@ class TestFormatType extends FunSuite with TestUtils {
   test("FormatPartialType.Arrow.External.03") {
     val tpe = Type.Cst(TypeConstructor.Arrow(4), loc)
 
-    val expected = "? -> (? -> (? ->{?} ?))"
+    val expected = "? -> (? -> (? -> ? & ?))"
     val actual = FormatType.formatWellKindedType(tpe)(Audience.External)
 
     assert(actual == expected)
