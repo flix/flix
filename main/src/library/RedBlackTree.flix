@@ -124,7 +124,7 @@ namespace RedBlackTree {
     /// Returns `true` if and only if `t` is the empty tree.
     ///
     @Time(1) @Space(1)
-    pub def isEmpty(tree: RedBlackTree[k, v]): Bool = match tree {
+    pub def isEmpty(t: RedBlackTree[k, v]): Bool = match t {
         case Leaf => true
         case _    => false
     }
@@ -293,7 +293,7 @@ namespace RedBlackTree {
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
-    pub def foldRight(f: (k, v, b) -> b & ef, s: b, tree: RedBlackTree[k, v]): b & ef = match tree {
+    pub def foldRight(f: (k, v, b) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = match t {
         case Node(_, a, k, v, b) => foldRight(f, f(k, v, foldRight(f, s, b)), a)
         case _ => s
     }
@@ -304,7 +304,7 @@ namespace RedBlackTree {
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, tree: RedBlackTree[k, v]): b & ef = match tree {
+    pub def foldRightWithCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, t: RedBlackTree[k, v]): b & ef = match t {
         case Node(_, a, k, v, b) => foldRightWithCont(f, f(k, v, _ -> foldRightWithCont(f, z, b)), a)
         case _ => z
     }
@@ -316,11 +316,11 @@ namespace RedBlackTree {
     ///
     /// Returns `None` if `t` is the empty tree.
     ///
-    pub def reduceLeft(f: (k, v, k, v) -> (k, v) & ef, tree: RedBlackTree[k, v]): Option[(k, v)] & ef =
+    pub def reduceLeft(f: (k, v, k, v) -> (k, v) & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
         foldLeft((x, k1, v1) -> match x {
             case Some((k2, v2)) => Some(f(k2, v2, k1, v1))
             case None           => Some(k1, v1)
-        }, None, tree)
+        }, None, t)
 
     ///
     /// Applies `f` to all key-value pairs in `t` going from right to left until a single pair `(k, v)` is obtained.
@@ -329,11 +329,11 @@ namespace RedBlackTree {
     ///
     /// Returns `None` if `t` is the empty tree.
     ///
-    pub def reduceRight(f: (k, v, k, v) -> (k, v) & ef, tree: RedBlackTree[k, v]): Option[(k, v)] & ef =
+    pub def reduceRight(f: (k, v, k, v) -> (k, v) & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
         foldRight((k1, v1, acc) -> match acc {
             case Some((k2, v2)) => Some(f(k1, v1, k2, v2))
             case None           => Some(k1, v1)
-        }, None, tree)
+        }, None, t)
 
     ///
     /// Returns `true` if and only if at least one key-value pair in `t` satisfies the predicate `f`.
