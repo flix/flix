@@ -1031,12 +1031,12 @@ object ParsedAst {
     /**
       * Fixpoint Lambda expression.
       *
-      * @param sp1    the position of the first character in the expression.
-      * @param idents the input and output predicates.
-      * @param exp    the constraint expression.
-      * @param sp2    the position of the last character in the expression.
+      * @param sp1     the position of the first character in the expression.
+      * @param pparams the predicate parameters.
+      * @param exp     the constraint expression.
+      * @param sp2     the position of the last character in the expression.
       */
-    case class FixpointLambda(sp1: SourcePosition, idents: Seq[Name.Ident], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointLambda(sp1: SourcePosition, pparams: Seq[ParsedAst.PredicateParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Compose expression.
@@ -1399,21 +1399,21 @@ object ParsedAst {
     /**
       * Unary Polymorphic Arrow Type.
       *
-      * @param tpe1 the argument type.
-      * @param tpe2 the result type.
-      * @param effOrPur  the optional purity.
-      * @param sp2  the position of the last character in the type.
+      * @param tpe1     the argument type.
+      * @param tpe2     the result type.
+      * @param effOrPur the optional purity.
+      * @param sp2      the position of the last character in the type.
       */
     case class UnaryPolymorphicArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, effOrPur: Option[ParsedAst.EffectOrPurity], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Effect Polymorphic Arrow Type.
       *
-      * @param sp1     the position of the first character in the type.
-      * @param tparams the arguments types.
-      * @param tresult the result type.
-      * @param effOrPur     the optional purity.
-      * @param sp2     the position of the last character in the type.
+      * @param sp1      the position of the first character in the type.
+      * @param tparams  the arguments types.
+      * @param tresult  the result type.
+      * @param effOrPur the optional purity.
+      * @param sp2      the position of the last character in the type.
       */
     case class PolymorphicArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, effOrPur: Option[ParsedAst.EffectOrPurity], sp2: SourcePosition) extends ParsedAst.Type
 
@@ -1795,6 +1795,45 @@ object ParsedAst {
     * @param sp2   the position of the last character in the formal parameter.
     */
   case class FormalParam(sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ident: Name.Ident, tpe: Option[ParsedAst.Type], sp2: SourcePosition)
+
+  /**
+    * A common super-type for predicate parameters.
+    */
+  sealed trait PredicateParam
+
+  object PredicateParam {
+
+    /**
+      * Represents an untyped (un-annotated) predicate parameter.
+      *
+      * @param sp1   the position of the first character in the predicate parameter.
+      * @param ident the name of the predicate.
+      * @param sp2   the position of the first character in the predicate parameter.
+      */
+    case class UntypedPredicateParam(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends PredicateParam
+
+    /**
+      * Represents a type-annotated relational predicate parameter.
+      *
+      * @param sp1   the position of the first character in the predicate parameter.
+      * @param ident the name of the predicate.
+      * @param tpes  the term types.
+      * @param sp2   the position of the first character in the predicate parameter.
+      */
+    case class RelPredicateParam(sp1: SourcePosition, ident: Name.Ident, tpes: Seq[ParsedAst.Type], sp2: SourcePosition) extends PredicateParam
+
+    /**
+      * Represents a type-annotated latticenal predicate parameter.
+      *
+      * @param sp1   the position of the first character in the predicate parameter.
+      * @param ident the name of the predicate.
+      * @param tpes  the key types.
+      * @param tpe   the lattice type.
+      * @param sp2   the position of the first character in the predicate parameter.
+      */
+    case class LatPredicateParam(sp1: SourcePosition, ident: Name.Ident, tpes: Seq[ParsedAst.Type], tpe: ParsedAst.Type, sp2: SourcePosition) extends PredicateParam
+
+  }
 
   /**
     * A catch rule consists of an identifier, a Java name, and a body expression.
