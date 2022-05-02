@@ -151,7 +151,7 @@ object Weeder {
     * Performs weeding on the given sig declaration `s0`.
     */
   private def visitSig(s0: ParsedAst.Declaration.Sig)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Sig], WeederError] = s0 match {
-    case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOpt, tconstrs0, exp0, sp2) =>
+    case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOrPur, tconstrs0, exp0, sp2) =>
       val doc = visitDoc(doc0)
 
       val annVal = visitAnnotations(ann)
@@ -160,16 +160,16 @@ object Weeder {
       val identVal = visitName(ident)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
-      val effVal = visitEff(effOpt, ident.loc)
+      val purVal = visitEffectOrPurity(effOrPur, ident.loc)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       val expVal = Validation.traverse(exp0)(visitExp)
 
-      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, effVal, tconstrsVal, expVal) {
-        case (as, mod, _, _, tparams, fparams, eff, tconstrs, exp) =>
+      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, purVal, tconstrsVal, expVal) {
+        case (as, mod, _, _, tparams, fparams, pur, tconstrs, exp) =>
           val ts = fparams.map(_.tpe.get)
           val retTpe = visitType(tpe0)
-          val tpe = WeededAst.Type.Arrow(ts, eff, retTpe, ident.loc)
-          List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, retTpe, eff, tconstrs, mkSL(sp1, sp2)))
+          val tpe = WeededAst.Type.Arrow(ts, pur, retTpe, ident.loc)
+          List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, retTpe, pur, tconstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -210,7 +210,7 @@ object Weeder {
     * Performs weeding on the given def declaration `d0`.
     */
   private def visitDef(d0: ParsedAst.Declaration.Def, legalModifiers: Set[Ast.Modifier], requiresPublic: Boolean)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = d0 match {
-    case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOpt, tconstrs0, exp0, sp2) =>
+    case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOrPur, tconstrs0, exp0, sp2) =>
       flix.subtask(ident.name, sample = true)
 
       val doc = visitDoc(doc0)
@@ -221,15 +221,15 @@ object Weeder {
       val expVal = visitExp(exp0)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
-      val effVal = visitEff(effOpt, ident.loc)
+      val purVal = visitEffectOrPurity(effOrPur, ident.loc)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
 
-      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, expVal, effVal, tconstrsVal) {
-        case (as, mod, _, _, tparams, fparams, exp, eff, tconstrs) =>
+      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, expVal, purVal, tconstrsVal) {
+        case (as, mod, _, _, tparams, fparams, exp, pur, tconstrs) =>
           val ts = fparams.map(_.tpe.get)
           val retTpe = visitType(tpe0)
-          val tpe = WeededAst.Type.Arrow(ts, eff, retTpe, ident.loc)
-          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, retTpe, eff, tconstrs, mkSL(sp1, sp2)))
+          val tpe = WeededAst.Type.Arrow(ts, pur, retTpe, ident.loc)
+          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, retTpe, pur, tconstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -729,9 +729,9 @@ object Weeder {
       // Visit the inner expression exp2.
       //
       impl match {
-        case ParsedAst.JvmOp.Constructor(fqn, sig, tpe0, eff0, ident) =>
+        case ParsedAst.JvmOp.Constructor(fqn, sig, tpe0, pur0, ident) =>
           //
-          // Introduce a let-bound lambda: (args...) -> InvokeConstructor(args) as tpe & eff
+          // Introduce a let-bound lambda: (args...) -> InvokeConstructor(args) as tpe & pur
           //
           mapN(visitExp(exp2)) {
             case e2 =>
@@ -739,7 +739,7 @@ object Weeder {
               val className = fqn.mkString(".")
 
               val tpe = visitType(tpe0)
-              val eff = visitType(eff0)
+              val pur = visitType(pur0)
 
               //
               // Case 1: No arguments.
@@ -747,7 +747,7 @@ object Weeder {
               if (sig.isEmpty) {
                 val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
                 val call = WeededAst.Expression.InvokeConstructor(className, Nil, Nil, loc)
-                val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
+                val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(pur), loc)
                 val e1 = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
                 return WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc).toSuccess
               }
@@ -771,14 +771,14 @@ object Weeder {
 
               // Assemble the lambda expression.
               val call = WeededAst.Expression.InvokeConstructor(className, as, ts, loc)
-              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
+              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(pur), loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
 
-        case ParsedAst.JvmOp.Method(fqn, sig, tpe0, eff0, identOpt) =>
+        case ParsedAst.JvmOp.Method(fqn, sig, tpe0, pur0, identOpt) =>
           //
-          // Introduce a let-bound lambda: (obj, args...) -> InvokeMethod(obj, args) as tpe & eff
+          // Introduce a let-bound lambda: (obj, args...) -> InvokeMethod(obj, args) as tpe & pur
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, methodName), e2) =>
@@ -788,7 +788,7 @@ object Weeder {
               val receiverType = WeededAst.Type.Native(className, loc)
 
               val tpe = visitType(tpe0)
-              val eff = visitType(eff0)
+              val pur = visitType(pur0)
 
               // Compute the types of declared parameters.
               val ts = sig.map(visitType).toList
@@ -814,14 +814,14 @@ object Weeder {
 
               // Assemble the lambda expression.
               val call = WeededAst.Expression.InvokeMethod(className, methodName, as.head, as.tail, ts, loc)
-              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
+              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(pur), loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
 
-        case ParsedAst.JvmOp.StaticMethod(fqn, sig, tpe0, eff0, identOpt) =>
+        case ParsedAst.JvmOp.StaticMethod(fqn, sig, tpe0, pur0, identOpt) =>
           //
-          // Introduce a let-bound lambda: (args...) -> InvokeStaticMethod(args) as tpe & eff
+          // Introduce a let-bound lambda: (args...) -> InvokeStaticMethod(args) as tpe & pur
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, methodName), e2) =>
@@ -830,7 +830,7 @@ object Weeder {
               val ident = identOpt.getOrElse(Name.Ident(sp1, methodName, sp2))
 
               val tpe = visitType(tpe0)
-              val eff = visitType(eff0)
+              val pur = visitType(pur0)
 
               //
               // Case 1: No arguments.
@@ -838,7 +838,7 @@ object Weeder {
               if (sig.isEmpty) {
                 val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
                 val call = WeededAst.Expression.InvokeStaticMethod(className, methodName, Nil, Nil, loc)
-                val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
+                val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(pur), loc)
                 val e1 = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
                 return WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc).toSuccess
               }
@@ -862,38 +862,38 @@ object Weeder {
 
               // Assemble the lambda expression.
               val call = WeededAst.Expression.InvokeStaticMethod(className, methodName, as, ts, loc)
-              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
+              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(pur), loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
 
-        case ParsedAst.JvmOp.GetField(fqn, tpe0, eff0, ident) =>
+        case ParsedAst.JvmOp.GetField(fqn, tpe0, pur0, ident) =>
           //
-          // Introduce a let-bound lambda: o -> GetField(o) as tpe & eff
+          // Introduce a let-bound lambda: o -> GetField(o) as tpe & pur
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
 
             case ((className, fieldName), e2) =>
               val tpe = visitType(tpe0)
-              val eff = visitType(eff0)
+              val pur = visitType(pur0)
 
               val objectId = Name.Ident(sp1, "o" + Flix.Delimiter, sp2)
               val objectExp = WeededAst.Expression.VarOrDefOrSig(objectId, loc)
               val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
               val call = WeededAst.Expression.GetField(className, fieldName, objectExp, loc)
-              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
+              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(pur), loc)
               val e1 = WeededAst.Expression.Lambda(objectParam, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
 
-        case ParsedAst.JvmOp.PutField(fqn, tpe0, eff0, ident) =>
+        case ParsedAst.JvmOp.PutField(fqn, tpe0, pur0, ident) =>
           //
-          // Introduce a let-bound lambda: (o, v) -> PutField(o, v) as tpe & eff
+          // Introduce a let-bound lambda: (o, v) -> PutField(o, v) as tpe & pur
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
               val tpe = visitType(tpe0)
-              val eff = visitType(eff0)
+              val pur = visitType(pur0)
 
               val objectId = Name.Ident(sp1, "o" + Flix.Delimiter, sp2)
               val valueId = Name.Ident(sp1, "v" + Flix.Delimiter, sp2)
@@ -902,42 +902,42 @@ object Weeder {
               val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
               val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
               val call = WeededAst.Expression.PutField(className, fieldName, objectExp, valueExp, loc)
-              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
+              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(pur), loc)
               val e1 = mkCurried(objectParam :: valueParam :: Nil, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
 
-        case ParsedAst.JvmOp.GetStaticField(fqn, tpe0, eff0, ident) =>
+        case ParsedAst.JvmOp.GetStaticField(fqn, tpe0, pur0, ident) =>
           //
           // Introduce a let-bound lambda: _: Unit -> GetStaticField.
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
               val tpe = visitType(tpe0)
-              val eff = visitType(eff0)
+              val pur = visitType(pur0)
 
               val unitId = Name.Ident(sp1, "_", sp2)
               val unitParam = WeededAst.FormalParam(unitId, Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
               val call = WeededAst.Expression.GetStaticField(className, fieldName, loc)
-              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
+              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(pur), loc)
               val e1 = WeededAst.Expression.Lambda(unitParam, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
 
-        case ParsedAst.JvmOp.PutStaticField(fqn, tpe0, eff0, ident) =>
+        case ParsedAst.JvmOp.PutStaticField(fqn, tpe0, pur0, ident) =>
           //
           // Introduce a let-bound lambda: x -> PutStaticField(x).
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
               val tpe = visitType(tpe0)
-              val eff = visitType(eff0)
+              val pur = visitType(pur0)
 
               val valueId = Name.Ident(sp1, "v" + Flix.Delimiter, sp2)
               val valueExp = WeededAst.Expression.VarOrDefOrSig(valueId, loc)
               val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
               val call = WeededAst.Expression.PutStaticField(className, fieldName, valueExp, loc)
-              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(eff), loc)
+              val lambdaBody = WeededAst.Expression.Cast(call, Some(tpe), Some(pur), loc)
               val e1 = WeededAst.Expression.Lambda(valueParam, lambdaBody, loc)
               WeededAst.Expression.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
           }
@@ -2150,27 +2150,27 @@ object Weeder {
     case ParsedAst.Type.SchemaRow(sp1, predicates, restOpt, sp2) =>
       buildSchemaRow(predicates, restOpt, mkSL(sp1, sp2))
 
-    case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, tpe2, effOpt, sp2) =>
+    case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, tpe2, purOpt, sp2) =>
       val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
       val t1 = visitType(tpe1)
       val t2 = visitType(tpe2)
-      val eff = effOpt match {
+      val eff = purOpt match {
         // NB: If there is no explicit effect then the arrow is pure.
         case None => WeededAst.Type.True(loc.asSynthetic)
         case Some(f) => visitType(f)
       }
       mkArrow(t1, eff, t2, loc)
 
-    case ParsedAst.Type.PolymorphicArrow(sp1, tparams, tresult, effOpt, sp2) =>
+    case ParsedAst.Type.PolymorphicArrow(sp1, tparams, tresult, purOpt, sp2) =>
       val loc = mkSL(sp1, sp2)
       val ts = tparams.map(visitType)
       val tr = visitType(tresult)
-      val eff = effOpt match {
+      val pur = purOpt match {
         // NB: If there is no explicit effect then the arrow is pure.
         case None => WeededAst.Type.True(loc.asSynthetic)
         case Some(f) => visitType(f)
       }
-      mkCurriedArrow(ts, eff, tr, loc)
+      mkCurriedArrow(ts, pur, tr, loc)
 
     case ParsedAst.Type.Native(sp1, fqn, sp2) =>
       WeededAst.Type.Native(fqn.mkString("."), mkSL(sp1, sp2))
@@ -2273,9 +2273,9 @@ object Weeder {
   }
 
   /**
-    * Weeds the given parsed optional effect `effOpt`.
+    * Weeds the given parsed optional effect or purity `effOrPur`.
     */
-  private def visitEff(effOpt: Option[ParsedAst.EffectOrPurity], loc: SourceLocation)(implicit flix: Flix): Validation[WeededAst.Type, WeederError] = effOpt match {
+  private def visitEffectOrPurity(effOrPur: Option[ParsedAst.EffectOrPurity], loc: SourceLocation)(implicit flix: Flix): Validation[WeededAst.Type, WeederError] = effOrPur match {
     case None => WeededAst.Type.True(loc.asSynthetic).toSuccess
     case Some(ParsedAst.EffectOrPurity.Purity(tpe)) => visitType(tpe).toSuccess
     case Some(ParsedAst.EffectOrPurity.Effect(s)) =>
