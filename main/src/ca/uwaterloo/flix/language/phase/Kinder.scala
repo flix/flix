@@ -616,13 +616,19 @@ object Kinder {
         cs => KindedAst.Expression.FixpointConstraintSet(cs, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
-    case ResolvedAst.Expression.FixpointLambda(preds, exp, loc) =>
-      val expVal = visitExp(exp, kenv, taenv, root)
-      val pparams = preds.map {
-        case pred => KindedAst.PredicateParam(pred, Type.freshVar(Kind.Predicate, loc, text = FallbackText(pred.name)), pred.loc)
+    case ResolvedAst.Expression.FixpointLambda(pparams, exp, loc) =>
+      // TODO: visitPredicateParam?
+      val ps = pparams.map {
+        case ResolvedAst.PredicateParam(pred, tpe, loc) =>
+          val t = tpe match {
+            case None => Type.freshVar(Kind.Predicate, loc, text = FallbackText(pred.name))
+            case Some(t) => t
+          }
+          KindedAst.PredicateParam(pred, t, pred.loc)
       }
+      val expVal = visitExp(exp, kenv, taenv, root)
       mapN(expVal) {
-        case e => KindedAst.Expression.FixpointLambda(pparams, e, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        case e => KindedAst.Expression.FixpointLambda(ps, e, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.FixpointMerge(exp10, exp20, loc) =>

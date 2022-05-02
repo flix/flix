@@ -1052,9 +1052,12 @@ object Resolver {
           }
 
         case NamedAst.Expression.FixpointLambda(preds, exp, loc) =>
+          val ps = preds.map {
+            case p => ResolvedAst.PredicateParam(p, None, p.loc)
+          }
           val eVal = visitExp(exp, region)
           mapN(eVal) {
-            case e => ResolvedAst.Expression.FixpointLambda(preds, e, loc)
+            case e => ResolvedAst.Expression.FixpointLambda(ps, e, loc)
           }
 
         case NamedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
