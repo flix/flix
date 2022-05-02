@@ -566,10 +566,10 @@ namespace Nec {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, acc: b, c: Nec[a]): b & ef = match viewRight(c) {
-        case OneRight(x)      => f(x, acc)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Nec[a]): b & ef = match viewRight(c) {
+        case OneRight(x)      => f(x, s)
         case SomeRight(rs, x) => {
-            let b = f(x, acc);
+            let b = f(x, s);
             foldRight(f, b, rs)
         }
     }
