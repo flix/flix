@@ -252,6 +252,8 @@ object Weeder {
       }
   }
 
+  private def visitEffect(d0: ParsedAst.Declaration.Effect)(implicit flix: Flix): Validaiton[List[WeededAst.Declaration.Effect], WeederError] =
+
   /**
     * Performs weeding on the given effect declaration.
     */
