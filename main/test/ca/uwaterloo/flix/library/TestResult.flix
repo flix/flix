@@ -238,19 +238,37 @@ def foldLeft05(): Bool = Result.foldLeft((b, i) -> if (i == 2 and b) true else f
 // foldRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRight01(): Bool = Result.foldRight((i, k) -> if (i == 2 and k()) true else false, false, Err(-1ii)) == false
+def foldRight01(): Bool = Result.foldRight((i, acc) -> if (i == 2 and acc) true else false, false, Err(-1ii)) == false
 
 @test
-def foldRight02(): Bool = Result.foldRight((i, k) -> if (i == 2 and k()) true else false, false, Ok(1)) == false
+def foldRight02(): Bool = Result.foldRight((i, acc) -> if (i == 2 and acc) true else false, false, Ok(1)) == false
 
 @test
-def foldRight03(): Bool = Result.foldRight((i, k) -> if (i == 2 and k()) true else false, true, Ok(1)) == false
+def foldRight03(): Bool = Result.foldRight((i, acc) -> if (i == 2 and acc) true else false, true, Ok(1)) == false
 
 @test
-def foldRight04(): Bool = Result.foldRight((i, k) -> if (i == 2 and k()) true else false, false, Ok(2)) == false
+def foldRight04(): Bool = Result.foldRight((i, acc) -> if (i == 2 and acc) true else false, false, Ok(2)) == false
 
 @test
-def foldRight05(): Bool = Result.foldRight((i, k) -> if (i == 2 and k()) true else false, true, Ok(2)) == true
+def foldRight05(): Bool = Result.foldRight((i, acc) -> if (i == 2 and acc) true else false, true, Ok(2)) == true
+
+/////////////////////////////////////////////////////////////////////////////
+// foldRightWithCont                                                       //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldRightWithCont01(): Bool = Result.foldRightWithCont((i, k) -> if (i == 2 and k()) true else false, false, Err(-1ii)) == false
+
+@test
+def foldRightWithCont02(): Bool = Result.foldRightWithCont((i, k) -> if (i == 2 and k()) true else false, false, Ok(1)) == false
+
+@test
+def foldRightWithCont03(): Bool = Result.foldRightWithCont((i, k) -> if (i == 2 and k()) true else false, true, Ok(1)) == false
+
+@test
+def foldRightWithCont04(): Bool = Result.foldRightWithCont((i, k) -> if (i == 2 and k()) true else false, false, Ok(2)) == false
+
+@test
+def foldRightWithCont05(): Bool = Result.foldRightWithCont((i, k) -> if (i == 2 and k()) true else false, true, Ok(2)) == true
 
 
 /////////////////////////////////////////////////////////////////////////////
