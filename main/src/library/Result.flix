@@ -196,7 +196,7 @@ namespace Result {
     /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foldRight(f: (t, a) -> a & ef, r: Result[t, e], z: a): a & ef = match r {
+    pub def foldRight(f: (t, a) -> a & ef, z: a, r: Result[t, e]): a & ef = match r {
         case Ok(v)  => f(v, z)
         case Err(_) => z
     }
