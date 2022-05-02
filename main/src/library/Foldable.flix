@@ -29,7 +29,15 @@ pub class Foldable[t : Type -> Type] {
     /// Right-associative fold of a structure.
     /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
     ///
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, t: t[a]): b & ef
+    pub def foldRight(f: (a, b) -> b & ef, s: b, t: t[a]): b & ef
+
+    ///
+    /// Right-associative fold of a structure.
+    /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
+    ///
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
+    ///
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, t: t[a]): b & ef
 
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
