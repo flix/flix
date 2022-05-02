@@ -110,7 +110,7 @@ namespace Test/Exp/Effect {
 
     pub def differenceEffect(): Bool \ Flip - Fail = ???
 
-    pub def singlePolyEffect(): Bool \ ef1 = ???
+    pub def singlePolyEffect(): Bool \ ef1 = ??? as & ef1
 
     pub def complementPolyEffect(): Bool \ ~ef1 = ???
 
