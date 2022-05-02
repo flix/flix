@@ -266,9 +266,10 @@ object Packager {
       addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
 
       // Add all class files.
-      for (buildFile <- getAllFiles(getBuildDirectory(p)).sorted(PathComparator)) {
-        val fileName = getBuildDirectory(p).relativize(buildFile).toString
-        val fileNameWithSlashes = fileName.replace('\\', '/')
+      // Here we sort entries by relative file name to apply https://reproducible-builds.org/
+      for ((buildFile, fileNameWithSlashes) <- getAllFiles(getBuildDirectory(p))
+          .map{(path: Path)=>(path, getBuildDirectory(p).relativize(path).toString.replace('\\', '/'))}
+          .sortBy(_._2)) {
         addToZip(zip, fileNameWithSlashes, buildFile)
       }
     } match {
@@ -304,9 +305,11 @@ object Packager {
       addToZip(zip, "README.md", getReadmeFile(p))
 
       // Add all source files.
-      for (sourceFile <- getAllFiles(getSourceDirectory(p)).sorted(PathComparator)) {
-        val name = p.relativize(sourceFile).toString
-        addToZip(zip, name, sourceFile)
+      // Here we sort entries by relative file name to apply https://reproducible-builds.org/
+      for ((sourceFile, fileNameWithSlashes) <- getAllFiles(getBuildDirectory(p))
+          .map{(path: Path)=>(path, p.relativize(path).toString.replace('\\', '/'))}
+          .sortBy(_._2)) {
+        addToZip(zip, fileNameWithSlashes, sourceFile)
       }
     } match {
       case Success(()) => ().toOk
@@ -558,36 +561,6 @@ object Packager {
     override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
       result += file
       FileVisitResult.CONTINUE
-    }
-  }
-
-  /**
-    * The comparator which compares Path objects by a non platform-specific way.
-    * @see <a href="https://reproducible-builds.org/">Reproducible Builds</a>
-    */
-  object PathComparator extends Ordering[Path] {
-    /**
-      * Create a Seq that lists names of path elements.
-      * e.g. `seq(Paths.get("path/to/file"))` returns a Seq that lists `["path", "to", "file"]`.
-      *
-      * @param p Path instance to iterate
-      * @return non-null Seq
-      */
-    private def seq(p: Path): Seq[String] =
-      p.toAbsolutePath.normalize.iterator.asScala.map(
-        // Convert Path to String, to compare the name of path elements by a platform-independent way.
-        // According to Javadoc, the implementation of `Path.compareTo(Path)` is platform-specific.
-        Objects.toString
-      ).toSeq
-
-    override def compare(l: Path, r: Path): Int = {
-      val sl = seq(l)
-      val sr = seq(r)
-      sl.zip(sr).map {
-        case (el, er) => el.compare(er)
-      }.find {
-        _ != 0
-      }.getOrElse(sl.length.compare(sr.length))
     }
   }
 }
