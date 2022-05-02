@@ -347,19 +347,37 @@ def foldLeft05(): Bool = Option.foldLeft((b, i) -> if (i == 2 and b) true else f
 // foldRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRight01(): Bool = Option.foldRight((i, k) -> if (i == 2 and k()) true else false, None, false) == false
+def foldRight01(): Bool = Option.foldRight((i, acc) -> if (i == 2 and acc)) true else false, None, false) == false
 
 @test
-def foldRight02(): Bool = Option.foldRight((i, k) -> if (i == 2 and k()) true else false, Some(1), false) == false
+def foldRight02(): Bool = Option.foldRight((i, acc) -> if (i == 2 and acc)) true else false, Some(1), false) == false
 
 @test
-def foldRight03(): Bool = Option.foldRight((i, k) -> if (i == 2 and k()) true else false, Some(2), false) == false
+def foldRight03(): Bool = Option.foldRight((i, acc) -> if (i == 2 and acc)) true else false, Some(2), false) == false
 
 @test
-def foldRight04(): Bool = Option.foldRight((i, k) -> if (i == 2 and k()) true else false, Some(1), true) == false
+def foldRight04(): Bool = Option.foldRight((i, acc) -> if (i == 2 and acc)) true else false, Some(1), true) == false
 
 @test
-def foldRight05(): Bool = Option.foldRight((i, k) -> if (i == 2 and k()) true else false, Some(2), true) == true
+def foldRight05(): Bool = Option.foldRight((i, acc) -> if (i == 2 and acc)) true else false, Some(2), true) == true
+
+/////////////////////////////////////////////////////////////////////////////
+// foldRightWithCont                                                       //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldRightWithCont01(): Bool = Option.foldRightWithCont((i, k) -> if (i == 2 and k()) true else false, None, false) == false
+
+@test
+def foldRightWithCont02(): Bool = Option.foldRightWithCont((i, k) -> if (i == 2 and k()) true else false, Some(1), false) == false
+
+@test
+def foldRightWithCont03(): Bool = Option.foldRightWithCont((i, k) -> if (i == 2 and k()) true else false, Some(2), false) == false
+
+@test
+def foldRightWithCont04(): Bool = Option.foldRightWithCont((i, k) -> if (i == 2 and k()) true else false, Some(1), true) == false
+
+@test
+def foldRightWithCont05(): Bool = Option.foldRightWithCont((i, k) -> if (i == 2 and k()) true else false, Some(2), true) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // sequence                                                                //
