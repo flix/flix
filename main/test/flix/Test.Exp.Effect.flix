@@ -128,9 +128,9 @@ namespace Test/Exp/Effect {
 
     pub def effectSet04(): Bool \ {} = ???
 
-    pub def polyEffectSet01[ef: Effect](): Bool \ ef = ??? as & ef
+    pub def polyEffectSet01[ef: Eff](): Bool \ ef = ??? as & ef
 
-    pub def polyEffectSet02[ef: Effect](): Bool \ { ef, Fail } = ??? as & ef
+    pub def polyEffectSet02[ef: Eff](): Bool \ { ef, Fail } = ??? as & ef
 
     pub def arrowWithEffect01(f: a -> b \ {}): Bool = ???
 

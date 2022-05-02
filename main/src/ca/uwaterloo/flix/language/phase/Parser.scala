@@ -1511,7 +1511,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Effect: Rule1[ParsedAst.Kind.Effect] = rule {
-      SP ~ keyword("Effect") ~ SP ~> ParsedAst.Kind.Effect
+      SP ~ keyword("Eff") ~ SP ~> ParsedAst.Kind.Effect
     }
 
     def Record: Rule1[ParsedAst.Kind.RecordRow] = rule {
