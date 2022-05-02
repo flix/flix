@@ -1264,9 +1264,9 @@ object Resolver {
           case ts => ResolvedAst.PredicateParam.RelPredicateParam(pred, ts, loc)
         }
 
-      case NamedAst.PredicateParam.LatPredicateParam(pred, tpes, tpe, loc) =>
-        mapN(traverse(tpes)(resolveType(_, taenv, ns0, root)), resolveType(tpe, taenv, ns0, root)) {
-          case (ts, t) => ResolvedAst.PredicateParam.LatPredicateParam(pred, ts, t, loc)
+      case NamedAst.PredicateParam.LatPredicateParam(pred, tpes, loc) =>
+        mapN(traverse(tpes)(resolveType(_, taenv, ns0, root))) {
+          case ts => ResolvedAst.PredicateParam.LatPredicateParam(pred, ts, loc)
         }
 
     }

@@ -405,7 +405,7 @@ object NamedAst {
 
     case class RelPredicateParam(pred: Name.Pred, tpes: List[NamedAst.Type], loc: SourceLocation) extends PredicateParam
 
-    case class LatPredicateParam(pred: Name.Pred, tpes: List[NamedAst.Type], tpe: NamedAst.Type, loc: SourceLocation) extends PredicateParam
+    case class LatPredicateParam(pred: Name.Pred, tpes: List[NamedAst.Type], loc: SourceLocation) extends PredicateParam
 
   }
 

@@ -330,7 +330,7 @@ object ResolvedAst {
 
     case class RelPredicateParam(pred: Name.Pred, tpes: List[Type], loc: SourceLocation) extends PredicateParam
 
-    case class LatPredicateParam(pred: Name.Pred, tpes: List[Type], tpe: Type, loc: SourceLocation) extends PredicateParam
+    case class LatPredicateParam(pred: Name.Pred, tpes: List[Type], loc: SourceLocation) extends PredicateParam
 
   }
 

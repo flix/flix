@@ -2381,7 +2381,7 @@ object Weeder {
     case ParsedAst.PredicateParam.LatPredicateParam(sp1, ident, tpes, tpe, sp2) =>
       val ts = tpes.map(visitType).toList
       val t = visitType(tpe)
-      WeededAst.PredicateParam.LatPredicateParam(Name.mkPred(ident), ts, t, mkSL(sp1, sp2))
+      WeededAst.PredicateParam.LatPredicateParam(Name.mkPred(ident), ts ::: t :: Nil, mkSL(sp1, sp2))
   }
 
   /**

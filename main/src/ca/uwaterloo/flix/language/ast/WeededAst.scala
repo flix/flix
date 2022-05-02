@@ -380,7 +380,7 @@ object WeededAst {
 
     case class RelPredicateParam(pred: Name.Pred, tpes: List[WeededAst.Type], loc: SourceLocation) extends PredicateParam
 
-    case class LatPredicateParam(pred: Name.Pred, tpes: List[WeededAst.Type], tpe: WeededAst.Type, loc: SourceLocation) extends PredicateParam
+    case class LatPredicateParam(pred: Name.Pred, tpes: List[WeededAst.Type], loc: SourceLocation) extends PredicateParam
 
   }
 

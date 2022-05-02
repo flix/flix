@@ -1564,9 +1564,9 @@ object Namer {
         case ts => NamedAst.PredicateParam.RelPredicateParam(pred, ts, loc)
       }
 
-    case WeededAst.PredicateParam.LatPredicateParam(pred, tpes, tpe, loc) =>
-      mapN(traverse(tpes)(visitType(_, uenv0, tenv0)), visitType(tpe, uenv0, tenv0)) {
-        case (ts, t) => NamedAst.PredicateParam.LatPredicateParam(pred, ts, t, loc)
+    case WeededAst.PredicateParam.LatPredicateParam(pred, tpes, loc) =>
+      mapN(traverse(tpes)(visitType(_, uenv0, tenv0))) {
+        case ts => NamedAst.PredicateParam.LatPredicateParam(pred, ts, loc)
       }
   }
 

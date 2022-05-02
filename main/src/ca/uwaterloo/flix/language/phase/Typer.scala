@@ -1376,8 +1376,8 @@ object Typer {
 
       case KindedAst.Expression.FixpointLambda(pparams, exp, tvar, loc) =>
 
-        def mkRowExtend(pparam: KindedAst.PredicateParam, restRow: Type): Type = {
-          Type.mkSchemaRowExtend(pparam.pred, pparam.tpe, restRow, loc)
+        def mkRowExtend(pparam: KindedAst.PredicateParam, restRow: Type): Type = pparam match {
+          case KindedAst.PredicateParam(pred, tpe, loc) => Type.mkSchemaRowExtend(pred, tpe, restRow, loc)
         }
 
         def mkFullRow(baseRow: Type): Type = pparams.foldRight(baseRow)(mkRowExtend)

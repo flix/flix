@@ -985,10 +985,10 @@ object Kinder {
           KindedAst.PredicateParam(pred, tpe, loc)
       }
 
-    case ResolvedAst.PredicateParam.LatPredicateParam(pred, tpes, tpe, loc) =>
-      mapN(traverse(tpes)(visitType(_, Kind.Star, kenv, taenv, root)), visitType(tpe, Kind.Star, kenv, taenv, root)) {
-        case (ts, t) =>
-          val tpe = Type.mkLattice(ts ::: t :: Nil, loc)
+    case ResolvedAst.PredicateParam.LatPredicateParam(pred, tpes, loc) =>
+      mapN(traverse(tpes)(visitType(_, Kind.Star, kenv, taenv, root))) {
+        case ts =>
+          val tpe = Type.mkLattice(ts, loc)
           KindedAst.PredicateParam(pred, tpe, loc)
       }
 
