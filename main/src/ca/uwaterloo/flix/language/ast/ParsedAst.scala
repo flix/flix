@@ -1803,10 +1803,34 @@ object ParsedAst {
 
   object PredicateParam {
 
+    /**
+      * Represents an untyped (un-annotated) predicate parameter.
+      *
+      * @param sp1   the position of the first character in the predicate parameter.
+      * @param ident the name of the predicate.
+      * @param sp2   the position of the first character in the predicate parameter.
+      */
     case class UntypedPredicateParam(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends PredicateParam
 
+    /**
+      * Represents a type-annotated relational predicate parameter.
+      *
+      * @param sp1   the position of the first character in the predicate parameter.
+      * @param ident the name of the predicate.
+      * @param tpes  the term types.
+      * @param sp2   the position of the first character in the predicate parameter.
+      */
     case class RelPredicateParam(sp1: SourcePosition, ident: Name.Ident, tpes: Seq[ParsedAst.Type], sp2: SourcePosition) extends PredicateParam
 
+    /**
+      * Represents a type-annotated latticenal predicate parameter.
+      *
+      * @param sp1   the position of the first character in the predicate parameter.
+      * @param ident the name of the predicate.
+      * @param tpes  the key types.
+      * @param tpe   the lattice type.
+      * @param sp2   the position of the first character in the predicate parameter.
+      */
     case class LatPredicateParam(sp1: SourcePosition, ident: Name.Ident, tpes: Seq[ParsedAst.Type], tpe: ParsedAst.Type, sp2: SourcePosition) extends PredicateParam
 
   }
