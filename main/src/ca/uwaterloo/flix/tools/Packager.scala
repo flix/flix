@@ -488,13 +488,13 @@ object Packager {
 
   /**
     * To support DOS time, Java 8+ treats dates before the 1980 January in special way.
-    * Here we use 1980 February to avoid the complexity introduced by this hack.
+    * Here we use 2014-06-27 (the date of the first commit to Flix) to avoid the complexity introduced by this hack.
     *
     * @see <a href="https://bugs.openjdk.java.net/browse/JDK-4759491">JDK-4759491 that introduced the hack around 1980 January from Java 8+</a>
     * @see <a href="https://bugs.openjdk.java.net/browse/JDK-6303183">JDK-6303183 that explains why the second should be even to create ZIP files in platform-independent way</a>
     * @see <a href="https://github.com/gradle/gradle/blob/445deb9aa988e506120b7918bf91acb421e429ba/subprojects/core/src/main/java/org/gradle/api/internal/file/archive/ZipCopyAction.java#L42-L57">A similar case from Gradle</a>
     */
-  private val ENOUGH_OLD_CONSTANT_TIME: Long = new GregorianCalendar(1980, Calendar.FEBRUARY, 1, 0, 0, 0).getTimeInMillis
+  private val ENOUGH_OLD_CONSTANT_TIME: Long = new GregorianCalendar(2014, Calendar.JUNE, 27, 0, 0, 0).getTimeInMillis
 
   /**
     * Adds an entry to the given zip file.

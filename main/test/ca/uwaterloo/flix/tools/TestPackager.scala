@@ -55,7 +55,7 @@ class TestPackager extends FunSuite {
     for (e <- new ZipFile(packagePath.toFile).entries().asScala) {
       val time = new Date(e.getTime)
       val formatted = format.format(time)
-      assert(formatted.equals("1980-02-01 00:00:00"))
+      assert(formatted.equals("2014-06-27 00:00:00"))
     }
   }
 
@@ -81,7 +81,7 @@ class TestPackager extends FunSuite {
     for (e <- new ZipFile(packagePath.toFile).entries().asScala) {
       val time = new Date(e.getTime)
       val formatted = format.format(time)
-      assert(formatted.equals("1980-02-01 00:00:00"))
+      assert(formatted.equals("2014-06-27 00:00:00"))
     }
   }
 
