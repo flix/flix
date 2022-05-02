@@ -160,12 +160,12 @@ object Weeder {
       val identVal = visitName(ident)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
-      val purVal = visitEffectOrPurity(effOrPur, ident.loc)
+      val pur = visitEffectOrPurity(effOrPur, ident.loc)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       val expVal = Validation.traverse(exp0)(visitExp)
 
-      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, purVal, tconstrsVal, expVal) {
-        case (as, mod, _, _, tparams, fparams, pur, tconstrs, exp) =>
+      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, tconstrsVal, expVal) {
+        case (as, mod, _, _, tparams, fparams, tconstrs, exp) =>
           val ts = fparams.map(_.tpe.get)
           val retTpe = visitType(tpe0)
           val tpe = WeededAst.Type.Arrow(ts, pur, retTpe, ident.loc)
@@ -221,11 +221,11 @@ object Weeder {
       val expVal = visitExp(exp0)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
-      val purVal = visitEffectOrPurity(effOrPur, ident.loc)
+      val pur = visitEffectOrPurity(effOrPur, ident.loc)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
 
-      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, expVal, purVal, tconstrsVal) {
-        case (as, mod, _, _, tparams, fparams, exp, pur, tconstrs) =>
+      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, expVal, tconstrsVal) {
+        case (as, mod, _, _, tparams, fparams, exp, tconstrs) =>
           val ts = fparams.map(_.tpe.get)
           val retTpe = visitType(tpe0)
           val tpe = WeededAst.Type.Arrow(ts, pur, retTpe, ident.loc)
@@ -2150,26 +2150,18 @@ object Weeder {
     case ParsedAst.Type.SchemaRow(sp1, predicates, restOpt, sp2) =>
       buildSchemaRow(predicates, restOpt, mkSL(sp1, sp2))
 
-    case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, tpe2, purOpt, sp2) =>
+    case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, tpe2, effOrPur, sp2) =>
       val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
       val t1 = visitType(tpe1)
       val t2 = visitType(tpe2)
-      val eff = purOpt match {
-        // NB: If there is no explicit effect then the arrow is pure.
-        case None => WeededAst.Type.True(loc.asSynthetic)
-        case Some(f) => visitType(f)
-      }
-      mkArrow(t1, eff, t2, loc)
+      val pur = visitEffectOrPurity(effOrPur, loc)
+      mkArrow(t1, pur, t2, loc)
 
-    case ParsedAst.Type.PolymorphicArrow(sp1, tparams, tresult, purOpt, sp2) =>
+    case ParsedAst.Type.PolymorphicArrow(sp1, tparams, tresult, effOrPur, sp2) =>
       val loc = mkSL(sp1, sp2)
       val ts = tparams.map(visitType)
       val tr = visitType(tresult)
-      val pur = purOpt match {
-        // NB: If there is no explicit effect then the arrow is pure.
-        case None => WeededAst.Type.True(loc.asSynthetic)
-        case Some(f) => visitType(f)
-      }
+      val pur = visitEffectOrPurity(effOrPur, loc)
       mkCurriedArrow(ts, pur, tr, loc)
 
     case ParsedAst.Type.Native(sp1, fqn, sp2) =>
@@ -2275,23 +2267,23 @@ object Weeder {
   /**
     * Weeds the given parsed optional effect or purity `effOrPur`.
     */
-  private def visitEffectOrPurity(effOrPur: Option[ParsedAst.EffectOrPurity], loc: SourceLocation)(implicit flix: Flix): Validation[WeededAst.Type, WeederError] = effOrPur match {
-    case None => WeededAst.Type.True(loc.asSynthetic).toSuccess
-    case Some(ParsedAst.EffectOrPurity.Purity(tpe)) => visitType(tpe).toSuccess
+  private def visitEffectOrPurity(effOrPur: Option[ParsedAst.EffectOrPurity], loc: SourceLocation): WeededAst.Type = effOrPur match {
+    case None => WeededAst.Type.True(loc.asSynthetic)
+    case Some(ParsedAst.EffectOrPurity.Purity(tpe)) => visitType(tpe)
     case Some(ParsedAst.EffectOrPurity.Effect(s)) =>
       // for now just pull out the reads and vars and convert them to types
       s match {
-        case EffectSet.Singleton(sp1, eff, sp2) => visitSingleEffect(eff).toSuccess
-        case EffectSet.Pure(sp1, sp2) => WeededAst.Type.True(mkSL(sp1, sp2)).toSuccess
+        case EffectSet.Singleton(sp1, eff, sp2) => visitSingleEffect(eff)
+        case EffectSet.Pure(sp1, sp2) => WeededAst.Type.True(mkSL(sp1, sp2))
         case EffectSet.Set(sp1, effs, sp2) =>
           val loc = mkSL(sp1, sp2)
           effs.toList match {
-            case Nil => WeededAst.Type.True(loc).toSuccess
+            case Nil => WeededAst.Type.True(loc)
             case hd :: tl =>
               val tpe = tl.foldLeft(visitSingleEffect(hd)) {
                 case (acc, eff) => WeededAst.Type.And(acc, visitSingleEffect(eff), loc)
               }
-              tpe.toSuccess
+              tpe
           }
       }
   }

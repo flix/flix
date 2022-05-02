@@ -1271,7 +1271,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Types {
 
     def UnaryArrow: Rule1[ParsedAst.Type] = rule {
-      Or ~ optional(optWS ~ atomic("->") ~ optWS ~ Type ~ optional(WS ~ "&" ~ WS ~ Type) ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
+      Or ~ optional(optWS ~ atomic("->") ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow))
     }
 
     def Or: Rule1[ParsedAst.Type] = rule {
@@ -1300,7 +1300,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ TypeList ~ optWS ~ (atomic("->") ~ optWS ~ Type ~ optional(WS ~ "&" ~ WS ~ Type) ~ SP ~> ParsedAst.Type.PolymorphicArrow)
+        SP ~ TypeList ~ optWS ~ (atomic("->") ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Type.PolymorphicArrow)
       }
     }
 

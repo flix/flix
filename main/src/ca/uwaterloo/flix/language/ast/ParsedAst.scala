@@ -1401,10 +1401,10 @@ object ParsedAst {
       *
       * @param tpe1 the argument type.
       * @param tpe2 the result type.
-      * @param pur  the optional purity.
+      * @param effOrPur  the optional purity.
       * @param sp2  the position of the last character in the type.
       */
-    case class UnaryPolymorphicArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, pur: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
+    case class UnaryPolymorphicArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, effOrPur: Option[ParsedAst.EffectOrPurity], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Effect Polymorphic Arrow Type.
@@ -1412,10 +1412,10 @@ object ParsedAst {
       * @param sp1     the position of the first character in the type.
       * @param tparams the arguments types.
       * @param tresult the result type.
-      * @param pur     the optional purity.
+      * @param effOrPur     the optional purity.
       * @param sp2     the position of the last character in the type.
       */
-    case class PolymorphicArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, pur: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
+    case class PolymorphicArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, effOrPur: Option[ParsedAst.EffectOrPurity], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Native Type.
