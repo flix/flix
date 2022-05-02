@@ -100,15 +100,25 @@ namespace Test/Exp/Effect {
         }
     }
 
-    pub def singleEffect(): Bool \ Empty = ???
+    pub def singleEffect(): Bool \ Flip = ???
 
-    pub def complementEffect(): Bool \ ~Empty = ???
+    pub def complementEffect(): Bool \ ~Flip = ???
 
     pub def unionEffect(): Bool \ Flip + Fail = ???
 
     pub def intersectionEffect(): Bool \ Flip & Fail = ???
 
     pub def differenceEffect(): Bool \ Flip - Fail = ???
+
+    pub def singlePolyEffect(): Bool \ ef1 = ???
+
+    pub def complementPolyEffect(): Bool \ ~ef1 = ???
+
+    pub def unionPolyEffect(): Bool \ ef1 + ef2 = ???
+
+    pub def intersectionPolyEffect(): Bool \ ef1 & ef2 = ???
+
+    pub def differencePolyEffect(): Bool \ ef1 - ef2 = ???
 
     pub def effectSet01(): Bool \ { Fail } = ???
 
