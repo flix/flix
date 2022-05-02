@@ -1051,13 +1051,11 @@ object Resolver {
             cs => ResolvedAst.Expression.FixpointConstraintSet(cs, loc)
           }
 
-        case NamedAst.Expression.FixpointLambda(preds, exp, loc) =>
-          val ps = preds.map {
-            case p => ResolvedAst.PredicateParam(p, None, p.loc)
-          }
+        case NamedAst.Expression.FixpointLambda(pparams, exp, loc) =>
+          val psVal = traverse(pparams)(Params.resolve(_, taenv, ns0, root))
           val eVal = visitExp(exp, region)
-          mapN(eVal) {
-            case e => ResolvedAst.Expression.FixpointLambda(ps, e, loc)
+          mapN(psVal, eVal) {
+            case (ps, e) => ResolvedAst.Expression.FixpointLambda(ps, e, loc)
           }
 
         case NamedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
@@ -1252,6 +1250,16 @@ object Resolver {
       mapN(tVal) {
         t => ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
       }
+    }
+
+    /**
+      * Performs name resolution on the given predicate parameter `pparam0` in the given namespace `ns0`.
+      */
+    def resolve(pparam0: NamedAst.PredicateParam, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.PredicateParam, ResolutionError] = pparam0 match {
+      case NamedAst.PredicateParam(pred, tpe, loc) =>
+        mapN(traverse(tpe)(resolveType(_, taenv, ns0, root))) {
+          case t => ResolvedAst.PredicateParam(pred, t.headOption, loc)
+        }
     }
 
     /**

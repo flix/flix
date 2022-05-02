@@ -372,7 +372,7 @@ object WeededAst {
 
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], loc: SourceLocation)
 
-  case class PredicateParam(ident: Name.Ident, tpe: Option[WeededAst.Type], loc: SourceLocation)
+  case class PredicateParam(pred: Name.Pred, tpe: Option[WeededAst.Type], loc: SourceLocation)
 
   case class CatchRule(ident: Name.Ident, className: String, exp: WeededAst.Expression)
 

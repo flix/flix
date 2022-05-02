@@ -907,9 +907,11 @@ object Namer {
           NamedAst.Expression.FixpointConstraintSet(cs, loc)
       }
 
-    case WeededAst.Expression.FixpointLambda(preds, exp, loc) =>
-      mapN(visitExp(exp, env0, uenv0, tenv0)) {
-        case e => NamedAst.Expression.FixpointLambda(preds, e, loc)
+    case WeededAst.Expression.FixpointLambda(pparams, exp, loc) =>
+      val psVal = traverse(pparams)(visitPredicateParam(_, uenv0, tenv0))
+      val expVal = visitExp(exp, env0, uenv0, tenv0)
+      mapN(psVal, expVal) {
+        case (ps, e) => NamedAst.Expression.FixpointLambda(ps, e, loc)
       }
 
     case WeededAst.Expression.FixpointMerge(exp1, exp2, loc) =>
@@ -1547,6 +1549,16 @@ object Namer {
       // Construct the formal parameter.
       mapN(tpeVal) {
         case tpe => NamedAst.FormalParam(freshSym, mod, tpe, loc)
+      }
+  }
+
+  /**
+    * Translates the given weeded predicate parameter to a named predicate parameter.
+    */
+  private def visitPredicateParam(fparam: WeededAst.PredicateParam, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.PredicateParam, NameError] = fparam match {
+    case WeededAst.PredicateParam(pred, tpe, loc) =>
+      mapN(traverse(tpe)(visitType(_, uenv0, tenv0))) {
+        case t => NamedAst.PredicateParam(pred, t.headOption, loc)
       }
   }
 
