@@ -203,7 +203,7 @@ object NamedAst {
 
     case class FixpointConstraintSet(cs: List[NamedAst.Constraint], loc: SourceLocation) extends NamedAst.Expression
 
-    case class FixpointLambda(preds: List[Name.Pred], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class FixpointLambda(pparams: List[NamedAst.PredicateParam], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class FixpointMerge(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
@@ -396,6 +396,8 @@ object NamedAst {
   }
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, loc: SourceLocation)
+
+  case class PredicateParam(pred: Name.Pred, tpe: Option[NamedAst.Type], loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, className: String, exp: NamedAst.Expression)
 

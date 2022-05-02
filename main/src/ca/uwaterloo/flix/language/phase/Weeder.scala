@@ -1391,10 +1391,10 @@ object Weeder {
       }
 
     case ParsedAst.Expression.FixpointLambda(sp1, idents, exp, sp2) =>
-      val preds = idents.map(Name.mkPred).toList
+      val ps = idents.map(ident => WeededAst.PredicateParam(ident, None, ident.loc)).toList
       val loc = mkSL(sp1, sp2)
       mapN(visitExp(exp)) {
-        case e => WeededAst.Expression.FixpointLambda(preds, e, loc)
+        case e => WeededAst.Expression.FixpointLambda(ps, e, loc)
       }
 
     case ParsedAst.Expression.FixpointCompose(exp1, exp2, sp2) =>
