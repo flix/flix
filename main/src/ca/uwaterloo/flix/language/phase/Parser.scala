@@ -284,12 +284,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.EffectOrPurity]] = rule {
-    Type ~ optional(optWS ~ EffectSetOrBool)
+    Type ~ optional(optWS ~ EffectOrPurity)
   }
 
-  def EffectSetOrBool: Rule1[ParsedAst.EffectOrPurity] = {
+  def EffectOrPurity: Rule1[ParsedAst.EffectOrPurity] = {
     def Set: Rule1[ParsedAst.EffectOrPurity] = rule {
-      "\\" ~ optWS ~ Effects.EffectSet ~> ParsedAst.EffectOrPurity.Effect
+      "\\" ~ optWS ~ Effects.EffectSetOrEmpty ~> ParsedAst.EffectOrPurity.Effect
     }
 
     def Bool: Rule1[ParsedAst.EffectOrPurity] = rule {
@@ -1271,7 +1271,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Types {
 
     def UnaryArrow: Rule1[ParsedAst.Type] = rule {
-      Or ~ optional(optWS ~ atomic("->") ~ optWS ~ Type ~ optional(WS ~ "&" ~ WS ~ Type) ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
+      Or ~ optional(optWS ~ atomic("->") ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
     }
 
     def Or: Rule1[ParsedAst.Type] = rule {
@@ -1300,7 +1300,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ TypeList ~ optWS ~ (atomic("->") ~ optWS ~ Type ~ optional(WS ~ "&" ~ WS ~ Type) ~ SP ~> ParsedAst.Type.PolymorphicArrow)
+        SP ~ TypeList ~ optWS ~ (atomic("->") ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Type.PolymorphicArrow)
       }
     }
 
@@ -1391,6 +1391,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   object Effects {
 
+    // This should only be used where the effect is unambiguously an effect.
+    // NOT where it might be some other type, since this overlaps with the empty record type.
+    def EffectSetOrEmpty: Rule1[ParsedAst.EffectSet] = {
+      def Empty: Rule1[ParsedAst.EffectSet] = rule {
+        SP ~ "{" ~ optWS ~ "}" ~ SP ~> ParsedAst.EffectSet.Pure
+      }
+
+      rule {
+        Empty | EffectSet
+      }
+    }
+
     def EffectSet: Rule1[ParsedAst.EffectSet] = rule {
       // NB: Pure must come before Set since they overlap
       Pure | Set | Singleton
@@ -1437,15 +1449,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def UnionTail = rule {
-      operatorX("+") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "+" ~ optWS) ~> ParsedAst.Effect.Union
+      operatorX("+") ~ optWS ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "+" ~ optWS) ~> ParsedAst.Effect.Union
     }
 
     def IntersectionTail = rule {
-      operatorX("&") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "&" ~ optWS) ~> ParsedAst.Effect.Intersection
+      operatorX("&") ~ optWS ~  oneOrMore(SimpleEffect).separatedBy(optWS ~ "&" ~ optWS) ~> ParsedAst.Effect.Intersection
     }
 
     def DifferenceTail = rule {
-      operatorX("-") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "-" ~ optWS) ~> ParsedAst.Effect.Difference
+      operatorX("-") ~ optWS ~  oneOrMore(SimpleEffect).separatedBy(optWS ~ "-" ~ optWS) ~> ParsedAst.Effect.Difference
     }
 
     def BinaryTail = rule {
@@ -1479,7 +1491,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Kinds {
 
     def SimpleKind: Rule1[ParsedAst.Kind] = rule {
-      Kinds.Star | Kinds.Bool | Kinds.Region | Kinds.Record | Kinds.Schema | Kinds.Parens
+      Kinds.Star | Kinds.Bool | Kinds.Region | Kinds.Effect | Kinds.Record | Kinds.Schema | Kinds.Parens
     }
 
     def Arrow: Rule1[ParsedAst.Kind] = rule {
@@ -1496,6 +1508,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Region: Rule1[ParsedAst.Kind.Region] = rule {
       SP ~ keyword("Region") ~ SP ~> ParsedAst.Kind.Region
+    }
+
+    def Effect: Rule1[ParsedAst.Kind.Effect] = rule {
+      SP ~ keyword("Eff") ~ SP ~> ParsedAst.Kind.Effect
     }
 
     def Record: Rule1[ParsedAst.Kind.RecordRow] = rule {

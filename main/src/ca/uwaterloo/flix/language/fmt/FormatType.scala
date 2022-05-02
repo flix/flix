@@ -232,7 +232,7 @@ object FormatType {
         val argString = delimitFunctionArg(arg)
         val effString = visit(eff, Mode.Effect)
         val retString = delimit(ret, Mode.Type)
-        s"$argString ->{$effString} $retString"
+        s"$argString -> $retString & $effString"
       case SimpleType.TagConstructor(name) => name
       case SimpleType.Tag(name, args, ret) =>
         // NB: not putting too much care into tag formatting, as it should not show up

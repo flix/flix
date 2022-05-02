@@ -146,6 +146,21 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedTypes](result)
   }
 
+  test("TestMismatchedTypes.Arrow.01") {
+    // Regression test.
+    // See https://github.com/flix/flix/issues/3634
+    val input =
+      """
+        |opaque type E[a: Type, ef: Bool] = Unit
+        |def f(g: E[Int32, true]): Bool = ???
+        |def mkE(): E[Int32, true] & ef = ???
+        |
+        |def g(): Bool = f(mkE)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
   test("TestOverApplied.01") {
     val input =
       """

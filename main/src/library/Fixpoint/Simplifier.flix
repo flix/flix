@@ -54,7 +54,7 @@ namespace Fixpoint {
                             case RamTerm.RowLoad(var, i) => if (varB == var) i else -1
                             case _ => -1
                         }, tuple) |>
-                        Array.sameElements(Array.range(0, arityOf(relB)));
+                        Array.sameElements(Array.range(0, arityOf(relB), static));
                     if (isCopy)
                         Some(RamStmt.Merge(relB, relA))
                     else

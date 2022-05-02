@@ -72,13 +72,13 @@ object Unification {
       case (x: Type.Var, y: Type.Var) => unifyVars(x.asKinded, y.asKinded)
 
       case (x: Type.Var, _) =>
-        if (x.kind == Kind.Bool || tpe2.kind == Kind.Bool)
+        if (x.kind == Kind.Bool && tpe2.kind == Kind.Bool)
           BoolUnification.unify(x, tpe2)
         else
           unifyVar(x.asKinded, tpe2)
 
       case (_, x: Type.Var) =>
-        if (x.kind == Kind.Bool || tpe1.kind == Kind.Bool)
+        if (x.kind == Kind.Bool && tpe1.kind == Kind.Bool)
           BoolUnification.unify(x, tpe1)
         else
           unifyVar(x.asKinded, tpe1)
