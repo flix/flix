@@ -122,6 +122,12 @@ namespace Test/Exp/Effect {
 
     pub def polyEffectSet02[ef: Effect](): Bool \ { ef, Fail } = ??? as & ef
 
+    pub def arrowWithEffect01(f: a -> b \ {}): Bool = ???
+
+    pub def arrowWithEffect02(f: a -> b \ {ef - Fail}): Bool = ???
+
+    pub def arrowWithEffect03(f: a -> b \ {Console, ef - Fail}): Bool = ???
+
     eff Empty
 
     eff Fail {
