@@ -1797,13 +1797,19 @@ object ParsedAst {
   case class FormalParam(sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ident: Name.Ident, tpe: Option[ParsedAst.Type], sp2: SourcePosition)
 
   /**
-    * Predicate Parameter.
-    *
-    * @param sp1   the position of the first character in the formal parameter.
-    * @param ident the name of the argument.
-    * @param sp2   the position of the last character in the formal parameter.
+    * A common super-type for predicate parameters.
     */
-  case class PredicateParam(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition)
+  sealed trait PredicateParam
+
+  object PredicateParam {
+
+    case class UntypedPredicateParam(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends PredicateParam
+
+    case class RelPredicateParam(sp1: SourcePosition, ident: Name.Ident, tpes: Seq[ParsedAst.Type], sp2: SourcePosition) extends PredicateParam
+
+    case class LatPredicateParam(sp1: SourcePosition, ident: Name.Ident, tpes: Seq[ParsedAst.Type], tpe: ParsedAst.Type, sp2: SourcePosition) extends PredicateParam
+
+  }
 
   /**
     * A catch rule consists of an identifier, a Java name, and a body expression.

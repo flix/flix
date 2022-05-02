@@ -372,7 +372,17 @@ object WeededAst {
 
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], loc: SourceLocation)
 
-  case class PredicateParam(pred: Name.Pred, tpe: Option[WeededAst.Type], loc: SourceLocation)
+  sealed trait PredicateParam
+
+  object PredicateParam {
+
+    case class UntypedPredicateParam(pred: Name.Pred, loc: SourceLocation) extends PredicateParam
+
+    case class RelPredicateParam(pred: Name.Pred, tpes: List[WeededAst.Type], loc: SourceLocation) extends PredicateParam
+
+    case class LatPredicateParam(pred: Name.Pred, tpes: List[WeededAst.Type], tpe: WeededAst.Type, loc: SourceLocation) extends PredicateParam
+
+  }
 
   case class CatchRule(ident: Name.Ident, className: String, exp: WeededAst.Expression)
 

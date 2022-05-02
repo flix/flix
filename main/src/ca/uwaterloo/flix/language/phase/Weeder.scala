@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
-import ca.uwaterloo.flix.language.ast.ParsedAst.{Effect, EffectSet, RecordFieldType}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -1391,10 +1390,7 @@ object Weeder {
       }
 
     case ParsedAst.Expression.FixpointLambda(sp1, pparams, exp, sp2) =>
-      val ps = pparams.map {
-        case ParsedAst.PredicateParam(sp1, ident, sp2) =>
-          WeededAst.PredicateParam(Name.mkPred(ident), None, mkSL(sp1, sp2))
-      }
+      val ps = pparams.map(visitPredicateParam)
       val loc = mkSL(sp1, sp2)
       mapN(visitExp(exp)) {
         case e => WeededAst.Expression.FixpointLambda(ps.toList, e, loc)
@@ -2205,7 +2201,7 @@ object Weeder {
   /**
     * Builds a record row from the given fields and optional rest variable.
     */
-  private def buildRecordRow(fields: Seq[RecordFieldType], restOpt: Option[Name.Ident], loc: SourceLocation): WeededAst.Type = {
+  private def buildRecordRow(fields: Seq[ParsedAst.RecordFieldType], restOpt: Option[Name.Ident], loc: SourceLocation): WeededAst.Type = {
     // If rest is absent, then it is the empty record row
     val rest = restOpt match {
       case None => WeededAst.Type.RecordRowEmpty(loc)
@@ -2272,9 +2268,9 @@ object Weeder {
     case Some(ParsedAst.EffectOrPurity.Effect(s)) =>
       // for now just pull out the reads and vars and convert them to types
       s match {
-        case EffectSet.Singleton(sp1, eff, sp2) => visitSingleEffect(eff)
-        case EffectSet.Pure(sp1, sp2) => WeededAst.Type.True(mkSL(sp1, sp2))
-        case EffectSet.Set(sp1, effs, sp2) =>
+        case ParsedAst.EffectSet.Singleton(sp1, eff, sp2) => visitSingleEffect(eff)
+        case ParsedAst.EffectSet.Pure(sp1, sp2) => WeededAst.Type.True(mkSL(sp1, sp2))
+        case ParsedAst.EffectSet.Set(sp1, effs, sp2) =>
           val loc = mkSL(sp1, sp2)
           effs.toList match {
             case Nil => WeededAst.Type.True(loc)
@@ -2294,10 +2290,10 @@ object Weeder {
     * @param eff the effect
     */
   private def visitSingleEffect(eff: ParsedAst.Effect): WeededAst.Type = eff match {
-    case Effect.Var(sp1, ident, sp2) =>
+    case ParsedAst.Effect.Var(sp1, ident, sp2) =>
       visitEffectIdent(ident)
 
-    case Effect.Read(sp1, idents, sp2) =>
+    case ParsedAst.Effect.Read(sp1, idents, sp2) =>
       val loc = mkSL(sp1, sp2)
       if (idents.isEmpty)
         WeededAst.Type.True(loc)
@@ -2308,7 +2304,7 @@ object Weeder {
         }
       }
 
-    case Effect.Write(sp1, idents, sp2) =>
+    case ParsedAst.Effect.Write(sp1, idents, sp2) =>
       val loc = mkSL(sp1, sp2)
       if (idents.isEmpty)
         WeededAst.Type.True(loc)
@@ -2369,6 +2365,23 @@ object Weeder {
           ))
       }
     }
+  }
+
+  /**
+    * Weeds the given predicate param `pparam`.
+    */
+  private def visitPredicateParam(pparam: ParsedAst.PredicateParam): WeededAst.PredicateParam = pparam match {
+    case ParsedAst.PredicateParam.UntypedPredicateParam(sp1, ident, sp2) =>
+      WeededAst.PredicateParam.UntypedPredicateParam(Name.mkPred(ident), mkSL(sp1, sp2))
+
+    case ParsedAst.PredicateParam.RelPredicateParam(sp1, ident, tpes, sp2) =>
+      val ts = tpes.map(visitType).toList
+      WeededAst.PredicateParam.RelPredicateParam(Name.mkPred(ident), ts, mkSL(sp1, sp2))
+
+    case ParsedAst.PredicateParam.LatPredicateParam(sp1, ident, tpes, tpe, sp2) =>
+      val ts = tpes.map(visitType).toList
+      val t = visitType(tpe)
+      WeededAst.PredicateParam.LatPredicateParam(Name.mkPred(ident), ts, t, mkSL(sp1, sp2))
   }
 
   /**

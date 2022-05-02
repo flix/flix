@@ -322,7 +322,17 @@ object ResolvedAst {
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
 
-  case class PredicateParam(pred: Name.Pred, tpe: Option[Type], loc: SourceLocation)
+  sealed trait PredicateParam
+
+  object PredicateParam {
+
+    case class UntypedPredicateParam(pred: Name.Pred, loc: SourceLocation) extends PredicateParam
+
+    case class RelPredicateParam(pred: Name.Pred, tpes: List[Type], loc: SourceLocation) extends PredicateParam
+
+    case class LatPredicateParam(pred: Name.Pred, tpes: List[Type], tpe: Type, loc: SourceLocation) extends PredicateParam
+
+  }
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ResolvedAst.Expression)
 

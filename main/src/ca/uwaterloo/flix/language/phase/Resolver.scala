@@ -1256,10 +1256,19 @@ object Resolver {
       * Performs name resolution on the given predicate parameter `pparam0` in the given namespace `ns0`.
       */
     def resolve(pparam0: NamedAst.PredicateParam, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.PredicateParam, ResolutionError] = pparam0 match {
-      case NamedAst.PredicateParam(pred, tpe, loc) =>
-        mapN(traverse(tpe)(resolveType(_, taenv, ns0, root))) {
-          case t => ResolvedAst.PredicateParam(pred, t.headOption, loc)
+      case NamedAst.PredicateParam.UntypedPredicateParam(pred, loc) =>
+        ResolvedAst.PredicateParam.UntypedPredicateParam(pred, loc).toSuccess
+
+      case NamedAst.PredicateParam.RelPredicateParam(pred, tpes, loc) =>
+        mapN(traverse(tpes)(resolveType(_, taenv, ns0, root))) {
+          case ts => ResolvedAst.PredicateParam.RelPredicateParam(pred, ts, loc)
         }
+
+      case NamedAst.PredicateParam.LatPredicateParam(pred, tpes, tpe, loc) =>
+        mapN(traverse(tpes)(resolveType(_, taenv, ns0, root)), resolveType(tpe, taenv, ns0, root)) {
+          case (ts, t) => ResolvedAst.PredicateParam.LatPredicateParam(pred, ts, t, loc)
+        }
+
     }
 
     /**

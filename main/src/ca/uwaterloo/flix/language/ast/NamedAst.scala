@@ -397,7 +397,17 @@ object NamedAst {
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, loc: SourceLocation)
 
-  case class PredicateParam(pred: Name.Pred, tpe: Option[NamedAst.Type], loc: SourceLocation)
+  sealed trait PredicateParam
+
+  object PredicateParam {
+
+    case class UntypedPredicateParam(pred: Name.Pred, loc: SourceLocation) extends PredicateParam
+
+    case class RelPredicateParam(pred: Name.Pred, tpes: List[NamedAst.Type], loc: SourceLocation) extends PredicateParam
+
+    case class LatPredicateParam(pred: Name.Pred, tpes: List[NamedAst.Type], tpe: NamedAst.Type, loc: SourceLocation) extends PredicateParam
+
+  }
 
   case class CatchRule(sym: Symbol.VarSym, className: String, exp: NamedAst.Expression)
 

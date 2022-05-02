@@ -617,18 +617,10 @@ object Kinder {
       }
 
     case ResolvedAst.Expression.FixpointLambda(pparams, exp, loc) =>
-      // TODO: visitPredicateParam?
-      val ps = pparams.map {
-        case ResolvedAst.PredicateParam(pred, tpe, loc) =>
-          val t = tpe match {
-            case None => Type.freshVar(Kind.Predicate, loc, text = FallbackText(pred.name))
-            case Some(t) => t
-          }
-          KindedAst.PredicateParam(pred, t, pred.loc)
-      }
+      val psVal = traverse(pparams)(visitPredicateParam(_, kenv, taenv, root))
       val expVal = visitExp(exp, kenv, taenv, root)
-      mapN(expVal) {
-        case e => KindedAst.Expression.FixpointLambda(ps, e, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      mapN(psVal, expVal) {
+        case (ps, e) => KindedAst.Expression.FixpointLambda(ps, e, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.FixpointMerge(exp10, exp20, loc) =>
@@ -976,6 +968,30 @@ object Kinder {
       mapN(visitType(tpe0, Kind.Star, kenv, taenv, root)) {
         tpe => KindedAst.FormalParam(sym, mod, tpe, loc)
       }
+  }
+
+  /**
+    * Performs kinding on the given predicate param under the given kind environment.
+    */
+  private def visitPredicateParam(pparam0: ResolvedAst.PredicateParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.PredicateParam, KindError] = pparam0 match {
+    case ResolvedAst.PredicateParam.UntypedPredicateParam(pred, loc) =>
+      val tpe = Type.freshVar(Kind.Predicate, loc, text = FallbackText(pred.name))
+      KindedAst.PredicateParam(pred, tpe, loc).toSuccess
+
+    case ResolvedAst.PredicateParam.RelPredicateParam(pred, tpes, loc) =>
+      mapN(traverse(tpes)(visitType(_, Kind.Star, kenv, taenv, root))) {
+        case ts =>
+          val tpe = Type.mkRelation(ts, loc)
+          KindedAst.PredicateParam(pred, tpe, loc)
+      }
+
+    case ResolvedAst.PredicateParam.LatPredicateParam(pred, tpes, tpe, loc) =>
+      mapN(traverse(tpes)(visitType(_, Kind.Star, kenv, taenv, root)), visitType(tpe, Kind.Star, kenv, taenv, root)) {
+        case (ts, t) =>
+          val tpe = Type.mkLattice(ts ::: t :: Nil, loc)
+          KindedAst.PredicateParam(pred, tpe, loc)
+      }
+
   }
 
   /**
