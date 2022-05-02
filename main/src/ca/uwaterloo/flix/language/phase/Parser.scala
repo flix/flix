@@ -1057,7 +1057,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def FixpointLambda: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("#(") ~ optWS ~ oneOrMore(Names.Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ keyword("=>") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointLambda
+      SP ~ atomic("#(") ~ optWS ~ oneOrMore(PredicateParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ keyword("=>") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointLambda
     }
 
     def FixpointProject: Rule1[ParsedAst.Expression] = {
@@ -1541,6 +1541,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   def FormalParamList: Rule1[Seq[ParsedAst.FormalParam]] = rule {
     "(" ~ optWS ~ zeroOrMore(FormalParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+  }
+
+  def PredicateParam: Rule1[ParsedAst.PredicateParam] = rule {
+    SP ~ Modifiers ~ Names.Predicate ~ SP ~> ParsedAst.PredicateParam
   }
 
   def Argument: Rule1[ParsedAst.Argument] = {
