@@ -869,16 +869,32 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldRight01(): Bool = Chain.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Chain.empty()) == 100
+    def foldRight01(): Bool = Chain.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, Chain.empty()) == 100
 
     @test
-    def foldRight02(): Bool = Chain.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Chain.singleton(1)) == 198
+    def foldRight02(): Bool = Chain.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, Chain.singleton(1)) == 198
 
     @test
-    def foldRight03(): Bool = Chain.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, List.toChain(1 :: 2 :: Nil)) == 194
+    def foldRight03(): Bool = Chain.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, List.toChain(1 :: 2 :: Nil)) == 194
 
     @test
-    def foldRight04(): Bool = Chain.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 382
+    def foldRight04(): Bool = Chain.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 382
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightWithCont                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightWithCont01(): Bool = Chain.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, Chain.empty()) == 100
+
+    @test
+    def foldRightWithCont02(): Bool = Chain.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, Chain.singleton(1)) == 198
+
+    @test
+    def foldRightWithCont03(): Bool = Chain.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, List.toChain(1 :: 2 :: Nil)) == 194
+
+    @test
+    def foldRightWithCont04(): Bool = Chain.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 382
 
     /////////////////////////////////////////////////////////////////////////////
     // dropLeft                                                                //
@@ -1354,7 +1370,7 @@ namespace TestChain {
 
     @test
     def toMutList01(): Bool & Impure =
-        Chain.toMutList(Chain.empty(): Chain[Int32]) `MutList.sameElements` List.toMutList(Nil): MutList[Int32]
+        Chain.toMutList(Chain.empty(): Chain[Int32]) `MutList.sameElements` List.toMutList(Nil): MutList[Int32, Impure]
 
     @test
     def toMutList02(): Bool & Impure =
