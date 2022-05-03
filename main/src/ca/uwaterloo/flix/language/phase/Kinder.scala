@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
@@ -974,18 +975,18 @@ object Kinder {
     * Performs kinding on the given predicate param under the given kind environment.
     */
   private def visitPredicateParam(pparam0: ResolvedAst.PredicateParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.PredicateParam, KindError] = pparam0 match {
-    case ResolvedAst.PredicateParam.UntypedPredicateParam(pred, loc) =>
+    case ResolvedAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
       val tpe = Type.freshVar(Kind.Predicate, loc, text = FallbackText(pred.name))
       KindedAst.PredicateParam(pred, tpe, loc).toSuccess
 
-    case ResolvedAst.PredicateParam.RelPredicateParam(pred, tpes, loc) =>
+    case ResolvedAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
       mapN(traverse(tpes)(visitType(_, Kind.Star, kenv, taenv, root))) {
-        case ts => KindedAst.PredicateParam(pred, Type.mkRelation(ts, loc), loc)
-      }
-
-    case ResolvedAst.PredicateParam.LatPredicateParam(pred, tpes, loc) =>
-      mapN(traverse(tpes)(visitType(_, Kind.Star, kenv, taenv, root))) {
-        case ts => KindedAst.PredicateParam(pred, Type.mkLattice(ts, loc), loc)
+        case ts =>
+          val tpe = den match {
+            case Denotation.Relational => Type.mkRelation(ts, pred.loc.asSynthetic)
+            case Denotation.Latticenal => Type.mkLattice(ts, pred.loc.asSynthetic)
+          }
+          KindedAst.PredicateParam(pred, tpe, loc)
       }
 
   }

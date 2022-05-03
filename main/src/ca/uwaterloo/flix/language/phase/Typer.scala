@@ -1377,7 +1377,7 @@ object Typer {
       case KindedAst.Expression.FixpointLambda(pparams, exp, tvar, loc) =>
 
         def mkRowExtend(pparam: KindedAst.PredicateParam, restRow: Type): Type = pparam match {
-          case KindedAst.PredicateParam(pred, tpe, loc) => Type.mkSchemaRowExtend(pred, tpe, restRow, loc)
+          case KindedAst.PredicateParam(pred, tpe, loc) => Type.mkSchemaRowExtend(pred, tpe, restRow, tpe.loc)
         }
 
         def mkFullRow(baseRow: Type): Type = pparams.foldRight(baseRow)(mkRowExtend)
@@ -1976,14 +1976,14 @@ object Typer {
     /**
       * Applies the substitution to the given list of formal parameters.
       */
-    def visitFormalParam(param: KindedAst.FormalParam): TypedAst.FormalParam =
-      TypedAst.FormalParam(param.sym, param.mod, subst0(param.tpe), param.loc)
+    def visitFormalParam(fparam: KindedAst.FormalParam): TypedAst.FormalParam =
+      TypedAst.FormalParam(fparam.sym, fparam.mod, subst0(fparam.tpe), fparam.loc)
 
     /**
       * Applies the substitution to the given list of predicate parameters.
       */
-    def visitPredicateParam(param: KindedAst.PredicateParam): TypedAst.PredicateParam =
-      TypedAst.PredicateParam(param.pred, subst0(param.tpe), param.loc)
+    def visitPredicateParam(pparam: KindedAst.PredicateParam): TypedAst.PredicateParam =
+      TypedAst.PredicateParam(pparam.pred, subst0(pparam.tpe), pparam.loc)
 
     visitExp(exp0, subst0)
   }
