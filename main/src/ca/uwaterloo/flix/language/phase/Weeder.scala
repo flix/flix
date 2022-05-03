@@ -2423,16 +2423,21 @@ object Weeder {
     */
   private def visitPredicateParam(pparam: ParsedAst.PredicateParam): WeededAst.PredicateParam = pparam match {
     case ParsedAst.PredicateParam.UntypedPredicateParam(sp1, ident, sp2) =>
-      WeededAst.PredicateParam.UntypedPredicateParam(Name.mkPred(ident), mkSL(sp1, sp2))
+      val pred = Name.mkPred(ident)
+      WeededAst.PredicateParam.PredicateParamUntyped(pred, mkSL(sp1, sp2))
 
     case ParsedAst.PredicateParam.RelPredicateParam(sp1, ident, tpes, sp2) =>
+      val pred = Name.mkPred(ident)
+      val den = Ast.Denotation.Relational
       val ts = tpes.map(visitType).toList
-      WeededAst.PredicateParam.RelPredicateParam(Name.mkPred(ident), ts, mkSL(sp1, sp2))
+      WeededAst.PredicateParam.PredicateParamWithType(pred, den, ts, mkSL(sp1, sp2))
 
     case ParsedAst.PredicateParam.LatPredicateParam(sp1, ident, tpes, tpe, sp2) =>
+      val pred = Name.mkPred(ident)
+      val den = Ast.Denotation.Latticenal
       val ts = tpes.map(visitType).toList
       val t = visitType(tpe)
-      WeededAst.PredicateParam.LatPredicateParam(Name.mkPred(ident), ts ::: t :: Nil, mkSL(sp1, sp2))
+      WeededAst.PredicateParam.PredicateParamWithType(pred, den, ts ::: t :: Nil, mkSL(sp1, sp2))
   }
 
   /**
