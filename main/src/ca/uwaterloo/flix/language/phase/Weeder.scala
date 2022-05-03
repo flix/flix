@@ -291,44 +291,6 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given effect declaration.
-    */
-  private def visitEffect(d0: ParsedAst.Declaration.Effect)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Effect], WeederError] = d0 match {
-    case ParsedAst.Declaration.Effect(doc0, mod0, sp1, ident, tparams0, ops0, sp2) =>
-      val doc = visitDoc(doc0)
-      val modVal = visitModifiers(mod0, legalModifiers = Set.empty) // MATT public and stuff?
-      val identVal = visitName(ident)
-      val tparamsVal = requireNoTypeParams(tparams0)
-      val opsVal = traverse(ops0)(visitOp)
-      mapN(modVal, identVal, tparamsVal, opsVal) {
-        case (mod, _, _, ops) =>
-          List(WeededAst.Declaration.Effect(doc, mod, ident, ops, mkSL(sp1, sp2)))
-      }
-  }
-
-  /**
-    * Performs weeding on the given effect operation.
-    */
-  private def visitOp(d0: ParsedAst.Declaration.Op)(implicit flix: Flix): Validation[WeededAst.Declaration.Op, WeederError] = d0 match {
-    case ParsedAst.Declaration.Op(doc0, ann0, mod0, sp1, ident, tparams0, fparamsOpt0, tpe0, pur0, tconstrs0, sp2) =>
-      val doc = visitDoc(doc0)
-      val annVal = visitAnnotations(ann0)
-      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
-      val pubVal = requirePublic(mod0, ident)
-      val tparamsVal = requireNoTypeParams(tparams0)
-      val fparamsVal = visitFormalParams(fparamsOpt0, typeRequired = true)
-      val pur = visitEffectOrPurity(pur0, ident.loc)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
-      mapN(annVal, modVal, pubVal, tparamsVal, fparamsVal, tconstrsVal) {
-        case (ann, mod, _, _, fparams, tconstrs) =>
-          val ts = fparams.map(_.tpe.get)
-          val retTpe = visitType(tpe0)
-          val tpe = WeededAst.Type.Arrow(ts, pur, retTpe, ident.loc)
-          WeededAst.Declaration.Op(doc, ann, mod, ident, fparams, tpe, retTpe, pur, tconstrs, mkSL(sp1, sp2));
-      }
-  }
-
-  /**
     * Performs weeding on the given enum declaration `d0`.
     */
   private def visitEnum(d0: ParsedAst.Declaration.Enum)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Enum], WeederError] = d0 match {
