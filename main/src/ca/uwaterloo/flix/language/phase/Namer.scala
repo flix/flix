@@ -197,8 +197,8 @@ object Namer {
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
 
-      case _: WeededAst.Declaration.Sig =>
-        throw InternalCompilerException("Unexpected signature declaration.") // signatures should not be at the top level
+      // Not handling effects for now
+      case _: WeededAst.Declaration.Effect => prog0.toSuccess
     }
   }
 
