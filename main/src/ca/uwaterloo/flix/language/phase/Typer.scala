@@ -261,7 +261,7 @@ object Typer {
                 case _ => Substitution.empty
               }
 
-              val subst = substBeforeHacks @@ substSuffix
+              val subst = substSuffix @@ substBeforeHacks
               ////////////// hacking ends
 
               ///
