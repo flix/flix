@@ -1,4 +1,3 @@
-
 namespace Test/Exp/Fixpoint/Lambda {
 
     pub def testLambdaCopy01(): Bool & Impure = {
