@@ -1377,13 +1377,19 @@ object Weeder {
         case e => WeededAst.Expression.Cast(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
-    // ignoring Do for now
-    case ParsedAst.Expression.Do(sp1, op, args, sp2) =>
-      WeededAst.Expression.Hole(None, mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Expression.Do(sp1, op, args0, sp2) =>
+      val argsVal = traverse(args0)(visitArgument)
+      val loc = mkSL(sp1, sp2)
+      mapN(argsVal) {
+        args => WeededAst.Expression.Do(op, args, loc)
+      }
 
-    // ignoring Resume for now
-    case ParsedAst.Expression.Resume(sp1, args, sp2) =>
-      WeededAst.Expression.Hole(None, mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Expression.Resume(sp1, args0, sp2) =>
+      val argsVal = traverse(args0)(visitArgument)
+      val loc = mkSL(sp1, sp2)
+      mapN(argsVal) {
+        args => WeededAst.Expression.Resume(args, loc)
+      }
 
     case ParsedAst.Expression.Try(sp1, exp, ParsedAst.CatchOrHandler.Catch(rules), sp2) =>
       val expVal = visitExp(exp)
@@ -1399,8 +1405,20 @@ object Weeder {
       }
 
     // not handling these rules yet
-    case ParsedAst.Expression.Try(sp1, exp, ParsedAst.CatchOrHandler.Handler(eff, rules), sp2) =>
-      WeededAst.Expression.Hole(None, mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Expression.Try(sp1, exp0, ParsedAst.CatchOrHandler.Handler(eff, rules0), sp2) =>
+      val expVal = visitExp(exp0)
+      val rulesVal = traverse(rules0) {
+        case ParsedAst.HandlerRule(op, fparams0, body0) =>
+          val fparamsVal = visitFormalParams(fparams0, typeRequired = false)
+          val bodyVal = visitExp(body0)
+          mapN(fparamsVal, bodyVal) {
+            case (fparams, body) => WeededAst.HandlerRule(op, fparams, body)
+          }
+      }
+      val loc = mkSL(sp1, sp2)
+      mapN(expVal, rulesVal) {
+        case (exp, rules) => WeededAst.Expression.TryWith(exp, eff, rules, loc)
+      }
 
     // TODO SJ: Rewrite to Ascribe(newch, Channel[Int32]), to remove the tpe (and get tvar like everything else)
     // TODO SJ: Also do not allow function types (Arrow) when rewriting

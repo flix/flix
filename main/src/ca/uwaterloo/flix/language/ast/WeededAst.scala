@@ -169,6 +169,12 @@ object WeededAst {
 
     case class TryCatch(exp: WeededAst.Expression, rules: List[WeededAst.CatchRule], loc: SourceLocation) extends WeededAst.Expression
 
+    case class TryWith(exp: WeededAst.Expression, eff: Name.QName, rules: List[WeededAst.HandlerRule], loc: SourceLocation) extends WeededAst.Expression
+
+    case class Do(op: Name.QName, args: Seq[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+
+    case class Resume(args: Seq[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+
     case class InvokeConstructor(className: String, args: List[WeededAst.Expression], sig: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Expression
 
     case class InvokeMethod(className: String, methodName: String, exp: WeededAst.Expression, args: List[WeededAst.Expression], sig: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Expression
@@ -387,6 +393,8 @@ object WeededAst {
   }
 
   case class CatchRule(ident: Name.Ident, className: String, exp: WeededAst.Expression)
+
+  case class HandlerRule(op: Name.Ident, fparams: Seq[WeededAst.FormalParam], exp: WeededAst.Expression)
 
   case class ChoiceRule(pat: List[WeededAst.ChoicePattern], exp: WeededAst.Expression)
 
