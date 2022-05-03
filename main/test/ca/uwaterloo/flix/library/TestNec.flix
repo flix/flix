@@ -839,13 +839,26 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldRight01(): Bool = Nec.foldRight((x, k) -> k() - x, 0, singleton(1)) == -1
+    def foldRight01(): Bool = Nec.foldRight((x, acc) -> acc - x, 0, singleton(1)) == -1
 
     @test
-    def foldRight02(): Bool = Nec.foldRight((x, k) -> k() - x, 0, necOf2(1, 2)) == -3
+    def foldRight02(): Bool = Nec.foldRight((x, acc) -> acc - x, 0, necOf2(1, 2)) == -3
 
     @test
-    def foldRight03(): Bool = Nec.foldRight((x, k) -> k() - x, 0, necOf3(1, 2, 3)) == -6
+    def foldRight03(): Bool = Nec.foldRight((x, acc) -> acc - x, 0, necOf3(1, 2, 3)) == -6
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightWithCont                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightWithCont01(): Bool = Nec.foldRightWithCont((x, k) -> k() - x, 0, singleton(1)) == -1
+
+    @test
+    def foldRightWithCont02(): Bool = Nec.foldRightWithCont((x, k) -> k() - x, 0, necOf2(1, 2)) == -3
+
+    @test
+    def foldRightWithCont03(): Bool = Nec.foldRightWithCont((x, k) -> k() - x, 0, necOf3(1, 2, 3)) == -6
 
 
     /////////////////////////////////////////////////////////////////////////////

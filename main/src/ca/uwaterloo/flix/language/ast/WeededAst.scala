@@ -195,7 +195,7 @@ object WeededAst {
 
     case class FixpointConstraintSet(cs: List[WeededAst.Constraint], loc: SourceLocation) extends WeededAst.Expression
 
-    case class FixpointLambda(idents: List[Name.Pred], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class FixpointLambda(pparams: List[WeededAst.PredicateParam], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointMerge(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -371,6 +371,18 @@ object WeededAst {
   case class Case(ident: Name.Ident, tag: Name.Tag, tpe: WeededAst.Type)
 
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], loc: SourceLocation)
+
+  sealed trait PredicateParam
+
+  object PredicateParam {
+
+    case class UntypedPredicateParam(pred: Name.Pred, loc: SourceLocation) extends PredicateParam
+
+    case class RelPredicateParam(pred: Name.Pred, tpes: List[WeededAst.Type], loc: SourceLocation) extends PredicateParam
+
+    case class LatPredicateParam(pred: Name.Pred, tpes: List[WeededAst.Type], loc: SourceLocation) extends PredicateParam
+
+  }
 
   case class CatchRule(ident: Name.Ident, className: String, exp: WeededAst.Expression)
 

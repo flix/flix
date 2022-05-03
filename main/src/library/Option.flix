@@ -279,9 +279,17 @@ namespace Option {
     ///
     /// Returns `f(v, z)` if `o` is `Some(v)`. Otherwise returns `z`.
     ///
-    /// A `foldRight` allows early termination by not calling the continuation.
+    pub def foldRight(f: (a, b) -> b & ef, o: Option[a], z: b): b & ef = match o {
+        case None    => z
+        case Some(v) => f(v, z)
+    }
+
     ///
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, o: Option[a], z: b): b & ef = match o {
+    /// Returns `f(v, z)` if `o` is `Some(v)`. Otherwise returns `z`.
+    ///
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
+    ///
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, o: Option[a], z: b): b & ef = match o {
         case None    => z
         case Some(v) => f(v, _ -> z as & ef)
     }
@@ -398,7 +406,7 @@ namespace Option {
     /// Returns a map with elements of `s` as keys and `f` applied as values.
     ///
     pub def toMapWith(f: a -> b, s: Option[a]): Map[a, b] with Order[a] =
-        Option.foldRight((x, k) -> Map.insert(x, f(x), k()), s, Map.empty())
+        Option.foldRight((x, acc) -> Map.insert(x, f(x), acc), s, Map.empty())
 
     ///
     /// Returns the Option value `Ok(v)` if `o` is `Some(v)`. Otherwise returns `Err(e)`.

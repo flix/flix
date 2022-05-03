@@ -328,9 +328,9 @@ object Indexer {
 
     case Expression.FixpointConstraintSet(cs, _, _, _) => traverse(cs)(visitConstraint)
 
-    case Expression.FixpointLambda(preds, exp, _, tpe, _, _) =>
-      val i0 = traverse(preds)(pred => Index.occurrenceOf(pred, getPredicateType(pred, tpe)))
-      val i1 = traverse(preds)(pred => Index.defOf(pred))
+    case Expression.FixpointLambda(pparams, exp, _, tpe, _, _) =>
+      val i0 = traverse(pparams)(pparam => Index.occurrenceOf(pparam.pred, getPredicateType(pparam.pred, tpe)))
+      val i1 = traverse(pparams)(pparams => Index.defOf(pparams.pred))
       i0 ++ i1 ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
