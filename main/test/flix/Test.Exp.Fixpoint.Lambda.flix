@@ -1,7 +1,7 @@
 namespace Test/Exp/Fixpoint/Lambda {
 
     pub def testLambdaCopy01(): Bool & Impure = {
-        let p1 = #(Input, Output) => #{
+        let p1 = #(Input, Output) -> #{
             Local(x) :- Input(x).
             Output(x) :- Local(x).
         };
@@ -12,7 +12,7 @@ namespace Test/Exp/Fixpoint/Lambda {
     }
 
     pub def testLambdaCopy02(): Bool & Impure = {
-        let p1 = #(Input, Output) => #{
+        let p1 = #(Input, Output) -> #{
             Local1(x) :- Input(x).
             Local2(x) :- Local1(x).
             Output(x) :- Local2(x).
@@ -24,7 +24,7 @@ namespace Test/Exp/Fixpoint/Lambda {
     }
 
     pub def testLambdaMultipleLocals01(): Bool & Impure = {
-        let p1 = #(Input, Output) => #{
+        let p1 = #(Input, Output) -> #{
             Local("abc").
             Local("def").
             Output(x) :- Input(x).
@@ -37,11 +37,11 @@ namespace Test/Exp/Fixpoint/Lambda {
     }
 
     pub def testLambdaMultipleLocals02(): Bool & Impure = {
-        let p1 = #(A) => #{
+        let p1 = #(A) -> #{
             Local("abc").
             A(42) :- Local("abc").
         };
-        let p2 = #(B) => #{
+        let p2 = #(B) -> #{
             Local(123).
             B(42) :- Local(123).
         };
@@ -55,9 +55,9 @@ namespace Test/Exp/Fixpoint/Lambda {
         let p1 = #{
             A(1). B(1). C(1).
         };
-        let p2 = #(A, B, C) => p1;
-        let p3 = #(A, B) => p2;
-        let p4 = #(A) => p3;
+        let p2 = #(A, B, C) -> p1;
+        let p3 = #(A, B) -> p2;
+        let p4 = #(A) -> p3;
         query p4 select x from A(x) |> Array.memberOf(1)
     }
 
@@ -65,9 +65,9 @@ namespace Test/Exp/Fixpoint/Lambda {
         let p1 = #{
             A(1). B(1). C(1).
         };
-        let p2 = #(A, B, C) => p1;
-        let p3 = #(A, B) => p2;
-        let p4 = #(A) => p3;
+        let p2 = #(A, B, C) -> p1;
+        let p3 = #(A, B) -> p2;
+        let p4 = #(A) -> p3;
         not (query p4 select x from B(x) |> Array.memberOf(1))
     }
 
@@ -75,9 +75,9 @@ namespace Test/Exp/Fixpoint/Lambda {
         let p1 = #{
             A(1). B(1). C(1).
         };
-        let p2 = #(A, B, C) => p1;
-        let p3 = #(A, B) => p2;
-        let p4 = #(A) => p3;
+        let p2 = #(A, B, C) -> p1;
+        let p3 = #(A, B) -> p2;
+        let p4 = #(A) -> p3;
         not (query p4 select x from C(x) |> Array.memberOf(1))
     }
 
@@ -86,17 +86,17 @@ namespace Test/Exp/Fixpoint/Lambda {
             A(1). B(1). C(1).
             R(42) :- A(x), B(x), C(x).
         };
-        let p2 = #(R, A, B) => p1;
-        let p3 = #(R, A) => p2;
+        let p2 = #(R, A, B) -> p1;
+        let p3 = #(R, A) -> p2;
         query p3 select x from R(x) |> Array.memberOf(42)
     }
 
     pub def testStratification01(): Bool =
-        let p1 = #(A) => #{
+        let p1 = #(A) -> #{
             Q(1).
             A(x) :- Q(x), not B(x).
         };
-        let p2 = #(B) => #{
+        let p2 = #(B) -> #{
             Q(2).
             B(x) :- Q(x), not A(x).
         };
@@ -115,32 +115,32 @@ namespace Test/Exp/Fixpoint/Lambda {
         query poly(123), poly("abc"), poly(true) select x from R(x) |> Array.memberOf("OK")
 
     def poly(x: a): #{ R(String) } with Boxable[a] =
-        #(R) => #{
+        #(R) -> #{
             A(x).
             R("OK") :- A(x).
         }
 
     pub def testTypedLambda01(): Bool =
-        let p = #(A(Int32)) => #{
+        let p = #(A(Int32)) -> #{
             A(123).
         };
         not (query p select x from A(x) |> Array.isEmpty)
 
     pub def testTypedLambda02(): Bool =
-        let p = #(A(Int32, String)) => #{
+        let p = #(A(Int32, String)) -> #{
             A(123, "Hello World").
         };
         not (query p select x from A(x) |> Array.isEmpty)
 
     pub def testTypedLambda03(): Bool =
-        let p = #(A(Int32, Int32), B(String, String)) => #{
+        let p = #(A(Int32, Int32), B(String, String)) -> #{
             A(123, 456).
             B("hello", "World").
         };
         not (query p select x from A(x) |> Array.isEmpty)
 
     pub def testTypedLambda04(): Bool =
-        let p = #(L(String; Int32)) => #{
+        let p = #(L(String; Int32)) -> #{
             L("a"; 1).
             L("a"; 2).
         };
