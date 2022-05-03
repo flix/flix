@@ -1847,11 +1847,11 @@ object ParsedAst {
   /**
     * Effect handler rule.
     *
-    * @param name    the operation name.
+    * @param op      the operation name.
     * @param fparams the operation parameters.
     * @param exp     the body expression.
     */
-  case class HandlerRule(name: Name.Ident, fparams: Seq[FormalParam], exp: ParsedAst.Expression)
+  case class HandlerRule(op: Name.Ident, fparams: Seq[FormalParam], exp: ParsedAst.Expression)
 
   /**
     * A choice pattern match rule.
