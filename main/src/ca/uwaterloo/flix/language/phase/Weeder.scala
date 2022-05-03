@@ -258,7 +258,7 @@ object Weeder {
   private def visitEffect(d0: ParsedAst.Declaration.Effect)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Effect], WeederError] = d0 match {
     case ParsedAst.Declaration.Effect(doc0, mod0, sp1, ident, tparams0, ops0, sp2) =>
       val doc = visitDoc(doc0)
-      val modVal = visitModifiers(mod0, legalModifiers = Set.empty) // MATT public and stuff?
+      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val identVal = visitName(ident)
       val tparamsVal = requireNoTypeParams(tparams0)
       val opsVal = traverse(ops0)(visitOp)
