@@ -1340,6 +1340,9 @@ object Namer {
     case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => freeVars(exp)
     case WeededAst.Expression.Cast(exp, tpe, eff, loc) => freeVars(exp)
+    case WeededAst.Expression.Do(op, args, loc) => Nil // TODO handle
+    case WeededAst.Expression.Resume(args, loc) => Nil // TODO handle
+    case WeededAst.Expression.TryWith(exp, eff, rules, loc) => Nil // TODO handle
     case WeededAst.Expression.TryCatch(exp, rules, loc) =>
       rules.foldLeft(freeVars(exp)) {
         case (fvs, WeededAst.CatchRule(ident, className, body)) => filterBoundVars(freeVars(body), List(ident))

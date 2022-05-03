@@ -171,9 +171,9 @@ object WeededAst {
 
     case class TryWith(exp: WeededAst.Expression, eff: Name.QName, rules: List[WeededAst.HandlerRule], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Do(op: Name.QName, args: Seq[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class Do(op: Name.QName, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Resume(args: Seq[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class Resume(args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class InvokeConstructor(className: String, args: List[WeededAst.Expression], sig: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Expression
 
