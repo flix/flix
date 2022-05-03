@@ -238,22 +238,25 @@ object Typer {
               val substSuffix = boolTparams match {
                 // Case 1: exactly one Boolean tparam: do some magic
                 case tparam :: Nil =>
-                  val tpe = substBeforeHacks.m(tparam.sym) // MATT what happens if it's not in there?
-                  val newSym = tparam.sym.withRigidity(Rigidity.Rigid)
-                  unifyTypes(Type.KindedVar(newSym, tparam.loc), tpe) match {
-                    case Ok(subst) =>
-                      // de-rigidify the substitution
-                      val m = subst.m.map {
-                        case (k, v) =>
-                          val v2 = v.map {
-                            case Type.KindedVar(sym, loc) if sym == newSym => Type.KindedVar(newSym.withRigidity(Rigidity.Flexible), loc)
-                            case otherVar => otherVar
+                  substBeforeHacks.m.get(tparam.sym) match {
+                    case Some(tpe) =>
+                      val newSym = tparam.sym.withRigidity(Rigidity.Rigid)
+                      unifyTypes(Type.KindedVar(newSym, tparam.loc), tpe) match {
+                        case Ok(subst) =>
+                          // de-rigidify the substitution
+                          val m = subst.m.map {
+                            case (k, v) =>
+                              val v2 = v.map {
+                                case Type.KindedVar(sym, loc) if sym == newSym => Type.KindedVar(newSym.withRigidity(Rigidity.Flexible), loc)
+                                case otherVar => otherVar
+                              }
+                              (k, v2)
                           }
-                          (k, v2)
+                          Substitution(m)
+                        case Err(_) => throw InternalCompilerException("asf") // MATT
                       }
-                      Substitution(m)
-                    case Err(_) => throw InternalCompilerException("asf") // MATT
-                  }
+                    case None => Substitution.empty
+                  } // MATT what happens if it's not in there?
                 // Case 2: Zero or multiple Boolean tparams: don't do any magic
                 case _ => Substitution.empty
               }
