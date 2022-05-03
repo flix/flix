@@ -401,11 +401,9 @@ object NamedAst {
 
   object PredicateParam {
 
-    case class UntypedPredicateParam(pred: Name.Pred, loc: SourceLocation) extends PredicateParam
+    case class PredicateParamUntyped(pred: Name.Pred, loc: SourceLocation) extends PredicateParam
 
-    case class RelPredicateParam(pred: Name.Pred, tpes: List[NamedAst.Type], loc: SourceLocation) extends PredicateParam
-
-    case class LatPredicateParam(pred: Name.Pred, tpes: List[NamedAst.Type], loc: SourceLocation) extends PredicateParam
+    case class PredicateParamWithType(pred: Name.Pred, den: Ast.Denotation, tpes: List[NamedAst.Type], loc: SourceLocation) extends PredicateParam
 
   }
 
