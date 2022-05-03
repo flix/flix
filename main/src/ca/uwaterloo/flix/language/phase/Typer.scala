@@ -247,6 +247,7 @@ object Typer {
                         case (k, v) =>
                           val v2 = v.map {
                             case Type.KindedVar(sym, loc) if sym == newSym => Type.KindedVar(newSym.withRigidity(Rigidity.Flexible), loc)
+                            case otherVar => otherVar
                           }
                           (k, v2)
                       }
