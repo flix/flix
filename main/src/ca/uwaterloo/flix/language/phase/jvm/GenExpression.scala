@@ -106,22 +106,20 @@ object GenExpression {
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expression.Closure(sym, freeVars, fnType, _, loc) =>
-      // ClosureInfo
-      val closure = ClosureInfo(sym, freeVars, fnType)
+    case Expression.Closure(sym, closureArgs, fnType, _, _) =>
       // JvmType of the closure
-      val jvmType = JvmOps.getClosureClassType(closure.sym, closure.tpe)
+      val jvmType = JvmOps.getClosureClassType(sym, fnType)
       // new closure instance
       visitor.visitTypeInsn(NEW, jvmType.name.toInternalName)
       // Duplicate
       visitor.visitInsn(DUP)
       visitor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
       // Capturing free args
-      for ((f, i) <- freeVars.zipWithIndex) {
+      for ((arg, i) <- closureArgs.zipWithIndex) {
+        val erasedArgType = JvmOps.getErasedJvmType(arg.tpe)
         visitor.visitInsn(DUP)
-        val v = Expression.Var(f.sym, f.tpe, loc)
-        compileExpression(v, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitFieldInsn(PUTFIELD, jvmType.name.toInternalName, s"clo$i", JvmOps.getErasedJvmType(f.tpe).toDescriptor)
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitFieldInsn(PUTFIELD, jvmType.name.toInternalName, s"clo$i", erasedArgType.toDescriptor)
       }
 
     case Expression.ApplyClo(exp, args, tpe, _) =>
