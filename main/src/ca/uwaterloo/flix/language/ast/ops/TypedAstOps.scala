@@ -223,7 +223,7 @@ object TypedAstOps {
           case (macc, c) => macc ++ visitConstraint(c, env0)
         }
 
-      case Expression.FixpointLambda(preds, exp, stf, tpe, eff, loc) =>
+      case Expression.FixpointLambda(pparams, exp, stf, tpe, eff, loc) =>
         visitExp(exp, env0)
 
       case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>

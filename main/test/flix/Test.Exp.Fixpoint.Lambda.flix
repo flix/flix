@@ -121,4 +121,30 @@ namespace Test/Exp/Fixpoint/Lambda {
             R("OK") :- A(x).
         }
 
+    pub def testTypedLambda01(): Bool =
+        let p = #(A(Int32)) => #{
+            A(123).
+        };
+        not (query p select x from A(x) |> Array.isEmpty)
+
+    pub def testTypedLambda02(): Bool =
+        let p = #(A(Int32, String)) => #{
+            A(123, "Hello World").
+        };
+        not (query p select x from A(x) |> Array.isEmpty)
+
+    pub def testTypedLambda03(): Bool =
+        let p = #(A(Int32, Int32), B(String, String)) => #{
+            A(123, 456).
+            B("hello", "World").
+        };
+        not (query p select x from A(x) |> Array.isEmpty)
+
+    pub def testTypedLambda04(): Bool =
+        let p = #(L(String; Int32)) => #{
+            L("a"; 1).
+            L("a"; 2).
+        };
+        not (query p select (x, y) from L(x; y) |> Array.isEmpty)
+
 }

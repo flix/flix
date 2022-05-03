@@ -197,8 +197,8 @@ object Namer {
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
 
-      case _: WeededAst.Declaration.Sig =>
-        throw InternalCompilerException("Unexpected signature declaration.") // signatures should not be at the top level
+      // Not handling effects for now
+      case _: WeededAst.Declaration.Effect => prog0.toSuccess
     }
   }
 
@@ -907,9 +907,11 @@ object Namer {
           NamedAst.Expression.FixpointConstraintSet(cs, loc)
       }
 
-    case WeededAst.Expression.FixpointLambda(preds, exp, loc) =>
-      mapN(visitExp(exp, env0, uenv0, tenv0)) {
-        case e => NamedAst.Expression.FixpointLambda(preds, e, loc)
+    case WeededAst.Expression.FixpointLambda(pparams, exp, loc) =>
+      val psVal = traverse(pparams)(visitPredicateParam(_, uenv0, tenv0))
+      val expVal = visitExp(exp, env0, uenv0, tenv0)
+      mapN(psVal, expVal) {
+        case (ps, e) => NamedAst.Expression.FixpointLambda(ps, e, loc)
       }
 
     case WeededAst.Expression.FixpointMerge(exp1, exp2, loc) =>
@@ -1547,6 +1549,24 @@ object Namer {
       // Construct the formal parameter.
       mapN(tpeVal) {
         case tpe => NamedAst.FormalParam(freshSym, mod, tpe, loc)
+      }
+  }
+
+  /**
+    * Translates the given weeded predicate parameter to a named predicate parameter.
+    */
+  private def visitPredicateParam(pparam: WeededAst.PredicateParam, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.PredicateParam, NameError] = pparam match {
+    case WeededAst.PredicateParam.UntypedPredicateParam(pred, loc) =>
+      NamedAst.PredicateParam.UntypedPredicateParam(pred, loc).toSuccess
+
+    case WeededAst.PredicateParam.RelPredicateParam(pred, tpes, loc) =>
+      mapN(traverse(tpes)(visitType(_, uenv0, tenv0))) {
+        case ts => NamedAst.PredicateParam.RelPredicateParam(pred, ts, loc)
+      }
+
+    case WeededAst.PredicateParam.LatPredicateParam(pred, tpes, loc) =>
+      mapN(traverse(tpes)(visitType(_, uenv0, tenv0))) {
+        case ts => NamedAst.PredicateParam.LatPredicateParam(pred, ts, loc)
       }
   }
 
