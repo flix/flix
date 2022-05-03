@@ -527,7 +527,7 @@ object JvmOps {
       case Expression.Var(_, _, _) => Set.empty
 
       case Expression.Closure(sym, closureArgs, _, tpe, _) =>
-        Set(ClosureInfo(sym, closureArgs, tpe))
+        Set(ClosureInfo(sym, closureArgs.map(_.tpe), tpe))
 
       case Expression.ApplyClo(exp, args, _, _) => args.foldLeft(visitExp(exp)) {
         case (sacc, e) => sacc ++ visitExp(e)

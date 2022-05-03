@@ -86,21 +86,21 @@ object GenClosureClasses {
       functionInterface.name.toInternalName, null)
 
     // Generate a field for each captured variable.
-    for ((arg, index) <- closure.closureArgs.zipWithIndex) {
+    for ((argType, index) <- closure.closureArgTypes.zipWithIndex) {
       // `JvmType` of `arg`
-      val argType = JvmOps.getErasedJvmType(arg.tpe)
+      val erasedArgType = JvmOps.getErasedJvmType(argType)
 
       // `clo$index` field
-      AsmOps.compileField(visitor, s"clo$index", argType, isStatic = false, isPrivate = false)
+      AsmOps.compileField(visitor, s"clo$index", erasedArgType, isStatic = false, isPrivate = false)
     }
 
     val defn = root.defs(closure.sym)
 
     // Invoke method of the class
-    compileInvokeMethod(visitor, classType, defn, closure.closureArgs, tresult)
+    compileInvokeMethod(visitor, classType, defn, closure.closureArgTypes, tresult)
 
     // getUniqueThreadClosure method of the class
-    compileGetUniqueThreadClosureMethod(visitor, classType, defn, closure.closureArgs)
+    compileGetUniqueThreadClosureMethod(visitor, classType, defn, closure.closureArgTypes)
 
     // Constructor of the class
     compileConstructor(visitor, functionInterface)
@@ -113,7 +113,7 @@ object GenClosureClasses {
     * Invoke method for the given `defn`, `classType`, and `resultType`.
     */
   private def compileInvokeMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def,
-                                  closureArgs: List[Expression], resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
+                                  closureArgTypes: List[MonoType], resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
     // Continuation class
     val continuationType = JvmOps.getContinuationInterfaceType(defn.tpe)
     val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(resultType))
@@ -124,10 +124,10 @@ object GenClosureClasses {
     invokeMethod.visitCode()
 
     // Free variables
-    val closureFormals = defn.formals.take(closureArgs.length)
+    val closureFormals = defn.formals.take(closureArgTypes.length)
 
     // Function parameters
-    val params = defn.formals.takeRight(defn.formals.length - closureArgs.length)
+    val params = defn.formals.takeRight(defn.formals.length - closureArgTypes.length)
 
     // Enter label
     val enterLabel = new Label()
@@ -186,7 +186,7 @@ object GenClosureClasses {
   }
 
   private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def,
-                                                  closureArgs: List[Expression])(implicit root: Root, flix: Flix): Unit = {
+                                                  closureArgTypes: List[MonoType])(implicit root: Root, flix: Flix): Unit = {
 
     val closureAbstractClass = JvmOps.getClosureAbstractClassType(defn.tpe)
 
@@ -198,9 +198,9 @@ object GenClosureClasses {
     m.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
 
     // transfer the closure arguments
-    for ((arg, i) <- closureArgs.zipWithIndex) {
+    for ((argType, i) <- closureArgTypes.zipWithIndex) {
       m.visitInsn(DUP)
-      val fieldDescriptor = JvmOps.getErasedJvmType(arg.tpe).toDescriptor
+      val fieldDescriptor = JvmOps.getErasedJvmType(argType).toDescriptor
       m.visitIntInsn(ALOAD, 0)
       m.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"clo$i", fieldDescriptor)
       m.visitFieldInsn(PUTFIELD, classType.name.toInternalName, s"clo$i", fieldDescriptor)

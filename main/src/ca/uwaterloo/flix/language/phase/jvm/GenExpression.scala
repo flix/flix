@@ -107,10 +107,8 @@ object GenExpression {
       readVar(sym, tpe, visitor)
 
     case Expression.Closure(sym, closureArgs, fnType, _, _) =>
-      // ClosureInfo
-      val closure = ClosureInfo(sym, closureArgs, fnType)
       // JvmType of the closure
-      val jvmType = JvmOps.getClosureClassType(closure.sym, closure.tpe)
+      val jvmType = JvmOps.getClosureClassType(sym, fnType)
       // new closure instance
       visitor.visitTypeInsn(NEW, jvmType.name.toInternalName)
       // Duplicate
