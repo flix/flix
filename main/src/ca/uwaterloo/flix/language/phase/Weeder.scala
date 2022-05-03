@@ -1407,7 +1407,7 @@ object Weeder {
     // not handling these rules yet
     case ParsedAst.Expression.Try(sp1, exp0, ParsedAst.CatchOrHandler.Handler(eff, rules0), sp2) =>
       val expVal = visitExp(exp0)
-      val rulesVal = traverse(rules0) {
+      val rulesVal = traverse(rules0.getOrElse(Seq.empty)) {
         case ParsedAst.HandlerRule(op, fparams0, body0) =>
           val fparamsVal = visitFormalParams(fparams0, typeRequired = false)
           val bodyVal = visitExp(body0)
