@@ -1556,17 +1556,12 @@ object Namer {
     * Translates the given weeded predicate parameter to a named predicate parameter.
     */
   private def visitPredicateParam(pparam: WeededAst.PredicateParam, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.PredicateParam, NameError] = pparam match {
-    case WeededAst.PredicateParam.UntypedPredicateParam(pred, loc) =>
-      NamedAst.PredicateParam.UntypedPredicateParam(pred, loc).toSuccess
+    case WeededAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
+      NamedAst.PredicateParam.PredicateParamUntyped(pred, loc).toSuccess
 
-    case WeededAst.PredicateParam.RelPredicateParam(pred, tpes, loc) =>
+    case WeededAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
       mapN(traverse(tpes)(visitType(_, uenv0, tenv0))) {
-        case ts => NamedAst.PredicateParam.RelPredicateParam(pred, ts, loc)
-      }
-
-    case WeededAst.PredicateParam.LatPredicateParam(pred, tpes, loc) =>
-      mapN(traverse(tpes)(visitType(_, uenv0, tenv0))) {
-        case ts => NamedAst.PredicateParam.LatPredicateParam(pred, ts, loc)
+        case ts => NamedAst.PredicateParam.PredicateParamWithType(pred, den, ts, loc)
       }
   }
 

@@ -29,7 +29,15 @@ pub class Foldable[t : Type -> Type] {
     /// Right-associative fold of a structure.
     /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
     ///
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, t: t[a]): b & ef
+    pub def foldRight(f: (a, b) -> b & ef, s: b, t: t[a]): b & ef
+
+    ///
+    /// Right-associative fold of a structure.
+    /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
+    ///
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
+    ///
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, t: t[a]): b & ef
 
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
@@ -97,7 +105,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns `None` if `t` is empty.
     ///
     pub def findRight(f: a -> Bool, t: t[a]): Option[a] =
-        Foldable.foldRight((x, k) -> Option.withDefault(default = if (f(x)) Some(x) else None, k()), None, t)
+        Foldable.foldRight((x, acc) -> Option.withDefault(default = if (f(x)) Some(x) else None, acc), None, t)
 
     ///
     /// Returns the result of mapping each element and combining the results.
@@ -163,13 +171,13 @@ pub class Foldable[t : Type -> Type] {
     /// Returns `None` if `t` is empty.
     ///
     pub def reduceRight(f: (a, a) -> a & ef, t: t[a]): Option[a] & ef =
-        Foldable.foldRight((x, k) -> Some(Option.foldLeft((v, z) -> f(v, z), x, k())), None, t)
+        Foldable.foldRight((x, acc) -> Some(Option.foldLeft((v, z) -> f(v, z), x, acc)), None, t)
 
     ///
     /// Returns `t` as an immutable list.
     ///
     pub def toList(t: t[a]): List[a] =
-        Foldable.foldRight((x, k) -> x :: k(), Nil, t)
+        Foldable.foldRight((x, acc) -> x :: acc, Nil, t)
 
     ///
     /// Returns `t` as an array.
@@ -207,19 +215,19 @@ pub class Foldable[t : Type -> Type] {
     /// Returns `t` as a set.
     ///
     pub def toSet(t: t[a]): Set[a] with Order[a] =
-        Foldable.foldRight((x, k) -> Set.insert(x, k()), Set.empty(), t)
+        Foldable.foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), t)
 
     ///
     /// Returns `t` as a map.
     ///
     pub def toMap(t: t[(k, v)]): Map[k, v] with Order[k] =
-        Foldable.foldRight((x, c) -> let (k, v) = x; Map.insert(k, v, c()), Map.empty(), t)
+        Foldable.foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc), Map.empty(), t)
 
     ///
     /// Returns a map with elements of `s` as keys and `f` applied as values.
     ///
     pub def toMapWith(f: a -> b, s: t[a]): Map[a, b] with Order[a] =
-            Foldable.foldRight((x, k) -> Map.insert(x, f(x), k()), Map.empty(), s)
+            Foldable.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
 
     ///
     /// Returns `t` without the longest prefix that satisfies the predicate `f`.
@@ -239,13 +247,13 @@ pub class Foldable[t : Type -> Type] {
     /// Returns an immutable list.
     ///
     pub def takeWhile(f: a -> Bool, t: t[a]): List[a] =
-        Foldable.foldRight((x, k) -> if (f(x)) x :: k() else Nil, Nil, t)
+        Foldable.foldRight((x, acc) -> if (f(x)) x :: acc else Nil, Nil, t)
 
     ///
     /// Returns an immutable list of all the elements in `t` that satisfy the predicate `f`.
     ///
     pub def filter(f: a -> Bool, t: t[a]): List[a] =
-        Foldable.foldRight((x, k) -> if (f(x)) x :: k() else k(), Nil, t)
+        Foldable.foldRight((x, acc) -> if (f(x)) x :: acc else acc, Nil, t)
 
     ///
     /// Applies `f` to each element in `t`.
@@ -266,7 +274,7 @@ pub class Foldable[t : Type -> Type] {
     /// from left to right.
     ///
     pub def foldLeftM(f: (b, a) -> m[b] & ef, s: b, t: t[a]): m[b] & ef with Monad[m] =
-        let f1 = (x, k) -> z -> Monad.flatMap(k(), f(z, x));
+        let f1 = (x, acc) -> z -> Monad.flatMap(acc, f(z, x));
         s |> Foldable.foldRight(f1, x1 -> Applicative.point(x1) as & ef, t)
 
     ///
