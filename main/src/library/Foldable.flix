@@ -274,7 +274,7 @@ pub class Foldable[t : Type -> Type] {
     /// from left to right.
     ///
     pub def foldLeftM(f: (b, a) -> m[b] & ef, s: b, t: t[a]): m[b] & ef with Monad[m] =
-        let f1 = (x, k) -> z -> Monad.flatMap(k(), f(z, x));
+        let f1 = (x, acc) -> z -> Monad.flatMap(acc, f(z, x));
         s |> Foldable.foldRight(f1, x1 -> Applicative.point(x1) as & ef, t)
 
     ///
