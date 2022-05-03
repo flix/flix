@@ -256,7 +256,7 @@ object Typer {
                         case Err(_) => throw InternalCompilerException("asf") // MATT
                       }
                     case None => Substitution.empty
-                  } // MATT what happens if it's not in there?
+                  }
                 // Case 2: Zero or multiple Boolean tparams: don't do any magic
                 case _ => Substitution.empty
               }
