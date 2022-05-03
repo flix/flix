@@ -983,8 +983,8 @@ object Kinder {
       mapN(traverse(tpes)(visitType(_, Kind.Star, kenv, taenv, root))) {
         case ts =>
           val tpe = den match {
-            case Denotation.Relational => Type.mkRelation(ts, loc)
-            case Denotation.Latticenal => Type.mkLattice(ts, loc)
+            case Denotation.Relational => Type.mkRelation(ts, pred.loc.asSynthetic)
+            case Denotation.Latticenal => Type.mkLattice(ts, pred.loc.asSynthetic)
           }
           KindedAst.PredicateParam(pred, tpe, loc)
       }
