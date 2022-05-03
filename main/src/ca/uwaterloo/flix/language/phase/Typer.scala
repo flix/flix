@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
+import ca.uwaterloo.flix.language.ast.Symbol.KindedTypeVarSym
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
@@ -243,7 +244,7 @@ object Typer {
                       val newSym = tparam.sym.withRigidity(Rigidity.Rigid)
                       unifyTypes(Type.KindedVar(newSym, tparam.loc), tpe) match {
                         case Ok(subst) =>
-                          // de-rigidify the substitution
+                          // de-rigidify and minimize the substitution
                           val m = subst.m.map {
                             case (k, v) =>
                               val v2 = v.map {
@@ -261,7 +262,11 @@ object Typer {
                 case _ => Substitution.empty
               }
 
-              val subst = substSuffix @@ substBeforeHacks
+              val unminSubst = substSuffix @@ substBeforeHacks
+              val subst = Substitution(unminSubst.m.map {
+                case (k: KindedTypeVarSym, v) if k.kind == Kind.Bool => (k, BoolTable.minimizeType(v))
+                case kv => kv
+              })
               ////////////// hacking ends
 
               ///
