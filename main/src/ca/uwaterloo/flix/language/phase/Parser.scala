@@ -1057,7 +1057,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def FixpointLambda: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("#(") ~ optWS ~ oneOrMore(PredicateParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ keyword("=>") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointLambda
+      SP ~ atomic("#(") ~ optWS ~ oneOrMore(PredicateParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ keyword("->") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointLambda
     }
 
     def FixpointProject: Rule1[ParsedAst.Expression] = {

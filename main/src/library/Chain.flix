@@ -56,7 +56,8 @@ instance Monad[Chain] {
 
 instance Foldable[Chain] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldLeft(f, s, c)
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRightWithCont(f, s, c)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRight(f, s, c)
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, c: Chain[a]): b & ef = Chain.foldRightWithCont(f, s, c)
 }
 
 instance Traversable[Chain] {
