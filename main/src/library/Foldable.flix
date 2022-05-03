@@ -72,8 +72,8 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `false` if `t` is empty.
     ///
-    pub def exists(f: a -> Bool, t: t[a]): Bool =
-        Foldable.foldLeft((acc, x) -> acc or f(x), false, t)
+    pub def exists(f: a -> Bool, t: t[a]): Bool & ef =
+        Foldable.foldRightWithCont((x, k) -> k() or f(x), false, t)
 
     ///
     /// Returns `true` if and only if all elements in `t` satisfy the predicate `f`.
