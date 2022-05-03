@@ -12,6 +12,7 @@ target
 .metals
 .vscode
 .bloop
+crash_report_*.txt
 
 # local development files
 **/personal/**
