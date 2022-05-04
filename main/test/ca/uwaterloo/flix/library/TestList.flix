@@ -1603,6 +1603,21 @@ def zipWith06(): Bool = List.zipWith((a, b) -> if (b) a+1 else a, 1 :: 2 :: 3 ::
                       1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
+// zipWithIndex                                                            //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def zipWithIndex01(): Bool = List.zipWithIndex(Nil) == Nil
+
+@test
+def zipWithIndex02(): Bool = List.zipWithIndex(1 :: Nil) == (1, 0) :: Nil
+
+@test
+def zipWithIndex03(): Bool = List.zipWithIndex("a" :: "b" :: Nil) == ("a", 0) :: ("b", 1) :: Nil
+
+@test
+def zipWithIndex04(): Bool = List.zipWithIndex(List.zipWithIndex(true :: false :: Nil)) == ((true, 0), 0) :: ((false, 1), 1) :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
 // unzip                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
