@@ -1775,7 +1775,7 @@ object ParsedAst {
     * @param tparam the name of the constrained type.
     * @param sp2    the position of the last character in the type constraint.
     */
-  case class TypeConstraint(sp1: SourcePosition, clazz: Name.QName, tparam: ParsedAst.Type, sp2: SourcePosition)
+  case class TypeConstraint(sp1: SourcePosition, clazz: Name.QName, tparams: List[ParsedAst.Type], sp2: SourcePosition)
 
   /**
     * Formal Parameter.
