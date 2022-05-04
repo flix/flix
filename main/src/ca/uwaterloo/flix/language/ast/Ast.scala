@@ -488,7 +488,7 @@ object Ast {
   /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
     */
-  case class Instance(tpe: Type, tconstrs: List[Ast.TypeConstraint])
+  case class Instance(tpes: List[Type], tconstrs: List[Ast.TypeConstraint])
 
   /**
     * Represents the super classes and instances available for a particular class.

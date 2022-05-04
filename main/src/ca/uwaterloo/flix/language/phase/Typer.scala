@@ -62,7 +62,7 @@ object Typer {
         case (classSym, clazz) =>
           val instances = instances0.getOrElse(classSym, Nil)
           val envInsts = instances.map {
-            case KindedAst.Instance(_, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
+            case KindedAst.Instance(_, _, _, tpes, tconstrs, _, _, _) => Ast.Instance(tpes, tconstrs)
           }
           // ignore the super class parameters since they should all be the same as the class param
           val superClasses = clazz.superClasses.map(_.head.sym)
@@ -95,14 +95,15 @@ object Typer {
     * Reassembles a single class.
     */
   private def visitClass(clazz: KindedAst.Class, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
-    case KindedAst.Class(doc, ann0, mod, sym, tparam, superClasses, sigs0, laws0, loc) =>
-      val tparams = getTypeParams(List(tparam))
-      val tconstr = Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), Type.KindedVar(tparam.sym, tparam.loc), sym.loc)
+    case KindedAst.Class(doc, ann0, mod, sym, tparams0, superClasses, sigs0, laws0, loc) =>
+      val tparams = getTypeParams(tparams0)
+      val tvars = tparams.map(tparam => Type.KindedVar(tparam.sym, tparam.loc))
+      val tconstr = Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), tvars, sym.loc)
       val annVal = visitAnnotations(ann0, root)
       val sigsVal = traverse(sigs0.values)(visitSig(_, List(tconstr), root, classEnv))
       val lawsVal = traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
       mapN(annVal, sigsVal, lawsVal) {
-        case (ann, sigs, laws) => (sym, TypedAst.Class(doc, ann, mod, sym, tparams.head, superClasses, sigs, laws, loc))
+        case (ann, sigs, laws) => (sym, TypedAst.Class(doc, ann, mod, sym, tparams, superClasses, sigs, laws, loc))
       }
   }
 
@@ -123,10 +124,10 @@ object Typer {
     * Reassembles a single instance.
     */
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Instance, TypeError] = inst match {
-    case KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs0, ns, loc) =>
+    case KindedAst.Instance(doc, mod, sym, tpes, tconstrs, defs0, ns, loc) =>
       val defsVal = traverse(defs0)(visitDefn(_, tconstrs, root, classEnv))
       mapN(defsVal) {
-        defs => TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
+        defs => TypedAst.Instance(doc, mod, sym, tpes, tconstrs, defs, ns, loc)
       }
   }
 
@@ -250,18 +251,18 @@ object Typer {
                 case Validation.Failure(errs) =>
                   val instanceErrs = errs.collect {
                     case UnificationError.NoMatchingInstance(tconstr) =>
-                      tconstr.arg.typeConstructor match {
+                      tconstr.arg.last.typeConstructor match {
                         case Some(tc: TypeConstructor.Arrow) =>
-                          TypeError.MissingArrowInstance(tconstr.head.sym, tconstr.arg, tconstr.loc)
+                          TypeError.MissingArrowInstance(tconstr.head.sym, tconstr.arg.last, tconstr.loc)
                         case _ =>
                           if (tconstr.head.sym.name == "Eq")
-                            TypeError.MissingEq(tconstr.arg, tconstr.loc)
+                            TypeError.MissingEq(tconstr.arg.last, tconstr.loc)
                           else if (tconstr.head.sym.name == "Order")
-                            TypeError.MissingOrder(tconstr.arg, tconstr.loc)
+                            TypeError.MissingOrder(tconstr.arg.last, tconstr.loc)
                           else if (tconstr.head.sym.name == "ToString")
-                            TypeError.MissingToString(tconstr.arg, tconstr.loc)
+                            TypeError.MissingToString(tconstr.arg.last, tconstr.loc)
                           else
-                            TypeError.MissingInstance(tconstr.head.sym, tconstr.arg, tconstr.loc)
+                            TypeError.MissingInstance(tconstr.head.sym, tconstr.arg.last, tconstr.loc)
                       }
                   }
                   // Case 2: non instance error
@@ -1447,8 +1448,8 @@ object Typer {
         // Require Boxable and Foldable instances.
         val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
         val foldableSym = PredefinedClasses.lookupClassSym("Foldable", root)
-        val boxable = Ast.TypeConstraint(Ast.TypeConstraint.Head(boxableSym, loc), freshElmTypeVar, loc)
-        val foldable = Ast.TypeConstraint(Ast.TypeConstraint.Head(foldableSym, loc), freshTypeConstructorVar, loc)
+        val boxable = Ast.TypeConstraint(Ast.TypeConstraint.Head(boxableSym, loc), List(freshElmTypeVar), loc)
+        val foldable = Ast.TypeConstraint(Ast.TypeConstraint.Head(foldableSym, loc), List(freshTypeConstructorVar), loc)
 
         for {
           (constrs, tpe, eff) <- visitExp(exp)
@@ -2221,7 +2222,7 @@ object Typer {
       PredefinedClasses.lookupClassSym("Eq", root),
       PredefinedClasses.lookupClassSym("ToString", root),
     )
-    classes.map(clazz => Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), tpe, loc))
+    classes.map(clazz => Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), List(tpe), loc))
   }
 
   /**
@@ -2237,7 +2238,7 @@ object Typer {
       PredefinedClasses.lookupClassSym("JoinLattice", root),
       PredefinedClasses.lookupClassSym("MeetLattice", root),
     )
-    classes.map(clazz => Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), tpe, loc))
+    classes.map(clazz => Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), List(tpe), loc))
   }
 
   /**
