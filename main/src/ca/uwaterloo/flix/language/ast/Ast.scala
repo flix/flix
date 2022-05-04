@@ -475,7 +475,7 @@ object Ast {
   /**
     * Represents that the type `arg` must belong to class `sym`.
     */
-  case class TypeConstraint(head: TypeConstraint.Head, arg: Type, loc: SourceLocation) {
+  case class TypeConstraint(head: TypeConstraint.Head, arg: List[Type], loc: SourceLocation) {
     override def equals(o: Any): Boolean = o match {
       case that: TypeConstraint =>
         this.head.sym == that.head.sym && this.arg == that.arg
