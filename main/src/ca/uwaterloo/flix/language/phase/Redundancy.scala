@@ -294,7 +294,16 @@ object Redundancy {
 
     case Expression.Hole(sym, _, _) => Used.of(sym)
 
-    case Expression.Discard(exp, _, _) => visitExp(exp, env0, rc)
+    case Expression.Discard(exp, _, loc) =>
+      val us = visitExp(exp, env0, rc)
+
+      if (exp.eff == Type.Pure)
+        us + DiscardedPureValue(exp.loc)
+      else if (exp.tpe == Type.Unit)
+        us + DiscardedUnitValue(exp.loc)
+      else
+        us
+
 
     case Expression.Lambda(fparam, exp, _, _) =>
       // Extend the environment with the variable symbol.

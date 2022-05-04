@@ -1565,7 +1565,7 @@ object Typer {
 
       case KindedAst.Expression.Discard(exp, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Discard(e, Type.mkUnit(loc), loc)
+        TypedAst.Expression.Discard(e, e.eff, loc)
 
       case KindedAst.Expression.Unit(loc) => TypedAst.Expression.Unit(loc)
 

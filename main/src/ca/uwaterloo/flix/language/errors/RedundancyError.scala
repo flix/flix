@@ -395,7 +395,7 @@ object RedundancyError {
       s"""${line(kind, source.name)}
          |>> Type constraint '${red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}' is entailed by type constraint '${green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}'.
          |
-         |${code(loc, "redundant type constraint.")}
+         |${code(loc, "redundant type constraint")}
          |""".stripMargin
     }
 
@@ -408,4 +408,52 @@ object RedundancyError {
          |""".stripMargin
     })
   }
+
+  /**
+    * An error raised to indicate that a pure expression value was discarded.
+    *
+    * @param loc the location of the expression.
+    */
+  case class DiscardedPureValue(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Discarded a pure expression."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Discarded a pure expression: It should be impure.
+         |
+         |${code(loc, "discarded pure expression")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that an impure unit value was discarded.
+    *
+    * @param loc the location of the expression.
+    */
+  case class DiscardedUnitValue(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Discarded a unit value."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Discarded a unit value.
+         |
+         |${code(loc, "discarded unit value")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1) Remove the discard keyword.
+         |
+         |""".stripMargin
+    })
+  }
+
 }
