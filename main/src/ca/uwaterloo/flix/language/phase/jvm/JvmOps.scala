@@ -527,7 +527,10 @@ object JvmOps {
       case Expression.Var(_, _, _) => Set.empty
 
       case Expression.Closure(sym, closureArgs, _, tpe, _) =>
-        Set(ClosureInfo(sym, closureArgs.map(_.tpe), tpe))
+        val closureInfo = closureArgs.foldLeft(Set.empty[ClosureInfo]) {
+          case (sacc, e) => sacc ++ visitExp(e)
+        }
+        Set(ClosureInfo(sym, closureArgs.map(_.tpe), tpe)) ++ closureInfo
 
       case Expression.ApplyClo(exp, args, _, _) => args.foldLeft(visitExp(exp)) {
         case (sacc, e) => sacc ++ visitExp(e)
