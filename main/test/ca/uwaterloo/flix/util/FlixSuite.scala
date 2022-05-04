@@ -20,9 +20,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import org.scalatest.FunSuite
-import scala.jdk.CollectionConverters._
 
 import java.nio.file.{Files, Path, Paths}
+import scala.jdk.CollectionConverters._
 
 class FlixSuite(incremental: Boolean) extends FunSuite {
 
@@ -60,17 +60,19 @@ class FlixSuite(incremental: Boolean) extends FunSuite {
     // Add the given path.
     flix.addSourcePath(path)
 
-    // Compile and Evaluate the program to obtain the compilationResult.
-    flix.compile() match {
-      case Success(compilationResult) =>
-        runTests(name, compilationResult)
-      case Failure(errors) =>
-        val es = errors.map(_.message(flix.getFormatter)).mkString("\n")
-        fail(s"Unable to compile. Failed with: ${errors.length} errors.\n\n$es")
+    try {
+      // Compile and Evaluate the program to obtain the compilationResult.
+      flix.compile() match {
+        case Success(compilationResult) =>
+          runTests(name, compilationResult)
+        case Failure(errors) =>
+          val es = errors.map(_.message(flix.getFormatter)).mkString("\n")
+          fail(s"Unable to compile. Failed with: ${errors.length} errors.\n\n$es")
+      }
+    } finally {
+      // Remove the source path.
+      flix.remSourcePath(path)
     }
-
-    // Remove the source path.
-    flix.remSourcePath(path)
   }
 
   private def runTests(name: String, compilationResult: CompilationResult): Unit = {
