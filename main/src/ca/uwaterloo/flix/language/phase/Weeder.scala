@@ -155,7 +155,7 @@ object Weeder {
       val pubVal = requirePublic(mods, ident)
       val identVal = visitName(ident)
       val tparamsVal = visitKindedTypeParams(tparams0)
-      val formalsVal = visitFormalParams(fparams0, typeRequired = true)
+      val formalsVal = visitFormalParams(fparams0, Presence.Required)
       val pur = visitEffectOrPurity(effOrPur, ident.loc)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       val expVal = Validation.traverse(exp0)(visitExp(_, SyntacticEnv.Top))
@@ -216,7 +216,7 @@ object Weeder {
       val identVal = visitName(ident)
       val expVal = visitExp(exp0, SyntacticEnv.Top)
       val tparamsVal = visitKindedTypeParams(tparams0)
-      val formalsVal = visitFormalParams(fparams0, typeRequired = true)
+      val formalsVal = visitFormalParams(fparams0, Presence.Required)
       val pur = visitEffectOrPurity(effOrPur, ident.loc)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
 
@@ -240,7 +240,7 @@ object Weeder {
       val identVal = visitName(ident)
       val expVal = visitExp(exp0, SyntacticEnv.Top)
       val tparamsVal = visitKindedTypeParams(tparams0)
-      val formalsVal = visitFormalParams(fparams0, typeRequired = true)
+      val formalsVal = visitFormalParams(fparams0, Presence.Required)
       val tconstrsVal = Validation.traverse(tconstrs0)(visitTypeConstraint)
 
       mapN(annVal, modVal, identVal, tparamsVal, formalsVal, expVal, tconstrsVal) {
@@ -278,7 +278,7 @@ object Weeder {
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val pubVal = requirePublic(mod0, ident)
       val tparamsVal = requireNoTypeParams(tparams0)
-      val fparamsVal = visitFormalParams(fparamsOpt0, typeRequired = true)
+      val fparamsVal = visitFormalParams(fparamsOpt0, Presence.Required)
       val pur = visitEffectOrPurity(pur0, ident.loc)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       mapN(annVal, modVal, pubVal, tparamsVal, fparamsVal, tconstrsVal) {
@@ -642,7 +642,7 @@ object Weeder {
       /*
        * Check for `DuplicateFormal`.
        */
-      val fparamsVal = visitFormalParams(fparams0, typeRequired = false)
+      val fparamsVal = visitFormalParams(fparams0, Presence.Optional)
       val expVal = visitExp(exp, senv)
       mapN(fparamsVal, expVal) {
         case (fparams, e) => mkCurried(fparams, e, loc)
@@ -759,7 +759,7 @@ object Weeder {
       val mod = Ast.Modifiers.Empty
       val loc = mkSL(sp1, sp2)
 
-      mapN(visitFormalParams(fparams, typeRequired = false), visitExp(exp1, senv), visitExp(exp2, senv)) {
+      mapN(visitFormalParams(fparams, Presence.Optional), visitExp(exp1, senv), visitExp(exp2, senv)) {
         case (fp, e1, e2) =>
           val lambda = mkCurried(fp, e1, loc)
           WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
@@ -1389,7 +1389,7 @@ object Weeder {
       val expVal = visitExp(exp0, senv)
       val rulesVal = traverse(rules0.getOrElse(Seq.empty)) {
         case ParsedAst.HandlerRule(op, fparams0, body0) =>
-          val fparamsVal = visitFormalParams(fparams0, typeRequired = false)
+          val fparamsVal = visitFormalParams(fparams0, Presence.Forbidden)
           val bodyVal = visitExp(body0, SyntacticEnv.Handler)
           mapN(fparamsVal, bodyVal) {
             case (fparams, body) => WeededAst.HandlerRule(op, fparams, body)
