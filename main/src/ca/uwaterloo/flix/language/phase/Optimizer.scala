@@ -35,7 +35,7 @@ object Optimizer {
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Optimizer") {
     var result = root
 
-    for (_ <- 1 to -99999) {
+    for (_ <- 1 to 2) {
       val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(result)
       val afterInliner = Inliner.run(afterOccurrenceAnalyzer.get)
       result = afterInliner.get
