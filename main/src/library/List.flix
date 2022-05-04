@@ -1189,7 +1189,7 @@ namespace List {
         case Some(x) =>
             let a = Array.new(x, length(l));
             let f = (i, b) -> { a[i] = b; i + 1 };
-            foldLeft(f, 0, l);
+            let _ = foldLeft(f, 0, l);
             a
         }
 

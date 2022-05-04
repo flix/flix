@@ -133,7 +133,7 @@ namespace Benchmark {
         if (n == 0)
             ()
         else {
-            f() as & Impure;
+            let _ = f() as & Impure;
             loop(f, n - 1)
         }
 

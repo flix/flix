@@ -71,7 +71,7 @@ instance ToString[Chain[a]] with ToString[a] {
         let fn = () -> {
             let sb = StringBuilder.new();
             StringBuilder.appendString!("Chain#{", sb);
-            Chain.foldLeft((acc, x) -> {
+            let _ = Chain.foldLeft((acc, x) -> {
                 if (acc < 1)
                     StringBuilder.appendString!("${x}", sb)
                 else
@@ -759,7 +759,7 @@ namespace Chain {
         case Some(x) =>
             let arr = Array.new(x, length(c));
             let f = (i, b) -> { arr[i] = b; i + 1 };
-            foldLeft(f, 0, c);
+            let _ = foldLeft(f, 0, c);
             arr
         }
 

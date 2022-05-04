@@ -453,8 +453,8 @@ namespace Array {
             else {
                 let x = arr[i];
                 let y = arr[j];
-                put(y, i, arr);
-                put(x, j, arr);
+                let _ = put(y, i, arr);
+                let _ = put(x, j, arr);
                 loop(i + 1, j - 1)
             }
         };
@@ -604,7 +604,7 @@ namespace Array {
                         let pos2 = arrayWrites(pos1, a, out);
                         (pos2, i+1)
                     }};
-                foreachAccum(overwrite, (0,0), arrs);
+                let _ = foreachAccum(overwrite, (0,0), arrs);
                 out
         }
 
@@ -888,7 +888,7 @@ namespace Array {
             case None => []
             case Some(x) => {
                 let out = new(x, len);
-                foreachAccum((a, pos) -> arrayWrites(pos, a, out), 0, arrs);
+                let _ = foreachAccum((a, pos) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
         }
@@ -1360,7 +1360,7 @@ namespace Array {
         let l = new MutList(static);
         def loop(i) = {
             if (i >= len)
-                Nil
+                ()
             else {
                 if (f(a[i])) MutList.push!(i, l) else ();
                 loop(i + 1)

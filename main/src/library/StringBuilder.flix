@@ -42,7 +42,7 @@ namespace StringBuilder {
     pub def appendString!(s: String, sb: StringBuilder): Unit & Impure =
         import java.lang.StringBuilder.append(String): ##java.lang.StringBuilder & Impure;
         let StringBuilder(msb) = sb;
-        msb `append` s;
+        let _ = msb `append` s;
         ()
 
     ///

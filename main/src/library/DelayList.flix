@@ -1147,7 +1147,7 @@ namespace DelayList {
     pub def toArray(l: DelayList[a]): Array[a] & Impure =
         let a = Array.new($DEFAULT$, length(l));
         let f = (i, y) -> { a[i] = y; i + 1 };
-        foldLeft(f, 0, l);
+        let _ = foldLeft(f, 0, l);
         a
 
     ///

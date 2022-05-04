@@ -116,7 +116,7 @@ instance ToString[Nec[a]] with ToString[a] {
         let fn = () -> {
             let sb = StringBuilder.new();
             StringBuilder.appendString!("Nec#{", sb);
-            Nec.foldLeft((acc, x) -> {
+            let _ = Nec.foldLeft((acc, x) -> {
                 if (acc < 1)
                     StringBuilder.appendString!("${x}", sb)
                 else
@@ -743,7 +743,7 @@ namespace Nec {
         let x = head(c);
         let arr = Array.new(x, length(c));
         let f = (i, b) -> { arr[i] = b; i + 1 };
-        foldLeft(f, 0, c);
+        let _ = foldLeft(f, 0, c);
         arr
 
     ///

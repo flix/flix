@@ -88,7 +88,7 @@ namespace Concurrent/Channel/Ticker {
         select {
           case _stop <- stopChannel => ()
           case _ => {
-            tickChannel <- count;
+            let _ = tickChannel <- count;
             sleepSendAndRepeat(ns, ticker, count + 1)
           }
         }
@@ -101,7 +101,9 @@ namespace Concurrent/Channel/Ticker {
 
     pub def stop(ticker: Ticker): Unit & Impure = {
       match ticker {
-        case Ticker(_tickChannel, stopChannel) => stopChannel <- (); ()
+        case Ticker(_tickChannel, stopChannel) =>
+        let _ = stopChannel <- ();
+        ()
       }
     }
 

@@ -338,6 +338,29 @@ object RedundancyError {
     })
   }
 
+  case class discardedValue(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Non-unit expression value is implicitly discarded."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Implicitly discarded value: The non-unit expression value is not used.
+         |
+         |${code(loc, "discarded value.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Use the result value.
+         |  (2)  Use an anonymous let-binding.
+         |
+         |""".stripMargin
+    })
+  }
+
   /**
     * An error raised to indicate that a purity cast is redundant.
     *
