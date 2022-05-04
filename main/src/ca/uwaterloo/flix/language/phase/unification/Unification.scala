@@ -253,7 +253,7 @@ object Unification {
         case Result.Err(UnificationError.MismatchedBools(baseType1, baseType2)) =>
           Err(TypeError.MismatchedBools(baseType1, baseType2, Some(type1), Some(type2), loc))
 
-        case Result.Err(UnificationError.MismatchedArity(baseType1, baseType2)) =>
+        case Result.Err(UnificationError.MismatchedArity(_, _)) =>
           Err(TypeError.MismatchedArity(tpe1, tpe2, loc))
 
         case Result.Err(UnificationError.RigidVar(baseType1, baseType2)) =>
@@ -288,7 +288,7 @@ object Unification {
     */
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     def handler(e: TypeError): TypeError = e match {
-      case e: TypeError.MismatchedTypes => TypeError.UnexpectedType(expected, actual, loc)
+      case _: TypeError.MismatchedTypes => TypeError.UnexpectedType(expected, actual, loc)
       case e => e
     }
 
@@ -312,7 +312,7 @@ object Unification {
     val default = TypeError.MismatchedTypes(arrowType, argType, fullType1, fullType2, loc)
 
     arrowType match {
-      case Type.Apply(arg, resultType, _) =>
+      case Type.Apply(_, resultType, _) =>
         if (Unification.unifiesWith(resultType, argType)) {
           arrowType.typeArguments.lift(1) match {
             case None => default

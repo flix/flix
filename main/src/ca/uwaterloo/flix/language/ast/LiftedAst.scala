@@ -110,7 +110,7 @@ object LiftedAst {
       def purity: Purity = Pure
     }
 
-    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+    case class Closure(sym: Symbol.DefnSym, closureArgs: List[LiftedAst.Expression], tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
       def purity: Purity = Pure
     }
 
@@ -257,8 +257,6 @@ object LiftedAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: LiftedAst.Expression)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
-
-  case class FreeVar(sym: Symbol.VarSym, tpe: Type)
 
 }
 
