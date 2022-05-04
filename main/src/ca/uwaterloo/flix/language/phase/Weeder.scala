@@ -2407,9 +2407,9 @@ object Weeder {
   /**
     * Weeds the given list of formal parameter `fparams`.
     *
-    * Checks for [[IllegalFormalParameter]] and [[DuplicateFormalParam]].
+    * Checks for [[MissingFormalParamAscription]] and [[DuplicateFormalParam]].
     */
-  private def visitFormalParams(fparams: Seq[ParsedAst.FormalParam], typeRequired: Boolean): Validation[List[WeededAst.FormalParam], WeederError] = {
+  private def visitFormalParams(fparams: Seq[ParsedAst.FormalParam], typePresence: Presence): Validation[List[WeededAst.FormalParam], WeederError] = {
     //
     // Special Case: Check if no formal parameters are present. If so, introduce a unit parameter.
     //
@@ -2434,10 +2434,14 @@ object Weeder {
 
           flatMapN(visitModifiers(mods, legalModifiers = Set.empty)) {
             case mod =>
-              if (typeRequired && typeOpt.isEmpty)
-                IllegalFormalParameter(ident.name, mkSL(sp1, sp2)).toFailure
-              else
-                WeededAst.FormalParam(ident, mod, typeOpt.map(visitType), mkSL(sp1, sp2)).toSuccess
+              (typeOpt, typePresence) match {
+                // Case 1: Required but missing. Error.
+                case (None, Presence.Required) => MissingFormalParamAscription(ident.name, mkSL(sp1, sp2)).toFailure
+                // Case 2: Forbidden but present. Error.
+                case (Some(tpe), Presence.Forbidden) => IllegalFormalParamAscription(mkSL(sp1, sp2)).toFailure
+                // Case 3: No violation. Good to go.
+                case _ => WeededAst.FormalParam(ident, mod, typeOpt.map(visitType), mkSL(sp1, sp2)).toSuccess
+              }
           }
         case Some(otherParam) =>
           val name = ident.name
@@ -2895,9 +2899,24 @@ object Weeder {
   }
 
   private sealed trait SyntacticEnv
+
   private object SyntacticEnv {
     case object Top extends SyntacticEnv
+
     case object Handler extends SyntacticEnv
+  }
+
+  /**
+    * Ternary enumeration of constraints on the presence of something.
+    */
+  private sealed trait Presence
+
+  private object Presence {
+    case object Required extends Presence
+
+    case object Optional extends Presence
+
+    case object Forbidden extends Presence
   }
 
 }

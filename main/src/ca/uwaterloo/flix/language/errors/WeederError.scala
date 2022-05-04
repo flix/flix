@@ -229,7 +229,7 @@ object WeederError {
     * @param name the name of the parameter.
     * @param loc  the location of the formal parameter.
     */
-  case class IllegalFormalParameter(name: String, loc: SourceLocation) extends WeederError {
+  case class MissingFormalParamAscription(name: String, loc: SourceLocation) extends WeederError {
     def summary: String = "The formal parameter must have a declared type."
 
     def message(formatter: Formatter): String = {
