@@ -203,12 +203,12 @@ object ParsedAst {
       * @param mod          the associated modifiers.
       * @param sp1          the position of the first character in the declaration.
       * @param ident        the name of the definition.
-      * @param tparam       the type parameter.
+      * @param tparams      the type parameters.
       * @param superClasses the super classes of the class.
       * @param lawsAndSigs  the signatures and laws of the class.
       * @param sp2          the position of the last character in the declaration.
       */
-    case class Class(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, superClasses: Seq[ParsedAst.TypeConstraint], lawsAndSigs: Seq[ParsedAst.Declaration.LawOrSig], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Class(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, superClasses: Seq[ParsedAst.TypeConstraint], lawsAndSigs: Seq[ParsedAst.Declaration.LawOrSig], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Typeclass instance.
@@ -217,11 +217,11 @@ object ParsedAst {
       * @param mod   the associated modifiers.
       * @param sp1   the position of the first character in the declaration.
       * @param clazz the name of the class.
-      * @param tpe   the type of the instance.
+      * @param tpes  the types of the instance.
       * @param defs  the definitions of the instance.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Instance(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, constraints: Seq[ParsedAst.TypeConstraint], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Instance(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpes: Seq[ParsedAst.Type], constraints: Seq[ParsedAst.TypeConstraint], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Effect Declaration.

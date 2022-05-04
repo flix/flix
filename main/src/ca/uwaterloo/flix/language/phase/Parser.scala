@@ -189,7 +189,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Class: Rule1[ParsedAst.Declaration] = {
       def Head = rule {
-        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ TypeParam ~ optWS ~ "]" ~ OptTypeConstraintList
+        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("class") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ OptTypeConstraintList
       }
 
       def EmptyBody = namedRule("ClassBody") {
@@ -215,7 +215,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Instance: Rule1[ParsedAst.Declaration] = {
       def Head = rule {
-        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ OptTypeConstraintList
+        Documentation ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ OptTypeConstraintList
       }
 
       def EmptyBody = namedRule("InstanceBody") {
