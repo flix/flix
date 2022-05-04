@@ -1606,7 +1606,7 @@ def zipWith06(): Bool = List.zipWith((a, b) -> if (b) a+1 else a, 1 :: 2 :: 3 ::
 // zipWithIndex                                                            //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def zipWithIndex01(): Bool = List.zipWithIndex(Nil) == Nil
+def zipWithIndex01(): Bool = List.zipWithIndex(Nil : List[Char]) == Nil
 
 @test
 def zipWithIndex02(): Bool = List.zipWithIndex(1 :: Nil) == (1, 0) :: Nil
