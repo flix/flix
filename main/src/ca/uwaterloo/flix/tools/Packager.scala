@@ -239,6 +239,14 @@ object Packager {
   }
 
   /**
+    * @param root the root directory to compute a relative path from the given path
+    * @param path the path to be converted to a relative path based on the given root directory
+    * @return relative file name separated by slashes, like `path/to/file.ext`
+    */
+  private def convertPathToRelativeFileName(root: Path, path: Path): String =
+    root.relativize(path).toString.replace('\\', '/')
+
+  /**
     * Builds a jar package for the given project path `p`.
     */
   def buildJar(p: Path, o: Options): Result[Unit, Int] = {
@@ -268,7 +276,7 @@ object Packager {
       // Add all class files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
       for ((buildFile, fileNameWithSlashes) <- getAllFiles(getBuildDirectory(p))
-          .map{(path: Path)=>(path, getBuildDirectory(p).relativize(path).toString.replace('\\', '/'))}
+          .map{path=>(path, convertPathToRelativeFileName(getBuildDirectory(p), path))}
           .sortBy(_._2)) {
         addToZip(zip, fileNameWithSlashes, buildFile)
       }
@@ -307,7 +315,7 @@ object Packager {
       // Add all source files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
       for ((sourceFile, fileNameWithSlashes) <- getAllFiles(getBuildDirectory(p))
-          .map{(path: Path)=>(path, p.relativize(path).toString.replace('\\', '/'))}
+          .map{path=>(path, convertPathToRelativeFileName(p, path))}
           .sortBy(_._2)) {
         addToZip(zip, fileNameWithSlashes, sourceFile)
       }
