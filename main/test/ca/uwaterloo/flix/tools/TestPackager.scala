@@ -61,15 +61,6 @@ class TestPackager extends FunSuite {
     }
   }
 
-  def calcHash(p: Path): String = {
-    val buffer = new Array[Byte](8192)
-    val sha = MessageDigest.getInstance("SHA-256")
-    Using(new DigestInputStream(Files.newInputStream(p), sha)) { input =>
-      while (input.read(buffer) != -1) { }
-      sha.digest.map("%02x".format(_)).mkString
-    }.get
-  }
-
   test("build-jar always generates package that is byte-for-byte exactly the same") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Packager.init(p, DefaultOptions)
@@ -148,6 +139,15 @@ class TestPackager extends FunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Packager.init(p, DefaultOptions)
     Packager.test(p, DefaultOptions)
+  }
+
+  def calcHash(p: Path): String = {
+    val buffer = new Array[Byte](8192)
+    val sha = MessageDigest.getInstance("SHA-256")
+    Using(new DigestInputStream(Files.newInputStream(p), sha)) { input =>
+      while (input.read(buffer) != -1) { }
+      sha.digest.map("%02x".format(_)).mkString
+    }.get
   }
 
 }
