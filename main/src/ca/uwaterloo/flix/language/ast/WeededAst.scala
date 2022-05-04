@@ -31,9 +31,9 @@ object WeededAst {
     case class Namespace(name: Name.NName, uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
     // TODO change laws to WeededAst.Law
-    case class Class(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparam: WeededAst.TypeParam, superClasses: List[WeededAst.TypeConstraint], sigs: List[WeededAst.Declaration.Sig], laws: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
+    case class Class(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, superClasses: List[WeededAst.TypeConstraint], sigs: List[WeededAst.Declaration.Sig], laws: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, clazz: Name.QName, tpe: WeededAst.Type, tconstrs: List[WeededAst.TypeConstraint], defs: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
+    case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, clazz: Name.QName, tpes: List[WeededAst.Type], tconstrs: List[WeededAst.TypeConstraint], defs: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Sig(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.KindedTypeParams, fparams: List[WeededAst.FormalParam], exp: Option[WeededAst.Expression], tpe: WeededAst.Type, retTpe: WeededAst.Type, pur: WeededAst.Type, tconstrs: List[WeededAst.TypeConstraint], loc: SourceLocation)
 

@@ -123,7 +123,7 @@ object Weeder {
     * Performs weeding on the given class declaration `c0`.
     */
   private def visitClass(c0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Class], WeederError] = c0 match {
-    case ParsedAst.Declaration.Class(doc0, ann0, mods0, sp1, ident, tparam0, superClasses0, lawsAndSigs, sp2) =>
+    case ParsedAst.Declaration.Class(doc0, ann0, mods0, sp1, ident, tparams0, superClasses0, lawsAndSigs, sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
       val laws0 = lawsAndSigs.collect { case law: ParsedAst.Declaration.Law => law }
@@ -135,11 +135,11 @@ object Weeder {
       val lawsVal = traverse(laws0)(visitLaw)
       val superClassesVal = traverse(superClasses0)(visitTypeConstraint)
 
-      val tparam = visitTypeParam(tparam0)
+      val tparamsVal = visitTypeParams(tparams0)
 
-      mapN(annVal, modsVal, sigsVal, lawsVal, superClassesVal) {
-        case (ann, mods, sigs, laws, superClasses) =>
-          List(WeededAst.Declaration.Class(doc, ann, mods, ident, tparam, superClasses, sigs.flatten, laws.flatten, loc))
+      mapN(annVal, modsVal, sigsVal, lawsVal, superClassesVal, tparamsVal) {
+        case (ann, mods, sigs, laws, superClasses, tparams) =>
+          List(WeededAst.Declaration.Class(doc, ann, mods, ident, tparams, superClasses, sigs.flatten, laws.flatten, loc))
       }
   }
 
@@ -173,9 +173,9 @@ object Weeder {
     * Performs weeding on the given instance declaration `i0`.
     */
   private def visitInstance(i0: ParsedAst.Declaration.Instance)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Instance], WeederError] = i0 match {
-    case ParsedAst.Declaration.Instance(doc0, mods0, sp1, clazz, tpe0, tconstrs0, defs0, sp2) =>
+    case ParsedAst.Declaration.Instance(doc0, mods0, sp1, clazz, tpes0, tconstrs0, defs0, sp2) =>
       val doc = visitDoc(doc0)
-      val tpe = visitType(tpe0)
+      val tpes = tpes0.map(visitType).toList
 
       val modsVal = visitModifiers(mods0, legalModifiers = Set.empty)
       val defsVal = traverse(defs0)(visitInstanceDef)
@@ -183,7 +183,7 @@ object Weeder {
 
       mapN(modsVal, defsVal, tconstrsVal) {
         case (mods, defs, tconstrs) =>
-          List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, tconstrs, defs.flatten, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Instance(doc, mods, clazz, tpes, tconstrs, defs.flatten, mkSL(sp1, sp2)))
       }
 
   }
