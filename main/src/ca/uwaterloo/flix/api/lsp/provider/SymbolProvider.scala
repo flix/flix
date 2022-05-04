@@ -77,7 +77,7 @@ object SymbolProvider {
       Range.from(sym.loc),
       Range.from(sym.loc),
       Nil,
-      signatures.map(mkSigDocumentSymbol) :+ mkTypeParamDocumentSymbol(tparam),
+      signatures.map(mkSigDocumentSymbol) :+ mkTypeParamDocumentSymbol(tparam.head), // MATT don't care
     )
   }
 

@@ -174,11 +174,11 @@ object Lowering {
     * Lowers the given instance `inst0`.
     */
   private def visitInstance(inst0: Instance)(implicit root: Root, flix: Flix): Instance = inst0 match {
-    case Instance(doc, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
-      val tpe = visitType(tpe0)
+    case Instance(doc, mod, sym, tpes0, tconstrs0, defs0, ns, loc) =>
+      val tpes = tpes0.map(visitType(_))
       val tconstrs = tconstrs0.map(visitTypeConstraint)
       val defs = defs0.map(visitDef)
-      Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
+      Instance(doc, mod, sym, tpes, tconstrs, defs, ns, loc)
   }
 
   /**
@@ -201,9 +201,9 @@ object Lowering {
     * Lowers the given type constraint `tconstr0`.
     */
   private def visitTypeConstraint(tconstr0: Ast.TypeConstraint)(implicit root: Root, flix: Flix): Ast.TypeConstraint = tconstr0 match {
-    case Ast.TypeConstraint(head, tpe0, loc) =>
-      val tpe = visitType(tpe0)
-      Ast.TypeConstraint(head, tpe, loc)
+    case Ast.TypeConstraint(head, tpes0, loc) =>
+      val tpes = tpes0.map(visitType)
+      Ast.TypeConstraint(head, tpes, loc)
   }
 
   /**
