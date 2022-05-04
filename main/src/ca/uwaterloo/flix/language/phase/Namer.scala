@@ -392,10 +392,10 @@ object Namer {
     * Performs naming on the given type constraint `tconstr`.
     */
   private def visitTypeConstraint(tconstr: WeededAst.TypeConstraint, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.TypeConstraint, NameError] = tconstr match {
-    case WeededAst.TypeConstraint(clazz0, tparam0, loc) =>
+    case WeededAst.TypeConstraint(clazz0, tparams0, loc) =>
       val clazz = getClass(clazz0, uenv0)
-      mapN(visitType(tparam0, uenv0, tenv0)) {
-        tparam => NamedAst.TypeConstraint(clazz, List(tparam), loc)
+      mapN(traverse(tparams0)(visitType(_, uenv0, tenv0))) {
+        tparams => NamedAst.TypeConstraint(clazz, tparams, loc)
       }
   }
 
