@@ -2557,10 +2557,10 @@ object Weeder {
     * Weeds the given type constraint `tconstr`.
     */
   private def visitTypeConstraint(tconstr: ParsedAst.TypeConstraint): Validation[WeededAst.TypeConstraint, WeederError] = tconstr match {
-    case ParsedAst.TypeConstraint(sp1, clazz, tparam0, sp2) =>
-      val tpe = visitType(tparam0)
-      if (isAllVars(tpe)) {
-        WeededAst.TypeConstraint(clazz, tpe, mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.TypeConstraint(sp1, clazz, tparams0, sp2) =>
+      val tpes = tparams0.map(visitType)
+      if (tpes.forall(isAllVars)) {
+        WeededAst.TypeConstraint(clazz, tpes.toList, mkSL(sp1, sp2)).toSuccess
       } else {
         WeederError.IllegalTypeConstraintParameter(mkSL(sp1, sp2)).toFailure
       }

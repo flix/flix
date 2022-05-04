@@ -398,7 +398,7 @@ object WeededAst {
 
   case class ChoiceRule(pat: List[WeededAst.ChoicePattern], exp: WeededAst.Expression)
 
-  case class TypeConstraint(clazz: Name.QName, tpe: WeededAst.Type, loc: SourceLocation)
+  case class TypeConstraint(clazz: Name.QName, tpes: List[WeededAst.Type], loc: SourceLocation)
 
   case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation)
 
