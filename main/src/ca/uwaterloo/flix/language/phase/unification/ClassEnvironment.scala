@@ -91,7 +91,7 @@ object ClassEnvironment {
     */
   def reduce(tconstrs0: List[Ast.TypeConstraint], classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
     val tconstrs1 = tconstrs0.map {
-      case Ast.TypeConstraint(head, tpe, loc) => Ast.TypeConstraint(head, Type.eraseAliases(tpe), loc)
+      case Ast.TypeConstraint(head, tpes, loc) => Ast.TypeConstraint(head, tpes.map(Type.eraseAliases), loc)
     }
     for {
       tconstrs <- Validation.sequence(tconstrs1.map(toHeadNormalForm(_, classEnv)))
@@ -102,7 +102,7 @@ object ClassEnvironment {
     * Converts the type constraint to head-normal form, i.e. `a[X1, Xn]`, where `a` is a variable and `n >= 0`.
     */
   private def toHeadNormalForm(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, ClassContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
-    if (isHeadNormalForm(tconstr.arg)) {
+    if (isHeadNormalForm(tconstr.arg.last)) {
       List(tconstr).toSuccess
     } else {
       byInst(tconstr, classEnv)
@@ -114,16 +114,16 @@ object ClassEnvironment {
     */
   private def byInst(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
     val matchingInstances = classEnv.get(tconstr.head.sym).map(_.instances).getOrElse(Nil)
-    val tconstrSc = Scheme.generalize(Nil, tconstr.arg)
+    val tconstrSc = Scheme.generalize(Nil, tconstr.arg.last)
 
     def tryInst(inst: Ast.Instance): Validation[List[Ast.TypeConstraint], UnificationError] = {
-      val instSc = Scheme.generalize(Nil, inst.tpe)
+      val instSc = Scheme.generalize(Nil, inst.tpes.last)
 
       // NB: This is different from the THIH implementation.
       // We also check `leq` instead of just `unifies` in order to support complex types in instances.
       for {
         _ <- Scheme.checkLessThanEqual(instSc, tconstrSc, Map.empty)
-        subst <- Unification.unifyTypes(inst.tpe, tconstr.arg).toValidation
+        subst <- Unification.unifyTypes(inst.tpes.last, tconstr.arg.last).toValidation
       } yield inst.tconstrs.map(subst(_))
     }
 
