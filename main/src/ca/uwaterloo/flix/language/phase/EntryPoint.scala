@@ -171,7 +171,7 @@ object EntryPoint {
       } else {
         // Delay ToString resolution if main has return type unit for testing with lib nix.
         val toString = root.classes(new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)).sym
-        if (ClassEnvironment.holds(Ast.TypeConstraint(Ast.TypeConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), classEnv)) {
+        if (ClassEnvironment.holds(Ast.TypeConstraint(Ast.TypeConstraint.Head(toString, SourceLocation.Unknown), List(resultTpe), SourceLocation.Unknown), classEnv)) {
           // Case 2: XYZ -> a with ToString[a]
           ().toSuccess
         } else {

@@ -168,7 +168,7 @@ object Documentor {
     * Returns the enum that is in the head position of the instance's type, if it exists.
     * Returns `None` if the type is not an `enum` type.
     */
-  def getEnum(inst: TypedAst.Instance): Option[Symbol.EnumSym] = inst.tpe.baseType match {
+  def getEnum(inst: TypedAst.Instance): Option[Symbol.EnumSym] = inst.tpes.head.baseType match { // MATT hack
     case Type.Cst(TypeConstructor.KindedEnum(sym, _), _) => Some(sym)
     case _ => None
   }
@@ -234,7 +234,7 @@ object Documentor {
   private def visitInstance(sym: Symbol.ClassSym, inst: Instance): JObject = inst match {
     case Instance(_, _, _, tpe, tcs, _, _, loc) =>
       ("sym" -> visitClassSym(sym)) ~
-        ("tpe" -> visitType(tpe)) ~
+        ("tpe" -> visitType(tpe.head)) ~ // MATT hack
         ("tcs" -> tcs.map(visitTypeConstraint)) ~
         ("loc" -> visitSourceLocation(loc))
   }
@@ -249,7 +249,7 @@ object Documentor {
     */
   private def visitTypeConstraint(tc: TypeConstraint): JObject = tc match {
     case TypeConstraint(head, tpe, _) =>
-      ("sym" -> visitClassSym(head.sym)) ~ ("tpe" -> visitType(tpe))
+      ("sym" -> visitClassSym(head.sym)) ~ ("tpe" -> visitType(tpe.head)) // MATT hack
   }
 
   /**
@@ -425,7 +425,7 @@ object Documentor {
         ("doc" -> visitDoc(doc)) ~
         ("ann" -> visitAnnotations(ann)) ~
         ("mod" -> visitModifier(mod)) ~
-        ("tparam" -> visitTypeParam(tparam)) ~
+        ("tparam" -> visitTypeParam(tparam.head)) ~ // MATT hack
         ("superClasses" -> superClasses.map(visitTypeConstraint)) ~
         ("sigs" -> sigs) ~
         ("defs" -> defs) ~

@@ -204,7 +204,7 @@ object CompleteProvider {
       * Formats the given type `tpe`.
       */
     def fmtType(clazz: TypedAst.Class, tpe: Type, hole: String): String =
-      FormatType.formatWellKindedType(replaceText(clazz.tparam.sym, tpe, hole))
+      FormatType.formatWellKindedType(replaceText(clazz.tparams.head.sym, tpe, hole)) // MATT hack
 
     /**
       * Formats the given formal parameters in `spec`.
@@ -252,7 +252,7 @@ object CompleteProvider {
     * Formats the given class `clazz`.
     */
   private def fmtClass(clazz: TypedAst.Class): String = {
-    s"class ${clazz.sym.name}[${clazz.tparam.name.name}]"
+    s"class ${clazz.sym.name}[${clazz.tparams.head.name.name}]" // MATT hack
   }
 
   /**
