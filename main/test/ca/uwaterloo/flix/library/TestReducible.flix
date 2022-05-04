@@ -185,32 +185,67 @@ namespace TestReducible {
 
     @test
     def foldRight01(): Bool =
-        Reducible.foldRight((a, k) -> a + k(), "", Nel("a", Nil)) == "a"
+        Reducible.foldRight((a, acc) -> a + acc, "", Nel("a", Nil)) == "a"
 
     @test
     def foldRight02(): Bool =
-        Reducible.foldRight((a, k) -> a + k(), "", Nel("a", "b" :: Nil)) == "ab"
+        Reducible.foldRight((a, acc) -> a + acc, "", Nel("a", "b" :: Nil)) == "ab"
 
     @test
     def foldRight03(): Bool =
-        Reducible.foldRight((a, k) -> a + k(), "", Nel("a", "b" :: "c" :: Nil)) == "abc"
+        Reducible.foldRight((a, acc) -> a + acc, "", Nel("a", "b" :: "c" :: Nil)) == "abc"
 
     @test
     def foldRight04(): Bool =
-        Reducible.foldRight((a, k) -> (k() - a) * ((a rem 2) + 1), 100, Nel(1, Nil)) == 198
+        Reducible.foldRight((a, acc) -> (acc - a) * ((a rem 2) + 1), 100, Nel(1, Nil)) == 198
 
     @test
     def foldRight05(): Bool =
-        Reducible.foldRight((a, k) -> (k() - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: Nil)) == 194
+        Reducible.foldRight((a, acc) -> (acc - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: Nil)) == 194
 
     @test
     def foldRight06(): Bool =
-        Reducible.foldRight((a, k) -> (k() - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: 3 :: Nil)) == 382
+        Reducible.foldRight((a, acc) -> (acc - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: 3 :: Nil)) == 382
 
     @test
     def foldRight07(): Bool & Impure =
         let l = ref Nil;
         Reducible.foldRight((x, _) -> { l := x :: deref l; x == 1 }, false, Nel(1, 2 :: 3 :: Nil));
+        (deref l) == 1 :: 2 :: 3 :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightWithCont                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRightWithCont01(): Bool =
+        Reducible.foldRightWithCont((a, k) -> a + k(), "", Nel("a", Nil)) == "a"
+
+    @test
+    def foldRightWithCont02(): Bool =
+        Reducible.foldRightWithCont((a, k) -> a + k(), "", Nel("a", "b" :: Nil)) == "ab"
+
+    @test
+    def foldRightWithCont03(): Bool =
+        Reducible.foldRightWithCont((a, k) -> a + k(), "", Nel("a", "b" :: "c" :: Nil)) == "abc"
+
+    @test
+    def foldRightWithCont04(): Bool =
+        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a rem 2) + 1), 100, Nel(1, Nil)) == 198
+
+    @test
+    def foldRightWithCont05(): Bool =
+        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: Nil)) == 194
+
+    @test
+    def foldRightWithCont06(): Bool =
+        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a rem 2) + 1), 100, Nel(1, 2 :: 3 :: Nil)) == 382
+
+    @test
+    def foldRightWithCont07(): Bool & Impure =
+        let l = ref Nil;
+        Reducible.foldRightWithCont((x, _) -> { l := x :: deref l; x == 1 }, false, Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
 
 

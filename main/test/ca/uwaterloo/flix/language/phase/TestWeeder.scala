@@ -613,4 +613,51 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.ReservedName](result)
   }
+
+  test("ReservedName.Effect.01") {
+    val input =
+      """
+        |eff Pure
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.ReservedName](result)
+  }
+
+  test("ReservedName.Effect.02") {
+    val input =
+      """
+        |eff Read
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.ReservedName](result)
+  }
+
+  test("ReservedName.Effect.03") {
+    val input =
+      """
+        |eff Write
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.ReservedName](result)
+  }
+
+  test("IllegalEffectTypeParams.01") {
+    val input =
+      """
+        |eff MyEffect[a]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectTypeParams](result)
+  }
+
+  test("IllegalEffectTypeParams.02") {
+    val input =
+      """
+        |eff MyEffect {
+        |    def op[a](x: a): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectTypeParams](result)
+  }
 }

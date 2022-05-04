@@ -67,7 +67,8 @@ instance MeetLattice[Set[a]] with Order[a] {
 
 instance Foldable[Set] {
     pub def foldLeft(f: (b, a) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldLeft(f, s, s1)
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRightWithCont(f, s, s1)
+    pub def foldRight(f: (a, b) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRight(f, s, s1)
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, s: b, s1: Set[a]): b & ef = Set.foldRightWithCont(f, s, s1)
 }
 
 instance SemiGroup[Set[a]] with Order[a] {

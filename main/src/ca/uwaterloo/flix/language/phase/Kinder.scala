@@ -17,6 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse}
@@ -615,10 +617,11 @@ object Kinder {
         cs => KindedAst.Expression.FixpointConstraintSet(cs, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
-    case ResolvedAst.Expression.FixpointLambda(preds, exp, loc) =>
+    case ResolvedAst.Expression.FixpointLambda(pparams, exp, loc) =>
+      val psVal = traverse(pparams)(visitPredicateParam(_, kenv, taenv, root))
       val expVal = visitExp(exp, kenv, taenv, root)
-      mapN(expVal) {
-        case e => KindedAst.Expression.FixpointLambda(preds, e, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      mapN(psVal, expVal) {
+        case (ps, e) => KindedAst.Expression.FixpointLambda(ps, e, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.FixpointMerge(exp10, exp20, loc) =>
@@ -966,6 +969,26 @@ object Kinder {
       mapN(visitType(tpe0, Kind.Star, kenv, taenv, root)) {
         tpe => KindedAst.FormalParam(sym, mod, tpe, loc)
       }
+  }
+
+  /**
+    * Performs kinding on the given predicate param under the given kind environment.
+    */
+  private def visitPredicateParam(pparam0: ResolvedAst.PredicateParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.PredicateParam, KindError] = pparam0 match {
+    case ResolvedAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
+      val tpe = Type.freshVar(Kind.Predicate, loc, text = FallbackText(pred.name))
+      KindedAst.PredicateParam(pred, tpe, loc).toSuccess
+
+    case ResolvedAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
+      mapN(traverse(tpes)(visitType(_, Kind.Star, kenv, taenv, root))) {
+        case ts =>
+          val tpe = den match {
+            case Denotation.Relational => Type.mkRelation(ts, pred.loc.asSynthetic)
+            case Denotation.Latticenal => Type.mkLattice(ts, pred.loc.asSynthetic)
+          }
+          KindedAst.PredicateParam(pred, tpe, loc)
+      }
+
   }
 
   /**

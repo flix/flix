@@ -141,15 +141,15 @@ namespace Test/Exp/Effect {
     eff Empty
 
     eff Fail {
-        def fail(x: String): Unit
+        pub def fail(x: String): Unit
     }
 
     eff Console {
-        def readln(): String
-        def println(x: String): Unit
+        pub def readln(): String
+        pub def println(x: String): Unit
     }
 
     eff Flip {
-        def flip(): Bool
+        pub def flip(): Bool
     }
 }
