@@ -49,6 +49,7 @@ class TestPackager extends FunSuite {
   test("build-jar generates ZIP entries with fixed time") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Packager.init(p, DefaultOptions)
+    Packager.build(p, DefaultOptions)
     Packager.buildJar(p, DefaultOptions)
 
     val packageName = p.getFileName.toString
@@ -67,9 +68,11 @@ class TestPackager extends FunSuite {
     val packageName = p.getFileName.toString
     val packagePath = p.resolve(packageName + ".jar")
 
+    Packager.build(p, DefaultOptions)
     Packager.buildJar(p, DefaultOptions)
     def hash1 = calcHash(packagePath)
 
+    Packager.build(p, DefaultOptions)
     Packager.buildJar(p, DefaultOptions)
     def hash2 = calcHash(packagePath)
 
