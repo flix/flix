@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Index.traverse
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, Impl, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule, Sig, Spec, TypeParam}
+import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -92,7 +92,7 @@ object Indexer {
       val idx3 = traverse(cases) {
         case (_, caze) => Index.occurrenceOf(caze)
       }
-    idx0 ++ idx1 ++ idx2 ++ idx3
+      idx0 ++ idx1 ++ idx2 ++ idx3
   }
 
   /**
@@ -325,6 +325,9 @@ object Indexer {
 
     case Expression.FixpointConstraintSet(cs, _, _, _) => traverse(cs)(visitConstraint)
 
+    case Expression.FixpointLambda(pparams, exp, _, _, _, _) =>
+      val i0 = traverse(pparams)(visitPredicateParam)
+      i0 ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
@@ -400,14 +403,14 @@ object Indexer {
     * Returns a reverse index for the given head predicate `h0`.
     */
   private def visitHead(h0: Predicate.Head): Index = h0 match {
-    case Head.Atom(pred, _, terms, _, _) => Index.occurrenceOf(pred) ++ Index.defOf(pred) ++ visitExps(terms)
+    case Head.Atom(pred, _, terms, tpe, _) => Index.occurrenceOf(pred, tpe) ++ Index.defOf(pred) ++ visitExps(terms)
   }
 
   /**
     * Returns a reverse index for the given body predicate `b0`.
     */
   private def visitBody(b0: Predicate.Body): Index = b0 match {
-    case Body.Atom(pred, _, _, _, terms, _, _) => Index.occurrenceOf(pred) ++ Index.useOf(pred) ++ visitPats(terms)
+    case Body.Atom(pred, _, _, _, terms, tpe, _) => Index.occurrenceOf(pred, tpe) ++ Index.useOf(pred) ++ visitPats(terms)
     case Body.Guard(exp, _) => visitExp(exp)
     case Body.Loop(_, exp, _) => visitExp(exp)
   }
@@ -425,6 +428,14 @@ object Indexer {
   private def visitFormalParam(fparam0: FormalParam): Index = fparam0 match {
     case FormalParam(_, _, tpe, _) =>
       Index.occurrenceOf(fparam0) ++ visitType(tpe)
+  }
+
+  /**
+    * Returns a reverse index for the given predicate parameter `pparam0`.
+    */
+  private def visitPredicateParam(pparam0: PredicateParam): Index = pparam0 match {
+    case PredicateParam(pred, tpe, _) =>
+      Index.occurrenceOf(pred, tpe) ++ Index.defOf(pred) ++ visitType(tpe)
   }
 
   /**

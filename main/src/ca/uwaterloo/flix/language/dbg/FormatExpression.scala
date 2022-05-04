@@ -75,6 +75,7 @@ object FormatExpression {
     case TypedAst.Expression.Lazy(exp, tpe, loc) => s"Lazy($exp)"
     case TypedAst.Expression.Force(exp, tpe, eff, loc) => s"Force($exp)"
     case TypedAst.Expression.FixpointConstraintSet(cs, stf, tpe, loc) => s"FixpointConstraintSet($cs})"
+    case TypedAst.Expression.FixpointLambda(pparams, exp, stf, tpe, eff, loc) => s"FixpointLambda(${pparams.map(_.pred).mkString(", ")}, $exp)"
     case TypedAst.Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) => s"FixpointMerge($exp1, $exp2)"
     case TypedAst.Expression.FixpointSolve(exp, stf, tpe, eff, loc) => s"FixpointSolve($exp, $stf)"
     case TypedAst.Expression.FixpointFilter(pred, exp, tpe, eff, loc) => s"FixpointFilter($pred, $exp)"

@@ -79,13 +79,13 @@ object PrettyPrinter {
 
         case Expression.Var(sym, tpe, loc) => fmtSym(sym, formatter)
 
-        case Expression.Closure(sym, freeVars, tpe, loc) =>
+        case Expression.Closure(sym, closureArgs, _, _) =>
           val sb = new StringBuilder()
           sb.append("Closure(")
             .append(fmtSym(sym, formatter))
             .append(", [")
-          for (freeVar <- freeVars) {
-            sb.append(fmtSym(freeVar.sym, formatter))
+          for (arg <- closureArgs) {
+            sb.append(visitExp(arg))
               .append(", ")
           }
           sb.append("])")

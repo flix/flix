@@ -383,6 +383,13 @@ object Stratifier {
           Expression.FixpointConstraintSet(cs, s, tpe, loc)
       }
 
+    case Expression.FixpointLambda(pparams, exp, _, tpe, eff, loc) =>
+      // Compute the stratification.
+      val stf = stratify(g, tpe, loc)
+      mapN(stf) {
+        case s => Expression.FixpointLambda(pparams, exp, s, tpe, eff, loc)
+      }
+
     case Expression.FixpointMerge(exp1, exp2, _, tpe, eff, loc) =>
       // Compute the stratification.
       val stf = stratify(g, tpe, loc)
@@ -662,6 +669,9 @@ object Stratifier {
       cs.foldLeft(LabelledGraph.empty) {
         case (dg, c) => dg + labelledGraphOfConstraint(c)
       }
+
+    case Expression.FixpointLambda(_, exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
 
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)

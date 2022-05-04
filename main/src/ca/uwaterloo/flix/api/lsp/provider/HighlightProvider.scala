@@ -54,7 +54,7 @@ object HighlightProvider {
           case _ => mkNotFound(uri, pos)
         }
 
-        case Entity.Pred(pred) => highlightPred(pred)
+        case Entity.Pred(pred, _) => highlightPred(pred)
 
         case Entity.LocalVar(sym, _) => highlightVar(sym)
 

@@ -693,8 +693,8 @@ def mapWithKey05(): Bool = Map.mapWithKey((k, v) -> k + v, Map#{2 => -1, 5 => 15
 def mapWithKey06(): Bool & Impure =
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap;
-    let a = MutList.new();
-    Map.mapWithKey((k, v) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); v }, m);
+    let a = new MutList(static);
+    Map.mapWithKey((k, v) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); v }, m);
     MutList.toList(a) == range
 
 
@@ -747,31 +747,61 @@ def foldLeftWithKey04(): Bool = Map.foldLeftWithKey((s, k, v) -> k + s + v, 0, M
 // foldRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRight01(): Bool = Map.foldRight((v, k) -> k() + v, 0, Map#{}) == 0
+def foldRight01(): Bool = Map.foldRight((v, acc) -> acc + v, 0, Map#{}) == 0
 
 @test
-def foldRight02(): Bool = Map.foldRight((v, k) -> k() + v, 0, Map#{1 => 2}) == 2
+def foldRight02(): Bool = Map.foldRight((v, acc) -> acc + v, 0, Map#{1 => 2}) == 2
 
 @test
-def foldRight03(): Bool = Map.foldRight((v, k) -> k() + v, 0, Map#{1 => 2, 3 => 4}) == 6
+def foldRight03(): Bool = Map.foldRight((v, acc) -> acc + v, 0, Map#{1 => 2, 3 => 4}) == 6
 
 @test
-def foldRight04(): Bool = Map.foldRight((v, k) -> k() + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}) == 12
+def foldRight04(): Bool = Map.foldRight((v, acc) -> acc + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}) == 12
 
 /////////////////////////////////////////////////////////////////////////////
 // foldRightWithKey                                                        //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRightWithKey01(): Bool = Map.foldRightWithKey((k, v, c) -> k + c() + v, 0, Map#{}) == 0
+def foldRightWithKey01(): Bool = Map.foldRightWithKey((k, v, acc) -> k + acc + v, 0, Map#{}) == 0
 
 @test
-def foldRightWithKey02(): Bool = Map.foldRightWithKey((k, v, c) -> k + c() + v, 0, Map#{1 => 2}) == 3
+def foldRightWithKey02(): Bool = Map.foldRightWithKey((k, v, acc) -> k + acc + v, 0, Map#{1 => 2}) == 3
 
 @test
-def foldRightWithKey03(): Bool = Map.foldRightWithKey((k, v, c) -> k + c() + v, 0, Map#{1 => 2, 3 => 4}) == 10
+def foldRightWithKey03(): Bool = Map.foldRightWithKey((k, v, acc) -> k + acc + v, 0, Map#{1 => 2, 3 => 4}) == 10
 
 @test
-def foldRightWithKey04(): Bool = Map.foldRightWithKey((k, v, c) -> k + c() + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}) == 21
+def foldRightWithKey04(): Bool = Map.foldRightWithKey((k, v, acc) -> k + acc + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}) == 21
+
+/////////////////////////////////////////////////////////////////////////////
+// foldRightWithCont                                                       //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldRightWithCont01(): Bool = Map.foldRightWithCont((v, k) -> k() + v, 0, Map#{}) == 0
+
+@test
+def foldRightWithCont02(): Bool = Map.foldRightWithCont((v, k) -> k() + v, 0, Map#{1 => 2}) == 2
+
+@test
+def foldRightWithCont03(): Bool = Map.foldRightWithCont((v, k) -> k() + v, 0, Map#{1 => 2, 3 => 4}) == 6
+
+@test
+def foldRightWithCont04(): Bool = Map.foldRightWithCont((v, k) -> k() + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}) == 12
+
+/////////////////////////////////////////////////////////////////////////////
+// foldRightWithKeyCont                                                    //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldRightWithKeyCont01(): Bool = Map.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0, Map#{}) == 0
+
+@test
+def foldRightWithKeyCont02(): Bool = Map.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0, Map#{1 => 2}) == 3
+
+@test
+def foldRightWithKeyCont03(): Bool = Map.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0, Map#{1 => 2, 3 => 4}) == 10
+
+@test
+def foldRightWithKeyCont04(): Bool = Map.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}) == 21
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
@@ -861,8 +891,8 @@ def count07(): Bool = Map.count((k, v) -> k == v, Map#{1 => 1, 2 => 2}) == 2
 def count08(): Bool & Impure =
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap;
-    let a = MutList.new();
-    Map.count((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); true }, m);
+    let a = new MutList(static);
+    Map.count((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); true }, m);
     MutList.toList(a) == range
 
 
@@ -981,8 +1011,8 @@ def count08(): Bool & Impure =
     def sumWith07(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = MutList.new();
-        Map.sumWith((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
+        let a = new MutList(static);
+        Map.sumWith((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
         MutList.toList(a) == range
 
 
@@ -1091,8 +1121,8 @@ def count08(): Bool & Impure =
     def productWith07(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = MutList.new();
-        Map.productWith((k, _) -> { let b = MutList.new(); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
+        let a = new MutList(static);
+        Map.productWith((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
         MutList.toList(a) == range
 
 
@@ -2101,8 +2131,8 @@ def query18(): Bool =
     def minimumKeyBy05(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = MutList.new();
-        Map.minimumKeyBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
+        let a = new MutList(static);
+        Map.minimumKeyBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -2153,8 +2183,8 @@ def query18(): Bool =
     def minimumValueBy06(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, List.reverse(range)) |> List.toMap;
-        let a = MutList.new();
-        Map.minimumValueBy((x, y) -> { let b = MutList.new(); MutList.push!(x, b); MutList.append!(b, a); x <=> y }, m);
+        let a = new MutList(static);
+        Map.minimumValueBy((x, y) -> { let b = new MutList(static); MutList.push!(x, b); MutList.append!(b, a); x <=> y }, m);
         MutList.toList(a) == List.reverse(List.range(1, 2000)) // The first / left most value is ignored
 
 
@@ -2195,8 +2225,8 @@ def query18(): Bool =
     def maximumKeyBy05(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = MutList.new();
-        Map.maximumKeyBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
+        let a = new MutList(static);
+        Map.maximumKeyBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -2237,8 +2267,8 @@ def query18(): Bool =
     def maximumValueBy05(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = MutList.new();
-        Map.maximumValueBy((x, y) -> { let b = MutList.new(); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
+        let a = new MutList(static);
+        Map.maximumValueBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 

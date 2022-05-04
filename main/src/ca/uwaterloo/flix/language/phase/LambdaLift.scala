@@ -133,15 +133,19 @@ object LambdaLift {
         // Add the new definition to the map of lifted definitions.
         m += (freshSymbol -> defn)
 
-        // Construct the free variables.
-        val fvs = freeVars.map(visitFreeVar)
+        // Construct the closure args.
+        val closureArgs = freeVars.map {
+          case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.Expression.Var(sym, tpe, sym.loc)
+        }
 
         // Construct the closure expression.
-        LiftedAst.Expression.Closure(freshSymbol, fvs, tpe, loc)
+        LiftedAst.Expression.Closure(freshSymbol, closureArgs, tpe, loc)
 
       case SimplifiedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
-        val fvs = freeVars.map(visitFreeVar)
-        LiftedAst.Expression.Closure(sym, fvs, tpe, loc)
+        val closureArgs = freeVars.map {
+          case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.Expression.Var(sym, tpe, sym.loc)
+        }
+        LiftedAst.Expression.Closure(sym, closureArgs, tpe, loc)
 
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, purity, loc) =>
         val e = visitExp(exp)
@@ -186,11 +190,14 @@ object LambdaLift {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         e1 match {
-          case LiftedAst.Expression.Closure(defSym, freeVars, _, _) =>
-            val index = freeVars.indexWhere(freeVar => varSym == freeVar.sym)
+          case LiftedAst.Expression.Closure(defSym, closureArgs, _, _) =>
+            val index = closureArgs.indexWhere {
+              case LiftedAst.Expression.Var(sym, _, _) => varSym == sym
+              case _ => false
+            }
             if (index == -1) {
               // function never calls itself
-              LiftedAst.Expression.Let(varSym, e1, e2,tpe, purity, loc)
+              LiftedAst.Expression.Let(varSym, e1, e2, tpe, purity, loc)
             } else
               LiftedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
@@ -375,13 +382,6 @@ object LambdaLift {
     */
   private def visitFormalParam(fparam: SimplifiedAst.FormalParam): LiftedAst.FormalParam = fparam match {
     case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
-  }
-
-  /**
-    * Translates the given simplified free variable `fv` into a lifted free variable.
-    */
-  private def visitFreeVar(fv: SimplifiedAst.FreeVar): LiftedAst.FreeVar = fv match {
-    case SimplifiedAst.FreeVar(sym, tpe) => LiftedAst.FreeVar(sym, tpe)
   }
 
 }

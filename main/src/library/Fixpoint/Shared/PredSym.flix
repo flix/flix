@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2021 Benjamin Dahse
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+namespace Fixpoint/Shared {
 
-package ca.uwaterloo.flix.language
+    pub enum PredSym with Eq, Order {
+        case PredSym(String, Int64)
+    }
 
-import ca.uwaterloo.flix.language.fmt.TestFormatType
-import ca.uwaterloo.flix.language.phase.PhaseSuite
-import org.scalatest.Suites
+    instance ToString[PredSym] {
+        pub def toString(predSym: PredSym): String = match predSym {
+            case PredSym(name, id) => if (id == 0i64) name else "${name}%${id}"
+        }
+    }
 
-class LanguageSuite extends Suites(
-  new PhaseSuite,
-  new TestFlixErrors,
-  new TestFormatType
-)
+}

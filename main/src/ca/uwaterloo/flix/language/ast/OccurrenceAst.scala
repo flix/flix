@@ -16,10 +16,10 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.{Constructor, Field, Method}
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.Purity.{Pure, Impure}
-import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
+import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
+
+import java.lang.reflect.{Constructor, Field, Method}
 
 object OccurrenceAst {
 
@@ -36,7 +36,7 @@ object OccurrenceAst {
   sealed trait Expression {
     def tpe: Type
 
-    def purity : Purity
+    def purity: Purity
 
     def loc: SourceLocation
   }
@@ -111,7 +111,7 @@ object OccurrenceAst {
       def purity: Purity = Pure
     }
 
-    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+    case class Closure(sym: Symbol.DefnSym, closureArgs: List[OccurrenceAst.Expression], tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Pure
     }
 
@@ -259,44 +259,44 @@ object OccurrenceAst {
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
 
-  case class FreeVar(sym: Symbol.VarSym, tpe: Type)
-
   sealed trait Occur
 
   object Occur {
 
     /**
-     * Represents a variable that is not used in an expression.
-     */
+      * Represents a variable that is not used in an expression.
+      */
     case object Dead extends Occur
 
     /**
-     * Represents a variables that occur exactly once in an expression.
-     */
+      * Represents a variables that occur exactly once in an expression.
+      */
     case object Once extends Occur
 
     /**
-     * Represents a variable that occur in expressions more than once.
-     */
+      * Represents a variable that occur in expressions more than once.
+      */
     case object Many extends Occur
 
     /**
-     * Represents a variable that occur in more than one branch, e.g. match cases.
-     */
+      * Represents a variable that occur in more than one branch, e.g. match cases.
+      */
     case object ManyBranch extends Occur
 
     /**
-     * Represents a variable that we explicitly do not want to inline.
-     */
+      * Represents a variable that we explicitly do not want to inline.
+      */
     case object DontInline extends Occur
   }
 
   /**
    * `OccurDef` contains information that indicates whether or not a def should be inlined
-   *  A def is `isTrivialNonSelfCall` if
+   *  A def is `isDirectCall` if
    *  the expression consist of a single (non-self) call with trivial arguments
+   *  `occur` represents the number of times a def is references in the entire program.
+   *  `size` denotes the cumulative weight of each expression in the body of the def
    */
-  case class DefContext(isNonSelfCall: Boolean)
+  case class DefContext(isDirectCall: Boolean, occur: Occur, size: Int, isSelfRecursive: Boolean)
 
 }
 

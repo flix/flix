@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2022 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+use Fixpoint/Shared.PredSym;
 
-package ca.uwaterloo.flix.language
-
-import ca.uwaterloo.flix.language.fmt.TestFormatType
-import ca.uwaterloo.flix.language.phase.PhaseSuite
-import org.scalatest.Suites
-
-class LanguageSuite extends Suites(
-  new PhaseSuite,
-  new TestFlixErrors,
-  new TestFormatType
-)
+namespace Fixpoint {
+    ///
+    /// A type class for types that contain predicate symbols.
+    ///
+    pub class PredSymsOf[t] {
+        pub def predSymsOf(x: t): Set[PredSym]
+    }
+}

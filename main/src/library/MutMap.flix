@@ -30,12 +30,6 @@ instance Newable[MutMap[k, v]] {
 namespace MutMap {
 
     ///
-    /// Placeholder function until `new MutMap(static)` is implemented
-    ///
-    pub def empty(): MutMap[k, v, Impure] & Impure =
-        MutMap(ref Map.empty())
-
-    ///
     /// Returns a fresh empty mutable map.
     ///
     pub def emptyWithRegion(r: Region[r]): MutMap[k, v, r] \ Write(r) =
@@ -237,19 +231,19 @@ namespace MutMap {
     ///
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
-    pub def merge!(m1: MutMap[k, v, r], m2: MutMap[k, v, r]): Unit \ { Read(r), Write(r) } with Order[k] =
+    pub def merge!(m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit \ { Read(r1, r2), Write(r2) } with Order[k] =
         mergeWithKey!((_, v1, _) -> v1, m1, m2)
 
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`.
     ///
-    pub def mergeWith!(f: (v, v) -> v & ef, m1: MutMap[k, v, r], m2: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
+    pub def mergeWith!(f: (v, v) -> v & ef, m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit \ { ef, Read(r1, r2), Write(r2) } with Order[k] =
         mergeWithKey!(_ -> f, m1, m2)
 
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
-    pub def mergeWithKey!(f: (k, v, v) -> v & ef, m1: MutMap[k, v, r], m2: MutMap[k, v, r]): Unit \ { ef, Read(r), Write(r) } with Order[k] =
+    pub def mergeWithKey!(f: (k, v, v) -> v & ef, m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit \ { ef, Read(r1, r2), Write(r2) } with Order[k] =
         let MutMap(mm1) = m1;
         let MutMap(mm2) = m2;
         mm2 := Map.unionWithKey(f, deref mm1, deref mm2)
@@ -380,22 +374,40 @@ namespace MutMap {
         Map.foldLeftWithKey(f, i, deref mm)
 
     ///
+    /// Applies `f` to a start value `s` and all values in the mutable map `m` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
+    ///
+    pub def foldRight(f: (v, b) -> b & ef, s: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
+        foldRightWithKey((_, v, b) -> f(v, b), s, m)
+
+    ///
+    /// Applies `f` to a start value `s` and all key-value pairs in the mutable map `m` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
+    ///
+    pub def foldRightWithKey(f: (k, v, b) -> b & ef, s: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
+        let MutMap(mm) = m;
+        Map.foldRightWithKey(f, s, deref mm)
+
+    ///
     /// Applies `f` to a start value `z` and all values in the mutable map `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
-    /// A `foldRight` allows early termination by not calling the continuation.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, z: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
-        foldRightWithKey((_, v, b) -> f(v, b), z, m)
+    pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, z: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
+        foldRightWithKeyCont((_, v, b) -> f(v, b), z, m)
 
     ///
     /// Applies `f` to a start value `z` and all key-value pairs in the mutable map `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, z)))`.
+    /// A `foldRightWithKeyCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithKey(f: (k, v, Unit -> b & ef) -> b & ef, z: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
+    pub def foldRightWithKeyCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, m: MutMap[k, v, r]): b \ { ef, Read(r) } =
         let MutMap(mm) = m;
-        Map.foldRightWithKey(f, z, deref mm)
+        Map.foldRightWithKeyCont(f, z, deref mm)
 
     ///
     /// Applies `f` to all values in the mutable map `m` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
@@ -577,7 +589,7 @@ namespace MutMap {
     ///
     /// Returns `true` if MutMaps `a` and `b` have the same elements, i.e. are structurally equal.
     ///
-    pub def sameElements(a: MutMap[k, v, r], b: MutMap[k, v, r]): Bool \ Read(r) with Order[k], Eq[v] =
+    pub def sameElements(a: MutMap[k, v, r1], b: MutMap[k, v, r2]): Bool \ Read(r1, r2) with Order[k], Eq[v] =
         (MutMap.isSubmapOf(a, b) and MutMap.isSubmapOf(b, a))
 
     ///

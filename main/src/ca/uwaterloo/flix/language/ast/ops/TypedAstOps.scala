@@ -223,6 +223,9 @@ object TypedAstOps {
           case (macc, c) => macc ++ visitConstraint(c, env0)
         }
 
+      case Expression.FixpointLambda(pparams, exp, stf, tpe, eff, loc) =>
+        visitExp(exp, env0)
+
       case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
@@ -397,6 +400,7 @@ object TypedAstOps {
     case Expression.Lazy(exp, _, _) => sigSymsOf(exp)
     case Expression.Force(exp, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointConstraintSet(_, _, _, _) => Set.empty
+    case Expression.FixpointLambda(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.FixpointSolve(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointFilter(_, exp, _, _, _) => sigSymsOf(exp)
@@ -634,6 +638,9 @@ object TypedAstOps {
       cs.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, c) => acc ++ freeVars(c)
       }
+
+    case Expression.FixpointLambda(_, exp, _, _, _, _) =>
+      freeVars(exp)
 
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)

@@ -17,6 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse}
@@ -83,7 +85,7 @@ object Kinder {
   /**
     * Performs kinding on the given enum.
     */
-  private def visitEnum(enum: ResolvedAst.Enum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Enum, KindError] = enum match {
+  private def visitEnum(enum0: ResolvedAst.Enum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Enum, KindError] = enum0 match {
     case ResolvedAst.Enum(doc, ann, mod, sym, tparams0, derives, cases0, tpeDeprecated0, sc0, loc) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams0)
 
@@ -615,6 +617,13 @@ object Kinder {
         cs => KindedAst.Expression.FixpointConstraintSet(cs, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
+    case ResolvedAst.Expression.FixpointLambda(pparams, exp, loc) =>
+      val psVal = traverse(pparams)(visitPredicateParam(_, kenv, taenv, root))
+      val expVal = visitExp(exp, kenv, taenv, root)
+      mapN(psVal, expVal) {
+        case (ps, e) => KindedAst.Expression.FixpointLambda(ps, e, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      }
+
     case ResolvedAst.Expression.FixpointMerge(exp10, exp20, loc) =>
       val exp1Val = visitExp(exp10, kenv, taenv, root)
       val exp2Val = visitExp(exp20, kenv, taenv, root)
@@ -963,6 +972,26 @@ object Kinder {
   }
 
   /**
+    * Performs kinding on the given predicate param under the given kind environment.
+    */
+  private def visitPredicateParam(pparam0: ResolvedAst.PredicateParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.PredicateParam, KindError] = pparam0 match {
+    case ResolvedAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
+      val tpe = Type.freshVar(Kind.Predicate, loc, text = FallbackText(pred.name))
+      KindedAst.PredicateParam(pred, tpe, loc).toSuccess
+
+    case ResolvedAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
+      mapN(traverse(tpes)(visitType(_, Kind.Star, kenv, taenv, root))) {
+        case ts =>
+          val tpe = den match {
+            case Denotation.Relational => Type.mkRelation(ts, pred.loc.asSynthetic)
+            case Denotation.Latticenal => Type.mkLattice(ts, pred.loc.asSynthetic)
+          }
+          KindedAst.PredicateParam(pred, tpe, loc)
+      }
+
+  }
+
+  /**
     * Performs kinding on the given annotation under the given kind environment.
     */
   private def visitAnnotation(ann: ResolvedAst.Annotation, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Annotation, KindError] = ann match {
@@ -1131,7 +1160,7 @@ object Kinder {
   /**
     * Gets the kind of the enum.
     */
-  private def getEnumKind(enum: ResolvedAst.Enum)(implicit flix: Flix): Kind = enum match {
+  private def getEnumKind(enum0: ResolvedAst.Enum)(implicit flix: Flix): Kind = enum0 match {
     case ResolvedAst.Enum(_, _, _, _, tparams, _, _, _, _, _) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams)
       tparams.tparams.foldRight(Kind.Star: Kind) {

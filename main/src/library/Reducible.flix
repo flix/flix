@@ -70,9 +70,16 @@ pub class Reducible[t: Type -> Type] {
     /// Right-associative fold of a structure.
     /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
     ///
-    /// A `foldRight` allows early termination by not calling the continuation.
+    pub def foldRight(f: (a, b) -> b & ef, s: b, t: t[a]): b & ef =
+        Reducible.reduceRightTo(f, a -> f(a, s), t)
+
     ///
-    pub def foldRight(f: (a, Unit -> b & ef) -> b & ef, z: b, t: t[a]): b & ef =
+    /// Right-associative fold of a structure.
+    /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
+    ///
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
+    ///
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, t: t[a]): b & ef =
         let f1 = (a, b) -> f(a, _ -> b as & ef);
         Reducible.reduceRightTo(f1, a -> f(a, _ -> z as & ef), t)
 
@@ -186,7 +193,7 @@ pub class Reducible[t: Type -> Type] {
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from right to left.
     ///
     pub def findRight(f: a -> Bool & ef, t: t[a]): Option[a] & ef =
-        Reducible.foldRight((a, k) -> Option.withDefault(default = if (f(a)) Some(a) else None, k()), None, t)
+        Reducible.foldRight((a, acc) -> Option.withDefault(default = if (f(a)) Some(a) else None, acc), None, t)
 
     ///
     /// Returns `true` if and only if the element `a` is in `t`.
@@ -252,7 +259,7 @@ pub class Reducible[t: Type -> Type] {
     /// Returns `t` as an array.
     ///
     pub def toArray(t: t[a]): Array[a] & Impure =
-        let v = MutList.new();
+        let v = new MutList(static);
         Reducible.foldLeft((_, a) -> MutList.push!(a, v), (), t);
         MutList.toArray(v)
 
@@ -266,7 +273,7 @@ pub class Reducible[t: Type -> Type] {
     /// Returns `t` as a list.
     ///
     pub def toList(t: t[a]): List[a] =
-        Reducible.foldRight((a, k) -> a :: k(), Nil, t)
+        Reducible.foldRight((a, acc) -> a :: acc, Nil, t)
 
     ///
     /// Returns `t` as a map.

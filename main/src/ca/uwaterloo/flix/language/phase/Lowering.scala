@@ -47,6 +47,7 @@ object Lowering {
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.solve")
     lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.union")
     lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.project")
+    lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.rename")
 
     lazy val Lift1: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift1")
     lazy val Lift2: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.lift2")
@@ -73,7 +74,7 @@ object Lowering {
     lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadTerm")
     lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyTerm")
 
-    lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.PredSym")
+    lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Shared.PredSym")
     lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.VarSym")
 
     lazy val Denotation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Denotation")
@@ -125,6 +126,7 @@ object Lowering {
     lazy val SolveType: Type = Type.mkPureArrow(Datalog, Datalog, SourceLocation.Unknown)
     lazy val MergeType: Type = Type.mkPureUncurriedArrow(List(Datalog, Datalog), Datalog, SourceLocation.Unknown)
     lazy val FilterType: Type = Type.mkPureUncurriedArrow(List(PredSym, Datalog), Datalog, SourceLocation.Unknown)
+    lazy val RenameType: Type = Type.mkPureUncurriedArrow(List(Type.mkArray(PredSym, SourceLocation.Unknown), Datalog), Datalog, SourceLocation.Unknown)
   }
 
   /**
@@ -535,6 +537,14 @@ object Lowering {
 
     case Expression.FixpointConstraintSet(cs, _, _, loc) =>
       mkDatalog(cs, loc)
+
+    case Expression.FixpointLambda(pparams, exp, _, _, eff, loc) =>
+      val defn = Defs.lookup(Defs.Rename)
+      val defExp = Expression.Def(defn.sym, Types.RenameType, loc)
+      val predExps = mkArray(pparams.map(pparam => mkPredSym(pparam.pred)), Type.mkArray(Types.PredSym, loc), loc)
+      val argExps = predExps :: visitExp(exp) :: Nil
+      val resultType = Types.Datalog
+      Expression.Apply(defExp, argExps, resultType, eff, loc)
 
     case Expression.FixpointMerge(exp1, exp2, _, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Merge)
@@ -1041,7 +1051,9 @@ object Lowering {
   private def mkPredSym(pred: Name.Pred): Expression = pred match {
     case Name.Pred(sym, loc) =>
       val nameExp = Expression.Str(sym, loc)
-      mkTag(Enums.PredSym, "PredSym", nameExp, Types.PredSym, loc)
+      val idExp = Expression.Int64(0, loc)
+      val inner = mkTuple(List(nameExp, idExp), loc)
+      mkTag(Enums.PredSym, "PredSym", inner, Types.PredSym, loc)
   }
 
   /**
@@ -1506,6 +1518,10 @@ object Lowering {
     case Expression.Force(exp, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       Expression.Force(e, tpe, eff, loc)
+
+    case Expression.FixpointLambda(pparams, exp, stf, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.FixpointLambda(pparams, e, stf, tpe, eff, loc)
 
     case Expression.FixpointMerge(exp1, exp2, stf, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)

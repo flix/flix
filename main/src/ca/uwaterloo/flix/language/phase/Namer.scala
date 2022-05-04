@@ -197,8 +197,8 @@ object Namer {
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
 
-      case _: WeededAst.Declaration.Sig =>
-        throw InternalCompilerException("Unexpected signature declaration.") // signatures should not be at the top level
+      // Not handling effects for now
+      case _: WeededAst.Declaration.Effect => prog0.toSuccess
     }
   }
 
@@ -809,6 +809,11 @@ object Namer {
         case (e, rs) => NamedAst.Expression.TryCatch(e, rs, loc)
       }
 
+      // replace effect stuff with holes for now
+    case WeededAst.Expression.TryWith(exp, eff, rules, loc) => NamedAst.Expression.Hole(None, loc).toSuccess
+    case WeededAst.Expression.Do(op, args, loc) => NamedAst.Expression.Hole(None, loc).toSuccess
+    case WeededAst.Expression.Resume(args, loc) => NamedAst.Expression.Hole(None, loc).toSuccess
+
     case WeededAst.Expression.InvokeConstructor(className, args, sig, loc) =>
       val argsVal = traverse(args)(visitExp(_, env0, uenv0, tenv0))
       val sigVal = traverse(sig)(visitType(_, uenv0, tenv0))
@@ -905,6 +910,13 @@ object Namer {
       mapN(traverse(cs0)(visitConstraint(_, env0, uenv0, tenv0))) {
         case cs =>
           NamedAst.Expression.FixpointConstraintSet(cs, loc)
+      }
+
+    case WeededAst.Expression.FixpointLambda(pparams, exp, loc) =>
+      val psVal = traverse(pparams)(visitPredicateParam(_, uenv0, tenv0))
+      val expVal = visitExp(exp, env0, uenv0, tenv0)
+      mapN(psVal, expVal) {
+        case (ps, e) => NamedAst.Expression.FixpointLambda(ps, e, loc)
       }
 
     case WeededAst.Expression.FixpointMerge(exp1, exp2, loc) =>
@@ -1328,6 +1340,9 @@ object Namer {
     case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => freeVars(exp)
     case WeededAst.Expression.Cast(exp, tpe, eff, loc) => freeVars(exp)
+    case WeededAst.Expression.Do(op, args, loc) => Nil // TODO handle
+    case WeededAst.Expression.Resume(args, loc) => Nil // TODO handle
+    case WeededAst.Expression.TryWith(exp, eff, rules, loc) => Nil // TODO handle
     case WeededAst.Expression.TryCatch(exp, rules, loc) =>
       rules.foldLeft(freeVars(exp)) {
         case (fvs, WeededAst.CatchRule(ident, className, body)) => filterBoundVars(freeVars(body), List(ident))
@@ -1353,6 +1368,7 @@ object Namer {
     case WeededAst.Expression.Lazy(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Force(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointConstraintSet(cs, loc) => cs.flatMap(freeVarsConstraint)
+    case WeededAst.Expression.FixpointLambda(preds, exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointMerge(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointFilter(qname, exp, loc) => freeVars(exp)
@@ -1541,6 +1557,19 @@ object Namer {
       // Construct the formal parameter.
       mapN(tpeVal) {
         case tpe => NamedAst.FormalParam(freshSym, mod, tpe, loc)
+      }
+  }
+
+  /**
+    * Translates the given weeded predicate parameter to a named predicate parameter.
+    */
+  private def visitPredicateParam(pparam: WeededAst.PredicateParam, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.PredicateParam, NameError] = pparam match {
+    case WeededAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
+      NamedAst.PredicateParam.PredicateParamUntyped(pred, loc).toSuccess
+
+    case WeededAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
+      mapN(traverse(tpes)(visitType(_, uenv0, tenv0))) {
+        case ts => NamedAst.PredicateParam.PredicateParamWithType(pred, den, ts, loc)
       }
   }
 

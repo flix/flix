@@ -15,17 +15,19 @@
  */
 
 use Boxable.{box, unbox};
-use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, PredSym, Denotation};
+use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, Denotation};
 use Fixpoint/Ast.Datalog.{Datalog, Model, Join};
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
-use Fixpoint/Ast.PredSym.PredSym;
 use Fixpoint/Ast.Denotation.{Relational, Latticenal};
 use Fixpoint/Ram.RamSym;
+use Fixpoint/Shared.PredSym;
+use Fixpoint/Shared.PredSym.PredSym;
 
 use Fixpoint.Tuple.Tuple;
 
 namespace Fixpoint {
+
     ///
     /// Returns the minimal model of the given Datalog program `d`.
     /// The minimal model is given by the model semantics for Datalog programs with stratified negation.
@@ -95,9 +97,8 @@ namespace Fixpoint {
             let pFacts = Array.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
             Datalog(pFacts, [])
         case Model(db) =>
-            let PredSym(key) = p;
             Map.query(ramSym -> match ramSym {
-                case RamSym.Full(relName, _, _) => match relName <=> key {
+                case RamSym.Full(predSym, _, _) => match predSym <=> p {
                     case EqualTo => EqualTo
                     case cmp => cmp
                 }
@@ -106,6 +107,48 @@ namespace Fixpoint {
             List.toMap |>
             Model
         case Join(d1, d2) => union(project(p, d1), project(p, d2))
+    } as & Pure
+
+    ///
+    /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
+    ///
+    @Internal
+    pub def rename(preds: Array[PredSym], d: Datalog[v]): Datalog[v] with Order[v], ToString[v] = {
+        use Fixpoint/PredSymsOf.predSymsOf;
+        use Fixpoint/SubstitutePredSym.substitute;
+
+        // Import a function that can create new ids.
+        import static dev.flix.runtime.Global.newId(): Int64 & Impure;
+
+        /// Determine all the predicate symbols in `d`.
+        let predSyms = predSymsOf(d);
+
+        /// Compute a substitition that assignes fresh names to all predicates except those in `preds`.
+        def f(macc, predSym) = {
+            if (Array.memberOf(predSym, preds)) {
+                // Case 1: Do not rename. Do not extend the map.
+                macc
+            } else {
+                // Case 2: Introduce a fresh name (index) for the prediate symbol.
+                let PredSym(name, _) = predSym;
+                let newPredSym = PredSym(name, newId() + 1i64); // We add one because the counter starts at zero.
+                Map.insert(predSym, newPredSym, macc)
+            }
+        };
+        let s = Set.foldLeft(f, Map.empty(), predSyms);
+
+        // Apply the computed substitution to the Datalog program `d`.
+        let r = substitute(d, s);
+
+        // Debugging
+        if (enableDebugging()) {
+            println(s);
+            println(d);
+            println(r)
+        } else ();
+
+        // Return the result.
+        r
     } as & Pure
 
     ///
@@ -439,13 +482,12 @@ namespace Fixpoint {
         , p, ts) as & Pure
 
     def projectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> Array[Boxed] & ef, p: PredSym, ts: f[t]): Datalog[Boxed] & Impure with Foldable[f] =
-        let PredSym(relName) = p;
-        let db = MutMap.empty();
+        let db = new MutMap(static);
         Foldable.foldLeft(() -> t -> {
             let vs = f(t);
             let arity = Array.length(vs);
-            let ramSym = RamSym.Full(relName, arity, Denotation.Relational);
-            let rel = MutMap.getOrElsePut!(ramSym, MutMap.empty(), db);
+            let ramSym = RamSym.Full(p, arity, Denotation.Relational);
+            let rel = MutMap.getOrElsePut!(ramSym, new MutMap(static), db);
             MutMap.put!(Tuple(vs), $DEFAULT$, rel)
         }, (), ts);
         toModel(db)
@@ -582,7 +624,7 @@ namespace Fixpoint {
     ///
     def factsOf(f: Array[v] -> t & ef, p: PredSym, d: Datalog[v]): Array[t] & Impure = match d {
         case Datalog(_, cs) =>
-            let pFacts = MutList.new();
+            let pFacts = new MutList(static);
             Array.foreach(c -> match c {
                 case Constraint(HeadAtom(headPred, _, terms), []) =>
                     if (headPred == p)
@@ -595,10 +637,9 @@ namespace Fixpoint {
             MutList.toArray(pFacts)
         case Model(db) =>
             use Fixpoint/Ram.toDenotation;
-            let pFacts = MutList.new();
-            let PredSym(key) = p;
+            let pFacts = new MutList(static);
             let query = ramSym -> match ramSym {
-                case RamSym.Full(relName, _, _) => match relName <=> key {
+                case RamSym.Full(predSym, _, _) => match predSym <=> p {
                     case EqualTo => EqualTo
                     case cmp => cmp
                 }
@@ -614,7 +655,7 @@ namespace Fixpoint {
                                 tuple[i]
                             else
                                 lat
-                        }, Array.length(tuple) + 1);
+                        }, Array.length(tuple) + 1, static);
                         MutList.push!(f(vs), pFacts)
                     }, rel)
             }, db);
