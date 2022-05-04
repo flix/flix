@@ -148,8 +148,7 @@ object Inliner {
           if (canInlineDef(def1)) {
             val e1 = rewriteTailCalls(def1.exp)
             // Map for substituting formal parameters of a function with the closureArgs currently in scope
-            val env = ??? // def1.fparams.map(_.sym).zip(closureArgs.map(_.sym)).toMap
-            bindFormals(e1, def1.fparams.drop(closureArgs.length).map(_.sym), as, env)
+            bindFormals(e1, def1.fparams.map(_.sym), closureArgs ++ as, Map.empty)
           } else {
             LiftedAst.Expression.ApplyClo(e, as, tpe, purity, loc)
           }
@@ -182,8 +181,7 @@ object Inliner {
           // then inline the body of `def1`
           if (canInlineDef(def1)) {
             // Map for substituting formal parameters of a function with the freevars currently in scope
-            val env = ??? // def1.fparams.map(_.sym).zip(freevars.map(_.sym)).toMap
-            bindFormals(def1.exp, def1.fparams.drop(closureArgs.length).map(_.sym), as, env)
+            bindFormals(def1.exp, def1.fparams.map(_.sym), closureArgs ++ as, Map.empty)
           } else {
             LiftedAst.Expression.ApplyCloTail(e, as, tpe, purity, loc)
           }

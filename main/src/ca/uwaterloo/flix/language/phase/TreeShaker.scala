@@ -135,8 +135,8 @@ object TreeShaker {
     case Expression.Var(_, _, _) =>
       Set.empty
 
-    case Expression.Closure(sym, _, _, _) =>
-      Set(sym)
+    case Expression.Closure(sym, closureArgs, _, _) =>
+      Set(sym) ++ visitExps(closureArgs)
 
     case Expression.ApplyClo(exp, args, _, _, _) =>
       visitExp(exp) ++ visitExps(args)
