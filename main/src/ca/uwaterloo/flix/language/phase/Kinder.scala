@@ -1049,9 +1049,9 @@ object Kinder {
     * Infers a kind environment from the given type constraint.
     */
   private def inferTconstr(tconstr: ResolvedAst.TypeConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = tconstr match {
-    case ResolvedAst.TypeConstraint(head, tpe, loc) =>
-      val kind = getClassKind(root.classes(head.sym))
-      inferType(tpe, kind, kenv: KindEnv, taenv, root)
+    case ResolvedAst.TypeConstraint(head, tpes, loc) =>
+      val kinds = getClassKinds(root.classes(head.sym))
+      traverse(tpes.zip(kinds)) { case (t, k) => inferType(t, k, kenv, taenv, root) } flatMap (KindEnv.merge)
   }
 
   /**

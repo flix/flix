@@ -129,7 +129,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
       val st1 = Iterator(t)
       val st2 = superClasses.flatMap(visitTypeConstraint)
-      val st3 = visitTypeParam(tparam)
+      val st3 = tparam.flatMap(visitTypeParam)
       val st4 = signatures.flatMap(visitSig)
       val st5 = laws.flatMap(visitDef)
       st1 ++ st2 ++ st3 ++ st4 ++ st5
@@ -143,7 +143,7 @@ object SemanticTokensProvider {
       // NB: we use SemanticTokenType.Class because the OOP "Class" most directly corresponds to the FP "Instance"
       val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
       val st1 = Iterator(t)
-      val st2 = visitType(tpe)
+      val st2 = tpe.map(visitType)
       val st3 = tconstrs.flatMap(visitTypeConstraint)
       val st4 = defs.flatMap(visitDef)
       st1 ++ st2 ++ st3 ++ st4
@@ -617,7 +617,7 @@ object SemanticTokensProvider {
     */
   private def visitTypeConstraint(tc0: TypeConstraint): Iterator[SemanticToken] = tc0 match {
     case TypeConstraint(head, arg, _) =>
-      visitTypeConstraintHead(head) ++ visitType(arg)
+      visitTypeConstraintHead(head) ++ arg.flatMap(visitType)
   }
 
   /**
