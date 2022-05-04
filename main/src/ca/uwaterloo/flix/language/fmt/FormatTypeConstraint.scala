@@ -24,7 +24,7 @@ object FormatTypeConstraint {
     */
   def formatTypeConstraint(tconstr: Ast.TypeConstraint)(implicit audience: Audience): String = tconstr match {
     case Ast.TypeConstraint(head, arg, _) =>
-      val typeString = arg.map(FormatType.formatWellKindedType(_))
+      val typeString = arg.map(FormatType.formatWellKindedType(_)).mkString(", ")
       s"${head.sym}[${typeString}]"
   }
 }
