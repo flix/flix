@@ -70,7 +70,6 @@ class TestPackager extends FunSuite {
     Packager.buildJar(p, DefaultOptions)
     def hash1 = calcHash(packagePath)
 
-    Files.delete(packagePath)
     Packager.buildJar(p, DefaultOptions)
     def hash2 = calcHash(packagePath)
 
@@ -114,7 +113,6 @@ class TestPackager extends FunSuite {
     Packager.buildPkg(p, DefaultOptions)
     def hash1 = calcHash(packagePath)
 
-    Files.delete(packagePath)
     Packager.buildPkg(p, DefaultOptions)
     def hash2 = calcHash(packagePath)
 
