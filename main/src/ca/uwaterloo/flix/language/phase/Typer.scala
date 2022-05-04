@@ -437,6 +437,12 @@ object Typer {
       case KindedAst.Expression.Hole(sym, tvar, _) =>
         liftM(List.empty, tvar, Type.Pure)
 
+      case KindedAst.Expression.Discard(exp, loc) =>
+        for {
+          (constrs, _, eff) <- visitExp(exp)
+          resultTyp = Type.Unit
+        } yield (constrs, resultTyp, eff)
+
       case KindedAst.Expression.Unit(_) =>
         liftM(List.empty, Type.Unit, Type.Pure)
 
@@ -1556,6 +1562,10 @@ object Typer {
 
       case KindedAst.Expression.Hole(sym, tpe, loc) =>
         TypedAst.Expression.Hole(sym, subst0(tpe), loc)
+
+      case KindedAst.Expression.Discard(exp, loc) =>
+        val e = visitExp(exp, subst0)
+        TypedAst.Expression.Discard(e, Type.mkUnit(loc), loc)
 
       case KindedAst.Expression.Unit(loc) => TypedAst.Expression.Unit(loc)
 

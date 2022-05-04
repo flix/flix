@@ -64,6 +64,8 @@ object ResolvedAst {
 
     case class Hole(sym: Symbol.HoleSym, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class Discard(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Unit(loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Null(loc: SourceLocation) extends ResolvedAst.Expression

@@ -294,6 +294,8 @@ object Redundancy {
 
     case Expression.Hole(sym, _, _) => Used.of(sym)
 
+    case Expression.Discard(exp, _, _) => visitExp(exp, env0, rc)
+
     case Expression.Lambda(fparam, exp, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + fparam.sym

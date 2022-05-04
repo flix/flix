@@ -81,6 +81,8 @@ object NamedAst {
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends NamedAst.Expression
 
+    case class Discard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
     case class Use(use: NamedAst.Use, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Unit(loc: SourceLocation) extends NamedAst.Expression

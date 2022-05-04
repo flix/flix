@@ -291,6 +291,10 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Hole(sym, t, loc)
 
+    case d@Expression.Discard(exp, eff, loc) =>
+      val e = visitExp(exp)
+      Expression.Discard(e, eff, loc)
+
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       val p = visitFormalParam(fparam)
       val e = visitExp(exp)
@@ -1324,6 +1328,10 @@ object Lowering {
     case Expression.Sig(_, _, _) => exp0
 
     case Expression.Hole(_, _, _) => exp0
+
+    case Expression.Discard(exp, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Discard(e, eff, loc)
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       val p = substFormalParam(fparam, subst)

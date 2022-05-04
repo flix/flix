@@ -133,6 +133,11 @@ object Stratifier {
 
     case Expression.Hole(_, _, _) => exp0.toSuccess
 
+    case Expression.Discard(exp, eff, loc) =>
+      visitExp(exp) map {
+        case e => Expression.Discard(e, eff, loc)
+      }
+
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Lambda(fparam, e, tpe, loc)
@@ -501,6 +506,9 @@ object Stratifier {
     case Expression.Sig(_, _, _) => LabelledGraph.empty
 
     case Expression.Hole(_, _, _) => LabelledGraph.empty
+
+    case Expression.Discard(exp, _, _) =>
+      labelledGraphOfExp(exp)
 
     case Expression.Lambda(_, exp, _, _) =>
       labelledGraphOfExp(exp)

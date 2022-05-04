@@ -163,6 +163,10 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
+    case class Discard(exp: TypedAst.Expression, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
+      def tpe: Type = Type.mkUnit(loc)
+    }
+
     case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def eff: Type = Type.Pure
     }

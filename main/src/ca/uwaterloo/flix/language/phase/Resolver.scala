@@ -586,6 +586,11 @@ object Resolver {
           }
           ResolvedAst.Expression.Hole(sym, loc).toSuccess
 
+        case NamedAst.Expression.Discard(exp, loc) =>
+          visitExp(exp, region) map {
+            case e => ResolvedAst.Expression.Discard(e, loc)
+          }
+
         case NamedAst.Expression.Use(use, exp, loc) =>
           // Lookup the used name to ensure that it exists.
           use match {

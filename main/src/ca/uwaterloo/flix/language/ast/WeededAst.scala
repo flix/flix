@@ -77,6 +77,8 @@ object WeededAst {
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Expression
 
+    case class Discard(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class Use(uses: List[WeededAst.Use], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Unit(loc: SourceLocation) extends WeededAst.Expression

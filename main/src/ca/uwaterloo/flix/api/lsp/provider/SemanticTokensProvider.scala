@@ -256,6 +256,8 @@ object SemanticTokensProvider {
 
     case Expression.Hole(_, _, _) => Iterator.empty
 
+    case Expression.Discard(exp, _, _) => visitExp(exp)
+
     case Expression.Unit(loc) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
       Iterator(t)

@@ -92,6 +92,9 @@ object CodeHinter {
 
     case Expression.Hole(_, _, _) => Nil
 
+    case Expression.Discard(exp, _, _) =>
+      visitExp(exp)
+
     case Expression.Unit(_) => Nil
 
     case Expression.Null(_, _) => Nil

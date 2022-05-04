@@ -173,6 +173,9 @@ object Indexer {
     case Expression.Hole(_, _, _) =>
       Index.occurrenceOf(exp0)
 
+    case Expression.Discard(exp, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
+
     case Expression.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 

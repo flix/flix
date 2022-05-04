@@ -273,6 +273,10 @@ object Monomorph {
 
       case Expression.Hole(sym, tpe, loc) => Expression.Hole(sym, subst0(tpe), loc)
 
+      case Expression.Discard(exp, eff, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.Discard(e, eff, loc)
+
       case Expression.Unit(loc) => Expression.Unit(loc)
 
       case Expression.Null(tpe, loc) => Expression.Null(subst0(tpe), loc)

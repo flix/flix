@@ -661,7 +661,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         GetChannel | SelectChannel | Spawn | Lazy | Force | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        UnaryLambda | FName | Tag | Hole
+        Discard | UnaryLambda | FName | Tag | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -775,7 +775,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Ascription: Rule2[ParsedAst.Type, ParsedAst.Type] = rule {
-        (":" ~ optWS ~ Type ~ optWS ~ "&" ~ optWS ~ Type)
+        ":" ~ optWS ~ Type ~ optWS ~ "&" ~ optWS ~ Type
       }
 
       def Import: Rule1[ParsedAst.JvmOp] = rule {
@@ -868,7 +868,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       ArraySlice ~ zeroOrMore(optWS ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordSelect)
     }
 
-    //TODO SJ: order this with primaries
     def NewChannel: Rule1[ParsedAst.Expression.NewChannel] = rule {
       SP ~ keyword("chan") ~ WS ~ Type ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.NewChannel
     }
@@ -1033,6 +1032,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         AnonymousHole | NamedHole
       }
+    }
+
+    def Discard: Rule1[ParsedAst.Expression.Discard] = rule {
+      SP ~ keyword("discard") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Discard
     }
 
     def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {

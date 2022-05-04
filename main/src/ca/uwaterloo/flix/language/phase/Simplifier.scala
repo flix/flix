@@ -61,6 +61,10 @@ object Simplifier {
 
       case TypedAst.Expression.Hole(sym, tpe, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, loc)
 
+      case d@TypedAst.Expression.Discard(exp, eff, loc) =>
+        val sym = Symbol.freshVarSym("_", BoundBy.Let, loc)
+        SimplifiedAst.Expression.Let(sym, visitExp(exp), SimplifiedAst.Expression.Unit(loc), d.tpe, effectToPurity(eff), loc)
+
       case TypedAst.Expression.Unit(loc) => SimplifiedAst.Expression.Unit(loc)
 
       case TypedAst.Expression.Null(tpe, loc) => SimplifiedAst.Expression.Null(tpe, loc)
