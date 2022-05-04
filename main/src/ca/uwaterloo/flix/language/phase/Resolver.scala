@@ -285,7 +285,7 @@ object Resolver {
     */
   def resolveClass(c0: NamedAst.Class, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
     case NamedAst.Class(doc, ann0, mod, sym, tparams0, superClasses0, signatures, laws0, loc) =>
-      val tparams = tparams0.tparams.map(Params.resolveTparam)
+      val tparams = resolveTypeParams(tparams0, ns0, root)
       val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
       val sigsListVal = traverse(signatures)(resolveSig(_, taenv, ns0, root))
       // ignore the parameter of the super class; we don't use it
