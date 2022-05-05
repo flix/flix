@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
-import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Purity, SemanticOperator, Symbol}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, LiftedAst, OccurrenceAst, Purity, SemanticOperator, SourceLocation, Symbol, Type, UnaryOperator}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -545,11 +545,7 @@ object Inliner {
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e2 = rewriteTailCalls(exp2)
       val e3 = rewriteTailCalls(exp3)
-      exp1 match {
-        case OccurrenceAst.Expression.True(_) => e2
-        case OccurrenceAst.Expression.False(_) => e3
-        case _ => OccurrenceAst.Expression.IfThenElse(exp1, e2, e3, tpe, purity, loc)
-      }
+      OccurrenceAst.Expression.IfThenElse(exp1, e2, e3, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Branch(e0, br0, tpe, purity, loc) =>
       val br = br0 map {
@@ -673,7 +669,11 @@ object Inliner {
       val e1 = substituteExp(exp1, env0)
       val e2 = substituteExp(exp2, env0)
       val e3 = substituteExp(exp3, env0)
-      LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
+      e1 match {
+        case LiftedAst.Expression.True(_) => e2
+        case LiftedAst.Expression.False(_) => e3
+        case _ => LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
+      }
 
     case OccurrenceAst.Expression.Branch(exp, branches, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
