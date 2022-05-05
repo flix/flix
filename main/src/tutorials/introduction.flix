@@ -233,7 +233,7 @@ def main(): Unit & Impure =
         DivStm("v", "w", "z"). // v = w / z
     };
     let m = solve p;
-    (m |> Fixpoint.unsafePrint) as & Impure;
+    let _ = (m |> Fixpoint.unsafePrint) as & Impure;
     ()
 
 //

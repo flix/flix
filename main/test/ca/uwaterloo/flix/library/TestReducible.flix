@@ -59,7 +59,7 @@ namespace TestReducible {
                 l := a :: acc :: deref l;
             0
         };
-        Reducible.reduceLeft(f, Nel(3, 2 :: 1 :: Nil));
+        let _ = Reducible.reduceLeft(f, Nel(3, 2 :: 1 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
 
 
@@ -106,7 +106,7 @@ namespace TestReducible {
                 l := a :: acc :: deref l;
             0
         };
-        Reducible.reduceRight(f, Nel(1, 2 :: 3 :: Nil));
+        let _ = Reducible.reduceRight(f, Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
 
 
@@ -175,7 +175,7 @@ namespace TestReducible {
     @test
     def foldLeft07(): Bool & Impure =
         let l = ref Nil;
-        Reducible.foldLeft((_, x) -> { l := x :: deref l; x == 1 }, false, Nel(3, 2 :: 1 :: Nil));
+        let _ = Reducible.foldLeft((_, x) -> { l := x :: deref l; x == 1 }, false, Nel(3, 2 :: 1 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
 
 
@@ -210,7 +210,7 @@ namespace TestReducible {
     @test
     def foldRight07(): Bool & Impure =
         let l = ref Nil;
-        Reducible.foldRight((x, _) -> { l := x :: deref l; x == 1 }, false, Nel(1, 2 :: 3 :: Nil));
+        let _ = Reducible.foldRight((x, _) -> { l := x :: deref l; x == 1 }, false, Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
 
 
@@ -245,7 +245,7 @@ namespace TestReducible {
     @test
     def foldRightWithCont07(): Bool & Impure =
         let l = ref Nil;
-        Reducible.foldRightWithCont((x, _) -> { l := x :: deref l; x == 1 }, false, Nel(1, 2 :: 3 :: Nil));
+        let _ = Reducible.foldRightWithCont((x, _) -> { l := x :: deref l; x == 1 }, false, Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
 
 
@@ -600,7 +600,7 @@ namespace TestReducible {
     @test
     def findLeft07(): Bool & Impure =
         let l = ref Nil;
-        Reducible.findLeft(x -> { l := x :: deref l; x == 1 }, Nel(3, 2 :: 1 :: Nil));
+        let _ = Reducible.findLeft(x -> { l := x :: deref l; x == 1 }, Nel(3, 2 :: 1 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
 
 
@@ -635,7 +635,7 @@ namespace TestReducible {
     @test
     def findRight07(): Bool & Impure =
         let l = ref Nil;
-        Reducible.findRight(x -> { l := x :: deref l; x == 1 }, Nel(1, 2 :: 3 :: Nil));
+        let _ = Reducible.findRight(x -> { l := x :: deref l; x == 1 }, Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
 
 

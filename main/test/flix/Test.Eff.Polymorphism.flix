@@ -17,7 +17,7 @@ namespace Test/Eff/Polymorphism {
 
     @test
     def testEffPoly04(): Bool & Impure =
-        let f = flip(flip((x, y) -> {[1, 2, 3]; x and y}));
+        let f = flip(flip((x, y) -> {let _ = [1, 2, 3]; x and y}));
         f(true, true)
 
     @test

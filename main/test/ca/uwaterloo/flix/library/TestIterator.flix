@@ -32,13 +32,13 @@ namespace TestIterator {
     @test
     def next03(): Bool & Impure =
         let iter = List.toIterator(1 :: Nil);
-        Iterator.next(iter);
+        let _ = Iterator.next(iter);
         Iterator.next(iter) == None
 
     @test
     def next04(): Bool & Impure =
         let iter = List.toIterator(1 :: 2 :: Nil);
-        Iterator.next(iter);
+        let _ = Iterator.next(iter);
         Iterator.next(iter) == Some(2)
 
 
@@ -143,7 +143,7 @@ namespace TestIterator {
             if (m <= 0)
                 true
             else {
-                Iterator.isEmpty(iter);
+                let _ = Iterator.isEmpty(iter);
                 loop(m - 1)
             };
         loop(n)
@@ -1185,7 +1185,7 @@ namespace TestIterator {
         let Iterator(d, n) = (1 :: 2 :: 3 :: 4 :: 5 :: Nil)   |>
             List.map(x -> if (x == 4) Err("Done") else Ok(x)) |>
             List.toIterator;
-        Iterator.unfoldWithOk(() -> { d(); n() }) |>
+        Iterator.unfoldWithOk(() -> { let _ = d(); n() }) |>
             Iterator.toList == 1 :: 2 :: 3 :: Nil
 
 

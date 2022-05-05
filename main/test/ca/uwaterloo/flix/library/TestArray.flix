@@ -4031,7 +4031,7 @@ def sort09(): Bool & Impure = testSortVsSortWith([2,3,0,4,1,2])
 @test
 def sortWith01!(): Bool & Impure =
     let a = []: Array[Int32];
-    Array.sortWith(cmp, a);
+    Array.sortWith!(cmp, a);
     a `sameElements` []: Array[Int32]
 
 @test
