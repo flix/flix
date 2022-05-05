@@ -80,23 +80,23 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `false` if `t` is empty.
     ///
-    pub def exists(f: a -> Bool, t: t[a]): Bool & ef =
-        Foldable.foldRightWithCont((x, k) -> k() or f(x), false, t)
+    pub def exists(f: a -> Bool & ef, t: t[a]): Bool & ef =
+        Foldable.foldRightWithCont((x, k) -> f(x) or k(), false, t)
 
     ///
     /// Returns `true` if and only if all elements in `t` satisfy the predicate `f`.
     ///
     /// Returns `true` if `t` is empty.
     ///
-    pub def forall(f: a -> Bool, t: t[a]): Bool =
-        Foldable.foldRightWithCont((x, k) -> k() and f(x), true, t)
+    pub def forall(f: a -> Bool & ef, t: t[a]): Bool & ef =
+        Foldable.foldRightWithCont((x, k) -> f(x) and k(), true, t)
 
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from left to right.
     ///
     /// Returns `None` if `t` is empty.
     ///
-    pub def findLeft(f: a -> Bool, t: t[a]): Option[a] =
+    pub def findLeft(f: a -> Bool & ef, t: t[a]): Option[a] & ef =
         Foldable.foldRightWithCont((x, k) -> Option.withDefault(default = if (f(x)) Some(x) else None, k()), None, t)
 
     ///
@@ -123,7 +123,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns `true` if and only if the element `x` is in `t`.
     ///
     pub def memberOf(x: a, t: t[a]): Bool with Eq[a] =
-        Foldable.foldRightWithCont((y, k) -> k() or x == y, false, t)
+        Foldable.foldRightWithCont((y, k) -> x == y or k(), false, t)
 
     ///
     /// Optionally finds the smallest element of `t` according to the `Order` on `a`.
