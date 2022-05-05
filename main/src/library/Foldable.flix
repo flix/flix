@@ -92,12 +92,28 @@ pub class Foldable[t : Type -> Type] {
         Foldable.foldRightWithCont((x, k) -> f(x) and k(), true, t)
 
     ///
+    /// Optionally returns the first element of `t`.
+    ///
+    /// Returns `None` if `t` is empty.
+    ///
+    pub def head(t: t[a]): Option[a] with Foldable[t] =
+        Foldable.foldRightWithCont((x, _) -> Some(x), None, t)
+
+    ///
+    /// Optionally returns the last element of `t`.
+    ///
+    /// Returns `None` if `t` is empty.
+    ///
+    pub def last(t: t[a]): Option[a] with Foldable[t] =
+        Foldable.foldRightWithCont((x, k) -> Option.withDefault(default = Some(x), k()), None, t)
+
+    ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from left to right.
     ///
     /// Returns `None` if `t` is empty.
     ///
     pub def findLeft(f: a -> Bool & ef, t: t[a]): Option[a] & ef =
-        Foldable.foldRightWithCont((x, k) -> Option.withDefault(default = if (f(x)) Some(x) else None, k()), None, t)
+        Foldable.foldRightWithCont((x, k) -> if (f(x)) Some(x) else k(), None, t)
 
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from right to left.
