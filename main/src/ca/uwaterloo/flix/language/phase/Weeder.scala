@@ -309,7 +309,7 @@ object Weeder {
             case (macc, caze: ParsedAst.Case) =>
               val tagName = Name.mkTag(caze.ident)
               macc.get(tagName) match {
-                case None => (macc + (tagName -> WeededAst.Case(ident, Name.mkTag(caze.ident), visitType(caze.tpe)))).toSuccess
+                case None => (macc + (tagName -> visitCase(caze, ident))).toSuccess
                 case Some(otherTag) =>
                   val enumName = ident.name
                   val loc1 = otherTag.tag.loc
@@ -324,6 +324,15 @@ object Weeder {
             case m => List(WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives.toList, m, mkSL(sp1, sp2)))
           }
       }
+  }
+
+  /**
+    * Performs weeding on the given enum case `c0`.
+    */
+  private def visitCase(c0: ParsedAst.Case, enum: Name.Ident)(implicit flix: Flix): WeededAst.Case = c0 match {
+    case ParsedAst.Case(_, ident, tpe0, _) =>
+      val tpe = tpe0.map(visitType).getOrElse(WeededAst.Type.Unit(ident.loc))
+      WeededAst.Case(enum, Name.mkTag(ident), tpe)
   }
 
   /**
@@ -2192,8 +2201,6 @@ object Weeder {
     * Weeds the given parsed type `tpe`.
     */
   private def visitType(tpe: ParsedAst.Type): WeededAst.Type = tpe match {
-    case ParsedAst.Type.Unit(sp1, sp2) => WeededAst.Type.Unit(mkSL(sp1, sp2))
-
     case ParsedAst.Type.Var(sp1, ident, sp2) => visitEffectIdent(ident)
 
     case ParsedAst.Type.Ambiguous(sp1, qname, sp2) => WeededAst.Type.Ambiguous(qname, mkSL(sp1, sp2))
@@ -2795,7 +2802,6 @@ object Weeder {
     */
   @tailrec
   private def leftMostSourcePosition(tpe: ParsedAst.Type): SourcePosition = tpe match {
-    case ParsedAst.Type.Unit(sp1, _) => sp1
     case ParsedAst.Type.Var(sp1, _, _) => sp1
     case ParsedAst.Type.Ambiguous(sp1, _, _) => sp1
     case ParsedAst.Type.Tuple(sp1, _, _) => sp1
