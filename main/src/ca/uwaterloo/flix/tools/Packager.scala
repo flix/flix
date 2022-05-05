@@ -27,8 +27,10 @@ import ca.uwaterloo.flix.util._
 import java.io.{File, PrintWriter}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
+import java.util.{Calendar, GregorianCalendar, Objects}
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Using}
 
 /**
@@ -237,6 +239,14 @@ object Packager {
   }
 
   /**
+    * @param root the root directory to compute a relative path from the given path
+    * @param path the path to be converted to a relative path based on the given root directory
+    * @return relative file name separated by slashes, like `path/to/file.ext`
+    */
+  private def convertPathToRelativeFileName(root: Path, path: Path): String =
+    root.relativize(path).toString.replace('\\', '/')
+
+  /**
     * Builds a jar package for the given project path `p`.
     */
   def buildJar(p: Path, o: Options): Result[Unit, Int] = {
@@ -264,9 +274,10 @@ object Packager {
       addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
 
       // Add all class files.
-      for (buildFile <- getAllFiles(getBuildDirectory(p))) {
-        val fileName = getBuildDirectory(p).relativize(buildFile).toString
-        val fileNameWithSlashes = fileName.replace('\\', '/')
+      // Here we sort entries by relative file name to apply https://reproducible-builds.org/
+      for ((buildFile, fileNameWithSlashes) <- getAllFiles(getBuildDirectory(p))
+          .map{path=>(path, convertPathToRelativeFileName(getBuildDirectory(p), path))}
+          .sortBy(_._2)) {
         addToZip(zip, fileNameWithSlashes, buildFile)
       }
     } match {
@@ -302,9 +313,11 @@ object Packager {
       addToZip(zip, "README.md", getReadmeFile(p))
 
       // Add all source files.
-      for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
-        val name = p.relativize(sourceFile).toString
-        addToZip(zip, name, sourceFile)
+      // Here we sort entries by relative file name to apply https://reproducible-builds.org/
+      for ((sourceFile, fileNameWithSlashes) <- getAllFiles(getBuildDirectory(p))
+          .map{path=>(path, convertPathToRelativeFileName(p, path))}
+          .sortBy(_._2)) {
+        addToZip(zip, fileNameWithSlashes, sourceFile)
       }
     } match {
       case Success(()) => ().toOk
@@ -482,10 +495,21 @@ object Packager {
   }
 
   /**
+    * To support DOS time, Java 8+ treats dates before the 1980 January in special way.
+    * Here we use 2014-06-27 (the date of the first commit to Flix) to avoid the complexity introduced by this hack.
+    *
+    * @see <a href="https://bugs.openjdk.java.net/browse/JDK-4759491">JDK-4759491 that introduced the hack around 1980 January from Java 8+</a>
+    * @see <a href="https://bugs.openjdk.java.net/browse/JDK-6303183">JDK-6303183 that explains why the second should be even to create ZIP files in platform-independent way</a>
+    * @see <a href="https://github.com/gradle/gradle/blob/445deb9aa988e506120b7918bf91acb421e429ba/subprojects/core/src/main/java/org/gradle/api/internal/file/archive/ZipCopyAction.java#L42-L57">A similar case from Gradle</a>
+    */
+  private val ENOUGH_OLD_CONSTANT_TIME: Long = new GregorianCalendar(2014, Calendar.JUNE, 27, 0, 0, 0).getTimeInMillis
+
+  /**
     * Adds an entry to the given zip file.
     */
   private def addToZip(zip: ZipOutputStream, name: String, d: Array[Byte]): Unit = {
     val entry = new ZipEntry(name)
+    entry.setTime(ENOUGH_OLD_CONSTANT_TIME)
     zip.putNextEntry(entry)
     zip.write(d)
     zip.closeEntry()
