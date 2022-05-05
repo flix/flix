@@ -64,11 +64,11 @@ namespace TestFoldable {
 
     @test
     def head02(): Bool =
-        Foldable.head("a" :: Nil) == "a"
+        Foldable.head("a" :: Nil) == Some("a")
 
     @test
     def head03(): Bool =
-        Foldable.head("a" :: "b" :: Nil) == "a"
+        Foldable.head("a" :: "b" :: Nil) == Some("a")
 
     /////////////////////////////////////////////////////////////////////////////
     // last                                                                    //
@@ -80,11 +80,11 @@ namespace TestFoldable {
 
     @test
     def last02(): Bool =
-        Foldable.last("a" :: Nil) == "a"
+        Foldable.last("a" :: Nil) == Some("a")
 
     @test
     def last03(): Bool =
-        Foldable.last("a" :: "b" :: Nil) == "b"
+        Foldable.last("a" :: "b" :: Nil) == Some("b")
 
     /////////////////////////////////////////////////////////////////////////////
     // findLeft                                                                //
