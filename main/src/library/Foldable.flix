@@ -96,7 +96,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `None` if `t` is empty.
     ///
-    pub def head(t: t[a]): Option[a] with Foldable[t] =
+    pub def head(t: t[a]): Option[a] =
         Foldable.foldRightWithCont((x, _) -> Some(x), None, t)
 
     ///
@@ -104,7 +104,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `None` if `t` is empty.
     ///
-    pub def last(t: t[a]): Option[a] with Foldable[t] =
+    pub def last(t: t[a]): Option[a] =
         Foldable.foldRightWithCont((x, k) -> Option.withDefault(default = Some(x), k()), None, t)
 
     ///
