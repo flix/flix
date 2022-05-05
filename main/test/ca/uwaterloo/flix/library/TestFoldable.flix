@@ -103,7 +103,7 @@ namespace TestFoldable {
         Foldable.findLeft(x -> x mod 2 == 0, 1 :: 2 :: Nil) == Some(2)
 
     @test
-    def findLeft03(): Bool =
+    def findLeft04(): Bool =
         Foldable.findLeft(x -> x mod 2 == 0, 1 :: 2 :: 3 :: 4 :: Nil) == Some(2)
 
     /////////////////////////////////////////////////////////////////////////////
