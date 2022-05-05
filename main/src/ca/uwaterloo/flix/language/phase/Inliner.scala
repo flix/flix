@@ -246,7 +246,8 @@ object Inliner {
             case LiftedAst.Expression.IfThenElse(e4, e5, e6, _, _, _) =>
               (e3, e6) match {
                 case (LiftedAst.Expression.JumpTo(sym1, _, _, _), LiftedAst.Expression.JumpTo(sym2, _, _, _)) if sym1 == sym2 =>
-                    val andExp = LiftedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, e1, e4, e1.tpe, Pure, loc)
+                    val andPurity = if (e1.purity == Pure && e4.purity == Pure) Pure else Impure
+                    val andExp = LiftedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, e1, e4, e1.tpe, andPurity, loc)
                     LiftedAst.Expression.IfThenElse(andExp, e5, e3, tpe, purity, loc)
                 case _ => LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
               }
