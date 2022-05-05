@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, LiftedAst, OccurrenceAst, Purity, SemanticOperator, SourceLocation, Symbol, Type, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Purity, SemanticOperator, Symbol}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -495,9 +495,13 @@ object Inliner {
 
   /**
    * Performs boolean folding on a given binary expression with the logic:
-   * Only fold if the expression is pure, and
-   * For Or-expressions, fold into true if either `e1` or `e2` is true.
-   * For And-expressions, fold into false, if either `e1` or `e2` is false.
+   * Only fold if the expression removed is pure, and
+   * For Or-expressions,
+   * fold into true if either the left or right expression is true.
+   * if either the left or right expression is false, fold into the other expression.
+   * For And-expressions,
+   * fold into false, if either the left or right expression is false.
+   * if either the left or right expression is true, fold into the other expression.
    */
   private def binaryFold(exp0: LiftedAst.Expression.Binary): LiftedAst.Expression = {
     (exp0.sop, exp0.exp1, exp0.exp2) match {
