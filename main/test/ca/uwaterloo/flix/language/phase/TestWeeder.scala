@@ -674,11 +674,33 @@ class TestWeeder extends FunSuite with TestUtils {
     val input =
       """
         |def f(): String =
-        |    try ??? with {
-        |        def Fail(x: String) = "hello"
+        |    try ??? with Fail {
+        |        def fail(x: String) = "hello"
         |    }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalFormalParamAscription](result)
+  }
+
+  test("IllegalOperationEffect.01") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Bool & Impure
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalOperationEffect](result)
+  }
+
+  test("IllegalOperationEffect.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Bool \ E
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalOperationEffect](result)
   }
 }
