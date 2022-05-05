@@ -272,21 +272,21 @@ object Weeder {
     * Performs weeding on the given effect operation.
     */
   private def visitOp(d0: ParsedAst.Declaration.Op)(implicit flix: Flix): Validation[WeededAst.Declaration.Op, WeederError] = d0 match {
-    case ParsedAst.Declaration.Op(doc0, ann0, mod0, sp1, ident, tparams0, fparamsOpt0, tpe0, pur0, tconstrs0, sp2) =>
+    case ParsedAst.Declaration.Op(doc0, ann0, mod0, sp1, ident, tparams0, fparamsOpt0, tpe0, effOrPur0, tconstrs0, sp2) =>
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val pubVal = requirePublic(mod0, ident)
       val tparamsVal = requireNoTypeParams(tparams0)
       val fparamsVal = visitFormalParams(fparamsOpt0, Presence.Required)
-      val pur = visitEffectOrPurity(pur0, ident.loc)
+      val effOrPurVal = requireNoEffect(effOrPur0, ident.loc)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
-      mapN(annVal, modVal, pubVal, tparamsVal, fparamsVal, tconstrsVal) {
-        case (ann, mod, _, _, fparams, tconstrs) =>
+      mapN(annVal, modVal, pubVal, tparamsVal, fparamsVal, effOrPurVal, tconstrsVal) {
+        case (ann, mod, _, _, fparams, _, tconstrs) =>
           val ts = fparams.map(_.tpe.get)
           val retTpe = visitType(tpe0)
-          val tpe = WeededAst.Type.Arrow(ts, pur, retTpe, ident.loc)
-          WeededAst.Declaration.Op(doc, ann, mod, ident, fparams, tpe, retTpe, pur, tconstrs, mkSL(sp1, sp2));
+          val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(ident.loc), retTpe, ident.loc)
+          WeededAst.Declaration.Op(doc, ann, mod, ident, fparams, tpe, retTpe, tconstrs, mkSL(sp1, sp2));
       }
   }
 
@@ -2204,6 +2204,14 @@ object Weeder {
       val sp1 = tparams.head.sp1
       val sp2 = tparams.last.sp2
       WeederError.IllegalEffectTypeParams(mkSL(sp1, sp2)).toFailure
+  }
+
+  /**
+    * Returns an error if an effect is present.
+    */
+  private def requireNoEffect(effOrPur: Option[ParsedAst.EffectOrPurity], loc: SourceLocation): Validation[Unit, WeederError] = effOrPur match {
+    case None => ().toSuccess
+    case Some(_) => WeederError.IllegalOperationEffect(loc).toFailure
   }
 
   /**
