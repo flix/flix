@@ -1951,7 +1951,7 @@ def foreach02(): Bool & Impure =
     def toArray01(): Bool = region r {
         let xs: List[Int32] = Nil;
         let a: ScopedArray[Int32, _] = List.toArray(xs, r);
-        Array.sameElements(a, [] @ r: Array[Int32, _])
+        Array.sameElements(a, ([] @ r): ScopedArray[Int32, _])
     }
 
     @test
