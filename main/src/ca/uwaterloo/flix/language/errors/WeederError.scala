@@ -818,22 +818,18 @@ object WeederError {
     * @param loc the location where the error occurred.
     */
   case class NonUnitOperationType(loc: SourceLocation) extends WeederError {
-    def summary: String = "Non-Unit operation type."
+    def summary: String = "Non-Unit operation type. Effect operations must return Unit type."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Non-Unit operation type.
+         |>> Non-Unit operation type. Effect operations must return Unit type.
          |
          |${code(loc, "non-Unit operation type")}
          |
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Effect operations must return Unit type."
-    })
+    def explain(formatter: Formatter): Option[String] = None
   }
-
 }
