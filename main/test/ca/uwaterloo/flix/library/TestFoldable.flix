@@ -55,6 +55,58 @@ namespace TestFoldable {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // head                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def head01(): Bool =
+        Foldable.head(Nil: List[String]) == None
+
+    @test
+    def head02(): Bool =
+        Foldable.head("a" :: Nil) == Some("a")
+
+    @test
+    def head03(): Bool =
+        Foldable.head("a" :: "b" :: Nil) == Some("a")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // last                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def last01(): Bool =
+        Foldable.last(Nil: List[String]) == None
+
+    @test
+    def last02(): Bool =
+        Foldable.last("a" :: Nil) == Some("a")
+
+    @test
+    def last03(): Bool =
+        Foldable.last("a" :: "b" :: Nil) == Some("b")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def findLeft01(): Bool =
+        Foldable.findLeft(x -> x mod 2 == 0, Nil: List[Int32]) == None
+
+    @test
+    def findLeft02(): Bool =
+        Foldable.findLeft(x -> x mod 2 == 0, 1 :: Nil) == None
+
+    @test
+    def findLeft03(): Bool =
+        Foldable.findLeft(x -> x mod 2 == 0, 1 :: 2 :: Nil) == Some(2)
+
+    @test
+    def findLeft04(): Bool =
+        Foldable.findLeft(x -> x mod 2 == 0, 1 :: 2 :: 3 :: 4 :: Nil) == Some(2)
+
+    /////////////////////////////////////////////////////////////////////////////
     // fold                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
