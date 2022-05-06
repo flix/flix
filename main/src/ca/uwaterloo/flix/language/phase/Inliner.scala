@@ -843,8 +843,7 @@ object Inliner {
    * to
    * if (c1 and c2) e else jump l1)
    */
-  private def reduceIfThenElse(outerCond: LiftedAst.Expression, outerThen: LiftedAst.Expression, outerElse: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression =
-    outerCond match {
+  private def reduceIfThenElse(outerCond: LiftedAst.Expression, outerThen: LiftedAst.Expression, outerElse: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = outerCond match {
       case LiftedAst.Expression.True(_) => outerThen
       case LiftedAst.Expression.False(_) => outerElse
       case _ =>
