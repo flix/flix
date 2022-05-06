@@ -3908,45 +3908,6 @@ def updateSequence28!(): Bool & Impure =
     Array.updateSequence!(-1, [-1, -2, -3, -4, -5, -6, -7, -8], a);
     Array.sameElements(a, [-2, -3, -4, -5, -6, -7, -8])
 
-/////////////////////////////////////////////////////////////////////////////
-// formatWith                                                              //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def formatWith01(): Bool & Impure =
-    let a: Array[Int32] = [];
-    let s = Array.formatWith(Int32.toString, ",", a);
-    s == ""
-
-@test
-def formatWith02(): Bool & Impure =
-    let a = [1];
-    let s = Array.formatWith(Int32.toString, ",", a);
-    s == "1"
-
-@test
-def formatWith03(): Bool & Impure =
-    let a = [1,2];
-    let s = Array.formatWith(Int32.toString, ",", a);
-    s == "1,2"
-
-@test
-def formatWith04(): Bool & Impure =
-    let a = [1,2,3];
-    let s = Array.formatWith(Int32.toString, ",", a);
-    s == "1,2,3"
-
-@test
-def formatWith05(): Bool & Impure =
-    let a = [1,2,3];
-    let s = Array.formatWith(Int32.toString, "", a);
-    s == "123"
-
-@test
-def formatWith06(): Bool & Impure =
-    let a = [1,2,3];
-    let s = Array.formatWith(Int32.toString, "..", a);
-    s == "1..2..3"
 
 /////////////////////////////////////////////////////////////////////////////
 // sortWith                                                                //
@@ -4658,6 +4619,43 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     @test
     def joinWith04(): Bool & Impure =
         Array.joinWith(x -> x + x, ",", ["1", "2", "3"]) == "11,22,33"
+
+    @test
+    def joinWith05(): Bool & Impure =
+        let a: Array[Int32] = [];
+        let s = Array.joinWith(Int32.toString, ",", a);
+        s == ""
+
+    @test
+    def joinWith06(): Bool & Impure =
+        let a = [1];
+        let s = Array.joinWith(Int32.toString, ",", a);
+        s == "1"
+
+    @test
+    def joinWith07(): Bool & Impure =
+        let a = [1,2];
+        let s = Array.joinWith(Int32.toString, ",", a);
+        s == "1,2"
+
+    @test
+    def joinWith08(): Bool & Impure =
+        let a = [1,2,3];
+        let s = Array.joinWith(Int32.toString, ",", a);
+        s == "1,2,3"
+
+    @test
+    def joinWith09(): Bool & Impure =
+        let a = [1,2,3];
+        let s = Array.joinWith(Int32.toString, "", a);
+        s == "123"
+
+    @test
+    def joinWith10(): Bool & Impure =
+        let a = [1,2,3];
+        let s = Array.joinWith(Int32.toString, "..", a);
+        s == "1..2..3"
+
 
 
     /////////////////////////////////////////////////////////////////////////////
