@@ -1322,14 +1322,6 @@ object ParsedAst {
   object Type {
 
     /**
-      * Unit type.
-      *
-      * @param sp1 the position of the first character in the type.
-      * @param sp2 the position of the last character in the type.
-      */
-    case class Unit(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
       * Type Variable.
       *
       * @param sp1   the position of the first character in the type.
@@ -1735,7 +1727,7 @@ object ParsedAst {
     * @param tpe   the type of the declared tag
     * @param sp2   the position of the last character in the case declaration.
     */
-  case class Case(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
+  case class Case(sp1: SourcePosition, ident: Name.Ident, tpe: Option[ParsedAst.Type], sp2: SourcePosition)
 
   /**
     * A common super-type for a sequence of type parameters.
