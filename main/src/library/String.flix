@@ -168,11 +168,12 @@ namespace String {
     ///
     /// Helper function for `intercalate`.
     ///
-    def intercalateHelper(sep: String, xs: List[String]): String & Impure =
+    def intercalateHelper(sep: String, xs: List[String]): String & Impure = region r { // Impure due to StringBuilder
         let sb = StringBuilder.new();
-        let arr = List.toArray(xs);
+        let arr = List.toArray(xs, r);
         StringBuilder.intercalate!(sep, arr, sb);
         StringBuilder.toString(sb)
+    }
 
     ///
     /// Concatenate a list of strings into a single string, inserting the separator `sep` between
