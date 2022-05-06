@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, LiftedAst, OccurrenceAst, Purity, SemanticOperator, Symbol}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, LiftedAst, OccurrenceAst, Purity, SemanticOperator, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -230,29 +230,8 @@ object Inliner {
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
       val e3 = visitExp(exp3, subst0)
-      // If `e1` is always true then eliminate else branch
-      // If `e2` is always true then eliminate then branch
-      e1 match {
-        case LiftedAst.Expression.True(_) => e2
-        case LiftedAst.Expression.False(_) => e3
-        case _ =>
-          /*
-          Transforms expressions of the form
-          if (c1) (if (c2) e else jump l1) else jump l1)
-          to
-          if (c1 and c2) e else jump l1)
-          */
-          e2 match {
-            case LiftedAst.Expression.IfThenElse(e4, e5, e6, _, _, _) =>
-              (e3, e6) match {
-                case (LiftedAst.Expression.JumpTo(sym1, _, _, _), LiftedAst.Expression.JumpTo(sym2, _, _, _)) if sym1 == sym2 =>
-                    val andExp = LiftedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, e1, e4, e1.tpe, combine(e1.purity, e4.purity), loc)
-                    LiftedAst.Expression.IfThenElse(andExp, e5, e3, tpe, purity, loc)
-                case _ => LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
-              }
-            case _ => LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
-          }
-      }
+      reduceIfThenElse(e1, e2, e3, tpe, purity, loc)
+
 
     case OccurrenceAst.Expression.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -661,7 +640,7 @@ object Inliner {
       val e1 = substituteExp(exp1, env0)
       val e2 = substituteExp(exp2, env0)
       val e3 = substituteExp(exp3, env0)
-      LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
+      reduceIfThenElse(e1, e2, e3, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Branch(exp, branches, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
@@ -855,4 +834,29 @@ object Inliner {
   private def visitFormalParam(fparam: OccurrenceAst.FormalParam): LiftedAst.FormalParam = fparam match {
     case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
   }
+
+  /**
+   * If `outerCond` is always true then eliminate else branch
+   * If `outerThen` is always true then eliminate then branch
+   * Transforms expressions of the form
+   * if (c1) (if (c2) e else jump l1) else jump l1)
+   * to
+   * if (c1 and c2) e else jump l1)
+   */
+  private def reduceIfThenElse(outerCond: LiftedAst.Expression, outerThen: LiftedAst.Expression, outerElse: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression =
+    outerCond match {
+      case LiftedAst.Expression.True(_) => outerThen
+      case LiftedAst.Expression.False(_) => outerElse
+      case _ =>
+        outerThen match {
+          case LiftedAst.Expression.IfThenElse(innerCond, innerThen, innerElse, _, _, _) =>
+            (outerElse, innerElse) match {
+              case (LiftedAst.Expression.JumpTo(sym1, _, _, _), LiftedAst.Expression.JumpTo(sym2, _, _, _)) if sym1 == sym2 =>
+                val andExp = LiftedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, outerCond, innerCond, outerCond.tpe, combine(outerCond.purity, innerCond.purity), loc)
+                LiftedAst.Expression.IfThenElse(andExp, innerThen, outerElse, tpe, purity, loc)
+              case _ => LiftedAst.Expression.IfThenElse(outerCond, outerThen, outerElse, tpe, purity, loc)
+            }
+          case _ => LiftedAst.Expression.IfThenElse(outerCond, outerThen, outerElse, tpe, purity, loc)
+        }
+    }
 }
