@@ -781,7 +781,7 @@ namespace Array {
     ///
     /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, arr: ScopedArray[a, r]): b \ Read(r) =
+    pub def foldRight(f: (a, b) -> b & ef, s: b, arr: ScopedArray[a, r]): b \ { ef, Read(r) } =
         def loop(i, acc) = {
             if (i < 0)
                 acc
