@@ -104,9 +104,9 @@ namespace Array {
     /// Returns the array `a` as a list.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toList(a: Array[a]): List[a] & Impure =
+    pub def toList(a: ScopedArray[a, r]): List[a] \ Read(r) =
         def loop(i, acc) = {
-            if (i == 0) {
+            if (i <= 0) {
                 acc
             } else {
                 let x = a[i - 1];
