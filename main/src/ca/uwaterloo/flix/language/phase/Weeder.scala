@@ -2226,7 +2226,7 @@ object Weeder {
     * Returns an error if the type is not Unit.
     */
   private def requireUnit(tpe: ParsedAst.Type, loc: SourceLocation): Validation[Unit, WeederError] = tpe match {
-    case ParsedAst.Type.Unit(_, _) => ().toSuccess
+    case ParsedAst.Type.Ambiguous(_, name, _) if name.isUnqualified && name.ident.name == "Unit" => ().toSuccess
     case _ => WeederError.NonUnitOperationType(loc).toFailure
   }
 
