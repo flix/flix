@@ -446,14 +446,7 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1) Remove the discard keyword.
-         |
-         |""".stripMargin
-    })
+    def explain(formatter: Formatter): Option[String] = None
   }
 
 }
