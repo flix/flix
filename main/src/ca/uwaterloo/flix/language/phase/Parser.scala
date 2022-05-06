@@ -472,6 +472,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Expression ~ optional(optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.Stm)
     }
 
+    def Discard: Rule1[ParsedAst.Expression.Discard] = rule {
+      SP ~ keyword("discard") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Discard
+    }
+
     def Assign: Rule1[ParsedAst.Expression] = rule {
       PutChannel ~ optional(optWS ~ operatorX(":=") ~ optWS ~ PutChannel ~ SP ~> ParsedAst.Expression.Assign)
     }
@@ -1021,10 +1025,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         AnonymousHole | NamedHole
       }
-    }
-
-    def Discard: Rule1[ParsedAst.Expression.Discard] = rule {
-      SP ~ keyword("discard") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Discard
     }
 
     def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {
