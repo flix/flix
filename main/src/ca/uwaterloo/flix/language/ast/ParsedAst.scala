@@ -612,7 +612,7 @@ object ParsedAst {
     case class Stm(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Discard expression. Throws out the expression value and returns unit.
+      * Discard expression. Evaluates the inner expression and throws away its result. Evaluates to Unit.
       *
       * @param sp1 the position of the first character in the expression.
       * @param exp the expression.
