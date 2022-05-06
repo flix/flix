@@ -586,11 +586,6 @@ object Resolver {
           }
           ResolvedAst.Expression.Hole(sym, loc).toSuccess
 
-        case NamedAst.Expression.Discard(exp, loc) =>
-          visitExp(exp, region) map {
-            case e => ResolvedAst.Expression.Discard(e, loc)
-          }
-
         case NamedAst.Expression.Use(use, exp, loc) =>
           // Lookup the used name to ensure that it exists.
           use match {
@@ -673,6 +668,11 @@ object Resolver {
           val e2Val = visitExp(exp2, region)
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.Stm(e1, e2, loc)
+          }
+
+        case NamedAst.Expression.Discard(exp, loc) =>
+          visitExp(exp, region) map {
+            case e => ResolvedAst.Expression.Discard(e, loc)
           }
 
         case NamedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>

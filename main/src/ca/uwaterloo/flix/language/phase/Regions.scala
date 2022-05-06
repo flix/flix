@@ -87,8 +87,6 @@ object Regions {
 
     case Expression.Hole(_, _, _) => ().toSuccess
 
-    case Expression.Discard(exp, _, _) => visitExp(exp)
-
     case Expression.Lambda(_, exp, tpe, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
@@ -136,6 +134,8 @@ object Regions {
       flatMapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => checkType(tpe, loc)
       }
+
+    case Expression.Discard(exp, _, _) => visitExp(exp)
 
     case Expression.Match(exp, rules, tpe, _, loc) =>
       val matchVal = visitExp(exp)

@@ -85,9 +85,6 @@ object Safety {
 
     case Expression.Hole(_, _, _) => Nil
 
-    case Expression.Discard(exp, _, _) =>
-      visitExp(exp)
-
     case Expression.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
@@ -117,6 +114,9 @@ object Safety {
 
     case Expression.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
+
+    case Expression.Discard(exp, _, _) =>
+      visitExp(exp)
 
     case Expression.Match(exp, rules, _, _, _) =>
       visitExp(exp) :::

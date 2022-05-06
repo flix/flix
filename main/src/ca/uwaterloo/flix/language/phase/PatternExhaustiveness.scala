@@ -142,9 +142,6 @@ object PatternExhaustiveness {
         case Expression.Def(_, _, _) => tast.toSuccess
         case Expression.Sig(_, _, _) => tast.toSuccess
         case Expression.Hole(_, _, _) => tast.toSuccess
-        case Expression.Discard(exp, _, _) => for {
-          _ <- checkPats(exp, root)
-        } yield tast
         case Expression.Null(_, _) => tast.toSuccess
         case Expression.Unit(_) => tast.toSuccess
         case Expression.True(_) => tast.toSuccess
@@ -191,6 +188,9 @@ object PatternExhaustiveness {
         case Expression.Stm(exp1, exp2, _, _, _) => for {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)
+        } yield tast
+        case Expression.Discard(exp, _, _) => for {
+          _ <- checkPats(exp, root)
         } yield tast
         case Expression.Match(exp, rules, _, _, _) => for {
           _ <- sequence(rules map { x => checkPats(x.exp, root) })

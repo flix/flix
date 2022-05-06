@@ -273,10 +273,6 @@ object Monomorph {
 
       case Expression.Hole(sym, tpe, loc) => Expression.Hole(sym, subst0(tpe), loc)
 
-      case Expression.Discard(exp, eff, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Discard(e, eff, loc)
-
       case Expression.Unit(loc) => Expression.Unit(loc)
 
       case Expression.Null(tpe, loc) => Expression.Null(subst0(tpe), loc)
@@ -371,6 +367,10 @@ object Monomorph {
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         Expression.Stm(e1, e2, subst0(tpe), eff, loc)
+
+      case Expression.Discard(exp, eff, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.Discard(e, eff, loc)
 
       case Expression.Match(exp, rules, tpe, eff, loc) =>
         val rs = rules map {

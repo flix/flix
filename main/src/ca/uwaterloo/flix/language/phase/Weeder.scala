@@ -461,13 +461,6 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       WeededAst.Expression.Hole(name, loc).toSuccess
 
-    case ParsedAst.Expression.Discard(sp1, exp, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      visitExp(exp, senv) map {
-        case e => WeededAst.Expression.Discard(e, loc)
-      }
-
-
     case ParsedAst.Expression.Use(sp1, use, exp, sp2) =>
       mapN(visitUse(use), visitExp(exp, senv)) {
         case (us, e) => WeededAst.Expression.Use(us, e, mkSL(sp1, sp2))
@@ -707,6 +700,12 @@ object Weeder {
       val sp1 = leftMostSourcePosition(exp1)
       mapN(visitExp(exp1, senv), visitExp(exp2, senv)) {
         case (e1, e2) => WeededAst.Expression.Stm(e1, e2, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.Discard(sp1, exp, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      visitExp(exp, senv) map {
+        case e => WeededAst.Expression.Discard(e, loc)
       }
 
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
@@ -2748,7 +2747,6 @@ object Weeder {
     case ParsedAst.Expression.SName(sp1, _, _) => sp1
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
     case ParsedAst.Expression.Hole(sp1, _, _) => sp1
-    case ParsedAst.Expression.Discard(sp1, _, _) => sp1
     case ParsedAst.Expression.Use(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Intrinsic(sp1, _, _, _) => sp1
@@ -2760,6 +2758,7 @@ object Weeder {
     case ParsedAst.Expression.Binary(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.Discard(sp1, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _) => sp1

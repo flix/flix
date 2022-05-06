@@ -437,12 +437,6 @@ object Typer {
       case KindedAst.Expression.Hole(sym, tvar, _) =>
         liftM(List.empty, tvar, Type.Pure)
 
-      case KindedAst.Expression.Discard(exp, loc) =>
-        for {
-          (constrs, _, eff) <- visitExp(exp)
-          resultTyp = Type.Unit
-        } yield (constrs, resultTyp, eff)
-
       case KindedAst.Expression.Unit(_) =>
         liftM(List.empty, Type.Unit, Type.Pure)
 
@@ -738,6 +732,12 @@ object Typer {
           resultTyp = tpe2
           resultEff = Type.mkAnd(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+
+      case KindedAst.Expression.Discard(exp, loc) =>
+        for {
+          (constrs, _, eff) <- visitExp(exp)
+          resultTyp = Type.Unit
+        } yield (constrs, resultTyp, eff)
 
       case KindedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
         // Note: The call to unify on sym.tvar occurs immediately after we have inferred the type of exp1.
@@ -1563,10 +1563,6 @@ object Typer {
       case KindedAst.Expression.Hole(sym, tpe, loc) =>
         TypedAst.Expression.Hole(sym, subst0(tpe), loc)
 
-      case KindedAst.Expression.Discard(exp, loc) =>
-        val e = visitExp(exp, subst0)
-        TypedAst.Expression.Discard(e, e.eff, loc)
-
       case KindedAst.Expression.Unit(loc) => TypedAst.Expression.Unit(loc)
 
       case KindedAst.Expression.Null(loc) => TypedAst.Expression.Null(Type.Unit, loc)
@@ -1631,6 +1627,10 @@ object Typer {
         val tpe = e2.tpe
         val eff = Type.mkAnd(e1.eff, e2.eff, loc)
         TypedAst.Expression.Stm(e1, e2, tpe, eff, loc)
+
+      case KindedAst.Expression.Discard(exp, loc) =>
+        val e = visitExp(exp, subst0)
+        TypedAst.Expression.Discard(e, e.eff, loc)
 
       case KindedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)

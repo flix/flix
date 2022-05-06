@@ -524,11 +524,6 @@ object Namer {
     case WeededAst.Expression.Hole(name, loc) =>
       NamedAst.Expression.Hole(name, loc).toSuccess
 
-    case WeededAst.Expression.Discard(exp, loc) =>
-      visitExp(exp, env0, uenv0, tenv0) map {
-        case e => NamedAst.Expression.Discard(e, loc)
-      }
-
     case WeededAst.Expression.Use(uses0, exp, loc) =>
       val uses = uses0.map {
         case WeededAst.Use.UseDefOrSig(qname, alias, loc) => NamedAst.Use.UseDefOrSig(qname, alias, loc)
@@ -609,6 +604,11 @@ object Namer {
       val e2 = visitExp(exp2, env0, uenv0, tenv0)
       mapN(e1, e2) {
         NamedAst.Expression.Stm(_, _, loc)
+      }
+
+    case WeededAst.Expression.Discard(exp, loc) =>
+      visitExp(exp, env0, uenv0, tenv0) map {
+        case e => NamedAst.Expression.Discard(e, loc)
       }
 
     case WeededAst.Expression.Let(ident, mod, exp1, exp2, loc) =>
@@ -1296,7 +1296,6 @@ object Namer {
     case WeededAst.Expression.VarOrDefOrSig(ident, _) => List(ident)
     case WeededAst.Expression.DefOrSig(_, _) => Nil
     case WeededAst.Expression.Hole(_, _) => Nil
-    case WeededAst.Expression.Discard(exp, _) => freeVars(exp)
     case WeededAst.Expression.Use(_, exp, _) => freeVars(exp)
     case WeededAst.Expression.Unit(_) => Nil
     case WeededAst.Expression.Null(_) => Nil
@@ -1318,6 +1317,7 @@ object Namer {
     case WeededAst.Expression.Binary(_, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, _) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
     case WeededAst.Expression.Stm(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.Discard(exp, _) => freeVars(exp)
     case WeededAst.Expression.Let(ident, _, exp1, exp2, _) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
     case WeededAst.Expression.LetRec(ident, _, exp1, exp2, _) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2), List(ident))
     case WeededAst.Expression.Region(_, _) => Nil
