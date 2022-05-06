@@ -2906,11 +2906,22 @@ object Weeder {
     region.getOrElse(exp)
   }
 
+  /**
+    * The syntactic environment of an expression.
+    *
+    * Used to indicate which expressions are allowed at the given point in the syntax tree.
+    */
   private sealed trait SyntacticEnv
 
   private object SyntacticEnv {
+    /**
+      * Indicates a top-level expression, not inside a handler.
+      */
     case object Top extends SyntacticEnv
 
+    /**
+      * Indicates an expression inside a handler.
+      */
     case object Handler extends SyntacticEnv
   }
 
@@ -2920,10 +2931,19 @@ object Weeder {
   private sealed trait Presence
 
   private object Presence {
+    /**
+      * Indicates that the thing is required.
+      */
     case object Required extends Presence
 
+    /**
+      * Indicates that the thing is optional.
+      */
     case object Optional extends Presence
 
+    /**
+      * Indicates that the thing is forbidden.
+      */
     case object Forbidden extends Presence
   }
 
