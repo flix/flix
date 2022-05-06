@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
-import ca.uwaterloo.flix.language.ast.{LiftedAst, OccurrenceAst, Purity, SemanticOperator, Symbol}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, LiftedAst, OccurrenceAst, Purity, SemanticOperator, SourceLocation, Symbol, Type, UnaryOperator}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -209,14 +209,12 @@ object Inliner {
 
     case OccurrenceAst.Expression.Unary(sop, op, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      val unExp = LiftedAst.Expression.Unary(sop, op, e, tpe, purity, loc)
-      unaryFold(unExp)
+      unaryFold(sop, op, e, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
-      val binExp = LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
-      binaryFold(binExp)
+      binaryFold(sop, op, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
@@ -494,42 +492,6 @@ object Inliner {
   }
 
   /**
-   * Performs boolean folding on a given binary expression with the logic:
-   * Only fold if the expression removed is pure, and
-   * For Or-expressions,
-   * fold into true if either the left or right expression is true.
-   * if either the left or right expression is false, fold into the other expression.
-   * For And-expressions,
-   * fold into false, if either the left or right expression is false.
-   * if either the left or right expression is true, fold into the other expression.
-   */
-  private def binaryFold(exp0: LiftedAst.Expression.Binary): LiftedAst.Expression = {
-    (exp0.sop, exp0.exp1, exp0.exp2) match {
-      case (SemanticOperator.BoolOp.And, LiftedAst.Expression.True(_), _) => exp0.exp2
-      case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.True(_)) => exp0.exp1
-      case (SemanticOperator.BoolOp.And, LiftedAst.Expression.False(_), _) => LiftedAst.Expression.False(exp0.loc)
-      case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.False(_)) if exp0.exp1.purity == Pure => LiftedAst.Expression.False(exp0.loc)
-      case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.False(_), _) => exp0.exp2
-      case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.False(_)) => exp0.exp1
-      case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.True(_), _) => LiftedAst.Expression.True(exp0.loc)
-      case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.True(_)) if exp0.exp1.purity == Pure => LiftedAst.Expression.True(exp0.loc)
-      case _ => exp0
-    }
-  }
-
-  /**
-   * Performs boolean folding on a given unary expression with the logic:
-   * Folds not-true => false and not-false => true.
-   */
-  private def unaryFold(exp0: LiftedAst.Expression.Unary): LiftedAst.Expression = {
-    (exp0.sop, exp0.exp) match {
-      case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.False(_)) => LiftedAst.Expression.True(exp0.loc)
-      case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.True(_)) => LiftedAst.Expression.False(exp0.loc)
-      case _ => exp0
-    }
-  }
-
-  /**
    * Combines purities `p1` and `p2`
    * A combined purity is only pure if both `p1` and `p2` are pure, otherwise it is always impure.
    */
@@ -660,14 +622,12 @@ object Inliner {
 
     case OccurrenceAst.Expression.Unary(sop, op, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
-      val unExp = LiftedAst.Expression.Unary(sop, op, e, tpe, purity, loc)
-      unaryFold(unExp)
+      unaryFold(sop, op, e, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Binary(sop, op, exp1, exp2, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
       val e2 = substituteExp(exp2, env0)
-      val binExp = LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
-      binaryFold(binExp)
+      binaryFold(sop, op, e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
@@ -870,5 +830,41 @@ object Inliner {
    */
   private def visitFormalParam(fparam: OccurrenceAst.FormalParam): LiftedAst.FormalParam = fparam match {
     case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
+  }
+
+  /**
+   * Performs boolean folding on a given unary expression with the logic:
+   * Folds not-true => false and not-false => true.
+   */
+  private def unaryFold(sop: SemanticOperator, op: UnaryOperator,  e: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = {
+    (sop, e) match {
+      case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.False(_)) => LiftedAst.Expression.True(loc)
+      case (SemanticOperator.BoolOp.Not, LiftedAst.Expression.True(_)) => LiftedAst.Expression.False(loc)
+      case _ => LiftedAst.Expression.Unary(sop, op, e, tpe, purity, loc)
+    }
+  }
+
+  /**
+   * Performs boolean folding on a given binary expression with the logic:
+   * Only fold if the expression removed is pure, and
+   * For Or-expressions,
+   * fold into true if either the left or right expression is true.
+   * if either the left or right expression is false, fold into the other expression.
+   * For And-expressions,
+   * fold into false, if either the left or right expression is false.
+   * if either the left or right expression is true, fold into the other expression.
+   */
+  private def binaryFold(sop: SemanticOperator, op: BinaryOperator, e1: LiftedAst.Expression, e2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = {
+    (sop, e1, e2) match {
+      case (SemanticOperator.BoolOp.And, LiftedAst.Expression.True(_), _) => e2
+      case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.True(_)) => e1
+      case (SemanticOperator.BoolOp.And, LiftedAst.Expression.False(_), _) => LiftedAst.Expression.False(loc)
+      case (SemanticOperator.BoolOp.And, _, LiftedAst.Expression.False(_)) if e1.purity == Pure => LiftedAst.Expression.False(loc)
+      case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.False(_), _) => e2
+      case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.False(_)) => e1
+      case (SemanticOperator.BoolOp.Or, LiftedAst.Expression.True(_), _) => LiftedAst.Expression.True(loc)
+      case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.True(_)) if e1.purity == Pure => LiftedAst.Expression.True(loc)
+      case _ => LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
+    }
   }
 }
