@@ -1360,7 +1360,7 @@ namespace Array {
         let l = new MutList(static);
         def loop(i) = {
             if (i >= len)
-                Nil
+                ()
             else {
                 if (f(a[i])) MutList.push!(i, l) else ();
                 loop(i + 1)
@@ -1478,11 +1478,11 @@ namespace Array {
     /// The function returns the final value of the accumulator `s`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    def foreachAccum(f: (a, b) -> b & ef, s: b, a: Array[a]): b & Impure =
+    def foreachAccum(f: (a, b) -> b & ef, s: b, a: Array[a]): Unit & Impure =
         let len = length(a);
         def loop(i, acc) = {
             if (i >= len)
-                acc
+                ()
             else
                 loop(i + 1, f(a[i], acc))
         };

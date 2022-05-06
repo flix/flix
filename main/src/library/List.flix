@@ -1201,7 +1201,7 @@ namespace List {
         case Some(x) =>
             let a = Array.new(x, length(l));
             let f = (i, b) -> { a[i] = b; i + 1 };
-            foldLeft(f, 0, l);
+            foreach((b, i) -> a[i] = b, zipWithIndex(l))
             a
         }
 
