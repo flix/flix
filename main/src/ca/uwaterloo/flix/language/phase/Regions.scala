@@ -87,7 +87,7 @@ object Regions {
 
     case Expression.Hole(_, _, _) => ().toSuccess
 
-    case d@Expression.Discard(exp, _, _) => visitExp(exp)
+    case Expression.Discard(exp, _, _) => visitExp(exp)
 
     case Expression.Lambda(_, exp, tpe, loc) =>
       flatMapN(visitExp(exp)) {

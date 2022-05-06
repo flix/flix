@@ -291,7 +291,7 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Hole(sym, t, loc)
 
-    case d@Expression.Discard(exp, eff, loc) =>
+    case Expression.Discard(exp, eff, loc) =>
       val e = visitExp(exp)
       Expression.Discard(e, eff, loc)
 
