@@ -689,4 +689,38 @@ namespace TestRedBlackTree {
         let Map(t) = Map#{0 => "1", 1 => "2", 2 => "2"};
         RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ", ", t) == "0 => 1, 1 => 2, 2 => 2"
 
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWithIndex                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithIndex01(): Bool =
+        let Map(t) = Map#{}: Map[Int32, Int32];
+        let m = Map(RedBlackTree.zipWithIndex(t));
+        m == Map#{}
+
+    @test
+    def zipWithIndex02(): Bool =
+        let Map(t) = Map#{0 => 0};
+        let m = Map(RedBlackTree.zipWithIndex(t));
+        m == Map#{(0, 0) => 0}
+
+    @test
+    def zipWithIndex03(): Bool =
+        let Map(t) = Map#{0 => 0, 1 => 1, 2 => 2};
+        let m = Map(RedBlackTree.zipWithIndex(t));
+        m == Map#{(0, 0) => 0, (1, 1) => 1, (2, 2) => 2}
+
+    @test
+    def zipWithIndex04(): Bool =
+        let Map(t) = Map#{1 => 1, 2 => 2, 0 => 0};
+        let m = Map(RedBlackTree.zipWithIndex(t));
+        m == Map#{(0, 0) => 0, (1, 1) => 1, (2, 2) => 2}
+
+    @test
+    def zipWithIndex05(): Bool =
+        let Map(t) = Map#{7 => 1, 2 => 2, 4 => 0, 8 => 7};
+        let m = Map(RedBlackTree.zipWithIndex(t));
+        m == Map#{(7, 2) => 1, (2, 0) => 2, (4, 1) => 0, (8, 3) => 7}
+
 }
