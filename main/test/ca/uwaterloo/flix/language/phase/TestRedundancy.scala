@@ -1009,7 +1009,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.DiscardedPureValue](result)
   }
 
-  test("DiscardedUnitValue.01") {
+  test("RedundantDiscard.01") {
     val input =
       """
         |def fakePrint(_msg: a): Unit & Impure =
@@ -1022,10 +1022,10 @@ class TestRedundancy extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.DiscardedUnitValue](result)
+    expectError[RedundancyError.RedundantDiscard](result)
   }
 
-  test("DiscardedUnitValue.02") {
+  test("RedundantDiscard.02") {
     val input =
       """
         |def f(g: a -> b & ef, x: a): b & ef = g(x)
@@ -1037,6 +1037,6 @@ class TestRedundancy extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.DiscardedUnitValue](result)
+    expectError[RedundancyError.RedundantDiscard](result)
   }
 }

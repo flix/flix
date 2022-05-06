@@ -351,7 +351,7 @@ object RedundancyError {
       s"""${line(kind, source.name)}
          |>> Redundant purity cast. The expression is already pure.
          |
-         |${code(loc, "redundant cast")}
+         |${code(loc, "redundant cast.")}
          |
          |""".stripMargin
     }
@@ -372,7 +372,7 @@ object RedundancyError {
       s"""${line(kind, source.name)}
          |>> Redundant effect cast. The expression already has the same effect.
          |
-         |${code(loc, "redundant cast")}
+         |${code(loc, "redundant cast.")}
          |
          |""".stripMargin
     }
@@ -395,7 +395,7 @@ object RedundancyError {
       s"""${line(kind, source.name)}
          |>> Type constraint '${red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}' is entailed by type constraint '${green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}'.
          |
-         |${code(loc, "redundant type constraint")}
+         |${code(loc, "redundant type constraint.")}
          |""".stripMargin
     }
 
@@ -410,19 +410,19 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that a pure expression value was discarded.
+    * An error raised to indicate that the result of a pure expression is discarded.
     *
-    * @param loc the location of the expression.
+    * @param loc the location of the inner expression.
     */
   case class DiscardedPureValue(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Discarded a pure expression."
+    def summary: String = "A pure expression cannot be discarded."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Discarded a pure expression: It should be impure.
+         |>> A pure expression cannot be discarded.
          |
-         |${code(loc, "discarded pure expression")}
+         |${code(loc, "pure expression.")}
          |""".stripMargin
     }
 
@@ -430,19 +430,19 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that an impure unit value was discarded.
+    * An error raised to indicate a redundant discard of a unit value.
     *
-    * @param loc the location of the expression.
+    * @param loc the location of the inner expression.
     */
-  case class DiscardedUnitValue(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Discarded a unit value."
+  case class RedundantDiscard(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant discard of unit value."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Discarded a unit value.
+         |>> Redundant discard of unit value.
          |
-         |${code(loc, "discarded unit value")}
+         |${code(loc, "discarded unit value.")}
          |""".stripMargin
     }
 

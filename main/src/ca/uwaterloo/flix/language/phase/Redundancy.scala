@@ -395,13 +395,13 @@ object Redundancy {
       else
         us1 ++ us2
 
-    case Expression.Discard(exp, _, loc) =>
+    case Expression.Discard(exp, _, _) =>
       val us = visitExp(exp, env0, rc)
 
       if (exp.eff == Type.Pure)
         us + DiscardedPureValue(exp.loc)
       else if (exp.tpe == Type.Unit)
-        us + DiscardedUnitValue(exp.loc)
+        us + RedundantDiscard(exp.loc)
       else
         us
 
