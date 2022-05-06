@@ -143,19 +143,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Enum: Rule1[ParsedAst.Declaration.Enum] = {
-      def Case: Rule1[ParsedAst.Case] = {
-        def CaseWithUnit: Rule1[ParsedAst.Case] = namedRule("Case") {
-          SP ~ Names.Tag ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) =>
-            ParsedAst.Case(sp1, ident, ParsedAst.Type.Unit(sp1, sp2), sp2))
-        }
-
-        def CaseWithType: Rule1[ParsedAst.Case] = namedRule("Case") {
-          SP ~ Names.Tag ~ Types.Tuple ~ SP ~> ParsedAst.Case
-        }
-
-        rule {
-          CaseWithType | CaseWithUnit
-        }
+      def Case: Rule1[ParsedAst.Case] = rule {
+        SP ~ Names.Tag ~ optional(Types.Tuple) ~ SP ~> ParsedAst.Case
       }
 
       def NonEmptyCaseList: Rule1[Seq[ParsedAst.Case]] = rule {
@@ -284,12 +273,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.EffectOrPurity]] = rule {
-    Type ~ optional(optWS ~ EffectSetOrBool)
+    Type ~ optional(optWS ~ EffectOrPurity)
   }
 
-  def EffectSetOrBool: Rule1[ParsedAst.EffectOrPurity] = {
+  def EffectOrPurity: Rule1[ParsedAst.EffectOrPurity] = {
     def Set: Rule1[ParsedAst.EffectOrPurity] = rule {
-      "\\" ~ optWS ~ Effects.EffectSet ~> ParsedAst.EffectOrPurity.Effect
+      "\\" ~ optWS ~ Effects.EffectSetOrEmpty ~> ParsedAst.EffectOrPurity.Effect
     }
 
     def Bool: Rule1[ParsedAst.EffectOrPurity] = rule {
@@ -1057,7 +1046,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def FixpointLambda: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("#(") ~ optWS ~ oneOrMore(Names.Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ keyword("=>") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointLambda
+      SP ~ atomic("#(") ~ optWS ~ oneOrMore(PredicateParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ WS ~ keyword("->") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointLambda
     }
 
     def FixpointProject: Rule1[ParsedAst.Expression] = {
@@ -1271,7 +1260,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Types {
 
     def UnaryArrow: Rule1[ParsedAst.Type] = rule {
-      Or ~ optional(optWS ~ atomic("->") ~ optWS ~ Type ~ optional(WS ~ "&" ~ WS ~ Type) ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
+      Or ~ optional(optWS ~ atomic("->") ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
     }
 
     def Or: Rule1[ParsedAst.Type] = rule {
@@ -1300,7 +1289,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ TypeList ~ optWS ~ (atomic("->") ~ optWS ~ Type ~ optional(WS ~ "&" ~ WS ~ Type) ~ SP ~> ParsedAst.Type.PolymorphicArrow)
+        SP ~ TypeList ~ optWS ~ (atomic("->") ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Type.PolymorphicArrow)
       }
     }
 
@@ -1391,6 +1380,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   object Effects {
 
+    // This should only be used where the effect is unambiguously an effect.
+    // NOT where it might be some other type, since this overlaps with the empty record type.
+    def EffectSetOrEmpty: Rule1[ParsedAst.EffectSet] = {
+      def Empty: Rule1[ParsedAst.EffectSet] = rule {
+        SP ~ "{" ~ optWS ~ "}" ~ SP ~> ParsedAst.EffectSet.Pure
+      }
+
+      rule {
+        Empty | EffectSet
+      }
+    }
+
     def EffectSet: Rule1[ParsedAst.EffectSet] = rule {
       // NB: Pure must come before Set since they overlap
       Pure | Set | Singleton
@@ -1437,15 +1438,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def UnionTail = rule {
-      operatorX("+") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "+" ~ optWS) ~> ParsedAst.Effect.Union
+      operatorX("+") ~ optWS ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "+" ~ optWS) ~> ParsedAst.Effect.Union
     }
 
     def IntersectionTail = rule {
-      operatorX("&") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "&" ~ optWS) ~> ParsedAst.Effect.Intersection
+      operatorX("&") ~ optWS ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "&" ~ optWS) ~> ParsedAst.Effect.Intersection
     }
 
     def DifferenceTail = rule {
-      operatorX("-") ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "-" ~ optWS) ~> ParsedAst.Effect.Difference
+      operatorX("-") ~ optWS ~ oneOrMore(SimpleEffect).separatedBy(optWS ~ "-" ~ optWS) ~> ParsedAst.Effect.Difference
     }
 
     def BinaryTail = rule {
@@ -1479,7 +1480,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Kinds {
 
     def SimpleKind: Rule1[ParsedAst.Kind] = rule {
-      Kinds.Star | Kinds.Bool | Kinds.Region | Kinds.Record | Kinds.Schema | Kinds.Parens
+      Kinds.Star | Kinds.Bool | Kinds.Region | Kinds.Effect | Kinds.Record | Kinds.Schema | Kinds.Parens
     }
 
     def Arrow: Rule1[ParsedAst.Kind] = rule {
@@ -1496,6 +1497,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Region: Rule1[ParsedAst.Kind.Region] = rule {
       SP ~ keyword("Region") ~ SP ~> ParsedAst.Kind.Region
+    }
+
+    def Effect: Rule1[ParsedAst.Kind.Effect] = rule {
+      SP ~ keyword("Eff") ~ SP ~> ParsedAst.Kind.Effect
     }
 
     def Record: Rule1[ParsedAst.Kind.RecordRow] = rule {
@@ -1525,6 +1530,22 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   def FormalParamList: Rule1[Seq[ParsedAst.FormalParam]] = rule {
     "(" ~ optWS ~ zeroOrMore(FormalParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+  }
+
+  def PredicateParam: Rule1[ParsedAst.PredicateParam] = rule {
+    RelPredicateParam | LatPredicateParam | UntypedPredicateParam
+  }
+
+  def UntypedPredicateParam: Rule1[ParsedAst.PredicateParam.UntypedPredicateParam] = rule {
+    SP ~ Names.Predicate ~ SP ~> ParsedAst.PredicateParam.UntypedPredicateParam
+  }
+
+  def RelPredicateParam: Rule1[ParsedAst.PredicateParam.RelPredicateParam] = rule {
+    SP ~ Names.Predicate ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.PredicateParam.RelPredicateParam
+  }
+
+  def LatPredicateParam: Rule1[ParsedAst.PredicateParam.LatPredicateParam] = rule {
+    SP ~ Names.Predicate ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ";" ~ optWS ~ Type ~ optWS ~ ")" ~ SP ~> ParsedAst.PredicateParam.LatPredicateParam
   }
 
   def Argument: Rule1[ParsedAst.Argument] = {

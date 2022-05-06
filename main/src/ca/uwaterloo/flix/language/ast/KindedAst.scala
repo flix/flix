@@ -181,7 +181,7 @@ object KindedAst {
 
     case class FixpointConstraintSet(cs: List[KindedAst.Constraint], tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class FixpointLambda(preds: List[Name.Pred], exp: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class FixpointLambda(pparams: List[KindedAst.PredicateParam], exp: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
     case class FixpointMerge(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
@@ -306,6 +306,8 @@ object KindedAst {
   }
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
+
+  case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: KindedAst.Expression)
 

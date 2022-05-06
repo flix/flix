@@ -1012,28 +1012,55 @@ def foldLeft04(): Bool = List.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, 1 :
 // foldRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRight01(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Nil) == 100
+def foldRight01(): Bool = List.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, Nil) == 100
 
 @test
-def foldRight02(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: Nil) == 198
+def foldRight02(): Bool = List.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, 1 :: Nil) == 198
 
 @test
-def foldRight03(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
+def foldRight03(): Bool = List.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
 
 @test
-def foldRight04(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
+def foldRight04(): Bool = List.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
 
 @test
-def foldRight05(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, Nil) == 100
+def foldRight05(): Bool = List.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, Nil) == 100
 
 @test
-def foldRight06(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: Nil) == 198
+def foldRight06(): Bool = List.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, 1 :: Nil) == 198
 
 @test
-def foldRight07(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
+def foldRight07(): Bool = List.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
 
 @test
-def foldRight08(): Bool = List.foldRight((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
+def foldRight08(): Bool = List.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
+
+/////////////////////////////////////////////////////////////////////////////
+// foldRightWithCont                                                       //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldRightWithCont01(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, Nil) == 100
+
+@test
+def foldRightWithCont02(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: Nil) == 198
+
+@test
+def foldRightWithCont03(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
+
+@test
+def foldRightWithCont04(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
+
+@test
+def foldRightWithCont05(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, Nil) == 100
+
+@test
+def foldRightWithCont06(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: Nil) == 198
+
+@test
+def foldRightWithCont07(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: 2 :: Nil) == 194
+
+@test
+def foldRightWithCont08(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
@@ -1574,6 +1601,21 @@ def zipWith05(): Bool = List.zipWith((a, b) -> if (b) a+1 else a, 1 :: Nil, fals
 def zipWith06(): Bool = List.zipWith((a, b) -> if (b) a+1 else a, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil,
                       false :: true :: true :: false :: false :: true :: true :: true ::Nil) ==
                       1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// zipWithIndex                                                            //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def zipWithIndex01(): Bool = List.zipWithIndex(Nil : List[Char]) == Nil
+
+@test
+def zipWithIndex02(): Bool = List.zipWithIndex(1 :: Nil) == (1, 0) :: Nil
+
+@test
+def zipWithIndex03(): Bool = List.zipWithIndex("a" :: "b" :: Nil) == ("a", 0) :: ("b", 1) :: Nil
+
+@test
+def zipWithIndex04(): Bool = List.zipWithIndex(List.zipWithIndex(true :: false :: Nil)) == ((true, 0), 0) :: ((false, 1), 1) :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // unzip                                                                   //

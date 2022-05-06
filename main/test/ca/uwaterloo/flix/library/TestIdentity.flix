@@ -71,7 +71,7 @@ namespace TestIdentity {
 
     @test
     def foldRight01(): Bool =
-        Foldable.foldRight((x, k) -> k() + x, 100, Identity(1)) == 101
+        Foldable.foldRight((x, acc) -> acc + x, 100, Identity(1)) == 101
 
     /////////////////////////////////////////////////////////////////////////////
     // Traversable                                                             //

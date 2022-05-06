@@ -447,10 +447,8 @@ object SemanticTokensProvider {
         case (acc, c) => acc ++ visitConstraint(c)
       }
 
-    case Expression.FixpointLambda(preds, exp, _, _, _, _) =>
-      preds.foldLeft(visitExp(exp)) {
-        case (acc, pred) => acc ++ Iterator(SemanticToken(SemanticTokenType.EnumMember, Nil, pred.loc))
-      }
+    case Expression.FixpointLambda(pparams, exp, _, _, _, _) =>
+      visitPredicateParams(pparams) ++ visitExp(exp)
 
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
@@ -647,6 +645,23 @@ object SemanticTokensProvider {
     case FormalParam(sym, _, tpe, _) =>
       val o = getSemanticTokenType(sym, tpe)
       val t = SemanticToken(o, Nil, sym.loc)
+      Iterator(t) ++ visitType(tpe)
+  }
+
+  /**
+    * Returns all semantic tokens in the given predicate parameters `pparams0`.
+    */
+  private def visitPredicateParams(pparams0: List[PredicateParam]): Iterator[SemanticToken] =
+    pparams0.foldLeft(Iterator.empty[SemanticToken]) {
+      case (acc, fparam0) => acc ++ visitPredicateParam(fparam0)
+    }
+
+  /**
+    * Returns all semantic tokens in the given predicate parameter `pparam0`.
+    */
+  private def visitPredicateParam(pparam0: PredicateParam): Iterator[SemanticToken] = pparam0 match {
+    case PredicateParam(pred, tpe, _) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, pred.loc)
       Iterator(t) ++ visitType(tpe)
   }
 

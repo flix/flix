@@ -16,13 +16,10 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.Index.traverse
-import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, ChoiceRule, Constraint, Def, Enum, Expression, FormalParam, Impl, Instance, MatchRule, Pattern, Predicate, Root, SelectChannelRule, Sig, Spec, TypeParam}
+import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
-
-import scala.annotation.tailrec
 
 object Indexer {
 
@@ -328,10 +325,9 @@ object Indexer {
 
     case Expression.FixpointConstraintSet(cs, _, _, _) => traverse(cs)(visitConstraint)
 
-    case Expression.FixpointLambda(preds, exp, _, tpe, _, _) =>
-      val i0 = traverse(preds)(pred => Index.occurrenceOf(pred, getPredicateType(pred, tpe)))
-      val i1 = traverse(preds)(pred => Index.defOf(pred))
-      i0 ++ i1 ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
+    case Expression.FixpointLambda(pparams, exp, _, _, _, _) =>
+      val i0 = traverse(pparams)(visitPredicateParam)
+      i0 ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.FixpointMerge(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
@@ -420,27 +416,6 @@ object Indexer {
   }
 
   /**
-    * Returns the type of the given predicate `pred` inside the given type `tpe`.
-    */
-  private def getPredicateType(pred: Name.Pred, tpe: Type): Type = eraseAliases(tpe) match {
-    case Type.Apply(Type.Cst(TypeConstructor.Schema, _), row, loc) => getPredicateTypeFromRow(pred, row)
-    case _ => throw InternalCompilerException(s"Unexpected non-schema type: '$tpe'.")
-  }
-
-  /**
-    * Returns the type of the given predicate `pred` inside the given row type `tpe`.
-    */
-  @tailrec
-  private def getPredicateTypeFromRow(pred: Name.Pred, row: Type): Type = row match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(currentPred), _), predType, _), restRow, _) =>
-      if (pred == currentPred)
-        predType
-      else
-        getPredicateTypeFromRow(pred, restRow)
-    case _ => throw InternalCompilerException(s"Unexpected non-row type: '$row'.")
-  }
-
-  /**
     * Returns a reverse index for the given type parameter `tparam0`.
     */
   private def visitTypeParam(tparam0: TypeParam): Index = tparam0 match {
@@ -453,6 +428,14 @@ object Indexer {
   private def visitFormalParam(fparam0: FormalParam): Index = fparam0 match {
     case FormalParam(_, _, tpe, _) =>
       Index.occurrenceOf(fparam0) ++ visitType(tpe)
+  }
+
+  /**
+    * Returns a reverse index for the given predicate parameter `pparam0`.
+    */
+  private def visitPredicateParam(pparam0: PredicateParam): Index = pparam0 match {
+    case PredicateParam(pred, tpe, _) =>
+      Index.occurrenceOf(pred, tpe) ++ Index.defOf(pred) ++ visitType(tpe)
   }
 
   /**

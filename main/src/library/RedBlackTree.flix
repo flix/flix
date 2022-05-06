@@ -62,7 +62,8 @@ namespace RedBlackTree {
 
     instance Foldable[RedBlackTree[k]] {
         pub def foldLeft(f: (b, v) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldLeft((acc, _, v) -> f(acc, v), s, t)
-        pub def foldRight(f: (v, Unit -> b & ef) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRight((_, v, acc) -> f(v, acc), s, t)
+        pub def foldRight(f: (v, b) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRight((_, v, acc) -> f(v, acc), s, t)
+        pub def foldRightWithCont(f: (v, Unit -> b & ef) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = foldRightWithCont((_, v, acc) -> f(v, acc), s, t)
     }
 
     instance Traversable[RedBlackTree[k]] {
@@ -124,7 +125,7 @@ namespace RedBlackTree {
     /// Returns `true` if and only if `t` is the empty tree.
     ///
     @Time(1) @Space(1)
-    pub def isEmpty(tree: RedBlackTree[k, v]): Bool = match tree {
+    pub def isEmpty(t: RedBlackTree[k, v]): Bool = match t {
         case Leaf => true
         case _    => false
     }
@@ -289,14 +290,23 @@ namespace RedBlackTree {
         case _                   => s
     }
 
+    /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
+    ///
+    pub def foldRight(f: (k, v, b) -> b & ef, s: b, t: RedBlackTree[k, v]): b & ef = match t {
+        case Node(_, a, k, v, b) => foldRight(f, f(k, v, foldRight(f, s, b)), a)
+        case _ => s
+    }
+
     ///
     /// Applies `f` to a start value `z` and all key-value pairs in `t` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
-    /// A `foldRight` allows early termination by not calling the continuation.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRight(f: (k, v, Unit -> b & ef) -> b & ef, z: b, t: RedBlackTree[k, v]): b & ef = match t {
-        case Node(_, a, k, v, b) => foldRight(f, f(k, v, _ -> foldRight(f, z, b)), a)
+    pub def foldRightWithCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, t: RedBlackTree[k, v]): b & ef = match t {
+        case Node(_, a, k, v, b) => foldRightWithCont(f, f(k, v, _ -> foldRightWithCont(f, z, b)), a)
         case _ => z
     }
 
@@ -307,11 +317,11 @@ namespace RedBlackTree {
     ///
     /// Returns `None` if `t` is the empty tree.
     ///
-    pub def reduceLeft(f: (k, v, k, v) -> (k, v) & ef, tree: RedBlackTree[k, v]): Option[(k, v)] & ef =
+    pub def reduceLeft(f: (k, v, k, v) -> (k, v) & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
         foldLeft((x, k1, v1) -> match x {
             case Some((k2, v2)) => Some(f(k2, v2, k1, v1))
             case None           => Some(k1, v1)
-        }, None, tree)
+        }, None, t)
 
     ///
     /// Applies `f` to all key-value pairs in `t` going from right to left until a single pair `(k, v)` is obtained.
@@ -320,11 +330,11 @@ namespace RedBlackTree {
     ///
     /// Returns `None` if `t` is the empty tree.
     ///
-    pub def reduceRight(f: (k, v, k, v) -> (k, v) & ef, tree: RedBlackTree[k, v]): Option[(k, v)] & ef =
-        foldRight((k1, v1, c) -> match c() {
+    pub def reduceRight(f: (k, v, k, v) -> (k, v) & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
+        foldRight((k1, v1, acc) -> match acc {
             case Some((k2, v2)) => Some(f(k1, v1, k2, v2))
             case None           => Some(k1, v1)
-        }, None, tree)
+        }, None, t)
 
     ///
     /// Returns `true` if and only if at least one key-value pair in `t` satisfies the predicate `f`.
@@ -865,7 +875,7 @@ namespace RedBlackTree {
     /// Returns the tree `t` as a list. Elements are ordered from smallest (left) to largest (right).
     ///
     pub def toList(t: RedBlackTree[k, v]): List[(k, v)] =
-        RedBlackTree.foldRight((k, v, c) -> (k, v) :: c(), Nil, t)
+        RedBlackTree.foldRight((k, v, acc) -> (k, v) :: acc, Nil, t)
 
     ///
     /// Build a node applicatively.

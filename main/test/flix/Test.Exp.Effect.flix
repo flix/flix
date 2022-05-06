@@ -100,18 +100,56 @@ namespace Test/Exp/Effect {
         }
     }
 
+    pub def singleEffect(): Bool \ Flip = ???
+
+    pub def complementEffect(): Bool \ ~Flip = ???
+
+    pub def unionEffect(): Bool \ Flip + Fail = ???
+
+    pub def intersectionEffect(): Bool \ Flip & Fail = ???
+
+    pub def differenceEffect(): Bool \ Flip - Fail = ???
+
+    pub def singlePolyEffect(): Bool \ ef1 = ??? as & ef1
+
+    pub def complementPolyEffect(): Bool \ ~ef1 = ???
+
+    pub def unionPolyEffect(): Bool \ ef1 + ef2 = ???
+
+    pub def intersectionPolyEffect(): Bool \ ef1 & ef2 = ???
+
+    pub def differencePolyEffect(): Bool \ ef1 - ef2 = ???
+
+    pub def effectSet01(): Bool \ { Fail } = ???
+
+    pub def effectSet02(): Bool \ { Flip, Fail } = ???
+
+    pub def effectSet03(): Bool \ { Flip, Fail, Console } = ???
+
+    pub def effectSet04(): Bool \ {} = ???
+
+    pub def polyEffectSet01[ef: Eff](): Bool \ ef = ??? as & ef
+
+    pub def polyEffectSet02[ef: Eff](): Bool \ { ef, Fail } = ??? as & ef
+
+    pub def arrowWithEffect01(f: a -> b \ {}): Bool = ???
+
+    pub def arrowWithEffect02(f: a -> b \ {ef - Fail}): Bool = ???
+
+    pub def arrowWithEffect03(f: a -> b \ {Console, ef - Fail}): Bool = ???
+
     eff Empty
 
     eff Fail {
-        def fail(x: String): Unit
+        pub def fail(x: String): Unit
     }
 
     eff Console {
-        def readln(): String
-        def println(x: String): Unit
+        pub def readln(): String
+        pub def println(x: String): Unit
     }
 
     eff Flip {
-        def flip(): Bool
+        pub def flip(): Bool
     }
 }

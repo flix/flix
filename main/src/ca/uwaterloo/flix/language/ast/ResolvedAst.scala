@@ -182,7 +182,7 @@ object ResolvedAst {
 
     case class FixpointConstraintSet(cs: List[ResolvedAst.Constraint], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class FixpointLambda(preds: List[Name.Pred], exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class FixpointLambda(pparams: List[ResolvedAst.PredicateParam], exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class FixpointMerge(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -321,6 +321,16 @@ object ResolvedAst {
   }
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
+
+  sealed trait PredicateParam
+
+  object PredicateParam {
+
+    case class PredicateParamUntyped(pred: Name.Pred, loc: SourceLocation) extends PredicateParam
+
+    case class PredicateParamWithType(pred: Name.Pred, den: Ast.Denotation, tpes: List[Type], loc: SourceLocation) extends PredicateParam
+
+  }
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ResolvedAst.Expression)
 

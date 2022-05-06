@@ -723,4 +723,53 @@ object WeederError {
     })
 
   }
+
+  /**
+    * An error raised to indicate that type parameters are present on an effect or operation.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEffectTypeParams(loc: SourceLocation) extends WeederError {
+    def summary: String = "Unexpected effect type parameters."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected effect type parameters.
+         |
+         |${code(loc, "unexpected effect type parameters")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Type parameters are not allowed on effects."
+    })
+  }
+
+  /**
+    * An error raised to indicate a use of resume outside an effect handler.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalResume(loc: SourceLocation) extends WeederError {
+    def summary: String = "Unexpected use of 'resume'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected use of 'resume'.
+         |
+         |${code(loc, "unexpected use of 'resume'")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} The 'resume' expression may only be used in effect handlers."
+    })
+
+  }
 }
