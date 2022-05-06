@@ -2203,7 +2203,7 @@ object Resolver {
     *
     * An array type is mapped to the corresponding array type.
     */
-  private def getJVMType(tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], ResolutionError] = Type.eraseAliases(tpe).typeConstructor match {
+  private def getJVMType(tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], ResolutionError] = Type.eraseTopAliases(tpe).typeConstructor match {
     case None =>
       ResolutionError.IllegalType(tpe, loc).toFailure
 
@@ -2241,7 +2241,7 @@ object Resolver {
       case TypeConstructor.Tuple(_) => Class.forName("java.lang.Object").toSuccess
 
       case TypeConstructor.ScopedArray =>
-        Type.eraseAliases(tpe).typeArguments match {
+        Type.eraseTopAliases(tpe).typeArguments match {
           case elmTyp :: region :: Nil =>
             mapN(getJVMType(elmTyp, loc)) {
               case elmClass =>
