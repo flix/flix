@@ -797,12 +797,12 @@ object WeederError {
     * @param loc the location where the error occurred.
     */
   case class IllegalOperationEffect(loc: SourceLocation) extends WeederError {
-    def summary: String = "Unexpected effect. Effects are not permitted on effect operations."
+    def summary: String = "Unexpected effect. Effect operations may not themselves have effects."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unexpected effect. Effects are not permitted on effect operations.
+         |>> Unexpected effect. Effect operations may not themselves have effects.
          |
          |${code(loc, "unexpected effect")}
          |
