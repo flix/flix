@@ -1257,11 +1257,11 @@ namespace Array {
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def filterMap(f: a -> Option[b] & ef, a: ScopedArray[a, r]): ScopedArray[b, r] \ { ef, Read(r), Write(r) } =
-        let f = (x, xs) -> match f(x) {
+        let g = (x, xs) -> match f(x) {
             case None => xs
             case Some(b) => b :: xs
         };
-        let l = foldRight(f, Nil, a);
+        let l = foldRight(g, Nil, a);
         List.toArray(l, Scoped.regionOf(a))
 
     ///
