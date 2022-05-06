@@ -1001,4 +1001,22 @@ namespace RedBlackTree {
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     } as & ef
 
+    ///
+    /// Returns `t` where each key `k` is mapped to `(k, i)`.
+    /// Where `i` is the index of `k`.
+    ///
+    pub def zipWithIndex(t: RedBlackTree[k, v]): RedBlackTree[(k, Int32), v] =
+        def loop(tt, i) = match tt {
+            case Leaf                   => (Leaf, i)
+            case Node(c, a, k, v, b)    => {
+                let (left,  il) = loop(a, i);
+                let (right, ir) = loop(b, il + 1);
+
+                (Node(c, left, (k, il), v, right), ir)
+            }
+            case _ => bug!("Error")
+        };
+        let (tree, _) = loop(t, 0);
+        tree
+
 }
