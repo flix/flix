@@ -64,7 +64,7 @@ object CompleteProvider {
       CompletionItem("class", "class ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("def", "def ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("deref", "deref ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
-      CompletionItem("discard", "discard", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("discard", "discard ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("do", "do ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("eff", "eff ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
       CompletionItem("else", "else ", None, Some("keyword"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
