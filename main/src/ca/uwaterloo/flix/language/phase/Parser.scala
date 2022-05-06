@@ -143,19 +143,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Enum: Rule1[ParsedAst.Declaration.Enum] = {
-      def Case: Rule1[ParsedAst.Case] = {
-        def CaseWithUnit: Rule1[ParsedAst.Case] = namedRule("Case") {
-          SP ~ Names.Tag ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) =>
-            ParsedAst.Case(sp1, ident, ParsedAst.Type.Unit(sp1, sp2), sp2))
-        }
-
-        def CaseWithType: Rule1[ParsedAst.Case] = namedRule("Case") {
-          SP ~ Names.Tag ~ Types.Tuple ~ SP ~> ParsedAst.Case
-        }
-
-        rule {
-          CaseWithType | CaseWithUnit
-        }
+      def Case: Rule1[ParsedAst.Case] = rule {
+        SP ~ Names.Tag ~ optional(Types.Tuple) ~ SP ~> ParsedAst.Case
       }
 
       def NonEmptyCaseList: Rule1[Seq[ParsedAst.Case]] = rule {
