@@ -284,7 +284,11 @@ object Inliner {
 
     case OccurrenceAst.Expression.Is(sym, tag, exp, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Is(sym, tag, e, purity, loc)
+      val enum0 = root.enums(sym)
+      if (enum0.cases.size == 1 && e.purity == Pure)
+          LiftedAst.Expression.True(loc)
+      else
+        LiftedAst.Expression.Is(sym, tag, e, purity, loc)
 
     case OccurrenceAst.Expression.Tag(sym, tag, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
