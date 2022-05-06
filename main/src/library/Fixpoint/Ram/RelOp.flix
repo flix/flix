@@ -17,8 +17,8 @@
 namespace Fixpoint/Ram {
     pub enum RelOp[v] {
         case Search(RowVar, RamSym[v], RelOp[v])
-        case Query(RowVar, RamSym[v], Array[(Int32, RamTerm[v])], RelOp[v])
-        case Project(Array[RamTerm[v]], RamSym[v])
+        case Query(RowVar, RamSym[v], ScopedArray[(Int32, RamTerm[v]), Impure], RelOp[v])
+        case Project(ScopedArray[RamTerm[v], Impure], RamSym[v])
         case If(List[BoolExp[v]], RelOp[v])
     }
 

@@ -43,7 +43,7 @@ namespace Fixpoint {
                     let ruleStratum = Map.getWithDefault(p, 0, strat);
                     Map.insertWith(List.append, ruleStratum, rule :: Nil)
             }, Map#{}, rules) |>
-            Map.foreach(_ -> List.toArray >> compileStratum(stmts));
+            Map.foreach((_, v) -> List.toArray(v, static) |> compileStratum(stmts));
             RamStmt.Seq(MutList.toArray(stmts))
         case _ => bug!("Datalog normalization bug")
     }

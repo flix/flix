@@ -80,7 +80,7 @@ namespace StringBuilder {
     ///
     /// Append the array of strings `a` separating each pair of string with `sep` to the StringBuilder `sb`.
     ///
-    pub def intercalate!(sep: String, a: ScopedArray[String, r], sb: StringBuilder): Unit \ { Read(r), Write(r) }=
+    pub def intercalate!(sep: String, a: ScopedArray[String, r], sb: StringBuilder): Unit & Impure = // Impure due to StringBuilder
         let append1! = (s,i) ->
             if (i > 0) {
                 appendString!(sep, sb);
