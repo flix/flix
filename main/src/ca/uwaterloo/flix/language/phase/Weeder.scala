@@ -463,7 +463,7 @@ object Weeder {
 
     case ParsedAst.Expression.Discard(sp1, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
-      visitExp(exp) map {
+      visitExp(exp, senv) map {
         case e => WeededAst.Expression.Discard(e, loc)
       }
 

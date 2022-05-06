@@ -63,8 +63,6 @@ object KindedAst {
 
     case class Hole(sym: Symbol.HoleSym, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Discard(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
-
     case class Unit(loc: SourceLocation) extends KindedAst.Expression
 
     case class Null(loc: SourceLocation) extends KindedAst.Expression
@@ -104,6 +102,8 @@ object KindedAst {
     case class IfThenElse(exp1: KindedAst.Expression, exp2: KindedAst.Expression, exp3: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Stm(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+
+    case class Discard(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Let(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
