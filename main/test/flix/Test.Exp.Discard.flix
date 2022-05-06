@@ -16,7 +16,9 @@
 
 namespace Test/Exp/Discard {
 
+
     // Simple Type Tests
+
 
     @test
     def testBoolDiscard01(): Unit & Impure =
@@ -104,6 +106,19 @@ namespace Test/Exp/Discard {
         let arr = [That("hello")];
         discard arr[0]
 
+
     // Longer tests
+
+
+    @test
+    def testBuilderDiscard01(): Bool & Impure =
+        let counter = ref 0;
+        def increaseBy(i, c) = {
+            c := deref c + i;
+            c
+        };
+        discard counter |> increaseBy(2) |> increaseBy(5);
+        deref counter == 7
+
 
 }
