@@ -230,7 +230,7 @@ object WeederError {
     * @param loc  the location of the formal parameter.
     */
   case class MissingFormalParamAscription(name: String, loc: SourceLocation) extends WeederError {
-    def summary: String = "The formal parameter must have a declared type."
+    def summary: String = "Missing type ascription. Type ascriptions are required for parameters here."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -242,10 +242,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Explicitly declare the type of the formal parameter."
-    })
+    def explain(formatter: Formatter): Option[String] = None
 
   }
 
