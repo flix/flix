@@ -118,7 +118,7 @@ namespace Array {
     ///
     /// Returns the array `a` as a `DelayList`.
     ///
-    pub def toDelayList(a: ScopedArray[a, r1]): DelayList[a] \ Read(r1) = region r2 {
+    pub def toDelayList(a: ScopedArray[a, r]): DelayList[a] \ Read(r) = region r2 {
         let cp = Array.copyOfRange(0, a.length, a, r2);
         def loop(i, k) = {
             if (i >= cp.length) {
@@ -1464,7 +1464,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, a: ScopedArray[a, r]): Unit \ { ef, Read(r), Write(r) } =
+    pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, a: ScopedArray[a, r]): Unit \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)
