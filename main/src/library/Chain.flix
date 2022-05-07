@@ -754,7 +754,7 @@ namespace Chain {
     ///
     /// Returns the chain `c` as an array.
     ///
-    pub def toArray(c: Chain[a], r: Region[r]) : ScopedArray[a, r] \ Write(r) = match head(c) {
+    pub def toArray(c: Chain[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = match head(c) {
         case None => [] @ r
         case Some(x) =>
             let arr = [x; length(c)] @ r;
