@@ -976,6 +976,18 @@ namespace List {
         loop(l1, l2, identity)
 
     ///
+    /// Returns a list where each element `e` is mapped to `(e, i)` where `i`
+    /// is the index of `e`.
+    ///
+    @Time(length(l)) @Space(length(l))
+    pub def zipWithIndex(l: List[a]): List[(a, Int32)] =
+        def loop(ll, i, acc) = match ll {
+            case (x :: xs) => loop(xs, i+1, (x, i) :: acc)
+            case Nil       => acc
+        };
+        reverse(loop(l, 0, Nil))
+
+    ///
     /// Returns a pair of lists, the first containing all first components in `l`
     /// and the second containing all second components in `l`.
     ///

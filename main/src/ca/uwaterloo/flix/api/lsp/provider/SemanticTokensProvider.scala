@@ -323,6 +323,8 @@ object SemanticTokensProvider {
     case Expression.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
+    case Expression.Discard(exp, _, _) => visitExp(exp)
+
     case Expression.Match(matchExp, rules, _, _, _) =>
       val m = visitExp(matchExp)
       rules.foldLeft(m) {
