@@ -1265,9 +1265,9 @@ namespace Array {
         List.toArray(l, Scoped.regionOf(a))
 
     ///
-    /// Returns the first non-None result of applying the partial function `f` to each element of `xs`.
+    /// Returns the first non-None result of applying the partial function `f` to each element of `a`.
     ///
-    /// Returns `None` if every element of `xs` is `None`.
+    /// Returns `None` if every element of `a` is `None`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
     pub def findMap(f: a -> Option[b] & ef, a: Array[a]): Option[b] & Impure =
@@ -1276,8 +1276,7 @@ namespace Array {
             if (i >= len)
                 None
             else
-                let x = f(a[i]);
-                match x {
+                match f(a[i]) {
                     case Some(v) => Some(v)
                     case None    => loop(i + 1)
                 }
