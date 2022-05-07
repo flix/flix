@@ -204,6 +204,9 @@ object Indexer {
     case Expression.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
+    case Expression.Discard(exp, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
+
     case Expression.Match(exp, rules, _, _, _) =>
       val i0 = visitExp(exp) ++ Index.occurrenceOf(exp0)
       val i1 = traverse(rules) {

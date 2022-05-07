@@ -136,7 +136,12 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Default", "main/test/flix/Test.Exp.Default.flix"),
 
   //
-  // Effects
+  // Discard.
+  //
+  new FlixTest("Test.Exp.Discard", "main/test/flix/Test.Exp.Discard.flix"),
+
+  //
+  // Effects.
   //
   new FlixTest("Test.Exp.Effect", "main/test/flix/Test.Exp.Effect.flix"),
 

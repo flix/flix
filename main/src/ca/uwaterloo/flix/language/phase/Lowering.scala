@@ -350,6 +350,10 @@ object Lowering {
       val t = visitType(tpe)
       Expression.Stm(e1, e2, t, eff, loc)
 
+    case Expression.Discard(exp, eff, loc) =>
+      val e = visitExp(exp)
+      Expression.Discard(e, eff, loc)
+
     case Expression.Match(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitMatchRule)
@@ -1374,6 +1378,10 @@ object Lowering {
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
       Expression.Stm(e1, e2, tpe, eff, loc)
+
+    case Expression.Discard(exp, eff, loc) =>
+      val e = substExp(exp, subst)
+      Expression.Discard(e, eff, loc)
 
     case Expression.Match(_, _, _, _, _) => ??? // TODO
 
