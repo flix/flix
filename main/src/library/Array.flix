@@ -1140,7 +1140,7 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a) * length(a)) @Space(space(f) * length(a))
-    pub def groupBy(f: (a, a) -> Bool, a: ScopedArray[a, r]): ScopedArray[ScopedArray[a, r], r] \ Write(r) =
+    pub def groupBy(f: (a, a) -> Bool, a: ScopedArray[a, r]): ScopedArray[ScopedArray[a, r], r] \ { Read(r), Write(r) } =
         let xs = toList(a);
         let r = Scoped.regionOf(a);
         List.toArray(groupByHelper(f, xs, Nil, r), r)
