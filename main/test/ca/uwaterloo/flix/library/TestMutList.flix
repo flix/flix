@@ -1665,13 +1665,13 @@ namespace TestMutList {
 
     @test
     def toArray01(): Bool = region r {
-        Array.sameElements(MutList.toArray(Array.toMutList([1, 2, 3])), [1, 2, 3])
+        Array.sameElements(MutList.toArray(Array.toMutList([1, 2, 3]), static), [1, 2, 3])
     }
 
     @test
     def toArray02(): Bool = region r {
         let v = Array.toMutList([1, 2, 3]);
-        let a = MutList.toArray(v);
+        let a = MutList.toArray(v, r);
         a[1] = 42;
         MutList.get(1, v) == 2
     }
@@ -1681,7 +1681,7 @@ namespace TestMutList {
         let v = Array.toMutList([1, 2, 3]);
         MutList.pop!(v);
         MutList.pop!(v);
-        Array.length(MutList.toArray(v)) == 1
+        Array.length(MutList.toArray(v, r)) == 1
     }
 
     /////////////////////////////////////////////////////////////////////////////

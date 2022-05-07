@@ -1372,7 +1372,7 @@ namespace Array {
             }
         };
         loop(0);
-        MutList.toArray(l)
+        MutList.toArray(l, static)
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.

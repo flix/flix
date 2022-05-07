@@ -201,7 +201,7 @@ pub class Foldable[t : Type -> Type] {
     pub def toArray(t: t[a]): Array[a] & Impure =
         let v = new MutList(static);
         Foldable.foreach(a -> MutList.push!(a, v), t);
-        MutList.toArray(v)
+        MutList.toArray(v, static)
 
     ///
     /// Returns an iterator over `t`.

@@ -4688,7 +4688,7 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def toMutList05(): Bool & Impure =
         let v = Array.toMutList([1, 2, 3]);
         MutList.push!(4, v);
-        Array.sameElements(MutList.toArray(v), [1, 2, 3, 4])
+        Array.sameElements(MutList.toArray(v, static), [1, 2, 3, 4])
 
     @test
     def toMutList06(): Bool & Impure =
@@ -4698,6 +4698,6 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
         let _ = MutList.pop!(v);
         let _ = MutList.pop!(v);
         let _ = MutList.pop!(v);
-        Array.sameElements(MutList.toArray(v), [])
+        Array.sameElements(MutList.toArray(v, static), [])
 
 }
