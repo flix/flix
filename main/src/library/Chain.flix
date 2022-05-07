@@ -761,7 +761,7 @@ namespace Chain {
             let f = (i, b) -> { arr[i] = b; i + 1 };
             foldLeft(f, 0, c);
             arr
-        }
+    }
 
     ///
     /// Returns `true` if and only if `c1` and `c2` and equal.
