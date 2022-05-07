@@ -1203,7 +1203,7 @@ namespace List {
             let f = (i, b) -> { a[i] = b; i + 1 };
             foldLeft(f, 0, l);
             a
-        }
+    }
 
     ///
     /// Returns the list `l` as `Option[Nel[a]]`.
