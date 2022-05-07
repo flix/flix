@@ -155,7 +155,7 @@ object Weeder {
       val pubVal = requirePublic(mods, ident)
       val identVal = visitName(ident)
       val tparamsVal = visitKindedTypeParams(tparams0)
-      val formalsVal = visitFormalParams(fparams0, typeRequired = true)
+      val formalsVal = visitFormalParams(fparams0, Presence.Required)
       val pur = visitEffectOrPurity(effOrPur, ident.loc)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       val expVal = Validation.traverse(exp0)(visitExp(_, SyntacticEnv.Top))
@@ -216,7 +216,7 @@ object Weeder {
       val identVal = visitName(ident)
       val expVal = visitExp(exp0, SyntacticEnv.Top)
       val tparamsVal = visitKindedTypeParams(tparams0)
-      val formalsVal = visitFormalParams(fparams0, typeRequired = true)
+      val formalsVal = visitFormalParams(fparams0, Presence.Required)
       val pur = visitEffectOrPurity(effOrPur, ident.loc)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
 
@@ -240,7 +240,7 @@ object Weeder {
       val identVal = visitName(ident)
       val expVal = visitExp(exp0, SyntacticEnv.Top)
       val tparamsVal = visitKindedTypeParams(tparams0)
-      val formalsVal = visitFormalParams(fparams0, typeRequired = true)
+      val formalsVal = visitFormalParams(fparams0, Presence.Required)
       val tconstrsVal = Validation.traverse(tconstrs0)(visitTypeConstraint)
 
       mapN(annVal, modVal, identVal, tparamsVal, formalsVal, expVal, tconstrsVal) {
@@ -272,21 +272,21 @@ object Weeder {
     * Performs weeding on the given effect operation.
     */
   private def visitOp(d0: ParsedAst.Declaration.Op)(implicit flix: Flix): Validation[WeededAst.Declaration.Op, WeederError] = d0 match {
-    case ParsedAst.Declaration.Op(doc0, ann0, mod0, sp1, ident, tparams0, fparamsOpt0, tpe0, pur0, tconstrs0, sp2) =>
+    case ParsedAst.Declaration.Op(doc0, ann0, mod0, sp1, ident, tparams0, fparamsOpt0, tpe0, effOrPur0, tconstrs0, sp2) =>
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val pubVal = requirePublic(mod0, ident)
       val tparamsVal = requireNoTypeParams(tparams0)
-      val fparamsVal = visitFormalParams(fparamsOpt0, typeRequired = true)
-      val pur = visitEffectOrPurity(pur0, ident.loc)
+      val fparamsVal = visitFormalParams(fparamsOpt0, Presence.Required)
+      val effOrPurVal = requireNoEffect(effOrPur0, ident.loc)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
-      mapN(annVal, modVal, pubVal, tparamsVal, fparamsVal, tconstrsVal) {
-        case (ann, mod, _, _, fparams, tconstrs) =>
+      mapN(annVal, modVal, pubVal, tparamsVal, fparamsVal, effOrPurVal, tconstrsVal) {
+        case (ann, mod, _, _, fparams, _, tconstrs) =>
           val ts = fparams.map(_.tpe.get)
           val retTpe = visitType(tpe0)
-          val tpe = WeededAst.Type.Arrow(ts, pur, retTpe, ident.loc)
-          WeededAst.Declaration.Op(doc, ann, mod, ident, fparams, tpe, retTpe, pur, tconstrs, mkSL(sp1, sp2));
+          val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(ident.loc), retTpe, ident.loc)
+          WeededAst.Declaration.Op(doc, ann, mod, ident, fparams, tpe, retTpe, tconstrs, mkSL(sp1, sp2));
       }
   }
 
@@ -642,7 +642,7 @@ object Weeder {
       /*
        * Check for `DuplicateFormal`.
        */
-      val fparamsVal = visitFormalParams(fparams0, typeRequired = false)
+      val fparamsVal = visitFormalParams(fparams0, Presence.Optional)
       val expVal = visitExp(exp, senv)
       mapN(fparamsVal, expVal) {
         case (fparams, e) => mkCurried(fparams, e, loc)
@@ -765,7 +765,7 @@ object Weeder {
       val mod = Ast.Modifiers.Empty
       val loc = mkSL(sp1, sp2)
 
-      mapN(visitFormalParams(fparams, typeRequired = false), visitExp(exp1, senv), visitExp(exp2, senv)) {
+      mapN(visitFormalParams(fparams, Presence.Optional), visitExp(exp1, senv), visitExp(exp2, senv)) {
         case (fp, e1, e2) =>
           val lambda = mkCurried(fp, e1, loc)
           WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
@@ -1395,7 +1395,7 @@ object Weeder {
       val expVal = visitExp(exp0, senv)
       val rulesVal = traverse(rules0.getOrElse(Seq.empty)) {
         case ParsedAst.HandlerRule(op, fparams0, body0) =>
-          val fparamsVal = visitFormalParams(fparams0, typeRequired = false)
+          val fparamsVal = visitFormalParams(fparams0, Presence.Forbidden)
           val bodyVal = visitExp(body0, SyntacticEnv.Handler)
           mapN(fparamsVal, bodyVal) {
             case (fparams, body) => WeededAst.HandlerRule(op, fparams, body)
@@ -2213,6 +2213,14 @@ object Weeder {
   }
 
   /**
+    * Returns an error if an effect is present.
+    */
+  private def requireNoEffect(effOrPur: Option[ParsedAst.EffectOrPurity], loc: SourceLocation): Validation[Unit, WeederError] = effOrPur match {
+    case None => ().toSuccess
+    case Some(_) => WeederError.IllegalOperationEffect(loc).toFailure
+  }
+
+  /**
     * Weeds the given parsed type `tpe`.
     */
   private def visitType(tpe: ParsedAst.Type): WeededAst.Type = tpe match {
@@ -2413,9 +2421,9 @@ object Weeder {
   /**
     * Weeds the given list of formal parameter `fparams`.
     *
-    * Checks for [[IllegalFormalParameter]] and [[DuplicateFormalParam]].
+    * Checks for [[MissingFormalParamAscription]] and [[DuplicateFormalParam]].
     */
-  private def visitFormalParams(fparams: Seq[ParsedAst.FormalParam], typeRequired: Boolean): Validation[List[WeededAst.FormalParam], WeederError] = {
+  private def visitFormalParams(fparams: Seq[ParsedAst.FormalParam], typePresence: Presence): Validation[List[WeededAst.FormalParam], WeederError] = {
     //
     // Special Case: Check if no formal parameters are present. If so, introduce a unit parameter.
     //
@@ -2440,10 +2448,14 @@ object Weeder {
 
           flatMapN(visitModifiers(mods, legalModifiers = Set.empty)) {
             case mod =>
-              if (typeRequired && typeOpt.isEmpty)
-                IllegalFormalParameter(ident.name, mkSL(sp1, sp2)).toFailure
-              else
-                WeededAst.FormalParam(ident, mod, typeOpt.map(visitType), mkSL(sp1, sp2)).toSuccess
+              (typeOpt, typePresence) match {
+                // Case 1: Required but missing. Error.
+                case (None, Presence.Required) => MissingFormalParamAscription(ident.name, mkSL(sp1, sp2)).toFailure
+                // Case 2: Forbidden but present. Error.
+                case (Some(tpe), Presence.Forbidden) => IllegalFormalParamAscription(mkSL(sp1, sp2)).toFailure
+                // Case 3: No violation. Good to go.
+                case _ => WeededAst.FormalParam(ident, mod, typeOpt.map(visitType), mkSL(sp1, sp2)).toSuccess
+              }
           }
         case Some(otherParam) =>
           val name = ident.name
@@ -2901,10 +2913,45 @@ object Weeder {
     region.getOrElse(exp)
   }
 
+  /**
+    * The syntactic environment of an expression.
+    *
+    * Used to indicate which expressions are allowed at the given point in the syntax tree.
+    */
   private sealed trait SyntacticEnv
+
   private object SyntacticEnv {
+    /**
+      * Indicates a top-level expression, not inside a handler.
+      */
     case object Top extends SyntacticEnv
+
+    /**
+      * Indicates an expression inside a handler.
+      */
     case object Handler extends SyntacticEnv
+  }
+
+  /**
+    * Ternary enumeration of constraints on the presence of something.
+    */
+  private sealed trait Presence
+
+  private object Presence {
+    /**
+      * Indicates that the thing is required.
+      */
+    case object Required extends Presence
+
+    /**
+      * Indicates that the thing is optional.
+      */
+    case object Optional extends Presence
+
+    /**
+      * Indicates that the thing is forbidden.
+      */
+    case object Forbidden extends Presence
   }
 
 }
