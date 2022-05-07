@@ -1152,7 +1152,7 @@ namespace List {
     ///
     /// Returns `l` as a mutable list.
     ///
-    pub def toMutList(l: List[a], r: Region[r]): MutList[a, r] \ Write(r) =
+    pub def toMutList(l: List[a], r: Region[r]): MutList[a, r] \ { Read(r), Write(r) } =
         let v = new MutList(r);
         foreach(x -> MutList.push!(x, v), l);
         v
