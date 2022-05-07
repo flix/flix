@@ -351,7 +351,7 @@ object RedundancyError {
       s"""${line(kind, source.name)}
          |>> Redundant purity cast. The expression is already pure.
          |
-         |${code(loc, "redundant cast")}
+         |${code(loc, "redundant cast.")}
          |
          |""".stripMargin
     }
@@ -372,7 +372,7 @@ object RedundancyError {
       s"""${line(kind, source.name)}
          |>> Redundant effect cast. The expression already has the same effect.
          |
-         |${code(loc, "redundant cast")}
+         |${code(loc, "redundant cast.")}
          |
          |""".stripMargin
     }
@@ -408,4 +408,45 @@ object RedundancyError {
          |""".stripMargin
     })
   }
+
+  /**
+    * An error raised to indicate that the result of a pure expression is discarded.
+    *
+    * @param loc the location of the inner expression.
+    */
+  case class DiscardedPureValue(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "A pure expression cannot be discarded."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> A pure expression cannot be discarded.
+         |
+         |${code(loc, "pure expression.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate a redundant discard of a unit value.
+    *
+    * @param loc the location of the inner expression.
+    */
+  case class RedundantDiscard(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant discard of unit value."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Redundant discard of unit value.
+         |
+         |${code(loc, "discarded unit value.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
 }
