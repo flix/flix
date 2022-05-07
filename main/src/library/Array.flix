@@ -633,7 +633,7 @@ namespace Array {
     ///
     /// Helper function for `intercalate` and `flatten`.
     ///
-    def headArrays(arrs: ScopedArray[ScopedArray[a, r1], r2]): Option[a] \ Read(r1, r2) =
+    def headArrays(arrs: ScopedArray[ScopedArray[a, r1], r2]): Option[a] \ Read(r2) =
         let len = length(arrs);
         def loop(i) = {
             if (i >= len)
@@ -767,7 +767,7 @@ namespace Array {
     ///
     /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, arr: Array[a]): b & Impure =
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, arr: ScopedArray[a, r]): b \ { ef, Read(r) } =
         let len = length(arr);
         def loop(i, acc) = {
             if (i >= len)
