@@ -71,13 +71,12 @@ object ParsedAst {
       * @param ident      the name of the definition.
       * @param tparams    the type parameters.
       * @param fparamsOpt the formal parameters.
-      * @param tpe        the declared type.
-      * @param pur        the declared purity.
+      * @param tpeAndEffOrPur  the declared type and purity.
       * @param exp        the expression.
       * @param tconstrs   the type constraints.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, pur: Option[ParsedAst.EffectOrPurity], tconstrs: Seq[ParsedAst.TypeConstraint], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpeAndEffOrPur: Option[ParsedAst.TypeAndEffectOrPurity], tconstrs: Seq[ParsedAst.TypeConstraint], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Signature Declaration.
@@ -89,13 +88,12 @@ object ParsedAst {
       * @param ident      the name of the definition.
       * @param tparams    the type parameters.
       * @param fparamsOpt the formal parameters.
-      * @param tpe        the declared type.
-      * @param pur        the declared purity.
+      * @param tpeAndEffOrPur  the declared type and purity.
       * @param tconstrs   the type constraints.
       * @param exp        the optional expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, pur: Option[ParsedAst.EffectOrPurity], tconstrs: Seq[ParsedAst.TypeConstraint], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration.LawOrSig
+    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpeAndEffOrPur: Option[ParsedAst.TypeAndEffectOrPurity], tconstrs: Seq[ParsedAst.TypeConstraint], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration.LawOrSig
 
     /**
       * Law Declaration.
@@ -122,11 +120,11 @@ object ParsedAst {
       * @param ident      the name of the definition.
       * @param tparams    the type parameters.
       * @param fparamsOpt the formal parameters.
-      * @param tpe        the declared type.
+      * @param tpeAndEffOrPur  the declared type and purity.
       * @param tconstrs   the type constraints.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Op(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, pur: Option[ParsedAst.EffectOrPurity], tconstrs: Seq[ParsedAst.TypeConstraint], sp2: SourcePosition)
+    case class Op(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpeAndEffOrPur: Option[ParsedAst.TypeAndEffectOrPurity], tconstrs: Seq[ParsedAst.TypeConstraint], sp2: SourcePosition)
 
     /**
       * Enum Declaration.
@@ -2145,5 +2143,13 @@ object ParsedAst {
       */
     case class Purity(b: Type) extends EffectOrPurity
   }
+
+  /**
+    * Represents a type and effect or purity pair.
+    *
+    * @param tpe      the type.
+    * @param effOrPur the effect or purity.
+    */
+  case class TypeAndEffectOrPurity(tpe: ParsedAst.Type, effOrPur: Option[ParsedAst.EffectOrPurity])
 
 }

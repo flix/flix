@@ -742,4 +742,35 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.NonUnitOperationType](result)
   }
+
+  test("MissingReturnType.01") {
+    val input =
+      """
+        |def f() = 123
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MissingReturnType](result)
+  }
+
+  test("MissingReturnType.02") {
+    val input =
+      """
+        |class C[a] {
+        |    pub def f(x: a) = x
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MissingReturnType](result)
+  }
+
+  test("MissingReturnType.03") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(x: a)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MissingReturnType](result)
+  }
 }

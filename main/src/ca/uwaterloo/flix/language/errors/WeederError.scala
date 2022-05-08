@@ -829,4 +829,25 @@ object WeederError {
 
     def explain(formatter: Formatter): Option[String] = None
   }
+
+  /**
+    * An error raised to indicate a missing return type on a non-nested definition.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class MissingReturnType(loc: SourceLocation) extends WeederError {
+    def summary: String = "Missing return type. Return types are required for non-nested definitions."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Missing return type. Return types are required for non-nested definitions.
+         |
+         |${code(loc, "missing return type")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
 }

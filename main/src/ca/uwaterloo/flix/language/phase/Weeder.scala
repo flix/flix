@@ -147,7 +147,7 @@ object Weeder {
     * Performs weeding on the given sig declaration `s0`.
     */
   private def visitSig(s0: ParsedAst.Declaration.Sig)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Sig], WeederError] = s0 match {
-    case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOrPur, tconstrs0, exp0, sp2) =>
+    case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpeAndEffOrPur0, tconstrs0, exp0, sp2) =>
       val doc = visitDoc(doc0)
 
       val annVal = visitAnnotations(ann)
@@ -156,14 +156,13 @@ object Weeder {
       val identVal = visitName(ident)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, Presence.Required)
-      val (pur, eff) = visitEffectOrPurity(effOrPur, ident.loc)
+      val tpeAndPurVal = visitTypeAndEffectOrPurity(tpeAndEffOrPur0, ident.loc, allowEffOrPur = true, requireUnit = false)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       val expVal = Validation.traverse(exp0)(visitExp(_, SyntacticEnv.Top))
 
-      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, tconstrsVal, expVal) {
-        case (as, mod, _, _, tparams, fparams, tconstrs, exp) =>
+      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, tpeAndPurVal, tconstrsVal, expVal) {
+        case (as, mod, _, _, tparams, fparams, (retTpe, pur, eff), tconstrs, exp) =>
           val ts = fparams.map(_.tpe.get)
-          val retTpe = visitType(tpe0)
           val tpe = WeededAst.Type.Arrow(ts, pur, eff, retTpe, ident.loc)
           List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, retTpe, pur, eff, tconstrs, mkSL(sp1, sp2)))
       }
@@ -206,7 +205,7 @@ object Weeder {
     * Performs weeding on the given def declaration `d0`.
     */
   private def visitDef(d0: ParsedAst.Declaration.Def, legalModifiers: Set[Ast.Modifier], requiresPublic: Boolean)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = d0 match {
-    case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, effOrPur, tconstrs0, exp0, sp2) =>
+    case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpeAndEffOrPur0, tconstrs0, exp0, sp2) =>
       flix.subtask(ident.name, sample = true)
 
       val doc = visitDoc(doc0)
@@ -217,13 +216,12 @@ object Weeder {
       val expVal = visitExp(exp0, SyntacticEnv.Top)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, Presence.Required)
-      val (pur, eff) = visitEffectOrPurity(effOrPur, ident.loc)
+      val tpeAndPurVal = visitTypeAndEffectOrPurity(tpeAndEffOrPur0, ident.loc, allowEffOrPur = true, requireUnit = false)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
 
-      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, expVal, tconstrsVal) {
-        case (as, mod, _, _, tparams, fparams, exp, tconstrs) =>
+      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, tpeAndPurVal, expVal, tconstrsVal) {
+        case (as, mod, _, _, tparams, fparams, (retTpe, pur, eff), exp, tconstrs) =>
           val ts = fparams.map(_.tpe.get)
-          val retTpe = visitType(tpe0)
           val tpe = WeededAst.Type.Arrow(ts, pur, eff, retTpe, ident.loc)
           List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, retTpe, pur, eff, tconstrs, mkSL(sp1, sp2)))
       }
@@ -274,7 +272,7 @@ object Weeder {
     * Performs weeding on the given effect operation.
     */
   private def visitOp(d0: ParsedAst.Declaration.Op)(implicit flix: Flix): Validation[WeededAst.Declaration.Op, WeederError] = d0 match {
-    case ParsedAst.Declaration.Op(doc0, ann0, mod0, sp1, ident, tparams0, fparamsOpt0, tpe0, effOrPur0, tconstrs0, sp2) =>
+    case ParsedAst.Declaration.Op(doc0, ann0, mod0, sp1, ident, tparams0, fparamsOpt0, tpeAndEffOrPur0, tconstrs0, sp2) =>
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
@@ -282,12 +280,10 @@ object Weeder {
       val identVal = visitName(ident)
       val tparamsVal = requireNoTypeParams(tparams0)
       val fparamsVal = visitFormalParams(fparamsOpt0, Presence.Required)
-      val retTpe = visitType(tpe0)
-      val unitVal = requireUnit(tpe0, ident.loc)
-      val effOrPurVal = requireNoEffect(effOrPur0, ident.loc)
+      val tpeAndPurVal = visitTypeAndEffectOrPurity(tpeAndEffOrPur0, ident.loc, allowEffOrPur = false, requireUnit = true)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
-      mapN(annVal, modVal, pubVal, identVal, tparamsVal, fparamsVal, unitVal, effOrPurVal, tconstrsVal) {
-        case (ann, mod, _, _, _, fparams, _, _, tconstrs) =>
+      mapN(annVal, modVal, pubVal, identVal, tparamsVal, fparamsVal, tpeAndPurVal, tconstrsVal) {
+        case (ann, mod, _, _, _, fparams, (retTpe, _, _), tconstrs) =>
           val ts = fparams.map(_.tpe.get)
           val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(ident.loc), WeededAst.EffectSet.Pure(ident.loc), retTpe, ident.loc)
           WeededAst.Declaration.Op(doc, ann, mod, ident, fparams, tpe, retTpe, tconstrs, mkSL(sp1, sp2));
@@ -2371,6 +2367,26 @@ object Weeder {
     val l = loc.asSynthetic
     val base = mkArrow(tparams.last, pur, eff, tresult, l)
     tparams.init.foldRight(base)(mkArrow(_, WeededAst.Type.True(l), WeededAst.EffectSet.Pure(l), _, l))
+  }
+
+  /**
+    * Visit the given type and effect or purity, creating an error if it is absent.
+    */
+  private def visitTypeAndEffectOrPurity(typeAndEffOrPur: Option[ParsedAst.TypeAndEffectOrPurity], loc: SourceLocation, allowEffOrPur: Boolean, requireUnit: Boolean): Validation[(WeededAst.Type, WeededAst.Type, WeededAst.EffectSet), WeederError] = typeAndEffOrPur match {
+    // Case 1: Return type absent: error
+    case None => WeederError.MissingReturnType(loc).toFailure
+    // Case 2: Effect required but absent
+    case Some(ParsedAst.TypeAndEffectOrPurity(tpe0, effOrPur0)) =>
+      // conditionally ensure the return type is unit
+      val unitVal = if (requireUnit) Weeder.requireUnit(tpe0, loc) else ().toSuccess
+      // conditionally ensure the effect is absent
+      val effOrPurVal = if (allowEffOrPur) ().toSuccess else requireNoEffect(effOrPur0, loc)
+      mapN(unitVal, effOrPurVal) {
+        (_, _) =>
+          val tpe = visitType(tpe0)
+          val (pur, eff) = visitEffectOrPurity(effOrPur0, loc)
+          (tpe, pur, eff)
+      }
   }
 
   /**
