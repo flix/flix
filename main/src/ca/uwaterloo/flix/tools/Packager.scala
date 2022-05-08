@@ -314,7 +314,7 @@ object Packager {
 
       // Add all source files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
-      for ((sourceFile, fileNameWithSlashes) <- getAllFiles(getBuildDirectory(p))
+      for ((sourceFile, fileNameWithSlashes) <- getAllFiles(getSourceDirectory(p))
           .map{path=>(path, convertPathToRelativeFileName(p, path))}
           .sortBy(_._2)) {
         addToZip(zip, fileNameWithSlashes, sourceFile)
