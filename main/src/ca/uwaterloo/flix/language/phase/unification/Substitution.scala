@@ -15,8 +15,11 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Rigidity, Scheme, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.unification.Unification.unifyTypes
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 /**
   * Companion object for the [[Substitution]] class.
@@ -218,4 +221,46 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
     Substitution(m2)
   }
 
+  /**
+    * Prioritizes the given symbol so that it is not replaced by the substitution.
+    *
+    * This is done by:
+    * * rigidifying the variable `x` (so that it cannot appear on the left of the unification result)
+    * * unifying `x` with its replacement `this(x)` to make a new substitution `s`
+    * * putting `s` into the `this` substitution
+    */
+  def prioritize(sym0: Symbol.KindedTypeVarSym)(implicit flix: Flix): Substitution = {
+    val newSubst = m.get(sym0) match {
+      // Case 1: The variable is replaced. Need to process it.
+      case Some(tpe) =>
+        val rigidSym = sym0.withRigidity(Rigidity.Rigid)
+        unifyTypes(Type.KindedVar(rigidSym, sym0.loc), tpe) match {
+          case Ok(rigidSubst) =>
+            // de-rigidify and minimize the substitution
+            val flexMap = rigidSubst.m.map {
+              case (k, v) =>
+                val v2 = v.map {
+                  case Type.KindedVar(sym, loc) if sym == rigidSym => Type.KindedVar(rigidSym.withRigidity(Rigidity.Flexible), loc)
+                  case otherVar => otherVar
+                }
+                (k, v2)
+            }
+            Substitution(flexMap)
+          case Err(_) => throw InternalCompilerException("Unexpected unification failure.")
+        }
+      // Case 2: The variable is not replaced. Nothing to do.
+      case None => Substitution.empty
+    }
+    newSubst @@ this
+  }
+
+  /**
+    * Minimizes the mapped type variable symbol.
+    */
+  def minimize(sym: Symbol.KindedTypeVarSym)(implicit flix: Flix): Substitution = {
+    sym.kind match {
+      case Kind.Bool => Substitution(this.m.updatedWith(sym)(_.map(BoolTable.minimizeType)))
+      case _ => this
+    }
+  }
 }

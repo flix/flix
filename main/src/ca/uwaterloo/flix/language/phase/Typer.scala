@@ -229,45 +229,7 @@ object Typer {
 
           run(initialSubst) match {
             case Ok((subst0, (partialTconstrs, partialType))) =>
-              ///
-              /// Propagate type variables *names* in the substitution.
-              ///
-              val substBeforeHacks = subst0.propagate
-
-              ////////////// hacking begins
-              val boolTparams = tparams0.filter(tparam => tparam.sym.kind == Kind.Bool)
-              val substSuffix = boolTparams match {
-                // Case 1: exactly one Boolean tparam: do some magic
-                case tparam :: Nil =>
-                  substBeforeHacks.m.get(tparam.sym) match {
-                    case Some(tpe) =>
-                      val newSym = tparam.sym.withRigidity(Rigidity.Rigid)
-                      unifyTypes(Type.KindedVar(newSym, tparam.loc), tpe) match {
-                        case Ok(subst) =>
-                          // de-rigidify and minimize the substitution
-                          val m = subst.m.map {
-                            case (k, v) =>
-                              val v2 = v.map {
-                                case Type.KindedVar(sym, loc) if sym == newSym => Type.KindedVar(newSym.withRigidity(Rigidity.Flexible), loc)
-                                case otherVar => otherVar
-                              }
-                              (k, v2)
-                          }
-                          Substitution(m)
-                        case Err(_) => throw InternalCompilerException("asf") // MATT
-                      }
-                    case None => Substitution.empty
-                  }
-                // Case 2: Zero or multiple Boolean tparams: don't do any magic
-                case _ => Substitution.empty
-              }
-
-              val unminSubst = substSuffix @@ substBeforeHacks
-              val subst = Substitution(unminSubst.m.map {
-                case (k: KindedTypeVarSym, v) if k.kind == Kind.Bool => (k, BoolTable.minimizeType(v))
-                case kv => kv
-              })
-              ////////////// hacking ends
+              val subst = processTypeVariableNames(subst0, tparams0)
 
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.
@@ -357,6 +319,19 @@ object Typer {
             case Err(e) => Validation.Failure(LazyList(e))
           }
       }
+  }
+
+  /**
+    * Performs processing on the type variable names to attempt to preserve user-given names.
+    */
+  private def processTypeVariableNames(subst: Substitution, tparams: List[KindedAst.TypeParam])(implicit flix: Flix): Substitution = {
+    val boolTparams = tparams.filter(tparam => tparam.sym.kind == Kind.Bool)
+    boolTparams match {
+      // Case 1: exactly one boolean type parameter. Prioritize and minimize it.
+      case tparam :: Nil => subst.prioritize(tparam.sym).minimize(tparam.sym).propagate
+      // Case 2: multiple or zero boolean type parameters. Just do name propagation.
+      case _ => subst.propagate
+    }
   }
 
   /**
