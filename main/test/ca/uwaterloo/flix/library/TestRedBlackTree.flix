@@ -91,13 +91,13 @@ namespace TestRedBlackTree {
         checkBinarySearchTreeInvariant(tree)
 
     @test
-    def testBinarySearchTreeInvariant10(): Bool & Impure = checkBinarySearchTreeInvariant(random(10))
+    def testBinarySearchTreeInvariant10(): Bool = checkBinarySearchTreeInvariant(random(10))
 
     @test
-    def testBinarySearchTreeInvariant11(): Bool & Impure = checkBinarySearchTreeInvariant(random(100))
+    def testBinarySearchTreeInvariant11(): Bool = checkBinarySearchTreeInvariant(random(100))
 
     @test
-    def testBinarySearchTreeInvariant12(): Bool & Impure = checkBinarySearchTreeInvariant(random(1000))
+    def testBinarySearchTreeInvariant12(): Bool = checkBinarySearchTreeInvariant(random(1000))
 
     @test
     def testRedParentInvariant01(): Bool =
@@ -139,13 +139,13 @@ namespace TestRedBlackTree {
         checkRedParentInvariant(tree)
 
     @test
-    def testRedParentInvariant10(): Bool & Impure = checkRedParentInvariant(random(10))
+    def testRedParentInvariant10(): Bool = checkRedParentInvariant(random(10))
 
     @test
-    def testRedParentInvariant11(): Bool & Impure = checkRedParentInvariant(random(100))
+    def testRedParentInvariant11(): Bool = checkRedParentInvariant(random(100))
 
     @test
-    def testRedParentInvariant12(): Bool & Impure = checkRedParentInvariant(random(1000))
+    def testRedParentInvariant12(): Bool = checkRedParentInvariant(random(1000))
 
     ///
     /// Returns `true` if and only if the binary search tree invariant holds for `tree`.
@@ -192,11 +192,13 @@ namespace TestRedBlackTree {
     ///
     /// Returns a tree with `n` nodes `x -> ()` where `x` is a random integer.
     ///
-    def random(n: Int32): RedBlackTree[Int32, Unit] & Impure = {
-        let seed = 42i64;
-        let r = Random.newWithSeed(seed);
-        List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(),
-            List.map(_ -> Random.nextInt32(r), List.range(0, n)))
+    def random(n: Int32): RedBlackTree[Int32, Unit] = {
+        region r {
+            let seed = 42i64;
+            let ran = Random.newWithSeed(r, seed);
+            List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(),
+                List.map(_ -> Random.nextInt32(ran), List.range(0, n)))
+        }
     }
 
 

@@ -68,8 +68,8 @@ def testShuffleList(): Bool & Impure =
     List.sum(shuffledList) == 10 and List.length(shuffledList) == 4
 
 @test
-def testShuffleArray(): Unit =
+def testShuffleArray(): Bool & Impure =
     let ran = Random.new();
-    let arr = [1, 2, 3, 4, Nil] @ static;
+    let arr = [1, 2, 3, 4] @ static;
     Random.shuffleArray(ran, arr);
-    List.sum(shuffledList) == 10 and List.length(shuffledList) == 4
+    Array.sum(arr) == 10 and Array.length(arr) == 4
