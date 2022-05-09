@@ -2,7 +2,7 @@ package flix
 
 import ca.uwaterloo.flix.util.{FlixSuite, Options}
 
-class LanguageSuite extends FlixSuite(incremental = true) {
+class CompilerSuite extends FlixSuite(incremental = true) {
   implicit val options: Options = Options.TestWithLibAll
 
   mkTest("main/test/flix/Test.Exp.ArrayLit.flix")
