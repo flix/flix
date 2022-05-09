@@ -1,20 +1,18 @@
 # Changelog
 
 Version 0.28.0:
-- Added CrashHandler for easier error reporting (thanks Magnus!)
-- Added auto-complete for local variables and formal parameters (thanks Magnus!)
-- Allow any unit function to be used as main (thanks Matt, Jonathan, and Magnus!)
-- Mark root namespace definitions as implicitly public (thanks Matt!)
-- Added `List.merge` (thanks Nina!)
-- Added examples for working with files (thanks Nina!)
-- LSP: Added support for renaming type variables (thanks Matt!)
-- LSP: Added CodeHints for `@Deprecated` and `@Experimental` to LSP (thanks Nicola!)
+- Language: Allow any unit function to be used as main (thanks Matt, Jonathan, and Magnus!)
+- Language: Mark root namespace declarations as implicitly public (thanks Matt!)
+- Compiler: Added support for minimization of Booleans via tabling (thanks Jaco and Magnus!)
+- Compiler: Added a CrashHandler for easier error reporting (thanks Magnus!)
+- LSP: Added auto-complete for local variables and formal parameters (thanks Magnus!)
+- LSP: Added code hints for `@Deprecated` and `@Experimental` (thanks Nicola!)
 - LSP: Added support for finding references to type variables (thanks Matt!)
+- LSP: Added support for renaming type variables (thanks Matt!)
 - Lib: Added `Environment.getArgs` for retrieving the program arguments (thanks Matt!)
 - Lib: Added `Group` and `CommutativeGroup` (thanks Jakob!)
-- Minimization Boolean types (thanks Jaco and Magnus!)
-- Lib: Added `foldRightWithCont` (thanks Nina!) 
-- Improved type error messages (thanks Magnus!)
+- Lib: Added `foldRightWithCont` to collections and `Foldable` (thanks Nina!) 
+- Lib: Added examples for working with files (thanks Nina!)
 
 Version 0.27.0:
 - Incrementalized large parts of the front-end, including: 
