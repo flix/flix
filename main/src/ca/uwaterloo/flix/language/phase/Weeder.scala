@@ -418,17 +418,17 @@ object Weeder {
   private def visitUse(u0: ParsedAst.Use): Validation[List[WeededAst.Use], WeederError] = u0 match {
     case ParsedAst.Use.UseOne(sp1, nname, ident, sp2) =>
       if (ident.isUpper)
-        List(WeededAst.Use.UseTypeOrClass(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
+        List(WeededAst.Use.UseUpper(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
       else
-        List(WeededAst.Use.UseDefOrSig(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
+        List(WeededAst.Use.UseLower(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
     case ParsedAst.Use.UseMany(_, nname, names, _) =>
       val us = names.foldRight(Nil: List[WeededAst.Use]) {
         case (ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2), acc) =>
           val alias = aliasOpt.getOrElse(ident)
           if (ident.isUpper)
-            WeededAst.Use.UseTypeOrClass(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
+            WeededAst.Use.UseUpper(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
           else
-            WeededAst.Use.UseDefOrSig(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
+            WeededAst.Use.UseLower(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
       }
       us.toSuccess
 
