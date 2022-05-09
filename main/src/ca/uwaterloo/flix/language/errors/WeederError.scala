@@ -229,8 +229,8 @@ object WeederError {
     * @param name the name of the parameter.
     * @param loc  the location of the formal parameter.
     */
-  case class IllegalFormalParameter(name: String, loc: SourceLocation) extends WeederError {
-    def summary: String = "The formal parameter must have a declared type."
+  case class MissingFormalParamAscription(name: String, loc: SourceLocation) extends WeederError {
+    def summary: String = "Missing type ascription. Type ascriptions are required for parameters here."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -242,10 +242,7 @@ object WeederError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Explicitly declare the type of the formal parameter."
-    })
+    def explain(formatter: Formatter): Option[String] = None
 
   }
 
@@ -747,4 +744,72 @@ object WeederError {
       s"${underline("Tip:")} Type parameters are not allowed on effects."
     })
   }
+
+  /**
+    * An error raised to indicate a use of resume outside an effect handler.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalResume(loc: SourceLocation) extends WeederError {
+    def summary: String = "Unexpected use of 'resume'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected use of 'resume'.
+         |
+         |${code(loc, "unexpected use of 'resume'")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} The 'resume' expression may only be used in effect handlers."
+    })
+
+  }
+
+  /**
+    * An error raised to indicate an illegal ascription on a formal parameter.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalFormalParamAscription(loc: SourceLocation) extends WeederError {
+    def summary: String = "Unexpected type ascription. Type ascriptions are not permitted on effect handler cases."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected type ascription. Type ascriptions are not permitted on effect handler cases.
+         |
+         |${code(loc, "unexpected type ascription")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate an illegal effect on an effect operation.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalOperationEffect(loc: SourceLocation) extends WeederError {
+    def summary: String = "Unexpected effect. Effect operations may not themselves have effects."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected effect. Effect operations may not themselves have effects.
+         |
+         |${code(loc, "unexpected effect")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
 }

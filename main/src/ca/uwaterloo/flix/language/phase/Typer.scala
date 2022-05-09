@@ -733,6 +733,12 @@ object Typer {
           resultEff = Type.mkAnd(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
+      case KindedAst.Expression.Discard(exp, loc) =>
+        for {
+          (constrs, _, eff) <- visitExp(exp)
+          resultTyp = Type.Unit
+        } yield (constrs, resultTyp, eff)
+
       case KindedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
         // Note: The call to unify on sym.tvar occurs immediately after we have inferred the type of exp1.
         // This ensures that uses of sym inside exp2 are type checked according to this type.
@@ -1621,6 +1627,10 @@ object Typer {
         val tpe = e2.tpe
         val eff = Type.mkAnd(e1.eff, e2.eff, loc)
         TypedAst.Expression.Stm(e1, e2, tpe, eff, loc)
+
+      case KindedAst.Expression.Discard(exp, loc) =>
+        val e = visitExp(exp, subst0)
+        TypedAst.Expression.Discard(e, e.eff, loc)
 
       case KindedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)

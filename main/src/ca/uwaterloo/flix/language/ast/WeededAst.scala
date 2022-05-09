@@ -47,7 +47,7 @@ object WeededAst {
 
     case class Effect(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, ops: List[WeededAst.Declaration.Op], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Op(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, retTpe: WeededAst.Type, pur: WeededAst.Type, tconstrs: List[WeededAst.TypeConstraint], loc: SourceLocation)
+    case class Op(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, retTpe: WeededAst.Type, tconstrs: List[WeededAst.TypeConstraint], loc: SourceLocation)
 
   }
 
@@ -55,9 +55,9 @@ object WeededAst {
 
   object Use {
 
-    case class UseDefOrSig(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
+    case class UseLower(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
-    case class UseTypeOrClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
+    case class UseUpper(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
     case class UseTag(qname: Name.QName, tag: Name.Tag, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
@@ -118,6 +118,8 @@ object WeededAst {
     case class IfThenElse(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Stm(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Discard(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Let(ident: Name.Ident, mod: Ast.Modifiers, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 

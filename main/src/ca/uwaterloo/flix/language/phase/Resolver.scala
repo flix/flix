@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation}
-import ca.uwaterloo.flix.language.ast.NamedAst.DefOrSig
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -331,8 +330,8 @@ object Resolver {
     */
   private def resolveDefs(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, ResolvedAst.Def], ResolutionError] = {
     def getDef(defOrSig: NamedAst.DefOrSig): Option[NamedAst.Def] = defOrSig match {
-      case DefOrSig.Def(d) => Some(d)
-      case DefOrSig.Sig(_) => None
+      case NamedAst.DefOrSig.Def(d) => Some(d)
+      case NamedAst.DefOrSig.Sig(_) => None
     }
 
     val rootDefs = for {
@@ -668,6 +667,11 @@ object Resolver {
           val e2Val = visitExp(exp2, region)
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.Stm(e1, e2, loc)
+          }
+
+        case NamedAst.Expression.Discard(exp, loc) =>
+          visitExp(exp, region) map {
+            case e => ResolvedAst.Expression.Discard(e, loc)
           }
 
         case NamedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>

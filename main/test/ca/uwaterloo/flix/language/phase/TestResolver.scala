@@ -893,4 +893,15 @@ class TestResolver extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalDerivation](result)
   }
+
+  test("IllegalType.01") {
+    val input =
+      """
+        |def isThisThingNull(x: a): Bool =
+        |    import static java.util.Objects.isNull(a): Bool & Pure;
+        |    isNull(x)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalType](result)
+  }
 }

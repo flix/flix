@@ -35,7 +35,7 @@ namespace Fixpoint/Ram {
                 case Merge(src, dst) => "merge ${src} into ${dst}"
                 case Assign(lhs, rhs) => "${lhs} := ${rhs}"
                 case Purge(ramSym) => "purge ${ramSym}"
-                case Seq(xs) => Array.formatWith(ToString.toString, ";${nl}", xs)
+                case Seq(xs) => Array.join(";${nl}", xs)
                 case Until(test, body) =>
                     let tst = List.map(ToString.toString, test) |> String.intercalate(" Λ ");
                     "until(${tst}) do${nl}${String.indent(4, "${body}")}end"
