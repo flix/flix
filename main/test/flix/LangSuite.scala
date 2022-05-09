@@ -61,31 +61,6 @@ class LangSuite extends Suites(
   new FlixTest("Test.Equality.Set", "main/test/flix/Test.Equality.Set.flix")(Options.TestWithLibAll),
 
   //
-  // Apply.
-  //
-  new FlixTest("Test.Exp.Apply.Tail", "main/test/flix/Test.Exp.Apply.Tail.flix"),
-  new FlixTest("Test.Exp.Apply.Named", "main/test/flix/Test.Exp.Apply.Named.flix"),
-
-  //
-  // Ascribe.
-  //
-  new FlixTest("Test.Exp.Ascribe", "main/test/flix/Test.Exp.Ascribe.flix")(Options.TestWithLibAll),
-
-  //
-  // BigInt.
-  //
-  new FlixTest("Test.Exp.BigInt", "main/test/flix/Test.Exp.BigInt.flix"),
-
-  //
-  // Binary.
-  //
-  new FlixTest("Test.Exp.Binary.Arithmetic", "main/test/flix/Test.Exp.Binary.Arithmetic.flix"),
-  new FlixTest("Test.Exp.Binary.Bitwise", "main/test/flix/Test.Exp.Binary.Bitwise.flix"),
-  new FlixTest("Test.Exp.Binary.Comparison", "main/test/flix/Test.Exp.Binary.Comparison.flix"),
-  new FlixTest("Test.Exp.Binary.Logic", "main/test/flix/Test.Exp.Binary.Logic.flix"),
-  new FlixTest("Test.Exp.Binary.Spaceship", "main/test/flix/Test.Exp.Binary.Spaceship.flix")(Options.TestWithLibAll),
-
-  //
   // Block.
   //
   new FlixTest("Test.Exp.Block", "main/test/flix/Test.Exp.Block.flix"),
@@ -217,39 +192,9 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.List", "main/test/flix/Test.Exp.List.flix"),
 
   //
-  // Match.
-  //
-  new FlixTest("Test.Exp.Match.Array", "main/test/flix/Test.Exp.Match.Array.flix"),
-  new FlixTest("Test.Exp.Match.Bool", "main/test/flix/Test.Exp.Match.Bool.flix"),
-  new FlixTest("Test.Exp.Match.Char", "main/test/flix/Test.Exp.Match.Char.flix"),
-  new FlixTest("Test.Exp.Match.Guard", "main/test/flix/Test.Exp.Match.Guard.flix"),
-  new FlixTest("Test.Exp.Match.Float32", "main/test/flix/Test.Exp.Match.Float32.flix"),
-  new FlixTest("Test.Exp.Match.Float64", "main/test/flix/Test.Exp.Match.Float64.flix"),
-  new FlixTest("Test.Exp.Match.Int8", "main/test/flix/Test.Exp.Match.Int8.flix"),
-  new FlixTest("Test.Exp.Match.Int16", "main/test/flix/Test.Exp.Match.Int16.flix"),
-  new FlixTest("Test.Exp.Match.Int32", "main/test/flix/Test.Exp.Match.Int32.flix"),
-  new FlixTest("Test.Exp.Match.Int64", "main/test/flix/Test.Exp.Match.Int64.flix"),
-  new FlixTest("Test.Exp.Match.List", "main/test/flix/Test.Exp.Match.List.flix"),
-  new FlixTest("Test.Exp.Match.String", "main/test/flix/Test.Exp.Match.String.flix"),
-  new FlixTest("Test.Exp.Match.Tag", "main/test/flix/Test.Exp.Match.Tag.flix"),
-  new FlixTest("Test.Exp.Match.Unit", "main/test/flix/Test.Exp.Match.Unit.flix"),
-  new FlixTest("Test.Exp.Match.Wild", "main/test/flix/Test.Exp.Match.Wild.flix"),
-
-  //
   // Null.
   //
   new FlixTest("Test.Exp.Null", "main/test/flix/Test.Exp.Null.flix"),
-
-  //
-  // Record.
-  //
-  new FlixTest("Test.Exp.Record.Extend", "main/test/flix/Test.Exp.Record.Extend.flix"),
-  new FlixTest("Test.Exp.Record.Literal", "main/test/flix/Test.Exp.Record.Literal.flix"),
-  new FlixTest("Test.Exp.Record.Multiple", "main/test/flix/Test.Exp.Record.Multiple.flix"),
-  new FlixTest("Test.Exp.Record.Polymorphism", "main/test/flix/Test.Exp.Record.Polymorphism.flix"),
-  new FlixTest("Test.Exp.Record.Restrict", "main/test/flix/Test.Exp.Record.Restrict.flix"),
-  new FlixTest("Test.Exp.Record.Select", "main/test/flix/Test.Exp.Record.Select.flix"),
-  new FlixTest("Test.Exp.Record.Update", "main/test/flix/Test.Exp.Record.Update.flix"),
 
   //
   // Reference.
