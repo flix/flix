@@ -16,32 +16,43 @@
 
 package ca.uwaterloo.flix.util
 
+
 object StatUtils {
 
   /**
     * Returns the average of `xs`.
     */
-  def avg(xs: List[Long]): Double = {
+  def avg[T](xs: Seq[T])(implicit numeric: Numeric[T]): Double = {
     if (xs.isEmpty) return 0.0
-    xs.sum.toDouble / xs.length.toDouble
+    numeric.toDouble(xs.sum) / xs.length.toDouble
   }
 
   /**
     * Returns the median of `xs`.
     */
-  def median(xs: List[Long]): Long = {
+  def median[T](xs: Seq[T])(implicit numeric: Numeric[T]): Double = {
     if (xs.isEmpty) throw new IllegalArgumentException("Empty list.")
-    if (xs.length == 1) return xs.head
+    if (xs.length == 1) return numeric.toDouble(xs.head)
 
     val l = xs.sorted
     val n = xs.length
     if (n % 2 == 0) {
       val index = n / 2
-      l(index)
+      numeric.toDouble(l(index))
     } else {
       val index = n / 2
-      (l(index) + l(index + 1)) / 2
+      (numeric.toDouble(l(index)) + numeric.toDouble(l(index + 1))) / 2
     }
+  }
+
+  /**
+    * Returns the standard deviation of `xs`.
+    */
+  def stdDev[T](xs: Seq[T])(implicit numeric: Numeric[T]): Double = {
+    val mean = avg(xs)
+    val deviations = xs.map(mean - numeric.toDouble(_))
+    val variance = avg(deviations.map { x => x * x })
+    Math.sqrt(variance)
   }
 
 }
