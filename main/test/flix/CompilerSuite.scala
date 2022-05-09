@@ -41,4 +41,24 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Fixpoint.Solve.flix")
   mkTest("main/test/flix/Test.Exp.Fixpoint.Solve.Lattice.flix")
 
+
+  //
+  // Match.
+  //
+  mkTest("main/test/flix/Test.Exp.Match.Array.flix")
+  mkTest("main/test/flix/Test.Exp.Match.Bool.flix")
+  mkTest("main/test/flix/Test.Exp.Match.Char.flix")
+  mkTest("main/test/flix/Test.Exp.Match.Guard.flix")
+  mkTest("main/test/flix/Test.Exp.Match.Float32.flix")
+  mkTest("main/test/flix/Test.Exp.Match.Float64.flix")
+  mkTest("main/test/flix/Test.Exp.Match.Int8.flix")
+  mkTest("main/test/flix/Test.Exp.Match.Int16.flix")
+  mkTest("main/test/flix/Test.Exp.Match.Int32.flix")
+  mkTest("main/test/flix/Test.Exp.Match.Int64.flix")
+  mkTest("main/test/flix/Test.Exp.Match.List.flix")
+  mkTest("main/test/flix/Test.Exp.Match.String.flix")
+  mkTest("main/test/flix/Test.Exp.Match.Tag.flix")
+  mkTest("main/test/flix/Test.Exp.Match.Unit.flix")
+  mkTest("main/test/flix/Test.Exp.Match.Wild.flix")
+
 }
