@@ -1,5 +1,21 @@
 # Changelog
 
+Version 0.28.0:
+- Added CrashHandler for easier error reporting (thanks Magnus!)
+- Added auto-complete for local variables and formal parameters (thanks Magnus!)
+- Allow any unit function to be used as main (thanks Matt, Jonathan, and Magnus!)
+- Mark root namespace definitions as implicitly public (thanks Matt!)
+- Added `List.merge` (thanks Nina!)
+- Added examples for working with files (thanks Nina!)
+- LSP: Added support for renaming type variables (thanks Matt!)
+- LSP: Added CodeHints for `@Deprecated` and `@Experimental` to LSP (thanks Nicola!)
+- LSP: Added support for finding references to type variables (thanks Matt!)
+- Lib: Added `Environment.getArgs` for retrieving the program arguments (thanks Matt!)
+- Lib: Added `Group` and `CommutativeGroup` (thanks Jakob!)
+- Minimization Boolean types (thanks Jaco and Magnus!)
+- Lib: Added `foldRightWithCont` (thanks Nina!) 
+- Improved type error messages (thanks Magnus!)
+
 Version 0.27.0:
 - Incrementalized large parts of the front-end, including: 
   - `Parser`, `Weeder`, `Kinder`, and `Typer` (thanks Magnus and Matt!).
@@ -280,3 +296,5 @@ HEAD (in progress, not released):
 - Added automatic parallelization of certain `Set` and `Map` operations (thanks Jakob!)
 - Improved stratification algorithm (thanks Jonathan!)
 - Regions.
+- Inliner
+- Datalog abstraction
