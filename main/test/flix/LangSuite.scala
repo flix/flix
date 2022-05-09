@@ -67,19 +67,6 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Apply.Named", "main/test/flix/Test.Exp.Apply.Named.flix"),
 
   //
-  // Array.
-  //
-  new FlixTest("Test.Exp.Array", List(
-    "main/test/flix/Test.Exp.ArrayLength.flix",
-    "main/test/flix/Test.Exp.ArraySlice.flix",
-    "main/test/flix/Test.Exp.ArraySliceNoEndIndex.flix",
-    "main/test/flix/Test.Exp.ArraySliceNoStartIndex.flix",
-    "main/test/flix/Test.Exp.ArraySliceCopy.flix",
-    "main/test/flix/Test.Exp.ArrayStore.flix",
-    "main/test/flix/Test.Exp.ArrayNew.flix"
-  ), Options.TestWithLibAll),
-
-  //
   // Ascribe.
   //
   new FlixTest("Test.Exp.Ascribe", "main/test/flix/Test.Exp.Ascribe.flix")(Options.TestWithLibAll),
@@ -148,19 +135,6 @@ class LangSuite extends Suites(
   //
   new FlixTest("Test.Exp.Float32", "main/test/flix/Test.Exp.Float32.flix"),
   new FlixTest("Test.Exp.Float64", "main/test/flix/Test.Exp.Float64.flix"),
-
-  //
-  // Fixpoint.
-  //
-  new FlixTest("Test.Exp.Fixpoint", List(
-    "main/test/flix/Test.Exp.Fixpoint.Compose.flix",
-    "main/test/flix/Test.Exp.Fixpoint.Constraint.flix",
-    "main/test/flix/Test.Exp.Fixpoint.Lambda.flix",
-    "main/test/flix/Test.Exp.Fixpoint.Project.flix",
-    "main/test/flix/Test.Exp.Fixpoint.Query.flix",
-    "main/test/flix/Test.Exp.Fixpoint.Solve.flix",
-    "main/test/flix/Test.Exp.Fixpoint.Solve.Lattice.flix"
-  ), Options.TestWithLibAll),
 
   //
   // Force.
