@@ -116,6 +116,9 @@ object Safety {
     case Expression.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ::: visitExp(exp2)
 
+    case Expression.Discard(exp, _, _) =>
+      visitExp(exp)
+
     case Expression.Match(exp, rules, _, _, _) =>
       visitExp(exp) :::
         rules.flatMap { case MatchRule(_, g, e) => visitExp(g) ::: visitExp(e) }

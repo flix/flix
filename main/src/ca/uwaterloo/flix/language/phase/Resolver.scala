@@ -670,6 +670,11 @@ object Resolver {
             case (e1, e2) => ResolvedAst.Expression.Stm(e1, e2, loc)
           }
 
+        case NamedAst.Expression.Discard(exp, loc) =>
+          visitExp(exp, region) map {
+            case e => ResolvedAst.Expression.Discard(e, loc)
+          }
+
         case NamedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
           val e1Val = visitExp(exp1, region)
           val e2Val = visitExp(exp2, region)

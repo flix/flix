@@ -1512,23 +1512,6 @@ namespace Array {
         foreachWithIndex(f, a)
 
     ///
-    /// Render the array `a` as a String. Elements are rendered with the
-    /// function `f` and seperated with the string `sep`.
-    ///
-    @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def formatWith(f: a -> String, sep: String, a: Array[a]): String & Impure =
-        let sb = StringBuilder.new();
-        let step = (x,i) ->
-            if (i == 0)
-                StringBuilder.appendString!(f(x), sb)
-            else {
-                StringBuilder.appendString!(sep, sb);
-                StringBuilder.appendString!(f(x), sb)
-            };
-        foreachWithIndex(step, a);
-        StringBuilder.toString(sb)
-
-    ///
     /// Returns the concatenation of the string representation
     /// of each element in `a` with `sep` inserted between each element.
     ///

@@ -135,6 +135,8 @@ object Regions {
         case (e1, e2) => checkType(tpe, loc)
       }
 
+    case Expression.Discard(exp, _, _) => visitExp(exp)
+
     case Expression.Match(exp, rules, tpe, _, loc) =>
       val matchVal = visitExp(exp)
       val rulesVal = traverse(rules) {

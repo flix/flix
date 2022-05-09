@@ -606,6 +606,11 @@ object Namer {
         NamedAst.Expression.Stm(_, _, loc)
       }
 
+    case WeededAst.Expression.Discard(exp, loc) =>
+      visitExp(exp, env0, uenv0, tenv0) map {
+        case e => NamedAst.Expression.Discard(e, loc)
+      }
+
     case WeededAst.Expression.Let(ident, mod, exp1, exp2, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
@@ -1287,96 +1292,97 @@ object Namer {
     * Returns all the free variables in the given expression `exp0`.
     */
   private def freeVars(exp0: WeededAst.Expression): List[Name.Ident] = exp0 match {
-    case WeededAst.Expression.Wild(loc) => Nil
-    case WeededAst.Expression.VarOrDefOrSig(ident, loc) => List(ident)
+    case WeededAst.Expression.Wild(_) => Nil
+    case WeededAst.Expression.VarOrDefOrSig(ident, _) => List(ident)
     case WeededAst.Expression.DefOrSig(_, _) => Nil
-    case WeededAst.Expression.Hole(name, loc) => Nil
+    case WeededAst.Expression.Hole(_, _) => Nil
     case WeededAst.Expression.Use(_, exp, _) => freeVars(exp)
-    case WeededAst.Expression.Unit(loc) => Nil
-    case WeededAst.Expression.Null(loc) => Nil
-    case WeededAst.Expression.True(loc) => Nil
-    case WeededAst.Expression.False(loc) => Nil
-    case WeededAst.Expression.Char(lit, loc) => Nil
-    case WeededAst.Expression.Float32(lit, loc) => Nil
-    case WeededAst.Expression.Float64(lit, loc) => Nil
-    case WeededAst.Expression.Int8(lit, loc) => Nil
-    case WeededAst.Expression.Int16(lit, loc) => Nil
-    case WeededAst.Expression.Int32(lit, loc) => Nil
-    case WeededAst.Expression.Int64(lit, loc) => Nil
-    case WeededAst.Expression.BigInt(lit, loc) => Nil
-    case WeededAst.Expression.Str(lit, loc) => Nil
-    case WeededAst.Expression.Default(loc) => Nil
-    case WeededAst.Expression.Apply(exp, exps, loc) => freeVars(exp) ++ exps.flatMap(freeVars)
-    case WeededAst.Expression.Lambda(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
-    case WeededAst.Expression.Unary(sop, exp, loc) => freeVars(exp)
-    case WeededAst.Expression.Binary(op, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
-    case WeededAst.Expression.Stm(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.Let(ident, mod, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
-    case WeededAst.Expression.LetRec(ident, mod, exp1, exp2, loc) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2), List(ident))
+    case WeededAst.Expression.Unit(_) => Nil
+    case WeededAst.Expression.Null(_) => Nil
+    case WeededAst.Expression.True(_) => Nil
+    case WeededAst.Expression.False(_) => Nil
+    case WeededAst.Expression.Char(_, _) => Nil
+    case WeededAst.Expression.Float32(_, _) => Nil
+    case WeededAst.Expression.Float64(_, _) => Nil
+    case WeededAst.Expression.Int8(_, _) => Nil
+    case WeededAst.Expression.Int16(_, _) => Nil
+    case WeededAst.Expression.Int32(_, _) => Nil
+    case WeededAst.Expression.Int64(_, _) => Nil
+    case WeededAst.Expression.BigInt(_, _) => Nil
+    case WeededAst.Expression.Str(_, _) => Nil
+    case WeededAst.Expression.Default(_) => Nil
+    case WeededAst.Expression.Apply(exp, exps, _) => freeVars(exp) ++ exps.flatMap(freeVars)
+    case WeededAst.Expression.Lambda(fparam, exp, _) => filterBoundVars(freeVars(exp), List(fparam.ident))
+    case WeededAst.Expression.Unary(_, exp, _) => freeVars(exp)
+    case WeededAst.Expression.Binary(_, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, _) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+    case WeededAst.Expression.Stm(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.Discard(exp, _) => freeVars(exp)
+    case WeededAst.Expression.Let(ident, _, exp1, exp2, _) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
+    case WeededAst.Expression.LetRec(ident, _, exp1, exp2, _) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2), List(ident))
     case WeededAst.Expression.Region(_, _) => Nil
-    case WeededAst.Expression.Scope(ident, exp, loc) => filterBoundVars(freeVars(exp), List(ident))
-    case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
+    case WeededAst.Expression.Scope(ident, exp, _) => filterBoundVars(freeVars(exp), List(ident))
+    case WeededAst.Expression.Match(exp, rules, _) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
     }
-    case WeededAst.Expression.Choose(_, exps, rules, loc) => exps.flatMap(freeVars) ++ rules.flatMap {
+    case WeededAst.Expression.Choose(_, exps, rules, _) => exps.flatMap(freeVars) ++ rules.flatMap {
       case WeededAst.ChoiceRule(pat, exp) => filterBoundVars(freeVars(exp), pat.flatMap(freeVars))
     }
-    case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
-    case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
-    case WeededAst.Expression.RecordEmpty(loc) => Nil
-    case WeededAst.Expression.RecordSelect(exp, _, loc) => freeVars(exp)
-    case WeededAst.Expression.RecordExtend(_, exp, rest, loc) => freeVars(exp) ++ freeVars(rest)
-    case WeededAst.Expression.RecordRestrict(_, rest, loc) => freeVars(rest)
-    case WeededAst.Expression.New(qname, exp, loc) => exp.map(freeVars).getOrElse(Nil)
-    case WeededAst.Expression.ArrayLit(exps, exp, loc) => exps.flatMap(freeVars) ++ exp.map(freeVars).getOrElse(Nil)
-    case WeededAst.Expression.ArrayNew(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ exp3.map(freeVars).getOrElse(Nil)
-    case WeededAst.Expression.ArrayLoad(base, index, loc) => freeVars(base) ++ freeVars(index)
-    case WeededAst.Expression.ArrayStore(base, index, elm, loc) => freeVars(base) ++ freeVars(index) ++ freeVars(elm)
-    case WeededAst.Expression.ArrayLength(base, loc) => freeVars(base)
-    case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, loc) => freeVars(base) ++ freeVars(startIndex) ++ freeVars(endIndex)
-    case WeededAst.Expression.Ref(exp1, exp2, loc) => freeVars(exp1) ++ exp2.map(freeVars).getOrElse(Nil)
-    case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => freeVars(exp)
-    case WeededAst.Expression.Cast(exp, tpe, eff, loc) => freeVars(exp)
-    case WeededAst.Expression.Do(op, args, loc) => Nil // TODO handle
-    case WeededAst.Expression.Resume(args, loc) => Nil // TODO handle
-    case WeededAst.Expression.TryWith(exp, eff, rules, loc) => Nil // TODO handle
-    case WeededAst.Expression.TryCatch(exp, rules, loc) =>
+    case WeededAst.Expression.Tag(_, _, expOpt, _) => expOpt.map(freeVars).getOrElse(Nil)
+    case WeededAst.Expression.Tuple(elms, _) => elms.flatMap(freeVars)
+    case WeededAst.Expression.RecordEmpty(_) => Nil
+    case WeededAst.Expression.RecordSelect(exp, _, _) => freeVars(exp)
+    case WeededAst.Expression.RecordExtend(_, exp, rest, _) => freeVars(exp) ++ freeVars(rest)
+    case WeededAst.Expression.RecordRestrict(_, rest, _) => freeVars(rest)
+    case WeededAst.Expression.New(_, exp, _) => exp.map(freeVars).getOrElse(Nil)
+    case WeededAst.Expression.ArrayLit(exps, exp, _) => exps.flatMap(freeVars) ++ exp.map(freeVars).getOrElse(Nil)
+    case WeededAst.Expression.ArrayNew(exp1, exp2, exp3, _) => freeVars(exp1) ++ freeVars(exp2) ++ exp3.map(freeVars).getOrElse(Nil)
+    case WeededAst.Expression.ArrayLoad(base, index, _) => freeVars(base) ++ freeVars(index)
+    case WeededAst.Expression.ArrayStore(base, index, elm, _) => freeVars(base) ++ freeVars(index) ++ freeVars(elm)
+    case WeededAst.Expression.ArrayLength(base, _) => freeVars(base)
+    case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, _) => freeVars(base) ++ freeVars(startIndex) ++ freeVars(endIndex)
+    case WeededAst.Expression.Ref(exp1, exp2, _) => freeVars(exp1) ++ exp2.map(freeVars).getOrElse(Nil)
+    case WeededAst.Expression.Deref(exp, _) => freeVars(exp)
+    case WeededAst.Expression.Assign(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.Ascribe(exp, _, _, _) => freeVars(exp)
+    case WeededAst.Expression.Cast(exp, _, _, _) => freeVars(exp)
+    case WeededAst.Expression.Do(_, _, _) => Nil // TODO handle
+    case WeededAst.Expression.Resume(_, _) => Nil // TODO handle
+    case WeededAst.Expression.TryWith(_, _, _, _) => Nil // TODO handle
+    case WeededAst.Expression.TryCatch(exp, rules, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (fvs, WeededAst.CatchRule(ident, className, body)) => filterBoundVars(freeVars(body), List(ident))
+        case (fvs, WeededAst.CatchRule(ident, _, body)) => fvs ++ filterBoundVars(freeVars(body), List(ident))
       }
-    case WeededAst.Expression.InvokeConstructor(className, args, sig, loc) => args.flatMap(freeVars)
-    case WeededAst.Expression.InvokeMethod(className, methodName, exp, args, sig, loc) => freeVars(exp) ++ args.flatMap(freeVars)
-    case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) => args.flatMap(freeVars)
-    case WeededAst.Expression.GetField(className, fieldName, exp, loc) => freeVars(exp)
-    case WeededAst.Expression.PutField(className, fieldName, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.GetStaticField(className, fieldName, loc) => Nil
-    case WeededAst.Expression.PutStaticField(className, fieldName, exp, loc) => freeVars(exp)
-    case WeededAst.Expression.NewChannel(tpe, exp, loc) => freeVars(exp) // TODO exp is a Type. is this a bug?
-    case WeededAst.Expression.GetChannel(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.PutChannel(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.SelectChannel(rules, default, loc) =>
+    case WeededAst.Expression.InvokeConstructor(_, args, _, _) => args.flatMap(freeVars)
+    case WeededAst.Expression.InvokeMethod(_, _, exp, args, _, _) => freeVars(exp) ++ args.flatMap(freeVars)
+    case WeededAst.Expression.InvokeStaticMethod(_, _, args, _, _) => args.flatMap(freeVars)
+    case WeededAst.Expression.GetField(_, _, exp, _) => freeVars(exp)
+    case WeededAst.Expression.PutField(_, _, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.GetStaticField(_, _, _) => Nil
+    case WeededAst.Expression.PutStaticField(_, _, exp, _) => freeVars(exp)
+    case WeededAst.Expression.NewChannel(exp, _, _) => freeVars(exp) // TODO exp is a Type. is this a bug?
+    case WeededAst.Expression.GetChannel(exp, _) => freeVars(exp)
+    case WeededAst.Expression.PutChannel(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.SelectChannel(rules, default, _) =>
       val rulesFreeVars = rules.flatMap {
         case WeededAst.SelectChannelRule(ident, chan, exp) =>
           freeVars(chan) ++ filterBoundVars(freeVars(exp), List(ident))
       }
       val defaultFreeVars = default.map(freeVars).getOrElse(Nil)
       rulesFreeVars ++ defaultFreeVars
-    case WeededAst.Expression.Spawn(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.Lazy(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.Force(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.FixpointConstraintSet(cs, loc) => cs.flatMap(freeVarsConstraint)
-    case WeededAst.Expression.FixpointLambda(preds, exp, loc) => freeVars(exp)
-    case WeededAst.Expression.FixpointMerge(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.FixpointFilter(qname, exp, loc) => freeVars(exp)
-    case WeededAst.Expression.FixpointProjectIn(exp, pred, loc) => freeVars(exp)
-    case WeededAst.Expression.FixpointProjectOut(pred, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.Reify(t, loc) => Nil
-    case WeededAst.Expression.ReifyType(t, k, loc) => Nil
-    case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, loc) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3), List(ident))
+    case WeededAst.Expression.Spawn(exp, _) => freeVars(exp)
+    case WeededAst.Expression.Lazy(exp, _) => freeVars(exp)
+    case WeededAst.Expression.Force(exp, _) => freeVars(exp)
+    case WeededAst.Expression.FixpointConstraintSet(cs, _) => cs.flatMap(freeVarsConstraint)
+    case WeededAst.Expression.FixpointLambda(_, exp, _) => freeVars(exp)
+    case WeededAst.Expression.FixpointMerge(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.FixpointSolve(exp, _) => freeVars(exp)
+    case WeededAst.Expression.FixpointFilter(_, exp, _) => freeVars(exp)
+    case WeededAst.Expression.FixpointProjectIn(exp, _, _) => freeVars(exp)
+    case WeededAst.Expression.FixpointProjectOut(_, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.Reify(_, _) => Nil
+    case WeededAst.Expression.ReifyType(_, _, _) => Nil
+    case WeededAst.Expression.ReifyEff(ident, exp1, exp2, exp3, _) => filterBoundVars(freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3), List(ident))
   }
 
   /**
