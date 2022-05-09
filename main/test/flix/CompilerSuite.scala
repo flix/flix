@@ -19,6 +19,12 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.ArrayStore.flix")
 
   //
+  // Apply.
+  //
+  mkTest("main/test/flix/Test.Exp.Apply.Tail.flix")
+  mkTest("main/test/flix/Test.Exp.Apply.Named.flix")
+
+  //
   // Fixpoint
   //
   mkTest("main/test/flix/Test.Exp.Fixpoint.Compose.flix")

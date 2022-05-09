@@ -61,12 +61,6 @@ class LangSuite extends Suites(
   new FlixTest("Test.Equality.Set", "main/test/flix/Test.Equality.Set.flix")(Options.TestWithLibAll),
 
   //
-  // Apply.
-  //
-  new FlixTest("Test.Exp.Apply.Tail", "main/test/flix/Test.Exp.Apply.Tail.flix"),
-  new FlixTest("Test.Exp.Apply.Named", "main/test/flix/Test.Exp.Apply.Named.flix"),
-
-  //
   // Ascribe.
   //
   new FlixTest("Test.Exp.Ascribe", "main/test/flix/Test.Exp.Ascribe.flix")(Options.TestWithLibAll),
