@@ -31,6 +31,20 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Ascribe.flix")
 
   //
+  // BigInt.
+  //
+  mkTest("main/test/flix/Test.Exp.BigInt.flix")
+
+  //
+  // Binary.
+  //
+  mkTest("main/test/flix/Test.Exp.Binary.Arithmetic.flix")
+  mkTest("main/test/flix/Test.Exp.Binary.Bitwise.flix")
+  mkTest("main/test/flix/Test.Exp.Binary.Comparison.flix")
+  mkTest("main/test/flix/Test.Exp.Binary.Logic.flix")
+  mkTest("main/test/flix/Test.Exp.Binary.Spaceship.flix")
+
+  //
   // Fixpoint
   //
   mkTest("main/test/flix/Test.Exp.Fixpoint.Compose.flix")
@@ -40,7 +54,6 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Fixpoint.Query.flix")
   mkTest("main/test/flix/Test.Exp.Fixpoint.Solve.flix")
   mkTest("main/test/flix/Test.Exp.Fixpoint.Solve.Lattice.flix")
-
 
   //
   // Match.
@@ -60,7 +73,6 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Match.Tag.flix")
   mkTest("main/test/flix/Test.Exp.Match.Unit.flix")
   mkTest("main/test/flix/Test.Exp.Match.Wild.flix")
-
 
   //
   // Record.
