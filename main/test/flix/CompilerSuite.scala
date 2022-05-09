@@ -61,4 +61,16 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Match.Unit.flix")
   mkTest("main/test/flix/Test.Exp.Match.Wild.flix")
 
+
+  //
+  // Record.
+  //
+  mkTest("main/test/flix/Test.Exp.Record.Extend.flix")
+  mkTest("main/test/flix/Test.Exp.Record.Literal.flix")
+  mkTest("main/test/flix/Test.Exp.Record.Multiple.flix")
+  mkTest("main/test/flix/Test.Exp.Record.Polymorphism.flix")
+  mkTest("main/test/flix/Test.Exp.Record.Restrict.flix")
+  mkTest("main/test/flix/Test.Exp.Record.Select.flix")
+  mkTest("main/test/flix/Test.Exp.Record.Update.flix")
+
 }
