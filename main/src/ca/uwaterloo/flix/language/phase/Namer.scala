@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
-import ca.uwaterloo.flix.language.ast.NamedAst.Method
 import ca.uwaterloo.flix.language.ast.WeededAst.ChoicePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
@@ -110,7 +109,7 @@ object Namer {
                         NameError.DuplicateDefOrSig(name, loc1, loc2),
                         NameError.DuplicateDefOrSig(name, loc2, loc1)
                       ))
-                    case None => (defsAndSigs + (sig.sym.name -> NamedAst.Method.Sig(sig))).toSuccess
+                    case None => (defsAndSigs + (sig.sym.name -> NamedAst.DefOrSig.Sig(sig))).toSuccess
                   }
                 }
                 defsAndSigsVal.map {
@@ -144,7 +143,7 @@ object Namer {
           case None =>
             // Case 1: The definition does not already exist. Update it.
             visitDef(decl, uenv0, Map.empty, ns0, Nil, Nil) map {
-              defn => prog0.copy(defsAndSigs = prog0.defsAndSigs + (ns0 -> (defsAndSigs + (ident.name -> NamedAst.Method.Def(defn)))))
+              defn => prog0.copy(defsAndSigs = prog0.defsAndSigs + (ns0 -> (defsAndSigs + (ident.name -> NamedAst.DefOrSig.Def(defn)))))
             }
           case Some(defOrSig) =>
             // Case 2: Duplicate definition.
@@ -1754,9 +1753,9 @@ object Namer {
   /**
     * Gets the location of the symbol of the given def or sig.
     */
-  private def getSymLocation(f: NamedAst.Method): SourceLocation = f match {
-    case Method.Def(d) => d.sym.loc
-    case Method.Sig(s) => s.sym.loc
+  private def getSymLocation(f: NamedAst.DefOrSig): SourceLocation = f match {
+    case NamedAst.DefOrSig.Def(d) => d.sym.loc
+    case NamedAst.DefOrSig.Sig(s) => s.sym.loc
   }
 
   /**
