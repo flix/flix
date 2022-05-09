@@ -368,6 +368,10 @@ object Monomorph {
         val e2 = visitExp(exp2, env0)
         Expression.Stm(e1, e2, subst0(tpe), eff, loc)
 
+      case Expression.Discard(exp, eff, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.Discard(e, eff, loc)
+
       case Expression.Match(exp, rules, tpe, eff, loc) =>
         val rs = rules map {
           case MatchRule(pat, guard, body) =>

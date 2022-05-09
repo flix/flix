@@ -30,7 +30,7 @@ namespace Fixpoint/Ram {
                 case Search(var, ramSym, body) =>
                     "search ${var} ∈ ${ramSym} do${nl}${String.indent(4, "${body}")}end"
                 case Query(var, ramSym, prefixQuery, body) =>
-                    let query = Array.formatWith(match (i, term) -> {
+                    let query = Array.joinWith(match (i, term) -> {
                         ToString.toString(BoolExp.Eq(RamTerm.RowLoad(var, i), term))
                     }, " ∧ ", prefixQuery);
                     "query {${var} ∈ ${ramSym} | ${query}} do${nl}${String.indent(4, "${body}")}end"

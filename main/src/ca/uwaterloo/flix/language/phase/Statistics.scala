@@ -109,6 +109,7 @@ object Statistics {
       case Expression.Scope(sym, regionVar, exp, tpe, eff, loc) => visitExp(exp)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
       case Expression.Stm(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.Discard(exp, eff, loc) => visitExp(exp)
       case Expression.Match(exp, rules, tpe, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchRule))
       case Expression.Choose(exps, rules, tpe, eff, loc) => Counter.merge(exps.map(visitExp)) ++ Counter.merge(rules.map(visitChoiceRule))
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) => visitExp(exp)

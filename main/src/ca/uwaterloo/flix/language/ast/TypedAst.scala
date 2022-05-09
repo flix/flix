@@ -187,6 +187,10 @@ object TypedAst {
 
     case class Stm(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class Discard(exp: TypedAst.Expression, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
+      def tpe: Type = Type.mkUnit(loc)
+    }
+
     case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Choose(exps: List[TypedAst.Expression], rules: List[TypedAst.ChoiceRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
