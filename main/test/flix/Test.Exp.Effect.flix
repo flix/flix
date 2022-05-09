@@ -145,11 +145,6 @@ namespace Test/Exp/Effect {
     }
 
     eff Console {
-        pub def readln(): String
         pub def println(x: String): Unit
-    }
-
-    eff Flip {
-        pub def flip(): Bool
     }
 }
