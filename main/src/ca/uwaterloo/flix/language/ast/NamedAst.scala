@@ -25,7 +25,7 @@ object NamedAst {
 
   case class Root(classes: Map[Name.NName, Map[String, NamedAst.Class]],
                   instances: Map[Name.NName, Map[String, List[NamedAst.Instance]]],
-                  defsAndSigs: Map[Name.NName, Map[String, NamedAst.DefOrSig]],
+                  defsAndSigs: Map[Name.NName, Map[String, NamedAst.Method]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typeAliases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
                   entryPoint: Option[Symbol.DefnSym],

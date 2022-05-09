@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation}
-import ca.uwaterloo.flix.language.ast.NamedAst.DefOrSig
+import ca.uwaterloo.flix.language.ast.NamedAst.Method
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
@@ -330,9 +330,9 @@ object Resolver {
     * Resolves all the definitions in the given root.
     */
   private def resolveDefs(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, ResolvedAst.Def], ResolutionError] = {
-    def getDef(defOrSig: NamedAst.DefOrSig): Option[NamedAst.Def] = defOrSig match {
-      case DefOrSig.Def(d) => Some(d)
-      case DefOrSig.Sig(_) => None
+    def getDef(defOrSig: NamedAst.Method): Option[NamedAst.Def] = defOrSig match {
+      case Method.Def(d) => Some(d)
+      case Method.Sig(_) => None
     }
 
     val rootDefs = for {
@@ -575,8 +575,8 @@ object Resolver {
 
         case NamedAst.Expression.DefOrSig(qname, loc) =>
           mapN(lookupDefOrSig(qname, ns0, root)) {
-            case NamedAst.DefOrSig.Def(defn) => visitDef(defn, loc)
-            case NamedAst.DefOrSig.Sig(sig) => visitSig(sig, loc)
+            case NamedAst.Method.Def(defn) => visitDef(defn, loc)
+            case NamedAst.Method.Sig(sig) => visitSig(sig, loc)
           }
 
         case NamedAst.Expression.Hole(nameOpt, loc) =>
@@ -629,8 +629,8 @@ object Resolver {
 
         case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qname, innerLoc), exps, outerLoc) =>
           flatMapN(lookupDefOrSig(qname, ns0, root)) {
-            case NamedAst.DefOrSig.Def(defn) => visitApplyDef(app, defn, exps, region, innerLoc, outerLoc)
-            case NamedAst.DefOrSig.Sig(sig) => visitApplySig(app, sig, exps, region, innerLoc, outerLoc)
+            case NamedAst.Method.Def(defn) => visitApplyDef(app, defn, exps, region, innerLoc, outerLoc)
+            case NamedAst.Method.Sig(sig) => visitApplySig(app, sig, exps, region, innerLoc, outerLoc)
           }
 
         case app@NamedAst.Expression.Apply(_, _, _) => visitApply(app, region)
@@ -1470,18 +1470,18 @@ object Resolver {
   /**
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
-  def lookupDefOrSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.DefOrSig, ResolutionError] = {
+  def lookupDefOrSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Method, ResolutionError] = {
     val defOrSigOpt = tryLookupDefOrSig(qname, ns0, root)
 
     defOrSigOpt match {
       case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
-      case Some(d@NamedAst.DefOrSig.Def(defn)) =>
+      case Some(d@NamedAst.Method.Def(defn)) =>
         if (isDefAccessible(defn, ns0)) {
           d.toSuccess
         } else {
           ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure
         }
-      case Some(s@NamedAst.DefOrSig.Sig(sig)) =>
+      case Some(s@NamedAst.Method.Sig(sig)) =>
         if (isSigAccessible(sig, ns0)) {
           s.toSuccess
         } else {
@@ -1493,7 +1493,7 @@ object Resolver {
   /**
     * Attempts to lookup the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
-  def tryLookupDefOrSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.DefOrSig] = {
+  def tryLookupDefOrSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Method] = {
     if (qname.isUnqualified) {
       // Case 1: Unqualified name. Lookup in the current namespace.
       val defnOpt = root.defsAndSigs.getOrElse(ns0, Map.empty).get(qname.ident.name)
