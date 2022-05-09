@@ -256,6 +256,7 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
               case Ok(rigidSubst) => rigidSubst @@ asdf(syms, visited + sym)
               case Err(_) => throw InternalCompilerException("asdf") // MATT
             }
+          case None => asdf(syms, visited + sym)
         }
     }
   }
