@@ -61,36 +61,6 @@ class LangSuite extends Suites(
   new FlixTest("Test.Equality.Set", "main/test/flix/Test.Equality.Set.flix")(Options.TestWithLibAll),
 
   //
-  // Block.
-  //
-  new FlixTest("Test.Exp.Block", "main/test/flix/Test.Exp.Block.flix"),
-
-  //
-  // Cast.
-  //
-  new FlixTest("Test.Exp.Cast", "main/test/flix/Test.Exp.Cast.flix")(Options.TestWithLibAll),
-
-  //
-  // Char.
-  //
-  new FlixTest("Test.Exp.Char", "main/test/flix/Test.Exp.Char.flix"),
-
-  //
-  // Choose.
-  //
-  new FlixTest("Test.Exp.Choose", "main/test/flix/Test.Exp.Choose.flix")(Options.TestWithLibAll),
-  new FlixTest("Test.Exp.ChooseStar", "main/test/flix/Test.Exp.ChooseStar.flix")(Options.TestWithLibAll),
-
-  //
-  // Concurrency.
-  //
-  new FlixTest("Test.Exp.Concurrency.Buffered", "main/test/flix/Test.Exp.Concurrency.Buffered.flix")(Options.TestWithLibAll),
-  new FlixTest("Test.Exp.Concurrency.NewChannel", "main/test/flix/Test.Exp.Concurrency.NewChannel.flix")(Options.TestWithLibAll),
-  new FlixTest("Test.Exp.Concurrency.Unbuffered", "main/test/flix/Test.Exp.Concurrency.Unbuffered.flix")(Options.TestWithLibAll),
-  new FlixTest("Test.Exp.Concurrency.Spawn", "main/test/flix/Test.Exp.Concurrency.Spawn.flix")(Options.TestWithLibAll),
-  new FlixTest("Test.Exp.Concurrency.Select", "main/test/flix/Test.Exp.Concurrency.Select.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-
-  //
   // Default.
   //
   new FlixTest("Test.Exp.Default", "main/test/flix/Test.Exp.Default.flix"),

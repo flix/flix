@@ -45,6 +45,36 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Binary.Spaceship.flix")
 
   //
+  // Block.
+  //
+  mkTest("main/test/flix/Test.Exp.Block.flix")
+
+  //
+  // Cast.
+  //
+  mkTest("main/test/flix/Test.Exp.Cast.flix")
+
+  //
+  // Char.
+  //
+  mkTest("main/test/flix/Test.Exp.Char.flix")
+
+  //
+  // Choose.
+  //
+  mkTest("main/test/flix/Test.Exp.Choose.flix")
+  mkTest("main/test/flix/Test.Exp.ChooseStar.flix")
+
+  //
+  // Concurrency.
+  //
+  mkTest("main/test/flix/Test.Exp.Concurrency.Buffered.flix")
+  mkTest("main/test/flix/Test.Exp.Concurrency.NewChannel.flix")
+  mkTest("main/test/flix/Test.Exp.Concurrency.Unbuffered.flix")
+  mkTest("main/test/flix/Test.Exp.Concurrency.Spawn.flix")
+  mkTest("main/test/flix/Test.Exp.Concurrency.Select.flix")
+
+  //
   // Fixpoint
   //
   mkTest("main/test/flix/Test.Exp.Fixpoint.Compose.flix")
