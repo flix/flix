@@ -277,14 +277,16 @@ object Weeder {
       val annVal = visitAnnotations(ann0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val pubVal = requirePublic(mod0, ident)
+      val identVal = visitName(ident)
       val tparamsVal = requireNoTypeParams(tparams0)
       val fparamsVal = visitFormalParams(fparamsOpt0, Presence.Required)
+      val retTpe = visitType(tpe0)
+      val unitVal = requireUnit(tpe0, ident.loc)
       val effOrPurVal = requireNoEffect(effOrPur0, ident.loc)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
-      mapN(annVal, modVal, pubVal, tparamsVal, fparamsVal, effOrPurVal, tconstrsVal) {
-        case (ann, mod, _, _, fparams, _, tconstrs) =>
+      mapN(annVal, modVal, pubVal, identVal, tparamsVal, fparamsVal, unitVal, effOrPurVal, tconstrsVal) {
+        case (ann, mod, _, _, _, fparams, _, _, tconstrs) =>
           val ts = fparams.map(_.tpe.get)
-          val retTpe = visitType(tpe0)
           val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(ident.loc), retTpe, ident.loc)
           WeededAst.Declaration.Op(doc, ann, mod, ident, fparams, tpe, retTpe, tconstrs, mkSL(sp1, sp2));
       }
@@ -2218,6 +2220,14 @@ object Weeder {
   private def requireNoEffect(effOrPur: Option[ParsedAst.EffectOrPurity], loc: SourceLocation): Validation[Unit, WeederError] = effOrPur match {
     case None => ().toSuccess
     case Some(_) => WeederError.IllegalOperationEffect(loc).toFailure
+  }
+
+  /**
+    * Returns an error if the type is not Unit.
+    */
+  private def requireUnit(tpe: ParsedAst.Type, loc: SourceLocation): Validation[Unit, WeederError] = tpe match {
+    case ParsedAst.Type.Ambiguous(_, name, _) if name.isUnqualified && name.ident.name == "Unit" => ().toSuccess
+    case _ => WeederError.NonUnitOperationType(loc).toFailure
   }
 
   /**
