@@ -277,14 +277,16 @@ object Weeder {
       val annVal = visitAnnotations(ann0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val pubVal = requirePublic(mod0, ident)
+      val identVal = visitName(ident)
       val tparamsVal = requireNoTypeParams(tparams0)
       val fparamsVal = visitFormalParams(fparamsOpt0, Presence.Required)
+      val retTpe = visitType(tpe0)
+      val unitVal = requireUnit(tpe0, ident.loc)
       val effOrPurVal = requireNoEffect(effOrPur0, ident.loc)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
-      mapN(annVal, modVal, pubVal, tparamsVal, fparamsVal, effOrPurVal, tconstrsVal) {
-        case (ann, mod, _, _, fparams, _, tconstrs) =>
+      mapN(annVal, modVal, pubVal, identVal, tparamsVal, fparamsVal, unitVal, effOrPurVal, tconstrsVal) {
+        case (ann, mod, _, _, _, fparams, _, _, tconstrs) =>
           val ts = fparams.map(_.tpe.get)
-          val retTpe = visitType(tpe0)
           val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(ident.loc), retTpe, ident.loc)
           WeededAst.Declaration.Op(doc, ann, mod, ident, fparams, tpe, retTpe, tconstrs, mkSL(sp1, sp2));
       }
@@ -418,17 +420,17 @@ object Weeder {
   private def visitUse(u0: ParsedAst.Use): Validation[List[WeededAst.Use], WeederError] = u0 match {
     case ParsedAst.Use.UseOne(sp1, nname, ident, sp2) =>
       if (ident.isUpper)
-        List(WeededAst.Use.UseTypeOrClass(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
+        List(WeededAst.Use.UseUpper(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
       else
-        List(WeededAst.Use.UseDefOrSig(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
+        List(WeededAst.Use.UseLower(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
     case ParsedAst.Use.UseMany(_, nname, names, _) =>
       val us = names.foldRight(Nil: List[WeededAst.Use]) {
         case (ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2), acc) =>
           val alias = aliasOpt.getOrElse(ident)
           if (ident.isUpper)
-            WeededAst.Use.UseTypeOrClass(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
+            WeededAst.Use.UseUpper(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
           else
-            WeededAst.Use.UseDefOrSig(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
+            WeededAst.Use.UseLower(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
       }
       us.toSuccess
 
@@ -2218,6 +2220,14 @@ object Weeder {
   private def requireNoEffect(effOrPur: Option[ParsedAst.EffectOrPurity], loc: SourceLocation): Validation[Unit, WeederError] = effOrPur match {
     case None => ().toSuccess
     case Some(_) => WeederError.IllegalOperationEffect(loc).toFailure
+  }
+
+  /**
+    * Returns an error if the type is not Unit.
+    */
+  private def requireUnit(tpe: ParsedAst.Type, loc: SourceLocation): Validation[Unit, WeederError] = tpe match {
+    case ParsedAst.Type.Ambiguous(_, name, _) if name.isUnqualified && name.ident.name == "Unit" => ().toSuccess
+    case _ => WeederError.NonUnitOperationType(loc).toFailure
   }
 
   /**

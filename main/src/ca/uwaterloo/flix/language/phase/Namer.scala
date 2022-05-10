@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
-import ca.uwaterloo.flix.language.ast.NamedAst.DefOrSig
 import ca.uwaterloo.flix.language.ast.WeededAst.ChoicePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
@@ -506,7 +505,7 @@ object Namer {
       val name = ident.name
 
       // lookup the name in the var and use environments.
-      (env0.get(name), uenv0.defsAndSigs.get(name)) match {
+      (env0.get(name), uenv0.lowerNames.get(name)) match {
         case (None, None) =>
           // Case 1: the name is a top-level function.
           NamedAst.Expression.DefOrSig(Name.mkQName(ident), loc).toSuccess
@@ -526,8 +525,8 @@ object Namer {
 
     case WeededAst.Expression.Use(uses0, exp, loc) =>
       val uses = uses0.map {
-        case WeededAst.Use.UseDefOrSig(qname, alias, loc) => NamedAst.Use.UseDefOrSig(qname, alias, loc)
-        case WeededAst.Use.UseTypeOrClass(qname, alias, loc) => NamedAst.Use.UseTypeOrClass(qname, alias, loc)
+        case WeededAst.Use.UseLower(qname, alias, loc) => NamedAst.Use.UseDefOrSig(qname, alias, loc)
+        case WeededAst.Use.UseUpper(qname, alias, loc) => NamedAst.Use.UseTypeOrClass(qname, alias, loc)
         case WeededAst.Use.UseTag(qname, tag, alias, loc) => NamedAst.Use.UseTag(qname, tag, alias, loc)
       }
 
@@ -1151,7 +1150,7 @@ object Namer {
       if (qname.isUnqualified) {
         val name = qname.ident.name
         // Disambiguate the qname.
-        (tenv0.get(name), uenv0.typesAndClasses.get(name)) match {
+        (tenv0.get(name), uenv0.upperNames.get(name)) match {
           case (None, None) =>
             // Case 1: the name is top-level type.
             NamedAst.Type.Ambiguous(qname, loc).toSuccess
@@ -1196,7 +1195,7 @@ object Namer {
     case WeededAst.Type.SchemaRowExtendByAlias(qname, targs, rest, loc) =>
       // Disambiguate the qname.
       val name = if (qname.isUnqualified) {
-        uenv0.typesAndClasses.getOrElse(qname.ident.name, qname)
+        uenv0.upperNames.getOrElse(qname.ident.name, qname)
       } else {
         qname
       }
@@ -1725,7 +1724,7 @@ object Namer {
         // Case 2: The tag is qualified. Check if it fully-qualified.
         if (qname.isUnqualified) {
           // Case 2.1: The tag is only qualified by one name. Look it up in the use environment.
-          uenv0.typesAndClasses.get(qname.ident.name) match {
+          uenv0.upperNames.get(qname.ident.name) match {
             case None =>
               // Case 2.1.1: The qualified name is not in the use environment. Do not touch it.
               (Some(qname), tag0)
@@ -1747,7 +1746,7 @@ object Namer {
     if (qname.isQualified) {
       qname
     } else {
-      uenv0.typesAndClasses.getOrElse(qname.ident.name, qname)
+      uenv0.upperNames.getOrElse(qname.ident.name, qname)
     }
   }
 
@@ -1755,8 +1754,8 @@ object Namer {
     * Gets the location of the symbol of the given def or sig.
     */
   private def getSymLocation(f: NamedAst.DefOrSig): SourceLocation = f match {
-    case DefOrSig.Def(d) => d.sym.loc
-    case DefOrSig.Sig(s) => s.sym.loc
+    case NamedAst.DefOrSig.Def(d) => d.sym.loc
+    case NamedAst.DefOrSig.Sig(s) => s.sym.loc
   }
 
   /**
@@ -1773,10 +1772,10 @@ object Namer {
   private def mergeUseEnvs(uses: List[WeededAst.Use], uenv0: UseEnv): Validation[UseEnv, NameError] = {
 
     Validation.fold(uses, uenv0) {
-      case (uenv1, WeededAst.Use.UseDefOrSig(qname, alias, _)) =>
+      case (uenv1, WeededAst.Use.UseLower(qname, alias, _)) =>
         val name = alias.name
-        uenv1.defsAndSigs.get(name) match {
-          case None => uenv1.addDefOrSig(name, qname).toSuccess
+        uenv1.lowerNames.get(name) match {
+          case None => uenv1.addLower(name, qname).toSuccess
           case Some(otherQName) =>
             val loc1 = otherQName.loc
             val loc2 = qname.loc
@@ -1786,10 +1785,10 @@ object Namer {
               NameError.DuplicateUseDefOrSig(name, loc2, loc1)
             ))
         }
-      case (uenv1, WeededAst.Use.UseTypeOrClass(qname, alias, _)) =>
+      case (uenv1, WeededAst.Use.UseUpper(qname, alias, _)) =>
         val name = alias.name
-        uenv1.typesAndClasses.get(name) match {
-          case None => uenv1.addTypeOrClass(name, qname).toSuccess
+        uenv1.upperNames.get(name) match {
+          case None => uenv1.addUpper(name, qname).toSuccess
           case Some(otherQName) =>
             val loc1 = otherQName.loc
             val loc2 = qname.loc
@@ -1825,16 +1824,16 @@ object Namer {
   /**
     * Represents an environment of "imported" names, including defs, types, and tags.
     */
-  private case class UseEnv(defsAndSigs: Map[String, Name.QName], typesAndClasses: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Tag)]) {
+  private case class UseEnv(lowerNames: Map[String, Name.QName], upperNames: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Tag)]) {
     /**
-      * Binds the def or sig name `s` to the qualified name `n`.
+      * Binds the lowercase name `s` to the qualified name `n`.
       */
-    def addDefOrSig(s: String, n: Name.QName): UseEnv = copy(defsAndSigs = defsAndSigs + (s -> n))
+    def addLower(s: String, n: Name.QName): UseEnv = copy(lowerNames = lowerNames + (s -> n))
 
     /**
-      * Binds the type or class name `s` to the qualified name `n`.
+      * Binds the uppercase name `s` to the qualified name `n`.
       */
-    def addTypeOrClass(s: String, n: Name.QName): UseEnv = copy(typesAndClasses = typesAndClasses + (s -> n))
+    def addUpper(s: String, n: Name.QName): UseEnv = copy(upperNames = upperNames + (s -> n))
 
     /**
       * Binds the tag name `s` to the qualified name `n` and tag `t`.
