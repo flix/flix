@@ -326,13 +326,12 @@ object Typer {
     */
   private def processTypeVariableNames(subst: Substitution, tparams: List[KindedAst.TypeParam])(implicit flix: Flix): Substitution = {
     val boolTparams = tparams.filter(tparam => tparam.sym.kind == Kind.Bool)
-    subst.prioritize(boolTparams.map(_.sym)).propagate // MATT
-//    boolTparams match {
-//      // Case 1: exactly one boolean type parameter. Prioritize and minimize it.
-//      case tparam :: Nil => subst.prioritize(List(tparam.sym)).minimize(tparam.sym).propagate
-//      // Case 2: multiple or zero boolean type parameters. Just do name propagation.
-//      case _ => subst.propagate
-//    }
+    boolTparams match {
+      // Case 1: exactly one boolean type parameter. Prioritize and minimize it.
+      case tparam :: Nil => subst.prioritize(List(tparam.sym)).minimize(tparam.sym).propagate
+      // Case 2: multiple or zero boolean type parameters. Just do name propagation.
+      case _ => subst.propagate
+    }
   }
 
   /**
