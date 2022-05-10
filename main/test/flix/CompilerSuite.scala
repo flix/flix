@@ -72,7 +72,7 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Concurrency.NewChannel.flix")
   mkTest("main/test/flix/Test.Exp.Concurrency.Unbuffered.flix")
   mkTest("main/test/flix/Test.Exp.Concurrency.Spawn.flix")
-  mkTest("main/test/flix/Test.Exp.Concurrency.Select.flix")
+  mkTest("main/test/flix/Test.Exp.Concurrency.Select.flix")(Options.DefaultTest.copy(xallowredundancies = true))
 
   //
   // Fixpoint
@@ -84,6 +84,60 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Fixpoint.Query.flix")
   mkTest("main/test/flix/Test.Exp.Fixpoint.Solve.flix")
   mkTest("main/test/flix/Test.Exp.Fixpoint.Solve.Lattice.flix")
+
+  //
+  // Default.
+  //
+  mkTest("main/test/flix/Test.Exp.Default.flix")
+
+  //
+  // Discard.
+  //
+  mkTest("main/test/flix/Test.Exp.Discard.flix")
+
+  //
+  // Effects.
+  //
+  mkTest("main/test/flix/Test.Exp.Effect.flix")
+
+  //
+  // Floats.
+  //
+  mkTest("main/test/flix/Test.Exp.Float32.flix")
+  mkTest("main/test/flix/Test.Exp.Float64.flix")
+
+  //
+  // Force.
+  //
+  mkTest("main/test/flix/Test.Exp.Force.flix")
+
+  //
+  // Hole.
+  //
+  mkTest("main/test/flix/Test.Exp.Hole.flix")
+
+  //
+  // IfThenElse.
+  //
+  mkTest("main/test/flix/Test.Exp.IfThenElse.flix")
+
+  //
+  // Infix.
+  //
+  mkTest("main/test/flix/Test.Exp.Infix.flix")
+
+  //
+  // Int.
+  //
+  mkTest("main/test/flix/Test.Exp.Int8.flix")
+  mkTest("main/test/flix/Test.Exp.Int16.flix")
+  mkTest("main/test/flix/Test.Exp.Int32.flix")
+  mkTest("main/test/flix/Test.Exp.Int64.flix")
+
+  //
+  // Interpolation.
+  //
+  mkTest("main/test/flix/Test.Exp.Interpolation.flix")
 
   //
   // Match.

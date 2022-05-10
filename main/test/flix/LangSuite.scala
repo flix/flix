@@ -61,60 +61,6 @@ class LangSuite extends Suites(
   new FlixTest("Test.Equality.Set", "main/test/flix/Test.Equality.Set.flix")(Options.TestWithLibAll),
 
   //
-  // Default.
-  //
-  new FlixTest("Test.Exp.Default", "main/test/flix/Test.Exp.Default.flix"),
-
-  //
-  // Discard.
-  //
-  new FlixTest("Test.Exp.Discard", "main/test/flix/Test.Exp.Discard.flix"),
-
-  //
-  // Effects.
-  //
-  new FlixTest("Test.Exp.Effect", "main/test/flix/Test.Exp.Effect.flix"),
-
-  //
-  // Floats.
-  //
-  new FlixTest("Test.Exp.Float32", "main/test/flix/Test.Exp.Float32.flix"),
-  new FlixTest("Test.Exp.Float64", "main/test/flix/Test.Exp.Float64.flix"),
-
-  //
-  // Force.
-  //
-  new FlixTest("Test.Exp.Force", "main/test/flix/Test.Exp.Force.flix"),
-
-  //
-  // Hole.
-  //
-  new FlixTest("Test.Exp.Hole", "main/test/flix/Test.Exp.Hole.flix")(Options.TestWithLibAll),
-
-  //
-  // IfThenElse.
-  //
-  new FlixTest("Test.Exp.IfThenElse", "main/test/flix/Test.Exp.IfThenElse.flix"),
-
-  //
-  // Infix.
-  //
-  new FlixTest("Test.Exp.Infix", "main/test/flix/Test.Exp.Infix.flix"),
-
-  //
-  // Int.
-  //
-  new FlixTest("Test.Exp.Int8", "main/test/flix/Test.Exp.Int8.flix"),
-  new FlixTest("Test.Exp.Int16", "main/test/flix/Test.Exp.Int16.flix"),
-  new FlixTest("Test.Exp.Int32", "main/test/flix/Test.Exp.Int32.flix"),
-  new FlixTest("Test.Exp.Int64", "main/test/flix/Test.Exp.Int64.flix"),
-
-  //
-  // Interpolation.
-  //
-  new FlixTest("Test.Exp.Interpolation", "main/test/flix/Test.Exp.Interpolation.flix"),
-
-  //
   // JVM.
   //
   new FlixTest("Test.Exp.Jvm.GetField", "main/test/flix/Test.Exp.Jvm.GetField.flix"),
