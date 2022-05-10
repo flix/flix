@@ -56,6 +56,35 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Fixpoint.Solve.Lattice.flix")
 
   //
+  // Int.
+  //
+  mkTest("main/test/flix/Test.Exp.Int8.flix")
+  mkTest("main/test/flix/Test.Exp.Int16.flix")
+  mkTest("main/test/flix/Test.Exp.Int32.flix")
+  mkTest("main/test/flix/Test.Exp.Int64.flix")
+
+  //
+  // Interpolation.
+  //
+  mkTest("main/test/flix/Test.Exp.Interpolation.flix")
+
+  //
+  // JVM.
+  //
+  mkTest("main/test/flix/Test.Exp.Jvm.GetField.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.GetStaticField.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.GetFieldStaticInnerClass.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.GetStaticFieldStaticInnerClass.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.GetFieldDoubleNestedClass.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.InvokeConstructor.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.InvokeMethod.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.PutField.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.PutStaticField.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.TryCatch.flix")
+
+
+  //
   // Match.
   //
   mkTest("main/test/flix/Test.Exp.Match.Array.flix")
