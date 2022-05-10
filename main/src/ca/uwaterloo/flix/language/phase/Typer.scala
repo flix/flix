@@ -232,7 +232,7 @@ object Typer {
 
               // Pivot the substitution and propagate the names to
               // help with type variable naming.
-              val subst = pivot(subst0, tparams0).propagate
+              val subst = subst0.propagate
 
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.
@@ -300,11 +300,13 @@ object Typer {
                   }
               }
 
+              val finalSubst = pivot(subst, tparams0)
+
               ///
               /// Compute the expression, type parameters, and formal parameters with the substitution applied everywhere.
               ///
-              val exp = reassembleExp(exp0, root, subst)
-              val specVal = visitSpec(spec0, root, subst)
+              val exp = reassembleExp(exp0, root, finalSubst)
+              val specVal = visitSpec(spec0, root, finalSubst)
 
               ///
               /// Compute a type scheme that matches the type variables that appear in the expression body.
