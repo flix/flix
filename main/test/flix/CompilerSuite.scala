@@ -45,6 +45,51 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Binary.Spaceship.flix")
 
   //
+  // Block.
+  //
+  mkTest("main/test/flix/Test.Exp.Block.flix")
+
+  //
+  // Cast.
+  //
+  mkTest("main/test/flix/Test.Exp.Cast.flix")
+
+  //
+  // Char.
+  //
+  mkTest("main/test/flix/Test.Exp.Char.flix")
+
+  //
+  // Choose.
+  //
+  mkTest("main/test/flix/Test.Exp.Choose.flix")
+  mkTest("main/test/flix/Test.Exp.ChooseStar.flix")
+
+  //
+  // Concurrency.
+  //
+  mkTest("main/test/flix/Test.Exp.Concurrency.Buffered.flix")
+  mkTest("main/test/flix/Test.Exp.Concurrency.NewChannel.flix")
+  mkTest("main/test/flix/Test.Exp.Concurrency.Unbuffered.flix")
+  mkTest("main/test/flix/Test.Exp.Concurrency.Spawn.flix")
+  mkTest("main/test/flix/Test.Exp.Concurrency.Select.flix")(Options.DefaultTest.copy(xallowredundancies = true))
+
+  //
+  // Default.
+  //
+  mkTest("main/test/flix/Test.Exp.Default.flix")
+
+  //
+  // Discard.
+  //
+  mkTest("main/test/flix/Test.Exp.Discard.flix")
+
+  //
+  // Effects.
+  //
+  mkTest("main/test/flix/Test.Exp.Effect.flix")
+
+  //
   // Fixpoint
   //
   mkTest("main/test/flix/Test.Exp.Fixpoint.Compose.flix")
@@ -54,6 +99,45 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Fixpoint.Query.flix")
   mkTest("main/test/flix/Test.Exp.Fixpoint.Solve.flix")
   mkTest("main/test/flix/Test.Exp.Fixpoint.Solve.Lattice.flix")
+
+  //
+  // Floats.
+  //
+  mkTest("main/test/flix/Test.Exp.Float32.flix")
+  mkTest("main/test/flix/Test.Exp.Float64.flix")
+
+  //
+  // Force.
+  //
+  mkTest("main/test/flix/Test.Exp.Force.flix")
+
+  //
+  // Hole.
+  //
+  mkTest("main/test/flix/Test.Exp.Hole.flix")
+
+  //
+  // IfThenElse.
+  //
+  mkTest("main/test/flix/Test.Exp.IfThenElse.flix")
+
+  //
+  // Infix.
+  //
+  mkTest("main/test/flix/Test.Exp.Infix.flix")
+
+  //
+  // Int.
+  //
+  mkTest("main/test/flix/Test.Exp.Int8.flix")
+  mkTest("main/test/flix/Test.Exp.Int16.flix")
+  mkTest("main/test/flix/Test.Exp.Int32.flix")
+  mkTest("main/test/flix/Test.Exp.Int64.flix")
+
+  //
+  // Interpolation.
+  //
+  mkTest("main/test/flix/Test.Exp.Interpolation.flix")
 
   //
   // Match.
