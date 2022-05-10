@@ -241,7 +241,7 @@ class TestStratifier extends FunSuite with TestUtils {
         |    let p = #{
         |        A(1; 2) :- fix A(2; 3).
         |    };
-        |    let ans = query p select (a,b) from A(a; b);
+        |    let ans = query p select (a, b) from A(a; b);
         |    Array.length(ans)
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
@@ -255,7 +255,7 @@ class TestStratifier extends FunSuite with TestUtils {
         |    let p = #{
         |        A(1; 2) :- A(2; 3), fix A(2; 3).
         |    };
-        |    let ans = query p select (a,b) from A(a; b);
+        |    let ans = query p select (a, b) from A(a; b);
         |    Array.length(ans)
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
@@ -269,7 +269,7 @@ class TestStratifier extends FunSuite with TestUtils {
         |    let p = #{
         |        A(1; 2) :- fix A(2; 3), A(2; 3).
         |    };
-        |    let ans = query p select (a,b) from A(a; b);
+        |    let ans = query p select (a, b) from A(a; b);
         |    Array.length(ans)
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
@@ -283,7 +283,7 @@ class TestStratifier extends FunSuite with TestUtils {
         |    let p = #{
         |        A(1; 2) :- not A(2; 3).
         |    };
-        |    let ans = query p select (a,b) from A(a; b);
+        |    let ans = query p select (a, b) from A(a; b);
         |    Array.length(ans)
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
@@ -297,7 +297,7 @@ class TestStratifier extends FunSuite with TestUtils {
         |    let p = #{
         |        A(1; 2) :- A(2; 3), not A(2; 3).
         |    };
-        |    let ans = query p select (a,b) from A(a; b);
+        |    let ans = query p select (a, b) from A(a; b);
         |    Array.length(ans)
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
@@ -311,7 +311,7 @@ class TestStratifier extends FunSuite with TestUtils {
         |    let p = #{
         |        A(1; 2) :- not A(2; 3), A(2; 3).
         |    };
-        |    let ans = query p select (a,b) from A(a; b);
+        |    let ans = query p select (a, b) from A(a; b);
         |    Array.length(ans)
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
