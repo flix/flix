@@ -669,4 +669,66 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalResume](result)
   }
+
+  test("IllegalResume.02") {
+    val input =
+      """
+        |def f(): Bool =
+        |   try {
+        |       true
+        |   } catch {
+        |       case _: ##java.lang.Exception => resume(true)
+        |   }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalResume](result)
+  }
+
+  test("IllegalResume.03") {
+    val input =
+      """
+        |def f(): Bool =
+        |   try {
+        |       resume(true)
+        |   } with Fail {
+        |       def fail() = false
+        |   }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalResume](result)
+  }
+
+  test("IllegalFormalParamAscription.01") {
+    val input =
+      """
+        |def f(): String =
+        |    try ??? with Fail {
+        |        def fail(x: String) = "hello"
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalFormalParamAscription](result)
+  }
+
+  test("IllegalOperationEffect.01") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Bool & Impure
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalOperationEffect](result)
+  }
+
+  test("IllegalOperationEffect.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Bool \ E
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalOperationEffect](result)
+  }
 }

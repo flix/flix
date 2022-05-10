@@ -945,11 +945,11 @@ object Type {
     * to clear all aliases for easier processing.
     */
   def eraseAliases(t: Type): Type = t match {
-    case tvar: Type.Var => tvar.asKinded
+    case tvar: Type.Var => tvar
     case Type.Cst(_, _) => t
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
-    case Type.Ascribe(_, _, _) => throw InternalCompilerException("Unexpected type ascription.")
+    case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(tpe, kind, loc)
   }
 
   /**
