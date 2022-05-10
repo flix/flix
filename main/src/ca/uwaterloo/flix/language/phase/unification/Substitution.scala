@@ -251,7 +251,7 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
       // Case 2: The variable is not replaced. Nothing to do.
       case None => Substitution.empty
     }
-    newSubst @@ this
+    newSubst @@ this.unbind(sym0)
   }
 
   /**
