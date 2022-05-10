@@ -235,4 +235,46 @@ class TestStratifier extends FunSuite with TestUtils {
     expectError[StratificationError](result)
   }
 
+  test("Stratification.15") {
+    val input =
+      """
+        |pub def f(): Int32 =
+        |    let p = #{
+        |        Something42(1; 2) :- fix Something42(2; 3).
+        |    };
+        |    let ans = query p select (a,b) from Something42(a; b);
+        |    Array.length(ans)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[StratificationError](result)
+  }
+
+  test("Stratification.16") {
+    val input =
+      """
+        |pub def f(): Int32 =
+        |    let p = #{
+        |        Something42(1; 2) :- Something42(2; 3), fix Something42(2; 3).
+        |    };
+        |    let ans = query p select (a,b) from Something42(a; b);
+        |    Array.length(ans)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[StratificationError](result)
+  }
+
+  test("Stratification.17") {
+    val input =
+      """
+        |pub def f(): Int32 =
+        |    let p = #{
+        |        Something42(1; 2) :- fix Something42(2; 3), Something42(2; 3).
+        |    };
+        |    let ans = query p select (a,b) from Something42(a; b);
+        |    Array.length(ans)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[StratificationError](result)
+  }
+
 }
