@@ -239,9 +239,9 @@ class TestStratifier extends FunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let p = #{
-        |        Something42(1; 2) :- fix Something42(2; 3).
+        |        A(1; 2) :- fix A(2; 3).
         |    };
-        |    let ans = query p select (a,b) from Something42(a; b);
+        |    let ans = query p select (a,b) from A(a; b);
         |    Array.length(ans)
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
@@ -253,9 +253,9 @@ class TestStratifier extends FunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let p = #{
-        |        Something42(1; 2) :- Something42(2; 3), fix Something42(2; 3).
+        |        A(1; 2) :- A(2; 3), fix A(2; 3).
         |    };
-        |    let ans = query p select (a,b) from Something42(a; b);
+        |    let ans = query p select (a,b) from A(a; b);
         |    Array.length(ans)
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
@@ -267,9 +267,9 @@ class TestStratifier extends FunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let p = #{
-        |        Something42(1; 2) :- fix Something42(2; 3), Something42(2; 3).
+        |        A(1; 2) :- fix A(2; 3), A(2; 3).
         |    };
-        |    let ans = query p select (a,b) from Something42(a; b);
+        |    let ans = query p select (a,b) from A(a; b);
         |    Array.length(ans)
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
@@ -281,9 +281,9 @@ class TestStratifier extends FunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let p = #{
-        |        Something42(1; 2) :- not Something42(2; 3).
+        |        A(1; 2) :- not A(2; 3).
         |    };
-        |    let ans = query p select (a,b) from Something42(a; b);
+        |    let ans = query p select (a,b) from A(a; b);
         |    Array.length(ans)
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
@@ -295,9 +295,9 @@ class TestStratifier extends FunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let p = #{
-        |        Something42(1; 2) :- Something42(2; 3), not Something42(2; 3).
+        |        A(1; 2) :- A(2; 3), not A(2; 3).
         |    };
-        |    let ans = query p select (a,b) from Something42(a; b);
+        |    let ans = query p select (a,b) from A(a; b);
         |    Array.length(ans)
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
@@ -309,9 +309,9 @@ class TestStratifier extends FunSuite with TestUtils {
       """
         |pub def f(): Int32 =
         |    let p = #{
-        |        Something42(1; 2) :- not Something42(2; 3), Something42(2; 3).
+        |        A(1; 2) :- not A(2; 3), A(2; 3).
         |    };
-        |    let ans = query p select (a,b) from Something42(a; b);
+        |    let ans = query p select (a,b) from A(a; b);
         |    Array.length(ans)
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
