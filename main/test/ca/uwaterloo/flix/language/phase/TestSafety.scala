@@ -136,4 +136,48 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[IllegalRelationalUseOfLatticeVariable](result)
   }
 
+  test("UseOfLatticeVariable.02") {
+    val input =
+      """
+        |pub def f(): #{A(Int32), B(Int32; Int32), C(Int32, Int32) } = #{
+        |    A(x) :- B(x; l), C(x, l).
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[IllegalRelationalUseOfLatticeVariable](result)
+  }
+
+  test("UseOfLatticeVariable.03") {
+    val input =
+      """
+        |pub def f(): #{A(Int32; Int32), B(Int32; Int32), C(Int32, Int32) } = #{
+        |    A(x; l) :- B(x; l), C(x, l).
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[IllegalRelationalUseOfLatticeVariable](result)
+  }
+
+  test("UseOfLatticeVariable.04") {
+    val input =
+      """
+        |pub def f(): #{A(Int32, Int32), B(Int32; Int32), C(Int32; Int32) } = #{
+        |    A(12, l) :- B(12; l), fix C(12; l).
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[IllegalRelationalUseOfLatticeVariable](result)
+  }
+
+  test("UseOfLatticeVariable.05") {
+    val input =
+      """
+        |pub def f(): #{A(Int32), B(Int32, Int32), C(Int32; Int32) } = #{
+        |    A(12) :- B(12, l), fix C(12; l).
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[IllegalRelationalUseOfLatticeVariable](result)
+  }
+
 }
