@@ -75,17 +75,6 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Concurrency.Select.flix")(Options.DefaultTest.copy(xallowredundancies = true))
 
   //
-  // Fixpoint
-  //
-  mkTest("main/test/flix/Test.Exp.Fixpoint.Compose.flix")
-  mkTest("main/test/flix/Test.Exp.Fixpoint.Constraint.flix")
-  mkTest("main/test/flix/Test.Exp.Fixpoint.Lambda.flix")
-  mkTest("main/test/flix/Test.Exp.Fixpoint.Project.flix")
-  mkTest("main/test/flix/Test.Exp.Fixpoint.Query.flix")
-  mkTest("main/test/flix/Test.Exp.Fixpoint.Solve.flix")
-  mkTest("main/test/flix/Test.Exp.Fixpoint.Solve.Lattice.flix")
-
-  //
   // Default.
   //
   mkTest("main/test/flix/Test.Exp.Default.flix")
@@ -99,6 +88,17 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   // Effects.
   //
   mkTest("main/test/flix/Test.Exp.Effect.flix")
+
+  //
+  // Fixpoint
+  //
+  mkTest("main/test/flix/Test.Exp.Fixpoint.Compose.flix")
+  mkTest("main/test/flix/Test.Exp.Fixpoint.Constraint.flix")
+  mkTest("main/test/flix/Test.Exp.Fixpoint.Lambda.flix")
+  mkTest("main/test/flix/Test.Exp.Fixpoint.Project.flix")
+  mkTest("main/test/flix/Test.Exp.Fixpoint.Query.flix")
+  mkTest("main/test/flix/Test.Exp.Fixpoint.Solve.flix")
+  mkTest("main/test/flix/Test.Exp.Fixpoint.Solve.Lattice.flix")
 
   //
   // Floats.
