@@ -41,7 +41,7 @@ object UllmansAlgorithm {
       case _: DependencyEdge.Strong => 7 * Objects.hash(head, body)
     }
 
-    override def equals(obj: Any): Boolean = (this, obj) match {
+    override def equals(that: Any): Boolean = (this, that) match {
       case (DependencyEdge.Weak(head1, body1, _), DependencyEdge.Weak(head2, body2, _)) =>
         head1 == head2 && body1 == body2
       case (DependencyEdge.Strong(head1, body1, _), DependencyEdge.Strong(head2, body2, _)) =>
