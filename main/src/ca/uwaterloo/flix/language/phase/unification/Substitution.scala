@@ -229,35 +229,29 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
     * * unifying `x` with its replacement `this(x)` to make a new substitution `s`
     * * putting `s` into the `this` substitution
     */
-  def prioritize(syms0: List[Symbol.KindedTypeVarSym])(implicit flix: Flix): Substitution = {
-    val rigidSubst = asdf(syms0, Set.empty)
-    Substitution(rigidSubst.m.map {
-      case (k, v) =>
-        (k, v.map {
-          case tvar if syms0.contains(tvar.sym) => tvar.withRigidity(Rigidity.Flexible)
-          case tvar => tvar
-        })
-    }) @@ this
-  }
-
-
-  private def asdf(syms0: List[Symbol.KindedTypeVarSym], visited: Set[Symbol.KindedTypeVarSym])(implicit flix: Flix): Substitution = {
-    syms0 match {
-      case Nil => Substitution.empty
-      case sym :: syms =>
-        m.get(sym) match {
-          case Some (tpe) =>
-            val rigidTpe = tpe.map {
-              case tvar if visited.contains(tvar.sym) => tvar.withRigidity(Rigidity.Rigid)
-              case tvar => tvar
+  def prioritize(sym0: Symbol.KindedTypeVarSym)(implicit flix: Flix): Substitution = {
+    val newSubst = m.get(sym0) match {
+      // Case 1: The variable is replaced. Need to process it.
+      case Some(tpe) =>
+        val rigidSym = sym0.withRigidity(Rigidity.Rigid)
+        unifyTypes(Type.KindedVar(rigidSym, sym0.loc), tpe) match {
+          case Ok(rigidSubst) =>
+            // de-rigidify and minimize the substitution
+            val flexMap = rigidSubst.m.map {
+              case (k, v) =>
+                val v2 = v.map {
+                  case Type.KindedVar(sym, loc) if sym == rigidSym => Type.KindedVar(rigidSym.withRigidity(Rigidity.Flexible), loc)
+                  case otherVar => otherVar
+                }
+                (k, v2)
             }
-            val rigidSym = sym.withRigidity(Rigidity.Rigid)
-            unifyTypes(Type.KindedVar(rigidSym, sym.loc), rigidTpe) match {
-              case Ok(rigidSubst) => rigidSubst @@ asdf(syms, visited + sym)
-              case Err(_) => throw InternalCompilerException("asdf") // MATT
-            }
+            Substitution(flexMap)
+          case Err(_) => throw InternalCompilerException("Unexpected unification failure.")
         }
+      // Case 2: The variable is not replaced. Nothing to do.
+      case None => Substitution.empty
     }
+    newSubst @@ this
   }
 
   /**
