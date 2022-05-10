@@ -229,7 +229,10 @@ object Typer {
 
           run(initialSubst) match {
             case Ok((subst0, (partialTconstrs, partialType))) =>
-              val subst = processTypeVariableNames(subst0, tparams0)
+
+              // Pivot the substitution and propagate the names to
+              // help with type variable naming.
+              val subst = pivot(subst0, tparams0).propagate
 
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.
@@ -322,15 +325,16 @@ object Typer {
   }
 
   /**
-    * Performs processing on the type variable names to attempt to preserve user-given names.
+    * Computes an equ-most general substitution with the given `tparams` as rigid variables.
     */
-  private def processTypeVariableNames(subst: Substitution, tparams: List[KindedAst.TypeParam])(implicit flix: Flix): Substitution = {
+  private def pivot(subst: Substitution, tparams: List[KindedAst.TypeParam])(implicit flix: Flix): Substitution = {
+    // We only pivot Boolean type variables
     val boolTparams = tparams.filter(tparam => tparam.sym.kind == Kind.Bool)
     boolTparams match {
-      // Case 1: exactly one boolean type parameter. Prioritize and minimize it.
-      case tparam :: Nil => subst.prioritize(tparam.sym).propagate
-      // Case 2: multiple or zero boolean type parameters. Just do name propagation.
-      case _ => subst.propagate
+      // Case 1: exactly one boolean type parameter.
+      case tparam :: Nil => subst.pivot(tparam.sym)
+      // Case 2: multiple or zero boolean type parameters. No action
+      case _ => subst
     }
   }
 

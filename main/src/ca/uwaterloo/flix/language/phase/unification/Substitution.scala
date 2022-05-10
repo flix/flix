@@ -222,14 +222,11 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
   }
 
   /**
-    * Prioritizes the given symbol so that it is not replaced by the substitution.
+    * Computes an equ-most general substitution with the given type variable as `rigid`.
     *
-    * This is done by:
-    * * rigidifying the variable `x` (so that it cannot appear on the left of the unification result)
-    * * unifying `x` with its replacement `this(x)` to make a new substitution `s`
-    * * putting `s` into the `this` substitution
+    * That is, the resulting subst has `sym = sym`.
     */
-  def prioritize(sym0: Symbol.KindedTypeVarSym)(implicit flix: Flix): Substitution = {
+  def pivot(sym0: Symbol.KindedTypeVarSym)(implicit flix: Flix): Substitution = {
     val newSubst = m.get(sym0) match {
       // Case 1: The variable is replaced. Need to process it.
       case Some(tpe) =>
