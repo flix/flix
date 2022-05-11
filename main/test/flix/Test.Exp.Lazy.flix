@@ -101,7 +101,7 @@ namespace Test/Exp/Lazy {
 
 
     @test
-    def testInliningLazy(): Bool =
+    def testInliningLazy(): Bool & Impure =
         region r {
             let a = [0, 1, 2] @ r;
             let y = (a[0] = 42) as & Pure;
