@@ -881,6 +881,26 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
+  test("DuplicateUpperName.19") {
+    val input =
+      """
+        |enum E
+        |eff E
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.20") {
+    val input =
+      """
+        |class C[a]
+        |eff C
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
   test("SuspiciousTypeVarName.01") {
     val input =
       s"""
