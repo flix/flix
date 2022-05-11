@@ -654,7 +654,7 @@ class TestWeeder extends FunSuite with TestUtils {
     val input =
       """
         |eff MyEffect {
-        |    def op[a](x: a): Bool
+        |    def op[a](x: a): Unit
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -714,7 +714,7 @@ class TestWeeder extends FunSuite with TestUtils {
     val input =
       """
         |eff E {
-        |    def op(): Bool & Impure
+        |    def op(): Unit & Impure
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -725,10 +725,21 @@ class TestWeeder extends FunSuite with TestUtils {
     val input =
       """
         |eff E {
-        |    def op(): Bool \ E
+        |    def op(): Unit \ E
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalOperationEffect](result)
+  }
+
+  test("NonUnitOperationType.01") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonUnitOperationType](result)
   }
 }
