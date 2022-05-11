@@ -140,19 +140,6 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Interpolation.flix")
 
   //
-  // Int.
-  //
-  mkTest("main/test/flix/Test.Exp.Int8.flix")
-  mkTest("main/test/flix/Test.Exp.Int16.flix")
-  mkTest("main/test/flix/Test.Exp.Int32.flix")
-  mkTest("main/test/flix/Test.Exp.Int64.flix")
-
-  //
-  // Interpolation.
-  //
-  mkTest("main/test/flix/Test.Exp.Interpolation.flix")
-
-  //
   // JVM.
   //
   mkTest("main/test/flix/Test.Exp.Jvm.GetField.flix")
