@@ -103,8 +103,8 @@ object Namer {
                 val sigsProgVal = Validation.fold(sigs, prog0) {
                   case (prog, sig) => lookupLowerName(sig.sym.name, sigNs, prog) match {
                     case LookupResult.NotDefined =>
-                      val defsAndSigsInNs = prog0.defsAndSigs.getOrElse(sigNs, Map.empty) + (sig.sym.name -> NamedAst.DefOrSig.Sig(sig))
-                      prog0.copy(defsAndSigs = prog0.defsAndSigs + (sigNs -> defsAndSigsInNs)).toSuccess
+                      val defsAndSigsInNs = prog.defsAndSigs.getOrElse(sigNs, Map.empty) + (sig.sym.name -> NamedAst.DefOrSig.Sig(sig))
+                      prog.copy(defsAndSigs = prog.defsAndSigs + (sigNs -> defsAndSigsInNs)).toSuccess
                     case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(sig.sym.name, sig.sym.loc, otherLoc)
                   }
                 }
@@ -192,8 +192,8 @@ object Namer {
                 val opsProgVal = Validation.fold(ops, prog0) {
                   case (prog, op) => lookupLowerName(op.sym.name, opNs, prog) match {
                     case LookupResult.NotDefined =>
-                      val opsInNs = prog0.ops.getOrElse(opNs, Map.empty) + (op.sym.name -> op)
-                      prog0.copy(ops = prog0.ops + (opNs -> opsInNs)).toSuccess
+                      val opsInNs = prog.ops.getOrElse(opNs, Map.empty) + (op.sym.name -> op)
+                      prog.copy(ops = prog.ops + (opNs -> opsInNs)).toSuccess
                     case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(op.sym.name, op.sym.loc, otherLoc)
                   }
                 }
