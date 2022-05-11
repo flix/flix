@@ -99,6 +99,16 @@ namespace Test/Exp/Lazy {
     def testPolyLazy03(): Lazy[Poly[String, Int32]] =
         lazy Both("str", 123)
 
+
+    @test
+    def testInliningLazy(): Bool =
+        region r {
+            let a = [0, 1, 2] @ r;
+            let y = (a[0] = 42) as & Pure;
+            let _ = (lazy y) as & Impure;
+            a[0] == 42
+        }
+
     pub enum Suit {
         case Hearts, Diamonds, Clubs, Spades
     }
