@@ -38,6 +38,10 @@ namespace Test/Enum/Kinding {
             case CSchemaRow1(#{ R | a })
         }
 
+        pub enum EEffect[a: Eff] {
+            case CEffect1(Int32 -> Int32 \ a)
+        }
+
         // These pass kinding but cause a crash in the Finalizer.
 //        pub enum EStarToStar[a: Type -> Type] {
 //            case CStarToStar1(a[Int32])
