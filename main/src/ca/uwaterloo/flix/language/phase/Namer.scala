@@ -205,7 +205,7 @@ object Namer {
         val opNs = Name.extendNName(ns0, ident)
         lookupUpperName(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
-            // Case 1: The class does not already exist. Update it.
+            // Case 1: The effect does not exist. Add it.
             flatMapN(visitEffect(decl, uenv0, Map.empty, ns0)) {
               case eff@NamedAst.Effect(_, _, _, _, ops, _) =>
                 // add each operation to the namespace
@@ -221,6 +221,8 @@ object Namer {
                   prog => prog.copy(effects = prog0.effects + (ns0 -> (effs0 + (ident.name -> eff))))
                 }
             }
+          // Case 2: The name is in use. Error
+          case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
     }
   }
@@ -535,8 +537,50 @@ object Namer {
   }
 
   // MATT docs
-  private def visitEffect(eff0: WeededAst.Declaration.Effect, uenv0: Namer.UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym], ns: Name.NName): Validation[NamedAst.Effect, NameError] = {
-    ??? // MATT
+  private def visitEffect(eff0: WeededAst.Declaration.Effect, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Effect, NameError] = eff0 match {
+    case WeededAst.Declaration.Effect(doc, mod0, ident, ops, loc) =>
+      val sym = Symbol.mkEffectSym(ns0, ident)
+      val mod = visitModifiers(mod0, ns0)
+
+      val opsVal = traverse(ops)(visitOp(_, uenv0, tenv0, ns0, sym))
+
+      mapN(opsVal) {
+        ops => NamedAst.Effect(doc, Nil, mod, sym, ops, loc) // MATT add annotations to Parser, Weeder
+      }
+  }
+
+  // MATT docs
+  private def visitOp(op0: WeededAst.Declaration.Op, uenv0: UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix): Validation[NamedAst.Op, NameError] = op0 match {
+    case WeededAst.Declaration.Op(doc, ann0, mod0, ident, fparams0, tpe0, retTpe0, tconstrs0, loc) =>
+      // First visit all the top-level information
+      val mod = visitModifiers(mod0, ns0)
+      val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
+      val tpeVal = visitType(tpe0, uenv0, tenv)
+      val retTpeVal = visitType(retTpe0, uenv0, tenv)
+      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
+
+      flatMapN(fparamsVal, tpeVal, retTpeVal, tconstrsVal) {
+        case (fparams, tpe, retTpe, tconstrs) =>
+
+          // Then visit the parts depending on the parameters
+          val env0 = getVarEnv(fparams)
+          val annVal = traverse(ann0)(visitAnnotation(_, env0, uenv0, tenv))
+
+          mapN(annVal) {
+            ann =>
+
+              // Build the scheme, including the class type constraint.
+              val quantifiers = Nil // operations are monomorphic
+              val sc = NamedAst.Scheme(quantifiers, tconstrs, tpe)
+
+              val tparams = NamedAst.TypeParams.Kinded(Nil) // operations are monomorphic
+              val pur = NamedAst.Type.True(ident.loc) // operations are pure
+
+              val sym = Symbol.mkOpSym(effSym, ident)
+              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, sc, retTpe, pur, loc)
+              NamedAst.Op(sym, spec)
+          }
+      }
   }
 
   /**

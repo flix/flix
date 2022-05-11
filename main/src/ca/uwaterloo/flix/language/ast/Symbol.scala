@@ -165,6 +165,20 @@ object Symbol {
   }
 
   /**
+    * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkEffectSym(ns: NName, ident: Ident): EffectSym = {
+    new EffectSym(ns.parts, ident.name, ident.loc)
+  }
+
+  /**
+    * Returns the operation symbol for the given name `ident` in the effect associated with the given effect symbol `effectSym`.
+    */
+  def mkOpSym(effectSym: EffectSym, ident: Name.Ident): OpSym = {
+    new OpSym(effectSym, ident.name, ident.loc)
+  }
+
+  /**
     * Variable Symbol.
     *
     * @param id      the globally unique name of the symbol.
