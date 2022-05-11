@@ -2310,6 +2310,8 @@ object Weeder {
       val t = visitType(tpe)
       val k = visitKind(kind)
       WeededAst.Type.Ascribe(t, k, mkSL(sp1, sp2))
+
+    case ParsedAst.Type.Effect(sp1, eff, sp2) => ??? // MATT use WeededAst.Type.Effect(EffectSet)
   }
 
   /**
