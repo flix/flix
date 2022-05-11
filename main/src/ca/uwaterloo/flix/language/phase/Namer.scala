@@ -93,7 +93,7 @@ object Namer {
         val sigNs = Name.extendNName(ns0, ident)
         val defsAndSigs0 = prog0.defsAndSigs.getOrElse(sigNs, Map.empty)
         val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
-        lookupTypeOrClass(ident, ns0, prog0) match {
+        lookupUpperName(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
             // Case 1: The class does not already exist. Update it.
             flatMapN(visitClass(decl, uenv0, Map.empty, ns0)) {
@@ -169,7 +169,7 @@ object Namer {
      */
       case enum0@WeededAst.Declaration.Enum(_, _, _, ident, _, _, _, _) =>
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
-        lookupTypeOrClass(ident, ns0, prog0) match {
+        lookupUpperName(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
             // Case 1: The enum does not exist in the namespace. Update it.
             visitEnum(enum0, uenv0, ns0) map {
@@ -186,7 +186,7 @@ object Namer {
      */
       case alias0@WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams0, tpe0, loc) =>
         val typeAliases0 = prog0.typeAliases.getOrElse(ns0, Map.empty)
-        lookupTypeOrClass(ident, ns0, prog0) match {
+        lookupUpperName(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
             // Case 1: The type alias does not exist in the namespace. Add it.
             visitTypeAlias(alias0, uenv0, ns0) map {
@@ -199,7 +199,29 @@ object Namer {
         }
 
       // Not handling effects for now
-      case _: WeededAst.Declaration.Effect => prog0.toSuccess
+      case _: WeededAst.Declaration.Effect if true => prog0.toSuccess
+      case decl@WeededAst.Declaration.Effect(_, _, ident, _, _) =>
+        val effs0 = prog0.effects.getOrElse(ns0, Map.empty)
+        val opNs = Name.extendNName(ns0, ident)
+        lookupUpperName(ident, ns0, prog0) match {
+          case LookupResult.NotDefined =>
+            // Case 1: The class does not already exist. Update it.
+            flatMapN(visitEffect(decl, uenv0, Map.empty, ns0)) {
+              case eff@NamedAst.Effect(_, _, _, _, ops, _) =>
+                // add each operation to the namespace
+                val opsProgVal = Validation.fold(ops, prog0) {
+                  case (prog, op) => lookupLowerName(op.sym.name, opNs, prog) match {
+                    case LookupResult.NotDefined =>
+                      val opsInNs = prog0.ops + (op.sym.name -> op)
+                      prog0.copy(ops = prog0.ops + (opNs -> opsInNs)).toSuccess
+                    case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(op.sym.name, op.sym.loc, otherLoc)
+                  }
+                }
+                opsProgVal.map {
+                  prog => prog.copy(effects = prog0.effects + (ns0 -> (effs0 + (ident.name -> eff))))
+                }
+            }
+        }
     }
   }
 
@@ -228,23 +250,44 @@ object Namer {
   }
 
   /**
-    * Looks up the type or class in the given namespace and root.
+    * Looks up the uppercase name in the given namespace and root.
     */
-  private def lookupTypeOrClass(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Root): NameLookupResult = {
+  private def lookupUpperName(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Root): NameLookupResult = {
     val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
     val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
     val typeAliases0 = prog0.typeAliases.getOrElse(ns0, Map.empty)
-    (classes0.get(ident.name), enums0.get(ident.name), typeAliases0.get(ident.name)) match {
+    val effects0 = prog0.effects.getOrElse(ns0, Map.empty)
+    (classes0.get(ident.name), enums0.get(ident.name), typeAliases0.get(ident.name), effects0.get(ident.name)) match {
       // Case 1: The name is unused.
-      case (None, None, None) => LookupResult.NotDefined
+      case (None, None, None, None) => LookupResult.NotDefined
       // Case 2: A class with the name already exists.
-      case (Some(clazz), None, None) => LookupResult.AlreadyDefined(clazz.sym.loc)
+      case (Some(clazz), None, None, None) => LookupResult.AlreadyDefined(clazz.sym.loc)
       // Case 3: An enum with the name already exists.
-      case (None, Some(enum), None) => LookupResult.AlreadyDefined(enum.sym.loc)
+      case (None, Some(enum), None, None) => LookupResult.AlreadyDefined(enum.sym.loc)
       // Case 4: A type alias with the name already exists.
-      case (None, None, Some(typeAlias)) => LookupResult.AlreadyDefined(typeAlias.sym.loc)
+      case (None, None, Some(typeAlias), None) => LookupResult.AlreadyDefined(typeAlias.sym.loc)
+      // Case 5: An effect with the name already exists.
+      case (None, None, None, Some(eff)) => LookupResult.AlreadyDefined(eff.sym.loc)
       // Impossible.
-      case _ => throw InternalCompilerException("Unexpected duplicate enum, type alias, or class found.")
+      case _ => throw InternalCompilerException("Unexpected duplicate name found.")
+    }
+  }
+
+  /**
+    * Looks up the lowercase name in the given namespace and root.
+    */
+  private def lookupLowerName(name: String, ns0: Name.NName, prog0: NamedAst.Root): NameLookupResult = {
+    val defsAndSigs0 = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
+    val ops0 = prog0.ops.getOrElse(ns0, Map.empty)
+    (defsAndSigs0.get(name), ops0.get(name)) match {
+      // Case 1: The name is unused.
+      case (None, None) => LookupResult.NotDefined
+      // Case 2: A sig or def with the name already exists.
+      case (Some(defOrSig), None) => LookupResult.AlreadyDefined(getSymLocation(defOrSig))
+      // Case 3: An op with the name already exists.
+      case (None, Some(op)) => LookupResult.AlreadyDefined(op.sym.loc)
+      // Impossible
+      case _ => throw InternalCompilerException("Unexpected duplicate name found.")
     }
   }
 
@@ -489,6 +532,11 @@ object Namer {
               NamedAst.Def(sym, spec, e)
           }
       }
+  }
+
+  // MATT docs
+  private def visitEffect(eff0: WeededAst.Declaration.Effect, uenv0: Namer.UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym], ns: Name.NName): Validation[NamedAst.Effect, NameError] = {
+    ??? // MATT
   }
 
   /**
@@ -815,7 +863,7 @@ object Namer {
         case (e, rs) => NamedAst.Expression.TryCatch(e, rs, loc)
       }
 
-      // replace effect stuff with holes for now
+    // replace effect stuff with holes for now
     case WeededAst.Expression.TryWith(exp, eff, rules, loc) => NamedAst.Expression.Hole(None, loc).toSuccess
     case WeededAst.Expression.Do(op, args, loc) => NamedAst.Expression.Hole(None, loc).toSuccess
     case WeededAst.Expression.Resume(args, loc) => NamedAst.Expression.Hole(None, loc).toSuccess
