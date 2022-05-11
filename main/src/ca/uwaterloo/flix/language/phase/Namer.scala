@@ -1260,7 +1260,8 @@ object Namer {
         case (t1, t2) => NamedAst.Type.Or(t1, t2, loc)
       }
 
-    case WeededAst.Type.Effect(tpe, eff, loc) => ??? // not handling effects here yet
+    // ignoring effect for now
+    case WeededAst.Type.Effect(tpe, eff, loc) => visitType(tpe, uenv0, tenv0)
 
     case WeededAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(visitType(tpe, uenv0, tenv0)) {
