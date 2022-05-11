@@ -525,7 +525,9 @@ object Namer {
       }
   }
 
-  // MATT docs
+  /**
+    * Performs naming on the given effect `eff0` under the given environments `env0`, `uenv0`, and `tenv0`.
+    */
   private def visitEffect(eff0: WeededAst.Declaration.Effect, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Effect, NameError] = eff0 match {
     case WeededAst.Declaration.Effect(doc, mod0, ident, ops, loc) =>
       val sym = Symbol.mkEffectSym(ns0, ident)
@@ -538,7 +540,9 @@ object Namer {
       }
   }
 
-  // MATT docs
+  /**
+    * Performs naming on the given effect operation `op0` under the given environments `env0`, `uenv0`, and `tenv0`.
+    */
   private def visitOp(op0: WeededAst.Declaration.Op, uenv0: UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix): Validation[NamedAst.Op, NameError] = op0 match {
     case WeededAst.Declaration.Op(doc, ann0, mod0, ident, fparams0, tpe0, retTpe0, tconstrs0, loc) =>
       // First visit all the top-level information
