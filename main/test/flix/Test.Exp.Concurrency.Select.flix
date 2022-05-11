@@ -116,7 +116,7 @@ namespace Test/Exp/Concurrency/Select {
     @test
     def testSelectDefault02(): Bool & Impure =
         (1 + select {
-            case x <- chan Int64 1 => 2
+            case _ <- chan Int64 1 => 2
             case _                 => 1
         }) == 2
 
@@ -127,7 +127,7 @@ namespace Test/Exp/Concurrency/Select {
         let c11 = chan Unit 0;
         let c12 = chan Unit 0;
         let c13 = chan Unit 0;
-        spawn { c13 <- () ; () } ; spawn { c12 <- () ; () } ; spawn { c11 <- () ; () } ; spawn { c10 <- () ; () } ; spawn { c9 <- () ; () } ; () ; select {
+        spawn { c13 <- () ; () } ; spawn { c12 <- () ; () } ; spawn { c11 <- () ; () } ; spawn { c10 <- () ; () } ; spawn { c9 <- () ; () } ; select {
         case _ <- c13 => select {
         case _ <- c11 => ()
         case _ <- c11 => ()
@@ -135,7 +135,7 @@ namespace Test/Exp/Concurrency/Select {
         let c43 = chan Unit 0;
         let c44 = chan Unit 0;
         let c45 = chan Unit 0;
-        spawn { c45 <- () ; () } ; spawn { c44 <- () ; () } ; spawn { c43 <- () ; () } ; spawn { c42 <- () ; () } ; () ; select {
+        spawn { c45 <- () ; () } ; spawn { c44 <- () ; () } ; spawn { c43 <- () ; () } ; spawn { c42 <- () ; () } ; select {
         case _ <- c43 => <- c42 ; <- c44 ; <- c45
         case _ <- c42 => <- c45 ; <- c43 ; <- c44 ; ()
         }
@@ -146,7 +146,7 @@ namespace Test/Exp/Concurrency/Select {
         let c43 = chan Unit 0;
         let c44 = chan Unit 0;
         let c45 = chan Unit 0;
-        spawn { c45 <- () ; () } ; spawn { c44 <- () ; () } ; spawn { c43 <- () ; () } ; spawn { c42 <- () ; () } ; () ; select {
+        spawn { c45 <- () ; () } ; spawn { c44 <- () ; () } ; spawn { c43 <- () ; () } ; spawn { c42 <- () ; () } ; select {
         case _ <- c43 => <- c42 ; <- c44 ; <- c45 ; ()
         case _ <- c42 => <- c45 ; <- c43 ; <- c44
         }
@@ -175,10 +175,10 @@ namespace Test/Exp/Concurrency/Select {
         let c16 = chan Unit 0;
         let c17 = chan Unit 0;
         let c18 = chan Unit 0;
-        spawn { c18 <- () ; () } ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; () ; spawn { c18 <- () ; () } ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; () ; let c141 = chan Unit 0;
+        spawn { c18 <- () ; () } ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; spawn { c18 <- () ; () } ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; let c141 = chan Unit 0;
         let c139 = chan Unit 0;
         let c140 = chan Unit 0;
-        spawn { c141 <- () ; () } ; spawn { c140 <- () ; () } ; spawn { c139 <- () ; () } ; () ; spawn { c141 <- () ; () } ; spawn { c140 <- () ; () } ; spawn { c139 <- () ; () } ; () ; spawn { c141 <- () ; () } ; spawn { c140 <- () ; () } ; spawn { c139 <- () ; () } ; () ; spawn { select {
+        spawn { c141 <- () ; () } ; spawn { c140 <- () ; () } ; spawn { c139 <- () ; () } ; spawn { c141 <- () ; () } ; spawn { c140 <- () ; () } ; spawn { c139 <- () ; () } ; spawn { c141 <- () ; () } ; spawn { c140 <- () ; () } ; spawn { c139 <- () ; () } ; spawn { select {
         case _ <- c141 => <- c140 ; <- c139 ; ()
         } } ; spawn { select {
         case _ <- c139 => <- c140 ; <- c141 ; ()
@@ -189,7 +189,7 @@ namespace Test/Exp/Concurrency/Select {
         case _ <- c140 => ()
         } ; <- c141 ; ()
         case _ <- c141 => <- c140 ; <- c139 ; ()
-        } } ; () ; spawn { select {
+        } } ; spawn { select {
         case _ <- c15 => <- c18 ; <- c16 ; <- c17 ; <- c14 ; ()
         case _ <- c14 => <- c18 ; <- c16 ; <- c15 ; <- c17 ; ()
         case _ <- c17 => <- c15 ; <- c18 ; select {
@@ -199,7 +199,7 @@ namespace Test/Exp/Concurrency/Select {
         case _ <- c18 => <- c15 ; <- c14 ; <- c17 ; <- c16 ; ()
         } } ; spawn { select {
         case _ <- c16 => <- c18 ; <- c17 ; <- c15 ; <- c14 ; ()
-        } } ; ();
+        } } ;
         ()
     }
 
@@ -211,7 +211,7 @@ namespace Test/Exp/Concurrency/Select {
         spawn { c12 <- () ; () } ; spawn { c11 <- () ; () } ; spawn { c10 <- () ; () } ; let c40 = chan Unit 0;
         let c41 = chan Unit 0;
         let c42 = chan Unit 0;
-        spawn { c42 <- () ; () } ; spawn { c41 <- () ; () } ; spawn { c40 <- () ; () } ; () ; spawn { c42 <- () ; () } ; spawn { c41 <- () ; () } ; spawn { c40 <- () ; () } ; spawn { c42 <- () ; () } ; spawn { c41 <- () ; () } ; spawn { c40 <- () ; () } ; () ; spawn { c42 <- () ; () } ; spawn { c41 <- () ; () } ; spawn { c40 <- () ; () } ; () ; spawn { select {
+        spawn { c42 <- () ; () } ; spawn { c41 <- () ; () } ; spawn { c40 <- () ; () } ; spawn { c42 <- () ; () } ; spawn { c41 <- () ; () } ; spawn { c40 <- () ; () } ; spawn { c42 <- () ; () } ; spawn { c41 <- () ; () } ; spawn { c40 <- () ; () } ; spawn { c42 <- () ; () } ; spawn { c41 <- () ; () } ; spawn { c40 <- () ; () } ; spawn { select {
         case _ <- c40 => <- c41 ; <- c42 ; ()
         } } ; spawn { select {
         case _ <- c40 => <- c42 ; <- c41 ; ()
@@ -221,7 +221,7 @@ namespace Test/Exp/Concurrency/Select {
         } } ; spawn { select {
         case _ <- c42 => <- c40 ; <- c41 ; ()
         case _ <- c42 => <- c40 ; <- c41 ; ()
-        } } ; () ; select {
+        } } ; select {
         case _ <- c10 => <- c12 ; <- c11 ; ()
         };
         ()
@@ -233,7 +233,7 @@ namespace Test/Exp/Concurrency/Select {
         let c15 = chan Unit 0;
         let c16 = chan Unit 0;
         let c17 = chan Unit 0;
-        spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; () ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; () ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; () ; () ; spawn { select {
+        spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; spawn { select {
         case _ <- c17 => <- c14 ; <- c15 ; <- c16
         } } ; spawn { select {
         case _ <- c16 => <- c14 ; <- c15 ; <- c17 ; ()
@@ -241,7 +241,7 @@ namespace Test/Exp/Concurrency/Select {
         case _ <- c17 => <- c15 ; <- c16 ; <- c14 ; let c171 = chan Unit 0;
         let c172 = chan Unit 0;
         let c173 = chan Unit 0;
-        spawn { c173 <- () ; () } ; spawn { c172 <- () ; () } ; spawn { c171 <- () ; () } ; () ; spawn { c173 <- () ; () } ; spawn { c172 <- () ; () } ; spawn { c171 <- () ; () } ; () ; spawn { c173 <- () ; () } ; spawn { c172 <- () ; () } ; spawn { c171 <- () ; () } ; () ; spawn { c173 <- () ; () } ; spawn { c172 <- () ; () } ; spawn { c171 <- () ; () } ; () ; () ; spawn { select {
+        spawn { c173 <- () ; () } ; spawn { c172 <- () ; () } ; spawn { c171 <- () ; () } ; spawn { c173 <- () ; () } ; spawn { c172 <- () ; () } ; spawn { c171 <- () ; () } ; spawn { c173 <- () ; () } ; spawn { c172 <- () ; () } ; spawn { c171 <- () ; () } ; spawn { c173 <- () ; () } ; spawn { c172 <- () ; () } ; spawn { c171 <- () ; () } ; spawn { select {
         case _ <- c172 => <- c173 ; <- c171 ; ()
         } } ; spawn { select {
         case _ <- c171 => <- c173 ; <- c172 ; ()
@@ -260,7 +260,7 @@ namespace Test/Exp/Concurrency/Select {
         case _ <- c14 => <- c17 ; <- c15 ; <- c16 ; ()
         } } ; spawn { select {
         case _ <- c17 => <- c16 ; <- c15 ; <- c14 ; ()
-        } } ; ();
+        } } ;
         ()
     }
 
@@ -268,14 +268,14 @@ namespace Test/Exp/Concurrency/Select {
     def testSelectRandom06(): Unit & Impure = {
         let c2 = chan Unit 0;
         let c3 = chan Unit 0;
-        spawn { c3 <- () ; () ; () } ; spawn { c2 <- () ; () ; () } ; () ; <- c3 ; select {
+        spawn { c3 <- () ; () } ; spawn { c2 <- () ; () } ; <- c3 ; select {
         case _ <- c2 => ()
         case _ <- c2 => ()
         } ; let c24 = chan Unit 0;
         spawn { select {
         case _ <- c24 => ()
         case _ <- c24 => ()
-        } } ; c24 <- () ; ();
+        } } ; c24 <- () ;
         ()
     }
 
@@ -286,7 +286,7 @@ namespace Test/Exp/Concurrency/Select {
         let c14 = chan Unit 0;
         let c15 = chan Unit 0;
         let c16 = chan Unit 0;
-        spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; spawn { c13 <- () ; () } ; spawn { c12 <- () ; () } ; () ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; spawn { c13 <- () ; () } ; spawn { c12 <- () ; () } ; () ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; spawn { c13 <- () ; () } ; spawn { c12 <- () ; () } ; () ; () ; spawn { select {
+        spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; spawn { c13 <- () ; () } ; spawn { c12 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; spawn { c13 <- () ; () } ; spawn { c12 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c14 <- () ; () } ; spawn { c13 <- () ; () } ; spawn { c12 <- () ; () } ; spawn { select {
         case _ <- c14 => <- c12 ; <- c13 ; <- c15 ; <- c16 ; ()
         } } ; spawn { select {
         case _ <- c16 => <- c13 ; <- c14 ; <- c12 ; <- c15 ; ()
@@ -294,7 +294,7 @@ namespace Test/Exp/Concurrency/Select {
         case _ <- c12 => <- c13 ; <- c15 ; <- c16 ; <- c14 ; let c180 = chan Unit 0;
         let c178 = chan Unit 0;
         let c179 = chan Unit 0;
-        spawn { c180 <- () ; () } ; spawn { c179 <- () ; () } ; spawn { c178 <- () ; () } ; () ; spawn { c180 <- () ; () } ; spawn { c179 <- () ; () } ; spawn { c178 <- () ; () } ; () ; () ; spawn { select {
+        spawn { c180 <- () ; () } ; spawn { c179 <- () ; () } ; spawn { c178 <- () ; () } ; spawn { c180 <- () ; () } ; spawn { c179 <- () ; () } ; spawn { c178 <- () ; () } ; spawn { select {
         case _ <- c178 => <- c180 ; <- c179
         case _ <- c179 => select {
         case _ <- c178 => ()
@@ -307,7 +307,7 @@ namespace Test/Exp/Concurrency/Select {
         } } ; spawn { select {
         case _ <- c14 => <- c15 ; <- c12 ; <- c16 ; <- c13 ; ()
         case _ <- c13 => <- c12 ; <- c14 ; <- c15 ; <- c16 ; ()
-        } } ; ();
+        } } ;
         ()
     }
 
@@ -318,7 +318,7 @@ namespace Test/Exp/Concurrency/Select {
         let c17 = chan Unit 0;
         let c18 = chan Unit 0;
         let c19 = chan Unit 0;
-        spawn { c19 <- () ; () } ; spawn { c18 <- () ; () } ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; () ; spawn { c19 <- () ; () } ; spawn { c18 <- () ; () } ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; () ; spawn { c19 <- () ; () } ; spawn { c18 <- () ; () } ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; () ; spawn { c19 <- () ; () } ; spawn { c18 <- () ; () } ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; () ; () ; spawn { select {
+        spawn { c19 <- () ; () } ; spawn { c18 <- () ; () } ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c19 <- () ; () } ; spawn { c18 <- () ; () } ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c19 <- () ; () } ; spawn { c18 <- () ; () } ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { c19 <- () ; () } ; spawn { c18 <- () ; () } ; spawn { c17 <- () ; () } ; spawn { c16 <- () ; () } ; spawn { c15 <- () ; () } ; spawn { select {
         case _ <- c15 => <- c17 ; <- c18 ; <- c16 ; <- c19 ; ()
         } } ; spawn { select {
         case _ <- c15 => <- c19 ; <- c18 ; <- c16 ; <- c17 ; ()
@@ -339,12 +339,12 @@ namespace Test/Exp/Concurrency/Select {
         let c215 = chan Unit 0;
         let c216 = chan Unit 0;
         let c217 = chan Unit 0;
-        spawn { c217 <- () ; () } ; spawn { c216 <- () ; () } ; spawn { c215 <- () ; () } ; spawn { c214 <- () ; () } ; () ; select {
+        spawn { c217 <- () ; () } ; spawn { c216 <- () ; () } ; spawn { c215 <- () ; () } ; spawn { c214 <- () ; () } ; select {
         case _ <- c215 => <- c214 ; <- c216 ; <- c217 ; ()
         case _ <- c214 => <- c216 ; <- c215 ; <- c217 ; ()
         case _ <- c216 => <- c214 ; <- c217 ; <- c215
         }
-        } } ; ();
+        } } ;
         ()
     }
 
@@ -357,10 +357,10 @@ namespace Test/Exp/Concurrency/Select {
         spawn { select {
         case _ <- c8 => ()
         case _ <- c8 => ()
-        } ; c9 <- () ; () } ; spawn { <- c7 ; c8 <- () ; () ; () } ; spawn { select {
+        } ; c9 <- () ; () } ; spawn { <- c7 ; c8 <- () ; () } ; spawn { select {
         case _ <- c6 => ()
         case _ <- c6 => ()
-        } ; c7 <- () ; () ; () } ; () ; c6 <- () ; () ; <- c9;
+        } ; c7 <- () ; () } ; c6 <- () ; <- c9;
         ()
     }
 

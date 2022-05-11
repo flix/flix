@@ -72,7 +72,7 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Concurrency.NewChannel.flix")
   mkTest("main/test/flix/Test.Exp.Concurrency.Unbuffered.flix")
   mkTest("main/test/flix/Test.Exp.Concurrency.Spawn.flix")
-  mkTest("main/test/flix/Test.Exp.Concurrency.Select.flix")(Options.DefaultTest.copy(xallowredundancies = true))
+  mkTest("main/test/flix/Test.Exp.Concurrency.Select.flix")
 
   //
   // Default.
@@ -182,8 +182,8 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   //
   mkTest("main/test/flix/Test.Exp.Let.flix")
   mkTest("main/test/flix/Test.Exp.Let.Match.flix")
-  mkTest("main/test/flix/Test.Exp.Let.MatchStar.flix")(Options.TestWithLibAll)
-  mkTest("main/test/flix/Test.Exp.Let.Rec.flix")(Options.TestWithLibAll)
+  mkTest("main/test/flix/Test.Exp.Let.MatchStar.flix")
+  mkTest("main/test/flix/Test.Exp.Let.Rec.flix")
 
   //
   // List.
@@ -230,9 +230,8 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   //
   mkTest("main/test/flix/Test.Exp.Ref.Assign.flix")
   mkTest("main/test/flix/Test.Exp.Ref.Ref.flix")
-  mkTest("main/test/flix/Test.Exp.Ref.Deref.flix",
-    "main/test/flix/Test.Exp.Ref.Precedence.flix",
-  )
+  mkTest("main/test/flix/Test.Exp.Ref.Deref.flix")
+  mkTest("main/test/flix/Test.Exp.Ref.Precedence.flix")
 
   //
   // Reify.
@@ -244,7 +243,7 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   // Tag.
   //
   mkTest("main/test/flix/Test.Exp.Tag.flix")
-  mkTest("main/test/flix/Test.Exp.Tag.Lambda.flix")(Options.TestWithLibAll)
+  mkTest("main/test/flix/Test.Exp.Tag.Lambda.flix")
 
   //
   // Tuple.
