@@ -519,6 +519,57 @@ object Symbol {
   }
 
   /**
+    * Effect symbol.
+    */
+  final class EffectSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: EffectSym => this.namespace == that.namespace && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = Objects.hash(namespace, name)
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+
+    /**
+      * Returns the source of `this`.
+      */
+    override def src: Ast.Source = loc.source
+  }
+
+  /**
+    * Effect Operation Symbol.
+    */
+  final class OpSym(val eff: Symbol.EffectSym, val name: String, val loc: SourceLocation) {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: OpSym => this.eff == that.eff && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = Objects.hash(eff, name)
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = eff.toString + "." + name
+  }
+
+  /**
     * Optionally returns the namespace part and name of the given fully qualified string `fqn`.
     *
     * Returns `None` if the `fqn` is not qualified.
