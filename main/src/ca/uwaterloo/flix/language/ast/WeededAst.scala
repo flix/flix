@@ -358,6 +358,8 @@ object WeededAst {
 
     case class Or(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
+    case class Effect(tpe: WeededAst.Type, eff: WeededAst.EffectSet, loc: SourceLocation) extends WeededAst.Type
+
     case class Ascribe(tpe: WeededAst.Type, kind: Kind, loc: SourceLocation) extends WeededAst.Type
 
   }
