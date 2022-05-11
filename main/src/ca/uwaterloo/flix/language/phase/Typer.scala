@@ -315,7 +315,7 @@ object Typer {
               /// However, we require an even stronger property for the implementation to work. The inferred type scheme used in the rest of the
               /// compiler must *use the same type variables* in the scheme as in the body expression. Otherwise monomorphization et al. will break.
               ///
-              val inferredScheme = Scheme(inferredType.typeVars.toList.map(_.sym), inferredConstrs, inferredType)
+              val inferredScheme = finalSubst(Scheme(partialType.typeVars.toList.map(_.sym), partialTconstrs, partialType))
 
               specVal map {
                 spec => (spec, TypedAst.Impl(exp, inferredScheme))
