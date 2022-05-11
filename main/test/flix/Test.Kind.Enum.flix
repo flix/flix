@@ -1,4 +1,4 @@
-namespace Test/Enum/Kinding {
+namespace Test/Kind/Enum {
     namespace Implicit {
         pub enum EStar[a] {
             case CStar1(a)
