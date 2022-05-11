@@ -225,6 +225,7 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
     * Computes an equ-most general substitution with the given type variable as `rigid`.
     *
     * That is, the resulting subst has `sym = sym`.
+    * (which actually means `sym` does not appear in the substitution).
     */
   def pivot(sym0: Symbol.KindedTypeVarSym)(implicit flix: Flix): Substitution = {
     val newSubst = m.get(sym0) match {
@@ -233,7 +234,7 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
         val rigidSym = sym0.withRigidity(Rigidity.Rigid)
         unifyTypes(Type.KindedVar(rigidSym, sym0.loc), tpe) match {
           case Ok(rigidSubst) =>
-            // de-rigidify and minimize the substitution
+            // de-rigidify the substitution
             val flexMap = rigidSubst.m.map {
               case (k, v) =>
                 val v2 = v.map {
@@ -249,15 +250,5 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
       case None => Substitution.empty
     }
     newSubst @@ this.unbind(sym0)
-  }
-
-  /**
-    * Minimizes the mapped type variable symbol.
-    */
-  def minimize(sym: Symbol.KindedTypeVarSym)(implicit flix: Flix): Substitution = {
-    sym.kind match {
-      case Kind.Bool => Substitution(this.m.updatedWith(sym)(_.map(BoolTable.minimizeType)))
-      case _ => this
-    }
   }
 }

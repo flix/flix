@@ -230,8 +230,7 @@ object Typer {
           run(initialSubst) match {
             case Ok((subst0, (partialTconstrs, partialType))) =>
 
-              // Pivot the substitution and propagate the names to
-              // help with type variable naming.
+              // propogate the type variable names
               val subst = subst0.propagate
 
               ///
@@ -300,6 +299,7 @@ object Typer {
                   }
               }
 
+              // Pivot the substititution to keep the type parameters from being replaced
               val finalSubst = pivot(subst, tparams0)
 
               ///
