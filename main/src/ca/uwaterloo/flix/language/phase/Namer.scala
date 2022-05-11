@@ -100,25 +100,16 @@ object Namer {
               case clazz@NamedAst.Class(_, _, _, _, _, _, sigs, _, _) =>
                 // add each signature to the namespace
                 // TODO add laws
-                val defsAndSigsVal = Validation.fold(sigs, defsAndSigs0) {
-                  case (defsAndSigs, sig) => defsAndSigs.get(sig.sym.name) match {
-                    case Some(otherSig) =>
-                      val name = sig.sym.name
-                      val loc1 = sig.sym.loc
-                      val loc2 = getSymLocation(otherSig)
-                      Failure(LazyList(
-                        // NB: We report an error at both source locations.
-                        NameError.DuplicateDefOrSig(name, loc1, loc2),
-                        NameError.DuplicateDefOrSig(name, loc2, loc1)
-                      ))
-                    case None => (defsAndSigs + (sig.sym.name -> NamedAst.DefOrSig.Sig(sig))).toSuccess
+                val sigsProgVal = Validation.fold(sigs, prog0) {
+                  case (prog, sig) => lookupLowerName(sig.sym.name, sigNs, prog) match {
+                    case LookupResult.NotDefined =>
+                      val defsAndSigsInNs = prog0.defsAndSigs.getOrElse(sigNs, Map.empty) + (sig.sym.name -> NamedAst.DefOrSig.Sig(sig))
+                      prog0.copy(defsAndSigs = prog0.defsAndSigs + (sigNs -> defsAndSigsInNs)).toSuccess
+                    case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(sig.sym.name, sig.sym.loc, otherLoc)
                   }
                 }
-                defsAndSigsVal.map {
-                  defsAndSigs =>
-                    prog0.copy(
-                      classes = prog0.classes + (ns0 -> (classes0 + (ident.name -> clazz))),
-                      defsAndSigs = prog0.defsAndSigs + (sigNs -> defsAndSigs))
+                sigsProgVal.map {
+                  prog => prog.copy(classes = prog0.classes + (ns0 -> (classes0 + (ident.name -> clazz))))
                 }
             }
 
@@ -141,27 +132,18 @@ object Namer {
       case decl@WeededAst.Declaration.Def(_, _, _, ident, _, _, _, _, _, _, _, _, _) =>
         // Check if the definition already exists.
         val defsAndSigs = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
-        defsAndSigs.get(ident.name) match {
-          case None =>
-            // Case 1: The definition does not already exist. Update it.
-            visitDef(decl, uenv0, Map.empty, ns0, Nil, Nil) map {
+        lookupLowerName(ident.name, ns0, prog0) match {
+          // Case 1: Not used. Add it to the namespace
+          case LookupResult.NotDefined =>
+            mapN(visitDef(decl, uenv0, Map.empty, ns0, Nil, Nil)) {
               defn => prog0.copy(defsAndSigs = prog0.defsAndSigs + (ns0 -> (defsAndSigs + (ident.name -> NamedAst.DefOrSig.Def(defn)))))
             }
-          case Some(defOrSig) =>
-            // Case 2: Duplicate definition.
-            val name = ident.name
-            val loc1 = getSymLocation(defOrSig)
-            val loc2 = ident.loc
-            Failure(LazyList(
-              // NB: We report an error at both source locations.
-              NameError.DuplicateDefOrSig(name, loc1, loc2),
-              NameError.DuplicateDefOrSig(name, loc2, loc1),
-            ))
+          case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
 
       /*
-     * Law.
-     */
+      * Law.
+      */
       case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, retTpe, eff0, tconstrs, loc) => ??? // TODO
 
       /*
@@ -198,8 +180,6 @@ object Namer {
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
 
-      // Not handling effects for now
-      case _: WeededAst.Declaration.Effect if true => prog0.toSuccess
       case decl@WeededAst.Declaration.Effect(_, _, ident, _, _) =>
         val effs0 = prog0.effects.getOrElse(ns0, Map.empty)
         val opNs = Name.extendNName(ns0, ident)
@@ -212,7 +192,7 @@ object Namer {
                 val opsProgVal = Validation.fold(ops, prog0) {
                   case (prog, op) => lookupLowerName(op.sym.name, opNs, prog) match {
                     case LookupResult.NotDefined =>
-                      val opsInNs = prog0.ops + (op.sym.name -> op)
+                      val opsInNs = prog0.ops.getOrElse(opNs, Map.empty) + (op.sym.name -> op)
                       prog0.copy(ops = prog0.ops + (opNs -> opsInNs)).toSuccess
                     case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(op.sym.name, op.sym.loc, otherLoc)
                   }
@@ -231,11 +211,20 @@ object Namer {
     * Creates a pair of errors reporting a duplicate type declaration at each location.
     */
   private def mkDuplicateNamePair[T](name: String, loc1: SourceLocation, loc2: SourceLocation): Validation.Failure[T, NameError] = {
-    Failure(LazyList(
-      // NB: We report an error at both source locations.
-      NameError.DuplicateTypeOrClass(name, loc1, loc2),
-      NameError.DuplicateTypeOrClass(name, loc2, loc1)
-    ))
+    // NB: We report an error at both source locations.
+    if (name.charAt(0).isUpper) {
+      // Case 1: uppercase name
+      Failure(LazyList(
+        NameError.DuplicateUpperName(name, loc1, loc2),
+        NameError.DuplicateUpperName(name, loc2, loc1)
+      ))
+    } else {
+      // Case 2: lowercase name
+      Failure(LazyList(
+        NameError.DuplicateLowerName(name, loc1, loc2),
+        NameError.DuplicateLowerName(name, loc2, loc1)
+      ))
+    }
   }
 
   /**

@@ -51,17 +51,17 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.AmbiguousVarOrUse](result)
   }
 
-  test("DuplicateDefOrSig.01") {
+  test("DuplicateLowerName.01") {
     val input =
       s"""
          |def f(): Int = 42
          |def f(): Int = 21
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateDefOrSig](result)
+    expectError[NameError.DuplicateLowerName](result)
   }
 
-  test("DuplicateDefOrSig.02") {
+  test("DuplicateLowerName.02") {
     val input =
       s"""
          |def f(): Int = 42
@@ -69,10 +69,10 @@ class TestNamer extends FunSuite with TestUtils {
          |def f(): Int = 11
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateDefOrSig](result)
+    expectError[NameError.DuplicateLowerName](result)
   }
 
-  test("DuplicateDefOrSig.03") {
+  test("DuplicateLowerName.03") {
     val input =
       s"""
          |def f(x: Int): Int = 42
@@ -80,10 +80,10 @@ class TestNamer extends FunSuite with TestUtils {
          |def f(x: Int): Int = 11
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateDefOrSig](result)
+    expectError[NameError.DuplicateLowerName](result)
   }
 
-  test("DuplicateDefOrSig.04") {
+  test("DuplicateLowerName.04") {
     val input =
       s"""
          |def f(): Int = 42
@@ -91,10 +91,10 @@ class TestNamer extends FunSuite with TestUtils {
          |def f(x: Bool, y: Int, z: String): Int = 11
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateDefOrSig](result)
+    expectError[NameError.DuplicateLowerName](result)
   }
 
-  test("DuplicateDefOrSig.05") {
+  test("DuplicateLowerName.05") {
     val input =
       s"""
          |namespace A {
@@ -106,10 +106,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateDefOrSig](result)
+    expectError[NameError.DuplicateLowerName](result)
   }
 
-  test("DuplicateDefOrSig.06") {
+  test("DuplicateLowerName.06") {
     val input =
       s"""
          |namespace A/B/C {
@@ -125,10 +125,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateDefOrSig](result)
+    expectError[NameError.DuplicateLowerName](result)
   }
 
-  test("DuplicateDefOrSig.07") {
+  test("DuplicateLowerName.07") {
     val input =
       """
         |class C[a] {
@@ -137,10 +137,10 @@ class TestNamer extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateDefOrSig](result)
+    expectError[NameError.DuplicateLowerName](result)
   }
 
-  test("DuplicateDefOrSig.08") {
+  test("DuplicateLowerName.08") {
     val input =
       """
         |class C[a] {
@@ -150,10 +150,10 @@ class TestNamer extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateDefOrSig](result)
+    expectError[NameError.DuplicateLowerName](result)
   }
 
-  test("DuplicateDefOrSig.09") {
+  test("DuplicateLowerName.09") {
     val input =
       s"""
          |class A[a] {
@@ -165,10 +165,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateDefOrSig](result)
+    expectError[NameError.DuplicateLowerName](result)
   }
 
-  test("DuplicateDefOrSig.10") {
+  test("DuplicateLowerName.10") {
     val input =
       s"""
          |namespace A/B/C {
@@ -184,10 +184,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateDefOrSig](result)
+    expectError[NameError.DuplicateLowerName](result)
   }
 
-  test("DuplicateDefOrSig.11") {
+  test("DuplicateLowerName.11") {
     val input =
       s"""
          |namespace A/C {
@@ -201,7 +201,34 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateDefOrSig](result)
+    expectError[NameError.DuplicateLowerName](result)
+  }
+
+  test("DuplicateLowerName.12") {
+    val input =
+      """
+        |namespace N {
+        |    def f(): Int32 = 123
+        |}
+        |
+        |eff N {
+        |    pub def f(): Unit
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateLowerName](result)
+  }
+
+  test("DuplicateLowerName.13") {
+    val input =
+      """
+        |eff N {
+        |    pub def f(): Unit
+        |    pub def f(): Unit
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateLowerName](result)
   }
 
   test("DuplicateUseDef.01") {
@@ -610,17 +637,17 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseTag](result)
   }
 
-  test("DuplicateTypeOrClass.01") {
+  test("DuplicateUpperName.01") {
     val input =
       s"""
          |type alias USD = Int
          |type alias USD = Int
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateTypeOrClass.02") {
+  test("DuplicateUpperName.02") {
     val input =
       s"""
          |type alias USD = Int
@@ -628,10 +655,10 @@ class TestNamer extends FunSuite with TestUtils {
          |type alias USD = Int
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateTypeOrClass.03") {
+  test("DuplicateUpperName.03") {
     val input =
       s"""
          |namespace A {
@@ -643,10 +670,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateTypeOrClass.04") {
+  test("DuplicateUpperName.04") {
     val input =
       s"""
          |type alias USD = Int
@@ -655,10 +682,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateTypeOrClass.05") {
+  test("DuplicateUpperName.05") {
     val input =
       s"""
          |type alias USD = Int
@@ -668,10 +695,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateTypeOrClass.06") {
+  test("DuplicateUpperName.06") {
     val input =
       s"""
          |namespace A {
@@ -685,10 +712,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateTypeOrClass.07") {
+  test("DuplicateUpperName.07") {
     val input =
       s"""
          |enum USD {
@@ -699,10 +726,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateTypeOrClass.08") {
+  test("DuplicateUpperName.08") {
     val input =
       s"""
          |enum USD {
@@ -716,10 +743,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateTypeOrClass.09") {
+  test("DuplicateUpperName.09") {
     val input =
       s"""
          |namespace A {
@@ -735,20 +762,20 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateTypeOrClass.10") {
+  test("DuplicateUpperName.10") {
     val input =
       s"""
          |type alias USD = Int
          |class USD[a]
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateTypeOrClass.11") {
+  test("DuplicateUpperName.11") {
     val input =
       s"""
          |type alias USD = Int
@@ -756,10 +783,10 @@ class TestNamer extends FunSuite with TestUtils {
          |class USD[a]
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateTypeOrClass.12") {
+  test("DuplicateUpperName.12") {
     val input =
       s"""
          |namespace A {
@@ -771,10 +798,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateTypeOrClass.13") {
+  test("DuplicateUpperName.13") {
     val input =
       s"""
          |enum USD {
@@ -783,10 +810,10 @@ class TestNamer extends FunSuite with TestUtils {
          |class USD[a]
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateTypeOrClass.14") {
+  test("DuplicateUpperName.14") {
     val input =
       s"""
          |enum USD {
@@ -798,10 +825,10 @@ class TestNamer extends FunSuite with TestUtils {
          |class USD[a]
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateTypeOrClass.15") {
+  test("DuplicateUpperName.15") {
     val input =
       s"""
          |namespace A {
@@ -815,20 +842,20 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateTypeOrClass.16") {
+  test("DuplicateUpperName.16") {
     val input =
       s"""
          |class USD[a]
          |class USD[a]
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateTypeOrClass.17") {
+  test("DuplicateUpperName.17") {
     val input =
       s"""
          |class USD[a]
@@ -836,10 +863,10 @@ class TestNamer extends FunSuite with TestUtils {
          |class USD[a]
          """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateTypeOrClass.18") {
+  test("DuplicateUpperName.18") {
     val input =
       s"""
          |namespace A {
@@ -851,7 +878,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateTypeOrClass](result)
+    expectError[NameError.DuplicateUpperName](result)
   }
 
   test("SuspiciousTypeVarName.01") {
