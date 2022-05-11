@@ -83,6 +83,34 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Jvm.PutStaticField.flix")
   mkTest("main/test/flix/Test.Exp.Jvm.TryCatch.flix")
 
+  //
+  // Lambda.
+  //
+  mkTest("main/test/flix/Test.Exp.Lambda.Match.flix")
+
+  //
+  // Lazy
+  //
+  mkTest("main/test/flix/Test.Exp.Lazy.flix")
+
+  //
+  // Let.
+  //
+  mkTest("main/test/flix/Test.Exp.Let.flix")
+  mkTest("main/test/flix/Test.Exp.Let.Match.flix")
+  mkTest("main/test/flix/Test.Exp.Let.MatchStar.flix")(Options.TestWithLibAll)
+  mkTest("main/test/flix/Test.Exp.Let.Rec.flix")(Options.TestWithLibAll)
+
+  //
+  // List.
+  //
+  mkTest("main/test/flix/Test.Exp.List.flix")
+
+  //
+  // Null.
+  //
+  mkTest("main/test/flix/Test.Exp.Null.flix")
+
 
   //
   // Match.
@@ -113,5 +141,53 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Record.Restrict.flix")
   mkTest("main/test/flix/Test.Exp.Record.Select.flix")
   mkTest("main/test/flix/Test.Exp.Record.Update.flix")
+
+  //
+  // Reference.
+  //
+  mkTest("main/test/flix/Test.Exp.Ref.Assign.flix")
+  mkTest("main/test/flix/Test.Exp.Ref.Ref.flix")
+  mkTest("main/test/flix/Test.Exp.Ref.Deref.flix",
+    "main/test/flix/Test.Exp.Ref.Precedence.flix",
+  )
+
+  //
+  // Reify.
+  //
+  mkTest("main/test/flix/Test.Exp.Reify.flix")
+  mkTest("main/test/flix/Test.Exp.ReifyType.flix")
+
+  //
+  // Tag.
+  //
+  mkTest("main/test/flix/Test.Exp.Tag.flix")
+  mkTest("main/test/flix/Test.Exp.Tag.Lambda.flix")(Options.TestWithLibAll)
+
+  //
+  // Tuple.
+  //
+  mkTest("main/test/flix/Test.Exp.Tuple.flix")
+
+  //
+  // Unary.
+  //
+  mkTest("main/test/flix/Test.Exp.Unary.Arithmetic.flix")
+  mkTest("main/test/flix/Test.Exp.Unary.Bitwise.flix")
+  mkTest("main/test/flix/Test.Exp.Unary.Logic.flix")
+
+  //
+  // Unit.
+  //
+  mkTest("main/test/flix/Test.Exp.Unit.flix")
+
+  //
+  // Stm.
+  //
+  mkTest("main/test/flix/Test.Exp.Stm.flix")
+
+  //
+  // String.
+  //
+  mkTest("main/test/flix/Test.Exp.String.flix")
 
 }
