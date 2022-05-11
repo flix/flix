@@ -1376,7 +1376,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Effect: Rule1[ParsedAst.Type] = rule {
-      SP ~ Effects.EffectSet ~ SP ~ ParsedAst.Type.Effect
+      SP ~ Effects.NonSingletonEffectSet ~ SP ~> ParsedAst.Type.Effect
     }
 
     private def TypeArguments: Rule1[Seq[ParsedAst.Type]] = rule {
@@ -1397,6 +1397,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         Empty | EffectSet
       }
+    }
+
+    def NonSingletonEffectSet: Rule1[ParsedAst.EffectSet] = rule {
+      // NB: Pure must come before Set since they overlap
+      Pure | Set
     }
 
     def EffectSet: Rule1[ParsedAst.EffectSet] = rule {
