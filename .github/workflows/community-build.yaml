@@ -26,6 +26,7 @@ jobs:
       - name: Build jar
         run: ./gradlew jar
       - name: Build community projects
+        timeout-minutes: 10
         run: |
           # Sanity check: Make sure the project build directory does not exist.
           test ! -e ${{ env.PROJ_DIR }}
