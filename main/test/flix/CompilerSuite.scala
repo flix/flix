@@ -72,7 +72,7 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Concurrency.NewChannel.flix")
   mkTest("main/test/flix/Test.Exp.Concurrency.Unbuffered.flix")
   mkTest("main/test/flix/Test.Exp.Concurrency.Spawn.flix")
-  mkTest("main/test/flix/Test.Exp.Concurrency.Select.flix")(Options.DefaultTest.copy(xallowredundancies = true))
+  mkTest("main/test/flix/Test.Exp.Concurrency.Select.flix")
 
   //
   // Default.
@@ -140,6 +140,49 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Interpolation.flix")
 
   //
+  // JVM.
+  //
+  mkTest("main/test/flix/Test.Exp.Jvm.GetField.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.GetStaticField.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.GetFieldStaticInnerClass.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.GetStaticFieldStaticInnerClass.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.GetFieldDoubleNestedClass.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.InvokeConstructor.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.InvokeMethod.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.PutField.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.PutStaticField.flix")
+  mkTest("main/test/flix/Test.Exp.Jvm.TryCatch.flix")
+
+  //
+  // Lambda.
+  //
+  mkTest("main/test/flix/Test.Exp.Lambda.Match.flix")
+
+  //
+  // Lazy
+  //
+  mkTest("main/test/flix/Test.Exp.Lazy.flix")
+
+  //
+  // Let.
+  //
+  mkTest("main/test/flix/Test.Exp.Let.flix")
+  mkTest("main/test/flix/Test.Exp.Let.Match.flix")
+  mkTest("main/test/flix/Test.Exp.Let.MatchStar.flix")
+  mkTest("main/test/flix/Test.Exp.Let.Rec.flix")
+
+  //
+  // List.
+  //
+  mkTest("main/test/flix/Test.Exp.List.flix")
+
+  //
+  // Null.
+  //
+  mkTest("main/test/flix/Test.Exp.Null.flix")
+
+  //
   // Match.
   //
   mkTest("main/test/flix/Test.Exp.Match.Array.flix")
@@ -168,5 +211,52 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Record.Restrict.flix")
   mkTest("main/test/flix/Test.Exp.Record.Select.flix")
   mkTest("main/test/flix/Test.Exp.Record.Update.flix")
+
+  //
+  // Reference.
+  //
+  mkTest("main/test/flix/Test.Exp.Ref.Assign.flix")
+  mkTest("main/test/flix/Test.Exp.Ref.Ref.flix")
+  mkTest("main/test/flix/Test.Exp.Ref.Deref.flix")
+  mkTest("main/test/flix/Test.Exp.Ref.Precedence.flix")
+
+  //
+  // Reify.
+  //
+  mkTest("main/test/flix/Test.Exp.Reify.flix")
+  mkTest("main/test/flix/Test.Exp.ReifyType.flix")
+
+  //
+  // Tag.
+  //
+  mkTest("main/test/flix/Test.Exp.Tag.flix")
+  mkTest("main/test/flix/Test.Exp.Tag.Lambda.flix")
+
+  //
+  // Tuple.
+  //
+  mkTest("main/test/flix/Test.Exp.Tuple.flix")
+
+  //
+  // Unary.
+  //
+  mkTest("main/test/flix/Test.Exp.Unary.Arithmetic.flix")
+  mkTest("main/test/flix/Test.Exp.Unary.Bitwise.flix")
+  mkTest("main/test/flix/Test.Exp.Unary.Logic.flix")
+
+  //
+  // Unit.
+  //
+  mkTest("main/test/flix/Test.Exp.Unit.flix")
+
+  //
+  // Stm.
+  //
+  mkTest("main/test/flix/Test.Exp.Stm.flix")
+
+  //
+  // String.
+  //
+  mkTest("main/test/flix/Test.Exp.String.flix")
 
 }
