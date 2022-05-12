@@ -61,21 +61,6 @@ class LangSuite extends Suites(
   new FlixTest("Test.Equality.Set", "main/test/flix/Test.Equality.Set.flix")(Options.TestWithLibAll),
 
   //
-  // JVM.
-  //
-  new FlixTest("Test.Exp.Jvm.GetField", "main/test/flix/Test.Exp.Jvm.GetField.flix"),
-  new FlixTest("Test.Exp.Jvm.GetStaticField", "main/test/flix/Test.Exp.Jvm.GetStaticField.flix")(Options.TestWithLibAll),
-  new FlixTest("Test.Exp.Jvm.GetFieldStaticInnerClass", "main/test/flix/Test.Exp.Jvm.GetFieldStaticInnerClass.flix"),
-  new FlixTest("Test.Exp.Jvm.GetStaticFieldStaticInnerClass", "main/test/flix/Test.Exp.Jvm.GetStaticFieldStaticInnerClass.flix"),
-  new FlixTest("Test.Exp.Jvm.GetFieldDoubleNestedClass", "main/test/flix/Test.Exp.Jvm.GetFieldDoubleNestedClass.flix"),
-  new FlixTest("Test.Exp.Jvm.InvokeConstructor", "main/test/flix/Test.Exp.Jvm.InvokeConstructor.flix"),
-  new FlixTest("Test.Exp.Jvm.InvokeMethod", "main/test/flix/Test.Exp.Jvm.InvokeMethod.flix"),
-  new FlixTest("Test.Exp.Jvm.InvokeStaticMethod", "main/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix"),
-  new FlixTest("Test.Exp.Jvm.PutField", "main/test/flix/Test.Exp.Jvm.PutField.flix"),
-  new FlixTest("Test.Exp.Jvm.PutStaticField", "main/test/flix/Test.Exp.Jvm.PutStaticField.flix"),
-  new FlixTest("Test.Exp.Jvm.TryCatch", "main/test/flix/Test.Exp.Jvm.TryCatch.flix")(Options.TestWithLibNix),
-
-  //
   // Kind.
   //
   new FlixTest("Test.Kind.Class", "main/test/flix/Test.Kind.Class.flix"),
@@ -83,83 +68,6 @@ class LangSuite extends Suites(
   new FlixTest("Test.Kind.Enum", "main/test/flix/Test.Kind.Enum.flix"),
   new FlixTest("Test.Kind.Instance", "main/test/flix/Test.Kind.Instance.flix"),
   new FlixTest("Test.Kind.TypeAlias", "main/test/flix/Test.Kind.TypeAlias.flix"),
-
-  //
-  // Lambda.
-  //
-  new FlixTest("Test.Exp.Lambda.Match", "main/test/flix/Test.Exp.Lambda.Match.flix"),
-
-  //
-  // Lazy
-  //
-  new FlixTest("Test.Exp.Lazy", "main/test/flix/Test.Exp.Lazy.flix"),
-
-  //
-  // Let.
-  //
-  new FlixTest("Test.Exp.Let", "main/test/flix/Test.Exp.Let.flix"),
-  new FlixTest("Test.Exp.Let.Match", "main/test/flix/Test.Exp.Let.Match.flix"),
-  new FlixTest("Test.Exp.Let.MatchStar", "main/test/flix/Test.Exp.Let.MatchStar.flix")(Options.TestWithLibAll),
-  new FlixTest("Test.Exp.Let.Rec", "main/test/flix/Test.Exp.Let.Rec.flix")(Options.TestWithLibAll),
-
-  //
-  // List.
-  //
-  new FlixTest("Test.Exp.List", "main/test/flix/Test.Exp.List.flix"),
-
-  //
-  // Null.
-  //
-  new FlixTest("Test.Exp.Null", "main/test/flix/Test.Exp.Null.flix"),
-
-  //
-  // Reference.
-  //
-  new FlixTest("Test.Exp.Ref", List(
-    "main/test/flix/Test.Exp.Ref.Assign.flix",
-    "main/test/flix/Test.Exp.Ref.Ref.flix",
-    "main/test/flix/Test.Exp.Ref.Deref.flix",
-    "main/test/flix/Test.Exp.Ref.Precedence.flix",
-  ), Options.TestWithLibAll),
-
-  //
-  // Reify.
-  //
-  new FlixTest("Test.Exp.Reify", "main/test/flix/Test.Exp.Reify.flix"),
-  new FlixTest("Test.Exp.ReifyType", "main/test/flix/Test.Exp.ReifyType.flix"),
-
-  //
-  // Tag.
-  //
-  new FlixTest("Test.Exp.Tag", "main/test/flix/Test.Exp.Tag.flix"),
-  new FlixTest("Test.Exp.Tag.Lambda", "main/test/flix/Test.Exp.Tag.Lambda.flix")(Options.TestWithLibAll),
-
-  //
-  // Tuple.
-  //
-  new FlixTest("Test.Exp.Tuple", "main/test/flix/Test.Exp.Tuple.flix"),
-
-  //
-  // Unary.
-  //
-  new FlixTest("Test.Exp.Unary.Arithmetic", "main/test/flix/Test.Exp.Unary.Arithmetic.flix"),
-  new FlixTest("Test.Exp.Unary.Bitwise", "main/test/flix/Test.Exp.Unary.Bitwise.flix"),
-  new FlixTest("Test.Exp.Unary.Logic", "main/test/flix/Test.Exp.Unary.Logic.flix"),
-
-  //
-  // Unit.
-  //
-  new FlixTest("Test.Exp.Unit", "main/test/flix/Test.Exp.Unit.flix"),
-
-  //
-  // Stm.
-  //
-  new FlixTest("Test.Exp.Stm", "main/test/flix/Test.Exp.Stm.flix"),
-
-  //
-  // String.
-  //
-  new FlixTest("Test.Exp.String", "main/test/flix/Test.Exp.String.flix"),
 
   //
   // Predicate.

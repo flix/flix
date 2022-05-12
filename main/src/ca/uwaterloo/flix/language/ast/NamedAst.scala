@@ -28,8 +28,8 @@ object NamedAst {
                   defsAndSigs: Map[Name.NName, Map[String, NamedAst.DefOrSig]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typeAliases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
-                  effects: Map[Name.NName, NamedAst.Effect],
-                  ops: Map[Name.NName, NamedAst.Op],
+                  effects: Map[Name.NName, Map[String, NamedAst.Effect]],
+                  ops: Map[Name.NName, Map[String, NamedAst.Op]],
                   entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
