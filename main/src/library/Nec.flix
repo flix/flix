@@ -101,7 +101,7 @@ instance Reducible[Nec] {
     override pub def memberOf(a: a, l: Nec[a]): Bool with Eq[a] = Nec.memberOf(a, l)
     override pub def dropWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.dropWhileLeft(f, l)
     override pub def takeWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.takeWhileLeft(f, l)
-    override pub def toArray(l: Nec[a]): Array[a] & Impure = Nec.toArray(l)
+    override pub def toArray(l: Nec[a]): Array[a] & Impure = Nec.toArrayRegion(l, static)
     override pub def toIterator(l: Nec[a]): Iterator[a] & Impure = Nec.toIterator(l)
     override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
@@ -742,6 +742,16 @@ namespace Nec {
     pub def toArray(c: Nec[a]) : Array[a] & Impure =
         let x = head(c);
         let arr = Array.new(x, length(c));
+        let f = (i, b) -> { arr[i] = b; i + 1 };
+        foldLeft(f, 0, c);
+        arr
+
+    ///
+    /// Returns the Nec `c` as an array.
+    ///
+    pub def toArrayRegion(c: Nec[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
+        let x = head(c);
+        let arr = [x; length(c)] @ r;
         let f = (i, b) -> { arr[i] = b; i + 1 };
         foldLeft(f, 0, c);
         arr
