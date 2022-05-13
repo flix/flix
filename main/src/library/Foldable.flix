@@ -204,6 +204,14 @@ pub class Foldable[t : Type -> Type] {
         MutList.toArray(v)
 
     ///
+    /// Returns `t` as an array.
+    ///
+    pub def toArrayRegion(t: t[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
+        let v = new MutList(r);
+        Foldable.foreach(a -> MutList.push!(a, v), t);
+        MutList.toArrayRegion(v, r)
+
+    ///
     /// Returns an iterator over `t`.
     ///
     pub def toIterator(t: t[a]): Iterator[a] & Impure =
