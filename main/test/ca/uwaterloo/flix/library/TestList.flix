@@ -1943,30 +1943,36 @@ def foreach02(): Bool & Impure =
     List.foreach(x -> r := x, 1 :: 2 :: 3 :: Nil);
     3 == deref r
 
-/////////////////////////////////////////////////////////////////////////////
-// toArray                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def toArray01(): Bool & Impure =
-    let xs: List[Int32] = Nil;
-    let a: Array[Int32] = List.toArray(xs);
-    Array.sameElements(a, []: Array[Int32])
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def toArray02(): Bool & Impure =
-    let a = List.toArray(1 :: Nil);
-    Array.sameElements(a, [1])
+    @test
+    def toArray01(): Bool = region r {
+        let xs: List[Int32] = Nil;
+        let a = List.toArrayRegion(xs, r);
+        Array.sameElements(a, [] @ r)
+    }
 
-@test
-def toArray03(): Bool & Impure =
-    let a = List.toArray(1 :: 2 :: Nil);
-    Array.sameElements(a, [1,2])
+    @test
+    def toArray02(): Bool = region r {
+        let a = List.toArrayRegion(1 :: Nil, r);
+        Array.sameElements(a, [1] @ r)
+    }
 
-@test
-def toArray04(): Bool & Impure =
-    let a = List.toArray(1 :: 2 :: 3 :: Nil);
-    Array.sameElements(a, [1,2,3])
+    @test
+    def toArray03(): Bool = region r {
+        let a = List.toArrayRegion(1 :: 2 :: Nil, r);
+        Array.sameElements(a, [1, 2] @ r)
+    }
+
+    @test
+    def toArray04(): Bool = region r {
+        let a = List.toArrayRegion(1 :: 2 :: 3 :: Nil, r);
+        Array.sameElements(a, [1, 2, 3] @ r)
+    }
+
 
 /////////////////////////////////////////////////////////////////////////////
 // toNel                                                                   //
