@@ -131,7 +131,6 @@ namespace Array {
         loop(0, identity)
     }
 
-
     ///
     /// Returns the array `arr` as a chain.
     ///
@@ -1768,9 +1767,9 @@ namespace Array {
    ///
    /// Returns an iterator over `a`.
    ///
-   pub def toIterator(a: Array[a]): Iterator[a] & Impure = {
+   pub def toIterator(a: ScopedArray[a, r]): Iterator[a] & Impure =
        let len = Array.length(a);
-       let copy = a[0 .. len];
+       let copy = copyOfRangeRegion(0, len, a, static);
        let i = ref 0;
        let done = () -> (deref i) >= len;
        let next = () -> {
@@ -1780,5 +1779,4 @@ namespace Array {
            x
        };
        Iterator(done, next)
-   }
 }

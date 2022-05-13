@@ -4623,7 +4623,7 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
         MutList.sameElements(Array.range(0, 100, static) |> Array.toMutList, MutList.range(0, 100, static))
 
     @test
-    def toMutList05(): Bool & Impure = region r {
+    def toMutList05(): Bool = region r {
         let v = Array.toMutList([1, 2, 3] @ r);
         MutList.push!(4, v);
         Array.sameElements(MutList.toArrayRegion(v, r), [1, 2, 3, 4] @ r)
