@@ -1151,6 +1151,18 @@ namespace DelayList {
         a
 
     ///
+    /// Returns `l` as an `Array`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def toArrayRegion(l: DelayList[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
+        let a = [$DEFAULT$; length(l)] @ r;
+        let f = (i, y) -> { a[i] = y; i + 1 };
+        foldLeft(f, 0, l);
+        a
+
+    ///
     /// Returns `l` as an `Iterator`.
     ///
     /// Does not force any elements of the list.
