@@ -733,7 +733,7 @@ namespace Chain {
     /// Returns `c` as a mutable list.
     ///
     pub def toMutList(c: Chain[a]): MutList[a, Impure] & Impure =
-        toArray(c) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
+        toArrayRegion(c, static) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
 
     ///
     /// Returns the list `c` as a set.

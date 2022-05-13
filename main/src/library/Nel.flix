@@ -542,7 +542,7 @@ namespace Nel {
     /// Returns `l` as an array.
     ///
     pub def toArrayRegion(l: Nel[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
-        (l |> (toList >> List.toArrayRegion))(r)
+        (l |> toList |> List.toArrayRegion)(r)
 
     ///
     /// Applies `f` to every element of `l`.

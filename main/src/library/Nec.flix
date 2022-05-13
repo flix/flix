@@ -711,13 +711,12 @@ namespace Nec {
     /// Returns `c` as a mutable list.
     ///
     pub def toMutList(c: Nec[a]): MutList[a, Impure] & Impure =
-        toArray(c) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
+        toArrayRegion(c, static) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
 
     ///
     /// Returns the list `c` as a set.
     ///
     pub def toSet(c: Nec[a]): Set[a] with Order[a] = foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), c)
-
 
     ///
     /// Returns the Nec of pairs `c` that represents an association list as a map.

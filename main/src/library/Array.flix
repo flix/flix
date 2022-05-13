@@ -977,7 +977,7 @@ namespace Array {
             if (f(x)) (x :: a1, a2) else (a1, x :: a2)
         };
         let (xs, ys) = foldRight(step, (Nil, Nil), a);
-        (List.toArray(xs), List.toArray(ys))
+        (List.toArrayRegion(xs, static), List.toArrayRegion(ys, static))
 
     ///
     /// Returns a pair of arrays `(a1, a2)`.
@@ -1158,7 +1158,7 @@ namespace Array {
     ///
     def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Array[a], List[a]) & Impure = match xs {
         case Nil => {
-            let a = List.toArray(ps);
+            let a = List.toArrayRegion(ps, static);
             reverse!(a);
             (a, List.reverse(ns))
         }
@@ -1367,7 +1367,7 @@ namespace Array {
             }
         };
         loop(0);
-        MutList.toArray(l)
+        MutList.toArrayRegion(l, static)
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
