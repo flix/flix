@@ -1,4 +1,4 @@
-namespace Test/Instance/Kinding {
+namespace Test/Kind/Instance {
 
     namespace TypeConstraint {
         pub enum EStar[_a: Type]
