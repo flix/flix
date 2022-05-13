@@ -710,13 +710,6 @@ namespace MutList {
     ///
     /// Returns `v` as an array.
     ///
-    pub def toArray(v: MutList[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
-        let MutList(a, l) = v;
-        Array.copyOfRange(0, deref l, deref a)
-
-    ///
-    /// Returns `v` as an array.
-    ///
     pub def toArrayRegion(v: MutList[a, r1], r2: Region[r2]): ScopedArray[a, r2] \ { Read(r1), Write(r2) } =
         let MutList(a, l) = v;
         Array.copyOfRangeRegion(0, deref l, deref a, r2)

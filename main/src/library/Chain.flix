@@ -750,19 +750,6 @@ namespace Chain {
     pub def toMap(c: Chain[(a, b)]): Map[a, b] with Order[a] =
         foldRight((x, acc) -> Map.insert(fst(x), snd(x), acc), Map.empty(), c)
 
-
-    ///
-    /// Returns the chain `c` as an array.
-    ///
-    pub def toArray(c: Chain[a]) : Array[a] & Impure = match head(c) {
-        case None => []
-        case Some(x) =>
-            let arr = Array.new(x, length(c));
-            let f = (i, b) -> { arr[i] = b; i + 1 };
-            foldLeft(f, 0, c);
-            arr
-        }
-
     ///
     /// Returns the chain `c` as an array.
     ///

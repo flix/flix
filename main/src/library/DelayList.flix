@@ -1144,18 +1144,6 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toArray(l: DelayList[a]): Array[a] & Impure =
-        let a = Array.new($DEFAULT$, length(l));
-        let f = (i, y) -> { a[i] = y; i + 1 };
-        foldLeft(f, 0, l);
-        a
-
-    ///
-    /// Returns `l` as an `Array`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
     pub def toArrayRegion(l: DelayList[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
         let a = [$DEFAULT$; length(l)] @ r;
         let f = (i, y) -> { a[i] = y; i + 1 };
