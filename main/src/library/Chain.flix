@@ -783,8 +783,9 @@ namespace Chain {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(c: Chain[a]): Chain[a] with Order[a] =
-        (c |> toArray |> Array.sort |> Array.toChain) as & Pure
+    pub def sort(c: Chain[a]): Chain[a] with Order[a] = region r {
+        toArrayRegion(c, r) |> Array.sort |> Array.toChain
+    }
 
     /// Sort chain `c` so that elements are ordered from low to high according to the `Order` instance
     /// for the values obtained by applying `f` to each element.
@@ -793,8 +794,9 @@ namespace Chain {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, c: Chain[a]): Chain[a] with Order[b] =
-        (c |> toArray |> Array.sortBy(f) |> Array.toChain) as & Pure
+    pub def sortBy(f: a -> b, c: Chain[a]): Chain[a] with Order[b] = region r {
+        toArrayRegion(c, r) |> Array.sortBy(f) |> Array.toChain
+    }
 
     ///
     /// Sort chain `c` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -803,8 +805,9 @@ namespace Chain {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, c: Chain[a]): Chain[a] =
-        (c |> toArray |> Array.sortWith(cmp) |> Array.toChain) as & Pure
+    pub def sortWith(cmp: (a,a) -> Comparison, c: Chain[a]): Chain[a] = region r {
+        toArrayRegion(c, r) |> Array.sortWith(cmp) |> Array.toChain
+    }
 
     ///
     /// Helper function for `traverse` and `sequence`.

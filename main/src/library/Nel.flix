@@ -554,12 +554,13 @@ namespace Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(l: Nel[a]): Nel[a] with Order[a] =
-        let list = (l |> toArray |> Array.sort |> Array.toList) as & Pure;
+    pub def sort(l: Nel[a]): Nel[a] with Order[a] = region r {
+        let list = (toArrayRegion(l, r) |> Array.sort |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
         }
+    }
 
     ///
     /// Sort the non-empty list `l` so that elements are ordered from low to high according
@@ -569,12 +570,13 @@ namespace Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, l: Nel[a]): Nel[a] with Order[b] =
-        let list = (l |> toArray |> Array.sortBy(f) |> Array.toList) as & Pure;
+    pub def sortBy(f: a -> b, l: Nel[a]): Nel[a] with Order[b] = region r {
+        let list = (toArrayRegion(l, r) |> Array.sortBy(f) |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
         }
+    }
 
     ///
     /// Sort the non-empty list `l` so that elements are ordered from low to high according
@@ -584,12 +586,13 @@ namespace Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, l: Nel[a]): Nel[a] =
-        let list = (l |> toArray |> Array.sortWith(cmp) |> Array.toList) as & Pure;
+    pub def sortWith(cmp: (a,a) -> Comparison, l: Nel[a]): Nel[a] = region r {
+        let list = (toArrayRegion(l, r) |> Array.sortWith(cmp) |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
         }
+    }
 
     ///
     /// Returns an iterator over `l`.

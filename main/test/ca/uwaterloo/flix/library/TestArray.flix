@@ -4301,20 +4301,24 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toDelayList01(): Bool & Impure =
-        []: Array[Unit] |> Array.toDelayList == DelayList.empty()
+    def toDelayList01(): Bool = region r {
+        ([] @ r): ScopedArray[Unit, _] |> Array.toDelayList == DelayList.empty()
+    }
 
     @test
-    def toDelayList02(): Bool & Impure =
-        Array.new(0, 0) |> Array.toDelayList == DelayList.empty()
+    def toDelayList02(): Bool = region r {
+        ([0; 0] @ r) |> Array.toDelayList == DelayList.empty()
+    }
 
     @test
-    def toDelayList03(): Bool & Impure =
-        Array.range(-1000, 1000, static) |> Array.toDelayList == DelayList.range(-1000, 1000)
+    def toDelayList03(): Bool = region r {
+        Array.range(-1000, 1000, r) |> Array.toDelayList == DelayList.range(-1000, 1000)
+    }
 
     @test
-    def toDelayList04(): Bool & Impure =
-        Array.range(-1000, 1000, static) |> Array.toDelayList |> DelayList.toArray `sameElements` Array.range(-1000, 1000, static)
+    def toDelayList04(): Bool = region r {
+        (Array.range(-1000, 1000, r) |> Array.toDelayList |> DelayList.toArrayRegion)(r) `sameElements` Array.range(-1000, 1000, r)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
@@ -4495,12 +4499,14 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
         [1, 2, 3] |> Array.toIterator |> Iterator.toList == 1 :: 2 :: 3 :: Nil
 
     @test
-    def toIterator03(): Bool & Impure =
-        [1, 2, 3] |> Array.toIterator |> Iterator.toArray `sameElements` [1, 2, 3]
+    def toIterator03(): Bool & Impure = region r {
+        (([1, 2, 3] @ r) |> Array.toIterator |> Iterator.toArrayRegion)(r) `sameElements` [1, 2, 3] @ r
+    }
 
     @test
-    def toIterator04(): Bool & Impure =
-        Array.range(-100, 100, static) |> Array.toIterator |> Iterator.toArray `sameElements` Array.range(-100, 100, static)
+    def toIterator04(): Bool & Impure = region r {
+        (Array.range(-100, 100, r) |> Array.toIterator |> Iterator.toArrayRegion)(r) `sameElements` Array.range(-100, 100, r)
+    }
 
     @test
     def toIterator05(): Bool & Impure = {
@@ -4620,6 +4626,8 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def toMutList05(): Bool & Impure =
         let v = Array.toMutList([1, 2, 3]);
         MutList.push!(4, v);
+        ((1, 2, 3) @ r |> Array.toIterator |> Iterator.toArrayRegion)(r) `sameElements` [1, 2, 3] @ r
+
         Array.sameElements(MutList.toArrayRegion(v, static), [1, 2, 3, 4])
 
     @test

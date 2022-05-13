@@ -104,7 +104,7 @@ namespace Array {
     /// Returns the array `a` as a list.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toList(a: Array[a]): List[a] & Impure =
+    pub def toList(a: ScopedArray[a, r]): List[a] \ Read(r) =
         def loop(i, acc) = {
             if (i == 0) {
                 acc
@@ -133,7 +133,7 @@ namespace Array {
     ///
     /// Returns the array `arr` as a chain.
     ///
-    pub def toChain(arr: Array[a]): Chain[a] & Impure =
+    pub def toChain(arr: ScopedArray[a, r]): Chain[a] \ Read(r) =
         def loop(i, acc) = {
             if (i == 0) {
                 acc
@@ -1141,7 +1141,7 @@ namespace Array {
     @Time(time(f) * length(a) * length(a)) @Space(space(f) * length(a))
     pub def groupBy(f: (a, a) -> Bool, a: Array[a]): Array[Array[a]] & Impure =
         let xs = toList(a);
-        groupByHelper(f, xs, Nil) |> List.toArray
+        (groupByHelper(f, xs, Nil) |> List.toArrayRegion)(static)
 
     ///
     /// Helper function for `groupBy`.
@@ -1255,9 +1255,9 @@ namespace Array {
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def filterMap(f: a -> Option[b] & ef, a: Array[a]): Array[b] & Impure =
-        foldRight((x, xs) -> match f(x) {
+        (foldRight((x, xs) -> match f(x) {
             case None => xs
-            case Some(b) => b :: xs }, Nil, a) |> List.toArray
+            case Some(b) => b :: xs }, Nil, a) |> List.toArrayRegion)(static)
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `xs`.
@@ -1537,7 +1537,8 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(a: Array[a]): Array[a] & Impure with Order[a] = sortWith(Order.compare, a)
+    pub def sort(a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } with Order[a] =
+        sortWith(Order.compare, a)
 
     ///
     /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to
@@ -1547,7 +1548,8 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, a: Array[a]): Array[a] & Impure with Order[b] = sortWith(Order.compare `on` f, a)
+    pub def sortBy(f: a -> b, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } with Order[b] =
+        sortWith(Order.compare `on` f, a)
 
     ///
     /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to
@@ -1557,9 +1559,9 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, a: Array[a]): Array[a] & Impure =
+    pub def sortWith(cmp: (a,a) -> Comparison, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
-        let b = slice(0, len, a);
+        let b = copyOfRangeRegion(0, len, a, Scoped.regionOf(a));
         sortWith!(cmp, b);
         b
 
@@ -1571,7 +1573,8 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort!(a: Array[a]): Unit & Impure with Order[a] = sortWith!(Order.compare, a)
+    pub def sort!(a: ScopedArray[a, r]): Unit \ { Read(r), Write(r) } with Order[a] =
+        sortWith!(Order.compare, a)
 
     ///
     /// Sort array `a` so that elements are ordered from low to high according to the `Order` instance for
@@ -1581,7 +1584,8 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy!(f: a -> b, a: Array[a]): Unit & Impure with Order[b] = sortWith!(Order.compare `on` f, a)
+    pub def sortBy!(f: a -> b, a: ScopedArray[a, r]): Unit \ { Read(r), Write(r) } with Order[b] =
+        sortWith!(Order.compare `on` f, a)
 
     ///
     /// Sort array `a` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -1591,7 +1595,8 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith!(cmp: (a,a) -> Comparison, a: Array[a]): Unit & Impure = sortWithin!(cmp, 0, length(a) - 1, a)
+    pub def sortWith!(cmp: (a,a) -> Comparison, a: ScopedArray[a, r]): Unit \ { Read(r), Write(r) } =
+        sortWithin!(cmp, 0, length(a) - 1, a)
 
     ///
     /// Sort array `a` between the indices `lo` and `hi` (both inclusive) so that elements in that range are ordered
