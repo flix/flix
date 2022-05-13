@@ -764,6 +764,18 @@ namespace Chain {
         }
 
     ///
+    /// Returns the chain `c` as an array.
+    ///
+    pub def toArrayRegion(c: Chain[a], r: Region[r]): ScopedArray[a, r] \ { Read(r), Write(r) } = match head(c) {
+        case None => [] @ r
+        case Some(x) =>
+            let arr = [x; length(c)] @ r;
+            let f = (i, b) -> { arr[i] = b; i + 1 };
+            foldLeft(f, 0, c);
+            arr
+        }
+
+    ///
     /// Returns `true` if and only if `c1` and `c2` and equal.
     ///
     pub def equals(c1: Chain[a], c2: Chain[a]): Bool with Eq[a] =
