@@ -1206,6 +1206,19 @@ namespace List {
         }
 
     ///
+    /// Returns the list `l` as an array.
+    ///
+    @Time(length(l)) @Space(length(l))
+    pub def toArrayRegion(l: List[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = match head(l) {
+        case None    => [] @ r
+        case Some(x) =>
+            let a = [x; length(l)] @ r;
+            let f = (i, b) -> { a[i] = b; i + 1 };
+            foldLeft(f, 0, l);
+            a
+        }
+
+    ///
     /// Returns the list `l` as `Option[Nel[a]]`.
     ///
     /// If `l` is empty return `None`, otherwise return the Nel wrapped in `Some`.

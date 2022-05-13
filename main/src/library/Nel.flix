@@ -95,7 +95,7 @@ instance Reducible[Nel] {
     override pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
     override pub def dropWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.dropWhile(f, l)
     override pub def takeWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.takeWhile(f, l)
-    override pub def toArray(l: Nel[a]): Array[a] & Impure = Nel.toArray(l)
+    override pub def toArray(l: Nel[a]): Array[a] & Impure = Nel.toArrayRegion(l, static)
     override pub def toIterator(l: Nel[a]): Iterator[a] & Impure = Nel.toIterator(l)
     override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
@@ -537,6 +537,12 @@ namespace Nel {
     ///
     pub def toArray(l: Nel[a]): Array[a] & Impure =
         l |> toList |> List.toArray
+
+    ///
+    /// Returns `l` as an array.
+    ///
+    pub def toArrayRegion(l: Nel[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
+        (l |> (toList >> List.toArrayRegion))(r)
 
     ///
     /// Applies `f` to every element of `l`.
