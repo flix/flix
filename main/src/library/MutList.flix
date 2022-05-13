@@ -715,6 +715,13 @@ namespace MutList {
         Array.copyOfRange(0, deref l, deref a)
 
     ///
+    /// Returns `v` as an array.
+    ///
+    pub def toArrayRegion(v: MutList[a, r1], r2: Region[r2]): ScopedArray[a, r2] \ { Read(r1), Write(r2) } =
+        let MutList(a, l) = v;
+        Array.copyOfRangeRegion(0, deref l, deref a, r2)
+
+    ///
     /// Returns the mutable list `xs` as a chain.
     ///
     pub def toChain(xs: MutList[a, r]): Chain[a] \ Read(r) =
