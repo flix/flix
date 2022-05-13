@@ -1429,25 +1429,28 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool & Impure =
+    def toArray01(): Bool = region r {
         let c: Chain[Int32] = Chain.empty();
-        let a: Array[Int32] = Chain.toArray(c);
-        Array.sameElements(a, []: Array[Int32])
+        Array.sameElements(Chain.toArrayRegion(c, r), [] @ r)
+    }
 
     @test
-    def toArray02(): Bool & Impure =
-        let a = Chain.toArray(Chain.singleton(1));
-        Array.sameElements(a, [1])
+    def toArray02(): Bool = region r {
+        let a = Chain.toArrayRegion(Chain.singleton(1), r);
+        Array.sameElements(a, [1] @ r)
+    }
 
     @test
-    def toArray03(): Bool & Impure =
-        let a = Chain.toArray(List.toChain(1 :: 2 :: Nil));
-        Array.sameElements(a, [1,2])
+    def toArray03(): Bool = region r {
+        let a = Chain.toArrayRegion(List.toChain(1 :: 2 :: Nil), r);
+        Array.sameElements(a, [1, 2] @ r)
+    }
 
     @test
-    def toArray04(): Bool & Impure =
-        let a = Chain.toArray(List.toChain(1 :: 2 :: 3 :: Nil));
-        Array.sameElements(a, [1,2,3])
+    def toArray04(): Bool = region r {
+        let a = Chain.toArrayRegion(List.toChain(1 :: 2 :: 3 :: Nil), r);
+        Array.sameElements(a, [1, 2, 3] @ r)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // sort                                                                    //
