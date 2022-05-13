@@ -118,17 +118,19 @@ namespace Array {
     ///
     /// Returns the array `a` as a `DelayList`.
     ///
-    pub def toDelayList(a: Array[a]): DelayList[a] & Impure =
-        let cp = Array.copyOfRange(0, a.length, a);
-        def loop(i) = {
-            if (i == cp.length) {
-                ENil
+    pub def toDelayList(a: ScopedArray[a, r]): DelayList[a] \ Read(r) = region r1 {
+        let cp = Array.copyOfRangeRegion(0, a.length, a, r1);
+        def loop(i, k) = {
+            if (i >= cp.length) {
+                k(ENil)
             } else {
-                let x = cp[i] as & Pure; // Note this cast is safe, since `cp` is a private copy of `a`.
-                LCons(x, lazy loop(i + 1))
+                let x = cp[i];
+                loop(i + 1, ks -> ECons(x, ks))
             }
         };
-        LList(lazy loop(0))
+        loop(0, identity)
+    }
+
 
     ///
     /// Returns the array `arr` as a chain.
