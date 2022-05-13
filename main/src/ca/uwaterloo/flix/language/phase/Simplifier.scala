@@ -115,6 +115,10 @@ object Simplifier {
         val sym = Symbol.freshVarSym("_", BoundBy.Let, loc)
         SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, effectToPurity(eff), loc)
 
+      case d@TypedAst.Expression.Discard(exp, eff, loc) =>
+        val sym = Symbol.freshVarSym("_", BoundBy.Let, loc)
+        SimplifiedAst.Expression.Let(sym, visitExp(exp), SimplifiedAst.Expression.Unit(loc), d.tpe, effectToPurity(eff), loc)
+
       case TypedAst.Expression.Let(sym, mod, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, effectToPurity(eff), loc)
 

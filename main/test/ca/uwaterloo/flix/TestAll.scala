@@ -20,11 +20,12 @@ import ca.uwaterloo.flix.language.LanguageSuite
 import ca.uwaterloo.flix.library.LibrarySuite
 import ca.uwaterloo.flix.tools.ToolsSuite
 import ca.uwaterloo.flix.util.UtilSuite
-import flix.LangSuite
+import flix.{CompilerSuite, LangSuite}
 import org.scalatest.Suites
 
 class TestAll extends Suites(
   new LangSuite,
+  new CompilerSuite,
   new ExampleSuite,
   new LanguageSuite,
   new LibrarySuite,

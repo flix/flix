@@ -155,6 +155,9 @@ object CodeHinter {
     case Expression.Stm(exp1, exp2, _, eff, loc) =>
       checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
 
+    case Expression.Discard(exp, _, _) =>
+      visitExp(exp)
+
     case Expression.Match(matchExp, rules, _, _, _) =>
       visitExp(matchExp) ++ rules.flatMap {
         case MatchRule(_, guard, exp) => visitExp(guard) ++ visitExp(exp)
