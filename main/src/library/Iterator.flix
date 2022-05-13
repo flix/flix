@@ -169,7 +169,17 @@ namespace Iterator {
     pub def toArray(iter: Iterator[a]): Array[a] & Impure =
         let m = new MutList(static);
         foreach(a -> MutList.push!(a, m), iter);
-        MutList.toArray(m)
+        MutList.toArrayRegion(m, static)
+
+    ///
+    /// Returns the contents of `iter` as an array.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def toArrayRegion(iter: Iterator[a], r: Region[r]): ScopedArray[a, r] & Impure =
+        let m = new MutList(r);
+        foreach(a -> MutList.push!(a, m), iter);
+        MutList.toArrayRegion(m, r)
 
     ///
     /// Returns the contents of `iter` as a list.
