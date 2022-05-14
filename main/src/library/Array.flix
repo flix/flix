@@ -1664,55 +1664,6 @@ namespace Array {
     /// If the range is valid and greater than the length of `a`, the resulting array with have the length of the range
     /// and include the specified range of `a`.
     ///
-    pub def copyOfRange(b: Int32, e: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
-        match (reifyType a) {
-            case ErasedType =>
-                let arr = a as Array[##java.lang.Object];
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32): ScopedArray[##java.lang.Object, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
-            case ReifiedUnit =>
-                let arr = a as Array[Unit];
-                import static java.util.Arrays.copyOfRange(Array[Unit], Int32, Int32): ScopedArray[Unit, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
-            case ReifiedBool =>
-                let arr = a as Array[Bool];
-                import static java.util.Arrays.copyOfRange(Array[Bool], Int32, Int32): ScopedArray[Bool, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
-            case ReifiedChar =>
-                let arr = a as Array[Char];
-                import static java.util.Arrays.copyOfRange(Array[Char], Int32, Int32): ScopedArray[Char, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
-            case ReifiedFloat32 =>
-                let arr = a as Array[Float32];
-                import static java.util.Arrays.copyOfRange(Array[Float32], Int32, Int32): ScopedArray[Float32, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
-            case ReifiedFloat64 =>
-                let arr = a as Array[Float64];
-                import static java.util.Arrays.copyOfRange(Array[Float64], Int32, Int32): ScopedArray[Float64, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
-            case ReifiedInt8 =>
-                let arr = a as Array[Int8];
-                import static java.util.Arrays.copyOfRange(Array[Int8], Int32, Int32): ScopedArray[Int8, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
-            case ReifiedInt16 =>
-                let arr = a as Array[Int16];
-                import static java.util.Arrays.copyOfRange(Array[Int16], Int32, Int32): ScopedArray[Int16, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
-            case ReifiedInt32 =>
-                let arr = a as Array[Int32];
-                import static java.util.Arrays.copyOfRange(Array[Int32], Int32, Int32): ScopedArray[Int32, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
-            case ReifiedInt64 =>
-                let arr = a as Array[Int64];
-                import static java.util.Arrays.copyOfRange(Array[Int64], Int32, Int32): ScopedArray[Int64, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
-            case ReifiedArray(_) =>
-                let arr = a as Array[##java.lang.Object];
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32): ScopedArray[##java.lang.Object, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
-        }
-
-
     pub def copyOfRangeRegion(b: Int32, e: Int32, a: ScopedArray[a, r1], _: Region[r2]): ScopedArray[a, r2] \ { Read(r1), Write(r2) } =
         match (reifyType a) {
             case ErasedType =>
