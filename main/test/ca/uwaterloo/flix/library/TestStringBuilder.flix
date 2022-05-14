@@ -16,60 +16,72 @@
 
 namespace TestStringBuilder {
 
-/////////////////////////////////////////////////////////////////////////////
-// new                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def new01(): StringBuilder[Impure] & Impure =
-    StringBuilder.new(static) // Must be Impure, otherwise the StringBuilder would escape its region
+    /////////////////////////////////////////////////////////////////////////////
+    // new                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// appendString!                                                           //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def appendString01!(): Bool & Impure =
-    let sb = new StringBuilder(static);
-    StringBuilder.appendString!("hello", sb);
-    StringBuilder.toString(sb) == "hello"
+    @test
+    def new01(): StringBuilder[Impure] & Impure =
+        StringBuilder.new(static) // Must be Impure, otherwise the StringBuilder would escape its region
 
-@test
-def appendString02!(): Bool & Impure =
-    let sb = new StringBuilder(static);
-    StringBuilder.appendString!("hello", sb);
-    StringBuilder.appendString!("!", sb);
-    StringBuilder.toString(sb) == "hello!"
 
-@test
-def appendString03!(): Bool & Impure =
-    let sb = new StringBuilder(static);
-    StringBuilder.appendString!("hello", sb);
-    StringBuilder.appendString!(" ", sb);
-    StringBuilder.appendString!("world!", sb);
-    StringBuilder.toString(sb) == "hello world!"
+    /////////////////////////////////////////////////////////////////////////////
+    // appendString!                                                           //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// append! (Char)                                                          //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def appendChar01!(): Bool & Impure =
-    let sb = new StringBuilder(static);
-    StringBuilder.append!('A', sb);
-    StringBuilder.toString(sb) == "A"
+    @test
+    def appendString01!(): Bool = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.appendString!("hello", sb);
+        StringBuilder.toString(sb) == "hello"
+    }
 
-@test
-def appendChar02!(): Bool & Impure =
-    let sb = new StringBuilder(static);
-    StringBuilder.append!('A', sb);
-    StringBuilder.append!('B', sb);
-    StringBuilder.toString(sb) == "AB"
+    @test
+    def appendString02!(): Bool = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.appendString!("hello", sb);
+        StringBuilder.appendString!("!", sb);
+        StringBuilder.toString(sb) == "hello!"
+    }
 
-@test
-def appendChar03!(): Bool & Impure =
-    let sb = new StringBuilder(static);
-    StringBuilder.append!('A', sb);
-    StringBuilder.append!('B', sb);
-    StringBuilder.append!('C', sb);
-    StringBuilder.toString(sb) == "ABC"
+    @test
+    def appendString03!(): Bool = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.appendString!("hello", sb);
+        StringBuilder.appendString!(" ", sb);
+        StringBuilder.appendString!("world!", sb);
+        StringBuilder.toString(sb) == "hello world!"
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // append! (Char)                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def appendChar01!(): Bool = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.append!('A', sb);
+        StringBuilder.toString(sb) == "A"
+    }
+
+    @test
+    def appendChar02!(): Bool = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.append!('A', sb);
+        StringBuilder.append!('B', sb);
+        StringBuilder.toString(sb) == "AB"
+    }
+
+    @test
+    def appendChar03!(): Bool = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.append!('A', sb);
+        StringBuilder.append!('B', sb);
+        StringBuilder.append!('C', sb);
+        StringBuilder.toString(sb) == "ABC"
+    }
+
 
 /////////////////////////////////////////////////////////////////////////////
 // append! (Int8)                                                          //
