@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, LiftedAst, OccurrenceAst, Purity, SemanticOperator, SourceLocation, Symbol, Type, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, UnaryOperator, LiftedAst, OccurrenceAst, Purity, SemanticOperator, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -220,11 +220,8 @@ object Inliner {
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
       val e3 = visitExp(exp3, subst0)
-      e1 match {
-        case LiftedAst.Expression.True(_) => e2
-        case LiftedAst.Expression.False(_) => e3
-        case _ => LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
-      }
+      reduceIfThenElse(e1, e2, e3, tpe, purity, loc)
+
 
     case OccurrenceAst.Expression.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -637,11 +634,7 @@ object Inliner {
       val e1 = substituteExp(exp1, env0)
       val e2 = substituteExp(exp2, env0)
       val e3 = substituteExp(exp3, env0)
-      e1 match {
-        case LiftedAst.Expression.True(_) => e2
-        case LiftedAst.Expression.False(_) => e3
-        case _ => LiftedAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc)
-      }
+      reduceIfThenElse(e1, e2, e3, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Branch(exp, branches, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
@@ -870,5 +863,29 @@ object Inliner {
       case (SemanticOperator.BoolOp.Or, _, LiftedAst.Expression.True(_)) if e1.purity == Pure => LiftedAst.Expression.True(loc)
       case _ => LiftedAst.Expression.Binary(sop, op, e1, e2, tpe, purity, loc)
     }
+  }
+
+  /**
+   * If `outerCond` is always true then eliminate else branch
+   * If `outerThen` is always true then eliminate then branch
+   * Transforms expressions of the form
+   * if (c1) (if (c2) e else jump l1) else jump l1)
+   * to
+   * if (c1 and c2) e else jump l1)
+   */
+  private def reduceIfThenElse(outerCond: LiftedAst.Expression, outerThen: LiftedAst.Expression, outerElse: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation): LiftedAst.Expression = outerCond match {
+    case LiftedAst.Expression.True(_) => outerThen
+    case LiftedAst.Expression.False(_) => outerElse
+    case _ =>
+      outerThen match {
+        case LiftedAst.Expression.IfThenElse(innerCond, innerThen, innerElse, _, _, _) =>
+          (outerElse, innerElse) match {
+            case (LiftedAst.Expression.JumpTo(sym1, _, _, _), LiftedAst.Expression.JumpTo(sym2, _, _, _)) if sym1 == sym2 =>
+              val andExp = LiftedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, outerCond, innerCond, outerCond.tpe, combine(outerCond.purity, innerCond.purity), loc)
+              LiftedAst.Expression.IfThenElse(andExp, innerThen, outerElse, tpe, purity, loc)
+            case _ => LiftedAst.Expression.IfThenElse(outerCond, outerThen, outerElse, tpe, purity, loc)
+          }
+        case _ => LiftedAst.Expression.IfThenElse(outerCond, outerThen, outerElse, tpe, purity, loc)
+      }
   }
 }

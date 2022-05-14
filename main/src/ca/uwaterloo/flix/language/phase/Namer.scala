@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
-import ca.uwaterloo.flix.language.ast.NamedAst.DefOrSig
 import ca.uwaterloo.flix.language.ast.WeededAst.ChoicePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
@@ -48,6 +47,8 @@ object Namer {
       defsAndSigs = Map.empty,
       enums = Map.empty,
       typeAliases = Map.empty,
+      effects = Map.empty,
+      ops = Map.empty,
       entryPoint = program.entryPoint,
       reachable = program.reachable,
       sources = locations
@@ -92,32 +93,23 @@ object Namer {
         val sigNs = Name.extendNName(ns0, ident)
         val defsAndSigs0 = prog0.defsAndSigs.getOrElse(sigNs, Map.empty)
         val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
-        lookupTypeOrClass(ident, ns0, prog0) match {
+        lookupUpperName(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
             // Case 1: The class does not already exist. Update it.
             flatMapN(visitClass(decl, uenv0, Map.empty, ns0)) {
               case clazz@NamedAst.Class(_, _, _, _, _, _, sigs, _, _) =>
                 // add each signature to the namespace
                 // TODO add laws
-                val defsAndSigsVal = Validation.fold(sigs, defsAndSigs0) {
-                  case (defsAndSigs, sig) => defsAndSigs.get(sig.sym.name) match {
-                    case Some(otherSig) =>
-                      val name = sig.sym.name
-                      val loc1 = sig.sym.loc
-                      val loc2 = getSymLocation(otherSig)
-                      Failure(LazyList(
-                        // NB: We report an error at both source locations.
-                        NameError.DuplicateDefOrSig(name, loc1, loc2),
-                        NameError.DuplicateDefOrSig(name, loc2, loc1)
-                      ))
-                    case None => (defsAndSigs + (sig.sym.name -> NamedAst.DefOrSig.Sig(sig))).toSuccess
+                val sigsProgVal = Validation.fold(sigs, prog0) {
+                  case (prog, sig) => lookupLowerName(sig.sym.name, sigNs, prog) match {
+                    case LookupResult.NotDefined =>
+                      val defsAndSigsInNs = prog.defsAndSigs.getOrElse(sigNs, Map.empty) + (sig.sym.name -> NamedAst.DefOrSig.Sig(sig))
+                      prog.copy(defsAndSigs = prog.defsAndSigs + (sigNs -> defsAndSigsInNs)).toSuccess
+                    case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(sig.sym.name, sig.sym.loc, otherLoc)
                   }
                 }
-                defsAndSigsVal.map {
-                  defsAndSigs =>
-                    prog0.copy(
-                      classes = prog0.classes + (ns0 -> (classes0 + (ident.name -> clazz))),
-                      defsAndSigs = prog0.defsAndSigs + (sigNs -> defsAndSigs))
+                sigsProgVal.map {
+                  prog => prog.copy(classes = prog0.classes + (ns0 -> (classes0 + (ident.name -> clazz))))
                 }
             }
 
@@ -137,30 +129,21 @@ object Namer {
       /*
      * Definition.
      */
-      case decl@WeededAst.Declaration.Def(_, _, _, ident, _, _, _, _, _, _, _, _) =>
+      case decl@WeededAst.Declaration.Def(_, _, _, ident, _, _, _, _, _, _, _, _, _) =>
         // Check if the definition already exists.
         val defsAndSigs = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
-        defsAndSigs.get(ident.name) match {
-          case None =>
-            // Case 1: The definition does not already exist. Update it.
-            visitDef(decl, uenv0, Map.empty, ns0, Nil, Nil) map {
+        lookupLowerName(ident.name, ns0, prog0) match {
+          // Case 1: Not used. Add it to the namespace
+          case LookupResult.NotDefined =>
+            mapN(visitDef(decl, uenv0, Map.empty, ns0, Nil, Nil)) {
               defn => prog0.copy(defsAndSigs = prog0.defsAndSigs + (ns0 -> (defsAndSigs + (ident.name -> NamedAst.DefOrSig.Def(defn)))))
             }
-          case Some(defOrSig) =>
-            // Case 2: Duplicate definition.
-            val name = ident.name
-            val loc1 = getSymLocation(defOrSig)
-            val loc2 = ident.loc
-            Failure(LazyList(
-              // NB: We report an error at both source locations.
-              NameError.DuplicateDefOrSig(name, loc1, loc2),
-              NameError.DuplicateDefOrSig(name, loc2, loc1),
-            ))
+          case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
 
       /*
-     * Law.
-     */
+      * Law.
+      */
       case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, retTpe, eff0, tconstrs, loc) => ??? // TODO
 
       /*
@@ -168,7 +151,7 @@ object Namer {
      */
       case enum0@WeededAst.Declaration.Enum(_, _, _, ident, _, _, _, _) =>
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
-        lookupTypeOrClass(ident, ns0, prog0) match {
+        lookupUpperName(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
             // Case 1: The enum does not exist in the namespace. Update it.
             visitEnum(enum0, uenv0, ns0) map {
@@ -185,7 +168,7 @@ object Namer {
      */
       case alias0@WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams0, tpe0, loc) =>
         val typeAliases0 = prog0.typeAliases.getOrElse(ns0, Map.empty)
-        lookupTypeOrClass(ident, ns0, prog0) match {
+        lookupUpperName(ident, ns0, prog0) match {
           case LookupResult.NotDefined =>
             // Case 1: The type alias does not exist in the namespace. Add it.
             visitTypeAlias(alias0, uenv0, ns0) map {
@@ -197,8 +180,30 @@ object Namer {
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
 
-      // Not handling effects for now
-      case _: WeededAst.Declaration.Effect => prog0.toSuccess
+      case decl@WeededAst.Declaration.Effect(_, _, ident, _, _) =>
+        val effs0 = prog0.effects.getOrElse(ns0, Map.empty)
+        val opNs = Name.extendNName(ns0, ident)
+        lookupUpperName(ident, ns0, prog0) match {
+          case LookupResult.NotDefined =>
+            // Case 1: The effect does not exist. Add it.
+            flatMapN(visitEffect(decl, uenv0, Map.empty, ns0)) {
+              case eff@NamedAst.Effect(_, _, _, _, ops, _) =>
+                // add each operation to the namespace
+                val opsProgVal = Validation.fold(ops, prog0) {
+                  case (prog, op) => lookupLowerName(op.sym.name, opNs, prog) match {
+                    case LookupResult.NotDefined =>
+                      val opsInNs = prog.ops.getOrElse(opNs, Map.empty) + (op.sym.name -> op)
+                      prog.copy(ops = prog.ops + (opNs -> opsInNs)).toSuccess
+                    case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(op.sym.name, op.sym.loc, otherLoc)
+                  }
+                }
+                opsProgVal.map {
+                  prog => prog.copy(effects = prog0.effects + (ns0 -> (effs0 + (ident.name -> eff))))
+                }
+            }
+          // Case 2: The name is in use. Error
+          case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
+        }
     }
   }
 
@@ -206,11 +211,20 @@ object Namer {
     * Creates a pair of errors reporting a duplicate type declaration at each location.
     */
   private def mkDuplicateNamePair[T](name: String, loc1: SourceLocation, loc2: SourceLocation): Validation.Failure[T, NameError] = {
-    Failure(LazyList(
-      // NB: We report an error at both source locations.
-      NameError.DuplicateTypeOrClass(name, loc1, loc2),
-      NameError.DuplicateTypeOrClass(name, loc2, loc1)
-    ))
+    // NB: We report an error at both source locations.
+    if (name.charAt(0).isUpper) {
+      // Case 1: uppercase name
+      Failure(LazyList(
+        NameError.DuplicateUpperName(name, loc1, loc2),
+        NameError.DuplicateUpperName(name, loc2, loc1)
+      ))
+    } else {
+      // Case 2: lowercase name
+      Failure(LazyList(
+        NameError.DuplicateLowerName(name, loc1, loc2),
+        NameError.DuplicateLowerName(name, loc2, loc1)
+      ))
+    }
   }
 
   /**
@@ -227,23 +241,44 @@ object Namer {
   }
 
   /**
-    * Looks up the type or class in the given namespace and root.
+    * Looks up the uppercase name in the given namespace and root.
     */
-  private def lookupTypeOrClass(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Root): NameLookupResult = {
+  private def lookupUpperName(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Root): NameLookupResult = {
     val classes0 = prog0.classes.getOrElse(ns0, Map.empty)
     val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
     val typeAliases0 = prog0.typeAliases.getOrElse(ns0, Map.empty)
-    (classes0.get(ident.name), enums0.get(ident.name), typeAliases0.get(ident.name)) match {
+    val effects0 = prog0.effects.getOrElse(ns0, Map.empty)
+    (classes0.get(ident.name), enums0.get(ident.name), typeAliases0.get(ident.name), effects0.get(ident.name)) match {
       // Case 1: The name is unused.
-      case (None, None, None) => LookupResult.NotDefined
+      case (None, None, None, None) => LookupResult.NotDefined
       // Case 2: A class with the name already exists.
-      case (Some(clazz), None, None) => LookupResult.AlreadyDefined(clazz.sym.loc)
+      case (Some(clazz), None, None, None) => LookupResult.AlreadyDefined(clazz.sym.loc)
       // Case 3: An enum with the name already exists.
-      case (None, Some(enum), None) => LookupResult.AlreadyDefined(enum.sym.loc)
+      case (None, Some(enum), None, None) => LookupResult.AlreadyDefined(enum.sym.loc)
       // Case 4: A type alias with the name already exists.
-      case (None, None, Some(typeAlias)) => LookupResult.AlreadyDefined(typeAlias.sym.loc)
+      case (None, None, Some(typeAlias), None) => LookupResult.AlreadyDefined(typeAlias.sym.loc)
+      // Case 5: An effect with the name already exists.
+      case (None, None, None, Some(eff)) => LookupResult.AlreadyDefined(eff.sym.loc)
       // Impossible.
-      case _ => throw InternalCompilerException("Unexpected duplicate enum, type alias, or class found.")
+      case _ => throw InternalCompilerException("Unexpected duplicate name found.")
+    }
+  }
+
+  /**
+    * Looks up the lowercase name in the given namespace and root.
+    */
+  private def lookupLowerName(name: String, ns0: Name.NName, prog0: NamedAst.Root): NameLookupResult = {
+    val defsAndSigs0 = prog0.defsAndSigs.getOrElse(ns0, Map.empty)
+    val ops0 = prog0.ops.getOrElse(ns0, Map.empty)
+    (defsAndSigs0.get(name), ops0.get(name)) match {
+      // Case 1: The name is unused.
+      case (None, None) => LookupResult.NotDefined
+      // Case 2: A sig or def with the name already exists.
+      case (Some(defOrSig), None) => LookupResult.AlreadyDefined(getSymLocation(defOrSig))
+      // Case 3: An op with the name already exists.
+      case (None, Some(op)) => LookupResult.AlreadyDefined(op.sym.loc)
+      // Impossible
+      case _ => throw InternalCompilerException("Unexpected duplicate name found.")
     }
   }
 
@@ -402,7 +437,7 @@ object Namer {
     * Performs naming on the given signature declaration `sig` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitSig(sig: WeededAst.Declaration.Sig, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, classIdent: Name.Ident, classSym: Symbol.ClassSym, classTparam: NamedAst.TypeParam)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig match {
-    case WeededAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, retTpe0, eff0, tconstrs0, loc) =>
+    case WeededAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, retTpe0, pur0, eff0, tconstrs0, loc) =>
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, uenv0, tenv0)
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
 
@@ -412,7 +447,7 @@ object Namer {
       val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
       val tpeVal = visitType(tpe0, uenv0, tenv)
       val retTpeVal = visitType(retTpe0, uenv0, tenv)
-      val effVal = visitType(eff0, uenv0, tenv)
+      val effVal = visitType(pur0, uenv0, tenv)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
 
       flatMapN(sigTypeCheckVal, fparamsVal, tpeVal, retTpeVal, effVal, tconstrsVal) {
@@ -453,7 +488,7 @@ object Namer {
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`, with type constraints `tconstrs`.
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, addedTconstrs: List[NamedAst.TypeConstraint], addedQuantifiers: List[Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
-    case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, retTpe0, eff0, tconstrs0, loc) =>
+    case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, retTpe0, pur0, eff0, tconstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, uenv0, tenv0)
@@ -464,7 +499,7 @@ object Namer {
       val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
       val tpeVal = visitType(tpe0, uenv0, tenv)
       val retTpeVal = visitType(retTpe0, uenv0, tenv)
-      val effVal = visitType(eff0, uenv0, tenv)
+      val effVal = visitType(pur0, uenv0, tenv)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
 
       flatMapN(fparamsVal, tpeVal, retTpeVal, effVal, tconstrsVal) {
@@ -491,6 +526,57 @@ object Namer {
   }
 
   /**
+    * Performs naming on the given effect `eff0` under the given environments `env0`, `uenv0`, and `tenv0`.
+    */
+  private def visitEffect(eff0: WeededAst.Declaration.Effect, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Effect, NameError] = eff0 match {
+    case WeededAst.Declaration.Effect(doc, mod0, ident, ops, loc) =>
+      val sym = Symbol.mkEffectSym(ns0, ident)
+      val mod = visitModifiers(mod0, ns0)
+
+      val opsVal = traverse(ops)(visitOp(_, uenv0, tenv0, ns0, sym))
+
+      mapN(opsVal) {
+        ops => NamedAst.Effect(doc, Nil, mod, sym, ops, loc) // MATT add annotations to Parser, Weeder
+      }
+  }
+
+  /**
+    * Performs naming on the given effect operation `op0` under the given environments `env0`, `uenv0`, and `tenv0`.
+    */
+  private def visitOp(op0: WeededAst.Declaration.Op, uenv0: UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix): Validation[NamedAst.Op, NameError] = op0 match {
+    case WeededAst.Declaration.Op(doc, ann0, mod0, ident, fparams0, tpe0, retTpe0, tconstrs0, loc) =>
+      // First visit all the top-level information
+      val mod = visitModifiers(mod0, ns0)
+      val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
+      val tpeVal = visitType(tpe0, uenv0, tenv)
+      val retTpeVal = visitType(retTpe0, uenv0, tenv)
+      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
+
+      flatMapN(fparamsVal, tpeVal, retTpeVal, tconstrsVal) {
+        case (fparams, tpe, retTpe, tconstrs) =>
+
+          // Then visit the parts depending on the parameters
+          val env0 = getVarEnv(fparams)
+          val annVal = traverse(ann0)(visitAnnotation(_, env0, uenv0, tenv))
+
+          mapN(annVal) {
+            ann =>
+
+              // Build the scheme, including the class type constraint.
+              val quantifiers = Nil // operations are monomorphic
+              val sc = NamedAst.Scheme(quantifiers, tconstrs, tpe)
+
+              val tparams = NamedAst.TypeParams.Kinded(Nil) // operations are monomorphic
+              val pur = NamedAst.Type.True(ident.loc) // operations are pure
+
+              val sym = Symbol.mkOpSym(effSym, ident)
+              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, sc, retTpe, pur, loc)
+              NamedAst.Op(sym, spec)
+          }
+      }
+  }
+
+  /**
     * Performs naming on the given expression `exp0` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitExp(exp0: WeededAst.Expression, env0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.Expression, NameError] = exp0 match {
@@ -506,7 +592,7 @@ object Namer {
       val name = ident.name
 
       // lookup the name in the var and use environments.
-      (env0.get(name), uenv0.defsAndSigs.get(name)) match {
+      (env0.get(name), uenv0.lowerNames.get(name)) match {
         case (None, None) =>
           // Case 1: the name is a top-level function.
           NamedAst.Expression.DefOrSig(Name.mkQName(ident), loc).toSuccess
@@ -526,8 +612,8 @@ object Namer {
 
     case WeededAst.Expression.Use(uses0, exp, loc) =>
       val uses = uses0.map {
-        case WeededAst.Use.UseDefOrSig(qname, alias, loc) => NamedAst.Use.UseDefOrSig(qname, alias, loc)
-        case WeededAst.Use.UseTypeOrClass(qname, alias, loc) => NamedAst.Use.UseTypeOrClass(qname, alias, loc)
+        case WeededAst.Use.UseLower(qname, alias, loc) => NamedAst.Use.UseDefOrSig(qname, alias, loc)
+        case WeededAst.Use.UseUpper(qname, alias, loc) => NamedAst.Use.UseTypeOrClass(qname, alias, loc)
         case WeededAst.Use.UseTag(qname, tag, alias, loc) => NamedAst.Use.UseTag(qname, tag, alias, loc)
       }
 
@@ -814,7 +900,7 @@ object Namer {
         case (e, rs) => NamedAst.Expression.TryCatch(e, rs, loc)
       }
 
-      // replace effect stuff with holes for now
+    // replace effect stuff with holes for now
     case WeededAst.Expression.TryWith(exp, eff, rules, loc) => NamedAst.Expression.Hole(None, loc).toSuccess
     case WeededAst.Expression.Do(op, args, loc) => NamedAst.Expression.Hole(None, loc).toSuccess
     case WeededAst.Expression.Resume(args, loc) => NamedAst.Expression.Hole(None, loc).toSuccess
@@ -1151,7 +1237,7 @@ object Namer {
       if (qname.isUnqualified) {
         val name = qname.ident.name
         // Disambiguate the qname.
-        (tenv0.get(name), uenv0.typesAndClasses.get(name)) match {
+        (tenv0.get(name), uenv0.upperNames.get(name)) match {
           case (None, None) =>
             // Case 1: the name is top-level type.
             NamedAst.Type.Ambiguous(qname, loc).toSuccess
@@ -1196,7 +1282,7 @@ object Namer {
     case WeededAst.Type.SchemaRowExtendByAlias(qname, targs, rest, loc) =>
       // Disambiguate the qname.
       val name = if (qname.isUnqualified) {
-        uenv0.typesAndClasses.getOrElse(qname.ident.name, qname)
+        uenv0.upperNames.getOrElse(qname.ident.name, qname)
       } else {
         qname
       }
@@ -1228,8 +1314,8 @@ object Namer {
     case WeededAst.Type.Native(fqn, loc) =>
       NamedAst.Type.Native(fqn, loc).toSuccess
 
-    case WeededAst.Type.Arrow(tparams, eff, tresult, loc) =>
-      mapN(traverse(tparams)(visitType(_, uenv0, tenv0)), visitType(eff, uenv0, tenv0), visitType(tresult, uenv0, tenv0)) {
+    case WeededAst.Type.Arrow(tparams, pur, eff, tresult, loc) =>
+      mapN(traverse(tparams)(visitType(_, uenv0, tenv0)), visitType(pur, uenv0, tenv0), visitType(tresult, uenv0, tenv0)) {
         case (ts, f, t) => NamedAst.Type.Arrow(ts, f, t, loc)
       }
 
@@ -1360,7 +1446,7 @@ object Namer {
     case WeededAst.Expression.PutField(_, _, exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.GetStaticField(_, _, _) => Nil
     case WeededAst.Expression.PutStaticField(_, _, exp, _) => freeVars(exp)
-    case WeededAst.Expression.NewChannel(exp, _, _) => freeVars(exp) // TODO exp is a Type. is this a bug?
+    case WeededAst.Expression.NewChannel(exp, _, _) => freeVars(exp)
     case WeededAst.Expression.GetChannel(exp, _) => freeVars(exp)
     case WeededAst.Expression.PutChannel(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.SelectChannel(rules, default, _) =>
@@ -1447,7 +1533,7 @@ object Namer {
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Native(fqm, loc) => Nil
-    case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(freeVars) ::: freeVars(eff) ::: freeVars(tresult)
+    case WeededAst.Type.Arrow(tparams, pur, eff, tresult, loc) => tparams.flatMap(freeVars) ::: freeVars(pur) ::: freeVars(tresult)
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.True(loc) => Nil
     case WeededAst.Type.False(loc) => Nil
@@ -1477,7 +1563,7 @@ object Namer {
       case WeededAst.Type.Relation(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Native(fqm, loc) => Nil
-      case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(visit) ::: visit(eff) ::: visit(tresult)
+      case WeededAst.Type.Arrow(tparams, pur, eff, tresult, loc) => tparams.flatMap(visit) ::: visit(pur) ::: visit(tresult)
       case WeededAst.Type.Apply(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
       case WeededAst.Type.True(loc) => Nil
       case WeededAst.Type.False(loc) => Nil
@@ -1725,7 +1811,7 @@ object Namer {
         // Case 2: The tag is qualified. Check if it fully-qualified.
         if (qname.isUnqualified) {
           // Case 2.1: The tag is only qualified by one name. Look it up in the use environment.
-          uenv0.typesAndClasses.get(qname.ident.name) match {
+          uenv0.upperNames.get(qname.ident.name) match {
             case None =>
               // Case 2.1.1: The qualified name is not in the use environment. Do not touch it.
               (Some(qname), tag0)
@@ -1747,7 +1833,7 @@ object Namer {
     if (qname.isQualified) {
       qname
     } else {
-      uenv0.typesAndClasses.getOrElse(qname.ident.name, qname)
+      uenv0.upperNames.getOrElse(qname.ident.name, qname)
     }
   }
 
@@ -1755,8 +1841,8 @@ object Namer {
     * Gets the location of the symbol of the given def or sig.
     */
   private def getSymLocation(f: NamedAst.DefOrSig): SourceLocation = f match {
-    case DefOrSig.Def(d) => d.sym.loc
-    case DefOrSig.Sig(s) => s.sym.loc
+    case NamedAst.DefOrSig.Def(d) => d.sym.loc
+    case NamedAst.DefOrSig.Sig(s) => s.sym.loc
   }
 
   /**
@@ -1773,10 +1859,10 @@ object Namer {
   private def mergeUseEnvs(uses: List[WeededAst.Use], uenv0: UseEnv): Validation[UseEnv, NameError] = {
 
     Validation.fold(uses, uenv0) {
-      case (uenv1, WeededAst.Use.UseDefOrSig(qname, alias, _)) =>
+      case (uenv1, WeededAst.Use.UseLower(qname, alias, _)) =>
         val name = alias.name
-        uenv1.defsAndSigs.get(name) match {
-          case None => uenv1.addDefOrSig(name, qname).toSuccess
+        uenv1.lowerNames.get(name) match {
+          case None => uenv1.addLower(name, qname).toSuccess
           case Some(otherQName) =>
             val loc1 = otherQName.loc
             val loc2 = qname.loc
@@ -1786,10 +1872,10 @@ object Namer {
               NameError.DuplicateUseDefOrSig(name, loc2, loc1)
             ))
         }
-      case (uenv1, WeededAst.Use.UseTypeOrClass(qname, alias, _)) =>
+      case (uenv1, WeededAst.Use.UseUpper(qname, alias, _)) =>
         val name = alias.name
-        uenv1.typesAndClasses.get(name) match {
-          case None => uenv1.addTypeOrClass(name, qname).toSuccess
+        uenv1.upperNames.get(name) match {
+          case None => uenv1.addUpper(name, qname).toSuccess
           case Some(otherQName) =>
             val loc1 = otherQName.loc
             val loc2 = qname.loc
@@ -1825,16 +1911,16 @@ object Namer {
   /**
     * Represents an environment of "imported" names, including defs, types, and tags.
     */
-  private case class UseEnv(defsAndSigs: Map[String, Name.QName], typesAndClasses: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Tag)]) {
+  private case class UseEnv(lowerNames: Map[String, Name.QName], upperNames: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Tag)]) {
     /**
-      * Binds the def or sig name `s` to the qualified name `n`.
+      * Binds the lowercase name `s` to the qualified name `n`.
       */
-    def addDefOrSig(s: String, n: Name.QName): UseEnv = copy(defsAndSigs = defsAndSigs + (s -> n))
+    def addLower(s: String, n: Name.QName): UseEnv = copy(lowerNames = lowerNames + (s -> n))
 
     /**
-      * Binds the type or class name `s` to the qualified name `n`.
+      * Binds the uppercase name `s` to the qualified name `n`.
       */
-    def addTypeOrClass(s: String, n: Name.QName): UseEnv = copy(typesAndClasses = typesAndClasses + (s -> n))
+    def addUpper(s: String, n: Name.QName): UseEnv = copy(upperNames = upperNames + (s -> n))
 
     /**
       * Binds the tag name `s` to the qualified name `n` and tag `t`.
