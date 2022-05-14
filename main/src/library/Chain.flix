@@ -853,4 +853,15 @@ namespace Chain {
     pub def joinWith(f: a -> String & ef, sep: String, c: Chain[a]): String & ef =
         Foldable.joinWith(f, sep, c)
 
+    ///
+    /// Returns a chain where each element `e` is mapped to `(e, i)` where `i`
+    /// is the index of `e`.
+    ///
+    pub def zipWithIndex(c: Chain[a]): Chain[(a, Int32)] =
+        def loop(cc, acc, i) = match viewLeft(cc) {
+            case NoneLeft        => acc
+            case SomeLeft(a, rs) => loop(rs, snoc(acc, (a, i)), i + 1)
+        };
+        loop(c, Empty, 0)
+
 }
