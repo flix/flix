@@ -209,6 +209,16 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Jvm.PutStaticField.flix")
   mkTest("main/test/flix/Test.Exp.Jvm.TryCatch.flix")
 
+
+  //
+  // Kind
+  //
+  mkTest("main/test/flix/Test.Kind.Class.flix")
+  mkTest("main/test/flix/Test.Kind.Def.flix")
+  mkTest("main/test/flix/Test.Kind.Enum.flix")
+  mkTest("main/test/flix/Test.Kind.Instance.flix")
+  mkTest("main/test/flix/Test.Kind.TypeAlias.flix")
+
   //
   // Lambda
   //
@@ -314,4 +324,53 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   //
   mkTest("main/test/flix/Test.Exp.String.flix")
 
+  //
+  // Predicate
+  //
+  mkTest("main/test/flix/Test.Predicate.Guard.flix")
+  mkTest("main/test/flix/Test.Predicate.Nullary.flix")
+
+  //
+  // Stratified Negation
+  //
+  mkTest("main/test/flix/Test.Stratification.flix")
+
+  //
+  // Term
+  //
+  mkTest("main/test/flix/Test.Term.Apply.flix")
+  mkTest("main/test/flix/Test.Term.Lit.flix")
+  mkTest("main/test/flix/Test.Term.Lit.Option.flix")
+  mkTest("main/test/flix/Test.Term.Lit.Result.flix")
+  mkTest("main/test/flix/Test.Term.Lit.List.flix")
+  mkTest("main/test/flix/Test.Term.Lit.Set.flix")
+  mkTest("main/test/flix/Test.Term.Var.CapturedVar.flix")
+  mkTest("main/test/flix/Test.Term.Var.QuantVar.flix")
+  mkTest("main/test/flix/Test.Term.Var.WildVar.flix")
+
+  //
+  // Type Alias
+  //
+  mkTest("main/test/flix/Test.TypeAlias.Rel.flix")
+
+  //
+  // Unused
+  //
+  mkTest("main/test/flix/Test.Unused.Tag.flix")
+  mkTest("main/test/flix/Test.Unused.Var.flix")
+
+  //
+  // Use
+  //
+  mkTest("main/test/flix/Test.Use.Def.flix")
+  mkTest("main/test/flix/Test.Use.Sig.flix")
+  mkTest("main/test/flix/Test.Use.Tag.flix")
+  mkTest("main/test/flix/Test.Use.Type.flix")
+
+  //
+  // Integration
+  //
+  mkTest("main/test/flix/Test.Integ.Class.Schema.flix")
+  mkTest("main/test/flix/Test.Integ.Fixpoint.TypeAlias.flix")
+  mkTest("main/test/flix/Test.Integ.Enum.TypeAlias.flix")
 }
