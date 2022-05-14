@@ -1452,31 +1452,6 @@ namespace TestMutList {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // formatWith                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def formatWith01(): Bool & Impure =
-        let v = MutList.range(0, 5, static);
-        MutList.formatWith(Int32.toString, ", ", v) == "0, 1, 2, 3, 4"
-
-    @test
-    def formatWith02(): Bool & Impure =
-        let v = MutList.range(1, 4, static);
-        MutList.formatWith(Int32.toString, "+", v) == "1+2+3"
-
-    @test
-    def formatWith03(): Bool & Impure =
-        let v = MutList.range(2, 3, static);
-        MutList.formatWith(Int32.toString, "/", v) == "2"
-
-    @test
-    def formatWith04(): Bool & Impure =
-        let v = MutList.range(6, 9, static);
-        MutList.formatWith(Int32.toString, "/", v) == "6/7/8"
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // foreach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
