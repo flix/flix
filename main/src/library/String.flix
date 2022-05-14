@@ -158,17 +158,12 @@ namespace String {
     /// each pair of strings.
     ///
     @Time(length(sep) * List.length(xs)) @Space(length(sep) * List.length(xs))
-    pub def intercalate(sep: String, xs: List[String]): String =
-        intercalateHelper(sep, xs) as & Pure
-
-    ///
-    /// Helper function for `intercalate`.
-    ///
-    def intercalateHelper(sep: String, xs: List[String]): String & Impure =
-        let sb = new StringBuilder(static);
-        let arr = List.toArray(xs);
+    pub def intercalate(sep: String, xs: List[String]): String = region r {
+        let sb = new StringBuilder(r);
+        let arr = List.toArray(xs); // TODO: Use toArray @ r when PR is merged
         StringBuilder.intercalate!(sep, arr, sb);
         StringBuilder.toString(sb)
+    } as & Pure
 
     ///
     /// Concatenate a list of strings into a single string, inserting the separator `sep` between
