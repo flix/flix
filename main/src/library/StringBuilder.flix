@@ -38,6 +38,23 @@ namespace StringBuilder1 {
         import new java.lang.StringBuilder(): ##java.lang.StringBuilder & r as newStringBuilder;
         StringBuilder1(newStringBuilder())
 
+    ///
+    /// Append `x` to the StringBuilder `sb`.
+    ///
+    pub def append!(x: a, sb: StringBuilder1[r]): Unit \ Write(r) with ToString[a] =
+        let s = ToString.toString(x);
+        s `appendString!` sb;
+        ()
+
+    ///
+    /// Append the String `s` to the StringBuilder `sb`.
+    ///
+    pub def appendString!(s: String, sb: StringBuilder1[r]): Unit \ Write(r) =
+        import java.lang.StringBuilder.append(String): ##java.lang.StringBuilder & r;
+        let StringBuilder1(msb) = sb;
+        msb `append` s;
+        ()
+
 }
 
 namespace StringBuilder {
