@@ -102,16 +102,12 @@ namespace List {
     ///
     /// Renders the list `l` to a String.
     ///
-    pub def toString(l: List[a]): String with ToString[a] = toStringHelper(l) as & Pure
-
-    ///
-    /// Helper function for `toString`.
-    ///
-    def toStringHelper(l: List[a]): String & Impure with ToString[a] =
-        let sb = new StringBuilder(static);
+    pub def toString(l: List[a]): String with ToString[a] = region r {
+        let sb = new StringBuilder(r);
         List.foreach(x -> StringBuilder.appendString!("${x} :: ", sb), l);
         StringBuilder.appendString!("Nil", sb);
         StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns true if and only if `l` is the empty list, i.e. `Nil`.
@@ -1104,14 +1100,8 @@ namespace List {
     /// function `f` and separated with the string `sep`.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def formatWith(f: a -> String, sep: String, l: List[a]): String =
-        formatWithHelper(f, sep, l) as & Pure
-
-    ///
-    /// Helper function for `formatWith`.
-    ///
-    def formatWithHelper(f: a -> String, sep: String, l: List[a]): String & Impure =
-        let sb = new StringBuilder(static);
+    pub def formatWith(f: a -> String, sep: String, l: List[a]): String = region r {
+        let sb = new StringBuilder(r);
         match l {
             case Nil     => ()
             case x :: xs => {
@@ -1120,6 +1110,7 @@ namespace List {
             }
         };
         StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns the concatenation of the string representation

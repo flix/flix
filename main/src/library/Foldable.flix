@@ -317,25 +317,20 @@ pub class Foldable[t : Type -> Type] {
     /// Returns the concatenation of the string representation
     /// of each element in `t` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, t: t[a]): String with ToString[a] = {
-        use StringBuilder.append!;
-        let lastSep = String.length(sep);
-        let sb = new StringBuilder(static);
-        t |> Foldable.foreach(x -> { append!(ToString.toString(x), sb); append!(sep, sb) });
-        StringBuilder.toString(sb) |> String.dropRight(lastSep)
-    } as & Pure
+    pub def join(sep: String, t: t[a]): String with ToString[a] =
+        Foldable.joinWith(ToString.toString, sep, t)
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `t` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, t: t[a]): String & ef = {
+    pub def joinWith(f: a -> String & ef, sep: String, t: t[a]): String & ef = region r {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = new StringBuilder(static);
+        let sb = new StringBuilder(r);
         t |> Foldable.foreach(x -> { append!(f(x), sb); append!(sep, sb) });
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
-    } as & ef
+    }
 
 }
 

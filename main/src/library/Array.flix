@@ -1515,19 +1515,20 @@ namespace Array {
     /// Returns the concatenation of the string representation
     /// of each element in `a` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, a: Array[a]): String & Impure with ToString[a] =
-        joinWith(x -> ToString.toString(x), sep, a)
+    pub def join(sep: String, a: ScopedArray[a, r]): String \ Read(r) with ToString[a] =
+        joinWith(ToString.toString, sep, a)
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `a` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, a: Array[a]): String & Impure =
+    pub def joinWith(f: a -> String & ef, sep: String, a: ScopedArray[a, r]): String \ { ef, Read(r) } = region r1 {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = new StringBuilder(static);
+        let sb = new StringBuilder(r1);
         foreach(x -> { append!(f(x), sb); append!(sep, sb) }, a);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
+    }
 
     ///
     /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to

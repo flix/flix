@@ -700,7 +700,7 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def join(sep: String, iter: Iterator[a]): String & Impure with ToString[a] =
-        joinWith(x -> ToString.toString(x), sep, iter)
+        joinWith(ToString.toString, sep, iter)
 
     ///
     /// Returns the concatenation of the string representation
@@ -708,11 +708,12 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, iter: Iterator[a]): String & Impure =
+    pub def joinWith(f: a -> String & ef, sep: String, iter: Iterator[a]): String & Impure = region r {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = new StringBuilder(static);
+        let sb = new StringBuilder(r);
         foreach(x -> { append!(f(x), sb); append!(sep, sb) }, iter);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
+    }
 
 }
