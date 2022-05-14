@@ -126,7 +126,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b, t: t[a]): b with Monoid[b] =
+    pub def foldMap(f: a -> b & ef, t: t[a]): b & ef with Monoid[b] =
         Foldable.foldLeft((acc, x) -> Monoid.combine(f(x), acc), Monoid.empty(), t)
 
     ///
