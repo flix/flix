@@ -118,18 +118,14 @@ namespace Array {
     ///
     /// Returns the array `a` as a `DelayList`.
     ///
-    pub def toDelayList(a: ScopedArray[a, r]): DelayList[a] \ Read(r) = region r1 {
-        let cp = Array.copyOfRangeRegion(0, a.length, a, r1);
-        def loop(i, k) = {
-            if (i >= cp.length) {
-                k(ENil)
-            } else {
-                let x = cp[i];
-                loop(i + 1, ks -> ECons(x, ks))
-            }
+    pub def toDelayList(a: ScopedArray[a, r]): DelayList[a] \ Read(r) =
+        def loop(i, acc) = {
+            if (i < 0)
+                acc
+            else
+                loop(i - 1, ECons(a[i], acc))
         };
-        loop(0, identity)
-    }
+        loop(a.length - 1, ENil)
 
     ///
     /// Returns the array `arr` as a chain.
