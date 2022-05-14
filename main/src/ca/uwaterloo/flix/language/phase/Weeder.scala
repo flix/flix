@@ -164,8 +164,7 @@ object Weeder {
         case (as, mod, _, _, tparams, fparams, tconstrs, exp) =>
           val ts = fparams.map(_.tpe.get)
           val retTpe = visitType(tpe0)
-          val tpe = WeededAst.Type.Arrow(ts, pur, eff, retTpe, ident.loc)
-          List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, tpe, retTpe, pur, eff, tconstrs, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp.headOption, retTpe, pur, eff, tconstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -225,8 +224,7 @@ object Weeder {
         case (as, mod, _, _, tparams, fparams, exp, tconstrs) =>
           val ts = fparams.map(_.tpe.get)
           val retTpe = visitType(tpe0)
-          val tpe = WeededAst.Type.Arrow(ts, pur, eff, retTpe, ident.loc)
-          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, retTpe, pur, eff, tconstrs, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, retTpe, pur, eff, tconstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -250,8 +248,7 @@ object Weeder {
           val pur = WeededAst.Type.True(ident.loc)
           val eff = WeededAst.Type.True(ident.loc)
           val retTpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
-          val tpe = WeededAst.Type.Arrow(ts, pur, eff, retTpe, ident.loc)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, retTpe, pur, eff, tconstrs, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, retTpe, pur, eff, tconstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -291,8 +288,7 @@ object Weeder {
       mapN(annVal, modVal, pubVal, identVal, tparamsVal, fparamsVal, unitVal, purOrEffVal, tconstrsVal) {
         case (ann, mod, _, _, _, fparams, _, _, tconstrs) =>
           val ts = fparams.map(_.tpe.get)
-          val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(ident.loc), WeededAst.Type.True(ident.loc), retTpe, ident.loc)
-          WeededAst.Declaration.Op(doc, ann, mod, ident, fparams, tpe, retTpe, tconstrs, mkSL(sp1, sp2));
+          WeededAst.Declaration.Op(doc, ann, mod, ident, fparams, retTpe, tconstrs, mkSL(sp1, sp2))
       }
   }
 

@@ -381,18 +381,18 @@ object Resolver {
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
   def resolveSpec(s0: NamedAst.Spec, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
-    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, retTpe0, pur0, eff0, loc) => // TODO handle eff
+    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, retTpe0, pur0, eff0, tconstrs0, loc) => // TODO handle eff
 
       val tparams = resolveTypeParams(tparams0, ns0, root)
       val fparamsVal = resolveFormalParams(fparams0, taenv, ns0, root)
       val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
-      val schemeVal = resolveScheme(sc0, taenv, ns0, root)
       val retTpeVal = resolveType(retTpe0, taenv, ns0, root)
       val purVal = resolveType(pur0, taenv, ns0, root)
+      val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, taenv, ns0, root))
 
-      mapN(fparamsVal, annVal, schemeVal, retTpeVal, purVal) {
-        case (fparams, ann, scheme, retTpe, pur) =>
-          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, retTpe, pur, loc)
+      mapN(fparamsVal, annVal, retTpeVal, purVal, tconstrsVal) {
+        case (fparams, ann, retTpe, pur, tconstrs) =>
+          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, retTpe, pur, tconstrs, loc)
       }
   }
 
@@ -408,8 +408,7 @@ object Resolver {
       val tpeVal = resolveType(tpe0, taenv, ns0, root)
       mapN(annVal, derivesVal, casesVal, tpeVal) {
         case (ann, derives, cases, tpe) =>
-          val sc = ResolvedAst.Scheme(tparams.tparams.map(_.sym), Nil, tpe)
-          ResolvedAst.Enum(doc, ann, mod, sym, tparams, derives, cases.toMap, tpe, sc, loc)
+          ResolvedAst.Enum(doc, ann, mod, sym, tparams, derives, cases.toMap, tpe, loc)
       }
   }
 
@@ -425,8 +424,7 @@ object Resolver {
           val caseType = tpe
           val enumType = mkUnkindedEnum(sym, freeVars, sym.loc)
           val base = Type.mkTag(sym, tag, caseType, enumType, tpe.loc)
-          val sc = ResolvedAst.Scheme(freeVars, Nil, base)
-          name -> ResolvedAst.Case(enumIdent, tag, tpe, sc)
+          name -> ResolvedAst.Case(enumIdent, tag, tpe)
       }
   }
 
@@ -1382,17 +1380,6 @@ object Resolver {
     case NamedAst.TypeParams.Unkinded(tparams1) =>
       val tparams2 = tparams1.map(Params.resolveUnkindedTparam)
       ResolvedAst.TypeParams.Unkinded(tparams2)
-  }
-
-  /**
-    * Performs name resolution on the given scheme `sc0`.
-    */
-  def resolveScheme(sc0: NamedAst.Scheme, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Scheme, ResolutionError] = {
-    val baseVal = resolveType(sc0.base, taenv, ns0, root)
-    val tconstrsVal = sequence(sc0.tconstrs.map(resolveTypeConstraint(_, taenv, ns0, root)))
-    mapN(baseVal, tconstrsVal) {
-      case (base, tconstrs) => ResolvedAst.Scheme(sc0.quantifiers, tconstrs, base)
-    }
   }
 
   /**
