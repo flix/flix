@@ -147,15 +147,11 @@ namespace String {
     /// Concatenate a list of strings into a single string.
     ///
     @Time(List.length(xs)) @Space(List.length(xs))
-    pub def flatten(xs: List[String]): String = flattenHelper(xs) as & Pure
-
-    ///
-    /// Helper function for `flatten`.
-    ///
-    def flattenHelper(xs: List[String]): String & Impure =
-        let sb = new StringBuilder(static);
+    pub def flatten(xs: List[String]): String = region r {
+        let sb = new StringBuilder(r);
         List.foreach(x -> StringBuilder.appendString!(x, sb), xs);
         StringBuilder.toString(sb)
+    }
 
     ///
     /// Concatenate a list of strings into a single string, inserting the separator `sep` between
