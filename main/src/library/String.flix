@@ -635,8 +635,8 @@ namespace String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldWithIter(f: Unit -> Option[Char] & ef): String & ef =
-        let sb = new StringBuilder(static) as & Pure;
+    pub def unfoldWithIter(f: Unit -> Option[Char] & ef): String & ef = region r {
+        let sb = new StringBuilder(r);
         def loop() = {
             match f() {
                 case None    => StringBuilder.toString(sb)
@@ -646,7 +646,8 @@ namespace String {
                 }
             }
         };
-        loop() as & ef
+        loop()
+    }
 
     ///
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
