@@ -97,6 +97,18 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Default.flix")
 
   //
+  // Definitions.
+  //
+  mkTest("main/test/flix/Test.Def.Op.flix")
+
+  //
+  // Derivations.
+  //
+  mkTest("main/test/flix/Test.Derives.Eq.flix")
+  mkTest("main/test/flix/Test.Derives.Order.flix")
+  mkTest("main/test/flix/Test.Derives.ToString.flix")
+
+  //
   // Discard.
   //
   mkTest("main/test/flix/Test.Exp.Discard.flix")
@@ -105,6 +117,33 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   // Effects.
   //
   mkTest("main/test/flix/Test.Exp.Effect.flix")
+
+  //
+  // Effects.
+  //
+  mkTest("main/test/flix/Test.Eff.Advanced.flix")
+  mkTest("main/test/flix/Test.Eff.Polymorphism.flix")
+  mkTest("main/test/flix/Test.Eff.Simplification.flix")
+
+  //
+  // Equality.
+  //
+  mkTest("main/test/flix/Test.Equality.BigInt.flix")
+  mkTest("main/test/flix/Test.Equality.Bool.flix")
+  mkTest("main/test/flix/Test.Equality.Char.flix")
+  mkTest("main/test/flix/Test.Equality.Float32.flix")
+  mkTest("main/test/flix/Test.Equality.Float64.flix")
+  mkTest("main/test/flix/Test.Equality.Int8.flix")
+  mkTest("main/test/flix/Test.Equality.Int16.flix")
+  mkTest("main/test/flix/Test.Equality.Int32.flix")
+  mkTest("main/test/flix/Test.Equality.Int64.flix")
+  mkTest("main/test/flix/Test.Equality.String.flix")
+  mkTest("main/test/flix/Test.Equality.Tag.flix")
+  mkTest("main/test/flix/Test.Equality.Tuple.flix")
+  mkTest("main/test/flix/Test.Equality.Unit.flix")
+
+  mkTest("main/test/flix/Test.Equality.Map.flix")
+  mkTest("main/test/flix/Test.Equality.Set.flix")
 
   //
   // Fixpoint
