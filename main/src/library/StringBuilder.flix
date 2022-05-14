@@ -55,6 +55,38 @@ namespace StringBuilder1 {
         msb `append` s;
         ()
 
+    ///
+    /// Append the system line separator to the StringBuilder `sb`.
+    ///
+    pub def appendLineSeparator!(sb: StringBuilder1[r]): Unit \ Write(r) =
+        String.lineSeparator() `appendString!` sb
+
+    ///
+    /// Append the String `s` followed by the system line separator to the StringBuilder `sb`.
+    ///
+    pub def appendLine!(s: String, sb: StringBuilder1[r]): Unit \ Write(r) =
+        s `appendString!` sb;
+        appendLineSeparator!(sb)
+
+    ///
+    /// Appends `f(x)` to the string builder `sb`.
+    ///
+    pub def appendLineWith!(f: a -> String & ef, x: a, sb: StringBuilder1[r]): Unit \ { ef, Write(r) } =
+        f(x) `appendString!` sb;
+        appendLineSeparator!(sb)
+
+    ///
+    /// Appends each string in the array `a` to the string builder `sb`.
+    ///
+    pub def appendLines!(a: ScopedArray[String, r1], sb: StringBuilder1[r2]): Unit \ { Read(r1), Write(r2) } =
+        Array.foreach(x -> appendLine!(x, sb), a)
+
+    ///
+    /// Appends `f(x)` for each x in array `a` to the string builder `sb`.
+    ///
+    pub def appendLinesWith!(f: a -> String & ef, a: ScopedArray[a, r1], sb: StringBuilder1[r2]): Unit \ { ef, Read(r1), Write(r2) } =
+        Array.foreach(x -> appendLineWith!(f, x, sb), a)
+
 }
 
 namespace StringBuilder {

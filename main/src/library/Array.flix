@@ -1439,7 +1439,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreach(f: a -> Unit & ef, a: Array[a]): Unit & Impure =
+    pub def foreach(f: a -> Unit & ef, a: ScopedArray[a, r]): Unit \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)
