@@ -751,22 +751,19 @@ object WeederError {
     * @param loc the location where the error occurred.
     */
   case class IllegalResume(loc: SourceLocation) extends WeederError {
-    def summary: String = "Unexpected use of 'resume'."
+    def summary: String = "Unexpected use of 'resume'. The 'resume' expression must occur in an effect handler."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unexpected use of 'resume'.
+         |>> Unexpected use of 'resume'. The 'resume' expression must occur in an effect handler.
          |
          |${code(loc, "unexpected use of 'resume'")}
          |
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} The 'resume' expression may only be used in effect handlers."
-    })
+    def explain(formatter: Formatter): Option[String] = None
 
   }
 
