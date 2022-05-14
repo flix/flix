@@ -16,6 +16,13 @@ namespace Test/Dec/Effect {
         pub def spawn_(f: Unit -> Unit): Unit
     }
 
+    eff PolyEff {
+        def explicit[a](x: a): Unit
+
+        def implicit(x: a): Unit
+    }
+
+
     eff Empty
 
     eff EmptyWithParens {
