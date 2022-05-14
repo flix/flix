@@ -4317,7 +4317,7 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def toDelayList04(): Bool = region r {
-        (Array.range(-1000, 1000, r) |> Array.toDelayList |> DelayList.toArrayRegion)(r) `sameElements` Array.range(-1000, 1000, r)
+        (Array.range(-1000, 1000, r) |> Array.toDelayList |> DelayList.toArray)(r) `sameElements` Array.range(-1000, 1000, r)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4500,12 +4500,12 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def toIterator03(): Bool & Impure = region r {
-        (([1, 2, 3] @ r) |> Array.toIterator |> Iterator.toArrayRegion)(r) `sameElements` [1, 2, 3] @ r
+        (([1, 2, 3] @ r) |> Array.toIterator |> Iterator.toArray)(r) `sameElements` [1, 2, 3] @ r
     }
 
     @test
     def toIterator04(): Bool & Impure = region r {
-        (Array.range(-100, 100, r) |> Array.toIterator |> Iterator.toArrayRegion)(r) `sameElements` Array.range(-100, 100, r)
+        (Array.range(-100, 100, r) |> Array.toIterator |> Iterator.toArray)(r) `sameElements` Array.range(-100, 100, r)
     }
 
     @test
@@ -4513,7 +4513,7 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
         let a = [1, 2, 3];
         let iter = Array.toIterator(a);
         a[0] = 10000;
-        Iterator.toArrayRegion(iter, static) `sameElements` [1, 2, 3]
+        Iterator.toArray(iter, static) `sameElements` [1, 2, 3]
     }
 
 
@@ -4626,7 +4626,7 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
     def toMutList05(): Bool = region r {
         let v = Array.toMutList([1, 2, 3] @ r);
         MutList.push!(4, v);
-        Array.sameElements(MutList.toArrayRegion(v, r), [1, 2, 3, 4] @ r)
+        Array.sameElements(MutList.toArray(v, r), [1, 2, 3, 4] @ r)
     }
 
     @test
@@ -4637,6 +4637,6 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
         let _ = MutList.pop!(v);
         let _ = MutList.pop!(v);
         let _ = MutList.pop!(v);
-        Array.sameElements(MutList.toArrayRegion(v, static), [])
+        Array.sameElements(MutList.toArray(v, static), [])
 
 }

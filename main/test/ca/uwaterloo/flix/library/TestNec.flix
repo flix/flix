@@ -1099,25 +1099,25 @@ namespace TestNec {
 
     @test
     def toArray01(): Bool = region r {
-        let a = Nec.toArrayRegion(singleton(1), r);
+        let a = Nec.toArray(singleton(1), r);
         Array.sameElements(a, [1] @ r)
     }
 
     @test
     def toArray02(): Bool = region r {
-        let a = Nec.toArrayRegion(necOf2(1, 2), r);
+        let a = Nec.toArray(necOf2(1, 2), r);
         Array.sameElements(a, [1, 2] @ r)
     }
 
     @test
     def toArray03(): Bool = region r {
-        let a = Nec.toArrayRegion(necOf3(1, 2, 3), r);
+        let a = Nec.toArray(necOf3(1, 2, 3), r);
         Array.sameElements(a, [1, 2, 3] @ r)
     }
 
     @test
     def toArray04(): Bool = region r {
-        let a = Nec.toArrayRegion(necOf3(3, 2, 3), r);
+        let a = Nec.toArray(necOf3(3, 2, 3), r);
         Array.sameElements(a, [3, 2, 3] @ r)
     }
 

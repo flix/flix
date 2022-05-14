@@ -1431,24 +1431,24 @@ namespace TestChain {
     @test
     def toArray01(): Bool = region r {
         let c: Chain[Int32] = Chain.empty();
-        Array.sameElements(Chain.toArrayRegion(c, r), [] @ r)
+        Array.sameElements(Chain.toArray(c, r), [] @ r)
     }
 
     @test
     def toArray02(): Bool = region r {
-        let a = Chain.toArrayRegion(Chain.singleton(1), r);
+        let a = Chain.toArray(Chain.singleton(1), r);
         Array.sameElements(a, [1] @ r)
     }
 
     @test
     def toArray03(): Bool = region r {
-        let a = Chain.toArrayRegion(List.toChain(1 :: 2 :: Nil), r);
+        let a = Chain.toArray(List.toChain(1 :: 2 :: Nil), r);
         Array.sameElements(a, [1, 2] @ r)
     }
 
     @test
     def toArray04(): Bool = region r {
-        let a = Chain.toArrayRegion(List.toChain(1 :: 2 :: 3 :: Nil), r);
+        let a = Chain.toArray(List.toChain(1 :: 2 :: 3 :: Nil), r);
         Array.sameElements(a, [1, 2, 3] @ r)
     }
 

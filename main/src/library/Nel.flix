@@ -95,7 +95,7 @@ instance Reducible[Nel] {
     override pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
     override pub def dropWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.dropWhile(f, l)
     override pub def takeWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.takeWhile(f, l)
-    override pub def toArrayRegion(l: Nel[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = Nel.toArrayRegion(l, r)
+    override pub def toArray(l: Nel[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = Nel.toArray(l, r)
     override pub def toIterator(l: Nel[a]): Iterator[a] & Impure = Nel.toIterator(l)
     override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
@@ -535,8 +535,8 @@ namespace Nel {
     ///
     /// Returns `l` as an array.
     ///
-    pub def toArrayRegion(l: Nel[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
-        (l |> toList |> List.toArrayRegion)(r)
+    pub def toArray(l: Nel[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
+        (l |> toList |> List.toArray)(r)
 
     ///
     /// Applies `f` to every element of `l`.
@@ -555,7 +555,7 @@ namespace Nel {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(l: Nel[a]): Nel[a] with Order[a] = region r {
-        let list = (toArrayRegion(l, r) |> Array.sort |> Array.toList);
+        let list = (toArray(l, r) |> Array.sort |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -571,7 +571,7 @@ namespace Nel {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, l: Nel[a]): Nel[a] with Order[b] = region r {
-        let list = (toArrayRegion(l, r) |> Array.sortBy(f) |> Array.toList);
+        let list = (toArray(l, r) |> Array.sortBy(f) |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
@@ -587,7 +587,7 @@ namespace Nel {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, l: Nel[a]): Nel[a] = region r {
-        let list = (toArrayRegion(l, r) |> Array.sortWith(cmp) |> Array.toList);
+        let list = (toArray(l, r) |> Array.sortWith(cmp) |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()

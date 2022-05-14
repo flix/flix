@@ -974,7 +974,7 @@ namespace Array {
             if (f(x)) (x :: a1, a2) else (a1, x :: a2)
         };
         let (xs, ys) = foldRight(step, (Nil, Nil), a);
-        (List.toArrayRegion(xs, static), List.toArrayRegion(ys, static))
+        (List.toArray(xs, static), List.toArray(ys, static))
 
     ///
     /// Returns a pair of arrays `(a1, a2)`.
@@ -1138,7 +1138,7 @@ namespace Array {
     @Time(time(f) * length(a) * length(a)) @Space(space(f) * length(a))
     pub def groupBy(f: (a, a) -> Bool, a: Array[a]): Array[Array[a]] & Impure =
         let xs = toList(a);
-        (groupByHelper(f, xs, Nil) |> List.toArrayRegion)(static)
+        (groupByHelper(f, xs, Nil) |> List.toArray)(static)
 
     ///
     /// Helper function for `groupBy`.
@@ -1155,7 +1155,7 @@ namespace Array {
     ///
     def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Array[a], List[a]) & Impure = match xs {
         case Nil => {
-            let a = List.toArrayRegion(ps, static);
+            let a = List.toArray(ps, static);
             reverse!(a);
             (a, List.reverse(ns))
         }
@@ -1254,7 +1254,7 @@ namespace Array {
     pub def filterMap(f: a -> Option[b] & ef, a: Array[a]): Array[b] & Impure =
         (foldRight((x, xs) -> match f(x) {
             case None => xs
-            case Some(b) => b :: xs }, Nil, a) |> List.toArrayRegion)(static)
+            case Some(b) => b :: xs }, Nil, a) |> List.toArray)(static)
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `xs`.
@@ -1364,7 +1364,7 @@ namespace Array {
             }
         };
         loop(0);
-        MutList.toArrayRegion(l, static)
+        MutList.toArray(l, static)
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.

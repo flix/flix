@@ -1951,25 +1951,25 @@ def foreach02(): Bool & Impure =
     @test
     def toArray01(): Bool = region r {
         let xs: List[Int32] = Nil;
-        let a = List.toArrayRegion(xs, r);
+        let a = List.toArray(xs, r);
         Array.sameElements(a, [] @ r)
     }
 
     @test
     def toArray02(): Bool = region r {
-        let a = List.toArrayRegion(1 :: Nil, r);
+        let a = List.toArray(1 :: Nil, r);
         Array.sameElements(a, [1] @ r)
     }
 
     @test
     def toArray03(): Bool = region r {
-        let a = List.toArrayRegion(1 :: 2 :: Nil, r);
+        let a = List.toArray(1 :: 2 :: Nil, r);
         Array.sameElements(a, [1, 2] @ r)
     }
 
     @test
     def toArray04(): Bool = region r {
-        let a = List.toArrayRegion(1 :: 2 :: 3 :: Nil, r);
+        let a = List.toArray(1 :: 2 :: 3 :: Nil, r);
         Array.sameElements(a, [1, 2, 3] @ r)
     }
 

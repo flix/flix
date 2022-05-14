@@ -741,27 +741,27 @@ namespace TestDelayList {
 
     @test
     def toArray01(): Bool = region r {
-    	DelayList.toArrayRegion(ENil: DelayList[Unit], r) `Array.sameElements` [] @ r
+    	DelayList.toArray(ENil: DelayList[Unit], r) `Array.sameElements` [] @ r
     }
 
     @test
     def toArray02(): Bool = region r {
-    	DelayList.toArrayRegion(LList(lazy ENil): DelayList[Unit], r) `Array.sameElements` [] @ r
+    	DelayList.toArray(LList(lazy ENil): DelayList[Unit], r) `Array.sameElements` [] @ r
     }
 
     @test
     def toArray03(): Bool = region r {
-        DelayList.toArrayRegion(DelayList.range(-100, 1000), r) `Array.sameElements` Array.range(-100, 1000, r)
+        DelayList.toArray(DelayList.range(-100, 1000), r) `Array.sameElements` Array.range(-100, 1000, r)
     }
 
     @test
     def toArray04(): Bool = region r {
-    	DelayList.toArrayRegion(LCons(1, lazy ENil), r) `Array.sameElements` [1] @ r
+    	DelayList.toArray(LCons(1, lazy ENil), r) `Array.sameElements` [1] @ r
     }
 
     @test
     def toArray05(): Bool = region r {
-    	DelayList.toArrayRegion(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))), r) `Array.sameElements` [1, 2, 3] @ r
+    	DelayList.toArray(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))), r) `Array.sameElements` [1, 2, 3] @ r
     }
 
 

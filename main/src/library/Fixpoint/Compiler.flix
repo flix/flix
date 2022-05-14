@@ -43,8 +43,8 @@ namespace Fixpoint {
                     let ruleStratum = Map.getWithDefault(p, 0, strat);
                     Map.insertWith(List.append, ruleStratum, rule :: Nil)
             }, Map#{}, rules) |>
-            Map.foreach(_ -> (x -> List.toArrayRegion(x, static)) >> compileStratum(stmts));
-            RamStmt.Seq(MutList.toArrayRegion(stmts, static))
+            Map.foreach(_ -> (x -> List.toArray(x, static)) >> compileStratum(stmts));
+            RamStmt.Seq(MutList.toArray(stmts, static))
         case _ => bug!("Datalog normalization bug")
     }
 
@@ -101,7 +101,7 @@ namespace Fixpoint {
                 BoolExp.Empty(RamSym.Delta(predSym, arity, den))
             }, idb) |>
             Map.valuesOf;
-        let untilBody = RamStmt.Seq(MutList.toArrayRegion(loopBody, static));
+        let untilBody = RamStmt.Seq(MutList.toArray(loopBody, static));
         let fixpoint = RamStmt.Until(loopTest, untilBody);
         MutList.push!(fixpoint, stmts)
 

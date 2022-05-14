@@ -258,22 +258,22 @@ namespace TestIterator {
 
     @test
     def toArray01(): Bool & Impure = region r {
-        (Nil: List[Int32] |> List.toIterator |> Iterator.toArrayRegion)(r) `Array.sameElements` [] @ r
+        (Nil: List[Int32] |> List.toIterator |> Iterator.toArray)(r) `Array.sameElements` [] @ r
     }
 
     @test
     def toArray02(): Bool & Impure = region r {
-        (Iterator.range(-10, -5) |> Iterator.toArrayRegion)(r) `Array.sameElements` [-10, -9, -8, -7, -6] @ r
+        (Iterator.range(-10, -5) |> Iterator.toArray)(r) `Array.sameElements` [-10, -9, -8, -7, -6] @ r
     }
 
     @test
     def toArray03(): Bool & Impure = region r {
-        (Iterator.repeat(3, 1) |> Iterator.toArrayRegion)(r) `Array.sameElements` [1, 1, 1] @ r
+        (Iterator.repeat(3, 1) |> Iterator.toArray)(r) `Array.sameElements` [1, 1, 1] @ r
     }
 
     @test
     def toArray04(): Bool & Impure = region r {
-        (Iterator.range(-100, 200) |> Iterator.toArrayRegion)(r) `Array.sameElements` Array.range(-100, 200, r)
+        (Iterator.range(-100, 200) |> Iterator.toArray)(r) `Array.sameElements` Array.range(-100, 200, r)
     }
 
 

@@ -117,7 +117,7 @@ namespace Fixpoint {
                         case Eq(RamTerm.RowLoad(_, j), rhs) => (j, rhs)
                         case _ => ???
                     }, prefixQuery) |>
-                    List.toArrayRegion)(static);
+                    List.toArray)(static);
                 if (List.isEmpty(test))
                     let search = RelOp.Query(var, ramSym, query, innerOp);
                     (search, ground)

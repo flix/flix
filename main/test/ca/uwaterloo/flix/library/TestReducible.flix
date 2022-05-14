@@ -859,15 +859,15 @@ namespace TestReducible {
 
     @test
     def toArray01(): Bool & Impure =
-        Array.sameElements(Reducible.toArrayRegion(Nel(1, Nil), static), [1])
+        Array.sameElements(Reducible.toArray(Nel(1, Nil), static), [1])
 
     @test
     def toArray02(): Bool & Impure =
-        Array.sameElements(Reducible.toArrayRegion(Nel(1, 2 :: 3 :: Nil), static), [1, 2, 3])
+        Array.sameElements(Reducible.toArray(Nel(1, 2 :: 3 :: Nil), static), [1, 2, 3])
 
     @test
     def toArray03(): Bool & Impure =
-        Array.sameElements(Reducible.toArrayRegion(Nel(1, 1 :: 2 :: 3 :: Nil), static), [1, 1, 2, 3])
+        Array.sameElements(Reducible.toArray(Nel(1, 1 :: 2 :: 3 :: Nil), static), [1, 1, 2, 3])
 
 
     /////////////////////////////////////////////////////////////////////////////

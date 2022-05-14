@@ -1144,7 +1144,7 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toArrayRegion(l: DelayList[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
+    pub def toArray(l: DelayList[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
         let a = [$DEFAULT$; length(l)] @ r;
         let f = (i, y) -> { a[i] = y; i + 1 };
         foldLeft(f, 0, l);
@@ -1192,7 +1192,7 @@ namespace DelayList {
     ///
     @Experimental
     pub def toMutList(l: DelayList[a]): MutList[a, Impure] & Impure =
-        toArrayRegion(l, static) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`.
+        toArray(l, static) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`.
 
     ///
     /// Returns the association list `l` as a map.

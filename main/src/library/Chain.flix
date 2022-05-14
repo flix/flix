@@ -733,7 +733,7 @@ namespace Chain {
     /// Returns `c` as a mutable list.
     ///
     pub def toMutList(c: Chain[a]): MutList[a, Impure] & Impure =
-        toArrayRegion(c, static) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
+        toArray(c, static) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
 
     ///
     /// Returns the list `c` as a set.
@@ -753,7 +753,7 @@ namespace Chain {
     ///
     /// Returns the chain `c` as an array.
     ///
-    pub def toArrayRegion(c: Chain[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = match head(c) {
+    pub def toArray(c: Chain[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = match head(c) {
         case None => [] @ r
         case Some(x) =>
             let arr = [x; length(c)] @ r;
@@ -784,7 +784,7 @@ namespace Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sort(c: Chain[a]): Chain[a] with Order[a] = region r {
-        toArrayRegion(c, r) |> Array.sort |> Array.toChain
+        toArray(c, r) |> Array.sort |> Array.toChain
     }
 
     /// Sort chain `c` so that elements are ordered from low to high according to the `Order` instance
@@ -795,7 +795,7 @@ namespace Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortBy(f: a -> b, c: Chain[a]): Chain[a] with Order[b] = region r {
-        toArrayRegion(c, r) |> Array.sortBy(f) |> Array.toChain
+        toArray(c, r) |> Array.sortBy(f) |> Array.toChain
     }
 
     ///
@@ -806,7 +806,7 @@ namespace Chain {
     /// The sort implementation is a Quicksort.
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, c: Chain[a]): Chain[a] = region r {
-        toArrayRegion(c, r) |> Array.sortWith(cmp) |> Array.toChain
+        toArray(c, r) |> Array.sortWith(cmp) |> Array.toChain
     }
 
     ///
