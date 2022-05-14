@@ -543,8 +543,12 @@ object Namer {
   /**
     * Performs naming on the given effect operation `op0` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
-  private def visitOp(op0: WeededAst.Declaration.Op, uenv0: UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix): Validation[NamedAst.Op, NameError] = op0 match {
-    case WeededAst.Declaration.Op(doc, ann0, mod0, ident, fparams0, tpe0, retTpe0, tconstrs0, loc) =>
+  private def visitOp(op0: WeededAst.Declaration.Op, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix): Validation[NamedAst.Op, NameError] = op0 match {
+    case WeededAst.Declaration.Op(doc, ann0, mod0, ident, tparams0, fparams0, tpe0, retTpe0, tconstrs0, loc) =>
+
+      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, uenv0, tenv0)
+      val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
+
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0, uenv0, tenv)
@@ -562,11 +566,11 @@ object Namer {
           mapN(annVal) {
             ann =>
 
-              // Build the scheme, including the class type constraint.
-              val quantifiers = Nil // operations are monomorphic
-              val sc = NamedAst.Scheme(quantifiers, tconstrs, tpe)
+              // Build the scheme, including any instance parameters or type constraints
+              val quantifiers = tparams.tparams.map(_.sym)
+              val schemeTconstrs = tconstrs
+              val sc = NamedAst.Scheme(quantifiers, schemeTconstrs, tpe)
 
-              val tparams = NamedAst.TypeParams.Kinded(Nil) // operations are monomorphic
               val pur = NamedAst.Type.True(ident.loc) // operations are pure
 
               val sym = Symbol.mkOpSym(effSym, ident)

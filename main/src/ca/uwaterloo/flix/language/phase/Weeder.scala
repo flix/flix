@@ -280,17 +280,17 @@ object Weeder {
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val pubVal = requirePublic(mod0, ident)
       val identVal = visitName(ident)
-      val tparamsVal = requireNoTypeParams(tparams0)
+      val tparamsVal = visitTypeParams(tparams0)
       val fparamsVal = visitFormalParams(fparamsOpt0, Presence.Required)
       val retTpe = visitType(tpe0)
       val unitVal = requireUnit(tpe0, ident.loc)
       val effOrPurVal = requireNoEffect(effOrPur0, ident.loc)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       mapN(annVal, modVal, pubVal, identVal, tparamsVal, fparamsVal, unitVal, effOrPurVal, tconstrsVal) {
-        case (ann, mod, _, _, _, fparams, _, _, tconstrs) =>
+        case (ann, mod, _, _, tparams, fparams, _, _, tconstrs) =>
           val ts = fparams.map(_.tpe.get)
           val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(ident.loc), WeededAst.EffectSet.Pure(ident.loc), retTpe, ident.loc)
-          WeededAst.Declaration.Op(doc, ann, mod, ident, fparams, tpe, retTpe, tconstrs, mkSL(sp1, sp2));
+          WeededAst.Declaration.Op(doc, ann, mod, ident, tparams, fparams, tpe, retTpe, tconstrs, mkSL(sp1, sp2));
       }
   }
 
