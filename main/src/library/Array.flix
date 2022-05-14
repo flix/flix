@@ -1300,7 +1300,7 @@ namespace Array {
         let len = length(a);
         let c = Order.max(len, minCap);
         let r = Scoped.regionOf(a);
-        MutList(ref copyOfRangeRegion(0, c, a, r) @ r, ref len @ r)
+        MutList(ref copyOfRange(0, c, a, r) @ r, ref len @ r)
 
     ///
     /// Alias for `findIndexOfLeft`.
@@ -1559,7 +1559,7 @@ namespace Array {
     ///
     pub def sortWith(cmp: (a,a) -> Comparison, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
-        let b = copyOfRangeRegion(0, len, a, Scoped.regionOf(a));
+        let b = copyOfRange(0, len, a, Scoped.regionOf(a));
         sortWith!(cmp, b);
         b
 
@@ -1664,7 +1664,7 @@ namespace Array {
     /// If the range is valid and greater than the length of `a`, the resulting array with have the length of the range
     /// and include the specified range of `a`.
     ///
-    pub def copyOfRangeRegion(b: Int32, e: Int32, a: ScopedArray[a, r1], _: Region[r2]): ScopedArray[a, r2] \ { Read(r1), Write(r2) } =
+    pub def copyOfRange(b: Int32, e: Int32, a: ScopedArray[a, r1], _: Region[r2]): ScopedArray[a, r2] \ { Read(r1), Write(r2) } =
         match (reifyType a) {
             case ErasedType =>
                 let arr = a as Array[##java.lang.Object];
@@ -1717,7 +1717,7 @@ namespace Array {
    ///
    pub def toIterator(a: ScopedArray[a, r]): Iterator[a] & Impure =
        let len = Array.length(a);
-       let copy = copyOfRangeRegion(0, len, a, static);
+       let copy = copyOfRange(0, len, a, static);
        let i = ref 0;
        let done = () -> (deref i) >= len;
        let next = () -> {

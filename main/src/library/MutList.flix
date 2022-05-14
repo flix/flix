@@ -524,9 +524,9 @@ namespace MutList {
         let len = deref l;
         let r = Scoped.regionOf(v);
         if (len > minCapacity())
-            MutList(ref Array.copyOfRangeRegion(0, len, deref a, r) @ r, ref len @ r)
+            MutList(ref Array.copyOfRange(0, len, deref a, r) @ r, ref len @ r)
         else
-            MutList(ref Array.copyOfRangeRegion(0, capacity(v), deref a, r) @ r, ref len @ r)
+            MutList(ref Array.copyOfRange(0, capacity(v), deref a, r) @ r, ref len @ r)
 
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
@@ -568,7 +568,7 @@ namespace MutList {
         if (capacity(v) - len == 0)
             reserve!(len, v)
         else ();
-        let sub = Array.copyOfRangeRegion(i, len, deref a, Scoped.regionOf(v));
+        let sub = Array.copyOfRange(i, len, deref a, Scoped.regionOf(v));
         Array.updateSequence!(i + 1, sub, deref a);
         (deref a)[i] = x;
         l := len + 1
@@ -660,7 +660,7 @@ namespace MutList {
         if (n < capv and capv != minCap) {
             let len = deref l;
             let newCap = Order.max(n, minCap);
-            a := Array.copyOfRangeRegion(0, newCap, deref a, Scoped.regionOf(v));
+            a := Array.copyOfRange(0, newCap, deref a, Scoped.regionOf(v));
             l := Order.min(len, newCap)
         }
         else ()
@@ -700,7 +700,7 @@ namespace MutList {
     ///
     pub def reserve!(n: Int32, v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
         let MutList(a, l) = v;
-        a := Array.copyOfRangeRegion(0, (deref l) + n, deref a, Scoped.regionOf(v))
+        a := Array.copyOfRange(0, (deref l) + n, deref a, Scoped.regionOf(v))
 
     ///
     /// Returns `v` as an immutable list.
@@ -713,7 +713,7 @@ namespace MutList {
     ///
     pub def toArray(v: MutList[a, r1], r2: Region[r2]): ScopedArray[a, r2] \ { Read(r1), Write(r2) } =
         let MutList(a, l) = v;
-        Array.copyOfRangeRegion(0, deref l, deref a, r2)
+        Array.copyOfRange(0, deref l, deref a, r2)
 
     ///
     /// Returns the mutable list `xs` as a chain.
