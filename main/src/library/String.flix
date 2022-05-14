@@ -170,15 +170,10 @@ namespace String {
     /// each pair of strings.
     ///
     @Time(List.length(xs)) @Space(List.length(xs))
-    pub def intercalateChar(sep: Char, xs: List[String]): String = intercalateCharHelper(sep, xs) as & Pure
-
-    ///
-    /// Helper function for `intercalateChar`.
-    ///
-    def intercalateCharHelper(sep: Char, xs: List[String]): String & Impure = match xs {
+    pub def intercalateChar(sep: Char, xs: List[String]): String = match xs {
         case Nil => ""
-        case x :: rs => {
-            let sb = new StringBuilder(static);
+        case x :: rs => region r {
+            let sb = new StringBuilder(r);
             StringBuilder.appendString!(x, sb);
             let appendStep = s -> { StringBuilder.append!(sep, sb); StringBuilder.appendString!(s, sb) };
             List.foreach(appendStep, rs);
