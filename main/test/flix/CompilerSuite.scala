@@ -5,82 +5,13 @@ import ca.uwaterloo.flix.util.{FlixSuite, Options}
 class CompilerSuite extends FlixSuite(incremental = true) {
   implicit val options: Options = Options.TestWithLibAll
 
-
   //
-  // Apply.
-  //
-  mkTest("main/test/flix/Test.Exp.Apply.Tail.flix")
-  mkTest("main/test/flix/Test.Exp.Apply.Named.flix")
-
-  //
-  // Arrays
-  //
-  mkTest("main/test/flix/Test.Exp.ArrayLit.flix")
-  mkTest("main/test/flix/Test.Exp.ArrayLoad.flix")
-  mkTest("main/test/flix/Test.Exp.ArrayLength.flix")
-  mkTest("main/test/flix/Test.Exp.ArrayNew.flix")
-  mkTest("main/test/flix/Test.Exp.ArraySlice.flix")
-  mkTest("main/test/flix/Test.Exp.ArraySliceNoEndIndex.flix")
-  mkTest("main/test/flix/Test.Exp.ArraySliceNoStartIndex.flix")
-  mkTest("main/test/flix/Test.Exp.ArraySliceCopy.flix")
-  mkTest("main/test/flix/Test.Exp.ArrayStore.flix")
-
-  //
-  // Ascribe.
-  //
-  mkTest("main/test/flix/Test.Exp.Ascribe.flix")
-
-  //
-  // BigInt.
-  //
-  mkTest("main/test/flix/Test.Exp.BigInt.flix")
-
-  //
-  // Binary.
-  //
-  mkTest("main/test/flix/Test.Exp.Binary.Arithmetic.flix")
-  mkTest("main/test/flix/Test.Exp.Binary.Bitwise.flix")
-  mkTest("main/test/flix/Test.Exp.Binary.Comparison.flix")
-  mkTest("main/test/flix/Test.Exp.Binary.Logic.flix")
-  mkTest("main/test/flix/Test.Exp.Binary.Spaceship.flix")
-
-  //
-  // Block.
-  //
-  mkTest("main/test/flix/Test.Exp.Block.flix")
-
-  //
-  // Cast.
-  //
-  mkTest("main/test/flix/Test.Exp.Cast.flix")
-
-  //
-  // Char.
-  //
-  mkTest("main/test/flix/Test.Exp.Char.flix")
-
-  //
-  // Choose.
-  //
-  mkTest("main/test/flix/Test.Exp.Choose.flix")
-  mkTest("main/test/flix/Test.Exp.ChooseStar.flix")
-
-  //
-  // Concurrency.
-  //
-  mkTest("main/test/flix/Test.Exp.Concurrency.Buffered.flix")
-  mkTest("main/test/flix/Test.Exp.Concurrency.NewChannel.flix")
-  mkTest("main/test/flix/Test.Exp.Concurrency.Unbuffered.flix")
-  mkTest("main/test/flix/Test.Exp.Concurrency.Spawn.flix")
-  mkTest("main/test/flix/Test.Exp.Concurrency.Select.flix")
-
-  //
-  // Currying.
+  // Currying
   //
   mkTest("main/test/flix/Test.Currying.flix")
 
   //
-  // Declarations.
+  // Declarations
   //
   mkTest("main/test/flix/Test.Dec.Class.flix")
   mkTest("main/test/flix/Test.Dec.Effect.flix")
@@ -92,41 +23,26 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Dec.TypeAlias.flix")
 
   //
-  // Default.
-  //
-  mkTest("main/test/flix/Test.Exp.Default.flix")
-
-  //
-  // Definitions.
+  // Definitions
   //
   mkTest("main/test/flix/Test.Def.Op.flix")
 
   //
-  // Derivations.
+  // Derivations
   //
   mkTest("main/test/flix/Test.Derives.Eq.flix")
   mkTest("main/test/flix/Test.Derives.Order.flix")
   mkTest("main/test/flix/Test.Derives.ToString.flix")
 
   //
-  // Discard.
-  //
-  mkTest("main/test/flix/Test.Exp.Discard.flix")
-
-  //
-  // Effects.
-  //
-  mkTest("main/test/flix/Test.Exp.Effect.flix")
-
-  //
-  // Effects.
+  // Effects
   //
   mkTest("main/test/flix/Test.Eff.Advanced.flix")
   mkTest("main/test/flix/Test.Eff.Polymorphism.flix")
   mkTest("main/test/flix/Test.Eff.Simplification.flix")
 
   //
-  // Equality.
+  // Equality
   //
   mkTest("main/test/flix/Test.Equality.BigInt.flix")
   mkTest("main/test/flix/Test.Equality.Bool.flix")
@@ -146,6 +62,89 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Equality.Set.flix")
 
   //
+  // Apply
+  //
+  mkTest("main/test/flix/Test.Exp.Apply.Tail.flix")
+  mkTest("main/test/flix/Test.Exp.Apply.Named.flix")
+
+  //
+  // Arrays
+  //
+  mkTest("main/test/flix/Test.Exp.ArrayLit.flix")
+  mkTest("main/test/flix/Test.Exp.ArrayLoad.flix")
+  mkTest("main/test/flix/Test.Exp.ArrayLength.flix")
+  mkTest("main/test/flix/Test.Exp.ArrayNew.flix")
+  mkTest("main/test/flix/Test.Exp.ArraySlice.flix")
+  mkTest("main/test/flix/Test.Exp.ArraySliceNoEndIndex.flix")
+  mkTest("main/test/flix/Test.Exp.ArraySliceNoStartIndex.flix")
+  mkTest("main/test/flix/Test.Exp.ArraySliceCopy.flix")
+  mkTest("main/test/flix/Test.Exp.ArrayStore.flix")
+
+  //
+  // Ascribe
+  //
+  mkTest("main/test/flix/Test.Exp.Ascribe.flix")
+
+  //
+  // BigInt
+  //
+  mkTest("main/test/flix/Test.Exp.BigInt.flix")
+
+  //
+  // Binary
+  //
+  mkTest("main/test/flix/Test.Exp.Binary.Arithmetic.flix")
+  mkTest("main/test/flix/Test.Exp.Binary.Bitwise.flix")
+  mkTest("main/test/flix/Test.Exp.Binary.Comparison.flix")
+  mkTest("main/test/flix/Test.Exp.Binary.Logic.flix")
+  mkTest("main/test/flix/Test.Exp.Binary.Spaceship.flix")
+
+  //
+  // Block
+  //
+  mkTest("main/test/flix/Test.Exp.Block.flix")
+
+  //
+  // Cast
+  //
+  mkTest("main/test/flix/Test.Exp.Cast.flix")
+
+  //
+  // Char
+  //
+  mkTest("main/test/flix/Test.Exp.Char.flix")
+
+  //
+  // Choose
+  //
+  mkTest("main/test/flix/Test.Exp.Choose.flix")
+  mkTest("main/test/flix/Test.Exp.ChooseStar.flix")
+
+  //
+  // Concurrency
+  //
+  mkTest("main/test/flix/Test.Exp.Concurrency.Buffered.flix")
+  mkTest("main/test/flix/Test.Exp.Concurrency.NewChannel.flix")
+  mkTest("main/test/flix/Test.Exp.Concurrency.Unbuffered.flix")
+  mkTest("main/test/flix/Test.Exp.Concurrency.Spawn.flix")
+  mkTest("main/test/flix/Test.Exp.Concurrency.Select.flix")
+
+  //
+  // Default
+  //
+  mkTest("main/test/flix/Test.Exp.Default.flix")
+
+  //
+  // Discard
+  //
+  mkTest("main/test/flix/Test.Exp.Discard.flix")
+
+  //
+  // Effects
+  //
+  mkTest("main/test/flix/Test.Exp.Effect.flix")
+
+  //
   // Fixpoint
   //
   mkTest("main/test/flix/Test.Exp.Fixpoint.Compose.flix")
@@ -157,33 +156,33 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Fixpoint.Solve.Lattice.flix")
 
   //
-  // Floats.
+  // Floats
   //
   mkTest("main/test/flix/Test.Exp.Float32.flix")
   mkTest("main/test/flix/Test.Exp.Float64.flix")
 
   //
-  // Force.
+  // Force
   //
   mkTest("main/test/flix/Test.Exp.Force.flix")
 
   //
-  // Hole.
+  // Hole
   //
   mkTest("main/test/flix/Test.Exp.Hole.flix")
 
   //
-  // IfThenElse.
+  // IfThenElse
   //
   mkTest("main/test/flix/Test.Exp.IfThenElse.flix")
 
   //
-  // Infix.
+  // Infix
   //
   mkTest("main/test/flix/Test.Exp.Infix.flix")
 
   //
-  // Int.
+  // Int
   //
   mkTest("main/test/flix/Test.Exp.Int8.flix")
   mkTest("main/test/flix/Test.Exp.Int16.flix")
@@ -191,12 +190,12 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Int64.flix")
 
   //
-  // Interpolation.
+  // Interpolation
   //
   mkTest("main/test/flix/Test.Exp.Interpolation.flix")
 
   //
-  // JVM.
+  // JVM
   //
   mkTest("main/test/flix/Test.Exp.Jvm.GetField.flix")
   mkTest("main/test/flix/Test.Exp.Jvm.GetStaticField.flix")
@@ -211,7 +210,7 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Jvm.TryCatch.flix")
 
   //
-  // Lambda.
+  // Lambda
   //
   mkTest("main/test/flix/Test.Exp.Lambda.Match.flix")
 
@@ -221,7 +220,7 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Lazy.flix")
 
   //
-  // Let.
+  // Let
   //
   mkTest("main/test/flix/Test.Exp.Let.flix")
   mkTest("main/test/flix/Test.Exp.Let.Match.flix")
@@ -229,17 +228,17 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Let.Rec.flix")
 
   //
-  // List.
+  // List
   //
   mkTest("main/test/flix/Test.Exp.List.flix")
 
   //
-  // Null.
+  // Null
   //
   mkTest("main/test/flix/Test.Exp.Null.flix")
 
   //
-  // Match.
+  // Match
   //
   mkTest("main/test/flix/Test.Exp.Match.Array.flix")
   mkTest("main/test/flix/Test.Exp.Match.Bool.flix")
@@ -258,7 +257,7 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Match.Wild.flix")
 
   //
-  // Record.
+  // Record
   //
   mkTest("main/test/flix/Test.Exp.Record.Extend.flix")
   mkTest("main/test/flix/Test.Exp.Record.Literal.flix")
@@ -269,7 +268,7 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Record.Update.flix")
 
   //
-  // Reference.
+  // Reference
   //
   mkTest("main/test/flix/Test.Exp.Ref.Assign.flix")
   mkTest("main/test/flix/Test.Exp.Ref.Ref.flix")
@@ -277,41 +276,41 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Ref.Precedence.flix")
 
   //
-  // Reify.
+  // Reify
   //
   mkTest("main/test/flix/Test.Exp.Reify.flix")
   mkTest("main/test/flix/Test.Exp.ReifyType.flix")
 
   //
-  // Tag.
+  // Tag
   //
   mkTest("main/test/flix/Test.Exp.Tag.flix")
   mkTest("main/test/flix/Test.Exp.Tag.Lambda.flix")
 
   //
-  // Tuple.
+  // Tuple
   //
   mkTest("main/test/flix/Test.Exp.Tuple.flix")
 
   //
-  // Unary.
+  // Unary
   //
   mkTest("main/test/flix/Test.Exp.Unary.Arithmetic.flix")
   mkTest("main/test/flix/Test.Exp.Unary.Bitwise.flix")
   mkTest("main/test/flix/Test.Exp.Unary.Logic.flix")
 
   //
-  // Unit.
+  // Unit
   //
   mkTest("main/test/flix/Test.Exp.Unit.flix")
 
   //
-  // Stm.
+  // Stm
   //
   mkTest("main/test/flix/Test.Exp.Stm.flix")
 
   //
-  // String.
+  // String
   //
   mkTest("main/test/flix/Test.Exp.String.flix")
 
