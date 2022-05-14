@@ -75,6 +75,23 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Exp.Concurrency.Select.flix")
 
   //
+  // Currying.
+  //
+  mkTest("main/test/flix/Test.Currying.flix")
+
+  //
+  // Declarations.
+  //
+  mkTest("main/test/flix/Test.Dec.Class.flix")
+  mkTest("main/test/flix/Test.Dec.Effect.flix")
+  mkTest("main/test/flix/Test.Dec.Enum.flix")
+  mkTest("main/test/flix/Test.Dec.Namespace.flix")
+  mkTest("main/test/flix/Test.Dec.OpaqueType.flix")
+  mkTest("main/test/flix/Test.Dec.RelAlias.flix")
+  mkTest("main/test/flix/Test.Dec.TopLevel.flix")
+  mkTest("main/test/flix/Test.Dec.TypeAlias.flix")
+
+  //
   // Default.
   //
   mkTest("main/test/flix/Test.Exp.Default.flix")

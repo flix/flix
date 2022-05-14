@@ -4,22 +4,6 @@ import ca.uwaterloo.flix.util.{FlixTest, Options}
 import org.scalatest.Suites
 
 class LangSuite extends Suites(
-  //
-  // Currying.
-  //
-  new FlixTest("Test.Currying", "main/test/flix/Test.Currying.flix"),
-
-  //
-  // Declarations.
-  //
-  new FlixTest("Test.Dec.Class", "main/test/flix/Test.Dec.Class.flix"),
-  new FlixTest("Test.Dec.Effect", "main/test/flix/Test.Dec.Effect.flix"),
-  new FlixTest("Test.Dec.Enum", "main/test/flix/Test.Dec.Enum.flix"),
-  new FlixTest("Test.Dec.Namespace", "main/test/flix/Test.Dec.Namespace.flix"),
-  new FlixTest("Test.Dec.OpaqueType", "main/test/flix/Test.Dec.OpaqueType.flix"),
-  new FlixTest("Test.Dec.RelAlias", "main/test/flix/Test.Dec.RelAlias.flix")(Options.TestWithLibAll),
-  new FlixTest("Test.Dec.TopLevel", "main/test/flix/Test.Dec.TopLevel.flix"),
-  new FlixTest("Test.Dec.TypeAlias", "main/test/flix/Test.Dec.TypeAlias.flix"),
 
   //
   // Definitions.
