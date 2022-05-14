@@ -1299,7 +1299,8 @@ namespace Array {
         let minCap = MutList.minCapacity();
         let len = length(a);
         let c = Order.max(len, minCap);
-        MutList(ref copyOfRange(0, c, a) @ Scoped.regionOf(a), ref len @ Scoped.regionOf(a))
+        let r = Scoped.regionOf(a);
+        MutList(ref copyOfRangeRegion(0, c, a, r) @ r, ref len @ r)
 
     ///
     /// Alias for `findIndexOfLeft`.
