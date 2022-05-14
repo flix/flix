@@ -741,22 +741,6 @@ namespace MutList {
         if (l1 == l2) loop(0) else false
 
     ///
-    /// Render `v` as a String. Elements are rendered with the
-    /// function `f` and separated with the string `sep`.
-    ///
-    pub def formatWith(f: a -> String, sep: String, v: MutList[a, r]): String & Impure =
-        let sb = StringBuilder.new();
-        let step = (x,i) ->
-            if (i == 0)
-                StringBuilder.appendString!(f(x), sb)
-            else {
-                StringBuilder.appendString!(sep, sb);
-                StringBuilder.appendString!(f(x), sb)
-            };
-        foreachWithIndex(step, v);
-        StringBuilder.toString(sb)
-
-    ///
     /// Returns the concatenation of the string representation
     /// of each element in `v` with `sep` inserted between each element.
     ///
@@ -768,11 +752,16 @@ namespace MutList {
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: a -> String & ef, sep: String, v: MutList[a, r]): String & Impure =
-        use StringBuilder.append!;
-        let lastSep = String.length(sep);
         let sb = StringBuilder.new();
-        foreach(x -> { append!(f(x), sb); append!(sep, sb) }, v);
-        StringBuilder.toString(sb) |> String.dropRight(lastSep)
+        let step = (x, i) ->
+            if (i == 0)
+                StringBuilder.appendString!(f(x), sb)
+            else {
+                StringBuilder.appendString!(sep, sb);
+                StringBuilder.appendString!(f(x), sb)
+            };
+        foreachWithIndex(step, v);
+        StringBuilder.toString(sb)
 
     ///
     /// Applies `f` to all the elements in `v`.
