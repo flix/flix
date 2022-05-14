@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Rigidity, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ReificationError
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
@@ -922,11 +922,15 @@ object Monomorph {
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
   private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit flix: Flix): StrictSubstitution = {
-    Unification.unifyTypes(tpe1, tpe2) match {
+    // NB: This is a (hopefully temporary) hack used to ensure that type variables in type signatures are not required.
+    // The substitutions used in the typer should really ensure this.
+    val t1 = tpe1.map(_.withRigidity(Rigidity.Flexible))
+    val t2 = tpe2.map(_.withRigidity(Rigidity.Flexible))
+    Unification.unifyTypes(t1, t2) match {
       case Result.Ok(subst) =>
         StrictSubstitution(subst)
       case Result.Err(_) =>
-        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.")
+        throw InternalCompilerException(s"Unable to unify: '$t1' and '$t2'.")
     }
   }
 

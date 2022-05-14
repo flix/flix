@@ -1100,28 +1100,6 @@ namespace List {
         loop(l)
 
     ///
-    /// Render the list `l` as a String. Elements are rendered with the
-    /// function `f` and separated with the string `sep`.
-    ///
-    @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def formatWith(f: a -> String, sep: String, l: List[a]): String =
-        formatWithHelper(f, sep, l) as & Pure
-
-    ///
-    /// Helper function for `formatWith`.
-    ///
-    def formatWithHelper(f: a -> String, sep: String, l: List[a]): String & Impure =
-        let sb = StringBuilder.new();
-        match l {
-            case Nil     => ()
-            case x :: xs => {
-                StringBuilder.appendString!(f(x), sb);
-                foreach(x1 -> {StringBuilder.appendString!(sep, sb); StringBuilder.appendString!(f(x1), sb)}, xs)
-            }
-        };
-        StringBuilder.toString(sb)
-
-    ///
     /// Returns the concatenation of the string representation
     /// of each element in `l` with `sep` inserted between each element.
     ///
