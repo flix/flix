@@ -87,6 +87,35 @@ namespace StringBuilder1 {
     pub def appendLinesWith!(f: a -> String & ef, a: ScopedArray[a, r1], sb: StringBuilder1[r2]): Unit \ { ef, Read(r1), Write(r2) } =
         Array.foreach(x -> appendLineWith!(f, x, sb), a)
 
+    ///
+    /// Append the array of strings `a` separating each pair of string with `sep` to the StringBuilder `sb`.
+    ///
+    pub def intercalate!(sep: String, a: ScopedArray[String, r1], sb: StringBuilder1[r2]): Unit \ { Read(r1), Write(r2) } =
+        let append1! = (s,i) ->
+            if (i > 0) {
+                appendString!(sep, sb);
+                appendString!(s, sb)
+            } else {
+                appendString!(s, sb)
+            };
+       Array.foreachWithIndex(append1!, a)
+
+    ///
+    /// Return the length of the StringBuilder `sb`.
+    ///
+    pub def length(sb: StringBuilder1[r]): Int32 \ Read(r) =
+        import java.lang.StringBuilder.length(): Int32 & r;
+        let StringBuilder1(msb) = sb;
+        length(msb)
+
+    ///
+    /// Convert the StringBuilder `sb` to a string.
+    ///
+    pub def toString(sb: StringBuilder1[r]): String \ Read(r) =
+        import java.lang.StringBuilder.toString(): String & r;
+        let StringBuilder1(msb) = sb;
+        toString(msb)
+
 }
 
 namespace StringBuilder {
