@@ -108,7 +108,7 @@ namespace List {
     /// Helper function for `toString`.
     ///
     def toStringHelper(l: List[a]): String & Impure with ToString[a] =
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         List.foreach(x -> StringBuilder.appendString!("${x} :: ", sb), l);
         StringBuilder.appendString!("Nil", sb);
         StringBuilder.toString(sb)
@@ -1111,7 +1111,7 @@ namespace List {
     /// Helper function for `formatWith`.
     ///
     def formatWithHelper(f: a -> String, sep: String, l: List[a]): String & Impure =
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         match l {
             case Nil     => ()
             case x :: xs => {

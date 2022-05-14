@@ -1525,7 +1525,7 @@ namespace Array {
     pub def joinWith(f: a -> String & ef, sep: String, a: Array[a]): String & Impure =
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         foreach(x -> { append!(f(x), sb); append!(sep, sb) }, a);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
 

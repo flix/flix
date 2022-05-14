@@ -711,7 +711,7 @@ namespace Iterator {
     pub def joinWith(f: a -> String & ef, sep: String, iter: Iterator[a]): String & Impure =
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         foreach(x -> { append!(f(x), sb); append!(sep, sb) }, iter);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
 

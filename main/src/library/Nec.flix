@@ -114,7 +114,7 @@ instance Iterable[Nec] {
 instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String =
         let fn = () -> {
-            let sb = StringBuilder.new();
+            let sb = new StringBuilder(static);
             StringBuilder.appendString!("Nec#{", sb);
             Nec.foldLeft((acc, x) -> {
                 if (acc < 1)

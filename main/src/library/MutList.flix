@@ -745,7 +745,7 @@ namespace MutList {
     /// function `f` and separated with the string `sep`.
     ///
     pub def formatWith(f: a -> String, sep: String, v: MutList[a, r]): String & Impure =
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let step = (x,i) ->
             if (i == 0)
                 StringBuilder.appendString!(f(x), sb)
@@ -770,7 +770,7 @@ namespace MutList {
     pub def joinWith(f: a -> String & ef, sep: String, v: MutList[a, r]): String & Impure =
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         foreach(x -> { append!(f(x), sb); append!(sep, sb) }, v);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
 

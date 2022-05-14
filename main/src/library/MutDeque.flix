@@ -354,7 +354,7 @@ namespace MutDeque {
     pub def joinWith(f: a -> String & ef, sep: String, d: MutDeque[a, r]): String & Impure =
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         foreach(x -> { append!(f(x), sb); append!(sep, sb) }, d);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
 

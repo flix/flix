@@ -320,7 +320,7 @@ pub class Foldable[t : Type -> Type] {
     pub def join(sep: String, t: t[a]): String with ToString[a] = {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         t |> Foldable.foreach(x -> { append!(ToString.toString(x), sb); append!(sep, sb) });
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     } as & Pure
@@ -332,7 +332,7 @@ pub class Foldable[t : Type -> Type] {
     pub def joinWith(f: a -> String & ef, sep: String, t: t[a]): String & ef = {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         t |> Foldable.foreach(x -> { append!(f(x), sb); append!(sep, sb) });
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     } as & ef

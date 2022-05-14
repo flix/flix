@@ -129,7 +129,7 @@ namespace String {
         if (len <= 0)
             ""
         else {
-            let sb = StringBuilder.new();
+            let sb = new StringBuilder(static);
             def loop(i) = {
                 if (i >= len)
                     ()
@@ -153,7 +153,7 @@ namespace String {
     /// Helper function for `flatten`.
     ///
     def flattenHelper(xs: List[String]): String & Impure =
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         List.foreach(x -> StringBuilder.appendString!(x, sb), xs);
         StringBuilder.toString(sb)
 
@@ -169,7 +169,7 @@ namespace String {
     /// Helper function for `intercalate`.
     ///
     def intercalateHelper(sep: String, xs: List[String]): String & Impure =
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let arr = List.toArray(xs);
         StringBuilder.intercalate!(sep, arr, sb);
         StringBuilder.toString(sb)
@@ -187,7 +187,7 @@ namespace String {
     def intercalateCharHelper(sep: Char, xs: List[String]): String & Impure = match xs {
         case Nil => ""
         case x :: rs => {
-            let sb = StringBuilder.new();
+            let sb = new StringBuilder(static);
             StringBuilder.appendString!(x, sb);
             let appendStep = s -> { StringBuilder.append!(sep, sb); StringBuilder.appendString!(s, sb) };
             List.foreach(appendStep, rs);
@@ -628,7 +628,7 @@ namespace String {
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
     ///
     pub def unfold(f: b -> Option[(Char, b)] & ef, x: b): String & ef =
-        let sb = StringBuilder.new() as & ef;
+        let sb = new StringBuilder(static) as & ef;
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -650,7 +650,7 @@ namespace String {
     /// `next` should return `None` to signal the end of building the string.
     ///
     pub def unfoldWithIter(f: Unit -> Option[Char] & ef): String & ef =
-        let sb = StringBuilder.new() as & Pure;
+        let sb = new StringBuilder(static) as & Pure;
         def loop() = {
             match f() {
                 case None    => StringBuilder.toString(sb)
@@ -668,7 +668,7 @@ namespace String {
     /// This is a version of `unfold` where `f` generates substrings rather than chars.
     ///
     pub def unfoldString(f: b -> Option[(String, b)] & ef, x: b) : String & ef =
-        let sb = StringBuilder.new() as & ef;
+        let sb = new StringBuilder(static) as & ef;
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -690,7 +690,7 @@ namespace String {
     /// `next` should return `None` to signal the end of building the string.
     ///
     pub def unfoldStringWithIter(f: Unit -> Option[String] & ef): String & ef =
-        let sb = StringBuilder.new() as & Pure;
+        let sb = new StringBuilder(static) as & Pure;
         def loop() = {
             match f() {
                 case None    => StringBuilder.toString(sb)
@@ -867,7 +867,7 @@ namespace String {
     /// Helper function for `indent`.
     ///
     def indentHelper(n: Int32, s: String): String & Impure =
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let prefix = repeat(n, " ");
         let step = x -> {
             StringBuilder.appendString!(prefix, sb);
@@ -898,7 +898,7 @@ namespace String {
     /// Helper function for `stripIndent`.
     ///
     def stripIndentHelper(n: Int32, s: String): String & Impure =
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let limit = Int32.min(n, length(s));
         def loop(s1, ix) = {
             if (ix >= limit)
@@ -939,7 +939,7 @@ namespace String {
     /// Helper function for `unlines`.
     ///
     def unlinesHelper(a: List[String]): String & Impure =
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         List.foreach(x -> StringBuilder.appendLine!(x, sb), a);
         StringBuilder.toString(sb)
 
@@ -964,7 +964,7 @@ namespace String {
     /// Helper function for `unlines`.
     ///
     def unwordsHelper(xs: List[String]): String & Impure =
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let first = ref true;
         let step = s ->
             if (deref first == true) {

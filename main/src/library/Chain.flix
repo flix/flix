@@ -69,7 +69,7 @@ instance Traversable[Chain] {
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String =
         let fn = () -> {
-            let sb = StringBuilder.new();
+            let sb = new StringBuilder(static);
             StringBuilder.appendString!("Chain#{", sb);
             Chain.foldLeft((acc, x) -> {
                 if (acc < 1)
