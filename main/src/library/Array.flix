@@ -385,7 +385,7 @@ namespace Array {
     /// Apply `f` to every element in array `arr`. Array `arr` is mutated.
     ///
     @Time(time(f) * length(arr)) @Space(space(f) * length(arr))
-    pub def transform!(f: a -> a, arr: Array[a]): Unit & Impure =
+    pub def transform!(f: a -> a & ef, arr: Array[a]): Unit & Impure =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
@@ -411,7 +411,7 @@ namespace Array {
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
     ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def transformWithIndex!(f: (a, Int32) -> a, arr: Array[a]): Unit & Impure =
+    pub def transformWithIndex!(f: (a, Int32) -> a & ef, arr: Array[a]): Unit & Impure =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
