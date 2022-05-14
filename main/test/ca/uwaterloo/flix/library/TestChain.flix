@@ -1626,4 +1626,23 @@ namespace TestChain {
         ("1" :: "2" :: "3" :: Nil) |> List.toChain |>
             Chain.joinWith(x -> x + x, ",") == "11,22,33"
 
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWithIndex                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithIndex01(): Bool = Chain.zipWithIndex(Chain.empty(): Chain[Int32]) == Chain.empty()
+
+    @test
+    def zipWithIndex02(): Bool = Chain.zipWithIndex(Chain.singleton(2)) == List.toChain((2, 0) :: Nil)
+
+    @test
+    def zipWithIndex03(): Bool = Chain.zipWithIndex(List.toChain(1 :: 8 :: Nil)) == List.toChain((1, 0) :: (8, 1) :: Nil)
+
+    @test
+    def zipWithIndex04(): Bool = Chain.zipWithIndex(List.toChain(8 :: 1 :: Nil)) == List.toChain((8, 0) :: (1, 1) :: Nil)
+
+    @test
+    def zipWithIndex05(): Bool = Chain.zipWithIndex(List.toChain(1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil)) == List.toChain((1, 0) :: (4, 1) :: (11, 2) :: (2, 3) :: (-22, 4) :: (17, 5) :: Nil)
+
 }
