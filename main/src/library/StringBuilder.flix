@@ -19,7 +19,7 @@
 ///
 opaque type StringBuilder = ##java.lang.StringBuilder
 
-opaque type StringBuilder1[r: Region] = ##java.lang.StringBuilder
+opaque type StringBuilder1[_: Region] = ##java.lang.StringBuilder
 
 instance Newable[StringBuilder1] {
     pub def new(r: Region[r]): StringBuilder1[r] \ Write(r) = StringBuilder1.new(r)
@@ -36,7 +36,7 @@ namespace StringBuilder1 {
     ///
     pub def new(_: Region[r]): StringBuilder1[r] \ Write(r) =
         import new java.lang.StringBuilder(): ##java.lang.StringBuilder & r as newStringBuilder;
-        StringBuilder1(newStringBuilder()) as StringBuilder1[r]
+        StringBuilder1(newStringBuilder())
 
 }
 
