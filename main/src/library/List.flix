@@ -1136,6 +1136,13 @@ namespace List {
         v
 
     ///
+    /// Returns `l` as a mutable list.
+    ///
+    pub def toMutListRegion(l: List[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutListRegion(toArray(l, r2), r)
+    }
+
+    ///
     /// Returns the list `l` as a set.
     ///
     @Time(length(l)) @Space(length(l))
