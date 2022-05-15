@@ -1174,10 +1174,10 @@ namespace List {
     /// Returns the list `l` as an array.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def toArray(l: List[a]) : Array[a] & Impure = match head(l) {
-        case None    => []
+    pub def toArray(l: List[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = match head(l) {
+        case None    => [] @ r
         case Some(x) =>
-            let a = Array.new(x, length(l));
+            let a = [x; length(l)] @ r;
             let f = (i, b) -> { a[i] = b; i + 1 };
             foldLeft(f, 0, l);
             a
@@ -1210,8 +1210,9 @@ namespace List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(l: List[a]): List[a] with Order[a] =
-        (l |> toArray |> Array.sort |> Array.toList) as & Pure
+    pub def sort(l: List[a]): List[a] with Order[a] = region r {
+        toArray(l, r) |> Array.sort |> Array.toList
+    }
 
     /// Sort list `l` so that elements are ordered from low to high according to the `Order` instance
     /// for the values obtained by applying `f` to each element.
@@ -1220,8 +1221,9 @@ namespace List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] =
-        (l |> toArray |> Array.sortBy(f) |> Array.toList) as & Pure
+    pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] = region r {
+        toArray(l, r) |> Array.sortBy(f) |> Array.toList
+    }
 
     ///
     /// Sort list `l` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -1230,8 +1232,9 @@ namespace List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] =
-        (l |> toArray |> Array.sortWith(cmp) |> Array.toList) as & Pure
+    pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] = region r {
+        toArray(l, r) |> Array.sortWith(cmp) |> Array.toList
+    }
 
     ///
     /// Build a list by applying `f` to the seed value `st`.

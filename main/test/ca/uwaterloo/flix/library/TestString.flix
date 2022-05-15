@@ -179,18 +179,25 @@ def lineSeparator02(): Bool =
     let newline = String.lineSeparator();
     String.length(newline) == 1 or String.length(newline) == 2
 
-/////////////////////////////////////////////////////////////////////////////
-// toArray                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def toArray01(): Bool & Impure = Array.sameElements(String.toArray(""), []: Array[Char])
+    @test
+    def toArray01(): Bool = region r {
+        Array.sameElements(String.toArray("", r), [] @ r)
+    }
 
-@test
-def toArray02(): Bool & Impure = Array.sameElements(String.toArray("ABC"), ['A', 'B', 'C'])
+    @test
+    def toArray02(): Bool = region r {
+        Array.sameElements(String.toArray("ABC", r), ['A', 'B', 'C'] @ r)
+    }
 
-@test
-def toArray03(): Bool & Impure = Array.sameElements(String.toArray("1 2 3"), ['1', ' ', '2', ' ', '3'])
+    @test
+    def toArray03(): Bool = region r {
+        Array.sameElements(String.toArray("1 2 3", r), ['1', ' ', '2', ' ', '3'] @ r)
+    }
+
 
 /////////////////////////////////////////////////////////////////////////////
 // init                                                                    //
