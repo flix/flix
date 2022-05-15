@@ -710,12 +710,6 @@ namespace Nec {
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(c: Nec[a]): MutList[a, Impure] & Impure =
-        toArray(c, static) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
-
-    ///
-    /// Returns `c` as a mutable list.
-    ///
     pub def toMutListRegion(c: Nec[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
         Array.toMutListRegion(toArray(c, r2), r) // `Array.toMutListRegion` respects the invariant of `MutList`
     }

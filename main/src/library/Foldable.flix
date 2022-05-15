@@ -222,14 +222,6 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `t` as a mutable list.
     ///
-    pub def toMutList(t: t[a]): MutList[a, Impure] & Impure =
-        let v = new MutList(static);
-        Foldable.foldRight((x, _) -> MutList.push!(x, v), (), t);
-        v
-
-    ///
-    /// Returns `t` as a mutable list.
-    ///
     pub def toMutListRegion(t: t[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
         Array.toMutListRegion(Foldable.toArray(t, r2), r)
     }

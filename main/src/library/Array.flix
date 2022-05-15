@@ -1295,16 +1295,6 @@ namespace Array {
     ///
     /// Returns the array `a` as a MutList.
     ///
-    pub def toMutList(a: ScopedArray[a, r]): MutList[a, r] \ { Read(r), Write(r) } =
-        let minCap = MutList.minCapacity();
-        let len = length(a);
-        let c = Order.max(len, minCap);
-        let r = Scoped.regionOf(a);
-        MutList(ref copyOfRange(0, c, a, r) @ r, ref len @ r)
-
-    ///
-    /// Returns the array `a` as a MutList.
-    ///
     pub def toMutListRegion(a: ScopedArray[a, r1], r2: Region[r2]): MutList[a, r2] \ { Read(r1), Write(r2) } =
         let minCap = MutList.minCapacity();
         let len = length(a);
