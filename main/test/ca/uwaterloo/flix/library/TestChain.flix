@@ -1429,25 +1429,28 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool & Impure =
+    def toArray01(): Bool = region r {
         let c: Chain[Int32] = Chain.empty();
-        let a: Array[Int32] = Chain.toArray(c);
-        Array.sameElements(a, []: Array[Int32])
+        Array.sameElements(Chain.toArray(c, r), [] @ r)
+    }
 
     @test
-    def toArray02(): Bool & Impure =
-        let a = Chain.toArray(Chain.singleton(1));
-        Array.sameElements(a, [1])
+    def toArray02(): Bool = region r {
+        let a = Chain.toArray(Chain.singleton(1), r);
+        Array.sameElements(a, [1] @ r)
+    }
 
     @test
-    def toArray03(): Bool & Impure =
-        let a = Chain.toArray(List.toChain(1 :: 2 :: Nil));
-        Array.sameElements(a, [1,2])
+    def toArray03(): Bool = region r {
+        let a = Chain.toArray(List.toChain(1 :: 2 :: Nil), r);
+        Array.sameElements(a, [1, 2] @ r)
+    }
 
     @test
-    def toArray04(): Bool & Impure =
-        let a = Chain.toArray(List.toChain(1 :: 2 :: 3 :: Nil));
-        Array.sameElements(a, [1,2,3])
+    def toArray04(): Bool = region r {
+        let a = Chain.toArray(List.toChain(1 :: 2 :: 3 :: Nil), r);
+        Array.sameElements(a, [1, 2, 3] @ r)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // sort                                                                    //
@@ -1625,5 +1628,24 @@ namespace TestChain {
     def joinWith04(): Bool =
         ("1" :: "2" :: "3" :: Nil) |> List.toChain |>
             Chain.joinWith(x -> x + x, ",") == "11,22,33"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWithIndex                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithIndex01(): Bool = Chain.zipWithIndex(Chain.empty(): Chain[Int32]) == Chain.empty()
+
+    @test
+    def zipWithIndex02(): Bool = Chain.zipWithIndex(Chain.singleton(2)) == List.toChain((2, 0) :: Nil)
+
+    @test
+    def zipWithIndex03(): Bool = Chain.zipWithIndex(List.toChain(1 :: 8 :: Nil)) == List.toChain((1, 0) :: (8, 1) :: Nil)
+
+    @test
+    def zipWithIndex04(): Bool = Chain.zipWithIndex(List.toChain(8 :: 1 :: Nil)) == List.toChain((8, 0) :: (1, 1) :: Nil)
+
+    @test
+    def zipWithIndex05(): Bool = Chain.zipWithIndex(List.toChain(1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil)) == List.toChain((1, 0) :: (4, 1) :: (11, 2) :: (2, 3) :: (-22, 4) :: (17, 5) :: Nil)
 
 }

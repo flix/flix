@@ -634,7 +634,7 @@ namespace Fixpoint {
                         ()
                 case _ => ()
             }, cs);
-            MutList.toArray(pFacts)
+            MutList.toArray(pFacts, static)
         case Model(db) =>
             use Fixpoint/Ram.toDenotation;
             let pFacts = new MutList(static);
@@ -659,7 +659,7 @@ namespace Fixpoint {
                         MutList.push!(f(vs), pFacts)
                     }, rel)
             }, db);
-            MutList.toArray(pFacts)
+            MutList.toArray(pFacts, static)
         case Join(d1, d2) => Array.append(factsOf(f, p, d1), factsOf(f, p, d2))
     }
 

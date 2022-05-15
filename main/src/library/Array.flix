@@ -104,7 +104,7 @@ namespace Array {
     /// Returns the array `a` as a list.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toList(a: Array[a]): List[a] & Impure =
+    pub def toList(a: ScopedArray[a, r]): List[a] \ Read(r) =
         def loop(i, acc) = {
             if (i == 0) {
                 acc
@@ -118,22 +118,19 @@ namespace Array {
     ///
     /// Returns the array `a` as a `DelayList`.
     ///
-    pub def toDelayList(a: Array[a]): DelayList[a] & Impure =
-        let cp = Array.copyOfRange(0, a.length, a);
-        def loop(i) = {
-            if (i == cp.length) {
-                ENil
-            } else {
-                let x = cp[i] as & Pure; // Note this cast is safe, since `cp` is a private copy of `a`.
-                LCons(x, lazy loop(i + 1))
-            }
+    pub def toDelayList(a: ScopedArray[a, r]): DelayList[a] \ Read(r) =
+        def loop(i, acc) = {
+            if (i < 0)
+                acc
+            else
+                loop(i - 1, ECons(a[i], acc))
         };
-        LList(lazy loop(0))
+        loop(a.length - 1, ENil)
 
     ///
     /// Returns the array `arr` as a chain.
     ///
-    pub def toChain(arr: Array[a]): Chain[a] & Impure =
+    pub def toChain(arr: ScopedArray[a, r]): Chain[a] \ Read(r) =
         def loop(i, acc) = {
             if (i == 0) {
                 acc
@@ -385,7 +382,7 @@ namespace Array {
     /// Apply `f` to every element in array `arr`. Array `arr` is mutated.
     ///
     @Time(time(f) * length(arr)) @Space(space(f) * length(arr))
-    pub def transform!(f: a -> a, arr: Array[a]): Unit & Impure =
+    pub def transform!(f: a -> a & ef, arr: Array[a]): Unit & Impure =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
@@ -411,7 +408,7 @@ namespace Array {
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
     ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def transformWithIndex!(f: (a, Int32) -> a, arr: Array[a]): Unit & Impure =
+    pub def transformWithIndex!(f: (a, Int32) -> a & ef, arr: Array[a]): Unit & Impure =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
@@ -977,7 +974,7 @@ namespace Array {
             if (f(x)) (x :: a1, a2) else (a1, x :: a2)
         };
         let (xs, ys) = foldRight(step, (Nil, Nil), a);
-        (List.toArray(xs), List.toArray(ys))
+        (List.toArray(xs, static), List.toArray(ys, static))
 
     ///
     /// Returns a pair of arrays `(a1, a2)`.
@@ -1141,7 +1138,7 @@ namespace Array {
     @Time(time(f) * length(a) * length(a)) @Space(space(f) * length(a))
     pub def groupBy(f: (a, a) -> Bool, a: Array[a]): Array[Array[a]] & Impure =
         let xs = toList(a);
-        groupByHelper(f, xs, Nil) |> List.toArray
+        (groupByHelper(f, xs, Nil) |> List.toArray)(static)
 
     ///
     /// Helper function for `groupBy`.
@@ -1158,7 +1155,7 @@ namespace Array {
     ///
     def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Array[a], List[a]) & Impure = match xs {
         case Nil => {
-            let a = List.toArray(ps);
+            let a = List.toArray(ps, static);
             reverse!(a);
             (a, List.reverse(ns))
         }
@@ -1255,9 +1252,9 @@ namespace Array {
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def filterMap(f: a -> Option[b] & ef, a: Array[a]): Array[b] & Impure =
-        foldRight((x, xs) -> match f(x) {
+        (foldRight((x, xs) -> match f(x) {
             case None => xs
-            case Some(b) => b :: xs }, Nil, a) |> List.toArray
+            case Some(b) => b :: xs }, Nil, a) |> List.toArray)(static)
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `xs`.
@@ -1302,7 +1299,8 @@ namespace Array {
         let minCap = MutList.minCapacity();
         let len = length(a);
         let c = Order.max(len, minCap);
-        MutList(ref copyOfRange(0, c, a) @ Scoped.regionOf(a), ref len @ Scoped.regionOf(a))
+        let r = Scoped.regionOf(a);
+        MutList(ref copyOfRange(0, c, a, r) @ r, ref len @ r)
 
     ///
     /// Alias for `findIndexOfLeft`.
@@ -1367,7 +1365,7 @@ namespace Array {
             }
         };
         loop(0);
-        MutList.toArray(l)
+        MutList.toArray(l, static)
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
@@ -1537,7 +1535,8 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(a: Array[a]): Array[a] & Impure with Order[a] = sortWith(Order.compare, a)
+    pub def sort(a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } with Order[a] =
+        sortWith(Order.compare, a)
 
     ///
     /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to
@@ -1547,7 +1546,8 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, a: Array[a]): Array[a] & Impure with Order[b] = sortWith(Order.compare `on` f, a)
+    pub def sortBy(f: a -> b, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } with Order[b] =
+        sortWith(Order.compare `on` f, a)
 
     ///
     /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to
@@ -1557,9 +1557,9 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, a: Array[a]): Array[a] & Impure =
+    pub def sortWith(cmp: (a,a) -> Comparison, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
-        let b = slice(0, len, a);
+        let b = copyOfRange(0, len, a, Scoped.regionOf(a));
         sortWith!(cmp, b);
         b
 
@@ -1571,7 +1571,8 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort!(a: Array[a]): Unit & Impure with Order[a] = sortWith!(Order.compare, a)
+    pub def sort!(a: ScopedArray[a, r]): Unit \ { Read(r), Write(r) } with Order[a] =
+        sortWith!(Order.compare, a)
 
     ///
     /// Sort array `a` so that elements are ordered from low to high according to the `Order` instance for
@@ -1581,7 +1582,8 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy!(f: a -> b, a: Array[a]): Unit & Impure with Order[b] = sortWith!(Order.compare `on` f, a)
+    pub def sortBy!(f: a -> b, a: ScopedArray[a, r]): Unit \ { Read(r), Write(r) } with Order[b] =
+        sortWith!(Order.compare `on` f, a)
 
     ///
     /// Sort array `a` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -1591,7 +1593,8 @@ namespace Array {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith!(cmp: (a,a) -> Comparison, a: Array[a]): Unit & Impure = sortWithin!(cmp, 0, length(a) - 1, a)
+    pub def sortWith!(cmp: (a,a) -> Comparison, a: ScopedArray[a, r]): Unit \ { Read(r), Write(r) } =
+        sortWithin!(cmp, 0, length(a) - 1, a)
 
     ///
     /// Sort array `a` between the indices `lo` and `hi` (both inclusive) so that elements in that range are ordered
@@ -1661,60 +1664,60 @@ namespace Array {
     /// If the range is valid and greater than the length of `a`, the resulting array with have the length of the range
     /// and include the specified range of `a`.
     ///
-    pub def copyOfRange(b: Int32, e: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
+    pub def copyOfRange(b: Int32, e: Int32, a: ScopedArray[a, r1], _: Region[r2]): ScopedArray[a, r2] \ { Read(r1), Write(r2) } =
         match (reifyType a) {
             case ErasedType =>
                 let arr = a as Array[##java.lang.Object];
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32): ScopedArray[##java.lang.Object, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32): ScopedArray[##java.lang.Object, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as ScopedArray[a, r2]
             case ReifiedUnit =>
                 let arr = a as Array[Unit];
-                import static java.util.Arrays.copyOfRange(Array[Unit], Int32, Int32): ScopedArray[Unit, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                import static java.util.Arrays.copyOfRange(Array[Unit], Int32, Int32): ScopedArray[Unit, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as ScopedArray[a, r2]
             case ReifiedBool =>
                 let arr = a as Array[Bool];
-                import static java.util.Arrays.copyOfRange(Array[Bool], Int32, Int32): ScopedArray[Bool, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                import static java.util.Arrays.copyOfRange(Array[Bool], Int32, Int32): ScopedArray[Bool, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as ScopedArray[a, r2]
             case ReifiedChar =>
                 let arr = a as Array[Char];
-                import static java.util.Arrays.copyOfRange(Array[Char], Int32, Int32): ScopedArray[Char, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                import static java.util.Arrays.copyOfRange(Array[Char], Int32, Int32): ScopedArray[Char, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as ScopedArray[a, r2]
             case ReifiedFloat32 =>
                 let arr = a as Array[Float32];
-                import static java.util.Arrays.copyOfRange(Array[Float32], Int32, Int32): ScopedArray[Float32, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                import static java.util.Arrays.copyOfRange(Array[Float32], Int32, Int32): ScopedArray[Float32, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as ScopedArray[a, r2]
             case ReifiedFloat64 =>
                 let arr = a as Array[Float64];
-                import static java.util.Arrays.copyOfRange(Array[Float64], Int32, Int32): ScopedArray[Float64, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                import static java.util.Arrays.copyOfRange(Array[Float64], Int32, Int32): ScopedArray[Float64, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as ScopedArray[a, r2]
             case ReifiedInt8 =>
                 let arr = a as Array[Int8];
-                import static java.util.Arrays.copyOfRange(Array[Int8], Int32, Int32): ScopedArray[Int8, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                import static java.util.Arrays.copyOfRange(Array[Int8], Int32, Int32): ScopedArray[Int8, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as ScopedArray[a, r2]
             case ReifiedInt16 =>
                 let arr = a as Array[Int16];
-                import static java.util.Arrays.copyOfRange(Array[Int16], Int32, Int32): ScopedArray[Int16, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                import static java.util.Arrays.copyOfRange(Array[Int16], Int32, Int32): ScopedArray[Int16, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as ScopedArray[a, r2]
             case ReifiedInt32 =>
                 let arr = a as Array[Int32];
-                import static java.util.Arrays.copyOfRange(Array[Int32], Int32, Int32): ScopedArray[Int32, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                import static java.util.Arrays.copyOfRange(Array[Int32], Int32, Int32): ScopedArray[Int32, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as ScopedArray[a, r2]
             case ReifiedInt64 =>
                 let arr = a as Array[Int64];
-                import static java.util.Arrays.copyOfRange(Array[Int64], Int32, Int32): ScopedArray[Int64, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                import static java.util.Arrays.copyOfRange(Array[Int64], Int32, Int32): ScopedArray[Int64, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as ScopedArray[a, r2]
             case ReifiedArray(_) =>
                 let arr = a as Array[##java.lang.Object];
-                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32): ScopedArray[##java.lang.Object, r] & r as copy;
-                copy(arr, b, e) as ScopedArray[a, r]
+                import static java.util.Arrays.copyOfRange(Array[##java.lang.Object], Int32, Int32): ScopedArray[##java.lang.Object, r2] & r1 and r2 as copy;
+                copy(arr, b, e) as ScopedArray[a, r2]
         }
 
    ///
    /// Returns an iterator over `a`.
    ///
-   pub def toIterator(a: Array[a]): Iterator[a] & Impure = {
+   pub def toIterator(a: ScopedArray[a, r]): Iterator[a] & Impure =
        let len = Array.length(a);
-       let copy = a[0 .. len];
+       let copy = copyOfRange(0, len, a, static);
        let i = ref 0;
        let done = () -> (deref i) >= len;
        let next = () -> {
@@ -1724,5 +1727,4 @@ namespace Array {
            x
        };
        Iterator(done, next)
-   }
 }

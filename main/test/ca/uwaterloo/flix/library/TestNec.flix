@@ -1098,24 +1098,28 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool & Impure =
-        let a = Nec.toArray(singleton(1));
-        Array.sameElements(a, [1])
+    def toArray01(): Bool = region r {
+        let a = Nec.toArray(singleton(1), r);
+        Array.sameElements(a, [1] @ r)
+    }
 
     @test
-    def toArray02(): Bool & Impure =
-        let a = Nec.toArray(necOf2(1, 2));
-        Array.sameElements(a, [1,2])
+    def toArray02(): Bool = region r {
+        let a = Nec.toArray(necOf2(1, 2), r);
+        Array.sameElements(a, [1, 2] @ r)
+    }
 
     @test
-    def toArray03(): Bool & Impure =
-        let a = Nec.toArray(necOf3(1, 2, 3));
-        Array.sameElements(a, [1,2,3])
+    def toArray03(): Bool = region r {
+        let a = Nec.toArray(necOf3(1, 2, 3), r);
+        Array.sameElements(a, [1, 2, 3] @ r)
+    }
 
     @test
-    def toArray04(): Bool & Impure =
-        let a = Nec.toArray(necOf3(3, 2, 3));
-        Array.sameElements(a, [3,2,3])
+    def toArray04(): Bool = region r {
+        let a = Nec.toArray(necOf3(3, 2, 3), r);
+        Array.sameElements(a, [3, 2, 3] @ r)
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
