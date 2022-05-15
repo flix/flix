@@ -198,7 +198,7 @@ namespace Test/Dec/OpaqueType {
     def testOpaqueType33(): Bool = match V(Err(123)) {
         case V(x) => x == Err(123)
     }
-
+/*
     enum Option[t] {
         case None,
         case Some(t)
@@ -224,5 +224,5 @@ namespace Test/Dec/OpaqueType {
             case _ => false
         }
     }
-
+*/
 }

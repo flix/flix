@@ -53,7 +53,7 @@ namespace Test/Equality/Tag {
 
     @test
     def testNeqTag09(): Bool = Some((Ok(1) :: Err(2) :: Nil)) != Some((Err(1) :: Ok(2) :: Nil))
-
+/*
     enum Option[t] {
         case None,
         case Some(t)
@@ -92,5 +92,5 @@ namespace Test/Equality/Tag {
             case _ => false
         }
     }
-
+*/
 }

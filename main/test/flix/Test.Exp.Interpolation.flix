@@ -201,24 +201,6 @@ namespace Test/Exp/Interpolation {
         case Blue
     }
 
-    pub enum Option[t] {
-        case None,
-        case Some(t)
-    }
-
-    pub enum Result[t, e] {
-        case Ok(t),
-        case Err(e)
-    }
-
-    def toLowerCase(s: String): String =
-        import java.lang.String.toLowerCase(): String & Pure;
-        (s |> toLowerCase)
-
-    def toUpperCase(s: String): String =
-        import java.lang.String.toUpperCase(): String & Pure;
-        (s |> toUpperCase)
-
 }
 
 ///pub class ToString[a] {
