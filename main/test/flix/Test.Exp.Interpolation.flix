@@ -69,29 +69,29 @@ namespace Test/Exp/Interpolation {
         let x = "a";
         let y = "b";
         let z = "c";
-        "${toUpperCase(x)}${y}${z}" == "Abc"
+        "${String.toUpperCase(x)}${y}${z}" == "Abc"
 
     @test
     def interpolation13(): Bool =
         let x = "a";
         let y = "b";
         let z = "c";
-        "${x}${toUpperCase(y)}${z}" == "aBc"
+        "${x}${String.toUpperCase(y)}${z}" == "aBc"
 
     @test
     def interpolation14(): Bool =
         let x = "a";
         let y = "b";
         let z = "c";
-        "${x}${y}${toUpperCase(z)}" == "abC"
+        "${x}${y}${String.toUpperCase(z)}" == "abC"
 
     @test
     def interpolation15(): Bool =
-        "${toUpperCase("w")}" == "W"
+        "${String.toUpperCase("w")}" == "W"
 
     @test
     def interpolation16(): Bool =
-        "${toLowerCase("W")}" == "w"
+        "${String.toLowerCase("W")}" == "w"
 
     @test
     def interpolation17(): Bool =
@@ -234,6 +234,4 @@ instance ToString[Test/Exp/Interpolation.Color] {
             case Green => "g"
             case Blue  => "b"
         }
-}
-
 }
