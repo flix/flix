@@ -739,7 +739,7 @@ namespace Chain {
     /// Returns `c` as a mutable list.
     ///
     pub def toMutListRegion(c: Chain[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutListRegion(toArray(c, r2), r) // `Array.toMutList` respects the invariant of `MutList`
+        Array.toMutListRegion(toArray(c, r2), r) // `Array.toMutListRegion` respects the invariant of `MutList`
     }
 
     ///

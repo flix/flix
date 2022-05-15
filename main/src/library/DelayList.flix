@@ -1195,6 +1195,16 @@ namespace DelayList {
         toArray(l, static) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`.
 
     ///
+    /// Returns `l` as a `List`.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def toMutListRegion(l: DelayList[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutListRegion(toArray(l, r2), r) // `Array.toMutListRegion` respects the invariant of `MutList`.
+    }
+
+    ///
     /// Returns the association list `l` as a map.
     ///
     /// If `l` contains multiple mappings with the same key, `toMap` does not
