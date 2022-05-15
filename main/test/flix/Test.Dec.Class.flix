@@ -37,7 +37,6 @@ namespace Test/Dec/Class {
     }
 
     namespace Test05 {
-        use Test/Dec/Class.List;
 
         class C[a]
 
@@ -45,9 +44,6 @@ namespace Test/Dec/Class {
     }
 
     namespace Test06 {
-        use Test/Dec/Class.List;
-        use Test/Dec/Class.List.Nil;
-        use Test/Dec/Class.Option;
 
         pub class C[a] {
             pub def f(x: a): Bool
@@ -76,9 +72,6 @@ namespace Test/Dec/Class {
     }
 
     namespace Test08 {
-        use Test/Dec/Class.Option;
-        use Test/Dec/Class.Option.None;
-        use Test/Dec/Class.Option.Some;
 
         class F[m : Type -> Type] {
             pub def map(f: a -> b, x: m[a]): m[b]
