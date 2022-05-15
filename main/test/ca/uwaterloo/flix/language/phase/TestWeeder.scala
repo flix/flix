@@ -654,7 +654,7 @@ class TestWeeder extends FunSuite with TestUtils {
     val input =
       """
         |eff MyEffect {
-        |    def op[a](x: a): Bool
+        |    def op[a](x: a): Unit
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -668,5 +668,78 @@ class TestWeeder extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalResume](result)
+  }
+
+  test("IllegalResume.02") {
+    val input =
+      """
+        |def f(): Bool =
+        |   try {
+        |       true
+        |   } catch {
+        |       case _: ##java.lang.Exception => resume(true)
+        |   }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalResume](result)
+  }
+
+  test("IllegalResume.03") {
+    val input =
+      """
+        |def f(): Bool =
+        |   try {
+        |       resume(true)
+        |   } with Fail {
+        |       def fail() = false
+        |   }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalResume](result)
+  }
+
+  test("IllegalFormalParamAscription.01") {
+    val input =
+      """
+        |def f(): String =
+        |    try ??? with Fail {
+        |        def fail(x: String) = "hello"
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalFormalParamAscription](result)
+  }
+
+  test("IllegalOperationEffect.01") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit & Impure
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalOperationEffect](result)
+  }
+
+  test("IllegalOperationEffect.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit \ E
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalOperationEffect](result)
+  }
+
+  test("NonUnitOperationType.01") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonUnitOperationType](result)
   }
 }

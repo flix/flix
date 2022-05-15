@@ -20,5 +20,5 @@ namespace Fixpoint {
     ///
     @Internal
     pub def commaSeparate(a: Array[v]): String & Impure with ToString[v] =
-        Array.formatWith(ToString.toString, ", ", a)
+        Array.join(", ", a)
 }

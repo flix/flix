@@ -1,4 +1,4 @@
-namespace Test/Class/Kinding {
+namespace Test/Kind/Class {
 
     namespace Implicit {
 

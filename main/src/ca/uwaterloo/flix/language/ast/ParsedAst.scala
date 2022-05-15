@@ -612,6 +612,15 @@ object ParsedAst {
     case class Stm(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Discard expression. Evaluates the inner expression and throws away its result. Evaluates to Unit.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Discard(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * LetMatch Expression (let-binding with pattern match).
       *
       * @param sp1  the position of the first character in the expression.
@@ -1469,6 +1478,11 @@ object ParsedAst {
       * @param sp2  the position of the last character in the type.
       */
     case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * A type representing an effect set.
+      */
+    case class Effect(sp1: SourcePosition, eff: ParsedAst.EffectSet, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Kind Ascription.

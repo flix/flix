@@ -294,6 +294,7 @@ object Redundancy {
 
     case Expression.Hole(sym, _, _) => Used.of(sym)
 
+
     case Expression.Lambda(fparam, exp, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + fparam.sym
@@ -395,6 +396,16 @@ object Redundancy {
         (us1 ++ us2) + discardedValue(exp1.loc)
       else
         us1 ++ us2
+
+    case Expression.Discard(exp, _, _) =>
+      val us = visitExp(exp, env0, rc)
+
+      if (exp.eff == Type.Pure)
+        us + DiscardedPureValue(exp.loc)
+      else if (exp.tpe == Type.Unit)
+        us + RedundantDiscard(exp.loc)
+      else
+        us
 
     case Expression.Match(exp, rules, _, _, _) =>
       // Visit the match expression.

@@ -181,6 +181,11 @@ object Stratifier {
         case (e1, e2) => Expression.Stm(e1, e2, tpe, eff, loc)
       }
 
+    case Expression.Discard(exp, eff, loc) =>
+      visitExp(exp) map {
+        case e => Expression.Discard(e, eff, loc)
+      }
+
     case Expression.Match(exp, rules, tpe, eff, loc) =>
       val matchVal = visitExp(exp)
       val rulesVal = traverse(rules) {
@@ -534,6 +539,9 @@ object Stratifier {
 
     case Expression.Stm(exp1, exp2, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+
+    case Expression.Discard(exp, _, _) =>
+      labelledGraphOfExp(exp)
 
     case Expression.Match(exp, rules, _, _, _) =>
       val dg = labelledGraphOfExp(exp)

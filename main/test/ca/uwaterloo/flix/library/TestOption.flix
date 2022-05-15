@@ -154,37 +154,37 @@ def toMapWith05(): Bool =
 // toOk                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toOk01(): Bool = Option.toOk(None: Option[Unit], "err") == Err("err")
+def toOk01(): Bool = Option.toOk("err", None: Option[Unit]) == Err("err")
 
 @test
-def toOk02(): Bool = Option.toOk(Some(1), "err") == Ok(1)
+def toOk02(): Bool = Option.toOk("err", Some(1)) == Ok(1)
 
 /////////////////////////////////////////////////////////////////////////////
 // toErr                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toErr01(): Bool = Option.toErr(None: Option[Unit], "default") == Ok("default")
+def toErr01(): Bool = Option.toErr("default", None: Option[Unit]) == Ok("default")
 
 @test
-def toErr02(): Bool = Option.toErr(Some("err"), "default") == Err("err")
+def toErr02(): Bool = Option.toErr("default", Some("err")) == Err("err")
 
 /////////////////////////////////////////////////////////////////////////////
 // toSuccess                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toSuccess01(): Bool = Option.toSuccess(None: Option[Unit], "err") == Failure(Nec.singleton("err"))
+def toSuccess01(): Bool = Option.toSuccess("err", None: Option[Unit]) == Failure(Nec.singleton("err"))
 
 @test
-def toSuccess02(): Bool = Option.toSuccess(Some(1), "err") == Success(1)
+def toSuccess02(): Bool = Option.toSuccess("err", Some(1)) == Success(1)
 
 /////////////////////////////////////////////////////////////////////////////
 // toFailure                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toFailure01(): Bool = Option.toFailure(None: Option[Unit], "default") == Success("default")
+def toFailure01(): Bool = Option.toFailure("default", None: Option[Unit]) == Success("default")
 
 @test
-def toFailure02(): Bool = Option.toFailure(Some("err"), "default") == Failure(Nec.singleton("err"))
+def toFailure02(): Bool = Option.toFailure("default", Some("err")) == Failure(Nec.singleton("err"))
 
 /////////////////////////////////////////////////////////////////////////////
 // withDefault                                                             //

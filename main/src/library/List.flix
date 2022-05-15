@@ -1100,28 +1100,6 @@ namespace List {
         loop(l)
 
     ///
-    /// Render the list `l` as a String. Elements are rendered with the
-    /// function `f` and separated with the string `sep`.
-    ///
-    @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def formatWith(f: a -> String, sep: String, l: List[a]): String =
-        formatWithHelper(f, sep, l) as & Pure
-
-    ///
-    /// Helper function for `formatWith`.
-    ///
-    def formatWithHelper(f: a -> String, sep: String, l: List[a]): String & Impure =
-        let sb = StringBuilder.new();
-        match l {
-            case Nil     => ()
-            case x :: xs => {
-                StringBuilder.appendString!(f(x), sb);
-                foreach(x1 -> {StringBuilder.appendString!(sep, sb); StringBuilder.appendString!(f(x1), sb)}, xs)
-            }
-        };
-        StringBuilder.toString(sb)
-
-    ///
     /// Returns the concatenation of the string representation
     /// of each element in `l` with `sep` inserted between each element.
     ///
@@ -1196,10 +1174,10 @@ namespace List {
     /// Returns the list `l` as an array.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def toArray(l: List[a]) : Array[a] & Impure = match head(l) {
-        case None    => []
+    pub def toArray(l: List[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = match head(l) {
+        case None    => [] @ r
         case Some(x) =>
-            let a = Array.new(x, length(l));
+            let a = [x; length(l)] @ r;
             let f = (i, b) -> { a[i] = b; i + 1 };
             let _ = foldLeft(f, 0, l);
             a
@@ -1232,8 +1210,9 @@ namespace List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(l: List[a]): List[a] with Order[a] =
-        (l |> toArray |> Array.sort |> Array.toList) as & Pure
+    pub def sort(l: List[a]): List[a] with Order[a] = region r {
+        toArray(l, r) |> Array.sort |> Array.toList
+    }
 
     /// Sort list `l` so that elements are ordered from low to high according to the `Order` instance
     /// for the values obtained by applying `f` to each element.
@@ -1242,8 +1221,9 @@ namespace List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] =
-        (l |> toArray |> Array.sortBy(f) |> Array.toList) as & Pure
+    pub def sortBy(f: a -> b, l: List[a]): List[a] with Order[b] = region r {
+        toArray(l, r) |> Array.sortBy(f) |> Array.toList
+    }
 
     ///
     /// Sort list `l` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -1252,8 +1232,9 @@ namespace List {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] =
-        (l |> toArray |> Array.sortWith(cmp) |> Array.toList) as & Pure
+    pub def sortWith(cmp: (a,a) -> Comparison, l: List[a]): List[a] = region r {
+        toArray(l, r) |> Array.sortWith(cmp) |> Array.toList
+    }
 
     ///
     /// Build a list by applying `f` to the seed value `st`.

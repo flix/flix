@@ -28,6 +28,8 @@ object NamedAst {
                   defsAndSigs: Map[Name.NName, Map[String, NamedAst.DefOrSig]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typeAliases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
+                  effects: Map[Name.NName, Map[String, NamedAst.Effect]],
+                  ops: Map[Name.NName, Map[String, NamedAst.Op]],
                   entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
@@ -54,6 +56,10 @@ object NamedAst {
   case class Enum(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: NamedAst.TypeParams, derives: List[Name.QName], cases: Map[Name.Tag, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, loc: SourceLocation)
+
+  case class Effect(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[NamedAst.Op], loc: SourceLocation)
+
+  case class Op(sym: Symbol.OpSym, spec: NamedAst.Spec)
 
   sealed trait Use
 
@@ -122,6 +128,8 @@ object NamedAst {
     case class IfThenElse(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Stm(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Discard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Let(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 

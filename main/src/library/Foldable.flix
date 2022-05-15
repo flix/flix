@@ -126,7 +126,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b, t: t[a]): b with Monoid[b] =
+    pub def foldMap(f: a -> b & ef, t: t[a]): b & ef with Monoid[b] =
         Foldable.foldLeft((acc, x) -> Monoid.combine(f(x), acc), Monoid.empty(), t)
 
     ///
@@ -198,16 +198,16 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `t` as an array.
     ///
-    pub def toArray(t: t[a]): Array[a] & Impure =
-        let v = new MutList(static);
+    pub def toArray(t: t[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
+        let v = new MutList(r);
         Foldable.foreach(a -> MutList.push!(a, v), t);
-        MutList.toArray(v)
+        MutList.toArray(v, r)
 
     ///
     /// Returns an iterator over `t`.
     ///
     pub def toIterator(t: t[a]): Iterator[a] & Impure =
-        let arr = Foldable.toArray(t);
+        let arr = Foldable.toArray(t, static);
         let len = Array.length(arr);
         let i = ref 0;
         let done = () -> (deref i) >= len;
