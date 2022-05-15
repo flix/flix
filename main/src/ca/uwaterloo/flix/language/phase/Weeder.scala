@@ -2305,6 +2305,11 @@ object Weeder {
       val t2 = visitType(tpe2)
       WeededAst.Type.Or(t1, t2, mkSL(sp1, sp2))
 
+    case ParsedAst.Type.Effect(sp1, eff0, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val (tpe, eff) = visitEffectSet(eff0, loc)
+      WeededAst.Type.Effect(tpe, eff, loc)
+
     case ParsedAst.Type.Ascribe(tpe, kind, sp2) =>
       val sp1 = leftMostSourcePosition(tpe)
       val t = visitType(tpe)
@@ -2908,6 +2913,7 @@ object Weeder {
     case ParsedAst.Type.Not(sp1, _, _) => sp1
     case ParsedAst.Type.And(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Or(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.Effect(sp1, _, _) => sp1
     case ParsedAst.Type.Ascribe(tpe, _, _) => leftMostSourcePosition(tpe)
   }
 
