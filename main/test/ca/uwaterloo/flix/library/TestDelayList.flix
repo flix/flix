@@ -740,24 +740,29 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool & Impure =
-    	DelayList.toArray(ENil: DelayList[Unit]) `Array.sameElements` []
+    def toArray01(): Bool = region r {
+    	DelayList.toArray(ENil: DelayList[Unit], r) `Array.sameElements` [] @ r
+    }
 
     @test
-    def toArray02(): Bool & Impure =
-    	DelayList.toArray(LList(lazy ENil): DelayList[Unit]) `Array.sameElements` []
+    def toArray02(): Bool = region r {
+    	DelayList.toArray(LList(lazy ENil): DelayList[Unit], r) `Array.sameElements` [] @ r
+    }
 
     @test
-    def toArray03(): Bool & Impure =
-    	DelayList.range(-100, 1000) |> DelayList.toArray `Array.sameElements` Array.range(-100, 1000, static)
+    def toArray03(): Bool = region r {
+        DelayList.toArray(DelayList.range(-100, 1000), r) `Array.sameElements` Array.range(-100, 1000, r)
+    }
 
     @test
-    def toArray04(): Bool & Impure =
-    	DelayList.toArray(LCons(1, lazy ENil)) `Array.sameElements` [1]
+    def toArray04(): Bool = region r {
+    	DelayList.toArray(LCons(1, lazy ENil), r) `Array.sameElements` [1] @ r
+    }
 
     @test
-    def toArray05(): Bool & Impure =
-    	DelayList.toArray(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) `Array.sameElements` [1, 2, 3]
+    def toArray05(): Bool = region r {
+    	DelayList.toArray(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))), r) `Array.sameElements` [1, 2, 3] @ r
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

@@ -1452,31 +1452,6 @@ namespace TestMutList {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // formatWith                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def formatWith01(): Bool & Impure =
-        let v = MutList.range(0, 5, static);
-        MutList.formatWith(Int32.toString, ", ", v) == "0, 1, 2, 3, 4"
-
-    @test
-    def formatWith02(): Bool & Impure =
-        let v = MutList.range(1, 4, static);
-        MutList.formatWith(Int32.toString, "+", v) == "1+2+3"
-
-    @test
-    def formatWith03(): Bool & Impure =
-        let v = MutList.range(2, 3, static);
-        MutList.formatWith(Int32.toString, "/", v) == "2"
-
-    @test
-    def formatWith04(): Bool & Impure =
-        let v = MutList.range(6, 9, static);
-        MutList.formatWith(Int32.toString, "/", v) == "6/7/8"
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // foreach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1665,23 +1640,23 @@ namespace TestMutList {
 
     @test
     def toArray01(): Bool = region r {
-        Array.sameElements(MutList.toArray(Array.toMutList([1, 2, 3])), [1, 2, 3])
+        Array.sameElements(MutList.toArray(Array.toMutList([1, 2, 3] @ r), r), [1, 2, 3] @ r)
     }
 
     @test
     def toArray02(): Bool = region r {
         let v = Array.toMutList([1, 2, 3]);
-        let a = MutList.toArray(v);
+        let a = MutList.toArray(v, r);
         a[1] = 42;
         MutList.get(1, v) == 2
     }
 
     @test
     def toArray03(): Bool = region r {
-        let v = Array.toMutList([1, 2, 3]);
+        let v = Array.toMutList([1, 2, 3] @ r);
         MutList.pop!(v);
         MutList.pop!(v);
-        Array.length(MutList.toArray(v)) == 1
+        Array.length(MutList.toArray(v, r)) == 1
     }
 
     /////////////////////////////////////////////////////////////////////////////

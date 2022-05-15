@@ -113,8 +113,8 @@ namespace String {
     /// Returns the given string `s` as an array of characters.
     ///
     @Time(length(s)) @Space(length(s))
-    pub def toArray(s: String): Array[Char] & Impure =
-        Array.init(i -> charAt(i, s), length(s), static)
+    pub def toArray(s: String, r: Region[r]): ScopedArray[Char, r] \ Write(r) =
+        Array.init(i -> charAt(i, s), length(s), r)
 
     ///
     /// Build a string of length `len` by applying `f` to the successive indices.
@@ -160,10 +160,10 @@ namespace String {
     @Time(length(sep) * List.length(xs)) @Space(length(sep) * List.length(xs))
     pub def intercalate(sep: String, xs: List[String]): String = region r {
         let sb = new StringBuilder(r);
-        let arr = List.toArray(xs); // TODO: Use toArray @ r when PR is merged
+        let arr = List.toArray(xs, r);
         StringBuilder.intercalate!(sep, arr, sb);
         StringBuilder.toString(sb)
-    } as & Pure
+    }
 
     ///
     /// Concatenate a list of strings into a single string, inserting the separator `sep` between
