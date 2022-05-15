@@ -198,31 +198,5 @@ namespace Test/Dec/OpaqueType {
     def testOpaqueType33(): Bool = match V(Err(123)) {
         case V(x) => x == Err(123)
     }
-/*
-    enum Option[t] {
-        case None,
-        case Some(t)
-    }
 
-    enum Result[t, e] {
-        case Ok(t),
-        case Err(e)
-    }
-
-    instance Eq[Option[a]] with Eq[a] {
-        pub def eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
-            case (None, None) => true
-            case (Some(v1), Some(v2)) => v1 == v2
-            case _ => false
-        }
-    }
-
-    instance Eq[Result[t, e]] with Eq[t], Eq[e] {
-        pub def eq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
-            case (Ok(v1), Ok(v2)) => v1 == v2
-            case (Err(w1), Err(w2)) => w1 == w2
-            case _ => false
-        }
-    }
-*/
 }
