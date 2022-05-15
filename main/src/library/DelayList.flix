@@ -1191,8 +1191,8 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toMutListRegion(l: DelayList[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
-        Array.toMutListRegion(toArray(l, r2), r) // `Array.toMutListRegion` respects the invariant of `MutList`.
+    pub def toMutList(l: DelayList[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(toArray(l, r2), r) // `Array.toMutList` respects the invariant of `MutList`.
     }
 
     ///

@@ -4602,14 +4602,14 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
 
     @test
     def toMutList01(): Bool = region r {
-        MutList.sameElements(Array.toMutListRegion(([] @ r): ScopedArray[Int32, _], r), new MutList(r))
+        MutList.sameElements(Array.toMutList(([] @ r): ScopedArray[Int32, _], r), new MutList(r))
     }
 
     @test
     def toMutList02(): Bool = region r {
         let v = new MutList(r);
         MutList.push!(1, v);
-        MutList.sameElements(Array.toMutListRegion([1] @ r, r), v)
+        MutList.sameElements(Array.toMutList([1] @ r, r), v)
     }
 
     @test
@@ -4618,24 +4618,24 @@ def sortBy!09(): Bool & Impure = testSortBy!VsSortBy([2,3,0,4,1,2])
         MutList.push!(1, v);
         MutList.push!(2, v);
         MutList.push!(3, v);
-        MutList.sameElements(Array.toMutListRegion([1, 2, 3] @ r, r), v)
+        MutList.sameElements(Array.toMutList([1, 2, 3] @ r, r), v)
     }
 
     @test
     def toMutList04(): Bool = region r {
-        MutList.sameElements((Array.range(0, 100, r) |> Array.toMutListRegion)(r), MutList.range(0, 100, r))
+        MutList.sameElements((Array.range(0, 100, r) |> Array.toMutList)(r), MutList.range(0, 100, r))
     }
 
     @test
     def toMutList05(): Bool = region r {
-        let v = Array.toMutListRegion([1, 2, 3] @ r, r);
+        let v = Array.toMutList([1, 2, 3] @ r, r);
         MutList.push!(4, v);
         Array.sameElements(MutList.toArray(v, r), [1, 2, 3, 4] @ r)
     }
 
     @test
     def toMutList06(): Bool = region r {
-        let v = Array.toMutListRegion([1, 2, 3] @ r, r);
+        let v = Array.toMutList([1, 2, 3] @ r, r);
         MutList.push!(4, v);
         let _ = MutList.pop!(v);
         let _ = MutList.pop!(v);

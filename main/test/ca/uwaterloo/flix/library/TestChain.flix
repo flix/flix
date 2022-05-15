@@ -1370,22 +1370,22 @@ namespace TestChain {
 
     @test
     def toMutList01(): Bool = region r {
-        Chain.toMutListRegion(Chain.empty(): Chain[Int32], r) `MutList.sameElements` List.toMutListRegion(Nil, r): MutList[Int32, _]
+        Chain.toMutList(Chain.empty(): Chain[Int32], r) `MutList.sameElements` List.toMutList(Nil, r): MutList[Int32, _]
     }
 
     @test
     def toMutList02(): Bool = region r {
-        Chain.toMutListRegion(Chain.singleton(1), r) `MutList.sameElements` List.toMutListRegion(1 :: Nil, r)
+        Chain.toMutList(Chain.singleton(1), r) `MutList.sameElements` List.toMutList(1 :: Nil, r)
     }
 
     @test
     def toMutList03(): Bool = region r {
-        Chain.toMutListRegion(List.toChain(1 :: 2 :: Nil), r) `MutList.sameElements` List.toMutListRegion(1 :: 2 :: Nil, r)
+        Chain.toMutList(List.toChain(1 :: 2 :: Nil), r) `MutList.sameElements` List.toMutList(1 :: 2 :: Nil, r)
     }
 
     @test
     def toMutList04(): Bool = region r {
-        Chain.toMutListRegion(List.toChain(1 :: 2 :: 3 :: Nil), r) `MutList.sameElements` List.toMutListRegion(1 :: 2 :: 3 :: Nil, r)
+        Chain.toMutList(List.toChain(1 :: 2 :: 3 :: Nil), r) `MutList.sameElements` List.toMutList(1 :: 2 :: 3 :: Nil, r)
     }
 
     /////////////////////////////////////////////////////////////////////////////
