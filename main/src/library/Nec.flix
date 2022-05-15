@@ -101,7 +101,7 @@ instance Reducible[Nec] {
     override pub def memberOf(a: a, l: Nec[a]): Bool with Eq[a] = Nec.memberOf(a, l)
     override pub def dropWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.dropWhileLeft(f, l)
     override pub def takeWhile(f: a -> Bool & ef, l: Nec[a]): List[a] & ef = Nec.takeWhileLeft(f, l)
-    override pub def toArray(l: Nec[a]): Array[a] & Impure = Nec.toArray(l)
+    override pub def toArray(l: Nec[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = Nec.toArray(l, r)
     override pub def toIterator(l: Nec[a]): Iterator[a] & Impure = Nec.toIterator(l)
     override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
@@ -711,13 +711,12 @@ namespace Nec {
     /// Returns `c` as a mutable list.
     ///
     pub def toMutList(c: Nec[a]): MutList[a, Impure] & Impure =
-        toArray(c) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
+        toArray(c, static) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
 
     ///
     /// Returns the list `c` as a set.
     ///
     pub def toSet(c: Nec[a]): Set[a] with Order[a] = foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), c)
-
 
     ///
     /// Returns the Nec of pairs `c` that represents an association list as a map.
@@ -739,9 +738,9 @@ namespace Nec {
     ///
     /// Returns the Nec `c` as an array.
     ///
-    pub def toArray(c: Nec[a]) : Array[a] & Impure =
+    pub def toArray(c: Nec[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
         let x = head(c);
-        let arr = Array.new(x, length(c));
+        let arr = [x; length(c)] @ r;
         let f = (i, b) -> { arr[i] = b; i + 1 };
         foldLeft(f, 0, c);
         arr
@@ -776,7 +775,7 @@ namespace Nec {
     ///
     /// Helper for the `sort` functions.
     ///
-    def fromArray(arr: Array[a]): Option[Nec[a]] & Impure =
+    def fromArray(arr: ScopedArray[a, r]): Option[Nec[a]] \ Read(r) =
         def loop(ix, end, acc) = if (ix >= end) acc else {let x = arr[ix]; loop(ix+1, end, snoc(acc, x))};
         let len = Array.length(arr);
         if (len < 1)
@@ -794,12 +793,13 @@ namespace Nec {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(l: Nec[a]): Nec[a] with Order[a] =
-        let ans = (l |> toArray |> Array.sort |> fromArray) as & Pure;
+    pub def sort(c: Nec[a]): Nec[a] with Order[a] = region r {
+        let ans = (toArray(c, r) |> Array.sort |> fromArray);
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
         }
+    }
 
 
     /// Sort Nec `c` so that elements are ordered from low to high according to the `Order` instance
@@ -809,12 +809,13 @@ namespace Nec {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, l: Nec[a]): Nec[a] with Order[b] =
-        let ans = (l |> toArray |> Array.sortBy(f) |> fromArray) as & Pure;
+    pub def sortBy(f: a -> b, c: Nec[a]): Nec[a] with Order[b] = region r {
+        let ans = (toArray(c, r) |> Array.sortBy(f) |> fromArray);
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
         }
+    }
 
     ///
     /// Sort Nec `c` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -823,12 +824,13 @@ namespace Nec {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a, a) -> Comparison, l: Nec[a]): Nec[a] =
-        let ans = (l |> toArray |> Array.sortWith(cmp) |> fromArray) as & Pure;
+    pub def sortWith(cmp: (a, a) -> Comparison, c: Nec[a]): Nec[a] = region r {
+        let ans = (toArray(c, r) |> Array.sortWith(cmp) |> fromArray);
         match ans {
             case Some(n1) => n1
             case None     => unreachable!()
         }
+    }
 
     ///
     /// Helper function for `traverse` and `sequence`.
