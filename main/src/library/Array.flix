@@ -1303,6 +1303,15 @@ namespace Array {
         MutList(ref copyOfRange(0, c, a, r) @ r, ref len @ r)
 
     ///
+    /// Returns the array `a` as a MutList.
+    ///
+    pub def toMutListRegion(a: ScopedArray[a, r1], r2: Region[r2]): MutList[a, r2] \ { Read(r1), Write(r2) } =
+        let minCap = MutList.minCapacity();
+        let len = length(a);
+        let c = Order.max(len, minCap);
+        MutList(ref copyOfRange(0, c, a, r2) @ r2, ref len @ r2)
+
+    ///
     /// Alias for `findIndexOfLeft`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
