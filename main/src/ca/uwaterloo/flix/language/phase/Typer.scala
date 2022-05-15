@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
+import ca.uwaterloo.flix.language.ast.Symbol.KindedTypeVarSym
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
@@ -228,9 +229,8 @@ object Typer {
 
           run(initialSubst) match {
             case Ok((subst0, (partialTconstrs, partialType))) =>
-              ///
-              /// Propagate type variables *names* in the substitution.
-              ///
+
+              // propogate the type variable names
               val subst = subst0.propagate
 
               ///
@@ -299,11 +299,14 @@ object Typer {
                   }
               }
 
+              // Pivot the substititution to keep the type parameters from being replaced
+              val finalSubst = pivot(subst, tparams0)
+
               ///
               /// Compute the expression, type parameters, and formal parameters with the substitution applied everywhere.
               ///
-              val exp = reassembleExp(exp0, root, subst)
-              val specVal = visitSpec(spec0, root, subst)
+              val exp = reassembleExp(exp0, root, finalSubst)
+              val specVal = visitSpec(spec0, root, finalSubst)
 
               ///
               /// Compute a type scheme that matches the type variables that appear in the expression body.
@@ -312,7 +315,9 @@ object Typer {
               /// However, we require an even stronger property for the implementation to work. The inferred type scheme used in the rest of the
               /// compiler must *use the same type variables* in the scheme as in the body expression. Otherwise monomorphization et al. will break.
               ///
-              val inferredScheme = Scheme(inferredType.typeVars.toList.map(_.sym), inferredConstrs, inferredType)
+              val finalInferredType = finalSubst(partialType)
+              val finalInferredTconstrs = partialTconstrs.map(finalSubst.apply)
+              val inferredScheme = Scheme(finalInferredType.typeVars.toList.map(_.sym), finalInferredTconstrs, finalInferredType)
 
               specVal map {
                 spec => (spec, TypedAst.Impl(exp, inferredScheme))
@@ -321,6 +326,20 @@ object Typer {
             case Err(e) => Validation.Failure(LazyList(e))
           }
       }
+  }
+
+  /**
+    * Computes an equ-most general substitution with the given `tparams` as rigid variables.
+    */
+  private def pivot(subst: Substitution, tparams: List[KindedAst.TypeParam])(implicit flix: Flix): Substitution = {
+    // We only pivot Boolean type variables
+    val boolTparams = tparams.filter(tparam => tparam.sym.kind == Kind.Bool)
+    boolTparams match {
+      // Case 1: exactly one boolean type parameter.
+      case tparam :: Nil => subst.pivot(tparam.sym)
+      // Case 2: multiple or zero boolean type parameters. No action
+      case _ => subst
+    }
   }
 
   /**

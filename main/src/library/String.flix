@@ -113,8 +113,8 @@ namespace String {
     /// Returns the given string `s` as an array of characters.
     ///
     @Time(length(s)) @Space(length(s))
-    pub def toArray(s: String): Array[Char] & Impure =
-        Array.init(i -> charAt(i, s), length(s), static)
+    pub def toArray(s: String, r: Region[r]): ScopedArray[Char, r] \ Write(r) =
+        Array.init(i -> charAt(i, s), length(s), r)
 
     ///
     /// Build a string of length `len` by applying `f` to the successive indices.
@@ -170,7 +170,7 @@ namespace String {
     ///
     def intercalateHelper(sep: String, xs: List[String]): String & Impure =
         let sb = StringBuilder.new();
-        let arr = List.toArray(xs);
+        let arr = List.toArray(xs, static);
         StringBuilder.intercalate!(sep, arr, sb);
         StringBuilder.toString(sb)
 

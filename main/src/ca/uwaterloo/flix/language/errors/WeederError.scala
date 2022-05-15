@@ -751,22 +751,19 @@ object WeederError {
     * @param loc the location where the error occurred.
     */
   case class IllegalResume(loc: SourceLocation) extends WeederError {
-    def summary: String = "Unexpected use of 'resume'."
+    def summary: String = "Unexpected use of 'resume'. The 'resume' expression must occur in an effect handler."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unexpected use of 'resume'.
+         |>> Unexpected use of 'resume'. The 'resume' expression must occur in an effect handler.
          |
          |${code(loc, "unexpected use of 'resume'")}
          |
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} The 'resume' expression may only be used in effect handlers."
-    })
+    def explain(formatter: Formatter): Option[String] = None
 
   }
 
@@ -812,4 +809,24 @@ object WeederError {
     def explain(formatter: Formatter): Option[String] = None
   }
 
+  /**
+    * An error raised to indicate a non-Unit return type of an effect operation.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class NonUnitOperationType(loc: SourceLocation) extends WeederError {
+    def summary: String = "Non-Unit operation type. Effect operations must return Unit type."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Non-Unit operation type. Effect operations must return Unit type.
+         |
+         |${code(loc, "non-Unit operation type")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
 }
