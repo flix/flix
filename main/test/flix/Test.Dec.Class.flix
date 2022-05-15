@@ -244,16 +244,6 @@ namespace Test/Dec/Class {
         def testCallComplexBoolSig02(): Bool = M(10): M[true, Int32] != M(11): M[true, Int32]
     }
 
-    pub enum List[a] {
-        case Nil
-        case Cons(a, List[a])
-    }
-
-    pub enum Option[a] {
-        case None
-        case Some(a)
-    }
-
     @test
     def empty(): Bool = true
 }
