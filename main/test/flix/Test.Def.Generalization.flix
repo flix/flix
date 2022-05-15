@@ -162,12 +162,12 @@ namespace Test/Def/Generalization {
     //@test
     //def testLeq28(): (Unit -> b & (e1, e2, e3)) -> b & (e3, e2, e1) = f -> f()
 
-    @test
+    /*@test
     def testLeq29(x: Choice[String, true, true]): Int32 =
         choose x {
             case Absent     => 1
             case Present(_) => 2
-        }
+        }*/
 
     @test
     def testLeq30(x: Choice[String, _, true]): Int32 =
