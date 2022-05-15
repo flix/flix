@@ -1480,6 +1480,11 @@ object ParsedAst {
     case class Or(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+      * A type representing an effect set.
+      */
+    case class Effect(sp1: SourcePosition, eff: ParsedAst.EffectSet, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
       * Kind Ascription.
       *
       * @param tpe  the ascribed type.
