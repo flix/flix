@@ -365,6 +365,18 @@ object NamedAst {
 
     case class Or(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
+    case class Complement(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class Union(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class Intersection(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class Difference(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class Read(reg: Name.Ident, loc: SourceLocation) extends NamedAst.Type
+
+    case class Write(reg: Name.Ident, loc: SourceLocation) extends NamedAst.Type
+
     case class Ascribe(tpe: NamedAst.Type, kind: Kind, loc: SourceLocation) extends NamedAst.Type
 
   }
