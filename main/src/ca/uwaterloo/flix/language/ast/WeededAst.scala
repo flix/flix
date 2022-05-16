@@ -35,9 +35,9 @@ object WeededAst {
 
     case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, clazz: Name.QName, tpe: WeededAst.Type, tconstrs: List[WeededAst.TypeConstraint], defs: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Sig(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.KindedTypeParams, fparams: List[WeededAst.FormalParam], exp: Option[WeededAst.Expression], tpe: WeededAst.Type, retTpe: WeededAst.Type, pur: WeededAst.Type, eff: WeededAst.EffectSet, tconstrs: List[WeededAst.TypeConstraint], loc: SourceLocation)
+    case class Sig(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.KindedTypeParams, fparams: List[WeededAst.FormalParam], exp: Option[WeededAst.Expression], tpe: WeededAst.Type, retTpe: WeededAst.Type, eff: WeededAst.Type, put: WeededAst.Type, tconstrs: List[WeededAst.TypeConstraint], loc: SourceLocation)
 
-    case class Def(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.KindedTypeParams, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, retTpe: WeededAst.Type, pur: WeededAst.Type, eff: WeededAst.EffectSet, tconstrs: List[WeededAst.TypeConstraint], loc: SourceLocation) extends WeededAst.Declaration
+    case class Def(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.KindedTypeParams, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, retTpe: WeededAst.Type, eff: WeededAst.Type, pur: WeededAst.Type, tconstrs: List[WeededAst.TypeConstraint], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Law(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.KindedTypeParams, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, retTpe: WeededAst.Type, pur: WeededAst.Type, tconstrs: List[WeededAst.TypeConstraint], loc: SourceLocation) extends WeededAst.Declaration
 
@@ -344,7 +344,7 @@ object WeededAst {
 
     case class Native(fqn: String, loc: SourceLocation) extends WeededAst.Type
 
-    case class Arrow(tparams: List[WeededAst.Type], pur: WeededAst.Type, eff: WeededAst.EffectSet, tresult: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+    case class Arrow(tparams: List[WeededAst.Type], eff: WeededAst.Type, pur: WeededAst.Type, tresult: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class Apply(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
@@ -358,42 +358,21 @@ object WeededAst {
 
     case class Or(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class Effect(tpe: WeededAst.Type, eff: WeededAst.EffectSet, loc: SourceLocation) extends WeededAst.Type
+    case class Complement(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
+    case class Union(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
+    case class Intersection(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
+    case class Difference(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
+    case class Read(reg: Name.Ident, loc: SourceLocation) extends WeededAst.Type
+
+    case class Write(reg: Name.Ident, loc: SourceLocation) extends WeededAst.Type
 
     case class Ascribe(tpe: WeededAst.Type, kind: Kind, loc: SourceLocation) extends WeededAst.Type
 
   }
-
-  sealed trait EffectSet
-
-  object EffectSet {
-    case class Pure(loc: SourceLocation) extends WeededAst.EffectSet
-
-    case class Singleton(eff: WeededAst.EffectSet.Effect, loc: SourceLocation) extends WeededAst.EffectSet
-
-    case class Complement(eff: WeededAst.EffectSet, loc: SourceLocation) extends WeededAst.EffectSet
-
-    case class Union(eff1: WeededAst.EffectSet, eff2: WeededAst.EffectSet, loc: SourceLocation) extends WeededAst.EffectSet
-
-    case class Intersection(eff1: WeededAst.EffectSet, eff2: WeededAst.EffectSet, loc: SourceLocation) extends WeededAst.EffectSet
-
-    case class Difference(eff1: WeededAst.EffectSet, eff2: WeededAst.EffectSet, loc: SourceLocation) extends WeededAst.EffectSet
-
-    sealed trait Effect
-
-    object Effect {
-      case class Eff(name: Name.QName, loc: SourceLocation) extends WeededAst.EffectSet.Effect
-
-      case class Var(eff: Name.Ident, loc: SourceLocation) extends WeededAst.EffectSet.Effect
-
-      case class Read(reg: Name.Ident, loc: SourceLocation) extends WeededAst.EffectSet.Effect
-
-      case class Write(reg: Name.Ident, loc: SourceLocation) extends WeededAst.EffectSet.Effect
-
-      case class Impure(loc: SourceLocation) extends WeededAst.EffectSet.Effect
-    }
-  }
-
 
   sealed trait TypeParams
 
