@@ -2380,7 +2380,7 @@ object Weeder {
     */
   private def visitPurityOrEffect(purOrEff: Option[ParsedAst.PurityOrEffect], loc: SourceLocation): (WeededAst.Type, WeededAst.Type) = purOrEff match {
     case None => (WeededAst.Type.True(loc.asSynthetic), WeededAst.Type.True(loc.asSynthetic))
-    case Some(ParsedAst.PurityOrEffect.Purity(tpe)) => (WeededAst.Type.True(loc.asSynthetic), visitType(tpe))
+    case Some(ParsedAst.PurityOrEffect.Purity(tpe)) => (visitType(tpe), WeededAst.Type.True(loc.asSynthetic))
     case Some(ParsedAst.PurityOrEffect.Effect(s)) => visitEffectSet(s, loc.asSynthetic)
   }
 
