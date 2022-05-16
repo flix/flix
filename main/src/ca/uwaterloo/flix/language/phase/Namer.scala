@@ -1564,10 +1564,11 @@ object Namer {
     case WeededAst.Type.Not(tpe, loc) => freeVars(tpe)
     case WeededAst.Type.And(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Or(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
-    case WeededAst.Type.Complement(tpe, loc) => freeVars(tpe)
-    case WeededAst.Type.Union(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
-    case WeededAst.Type.Intersection(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
-    case WeededAst.Type.Difference(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
+    // TODO excluding eff for now due to redundancy check
+    case WeededAst.Type.Complement(tpe, loc) => Nil // TODO freeVars(tpe)
+    case WeededAst.Type.Union(tpe1, tpe2, loc) => Nil // TODO freeVars(tpe1) ++ freeVars(tpe2)
+    case WeededAst.Type.Intersection(tpe1, tpe2, loc) => Nil // TODO freeVars(tpe1) ++ freeVars(tpe2)
+    case WeededAst.Type.Difference(tpe1, tpe2, loc) => Nil // TODO freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Read(ident, loc) => ident :: Nil
     case WeededAst.Type.Write(ident, loc) => ident :: Nil
     case WeededAst.Type.Ascribe(tpe, _, _) => freeVars(tpe)
@@ -1600,10 +1601,11 @@ object Namer {
       case WeededAst.Type.Not(tpe, loc) => visit(tpe)
       case WeededAst.Type.And(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
       case WeededAst.Type.Or(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
-      case WeededAst.Type.Complement(tpe, loc) => freeVars(tpe)
-      case WeededAst.Type.Union(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
-      case WeededAst.Type.Intersection(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
-      case WeededAst.Type.Difference(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
+      // TODO excluding eff for now due to redundancy check
+      case WeededAst.Type.Complement(tpe, loc) => Nil // TODO freeVars(tpe)
+      case WeededAst.Type.Union(tpe1, tpe2, loc) => Nil // TODO freeVars(tpe1) ++ freeVars(tpe2)
+      case WeededAst.Type.Intersection(tpe1, tpe2, loc) => Nil // TODO freeVars(tpe1) ++ freeVars(tpe2)
+      case WeededAst.Type.Difference(tpe1, tpe2, loc) => Nil // TODO freeVars(tpe1) ++ freeVars(tpe2)
       case WeededAst.Type.Read(ident, loc) if tenv.contains(ident.name) => Nil
       case WeededAst.Type.Read(ident, loc) => Nil
       case WeededAst.Type.Write(ident, loc) if tenv.contains(ident.name) => Nil
