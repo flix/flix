@@ -102,16 +102,12 @@ namespace List {
     ///
     /// Renders the list `l` to a String.
     ///
-    pub def toString(l: List[a]): String with ToString[a] = toStringHelper(l) as & Pure
-
-    ///
-    /// Helper function for `toString`.
-    ///
-    def toStringHelper(l: List[a]): String & Impure with ToString[a] =
-        let sb = StringBuilder.new();
+    pub def toString(l: List[a]): String with ToString[a] = region r {
+        let sb = new StringBuilder(r);
         List.foreach(x -> StringBuilder.appendString!("${x} :: ", sb), l);
         StringBuilder.appendString!("Nil", sb);
         StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns true if and only if `l` is the empty list, i.e. `Nil`.

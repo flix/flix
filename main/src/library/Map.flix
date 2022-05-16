@@ -771,8 +771,8 @@ namespace Map {
     /// Returns `m` as a mutable set.
     ///
     @Time(1) @Space(1)
-    pub def toMutMap(m: Map[k, v]): MutMap[k, v, Impure] & Impure =
-        MutMap(ref m) as MutMap[k, v, Impure]
+    pub def toMutMap(m: Map[k, v], r: Region[r]): MutMap[k, v, r] \ Write(r) =
+        MutMap(ref m @ r)
 
     ///
     /// Returns the map `m` as a list of key-value pairs.
