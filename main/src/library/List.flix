@@ -209,14 +209,12 @@ namespace List {
         reduceLeft(Order.maxBy(cmp), l)
 
     ///
-    /// Returns the position of `x` in `l`.
+    /// Optionally returns the position of `x` in `l`.
     ///
-    /// Returns `-1` if `a` does not exist in `l`.
-    ///
-    pub def indexOf(a: a, l: List[a]): Int32 with Eq[a] =
+    pub def indexOf(a: a, l: List[a]): Option[Int32] with Eq[a] =
         def loop(ll, acc) = match ll {
-            case Nil     => -1
-            case x :: xs => if (a == x) acc else loop(xs, acc + 1)
+            case Nil     => None
+            case x :: xs => if (a == x) Some(acc) else loop(xs, acc + 1)
         };
         loop(l, 0)
 
@@ -1130,10 +1128,9 @@ namespace List {
     ///
     /// Returns `l` as a mutable list.
     ///
-    pub def toMutList(l: List[a]): MutList[a, Impure] & Impure =
-        let v = new MutList(static);
-        foreach(x -> MutList.push!(x, v), l);
-        v
+    pub def toMutList(l: List[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(toArray(l, r2), r) // `Array.toMutList` respects the invariant of `MutList`
+    }
 
     ///
     /// Returns the list `l` as a set.
