@@ -578,5 +578,4 @@ object Ast {
       */
     case class FallbackText(s: String) extends VarText
   }
-
 }
