@@ -2391,9 +2391,9 @@ object Weeder {
     case EffectSet.Singleton(_, eff, _) => visitSingleEffect(eff)
     case EffectSet.Pure(sp1, sp2) => (WeededAst.Type.True(mkSL(sp1, sp2)), WeededAst.Type.True(mkSL(sp1, sp2)))
     case EffectSet.Set(sp1, effs0, sp2) =>
-      val (effs, purs) = effs0.map(visitSingleEffect).unzip
-      val eff = effs.reduceOption(WeededAst.Type.Union(_, _, mkSL(sp1, sp2))).getOrElse(WeededAst.Type.True(loc.asSynthetic))
+      val (purs, effs) = effs0.map(visitSingleEffect).unzip
       val pur = purs.reduceOption(WeededAst.Type.And(_, _, mkSL(sp1, sp2))).getOrElse(WeededAst.Type.True(loc.asSynthetic))
+      val eff = effs.reduceOption(WeededAst.Type.Union(_, _, mkSL(sp1, sp2))).getOrElse(WeededAst.Type.True(loc.asSynthetic))
       (pur, eff)
   }
 
