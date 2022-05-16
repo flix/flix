@@ -1773,13 +1773,28 @@ object Resolver {
         case (t1, t2) => mkOr(t1, t2, loc)
       }
 
-    case _: NamedAst.Type.Complement |
-         _: NamedAst.Type.Union |
-         _: NamedAst.Type.Intersection |
-         _: NamedAst.Type.Difference |
-         _: NamedAst.Type.Read |
-         _: NamedAst.Type.Write =>
-      // TODO not handling effect types yet
+    case NamedAst.Type.Complement(tpe, loc) =>
+      mapN(semiResolveType(tpe, ns0, root)) {
+        t => Type.mkNot(t, loc) // TODO change to Complement
+      }
+
+    case NamedAst.Type.Union(tpe1, tpe2, loc) =>
+      mapN(semiResolveType(tpe1, ns0, root), semiResolveType(tpe2, ns0, root)) {
+        case (t1, t2) => mkAnd(t1, t2, loc) // TODO change to Union
+      }
+
+    case NamedAst.Type.Intersection(tpe1, tpe2, loc) =>
+      mapN(semiResolveType(tpe1, ns0, root), semiResolveType(tpe2, ns0, root)) {
+        case (t1, t2) => mkOr(t1, t2, loc) // TODO change to Intersection
+      }
+
+    case NamedAst.Type.Difference(tpe1, tpe2, loc) =>
+      mapN(semiResolveType(tpe1, ns0, root), semiResolveType(tpe2, ns0, root)) {
+        case (t1, t2) => mkOr(t1, t2, loc) // TODO change to Difference
+      }
+
+    case _: NamedAst.Type.Read | _: NamedAst.Type.Write =>
+      // TODO not handling region effect types yet
       Type.mkTrue(SourceLocation.Unknown).toSuccess
 
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>
