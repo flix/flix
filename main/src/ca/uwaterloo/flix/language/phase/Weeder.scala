@@ -2361,7 +2361,7 @@ object Weeder {
     *
     * In other words, the type is of the form `tpe1 ->{eff} tpe2`
     */
-  private def mkArrow(tpe1: WeededAst.Type, eff: WeededAst.Type, pur: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation): WeededAst.Type =
+  private def mkArrow(tpe1: WeededAst.Type, pur: WeededAst.Type, eff: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation): WeededAst.Type =
     WeededAst.Type.Arrow(List(tpe1), pur, eff, tpe2, loc.asSynthetic)
 
   /**
@@ -2369,7 +2369,7 @@ object Weeder {
     *
     * In other words, the type is of the form `tpe1 ->> tpe2 ->> ... ->{eff} tresult`.
     */
-  private def mkCurriedArrow(tparams: Seq[WeededAst.Type], eff: WeededAst.Type, pur: WeededAst.Type, tresult: WeededAst.Type, loc: SourceLocation): WeededAst.Type = {
+  private def mkCurriedArrow(tparams: Seq[WeededAst.Type], pur: WeededAst.Type, eff: WeededAst.Type, tresult: WeededAst.Type, loc: SourceLocation): WeededAst.Type = {
     val l = loc.asSynthetic
     val base = mkArrow(tparams.last, pur, eff, tresult, l)
     tparams.init.foldRight(base)(mkArrow(_, WeededAst.Type.True(l), WeededAst.Type.True(l), _, l))
