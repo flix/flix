@@ -22,6 +22,6 @@ namespace Test/Exp/Fixpoint {
             Win(x) :- A(x, n), L(x; s), if Set.size(s) >= n.
         };
         let result = query db, pr select x from Win(x) |> Array.toSet;
-        result == Set#{"x", "y"}
+        result == Set#{"x", "y", "w"}
 
 }
