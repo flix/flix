@@ -18,6 +18,10 @@ instance Scoped[ScopedArray[a]] {
     pub def regionOf(_: ScopedArray[a, r]): Region[r] = () as Region[r]
 }
 
+instance Newable[ScopedArray[a]] {
+    pub def new(r: Region[r]): ScopedArray[a, r] \ Write(r) = [$DEFAULT$; 8] @ r
+}
+
 namespace Array {
 
     ///
