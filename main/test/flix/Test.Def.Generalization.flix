@@ -47,13 +47,13 @@ namespace Test/Def/Generalization {
 
     @test
     def testGen16(): a -> (b -> a) = x -> (_ -> x)
-/*
-    @test
-    def testGen17(): r -> {x :: Int32 | r} = r -> {+x = 21 | r}
 
-    @test
-    def testGen18(): {x :: Int32 | r} -> r = r -> { -x | r}
-*/
+    //@test
+    //def testGen17(): r -> {x :: Int32 | r} = r -> {+x = 21 | r}
+
+    //@test
+    //def testGen18(): {x :: Int32 | r} -> r = r -> { -x | r}
+
     @test
     def testGen19(): {x :: Int32 | r} -> {x :: Int32 | r}  = r -> { x = 21 | r}
 
