@@ -726,14 +726,7 @@ namespace DelayMap {
     /// Returns `m` as a mutable set.
     ///
     @Experimental @Parallel
-    pub def toMutMap(m: DelayMap[k, v]): MutMap[k, v, Impure] & Impure =
-        MutMap(ref toMap(m)) as MutMap[k, v, Impure]
-
-    ///
-    /// Returns `m` as a mutable set.
-    ///
-    @Experimental @Parallel
-    pub def toMutMapRegion(m: DelayMap[k, v], r: Region[r]): MutMap[k, v, r] \ Write(r) =
+    pub def toMutMap(m: DelayMap[k, v], r: Region[r]): MutMap[k, v, r] \ Write(r) =
         MutMap(ref toMap(m) @ r)
 
     ///
