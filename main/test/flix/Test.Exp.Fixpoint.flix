@@ -1,7 +1,7 @@
 namespace Test/Exp/Fixpoint {
 
     @test
-    def testSemiNaive01(): Bool =
+    def testSemiNaive01(): Bool & Impure =
         let db = #{
             Goal("x").
             Edge("y", "x").
