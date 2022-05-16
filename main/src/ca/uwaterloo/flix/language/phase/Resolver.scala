@@ -372,18 +372,18 @@ object Resolver {
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
   def resolveSpec(s0: NamedAst.Spec, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
-    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, retTpe0, eff0, loc) =>
+    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, retTpe0, pur0, loc) =>
 
       val tparams = resolveTypeParams(tparams0, ns0, root)
       val fparamsVal = resolveFormalParams(fparams0, taenv, ns0, root)
       val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
       val schemeVal = resolveScheme(sc0, taenv, ns0, root)
       val retTpeVal = resolveType(retTpe0, taenv, ns0, root)
-      val effVal = resolveType(eff0, taenv, ns0, root)
+      val purVal = resolveType(pur0, taenv, ns0, root)
 
-      mapN(fparamsVal, annVal, schemeVal, retTpeVal, effVal) {
-        case (fparams, ann, scheme, retTpe, eff) =>
-          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, retTpe, eff, loc)
+      mapN(fparamsVal, annVal, schemeVal, retTpeVal, purVal) {
+        case (fparams, ann, scheme, retTpe, pur) =>
+          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, retTpe, pur, loc)
       }
   }
 
@@ -1737,12 +1737,12 @@ object Resolver {
         }
       }
 
-    case NamedAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
+    case NamedAst.Type.Arrow(tparams0, pur0, tresult0, loc) =>
       val tparamsVal = traverse(tparams0)(semiResolveType(_, ns0, root))
       val tresultVal = semiResolveType(tresult0, ns0, root)
-      val effVal = semiResolveType(eff0, ns0, root)
-      mapN(tparamsVal, tresultVal, effVal) {
-        case (tparams, tresult, eff) => Type.mkUncurriedArrowWithEffect(tparams, eff, tresult, loc)
+      val purVal = semiResolveType(pur0, ns0, root)
+      mapN(tparamsVal, tresultVal, purVal) {
+        case (tparams, tresult, pur) => Type.mkUncurriedArrowWithEffect(tparams, pur, tresult, loc)
       }
 
     case NamedAst.Type.Apply(base0, targ0, loc) =>
@@ -1772,6 +1772,15 @@ object Resolver {
       mapN(semiResolveType(tpe1, ns0, root), semiResolveType(tpe2, ns0, root)) {
         case (t1, t2) => mkOr(t1, t2, loc)
       }
+
+    case _: NamedAst.Type.Complement |
+         _: NamedAst.Type.Union |
+         _: NamedAst.Type.Intersection |
+         _: NamedAst.Type.Difference |
+         _: NamedAst.Type.Read |
+         _: NamedAst.Type.Write =>
+      // TODO not handling effect types yet
+      Type.mkTrue(SourceLocation.Unknown).toSuccess
 
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(semiResolveType(tpe, ns0, root)) {
