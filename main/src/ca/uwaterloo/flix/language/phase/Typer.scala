@@ -1332,7 +1332,8 @@ object Typer {
           (constrs2, tpe2, _) <- visitExp(exp2)
           _ <- expectTypeM(expected = channelType, actual = tpe1, exp1.loc)
           _ <- expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
-          resultTyp <- unifyTypeM(tvar, channelType, loc)
+          _ <- unifyTypeM(tvar, channelType, loc)
+          resultTyp = Type.mkUnit(loc)
           resultEff = Type.Impure
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
