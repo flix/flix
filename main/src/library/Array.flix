@@ -27,7 +27,7 @@ namespace Array {
     ///
     /// Compares `a` and `b` lexicographically.
     ///
-    pub def compare(a: Array[v], b: Array[v]): Comparison & Impure with Order[v] =
+    pub def compare(a: ScopedArray[v, r1], b: ScopedArray[v, r2]): Comparison \ Read(r1, r2) with Order[v] =
         let len = Int32.min(Array.length(a), Array.length(b));
         def loop(i) = {
             if (i < len) {
