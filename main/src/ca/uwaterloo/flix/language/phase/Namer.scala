@@ -1557,7 +1557,7 @@ object Namer {
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Native(fqm, loc) => Nil
-    case WeededAst.Type.Arrow(tparams, eff, pur, tresult, loc) => tparams.flatMap(freeVars) ::: freeVars(eff) ::: freeVars(pur) ::: freeVars(tresult)
+    case WeededAst.Type.Arrow(tparams, eff, pur, tresult, loc) => tparams.flatMap(freeVars) ::: freeVars(pur) ::: freeVars(tresult) // TODO excluding eff for now due to redundancy check
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.True(loc) => Nil
     case WeededAst.Type.False(loc) => Nil
@@ -1593,7 +1593,7 @@ object Namer {
       case WeededAst.Type.Relation(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Native(fqm, loc) => Nil
-      case WeededAst.Type.Arrow(tparams, eff, pur, tresult, loc) => tparams.flatMap(visit) ::: visit(eff) ::: visit(pur) ::: visit(tresult)
+      case WeededAst.Type.Arrow(tparams, eff, pur, tresult, loc) => tparams.flatMap(visit) ::: visit(pur) ::: visit(tresult) // TODO excluding eff for now due to redundancy check
       case WeededAst.Type.Apply(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
       case WeededAst.Type.True(loc) => Nil
       case WeededAst.Type.False(loc) => Nil
