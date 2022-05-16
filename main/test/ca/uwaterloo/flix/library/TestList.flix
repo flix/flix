@@ -131,22 +131,22 @@ def memberOf07(): Bool = List.memberOf(3, 1 :: 2 :: Nil) == false
 // indexOf                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def indexOf01(): Bool = List.indexOf(0, Nil) == -1
+def indexOf01(): Bool = List.indexOf(0, Nil) == None
 
 @test
-def indexOf02(): Bool = List.indexOf(0, 1 :: Nil) == -1
+def indexOf02(): Bool = List.indexOf(0, 1 :: Nil) == None
 
 @test
-def indexOf03(): Bool = List.indexOf(1, 1 :: Nil) == 0
+def indexOf03(): Bool = List.indexOf(1, 1 :: Nil) == Some(0)
 
 @test
-def indexOf04(): Bool = List.indexOf(0, 1 :: 2 :: Nil) == -1
+def indexOf04(): Bool = List.indexOf(0, 1 :: 2 :: Nil) == None
 
 @test
-def indexOf05(): Bool = List.indexOf(1, 1 :: 2 :: Nil) == 0
+def indexOf05(): Bool = List.indexOf(1, 1 :: 2 :: Nil) == Some(0)
 
 @test
-def indexOf06(): Bool = List.indexOf(2, 1 :: 2 :: Nil) == 1
+def indexOf06(): Bool = List.indexOf(2, 1 :: 2 :: Nil) == Some(1)
 
 /////////////////////////////////////////////////////////////////////////////
 // find                                                                    //
