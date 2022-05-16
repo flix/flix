@@ -1557,18 +1557,17 @@ object Namer {
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Native(fqm, loc) => Nil
-    case WeededAst.Type.Arrow(tparams, pur, eff, tresult, loc) => tparams.flatMap(freeVars) ::: freeVars(pur) ::: freeVars(tresult) // TODO excluding eff for now due to redundancy check
+    case WeededAst.Type.Arrow(tparams, pur, eff, tresult, loc) => tparams.flatMap(freeVars) ::: freeVars(pur) ::: freeVars(tresult)
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.True(loc) => Nil
     case WeededAst.Type.False(loc) => Nil
     case WeededAst.Type.Not(tpe, loc) => freeVars(tpe)
     case WeededAst.Type.And(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Or(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
-    // TODO excluding eff for now due to redundancy check
-    case WeededAst.Type.Complement(tpe, loc) => Nil // TODO freeVars(tpe)
-    case WeededAst.Type.Union(tpe1, tpe2, loc) => Nil // TODO freeVars(tpe1) ++ freeVars(tpe2)
-    case WeededAst.Type.Intersection(tpe1, tpe2, loc) => Nil // TODO freeVars(tpe1) ++ freeVars(tpe2)
-    case WeededAst.Type.Difference(tpe1, tpe2, loc) => Nil // TODO freeVars(tpe1) ++ freeVars(tpe2)
+    case WeededAst.Type.Complement(tpe, loc) => freeVars(tpe)
+    case WeededAst.Type.Union(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
+    case WeededAst.Type.Intersection(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
+    case WeededAst.Type.Difference(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Read(ident, loc) => ident :: Nil
     case WeededAst.Type.Write(ident, loc) => ident :: Nil
     case WeededAst.Type.Ascribe(tpe, _, _) => freeVars(tpe)
@@ -1594,18 +1593,17 @@ object Namer {
       case WeededAst.Type.Relation(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Native(fqm, loc) => Nil
-      case WeededAst.Type.Arrow(tparams, pur, eff, tresult, loc) => tparams.flatMap(visit) ::: visit(pur) ::: visit(tresult) // TODO excluding eff for now due to redundancy check
+      case WeededAst.Type.Arrow(tparams, pur, eff, tresult, loc) => tparams.flatMap(visit) ::: visit(pur) ::: visit(eff) ::: visit(tresult)
       case WeededAst.Type.Apply(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
       case WeededAst.Type.True(loc) => Nil
       case WeededAst.Type.False(loc) => Nil
       case WeededAst.Type.Not(tpe, loc) => visit(tpe)
       case WeededAst.Type.And(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
       case WeededAst.Type.Or(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
-      // TODO excluding eff for now due to redundancy check
-      case WeededAst.Type.Complement(tpe, loc) => Nil // TODO freeVars(tpe)
-      case WeededAst.Type.Union(tpe1, tpe2, loc) => Nil // TODO freeVars(tpe1) ++ freeVars(tpe2)
-      case WeededAst.Type.Intersection(tpe1, tpe2, loc) => Nil // TODO freeVars(tpe1) ++ freeVars(tpe2)
-      case WeededAst.Type.Difference(tpe1, tpe2, loc) => Nil // TODO freeVars(tpe1) ++ freeVars(tpe2)
+      case WeededAst.Type.Complement(tpe, loc) => freeVars(tpe)
+      case WeededAst.Type.Union(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
+      case WeededAst.Type.Intersection(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
+      case WeededAst.Type.Difference(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
       case WeededAst.Type.Read(ident, loc) if tenv.contains(ident.name) => Nil
       case WeededAst.Type.Read(ident, loc) => Nil
       case WeededAst.Type.Write(ident, loc) if tenv.contains(ident.name) => Nil
