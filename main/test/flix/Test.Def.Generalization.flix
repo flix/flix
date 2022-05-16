@@ -159,8 +159,8 @@ namespace Test/Def/Generalization {
     @test
     def testLeq27(): (Unit -> b & Impure) -> b & Impure = f -> f()
 
-    //@test
-    //def testLeq28(): (Unit -> b & (e1, e2, e3)) -> b & (e3, e2, e1) = f -> f()
+    @test
+    def testLeq28(): (Unit -> b & (e1 and e2 and e3)) -> b & (e3 and e2 and e1) = f -> f()
 
     /*@test
     def testLeq29(x: Choice[String, true, true]): Int32 =
