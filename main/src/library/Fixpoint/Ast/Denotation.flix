@@ -33,6 +33,14 @@ namespace Fixpoint/Ast {
     }
 
     ///
+    /// Returns `true` if the given denotation is relational.
+    ///
+    pub def isRelational(den: Denotation[v]): Bool = match den {
+        case Relational => true
+        case _          => false
+    }
+
+    ///
     /// Returns a latticenal denotation associated with the type `t`.
     ///
     @Internal
