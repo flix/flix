@@ -28,6 +28,11 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Def.Op.flix")
 
   //
+  // Fixpoints
+  //
+  mkTest("main/test/flix/Test.Exp.Fixpoint.flix")
+
+  //
   // Derivations
   //
   mkTest("main/test/flix/Test.Derives.Eq.flix")
