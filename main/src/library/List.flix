@@ -1128,10 +1128,9 @@ namespace List {
     ///
     /// Returns `l` as a mutable list.
     ///
-    pub def toMutList(l: List[a]): MutList[a, Impure] & Impure =
-        let v = new MutList(static);
-        foreach(x -> MutList.push!(x, v), l);
-        v
+    pub def toMutList(l: List[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(toArray(l, r2), r) // `Array.toMutList` respects the invariant of `MutList`
+    }
 
     ///
     /// Returns the list `l` as a set.
