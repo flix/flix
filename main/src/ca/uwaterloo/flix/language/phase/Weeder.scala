@@ -2304,8 +2304,8 @@ object Weeder {
 
     case ParsedAst.Type.Effect(sp1, eff0, sp2) =>
       val loc = mkSL(sp1, sp2)
-      val (tpe, eff) = visitEffectSet(eff0, loc)
-      WeededAst.Type.Effect(tpe, eff, loc)
+      val (_, eff) = visitEffectSet(eff0, loc)
+      eff
 
     case ParsedAst.Type.Ascribe(tpe, kind, sp2) =>
       val sp1 = leftMostSourcePosition(tpe)
