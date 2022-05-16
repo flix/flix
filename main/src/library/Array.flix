@@ -49,11 +49,11 @@ namespace Array {
     ///
     /// Returns a string representation of the given array `a`.
     ///
-    pub def toString(a: Array[a]): String with ToString[a] =
+    pub def toString(a: ScopedArray[a, r]): String \ Read(r) with ToString[a] =
         def loop(i, acc) =
             if (i < a.length) {
-                if (i == 0) loop(i + 1, "${a[i]}") as & Pure
-                else loop(i + 1, "${acc}, ${a[i]}") as & Pure
+                if (i == 0) loop(i + 1, "${a[i]}")
+                else loop(i + 1, "${acc}, ${a[i]}")
             } else {
                 "[${acc}]"
             };
