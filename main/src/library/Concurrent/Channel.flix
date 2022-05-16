@@ -129,7 +129,7 @@ namespace Concurrent/Channel {
     /// Implements the expression `c <- e`.
     ///
     @Internal
-    pub def put(e: Boxed, c: Mpmc): Mpmc & Impure =
+    pub def put(e: Boxed, c: Mpmc): Unit & Impure =
         let Mpmc(_, channelLock, unBuffered, _, elementDeque, _, waitingPutters) = c;
         lock(channelLock);
 
@@ -152,8 +152,7 @@ namespace Concurrent/Channel {
         if (unBuffered) awaitCondition(waitingPutters)
         else ();
 
-        unlock(channelLock);
-        c
+        unlock(channelLock)
 
     ///
     /// Receives an element from the channel `c`. This is blocking if the
