@@ -222,10 +222,9 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `t` as a mutable list.
     ///
-    pub def toMutList(t: t[a]): MutList[a, Impure] & Impure =
-        let v = new MutList(static);
-        Foldable.foldRight((x, _) -> MutList.push!(x, v), (), t);
-        v
+    pub def toMutList(t: t[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(Foldable.toArray(t, r2), r)
+    }
 
     ///
     /// Returns `t` as a set.
@@ -243,7 +242,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns a map with elements of `s` as keys and `f` applied as values.
     ///
     pub def toMapWith(f: a -> b, s: t[a]): Map[a, b] with Order[a] =
-            Foldable.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
+        Foldable.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
 
     ///
     /// Returns `t` without the longest prefix that satisfies the predicate `f`.

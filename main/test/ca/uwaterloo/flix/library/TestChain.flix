@@ -1369,20 +1369,24 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMutList01(): Bool & Impure =
-        Chain.toMutList(Chain.empty(): Chain[Int32]) `MutList.sameElements` List.toMutList(Nil): MutList[Int32, Impure]
+    def toMutList01(): Bool = region r {
+        Chain.toMutList(Chain.empty(): Chain[Int32], r) `MutList.sameElements` List.toMutList(Nil, r): MutList[Int32, _]
+    }
 
     @test
-    def toMutList02(): Bool & Impure =
-        Chain.toMutList(Chain.singleton(1)) `MutList.sameElements` List.toMutList(1 :: Nil)
+    def toMutList02(): Bool = region r {
+        Chain.toMutList(Chain.singleton(1), r) `MutList.sameElements` List.toMutList(1 :: Nil, r)
+    }
 
     @test
-    def toMutList03(): Bool & Impure =
-        Chain.toMutList(List.toChain(1 :: 2 :: Nil)) `MutList.sameElements` List.toMutList(1 :: 2 :: Nil)
+    def toMutList03(): Bool = region r {
+        Chain.toMutList(List.toChain(1 :: 2 :: Nil), r) `MutList.sameElements` List.toMutList(1 :: 2 :: Nil, r)
+    }
 
     @test
-    def toMutList04(): Bool & Impure =
-        Chain.toMutList(List.toChain(1 :: 2 :: 3 :: Nil)) `MutList.sameElements` List.toMutList(1 :: 2 :: 3 :: Nil)
+    def toMutList04(): Bool = region r {
+        Chain.toMutList(List.toChain(1 :: 2 :: 3 :: Nil), r) `MutList.sameElements` List.toMutList(1 :: 2 :: 3 :: Nil, r)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
