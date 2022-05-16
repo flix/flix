@@ -272,17 +272,17 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     SP ~ Names.Attribute ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Attribute
   }
 
-  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.EffectOrPurity]] = rule {
-    Type ~ optional(optWS ~ EffectOrPurity)
+  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.PurityOrEffect]] = rule {
+    Type ~ optional(optWS ~ PurityOrEffect)
   }
 
-  def EffectOrPurity: Rule1[ParsedAst.EffectOrPurity] = {
-    def Set: Rule1[ParsedAst.EffectOrPurity] = rule {
-      "\\" ~ optWS ~ Effects.EffectSetOrEmpty ~> ParsedAst.EffectOrPurity.Effect
+  def PurityOrEffect: Rule1[ParsedAst.PurityOrEffect] = {
+    def Set: Rule1[ParsedAst.PurityOrEffect] = rule {
+      "\\" ~ optWS ~ Effects.EffectSetOrEmpty ~> ParsedAst.PurityOrEffect.Effect
     }
 
-    def Bool: Rule1[ParsedAst.EffectOrPurity] = rule {
-      "&" ~ optWS ~ Type ~> ParsedAst.EffectOrPurity.Purity
+    def Bool: Rule1[ParsedAst.PurityOrEffect] = rule {
+      "&" ~ optWS ~ Type ~> ParsedAst.PurityOrEffect.Purity
     }
 
     rule {
