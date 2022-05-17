@@ -656,8 +656,8 @@ namespace Nel {
         List.takeWhile(f, x :: xs)
 
     ///
-    /// Returns a Nec where each element `e` is mapped to `(e, i)` where `i`
-    /// is the index of `e`.
+    /// Returns a new non-empty list where each element `e` is mapped to `(e, i)`
+    /// where `i` is the index of `e`.
     ///
     pub def zipWithIndex(l: Nel[a]): Nel[(a, Int32)] =
         def loop(ll, k, i) = match ll {
