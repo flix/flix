@@ -1286,4 +1286,19 @@ namespace DelayList {
         loop(l, ks -> ks as & ef) // NB: Cast required because the identity continuation is pure,
                                   // but the intermediate continuations are effect polymorphic.
 
+    ///
+    /// Returns a DelayList where each element `e` is mapped to `(e, i)` where `i`
+    /// is the index of `e`.
+    ///
+    /// Does not force the tail `l`.
+    ///
+    pub def zipWithIndex(l: DelayList[a]): DelayList[(a, Int32)] =
+        def loop(ll, i) = match ll {
+            case ENil         => ENil
+            case ECons(x, xs) => LCons(((x, i)), lazy loop(      xs, i + 1))
+            case LCons(x, xs) => LCons(((x, i)), lazy loop(force xs, i + 1))
+            case LList(xs)    => LList(          lazy loop(force xs, i))
+        };
+        loop(l, 0)
+
 }

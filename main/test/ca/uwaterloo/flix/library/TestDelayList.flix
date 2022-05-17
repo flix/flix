@@ -2828,4 +2828,29 @@ namespace TestDelayList {
         let l = List.toDelayList(0 :: 4 :: Nil);
         DelayList.ap(f, l) |> DelayList.toList == 1 :: 5 :: 0 :: 8 :: Nil
 
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWithIndex                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithIndex01(): Bool =
+        DelayList.zipWithIndex(ENil: DelayList[Unit]) == ENil: DelayList[(Unit, Int32)]
+
+    @test
+    def zipWithIndex02(): Bool =
+        DelayList.zipWithIndex(ECons(1, ENil)) == ECons((1, 0), ENil)
+
+    @test
+    def zipWithIndex03(): Bool =
+        DelayList.zipWithIndex(LCons(1, lazy ENil)) == LCons((1, 0), lazy ENil)
+
+    @test
+    def zipWithIndex04(): Bool =
+        DelayList.zipWithIndex(LList(lazy ECons(1, ENil))) == LList(lazy ECons((1, 0), ENil))
+
+    @test
+    def zipWithIndex05(): Bool =
+        let l = DelayList.zipWithIndex(LList(lazy LList(lazy LCons(5, lazy ECons(7, ENil)))));
+        l == LList(lazy LList(lazy LCons((5, 0), lazy ECons((7, 1), ENil))))
+
 }
