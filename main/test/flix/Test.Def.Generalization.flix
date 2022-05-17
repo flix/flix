@@ -48,11 +48,11 @@ namespace Test/Def/Generalization {
     @test
     def testGen16(): a -> (b -> a) = x -> (_ -> x)
 
-    //@test
-    //def testGen17(): r -> {x :: Int32 | r} = r -> {+x = 21 | r}
+    @test
+    def testGen17(): { | r} -> {x :: Int32 | r} = r -> {+x = 21 | r}
 
-    //@test
-    //def testGen18(): {x :: Int32 | r} -> r = r -> { -x | r}
+    @test
+    def testGen18(): {x :: Int32 | r} -> { | r} = r -> { -x | r}
 
     @test
     def testGen19(): {x :: Int32 | r} -> {x :: Int32 | r}  = r -> { x = 21 | r}
@@ -75,6 +75,7 @@ namespace Test/Def/Generalization {
     @test
     def testGen25(): #{A(Int32), B(Int32), C(Int32) | r} = #{A(21). B(42).}
 
+    // TODO: Broken
     //@test
     //def testGen26(): #{A(Int32) | r1} -> #{B(Int32) | r2} -> #{A(Int32), B(Int32) | r} = x -> y -> x <+> y
 
@@ -162,6 +163,7 @@ namespace Test/Def/Generalization {
     @test
     def testLeq28(): (Unit -> b & (e1 and e2 and e3)) -> b & (e3 and e2 and e1) = f -> f()
 
+    // TODO: Broken
     /*@test
     def testLeq29(x: Choice[String, true, true]): Int32 =
         choose x {
