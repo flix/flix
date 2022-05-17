@@ -1290,7 +1290,7 @@ namespace DelayList {
     /// Returns a `DelayList` where each element `e` is mapped to `(e, i)` where `i`
     /// is the index of `e`.
     ///
-    /// Does not force the tail `l`.
+    /// Does not force the tail of `l`.
     ///
     pub def zipWithIndex(l: DelayList[a]): DelayList[(a, Int32)] =
         def loop(ll, i) = match ll {
