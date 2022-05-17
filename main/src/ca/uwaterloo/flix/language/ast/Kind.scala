@@ -65,7 +65,8 @@ object Kind {
   /**
     * Represents the kind of effect sets.
     */
-  case object Effect extends Kind
+    val Effect: Kind = Bool // TODO Effect is temporarily an alias for Bool
+//  case object Effect extends Kind
 
   /**
     * Represents the kind of record rows.
