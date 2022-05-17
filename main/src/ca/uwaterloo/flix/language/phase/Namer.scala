@@ -890,6 +890,13 @@ object Namer {
         case (e, t, f) => NamedAst.Expression.Cast(e, t, f, loc)
       }
 
+    case WeededAst.Expression.Without(exp, eff, loc) =>
+      val expVal = visitExp(exp, env0, uenv0, tenv0)
+      val f = getClassOrEffect(eff, uenv0)
+      mapN(expVal) {
+        e => NamedAst.Expression.Without(e, f, loc)
+      }
+
     case WeededAst.Expression.TryCatch(exp, rules, loc) =>
       val expVal = visitExp(exp, env0, uenv0, tenv0)
       val rulesVal = traverse(rules) {
