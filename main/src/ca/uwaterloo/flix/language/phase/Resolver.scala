@@ -77,10 +77,18 @@ object Resolver {
           }
         }
 
-        flatMapN(classesVal, sequence(instancesVal), defsVal, sequence(enumsVal)) {
-          case (classes, instances, defs, enums) =>
+        val effectsVal = root.effects.flatMap {
+          case (ns0, effects) => effects.map {
+            case (_, effect) => resolveEffect(effect, taenv, ns0, root) map {
+              case e => e.sym -> e
+            }
+          }
+        }
+
+        flatMapN(classesVal, sequence(instancesVal), defsVal, sequence(enumsVal), sequence(effectsVal)) {
+          case (classes, instances, defs, enums, effects) =>
             mapN(checkSuperClassDag(classes)) {
-              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, taenv, taOrder, root.entryPoint, root.reachable, root.sources)
+              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, effects.toMap, taenv, taOrder, root.entryPoint, root.reachable, root.sources)
             }
         }
     }
@@ -421,6 +429,30 @@ object Resolver {
           name -> ResolvedAst.Case(enumIdent, tag, tpe, sc)
       }
   }
+
+  /**
+    * Performs name resolution on the given effect `eff0` in the given namespace `ns0`.
+    */
+  private def resolveEffect(eff0: NamedAst.Effect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Effect, ResolutionError] = eff0 match {
+    case NamedAst.Effect(doc, ann0, mod, sym, ops0, loc) =>
+      val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
+      val opsVal = traverse(ops0)(resolveOp(_, taenv, ns0, root))
+      mapN(annVal, opsVal) {
+        case (ann, ops) => ResolvedAst.Effect(doc, ann, mod, sym, ops, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given effect operation `op0` in the given namespace `ns0`.
+    */
+  private def resolveOp(op0: NamedAst.Op, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Op, ResolutionError] = op0 match {
+    case NamedAst.Op(sym, spec0) =>
+      val specVal = resolveSpec(spec0, taenv, ns0, root)
+      mapN(specVal) {
+        spec => ResolvedAst.Op(sym, spec)
+      }
+  }
+
 
   /**
     * Performs name resolution on the given attribute `a0` in the given namespace `ns0`.
