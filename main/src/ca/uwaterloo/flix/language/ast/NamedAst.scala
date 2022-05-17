@@ -177,6 +177,8 @@ object NamedAst {
 
     case class Cast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: Option[NamedAst.Type], loc: SourceLocation) extends NamedAst.Expression
 
+    case class Without(exp: NamedAst.Expression, eff: Name.QName, loc: SourceLocation) extends NamedAst.Expression
+
     case class TryCatch(exp: NamedAst.Expression, rules: List[NamedAst.CatchRule], loc: SourceLocation) extends NamedAst.Expression
 
     case class TryWith(exp: NamedAst.Expression, eff: Name.QName, rules: List[NamedAst.HandlerRule], loc: SourceLocation) extends NamedAst.Expression
