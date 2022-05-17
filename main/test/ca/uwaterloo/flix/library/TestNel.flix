@@ -918,4 +918,24 @@ namespace TestNel {
     def joinWith03(): Bool =
         Nel.joinWith(x -> x + x, ",", Nel("1", "2" :: "3" :: Nil)) == "11,22,33"
 
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWithIndex                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithIndex01(): Bool = Nel.zipWithIndex(Nel(1, Nil)) == Nel((1, 0), Nil)
+
+    @test
+    def zipWithIndex02(): Bool = Nel.zipWithIndex(Nel(1, 2 :: Nil)) == Nel((1, 0), (2, 1) :: Nil)
+
+    @test
+    def zipWithIndex03(): Bool = Nel.zipWithIndex(Nel(2, 1 :: Nil)) == Nel((2, 0), (1, 1) :: Nil)
+
+    @test
+    def zipWithIndex04(): Bool = Nel.zipWithIndex(Nel(1, 2 :: 3 :: Nil)) == Nel((1, 0), (2, 1) :: (3, 2) :: Nil)
+
+    @test
+    def zipWithIndex05(): Bool =
+        Nel.zipWithIndex(Nel(1, 2 :: 3 :: 4 :: 5 :: Nil)) == Nel((1, 0), (2, 1) :: (3, 2) :: (4, 3) :: (5, 4) :: Nil)
+
 }
