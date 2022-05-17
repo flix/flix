@@ -3487,7 +3487,7 @@ def sameElements07(): Bool & Impure =
 @test
 def foreach01(): Bool & Impure =
     let a = []: Array[Int32];
-    let sb = StringBuilder.new();
+    let sb = new StringBuilder(static);
     let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
     Array.foreach(fn, a);
     StringBuilder.toString(sb) == ""
@@ -3495,7 +3495,7 @@ def foreach01(): Bool & Impure =
 @test
 def foreach02(): Bool & Impure =
     let a = [0];
-    let sb = StringBuilder.new();
+    let sb = new StringBuilder(static);
     let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
     Array.foreach(fn, a);
     StringBuilder.toString(sb) == "F"
@@ -3503,7 +3503,7 @@ def foreach02(): Bool & Impure =
 @test
 def foreach03(): Bool & Impure =
     let a = [1];
-    let sb = StringBuilder.new();
+    let sb = new StringBuilder(static);
     let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
     Array.foreach(fn, a);
     StringBuilder.toString(sb) == "T"
@@ -3511,7 +3511,7 @@ def foreach03(): Bool & Impure =
 @test
 def foreach04(): Bool & Impure =
     let a = [0,1];
-    let sb = StringBuilder.new();
+    let sb = new StringBuilder(static);
     let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
     Array.foreach(fn, a);
     StringBuilder.toString(sb) == "FT"
@@ -3523,7 +3523,7 @@ def foreach04(): Bool & Impure =
 @test
 def foreachWithIndex01(): Bool & Impure =
     let a = []: Array[Float32];
-    let sb = StringBuilder.new();
+    let sb = new StringBuilder(static);
     let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
     Array.foreachWithIndex(fn, a);
     StringBuilder.toString(sb) == ""
@@ -3531,7 +3531,7 @@ def foreachWithIndex01(): Bool & Impure =
 @test
 def foreachWithIndex02(): Bool & Impure =
     let a = [0.0];
-    let sb = StringBuilder.new();
+    let sb = new StringBuilder(static);
     let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
     Array.foreachWithIndex(fn, a);
     StringBuilder.toString(sb) == "F"
@@ -3539,7 +3539,7 @@ def foreachWithIndex02(): Bool & Impure =
 @test
 def foreachWithIndex03(): Bool & Impure =
     let a = [0.0, 0.1];
-    let sb = StringBuilder.new();
+    let sb = new StringBuilder(static);
     let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
     Array.foreachWithIndex(fn, a);
     StringBuilder.toString(sb) == "FT"
@@ -3547,7 +3547,7 @@ def foreachWithIndex03(): Bool & Impure =
 @test
 def foreachWithIndex04(): Bool & Impure =
     let a = [0.0, 0.1, 0.2];
-    let sb = StringBuilder.new();
+    let sb = new StringBuilder(static);
     let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
     Array.foreachWithIndex(fn, a);
     StringBuilder.toString(sb) == "FTT"
@@ -3555,7 +3555,7 @@ def foreachWithIndex04(): Bool & Impure =
 @test
 def foreachWithIndex05(): Bool & Impure =
     let a = [0.0, 0.1, 0.2, 0.3];
-    let sb = StringBuilder.new();
+    let sb = new StringBuilder(static);
     let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
     Array.foreachWithIndex(fn, a);
     StringBuilder.toString(sb) == "FTTT"

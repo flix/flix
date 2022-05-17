@@ -77,10 +77,18 @@ object Resolver {
           }
         }
 
-        flatMapN(classesVal, sequence(instancesVal), defsVal, sequence(enumsVal)) {
-          case (classes, instances, defs, enums) =>
+        val effectsVal = root.effects.flatMap {
+          case (ns0, effects) => effects.map {
+            case (_, effect) => resolveEffect(effect, taenv, ns0, root) map {
+              case e => e.sym -> e
+            }
+          }
+        }
+
+        flatMapN(classesVal, sequence(instancesVal), defsVal, sequence(enumsVal), sequence(effectsVal)) {
+          case (classes, instances, defs, enums, effects) =>
             mapN(checkSuperClassDag(classes)) {
-              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, taenv, taOrder, root.entryPoint, root.reachable, root.sources)
+              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, effects.toMap, taenv, taOrder, root.entryPoint, root.reachable, root.sources)
             }
         }
     }
@@ -301,15 +309,16 @@ object Resolver {
     * Performs name resolution on the given instance `i0` in the given namespace `ns0`.
     */
   def resolveInstance(i0: NamedAst.Instance, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Instance, ResolutionError] = i0 match {
-    case NamedAst.Instance(doc, mod, clazz0, tpe0, tconstrs0, defs0, loc) =>
+    case NamedAst.Instance(doc, ann0, mod, clazz0, tpe0, tconstrs0, defs0, loc) =>
+      val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
       val clazzVal = lookupClassForImplementation(clazz0, ns0, root)
       val tpeVal = resolveType(tpe0, taenv, ns0, root)
       val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, taenv, ns0, root))
       val defsVal = traverse(defs0)(resolveDef(_, taenv, ns0, root))
-      mapN(clazzVal, tpeVal, tconstrsVal, defsVal) {
-        case (clazz, tpe, tconstrs, defs) =>
+      mapN(annVal, clazzVal, tpeVal, tconstrsVal, defsVal) {
+        case (ann, clazz, tpe, tconstrs, defs) =>
           val sym = Symbol.freshInstanceSym(clazz.sym, clazz0.loc)
-          ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns0, loc)
+          ResolvedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs, ns0, loc)
       }
   }
 
@@ -372,7 +381,7 @@ object Resolver {
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
   def resolveSpec(s0: NamedAst.Spec, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
-    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, retTpe0, pur0, loc) =>
+    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, retTpe0, pur0, eff0, loc) => // TODO handle eff
 
       val tparams = resolveTypeParams(tparams0, ns0, root)
       val fparamsVal = resolveFormalParams(fparams0, taenv, ns0, root)
@@ -420,6 +429,30 @@ object Resolver {
           name -> ResolvedAst.Case(enumIdent, tag, tpe, sc)
       }
   }
+
+  /**
+    * Performs name resolution on the given effect `eff0` in the given namespace `ns0`.
+    */
+  private def resolveEffect(eff0: NamedAst.Effect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Effect, ResolutionError] = eff0 match {
+    case NamedAst.Effect(doc, ann0, mod, sym, ops0, loc) =>
+      val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
+      val opsVal = traverse(ops0)(resolveOp(_, taenv, ns0, root))
+      mapN(annVal, opsVal) {
+        case (ann, ops) => ResolvedAst.Effect(doc, ann, mod, sym, ops, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given effect operation `op0` in the given namespace `ns0`.
+    */
+  private def resolveOp(op0: NamedAst.Op, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Op, ResolutionError] = op0 match {
+    case NamedAst.Op(sym, spec0) =>
+      val specVal = resolveSpec(spec0, taenv, ns0, root)
+      mapN(specVal) {
+        spec => ResolvedAst.Op(sym, spec)
+      }
+  }
+
 
   /**
     * Performs name resolution on the given attribute `a0` in the given namespace `ns0`.
@@ -936,6 +969,11 @@ object Resolver {
           mapN(eVal, rulesVal) {
             case (e, rs) => ResolvedAst.Expression.TryCatch(e, rs, loc)
           }
+
+        // TODO handle these cases
+        case NamedAst.Expression.TryWith(_, _, _, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("TryWith"), loc).toSuccess
+        case NamedAst.Expression.Do(_, _, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("Do"), loc).toSuccess
+        case NamedAst.Expression.Resume(_, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("Resume"), loc).toSuccess
 
         case NamedAst.Expression.InvokeConstructor(className, args, sig, loc) =>
           val argsVal = traverse(args)(visitExp(_, region))
@@ -1737,7 +1775,7 @@ object Resolver {
         }
       }
 
-    case NamedAst.Type.Arrow(tparams0, pur0, tresult0, loc) =>
+    case NamedAst.Type.Arrow(tparams0, pur0, eff0, tresult0, loc) => // TODO handle eff0
       val tparamsVal = traverse(tparams0)(semiResolveType(_, ns0, root))
       val tresultVal = semiResolveType(tresult0, ns0, root)
       val purVal = semiResolveType(pur0, ns0, root)
@@ -1773,13 +1811,28 @@ object Resolver {
         case (t1, t2) => mkOr(t1, t2, loc)
       }
 
-    case _: NamedAst.Type.Complement |
-         _: NamedAst.Type.Union |
-         _: NamedAst.Type.Intersection |
-         _: NamedAst.Type.Difference |
-         _: NamedAst.Type.Read |
-         _: NamedAst.Type.Write =>
-      // TODO not handling effect types yet
+    case NamedAst.Type.Complement(tpe, loc) =>
+      mapN(semiResolveType(tpe, ns0, root)) {
+        t => Type.mkNot(t, loc) // TODO change to Complement
+      }
+
+    case NamedAst.Type.Union(tpe1, tpe2, loc) =>
+      mapN(semiResolveType(tpe1, ns0, root), semiResolveType(tpe2, ns0, root)) {
+        case (t1, t2) => mkAnd(t1, t2, loc) // TODO change to Union
+      }
+
+    case NamedAst.Type.Intersection(tpe1, tpe2, loc) =>
+      mapN(semiResolveType(tpe1, ns0, root), semiResolveType(tpe2, ns0, root)) {
+        case (t1, t2) => mkOr(t1, t2, loc) // TODO change to Intersection
+      }
+
+    case NamedAst.Type.Difference(tpe1, tpe2, loc) =>
+      mapN(semiResolveType(tpe1, ns0, root), semiResolveType(tpe2, ns0, root)) {
+        case (t1, t2) => mkOr(t1, t2, loc) // TODO change to Difference
+      }
+
+    case _: NamedAst.Type.Read | _: NamedAst.Type.Write =>
+      // TODO not handling region effect types yet
       Type.mkTrue(SourceLocation.Unknown).toSuccess
 
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>

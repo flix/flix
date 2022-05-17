@@ -145,7 +145,8 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   //
   // Effects
   //
-  mkTest("main/test/flix/Test.Exp.Effect.flix")
+  // TODO temporarily allowing redundancies during development
+  mkTest("main/test/flix/Test.Exp.Effect.flix")(options.copy(xallowredundancies = true))
 
   //
   // Fixpoint

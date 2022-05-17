@@ -68,8 +68,8 @@ instance Traversable[Chain] {
 
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String =
-        let fn = () -> {
-            let sb = StringBuilder.new();
+        let fn = () -> region r {
+            let sb = new StringBuilder(r);
             StringBuilder.appendString!("Chain#{", sb);
             Chain.foldLeft((acc, x) -> {
                 if (acc < 1)
@@ -80,7 +80,7 @@ instance ToString[Chain[a]] with ToString[a] {
             StringBuilder.appendString!("}", sb);
             StringBuilder.toString(sb)
         };
-        fn() as & Pure
+        fn()
 }
 
 
