@@ -1287,7 +1287,7 @@ namespace DelayList {
                                   // but the intermediate continuations are effect polymorphic.
 
     ///
-    /// Returns a DelayList where each element `e` is mapped to `(e, i)` where `i`
+    /// Returns a `DelayList` where each element `e` is mapped to `(e, i)` where `i`
     /// is the index of `e`.
     ///
     /// Does not force the tail `l`.
