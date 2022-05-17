@@ -214,6 +214,7 @@ object ParsedAst {
       * Typeclass instance.
       *
       * @param doc   the optional comment associated with the declaration.
+      * @param ann   the annotations associated with the declaration.
       * @param mod   the associated modifiers.
       * @param sp1   the position of the first character in the declaration.
       * @param clazz the name of the class.
@@ -221,12 +222,13 @@ object ParsedAst {
       * @param defs  the definitions of the instance.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Instance(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, constraints: Seq[ParsedAst.TypeConstraint], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Instance(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, constraints: Seq[ParsedAst.TypeConstraint], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Effect Declaration.
       *
       * @param doc     the optional comment associated with the declaration.
+      * @param ann     the annotations associated with the declaration.
       * @param mod     the associated modifiers.
       * @param sp1     the position of the first character in the declaration.
       * @param ident   the name of the definition.
@@ -234,7 +236,7 @@ object ParsedAst {
       * @param ops     the operations of the class.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Effect(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, ops: Seq[ParsedAst.Declaration.Op], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Effect(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, ops: Seq[ParsedAst.Declaration.Op], sp2: SourcePosition) extends ParsedAst.Declaration
 
   }
 

@@ -117,7 +117,7 @@ object Namer {
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
 
-      case decl@WeededAst.Declaration.Instance(_, _, clazz, _, _, _, _) =>
+      case decl@WeededAst.Declaration.Instance(_, _, _, clazz, _, _, _, _) =>
         // duplication check must come after name resolution
         val instances = prog0.instances.getOrElse(ns0, Map.empty)
         visitInstance(decl, uenv0, Map.empty, ns0) map {
@@ -180,7 +180,7 @@ object Namer {
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
 
-      case decl@WeededAst.Declaration.Effect(_, _, ident, _, _) =>
+      case decl@WeededAst.Declaration.Effect(_, _, _, ident, _, _) =>
         val effs0 = prog0.effects.getOrElse(ns0, Map.empty)
         val opNs = Name.extendNName(ns0, ident)
         lookupUpperName(ident, ns0, prog0) match {
@@ -404,19 +404,20 @@ object Namer {
     * Performs naming on the given instance `instance`.
     */
   private def visitInstance(instance: WeededAst.Declaration.Instance, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Instance, NameError] = instance match {
-    case WeededAst.Declaration.Instance(doc, mod, clazz, tpe0, tconstrs0, defs0, loc) =>
+    case WeededAst.Declaration.Instance(doc, ann0, mod, clazz, tpe0, tconstrs0, defs0, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe0))
       val tenv = tenv0 ++ getTypeEnv(tparams.tparams)
 
+      val annVal = traverse(ann0)(visitAnnotation(_, Map.empty, uenv0, tenv))
       val tpeVal = visitType(tpe0, uenv0, tenv)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
-      flatMapN(tpeVal, tconstrsVal) {
-        case (tpe, tconstrs) =>
+      flatMapN(annVal, tpeVal, tconstrsVal) {
+        case (ann, tpe, tconstrs) =>
           val qualifiedClass = getClass(clazz, uenv0)
           val instTconstr = NamedAst.TypeConstraint(qualifiedClass, tpe, clazz.loc)
           val defsVal = traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr), tparams.tparams.map(_.sym)))
           mapN(defsVal) {
-            defs => NamedAst.Instance(doc, mod, qualifiedClass, tpe, tconstrs, defs, loc)
+            defs => NamedAst.Instance(doc, ann, mod, qualifiedClass, tpe, tconstrs, defs, loc)
           }
       }
   }
@@ -529,14 +530,15 @@ object Namer {
     * Performs naming on the given effect `eff0` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitEffect(eff0: WeededAst.Declaration.Effect, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Effect, NameError] = eff0 match {
-    case WeededAst.Declaration.Effect(doc, mod0, ident, ops, loc) =>
+    case WeededAst.Declaration.Effect(doc, ann0, mod0, ident, ops, loc) =>
       val sym = Symbol.mkEffectSym(ns0, ident)
-      val mod = visitModifiers(mod0, ns0)
 
+      val annVal = traverse(ann0)(visitAnnotation(_, Map.empty, uenv0, tenv0))
+      val mod = visitModifiers(mod0, ns0)
       val opsVal = traverse(ops)(visitOp(_, uenv0, tenv0, ns0, sym))
 
-      mapN(opsVal) {
-        ops => NamedAst.Effect(doc, Nil, mod, sym, ops, loc) // MATT add annotations to Parser, Weeder
+      mapN(annVal, opsVal) {
+        case (ann, ops) => NamedAst.Effect(doc, ann, mod, sym, ops, loc)
       }
   }
 

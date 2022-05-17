@@ -301,15 +301,16 @@ object Resolver {
     * Performs name resolution on the given instance `i0` in the given namespace `ns0`.
     */
   def resolveInstance(i0: NamedAst.Instance, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Instance, ResolutionError] = i0 match {
-    case NamedAst.Instance(doc, mod, clazz0, tpe0, tconstrs0, defs0, loc) =>
+    case NamedAst.Instance(doc, ann0, mod, clazz0, tpe0, tconstrs0, defs0, loc) =>
+      val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
       val clazzVal = lookupClassForImplementation(clazz0, ns0, root)
       val tpeVal = resolveType(tpe0, taenv, ns0, root)
       val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, taenv, ns0, root))
       val defsVal = traverse(defs0)(resolveDef(_, taenv, ns0, root))
-      mapN(clazzVal, tpeVal, tconstrsVal, defsVal) {
-        case (clazz, tpe, tconstrs, defs) =>
+      mapN(annVal, clazzVal, tpeVal, tconstrsVal, defsVal) {
+        case (ann, clazz, tpe, tconstrs, defs) =>
           val sym = Symbol.freshInstanceSym(clazz.sym, clazz0.loc)
-          ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns0, loc)
+          ResolvedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs, ns0, loc)
       }
   }
 

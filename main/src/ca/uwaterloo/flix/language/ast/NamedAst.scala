@@ -19,8 +19,6 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 
-import scala.collection.immutable.List
-
 object NamedAst {
 
   case class Root(classes: Map[Name.NName, Map[String, NamedAst.Class]],
@@ -37,7 +35,7 @@ object NamedAst {
   // TODO change laws to NamedAst.Law
   case class Class(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Sig], laws: List[NamedAst.Def], loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Def], loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Def], loc: SourceLocation)
 
   sealed trait DefOrSig
 
