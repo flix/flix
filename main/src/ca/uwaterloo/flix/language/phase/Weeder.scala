@@ -173,17 +173,18 @@ object Weeder {
     * Performs weeding on the given instance declaration `i0`.
     */
   private def visitInstance(i0: ParsedAst.Declaration.Instance)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Instance], WeederError] = i0 match {
-    case ParsedAst.Declaration.Instance(doc0, mods0, sp1, clazz, tpe0, tconstrs0, defs0, sp2) =>
+    case ParsedAst.Declaration.Instance(doc0, ann0, mods0, sp1, clazz, tpe0, tconstrs0, defs0, sp2) =>
       val doc = visitDoc(doc0)
       val tpe = visitType(tpe0)
 
+      val annVal = visitAnnotations(ann0)
       val modsVal = visitModifiers(mods0, legalModifiers = Set.empty)
       val defsVal = traverse(defs0)(visitInstanceDef)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
 
-      mapN(modsVal, defsVal, tconstrsVal) {
-        case (mods, defs, tconstrs) =>
-          List(WeededAst.Declaration.Instance(doc, mods, clazz, tpe, tconstrs, defs.flatten, mkSL(sp1, sp2)))
+      mapN(annVal, modsVal, defsVal, tconstrsVal) {
+        case (ann, mods, defs, tconstrs) =>
+          List(WeededAst.Declaration.Instance(doc, ann, mods, clazz, tpe, tconstrs, defs.flatten, mkSL(sp1, sp2)))
       }
 
   }
@@ -258,15 +259,16 @@ object Weeder {
     * Performs weeding on the given effect declaration.
     */
   private def visitEffect(d0: ParsedAst.Declaration.Effect)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Effect], WeederError] = d0 match {
-    case ParsedAst.Declaration.Effect(doc0, mod0, sp1, ident, tparams0, ops0, sp2) =>
+    case ParsedAst.Declaration.Effect(doc0, ann0, mod0, sp1, ident, tparams0, ops0, sp2) =>
       val doc = visitDoc(doc0)
+      val annVal = visitAnnotations(ann0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val identVal = visitName(ident)
       val tparamsVal = requireNoTypeParams(tparams0)
       val opsVal = traverse(ops0)(visitOp)
-      mapN(modVal, identVal, tparamsVal, opsVal) {
-        case (mod, _, _, ops) =>
-          List(WeededAst.Declaration.Effect(doc, mod, ident, ops, mkSL(sp1, sp2)))
+      mapN(annVal, modVal, identVal, tparamsVal, opsVal) {
+        case (ann, mod, _, _, ops) =>
+          List(WeededAst.Declaration.Effect(doc, ann, mod, ident, ops, mkSL(sp1, sp2)))
       }
   }
 
