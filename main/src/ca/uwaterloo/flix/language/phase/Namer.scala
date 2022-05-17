@@ -449,10 +449,11 @@ object Namer {
       val tpeVal = visitType(tpe0, uenv0, tenv)
       val retTpeVal = visitType(retTpe0, uenv0, tenv)
       val purVal = visitType(pur0, uenv0, tenv)
+      val effVal = visitType(eff0, uenv0, tenv)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
 
-      flatMapN(sigTypeCheckVal, fparamsVal, tpeVal, retTpeVal, purVal, tconstrsVal) {
-        case (_, fparams, tpe, retTpe, eff, tconstrs) =>
+      flatMapN(sigTypeCheckVal, fparamsVal, tpeVal, retTpeVal, purVal, effVal, tconstrsVal) {
+        case (_, fparams, tpe, retTpe, pur, eff, tconstrs) =>
 
           // Then visit the parts depending on the parameters
           val env0 = getVarEnv(fparams)
@@ -468,7 +469,7 @@ object Namer {
               val sc = NamedAst.Scheme(quantifiers, classTconstr :: tconstrs, tpe)
 
               val sym = Symbol.mkSigSym(classSym, ident)
-              val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, eff, loc)
+              val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, pur, eff, loc)
               NamedAst.Sig(sym, spec, exp.headOption)
           }
       }
@@ -501,10 +502,11 @@ object Namer {
       val tpeVal = visitType(tpe0, uenv0, tenv)
       val retTpeVal = visitType(retTpe0, uenv0, tenv)
       val purVal = visitType(pur0, uenv0, tenv)
+      val effVal = visitType(eff0, uenv0, tenv)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
 
-      flatMapN(fparamsVal, tpeVal, retTpeVal, purVal, tconstrsVal) {
-        case (fparams, tpe, retTpe, eff, tconstrs) =>
+      flatMapN(fparamsVal, tpeVal, retTpeVal, purVal, effVal, tconstrsVal) {
+        case (fparams, tpe, retTpe, pur, eff, tconstrs) =>
 
           // Then visit the parts depending on the parameters
           val env0 = getVarEnv(fparams)
@@ -520,7 +522,7 @@ object Namer {
               val sc = NamedAst.Scheme(quantifiers, schemeTconstrs, tpe)
 
               val sym = Symbol.mkDefnSym(ns0, ident)
-              val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, eff, loc)
+              val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, sc, retTpe, pur, eff, loc)
               NamedAst.Def(sym, spec, e)
           }
       }
@@ -570,9 +572,10 @@ object Namer {
 
               val tparams = NamedAst.TypeParams.Kinded(Nil) // operations are monomorphic
               val pur = NamedAst.Type.True(ident.loc) // operations are pure
+              val eff = NamedAst.Type.True(ident.loc) // operations are pure
 
               val sym = Symbol.mkOpSym(effSym, ident)
-              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, sc, retTpe, pur, loc)
+              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, sc, retTpe, pur, eff, loc)
               NamedAst.Op(sym, spec)
           }
       }
@@ -1316,9 +1319,13 @@ object Namer {
     case WeededAst.Type.Native(fqn, loc) =>
       NamedAst.Type.Native(fqn, loc).toSuccess
 
-    case WeededAst.Type.Arrow(tparams, pur, eff, tresult, loc) =>
-      mapN(traverse(tparams)(visitType(_, uenv0, tenv0)), visitType(pur, uenv0, tenv0), visitType(tresult, uenv0, tenv0)) {
-        case (ts, f, t) => NamedAst.Type.Arrow(ts, f, t, loc)
+    case WeededAst.Type.Arrow(tparams0, pur0, eff0, tresult0, loc) =>
+      val tparamsVal = traverse(tparams0)(visitType(_, uenv0, tenv0))
+      val purVal = visitType(pur0, uenv0, tenv0)
+      val effVal = visitType(eff0, uenv0, tenv0)
+      val tresultVal = visitType(tresult0, uenv0, tenv0)
+      mapN(tparamsVal, purVal, effVal, tresultVal) {
+        case (tparams, pur, eff, tresult) => NamedAst.Type.Arrow(tparams, pur, eff, tresult, loc)
       }
 
     case WeededAst.Type.Apply(tpe1, tpe2, loc) =>
