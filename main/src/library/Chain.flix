@@ -68,8 +68,8 @@ instance Traversable[Chain] {
 
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String =
-        let fn = () -> {
-            let sb = StringBuilder.new();
+        let fn = () -> region r {
+            let sb = new StringBuilder(r);
             StringBuilder.appendString!("Chain#{", sb);
             Chain.foldLeft((acc, x) -> {
                 if (acc < 1)
@@ -80,7 +80,7 @@ instance ToString[Chain[a]] with ToString[a] {
             StringBuilder.appendString!("}", sb);
             StringBuilder.toString(sb)
         };
-        fn() as & Pure
+        fn()
 }
 
 
@@ -732,8 +732,9 @@ namespace Chain {
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(c: Chain[a]): MutList[a, Impure] & Impure =
-        toArray(c, static) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(c: Chain[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(toArray(c, r2), r) // `Array.toMutList` respects the invariant of `MutList`
+    }
 
     ///
     /// Returns the list `c` as a set.

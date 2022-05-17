@@ -19,8 +19,6 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 
-import scala.collection.immutable.List
-
 object NamedAst {
 
   case class Root(classes: Map[Name.NName, Map[String, NamedAst.Class]],
@@ -37,7 +35,7 @@ object NamedAst {
   // TODO change laws to NamedAst.Law
   case class Class(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Sig], laws: List[NamedAst.Def], loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Def], loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Def], loc: SourceLocation)
 
   sealed trait DefOrSig
 
@@ -51,7 +49,7 @@ object NamedAst {
 
   case class Def(sym: Symbol.DefnSym, spec: NamedAst.Spec, exp: NamedAst.Expression)
 
-  case class Spec(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, retTpe: NamedAst.Type, eff: NamedAst.Type, loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, retTpe: NamedAst.Type, pur: NamedAst.Type, eff: NamedAst.Type, loc: SourceLocation)
 
   case class Enum(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: NamedAst.TypeParams, derives: List[Name.QName], cases: Map[Name.Tag, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation)
 
@@ -180,6 +178,12 @@ object NamedAst {
     case class Cast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: Option[NamedAst.Type], loc: SourceLocation) extends NamedAst.Expression
 
     case class TryCatch(exp: NamedAst.Expression, rules: List[NamedAst.CatchRule], loc: SourceLocation) extends NamedAst.Expression
+
+    case class TryWith(exp: NamedAst.Expression, eff: Name.QName, rules: List[NamedAst.HandlerRule], loc: SourceLocation) extends NamedAst.Expression
+
+    case class Do(op: Name.QName, args: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
+
+    case class Resume(args: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
     case class InvokeConstructor(className: String, args: List[NamedAst.Expression], sig: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Expression
 
@@ -351,7 +355,7 @@ object NamedAst {
 
     case class Lattice(tpes: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
-    case class Arrow(tparams: List[NamedAst.Type], eff: NamedAst.Type, tresult: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class Arrow(tparams: List[NamedAst.Type], pur: NamedAst.Type, eff: NamedAst.Type, tresult: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Apply(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
@@ -364,6 +368,18 @@ object NamedAst {
     case class And(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Or(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class Complement(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class Union(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class Intersection(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class Difference(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class Read(reg: Name.Ident, loc: SourceLocation) extends NamedAst.Type
+
+    case class Write(reg: Name.Ident, loc: SourceLocation) extends NamedAst.Type
 
     case class Ascribe(tpe: NamedAst.Type, kind: Kind, loc: SourceLocation) extends NamedAst.Type
 
@@ -416,6 +432,8 @@ object NamedAst {
   }
 
   case class CatchRule(sym: Symbol.VarSym, className: String, exp: NamedAst.Expression)
+
+  case class HandlerRule(op: Name.Ident, fparams: Seq[NamedAst.FormalParam], exp: NamedAst.Expression)
 
   case class ChoiceRule(pat: List[NamedAst.ChoicePattern], exp: NamedAst.Expression)
 

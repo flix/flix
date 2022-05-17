@@ -745,15 +745,15 @@ namespace MutList {
     /// Returns the concatenation of the string representation
     /// of each element in `v` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, v: MutList[a, r]): String & Impure with ToString[a] =
-        joinWith(x -> ToString.toString(x), sep, v)
+    pub def join(sep: String, v: MutList[a, r]): String \ Read(r) with ToString[a] =
+        joinWith(ToString.toString, sep, v)
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, v: MutList[a, r]): String & Impure =
-        let sb = StringBuilder.new();
+    pub def joinWith(f: a -> String & ef, sep: String, v: MutList[a, r]): String \ { ef, Read(r) } = region r1 {
+        let sb = new StringBuilder(r1);
         let step = (x, i) ->
             if (i == 0)
                 StringBuilder.appendString!(f(x), sb)
@@ -763,6 +763,7 @@ namespace MutList {
             };
         foreachWithIndex(step, v);
         StringBuilder.toString(sb)
+    }
 
     ///
     /// Applies `f` to all the elements in `v`.

@@ -113,8 +113,8 @@ instance Iterable[Nec] {
 
 instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String =
-        let fn = () -> {
-            let sb = StringBuilder.new();
+        let fn = () -> region r {
+            let sb = new StringBuilder(r);
             StringBuilder.appendString!("Nec#{", sb);
             Nec.foldLeft((acc, x) -> {
                 if (acc < 1)
@@ -125,7 +125,7 @@ instance ToString[Nec[a]] with ToString[a] {
             StringBuilder.appendString!("}", sb);
             StringBuilder.toString(sb)
         };
-        fn() as & Pure
+        fn()
 }
 
 
@@ -710,8 +710,9 @@ namespace Nec {
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(c: Nec[a]): MutList[a, Impure] & Impure =
-        toArray(c, static) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(c: Nec[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(toArray(c, r2), r) // `Array.toMutList` respects the invariant of `MutList`
+    }
 
     ///
     /// Returns the list `c` as a set.

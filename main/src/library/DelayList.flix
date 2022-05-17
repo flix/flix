@@ -1191,8 +1191,9 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toMutList(l: DelayList[a]): MutList[a, Impure] & Impure =
-        toArray(l, static) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`.
+    pub def toMutList(l: DelayList[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(toArray(l, r2), r) // `Array.toMutList` respects the invariant of `MutList`.
+    }
 
     ///
     /// Returns the association list `l` as a map.
