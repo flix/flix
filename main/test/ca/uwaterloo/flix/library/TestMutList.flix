@@ -1458,7 +1458,7 @@ namespace TestMutList {
     @test
     def foreach01(): Bool & Impure =
         let v = new MutList(static);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let f = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == ""
@@ -1466,7 +1466,7 @@ namespace TestMutList {
     @test
     def foreach02(): Bool & Impure =
         let v = MutList.range(0, 5, static);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let f = x -> if (x rem 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == "TFTFT"
@@ -1474,7 +1474,7 @@ namespace TestMutList {
     @test
     def foreach03(): Bool & Impure =
         let v = MutList.range(0, 2, static);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let f = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == "FT"
@@ -1482,7 +1482,7 @@ namespace TestMutList {
     @test
     def foreach04(): Bool & Impure =
         let v = MutList.range(0, 2, static);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let f = x -> if (x < 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == "FF"
@@ -1506,7 +1506,7 @@ namespace TestMutList {
     @test
     def foreachWithIndex02(): Bool & Impure = // Impure due to StringBuilder
         let v = MutList.range(1, 4, static);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let f = (x, i) -> if (x rem 2 == 1 and i == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFF"
@@ -1514,7 +1514,7 @@ namespace TestMutList {
     @test
     def foreachWithIndex03(): Bool & Impure = // Impure due to StringBuilder
         let v = MutList.range(0, 5, static);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let f = (x, _) -> if (x rem 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFTFT"

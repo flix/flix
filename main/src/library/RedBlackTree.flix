@@ -993,12 +993,12 @@ namespace RedBlackTree {
     /// Returns the concatenation of the string representation of each key-value pair
     /// `k => v` in `t` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: (k, v) -> String & ef, sep: String, t: RedBlackTree[k, v]): String & ef = {
+    pub def joinWith(f: (k, v) -> String & ef, sep: String, t: RedBlackTree[k, v]): String & ef = region r {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(r);
         foreach((k, v) -> { append!(f(k, v), sb); append!(sep, sb) }, t);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
-    } as & ef
+    }
 
 }

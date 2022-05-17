@@ -82,7 +82,7 @@ object Instances {
       * * The same namespace as its type.
       */
     def checkOrphan(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, sym, tpe, _, _, ns, _) => tpe.typeConstructor match {
+      case TypedAst.Instance(_, _, _, sym, tpe, _, _, ns, _) => tpe.typeConstructor match {
         // Case 1: Enum type in the same namespace as the instance: not an orphan
         case Some(TypeConstructor.KindedEnum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => ().toSuccess
         // Case 2: Any type in the class namespace: not an orphan
@@ -98,7 +98,7 @@ object Instances {
       * * all type arguments are variables or booleans
       */
     def checkSimple(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, sym, tpe, _, _, _, _) => tpe match {
+      case TypedAst.Instance(_, _, _, sym, tpe, _, _, _, _) => tpe match {
         case _: Type.Cst => ().toSuccess
         case _: Type.KindedVar => InstanceError.ComplexInstanceType(tpe, sym, sym.loc).toFailure
         case _: Type.Apply =>
@@ -210,7 +210,7 @@ object Instances {
       * and that the constraints on `inst` entail the constraints on the super instance.
       */
     def checkSuperInstances(inst: TypedAst.Instance): Validation[Unit, InstanceError] = inst match {
-      case TypedAst.Instance(_, _, sym, tpe, tconstrs, _, _, _) =>
+      case TypedAst.Instance(_, _, _, sym, tpe, tconstrs, _, _, _) =>
         val superClasses = root.classEnv(sym.clazz).superClasses
         Validation.traverseX(superClasses) {
           superClass =>

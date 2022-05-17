@@ -344,19 +344,20 @@ namespace MutDeque {
     /// Returns the concatenation of the string representation
     /// of each element in `d` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, d: MutDeque[a, r]): String & Impure with ToString[a] =
-        joinWith(x -> ToString.toString(x), sep, d)
+    pub def join(sep: String, d: MutDeque[a, r]): String \ Read(r) with ToString[a] =
+        joinWith(ToString.toString, sep, d)
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `d` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, d: MutDeque[a, r]): String & Impure =
+    pub def joinWith(f: a -> String & ef, sep: String, d: MutDeque[a, r]): String \ { ef, Read(r) } = region r1 {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(r1);
         foreach(x -> { append!(f(x), sb); append!(sep, sb) }, d);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
+    }
 
     ///
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`.
