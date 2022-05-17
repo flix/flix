@@ -413,7 +413,7 @@ object Namer {
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, uenv0, tenv, ns0))
       flatMapN(annVal, tpeVal, tconstrsVal) {
         case (ann, tpe, tconstrs) =>
-          val qualifiedClass = getClass(clazz, uenv0)
+          val qualifiedClass = getClassOrEffect(clazz, uenv0)
           val instTconstr = NamedAst.TypeConstraint(qualifiedClass, tpe, clazz.loc)
           val defsVal = traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr), tparams.tparams.map(_.sym)))
           mapN(defsVal) {
@@ -428,7 +428,7 @@ object Namer {
     */
   private def visitTypeConstraint(tconstr: WeededAst.TypeConstraint, uenv0: UseEnv, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.TypeConstraint, NameError] = tconstr match {
     case WeededAst.TypeConstraint(clazz0, tparam0, loc) =>
-      val clazz = getClass(clazz0, uenv0)
+      val clazz = getClassOrEffect(clazz0, uenv0)
       mapN(visitType(tparam0, uenv0, tenv0)) {
         tparam => NamedAst.TypeConstraint(clazz, tparam, loc)
       }
@@ -890,6 +890,13 @@ object Namer {
         case (e, t, f) => NamedAst.Expression.Cast(e, t, f, loc)
       }
 
+    case WeededAst.Expression.Without(exp, eff, loc) =>
+      val expVal = visitExp(exp, env0, uenv0, tenv0)
+      val f = getClassOrEffect(eff, uenv0)
+      mapN(expVal) {
+        e => NamedAst.Expression.Without(e, f, loc)
+      }
+
     case WeededAst.Expression.TryCatch(exp, rules, loc) =>
       val expVal = visitExp(exp, env0, uenv0, tenv0)
       val rulesVal = traverse(rules) {
@@ -905,10 +912,42 @@ object Namer {
         case (e, rs) => NamedAst.Expression.TryCatch(e, rs, loc)
       }
 
-    // replace effect stuff with holes for now
-    case WeededAst.Expression.TryWith(exp, eff, rules, loc) => NamedAst.Expression.Hole(None, loc).toSuccess
-    case WeededAst.Expression.Do(op, args, loc) => NamedAst.Expression.Hole(None, loc).toSuccess
-    case WeededAst.Expression.Resume(args, loc) => NamedAst.Expression.Hole(None, loc).toSuccess
+    case WeededAst.Expression.TryWith(e0, eff0, rules0, loc) =>
+      val eVal = visitExp(e0, env0, uenv0, tenv0)
+      val eff = getClassOrEffect(eff0, uenv0)
+      val rulesVal = traverse(rules0) {
+        case WeededAst.HandlerRule(op, fparams0, body0) =>
+          val fparamsVal = traverse(fparams0)(visitFormalParam(_, uenv0, tenv0))
+          flatMapN(fparamsVal) {
+            fparams =>
+              // visit the body with the fparams in the env
+              val env = env0 ++ getVarEnv(fparams)
+              val bodyVal = visitExp(body0, env, uenv0, tenv0)
+              mapN(bodyVal)(NamedAst.HandlerRule(op, fparams, _))
+          }
+      }
+      mapN(eVal, rulesVal) {
+        case (e, rules) => NamedAst.Expression.TryWith(e, eff, rules, loc)
+      }
+
+    case WeededAst.Expression.Do(op0, exps0, loc) =>
+      // lookup the op in the use environment if it is not qualified
+      val op = if (op0.isQualified) {
+        op0
+      } else {
+        uenv0.lowerNames.getOrElse(op0.ident.name, op0)
+      }
+
+      val expsVal = traverse(exps0)(visitExp(_, env0, uenv0, tenv0))
+      mapN(expsVal) {
+        exps => NamedAst.Expression.Do(op, exps, loc)
+      }
+
+    case WeededAst.Expression.Resume(exps0, loc) =>
+      val expsVal = traverse(exps0)(visitExp(_, env0, uenv0, tenv0))
+      mapN(expsVal) {
+        exps => NamedAst.Expression.Resume(exps, loc)
+      }
 
     case WeededAst.Expression.InvokeConstructor(className, args, sig, loc) =>
       val argsVal = traverse(args)(visitExp(_, env0, uenv0, tenv0))
@@ -1465,9 +1504,13 @@ object Namer {
     case WeededAst.Expression.Assign(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Ascribe(exp, _, _, _) => freeVars(exp)
     case WeededAst.Expression.Cast(exp, _, _, _) => freeVars(exp)
-    case WeededAst.Expression.Do(_, _, _) => Nil // TODO handle
-    case WeededAst.Expression.Resume(_, _) => Nil // TODO handle
-    case WeededAst.Expression.TryWith(_, _, _, _) => Nil // TODO handle
+    case WeededAst.Expression.Without(exp, _, _) => freeVars(exp)
+    case WeededAst.Expression.Do(_, exps, _) => exps.flatMap(freeVars)
+    case WeededAst.Expression.Resume(exps, _) => exps.flatMap(freeVars)
+    case WeededAst.Expression.TryWith(exp, _, rules, _) =>
+      rules.foldLeft(freeVars(exp)) {
+        case (fvs, WeededAst.HandlerRule(_, fparams, body)) => fvs ++ filterBoundVars(freeVars(body), fparams.map(_.ident))
+      }
     case WeededAst.Expression.TryCatch(exp, rules, _) =>
       rules.foldLeft(freeVars(exp)) {
         case (fvs, WeededAst.CatchRule(ident, _, body)) => fvs ++ filterBoundVars(freeVars(body), List(ident))
@@ -1874,9 +1917,9 @@ object Namer {
   }
 
   /**
-    * Looks up the class in the given UseEnv.
+    * Looks up the class or effect in the given UseEnv.
     */
-  private def getClass(qname: Name.QName, uenv0: UseEnv): Name.QName = {
+  private def getClassOrEffect(qname: Name.QName, uenv0: UseEnv): Name.QName = {
     if (qname.isQualified) {
       qname
     } else {
@@ -1915,8 +1958,8 @@ object Namer {
             val loc2 = qname.loc
             // NB: We report an error at both source locations.
             Failure(LazyList(
-              NameError.DuplicateUseDefOrSig(name, loc1, loc2),
-              NameError.DuplicateUseDefOrSig(name, loc2, loc1)
+              NameError.DuplicateUseLower(name, loc1, loc2),
+              NameError.DuplicateUseLower(name, loc2, loc1)
             ))
         }
       case (uenv1, WeededAst.Use.UseUpper(qname, alias, _)) =>
@@ -1928,8 +1971,8 @@ object Namer {
             val loc2 = qname.loc
             Failure(LazyList(
               // NB: We report an error at both source locations.
-              NameError.DuplicateUseTypeOrClass(name, loc1, loc2),
-              NameError.DuplicateUseTypeOrClass(name, loc2, loc1)
+              NameError.DuplicateUseUpper(name, loc1, loc2),
+              NameError.DuplicateUseUpper(name, loc2, loc1)
             ))
         }
       case (uenv1, WeededAst.Use.UseTag(qname, tag, alias, loc)) =>

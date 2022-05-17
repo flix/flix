@@ -1360,6 +1360,12 @@ object Weeder {
         case e => WeededAst.Expression.Cast(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
+    case ParsedAst.Expression.Without(exp, eff, sp2) =>
+      val e = visitExp(exp, senv)
+      mapN(visitExp(exp, senv)) {
+        e => WeededAst.Expression.Without(e, eff, mkSL(leftMostSourcePosition(exp), sp2))
+      }
+
     case ParsedAst.Expression.Do(sp1, op, args0, sp2) =>
       val argsVal = traverse(args0)(visitArgument(_, senv))
       val loc = mkSL(sp1, sp2)
@@ -2864,6 +2870,7 @@ object Weeder {
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Cast(e1, _, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.Without(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Do(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Resume(sp1, _, _) => sp1
     case ParsedAst.Expression.Try(sp1, _, _, _) => sp1

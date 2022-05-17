@@ -169,13 +169,15 @@ object WeededAst {
 
     case class Cast(exp: WeededAst.Expression, declaredType: Option[WeededAst.Type], declaredEff: Option[WeededAst.Type], loc: SourceLocation) extends WeededAst.Expression
 
+    case class Without(exp: WeededAst.Expression, eff: Name.QName, loc: SourceLocation) extends WeededAst.Expression
+
     case class TryCatch(exp: WeededAst.Expression, rules: List[WeededAst.CatchRule], loc: SourceLocation) extends WeededAst.Expression
 
     case class TryWith(exp: WeededAst.Expression, eff: Name.QName, rules: List[WeededAst.HandlerRule], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Do(op: Name.QName, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class Do(op: Name.QName, exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Resume(args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class Resume(exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class InvokeConstructor(className: String, args: List[WeededAst.Expression], sig: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Expression
 
@@ -408,7 +410,7 @@ object WeededAst {
 
   case class CatchRule(ident: Name.Ident, className: String, exp: WeededAst.Expression)
 
-  case class HandlerRule(op: Name.Ident, fparams: Seq[WeededAst.FormalParam], exp: WeededAst.Expression)
+  case class HandlerRule(op: Name.Ident, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression)
 
   case class ChoiceRule(pat: List[WeededAst.ChoicePattern], exp: WeededAst.Expression)
 

@@ -970,6 +970,12 @@ object Resolver {
             case (e, rs) => ResolvedAst.Expression.TryCatch(e, rs, loc)
           }
 
+        // TODO handle these cases
+        case NamedAst.Expression.Without(_, _, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("Without"), loc).toSuccess
+        case NamedAst.Expression.TryWith(_, _, _, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("TryWith"), loc).toSuccess
+        case NamedAst.Expression.Do(_, _, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("Do"), loc).toSuccess
+        case NamedAst.Expression.Resume(_, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("Resume"), loc).toSuccess
+
         case NamedAst.Expression.InvokeConstructor(className, args, sig, loc) =>
           val argsVal = traverse(args)(visitExp(_, region))
           val sigVal = traverse(sig)(resolveType(_, taenv, ns0, root))
