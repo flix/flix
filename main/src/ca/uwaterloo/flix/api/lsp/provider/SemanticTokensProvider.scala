@@ -608,6 +608,10 @@ object SemanticTokensProvider {
     case TypeConstructor.Not => false
     case TypeConstructor.And => false
     case TypeConstructor.Or => false
+    case TypeConstructor.Complement => false
+    case TypeConstructor.Union => false
+    case TypeConstructor.Intersection => false
+    case TypeConstructor.Difference => false
     case TypeConstructor.Region => false
 
     case TypeConstructor.UnkindedEnum(_) => throw InternalCompilerException("Unexpected unkinded type.")
