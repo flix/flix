@@ -179,6 +179,12 @@ object NamedAst {
 
     case class TryCatch(exp: NamedAst.Expression, rules: List[NamedAst.CatchRule], loc: SourceLocation) extends NamedAst.Expression
 
+    case class TryWith(exp: NamedAst.Expression, eff: Name.QName, rules: List[NamedAst.HandlerRule], loc: SourceLocation) extends NamedAst.Expression
+
+    case class Do(op: Name.QName, args: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
+
+    case class Resume(args: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
+
     case class InvokeConstructor(className: String, args: List[NamedAst.Expression], sig: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Expression
 
     case class InvokeMethod(className: String, methodName: String, exp: NamedAst.Expression, args: List[NamedAst.Expression], sig: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Expression
@@ -426,6 +432,8 @@ object NamedAst {
   }
 
   case class CatchRule(sym: Symbol.VarSym, className: String, exp: NamedAst.Expression)
+
+  case class HandlerRule(op: Name.Ident, fparams: Seq[NamedAst.FormalParam], exp: NamedAst.Expression)
 
   case class ChoiceRule(pat: List[NamedAst.ChoicePattern], exp: NamedAst.Expression)
 
