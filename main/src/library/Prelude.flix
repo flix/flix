@@ -113,6 +113,13 @@ pub def |>(x: a, f: a -> b & ef): b & ef = f(x)
 pub def ||>(x: (a, b), f: ((a, b)) -> c & ef): c & ef = f(x)
 
 ///
+/// Pipes the given value `x` into the function `f`.
+///
+/// Given a value `x` and a function `f` returns `x`.
+///
+pub def !>( x: a, f: a -> Unit & ef): a & ef = f(x); x
+
+///
 /// Returns `true` if `x` implies `y` logically holds.
 ///
 pub def ==>(x: Bool, y: Bool): Bool = not x or y
