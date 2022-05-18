@@ -251,30 +251,44 @@ namespace TestArray {
         Array.sameElements(a, [1,2,3])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// memberOf                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // memberOf                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def memberOf01(): Bool & Impure = Array.memberOf(0, []: Array[Int32]) == false
+    @test
+    def memberOf01(): Bool = region r {
+        Array.memberOf(0, []: ScopedArray[Int32, _]) == false
+    }
 
-@test
-def memberOf02(): Bool & Impure = Array.memberOf(0, [1]) == false
+    @test
+    def memberOf02(): Bool = region r {
+        Array.memberOf(0, [1]) == false
+    }
 
-@test
-def memberOf03(): Bool & Impure = Array.memberOf(0, [0]) == true
+    @test
+    def memberOf03(): Bool = region r {
+        Array.memberOf(0, [0]) == true
+    }
 
-@test
-def memberOf04(): Bool & Impure = Array.memberOf(0, [1,2]) == false
+    @test
+    def memberOf04(): Bool = region r {
+        Array.memberOf(0, [1,2]) == false
+    }
 
-@test
-def memberOf05(): Bool & Impure = Array.memberOf(1, [1,2]) == true
+    @test
+    def memberOf05(): Bool = region r {
+        Array.memberOf(1, [1,2]) == true
+    }
 
-@test
-def memberOf06(): Bool & Impure = Array.memberOf(2, [1,2]) == true
+    @test
+    def memberOf06(): Bool = region r {
+        Array.memberOf(2, [1,2]) == true
+    }
 
-@test
-def memberOf07(): Bool & Impure = Array.memberOf(3, [1,2]) == false
+    @test
+    def memberOf07(): Bool = region r {
+        Array.memberOf(3, [1,2]) == false
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // indexOf                                                                 //
