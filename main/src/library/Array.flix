@@ -373,15 +373,15 @@ namespace Array {
     /// The result is a new array.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def map(f: a -> b & ef, a: Array[a]): Array[b] & Impure =
+    pub def map(f: a -> b & ef, a: ScopedArray[a, r]): ScopedArray[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        init(i -> f(a[i]), len, static)
+        init(i -> f(a[i]), len, Scoped.regionOf(a))
 
     ///
     /// Apply `f` to every element in array `arr`. Array `arr` is mutated.
     ///
     @Time(time(f) * length(arr)) @Space(space(f) * length(arr))
-    pub def transform!(f: a -> a & ef, arr: Array[a]): Unit & Impure =
+    pub def transform!(f: a -> a & ef, arr: ScopedArray[a, r]): Unit \ { ef, Read(r), Write(r) } =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)

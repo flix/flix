@@ -590,72 +590,83 @@ def scanRight07(): Bool & Impure =
     let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true,true]);
     Array.sameElements(a, [3,2,1])
 
-/////////////////////////////////////////////////////////////////////////////
-// map                                                                     //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // map                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def map01(): Bool & Impure =
-    let a = Array.map(i -> i > 2, []);
-    Array.sameElements(a, []: Array[Bool])
+    @test
+    def map01(): Bool = region r {
+        let a = Array.map(i -> i > 2, []);
+        Array.sameElements(a, []: ScopedArray[Bool, _])
+    }
 
-@test
-def map02(): Bool & Impure =
-    let a = Array.map(i -> i > 2, [1]);
-    Array.sameElements(a, [false])
+    @test
+    def map02(): Bool = region r {
+        let a = Array.map(i -> i > 2, [1]);
+        Array.sameElements(a, [false])
+    }
 
-@test
-def map03(): Bool & Impure =
-    let a = Array.map(i -> i > 2, [3]);
-    Array.sameElements(a, [true])
+    @test
+    def map03(): Bool = region r {
+        let a = Array.map(i -> i > 2, [3]);
+        Array.sameElements(a, [true])
+    }
 
-@test
-def map04(): Bool & Impure =
-    let a = Array.map(i -> i > 2, [1,2]);
-    Array.sameElements(a, [false,false])
+    @test
+    def map04(): Bool = region r {
+        let a = Array.map(i -> i > 2, [1,2]);
+        Array.sameElements(a, [false,false])
+    }
 
-@test
-def map05(): Bool & Impure =
-    let a = Array.map(i -> i > 2, [1,8]);
-    Array.sameElements(a, [false, true])
+    @test
+    def map05(): Bool = region r {
+        let a = Array.map(i -> i > 2, [1,8]);
+        Array.sameElements(a, [false, true])
+    }
 
-@test
-def map06(): Bool & Impure =
-    let a = Array.map(i -> i > 2, [8,1]);
-    Array.sameElements(a, [true,false])
+    @test
+    def map06(): Bool = region r {
+        let a = Array.map(i -> i > 2, [8,1]);
+        Array.sameElements(a, [true,false])
+    }
 
-@test
-def map07(): Bool & Impure =
-    let a = Array.map(i -> i > 2, [7,8]);
-    Array.sameElements(a, [true,true])
+    @test
+    def map07(): Bool = region r {
+        let a = Array.map(i -> i > 2, [7,8]);
+        Array.sameElements(a, [true,true])
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// transform!                                                              //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // transform!                                                              //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def transform01!(): Bool & Impure =
-    let a: Array[Int32] = [];
-    Array.transform!(x -> x+1, a);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def transform01!(): Bool = region r {
+        let a: ScopedArray[Int32, _] = [];
+        Array.transform!(x -> x+1, a);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def transform02!(): Bool & Impure =
-    let a = [0];
-    Array.transform!(x -> x+1, a);
-    Array.sameElements(a, [1])
+    @test
+    def transform02!(): Bool = region r {
+        let a = [0];
+        Array.transform!(x -> x+1, a);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def transform03!(): Bool & Impure =
-    let a = [0,1];
-    Array.transform!(x -> x+1, a);
-    Array.sameElements(a, [1,2])
+    @test
+    def transform03!(): Bool = region r {
+        let a = [0,1];
+        Array.transform!(x -> x+1, a);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def transform04!(): Bool & Impure =
-    let a = [0,1,2];
-    Array.transform!(x -> x+1, a);
-    Array.sameElements(a, [1,2,3])
+    @test
+    def transform04!(): Bool = region r {
+        let a = [0,1,2];
+        Array.transform!(x -> x+1, a);
+        Array.sameElements(a, [1,2,3])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // mapWithIndex                                                            //
