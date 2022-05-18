@@ -171,7 +171,7 @@ object KindedAst {
 
     case class GetChannel(exp: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 
-    case class PutChannel(exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
+    case class PutChannel(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class SelectChannel(rules: List[KindedAst.SelectChannelRule], default: Option[KindedAst.Expression], tpe: Type.KindedVar, loc: SourceLocation) extends KindedAst.Expression
 

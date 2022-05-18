@@ -1419,7 +1419,6 @@ object Weeder {
       }
 
     // TODO SJ: Rewrite to Ascribe(newch, Channel[Int32]), to remove the tpe (and get tvar like everything else)
-    // TODO SJ: Also do not allow function types (Arrow) when rewriting
     case ParsedAst.Expression.NewChannel(sp1, tpe, exp, sp2) =>
       visitExp(exp, senv) map {
         case e => WeededAst.Expression.NewChannel(e, visitType(tpe), mkSL(sp1, sp2))

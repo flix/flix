@@ -123,24 +123,28 @@ namespace X {
     }
 }
 
-@test
-def testNamespace12(): Bool =
-    use X/GClass.g;
-    g() == 5
+namespace Test/Use/Sig {
 
-@test
-def testNamespace13(): Bool =
-    use X/Y/GClass.g;
-    g() == 6
+    @test
+    def testNamespace12(): Bool =
+        use X/GClass.g;
+        g() == 5
 
-@test
-def testNamespace14(): Bool =
-    use X/Y/Z/GClass.g;
-    g() == 7
+    @test
+    def testNamespace13(): Bool =
+        use X/Y/GClass.g;
+        g() == 6
 
-@test
-def testNamespace15(): Bool =
-    use X/GClass.{g => gx};
-    use X/Y/GClass.{g => gxy};
-    use X/Y/Z/GClass.{g => gxyz};
-    (gx() + gxy() + gxyz()) == 18
+    @test
+    def testNamespace14(): Bool =
+        use X/Y/Z/GClass.g;
+        g() == 7
+
+    @test
+    def testNamespace15(): Bool =
+        use X/GClass.{g => gx};
+        use X/Y/GClass.{g => gxy};
+        use X/Y/Z/GClass.{g => gxyz};
+        (gx() + gxy() + gxyz()) == 18
+
+}
