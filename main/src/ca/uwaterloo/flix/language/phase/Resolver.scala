@@ -971,6 +971,7 @@ object Resolver {
           }
 
         // TODO handle these cases
+        case NamedAst.Expression.Without(_, _, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("Without"), loc).toSuccess
         case NamedAst.Expression.TryWith(_, _, _, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("TryWith"), loc).toSuccess
         case NamedAst.Expression.Do(_, _, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("Do"), loc).toSuccess
         case NamedAst.Expression.Resume(_, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("Resume"), loc).toSuccess

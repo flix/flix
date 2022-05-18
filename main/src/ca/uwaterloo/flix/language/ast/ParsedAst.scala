@@ -928,6 +928,14 @@ object ParsedAst {
     case class Cast(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], pur: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Without Expression.
+      * @param exp the expression.
+      * @param eff the effect.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Without(exp: ParsedAst.Expression, eff: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Do Expression.
       *
       * @param sp1  the position of the first character in the expression.
