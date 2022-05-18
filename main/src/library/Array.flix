@@ -85,7 +85,7 @@ namespace Array {
     /// Returns `true` if the given array `a` is empty.
     ///
     @Time(1) @Space(1)
-    pub def isEmpty(a: Array[a]): Bool = a.length == 0
+    pub def isEmpty(a: ScopedArray[a, r]): Bool = a.length == 0
 
     ///
     /// Returns the length of the array `a`.
@@ -99,7 +99,7 @@ namespace Array {
     /// Equivalent to the expression `a[b..e]`.
     ///
     @Time(e - b) @Space(e - b)
-    pub def slice(b: Int32, e: Int32, a: Array[a]): Array[a] & Impure = a[b..e]
+    pub def slice(b: Int32, e: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } = a[b..e]
 
     ///
     /// Returns the array `a` as a list.
