@@ -971,10 +971,41 @@ object Resolver {
           }
 
         // TODO handle these cases
-        case NamedAst.Expression.Without(_, _, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("Without"), loc).toSuccess
-        case NamedAst.Expression.TryWith(_, _, _, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("TryWith"), loc).toSuccess
-        case NamedAst.Expression.Do(_, _, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("Do"), loc).toSuccess
-        case NamedAst.Expression.Resume(_, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("Resume"), loc).toSuccess
+        case NamedAst.Expression.Without(exp, eff, loc) =>
+          val eVal = visitExp(exp, region)
+          val fVal = lookupEffect(eff, ns0, root)
+          mapN(eVal, fVal) {
+            case (e, f) => ResolvedAst.Expression.Without(e, f.sym, loc)
+          }
+        case NamedAst.Expression.TryWith(exp, eff, rules, loc) =>
+          val eVal = visitExp(exp, region)
+          val fVal = lookupEffect(eff, ns0, root)
+          val rulesVal = traverse(rules) {
+            case NamedAst.HandlerRule(op, fparams, body) =>
+              val qname = Name.QName(op.sp1, eff.toNName, op, op.sp2)
+              val opVal = lookupOp(qname, ns0, root)
+              val fparamsVal = resolveFormalParams(fparams, taenv, ns0, root)
+              val bodyVal = visitExp(body, region)
+              mapN(opVal, fparamsVal, bodyVal) {
+                case (o, f, b) => ResolvedAst.HandlerRule(o.sym, f, b)
+              }
+          }
+          mapN(eVal, fVal, rulesVal) {
+            case (e, f, rs) => ResolvedAst.Expression.TryWith(e, f.sym, rs, loc)
+          }
+
+        case NamedAst.Expression.Do(op, exps, loc) =>
+          val opVal = lookupOp(op, ns0, root)
+          val expsVal = traverse(exps)(visitExp(_, region))
+          mapN(opVal, expsVal) {
+            case (o, es) => ResolvedAst.Expression.Do(o.sym, es, loc)
+          }
+
+        case NamedAst.Expression.Resume(exps, loc) =>
+          val expsVal = traverse(exps)(visitExp(_, region))
+          mapN(expsVal) {
+            es => ResolvedAst.Expression.Resume(es, loc)
+          }
 
         case NamedAst.Expression.InvokeConstructor(className, args, sig, loc) =>
           val argsVal = traverse(args)(visitExp(_, region))
@@ -1455,7 +1486,7 @@ object Resolver {
     * Finds the class with the qualified name `qname` in the namespace `ns0`, for the purposes of implementation.
     */
   def lookupClassForImplementation(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
-    val classOpt = tryLookupClass(qname, ns0, root)
+    val classOpt = tryLookupName(qname, ns0, root.classes)
     classOpt match {
       case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
       case Some(clazz) =>
@@ -1471,7 +1502,7 @@ object Resolver {
     * Finds the class with the qualified name `qname` in the namespace `ns0`.
     */
   def lookupClass(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
-    val classOpt = tryLookupClass(qname, ns0, root)
+    val classOpt = tryLookupName(qname, ns0, root.classes)
     classOpt match {
       case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
       case Some(clazz) =>
@@ -1483,33 +1514,10 @@ object Resolver {
   }
 
   /**
-    * Tries to find a class with the qualified name `qname` in the namespace `ns0`.
-    */
-  def tryLookupClass(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Class] = {
-    // Check whether the name is fully-qualified.
-    if (qname.isUnqualified) {
-      // Case 1: Unqualified name. Lookup in the current namespace.
-      val classOpt = root.classes.getOrElse(ns0, Map.empty).get(qname.ident.name)
-
-      classOpt match {
-        case Some(clazz) =>
-          // Case 1.2: Found in the current namespace.
-          Some(clazz)
-        case None =>
-          // Case 1.1: Try the global namespace.
-          root.classes.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
-      }
-    } else {
-      // Case 2: Qualified. Lookup in the given namespace.
-      root.classes.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
-    }
-  }
-
-  /**
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
   def lookupDefOrSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.DefOrSig, ResolutionError] = {
-    val defOrSigOpt = tryLookupDefOrSig(qname, ns0, root)
+    val defOrSigOpt = tryLookupName(qname, ns0, root.defsAndSigs)
 
     defOrSigOpt match {
       case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
@@ -1529,24 +1537,19 @@ object Resolver {
   }
 
   /**
-    * Attempts to lookup the definition or signature with qualified name `qname` in the namespace `ns0`.
+    * Looks up the effect operation with qualified name `qname` in the namespace `ns0`.
     */
-  def tryLookupDefOrSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.DefOrSig] = {
-    if (qname.isUnqualified) {
-      // Case 1: Unqualified name. Lookup in the current namespace.
-      val defnOpt = root.defsAndSigs.getOrElse(ns0, Map.empty).get(qname.ident.name)
+  def lookupOp(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Op, ResolutionError] = {
+    val opOpt = tryLookupName(qname, ns0, root.ops)
 
-      defnOpt match {
-        case Some(defn) =>
-          // Case 1.2: Found in the current namespace.
-          Some(defn)
-        case None =>
-          // Case 1.1: Try the global namespace.
-          root.defsAndSigs.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
-      }
-    } else {
-      // Case 2: Qualified. Lookup in the given namespace.
-      root.defsAndSigs.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+    opOpt match {
+      case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case Some(op) =>
+        if (isOpAccessible(op, ns0)) {
+          op.toSuccess
+        } else {
+          ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc).toFailure
+        }
     }
   }
 
@@ -2020,6 +2023,40 @@ object Resolver {
   }
 
   /**
+    * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
+    */
+  private def lookupEffect(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Effect, ResolutionError] = {
+    val effOpt = tryLookupName(qname, ns0, root.effects)
+
+    effOpt match {
+      case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case Some(eff) => getEffectIfAccessible(eff, ns0, qname.loc)
+    }
+  }
+
+  /**
+    * Tries to lookup the name in the given namespace, using the given namespace map.
+    */
+  private def tryLookupName[T](qname: Name.QName, ns0: Name.NName, map: Map[Name.NName, Map[String, T]]): Option[T] = {
+    if (qname.isUnqualified) {
+      // Case 1: Unqualified name. Lookup in the current namespace.
+      val effOpt = map.getOrElse(ns0, Map.empty).get(qname.ident.name)
+
+      effOpt match {
+        case Some(eff) =>
+          // Case 1.2: Found in the current namespace.
+          Some(eff)
+        case None =>
+          // Case 1.1: Try the global namespace.
+          map.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
+      }
+    } else {
+      // Case 2: Qualified. Lookup in the given namespace.
+      map.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+    }
+  }
+
+  /**
     * Determines if the class is accessible from the namespace.
     *
     * Accessibility depends on the modifiers on the class
@@ -2062,7 +2099,7 @@ object Resolver {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  def isDefAccessible(defn0: NamedAst.Def, ns0: Name.NName): Boolean = {
+  private def isDefAccessible(defn0: NamedAst.Def, ns0: Name.NName): Boolean = {
     //
     // Check if the definition is marked public.
     //
@@ -2091,17 +2128,47 @@ object Resolver {
     * (a) the signature is marked public, or
     * (b) the signature is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  def isSigAccessible(sig0: NamedAst.Sig, ns0: Name.NName): Boolean = {
+  private def isSigAccessible(sig0: NamedAst.Sig, ns0: Name.NName): Boolean = {
     //
     // Check if the definition is marked public.
     //
-    if (sig0.spec.mod.isPublic) // MATT check instance availability instead?
+    if (sig0.spec.mod.isPublic)
       return true
 
     //
     // Check if the definition is defined in `ns0` or in a parent of `ns0`.
     //
     val prefixNs = sig0.sym.clazz.namespace :+ sig0.sym.clazz.name
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return true
+
+    //
+    // The definition is not accessible.
+    //
+    false
+  }
+
+
+  /**
+    * Determines if the operation is accessible from the namespace.
+    *
+    * An operation `op0` is accessible from a namespace `ns0` if:
+    *
+    * (a) the operation is marked public, or
+    * (b) the operation is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
+  def isOpAccessible(op0: NamedAst.Op, ns0: Name.NName): Boolean = {
+    //
+    // Check if the definition is marked public.
+    //
+    if (op0.spec.mod.isPublic)
+      return true
+
+    //
+    // Check if the definition is defined in `ns0` or in a parent of `ns0`.
+    //
+    val prefixNs = op0.sym.eff.namespace :+ op0.sym.eff.name
     val targetNs = ns0.idents.map(_.name)
     if (targetNs.startsWith(prefixNs))
       return true
