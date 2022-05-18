@@ -94,18 +94,24 @@ namespace TestArray {
         not Array.isEmpty([1, 2, 3])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// length                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // length                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def testLength01(): Bool & Impure = Array.length([]) == 0
+    @test
+    def testLength01(): Bool = region r {
+        Array.length([]) == 0
+    }
 
-@test
-def testLength02(): Bool & Impure = Array.length([1]) == 1
+    @test
+    def testLength02(): Bool = region r {
+        Array.length([1]) == 1
+    }
 
-@test
-def testLength03(): Bool & Impure = Array.length([1, 2, 3]) == 3
+    @test
+    def testLength03(): Bool = region r {
+        Array.length([1, 2, 3]) == 3
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // slice                                                                   //
