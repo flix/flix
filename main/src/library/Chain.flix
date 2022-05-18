@@ -235,14 +235,12 @@ namespace Chain {
         loop(viewLeft(c))
 
     ///
-    /// Returns the position of `a` in `c`.
+    /// Optionally returns the position of `a` in `c`.
     ///
-    /// Returns `-1` if `a` does not exist in `c`.
-    ///
-    pub def indexOf(a: a, c: Chain[a]): Int32 with Eq[a] =
+    pub def indexOf(a: a, c: Chain[a]): Option[Int32] with Eq[a] =
         def loop(v, acc) = match v {
-            case NoneLeft       => -1
-            case SomeLeft(x, xs) => if (x == a) acc else loop(viewLeft(xs), acc + 1)
+            case NoneLeft       => None
+            case SomeLeft(x, xs) => if (x == a) Some(acc) else loop(viewLeft(xs), acc + 1)
         };
         loop(viewLeft(c), 0)
 
