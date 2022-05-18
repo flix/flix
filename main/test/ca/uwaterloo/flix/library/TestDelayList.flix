@@ -2853,4 +2853,17 @@ namespace TestDelayList {
         let l = DelayList.zipWithIndex(LList(lazy LList(lazy LCons(5, lazy ECons(7, ENil)))));
         l == LList(lazy LList(lazy LCons((5, 0), lazy ECons((7, 1), ENil))))
 
+    @test
+    def zipWithIndex0(): Bool =
+        let l = DelayList.zipWithIndex(LList(lazy LCons(0, lazy LList(lazy
+            LCons(1, lazy LList(lazy LCons(2, lazy
+            LList(lazy LCons(3, lazy LList(lazy
+            LCons(4, lazy LList(lazy LCons(5, lazy
+            LList(lazy LCons(10, lazy LList(lazy ENil))))))))))))))));
+        l == LList(lazy LCons((0, 0), lazy LList(lazy
+            LCons((1, 1), lazy LList(lazy LCons((2, 2), lazy
+            LList(lazy LCons((3, 3), lazy LList(lazy
+            LCons((4, 4), lazy LList(lazy LCons((5, 5), lazy
+            LList(lazy LCons((10, 6), lazy LList(lazy ENil)))))))))))))))
+
 }
