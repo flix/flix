@@ -2156,36 +2156,54 @@ def flatten10(): Bool & Impure =
     let a = Array.flatten([[1],[2,3],[4]]);
     Array.sameElements(a, [1,2,3,4])
 
-/////////////////////////////////////////////////////////////////////////////
-// exists                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def exists01(): Bool & Impure = Array.exists(i -> i > 3, [] : Array[Int32]) == false
+    @test
+    def exists01(): Bool = region r {
+        Array.exists(i -> i > 3, []: ScopedArray[Int32, _]) == false
+    }
 
-@test
-def exists02(): Bool & Impure = Array.exists(i -> i > 3, [1]) == false
+    @test
+    def exists02(): Bool = region r {
+        Array.exists(i -> i > 3, [1]) == false
+    }
 
-@test
-def exists03(): Bool & Impure = Array.exists(i -> i > 3, [5]) == true
+    @test
+    def exists03(): Bool = region r {
+        Array.exists(i -> i > 3, [5]) == true
+    }
 
-@test
-def exists04(): Bool & Impure = Array.exists(i -> i > 3, [1,2]) == false
+    @test
+    def exists04(): Bool = region r {
+        Array.exists(i -> i > 3, [1,2]) == false
+    }
 
-@test
-def exists05(): Bool & Impure = Array.exists(i -> i > 3, [1,6]) == true
+    @test
+    def exists05(): Bool = region r {
+        Array.exists(i -> i > 3, [1,6]) == true
+    }
 
-@test
-def exists06(): Bool & Impure = Array.exists(i -> i > 3, [6,1]) == true
+    @test
+    def exists06(): Bool = region r {
+        Array.exists(i -> i > 3, [6,1]) == true
+    }
 
-@test
-def exists07(): Bool & Impure = Array.exists(i -> i > 3, [16,6]) == true
+    @test
+    def exists07(): Bool = region r {
+        Array.exists(i -> i > 3, [16,6]) == true
+    }
 
-@test
-def exists08(): Bool & Impure = Array.exists(i -> i > 3, [1,-9,3]) == false
+    @test
+    def exists08(): Bool = region r {
+        Array.exists(i -> i > 3, [1,-9,3]) == false
+    }
 
-@test
-def exists09(): Bool & Impure = Array.exists(i -> i > 3, [1,9,3]) == true
+    @test
+    def exists09(): Bool = region r {
+        Array.exists(i -> i > 3, [1,9,3]) == true
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // forall                                                                  //
