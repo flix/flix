@@ -113,31 +113,43 @@ namespace TestArray {
         Array.length([1, 2, 3]) == 3
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// slice                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // slice                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def testSlice01(): Bool & Impure = Array.slice(0, 1, [1, 2, 3])[0] == 1
+    @test
+    def testSlice01(): Bool = region r {
+        Array.slice(0, 1, [1, 2, 3])[0] == 1
+    }
 
-@test
-def testSlice02(): Bool & Impure = Array.slice(1, 2, [1, 2, 3])[0] == 2
+    @test
+    def testSlice02(): Bool = region r {
+        Array.slice(1, 2, [1, 2, 3])[0] == 2
+    }
 
-@test
-def testSlice03(): Bool & Impure = Array.slice(2, 3, [1, 2, 3])[0] == 3
+    @test
+    def testSlice03(): Bool = region r {
+        Array.slice(2, 3, [1, 2, 3])[0] == 3
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// toList                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // toList                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def testToList01(): Bool & Impure = Array.toList([]: Array[Unit]) == Nil
+    @test
+    def testToList01(): Bool = region r {
+        Array.toList([]: ScopedArray[Unit, _]) == Nil
+    }
 
-@test
-def testToList02(): Bool & Impure = Array.toList([1]) == 1 :: Nil
+    @test
+    def testToList02(): Bool = region r {
+        Array.toList([1]) == 1 :: Nil
+    }
 
-@test
-def testToList03(): Bool & Impure = Array.toList([1, 2]) == 1 :: 2 :: Nil
+    @test
+    def testToList03(): Bool = region r {
+        Array.toList([1, 2]) == 1 :: 2 :: Nil
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // head                                                                    //
