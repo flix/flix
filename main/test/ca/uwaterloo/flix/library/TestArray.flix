@@ -151,21 +151,29 @@ namespace TestArray {
         Array.toList([1, 2]) == 1 :: 2 :: Nil
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// head                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // head                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def head01(): Bool & Impure = Array.head([]: Array[Int32]) == None
+    @test
+    def head01(): Bool = region r {
+        Array.head([]: ScopedArray[Int32, _]) == None
+    }
 
-@test
-def head02(): Bool & Impure = Array.head([1]) == Some(1)
+    @test
+    def head02(): Bool = region r {
+        Array.head([1]) == Some(1)
+    }
 
-@test
-def head03(): Bool & Impure = Array.head([2,1]) == Some(2)
+    @test
+    def head03(): Bool = region r {
+        Array.head([2,1]) == Some(2)
+    }
 
-@test
-def head04(): Bool & Impure = Array.head([3,2,1]) == Some(3)
+    @test
+    def head04(): Bool = region r {
+        Array.head([3,2,1]) == Some(3)
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // last                                                                    //
