@@ -324,30 +324,44 @@ namespace TestArray {
         Array.indexOf(2, [1,2]) == Some(1)
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// indexOfLeft                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOfLeft                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def indexOfLeft01(): Bool & Impure = Array.indexOfLeft(0, []: Array[Int32]) == None
+    @test
+    def indexOfLeft01(): Bool = region r {
+        Array.indexOfLeft(0, []: ScopedArray[Int32, _]) == None
+    }
 
-@test
-def indexOfLeft02(): Bool & Impure = Array.indexOfLeft(0, [1]) == None
+    @test
+    def indexOfLeft02(): Bool = region r {
+        Array.indexOfLeft(0, [1]) == None
+    }
 
-@test
-def indexOfLeft03(): Bool & Impure = Array.indexOfLeft(1, [1]) == Some(0)
+    @test
+    def indexOfLeft03(): Bool = region r {
+        Array.indexOfLeft(1, [1]) == Some(0)
+    }
 
-@test
-def indexOfLeft04(): Bool & Impure = Array.indexOfLeft(0, [1,2]) == None
+    @test
+    def indexOfLeft04(): Bool = region r {
+        Array.indexOfLeft(0, [1,2]) == None
+    }
 
-@test
-def indexOfLeft05(): Bool & Impure = Array.indexOfLeft(1, [1,2]) == Some(0)
+    @test
+    def indexOfLeft05(): Bool = region r {
+        Array.indexOfLeft(1, [1,2]) == Some(0)
+    }
 
-@test
-def indexOfLeft06(): Bool & Impure = Array.indexOfLeft(2, [1,2]) == Some(1)
+    @test
+    def indexOfLeft06(): Bool = region r {
+        Array.indexOfLeft(2, [1,2]) == Some(1)
+    }
 
-@test
-def indexOfLeft07(): Bool & Impure = Array.indexOfLeft(1, [1,1]) == Some(0)
+    @test
+    def indexOfLeft07(): Bool = region r {
+        Array.indexOfLeft(1, [1,1]) == Some(0)
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // indexOfRight                                                            //
