@@ -199,49 +199,57 @@ namespace TestArray {
         Array.last([1,2,3]) == Some(3)
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// append                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // append                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def append01(): Bool & Impure =
-    let a = Array.append([]: Array[Int32], []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def append01(): Bool = region r {
+        let a = Array.append([]: ScopedArray[Int32, _], []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def append02(): Bool & Impure =
-    let a = Array.append([]: Array[Int32], [1]);
-    Array.sameElements(a, [1])
+    @test
+    def append02(): Bool = region r {
+        let a = Array.append([]: ScopedArray[Int32, _], [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def append03(): Bool & Impure =
-    let a = Array.append([]: Array[Int32], [1,2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def append03(): Bool = region r {
+        let a = Array.append([]: ScopedArray[Int32, _], [1,2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def append04(): Bool & Impure =
-    let a = Array.append([1], []: Array[Int32]);
-    Array.sameElements(a, [1])
+    @test
+    def append04(): Bool = region r {
+        let a = Array.append([1], []: ScopedArray[Int32, _]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def append05(): Bool & Impure =
-    let a = Array.append([1,2], []: Array[Int32]);
-    Array.sameElements(a, [1,2])
+    @test
+    def append05(): Bool = region r {
+        let a = Array.append([1,2], []: ScopedArray[Int32, _]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def append06(): Bool & Impure =
-    let a = Array.append([1], [2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def append06(): Bool = region r {
+        let a = Array.append([1], [2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def append07(): Bool & Impure =
-    let a = Array.append([1,2], [3]);
-    Array.sameElements(a, [1,2,3])
+    @test
+    def append07(): Bool = region r {
+        let a = Array.append([1,2], [3]);
+        Array.sameElements(a, [1,2,3])
+    }
 
-@test
-def append08(): Bool & Impure =
-    let a = Array.append([1], [2,3]);
-    Array.sameElements(a, [1,2,3])
+    @test
+    def append08(): Bool = region r {
+        let a = Array.append([1], [2,3]);
+        Array.sameElements(a, [1,2,3])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // memberOf                                                                //
