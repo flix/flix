@@ -23,7 +23,7 @@ namespace Test/Exp/Effect {
 
     // @test
     pub def perform01(): Bool = {
-        do Fail.fail(":(")
+        do Test/Exp/Effect/Fail.fail(":(")
     }
 
     // @test
@@ -51,50 +51,6 @@ namespace Test/Exp/Effect {
             true
         } with Console {
             def println(_) = resume()
-        }
-    }
-
-    // @test
-    pub def handlePerform03(): Bool = {
-        // drunken coin flip: flip a coin to see if we can flip a coin
-        try {
-            try {
-                let caught = do Test/Exp/Effect/Flip.flip();
-                if (caught) {
-                    do Test/Exp/Effect/Fail.fail("dropped the coin :(")
-                } else {
-                    do Test/Exp/Effect/Flip.flip()
-                }
-            } with Flip {
-                def flip() = resume(true)
-            }
-        } with Fail {
-            def fail(_) = false
-        }
-    }
-
-    // @test
-    pub def handlePerform04(): Bool = {
-        // flaky failure: flip a coin to see if we recover
-        try {
-            try {
-                try {
-                    do Fail.fail("oh no!")
-                } with Fail {
-                    def fail(msg) = {
-                        let reallyFail = do Flip.flip();
-                        if (reallyFail) {
-                            do Fail.fail(msg)
-                        } else {
-                            ()
-                        }
-                    }
-                }
-            } with Flip {
-                def flip() = resume(false)
-            }
-        } with Fail {
-            def fail(_) = false
         }
     }
 
