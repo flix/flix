@@ -610,7 +610,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Deref: Rule1[ParsedAst.Expression] = rule {
-      (SP ~ keyword("deref") ~ WS ~ Deref ~ SP ~> ParsedAst.Expression.Deref) | Cast
+      (SP ~ keyword("deref") ~ WS ~ Deref ~ SP ~> ParsedAst.Expression.Deref) | Without
+    }
+
+    def Without: Rule1[ParsedAst.Expression] = rule {
+      Cast ~ optional(WS ~ keyword("without") ~ WS ~ Names.QualifiedEffect ~ SP ~> ParsedAst.Expression.Without)
     }
 
     def Cast: Rule1[ParsedAst.Expression] = rule {
