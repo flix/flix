@@ -98,13 +98,13 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that the given def or sig `name` is used twice.
+    * An error raised to indicate that the given lowercase `name` is used twice.
     *
     * @param name the clashing name.
     * @param loc1 the location of the first use.
     * @param loc2 the location of the second use.
     */
-  case class DuplicateUseDefOrSig(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+  case class DuplicateUseLower(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate use of '$name'."
 
     def message(formatter: Formatter): String = {
@@ -124,13 +124,13 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that the given type or class `name` is used twice.
+    * An error raised to indicate that the given uppercase `name` is used twice.
     *
     * @param name the clashing name.
     * @param loc1 the location of the first use.
     * @param loc2 the location of the second use.
     */
-  case class DuplicateUseTypeOrClass(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+  case class DuplicateUseUpper(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate use of '$name'."
 
     def message(formatter: Formatter): String = {

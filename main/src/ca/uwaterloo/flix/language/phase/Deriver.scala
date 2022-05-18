@@ -107,6 +107,7 @@ object Deriver {
 
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
+        ann = Nil,
         mod = Ast.Modifiers.Empty,
         sym = eqInstanceSym,
         tpe = sc.base,
@@ -253,6 +254,7 @@ object Deriver {
 
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
+        ann = Nil,
         mod = Ast.Modifiers.Empty,
         sym = orderInstanceSym,
         tpe = sc.base,
@@ -466,6 +468,7 @@ object Deriver {
 
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
+        ann = Nil,
         mod = Ast.Modifiers.Empty,
         sym = toStringInstanceSym,
         tpe = sc.base,
@@ -600,6 +603,7 @@ object Deriver {
 
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
+        ann = Nil,
         mod = Ast.Modifiers.Empty,
         sym = hashInstanceSym,
         tpe = sc.base,
@@ -722,6 +726,7 @@ object Deriver {
 
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
+        ann = Nil,
         mod = Ast.Modifiers.Empty,
         sym = boxableInstanceSym,
         tpe = sc.base,
