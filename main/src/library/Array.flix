@@ -181,7 +181,7 @@ namespace Array {
     /// Returns `true` if and only if `a` contains the element `x`.
     ///
     @Time(length(a)) @Space(1)
-    pub def memberOf(x: a, a: Array[a]): Bool & Impure with Eq[a] =
+    pub def memberOf(x: a, a: ScopedArray[a, r]): Bool \ Read(r) with Eq[a] =
         exists(y -> y == x, a)
 
     ///
@@ -899,7 +899,7 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def exists(f: a -> Bool, arr: Array[a]): Bool & Impure =
+    pub def exists(f: a -> Bool, arr: ScopedArray[a, r]): Bool \ Read(r) =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
