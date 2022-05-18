@@ -245,15 +245,14 @@ namespace Array {
     /// searching from right to left.
     ///
     @Time(length(arr)) @Space(1)
-    pub def indexOfRight(a: a, arr: Array[a]): Option[Int32] & Impure with Eq[a] =
+    pub def indexOfRight(a: a, arr: ScopedArray[a, r]): Option[Int32] \ Read(r) with Eq[a] =
         def loop(i) = {
             if (i < 0)
                 -1
+            else if (arr[i] == a)
+                i
             else
-                if (arr[i] == a)
-                    i
-                else
-                    loop(i - 1)
+                loop(i - 1)
         };
         let i = loop(length(arr) - 1);
         if (i < 0) None else Some(i)

@@ -257,30 +257,44 @@ def indexOfLeft06(): Bool & Impure = Array.indexOfLeft(2, [1,2]) == Some(1)
 @test
 def indexOfLeft07(): Bool & Impure = Array.indexOfLeft(1, [1,1]) == Some(0)
 
-/////////////////////////////////////////////////////////////////////////////
-// indexOfRight                                                            //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOfRight                                                            //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def indexOfRight01(): Bool & Impure = Array.indexOfRight(0, []: Array[Int32]) == None
+    @test
+    def indexOfRight01(): Bool = region r {
+        Array.indexOfRight(0, []: ScopedArray[Int32, _]) == None
+    }
 
-@test
-def indexOfRight02(): Bool & Impure = Array.indexOfRight(0, [1]) == None
+    @test
+    def indexOfRight02(): Bool = region r {
+        Array.indexOfRight(0, [1]) == None
+    }
 
-@test
-def indexOfRight03(): Bool & Impure = Array.indexOfRight(1, [1]) == Some(0)
+    @test
+    def indexOfRight03(): Bool = region r {
+        Array.indexOfRight(1, [1]) == Some(0)
+    }
 
-@test
-def indexOfRight04(): Bool & Impure = Array.indexOfRight(0, [1,2]) == None
+    @test
+    def indexOfRight04(): Bool = region r {
+        Array.indexOfRight(0, [1,2]) == None
+    }
 
-@test
-def indexOfRight05(): Bool & Impure = Array.indexOfRight(1, [1,2]) == Some(0)
+    @test
+    def indexOfRight05(): Bool = region r {
+        Array.indexOfRight(1, [1,2]) == Some(0)
+    }
 
-@test
-def indexOfRight06(): Bool & Impure = Array.indexOfRight(2, [1,2]) == Some(1)
+    @test
+    def indexOfRight06(): Bool = region r {
+        Array.indexOfRight(2, [1,2]) == Some(1)
+    }
 
-@test
-def indexOfRight07(): Bool & Impure = Array.indexOfRight(1, [1,1]) == Some(1)
+    @test
+    def indexOfRight07(): Bool = region r {
+        Array.indexOfRight(1, [1,1]) == Some(1)
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // indices                                                                 //
