@@ -970,16 +970,31 @@ object Resolver {
             case (e, rs) => ResolvedAst.Expression.TryCatch(e, rs, loc)
           }
 
-        // TODO handle these cases
         case NamedAst.Expression.Without(exp, eff, loc) =>
           val eVal = visitExp(exp, region)
           val fVal = lookupEffect(eff, ns0, root)
           mapN(eVal, fVal) {
             case (e, f) => ResolvedAst.Expression.Without(e, f.sym, loc)
           }
+
         case NamedAst.Expression.TryWith(exp, eff, rules, loc) =>
           val eVal = visitExp(exp, region)
           val fVal = lookupEffect(eff, ns0, root)
+          flatMapN(eVal, fVal) {
+            case (e, f) =>
+              val rulesVal = traverse(rules) {
+                case NamedAst.HandlerRule(ident, fparams, body) =>
+                  val opVal = findOpInEffect(ident, f)
+                  val fparamsVal = resolveFormalParams(fparams, taenv, ns0, root)
+                  val bodyVal = visitExp(body, region)
+                  mapN(opVal, fparamsVal, bodyVal) {
+                    case (o, f, b) => ResolvedAst.HandlerRule(o.sym, f, b)
+                  }
+              }
+              mapN(rulesVal) {
+                rs => ResolvedAst.Expression.TryWith(e, f.sym, rs, loc)
+              }
+          }
           val rulesVal = traverse(rules) {
             case NamedAst.HandlerRule(op, fparams, body) =>
               val qname = Name.QName(op.sp1, eff.toNName, op, op.sp2)
@@ -1539,7 +1554,7 @@ object Resolver {
   /**
     * Looks up the effect operation with qualified name `qname` in the namespace `ns0`.
     */
-  def lookupOp(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Op, ResolutionError] = {
+  private def lookupOp(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Op, ResolutionError] = {
     val opOpt = tryLookupName(qname, ns0, root.ops)
 
     opOpt match {
@@ -1550,6 +1565,18 @@ object Resolver {
         } else {
           ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc).toFailure
         }
+    }
+  }
+
+  /**
+    * Looks up the effect operation as a member of the given effect.
+    */
+  private def findOpInEffect(ident: Name.Ident, eff: NamedAst.Effect): Validation[NamedAst.Op, ResolutionError] = {
+    val opOpt = eff.ops.find(o => o.sym.name == ident.name)
+    opOpt match {
+      case None =>
+        ResolutionError.UndefinedOp(eff.sym, ident, ident.loc).toFailure
+      case Some(op) => op.toSuccess
     }
   }
 

@@ -453,6 +453,33 @@ object ResolutionError {
   }
 
   /**
+    * Undefined Sig Error.
+    *
+    * @param eff the effect.
+    * @param op  the unresolved operation.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedOp(eff: Symbol.EffectSym, op: Name.Ident, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Undefined operation."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined operation '${red(op.name)}' in effect '${red(eff.toString)}'.
+         |
+         |${code(loc, "operation not found")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent operation?"
+    })
+
+  }
+
+  /**
     * Undefined Tag Error.
     *
     * @param tag the tag.

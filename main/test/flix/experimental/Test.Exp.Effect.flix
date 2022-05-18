@@ -29,11 +29,10 @@ namespace Test/Exp/Effect {
     // @test
     pub def perform02(): Bool = {
         try {
-            let x = do Console.readln();
-            let y = do Console.readln();
+            let x = do Console.println("hi");
+            let y = do Console.println("bye");
             x == y
         } with Console {
-            def readln() = resume("hello")
             def println(_) = resume()
         }
     }
@@ -48,10 +47,9 @@ namespace Test/Exp/Effect {
     // @test
     pub def handlePerform02(): Bool = {
         try {
-            let _ = do Console.readln();
+            let _ = do Console.println("It was the best of times");
             true
         } with Console {
-            def readln() = "read"
             def println(_) = resume()
         }
     }
