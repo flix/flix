@@ -220,23 +220,22 @@ namespace Array {
     /// Alias for `IndexOfLeft`
     ///
     @Time(length(a)) @Space(1)
-    pub def indexOf(x: a, a: Array[a]): Option[Int32] & Impure with Eq[a] = indexOfLeft(x,a)
+    pub def indexOf(x: a, a: ScopedArray[a, r]): Option[Int32] \ Read(r) with Eq[a] =
+        indexOfLeft(x,a)
 
     ///
     /// Optionally returns the position of the first occurrence of `a` in `arr`
     /// searching from left to right.
     ///
     @Time(length(arr)) @Space(1)
-    pub def indexOfLeft(a: a, arr: Array[a]): Option[Int32] & Impure with Eq[a] =
+    pub def indexOfLeft(a: a, arr: ScopedArray[a, r]): Option[Int32] \ Read(r) with Eq[a] =
         def loop(i) = {
-            if (i >= arr.length) {
+            if (i >= arr.length)
                 -1
-            } else {
-                if (arr[i] == a)
-                    i
-                else
-                    loop(i + 1)
-            }
+            else if (arr[i] == a)
+                i
+            else
+                loop(i + 1)
         };
         let i = loop(0);
         if (i < 0) None else Some(i)
