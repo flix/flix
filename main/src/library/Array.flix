@@ -157,7 +157,7 @@ namespace Array {
     /// Returns `None` if `a` is empty.
     ///
     @Time(1) @Space(1)
-    pub def last(a: Array[a]): Option[a] & Impure =
+    pub def last(a: ScopedArray[a, r]): Option[a] \ Read(r) =
         let len = length(a);
         if (len > 0) Some(a[len-1]) else None
 
@@ -165,13 +165,13 @@ namespace Array {
     /// Return a new array, appending the elements `b` to elements of `a`.
     ///
     @Time(length(a) + length(b)) @Space(length(a) + length(b))
-    pub def append(a: Array[a], b: Array[a]): Array[a] & Impure =
+    pub def append(a: ScopedArray[a, r1], b: ScopedArray[a, r2]): ScopedArray[a, r1] \ { Read(r2), Write(r1) } =
         let len1 = length(a);
         let len2 = length(b);
         if (len1 == 0)
-            slice(0, len2, b)
+            copyOfRange(0, len2, b, Scoped.regionOf(a))
         else {
-            let out = new(a[0], len1 + len2, static);
+            let out = new(a[0], len1 + len2, Scoped.regionOf(a));
             updateSequence!(0, a, out);
             updateSequence!(len1, b, out);
             out
