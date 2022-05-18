@@ -439,14 +439,4 @@ namespace Test/Exp/Match/Array {
         case _ => false
     }
 
-    enum Option[t] {
-        case None,
-        case Some(t)
-    }
-
-    enum Result[t, e] {
-        case Ok(t),
-        case Err(e)
-    }
-
 }

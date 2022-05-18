@@ -156,14 +156,4 @@ namespace Test/Dec/TypeAlias {
     @test
     def testTypeAlias27(): W[Bool, Int32] = Z(Err(123))
 
-    enum Option[t] {
-        case None,
-        case Some(t)
-    }
-
-    enum Result[t, e] {
-        case Ok(t),
-        case Err(e)
-    }
-
 }
