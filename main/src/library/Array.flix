@@ -407,7 +407,7 @@ namespace Array {
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
     ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def transformWithIndex!(f: (a, Int32) -> a & ef, arr: Array[a]): Unit & Impure =
+    pub def transformWithIndex!(f: (a, Int32) -> a & ef, arr: ScopedArray[a, r]): Unit \ { ef, Read(r), Write(r) } =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)

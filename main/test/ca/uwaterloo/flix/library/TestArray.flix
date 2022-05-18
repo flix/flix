@@ -714,51 +714,58 @@ def scanRight07(): Bool & Impure =
         Array.sameElements(a, [true,false])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// transformWithIndex!                                                     //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // transformWithIndex!                                                     //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def transformWithIndex01!(): Bool & Impure =
-    let a = []: Array[Int32];
-    Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def transformWithIndex01!(): Bool = region r {
+        let a = []: ScopedArray[Int32, _];
+        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def transformWithIndex02!(): Bool & Impure =
-    let a = [1];
-    Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
-    Array.sameElements(a, [11])
+    @test
+    def transformWithIndex02!(): Bool = region r {
+        let a = [1];
+        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.sameElements(a, [11])
+    }
 
-@test
-def transformWithIndex03!(): Bool & Impure =
-    let a = [3];
-    Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
-    Array.sameElements(a, [13])
+    @test
+    def transformWithIndex03!(): Bool = region r {
+        let a = [3];
+        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.sameElements(a, [13])
+    }
 
-@test
-def transformWithIndex04!(): Bool & Impure =
-    let a = [1,2];
-    Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
-    Array.sameElements(a, [11,2])
+    @test
+    def transformWithIndex04!(): Bool = region r {
+        let a = [1,2];
+        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.sameElements(a, [11,2])
+    }
 
-@test
-def transformWithIndex05!(): Bool & Impure =
-    let a = [1,8];
-    Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
-    Array.sameElements(a, [11,8])
+    @test
+    def transformWithIndex05!(): Bool = region r {
+        let a = [1,8];
+        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.sameElements(a, [11,8])
+    }
 
-@test
-def transformWithIndex06!(): Bool & Impure =
-    let a = [8,1];
-    Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
-    Array.sameElements(a, [18,1])
+    @test
+    def transformWithIndex06!(): Bool = region r {
+        let a = [8,1];
+        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.sameElements(a, [18,1])
+    }
 
-@test
-def transformWithIndex07!(): Bool & Impure =
-    let a = [7,8,9];
-    Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
-    Array.sameElements(a, [17,8,9])
+    @test
+    def transformWithIndex07!(): Bool = region r {
+        let a = [7,8,9];
+        Array.transformWithIndex!((e, i) -> if (i < 1) e + 10 else e, a);
+        Array.sameElements(a, [17,8,9])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // flatMap                                                                 //
