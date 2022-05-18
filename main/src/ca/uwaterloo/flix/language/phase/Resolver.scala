@@ -988,7 +988,7 @@ object Resolver {
                   val fparamsVal = resolveFormalParams(fparams, taenv, ns0, root)
                   val bodyVal = visitExp(body, region)
                   mapN(opVal, fparamsVal, bodyVal) {
-                    case (o, f, b) => ResolvedAst.HandlerRule(o.sym, f, b)
+                    case (o, fp, b) => ResolvedAst.HandlerRule(o.sym, fp, b)
                   }
               }
               mapN(rulesVal) {
