@@ -175,21 +175,29 @@ namespace TestArray {
         Array.head([3,2,1]) == Some(3)
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// last                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // last                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def last01(): Bool & Impure = Array.last([]): Option[Unit] == None
+    @test
+    def last01(): Bool = region r {
+        Array.last([]): Option[Unit] == None
+    }
 
-@test
-def last02(): Bool & Impure = Array.last([1]) == Some(1)
+    @test
+    def last02(): Bool = region r {
+        Array.last([1]) == Some(1)
+    }
 
-@test
-def last03(): Bool & Impure = Array.last([1,2]) == Some(2)
+    @test
+    def last03(): Bool = region r {
+        Array.last([1,2]) == Some(2)
+    }
 
-@test
-def last04(): Bool & Impure = Array.last([1,2,3]) == Some(3)
+    @test
+    def last04(): Bool = region r {
+        Array.last([1,2,3]) == Some(3)
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // append                                                                  //
