@@ -29,9 +29,9 @@ namespace Test/Exp/Effect {
     // @test
     pub def perform02(): Bool = {
         try {
-            let x = do Console.println("hi");
-            let y = do Console.println("bye");
-            x == y
+            do Test/Exp/Effect/Console.println("hi");
+            do Test/Exp/Effect/Console.println("bye");
+            true
         } with Console {
             def println(_) = resume()
         }
@@ -39,7 +39,7 @@ namespace Test/Exp/Effect {
 
     // @test
     pub def handlePerform01(): Bool = {
-        try do Fail.fail("rats") with Fail {
+        try do Test/Exp/Effect/Fail.fail("rats") with Fail {
             def fail(_) = true
         }
     }
@@ -47,7 +47,7 @@ namespace Test/Exp/Effect {
     // @test
     pub def handlePerform02(): Bool = {
         try {
-            let _ = do Console.println("It was the best of times");
+            let _ = do Test/Exp/Effect/Console.println("It was the best of times");
             true
         } with Console {
             def println(_) = resume()
@@ -59,11 +59,11 @@ namespace Test/Exp/Effect {
         // drunken coin flip: flip a coin to see if we can flip a coin
         try {
             try {
-                let caught = do Flip.flip();
+                let caught = do Test/Exp/Effect/Flip.flip();
                 if (caught) {
-                    Fail.fail("dropped the coin :(")
+                    do Test/Exp/Effect/Fail.fail("dropped the coin :(")
                 } else {
-                    do Flip.flip()
+                    do Test/Exp/Effect/Flip.flip()
                 }
             } with Flip {
                 def flip() = resume(true)

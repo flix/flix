@@ -995,19 +995,6 @@ object Resolver {
                 rs => ResolvedAst.Expression.TryWith(e, f.sym, rs, loc)
               }
           }
-          val rulesVal = traverse(rules) {
-            case NamedAst.HandlerRule(op, fparams, body) =>
-              val qname = Name.QName(op.sp1, eff.toNName, op, op.sp2)
-              val opVal = lookupOp(qname, ns0, root)
-              val fparamsVal = resolveFormalParams(fparams, taenv, ns0, root)
-              val bodyVal = visitExp(body, region)
-              mapN(opVal, fparamsVal, bodyVal) {
-                case (o, f, b) => ResolvedAst.HandlerRule(o.sym, f, b)
-              }
-          }
-          mapN(eVal, fVal, rulesVal) {
-            case (e, f, rs) => ResolvedAst.Expression.TryWith(e, f.sym, rs, loc)
-          }
 
         case NamedAst.Expression.Do(op, exps, loc) =>
           val opVal = lookupOp(op, ns0, root)
