@@ -75,18 +75,24 @@ namespace TestArray {
         Array.put(42, 2, [1, 2, 3] @ r)[2] == 42
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// isEmpty                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // isEmpty                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def testIsEmpty01(): Bool & Impure = Array.isEmpty([])
+    @test
+    def testIsEmpty01(): Bool = region r {
+        Array.isEmpty([])
+    }
 
-@test
-def testIsEmpty02(): Bool & Impure = not Array.isEmpty([1])
+    @test
+    def testIsEmpty02(): Bool = region r {
+        not Array.isEmpty([1])
+    }
 
-@test
-def testIsEmpty03(): Bool & Impure = not Array.isEmpty([1, 2, 3])
+    @test
+    def testIsEmpty03(): Bool = region r {
+        not Array.isEmpty([1, 2, 3])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // length                                                                  //
