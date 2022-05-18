@@ -290,27 +290,39 @@ namespace TestArray {
         Array.memberOf(3, [1,2]) == false
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// indexOf                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOf                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def indexOf01(): Bool & Impure = Array.indexOf(0, []: Array[Int32]) == None
+    @test
+    def indexOf01(): Bool = region r {
+        Array.indexOf(0, []: ScopedArray[Int32, _]) == None
+    }
 
-@test
-def indexOf02(): Bool & Impure = Array.indexOf(0, [1]) == None
+    @test
+    def indexOf02(): Bool = region r {
+        Array.indexOf(0, [1]) == None
+    }
 
-@test
-def indexOf03(): Bool & Impure = Array.indexOf(1, [1]) == Some(0)
+    @test
+    def indexOf03(): Bool = region r {
+        Array.indexOf(1, [1]) == Some(0)
+    }
 
-@test
-def indexOf04(): Bool & Impure = Array.indexOf(0, [1,2]) == None
+    @test
+    def indexOf04(): Bool = region r {
+        Array.indexOf(0, [1,2]) == None
+    }
 
-@test
-def indexOf05(): Bool & Impure = Array.indexOf(1, [1,2]) == Some(0)
+    @test
+    def indexOf05(): Bool = region r {
+        Array.indexOf(1, [1,2]) == Some(0)
+    }
 
-@test
-def indexOf06(): Bool & Impure = Array.indexOf(2, [1,2]) == Some(1)
+    @test
+    def indexOf06(): Bool = region r {
+        Array.indexOf(2, [1,2]) == Some(1)
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // indexOfLeft                                                             //
