@@ -18,10 +18,6 @@ instance Scoped[ScopedArray[a]] {
     pub def regionOf(_: ScopedArray[a, r]): Region[r] = () as Region[r]
 }
 
-instance Newable[ScopedArray[a]] {
-    pub def new(r: Region[r]): ScopedArray[a, r] \ Write(r) = [$DEFAULT$; 8] @ r
-}
-
 namespace Array {
 
     ///
@@ -65,7 +61,8 @@ namespace Array {
     /// Equivalent to the expression `[x; l]`.
     ///
     @Time(l) @Space(l)
-    pub def new(x: a, l: Int32): Array[a] & Impure = [x; l]
+    pub def new(x: a, l: Int32, r: Region[r]): ScopedArray[a, r] \ Write(r) =
+        [x; l] @ r
 
     ///
     /// Returns the element at position `i` in the array `a`.
@@ -174,7 +171,7 @@ namespace Array {
         if (len1 == 0)
             slice(0, len2, b)
         else {
-            let out = new(a[0], len1 + len2);
+            let out = new(a[0], len1 + len2, static);
             updateSequence!(0, a, out);
             updateSequence!(len1, b, out);
             out
@@ -325,7 +322,7 @@ namespace Array {
         if (n <= 0)
             []
         else
-            new(x, n)
+            new(x, n, static)
 
     ///
     /// Alias for `scanLeft`.
@@ -339,7 +336,7 @@ namespace Array {
     ///
     pub def scanLeft(f: (b, a) -> b & ef, s: b, arr: Array[a]): Array[b] & Impure =
         let len = length(arr) + 1;
-        let b = new(s, len);
+        let b = new(s, len, static);
         def loop(i, acc) = {
             if (i >= len)
                 ()
@@ -359,7 +356,7 @@ namespace Array {
     ///
     pub def scanRight(f: (a, b) -> b & ef, s: b, a: Array[a]): Array[b] & Impure =
         let len = length(a);
-        let b = new(s, len + 1);
+        let b = new(s, len + 1, static);
         def loop(i, acc) = {
             if (i < 0)
                 ()
@@ -576,7 +573,7 @@ namespace Array {
         if (len2 <= 0)
             []
         else {
-            let b = new(x, len2);
+            let b = new(x, len2, static);
             let f = { (v,i) -> let j = i + i; b[j] = v };
             foreachWithIndex(f, a);
             b
@@ -594,7 +591,7 @@ namespace Array {
         match headArrays(arrs){
             case None => []
             case Some(x) =>
-                let out = new(x, len);
+                let out = new(x, len, static);
                 let overwrite = { (a,st) ->
                     let (pos,i) = st;
                     if (i == 0) {
@@ -888,7 +885,7 @@ namespace Array {
         match headArrays(arrs) {
             case None => []
             case Some(x) => {
-                let out = new(x, len);
+                let out = new(x, len, static);
                 foreachAccum((a, pos) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
@@ -945,7 +942,7 @@ namespace Array {
         if (len < 1) {
             []
         } else {
-            let out = new(arr[0], len);
+            let out = new(arr[0], len, static);
             def loop(i, j) = {
                 if (i >= len)
                     j
@@ -1400,8 +1397,8 @@ namespace Array {
             ([], [])
         else {
             let (x, y) = f(0);
-            let arr = new(x, len);
-            let brr = new(y, len);
+            let arr = new(x, len, static);
+            let brr = new(y, len, static);
             def loop(i) = {
                 if (i < len) {
                     let (a, b) = f(i);
