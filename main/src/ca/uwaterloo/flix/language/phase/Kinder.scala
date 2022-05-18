@@ -589,7 +589,7 @@ object Kinder {
       val exp1Val = visitExp(exp10, kenv, taenv, root)
       val exp2Val = visitExp(exp20, kenv, taenv, root)
       mapN(exp1Val, exp2Val) {
-        case (exp1, exp2) => KindedAst.Expression.PutChannel(exp1, exp2, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        case (exp1, exp2) => KindedAst.Expression.PutChannel(exp1, exp2, loc)
       }
 
     case ResolvedAst.Expression.SelectChannel(rules0, default0, loc) =>
