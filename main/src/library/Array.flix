@@ -245,15 +245,14 @@ namespace Array {
     /// searching from right to left.
     ///
     @Time(length(arr)) @Space(1)
-    pub def indexOfRight(a: a, arr: Array[a]): Option[Int32] & Impure with Eq[a] =
+    pub def indexOfRight(a: a, arr: ScopedArray[a, r]): Option[Int32] \ Read(r) with Eq[a] =
         def loop(i) = {
             if (i < 0)
                 -1
+            else if (arr[i] == a)
+                i
             else
-                if (arr[i] == a)
-                    i
-                else
-                    loop(i - 1)
+                loop(i - 1)
         };
         let i = loop(length(arr) - 1);
         if (i < 0) None else Some(i)
@@ -317,25 +316,26 @@ namespace Array {
     /// Returns `[]` if `n <= 0`.
     ///
     @Time(n) @Space(n)
-    pub def repeat(n: Int32, x: a): Array[a] & Impure =
+    pub def repeat(n: Int32, x: a, r: Region[r]): ScopedArray[a, r] \ Write(r) =
         if (n <= 0)
-            []
+            [] @ r
         else
-            new(x, n, static)
+            new(x, n, r)
 
     ///
     /// Alias for `scanLeft`.
     ///
-    pub def scan(f: (b, a) -> b & ef, s: b, arr: Array[a]): Array[b] & Impure = scanLeft(f, s, arr)
+    pub def scan(f: (b, a) -> b & ef, s: b, arr: ScopedArray[a, r]): ScopedArray[b, r] \ { ef, Read(r), Write(r) } =
+        scanLeft(f, s, arr)
 
     ///
     /// Accumulates the result of applying `f` to `arr` going left to right.
     ///
     /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2),  ...]`.
     ///
-    pub def scanLeft(f: (b, a) -> b & ef, s: b, arr: Array[a]): Array[b] & Impure =
+    pub def scanLeft(f: (b, a) -> b & ef, s: b, arr: ScopedArray[a, r]): ScopedArray[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(arr) + 1;
-        let b = new(s, len, static);
+        let b = new(s, len, Scoped.regionOf(arr));
         def loop(i, acc) = {
             if (i >= len)
                 ()
@@ -353,9 +353,9 @@ namespace Array {
     ///
     /// That is, the result is of the form: `[..., f(xn-1, f(xn, s)), f(xn, s), s]`.
     ///
-    pub def scanRight(f: (a, b) -> b & ef, s: b, a: Array[a]): Array[b] & Impure =
+    pub def scanRight(f: (a, b) -> b & ef, s: b, a: ScopedArray[a, r]): ScopedArray[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        let b = new(s, len + 1, static);
+        let b = new(s, len + 1, Scoped.regionOf(a));
         def loop(i, acc) = {
             if (i < 0)
                 ()
@@ -374,15 +374,15 @@ namespace Array {
     /// The result is a new array.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def map(f: a -> b & ef, a: Array[a]): Array[b] & Impure =
+    pub def map(f: a -> b & ef, a: ScopedArray[a, r]): ScopedArray[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        init(i -> f(a[i]), len, static)
+        init(i -> f(a[i]), len, Scoped.regionOf(a))
 
     ///
     /// Apply `f` to every element in array `arr`. Array `arr` is mutated.
     ///
     @Time(time(f) * length(arr)) @Space(space(f) * length(arr))
-    pub def transform!(f: a -> a & ef, arr: Array[a]): Unit & Impure =
+    pub def transform!(f: a -> a & ef, arr: ScopedArray[a, r]): Unit \ { ef, Read(r), Write(r) } =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
@@ -400,15 +400,15 @@ namespace Array {
     /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def mapWithIndex(f: (a, Int32) -> b & ef, a: Array[a]): Array[b] & Impure =
+    pub def mapWithIndex(f: (a, Int32) -> b & ef, a: ScopedArray[a, r]): ScopedArray[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        init(i -> f(a[i], i), len, static)
+        init(i -> f(a[i], i), len, Scoped.regionOf(a))
 
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
     ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def transformWithIndex!(f: (a, Int32) -> a & ef, arr: Array[a]): Unit & Impure =
+    pub def transformWithIndex!(f: (a, Int32) -> a & ef, arr: ScopedArray[a, r]): Unit \ { ef, Read(r), Write(r) } =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
@@ -432,16 +432,16 @@ namespace Array {
     /// Returns the reverse of `a`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def reverse(a: Array[a]): Array[a] & Impure =
+    pub def reverse(a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
         let end = len - 1;
-        init(i -> a[end - i], len, static)
+        init(i -> a[end - i], len, Scoped.regionOf(a))
 
     ///
     /// Reverse the array `arr`, mutating it in place.
     ///
     @Time(length(arr)) @Space(1)
-    pub def reverse!(arr: Array[a]): Unit & Impure =
+    pub def reverse!(arr: ScopedArray[a, r]): Unit \ { Read(r), Write(r) } =
         let len = length(arr);
         let halflen = len / 2;
         def loop(i, j) = {
