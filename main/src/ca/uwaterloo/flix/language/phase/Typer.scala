@@ -1324,7 +1324,7 @@ object Typer {
           resultEff = Type.Impure
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
+      case KindedAst.Expression.PutChannel(exp1, exp2, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
         val channelType = Type.mkChannel(elmVar, loc)
 
@@ -1333,7 +1333,7 @@ object Typer {
           (constrs2, tpe2, _) <- visitExp(exp2)
           _ <- expectTypeM(expected = channelType, actual = tpe1, exp1.loc)
           _ <- expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
-          resultTyp <- unifyTypeM(tvar, channelType, loc)
+          resultTyp = Type.mkUnit(loc)
           resultEff = Type.Impure
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -1875,11 +1875,12 @@ object Typer {
         val eff = Type.Impure
         TypedAst.Expression.GetChannel(e, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
+      case KindedAst.Expression.PutChannel(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
+        val tpe = Type.mkUnit(loc)
         val eff = Type.Impure
-        TypedAst.Expression.PutChannel(e1, e2, subst0(tvar), eff, loc)
+        TypedAst.Expression.PutChannel(e1, e2, tpe, eff, loc)
 
       case KindedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
         val rs = rules map {
@@ -2080,27 +2081,27 @@ object Typer {
         } yield Type.mkTuple(elementTypes, loc)
 
       case KindedAst.Pattern.Array(elms, tvar, loc) =>
-        for (
-          elementTypes <- seqM(elms map visit);
-          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc);
+        for {
+          elementTypes <- seqM(elms map visit)
+          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
           resultType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
-        ) yield resultType
+        } yield resultType
 
       case KindedAst.Pattern.ArrayTailSpread(elms, varSym, tvar, loc) =>
-        for (
+        for {
           elementTypes <- seqM(elms map visit);
-          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc);
-          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc);
+          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
+          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
           resultType <- unifyTypeM(varSym.tvar.ascribedWith(Kind.Star), arrayType, loc)
-        ) yield resultType
+        } yield resultType
 
       case KindedAst.Pattern.ArrayHeadSpread(varSym, elms, tvar, loc) =>
-        for (
-          elementTypes <- seqM(elms map visit);
-          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc);
-          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc);
+        for {
+          elementTypes <- seqM(elms map visit)
+          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
+          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
           resultType <- unifyTypeM(varSym.tvar.ascribedWith(Kind.Star), arrayType, loc)
-        ) yield resultType
+        } yield resultType
 
     }
 

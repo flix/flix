@@ -90,14 +90,4 @@ namespace Test/Exp/Match/Tag {
         case Some(Err(_)) => true
     }
 
-    enum Option[t] {
-        case None,
-        case Some(t)
-    }
-
-    enum Result[t, e] {
-        case Ok(t),
-        case Err(e)
-    }
-
 }

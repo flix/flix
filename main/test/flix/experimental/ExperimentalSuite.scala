@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2022 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package flix.experimental
 
-package ca.uwaterloo.flix
+import ca.uwaterloo.flix.util.{FlixSuite, Options}
 
-import ca.uwaterloo.flix.language.LanguageSuite
-import ca.uwaterloo.flix.library.LibrarySuite
-import ca.uwaterloo.flix.tools.ToolsSuite
-import ca.uwaterloo.flix.util.UtilSuite
-import flix.CompilerSuite
-import flix.experimental.ExperimentalSuite
-import org.scalatest.Suites
+class ExperimentalSuite extends FlixSuite(incremental = true) {
+  implicit val options: Options = Options.TestWithLibNix.copy(xallowredundancies = true)
 
-class TestAll extends Suites(
-  new CompilerSuite,
-  new ExperimentalSuite,
-  new ExampleSuite,
-  new LanguageSuite,
-  new LibrarySuite,
-  new ToolsSuite,
-  new UtilSuite,
-  new TestMain,
-  new TestTutorials
-)
+  // TODO temporarily allowing redundancies during development
+  mkTest("main/test/flix/experimental/Test.Exp.Effect.flix")
+  mkTest("main/test/flix/experimental/Test.Dec.Effect.flix")
+}
