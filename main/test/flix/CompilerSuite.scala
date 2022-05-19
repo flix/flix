@@ -14,7 +14,6 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   // Declarations
   //
   mkTest("main/test/flix/Test.Dec.Class.flix")
-  mkTest("main/test/flix/Test.Dec.Effect.flix")
   mkTest("main/test/flix/Test.Dec.Enum.flix")
   mkTest("main/test/flix/Test.Dec.Namespace.flix")
   mkTest("main/test/flix/Test.Dec.OpaqueType.flix")
@@ -138,12 +137,6 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   // Discard
   //
   mkTest("main/test/flix/Test.Exp.Discard.flix")
-
-  //
-  // Effects
-  //
-  // TODO temporarily allowing redundancies during development
-  mkTest("main/test/flix/Test.Exp.Effect.flix")(options.copy(xallowredundancies = true))
 
   //
   // Fixpoint
