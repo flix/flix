@@ -556,10 +556,10 @@ namespace Array {
     /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
     ///
     @Time(n) @Space(1)
-    pub def patch!(i: Int32, n: Int32, a: Array[a], b: Array[a]): Unit & Impure =
+    pub def patch!(i: Int32, n: Int32, a: ScopedArray[a, r1], b: ScopedArray[a, r2]): Unit \ { Read(r1), Write(r2) } =
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
-        let sub = slice(0, size, a);
+        let sub = copyOfRange(0, size, a, Scoped.regionOf(b));
         updateSequence!(i, sub, b)
 
     ///
