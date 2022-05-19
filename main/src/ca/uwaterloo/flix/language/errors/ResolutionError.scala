@@ -214,15 +214,15 @@ object ResolutionError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Definition '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+         |>> Operation '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
-         |${code(loc, "inaccessible definition.")}
+         |${code(loc, "inaccessible operation.")}
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
-      s"${underline("Tip:")} Mark the definition as public."
+      s"${underline("Tip:")} Mark the operation as public."
     })
 
   }
