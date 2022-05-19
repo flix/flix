@@ -16,246 +16,352 @@
 
 namespace TestArray {
 
-use Array.sameElements;
-
-/////////////////////////////////////////////////////////////////////////////
-// new                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def testNew01(): Bool & Impure = Array.new(42, 10)[0] == 42
-
-@test
-def testNew02(): Bool & Impure = Array.new(42, 10)[5] == 42
-
-@test
-def testNew03(): Bool & Impure = Array.new(42, 10)[9] == 42
-
-/////////////////////////////////////////////////////////////////////////////
-// get                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def testGet01(): Bool & Impure = Array.get(0, [1, 2, 3]) == 1
-
-@test
-def testGet02(): Bool & Impure = Array.get(1, [1, 2, 3]) == 2
-
-@test
-def testGet03(): Bool & Impure = Array.get(2, [1, 2, 3]) == 3
-
-/////////////////////////////////////////////////////////////////////////////
-// put                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def testPut01(): Bool & Impure = Array.put(42, 0, [1])[0] == 42
-
-@test
-def testPut02(): Bool & Impure = Array.put(42, 1, [1, 2])[1] == 42
-
-@test
-def testPut03(): Bool & Impure = Array.put(42, 2, [1, 2, 3])[2] == 42
-
-/////////////////////////////////////////////////////////////////////////////
-// isEmpty                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def testIsEmpty01(): Bool & Impure = Array.isEmpty([])
-
-@test
-def testIsEmpty02(): Bool & Impure = not Array.isEmpty([1])
-
-@test
-def testIsEmpty03(): Bool & Impure = not Array.isEmpty([1, 2, 3])
-
-/////////////////////////////////////////////////////////////////////////////
-// length                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def testLength01(): Bool & Impure = Array.length([]) == 0
-
-@test
-def testLength02(): Bool & Impure = Array.length([1]) == 1
-
-@test
-def testLength03(): Bool & Impure = Array.length([1, 2, 3]) == 3
-
-/////////////////////////////////////////////////////////////////////////////
-// slice                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def testSlice01(): Bool & Impure = Array.slice(0, 1, [1, 2, 3])[0] == 1
-
-@test
-def testSlice02(): Bool & Impure = Array.slice(1, 2, [1, 2, 3])[0] == 2
-
-@test
-def testSlice03(): Bool & Impure = Array.slice(2, 3, [1, 2, 3])[0] == 3
-
-/////////////////////////////////////////////////////////////////////////////
-// toList                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def testToList01(): Bool & Impure = Array.toList([]: Array[Unit]) == Nil
-
-@test
-def testToList02(): Bool & Impure = Array.toList([1]) == 1 :: Nil
-
-@test
-def testToList03(): Bool & Impure = Array.toList([1, 2]) == 1 :: 2 :: Nil
-
-/////////////////////////////////////////////////////////////////////////////
-// head                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def head01(): Bool & Impure = Array.head([]: Array[Int32]) == None
-
-@test
-def head02(): Bool & Impure = Array.head([1]) == Some(1)
-
-@test
-def head03(): Bool & Impure = Array.head([2,1]) == Some(2)
-
-@test
-def head04(): Bool & Impure = Array.head([3,2,1]) == Some(3)
-
-/////////////////////////////////////////////////////////////////////////////
-// last                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def last01(): Bool & Impure = Array.last([]): Option[Unit] == None
-
-@test
-def last02(): Bool & Impure = Array.last([1]) == Some(1)
-
-@test
-def last03(): Bool & Impure = Array.last([1,2]) == Some(2)
-
-@test
-def last04(): Bool & Impure = Array.last([1,2,3]) == Some(3)
-
-/////////////////////////////////////////////////////////////////////////////
-// append                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def append01(): Bool & Impure =
-    let a = Array.append([]: Array[Int32], []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
-
-@test
-def append02(): Bool & Impure =
-    let a = Array.append([]: Array[Int32], [1]);
-    Array.sameElements(a, [1])
-
-@test
-def append03(): Bool & Impure =
-    let a = Array.append([]: Array[Int32], [1,2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def append04(): Bool & Impure =
-    let a = Array.append([1], []: Array[Int32]);
-    Array.sameElements(a, [1])
-
-@test
-def append05(): Bool & Impure =
-    let a = Array.append([1,2], []: Array[Int32]);
-    Array.sameElements(a, [1,2])
-
-@test
-def append06(): Bool & Impure =
-    let a = Array.append([1], [2]);
-    Array.sameElements(a, [1,2])
-
-@test
-def append07(): Bool & Impure =
-    let a = Array.append([1,2], [3]);
-    Array.sameElements(a, [1,2,3])
-
-@test
-def append08(): Bool & Impure =
-    let a = Array.append([1], [2,3]);
-    Array.sameElements(a, [1,2,3])
-
-/////////////////////////////////////////////////////////////////////////////
-// memberOf                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def memberOf01(): Bool & Impure = Array.memberOf(0, []: Array[Int32]) == false
-
-@test
-def memberOf02(): Bool & Impure = Array.memberOf(0, [1]) == false
-
-@test
-def memberOf03(): Bool & Impure = Array.memberOf(0, [0]) == true
-
-@test
-def memberOf04(): Bool & Impure = Array.memberOf(0, [1,2]) == false
-
-@test
-def memberOf05(): Bool & Impure = Array.memberOf(1, [1,2]) == true
-
-@test
-def memberOf06(): Bool & Impure = Array.memberOf(2, [1,2]) == true
-
-@test
-def memberOf07(): Bool & Impure = Array.memberOf(3, [1,2]) == false
-
-/////////////////////////////////////////////////////////////////////////////
-// indexOf                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def indexOf01(): Bool & Impure = Array.indexOf(0, []: Array[Int32]) == None
-
-@test
-def indexOf02(): Bool & Impure = Array.indexOf(0, [1]) == None
-
-@test
-def indexOf03(): Bool & Impure = Array.indexOf(1, [1]) == Some(0)
-
-@test
-def indexOf04(): Bool & Impure = Array.indexOf(0, [1,2]) == None
-
-@test
-def indexOf05(): Bool & Impure = Array.indexOf(1, [1,2]) == Some(0)
-
-@test
-def indexOf06(): Bool & Impure = Array.indexOf(2, [1,2]) == Some(1)
-
-/////////////////////////////////////////////////////////////////////////////
-// indexOfLeft                                                             //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def indexOfLeft01(): Bool & Impure = Array.indexOfLeft(0, []: Array[Int32]) == None
-
-@test
-def indexOfLeft02(): Bool & Impure = Array.indexOfLeft(0, [1]) == None
-
-@test
-def indexOfLeft03(): Bool & Impure = Array.indexOfLeft(1, [1]) == Some(0)
-
-@test
-def indexOfLeft04(): Bool & Impure = Array.indexOfLeft(0, [1,2]) == None
-
-@test
-def indexOfLeft05(): Bool & Impure = Array.indexOfLeft(1, [1,2]) == Some(0)
-
-@test
-def indexOfLeft06(): Bool & Impure = Array.indexOfLeft(2, [1,2]) == Some(1)
-
-@test
-def indexOfLeft07(): Bool & Impure = Array.indexOfLeft(1, [1,1]) == Some(0)
+    use Array.sameElements;
+
+    /////////////////////////////////////////////////////////////////////////////
+    // new                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testNew01(): Bool = region r {
+        Array.new(42, 10, r)[0] == 42
+    }
+
+    @test
+    def testNew02(): Bool = region r {
+        Array.new(42, 10, r)[5] == 42
+    }
+
+    @test
+    def testNew03(): Bool = region r {
+        Array.new(42, 10, r)[9] == 42
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // get                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testGet01(): Bool = region r {
+        Array.get(0, [1, 2, 3] @ r) == 1
+    }
+
+    @test
+    def testGet02(): Bool = region r {
+        Array.get(1, [1, 2, 3] @ r) == 2
+    }
+
+    @test
+    def testGet03(): Bool = region r {
+        Array.get(2, [1, 2, 3] @ r) == 3
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // put                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testPut01(): Bool = region r {
+        Array.put(42, 0, [1] @ r)[0] == 42
+    }
+
+    @test
+    def testPut02(): Bool = region r {
+        Array.put(42, 1, [1, 2] @ r)[1] == 42
+    }
+
+    @test
+    def testPut03(): Bool = region r {
+        Array.put(42, 2, [1, 2, 3] @ r)[2] == 42
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isEmpty                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testIsEmpty01(): Bool = region r {
+        Array.isEmpty([])
+    }
+
+    @test
+    def testIsEmpty02(): Bool = region r {
+        not Array.isEmpty([1])
+    }
+
+    @test
+    def testIsEmpty03(): Bool = region r {
+        not Array.isEmpty([1, 2, 3])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // length                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testLength01(): Bool = region r {
+        Array.length([]) == 0
+    }
+
+    @test
+    def testLength02(): Bool = region r {
+        Array.length([1]) == 1
+    }
+
+    @test
+    def testLength03(): Bool = region r {
+        Array.length([1, 2, 3]) == 3
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // slice                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testSlice01(): Bool = region r {
+        Array.slice(0, 1, [1, 2, 3])[0] == 1
+    }
+
+    @test
+    def testSlice02(): Bool = region r {
+        Array.slice(1, 2, [1, 2, 3])[0] == 2
+    }
+
+    @test
+    def testSlice03(): Bool = region r {
+        Array.slice(2, 3, [1, 2, 3])[0] == 3
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toList                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testToList01(): Bool = region r {
+        Array.toList([]: ScopedArray[Unit, _]) == Nil
+    }
+
+    @test
+    def testToList02(): Bool = region r {
+        Array.toList([1]) == 1 :: Nil
+    }
+
+    @test
+    def testToList03(): Bool = region r {
+        Array.toList([1, 2]) == 1 :: 2 :: Nil
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // head                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def head01(): Bool = region r {
+        Array.head([]: ScopedArray[Int32, _]) == None
+    }
+
+    @test
+    def head02(): Bool = region r {
+        Array.head([1]) == Some(1)
+    }
+
+    @test
+    def head03(): Bool = region r {
+        Array.head([2,1]) == Some(2)
+    }
+
+    @test
+    def head04(): Bool = region r {
+        Array.head([3,2,1]) == Some(3)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // last                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def last01(): Bool = region r {
+        Array.last([]): Option[Unit] == None
+    }
+
+    @test
+    def last02(): Bool = region r {
+        Array.last([1]) == Some(1)
+    }
+
+    @test
+    def last03(): Bool = region r {
+        Array.last([1,2]) == Some(2)
+    }
+
+    @test
+    def last04(): Bool = region r {
+        Array.last([1,2,3]) == Some(3)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // append                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def append01(): Bool = region r {
+        let a = Array.append([]: ScopedArray[Int32, _], []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
+
+    @test
+    def append02(): Bool = region r {
+        let a = Array.append([]: ScopedArray[Int32, _], [1]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def append03(): Bool = region r {
+        let a = Array.append([]: ScopedArray[Int32, _], [1,2]);
+        Array.sameElements(a, [1,2])
+    }
+
+    @test
+    def append04(): Bool = region r {
+        let a = Array.append([1], []: ScopedArray[Int32, _]);
+        Array.sameElements(a, [1])
+    }
+
+    @test
+    def append05(): Bool = region r {
+        let a = Array.append([1,2], []: ScopedArray[Int32, _]);
+        Array.sameElements(a, [1,2])
+    }
+
+    @test
+    def append06(): Bool = region r {
+        let a = Array.append([1], [2]);
+        Array.sameElements(a, [1,2])
+    }
+
+    @test
+    def append07(): Bool = region r {
+        let a = Array.append([1,2], [3]);
+        Array.sameElements(a, [1,2,3])
+    }
+
+    @test
+    def append08(): Bool = region r {
+        let a = Array.append([1], [2,3]);
+        Array.sameElements(a, [1,2,3])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // memberOf                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def memberOf01(): Bool = region r {
+        Array.memberOf(0, []: ScopedArray[Int32, _]) == false
+    }
+
+    @test
+    def memberOf02(): Bool = region r {
+        Array.memberOf(0, [1]) == false
+    }
+
+    @test
+    def memberOf03(): Bool = region r {
+        Array.memberOf(0, [0]) == true
+    }
+
+    @test
+    def memberOf04(): Bool = region r {
+        Array.memberOf(0, [1,2]) == false
+    }
+
+    @test
+    def memberOf05(): Bool = region r {
+        Array.memberOf(1, [1,2]) == true
+    }
+
+    @test
+    def memberOf06(): Bool = region r {
+        Array.memberOf(2, [1,2]) == true
+    }
+
+    @test
+    def memberOf07(): Bool = region r {
+        Array.memberOf(3, [1,2]) == false
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOf                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def indexOf01(): Bool = region r {
+        Array.indexOf(0, []: ScopedArray[Int32, _]) == None
+    }
+
+    @test
+    def indexOf02(): Bool = region r {
+        Array.indexOf(0, [1]) == None
+    }
+
+    @test
+    def indexOf03(): Bool = region r {
+        Array.indexOf(1, [1]) == Some(0)
+    }
+
+    @test
+    def indexOf04(): Bool = region r {
+        Array.indexOf(0, [1,2]) == None
+    }
+
+    @test
+    def indexOf05(): Bool = region r {
+        Array.indexOf(1, [1,2]) == Some(0)
+    }
+
+    @test
+    def indexOf06(): Bool = region r {
+        Array.indexOf(2, [1,2]) == Some(1)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOfLeft                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def indexOfLeft01(): Bool = region r {
+        Array.indexOfLeft(0, []: ScopedArray[Int32, _]) == None
+    }
+
+    @test
+    def indexOfLeft02(): Bool = region r {
+        Array.indexOfLeft(0, [1]) == None
+    }
+
+    @test
+    def indexOfLeft03(): Bool = region r {
+        Array.indexOfLeft(1, [1]) == Some(0)
+    }
+
+    @test
+    def indexOfLeft04(): Bool = region r {
+        Array.indexOfLeft(0, [1,2]) == None
+    }
+
+    @test
+    def indexOfLeft05(): Bool = region r {
+        Array.indexOfLeft(1, [1,2]) == Some(0)
+    }
+
+    @test
+    def indexOfLeft06(): Bool = region r {
+        Array.indexOfLeft(2, [1,2]) == Some(1)
+    }
+
+    @test
+    def indexOfLeft07(): Bool = region r {
+        Array.indexOfLeft(1, [1,1]) == Some(0)
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // indexOfRight                                                            //
@@ -2050,36 +2156,54 @@ def flatten10(): Bool & Impure =
     let a = Array.flatten([[1],[2,3],[4]]);
     Array.sameElements(a, [1,2,3,4])
 
-/////////////////////////////////////////////////////////////////////////////
-// exists                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def exists01(): Bool & Impure = Array.exists(i -> i > 3, [] : Array[Int32]) == false
+    @test
+    def exists01(): Bool = region r {
+        Array.exists(i -> i > 3, []: ScopedArray[Int32, _]) == false
+    }
 
-@test
-def exists02(): Bool & Impure = Array.exists(i -> i > 3, [1]) == false
+    @test
+    def exists02(): Bool = region r {
+        Array.exists(i -> i > 3, [1]) == false
+    }
 
-@test
-def exists03(): Bool & Impure = Array.exists(i -> i > 3, [5]) == true
+    @test
+    def exists03(): Bool = region r {
+        Array.exists(i -> i > 3, [5]) == true
+    }
 
-@test
-def exists04(): Bool & Impure = Array.exists(i -> i > 3, [1,2]) == false
+    @test
+    def exists04(): Bool = region r {
+        Array.exists(i -> i > 3, [1,2]) == false
+    }
 
-@test
-def exists05(): Bool & Impure = Array.exists(i -> i > 3, [1,6]) == true
+    @test
+    def exists05(): Bool = region r {
+        Array.exists(i -> i > 3, [1,6]) == true
+    }
 
-@test
-def exists06(): Bool & Impure = Array.exists(i -> i > 3, [6,1]) == true
+    @test
+    def exists06(): Bool = region r {
+        Array.exists(i -> i > 3, [6,1]) == true
+    }
 
-@test
-def exists07(): Bool & Impure = Array.exists(i -> i > 3, [16,6]) == true
+    @test
+    def exists07(): Bool = region r {
+        Array.exists(i -> i > 3, [16,6]) == true
+    }
 
-@test
-def exists08(): Bool & Impure = Array.exists(i -> i > 3, [1,-9,3]) == false
+    @test
+    def exists08(): Bool = region r {
+        Array.exists(i -> i > 3, [1,-9,3]) == false
+    }
 
-@test
-def exists09(): Bool & Impure = Array.exists(i -> i > 3, [1,9,3]) == true
+    @test
+    def exists09(): Bool = region r {
+        Array.exists(i -> i > 3, [1,9,3]) == true
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // forall                                                                  //

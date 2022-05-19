@@ -365,7 +365,7 @@ namespace TestToString {
 
     @test
     def arrayToString03(): Bool & Impure =
-        toString(Array.new('a', 3)) == "[a, a, a]"
+        toString(Array.new('a', 3, static)) == "[a, a, a]"
 
     @test
     def arrayToString04(): Bool & Impure =
@@ -373,7 +373,7 @@ namespace TestToString {
 
     @test
     def arrayToString05(): Bool & Impure =
-        toString(Array.new([1, 2, 3], 3)) == "[[1, 2, 3], [1, 2, 3], [1, 2, 3]]"
+        toString(Array.new([1, 2, 3], 3, static)) == "[[1, 2, 3], [1, 2, 3], [1, 2, 3]]"
 
     @test
     def arrayToString06(): Bool & Impure =
