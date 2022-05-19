@@ -370,10 +370,19 @@ object CodeHinter {
     * NB: Not currently checked for every expression.
     */
   private def checkEffect(tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[CodeHint] = {
-    if (nonTrivialEffect(tpe)) {
-      CodeHint.NonTrivialEffect(tpe, loc) :: Nil
-    } else {
+    if (numberOfVarOccurs(tpe) < 5) {
+      // Case 1: Formula is small. Good.
       Nil
+    } else {
+      // Case 2: Formula is big. Try to minimize it.
+      val minType = BoolTable.minimizeType(tpe)
+      if (numberOfVarOccurs(minType) < 5) {
+        // Case 2.1: Formula is small. Good.
+        Nil
+      } else {
+        // Case 2.2: Formula is still big. Report a code hint.
+        CodeHint.NonTrivialEffect(minType, loc) :: Nil
+      }
     }
   }
 
@@ -458,16 +467,15 @@ object CodeHinter {
   private def isPureFunction(tpe: Type): Boolean = tpe.arrowEffectType == Type.Pure
 
   /**
-    * Returns `true` if the given effect `tpe` is non-trivial.
+    * Returns the total number of variable *occurrences* in the given type `tpe`.
     */
-  private def nonTrivialEffect(tpe: Type)(implicit flix: Flix): Boolean = {
-    if (Type.size(tpe) < 5) {
-      // Case 1: All good.
-      false
-    } else {
-      // Case 2: Try to minimize and then re-check.
-      BoolTable.minimizeType(tpe).size > 5
-    }
+  private def numberOfVarOccurs(tpe: Type): Int = tpe match {
+    case Type.KindedVar(_, _) => 1
+    case Type.UnkindedVar(_, _) => 1
+    case Type.Ascribe(tpe, _, _) => numberOfVarOccurs(tpe)
+    case Type.Cst(_, _) => 0
+    case Type.Apply(tpe1, tpe2, _) => numberOfVarOccurs(tpe1) + numberOfVarOccurs(tpe2)
+    case Type.Alias(_, _, tpe, _) => numberOfVarOccurs(tpe)
   }
 
 }
