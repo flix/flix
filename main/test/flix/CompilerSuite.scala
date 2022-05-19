@@ -374,4 +374,5 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Integ.Class.Schema.flix")
   mkTest("main/test/flix/Test.Integ.Fixpoint.TypeAlias.flix")
   mkTest("main/test/flix/Test.Integ.Enum.TypeAlias.flix")
+
 }
