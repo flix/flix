@@ -516,39 +516,45 @@ def findRight06(): Bool & Impure = Array.findRight(i -> i > 2, [-6,6]) == Some(6
 @test
 def findRight07(): Bool & Impure = Array.findRight(i -> i > 2, [6,7]) == Some(7)
 
-/////////////////////////////////////////////////////////////////////////////
-// range                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // range                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def range01(): Bool & Impure =
-    let a = Array.range(1, 0, static);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def range01(): Bool = region r {
+        let a = Array.range(1, 0, r);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def range02(): Bool & Impure =
-    let a = Array.range(1, 1, static);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def range02(): Bool = region r {
+        let a = Array.range(1, 1, r);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def range03(): Bool & Impure =
-    let a = Array.range(1, 2, static);
-    Array.sameElements(a, [1])
+    @test
+    def range03(): Bool = region r {
+        let a = Array.range(1, 2, r);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def range04(): Bool & Impure =
-    let a = Array.range(1, 3, static);
-    Array.sameElements(a, [1,2])
+    @test
+    def range04(): Bool = region r {
+        let a = Array.range(1, 3, r);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def range05(): Bool & Impure =
-    let a = Array.range(1, 4, static);
-    Array.sameElements(a, [1,2,3])
+    @test
+    def range05(): Bool = region r {
+        let a = Array.range(1, 4, r);
+        Array.sameElements(a, [1,2,3])
+    }
 
-@test
-def range06(): Bool & Impure =
-    let a = Array.range(-1, 3, static);
-    Array.sameElements(a, [-1,0,1,2])
+    @test
+    def range06(): Bool = region r {
+        let a = Array.range(-1, 3, r);
+        Array.sameElements(a, [-1,0,1,2])
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // repeat                                                                  //
