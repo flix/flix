@@ -3584,34 +3584,39 @@ def findIndices07(): Bool & Impure =
     let a = Array.findIndices(i -> i > 2, [6,7]);
     Array.sameElements(a, [0,1])
 
-/////////////////////////////////////////////////////////////////////////////
-// init                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // init                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def init01(): Bool & Impure =
-    let a = Array.init(x -> x, 0, static);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def init01(): Bool = region r {
+        let a = Array.init(x -> x, 0, r);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def init02(): Bool & Impure =
-    let a = Array.init(x -> x, -1, static);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def init02(): Bool = region r {
+        let a = Array.init(x -> x, -1, r);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def init03(): Bool & Impure =
-    let a = Array.init(x -> x, 1, static);
-    Array.sameElements(a, [0])
+    @test
+    def init03(): Bool = region r {
+        let a = Array.init(x -> x, 1, r);
+        Array.sameElements(a, [0])
+    }
 
-@test
-def init04(): Bool & Impure =
-    let a = Array.init(x -> x, 2, static);
-    Array.sameElements(a, [0,1])
+    @test
+    def init04(): Bool = region r {
+        let a = Array.init(x -> x, 2, r);
+        Array.sameElements(a, [0,1])
+    }
 
-@test
-def init05(): Bool & Impure =
-    let a = Array.init(x -> x, 50, static);
-    Array.length(a) == 50
+    @test
+    def init05(): Bool = region r {
+        let a = Array.init(x -> x, 50, r);
+        Array.length(a) == 50
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // init2                                                                   //
@@ -3643,131 +3648,147 @@ def init205(): Bool & Impure =
     Array.length(a) == 50 and Array.length(b) == 50
 
 
-/////////////////////////////////////////////////////////////////////////////
-// sameElements                                                            //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // sameElements                                                            //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def sameElements01(): Bool & Impure =
-    let a = []: Array[Int32];
-    let b = []: Array[Int32];
-    Array.sameElements(a,b) == true
+    @test
+    def sameElements01(): Bool = region r {
+        let a = []: ScopedArray[Int32, _];
+        let b = []: ScopedArray[Int32, _];
+        Array.sameElements(a,b) == true
+    }
 
-@test
-def sameElements02(): Bool & Impure =
-    let a = [1]: Array[Int32];
-    let b = []: Array[Int32];
-    Array.sameElements(a,b) == false
+    @test
+    def sameElements02(): Bool = region r {
+        let a = [1]: ScopedArray[Int32, _];
+        let b = []: ScopedArray[Int32, _];
+        Array.sameElements(a,b) == false
+    }
 
-@test
-def sameElements03(): Bool & Impure =
-    let a = []: Array[Int32];
-    let b = [1]: Array[Int32];
-    Array.sameElements(a,b) == false
+    @test
+    def sameElements03(): Bool = region r {
+        let a = []: ScopedArray[Int32, _];
+        let b = [1]: ScopedArray[Int32, _];
+        Array.sameElements(a,b) == false
+    }
 
-@test
-def sameElements04(): Bool & Impure =
-    let a = [1]: Array[Int32];
-    let b = [1]: Array[Int32];
-    Array.sameElements(a,b) == true
+    @test
+    def sameElements04(): Bool = region r {
+        let a = [1]: ScopedArray[Int32, _];
+        let b = [1]: ScopedArray[Int32, _];
+        Array.sameElements(a,b) == true
+    }
 
-@test
-def sameElements05(): Bool & Impure =
-    let a = [1]: Array[Int32];
-    let b = [0]: Array[Int32];
-    Array.sameElements(a,b) == false
+    @test
+    def sameElements05(): Bool = region r {
+        let a = [1]: ScopedArray[Int32, _];
+        let b = [0]: ScopedArray[Int32, _];
+        Array.sameElements(a,b) == false
+    }
 
-@test
-def sameElements06(): Bool & Impure =
-    let a = [1,2]: Array[Int32];
-    let b = [1,2]: Array[Int32];
-    Array.sameElements(a,b) == true
+    @test
+    def sameElements06(): Bool = region r {
+        let a = [1,2]: ScopedArray[Int32, _];
+        let b = [1,2]: ScopedArray[Int32, _];
+        Array.sameElements(a,b) == true
+    }
 
-@test
-def sameElements07(): Bool & Impure =
-    let a = [1,2]: Array[Int32];
-    let b = [2,1]: Array[Int32];
-    Array.sameElements(a,b) == false
+    @test
+    def sameElements07(): Bool = region r {
+        let a = [1,2]: ScopedArray[Int32, _];
+        let b = [2,1]: ScopedArray[Int32, _];
+        Array.sameElements(a,b) == false
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// foreach                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // foreach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def foreach01(): Bool & Impure =
-    let a = []: Array[Int32];
-    let sb = new StringBuilder(static);
-    let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-    Array.foreach(fn, a);
-    StringBuilder.toString(sb) == ""
+    @test
+    def foreach01(): Bool region r {
+        let a = []: ScopedArray[Int32, _];
+        let sb = new StringBuilder(r);
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        Array.foreach(fn, a);
+        StringBuilder.toString(sb) == ""
+    }
 
-@test
-def foreach02(): Bool & Impure =
-    let a = [0];
-    let sb = new StringBuilder(static);
-    let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-    Array.foreach(fn, a);
-    StringBuilder.toString(sb) == "F"
+    @test
+    def foreach02(): Bool region r {
+        let a = [0];
+        let sb = new StringBuilder(r);
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        Array.foreach(fn, a);
+        StringBuilder.toString(sb) == "F"
+    }
 
-@test
-def foreach03(): Bool & Impure =
-    let a = [1];
-    let sb = new StringBuilder(static);
-    let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-    Array.foreach(fn, a);
-    StringBuilder.toString(sb) == "T"
+    @test
+    def foreach03(): Bool region r {
+        let a = [1];
+        let sb = new StringBuilder(r);
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        Array.foreach(fn, a);
+        StringBuilder.toString(sb) == "T"
+    }
 
-@test
-def foreach04(): Bool & Impure =
-    let a = [0,1];
-    let sb = new StringBuilder(static);
-    let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-    Array.foreach(fn, a);
-    StringBuilder.toString(sb) == "FT"
+    @test
+    def foreach04(): Bool region r {
+        let a = [0,1];
+        let sb = new StringBuilder(r);
+        let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        Array.foreach(fn, a);
+        StringBuilder.toString(sb) == "FT"
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// foreachWithIndex                                                        //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // foreachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def foreachWithIndex01(): Bool & Impure =
-    let a = []: Array[Float32];
-    let sb = new StringBuilder(static);
-    let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-    Array.foreachWithIndex(fn, a);
-    StringBuilder.toString(sb) == ""
+    @test
+    def foreachWithIndex01(): Bool = region r {
+        let a = []: ScopedArray[Float32, _];
+        let sb = new StringBuilder(r);
+        let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        Array.foreachWithIndex(fn, a);
+        StringBuilder.toString(sb) == ""
+    }
 
-@test
-def foreachWithIndex02(): Bool & Impure =
-    let a = [0.0];
-    let sb = new StringBuilder(static);
-    let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-    Array.foreachWithIndex(fn, a);
-    StringBuilder.toString(sb) == "F"
+    @test
+    def foreachWithIndex02(): Bool = region r {
+        let a = [0.0];
+        let sb = new StringBuilder(r);
+        let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        Array.foreachWithIndex(fn, a);
+        StringBuilder.toString(sb) == "F"
+    }
 
-@test
-def foreachWithIndex03(): Bool & Impure =
-    let a = [0.0, 0.1];
-    let sb = new StringBuilder(static);
-    let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-    Array.foreachWithIndex(fn, a);
-    StringBuilder.toString(sb) == "FT"
+    @test
+    def foreachWithIndex03(): Bool = region r {
+        let a = [0.0, 0.1];
+        let sb = new StringBuilder(r);
+        let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        Array.foreachWithIndex(fn, a);
+        StringBuilder.toString(sb) == "FT"
+    }
 
-@test
-def foreachWithIndex04(): Bool & Impure =
-    let a = [0.0, 0.1, 0.2];
-    let sb = new StringBuilder(static);
-    let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-    Array.foreachWithIndex(fn, a);
-    StringBuilder.toString(sb) == "FTT"
+    @test
+    def foreachWithIndex04(): Bool = region r {
+        let a = [0.0, 0.1, 0.2];
+        let sb = new StringBuilder(r);
+        let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        Array.foreachWithIndex(fn, a);
+        StringBuilder.toString(sb) == "FTT"
+    }
 
-@test
-def foreachWithIndex05(): Bool & Impure =
-    let a = [0.0, 0.1, 0.2, 0.3];
-    let sb = new StringBuilder(static);
-    let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-    Array.foreachWithIndex(fn, a);
-    StringBuilder.toString(sb) == "FTTT"
+    @test
+    def foreachWithIndex05(): Bool = region r {
+        let a = [0.0, 0.1, 0.2, 0.3];
+        let sb = new StringBuilder(r);
+        let fn = (_,ix) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        Array.foreachWithIndex(fn, a);
+        StringBuilder.toString(sb) == "FTTT"
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // updateSequence                                                          //
