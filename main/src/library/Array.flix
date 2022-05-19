@@ -432,10 +432,10 @@ namespace Array {
     /// Returns the reverse of `a`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def reverse(a: Array[a]): Array[a] & Impure =
+    pub def reverse(a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
         let end = len - 1;
-        init(i -> a[end - i], len, static)
+        init(i -> a[end - i], len, Scoped.regionOf(a))
 
     ///
     /// Reverse the array `arr`, mutating it in place.
