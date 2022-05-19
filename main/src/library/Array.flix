@@ -461,10 +461,10 @@ namespace Array {
     /// Rotate the contents of array `arr` by `n` steps to the left.
     ///
     @Time(n) @Space(length(arr))
-    pub def rotateLeft(n: Int32, arr: Array[a]): Array[a] & Impure =
+    pub def rotateLeft(n: Int32, arr: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         let len = length(arr);
         if (len < 1)
-            []
+            [] @ Scoped.regionOf(arr)
         else
             if (n < 0)
                 rotateRightHelper(Int32.abs(n), arr)
@@ -478,18 +478,18 @@ namespace Array {
     ///
     /// This is an explicit helper to avoid code duplication.
     ///
-    def rotateLeftHelper(n: Int32, arr: Array[a]): Array[a] & Impure =
+    def rotateLeftHelper(n: Int32, arr: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         let len = length(arr);
         let f = i -> { let i1 = n + i; arr[i1 rem len] };
-        init(f, len, static)
+        init(f, len, Scoped.regionOf(arr))
 
     ///
     /// Rotate the contents of array `arr` by `n` steps to the right.
     ///
     @Time(n) @Space(length(arr))
-    pub def rotateRight(n: Int32, arr: Array[a]): Array[a] & Impure =
+    pub def rotateRight(n: Int32, arr: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         if (length(arr) < 1)
-            []
+            [] @ Scoped.regionOf(arr)
         else
             if (n < 0)
                 rotateLeftHelper(Int32.abs(n), arr)
@@ -503,12 +503,12 @@ namespace Array {
     ///
     /// This is an explicit helper to avoid code duplication.
     ///
-    def rotateRightHelper(n: Int32, a: Array[a]): Array[a] & Impure =
+    def rotateRightHelper(n: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
         let n1 = n rem len;
         let start = len - n1;
         let f = i -> { let i1 = start + i; a[i1 rem len]};
-        init(f, len, static)
+        init(f, len, Scoped.regionOf(a))
 
     ///
     /// Returns a copy of `a` with the element at index `i` replaced by `x`.

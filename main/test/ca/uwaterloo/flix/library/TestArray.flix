@@ -942,123 +942,145 @@ def reverse06!(): Bool & Impure =
     Array.reverse!(a);
     Array.sameElements(a, [4,3,2,1])
 
-/////////////////////////////////////////////////////////////////////////////
-// rotateLeft                                                              //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // rotateLeft                                                              //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def rotateLeft01(): Bool & Impure =
-    let a = Array.rotateLeft(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def rotateLeft01(): Bool = region r {
+        let a = Array.rotateLeft(0, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def rotateLeft02(): Bool & Impure =
-    let a = Array.rotateLeft(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def rotateLeft02(): Bool = region r {
+        let a = Array.rotateLeft(1, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def rotateLeft03(): Bool & Impure =
-    let a = Array.rotateLeft(0, [1]);
-    Array.sameElements(a, [1])
+    @test
+    def rotateLeft03(): Bool = region r {
+        let a = Array.rotateLeft(0, [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def rotateLeft04(): Bool & Impure =
-    let a = Array.rotateLeft(0, [1,2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def rotateLeft04(): Bool = region r {
+        let a = Array.rotateLeft(0, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def rotateLeft05(): Bool & Impure =
-    let a = Array.rotateLeft(1, [1,2]);
-    Array.sameElements(a, [2,1])
+    @test
+    def rotateLeft05(): Bool = region r {
+        let a = Array.rotateLeft(1, [1,2]);
+        Array.sameElements(a, [2,1])
+    }
 
-@test
-def rotateLeft06(): Bool & Impure =
-    let a = Array.rotateLeft(2, [1,2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def rotateLeft06(): Bool = region r {
+        let a = Array.rotateLeft(2, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def rotateLeft07(): Bool & Impure =
-    let a = Array.rotateLeft(3, [1,2]);
-    Array.sameElements(a, [2,1])
+    @test
+    def rotateLeft07(): Bool = region r {
+        let a = Array.rotateLeft(3, [1,2]);
+        Array.sameElements(a, [2,1])
+    }
 
-@test
-def rotateLeft08(): Bool & Impure =
-    let a = Array.rotateLeft(-1, [1,2]);
-    Array.sameElements(a, [2,1])
+    @test
+    def rotateLeft08(): Bool = region r {
+        let a = Array.rotateLeft(-1, [1,2]);
+        Array.sameElements(a, [2,1])
+    }
 
-@test
-def rotateLeft09(): Bool & Impure =
-    let a = Array.rotateLeft(0, [1,2,3]);
-    Array.sameElements(a, [1,2,3])
+    @test
+    def rotateLeft09(): Bool = region r {
+        let a = Array.rotateLeft(0, [1,2,3]);
+        Array.sameElements(a, [1,2,3])
+    }
 
-@test
-def rotateLeft10(): Bool & Impure =
-    let a = Array.rotateLeft(1, [1,2,3]);
-    Array.sameElements(a, [2,3,1])
+    @test
+    def rotateLeft10(): Bool = region r {
+        let a = Array.rotateLeft(1, [1,2,3]);
+        Array.sameElements(a, [2,3,1])
+    }
 
-@test
-def rotateLeft11(): Bool & Impure =
-    let a = Array.rotateLeft(2, [1,2,3]);
-    Array.sameElements(a, [3,1,2])
+    @test
+    def rotateLeft11(): Bool = region r {
+        let a = Array.rotateLeft(2, [1,2,3]);
+        Array.sameElements(a, [3,1,2])
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// rotateRight                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // rotateRight                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def rotateRight01(): Bool & Impure =
-    let a = Array.rotateRight(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def rotateRight01(): Bool = region r {
+        let a = Array.rotateRight(0, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def rotateRight02(): Bool & Impure =
-    let a = Array.rotateRight(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def rotateRight02(): Bool = region r {
+        let a = Array.rotateRight(1, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def rotateRight03(): Bool & Impure =
-    let a = Array.rotateRight(0, [1]);
-    Array.sameElements(a, [1])
+    @test
+    def rotateRight03(): Bool = region r {
+        let a = Array.rotateRight(0, [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def rotateRight04(): Bool & Impure =
-    let a = Array.rotateRight(0, [1,2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def rotateRight04(): Bool = region r {
+        let a = Array.rotateRight(0, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def rotateRight05(): Bool & Impure =
-    let a = Array.rotateRight(1, [1,2]);
-    Array.sameElements(a, [2,1])
+    @test
+    def rotateRight05(): Bool = region r {
+        let a = Array.rotateRight(1, [1,2]);
+        Array.sameElements(a, [2,1])
+    }
 
-@test
-def rotateRight06(): Bool & Impure =
-    let a = Array.rotateRight(2, [1,2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def rotateRight06(): Bool = region r {
+        let a = Array.rotateRight(2, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def rotateRight07(): Bool & Impure =
-    let a = Array.rotateRight(3, [1,2]);
-    Array.sameElements(a, [2,1])
+    @test
+    def rotateRight07(): Bool = region r {
+        let a = Array.rotateRight(3, [1,2]);
+        Array.sameElements(a, [2,1])
+    }
 
-@test
-def rotateRight08(): Bool & Impure =
-    let a = Array.rotateRight(-1, [1,2]);
-    Array.sameElements(a, [2,1])
+    @test
+    def rotateRight08(): Bool = region r {
+        let a = Array.rotateRight(-1, [1,2]);
+        Array.sameElements(a, [2,1])
+    }
 
-@test
-def rotateRight09(): Bool & Impure =
-    let a = Array.rotateRight(0, [1,2,3]);
-    Array.sameElements(a, [1,2,3])
+    @test
+    def rotateRight09(): Bool = region r {
+        let a = Array.rotateRight(0, [1,2,3]);
+        Array.sameElements(a, [1,2,3])
+    }
 
-@test
-def rotateRight10(): Bool & Impure =
-    let a = Array.rotateRight(1, [1,2,3]);
-    Array.sameElements(a, [3,1,2])
+    @test
+    def rotateRight10(): Bool = region r {
+        let a = Array.rotateRight(1, [1,2,3]);
+        Array.sameElements(a, [3,1,2])
+    }
 
-@test
-def rotateRight11(): Bool & Impure =
-    let a = Array.rotateRight(2, [1,2,3]);
-    Array.sameElements(a, [2,3,1])
+    @test
+    def rotateRight11(): Bool = region r {
+        let a = Array.rotateRight(2, [1,2,3]);
+        Array.sameElements(a, [2,3,1])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // update                                                                  //
