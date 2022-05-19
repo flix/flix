@@ -26,10 +26,38 @@ pub enum Option[t] with Eq, Order, ToString {
     case Some(t)
 }
 
+instance LowerBound[Option[t]] {
+    pub def minValue(_: Unit): Option[t] = None
+}
+
+instance PartialOrder[Option[t]] with PartialOrder[t] {
+    pub def lessEqual(x: Option[t], y: Option[t]): Bool = match (x,y) {
+       case (None, _)           => true
+       case (Some(a), Some(b))  => PartialOrder.lessEqual(a,b)
+       case _                   => false
+   }
+}
+
+instance JoinLattice[Option[t]] with JoinLattice[t] {
+    pub def leastUpperBound(x: Option[t], y: Option[t]): Option[t] = match (x,y) {
+       case (None, _)           => y
+       case (_, None)           => x
+       case (Some(a), Some(b))  => Some(JoinLattice.leastUpperBound(a,b))
+   }
+}
+
+instance MeetLattice[Option[t]] with MeetLattice[t] {
+    pub def greatestLowerBound(x: Option[t], y: Option[t]): Option[t] = match (x,y) {
+       case (None, _)           => None
+       case (_, None)           => None
+       case (Some(a), Some(b))  => Some(MeetLattice.greatestLowerBound(a, b))
+   }
+}
+
 instance Hash[Option[a]] with Hash[a] {
     pub def hash(o: Option[a]): Int32 = match o {
+        case None    => 1046527
         case Some(y) => 919 * Hash.hash(y)
-        case None => 1046527
     }
 }
 
