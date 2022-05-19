@@ -325,16 +325,17 @@ namespace Array {
     ///
     /// Alias for `scanLeft`.
     ///
-    pub def scan(f: (b, a) -> b & ef, s: b, arr: Array[a]): Array[b] & Impure = scanLeft(f, s, arr)
+    pub def scan(f: (b, a) -> b & ef, s: b, arr: ScopedArray[a, r]): ScopedArray[b, r] \ { ef, Read(r), Write(r) } =
+        scanLeft(f, s, arr)
 
     ///
     /// Accumulates the result of applying `f` to `arr` going left to right.
     ///
     /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2),  ...]`.
     ///
-    pub def scanLeft(f: (b, a) -> b & ef, s: b, arr: Array[a]): Array[b] & Impure =
+    pub def scanLeft(f: (b, a) -> b & ef, s: b, arr: ScopedArray[a, r]): ScopedArray[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(arr) + 1;
-        let b = new(s, len, static);
+        let b = new(s, len, Scoped.regionOf(arr));
         def loop(i, acc) = {
             if (i >= len)
                 ()
