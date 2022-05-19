@@ -1224,149 +1224,177 @@ def replace08!(): Bool & Impure =
     Array.replace!(from = 3, to = 4, a);
     Array.sameElements(a, [4,4])
 
-/////////////////////////////////////////////////////////////////////////////
-// patch                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // patch                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def patch01(): Bool & Impure =
-    let a = Array.patch(0, 0, []: Array[Int32], []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def patch01(): Bool = region r {
+        let a = Array.patch(0, 0, []: ScopedArray[Int32, _], []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def patch02(): Bool & Impure =
-    let a = Array.patch(0, 2, [1,2], []);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def patch02(): Bool = region r {
+        let a = Array.patch(0, 2, [1,2], []);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def patch03(): Bool & Impure =
-    let a = Array.patch(0, 2, [], [1,2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def patch03(): Bool = region r {
+        let a = Array.patch(0, 2, [], [1,2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def patch04(): Bool & Impure =
-    let a = Array.patch(-3, 3, [1,2,4], [1,2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def patch04(): Bool = region r {
+        let a = Array.patch(-3, 3, [1,2,4], [1,2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def patch05(): Bool & Impure =
-    let a = Array.patch(2, 3, [1,2,4], [1,2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def patch05(): Bool = region r {
+        let a = Array.patch(2, 3, [1,2,4], [1,2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def patch06(): Bool & Impure =
-    let a = Array.patch(0, 0, [], [1]);
-    Array.sameElements(a, [1])
+    @test
+    def patch06(): Bool = region r {
+        let a = Array.patch(0, 0, [], [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def patch07(): Bool & Impure =
-    let a = Array.patch(1, 0, [2], [1]);
-    Array.sameElements(a, [1])
+    @test
+    def patch07(): Bool = region r {
+        let a = Array.patch(1, 0, [2], [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def patch08(): Bool & Impure =
-    let a = Array.patch(0, 1, [2], [1]);
-    Array.sameElements(a, [2])
+    @test
+    def patch08(): Bool = region r {
+        let a = Array.patch(0, 1, [2], [1]);
+        Array.sameElements(a, [2])
+    }
 
-@test
-def patch09(): Bool & Impure =
-    let a = Array.patch(0, 2, [2,4], [1]);
-    Array.sameElements(a, [2])
+    @test
+    def patch09(): Bool = region r {
+        let a = Array.patch(0, 2, [2,4], [1]);
+        Array.sameElements(a, [2])
+    }
 
-@test
-def patch10(): Bool & Impure =
-    let a = Array.patch(-1, 2, [2,4], [1]);
-    Array.sameElements(a, [4])
+    @test
+    def patch10(): Bool = region r {
+        let a = Array.patch(-1, 2, [2,4], [1]);
+        Array.sameElements(a, [4])
+    }
 
-@test
-def patch11(): Bool & Impure =
-    let a = Array.patch(-1, 2, [3,4], [1,2]);
-    Array.sameElements(a, [4,2])
+    @test
+    def patch11(): Bool = region r {
+        let a = Array.patch(-1, 2, [3,4], [1,2]);
+        Array.sameElements(a, [4,2])
+    }
 
-@test
-def patch12(): Bool & Impure =
-    let a = Array.patch(1, 2, [3,4], [1,2]);
-    Array.sameElements(a, [1,3])
+    @test
+    def patch12(): Bool = region r {
+        let a = Array.patch(1, 2, [3,4], [1,2]);
+        Array.sameElements(a, [1,3])
+    }
 
-@test
-def patch13(): Bool & Impure =
-    let a = Array.patch(-2, 2, [3,4], [1,2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def patch13(): Bool = region r {
+        let a = Array.patch(-2, 2, [3,4], [1,2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def patch14(): Bool & Impure =
-    let a = Array.patch(2, 2, [3,4], [1,2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def patch14(): Bool = region r {
+        let a = Array.patch(2, 2, [3,4], [1,2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def patch15(): Bool & Impure =
-    let a = Array.patch(1, 1, [3], [1,2]);
-    Array.sameElements(a, [1,3])
+    @test
+    def patch15(): Bool = region r {
+        let a = Array.patch(1, 1, [3], [1,2]);
+        Array.sameElements(a, [1,3])
+    }
 
-@test
-def patch16(): Bool & Impure =
-    let a = Array.patch(0, 2, [3,4], [1,2]);
-    Array.sameElements(a, [3,4])
+    @test
+    def patch16(): Bool = region r {
+        let a = Array.patch(0, 2, [3,4], [1,2]);
+        Array.sameElements(a, [3,4])
+    }
 
-@test
-def patch17(): Bool & Impure =
-    let a = Array.patch(0, 1, [4], [1, 2, 3]);
-    Array.sameElements(a, [4, 2, 3])
+    @test
+    def patch17(): Bool = region r {
+        let a = Array.patch(0, 1, [4], [1, 2, 3]);
+        Array.sameElements(a, [4, 2, 3])
+    }
 
-@test
-def patch18(): Bool & Impure =
-    let a = Array.patch(1, 1, [4], [1, 2, 3]);
-    Array.sameElements(a, [1, 4, 3])
+    @test
+    def patch18(): Bool = region r {
+        let a = Array.patch(1, 1, [4], [1, 2, 3]);
+        Array.sameElements(a, [1, 4, 3])
+    }
 
-@test
-def patch19(): Bool & Impure =
-    let a = Array.patch(2, 1, [4], [1, 2, 3]);
-    Array.sameElements(a, [1, 2, 4])
+    @test
+    def patch19(): Bool = region r {
+        let a = Array.patch(2, 1, [4], [1, 2, 3]);
+        Array.sameElements(a, [1, 2, 4])
+    }
 
-@test
-def patch20(): Bool & Impure =
-    let a = Array.patch(0, 2, [4, 5], [1, 2, 3]);
-    Array.sameElements(a, [4, 5, 3])
+    @test
+    def patch20(): Bool = region r {
+        let a = Array.patch(0, 2, [4, 5], [1, 2, 3]);
+        Array.sameElements(a, [4, 5, 3])
+    }
 
-@test
-def patch21(): Bool & Impure =
-    let a = Array.patch(1, 2, [4, 5], [1, 2, 3]);
-    Array.sameElements(a, [1, 4, 5])
+    @test
+    def patch21(): Bool = region r {
+        let a = Array.patch(1, 2, [4, 5], [1, 2, 3]);
+        Array.sameElements(a, [1, 4, 5])
+    }
 
-@test
-def patch22(): Bool & Impure =
-    let a = Array.patch(0, 2, [4, 5, 6], [1, 2, 3]);
-    Array.sameElements(a, [4, 5, 3])
+    @test
+    def patch22(): Bool = region r {
+        let a = Array.patch(0, 2, [4, 5, 6], [1, 2, 3]);
+        Array.sameElements(a, [4, 5, 3])
+    }
 
-@test
-def patch23(): Bool & Impure =
-    let a = Array.patch(0, 3, [4, 5, 6], [1, 2, 3]);
-    Array.sameElements(a, [4, 5, 6])
+    @test
+    def patch23(): Bool = region r {
+        let a = Array.patch(0, 3, [4, 5, 6], [1, 2, 3]);
+        Array.sameElements(a, [4, 5, 6])
+    }
 
-@test
-def patch24(): Bool & Impure =
-    let a = Array.patch(2, 4, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
-    Array.sameElements(a, [1, 2, 14, 15, 16, 17, 7])
+    @test
+    def patch24(): Bool = region r {
+        let a = Array.patch(2, 4, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
+        Array.sameElements(a, [1, 2, 14, 15, 16, 17, 7])
+    }
 
-@test
-def patch25(): Bool & Impure =
-    let a = Array.patch(-2, 4, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
-    Array.sameElements(a, [16, 17, 3, 4, 5, 6, 7])
+    @test
+    def patch25(): Bool = region r {
+        let a = Array.patch(-2, 4, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
+        Array.sameElements(a, [16, 17, 3, 4, 5, 6, 7])
+    }
 
-@test
-def patch26(): Bool & Impure =
-    let a = Array.patch(4, 5, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
-    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 16])
+    @test
+    def patch26(): Bool = region r {
+        let a = Array.patch(4, 5, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
+        Array.sameElements(a, [1, 2, 3, 4, 14, 15, 16])
+    }
 
-@test
-def patch27(): Bool & Impure =
-    let a = Array.patch(4, 2, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
-    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 7])
+    @test
+    def patch27(): Bool = region r {
+        let a = Array.patch(4, 2, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
+        Array.sameElements(a, [1, 2, 3, 4, 14, 15, 7])
+    }
 
-@test
-def patch28(): Bool & Impure =
-    let a = Array.patch(-1, 10, [-1, -2, -3, -4, -5, -6, -7, -8], [1, 2, 3, 4, 5, 6, 7]);
-    Array.sameElements(a, [-2, -3, -4, -5, -6, -7, -8])
+    @test
+    def patch28(): Bool = region r {
+        let a = Array.patch(-1, 10, [-1, -2, -3, -4, -5, -6, -7, -8], [1, 2, 3, 4, 5, 6, 7]);
+        Array.sameElements(a, [-2, -3, -4, -5, -6, -7, -8])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // patch!                                                                  //
