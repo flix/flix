@@ -550,34 +550,39 @@ def range06(): Bool & Impure =
     let a = Array.range(-1, 3, static);
     Array.sameElements(a, [-1,0,1,2])
 
-/////////////////////////////////////////////////////////////////////////////
-// repeat                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // repeat                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def repeat01(): Bool & Impure =
-    let a = Array.repeat(-1, 1);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def repeat01(): Bool = region r {
+        let a = Array.repeat(-1, 1, r);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def repeat02(): Bool & Impure =
-    let a = Array.repeat(0, 1);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def repeat02(): Bool = region r {
+        let a = Array.repeat(0, 1, r);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def repeat03(): Bool & Impure =
-    let a = Array.repeat(1, 1);
-    Array.sameElements(a, [1])
+    @test
+    def repeat03(): Bool = region r {
+        let a = Array.repeat(1, 1, r);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def repeat04(): Bool & Impure =
-    let a = Array.repeat(2, 1);
-    Array.sameElements(a, [1,1])
+    @test
+    def repeat04(): Bool = region r {
+        let a = Array.repeat(2, 1, r);
+        Array.sameElements(a, [1,1])
+    }
 
-@test
-def repeat05(): Bool & Impure =
-    let a = Array.repeat(3, 1);
-    Array.sameElements(a, [1,1,1])
+    @test
+    def repeat05(): Bool = region r {
+        let a = Array.repeat(3, 1, r);
+        Array.sameElements(a, [1,1,1])
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // scan                                                                    //
@@ -893,32 +898,32 @@ def scanRight07(): Bool & Impure =
 
 @test
 def flatMap01(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i), []);
+    let a = Array.flatMap(i -> Array.repeat(i, i, static), []);
     Array.sameElements(a, []: Array[Int32])
 
 @test
 def flatMap02(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i), [0]);
+    let a = Array.flatMap(i -> Array.repeat(i, i, static), [0]);
     Array.sameElements(a, []: Array[Int32])
 
 @test
 def flatMap03(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i), [1]);
+    let a = Array.flatMap(i -> Array.repeat(i, i, static), [1]);
     Array.sameElements(a, [1])
 
 @test
 def flatMap04(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i), [2]);
+    let a = Array.flatMap(i -> Array.repeat(i, i, static), [2]);
     Array.sameElements(a, [2,2])
 
 @test
 def flatMap05(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i), [1,2]);
+    let a = Array.flatMap(i -> Array.repeat(i, i, static), [1,2]);
     Array.sameElements(a, [1,2,2])
 
 @test
 def flatMap06(): Bool & Impure =
-    let a = Array.flatMap(i -> Array.repeat(i, i), [2,3]);
+    let a = Array.flatMap(i -> Array.repeat(i, i, static), [2,3]);
     Array.sameElements(a, [2,2,3,3,3])
 
 /////////////////////////////////////////////////////////////////////////////

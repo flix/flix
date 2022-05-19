@@ -316,11 +316,11 @@ namespace Array {
     /// Returns `[]` if `n <= 0`.
     ///
     @Time(n) @Space(n)
-    pub def repeat(n: Int32, x: a): Array[a] & Impure =
+    pub def repeat(n: Int32, x: a, r: Region[r]): ScopedArray[a, r] \ Write(r) =
         if (n <= 0)
-            []
+            [] @ r
         else
-            new(x, n, static)
+            new(x, n, r)
 
     ///
     /// Alias for `scanLeft`.
