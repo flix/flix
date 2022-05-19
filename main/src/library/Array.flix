@@ -1488,10 +1488,10 @@ namespace Array {
     /// Returns a copy of `a` with the elements starting at index `i` replaced by `sub`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def updateSequence(i: Int32, sub: Array[a], a: Array[a]): Array[a] & Impure =
+    pub def updateSequence(i: Int32, sub: ScopedArray[a, r1], a: ScopedArray[a, r2]): ScopedArray[a, r2] \ { Read(r1, r2), Write(r2) } =
         let end = i + length(sub);
         let f = ix -> if (ix >= i and ix < end) sub[ix - i] else a[ix];
-        init(f, length(a), static)
+        init(f, length(a), Scoped.regionOf(a))
 
     ///
     /// Update the mutable array `a` with the elements starting at index `i` replaced by `sub`.
