@@ -232,8 +232,9 @@ object Documentor {
     * Returns the given instance `inst` as a JSON value.
     */
   private def visitInstance(sym: Symbol.ClassSym, inst: Instance): JObject = inst match {
-    case Instance(_, _, _, tpe, tcs, _, _, loc) =>
+    case Instance(_, ann, _, _, tpe, tcs, _, _, loc) =>
       ("sym" -> visitClassSym(sym)) ~
+        ("ann" -> visitAnnotations(ann)) ~
         ("tpe" -> visitType(tpe)) ~
         ("tcs" -> tcs.map(visitTypeConstraint)) ~
         ("loc" -> visitSourceLocation(loc))
@@ -300,6 +301,7 @@ object Documentor {
     case Kind.Wild => ""
     case Kind.Star => "Type"
     case Kind.Bool => "Bool"
+    case Kind.Effect => "Effect"
     case Kind.RecordRow => "Record"
     case Kind.SchemaRow => "Schema"
     case Kind.Predicate => ""

@@ -23,7 +23,7 @@ namespace Array {
     ///
     /// Compares `a` and `b` lexicographically.
     ///
-    pub def compare(a: Array[v], b: Array[v]): Comparison & Impure with Order[v] =
+    pub def compare(a: ScopedArray[v, r1], b: ScopedArray[v, r2]): Comparison \ Read(r1, r2) with Order[v] =
         let len = Int32.min(Array.length(a), Array.length(b));
         def loop(i) = {
             if (i < len) {
@@ -45,11 +45,11 @@ namespace Array {
     ///
     /// Returns a string representation of the given array `a`.
     ///
-    pub def toString(a: Array[a]): String with ToString[a] =
+    pub def toString(a: ScopedArray[a, r]): String \ Read(r) with ToString[a] =
         def loop(i, acc) =
             if (i < a.length) {
-                if (i == 0) loop(i + 1, "${a[i]}") as & Pure
-                else loop(i + 1, "${acc}, ${a[i]}") as & Pure
+                if (i == 0) loop(i + 1, "${a[i]}")
+                else loop(i + 1, "${acc}, ${a[i]}")
             } else {
                 "[${acc}]"
             };
@@ -61,7 +61,8 @@ namespace Array {
     /// Equivalent to the expression `[x; l]`.
     ///
     @Time(l) @Space(l)
-    pub def new(x: a, l: Int32): Array[a] & Impure = [x; l]
+    pub def new(x: a, l: Int32, r: Region[r]): ScopedArray[a, r] \ Write(r) =
+        [x; l] @ r
 
     ///
     /// Returns the element at position `i` in the array `a`.
@@ -84,7 +85,7 @@ namespace Array {
     /// Returns `true` if the given array `a` is empty.
     ///
     @Time(1) @Space(1)
-    pub def isEmpty(a: Array[a]): Bool = a.length == 0
+    pub def isEmpty(a: ScopedArray[a, r]): Bool = a.length == 0
 
     ///
     /// Returns the length of the array `a`.
@@ -98,7 +99,7 @@ namespace Array {
     /// Equivalent to the expression `a[b..e]`.
     ///
     @Time(e - b) @Space(e - b)
-    pub def slice(b: Int32, e: Int32, a: Array[a]): Array[a] & Impure = a[b..e]
+    pub def slice(b: Int32, e: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } = a[b..e]
 
     ///
     /// Returns the array `a` as a list.
@@ -156,7 +157,7 @@ namespace Array {
     /// Returns `None` if `a` is empty.
     ///
     @Time(1) @Space(1)
-    pub def last(a: Array[a]): Option[a] & Impure =
+    pub def last(a: ScopedArray[a, r]): Option[a] \ Read(r) =
         let len = length(a);
         if (len > 0) Some(a[len-1]) else None
 
@@ -164,13 +165,13 @@ namespace Array {
     /// Return a new array, appending the elements `b` to elements of `a`.
     ///
     @Time(length(a) + length(b)) @Space(length(a) + length(b))
-    pub def append(a: Array[a], b: Array[a]): Array[a] & Impure =
+    pub def append(a: ScopedArray[a, r1], b: ScopedArray[a, r2]): ScopedArray[a, r1] \ { Read(r2), Write(r1) } =
         let len1 = length(a);
         let len2 = length(b);
         if (len1 == 0)
-            slice(0, len2, b)
+            copyOfRange(0, len2, b, Scoped.regionOf(a))
         else {
-            let out = new(a[0], len1 + len2);
+            let out = new(a[0], len1 + len2, Scoped.regionOf(a));
             updateSequence!(0, a, out);
             updateSequence!(len1, b, out);
             out
@@ -180,7 +181,7 @@ namespace Array {
     /// Returns `true` if and only if `a` contains the element `x`.
     ///
     @Time(length(a)) @Space(1)
-    pub def memberOf(x: a, a: Array[a]): Bool & Impure with Eq[a] =
+    pub def memberOf(x: a, a: ScopedArray[a, r]): Bool \ Read(r) with Eq[a] =
         exists(y -> y == x, a)
 
     ///
@@ -219,23 +220,22 @@ namespace Array {
     /// Alias for `IndexOfLeft`
     ///
     @Time(length(a)) @Space(1)
-    pub def indexOf(x: a, a: Array[a]): Option[Int32] & Impure with Eq[a] = indexOfLeft(x,a)
+    pub def indexOf(x: a, a: ScopedArray[a, r]): Option[Int32] \ Read(r) with Eq[a] =
+        indexOfLeft(x,a)
 
     ///
     /// Optionally returns the position of the first occurrence of `a` in `arr`
     /// searching from left to right.
     ///
     @Time(length(arr)) @Space(1)
-    pub def indexOfLeft(a: a, arr: Array[a]): Option[Int32] & Impure with Eq[a] =
+    pub def indexOfLeft(a: a, arr: ScopedArray[a, r]): Option[Int32] \ Read(r) with Eq[a] =
         def loop(i) = {
-            if (i >= arr.length) {
+            if (i >= arr.length)
                 -1
-            } else {
-                if (arr[i] == a)
-                    i
-                else
-                    loop(i + 1)
-            }
+            else if (arr[i] == a)
+                i
+            else
+                loop(i + 1)
         };
         let i = loop(0);
         if (i < 0) None else Some(i)
@@ -321,7 +321,7 @@ namespace Array {
         if (n <= 0)
             []
         else
-            new(x, n)
+            new(x, n, static)
 
     ///
     /// Alias for `scanLeft`.
@@ -335,7 +335,7 @@ namespace Array {
     ///
     pub def scanLeft(f: (b, a) -> b & ef, s: b, arr: Array[a]): Array[b] & Impure =
         let len = length(arr) + 1;
-        let b = new(s, len);
+        let b = new(s, len, static);
         def loop(i, acc) = {
             if (i >= len)
                 ()
@@ -355,7 +355,7 @@ namespace Array {
     ///
     pub def scanRight(f: (a, b) -> b & ef, s: b, a: Array[a]): Array[b] & Impure =
         let len = length(a);
-        let b = new(s, len + 1);
+        let b = new(s, len + 1, static);
         def loop(i, acc) = {
             if (i < 0)
                 ()
@@ -572,7 +572,7 @@ namespace Array {
         if (len2 <= 0)
             []
         else {
-            let b = new(x, len2);
+            let b = new(x, len2, static);
             let f = { (v,i) -> let j = i + i; b[j] = v };
             foreachWithIndex(f, a);
             b
@@ -590,7 +590,7 @@ namespace Array {
         match headArrays(arrs){
             case None => []
             case Some(x) =>
-                let out = new(x, len);
+                let out = new(x, len, static);
                 let overwrite = { (a,st) ->
                     let (pos,i) = st;
                     if (i == 0) {
@@ -884,7 +884,7 @@ namespace Array {
         match headArrays(arrs) {
             case None => []
             case Some(x) => {
-                let out = new(x, len);
+                let out = new(x, len, static);
                 foreachAccum((a, pos) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
@@ -898,16 +898,15 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def exists(f: a -> Bool, arr: Array[a]): Bool & Impure =
+    pub def exists(f: a -> Bool, arr: ScopedArray[a, r]): Bool \ Read(r) =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
                 false
+            else if (f(arr[i]))
+                true
             else
-                if (f(arr[i]) == true)
-                    true
-                else
-                    loop(i + 1)
+                loop(i + 1)
         };
         loop(0)
 
@@ -941,7 +940,7 @@ namespace Array {
         if (len < 1) {
             []
         } else {
-            let out = new(arr[0], len);
+            let out = new(arr[0], len, static);
             def loop(i, j) = {
                 if (i >= len)
                     j
@@ -1396,8 +1395,8 @@ namespace Array {
             ([], [])
         else {
             let (x, y) = f(0);
-            let arr = new(x, len);
-            let brr = new(y, len);
+            let arr = new(x, len, static);
+            let brr = new(y, len, static);
             def loop(i) = {
                 if (i < len) {
                     let (a, b) = f(i);
@@ -1436,7 +1435,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreach(f: a -> Unit & ef, a: Array[a]): Unit & Impure =
+    pub def foreach(f: a -> Unit & ef, a: ScopedArray[a, r]): Unit \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)
@@ -1455,7 +1454,7 @@ namespace Array {
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, a: ScopedArray[a, r]): Unit \ { ef, Read(r), Write(r) } =
+    pub def foreachWithIndex(f: (a, Int32) -> Unit & ef, a: ScopedArray[a, r]): Unit \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)
@@ -1512,19 +1511,20 @@ namespace Array {
     /// Returns the concatenation of the string representation
     /// of each element in `a` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, a: Array[a]): String & Impure with ToString[a] =
-        joinWith(x -> ToString.toString(x), sep, a)
+    pub def join(sep: String, a: ScopedArray[a, r]): String \ Read(r) with ToString[a] =
+        joinWith(ToString.toString, sep, a)
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `a` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, a: Array[a]): String & Impure =
+    pub def joinWith(f: a -> String & ef, sep: String, a: ScopedArray[a, r]): String \ { ef, Read(r) } = region r1 {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(r1);
         foreach(x -> { append!(f(x), sb); append!(sep, sb) }, a);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
+    }
 
     ///
     /// Returns a sorted copy of array `a`, where the elements are ordered from low to high according to

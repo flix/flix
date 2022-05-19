@@ -77,10 +77,18 @@ object Resolver {
           }
         }
 
-        flatMapN(classesVal, sequence(instancesVal), defsVal, sequence(enumsVal)) {
-          case (classes, instances, defs, enums) =>
+        val effectsVal = root.effects.flatMap {
+          case (ns0, effects) => effects.map {
+            case (_, effect) => resolveEffect(effect, taenv, ns0, root) map {
+              case e => e.sym -> e
+            }
+          }
+        }
+
+        flatMapN(classesVal, sequence(instancesVal), defsVal, sequence(enumsVal), sequence(effectsVal)) {
+          case (classes, instances, defs, enums, effects) =>
             mapN(checkSuperClassDag(classes)) {
-              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, taenv, taOrder, root.entryPoint, root.reachable, root.sources)
+              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, effects.toMap, taenv, taOrder, root.entryPoint, root.reachable, root.sources)
             }
         }
     }
@@ -301,15 +309,16 @@ object Resolver {
     * Performs name resolution on the given instance `i0` in the given namespace `ns0`.
     */
   def resolveInstance(i0: NamedAst.Instance, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Instance, ResolutionError] = i0 match {
-    case NamedAst.Instance(doc, mod, clazz0, tpe0, tconstrs0, defs0, loc) =>
+    case NamedAst.Instance(doc, ann0, mod, clazz0, tpe0, tconstrs0, defs0, loc) =>
+      val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
       val clazzVal = lookupClassForImplementation(clazz0, ns0, root)
       val tpeVal = resolveType(tpe0, taenv, ns0, root)
       val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, taenv, ns0, root))
       val defsVal = traverse(defs0)(resolveDef(_, taenv, ns0, root))
-      mapN(clazzVal, tpeVal, tconstrsVal, defsVal) {
-        case (clazz, tpe, tconstrs, defs) =>
+      mapN(annVal, clazzVal, tpeVal, tconstrsVal, defsVal) {
+        case (ann, clazz, tpe, tconstrs, defs) =>
           val sym = Symbol.freshInstanceSym(clazz.sym, clazz0.loc)
-          ResolvedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns0, loc)
+          ResolvedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs, ns0, loc)
       }
   }
 
@@ -372,7 +381,7 @@ object Resolver {
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
   def resolveSpec(s0: NamedAst.Spec, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
-    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, retTpe0, pur0, loc) =>
+    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, retTpe0, pur0, eff0, loc) => // TODO handle eff
 
       val tparams = resolveTypeParams(tparams0, ns0, root)
       val fparamsVal = resolveFormalParams(fparams0, taenv, ns0, root)
@@ -420,6 +429,30 @@ object Resolver {
           name -> ResolvedAst.Case(enumIdent, tag, tpe, sc)
       }
   }
+
+  /**
+    * Performs name resolution on the given effect `eff0` in the given namespace `ns0`.
+    */
+  private def resolveEffect(eff0: NamedAst.Effect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Effect, ResolutionError] = eff0 match {
+    case NamedAst.Effect(doc, ann0, mod, sym, ops0, loc) =>
+      val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
+      val opsVal = traverse(ops0)(resolveOp(_, taenv, ns0, root))
+      mapN(annVal, opsVal) {
+        case (ann, ops) => ResolvedAst.Effect(doc, ann, mod, sym, ops, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given effect operation `op0` in the given namespace `ns0`.
+    */
+  private def resolveOp(op0: NamedAst.Op, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Op, ResolutionError] = op0 match {
+    case NamedAst.Op(sym, spec0) =>
+      val specVal = resolveSpec(spec0, taenv, ns0, root)
+      mapN(specVal) {
+        spec => ResolvedAst.Op(sym, spec)
+      }
+  }
+
 
   /**
     * Performs name resolution on the given attribute `a0` in the given namespace `ns0`.
@@ -936,6 +969,12 @@ object Resolver {
           mapN(eVal, rulesVal) {
             case (e, rs) => ResolvedAst.Expression.TryCatch(e, rs, loc)
           }
+
+        // TODO handle these cases
+        case NamedAst.Expression.Without(_, _, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("Without"), loc).toSuccess
+        case NamedAst.Expression.TryWith(_, _, _, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("TryWith"), loc).toSuccess
+        case NamedAst.Expression.Do(_, _, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("Do"), loc).toSuccess
+        case NamedAst.Expression.Resume(_, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("Resume"), loc).toSuccess
 
         case NamedAst.Expression.InvokeConstructor(className, args, sig, loc) =>
           val argsVal = traverse(args)(visitExp(_, region))
@@ -1640,19 +1679,21 @@ object Resolver {
 
       // Disambiguate type.
       case typeName =>
-        lookupEnumOrTypeAlias(qname, ns0, root) match {
-          case EnumOrTypeAliasLookupResult.Enum(enum) => getEnumTypeIfAccessible(enum, ns0, loc)
-          case EnumOrTypeAliasLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
-          case EnumOrTypeAliasLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+        lookupType(qname, ns0, root) match {
+          case TypeLookupResult.Enum(enum) => getEnumTypeIfAccessible(enum, ns0, loc)
+          case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
+          case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
+          case TypeLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
         }
     }
 
     case NamedAst.Type.Ambiguous(qname, loc) =>
       // Disambiguate type.
-      lookupEnumOrTypeAlias(qname, ns0, root) match {
-        case EnumOrTypeAliasLookupResult.Enum(enum) => getEnumTypeIfAccessible(enum, ns0, loc)
-        case EnumOrTypeAliasLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
-        case EnumOrTypeAliasLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+      lookupType(qname, ns0, root) match {
+        case TypeLookupResult.Enum(enum) => getEnumTypeIfAccessible(enum, ns0, loc)
+        case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
+        case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
+        case TypeLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
       }
 
     case NamedAst.Type.Enum(sym, loc) =>
@@ -1737,7 +1778,7 @@ object Resolver {
         }
       }
 
-    case NamedAst.Type.Arrow(tparams0, pur0, tresult0, loc) =>
+    case NamedAst.Type.Arrow(tparams0, pur0, eff0, tresult0, loc) => // TODO handle eff0
       val tparamsVal = traverse(tparams0)(semiResolveType(_, ns0, root))
       val tresultVal = semiResolveType(tresult0, ns0, root)
       val purVal = semiResolveType(pur0, ns0, root)
@@ -1773,13 +1814,28 @@ object Resolver {
         case (t1, t2) => mkOr(t1, t2, loc)
       }
 
-    case _: NamedAst.Type.Complement |
-         _: NamedAst.Type.Union |
-         _: NamedAst.Type.Intersection |
-         _: NamedAst.Type.Difference |
-         _: NamedAst.Type.Read |
-         _: NamedAst.Type.Write =>
-      // TODO not handling effect types yet
+    case NamedAst.Type.Complement(tpe, loc) =>
+      mapN(semiResolveType(tpe, ns0, root)) {
+        t => mkComplement(t, loc)
+      }
+
+    case NamedAst.Type.Union(tpe1, tpe2, loc) =>
+      mapN(semiResolveType(tpe1, ns0, root), semiResolveType(tpe2, ns0, root)) {
+        case (t1, t2) => mkUnion(t1, t2, loc)
+      }
+
+    case NamedAst.Type.Intersection(tpe1, tpe2, loc) =>
+      mapN(semiResolveType(tpe1, ns0, root), semiResolveType(tpe2, ns0, root)) {
+        case (t1, t2) => mkIntersection(t1, t2, loc)
+      }
+
+    case NamedAst.Type.Difference(tpe1, tpe2, loc) =>
+      mapN(semiResolveType(tpe1, ns0, root), semiResolveType(tpe2, ns0, root)) {
+        case (t1, t2) => mkDifference(t1, t2, loc)
+      }
+
+    case _: NamedAst.Type.Read | _: NamedAst.Type.Write =>
+      // TODO not handling region effect types yet
       Type.mkTrue(SourceLocation.Unknown).toSuccess
 
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>
@@ -1848,59 +1904,69 @@ object Resolver {
   /**
     * The result of looking up an ambiguous type.
     */
-  private sealed trait EnumOrTypeAliasLookupResult {
+  private sealed trait TypeLookupResult {
     /**
-      * Returns `other` if this result is [[EnumOrTypeAliasLookupResult.NotFound]].
+      * Returns `other` if this result is [[TypeLookupResult.NotFound]].
       *
       * Otherwise, returns this result.
       */
-    def orElse(other: => EnumOrTypeAliasLookupResult): EnumOrTypeAliasLookupResult = this match {
-      case res: EnumOrTypeAliasLookupResult.Enum => res
-      case res: EnumOrTypeAliasLookupResult.TypeAlias => res
-      case EnumOrTypeAliasLookupResult.NotFound => other
+    def orElse(other: => TypeLookupResult): TypeLookupResult = this match {
+      case res: TypeLookupResult.Enum => res
+      case res: TypeLookupResult.TypeAlias => res
+      case res: TypeLookupResult.Effect => res
+      case TypeLookupResult.NotFound => other
     }
   }
 
-  private object EnumOrTypeAliasLookupResult {
+  private object TypeLookupResult {
     /**
       * The result is an enum.
       */
-    case class Enum(enum0: NamedAst.Enum) extends EnumOrTypeAliasLookupResult
+    case class Enum(enum0: NamedAst.Enum) extends TypeLookupResult
 
     /**
       * The result is a type alias.
       */
-    case class TypeAlias(typeAlias: NamedAst.TypeAlias) extends EnumOrTypeAliasLookupResult
+    case class TypeAlias(typeAlias: NamedAst.TypeAlias) extends TypeLookupResult
+
+    /**
+      * The result is an effect.
+      */
+    case class Effect(eff: NamedAst.Effect) extends TypeLookupResult
 
     /**
       * The type cannot be found.
       */
-    case object NotFound extends EnumOrTypeAliasLookupResult
+    case object NotFound extends TypeLookupResult
   }
 
   /**
     * Looks up the ambiguous type.
     */
-  private def lookupEnumOrTypeAlias(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): EnumOrTypeAliasLookupResult = {
+  private def lookupType(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): TypeLookupResult = {
 
     /**
       * Looks up the type in the given namespace.
       */
-    def lookupIn(ns: Name.NName): EnumOrTypeAliasLookupResult = {
+    def lookupIn(ns: Name.NName): TypeLookupResult = {
       val enumsInNamespace = root.enums.getOrElse(ns, Map.empty)
       val aliasesInNamespace = root.typeAliases.getOrElse(ns, Map.empty)
-      (enumsInNamespace.get(qname.ident.name), aliasesInNamespace.get(qname.ident.name)) match {
-        case (None, None) =>
+      val effectsInNamespace = root.effects.getOrElse(ns, Map.empty)
+      (enumsInNamespace.get(qname.ident.name), aliasesInNamespace.get(qname.ident.name), effectsInNamespace.get(qname.ident.name)) match {
+        case (None, None, None) =>
           // Case 1: name not found
-          EnumOrTypeAliasLookupResult.NotFound
-        case (Some(enum), None) =>
+          TypeLookupResult.NotFound
+        case (Some(enum), None, None) =>
           // Case 2: found an enum
-          EnumOrTypeAliasLookupResult.Enum(enum)
-        case (None, Some(alias)) =>
+          TypeLookupResult.Enum(enum)
+        case (None, Some(alias), None) =>
           // Case 3: found a type alias
-          EnumOrTypeAliasLookupResult.TypeAlias(alias)
-        case (Some(_), Some(_)) =>
-          // Case 4: found both -- error
+          TypeLookupResult.TypeAlias(alias)
+        case (None, None, Some(effect)) =>
+          // Case 4: found an effect
+          TypeLookupResult.Effect(effect)
+        case _ =>
+          // Case 5: found multiple matches -- error
           throw InternalCompilerException("Unexpected ambiguity: Duplicate types / classes should have been resolved.")
       }
     }
@@ -2089,7 +2155,7 @@ object Resolver {
     }
 
   /**
-    * Successfully returns the given `enum0` if it is accessible from the given namespace `ns0`.
+    * Successfully returns the given type alias `alia0` if it is accessible from the given namespace `ns0`.
     *
     * Otherwise fails with a resolution error.
     *
@@ -2127,6 +2193,48 @@ object Resolver {
   private def getTypeAliasTypeIfAccessible(alia0: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
     getTypeAliasIfAccessible(alia0, ns0, loc) map {
       alias => mkUnappliedTypeAlias(alias.sym, loc)
+    }
+  }
+
+  /**
+    * Successfully returns the given `eff0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    *
+    * An enum is accessible from a namespace `ns0` if:
+    *
+    * (a) the definition is marked public, or
+    * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
+  private def getEffectIfAccessible(eff0: NamedAst.Effect, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Effect, ResolutionError] = {
+    //
+    // Check if the definition is marked public.
+    //
+    if (eff0.mod.isPublic)
+      return eff0.toSuccess
+
+    //
+    // Check if the type alias is defined in `ns0` or in a parent of `ns0`.
+    //
+    val prefixNs = eff0.sym.namespace
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return eff0.toSuccess
+
+    //
+    // The type alias is not accessible.
+    //
+    ResolutionError.InaccessibleEffect(eff0.sym, ns0, loc).toFailure
+  }
+
+  /**
+    * Successfully returns the type of the given effect `eff0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    */
+  private def getEffectTypeIfAccessible(eff0: NamedAst.Effect, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    getEffectIfAccessible(eff0, ns0, loc) map {
+      alias => mkEffect(alias.sym, loc)
     }
   }
 
@@ -2304,6 +2412,11 @@ object Resolver {
   def mkUnappliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation): Type = Type.Cst(TypeConstructor.UnappliedAlias(sym), loc)
 
   /**
+    * Construct the effect type for the given symbol.
+    */
+  def mkEffect(sym: Symbol.EffectSym, loc: SourceLocation): Type = Type.Cst(TypeConstructor.Effect(sym), loc)
+
+  /**
     * Constructs a predicate type.
     */
   private def mkPredicate(den: Ast.Denotation, ts0: List[Type], loc: SourceLocation): Type = {
@@ -2323,12 +2436,32 @@ object Resolver {
   /**
     * Returns the type `And(tpe1, tpe2)`.
     */
-  private def mkAnd(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, loc), tpe1, loc), tpe2, loc)
+  private def mkAnd(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.And, loc), List(tpe1, tpe2), loc)
 
   /**
     * Returns the type `Or(tpe1, tpe2)`.
     */
-  private def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, loc), tpe1, loc), tpe2, loc)
+  private def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Or, loc), List(tpe1, tpe2), loc)
+
+  /**
+    * Returns the type `Complement(tpe1, tpe2)`.
+    */
+  private def mkComplement(tpe1: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Complement, loc), List(tpe1), loc)
+
+  /**
+    * Returns the type `Union(tpe1, tpe2)`.
+    */
+  private def mkUnion(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Union, loc), List(tpe1, tpe2), loc)
+
+  /**
+    * Returns the type `Intersection(tpe1, tpe2)`.
+    */
+  private def mkIntersection(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Intersection, loc), List(tpe1, tpe2), loc)
+
+  /**
+    * Returns the type `Difference(tpe1, tpe2)`.
+    */
+  private def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Difference, loc), List(tpe1, tpe2), loc)
 
   /**
     * Returns either the explicit region (if present), the current region (if present), or the global region.

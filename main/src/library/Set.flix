@@ -540,11 +540,12 @@ namespace Set {
     ///
     pub def toMapWith(f: a -> b, s: Set[a]): Map[a, b] with Order[a] =
         Set.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
+
     ///
     /// Returns the set `s` as a `MutSet`.
     ///
-    pub def toMutSet(s: Set[a]): MutSet[a, Impure] & Impure =
-        MutSet(ref s)
+    pub def toMutSet(s: Set[a], r: Region[r]): MutSet[a, r] \ Write(r) =
+        MutSet(ref s @ r)
 
     ///
     /// Applies `f` to every element of `s`.

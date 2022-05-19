@@ -27,6 +27,7 @@ object ResolvedAst {
                   instances: Map[Symbol.ClassSym, List[ResolvedAst.Instance]],
                   defs: Map[Symbol.DefnSym, ResolvedAst.Def],
                   enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
+                  effects: Map[Symbol.EffectSym, ResolvedAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias],
                   taOrder: List[Symbol.TypeAliasSym],
                   entryPoint: Option[Symbol.DefnSym],
@@ -36,7 +37,7 @@ object ResolvedAst {
   // TODO use ResolvedAst.Law for laws
   case class Class(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[ResolvedAst.TypeConstraint], sigs: Map[Symbol.SigSym, ResolvedAst.Sig], laws: List[ResolvedAst.Def], loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.InstanceSym, tpe: Type, tconstrs: List[ResolvedAst.TypeConstraint], defs: List[ResolvedAst.Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.InstanceSym, tpe: Type, tconstrs: List[ResolvedAst.TypeConstraint], defs: List[ResolvedAst.Def], ns: Name.NName, loc: SourceLocation)
 
   case class Sig(sym: Symbol.SigSym, spec: ResolvedAst.Spec, exp: Option[ResolvedAst.Expression])
 
@@ -47,6 +48,10 @@ object ResolvedAst {
   case class Enum(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, derives: List[Ast.Derivation], cases: Map[Name.Tag, ResolvedAst.Case], tpeDeprecated: Type, sc: ResolvedAst.Scheme, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: ResolvedAst.TypeParams, tpe: Type, loc: SourceLocation)
+
+  case class Effect(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[ResolvedAst.Op], loc: SourceLocation)
+
+  case class Op(sym: Symbol.OpSym, spec: ResolvedAst.Spec)
 
   sealed trait Expression {
     def loc: SourceLocation

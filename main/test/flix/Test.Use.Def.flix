@@ -105,22 +105,26 @@ namespace Op {
     pub def prefish(left: String, right: String): String = "${left} fish ${right}"
 }
 
-@test
-def testNamespace16(): Bool =
-    use Op.{<><};
-    "one" <>< "two" == "one fish two"
+namespace Test/Use/Def {
 
-@test
-def testNamespace17(): Bool =
-    use Op.{<>< => ><>};
-    "one" ><> "two" == "one fish two"
+    @test
+    def testNamespace16(): Bool =
+        use Op.{<><};
+        "one" <>< "two" == "one fish two"
 
-@test
-def testNamespace18(): Bool =
-    use Op.{<>< => fish};
-    fish("one", "two") == "one fish two"
+    @test
+    def testNamespace17(): Bool =
+        use Op.{<>< => ><>};
+        "one" ><> "two" == "one fish two"
 
-@test
-def testNamespace19(): Bool =
-    use Op.{prefish => ><>};
-    "one" ><> "two" == "one fish two"
+    @test
+    def testNamespace18(): Bool =
+        use Op.{<>< => fish};
+        fish("one", "two") == "one fish two"
+
+    @test
+    def testNamespace19(): Bool =
+        use Op.{prefish => ><>};
+        "one" ><> "two" == "one fish two"
+
+}

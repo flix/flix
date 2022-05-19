@@ -147,7 +147,8 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   //
   // Effects
   //
-  mkTest("main/test/flix/Test.Exp.Effect.flix")
+  // TODO temporarily allowing redundancies during development
+  mkTest("main/test/flix/Test.Exp.Effect.flix")(options.copy(xallowredundancies = true))
 
   //
   // Fixpoint
@@ -378,4 +379,5 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Integ.Class.Schema.flix")
   mkTest("main/test/flix/Test.Integ.Fixpoint.TypeAlias.flix")
   mkTest("main/test/flix/Test.Integ.Enum.TypeAlias.flix")
+
 }

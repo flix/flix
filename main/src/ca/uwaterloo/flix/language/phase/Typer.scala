@@ -63,7 +63,7 @@ object Typer {
         case (classSym, clazz) =>
           val instances = instances0.getOrElse(classSym, Nil)
           val envInsts = instances.map {
-            case KindedAst.Instance(_, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
+            case KindedAst.Instance(_, _, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
           }
           // ignore the super class parameters since they should all be the same as the class param
           val superClasses = clazz.superClasses.map(_.head.sym)
@@ -124,10 +124,11 @@ object Typer {
     * Reassembles a single instance.
     */
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Instance, TypeError] = inst match {
-    case KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs0, ns, loc) =>
+    case KindedAst.Instance(doc, ann0, mod, sym, tpe, tconstrs, defs0, ns, loc) =>
+      val annVal = visitAnnotations(ann0, root)
       val defsVal = traverse(defs0)(visitDefn(_, tconstrs, root, classEnv))
-      mapN(defsVal) {
-        defs => TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
+      mapN(annVal, defsVal) {
+        case (ann, defs) => TypedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs, ns, loc)
       }
   }
 
@@ -1323,7 +1324,7 @@ object Typer {
           resultEff = Type.Impure
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
+      case KindedAst.Expression.PutChannel(exp1, exp2, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
         val channelType = Type.mkChannel(elmVar, loc)
 
@@ -1332,7 +1333,7 @@ object Typer {
           (constrs2, tpe2, _) <- visitExp(exp2)
           _ <- expectTypeM(expected = channelType, actual = tpe1, exp1.loc)
           _ <- expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
-          resultTyp <- unifyTypeM(tvar, channelType, loc)
+          resultTyp = Type.mkUnit(loc)
           resultEff = Type.Impure
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -1874,11 +1875,12 @@ object Typer {
         val eff = Type.Impure
         TypedAst.Expression.GetChannel(e, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
+      case KindedAst.Expression.PutChannel(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
+        val tpe = Type.mkUnit(loc)
         val eff = Type.Impure
-        TypedAst.Expression.PutChannel(e1, e2, subst0(tvar), eff, loc)
+        TypedAst.Expression.PutChannel(e1, e2, tpe, eff, loc)
 
       case KindedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
         val rs = rules map {
