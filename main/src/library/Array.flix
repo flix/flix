@@ -441,7 +441,7 @@ namespace Array {
     /// Reverse the array `arr`, mutating it in place.
     ///
     @Time(length(arr)) @Space(1)
-    pub def reverse!(arr: Array[a]): Unit & Impure =
+    pub def reverse!(arr: ScopedArray[a, r]): Unit \ { Read(r), Write(r) } =
         let len = length(arr);
         let halflen = len / 2;
         def loop(i, j) = {

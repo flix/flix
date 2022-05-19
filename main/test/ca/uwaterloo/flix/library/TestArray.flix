@@ -979,45 +979,51 @@ def flatMap06(): Bool & Impure =
         Array.sameElements(a, [4,3,2,1])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// reverse!                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // reverse!                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def reverse01!(): Bool & Impure =
-    let a: Array[Int32] = [];
-    Array.reverse!(a);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def reverse01!(): Bool = region r {
+        let a: ScopedArray[Int32, _] = [];
+        Array.reverse!(a);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def reverse02!(): Bool & Impure =
-    let a = [1];
-    Array.reverse!(a);
-    Array.sameElements(a, [1])
+    @test
+    def reverse02!(): Bool = region r {
+        let a = [1];
+        Array.reverse!(a);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def reverse03!(): Bool & Impure =
-    let a = [1,2];
-    Array.reverse!(a);
-    Array.sameElements(a, [2,1])
+    @test
+    def reverse03!(): Bool = region r {
+        let a = [1,2];
+        Array.reverse!(a);
+        Array.sameElements(a, [2,1])
+    }
 
-@test
-def reverse04!(): Bool & Impure =
-    let a = [1,1];
-    Array.reverse!(a);
-    Array.sameElements(a, [1,1])
+    @test
+    def reverse04!(): Bool = region r {
+        let a = [1,1];
+        Array.reverse!(a);
+        Array.sameElements(a, [1,1])
+    }
 
-@test
-def reverse05!(): Bool & Impure =
-    let a = [1,2,3];
-    Array.reverse!(a);
-    Array.sameElements(a, [3,2,1])
+    @test
+    def reverse05!(): Bool = region r {
+        let a = [1,2,3];
+        Array.reverse!(a);
+        Array.sameElements(a, [3,2,1])
+    }
 
-@test
-def reverse06!(): Bool & Impure =
-    let a = [1,2,3,4];
-    Array.reverse!(a);
-    Array.sameElements(a, [4,3,2,1])
+    @test
+    def reverse06!(): Bool = region r {
+        let a = [1,2,3,4];
+        Array.reverse!(a);
+        Array.sameElements(a, [4,3,2,1])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // rotateLeft                                                              //
