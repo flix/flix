@@ -2081,27 +2081,27 @@ object Typer {
         } yield Type.mkTuple(elementTypes, loc)
 
       case KindedAst.Pattern.Array(elms, tvar, loc) =>
-        for (
-          elementTypes <- seqM(elms map visit);
-          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc);
+        for {
+          elementTypes <- seqM(elms map visit)
+          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
           resultType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
-        ) yield resultType
+        } yield resultType
 
       case KindedAst.Pattern.ArrayTailSpread(elms, varSym, tvar, loc) =>
-        for (
+        for {
           elementTypes <- seqM(elms map visit);
-          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc);
-          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc);
+          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
+          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
           resultType <- unifyTypeM(varSym.tvar.ascribedWith(Kind.Star), arrayType, loc)
-        ) yield resultType
+        } yield resultType
 
       case KindedAst.Pattern.ArrayHeadSpread(varSym, elms, tvar, loc) =>
-        for (
-          elementTypes <- seqM(elms map visit);
-          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc);
-          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc);
+        for {
+          elementTypes <- seqM(elms map visit)
+          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
+          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
           resultType <- unifyTypeM(varSym.tvar.ascribedWith(Kind.Star), arrayType, loc)
-        ) yield resultType
+        } yield resultType
 
     }
 
