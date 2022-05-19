@@ -1082,44 +1082,51 @@ def reverse06!(): Bool & Impure =
         Array.sameElements(a, [2,3,1])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// update                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // update                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def update01(): Bool & Impure =
-    let a = Array.update(0, 2, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def update01(): Bool = region r {
+        let a = Array.update(0, 2, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def update02(): Bool & Impure =
-    let a = Array.update(-1, 2, [1]);
-    Array.sameElements(a, [1])
+    @test
+    def update02(): Bool = region r {
+        let a = Array.update(-1, 2, [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def update03(): Bool & Impure =
-    let a = Array.update(0, 2, [1]);
-    Array.sameElements(a, [2])
+    @test
+    def update03(): Bool = region r {
+        let a = Array.update(0, 2, [1]);
+        Array.sameElements(a, [2])
+    }
 
-@test
-def update04(): Bool & Impure =
-    let a = Array.update(1, 2, [1]);
-    Array.sameElements(a, [1])
+    @test
+    def update04(): Bool = region r {
+        let a = Array.update(1, 2, [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def update05(): Bool & Impure =
-    let a = Array.update(0, 5, [1,2]);
-    Array.sameElements(a, [5,2])
+    @test
+    def update05(): Bool = region r {
+        let a = Array.update(0, 5, [1,2]);
+        Array.sameElements(a, [5,2])
+    }
 
-@test
-def update06(): Bool & Impure =
-    let a = Array.update(1, 5, [1,2]);
-    Array.sameElements(a, [1,5])
+    @test
+    def update06(): Bool = region r {
+        let a = Array.update(1, 5, [1,2]);
+        Array.sameElements(a, [1,5])
+    }
 
-@test
-def update07(): Bool & Impure =
-    let a = Array.update(2, 5, [1,2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def update07(): Bool = region r {
+        let a = Array.update(2, 5, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // replace                                                                 //

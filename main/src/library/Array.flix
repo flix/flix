@@ -516,9 +516,9 @@ namespace Array {
     /// Returns a shallow copy of `a` if `i < 0` or `i > length(xs)-1`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def update(i: Int32, x: a, a: Array[a]): Array[a] & Impure =
+    pub def update(i: Int32, x: a, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         let f = ix -> if (ix == i) x else a[ix];
-        init(f, length(a), static)
+        init(f, length(a), Scoped.regionOf(a))
 
     ///
     /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
