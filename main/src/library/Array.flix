@@ -353,9 +353,9 @@ namespace Array {
     ///
     /// That is, the result is of the form: `[..., f(xn-1, f(xn, s)), f(xn, s), s]`.
     ///
-    pub def scanRight(f: (a, b) -> b & ef, s: b, a: Array[a]): Array[b] & Impure =
+    pub def scanRight(f: (a, b) -> b & ef, s: b, a: ScopedArray[a, r]): ScopedArray[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        let b = new(s, len + 1, static);
+        let b = new(s, len + 1, Scoped.regionOf(a));
         def loop(i, acc) = {
             if (i < 0)
                 ()

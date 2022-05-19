@@ -682,44 +682,51 @@ def findRight07(): Bool & Impure = Array.findRight(i -> i > 2, [6,7]) == Some(7)
         Array.sameElements(a, [1,2,3])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// scanRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // scanRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def scanRight01(): Bool & Impure =
-    let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, []);
-    Array.sameElements(a, [1])
+    @test
+    def scanRight01(): Bool = region r {
+        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, []);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def scanRight02(): Bool & Impure =
-    let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false]);
-    Array.sameElements(a, [3,1])
+    @test
+    def scanRight02(): Bool = region r {
+        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false]);
+        Array.sameElements(a, [3,1])
+    }
 
-@test
-def scanRight03(): Bool & Impure =
-    let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true]);
-    Array.sameElements(a, [2,1])
+    @test
+    def scanRight03(): Bool = region r {
+        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true]);
+        Array.sameElements(a, [2,1])
+    }
 
-@test
-def scanRight04(): Bool & Impure =
-    let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false,false]);
-    Array.sameElements(a, [5,3,1])
+    @test
+    def scanRight04(): Bool = region r {
+        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false,false]);
+        Array.sameElements(a, [5,3,1])
+    }
 
-@test
-def scanRight05(): Bool & Impure =
-    let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false,true]);
-    Array.sameElements(a, [4,2,1])
+    @test
+    def scanRight05(): Bool = region r {
+        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false,true]);
+        Array.sameElements(a, [4,2,1])
+    }
 
-@test
-def scanRight06(): Bool & Impure =
-    let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true,false]);
-    Array.sameElements(a, [4,3,1])
+    @test
+    def scanRight06(): Bool = region r {
+        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true,false]);
+        Array.sameElements(a, [4,3,1])
+    }
 
-@test
-def scanRight07(): Bool & Impure =
-    let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true,true]);
-    Array.sameElements(a, [3,2,1])
+    @test
+    def scanRight07(): Bool = region r {
+        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true,true]);
+        Array.sameElements(a, [3,2,1])
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // map                                                                     //
