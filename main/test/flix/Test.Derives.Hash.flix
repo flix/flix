@@ -121,7 +121,7 @@ namespace Test/Derives/Hash {
     def testHashNeq02(): Bool = hash(Enum.SingletonCase(123)) != hash(Enum.SingletonCase(456))
 
     @test
-    def testHashNeq03(): Bool = hash(PolyEnum.EmptyCase) != hash(PolyEnum.SingletonCase(123))
+    def testHashNeq03(): Bool = hash(PolyEnum.EmptyCase: PolyEnum[Int32]) != hash(PolyEnum.SingletonCase(123))
 
     @test
     def testHashNeq04(): Bool = hash(PolyEnum.SingletonCase(123)) != hash(PolyEnum.SingletonCase(456))
@@ -133,7 +133,7 @@ namespace Test/Derives/Hash {
     def testHashNeq06(): Bool = hash(RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase)) != hash(RecursiveEnum.RecursiveCase(RecursiveEnum.RecursiveCase(RecursiveEnum.EmptyCase)))
 
     @test
-    def testHashNeq07(): Bool = hash(PolyMultiEnum.LeftCase(123)) != hash(PolyMultiEnum.RightCase(123))
+    def testHashNeq07(): Bool = hash(PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Int32]) != hash(PolyMultiEnum.RightCase(123): PolyMultiEnum[Int32, Int32])
 
     @test
     def testHashNeq08(): Bool = hash(PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure]) != hash(PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure])

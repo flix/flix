@@ -470,6 +470,16 @@ object Finalize {
 
             case TypeConstructor.Or => MonoType.Unit
 
+            case TypeConstructor.Complement => MonoType.Unit
+
+            case TypeConstructor.Union => MonoType.Unit
+
+            case TypeConstructor.Intersection => MonoType.Unit
+
+            case TypeConstructor.Difference => MonoType.Unit
+
+            case TypeConstructor.Effect(_) => MonoType.Unit
+
             case TypeConstructor.UnkindedEnum(_) =>
               throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
