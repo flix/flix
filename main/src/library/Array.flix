@@ -753,14 +753,14 @@ namespace Array {
     ///
     /// Returns the result of applying `combine` to all the elements in `a`, using `empty` as the initial value.
     ///
-    pub def fold(arr: Array[a]): a & Impure with Monoid[a] = foldLeft(Monoid.combine, Monoid.empty(), arr)
+    pub def fold(arr: ScopedArray[a, r]): a \ Read(r) with Monoid[a] = foldLeft(Monoid.combine, Monoid.empty(), arr)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, arr: Array[a]): b & Impure =
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, arr: ScopedArray[a, r]): b \ { ef, Read(r) } =
         let len = length(arr);
         def loop(i, acc) = {
             if (i >= len)

@@ -2189,37 +2189,53 @@ def testCompare12(): Bool & Impure = ([1,2] `Array.compare` [1,3]) == LessThan
 @test
 def testCompare13(): Bool & Impure = ([1,2,3,4] `Array.compare` [1,2,3,4]) == EqualTo
 
-/////////////////////////////////////////////////////////////////////////////
-// fold                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // fold                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def fold01(): Bool & Impure = Array.fold([]: Array[Unit]) == ()
+    @test
+    def fold01(): Bool = region r {
+        Array.fold([]: ScopedArray[Unit, _]) == ()
+    }
 
-@test
-def fold02(): Bool & Impure = Array.fold(["a"]) == "a"
+    @test
+    def fold02(): Bool = region r {
+        Array.fold(["a"]) == "a"
+    }
 
-@test
-def fold03(): Bool & Impure = Array.fold(["a", "b", "c"]) == "abc"
+    @test
+    def fold03(): Bool = region r {
+        Array.fold(["a", "b", "c"]) == "abc"
+    }
 
-@test
-def fold04(): Bool & Impure = Array.fold([("yes", "no"), ("no", "yes")]) == ("yesno", "noyes")
+    @test
+    def fold04(): Bool = region r {
+        Array.fold([("yes", "no"), ("no", "yes")]) == ("yesno", "noyes")
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// foldLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def foldLeft01(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, []) == 100
+    @test
+    def foldLeft01(): Bool = region r {
+        Array.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, []) == 100
+    }
 
-@test
-def foldLeft02(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, [1]) == 198
+    @test
+    def foldLeft02(): Bool = region r {
+        Array.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, [1]) == 198
+    }
 
-@test
-def foldLeft03(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, [1,2]) == 196
+    @test
+    def foldLeft03(): Bool = region r {
+        Array.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, [1,2]) == 196
+    }
 
-@test
-def foldLeft04(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, [1,2,3]) == 386
+    @test
+    def foldLeft04(): Bool = region r {
+        Array.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, [1,2,3]) == 386
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // foldRight                                                               //
