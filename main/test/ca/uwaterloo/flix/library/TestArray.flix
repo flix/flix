@@ -4858,6 +4858,8 @@ def init205(): Bool & Impure =
     // copyOfRange                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
+    // depends on flatten
+
     @test
     def copyOfRange01(): Bool & Impure =
         Array.copyOfRange(0, 3, [true, false, true], static) `sameElements` [true, false, true]
