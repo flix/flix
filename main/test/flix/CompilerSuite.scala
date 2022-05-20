@@ -14,7 +14,6 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   // Declarations
   //
   mkTest("main/test/flix/Test.Dec.Class.flix")
-  mkTest("main/test/flix/Test.Dec.Effect.flix")
   mkTest("main/test/flix/Test.Dec.Enum.flix")
   mkTest("main/test/flix/Test.Dec.Namespace.flix")
   mkTest("main/test/flix/Test.Dec.OpaqueType.flix")
@@ -26,6 +25,11 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   // Definitions
   //
   mkTest("main/test/flix/Test.Def.Op.flix")
+
+  //
+  // Fixpoints
+  //
+  mkTest("main/test/flix/Test.Exp.Fixpoint.flix")
 
   //
   // Derivations
@@ -138,12 +142,6 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   // Discard
   //
   mkTest("main/test/flix/Test.Exp.Discard.flix")
-
-  //
-  // Effects
-  //
-  // TODO temporarily allowing redundancies during development
-  mkTest("main/test/flix/Test.Exp.Effect.flix")(options.copy(xallowredundancies = true))
 
   //
   // Fixpoint
@@ -374,4 +372,5 @@ class CompilerSuite extends FlixSuite(incremental = true) {
   mkTest("main/test/flix/Test.Integ.Class.Schema.flix")
   mkTest("main/test/flix/Test.Integ.Fixpoint.TypeAlias.flix")
   mkTest("main/test/flix/Test.Integ.Enum.TypeAlias.flix")
+
 }

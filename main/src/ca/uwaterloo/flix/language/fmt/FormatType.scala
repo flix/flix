@@ -91,6 +91,10 @@ object FormatType {
       case SimpleType.Not(_) => false
       case SimpleType.And(_) => false
       case SimpleType.Or(_) => false
+      case SimpleType.Complement(_) => false
+      case SimpleType.Union(_) => false
+      case SimpleType.Intersection(_) => false
+      case SimpleType.Difference(_, _) => false
       case SimpleType.PureArrow(_, _) => false
       case SimpleType.PolyArrow(_, _, _) => false
 
@@ -215,6 +219,14 @@ object FormatType {
       case SimpleType.Or(tpes) =>
         val strings = tpes.map(delimit(_, mode))
         strings.mkString(" or ")
+      case SimpleType.Complement(tpe) => s"~${delimit(tpe, mode)}"
+      case SimpleType.Union(tpes) =>
+        val strings = tpes.map(delimit(_, mode))
+        strings.mkString(" + ")
+      case SimpleType.Intersection(tpes) =>
+        val strings = tpes.map(delimit(_, mode))
+        strings.mkString(" & ")
+      case SimpleType.Difference(tpe1, tpe2) => s"${delimit(tpe1, mode)} - ${delimit(tpe2, mode)}"
       case SimpleType.RelationConstructor => "Relation"
       case SimpleType.Relation(tpes) =>
         val terms = tpes.map(visit(_, Mode.Type)).mkString(", ")
@@ -249,6 +261,7 @@ object FormatType {
           case Kind.Wild => "_" + id.toString
           case Kind.Star => "t" + id
           case Kind.Bool => "b" + id
+          case Kind.Effect => "e" + id
           case Kind.RecordRow => "r" + id
           case Kind.SchemaRow => "s" + id
           case Kind.Predicate => "'" + id.toString

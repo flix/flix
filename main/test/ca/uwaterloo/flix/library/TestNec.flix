@@ -363,22 +363,22 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def indexOf01(): Bool = Nec.indexOf(0, singleton(1)) == -1
+    def indexOf01(): Bool = Nec.indexOf(0, singleton(1)) == None
 
     @test
-    def indexOf02(): Bool = Nec.indexOf(1, singleton(1)) == 0
+    def indexOf02(): Bool = Nec.indexOf(1, singleton(1)) == Some(0)
 
     @test
-    def indexOf03(): Bool = Nec.indexOf(0, necOf2(1, 2)) == -1
+    def indexOf03(): Bool = Nec.indexOf(0, necOf2(1, 2)) == None
 
     @test
-    def indexOf04(): Bool = Nec.indexOf(1, necOf2(1, 2)) == 0
+    def indexOf04(): Bool = Nec.indexOf(1, necOf2(1, 2)) == Some(0)
 
     @test
-    def indexOf05(): Bool = Nec.indexOf(2, necOf2(1, 2)) == 1
+    def indexOf05(): Bool = Nec.indexOf(2, necOf2(1, 2)) == Some(1)
 
     @test
-    def indexOf06(): Bool = Nec.indexOf(3, necOf3(1, 2, 3)) == 2
+    def indexOf06(): Bool = Nec.indexOf(3, necOf3(1, 2, 3)) == Some(2)
 
     /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
