@@ -822,7 +822,7 @@ namespace Array {
     ///
     /// Returns `None` if `arr` is empty.
     ///
-    pub def reduceRight(f: (a, a) -> a & ef, arr: Array[a]): Option[a] & Impure =
+    pub def reduceRight(f: (a, a) -> a & ef, arr: ScopedArray[a, r]): Option[a] \ { ef, Read(r) } =
         let len = length(arr);
         def loop(i, acc) = {
             if (i < 0)
