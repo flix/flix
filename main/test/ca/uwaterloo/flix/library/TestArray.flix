@@ -2237,21 +2237,29 @@ def testCompare13(): Bool & Impure = ([1,2,3,4] `Array.compare` [1,2,3,4]) == Eq
         Array.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, [1,2,3]) == 386
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// foldRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def foldRight01(): Bool & Impure = Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, []) == 100
+    @test
+    def foldRight01(): Bool = region r {
+        Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, []) == 100
+    }
 
-@test
-def foldRight02(): Bool & Impure = Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, [1]) == 198
+    @test
+    def foldRight02(): Bool = region r {
+        Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, [1]) == 198
+    }
 
-@test
-def foldRight03(): Bool & Impure = Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, [1,2]) == 194
+    @test
+    def foldRight03(): Bool = region r {
+        Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, [1,2]) == 194
+    }
 
-@test
-def foldRight04(): Bool & Impure = Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, [1,2,3]) == 382
+    @test
+    def foldRight04(): Bool = region r {
+        Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, [1,2,3]) == 382
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // foldRightWithCont                                                       //
