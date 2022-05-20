@@ -202,6 +202,32 @@ object ResolutionError {
   }
 
   /**
+    * Inaccessible Op Error.
+    *
+    * @param sym the sig symbol.
+    * @param ns  the namespace where the symbol is not accessible.
+    * @param loc the location where the error occurred.
+    */
+  case class InaccessibleOp(sym: Symbol.OpSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Inaccessible."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Operation '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+         |
+         |${code(loc, "inaccessible operation.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Mark the operation as public."
+    })
+
+  }
+
+  /**
     * Inaccessible Enum Error.
     *
     * @param sym the enum symbol.
@@ -422,6 +448,33 @@ object ResolutionError {
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent class?"
+    })
+
+  }
+
+  /**
+    * Undefined Sig Error.
+    *
+    * @param eff the effect.
+    * @param op  the unresolved operation.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedOp(eff: Symbol.EffectSym, op: Name.Ident, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Undefined operation."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined operation '${red(op.name)}' in effect '${red(eff.toString)}'.
+         |
+         |${code(loc, "operation not found")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent operation?"
     })
 
   }
