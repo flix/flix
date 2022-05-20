@@ -790,7 +790,7 @@ namespace Array {
     /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], z))...)`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b & Impure) -> b & ef, z: b, arr: Array[a]): b & Impure =
+    pub def foldRightWithCont(f: (a, Unit -> b & ef and r) -> b & ef and r, z: b, arr: ScopedArray[a, r]): b \ { ef, Read(r) } =
         def loop(i) = {
             if (i == length(arr))
                 z
