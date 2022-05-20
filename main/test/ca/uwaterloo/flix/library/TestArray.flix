@@ -1911,48 +1911,74 @@ def intercalate07(): Bool & Impure =
         b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: (7 :: 8 :: 9 :: 10 :: Nil) :: Nil
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// isPrefixOf                                                              //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // isPrefixOf                                                              //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def isPrefixOf01(): Bool & Impure = Array.isPrefixOf([]: Array[Int32], []: Array[Int32])
+    @test
+    def isPrefixOf01(): Bool = region r {
+        Array.isPrefixOf([]: ScopedArray[Int32, _], []: ScopedArray[Int32, _])
+    }
 
-@test
-def isPrefixOf02(): Bool & Impure = Array.isPrefixOf([1], []: Array[Int32]) == false
+    @test
+    def isPrefixOf02(): Bool = region r {
+        Array.isPrefixOf([1], []: ScopedArray[Int32, _]) == false
+    }
 
-@test
-def isPrefixOf03(): Bool & Impure = Array.isPrefixOf([]: Array[Int32], [1])
+    @test
+    def isPrefixOf03(): Bool = region r {
+        Array.isPrefixOf([]: ScopedArray[Int32, _], [1])
+    }
 
-@test
-def isPrefixOf04(): Bool & Impure = Array.isPrefixOf([1], [1])
+    @test
+    def isPrefixOf04(): Bool = region r {
+        Array.isPrefixOf([1], [1])
+    }
 
-@test
-def isPrefixOf05(): Bool & Impure = Array.isPrefixOf([2], [1]) == false
+    @test
+    def isPrefixOf05(): Bool = region r {
+        Array.isPrefixOf([2], [1]) == false
+    }
 
-@test
-def isPrefixOf06(): Bool & Impure = Array.isPrefixOf([1,2], [1]) == false
+    @test
+    def isPrefixOf06(): Bool = region r {
+        Array.isPrefixOf([1,2], [1]) == false
+    }
 
-@test
-def isPrefixOf07(): Bool & Impure = Array.isPrefixOf([]: Array[Int32], [1,2])
+    @test
+    def isPrefixOf07(): Bool = region r {
+        Array.isPrefixOf([]: ScopedArray[Int32, _], [1,2])
+    }
 
-@test
-def isPrefixOf08(): Bool & Impure = Array.isPrefixOf([1], [1,2])
+    @test
+    def isPrefixOf08(): Bool = region r {
+        Array.isPrefixOf([1], [1,2])
+    }
 
-@test
-def isPrefixOf09(): Bool & Impure = Array.isPrefixOf([2], [1,2]) == false
+    @test
+    def isPrefixOf09(): Bool = region r {
+        Array.isPrefixOf([2], [1,2]) == false
+    }
 
-@test
-def isPrefixOf10(): Bool & Impure = Array.isPrefixOf([1,2], [1,2])
+    @test
+    def isPrefixOf10(): Bool = region r {
+        Array.isPrefixOf([1,2], [1,2])
+    }
 
-@test
-def isPrefixOf11(): Bool & Impure = Array.isPrefixOf([1,3], [1,2]) == false
+    @test
+    def isPrefixOf11(): Bool = region r {
+        Array.isPrefixOf([1,3], [1,2]) == false
+    }
 
-@test
-def isPrefixOf12(): Bool & Impure = Array.isPrefixOf([1,2,3], [1,2]) == false
+    @test
+    def isPrefixOf12(): Bool = region r {
+        Array.isPrefixOf([1,2,3], [1,2]) == false
+    }
 
-@test
-def isPrefixOf13(): Bool & Impure = Array.isPrefixOf([1,2,3], [89,11,1,2,3,4]) == false
+    @test
+    def isPrefixOf13(): Bool = region r {
+        Array.isPrefixOf([1,2,3], [89,11,1,2,3,4]) == false
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // isInfixOf                                                               //

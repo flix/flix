@@ -673,7 +673,7 @@ namespace Array {
     /// Returns `true` if and only if `a1` is a prefix of `a2`.
     ///
     @Time(length(a1)) @Space(1)
-    pub def isPrefixOf(a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
+    pub def isPrefixOf(a1: ScopedArray[a, r1], a2: ScopedArray[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
         let len1 = length(a1);
         if (len1 > length(a2))
             false
@@ -681,11 +681,10 @@ namespace Array {
             def loop(i) = {
                 if (i >= len1)
                     true
+                else if (a1[i] != a2[i])
+                    false
                 else
-                    if (a1[i] != a2[i])
-                        false
-                    else
-                        loop(i + 1)
+                    loop(i + 1)
             };
             loop(0)
 
