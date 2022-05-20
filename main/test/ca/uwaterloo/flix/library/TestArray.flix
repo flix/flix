@@ -2285,24 +2285,34 @@ def testCompare13(): Bool & Impure = ([1,2,3,4] `Array.compare` [1,2,3,4]) == Eq
         Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, [1,2,3]) == 382
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// reduceLeft                                                              //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // reduceLeft                                                              //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def reduceLeft01(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, []: Array[Int32]) == None
+    @test
+    def reduceLeft01(): Bool = region r {
+        Array.reduceLeft((a, b) -> a-b, []: ScopedArray[Int32, _]) == None
+    }
 
-@test
-def reduceLeft02(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, [1]) == Some(1)
+    @test
+    def reduceLeft02(): Bool = region r {
+        Array.reduceLeft((a, b) -> a-b, [1]) == Some(1)
+    }
 
-@test
-def reduceLeft03(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, [1,2]) == Some(-1)
+    @test
+    def reduceLeft03(): Bool = region r {
+        Array.reduceLeft((a, b) -> a-b, [1,2]) == Some(-1)
+    }
 
-@test
-def reduceLeft04(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, [1,2,3]) == Some(-4)
+    @test
+    def reduceLeft04(): Bool = region r {
+        Array.reduceLeft((a, b) -> a-b, [1,2,3]) == Some(-4)
+    }
 
-@test
-def reduceLeft05(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, [1,2,3,4]) == Some(-8)
+    @test
+    def reduceLeft05(): Bool = region r {
+        Array.reduceLeft((a, b) -> a-b, [1,2,3,4]) == Some(-8)
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceRight                                                             //

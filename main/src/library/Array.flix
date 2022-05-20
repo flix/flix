@@ -804,7 +804,7 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def reduceLeft(f: (a, a) ->  a & ef, a: Array[a]): Option[a] & Impure =
+    pub def reduceLeft(f: (a, a) ->  a & ef, a: ScopedArray[a, r]): Option[a] \ { ef, Read(r) } =
         let len = length(a);
         def loop(i, acc) = {
             if (i >= len)
