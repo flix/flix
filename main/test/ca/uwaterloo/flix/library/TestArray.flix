@@ -2023,48 +2023,74 @@ def isInfixOf12(): Bool & Impure = Array.isInfixOf([1,2,3], [1,2]) == false
 @test
 def isInfixOf13(): Bool & Impure = Array.isInfixOf([1,2,3], [89,11,1,2,3,4])
 
-/////////////////////////////////////////////////////////////////////////////
-// isSuffixOf                                                              //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // isSuffixOf                                                              //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def isSuffixOf01(): Bool & Impure = Array.isSuffixOf([]: Array[Int32], []: Array[Int32])
+    @test
+    def isSuffixOf01(): Bool = region r {
+        Array.isSuffixOf([]: ScopedArray[Int32, _], []: ScopedArray[Int32, _])
+    }
 
-@test
-def isSuffixOf02(): Bool & Impure = Array.isSuffixOf([1], []: Array[Int32]) == false
+    @test
+    def isSuffixOf02(): Bool = region r {
+        Array.isSuffixOf([1], []: ScopedArray[Int32, _]) == false
+    }
 
-@test
-def isSuffixOf03(): Bool & Impure = Array.isSuffixOf([]: Array[Int32], [1])
+    @test
+    def isSuffixOf03(): Bool = region r {
+        Array.isSuffixOf([]: ScopedArray[Int32, _], [1])
+    }
 
-@test
-def isSuffixOf04(): Bool & Impure = Array.isSuffixOf([1], [1])
+    @test
+    def isSuffixOf04(): Bool = region r {
+        Array.isSuffixOf([1], [1])
+    }
 
-@test
-def isSuffixOf05(): Bool & Impure = Array.isSuffixOf([2], [1]) == false
+    @test
+    def isSuffixOf05(): Bool = region r {
+        Array.isSuffixOf([2], [1]) == false
+    }
 
-@test
-def isSuffixOf06(): Bool & Impure = Array.isSuffixOf([1,2], [1]) == false
+    @test
+    def isSuffixOf06(): Bool = region r {
+        Array.isSuffixOf([1,2], [1]) == false
+    }
 
-@test
-def isSuffixOf07(): Bool & Impure = Array.isSuffixOf([]: Array[Int32], [1,2])
+    @test
+    def isSuffixOf07(): Bool = region r {
+        Array.isSuffixOf([]: ScopedArray[Int32, _], [1,2])
+    }
 
-@test
-def isSuffixOf08(): Bool & Impure = Array.isSuffixOf([1], [1,2]) == false
+    @test
+    def isSuffixOf08(): Bool = region r {
+        Array.isSuffixOf([1], [1,2]) == false
+    }
 
-@test
-def isSuffixOf09(): Bool & Impure = Array.isSuffixOf([2], [1,2])
+    @test
+    def isSuffixOf09(): Bool = region r {
+        Array.isSuffixOf([2], [1,2])
+    }
 
-@test
-def isSuffixOf10(): Bool & Impure = Array.isSuffixOf([1,2], [1,2])
+    @test
+    def isSuffixOf10(): Bool = region r {
+        Array.isSuffixOf([1,2], [1,2])
+    }
 
-@test
-def isSuffixOf11(): Bool & Impure = Array.isSuffixOf([1,3], [1,2]) == false
+    @test
+    def isSuffixOf11(): Bool = region r {
+        Array.isSuffixOf([1,3], [1,2]) == false
+    }
 
-@test
-def isSuffixOf12(): Bool & Impure = Array.isSuffixOf([1,2,3], [1,2]) == false
+    @test
+    def isSuffixOf12(): Bool = region r {
+        Array.isSuffixOf([1,2,3], [1,2]) == false
+    }
 
-@test
-def isSuffixOf13(): Bool & Impure = Array.isSuffixOf([1,2,3], [89,11,1,2,3])
+    @test
+    def isSuffixOf13(): Bool = region r {
+        Array.isSuffixOf([1,2,3], [89,11,1,2,3])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // eq                                                                      //
