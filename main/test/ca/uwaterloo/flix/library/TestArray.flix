@@ -4333,39 +4333,57 @@ def init205(): Bool & Impure =
         a `sameElements` [4,3,2,2,1,0]
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// sort                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // sort                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-def testSortVsSortWith(a: Array[Int32]) : Bool & Impure =
-    Array.sort(a) `sameElements` Array.sortWith(cmp, a)
+    def testSortVsSortWith(a: ScopedArray[Int32, r]): Bool \ { Read(r), Write(r) } =
+        Array.sort(a) `sameElements` Array.sortWith(cmp, a)
 
-@test
-def sort01(): Bool & Impure = testSortVsSortWith([]: Array[Int32])
+    @test
+    def sort01(): Bool = region r {
+        testSortVsSortWith([]: ScopedArray[Int32, _])
+    }
 
-@test
-def sort02(): Bool & Impure = testSortVsSortWith([0])
+    @test
+    def sort02(): Bool = region r {
+        testSortVsSortWith([0])
+    }
 
-@test
-def sort03(): Bool & Impure = testSortVsSortWith([0,1])
+    @test
+    def sort03(): Bool = region r {
+        testSortVsSortWith([0,1])
+    }
 
-@test
-def sort04(): Bool & Impure = testSortVsSortWith([1,0])
+    @test
+    def sort04(): Bool = region r {
+        testSortVsSortWith([1,0])
+    }
 
-@test
-def sort05(): Bool & Impure = testSortVsSortWith([1,1])
+    @test
+    def sort05(): Bool = region r {
+        testSortVsSortWith([1,1])
+    }
 
-@test
-def sort06(): Bool & Impure = testSortVsSortWith([0,1,2,3,4,5])
+    @test
+    def sort06(): Bool = region r {
+        testSortVsSortWith([0,1,2,3,4,5])
+    }
 
-@test
-def sort07(): Bool & Impure = testSortVsSortWith([5,4,3,2,1,0])
+    @test
+    def sort07(): Bool = region r {
+        testSortVsSortWith([5,4,3,2,1,0])
+    }
 
-@test
-def sort08(): Bool & Impure = testSortVsSortWith([5,3,0,4,1,2])
+    @test
+    def sort08(): Bool = region r {
+        testSortVsSortWith([5,3,0,4,1,2])
+    }
 
-@test
-def sort09(): Bool & Impure = testSortVsSortWith([2,3,0,4,1,2])
+    @test
+    def sort09(): Bool = region r {
+        testSortVsSortWith([2,3,0,4,1,2])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // sortWith!                                                               //
