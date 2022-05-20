@@ -566,13 +566,14 @@ namespace Array {
     /// Returns `a` with `x` inserted between every two adjacent elements.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def intersperse(x: a, a: Array[a]): Array[a] & Impure =
+    pub def intersperse(x: a, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) }=
         let len1 = length(a);
         let len2 = len1 + len1 - 1;
+        let r = Scoped.regionOf(a);
         if (len2 <= 0)
-            []
+            [] @ r
         else {
-            let b = new(x, len2, static);
+            let b = new(x, len2, r);
             let f = { (v,i) -> let j = i + i; b[j] = v };
             foreachWithIndex(f, a);
             b

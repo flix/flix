@@ -1679,34 +1679,39 @@ def replace08!(): Bool & Impure =
         Array.sameElements(a, [-2, -3, -4, -5, -6, -7, -8])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// intersperse                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // intersperse                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def intersperse01(): Bool & Impure =
-    let a = Array.intersperse(11, []);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def intersperse01(): Bool = region r {
+        let a = Array.intersperse(11, []);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def intersperse02(): Bool & Impure =
-    let a = Array.intersperse(11, [1]);
-    Array.sameElements(a, [1])
+    @test
+    def intersperse02(): Bool = region r {
+        let a = Array.intersperse(11, [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def intersperse03(): Bool & Impure =
-    let a = Array.intersperse(11, [1,2]);
-    Array.sameElements(a, [1,11,2])
+    @test
+    def intersperse03(): Bool = region r {
+        let a = Array.intersperse(11, [1,2]);
+        Array.sameElements(a, [1,11,2])
+    }
 
-@test
-def intersperse04(): Bool & Impure =
-    let a = Array.intersperse(11, [1,2,3]);
-    Array.sameElements(a, [1,11,2,11,3])
+    @test
+    def intersperse04(): Bool = region r {
+        let a = Array.intersperse(11, [1,2,3]);
+        Array.sameElements(a, [1,11,2,11,3])
+    }
 
-@test
-def intersperse05(): Bool & Impure =
-    let a = Array.intersperse(11, [1,2,3,4]);
-    Array.sameElements(a, [1,11,2,11,3,11,4])
+    @test
+    def intersperse05(): Bool = region r {
+        let a = Array.intersperse(11, [1,2,3,4]);
+        Array.sameElements(a, [1,11,2,11,3,11,4])
+    }
 
 
 /////////////////////////////////////////////////////////////////////////////
