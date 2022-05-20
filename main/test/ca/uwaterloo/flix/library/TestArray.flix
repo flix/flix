@@ -4835,20 +4835,24 @@ def init205(): Bool & Impure =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toChain01(): Bool & Impure =
-        Array.toChain([]: Array[Unit]) == Chain.empty(): Chain[Unit]
+    def toChain01(): Bool = region r {
+        Array.toChain([]: ScopedArray[Unit, _]) == Chain.empty(): Chain[Unit]
+    }
 
     @test
-    def toChain02(): Bool & Impure =
+    def toChain02(): Bool = region r {
         Array.toChain([1]) == Chain.singleton(1)
+    }
 
     @test
-    def toChain03(): Bool & Impure =
+    def toChain03(): Bool = region r {
         Array.toChain([1,2]) == List.toChain(1 :: 2 :: Nil)
+    }
 
     @test
-    def toChain04(): Bool & Impure =
+    def toChain04(): Bool = region r {
         Array.toChain([1,2,3]) == List.toChain(1 :: 2 :: 3 :: Nil)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // copyOfRange                                                             //
