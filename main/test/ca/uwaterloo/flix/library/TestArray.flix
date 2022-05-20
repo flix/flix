@@ -4246,79 +4246,92 @@ def init205(): Bool & Impure =
     }
 
 
-/////////////////////////////////////////////////////////////////////////////
-// sortWith                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // sortWith                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-def cmp(x: Int32, y: Int32): Comparison =
-    if (x < y) LessThan
-    else if (x == y) EqualTo
-    else GreaterThan
+    def cmp(x: Int32, y: Int32): Comparison =
+        if (x < y) LessThan
+        else if (x == y) EqualTo
+        else GreaterThan
 
-@test
-def sortWith01(): Bool & Impure =
-    let a = Array.sortWith(cmp, []: Array[Int32]);
-    a `sameElements` []: Array[Int32]
+    @test
+    def sortWith01(): Bool = region r {
+        let a = Array.sortWith(cmp, []: ScopedArray[Int32, _]);
+        a `sameElements` []: ScopedArray[Int32, _]
+    }
 
-@test
-def sortWith02(): Bool & Impure =
-    let a = Array.sortWith(cmp, [0]);
-    a `sameElements` [0]
+    @test
+    def sortWith02(): Bool = region r {
+        let a = Array.sortWith(cmp, [0]);
+        a `sameElements` [0]
+    }
 
-@test
-def sortWith03(): Bool & Impure =
-    let a = Array.sortWith(cmp, [0,1]);
-    a `sameElements` [0,1]
+    @test
+    def sortWith03(): Bool = region r {
+        let a = Array.sortWith(cmp, [0,1]);
+        a `sameElements` [0,1]
+    }
 
-@test
-def sortWith04(): Bool & Impure =
-    let a = Array.sortWith(cmp, [1,0]);
-    a `sameElements` [0,1]
+    @test
+    def sortWith04(): Bool = region r {
+        let a = Array.sortWith(cmp, [1,0]);
+        a `sameElements` [0,1]
+    }
 
-@test
-def sortWith05(): Bool & Impure =
-    let a = Array.sortWith(cmp, [1,1]);
-    a `sameElements` [1,1]
+    @test
+    def sortWith05(): Bool = region r {
+        let a = Array.sortWith(cmp, [1,1]);
+        a `sameElements` [1,1]
+    }
 
-@test
-def sortWith06(): Bool & Impure =
-    let a = Array.sortWith(cmp, [0,1,2,3,4,5]);
-    a `sameElements` [0,1,2,3,4,5]
+    @test
+    def sortWith06(): Bool = region r {
+        let a = Array.sortWith(cmp, [0,1,2,3,4,5]);
+        a `sameElements` [0,1,2,3,4,5]
+    }
 
-@test
-def sortWith07(): Bool & Impure =
-    let a = Array.sortWith(cmp, [5,4,3,2,1,0]);
-    a `sameElements` [0,1,2,3,4,5]
+    @test
+    def sortWith07(): Bool = region r {
+        let a = Array.sortWith(cmp, [5,4,3,2,1,0]);
+        a `sameElements` [0,1,2,3,4,5]
+    }
 
-@test
-def sortWith08(): Bool & Impure =
-    let a = Array.sortWith(cmp, [5,3,0,4,1,2]);
-    a `sameElements` [0,1,2,3,4,5]
+    @test
+    def sortWith08(): Bool = region r {
+        let a = Array.sortWith(cmp, [5,3,0,4,1,2]);
+        a `sameElements` [0,1,2,3,4,5]
+    }
 
-@test
-def sortWith09(): Bool & Impure =
-    let a = Array.sortWith(cmp, [2,3,0,4,1,2]);
-    a `sameElements` [0,1,2,2,3,4]
+    @test
+    def sortWith09(): Bool = region r {
+        let a = Array.sortWith(cmp, [2,3,0,4,1,2]);
+        a `sameElements` [0,1,2,2,3,4]
+    }
 
-@test
-def sortWith10(): Bool & Impure =
-    let a = Array.sortWith(flip(cmp), [0,1,2,3,4,5]);
-    a `sameElements` [5,4,3,2,1,0]
+    @test
+    def sortWith10(): Bool = region r {
+        let a = Array.sortWith(flip(cmp), [0,1,2,3,4,5]);
+        a `sameElements` [5,4,3,2,1,0]
+    }
 
-@test
-def sortWith11(): Bool & Impure =
-    let a = Array.sortWith(flip(cmp), [5,4,3,2,1,0]);
-    a `sameElements` [5,4,3,2,1,0]
+    @test
+    def sortWith11(): Bool = region r {
+        let a = Array.sortWith(flip(cmp), [5,4,3,2,1,0]);
+        a `sameElements` [5,4,3,2,1,0]
+    }
 
-@test
-def sortWith12(): Bool & Impure =
-    let a = Array.sortWith(flip(cmp), [5,3,0,4,1,2]);
-    a `sameElements` [5,4,3,2,1,0]
+    @test
+    def sortWith12(): Bool = region r {
+        let a = Array.sortWith(flip(cmp), [5,3,0,4,1,2]);
+        a `sameElements` [5,4,3,2,1,0]
+    }
 
-@test
-def sortWith13(): Bool & Impure =
-    let a = Array.sortWith(flip(cmp), [2,3,0,4,1,2]);
-    a `sameElements` [4,3,2,2,1,0]
+    @test
+    def sortWith13(): Bool = region r {
+        let a = Array.sortWith(flip(cmp), [2,3,0,4,1,2]);
+        a `sameElements` [4,3,2,2,1,0]
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // sort                                                                    //
