@@ -64,7 +64,7 @@ namespace Test/Exp/Effect {
 
     pub def differenceEffect(): Bool \ Console - Fail = ???
 
-    pub def singlePolyEffect(): Bool \ ef1 = ??? as & ef1
+    pub def singlePolyEffect(): Bool \ ef1 = ???
 
     pub def complementPolyEffect(): Bool \ ~ef1 = ???
 

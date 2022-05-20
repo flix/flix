@@ -2243,7 +2243,7 @@ object Weeder {
     * Weeds the given parsed type `tpe`.
     */
   private def visitType(tpe: ParsedAst.Type): WeededAst.Type = tpe match {
-    case ParsedAst.Type.Var(sp1, ident, sp2) => visitEffectIdent(ident)
+    case ParsedAst.Type.Var(sp1, ident, sp2) => visitPurityIdent(ident)
 
     case ParsedAst.Type.Ambiguous(sp1, qname, sp2) => WeededAst.Type.Ambiguous(qname, mkSL(sp1, sp2))
 
@@ -2413,8 +2413,10 @@ object Weeder {
 
     eff0 match {
       case ParsedAst.Effect.Var(sp1, ident, sp2) =>
-        val tpe = visitEffectIdent(ident)
-        (tpe, tpe)
+        val pur = WeededAst.Type.True(loc)
+        val eff = WeededAst.Type.Var(ident, loc)
+
+        (pur, eff)
 
       case ParsedAst.Effect.Read(sp1, idents, sp2) =>
         val pur = idents.map(ident => WeededAst.Type.Var(ident, ident.loc): WeededAst.Type)
@@ -2678,7 +2680,7 @@ object Weeder {
     * Performs weeding on the given effect `ident`.
     * Checks whether it is actually the keyword `static`.
     */
-  private def visitEffectIdent(ident: Name.Ident): WeededAst.Type = {
+  private def visitPurityIdent(ident: Name.Ident): WeededAst.Type = {
     if (ident.name == "static")
       WeededAst.Type.False(ident.loc)
     else
