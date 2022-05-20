@@ -54,41 +54,42 @@ namespace Test/Exp/Effect {
         }
     }
 
-    pub def singleEffect(): Bool \ Console = ???
-
-    pub def complementEffect(): Bool \ ~Console = ???
-
-    pub def unionEffect(): Bool \ Console + Fail = ???
-
-    pub def intersectionEffect(): Bool \ Console & Fail = ???
-
-    pub def differenceEffect(): Bool \ Console - Fail = ???
-
-    pub def singlePolyEffect(): Bool \ ef1 = ???
-
-    pub def complementPolyEffect(): Bool \ ~ef1 = ???
-
-    pub def unionPolyEffect(): Bool \ ef1 + ef2 = ???
-
-    pub def intersectionPolyEffect(): Bool \ ef1 & ef2 = ???
-
-    pub def differencePolyEffect(): Bool \ ef1 - ef2 = ???
-
-    pub def effectSet01(): Bool \ { Fail } = ???
-
-    pub def effectSet02(): Bool \ { Console, Fail } = ???
-
-    pub def effectSet03(): Bool \ {} = ???
-
-    pub def polyEffectSet01[ef: Eff](): Bool \ ef = ???
-
-    pub def polyEffectSet02[ef: Eff](): Bool \ { ef, Fail } = ???
-
-    pub def arrowWithEffect01(f: a -> b \ {}): Bool = ???
-
-    pub def arrowWithEffect02(f: a -> b \ {ef - Fail}): Bool = ???
-
-    pub def arrowWithEffect03(f: a -> b \ {Console, ef - Fail}): Bool = ???
+// TODO disabled until typing
+//    pub def singleEffect(): Bool \ Console = ???
+//
+//    pub def complementEffect(): Bool \ ~Console = ???
+//
+//    pub def unionEffect(): Bool \ Console + Fail = ???
+//
+//    pub def intersectionEffect(): Bool \ Console & Fail = ???
+//
+//    pub def differenceEffect(): Bool \ Console - Fail = ???
+//
+//    pub def singlePolyEffect(): Bool \ ef1 = ???
+//
+//    pub def complementPolyEffect(): Bool \ ~ef1 = ???
+//
+//    pub def unionPolyEffect(): Bool \ ef1 + ef2 = ???
+//
+//    pub def intersectionPolyEffect(): Bool \ ef1 & ef2 = ???
+//
+//    pub def differencePolyEffect(): Bool \ ef1 - ef2 = ???
+//
+//    pub def effectSet01(): Bool \ { Fail } = ???
+//
+//    pub def effectSet02(): Bool \ { Console, Fail } = ???
+//
+//    pub def effectSet03(): Bool \ {} = ???
+//
+//    pub def polyEffectSet01[ef: Eff](): Bool \ ef = ???
+//
+//    pub def polyEffectSet02[ef: Eff](): Bool \ { ef, Fail } = ???
+//
+//    pub def arrowWithEffect01(f: a -> b \ {}): Bool = ???
+//
+//    pub def arrowWithEffect02(f: a -> b \ {ef - Fail}): Bool = ???
+//
+//    pub def arrowWithEffect03(f: a -> b \ {Console, ef - Fail}): Bool = ???
 
     eff Empty
 
