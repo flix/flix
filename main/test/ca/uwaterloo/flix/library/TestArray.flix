@@ -2013,33 +2013,49 @@ def isSuffixOf12(): Bool & Impure = Array.isSuffixOf([1,2,3], [1,2]) == false
 @test
 def isSuffixOf13(): Bool & Impure = Array.isSuffixOf([1,2,3], [89,11,1,2,3])
 
-/////////////////////////////////////////////////////////////////////////////
-// eq                                                                      //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // eq                                                                      //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def testEq01(): Bool & Impure = ([] : Array[Int32]) `sameElements` ([] : Array[Int32])
+    @test
+    def testSameElements01(): Bool = region r {
+        ([]: ScopedArray[Int32, _]) `sameElements` ([]: ScopedArray[Int32, _])
+    }
 
-@test
-def testEq02(): Bool & Impure = Bool.not([1] `sameElements` [])
+    @test
+    def testSameElements02(): Bool = region r {
+        not ([1] `sameElements` [])
+    }
 
-@test
-def testEq03(): Bool & Impure = Bool.not([] `sameElements` [1])
+    @test
+    def testSameElements03(): Bool = region r {
+        not ([] `sameElements` [1])
+    }
 
-@test
-def testEq04(): Bool & Impure = [1] `sameElements` [1]
+    @test
+    def testSameElements04(): Bool = region r {
+        [1] `sameElements` [1]
+    }
 
-@test
-def testEq05(): Bool & Impure = Bool.not([1] `sameElements` [2])
+    @test
+    def testSameElements05(): Bool = region r {
+        not ([1] `sameElements` [2])
+    }
 
-@test
-def testEq06(): Bool & Impure = Bool.not([1,2] `sameElements` [1])
+    @test
+    def testSameElements06(): Bool = region r {
+        not ([1,2] `sameElements` [1])
+    }
 
-@test
-def testEq07(): Bool & Impure = Bool.not([1] `sameElements` [1,2])
+    @test
+    def testSameElements07(): Bool = region r {
+        not ([1] `sameElements` [1,2])
+    }
 
-@test
-def testEq08(): Bool & Impure = [1,2,3,4] `sameElements` [1,2,3,4]
+    @test
+    def testSameElements08(): Bool = region r {
+        [1,2,3,4] `sameElements` [1,2,3,4]
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // compare                                                                 //
