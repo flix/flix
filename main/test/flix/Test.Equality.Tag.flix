@@ -54,43 +54,4 @@ namespace Test/Equality/Tag {
     @test
     def testNeqTag09(): Bool = Some((Ok(1) :: Err(2) :: Nil)) != Some((Err(1) :: Ok(2) :: Nil))
 
-    enum Option[t] {
-        case None,
-        case Some(t)
-    }
-
-    enum Result[t, e] {
-        case Ok(t),
-        case Err(e)
-    }
-
-    enum List[t] {
-        case Nil,
-        case Cons(t, List[t])
-    }
-
-    instance Eq[Option[a]] with Eq[a] {
-        pub def eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
-            case (None, None) => true
-            case (Some(v1), Some(v2)) => v1 == v2
-            case _ => false
-        }
-    }
-
-    instance Eq[Result[t, e]] with Eq[t], Eq[e] {
-        pub def eq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) {
-            case (Ok(v1), Ok(v2)) => v1 == v2
-            case (Err(w1), Err(w2)) => w1 == w2
-            case _ => false
-        }
-    }
-
-    instance Eq[List[a]] with Eq[a] {
-        pub def eq(xs: List[a], ys: List[a]): Bool = match (xs, ys) {
-            case (Nil, Nil) => true
-            case (x :: rs, y :: qs) => if (x != y) false else rs == qs
-            case _ => false
-        }
-    }
-
 }

@@ -258,22 +258,22 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def indexOf01(): Bool = Chain.indexOf(0, Chain.empty()) == -1
+    def indexOf01(): Bool = Chain.indexOf(0, Chain.empty()) == None
 
     @test
-    def indexOf02(): Bool = Chain.indexOf(0, Chain.singleton(1)) == -1
+    def indexOf02(): Bool = Chain.indexOf(0, Chain.singleton(1)) == None
 
     @test
-    def indexOf03(): Bool = Chain.indexOf(1, Chain.singleton(1)) == 0
+    def indexOf03(): Bool = Chain.indexOf(1, Chain.singleton(1)) == Some(0)
 
     @test
-    def indexOf04(): Bool = Chain.indexOf(0, List.toChain(1 :: 2 :: Nil)) == -1
+    def indexOf04(): Bool = Chain.indexOf(0, List.toChain(1 :: 2 :: Nil)) == None
 
     @test
-    def indexOf05(): Bool = Chain.indexOf(1, List.toChain(1 :: 2 :: Nil)) == 0
+    def indexOf05(): Bool = Chain.indexOf(1, List.toChain(1 :: 2 :: Nil)) == Some(0)
 
     @test
-    def indexOf06(): Bool = Chain.indexOf(2, List.toChain(1 :: 2 :: Nil)) == 1
+    def indexOf06(): Bool = Chain.indexOf(2, List.toChain(1 :: 2 :: Nil)) == Some(1)
 
     /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //

@@ -300,6 +300,41 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represents the complement of an effect set.
+    */
+  case object Complement extends TypeConstructor {
+    def kind: Kind = Kind.Effect ->: Kind.Effect
+  }
+
+  /**
+    * A type constructor that represents the union of two effect sets.
+    */
+  case object Union extends TypeConstructor {
+    def kind: Kind = Kind.Effect ->: Kind.Effect ->: Kind.Effect
+  }
+
+  /**
+    * A type constructor that represents the intersection of two effect sets.
+    */
+  case object Intersection extends TypeConstructor {
+    def kind: Kind = Kind.Effect ->: Kind.Effect ->: Kind.Effect
+  }
+
+  /**
+    * A type constructor that represents the difference of two effect sets.
+    */
+  case object Difference extends TypeConstructor {
+    def kind: Kind = Kind.Effect ->: Kind.Effect ->: Kind.Effect
+  }
+
+  /**
+    * A type constructor that represents a single effect.
+    */
+  case class Effect(sym: Symbol.EffectSym) extends TypeConstructor {
+    def kind: Kind = Kind.Effect
+  }
+
+  /**
     * A type constructor that represent the type of regions.
     */
   case object Region extends TypeConstructor {

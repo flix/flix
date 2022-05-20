@@ -1113,8 +1113,8 @@ namespace String {
     def levenshteinDistanceHelper(s: String, t: String) : Int32 & Impure =
         let m = length(s);
         let n = length(t);
-        let v0 = Array.new(0, n + 1);
-        let v1 = Array.new(0, n + 1);
+        let v0 = Array.new(0, n + 1, static);
+        let v1 = Array.new(0, n + 1, static);
         forIndex(0, n, i -> v0[i] = i);
         forIndex(0, m - 1, i -> {
             v1[0] = i + 1;

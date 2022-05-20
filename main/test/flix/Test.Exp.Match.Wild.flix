@@ -25,14 +25,4 @@ namespace Test/Exp/Match/Wild {
         case _            => false
     }
 
-    pub enum Option[t] {
-        case None,
-        case Some(t)
-    }
-
-    pub enum Result[t, e] {
-        case Ok(t),
-        case Err(e)
-    }
-
 }

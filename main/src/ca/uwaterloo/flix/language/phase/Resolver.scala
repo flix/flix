@@ -970,11 +970,44 @@ object Resolver {
             case (e, rs) => ResolvedAst.Expression.TryCatch(e, rs, loc)
           }
 
-        // TODO handle these cases
-        case NamedAst.Expression.Without(_, _, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("Without"), loc).toSuccess
-        case NamedAst.Expression.TryWith(_, _, _, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("TryWith"), loc).toSuccess
-        case NamedAst.Expression.Do(_, _, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("Do"), loc).toSuccess
-        case NamedAst.Expression.Resume(_, loc) => ResolvedAst.Expression.Hole(Symbol.mkHoleSym("Resume"), loc).toSuccess
+        case NamedAst.Expression.Without(exp, eff, loc) =>
+          val eVal = visitExp(exp, region)
+          val fVal = lookupEffect(eff, ns0, root)
+          mapN(eVal, fVal) {
+            case (e, f) => ResolvedAst.Expression.Without(e, f.sym, loc)
+          }
+
+        case NamedAst.Expression.TryWith(exp, eff, rules, loc) =>
+          val eVal = visitExp(exp, region)
+          val fVal = lookupEffect(eff, ns0, root)
+          flatMapN(eVal, fVal) {
+            case (e, f) =>
+              val rulesVal = traverse(rules) {
+                case NamedAst.HandlerRule(ident, fparams, body) =>
+                  val opVal = findOpInEffect(ident, f)
+                  val fparamsVal = resolveFormalParams(fparams, taenv, ns0, root)
+                  val bodyVal = visitExp(body, region)
+                  mapN(opVal, fparamsVal, bodyVal) {
+                    case (o, fp, b) => ResolvedAst.HandlerRule(o.sym, fp, b)
+                  }
+              }
+              mapN(rulesVal) {
+                rs => ResolvedAst.Expression.TryWith(e, f.sym, rs, loc)
+              }
+          }
+
+        case NamedAst.Expression.Do(op, exps, loc) =>
+          val opVal = lookupOp(op, ns0, root)
+          val expsVal = traverse(exps)(visitExp(_, region))
+          mapN(opVal, expsVal) {
+            case (o, es) => ResolvedAst.Expression.Do(o.sym, es, loc)
+          }
+
+        case NamedAst.Expression.Resume(exps, loc) =>
+          val expsVal = traverse(exps)(visitExp(_, region))
+          mapN(expsVal) {
+            es => ResolvedAst.Expression.Resume(es, loc)
+          }
 
         case NamedAst.Expression.InvokeConstructor(className, args, sig, loc) =>
           val argsVal = traverse(args)(visitExp(_, region))
@@ -1455,7 +1488,7 @@ object Resolver {
     * Finds the class with the qualified name `qname` in the namespace `ns0`, for the purposes of implementation.
     */
   def lookupClassForImplementation(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
-    val classOpt = tryLookupClass(qname, ns0, root)
+    val classOpt = tryLookupName(qname, ns0, root.classes)
     classOpt match {
       case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
       case Some(clazz) =>
@@ -1471,7 +1504,7 @@ object Resolver {
     * Finds the class with the qualified name `qname` in the namespace `ns0`.
     */
   def lookupClass(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
-    val classOpt = tryLookupClass(qname, ns0, root)
+    val classOpt = tryLookupName(qname, ns0, root.classes)
     classOpt match {
       case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
       case Some(clazz) =>
@@ -1483,33 +1516,10 @@ object Resolver {
   }
 
   /**
-    * Tries to find a class with the qualified name `qname` in the namespace `ns0`.
-    */
-  def tryLookupClass(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Class] = {
-    // Check whether the name is fully-qualified.
-    if (qname.isUnqualified) {
-      // Case 1: Unqualified name. Lookup in the current namespace.
-      val classOpt = root.classes.getOrElse(ns0, Map.empty).get(qname.ident.name)
-
-      classOpt match {
-        case Some(clazz) =>
-          // Case 1.2: Found in the current namespace.
-          Some(clazz)
-        case None =>
-          // Case 1.1: Try the global namespace.
-          root.classes.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
-      }
-    } else {
-      // Case 2: Qualified. Lookup in the given namespace.
-      root.classes.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
-    }
-  }
-
-  /**
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
   def lookupDefOrSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.DefOrSig, ResolutionError] = {
-    val defOrSigOpt = tryLookupDefOrSig(qname, ns0, root)
+    val defOrSigOpt = tryLookupName(qname, ns0, root.defsAndSigs)
 
     defOrSigOpt match {
       case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
@@ -1529,24 +1539,31 @@ object Resolver {
   }
 
   /**
-    * Attempts to lookup the definition or signature with qualified name `qname` in the namespace `ns0`.
+    * Looks up the effect operation with qualified name `qname` in the namespace `ns0`.
     */
-  def tryLookupDefOrSig(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.DefOrSig] = {
-    if (qname.isUnqualified) {
-      // Case 1: Unqualified name. Lookup in the current namespace.
-      val defnOpt = root.defsAndSigs.getOrElse(ns0, Map.empty).get(qname.ident.name)
+  private def lookupOp(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Op, ResolutionError] = {
+    val opOpt = tryLookupName(qname, ns0, root.ops)
 
-      defnOpt match {
-        case Some(defn) =>
-          // Case 1.2: Found in the current namespace.
-          Some(defn)
-        case None =>
-          // Case 1.1: Try the global namespace.
-          root.defsAndSigs.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
-      }
-    } else {
-      // Case 2: Qualified. Lookup in the given namespace.
-      root.defsAndSigs.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+    opOpt match {
+      case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case Some(op) =>
+        if (isOpAccessible(op, ns0)) {
+          op.toSuccess
+        } else {
+          ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc).toFailure
+        }
+    }
+  }
+
+  /**
+    * Looks up the effect operation as a member of the given effect.
+    */
+  private def findOpInEffect(ident: Name.Ident, eff: NamedAst.Effect): Validation[NamedAst.Op, ResolutionError] = {
+    val opOpt = eff.ops.find(o => o.sym.name == ident.name)
+    opOpt match {
+      case None =>
+        ResolutionError.UndefinedOp(eff.sym, ident, ident.loc).toFailure
+      case Some(op) => op.toSuccess
     }
   }
 
@@ -1679,19 +1696,21 @@ object Resolver {
 
       // Disambiguate type.
       case typeName =>
-        lookupEnumOrTypeAlias(qname, ns0, root) match {
-          case EnumOrTypeAliasLookupResult.Enum(enum) => getEnumTypeIfAccessible(enum, ns0, loc)
-          case EnumOrTypeAliasLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
-          case EnumOrTypeAliasLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+        lookupType(qname, ns0, root) match {
+          case TypeLookupResult.Enum(enum) => getEnumTypeIfAccessible(enum, ns0, loc)
+          case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
+          case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
+          case TypeLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
         }
     }
 
     case NamedAst.Type.Ambiguous(qname, loc) =>
       // Disambiguate type.
-      lookupEnumOrTypeAlias(qname, ns0, root) match {
-        case EnumOrTypeAliasLookupResult.Enum(enum) => getEnumTypeIfAccessible(enum, ns0, loc)
-        case EnumOrTypeAliasLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
-        case EnumOrTypeAliasLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+      lookupType(qname, ns0, root) match {
+        case TypeLookupResult.Enum(enum) => getEnumTypeIfAccessible(enum, ns0, loc)
+        case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
+        case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
+        case TypeLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
       }
 
     case NamedAst.Type.Enum(sym, loc) =>
@@ -1814,22 +1833,22 @@ object Resolver {
 
     case NamedAst.Type.Complement(tpe, loc) =>
       mapN(semiResolveType(tpe, ns0, root)) {
-        t => Type.mkNot(t, loc) // TODO change to Complement
+        t => mkComplement(t, loc)
       }
 
     case NamedAst.Type.Union(tpe1, tpe2, loc) =>
       mapN(semiResolveType(tpe1, ns0, root), semiResolveType(tpe2, ns0, root)) {
-        case (t1, t2) => mkAnd(t1, t2, loc) // TODO change to Union
+        case (t1, t2) => mkUnion(t1, t2, loc)
       }
 
     case NamedAst.Type.Intersection(tpe1, tpe2, loc) =>
       mapN(semiResolveType(tpe1, ns0, root), semiResolveType(tpe2, ns0, root)) {
-        case (t1, t2) => mkOr(t1, t2, loc) // TODO change to Intersection
+        case (t1, t2) => mkIntersection(t1, t2, loc)
       }
 
     case NamedAst.Type.Difference(tpe1, tpe2, loc) =>
       mapN(semiResolveType(tpe1, ns0, root), semiResolveType(tpe2, ns0, root)) {
-        case (t1, t2) => mkOr(t1, t2, loc) // TODO change to Difference
+        case (t1, t2) => mkDifference(t1, t2, loc)
       }
 
     case _: NamedAst.Type.Read | _: NamedAst.Type.Write =>
@@ -1902,59 +1921,69 @@ object Resolver {
   /**
     * The result of looking up an ambiguous type.
     */
-  private sealed trait EnumOrTypeAliasLookupResult {
+  private sealed trait TypeLookupResult {
     /**
-      * Returns `other` if this result is [[EnumOrTypeAliasLookupResult.NotFound]].
+      * Returns `other` if this result is [[TypeLookupResult.NotFound]].
       *
       * Otherwise, returns this result.
       */
-    def orElse(other: => EnumOrTypeAliasLookupResult): EnumOrTypeAliasLookupResult = this match {
-      case res: EnumOrTypeAliasLookupResult.Enum => res
-      case res: EnumOrTypeAliasLookupResult.TypeAlias => res
-      case EnumOrTypeAliasLookupResult.NotFound => other
+    def orElse(other: => TypeLookupResult): TypeLookupResult = this match {
+      case res: TypeLookupResult.Enum => res
+      case res: TypeLookupResult.TypeAlias => res
+      case res: TypeLookupResult.Effect => res
+      case TypeLookupResult.NotFound => other
     }
   }
 
-  private object EnumOrTypeAliasLookupResult {
+  private object TypeLookupResult {
     /**
       * The result is an enum.
       */
-    case class Enum(enum0: NamedAst.Enum) extends EnumOrTypeAliasLookupResult
+    case class Enum(enum0: NamedAst.Enum) extends TypeLookupResult
 
     /**
       * The result is a type alias.
       */
-    case class TypeAlias(typeAlias: NamedAst.TypeAlias) extends EnumOrTypeAliasLookupResult
+    case class TypeAlias(typeAlias: NamedAst.TypeAlias) extends TypeLookupResult
+
+    /**
+      * The result is an effect.
+      */
+    case class Effect(eff: NamedAst.Effect) extends TypeLookupResult
 
     /**
       * The type cannot be found.
       */
-    case object NotFound extends EnumOrTypeAliasLookupResult
+    case object NotFound extends TypeLookupResult
   }
 
   /**
     * Looks up the ambiguous type.
     */
-  private def lookupEnumOrTypeAlias(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): EnumOrTypeAliasLookupResult = {
+  private def lookupType(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): TypeLookupResult = {
 
     /**
       * Looks up the type in the given namespace.
       */
-    def lookupIn(ns: Name.NName): EnumOrTypeAliasLookupResult = {
+    def lookupIn(ns: Name.NName): TypeLookupResult = {
       val enumsInNamespace = root.enums.getOrElse(ns, Map.empty)
       val aliasesInNamespace = root.typeAliases.getOrElse(ns, Map.empty)
-      (enumsInNamespace.get(qname.ident.name), aliasesInNamespace.get(qname.ident.name)) match {
-        case (None, None) =>
+      val effectsInNamespace = root.effects.getOrElse(ns, Map.empty)
+      (enumsInNamespace.get(qname.ident.name), aliasesInNamespace.get(qname.ident.name), effectsInNamespace.get(qname.ident.name)) match {
+        case (None, None, None) =>
           // Case 1: name not found
-          EnumOrTypeAliasLookupResult.NotFound
-        case (Some(enum), None) =>
+          TypeLookupResult.NotFound
+        case (Some(enum), None, None) =>
           // Case 2: found an enum
-          EnumOrTypeAliasLookupResult.Enum(enum)
-        case (None, Some(alias)) =>
+          TypeLookupResult.Enum(enum)
+        case (None, Some(alias), None) =>
           // Case 3: found a type alias
-          EnumOrTypeAliasLookupResult.TypeAlias(alias)
-        case (Some(_), Some(_)) =>
-          // Case 4: found both -- error
+          TypeLookupResult.TypeAlias(alias)
+        case (None, None, Some(effect)) =>
+          // Case 4: found an effect
+          TypeLookupResult.Effect(effect)
+        case _ =>
+          // Case 5: found multiple matches -- error
           throw InternalCompilerException("Unexpected ambiguity: Duplicate types / classes should have been resolved.")
       }
     }
@@ -2008,6 +2037,40 @@ object Resolver {
   }
 
   /**
+    * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
+    */
+  private def lookupEffect(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Effect, ResolutionError] = {
+    val effOpt = tryLookupName(qname, ns0, root.effects)
+
+    effOpt match {
+      case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case Some(eff) => getEffectIfAccessible(eff, ns0, qname.loc)
+    }
+  }
+
+  /**
+    * Tries to lookup the name in the given namespace, using the given namespace map.
+    */
+  private def tryLookupName[T](qname: Name.QName, ns0: Name.NName, map: Map[Name.NName, Map[String, T]]): Option[T] = {
+    if (qname.isUnqualified) {
+      // Case 1: Unqualified name. Lookup in the current namespace.
+      val effOpt = map.getOrElse(ns0, Map.empty).get(qname.ident.name)
+
+      effOpt match {
+        case Some(eff) =>
+          // Case 1.2: Found in the current namespace.
+          Some(eff)
+        case None =>
+          // Case 1.1: Try the global namespace.
+          map.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
+      }
+    } else {
+      // Case 2: Qualified. Lookup in the given namespace.
+      map.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+    }
+  }
+
+  /**
     * Determines if the class is accessible from the namespace.
     *
     * Accessibility depends on the modifiers on the class
@@ -2050,7 +2113,7 @@ object Resolver {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  def isDefAccessible(defn0: NamedAst.Def, ns0: Name.NName): Boolean = {
+  private def isDefAccessible(defn0: NamedAst.Def, ns0: Name.NName): Boolean = {
     //
     // Check if the definition is marked public.
     //
@@ -2079,17 +2142,47 @@ object Resolver {
     * (a) the signature is marked public, or
     * (b) the signature is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  def isSigAccessible(sig0: NamedAst.Sig, ns0: Name.NName): Boolean = {
+  private def isSigAccessible(sig0: NamedAst.Sig, ns0: Name.NName): Boolean = {
     //
     // Check if the definition is marked public.
     //
-    if (sig0.spec.mod.isPublic) // MATT check instance availability instead?
+    if (sig0.spec.mod.isPublic)
       return true
 
     //
     // Check if the definition is defined in `ns0` or in a parent of `ns0`.
     //
     val prefixNs = sig0.sym.clazz.namespace :+ sig0.sym.clazz.name
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return true
+
+    //
+    // The definition is not accessible.
+    //
+    false
+  }
+
+
+  /**
+    * Determines if the operation is accessible from the namespace.
+    *
+    * An operation `op0` is accessible from a namespace `ns0` if:
+    *
+    * (a) the operation is marked public, or
+    * (b) the operation is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
+  def isOpAccessible(op0: NamedAst.Op, ns0: Name.NName): Boolean = {
+    //
+    // Check if the definition is marked public.
+    //
+    if (op0.spec.mod.isPublic)
+      return true
+
+    //
+    // Check if the definition is defined in `ns0` or in a parent of `ns0`.
+    //
+    val prefixNs = op0.sym.eff.namespace :+ op0.sym.eff.name
     val targetNs = ns0.idents.map(_.name)
     if (targetNs.startsWith(prefixNs))
       return true
@@ -2143,7 +2236,7 @@ object Resolver {
     }
 
   /**
-    * Successfully returns the given `enum0` if it is accessible from the given namespace `ns0`.
+    * Successfully returns the given type alias `alia0` if it is accessible from the given namespace `ns0`.
     *
     * Otherwise fails with a resolution error.
     *
@@ -2181,6 +2274,48 @@ object Resolver {
   private def getTypeAliasTypeIfAccessible(alia0: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
     getTypeAliasIfAccessible(alia0, ns0, loc) map {
       alias => mkUnappliedTypeAlias(alias.sym, loc)
+    }
+  }
+
+  /**
+    * Successfully returns the given `eff0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    *
+    * An enum is accessible from a namespace `ns0` if:
+    *
+    * (a) the definition is marked public, or
+    * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
+  private def getEffectIfAccessible(eff0: NamedAst.Effect, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Effect, ResolutionError] = {
+    //
+    // Check if the definition is marked public.
+    //
+    if (eff0.mod.isPublic)
+      return eff0.toSuccess
+
+    //
+    // Check if the type alias is defined in `ns0` or in a parent of `ns0`.
+    //
+    val prefixNs = eff0.sym.namespace
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return eff0.toSuccess
+
+    //
+    // The type alias is not accessible.
+    //
+    ResolutionError.InaccessibleEffect(eff0.sym, ns0, loc).toFailure
+  }
+
+  /**
+    * Successfully returns the type of the given effect `eff0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    */
+  private def getEffectTypeIfAccessible(eff0: NamedAst.Effect, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    getEffectIfAccessible(eff0, ns0, loc) map {
+      alias => mkEffect(alias.sym, loc)
     }
   }
 
@@ -2358,6 +2493,11 @@ object Resolver {
   def mkUnappliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation): Type = Type.Cst(TypeConstructor.UnappliedAlias(sym), loc)
 
   /**
+    * Construct the effect type for the given symbol.
+    */
+  def mkEffect(sym: Symbol.EffectSym, loc: SourceLocation): Type = Type.Cst(TypeConstructor.Effect(sym), loc)
+
+  /**
     * Constructs a predicate type.
     */
   private def mkPredicate(den: Ast.Denotation, ts0: List[Type], loc: SourceLocation): Type = {
@@ -2377,12 +2517,32 @@ object Resolver {
   /**
     * Returns the type `And(tpe1, tpe2)`.
     */
-  private def mkAnd(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, loc), tpe1, loc), tpe2, loc)
+  private def mkAnd(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.And, loc), List(tpe1, tpe2), loc)
 
   /**
     * Returns the type `Or(tpe1, tpe2)`.
     */
-  private def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, loc), tpe1, loc), tpe2, loc)
+  private def mkOr(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Or, loc), List(tpe1, tpe2), loc)
+
+  /**
+    * Returns the type `Complement(tpe1, tpe2)`.
+    */
+  private def mkComplement(tpe1: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Complement, loc), List(tpe1), loc)
+
+  /**
+    * Returns the type `Union(tpe1, tpe2)`.
+    */
+  private def mkUnion(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Union, loc), List(tpe1, tpe2), loc)
+
+  /**
+    * Returns the type `Intersection(tpe1, tpe2)`.
+    */
+  private def mkIntersection(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Intersection, loc), List(tpe1, tpe2), loc)
+
+  /**
+    * Returns the type `Difference(tpe1, tpe2)`.
+    */
+  private def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Difference, loc), List(tpe1, tpe2), loc)
 
   /**
     * Returns either the explicit region (if present), the current region (if present), or the global region.

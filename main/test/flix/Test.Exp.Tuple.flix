@@ -138,19 +138,4 @@ namespace Test/Exp/Tuple {
     @test
     def testListTuple05(): List[(Int32, Int32)] = (1, 2) :: (3, 4) :: Nil
 
-    enum Option[t] {
-        case None,
-        case Some(t)
-    }
-
-    enum Result[t, e] {
-        case Ok(t),
-        case Err(e)
-    }
-
-    enum List[t] {
-        case Nil,
-        case Cons(t, List[t])
-    }
-
 }
