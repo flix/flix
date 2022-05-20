@@ -4578,57 +4578,76 @@ def init205(): Bool & Impure =
         testSort!VsSortWith!([2,3,0,4,1,2])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// sortBy                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // sortBy                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-def testSortByVsSort(a: Array[Int32]) : Bool & Impure =
-    (Array.sortBy(identity, a) `sameElements` Array.sort(a)) and
-    (Array.sortBy(x -> 4*x+7, a) `sameElements` Array.sort(a)) and
-    (Array.sortBy(x -> -x, a) `sameElements` Array.sortWith(flip(cmp),a))
+    def testSortByVsSort(a: ScopedArray[Int32, r]): Bool \ { Read(r), Write(r) } =
+        (Array.sortBy(identity, a) `sameElements` Array.sort(a)) and
+        (Array.sortBy(x -> 4 * x + 7, a) `sameElements` Array.sort(a)) and
+        (Array.sortBy(x -> -x, a) `sameElements` Array.sortWith(flip(cmp),a))
 
-@test
-def sortBy01(): Bool & Impure = testSortByVsSort([]: Array[Int32])
+    @test
+    def sortBy01(): Bool = region r {
+        testSortByVsSort([]: ScopedArray[Int32, _])
+    }
 
-@test
-def sortBy02(): Bool & Impure = testSortByVsSort([0])
+    @test
+    def sortBy02(): Bool = region r {
+        testSortByVsSort([0])
+    }
 
-@test
-def sortBy03(): Bool & Impure = testSortByVsSort([0,1])
+    @test
+    def sortBy03(): Bool = region r {
+        testSortByVsSort([0,1])
+    }
 
-@test
-def sortBy04(): Bool & Impure = testSortByVsSort([1,0])
+    @test
+    def sortBy04(): Bool = region r {
+        testSortByVsSort([1,0])
+    }
 
-@test
-def sortBy05(): Bool & Impure = testSortByVsSort([1,1])
+    @test
+    def sortBy05(): Bool = region r {
+        testSortByVsSort([1,1])
+    }
 
-@test
-def sortBy06(): Bool & Impure = testSortByVsSort([0,1,2,3,4,5])
+    @test
+    def sortBy06(): Bool = region r {
+        testSortByVsSort([0,1,2,3,4,5])
+    }
 
-@test
-def sortBy07(): Bool & Impure = testSortByVsSort([5,4,3,2,1,0])
+    @test
+    def sortBy07(): Bool = region r {
+        testSortByVsSort([5,4,3,2,1,0])
+    }
 
-@test
-def sortBy08(): Bool & Impure = testSortByVsSort([5,3,0,4,1,2])
+    @test
+    def sortBy08(): Bool = region r {
+        testSortByVsSort([5,3,0,4,1,2])
+    }
 
-@test
-def sortBy09(): Bool & Impure = testSortByVsSort([2,3,0,4,1,2])
+    @test
+    def sortBy09(): Bool = region r {
+        testSortByVsSort([2,3,0,4,1,2])
+    }
 
-enum R {
-    case R({i :: Int32, s :: String})
-}
+    enum R {
+        case R({i :: Int32, s :: String})
+    }
 
-instance Eq[R] {
-    pub def eq(a: R, b: R): Bool =
-        let R(x) = a;
-        let R(y) = b;
-        x.i == y.i and x.s == y.s
-}
+    instance Eq[R] {
+        pub def eq(a: R, b: R): Bool =
+            let R(x) = a;
+            let R(y) = b;
+            x.i == y.i and x.s == y.s
+    }
 
-@test
-def sortBy10(): Bool & Impure =
-    Array.sortBy(r -> let R(x) = r; x.i, [R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})])
-    `sameElements` [R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})]
+    @test
+    def sortBy10(): Bool = region r {
+        Array.sortBy(r -> let R(x) = r; x.i, [R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})])
+        `sameElements` [R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})]
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // sortBy!                                                                 //
