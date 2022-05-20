@@ -2449,7 +2449,7 @@ object Weeder {
         val pur = WeededAst.Type.True(loc)
         val (innerEff, _) = visitSingleEffect(eff)
         val outerEff = WeededAst.Type.Complement(innerEff, loc)
-        (outerEff, pur)
+        (pur, outerEff)
 
       case ParsedAst.Effect.Union(eff1, effs) =>
         val pur = WeededAst.Type.True(loc)
