@@ -958,6 +958,29 @@ namespace TestNec {
     def unzip03(): Bool = Nec.unzip(necOf3((1, 1), (2, 2), (3, 3))) == (necOf3(1, 2, 3), necOf3(1, 2, 3))
 
     /////////////////////////////////////////////////////////////////////////////
+    // zipWithIndex                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithIndex01(): Bool = Nec.zipWithIndex(singleton(1)) == singleton((1, 0))
+
+    @test
+    def zipWithIndex02(): Bool = Nec.zipWithIndex(necOf2(1, 2)) == necOf2((1, 0), (2, 1))
+
+    @test
+    def zipWithIndex03(): Bool = Nec.zipWithIndex(necOf2(2, 1)) == necOf2((2, 0), (1, 1))
+
+    @test
+    def zipWithIndex04(): Bool = Nec.zipWithIndex(necOf3(4, 3, 6)) == necOf3((4, 0), (3, 1), (6, 2))
+
+    @test
+    def zipWithIndex05(): Bool = Nec.zipWithIndex(necOf4(1, 2, 3, 4)) == necOf4((1, 0), (2, 1), (3, 2), (4, 3))
+
+    @test
+    def zipWithIndex06(): Bool =
+        Nec.zipWithIndex(necOf8(8, 7, 6, 5, 4, 3, 2, 1)) == necOf8((8, 0), (7, 1), (6, 2), (5, 3), (4, 4), (3, 5), (2, 6), (1, 7))
+
+    /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeft                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1515,28 +1538,5 @@ namespace TestNec {
 
     @test
     def takeWhileRight07(): Bool = Nec.takeWhileRight(i -> i > 3, necOf8(4, 6, -3, 11, -5, 1, 2, 16)) == 16 :: Nil
-
-    /////////////////////////////////////////////////////////////////////////////
-    // zipWithIndex                                                            //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def zipWithIndex01(): Bool = Nec.zipWithIndex(singleton(1)) == singleton((1, 0))
-
-    @test
-    def zipWithIndex02(): Bool = Nec.zipWithIndex(necOf2(1, 2)) == necOf2((1, 0), (2, 1))
-
-    @test
-    def zipWithIndex03(): Bool = Nec.zipWithIndex(necOf2(2, 1)) == necOf2((2, 0), (1, 1))
-
-    @test
-    def zipWithIndex04(): Bool = Nec.zipWithIndex(necOf3(4, 3, 6)) == necOf3((4, 0), (3, 1), (6, 2))
-
-    @test
-    def zipWithIndex05(): Bool = Nec.zipWithIndex(necOf4(1, 2, 3, 4)) == necOf4((1, 0), (2, 1), (3, 2), (4, 3))
-
-    @test
-    def zipWithIndex06(): Bool =
-        Nec.zipWithIndex(necOf8(8, 7, 6, 5, 4, 3, 2, 1)) == necOf8((8, 0), (7, 1), (6, 2), (5, 3), (4, 4), (3, 5), (2, 6), (1, 7))
 
 }

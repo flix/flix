@@ -660,6 +660,17 @@ namespace Nec {
         loop(c, (ks, ls) -> (ks, ls))
 
     ///
+    /// Returns a Nec where each element `e` is mapped to `(e, i)` where `i`
+    /// is the index of `e`.
+    ///
+    pub def zipWithIndex(c: Nec[a]): Nec[(a, Int32)] =
+        def loop(c1, k, i) = match viewLeft(c1) {
+            case OneLeft(x)      => k(NecOne(x, i))
+            case SomeLeft(x, rs) => loop(rs, ks -> k(cons((x, i), ks)), i + 1)
+        };
+        loop(c, k -> k, 0)
+
+    ///
     /// `mapAccumLeft` is a stateful version of `map`. The accumulating paramter `s` is updated at each
     /// step in a left-to-right traversal.
     ///
@@ -965,16 +976,5 @@ namespace Nec {
             case SomeRight(rs, x) => if (f(x)) loop(rs, x :: ac) else ac
         };
         loop(c, Nil)
-
-    ///
-    /// Returns a Nec where each element `e` is mapped to `(e, i)` where `i`
-    /// is the index of `e`.
-    ///
-    pub def zipWithIndex(c: Nec[a]): Nec[(a, Int32)] =
-        def loop(c1, k, i) = match viewLeft(c1) {
-            case OneLeft(x)      => k(NecOne(x, i))
-            case SomeLeft(x, rs) => loop(rs, ks -> k(cons((x, i), ks)), i + 1)
-        };
-        loop(c, k -> k, 0)
 
 }
