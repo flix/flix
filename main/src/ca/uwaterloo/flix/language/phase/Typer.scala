@@ -207,7 +207,7 @@ object Typer {
       ///
       val result = for {
         (inferredConstrs, inferredTyp, inferredEff) <- inferExp(exp0, root)
-      } yield (inferredConstrs, Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredEff, inferredTyp, loc))
+      } yield (inferredConstrs, Type.mkUncurriedArrowWithPurityAndEffect(fparams0.map(_.tpe), inferredEff, Type.Empty, inferredTyp, loc)) // TODO eff/pur
 
 
       // Add the assumed constraints to the declared scheme
@@ -504,7 +504,7 @@ object Typer {
         for {
           (constrs, bodyType, bodyEff) <- visitExp(exp)
           _ <- unifyTypeM(argType, argTypeVar, loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkArrowWithEffect(argType, bodyEff, bodyType, loc), loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkArrowWithPurityAndEffect(argType, bodyEff, Type.Empty, bodyType, loc), loc) // TODO eff
         } yield (constrs, resultTyp, Type.Pure)
 
       case KindedAst.Expression.Apply(exp, exps, tvar, evar, loc) =>
@@ -513,7 +513,7 @@ object Typer {
         for {
           (constrs1, tpe, eff) <- visitExp(exp)
           (constrs2, tpes, effs) <- seqM(exps.map(visitExp)).map(_.unzip3)
-          lambdaType <- unifyTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType, loc), loc)
+          lambdaType <- unifyTypeM(tpe, Type.mkUncurriedArrowWithPurityAndEffect(tpes, lambdaBodyEff, Type.Empty, lambdaBodyType, loc), loc) // TODO eff
           resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
           resultEff <- unifyBoolM(evar, Type.mkAnd(lambdaBodyEff :: eff :: effs, loc), loc)
           _ <- unbindVar(lambdaBodyType) // NB: Safe to unbind since the variable is not used elsewhere.
@@ -774,7 +774,7 @@ object Typer {
         val a = Type.freshVar(Kind.Star, loc, text = FallbackText("arg"))
         val b = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
         val ef = Type.freshVar(Kind.Bool, loc, text = FallbackText("eff"))
-        val expectedType = Type.mkArrowWithEffect(a, ef, b, loc)
+        val expectedType = Type.mkArrowWithPurityAndEffect(a, ef, Type.Empty, b, loc) // TODO eff
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, eff2) <- visitExp(exp2)
@@ -1523,7 +1523,7 @@ object Typer {
         val a = Type.freshVar(Kind.Star, loc, text = FallbackText("arg"))
         val b = Type.freshVar(Kind.Star, loc, text = FallbackText("result"))
         val ef = Type.freshVar(Kind.Bool, loc, text = FallbackText("eff"))
-        val polyLambdaType = Type.mkArrowWithEffect(a, ef, b, loc)
+        val polyLambdaType = Type.mkArrowWithPurityAndEffect(a, ef, Type.Empty, b, loc) // TODO eff
         val pureLambdaType = Type.mkPureArrow(a, b, loc)
         for {
           (constrs1, tpe1, eff1) <- visitExp(exp1)

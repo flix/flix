@@ -389,10 +389,11 @@ object Resolver {
       val schemeVal = resolveScheme(sc0, taenv, ns0, root)
       val retTpeVal = resolveType(retTpe0, taenv, ns0, root)
       val purVal = resolveType(pur0, taenv, ns0, root)
+      val effVal = resolveType(eff0, taenv, ns0, root)
 
-      mapN(fparamsVal, annVal, schemeVal, retTpeVal, purVal) {
-        case (fparams, ann, scheme, retTpe, pur) =>
-          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, retTpe, pur, loc)
+      mapN(fparamsVal, annVal, schemeVal, retTpeVal, purVal, effVal) {
+        case (fparams, ann, scheme, retTpe, pur, eff) =>
+          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, retTpe, pur, eff, loc)
       }
   }
 
@@ -1797,12 +1798,13 @@ object Resolver {
         }
       }
 
-    case NamedAst.Type.Arrow(tparams0, pur0, eff0, tresult0, loc) => // TODO handle eff0
+    case NamedAst.Type.Arrow(tparams0, pur0, eff0, tresult0, loc) =>
       val tparamsVal = traverse(tparams0)(semiResolveType(_, ns0, root))
       val tresultVal = semiResolveType(tresult0, ns0, root)
       val purVal = semiResolveType(pur0, ns0, root)
-      mapN(tparamsVal, tresultVal, purVal) {
-        case (tparams, tresult, pur) => Type.mkUncurriedArrowWithEffect(tparams, pur, tresult, loc)
+      val effVal = semiResolveType(eff0, ns0, root)
+      mapN(tparamsVal, tresultVal, purVal, effVal) {
+        case (tparams, tresult, pur, eff) => Type.mkUncurriedArrowWithPurityAndEffect(tparams, pur, eff, tresult, loc)
       }
 
     case NamedAst.Type.Apply(base0, targ0, loc) =>

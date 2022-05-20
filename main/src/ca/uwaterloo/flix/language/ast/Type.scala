@@ -333,6 +333,11 @@ object Type {
     */
   val Or: Type = Type.Cst(TypeConstructor.Or, SourceLocation.Unknown)
 
+  /**
+    * Represents the Empty type constructor.
+    */
+  val Empty: Type = Type.Cst(TypeConstructor.Empty, SourceLocation.Unknown)
+
   /////////////////////////////////////////////////////////////////////////////
   // Constructors                                                            //
   /////////////////////////////////////////////////////////////////////////////
@@ -646,56 +651,53 @@ object Type {
   /**
     * Constructs the pure arrow type A -> B.
     */
-  def mkPureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Pure, b, loc)
+  def mkPureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithPurityAndEffect(a, Pure, Empty, b, loc)
 
   /**
     * Constructs the impure arrow type A ~> B.
     */
-  def mkImpureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Impure, b, loc)
+  def mkImpureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithPurityAndEffect(a, Impure, Empty, b, loc)
 
   /**
     * Constructs the arrow type A -> B & e.
     */
-  def mkArrowWithEffect(a: Type, e: Type, b: Type, loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Arrow(2), loc), List(e, a, b), loc)
+  def mkArrowWithPurityAndEffect(a: Type, p: Type, e: Type, b: Type, loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Arrow(3), loc), List(p, e, a, b), loc)
 
   /**
     * Constructs the pure curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B.
     */
-  def mkPureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Pure, b, loc)
+  def mkPureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithPurityAndEffect(as, Pure, Empty, b, loc)
 
   /**
     * Constructs the impure curried arrow type A_1 -> (A_2  -> ... -> A_n) ~> B.
     */
-  def mkImpureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Impure, b, loc)
+  def mkImpureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithPurityAndEffect(as, Impure, Empty, b, loc)
 
   /**
-    * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B & e.
+    * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B & p \ e.
     */
-  def mkCurriedArrowWithEffect(as: List[Type], e: Type, b: Type, loc: SourceLocation): Type = {
+  def mkCurriedArrowWithPurityAndEffect(as: List[Type], p: Type, e: Type, b: Type, loc: SourceLocation): Type = {
     val a = as.last
-    val base = mkArrowWithEffect(a, e, b, loc)
+    val base = mkArrowWithPurityAndEffect(a, p, e, b, loc)
     as.init.foldRight(base)(mkPureArrow(_, _, loc))
   }
 
   /**
     * Constructs the pure uncurried arrow type (A_1, ..., A_n) -> B.
     */
-  def mkPureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Pure, b, loc)
+  def mkPureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithPurityAndEffect(as, Pure, Empty, b, loc)
 
   /**
     * Constructs the impure uncurried arrow type (A_1, ..., A_n) ~> B.
     */
-  def mkImpureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Impure, b, loc)
+  def mkImpureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithPurityAndEffect(as, Impure, Empty, b, loc)
 
   /**
-    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
+    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & p \ e.
     */
-  def mkUncurriedArrowWithEffect(as: List[Type], e: Type, b: Type, loc: SourceLocation): Type = {
-    val arrow = Type.Apply(Type.Cst(TypeConstructor.Arrow(as.length + 1), loc), e, loc)
-    val inner = as.foldLeft(arrow: Type) {
-      case (acc, x) => Apply(acc, x, loc)
-    }
-    Apply(inner, b, loc)
+  def mkUncurriedArrowWithPurityAndEffect(as: List[Type], p: Type, e: Type, b: Type, loc: SourceLocation): Type = {
+    val arrow = Type.Cst(TypeConstructor.Arrow(as.length + 1), loc)
+    mkApply(arrow, p :: e :: as ::: List(b), loc)
   }
 
   /**
