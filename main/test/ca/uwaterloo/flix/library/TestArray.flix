@@ -4480,43 +4480,61 @@ def init205(): Bool & Impure =
         a `sameElements` [4,3,2,2,1,0]
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// sort!                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // sort!                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
 
-def testSort!VsSortWith!(a: Array[Int32]) : Bool & Impure =
-    let b = Array.slice(0, Array.length(a), a);
-    let c = Array.slice(0, Array.length(a), a);
-    Array.sort!(b);
-    Array.sortWith!(cmp, c);
-    b `sameElements` c
+    def testSort!VsSortWith!(a: ScopedArray[Int32, r]): Bool \ { Read(r), Write(r) } =
+        let b = Array.slice(0, Array.length(a), a);
+        let c = Array.slice(0, Array.length(a), a);
+        Array.sort!(b);
+        Array.sortWith!(cmp, c);
+        b `sameElements` c
 
-@test
-def sort!01(): Bool & Impure = testSort!VsSortWith!([]: Array[Int32])
+    @test
+    def sort!01(): Bool = region r {
+        testSort!VsSortWith!([]: ScopedArray[Int32, _])
+    }
 
-@test
-def sort!02(): Bool & Impure = testSort!VsSortWith!([0])
+    @test
+    def sort!02(): Bool = region r {
+        testSort!VsSortWith!([0])
+    }
 
-@test
-def sort!03(): Bool & Impure = testSort!VsSortWith!([0,1])
+    @test
+    def sort!03(): Bool = region r {
+        testSort!VsSortWith!([0,1])
+    }
 
-@test
-def sort!04(): Bool & Impure = testSort!VsSortWith!([1,0])
+    @test
+    def sort!04(): Bool = region r {
+        testSort!VsSortWith!([1,0])
+    }
 
-@test
-def sort!05(): Bool & Impure = testSort!VsSortWith!([1,1])
+    @test
+    def sort!05(): Bool = region r {
+        testSort!VsSortWith!([1,1])
+    }
 
-@test
-def sort!06(): Bool & Impure = testSort!VsSortWith!([0,1,2,3,4,5])
+    @test
+    def sort!06(): Bool = region r {
+        testSort!VsSortWith!([0,1,2,3,4,5])
+    }
 
-@test
-def sort!07(): Bool & Impure = testSort!VsSortWith!([5,4,3,2,1,0])
+    @test
+    def sort!07(): Bool = region r {
+        testSort!VsSortWith!([5,4,3,2,1,0])
+    }
 
-@test
-def sort!08(): Bool & Impure = testSort!VsSortWith!([5,3,0,4,1,2])
+    @test
+    def sort!08(): Bool = region r {
+        testSort!VsSortWith!([5,3,0,4,1,2])
+    }
 
-@test
-def sort!09(): Bool & Impure = testSort!VsSortWith!([2,3,0,4,1,2])
+    @test
+    def sort!09(): Bool = region r {
+        testSort!VsSortWith!([2,3,0,4,1,2])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // sortBy                                                                  //
