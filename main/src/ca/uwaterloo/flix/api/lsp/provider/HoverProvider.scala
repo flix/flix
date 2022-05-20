@@ -15,10 +15,12 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Position, Range}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Root}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt._
+import ca.uwaterloo.flix.language.phase.unification.BoolTable
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -26,7 +28,7 @@ object HoverProvider {
 
   implicit val audience: Audience = Audience.External
 
-  def processHover(uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
+  def processHover(uri: String, pos: Position)(implicit index: Index, root: Root, flix: Flix): JObject = {
     index.query(uri, pos) match {
       case None => mkNotFound(uri, pos)
 
@@ -70,10 +72,11 @@ object HoverProvider {
     ("status" -> "success") ~ ("result" -> result)
   }
 
-  private def hoverTypAndEff(tpe: Type, eff: Type, loc: SourceLocation)(implicit index: Index, root: Root): JObject = {
+  private def hoverTypAndEff(tpe: Type, eff: Type, loc: SourceLocation)(implicit index: Index, root: Root, flix: Flix): JObject = {
+    val minEff = BoolTable.minimizeType(eff)
     val markup =
       s"""```flix
-         |${formatTypAndEff(tpe, eff)}
+         |${formatTypAndEff(tpe, minEff)}
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)

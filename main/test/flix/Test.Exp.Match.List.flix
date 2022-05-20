@@ -94,14 +94,4 @@ namespace Test/Exp/Match/List {
         case _                               => false
     }
 
-    enum Option[t] {
-        case None,
-        case Some(t)
-    }
-
-    enum List[t] {
-        case Nil,
-        case Cons(t, List[t])
-    }
-
 }

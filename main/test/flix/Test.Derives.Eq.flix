@@ -1,4 +1,5 @@
 namespace Test/Derives/Eq {
+
     pub enum Enum with Eq {
       case EmptyCase
       case SingletonCase(Int32)

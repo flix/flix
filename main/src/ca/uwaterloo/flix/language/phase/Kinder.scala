@@ -532,6 +532,12 @@ object Kinder {
         case (exp, rules) => KindedAst.Expression.TryCatch(exp, rules, loc)
       }
 
+    // TODO handle these
+    case ResolvedAst.Expression.Without(_, _, loc) => KindedAst.Expression.Hole(Symbol.mkHoleSym("Without"), Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
+    case ResolvedAst.Expression.TryWith(_, _, _, loc) => KindedAst.Expression.Hole(Symbol.mkHoleSym("TryWith"), Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
+    case ResolvedAst.Expression.Do(_, _, loc) => KindedAst.Expression.Hole(Symbol.mkHoleSym("Do"), Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
+    case ResolvedAst.Expression.Resume(_, loc) => KindedAst.Expression.Hole(Symbol.mkHoleSym("Resume"), Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
+
     case ResolvedAst.Expression.InvokeConstructor(constructor, args0, loc) =>
       val argsVal = traverse(args0)(visitExp(_, kenv, taenv, root))
       mapN(argsVal) {
@@ -589,7 +595,7 @@ object Kinder {
       val exp1Val = visitExp(exp10, kenv, taenv, root)
       val exp2Val = visitExp(exp20, kenv, taenv, root)
       mapN(exp1Val, exp2Val) {
-        case (exp1, exp2) => KindedAst.Expression.PutChannel(exp1, exp2, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        case (exp1, exp2) => KindedAst.Expression.PutChannel(exp1, exp2, loc)
       }
 
     case ResolvedAst.Expression.SelectChannel(rules0, default0, loc) =>

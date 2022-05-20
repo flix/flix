@@ -156,6 +156,30 @@ object SimpleType {
     */
   case class Or(tpes: List[SimpleType]) extends SimpleType
 
+  ////////////////
+  // Set Operators
+  ////////////////
+
+  /**
+    * Set complement.
+    */
+  case class Complement(tpe: SimpleType) extends SimpleType
+
+  /**
+    * A chain of types connected by `+`.
+    */
+  case class Union(tpes: List[SimpleType]) extends SimpleType
+
+  /**
+    * A chain of types connected by `&`.
+    */
+  case class Intersection(tpes: List[SimpleType]) extends SimpleType
+
+  /**
+    * Difference of two types.
+    */
+  case class Difference(tpe1: SimpleType, tpe2: SimpleType) extends SimpleType
+
   /////////////
   // Predicates
   /////////////
@@ -437,6 +461,53 @@ object SimpleType {
           case _ :: _ :: _ :: _ => throw new OverAppliedType
         }
 
+      case TypeConstructor.Complement =>
+        t.typeArguments.map(fromWellKindedType) match {
+          case Nil => Complement(Hole)
+          case arg :: Nil => Complement(arg)
+          case _ :: _ :: _ => throw new OverAppliedType
+        }
+
+      case TypeConstructor.Union =>
+        // collapse into a chain of unions
+        t.typeArguments.map(fromWellKindedType).map(splitUnions) match {
+          // Case 1: No args. ? + ?
+          case Nil => Union(Hole :: Hole :: Nil)
+          // Case 2: One arg. Take the left and put a hole at the end: tpe1 + tpe2 + ?
+          case args :: Nil => Union(args :+ Hole)
+          // Case 3: Multiple args. Concatenate them: tpe1 + tpe2 + tpe3 + tpe4
+          case args1 :: args2 :: Nil => Union(args1 ++ args2)
+          // Case 4: Too many args. Error.
+          case _ :: _ :: _ :: _ => throw new OverAppliedType
+        }
+
+      case TypeConstructor.Intersection =>
+        // collapse into a chain of intersections
+        t.typeArguments.map(fromWellKindedType).map(splitIntersections) match {
+          // Case 1: No args. ? & ?
+          case Nil => Intersection(Hole :: Hole :: Nil)
+          // Case 2: One arg. Take the left and put a hole at the end: tpe1 & tpe2 & ?
+          case args :: Nil => Intersection(args :+ Hole)
+          // Case 3: Multiple args. Concatenate them: tpe1 & tpe2 & tpe3 & tpe4
+          case args1 :: args2 :: Nil => Intersection(args1 ++ args2)
+          // Case 4: Too many args. Error.
+          case _ :: _ :: _ :: _ => throw new OverAppliedType
+        }
+
+      case TypeConstructor.Difference =>
+        // NB we don't collapse the chain since difference is not commutative
+        t.typeArguments.map(fromWellKindedType) match {
+          // Case 1: No args. ? - ?
+          case Nil => Intersection(Hole :: Hole :: Nil)
+          // Case 2: One arg. Take the left and put a hole at the end: tpe1 - ?
+          case arg :: Nil => Intersection(arg :: Hole :: Nil)
+          // Case 3: Multiple args. Concatenate them: tpe1 - tpe2
+          case arg1 :: arg2 :: Nil => Intersection(arg1 :: arg2 :: Nil)
+          // Case 4: Too many args. Error.
+          case _ :: _ :: _ :: _ => throw new OverAppliedType
+        }
+
+      case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Region => mkApply(Region, t.typeArguments.map(fromWellKindedType))
       case _: TypeConstructor.UnappliedAlias => throw InternalCompilerException("Unexpected unapplied alias.")
     }
@@ -540,6 +611,24 @@ object SimpleType {
     */
   private def splitOrs(tpe: SimpleType): List[SimpleType] = tpe match {
     case Or(tpes) => tpes
+    case t => List(t)
+  }
+
+  /**
+    * Splits `t1 + t2` into `t1 :: t2 :: Nil`,
+    * and leaves non-union types as singletons.
+    */
+  private def splitUnions(tpe: SimpleType): List[SimpleType] = tpe match {
+    case Union(tpes) => tpes
+    case t => List(t)
+  }
+
+  /**
+    * Splits `t1 & t2` into `t1 :: t2 :: Nil`,
+    * and leaves non-intersection types as singletons.
+    */
+  private def splitIntersections(tpe: SimpleType): List[SimpleType] = tpe match {
+    case Intersection(tpes) => tpes
     case t => List(t)
   }
 

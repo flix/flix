@@ -435,7 +435,7 @@ object NamedAst {
 
   case class CatchRule(sym: Symbol.VarSym, className: String, exp: NamedAst.Expression)
 
-  case class HandlerRule(op: Name.Ident, fparams: Seq[NamedAst.FormalParam], exp: NamedAst.Expression)
+  case class HandlerRule(op: Name.Ident, fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression)
 
   case class ChoiceRule(pat: List[NamedAst.ChoicePattern], exp: NamedAst.Expression)
 

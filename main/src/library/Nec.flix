@@ -298,14 +298,12 @@ namespace Nec {
         reduceLeft(Order.maxBy(cmp), c)
 
     ///
-    /// Returns the position of `a` in `c`.
+    /// Optionally returns the position of `a` in `c`.
     ///
-    /// Returns `-1` if `a` does not exist in `c`.
-    ///
-    pub def indexOf(a: a, c: Nec[a]): Int32 with Eq[a] =
+    pub def indexOf(a: a, c: Nec[a]): Option[Int32] with Eq[a] =
         def loop(acc: Int32, c1: Nec[a]) = match viewLeft(c1) {
-            case OneLeft(x)      => if (x == a) acc else -1
-            case SomeLeft(x, c2) => if (x == a) acc else loop(acc + 1, c2)
+            case OneLeft(x)      => if (x == a) Some(acc) else None
+            case SomeLeft(x, c2) => if (x == a) Some(acc) else loop(acc + 1, c2)
         };
         loop(0, c)
 
