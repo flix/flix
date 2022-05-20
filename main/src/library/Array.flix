@@ -588,7 +588,7 @@ namespace Array {
         let sepLength = length(sep);
         let sepCount = if (count < 2) 0 else count - 1;
         let len = sumLengths(arrs) + (sepCount * sepLength);
-        match headArrays(arrs){
+        match headArrays(arrs) {
             case None => []
             case Some(x) =>
                 let out = new(x, len, static);
@@ -613,7 +613,7 @@ namespace Array {
     ///
     /// Helper function for `intercalate` which needs to do sucessive writing.
     ///
-    def arrayWrites(pos: Int32, sub: Array[a], out: Array[a]): Int32 & Impure =
+    def arrayWrites(pos: Int32, sub: ScopedArray[a, r1], out: ScopedArray[a, r2]): Int32 \ { Read(r1), Write(r2) } =
         updateSequence!(pos, sub, out);
         pos + length(sub)
 
