@@ -54,15 +54,15 @@ namespace Test/Exp/Effect {
         }
     }
 
-    pub def singleEffect(): Bool \ Flip = ??? as & _
+    pub def singleEffect(): Bool \ Console = ??? as & _
 
-    pub def complementEffect(): Bool \ ~Flip = ??? as & _
+    pub def complementEffect(): Bool \ ~Console = ??? as & _
 
-    pub def unionEffect(): Bool \ Flip + Fail = ??? as & _
+    pub def unionEffect(): Bool \ Console + Fail = ??? as & _
 
-    pub def intersectionEffect(): Bool \ Flip & Fail = ??? as & _
+    pub def intersectionEffect(): Bool \ Console & Fail = ??? as & _
 
-    pub def differenceEffect(): Bool \ Flip - Fail = ??? as & _
+    pub def differenceEffect(): Bool \ Console - Fail = ??? as & _
 
     pub def singlePolyEffect(): Bool \ ef1 = ??? as & ef1
 
@@ -76,11 +76,9 @@ namespace Test/Exp/Effect {
 
     pub def effectSet01(): Bool \ { Fail } = ??? as & _
 
-    pub def effectSet02(): Bool \ { Flip, Fail } = ??? as & _
+    pub def effectSet02(): Bool \ { Console, Fail } = ??? as & _
 
-    pub def effectSet03(): Bool \ { Flip, Fail, Console } = ??? as & _
-
-    pub def effectSet04(): Bool \ {} = ??? as & _
+    pub def effectSet03(): Bool \ {} = ??? as & _
 
     pub def polyEffectSet01[ef: Eff](): Bool \ ef = ??? as & _
 
