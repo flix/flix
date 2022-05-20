@@ -453,19 +453,18 @@ object ResolutionError {
   }
 
   /**
-    * Undefined Sig Error.
+    * Undefined Op Error.
     *
-    * @param eff the effect.
-    * @param op  the unresolved operation.
-    * @param loc the location where the error occurred.
+    * @param qname the qualified name of the operation.
+    * @param loc   the location where the error occurred.
     */
-  case class UndefinedOp(eff: Symbol.EffectSym, op: Name.Ident, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedOp(qname: Name.QName, loc: SourceLocation) extends ResolutionError {
     def summary: String = "Undefined operation."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Undefined operation '${red(op.name)}' in effect '${red(eff.toString)}'.
+         |>> Undefined operation '${red(qname.toString)}'.'.
          |
          |${code(loc, "operation not found")}
          |
@@ -475,6 +474,32 @@ object ResolutionError {
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent operation?"
+    })
+  }
+
+  /**
+    * Undefined Effect Error.
+    *
+    * @param qn  the unresolved effect.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedEffect(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Undefined effect."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined effect '${red(qn.toString)}'.
+         |
+         |${code(loc, "effect not found")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent effect?"
     })
 
   }

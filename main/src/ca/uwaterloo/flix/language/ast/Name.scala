@@ -33,7 +33,14 @@ object Name {
     val index = fqn.indexOf('.')
     val parts = fqn.substring(0, index).split('/').toList
     val name = fqn.substring(index + 1, fqn.length)
-    val nname = NName(sp1, parts.map(t => Name.Ident(sp1, t, sp2)), sp2)
+    mkQName(parts, name, sp1, sp2)
+  }
+
+  /**
+    * Creates a qualified name from the given namespace `ns` and name `name`.
+    */
+  def mkQName(ns: List[String], name: String, sp1: SourcePosition, sp2: SourcePosition): QName = {
+    val nname = NName(sp1, ns.map(t => Name.Ident(sp1, t, sp2)), sp2)
     val ident = Ident(sp1, name, sp2)
     QName(sp1, nname, ident, sp2)
   }
