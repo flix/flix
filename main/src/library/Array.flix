@@ -692,47 +692,43 @@ namespace Array {
     /// Returns `true` if and only if `a1` is a infix of `a2`.
     ///
     @Time(length(a1)) @Space(1)
-    pub def isInfixOf(a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
+    pub def isInfixOf(a1: ScopedArray[a, r1], a2: ScopedArray[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
         let len1 = length(a1);
         let len2 = length(a2);
         if (len1 > len2)
             false
+        else if (len1 == 0)
+            true
         else
-            if (len1 == 0)
-                true
-            else
-                isInfixOfSearch(a1, a2, len1, len2, 0)
+            isInfixOfSearch(a1, a2, len1, len2, 0)
 
     ///
     /// Helper function for `isInfixOf` - scan a2 to find a match with first element of a1.
     ///
     /// Precondition: len1 (length of a1) > 0
     ///
-    def isInfixOfSearch(a1: Array[a], a2: Array[a], len1: Int32, len2: Int32, j: Int32): Bool & Impure with Eq[a] =
+    def isInfixOfSearch(a1: ScopedArray[a, r1], a2: ScopedArray[a, r2], len1: Int32, len2: Int32, j: Int32): Bool \ Read(r1, r2) with Eq[a] =
         if (j >= len2)
             false
+        else if (a1[0] == a2[j])
+            isInfixOfCheck(a1, a2, len1, len2, 1, j+1)
         else
-            if (a1[0] == a2[j])
-                isInfixOfCheck(a1, a2, len1, len2, 1, j+1)
-            else
-                isInfixOfSearch(a1, a2, len1, len2, j+1)
+            isInfixOfSearch(a1, a2, len1, len2, j+1)
 
     ///
     /// Helper function for `isInfixOf` - a1 has started matching, scan to see if it all matches.
     ///
-    def isInfixOfCheck(a1: Array[a], a2: Array[a], len1: Int32, len2: Int32, i: Int32, j: Int32): Bool & Impure with Eq[a] =
+    def isInfixOfCheck(a1: ScopedArray[a, r1], a2: ScopedArray[a, r2], len1: Int32, len2: Int32, i: Int32, j: Int32): Bool \ Read(r1, r2) with Eq[a] =
         if (i >= len1)
             // a1 exhausted, so success
             true
+        else if (j >= len2)
+            // a2 exhausted, a1 still trying to match, so failure
+            false
+        else if(a1[i] == a2[j])
+            isInfixOfCheck(a1, a2, len1, len2, i+1, j+1)
         else
-            if (j >= len2)
-                // a2 exhausted, a1 still trying to match, so failure
-                false
-            else
-                if(a1[i] == a2[j])
-                    isInfixOfCheck(a1, a2, len1, len2, i+1, j+1)
-                else
-                    isInfixOfSearch(a1, a2, len1, len2, j+1)
+            isInfixOfSearch(a1, a2, len1, len2, j+1)
 
     ///
     /// Returns `true` if and only if `a1` is a suffix of `a2`.

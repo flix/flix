@@ -1980,48 +1980,74 @@ def intercalate07(): Bool & Impure =
         Array.isPrefixOf([1,2,3], [89,11,1,2,3,4]) == false
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// isInfixOf                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // isInfixOf                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def isInfixOf01(): Bool & Impure = Array.isInfixOf([]: Array[Int32], []: Array[Int32])
+    @test
+    def isInfixOf01(): Bool = region r {
+        Array.isInfixOf([]: ScopedArray[Int32, _], []: ScopedArray[Int32, _])
+    }
 
-@test
-def isInfixOf02(): Bool & Impure = Array.isInfixOf([1], []: Array[Int32]) == false
+    @test
+    def isInfixOf02(): Bool = region r {
+        Array.isInfixOf([1], []: ScopedArray[Int32, _]) == false
+    }
 
-@test
-def isInfixOf03(): Bool & Impure = Array.isInfixOf([]: Array[Int32], [1])
+    @test
+    def isInfixOf03(): Bool = region r {
+        Array.isInfixOf([]: ScopedArray[Int32, _], [1])
+    }
 
-@test
-def isInfixOf04(): Bool & Impure = Array.isInfixOf([1], [1])
+    @test
+    def isInfixOf04(): Bool = region r {
+        Array.isInfixOf([1], [1])
+    }
 
-@test
-def isInfixOf05(): Bool & Impure = Array.isInfixOf([2], [1]) == false
+    @test
+    def isInfixOf05(): Bool = region r {
+        Array.isInfixOf([2], [1]) == false
+    }
 
-@test
-def isInfixOf06(): Bool & Impure = Array.isInfixOf([1,2], [1]) == false
+    @test
+    def isInfixOf06(): Bool = region r {
+        Array.isInfixOf([1,2], [1]) == false
+    }
 
-@test
-def isInfixOf07(): Bool & Impure = Array.isInfixOf([]: Array[Int32], [1,2])
+    @test
+    def isInfixOf07(): Bool = region r {
+        Array.isInfixOf([]: ScopedArray[Int32, _], [1,2])
+    }
 
-@test
-def isInfixOf08(): Bool & Impure = Array.isInfixOf([1], [1,2])
+    @test
+    def isInfixOf08(): Bool = region r {
+        Array.isInfixOf([1], [1,2])
+    }
 
-@test
-def isInfixOf09(): Bool & Impure = Array.isInfixOf([2], [1,2])
+    @test
+    def isInfixOf09(): Bool = region r {
+        Array.isInfixOf([2], [1,2])
+    }
 
-@test
-def isInfixOf10(): Bool & Impure = Array.isInfixOf([1,2], [1,2])
+    @test
+    def isInfixOf10(): Bool = region r {
+        Array.isInfixOf([1,2], [1,2])
+    }
 
-@test
-def isInfixOf11(): Bool & Impure = Array.isInfixOf([1,3], [1,2]) == false
+    @test
+    def isInfixOf11(): Bool = region r {
+        Array.isInfixOf([1,3], [1,2]) == false
+    }
 
-@test
-def isInfixOf12(): Bool & Impure = Array.isInfixOf([1,2,3], [1,2]) == false
+    @test
+    def isInfixOf12(): Bool = region r {
+        Array.isInfixOf([1,2,3], [1,2]) == false
+    }
 
-@test
-def isInfixOf13(): Bool & Impure = Array.isInfixOf([1,2,3], [89,11,1,2,3,4])
+    @test
+    def isInfixOf13(): Bool = region r {
+        Array.isInfixOf([1,2,3], [89,11,1,2,3,4])
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // isSuffixOf                                                              //
