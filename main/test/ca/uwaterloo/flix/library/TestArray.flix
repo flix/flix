@@ -1753,141 +1753,163 @@ def intercalate07(): Bool & Impure =
     let a = Array.intercalate([11,12,13], [[1],[2,3],[4]]);
     Array.sameElements(a, [1,11,12,13,2,3,11,12,13,4])
 
-/////////////////////////////////////////////////////////////////////////////
-// transpose                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // transpose                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def transpose01(): Bool & Impure =
-    let a = Array.transpose([]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b: List[List[Unit]] == Nil
+    @test
+    def transpose01(): Bool = region r {
+        let a = Array.transpose([]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b: List[List[Unit]] == Nil
+    }
 
-@test
-def transpose02(): Bool & Impure =
-    let a: Array[Array[Int32]] = Array.transpose([[]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == Nil :: Nil
+    @test
+    def transpose02(): Bool = region r {
+        let a: ScopedArray[ScopedArray[Int32, _], _] = Array.transpose([[]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == Nil :: Nil
+    }
 
-@test
-def transpose03(): Bool & Impure =
-    let a: Array[Array[Int32]] = Array.transpose([[], []]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == Nil :: Nil :: Nil
+    @test
+    def transpose03(): Bool = region r {
+        let a: ScopedArray[ScopedArray[Int32, _], _] = Array.transpose([[], []]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == Nil :: Nil :: Nil
+    }
 
-@test
-def transpose04(): Bool & Impure =
-    let a: Array[Array[Int32]] = Array.transpose([[], [], []]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == Nil :: Nil :: Nil :: Nil
+    @test
+    def transpose04(): Bool = region r {
+        let a: ScopedArray[ScopedArray[Int32, _], _] = Array.transpose([[], [], []]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == Nil :: Nil :: Nil :: Nil
+    }
 
-@test
-def transpose05(): Bool & Impure =
-    let a = Array.transpose([ [1] ]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: Nil) :: Nil
+    @test
+    def transpose05(): Bool = region r {
+        let a = Array.transpose([ [1] ]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: Nil) :: Nil
+    }
 
-@test
-def transpose06(): Bool & Impure =
-    let a = Array.transpose([[1,2]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: Nil) :: (2 :: Nil) :: Nil
+    @test
+    def transpose06(): Bool = region r {
+        let a = Array.transpose([[1,2]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: Nil) :: (2 :: Nil) :: Nil
+    }
 
-@test
-def transpose07(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: Nil
+    @test
+    def transpose07(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: Nil
+    }
 
-@test
-def transpose08(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3, 4]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: (4 :: Nil) :: Nil
+    @test
+    def transpose08(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3, 4]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: (4 :: Nil) :: Nil
+    }
 
-@test
-def transpose09(): Bool & Impure =
-    let a = Array.transpose([[1], [2]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b ==   (1 :: 2 :: Nil) :: Nil
+    @test
+    def transpose09(): Bool = region r {
+        let a = Array.transpose([[1], [2]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b ==   (1 :: 2 :: Nil) :: Nil
+    }
 
-@test
-def transpose10(): Bool & Impure =
-    let a = Array.transpose([[1], [2], [3]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b ==  (1 :: 2 :: 3 :: Nil) :: Nil
+    @test
+    def transpose10(): Bool = region r {
+        let a = Array.transpose([[1], [2], [3]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b ==  (1 :: 2 :: 3 :: Nil) :: Nil
+    }
 
-@test
-def transpose11(): Bool & Impure =
-    let a = Array.transpose([[1], [2], [3], [4]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 2 :: 3 :: 4 :: Nil) :: Nil
+    @test
+    def transpose11(): Bool = region r {
+        let a = Array.transpose([[1], [2], [3], [4]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 2 :: 3 :: 4 :: Nil) :: Nil
+    }
 
-@test
-def transpose12(): Bool & Impure =
-    let a = Array.transpose([[1, 2], [3, 4]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 3 :: Nil) :: (2 :: 4 :: Nil) :: Nil
+    @test
+    def transpose12(): Bool = region r {
+        let a = Array.transpose([[1, 2], [3, 4]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 3 :: Nil) :: (2 :: 4 :: Nil) :: Nil
+    }
 
-@test
-def transpose13(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3], [4, 5, 6]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 4 :: Nil) :: (2 :: 5 :: Nil) :: (3 :: 6 :: Nil) :: Nil
+    @test
+    def transpose13(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3], [4, 5, 6]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 4 :: Nil) :: (2 :: 5 :: Nil) :: (3 :: 6 :: Nil) :: Nil
+    }
 
-@test
-def transpose14(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3, 4], [5, 6, 7, 8]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 5 :: Nil) :: (2 :: 6 :: Nil) :: (3 :: 7 :: Nil) :: (4 :: 8 :: Nil) :: Nil
+    @test
+    def transpose14(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3, 4], [5, 6, 7, 8]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 5 :: Nil) :: (2 :: 6 :: Nil) :: (3 :: 7 :: Nil) :: (4 :: 8 :: Nil) :: Nil
+    }
 
-@test
-def transpose15(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 6 :: Nil) :: (2 :: 7 :: Nil) :: (3 :: 8 :: Nil) :: (4 :: 9 :: Nil) :: (5 :: 10 :: Nil) :: Nil
+    @test
+    def transpose15(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 6 :: Nil) :: (2 :: 7 :: Nil) :: (3 :: 8 :: Nil) :: (4 :: 9 :: Nil) :: (5 :: 10 :: Nil) :: Nil
+    }
 
-@test
-def transpose16(): Bool & Impure =
-    let a = Array.transpose([[1, 2], [3, 4], [5, 6]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 3 :: 5 :: Nil) :: (2 :: 4 :: 6 :: Nil) :: Nil
+    @test
+    def transpose16(): Bool = region r {
+        let a = Array.transpose([[1, 2], [3, 4], [5, 6]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 3 :: 5 :: Nil) :: (2 :: 4 :: 6 :: Nil) :: Nil
+    }
 
-@test
-def transpose17(): Bool & Impure =
-    let a = Array.transpose([[1, 2], [3, 4], [5, 6], [7,8]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 3 :: 5 :: 7 :: Nil) :: (2 :: 4 :: 6 :: 8 :: Nil) :: Nil
+    @test
+    def transpose17(): Bool = region r {
+        let a = Array.transpose([[1, 2], [3, 4], [5, 6], [7,8]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 3 :: 5 :: 7 :: Nil) :: (2 :: 4 :: 6 :: 8 :: Nil) :: Nil
+    }
 
-@test
-def transpose18(): Bool & Impure =
-    let a = Array.transpose([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 3 :: 5 :: 7 :: 9 :: Nil) :: (2 :: 4 :: 6 :: 8 :: 10 :: Nil) :: Nil
+    @test
+    def transpose18(): Bool = region r {
+        let a = Array.transpose([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 3 :: 5 :: 7 :: 9 :: Nil) :: (2 :: 4 :: 6 :: 8 :: 10 :: Nil) :: Nil
+    }
 
-@test
-def transpose19(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3], [4, 5, 6], [7, 8, 9]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 4 :: 7 :: Nil) :: (2 :: 5 :: 8 :: Nil) :: (3 :: 6 :: 9 :: Nil) :: Nil
+    @test
+    def transpose19(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3], [4, 5, 6], [7, 8, 9]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 4 :: 7 :: Nil) :: (2 :: 5 :: 8 :: Nil) :: (3 :: 6 :: 9 :: Nil) :: Nil
+    }
 
-@test
-def transpose20(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3], [4, 5], [7, 8, 9]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: Nil) :: (7 :: 8 :: 9 :: Nil) :: Nil
+    @test
+    def transpose20(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3], [4, 5], [7, 8, 9]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: Nil) :: (7 :: 8 :: 9 :: Nil) :: Nil
+    }
 
-@test
-def transpose21(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3], [], [7, 8, 9]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 2 :: 3 :: Nil) :: Nil :: (7 :: 8 :: 9 :: Nil) :: Nil
+    @test
+    def transpose21(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3], [], [7, 8, 9]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 2 :: 3 :: Nil) :: Nil :: (7 :: 8 :: 9 :: Nil) :: Nil
+    }
 
-@test
-def transpose22(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3], [4, 5, 6], [7, 8, 9, 10]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: (7 :: 8 :: 9 :: 10 :: Nil) :: Nil
+    @test
+    def transpose22(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3], [4, 5, 6], [7, 8, 9, 10]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: (7 :: 8 :: 9 :: 10 :: Nil) :: Nil
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // isPrefixOf                                                              //

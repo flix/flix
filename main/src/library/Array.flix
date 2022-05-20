@@ -649,22 +649,24 @@ namespace Array {
     /// Returns `a` if the dimensions of the elements of `a` are mismatched.
     ///
     @Time(length(a) * length(a)) @Space(length(a) * length(a))
-    pub def transpose(a: Array[Array[a]]): Array[Array[a]] & Impure =
+    pub def transpose(a: ScopedArray[ScopedArray[a, r1], r2]): ScopedArray[ScopedArray[a, r1], r2] \ { Read(r1, r2), Write(r1, r2) } =
         let ilen = length(a);
+        let r2 = Scoped.regionOf(a);
         if (ilen == 0)
-            []
+            [] @ r2
         else {
+            let r1 = Scoped.regionOf(a[0]);
             let jlen = length(a[0]);
             if (jlen == 0 or uniformHelper(a, jlen))
                 a
             else
-                init(i -> init(j -> a[j][i], ilen, static), jlen, static)
+                init(i -> init(j -> a[j][i], ilen, r1), jlen, r2)
         }
 
     ///
     /// Helper function for `transpose`.
     ///
-    def uniformHelper(a: Array[Array[a]], l: Int32): Bool & Impure =
+    def uniformHelper(a: ScopedArray[ScopedArray[a, r1], r2], l: Int32): Bool \ Read(r2) =
         exists(x -> length(x) != l, a)
 
     ///
