@@ -2057,48 +2057,74 @@ def isSuffixOf13(): Bool & Impure = Array.isSuffixOf([1,2,3], [89,11,1,2,3])
         [1,2,3,4] `sameElements` [1,2,3,4]
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// compare                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // compare                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def testCompare01(): Bool & Impure = (([] : Array[Int32]) `Array.compare` ([] : Array[Int32])) == EqualTo
+    @test
+    def testCompare01(): Bool = region r {
+        ([]: ScopedArray[Int32, _]) `Array.compare` ([]: ScopedArray[Int32, _]) == EqualTo
+    }
 
-@test
-def testCompare02(): Bool & Impure = ([1] `Array.compare` []) == GreaterThan
+    @test
+    def testCompare02(): Bool = region r {
+        ([1] `Array.compare` []) == GreaterThan
+    }
 
-@test
-def testCompare03(): Bool & Impure = ([] `Array.compare` [1]) == LessThan
+    @test
+    def testCompare03(): Bool = region r {
+        ([] `Array.compare` [1]) == LessThan
+    }
 
-@test
-def testCompare04(): Bool & Impure = ([1] `Array.compare` [1]) == EqualTo
+    @test
+    def testCompare04(): Bool = region r {
+        ([1] `Array.compare` [1]) == EqualTo
+    }
 
-@test
-def testCompare05(): Bool & Impure = ([1] `Array.compare` [2]) == LessThan
+    @test
+    def testCompare05(): Bool = region r {
+        ([1] `Array.compare` [2]) == LessThan
+    }
 
-@test
-def testCompare06(): Bool & Impure = ([2] `Array.compare` [1]) == GreaterThan
+    @test
+    def testCompare06(): Bool = region r {
+        ([2] `Array.compare` [1]) == GreaterThan
+    }
 
-@test
-def testCompare07(): Bool & Impure = ([1] `Array.compare` [1,2]) == LessThan
+    @test
+    def testCompare07(): Bool = region r {
+        ([1] `Array.compare` [1,2]) == LessThan
+    }
 
-@test
-def testCompare08(): Bool & Impure = ([1,2] `Array.compare` [1]) == GreaterThan
+    @test
+    def testCompare08(): Bool = region r {
+        ([1,2] `Array.compare` [1]) == GreaterThan
+    }
 
-@test
-def testCompare09(): Bool & Impure = ([1] `Array.compare` [0,0]) == GreaterThan
+    @test
+    def testCompare09(): Bool = region r {
+        ([1] `Array.compare` [0,0]) == GreaterThan
+    }
 
-@test
-def testCompare10(): Bool & Impure = ([0,0] `Array.compare` [1]) == LessThan
+    @test
+    def testCompare10(): Bool = region r {
+        ([0,0] `Array.compare` [1]) == LessThan
+    }
 
-@test
-def testCompare11(): Bool & Impure = ([1,2] `Array.compare` [1,1]) == GreaterThan
+    @test
+    def testCompare11(): Bool = region r {
+        ([1,2] `Array.compare` [1,1]) == GreaterThan
+    }
 
-@test
-def testCompare12(): Bool & Impure = ([1,2] `Array.compare` [1,3]) == LessThan
+    @test
+    def testCompare12(): Bool = region r {
+        ([1,2] `Array.compare` [1,3]) == LessThan
+    }
 
-@test
-def testCompare13(): Bool & Impure = ([1,2,3,4] `Array.compare` [1,2,3,4]) == EqualTo
+    @test
+    def testCompare13(): Bool = region r {
+        ([1,2,3,4] `Array.compare` [1,2,3,4]) == EqualTo
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // fold                                                                    //
