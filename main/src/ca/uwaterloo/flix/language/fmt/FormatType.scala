@@ -281,6 +281,8 @@ object FormatType {
           }
         }
 
+      case SimpleType.Empty => "{ Pure }"
+
       case SimpleType.Tuple(fields) =>
         fields.map(visit(_, Mode.Type)).mkString("(", ", ", ")")
     }

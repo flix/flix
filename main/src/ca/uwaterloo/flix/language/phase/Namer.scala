@@ -1624,6 +1624,7 @@ object Namer {
     case WeededAst.Type.Difference(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Read(ident, loc) => ident :: Nil
     case WeededAst.Type.Write(ident, loc) => ident :: Nil
+    case WeededAst.Type.Empty(loc) => Nil
     case WeededAst.Type.Ascribe(tpe, _, _) => freeVars(tpe)
   }
 

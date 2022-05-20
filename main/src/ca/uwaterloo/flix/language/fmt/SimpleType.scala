@@ -180,6 +180,11 @@ object SimpleType {
     */
   case class Difference(tpe1: SimpleType, tpe2: SimpleType) extends SimpleType
 
+  /**
+    * Empty set type.
+    */
+  case object Empty extends SimpleType
+
   /////////////
   // Predicates
   /////////////
@@ -308,16 +313,17 @@ object SimpleType {
             // NB: safe to subtract 2 since arity is always at least 2
             List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
           // Case 2: Pure function.
-          case True :: tpes =>
+          case True :: _ :: tpes =>
             // NB: safe to reduce because arity is always at least 2
             tpes.padTo(arity, Hole).reduceRight(PureArrow)
           // Case 3: Impure function.
-          case eff :: tpes =>
+          case eff :: _ :: tpes =>
             // NB: safe to take last 2 because arity is always at least 2
             val allTpes = tpes.padTo(arity, Hole)
             val List(lastArg, ret) = allTpes.takeRight(2)
             val lastArrow: SimpleType = PolyArrow(lastArg, eff, ret)
             allTpes.dropRight(2).foldRight(lastArrow)(PureArrow)
+          case _ => throw InternalCompilerException("TODO handle effs") // TODO
         }
 
       case TypeConstructor.RecordRowEmpty => RecordRow(Nil)
@@ -508,6 +514,7 @@ object SimpleType {
         }
 
       case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Empty => Empty
       case TypeConstructor.Region => mkApply(Region, t.typeArguments.map(fromWellKindedType))
       case _: TypeConstructor.UnappliedAlias => throw InternalCompilerException("Unexpected unapplied alias.")
     }
