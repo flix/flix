@@ -2447,16 +2447,16 @@ object Weeder {
 
       case ParsedAst.Effect.Complement(sp1, eff, sp2) =>
         val pur = WeededAst.Type.True(loc)
-        val (innerEff, _) = visitSingleEffect(eff)
+        val (_, innerEff) = visitSingleEffect(eff)
         val outerEff = WeededAst.Type.Complement(innerEff, loc)
         (pur, outerEff)
 
       case ParsedAst.Effect.Union(eff1, effs) =>
         val pur = WeededAst.Type.True(loc)
-        val (innerEff1, _) = visitSingleEffect(eff1)
+        val (_, innerEff1) = visitSingleEffect(eff1)
         val eff = effs.foldLeft(innerEff1) {
           case (acc, innerEff0) =>
-            val (innerEff, _) = visitSingleEffect(innerEff0)
+            val (_, innerEff) = visitSingleEffect(innerEff0)
             val innerLoc = mkSL(leftSp, rightMostSourcePosition(innerEff0))
             WeededAst.Type.Union(acc, innerEff, innerLoc)
         }
@@ -2464,10 +2464,10 @@ object Weeder {
 
       case ParsedAst.Effect.Intersection(eff1, effs) =>
         val pur = WeededAst.Type.True(loc)
-        val (innerEff1, _) = visitSingleEffect(eff1)
+        val (_, innerEff1) = visitSingleEffect(eff1)
         val eff = effs.foldLeft(innerEff1) {
           case (acc, innerEff0) =>
-            val (innerEff, _) = visitSingleEffect(innerEff0)
+            val (_, innerEff) = visitSingleEffect(innerEff0)
             val innerLoc = mkSL(leftSp, rightMostSourcePosition(innerEff0))
             WeededAst.Type.Intersection(acc, innerEff, innerLoc)
         }
@@ -2475,10 +2475,10 @@ object Weeder {
 
       case ParsedAst.Effect.Difference(eff1, effs) =>
         val pur = WeededAst.Type.True(loc)
-        val (innerEff1, _) = visitSingleEffect(eff1)
+        val (_, innerEff1) = visitSingleEffect(eff1)
         val eff = effs.foldLeft(innerEff1) {
           case (acc, innerEff0) =>
-            val (innerEff, _) = visitSingleEffect(innerEff0)
+            val (_, innerEff) = visitSingleEffect(innerEff0)
             val innerLoc = mkSL(leftSp, rightMostSourcePosition(innerEff0))
             WeededAst.Type.Difference(acc, innerEff, innerLoc)
         }
