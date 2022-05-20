@@ -630,7 +630,7 @@ namespace Array {
     ///
     /// Helper function for `intercalate` and `flatten`.
     ///
-    def headArrays(arrs: Array[Array[a]]): Option[a] & Impure =
+    def headArrays(arrs: ScopedArray[ScopedArray[a, r1], r2]): Option[a] \ Read(r1, r2) =
         let len = length(arrs);
         def loop(i) = {
             if (i >= len)
