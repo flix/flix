@@ -525,6 +525,19 @@ namespace Nel {
     }
 
     ///
+    /// Returns a new non-empty list where each element `e` is mapped to `(e, i)`
+    /// where `i` is the index of `e`.
+    ///
+    pub def zipWithIndex(l: Nel[a]): Nel[(a, Int32)] =
+        def loop(ll, k, i) = match ll {
+            case (x :: xs) => loop(xs, ks -> (k((x, i) :: ks)), i + 1)
+            case Nil       => k(Nil)
+        };
+        match l {
+            case Nel(x, xs) => Nel((x, 0), loop(xs, identity, 1))
+        }
+
+    ///
     /// Returns `l` as a normal list.
     ///
     @Time(1) @Space(1)
