@@ -1417,6 +1417,8 @@ object Namer {
 
     case WeededAst.Type.Write(reg, loc) => NamedAst.Type.Write(reg, loc).toSuccess
 
+    case WeededAst.Type.Empty(loc) => NamedAst.Type.Empty(loc).toSuccess
+
     case WeededAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(visitType(tpe, uenv0, tenv0)) {
         t => NamedAst.Type.Ascribe(t, kind, loc)
@@ -1660,6 +1662,7 @@ object Namer {
       case WeededAst.Type.Read(ident, loc) => Nil
       case WeededAst.Type.Write(ident, loc) if tenv.contains(ident.name) => Nil
       case WeededAst.Type.Write(ident, loc) => Nil
+      case WeededAst.Type.Empty(loc) => Nil
       case WeededAst.Type.Ascribe(tpe, _, _) => visit(tpe)
     }
 

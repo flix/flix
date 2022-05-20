@@ -1857,7 +1857,9 @@ object Resolver {
 
     case _: NamedAst.Type.Read | _: NamedAst.Type.Write =>
       // TODO not handling region effect types yet
-      Type.mkTrue(SourceLocation.Unknown).toSuccess
+      Type.Empty.toSuccess
+
+    case NamedAst.Type.Empty(loc) => Type.Cst(TypeConstructor.Empty, loc).toSuccess
 
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(semiResolveType(tpe, ns0, root)) {

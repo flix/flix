@@ -248,7 +248,7 @@ object Weeder {
         case (ann, mod, _, tparams, fs, exp, tconstrs) =>
           val ts = fs.map(_.tpe.get)
           val pur = WeededAst.Type.True(ident.loc)
-          val eff = WeededAst.Type.True(ident.loc)
+          val eff = WeededAst.Type.Empty(ident.loc)
           val retTpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
           val tpe = WeededAst.Type.Arrow(ts, pur, eff, retTpe, ident.loc)
           List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, retTpe, pur, eff, tconstrs, mkSL(sp1, sp2)))
@@ -291,7 +291,7 @@ object Weeder {
       mapN(annVal, modVal, pubVal, identVal, tparamsVal, fparamsVal, unitVal, purOrEffVal, tconstrsVal) {
         case (ann, mod, _, _, _, fparams, _, _, tconstrs) =>
           val ts = fparams.map(_.tpe.get)
-          val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(ident.loc), WeededAst.Type.True(ident.loc), retTpe, ident.loc)
+          val tpe = WeededAst.Type.Arrow(ts, WeededAst.Type.True(ident.loc), WeededAst.Type.Empty(ident.loc), retTpe, ident.loc)
           WeededAst.Declaration.Op(doc, ann, mod, ident, fparams, tpe, retTpe, tconstrs, mkSL(sp1, sp2));
       }
   }
@@ -2379,15 +2379,15 @@ object Weeder {
   private def mkCurriedArrow(tparams: Seq[WeededAst.Type], pur: WeededAst.Type, eff: WeededAst.Type, tresult: WeededAst.Type, loc: SourceLocation): WeededAst.Type = {
     val l = loc.asSynthetic
     val base = mkArrow(tparams.last, pur, eff, tresult, l)
-    tparams.init.foldRight(base)(mkArrow(_, WeededAst.Type.True(l), WeededAst.Type.True(l), _, l))
+    tparams.init.foldRight(base)(mkArrow(_, WeededAst.Type.True(l), WeededAst.Type.Empty(l), _, l))
   }
 
   /**
     * Weeds the given parsed optional effect or purity `purOrEff`.
     */
   private def visitPurityOrEffect(purOrEff: Option[ParsedAst.PurityOrEffect], loc: SourceLocation): (WeededAst.Type, WeededAst.Type) = purOrEff match {
-    case None => (WeededAst.Type.True(loc.asSynthetic), WeededAst.Type.True(loc.asSynthetic))
-    case Some(ParsedAst.PurityOrEffect.Purity(tpe)) => (visitType(tpe), WeededAst.Type.True(loc.asSynthetic))
+    case None => (WeededAst.Type.True(loc.asSynthetic), WeededAst.Type.Empty(loc.asSynthetic))
+    case Some(ParsedAst.PurityOrEffect.Purity(tpe)) => (visitType(tpe), WeededAst.Type.Empty(loc.asSynthetic))
     case Some(ParsedAst.PurityOrEffect.Effect(s)) => visitEffectSet(s, loc.asSynthetic)
   }
 
@@ -2396,11 +2396,11 @@ object Weeder {
     */
   private def visitEffectSet(eff0: ParsedAst.EffectSet, loc: SourceLocation): (WeededAst.Type, WeededAst.Type) = eff0 match {
     case EffectSet.Singleton(_, eff, _) => visitSingleEffect(eff)
-    case EffectSet.Pure(sp1, sp2) => (WeededAst.Type.True(mkSL(sp1, sp2)), WeededAst.Type.True(mkSL(sp1, sp2)))
+    case EffectSet.Pure(sp1, sp2) => (WeededAst.Type.True(mkSL(sp1, sp2)), WeededAst.Type.Empty(mkSL(sp1, sp2)))
     case EffectSet.Set(sp1, effs0, sp2) =>
       val (purs, effs) = effs0.map(visitSingleEffect).unzip
       val pur = purs.reduceOption(WeededAst.Type.And(_, _, mkSL(sp1, sp2))).getOrElse(WeededAst.Type.True(loc.asSynthetic))
-      val eff = effs.reduceOption(WeededAst.Type.Union(_, _, mkSL(sp1, sp2))).getOrElse(WeededAst.Type.True(loc.asSynthetic))
+      val eff = effs.reduceOption(WeededAst.Type.Union(_, _, mkSL(sp1, sp2))).getOrElse(WeededAst.Type.Empty(loc.asSynthetic))
       (pur, eff)
   }
 
@@ -2423,7 +2423,7 @@ object Weeder {
 
         val eff = idents.map(ident => WeededAst.Type.Read(ident, ident.loc): WeededAst.Type)
           .reduceOption(WeededAst.Type.Union(_, _, loc))
-          .getOrElse(WeededAst.Type.True(loc))
+          .getOrElse(WeededAst.Type.Empty(loc))
 
         (pur, eff)
 
@@ -2434,7 +2434,7 @@ object Weeder {
 
         val eff = idents.map(ident => WeededAst.Type.Write(ident, ident.loc): WeededAst.Type)
           .reduceOption(WeededAst.Type.Union(_, _, loc))
-          .getOrElse(WeededAst.Type.True(loc))
+          .getOrElse(WeededAst.Type.Empty(loc))
 
         (pur, eff)
 

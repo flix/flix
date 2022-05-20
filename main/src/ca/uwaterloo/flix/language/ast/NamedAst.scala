@@ -383,6 +383,8 @@ object NamedAst {
 
     case class Write(reg: Name.Ident, loc: SourceLocation) extends NamedAst.Type
 
+    case class Empty(loc: SourceLocation) extends NamedAst.Type
+
     case class Ascribe(tpe: NamedAst.Type, kind: Kind, loc: SourceLocation) extends NamedAst.Type
 
   }
