@@ -24,7 +24,7 @@ instance Scoped[MutMap[k, v]] {
 }
 
 instance Newable[MutMap[k, v]] {
-    pub def new(r: Region[r]): MutMap[k, v, r] \ Write(r) = MutMap.emptyWithRegion(r)
+    pub def new(r: Region[r]): MutMap[k, v, r] \ Write(r) = MutMap.new(r)
 }
 
 namespace MutMap {
@@ -32,8 +32,14 @@ namespace MutMap {
     ///
     /// Returns a fresh empty mutable map.
     ///
-    pub def emptyWithRegion(r: Region[r]): MutMap[k, v, r] \ Write(r) =
+    pub def new(r: Region[r]): MutMap[k, v, r] \ Write(r) =
         MutMap(ref Map.empty() @ r)
+
+    ///
+    /// Returns the singleton map where key `k` is mapped to value `v`.
+    ///
+    pub def singleton(k: k, v: v, r: Region[r]): MutMap[k, v, r] \ Write(r) with Order[k] =
+        MutMap(ref Map.singleton(k, v) @ r)
 
     ///
     /// Returns `true` if and only if the mutable map `m` contains the key `k`.
