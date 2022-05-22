@@ -189,7 +189,7 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def minimum(a: Array[a]): Option[a] & Impure with Order[a] =
+    pub def minimum(a: ScopedArray[a, r]): Option[a] \ Read(r) with Order[a] =
         reduceLeft(Order.min, a)
 
     ///
@@ -197,7 +197,7 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def minimumBy(cmp: (a, a) -> Comparison, a: Array[a]): Option[a] & Impure =
+    pub def minimumBy(cmp: (a, a) -> Comparison, a: ScopedArray[a, r]): Option[a] \ Read(r) =
         reduceLeft(Order.minBy(cmp), a)
 
     ///

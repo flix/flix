@@ -4894,19 +4894,26 @@ def init205(): Bool & Impure =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def minimumBy01(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, []: Array[Int32]) == None
+    def minimumBy01(): Bool = region r {
+        Array.minimumBy((x, y) -> x <=> y, []: ScopedArray[Int32, _]) == None
+    }
 
     @test
-    def minimumBy02(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, Array.range(0, 5, static)) == Some(0)
+    def minimumBy02(): Bool = region r {
+        Array.minimumBy((x, y) -> x <=> y, Array.range(0, 5, r)) == Some(0)
+    }
 
     @test
-    def minimumBy03(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, Array.range(4, 10, static)) == Some(4)
+    def minimumBy03(): Bool = region r {
+        Array.minimumBy((x, y) -> x <=> y, Array.range(4, 10, r)) == Some(4)
+    }
 
     @test
-    def minimumBy04(): Bool & Impure =
-        let a = Array.range(10, 20, static);
+    def minimumBy04(): Bool = region r {
+        let a = Array.range(10, 20, r);
         a[5] = -22;
         Array.minimumBy((x, y) -> x <=> y, a) == Some(-22)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // maximumBy                                                               //
