@@ -592,7 +592,7 @@ namespace Array {
             case None => []
             case Some(x) =>
                 let out = new(x, len, static);
-                let overwrite = { (a,st) ->
+                let overwrite = { (st, a) ->
                     let (pos,i) = st;
                     if (i == 0) {
                         let pos1 = arrayWrites(0, a, out);
@@ -602,7 +602,7 @@ namespace Array {
                         let pos2 = arrayWrites(pos1, a, out);
                         (pos2, i+1)
                     }};
-                foreachAccum(overwrite, (0,0), arrs);
+                foldLeft(overwrite, (0, 0), arrs);
                 out
         }
 
@@ -882,7 +882,7 @@ namespace Array {
             case None => []
             case Some(x) => {
                 let out = new(x, len, static);
-                foreachAccum((a, pos) -> arrayWrites(pos, a, out), 0, arrs);
+                foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
         }
@@ -1465,21 +1465,6 @@ namespace Array {
             ()
         else
             loop(0)
-
-    ///
-    /// Apply the effectful function `f` to all the elements in the array `a` and the accumulator `s`.
-    /// The function returns the final value of the accumulator `s`.
-    ///
-    @Time(time(f) * length(a)) @Space(space(f))
-    def foreachAccum(f: (a, b) -> b & ef, s: b, a: ScopedArray[a, r]): b \ { ef, Read(r) } =
-        let len = length(a);
-        def loop(i, acc) = {
-            if (i >= len)
-                acc
-            else
-                loop(i + 1, f(a[i], acc))
-        };
-        loop(0, s)
 
     ///
     /// Returns a copy of `a` with the elements starting at index `i` replaced by `sub`.
