@@ -2385,30 +2385,44 @@ def intercalate07(): Bool & Impure =
         Array.reduceRight((a, b) -> a - b, [1,2,3,4]) == Some(-2)
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// count                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // count                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def count01(): Bool & Impure = Array.count(i -> i > 3, []) == 0
+    @test
+    def count01(): Bool = region r {
+        Array.count(i -> i > 3, []) == 0
+    }
 
-@test
-def count02(): Bool & Impure = Array.count(i -> i > 3, [1]) == 0
+    @test
+    def count02(): Bool = region r {
+        Array.count(i -> i > 3, [1]) == 0
+    }
 
-@test
-def count03(): Bool & Impure = Array.count(i -> i > 3, [4]) == 1
+    @test
+    def count03(): Bool = region r {
+        Array.count(i -> i > 3, [4]) == 1
+    }
 
-@test
-def count04(): Bool & Impure = Array.count(i -> i > 3, [1,2]) == 0
+    @test
+    def count04(): Bool = region r {
+        Array.count(i -> i > 3, [1,2]) == 0
+    }
 
-@test
-def count05(): Bool & Impure = Array.count(i -> i > 3, [1,8]) == 1
+    @test
+    def count05(): Bool = region r {
+        Array.count(i -> i > 3, [1,8]) == 1
+    }
 
-@test
-def count06(): Bool & Impure = Array.count(i -> i > 3, [8,1]) == 1
+    @test
+    def count06(): Bool = region r {
+        Array.count(i -> i > 3, [8,1]) == 1
+    }
 
-@test
-def count07(): Bool & Impure = Array.count(i -> i > 3, [6,7]) == 2
+    @test
+    def count07(): Bool = region r {
+        Array.count(i -> i > 3, [6,7]) == 2
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

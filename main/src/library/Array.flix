@@ -839,8 +839,8 @@ namespace Array {
     /// Returns the number of elements in `a` that satisfy the predicate `f`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def count(f: a -> Bool, a: Array[a]): Int32 & Impure =
-        foldLeft((b,x) -> if (f(x)) b + 1 else b, 0, a) as & Impure
+    pub def count(f: a -> Bool & ef, a: ScopedArray[a, r]): Int32 \ { ef, Read(r) } =
+        foldLeft((b, x) -> if (f(x)) b + 1 else b, 0, a)
 
     ///
     /// Returns the sum of all elements in the array `a`.
