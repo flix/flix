@@ -284,12 +284,10 @@ namespace Array {
     ///
     /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from right to left.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def findRight(f: a -> Bool, arr: Array[a]): Option[a] & Impure =
+    pub def findRight(f: a -> Bool & ef, arr: ScopedArray[a, r]): Option[a] \ { ef, Read(r) } =
         match findIndexOfRight(x -> f(x), arr) {
-            case None => None
+            case None    => None
             case Some(i) => Some(arr[i])
         }
 

@@ -519,30 +519,44 @@ def indices07(): Bool & Impure =
         Array.findLeft(i -> i > 2, [6,7]) == Some(6)
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// findRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // findRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def findRight01(): Bool & Impure = Array.findRight(i -> i > 2, []: Array[Int32]) == None
+    @test
+    def findRight01(): Bool = region r {
+        Array.findRight(i -> i > 2, []) == None
+    }
 
-@test
-def findRight02(): Bool & Impure = Array.findRight(i -> i > 2, [1]) == None
+    @test
+    def findRight02(): Bool = region r {
+        Array.findRight(i -> i > 2, [1]) == None
+    }
 
-@test
-def findRight03(): Bool & Impure = Array.findRight(i -> i > 2, [3]) == Some(3)
+    @test
+    def findRight03(): Bool = region r {
+        Array.findRight(i -> i > 2, [3]) == Some(3)
+    }
 
-@test
-def findRight04(): Bool & Impure = Array.findRight(i -> i > 2, [1,2]) == None
+    @test
+    def findRight04(): Bool = region r {
+        Array.findRight(i -> i > 2, [1,2]) == None
+    }
 
-@test
-def findRight05(): Bool & Impure = Array.findRight(i -> i > 2, [6,-6]) == Some(6)
+    @test
+    def findRight05(): Bool = region r {
+        Array.findRight(i -> i > 2, [6,-6]) == Some(6)
+    }
 
-@test
-def findRight06(): Bool & Impure = Array.findRight(i -> i > 2, [-6,6]) == Some(6)
+    @test
+    def findRight06(): Bool = region r {
+        Array.findRight(i -> i > 2, [-6,6]) == Some(6)
+    }
 
-@test
-def findRight07(): Bool & Impure = Array.findRight(i -> i > 2, [6,7]) == Some(7)
+    @test
+    def findRight07(): Bool = region r {
+        Array.findRight(i -> i > 2, [6,7]) == Some(7)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // range                                                                   //
