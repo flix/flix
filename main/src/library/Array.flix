@@ -566,13 +566,14 @@ namespace Array {
     /// Returns `a` with `x` inserted between every two adjacent elements.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def intersperse(x: a, a: Array[a]): Array[a] & Impure =
+    pub def intersperse(x: a, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) }=
         let len1 = length(a);
         let len2 = len1 + len1 - 1;
+        let r = Scoped.regionOf(a);
         if (len2 <= 0)
-            []
+            [] @ r
         else {
-            let b = new(x, len2, static);
+            let b = new(x, len2, r);
             let f = { (v,i) -> let j = i + i; b[j] = v };
             foreachWithIndex(f, a);
             b
@@ -587,7 +588,7 @@ namespace Array {
         let sepLength = length(sep);
         let sepCount = if (count < 2) 0 else count - 1;
         let len = sumLengths(arrs) + (sepCount * sepLength);
-        match headArrays(arrs){
+        match headArrays(arrs) {
             case None => []
             case Some(x) =>
                 let out = new(x, len, static);
@@ -612,7 +613,7 @@ namespace Array {
     ///
     /// Helper function for `intercalate` which needs to do sucessive writing.
     ///
-    def arrayWrites(pos: Int32, sub: Array[a], out: Array[a]): Int32 & Impure =
+    def arrayWrites(pos: Int32, sub: ScopedArray[a, r1], out: ScopedArray[a, r2]): Int32 \ { Read(r1), Write(r2) } =
         updateSequence!(pos, sub, out);
         pos + length(sub)
 
@@ -629,7 +630,7 @@ namespace Array {
     ///
     /// Helper function for `intercalate` and `flatten`.
     ///
-    def headArrays(arrs: Array[Array[a]]): Option[a] & Impure =
+    def headArrays(arrs: ScopedArray[ScopedArray[a, r1], r2]): Option[a] \ Read(r1, r2) =
         let len = length(arrs);
         def loop(i) = {
             if (i >= len)
@@ -648,29 +649,31 @@ namespace Array {
     /// Returns `a` if the dimensions of the elements of `a` are mismatched.
     ///
     @Time(length(a) * length(a)) @Space(length(a) * length(a))
-    pub def transpose(a: Array[Array[a]]): Array[Array[a]] & Impure =
+    pub def transpose(a: ScopedArray[ScopedArray[a, r1], r2]): ScopedArray[ScopedArray[a, r1], r2] \ { Read(r1, r2), Write(r1, r2) } =
         let ilen = length(a);
+        let r2 = Scoped.regionOf(a);
         if (ilen == 0)
-            []
+            [] @ r2
         else {
+            let r1 = Scoped.regionOf(a[0]);
             let jlen = length(a[0]);
             if (jlen == 0 or uniformHelper(a, jlen))
                 a
             else
-                init(i -> init(j -> a[j][i], ilen, static), jlen, static)
+                init(i -> init(j -> a[j][i], ilen, r1), jlen, r2)
         }
 
     ///
     /// Helper function for `transpose`.
     ///
-    def uniformHelper(a: Array[Array[a]], l: Int32): Bool & Impure =
+    def uniformHelper(a: ScopedArray[ScopedArray[a, r1], r2], l: Int32): Bool \ Read(r2) =
         exists(x -> length(x) != l, a)
 
     ///
     /// Returns `true` if and only if `a1` is a prefix of `a2`.
     ///
     @Time(length(a1)) @Space(1)
-    pub def isPrefixOf(a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
+    pub def isPrefixOf(a1: ScopedArray[a, r1], a2: ScopedArray[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
         let len1 = length(a1);
         if (len1 > length(a2))
             false
@@ -678,11 +681,10 @@ namespace Array {
             def loop(i) = {
                 if (i >= len1)
                     true
+                else if (a1[i] != a2[i])
+                    false
                 else
-                    if (a1[i] != a2[i])
-                        false
-                    else
-                        loop(i + 1)
+                    loop(i + 1)
             };
             loop(0)
 
@@ -690,53 +692,49 @@ namespace Array {
     /// Returns `true` if and only if `a1` is a infix of `a2`.
     ///
     @Time(length(a1)) @Space(1)
-    pub def isInfixOf(a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
+    pub def isInfixOf(a1: ScopedArray[a, r1], a2: ScopedArray[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
         let len1 = length(a1);
         let len2 = length(a2);
         if (len1 > len2)
             false
+        else if (len1 == 0)
+            true
         else
-            if (len1 == 0)
-                true
-            else
-                isInfixOfSearch(a1, a2, len1, len2, 0)
+            isInfixOfSearch(a1, a2, len1, len2, 0)
 
     ///
     /// Helper function for `isInfixOf` - scan a2 to find a match with first element of a1.
     ///
     /// Precondition: len1 (length of a1) > 0
     ///
-    def isInfixOfSearch(a1: Array[a], a2: Array[a], len1: Int32, len2: Int32, j: Int32): Bool & Impure with Eq[a] =
+    def isInfixOfSearch(a1: ScopedArray[a, r1], a2: ScopedArray[a, r2], len1: Int32, len2: Int32, j: Int32): Bool \ Read(r1, r2) with Eq[a] =
         if (j >= len2)
             false
+        else if (a1[0] == a2[j])
+            isInfixOfCheck(a1, a2, len1, len2, 1, j+1)
         else
-            if (a1[0] == a2[j])
-                isInfixOfCheck(a1, a2, len1, len2, 1, j+1)
-            else
-                isInfixOfSearch(a1, a2, len1, len2, j+1)
+            isInfixOfSearch(a1, a2, len1, len2, j+1)
 
     ///
     /// Helper function for `isInfixOf` - a1 has started matching, scan to see if it all matches.
     ///
-    def isInfixOfCheck(a1: Array[a], a2: Array[a], len1: Int32, len2: Int32, i: Int32, j: Int32): Bool & Impure with Eq[a] =
+    def isInfixOfCheck(a1: ScopedArray[a, r1], a2: ScopedArray[a, r2], len1: Int32, len2: Int32, i: Int32, j: Int32): Bool \ Read(r1, r2) with Eq[a] =
         if (i >= len1)
             // a1 exhausted, so success
             true
+        else if (j >= len2)
+            // a2 exhausted, a1 still trying to match, so failure
+            false
+        else if(a1[i] == a2[j])
+            isInfixOfCheck(a1, a2, len1, len2, i+1, j+1)
         else
-            if (j >= len2)
-                // a2 exhausted, a1 still trying to match, so failure
-                false
-            else
-                if(a1[i] == a2[j])
-                    isInfixOfCheck(a1, a2, len1, len2, i+1, j+1)
-                else
-                    isInfixOfSearch(a1, a2, len1, len2, j+1)
+            isInfixOfSearch(a1, a2, len1, len2, j+1)
 
     ///
     /// Returns `true` if and only if `a1` is a suffix of `a2`.
     ///
     @Time(length(a1)) @Space(1)
-    pub def isSuffixOf(a1: Array[a], a2: Array[a]): Bool & Impure with Eq[a] =
+    pub def isSuffixOf(a1: ScopedArray[a, r1], a2: ScopedArray[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
         let len1 = length(a1);
         let len2 = length(a2);
         if (len1 > len2)
@@ -745,25 +743,24 @@ namespace Array {
             def loop(i, j) = {
                 if (i < 0)
                     true
+                else if (a1[i] != a2[j])
+                    false
                 else
-                    if (a1[i] != a2[j])
-                        false
-                    else
-                        loop(i - 1, j - 1)
+                    loop(i - 1, j - 1)
             };
             loop(len1 - 1, len2 - 1)
 
     ///
     /// Returns the result of applying `combine` to all the elements in `a`, using `empty` as the initial value.
     ///
-    pub def fold(arr: Array[a]): a & Impure with Monoid[a] = foldLeft(Monoid.combine, Monoid.empty(), arr)
+    pub def fold(arr: ScopedArray[a, r]): a \ Read(r) with Monoid[a] = foldLeft(Monoid.combine, Monoid.empty(), arr)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & ef, s: b, arr: Array[a]): b & Impure =
+    pub def foldLeft(f: (b, a) -> b & ef, s: b, arr: ScopedArray[a, r]): b \ { ef, Read(r) } =
         let len = length(arr);
         def loop(i, acc) = {
             if (i >= len)
@@ -778,7 +775,7 @@ namespace Array {
     ///
     /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & ef, s: b, arr: Array[a]): b & Impure =
+    pub def foldRight(f: (a, b) -> b & ef, s: b, arr: ScopedArray[a, r]): b \ { ef, Read(r) } =
         def loop(i, acc) = {
             if (i < 0)
                 acc
@@ -793,7 +790,7 @@ namespace Array {
     /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], z))...)`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b & Impure) -> b & ef, z: b, arr: Array[a]): b & Impure =
+    pub def foldRightWithCont(f: (a, Unit -> b & ef and r) -> b & ef and r, z: b, arr: ScopedArray[a, r]): b \ { ef, Read(r) } =
         def loop(i) = {
             if (i == length(arr))
                 z
@@ -807,7 +804,7 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def reduceLeft(f: (a, a) ->  a & ef, a: Array[a]): Option[a] & Impure =
+    pub def reduceLeft(f: (a, a) ->  a & ef, a: ScopedArray[a, r]): Option[a] \ { ef, Read(r) } =
         let len = length(a);
         def loop(i, acc) = {
             if (i >= len)
@@ -825,7 +822,7 @@ namespace Array {
     ///
     /// Returns `None` if `arr` is empty.
     ///
-    pub def reduceRight(f: (a, a) -> a & ef, arr: Array[a]): Option[a] & Impure =
+    pub def reduceRight(f: (a, a) -> a & ef, arr: ScopedArray[a, r]): Option[a] \ { ef, Read(r) } =
         let len = length(arr);
         def loop(i, acc) = {
             if (i < 0)
