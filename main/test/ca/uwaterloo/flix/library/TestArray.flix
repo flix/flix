@@ -4920,19 +4920,26 @@ def init205(): Bool & Impure =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def maximumBy01(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, []: Array[Int32]) == None
+    def maximumBy01(): Bool = region r {
+        Array.maximumBy((x, y) -> x <=> y, []: ScopedArray[Int32, _]) == None
+    }
 
     @test
-    def maximumBy02(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, Array.range(0, 5, static)) == Some(4)
+    def maximumBy02(): Bool = region r {
+        Array.maximumBy((x, y) -> x <=> y, Array.range(0, 5, r)) == Some(4)
+    }
 
     @test
-    def maximumBy03(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, Array.range(4, 10, static)) == Some(9)
+    def maximumBy03(): Bool = region r {
+        Array.maximumBy((x, y) -> x <=> y, Array.range(4, 10, r)) == Some(9)
+    }
 
     @test
-    def maximumBy04(): Bool & Impure =
-        let a = Array.range(10, 20, static);
+    def maximumBy04(): Bool = region r {
+        let a = Array.range(10, 20, r);
         a[5] = 42;
         Array.maximumBy((x, y) -> x <=> y, a) == Some(42)
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

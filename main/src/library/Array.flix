@@ -205,7 +205,7 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def maximum(a: Array[a]): Option[a] & Impure with Order[a] =
+    pub def maximum(a: ScopedArray[a, r]): Option[a] \ Read(r) with Order[a] =
         reduceLeft(Order.max, a)
 
     ///
@@ -213,7 +213,7 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def maximumBy(cmp: (a, a) -> Comparison, a: Array[a]): Option[a] & Impure =
+    pub def maximumBy(cmp: (a, a) -> Comparison, a: ScopedArray[a, r]): Option[a] \ Read(r) =
         reduceLeft(Order.maxBy(cmp), a)
 
     ///
