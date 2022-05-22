@@ -312,6 +312,12 @@ namespace Set {
         RedBlackTree.foldRightWithCont((k, _, c) -> f(k, c), z, t)
 
     ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, s: Set[a]): b & ef with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(f(x), acc), Monoid.empty(), s)
+
+    ///
     /// Applies `f` to all elements in `s` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     /// Returns `None` if `s` is the empty set.
