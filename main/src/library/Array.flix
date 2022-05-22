@@ -845,13 +845,13 @@ namespace Array {
     ///
     /// Returns the sum of all elements in the array `a`.
     ///
-    pub def sum(a: Array[Int32]): Int32 & Impure =
+    pub def sum(a: ScopedArray[Int32, r]): Int32 \ Read(r) =
         foldLeft((acc, x) -> acc + x, 0, a)
 
     ///
     /// Returns the sum of all elements in the array `a` according to the function `f`.
     ///
-    pub def sumWith(f: a -> Int32 & ef, a: Array[a]): Int32 & Impure =
+    pub def sumWith(f: a -> Int32 & ef, a: ScopedArray[a, r]): Int32 \ { ef, Read(r) } =
         foldLeft((acc, x) -> acc + f(x), 0, a)
 
     ///

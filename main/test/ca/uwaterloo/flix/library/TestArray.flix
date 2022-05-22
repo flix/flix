@@ -4921,31 +4921,38 @@ def init205(): Bool & Impure =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sum01(): Bool & Impure =
+    def sum01(): Bool = region r {
         Array.sum([]) == 0
+    }
 
     @test
-    def sum02(): Bool & Impure =
+    def sum02(): Bool = region r {
         Array.sum([1]) == 1
+    }
 
     @test
-    def sum03(): Bool & Impure =
+    def sum03(): Bool = region r {
         Array.sum([1, 2, 3]) == 6
+    }
 
     @test
-    def sum04(): Bool & Impure =
+    def sum04(): Bool = region r {
         Array.sum([1, 2, 3, -3]) == 3
+    }
 
     @test
-    def sum05(): Bool & Impure =
+    def sum05(): Bool = region r {
         Array.sum([-1, -2, -3, -4]) == -10
+    }
     @test
-    def sum06(): Bool & Impure =
+    def sum06(): Bool = region r {
         Array.sum([10, -10]) == 0
+    }
 
     @test
-    def sum07(): Bool & Impure =
-        Array.range(1, 101, static) |> Array.sum == 5050
+    def sum07(): Bool = region r {
+        Array.range(1, 101, r) |> Array.sum == 5050
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4953,28 +4960,34 @@ def init205(): Bool & Impure =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sumWith01(): Bool & Impure =
+    def sumWith01(): Bool = region r {
         Array.sumWith(x -> x + 1, []) == 0
+    }
 
     @test
-    def sumWith02(): Bool & Impure =
+    def sumWith02(): Bool = region r {
         Array.sumWith(x -> x + 1, [1]) == 2
+    }
 
     @test
-    def sumWith03(): Bool & Impure =
+    def sumWith03(): Bool = region r {
         Array.sumWith(x -> x + 1, [1, 2, 3]) == 9
+    }
 
     @test
-    def sumWith04(): Bool & Impure =
+    def sumWith04(): Bool = region r {
         Array.sumWith(x -> x + 1, [1, 2, 3, -3]) == 7
+    }
 
     @test
-    def sumWith05(): Bool & Impure =
+    def sumWith05(): Bool = region r {
         Array.sumWith(x -> x + 1, [-1, -2, -3, -4]) == -6
+    }
 
     @test
-    def sumWith06(): Bool & Impure =
+    def sumWith06(): Bool = region r {
         Array.sumWith(x -> x + 1, [10, -10]) == 2
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
