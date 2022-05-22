@@ -441,55 +441,83 @@ def indices07(): Bool & Impure =
     let a = Array.indices(1, [1,1]);
     Array.sameElements(a, [0,1])
 
-/////////////////////////////////////////////////////////////////////////////
-// find                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // find                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def find01(): Bool & Impure = Array.find(i -> i > 2, []: Array[Int32]) == None
+    @test
+    def find01(): Bool = region r {
+        Array.find(i -> i > 2, []) == None
+    }
 
-@test
-def find02(): Bool & Impure = Array.find(i -> i > 2, [1]) == None
+    @test
+    def find02(): Bool = region r {
+        Array.find(i -> i > 2, [1]) == None
+    }
 
-@test
-def find03(): Bool & Impure = Array.find(i -> i > 2, [3]) == Some(3)
+    @test
+    def find03(): Bool = region r {
+        Array.find(i -> i > 2, [3]) == Some(3)
+    }
 
-@test
-def find04(): Bool & Impure = Array.find(i -> i > 2, [1,2]) == None
+    @test
+    def find04(): Bool = region r {
+        Array.find(i -> i > 2, [1,2]) == None
+    }
 
-@test
-def find05(): Bool & Impure = Array.find(i -> i > 2, [6,-6]) == Some(6)
+    @test
+    def find05(): Bool = region r {
+        Array.find(i -> i > 2, [6,-6]) == Some(6)
+    }
 
-@test
-def find06(): Bool & Impure = Array.find(i -> i > 2, [-6,6]) == Some(6)
+    @test
+    def find06(): Bool = region r {
+        Array.find(i -> i > 2, [-6,6]) == Some(6)
+    }
 
-@test
-def find07(): Bool & Impure = Array.find(i -> i > 2, [6,7]) == Some(6)
+    @test
+    def find07(): Bool = region r {
+        Array.find(i -> i > 2, [6,7]) == Some(6)
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// findLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // findLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def findLeft01(): Bool & Impure = Array.findLeft(i -> i > 2, []) == None
+    @test
+    def findLeft01(): Bool = region r {
+        Array.findLeft(i -> i > 2, []) == None
+    }
 
-@test
-def findLeft02(): Bool & Impure = Array.findLeft(i -> i > 2, [1]) == None
+    @test
+    def findLeft02(): Bool = region r {
+        Array.findLeft(i -> i > 2, [1]) == None
+    }
 
-@test
-def findLeft03(): Bool & Impure = Array.findLeft(i -> i > 2, [3]) == Some(3)
+    @test
+    def findLeft03(): Bool = region r {
+        Array.findLeft(i -> i > 2, [3]) == Some(3)
+    }
 
-@test
-def findLeft04(): Bool & Impure = Array.findLeft(i -> i > 2, [1,2]) == None
+    @test
+    def findLeft04(): Bool = region r {
+        Array.findLeft(i -> i > 2, [1,2]) == None
+    }
 
-@test
-def findLeft05(): Bool & Impure = Array.findLeft(i -> i > 2, [6,-6]) == Some(6)
+    @test
+    def findLeft05(): Bool = region r {
+        Array.findLeft(i -> i > 2, [6,-6]) == Some(6)
+    }
 
-@test
-def findLeft06(): Bool & Impure = Array.findLeft(i -> i > 2, [-6,6]) == Some(6)
+    @test
+    def findLeft06(): Bool = region r {
+        Array.findLeft(i -> i > 2, [-6,6]) == Some(6)
+    }
 
-@test
-def findLeft07(): Bool & Impure = Array.findLeft(i -> i > 2, [6,7]) == Some(6)
+    @test
+    def findLeft07(): Bool = region r {
+        Array.findLeft(i -> i > 2, [6,7]) == Some(6)
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // findRight                                                               //

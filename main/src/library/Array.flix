@@ -267,20 +267,17 @@ namespace Array {
     ///
     /// Alias for `findLeft`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def find(f: a -> Bool, arr: Array[a]): Option[a] & Impure = findLeft(f, arr)
+    pub def find(f: a -> Bool & ef, arr: ScopedArray[a, r]): Option[a] \ { ef, Read(r) } =
+        findLeft(f, arr)
 
     ///
     /// Optionally returns the first element of `a` that satisfies the predicate `f` when searching from left to right.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def findLeft(f: a -> Bool, arr: Array[a]): Option[a] & Impure =
-        match findIndexOfLeft(x -> f(x), arr) {
-            case None => None
+    pub def findLeft(f: a -> Bool & ef, arr: ScopedArray[a, r]): Option[a] \ { ef, Read(r) } =
+        match findIndexOfLeft(f, arr) {
+            case None    => None
             case Some(i) => Some(arr[i])
         }
 
