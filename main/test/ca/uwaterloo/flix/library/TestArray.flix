@@ -3778,80 +3778,122 @@ def toMap03(): Bool & Impure = Array.toMap([(1, true), (2, false)]) == Map#{1 =>
 @test
 def toMap04(): Bool & Impure = Array.toMap([(1, true), (1, false)]) == Map#{1 => true}
 
-/////////////////////////////////////////////////////////////////////////////
-// findIndexOf                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // findIndexOf                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def findIndexOf01(): Bool & Impure = Array.findIndexOf(i -> i > 2, []: Array[Int32]) == None
+    @test
+    def findIndexOf01(): Bool = region r {
+        Array.findIndexOf(i -> i > 2, []: ScopedArray[Int32, _]) == None
+    }
 
-@test
-def findIndexOf02(): Bool & Impure = Array.findIndexOf(i -> i > 2, [1]) == None
+    @test
+    def findIndexOf02(): Bool = region r {
+        Array.findIndexOf(i -> i > 2, [1]) == None
+    }
 
-@test
-def findIndexOf03(): Bool & Impure = Array.findIndexOf(i -> i > 2, [3]) == Some(0)
+    @test
+    def findIndexOf03(): Bool = region r {
+        Array.findIndexOf(i -> i > 2, [3]) == Some(0)
+    }
 
-@test
-def findIndexOf04(): Bool & Impure = Array.findIndexOf(i -> i > 2, [1,2]) == None
+    @test
+    def findIndexOf04(): Bool = region r {
+        Array.findIndexOf(i -> i > 2, [1,2]) == None
+    }
 
-@test
-def findIndexOf05(): Bool & Impure = Array.findIndexOf(i -> i > 2, [6,-6]) == Some(0)
+    @test
+    def findIndexOf05(): Bool = region r {
+        Array.findIndexOf(i -> i > 2, [6,-6]) == Some(0)
+    }
 
-@test
-def findIndexOf06(): Bool & Impure = Array.findIndexOf(i -> i > 2, [-6,6]) == Some(1)
+    @test
+    def findIndexOf06(): Bool = region r {
+        Array.findIndexOf(i -> i > 2, [-6,6]) == Some(1)
+    }
 
-@test
-def findIndexOf07(): Bool & Impure = Array.findIndexOf(i -> i > 2, [6,7]) == Some(0)
+    @test
+    def findIndexOf07(): Bool = region r {
+        Array.findIndexOf(i -> i > 2, [6,7]) == Some(0)
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// findIndexOfLeft                                                         //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // findIndexOfLeft                                                         //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def findIndexOfLeft01(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, []: Array[Int32]) == None
+    @test
+    def findIndexOfLeft01(): Bool = region r {
+        Array.findIndexOfLeft(i -> i > 2, []: ScopedArray[Int32, _]) == None
+    }
 
-@test
-def findIndexOfLeft02(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [1]) == None
+    @test
+    def findIndexOfLeft02(): Bool = region r {
+        Array.findIndexOfLeft(i -> i > 2, [1]) == None
+    }
 
-@test
-def findIndexOfLeft03(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [3]) == Some(0)
+    @test
+    def findIndexOfLeft03(): Bool = region r {
+        Array.findIndexOfLeft(i -> i > 2, [3]) == Some(0)
+    }
 
-@test
-def findIndexOfLeft04(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [1,2]) == None
+    @test
+    def findIndexOfLeft04(): Bool = region r {
+        Array.findIndexOfLeft(i -> i > 2, [1,2]) == None
+    }
 
-@test
-def findIndexOfLeft05(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [6,-6]) == Some(0)
+    @test
+    def findIndexOfLeft05(): Bool = region r {
+        Array.findIndexOfLeft(i -> i > 2, [6,-6]) == Some(0)
+    }
 
-@test
-def findIndexOfLeft06(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [-6,6]) == Some(1)
+    @test
+    def findIndexOfLeft06(): Bool = region r {
+        Array.findIndexOfLeft(i -> i > 2, [-6,6]) == Some(1)
+    }
 
-@test
-def findIndexOfLeft07(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [6,7]) == Some(0)
+    @test
+    def findIndexOfLeft07(): Bool = region r {
+        Array.findIndexOfLeft(i -> i > 2, [6,7]) == Some(0)
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// findIndexOfRight                                                        //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // findIndexOfRight                                                        //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def findIndexOfRight01(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, []: Array[Int32]) == None
+    @test
+    def findIndexOfRight01(): Bool = region r {
+        Array.findIndexOfRight(i -> i > 2, []: ScopedArray[Int32, _]) == None
+    }
 
-@test
-def findIndexOfRight02(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [1]) == None
+    @test
+    def findIndexOfRight02(): Bool = region r {
+        Array.findIndexOfRight(i -> i > 2, [1]) == None
+    }
 
-@test
-def findIndexOfRight03(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [3]) == Some(0)
+    @test
+    def findIndexOfRight03(): Bool = region r {
+        Array.findIndexOfRight(i -> i > 2, [3]) == Some(0)
+    }
 
-@test
-def findIndexOfRight04(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [1,2]) == None
+    @test
+    def findIndexOfRight04(): Bool = region r {
+        Array.findIndexOfRight(i -> i > 2, [1,2]) == None
+    }
 
-@test
-def findIndexOfRight05(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [6,-6]) == Some(0)
+    @test
+    def findIndexOfRight05(): Bool = region r {
+        Array.findIndexOfRight(i -> i > 2, [6,-6]) == Some(0)
+    }
 
-@test
-def findIndexOfRight06(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [-6,6]) == Some(1)
+    @test
+    def findIndexOfRight06(): Bool = region r {
+        Array.findIndexOfRight(i -> i > 2, [-6,6]) == Some(1)
+    }
 
-@test
-def findIndexOfRight07(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [6,7]) == Some(1)
+    @test
+    def findIndexOfRight07(): Bool = region r {
+        Array.findIndexOfRight(i -> i > 2, [6,7]) == Some(1)
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // findIndices                                                             //

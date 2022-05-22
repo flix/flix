@@ -1301,13 +1301,14 @@ namespace Array {
     /// Alias for `findIndexOfLeft`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def findIndexOf(f: a -> Bool & ef, a: Array[a]): Option[Int32] & Impure = findIndexOfLeft(f,a)
+    pub def findIndexOf(f: a -> Bool & ef, a: ScopedArray[a, r]): Option[Int32] \ { ef, Read(r) } =
+        findIndexOfLeft(f,a)
 
     ///
     /// Optionally returns the position of the first element in `x` satisfying `f`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def findIndexOfLeft(f: a -> Bool & ef, a: Array[a]): Option[Int32] & Impure =
+    pub def findIndexOfLeft(f: a -> Bool & ef, a: ScopedArray[a, r]): Option[Int32] \ { ef, Read(r) } =
         let len = length(a);
         if (len < 1)
             None
@@ -1315,11 +1316,10 @@ namespace Array {
             def loop(i) = {
                 if (i >= len)
                     -1
+                else if (f(a[i]))
+                    i
                 else
-                    if (f(a[i]))
-                        i
-                    else
-                        loop(i + 1)
+                    loop(i + 1)
             };
             let i = loop(0);
             if (i < 0) None else Some(i)
@@ -1330,16 +1330,15 @@ namespace Array {
     /// searching from right to left.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def findIndexOfRight(f: a -> Bool & ef, a: Array[a]): Option[Int32] & Impure =
+    pub def findIndexOfRight(f: a -> Bool & ef, a: ScopedArray[a, r]): Option[Int32] \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i < 0)
                 -1
+            else if (f(a[i]))
+                i
             else
-                if (f(a[i]))
-                    i
-                else
-                    loop(i - 1)
+                loop(i - 1)
         };
         let i = loop(len - 1);
         if (i < 0) None else Some(i)
