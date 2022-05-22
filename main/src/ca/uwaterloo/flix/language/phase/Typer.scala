@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
-import ca.uwaterloo.flix.language.ast.Symbol.KindedTypeVarSym
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
@@ -228,8 +227,8 @@ object Typer {
           ///
           val initialSubst = getSubstFromParams(fparams0)
 
-          run(initialSubst) match {
-            case Ok((subst0, (partialTconstrs, partialType))) =>
+          run(initialSubst, Map.empty) match { // TODO renv
+            case Ok((subst0, renv0, (partialTconstrs, partialType))) =>
 
               // propogate the type variable names
               val subst = subst0.propagate
@@ -412,8 +411,8 @@ object Typer {
       // Run the type inference monad with an empty substitution.
       //
       val initialSubst = Substitution.empty
-      result.run(initialSubst).toValidation.map {
-        case (subst, _) =>
+      result.run(initialSubst, Map.empty).toValidation.map { // TODO renv
+        case (subst, _, _) =>
           val es = exps.map(reassembleExp(_, root, subst))
           TypedAst.Annotation(name, es, loc)
       }
