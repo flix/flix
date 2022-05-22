@@ -1253,101 +1253,117 @@ def flatMap06(): Bool & Impure =
         Array.sameElements(a, [1,2])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// replace                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // replace                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def replace01(): Bool & Impure =
-    let a = Array.replace(from = 3, to = 4, []);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def replace01(): Bool = region r {
+        let a = Array.replace(from = 3, to = 4, []);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def replace02(): Bool & Impure =
-    let a = Array.replace(from = 3, to = 4, [1]);
-    Array.sameElements(a, [1])
+    @test
+    def replace02(): Bool = region r {
+        let a = Array.replace(from = 3, to = 4, [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def replace03(): Bool & Impure =
-    let a = Array.replace(from = 3, to = 4, [3]);
-    Array.sameElements(a, [4])
+    @test
+    def replace03(): Bool = region r {
+        let a = Array.replace(from = 3, to = 4, [3]);
+        Array.sameElements(a, [4])
+    }
 
-@test
-def replace04(): Bool & Impure =
-    let a = Array.replace(from = 3, to = 4, [4]);
-    Array.sameElements(a, [4])
+    @test
+    def replace04(): Bool = region r {
+        let a = Array.replace(from = 3, to = 4, [4]);
+        Array.sameElements(a, [4])
+    }
 
-@test
-def replace05(): Bool & Impure =
-    let a = Array.replace(from = 3, to = 4, [1, 2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def replace05(): Bool = region r {
+        let a = Array.replace(from = 3, to = 4, [1, 2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def replace06(): Bool & Impure =
-    let a = Array.replace(from = 3, to = 4, [1,3]);
-    Array.sameElements(a, [1,4])
+    @test
+    def replace06(): Bool = region r {
+        let a = Array.replace(from = 3, to = 4, [1,3]);
+        Array.sameElements(a, [1,4])
+    }
 
-@test
-def replace07(): Bool & Impure =
-    let a = Array.replace(from = 3, to = 4, [3,4]);
-    Array.sameElements(a, [4,4])
+    @test
+    def replace07(): Bool = region r {
+        let a = Array.replace(from = 3, to = 4, [3,4]);
+        Array.sameElements(a, [4,4])
+    }
 
-@test
-def replace08(): Bool & Impure =
-    let a = Array.replace(from = 3, to = 4, [3,3]);
-    Array.sameElements(a, [4,4])
+    @test
+    def replace08(): Bool = region r {
+        let a = Array.replace(from = 3, to = 4, [3,3]);
+        Array.sameElements(a, [4,4])
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// replace!                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // replace!                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def replace01!(): Bool & Impure =
-    let a: Array[Int32] = [];
-    Array.replace!(from = 3, to = 4, a);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def replace01!(): Bool = region r {
+        let a: ScopedArray[Int32, _] = [];
+        Array.replace!(from = 3, to = 4, a);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def replace02!(): Bool & Impure =
-    let a = [1];
-    Array.replace!(from = 3, to = 4, a);
-    Array.sameElements(a, [1])
+    @test
+    def replace02!(): Bool = region r {
+        let a = [1];
+        Array.replace!(from = 3, to = 4, a);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def replace03!(): Bool & Impure =
-    let a = [3];
-    Array.replace!(from = 3, to = 4, a);
-    Array.sameElements(a, [4])
+    @test
+    def replace03!(): Bool = region r {
+        let a = [3];
+        Array.replace!(from = 3, to = 4, a);
+        Array.sameElements(a, [4])
+    }
 
-@test
-def replace04!(): Bool & Impure =
-    let a = [4];
-    Array.replace!(from = 3, to = 4, a);
-    Array.sameElements(a, [4])
+    @test
+    def replace04!(): Bool = region r {
+        let a = [4];
+        Array.replace!(from = 3, to = 4, a);
+        Array.sameElements(a, [4])
+    }
 
-@test
-def replace05!(): Bool & Impure =
-    let a = [1, 2];
-    Array.replace!(from = 3, to = 4, a);
-    Array.sameElements(a, [1,2])
+    @test
+    def replace05!(): Bool = region r {
+        let a = [1, 2];
+        Array.replace!(from = 3, to = 4, a);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def replace06!(): Bool & Impure =
-    let a = [1,3];
-    Array.replace!(from = 3, to = 4, a);
-    Array.sameElements(a, [1,4])
+    @test
+    def replace06!(): Bool = region r {
+        let a = [1,3];
+        Array.replace!(from = 3, to = 4, a);
+        Array.sameElements(a, [1,4])
+    }
 
-@test
-def replace07!(): Bool & Impure =
-    let a = [3,4];
-    Array.replace!(from = 3, to = 4, a);
-    Array.sameElements(a, [4,4])
+    @test
+    def replace07!(): Bool = region r {
+        let a = [3,4];
+        Array.replace!(from = 3, to = 4, a);
+        Array.sameElements(a, [4,4])
+    }
 
-@test
-def replace08!(): Bool & Impure =
-    let a = [3,3];
-    Array.replace!(from = 3, to = 4, a);
-    Array.sameElements(a, [4,4])
+    @test
+    def replace08!(): Bool = region r {
+        let a = [3,3];
+        Array.replace!(from = 3, to = 4, a);
+        Array.sameElements(a, [4,4])
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // patch                                                                   //

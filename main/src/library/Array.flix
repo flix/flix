@@ -519,14 +519,14 @@ namespace Array {
     /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def replace(from: {from :: a}, to: {to :: a}, a: Array[a]): Array[a] & Impure with Eq[a] =
+    pub def replace(from: {from :: a}, to: {to :: a}, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } with Eq[a] =
         map(e -> if (e == from.from) to.to else e, a)
 
     ///
     /// Replace every occurrence of `from` by `to` in the array `a`, mutating it in place.
     ///
     @Time(length(a)) @Space(1)
-    pub def replace!(from: {from :: a}, to: {to :: a}, a: Array[a]): Unit & Impure with Eq[a] =
+    pub def replace!(from: {from :: a}, to: {to :: a}, a: ScopedArray[a, r]): Unit \ { Read(r), Write(r) } with Eq[a] =
         transform!(e -> if (e == from.from) to.to else e, a)
 
     ///
