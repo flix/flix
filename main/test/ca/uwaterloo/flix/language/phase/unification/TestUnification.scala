@@ -28,6 +28,7 @@ class TestUnification extends FunSuite with TestUtils {
   implicit val flix: Flix = new Flix()
 
   val loc: SourceLocation = SourceLocation.Unknown
+  val renv: Map[Symbol.KindedTypeVarSym, Rigidity] = Map.empty
 
   /////////////////////////////////////////////////////////////////////////////
   // Substitutions                                                           //
@@ -344,13 +345,13 @@ class TestUnification extends FunSuite with TestUtils {
 
   test("unifyM.01") {
     val subst0 = Substitution.empty
-    val result = Unification.unifyTypeM(Type.Bool, Type.Bool, loc).run(subst0)
+    val result = Unification.unifyTypeM(Type.Bool, Type.Bool, loc).run(subst0, renv) // TODO renv
     assert(isOk(result))
   }
 
   test("unifyM.02") {
     val subst0 = Substitution.empty
-    val result = Unification.unifyTypeM(Type.Bool, Type.Char, loc).run(subst0)
+    val result = Unification.unifyTypeM(Type.Bool, Type.Char, loc).run(subst0, renv) // TODO renv
     assert(!isOk(result))
   }
 
@@ -358,8 +359,8 @@ class TestUnification extends FunSuite with TestUtils {
     val tpe1 = Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)
     val tpe2 = Type.Bool
     val subst0 = Substitution.empty
-    val result = Unification.unifyTypeM(tpe1, tpe2, loc).run(subst0)
-    val (subst, tpe) = result.get
+    val result = Unification.unifyTypeM(tpe1, tpe2, loc).run(subst0, renv) // TODO renv
+    val (subst, _, tpe) = result.get
     assertResult(Type.Bool)(subst(tpe1))
     assertResult(Type.Bool)(subst(tpe2))
     assertResult(Type.Bool)(tpe)
@@ -369,7 +370,7 @@ class TestUnification extends FunSuite with TestUtils {
     val subst0 = Substitution.empty
     val res1 = Unification.unifyTypeM(Type.Bool, Type.Bool, loc)
     val res2 = Unification.unifyTypeM(Type.Char, Type.Char, loc)
-    val result = seqM(List(res1, res2)).run(subst0)
+    val result = seqM(List(res1, res2)).run(subst0, renv) // TODO renv
     assert(isOk(result))
   }
 
@@ -377,7 +378,7 @@ class TestUnification extends FunSuite with TestUtils {
     val subst0 = Substitution.empty
     val res1 = Unification.unifyTypeM(Type.Bool, Type.Char, loc)
     val res2 = Unification.unifyTypeM(Type.Bool, Type.Char, loc)
-    val result = seqM(List(res1, res2)).run(subst0)
+    val result = seqM(List(res1, res2)).run(subst0, renv) // TODO renv
     assert(!isOk(result))
   }
 
@@ -386,8 +387,8 @@ class TestUnification extends FunSuite with TestUtils {
     val res1 = Unification.unifyTypeM(Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc), Type.Bool, loc)
     val res2 = Unification.unifyTypeM(Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc), Type.Char, loc)
     val res3 = Unification.unifyTypeM(Type.KindedVar(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc), Type.mkTuple(List(Type.KindedVar(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc), Type.KindedVar(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc), loc)), loc), loc)
-    val result = seqM(List(res1, res2, res3)).run(subst0)
-    val (subst, tpe) = result.get
+    val result = seqM(List(res1, res2, res3)).run(subst0, renv) // TODO renv
+    val (subst, _, _) = result.get
     assertResult(Type.Bool)(subst.m(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc)))
     assertResult(Type.Char)(subst.m(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc)))
     assertResult(Type.mkTuple(List(Type.Bool, Type.Char), loc))(subst.m(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, Rigidity.Flexible, loc)))
