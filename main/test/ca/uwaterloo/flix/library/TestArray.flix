@@ -2430,28 +2430,34 @@ def intercalate07(): Bool & Impure =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def product01(): Bool & Impure =
+    def product01(): Bool = region r {
         Array.product([]) == 0
+    }
 
     @test
-    def product02(): Bool & Impure =
+    def product02(): Bool = region r {
         Array.product([1]) == 1
+    }
 
     @test
-    def product03(): Bool & Impure =
+    def product03(): Bool = region r {
         Array.product([1, 2, 3]) == 6
+    }
 
     @test
-    def product04(): Bool & Impure =
+    def product04(): Bool = region r {
         Array.product([1, 2, 3, -3]) == -18
+    }
 
     @test
-    def product05(): Bool & Impure =
+    def product05(): Bool = region r {
         Array.product([-1, -2, -3, -4]) == 24
+    }
 
     @test
-    def product06(): Bool & Impure =
+    def product06(): Bool = region r {
         Array.product([10, -10]) == -100
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2459,28 +2465,34 @@ def intercalate07(): Bool & Impure =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def productWith01(): Bool & Impure =
+    def productWith01(): Bool = region r {
         Array.productWith(x -> x + 1, []) == 0
+    }
 
     @test
-    def productWith02(): Bool & Impure =
+    def productWith02(): Bool = region r {
         Array.productWith(x -> x + 1, [1]) == 2
+    }
 
     @test
-    def productWith03(): Bool & Impure =
+    def productWith03(): Bool = region r {
         Array.productWith(x -> x + 1, [1, 2, 3]) == 24
+    }
 
     @test
-    def productWith04(): Bool & Impure =
+    def productWith04(): Bool = region r {
         Array.productWith(x -> x + 1, [1, 2, 3, -3]) == -48
+    }
 
     @test
-    def productWith05(): Bool & Impure =
+    def productWith05(): Bool = region r {
         Array.productWith(x -> x + 1, [-2, -3, -4, -5]) == 24
+    }
 
     @test
-    def productWith06(): Bool & Impure =
+    def productWith06(): Bool = region r {
         Array.productWith(x -> x + 1, [10, -10]) == -99
+    }
 
 
 /////////////////////////////////////////////////////////////////////////////

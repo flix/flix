@@ -857,7 +857,7 @@ namespace Array {
     ///
     /// Returns the product of all elements in the array `a`.
     ///
-    pub def product(a: Array[Int32]): Int32 & Impure =
+    pub def product(a: ScopedArray[Int32, r]): Int32 \ Read(r) =
         if (isEmpty(a))
             0
         else
@@ -866,7 +866,7 @@ namespace Array {
     ///
     /// Returns the product of all elements in the array `a` according to the function `f`.
     ///
-    pub def productWith(f: a -> Int32 & ef, a: Array[a]): Int32 & Impure =
+    pub def productWith(f: a -> Int32 & ef, a: ScopedArray[a, r]): Int32 \ { ef, Read(r) } =
         if (isEmpty(a))
             0
         else
