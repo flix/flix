@@ -23,24 +23,23 @@ namespace Test/Exp/Effect {
 
     // @test
     pub def perform01(): Bool = {
-        do Fail.fail(":(")
+        do Test/Exp/Effect/Fail.fail(":(")
     }
 
     // @test
     pub def perform02(): Bool = {
         try {
-            let x = do Console.readln();
-            let y = do Console.readln();
-            x == y
+            do Test/Exp/Effect/Console.println("hi");
+            do Test/Exp/Effect/Console.println("bye");
+            true
         } with Console {
-            def readln() = resume("hello")
             def println(_) = resume()
         }
     }
 
     // @test
     pub def handlePerform01(): Bool = {
-        try do Fail.fail("rats") with Fail {
+        try do Test/Exp/Effect/Fail.fail("rats") with Fail {
             def fail(_) = true
         }
     }
@@ -48,55 +47,10 @@ namespace Test/Exp/Effect {
     // @test
     pub def handlePerform02(): Bool = {
         try {
-            let _ = do Console.readln();
+            let _ = do Test/Exp/Effect/Console.println("It was the best of times");
             true
         } with Console {
-            def readln() = "read"
             def println(_) = resume()
-        }
-    }
-
-    // @test
-    pub def handlePerform03(): Bool = {
-        // drunken coin flip: flip a coin to see if we can flip a coin
-        try {
-            try {
-                let caught = do Flip.flip();
-                if (caught) {
-                    Fail.fail("dropped the coin :(")
-                } else {
-                    do Flip.flip()
-                }
-            } with Flip {
-                def flip() = resume(true)
-            }
-        } with Fail {
-            def fail(_) = false
-        }
-    }
-
-    // @test
-    pub def handlePerform04(): Bool = {
-        // flaky failure: flip a coin to see if we recover
-        try {
-            try {
-                try {
-                    do Fail.fail("oh no!")
-                } with Fail {
-                    def fail(msg) = {
-                        let reallyFail = do Flip.flip();
-                        if (reallyFail) {
-                            do Fail.fail(msg)
-                        } else {
-                            ()
-                        }
-                    }
-                }
-            } with Flip {
-                def flip() = resume(false)
-            }
-        } with Fail {
-            def fail(_) = false
         }
     }
 

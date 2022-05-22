@@ -461,10 +461,10 @@ namespace Array {
     /// Rotate the contents of array `arr` by `n` steps to the left.
     ///
     @Time(n) @Space(length(arr))
-    pub def rotateLeft(n: Int32, arr: Array[a]): Array[a] & Impure =
+    pub def rotateLeft(n: Int32, arr: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         let len = length(arr);
         if (len < 1)
-            []
+            [] @ Scoped.regionOf(arr)
         else
             if (n < 0)
                 rotateRightHelper(Int32.abs(n), arr)
@@ -478,18 +478,18 @@ namespace Array {
     ///
     /// This is an explicit helper to avoid code duplication.
     ///
-    def rotateLeftHelper(n: Int32, arr: Array[a]): Array[a] & Impure =
+    def rotateLeftHelper(n: Int32, arr: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         let len = length(arr);
         let f = i -> { let i1 = n + i; arr[i1 rem len] };
-        init(f, len, static)
+        init(f, len, Scoped.regionOf(arr))
 
     ///
     /// Rotate the contents of array `arr` by `n` steps to the right.
     ///
     @Time(n) @Space(length(arr))
-    pub def rotateRight(n: Int32, arr: Array[a]): Array[a] & Impure =
+    pub def rotateRight(n: Int32, arr: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         if (length(arr) < 1)
-            []
+            [] @ Scoped.regionOf(arr)
         else
             if (n < 0)
                 rotateLeftHelper(Int32.abs(n), arr)
@@ -503,12 +503,12 @@ namespace Array {
     ///
     /// This is an explicit helper to avoid code duplication.
     ///
-    def rotateRightHelper(n: Int32, a: Array[a]): Array[a] & Impure =
+    def rotateRightHelper(n: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
         let n1 = n rem len;
         let start = len - n1;
         let f = i -> { let i1 = start + i; a[i1 rem len]};
-        init(f, len, static)
+        init(f, len, Scoped.regionOf(a))
 
     ///
     /// Returns a copy of `a` with the element at index `i` replaced by `x`.
@@ -516,9 +516,9 @@ namespace Array {
     /// Returns a shallow copy of `a` if `i < 0` or `i > length(xs)-1`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def update(i: Int32, x: a, a: Array[a]): Array[a] & Impure =
+    pub def update(i: Int32, x: a, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         let f = ix -> if (ix == i) x else a[ix];
-        init(f, length(a), static)
+        init(f, length(a), Scoped.regionOf(a))
 
     ///
     /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
@@ -542,10 +542,10 @@ namespace Array {
     /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
     ///
     @Time(n) @Space(length(b))
-    pub def patch(i: Int32, n: Int32, a: Array[a], b: Array[a]): Array[a] & Impure =
+    pub def patch(i: Int32, n: Int32, a: ScopedArray[a, r1], b: ScopedArray[a, r2]): ScopedArray[a, r2] \ { Read(r1, r2), Write(r2) } =
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
-        let sub = slice(0, size, a);
+        let sub = copyOfRange(0, size, a, Scoped.regionOf(b));
         updateSequence(i, sub, b)
 
     ///
@@ -556,10 +556,10 @@ namespace Array {
     /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
     ///
     @Time(n) @Space(1)
-    pub def patch!(i: Int32, n: Int32, a: Array[a], b: Array[a]): Unit & Impure =
+    pub def patch!(i: Int32, n: Int32, a: ScopedArray[a, r1], b: ScopedArray[a, r2]): Unit \ { Read(r1), Write(r2) } =
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
-        let sub = slice(0, size, a);
+        let sub = copyOfRange(0, size, a, Scoped.regionOf(b));
         updateSequence!(i, sub, b)
 
     ///
@@ -1488,10 +1488,10 @@ namespace Array {
     /// Returns a copy of `a` with the elements starting at index `i` replaced by `sub`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def updateSequence(i: Int32, sub: Array[a], a: Array[a]): Array[a] & Impure =
+    pub def updateSequence(i: Int32, sub: ScopedArray[a, r1], a: ScopedArray[a, r2]): ScopedArray[a, r2] \ { Read(r1, r2), Write(r2) } =
         let end = i + length(sub);
         let f = ix -> if (ix >= i and ix < end) sub[ix - i] else a[ix];
-        init(f, length(a), static)
+        init(f, length(a), Scoped.regionOf(a))
 
     ///
     /// Update the mutable array `a` with the elements starting at index `i` replaced by `sub`.

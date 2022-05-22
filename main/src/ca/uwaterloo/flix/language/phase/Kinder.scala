@@ -532,6 +532,12 @@ object Kinder {
         case (exp, rules) => KindedAst.Expression.TryCatch(exp, rules, loc)
       }
 
+    // TODO handle these
+    case ResolvedAst.Expression.Without(_, _, loc) => KindedAst.Expression.Hole(Symbol.mkHoleSym("Without"), Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
+    case ResolvedAst.Expression.TryWith(_, _, _, loc) => KindedAst.Expression.Hole(Symbol.mkHoleSym("TryWith"), Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
+    case ResolvedAst.Expression.Do(_, _, loc) => KindedAst.Expression.Hole(Symbol.mkHoleSym("Do"), Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
+    case ResolvedAst.Expression.Resume(_, loc) => KindedAst.Expression.Hole(Symbol.mkHoleSym("Resume"), Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
+
     case ResolvedAst.Expression.InvokeConstructor(constructor, args0, loc) =>
       val argsVal = traverse(args0)(visitExp(_, kenv, taenv, root))
       mapN(argsVal) {
