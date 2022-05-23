@@ -441,80 +441,122 @@ def indices07(): Bool & Impure =
     let a = Array.indices(1, [1,1]);
     Array.sameElements(a, [0,1])
 
-/////////////////////////////////////////////////////////////////////////////
-// find                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // find                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def find01(): Bool & Impure = Array.find(i -> i > 2, []: Array[Int32]) == None
+    @test
+    def find01(): Bool = region r {
+        Array.find(i -> i > 2, []) == None
+    }
 
-@test
-def find02(): Bool & Impure = Array.find(i -> i > 2, [1]) == None
+    @test
+    def find02(): Bool = region r {
+        Array.find(i -> i > 2, [1]) == None
+    }
 
-@test
-def find03(): Bool & Impure = Array.find(i -> i > 2, [3]) == Some(3)
+    @test
+    def find03(): Bool = region r {
+        Array.find(i -> i > 2, [3]) == Some(3)
+    }
 
-@test
-def find04(): Bool & Impure = Array.find(i -> i > 2, [1,2]) == None
+    @test
+    def find04(): Bool = region r {
+        Array.find(i -> i > 2, [1,2]) == None
+    }
 
-@test
-def find05(): Bool & Impure = Array.find(i -> i > 2, [6,-6]) == Some(6)
+    @test
+    def find05(): Bool = region r {
+        Array.find(i -> i > 2, [6,-6]) == Some(6)
+    }
 
-@test
-def find06(): Bool & Impure = Array.find(i -> i > 2, [-6,6]) == Some(6)
+    @test
+    def find06(): Bool = region r {
+        Array.find(i -> i > 2, [-6,6]) == Some(6)
+    }
 
-@test
-def find07(): Bool & Impure = Array.find(i -> i > 2, [6,7]) == Some(6)
+    @test
+    def find07(): Bool = region r {
+        Array.find(i -> i > 2, [6,7]) == Some(6)
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// findLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // findLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def findLeft01(): Bool & Impure = Array.findLeft(i -> i > 2, []) == None
+    @test
+    def findLeft01(): Bool = region r {
+        Array.findLeft(i -> i > 2, []) == None
+    }
 
-@test
-def findLeft02(): Bool & Impure = Array.findLeft(i -> i > 2, [1]) == None
+    @test
+    def findLeft02(): Bool = region r {
+        Array.findLeft(i -> i > 2, [1]) == None
+    }
 
-@test
-def findLeft03(): Bool & Impure = Array.findLeft(i -> i > 2, [3]) == Some(3)
+    @test
+    def findLeft03(): Bool = region r {
+        Array.findLeft(i -> i > 2, [3]) == Some(3)
+    }
 
-@test
-def findLeft04(): Bool & Impure = Array.findLeft(i -> i > 2, [1,2]) == None
+    @test
+    def findLeft04(): Bool = region r {
+        Array.findLeft(i -> i > 2, [1,2]) == None
+    }
 
-@test
-def findLeft05(): Bool & Impure = Array.findLeft(i -> i > 2, [6,-6]) == Some(6)
+    @test
+    def findLeft05(): Bool = region r {
+        Array.findLeft(i -> i > 2, [6,-6]) == Some(6)
+    }
 
-@test
-def findLeft06(): Bool & Impure = Array.findLeft(i -> i > 2, [-6,6]) == Some(6)
+    @test
+    def findLeft06(): Bool = region r {
+        Array.findLeft(i -> i > 2, [-6,6]) == Some(6)
+    }
 
-@test
-def findLeft07(): Bool & Impure = Array.findLeft(i -> i > 2, [6,7]) == Some(6)
+    @test
+    def findLeft07(): Bool = region r {
+        Array.findLeft(i -> i > 2, [6,7]) == Some(6)
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// findRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // findRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def findRight01(): Bool & Impure = Array.findRight(i -> i > 2, []: Array[Int32]) == None
+    @test
+    def findRight01(): Bool = region r {
+        Array.findRight(i -> i > 2, []) == None
+    }
 
-@test
-def findRight02(): Bool & Impure = Array.findRight(i -> i > 2, [1]) == None
+    @test
+    def findRight02(): Bool = region r {
+        Array.findRight(i -> i > 2, [1]) == None
+    }
 
-@test
-def findRight03(): Bool & Impure = Array.findRight(i -> i > 2, [3]) == Some(3)
+    @test
+    def findRight03(): Bool = region r {
+        Array.findRight(i -> i > 2, [3]) == Some(3)
+    }
 
-@test
-def findRight04(): Bool & Impure = Array.findRight(i -> i > 2, [1,2]) == None
+    @test
+    def findRight04(): Bool = region r {
+        Array.findRight(i -> i > 2, [1,2]) == None
+    }
 
-@test
-def findRight05(): Bool & Impure = Array.findRight(i -> i > 2, [6,-6]) == Some(6)
+    @test
+    def findRight05(): Bool = region r {
+        Array.findRight(i -> i > 2, [6,-6]) == Some(6)
+    }
 
-@test
-def findRight06(): Bool & Impure = Array.findRight(i -> i > 2, [-6,6]) == Some(6)
+    @test
+    def findRight06(): Bool = region r {
+        Array.findRight(i -> i > 2, [-6,6]) == Some(6)
+    }
 
-@test
-def findRight07(): Bool & Impure = Array.findRight(i -> i > 2, [6,7]) == Some(7)
+    @test
+    def findRight07(): Bool = region r {
+        Array.findRight(i -> i > 2, [6,7]) == Some(7)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // range                                                                   //
@@ -1211,101 +1253,117 @@ def flatMap06(): Bool & Impure =
         Array.sameElements(a, [1,2])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// replace                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // replace                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def replace01(): Bool & Impure =
-    let a = Array.replace(from = 3, to = 4, []);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def replace01(): Bool = region r {
+        let a = Array.replace(from = 3, to = 4, []);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def replace02(): Bool & Impure =
-    let a = Array.replace(from = 3, to = 4, [1]);
-    Array.sameElements(a, [1])
+    @test
+    def replace02(): Bool = region r {
+        let a = Array.replace(from = 3, to = 4, [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def replace03(): Bool & Impure =
-    let a = Array.replace(from = 3, to = 4, [3]);
-    Array.sameElements(a, [4])
+    @test
+    def replace03(): Bool = region r {
+        let a = Array.replace(from = 3, to = 4, [3]);
+        Array.sameElements(a, [4])
+    }
 
-@test
-def replace04(): Bool & Impure =
-    let a = Array.replace(from = 3, to = 4, [4]);
-    Array.sameElements(a, [4])
+    @test
+    def replace04(): Bool = region r {
+        let a = Array.replace(from = 3, to = 4, [4]);
+        Array.sameElements(a, [4])
+    }
 
-@test
-def replace05(): Bool & Impure =
-    let a = Array.replace(from = 3, to = 4, [1, 2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def replace05(): Bool = region r {
+        let a = Array.replace(from = 3, to = 4, [1, 2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def replace06(): Bool & Impure =
-    let a = Array.replace(from = 3, to = 4, [1,3]);
-    Array.sameElements(a, [1,4])
+    @test
+    def replace06(): Bool = region r {
+        let a = Array.replace(from = 3, to = 4, [1,3]);
+        Array.sameElements(a, [1,4])
+    }
 
-@test
-def replace07(): Bool & Impure =
-    let a = Array.replace(from = 3, to = 4, [3,4]);
-    Array.sameElements(a, [4,4])
+    @test
+    def replace07(): Bool = region r {
+        let a = Array.replace(from = 3, to = 4, [3,4]);
+        Array.sameElements(a, [4,4])
+    }
 
-@test
-def replace08(): Bool & Impure =
-    let a = Array.replace(from = 3, to = 4, [3,3]);
-    Array.sameElements(a, [4,4])
+    @test
+    def replace08(): Bool = region r {
+        let a = Array.replace(from = 3, to = 4, [3,3]);
+        Array.sameElements(a, [4,4])
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// replace!                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // replace!                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def replace01!(): Bool & Impure =
-    let a: Array[Int32] = [];
-    Array.replace!(from = 3, to = 4, a);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def replace01!(): Bool = region r {
+        let a: ScopedArray[Int32, _] = [];
+        Array.replace!(from = 3, to = 4, a);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def replace02!(): Bool & Impure =
-    let a = [1];
-    Array.replace!(from = 3, to = 4, a);
-    Array.sameElements(a, [1])
+    @test
+    def replace02!(): Bool = region r {
+        let a = [1];
+        Array.replace!(from = 3, to = 4, a);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def replace03!(): Bool & Impure =
-    let a = [3];
-    Array.replace!(from = 3, to = 4, a);
-    Array.sameElements(a, [4])
+    @test
+    def replace03!(): Bool = region r {
+        let a = [3];
+        Array.replace!(from = 3, to = 4, a);
+        Array.sameElements(a, [4])
+    }
 
-@test
-def replace04!(): Bool & Impure =
-    let a = [4];
-    Array.replace!(from = 3, to = 4, a);
-    Array.sameElements(a, [4])
+    @test
+    def replace04!(): Bool = region r {
+        let a = [4];
+        Array.replace!(from = 3, to = 4, a);
+        Array.sameElements(a, [4])
+    }
 
-@test
-def replace05!(): Bool & Impure =
-    let a = [1, 2];
-    Array.replace!(from = 3, to = 4, a);
-    Array.sameElements(a, [1,2])
+    @test
+    def replace05!(): Bool = region r {
+        let a = [1, 2];
+        Array.replace!(from = 3, to = 4, a);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def replace06!(): Bool & Impure =
-    let a = [1,3];
-    Array.replace!(from = 3, to = 4, a);
-    Array.sameElements(a, [1,4])
+    @test
+    def replace06!(): Bool = region r {
+        let a = [1,3];
+        Array.replace!(from = 3, to = 4, a);
+        Array.sameElements(a, [1,4])
+    }
 
-@test
-def replace07!(): Bool & Impure =
-    let a = [3,4];
-    Array.replace!(from = 3, to = 4, a);
-    Array.sameElements(a, [4,4])
+    @test
+    def replace07!(): Bool = region r {
+        let a = [3,4];
+        Array.replace!(from = 3, to = 4, a);
+        Array.sameElements(a, [4,4])
+    }
 
-@test
-def replace08!(): Bool & Impure =
-    let a = [3,3];
-    Array.replace!(from = 3, to = 4, a);
-    Array.sameElements(a, [4,4])
+    @test
+    def replace08!(): Bool = region r {
+        let a = [3,3];
+        Array.replace!(from = 3, to = 4, a);
+        Array.sameElements(a, [4,4])
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // patch                                                                   //
@@ -1679,34 +1737,39 @@ def replace08!(): Bool & Impure =
         Array.sameElements(a, [-2, -3, -4, -5, -6, -7, -8])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// intersperse                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // intersperse                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def intersperse01(): Bool & Impure =
-    let a = Array.intersperse(11, []);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def intersperse01(): Bool = region r {
+        let a = Array.intersperse(11, []);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def intersperse02(): Bool & Impure =
-    let a = Array.intersperse(11, [1]);
-    Array.sameElements(a, [1])
+    @test
+    def intersperse02(): Bool = region r {
+        let a = Array.intersperse(11, [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def intersperse03(): Bool & Impure =
-    let a = Array.intersperse(11, [1,2]);
-    Array.sameElements(a, [1,11,2])
+    @test
+    def intersperse03(): Bool = region r {
+        let a = Array.intersperse(11, [1,2]);
+        Array.sameElements(a, [1,11,2])
+    }
 
-@test
-def intersperse04(): Bool & Impure =
-    let a = Array.intersperse(11, [1,2,3]);
-    Array.sameElements(a, [1,11,2,11,3])
+    @test
+    def intersperse04(): Bool = region r {
+        let a = Array.intersperse(11, [1,2,3]);
+        Array.sameElements(a, [1,11,2,11,3])
+    }
 
-@test
-def intersperse05(): Bool & Impure =
-    let a = Array.intersperse(11, [1,2,3,4]);
-    Array.sameElements(a, [1,11,2,11,3,11,4])
+    @test
+    def intersperse05(): Bool = region r {
+        let a = Array.intersperse(11, [1,2,3,4]);
+        Array.sameElements(a, [1,11,2,11,3,11,4])
+    }
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1748,270 +1811,370 @@ def intercalate07(): Bool & Impure =
     let a = Array.intercalate([11,12,13], [[1],[2,3],[4]]);
     Array.sameElements(a, [1,11,12,13,2,3,11,12,13,4])
 
-/////////////////////////////////////////////////////////////////////////////
-// transpose                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def transpose01(): Bool & Impure =
-    let a = Array.transpose([]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b: List[List[Unit]] == Nil
-
-@test
-def transpose02(): Bool & Impure =
-    let a: Array[Array[Int32]] = Array.transpose([[]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == Nil :: Nil
-
-@test
-def transpose03(): Bool & Impure =
-    let a: Array[Array[Int32]] = Array.transpose([[], []]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == Nil :: Nil :: Nil
-
-@test
-def transpose04(): Bool & Impure =
-    let a: Array[Array[Int32]] = Array.transpose([[], [], []]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == Nil :: Nil :: Nil :: Nil
-
-@test
-def transpose05(): Bool & Impure =
-    let a = Array.transpose([ [1] ]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: Nil) :: Nil
-
-@test
-def transpose06(): Bool & Impure =
-    let a = Array.transpose([[1,2]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: Nil) :: (2 :: Nil) :: Nil
-
-@test
-def transpose07(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: Nil
-
-@test
-def transpose08(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3, 4]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: (4 :: Nil) :: Nil
-
-@test
-def transpose09(): Bool & Impure =
-    let a = Array.transpose([[1], [2]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b ==   (1 :: 2 :: Nil) :: Nil
-
-@test
-def transpose10(): Bool & Impure =
-    let a = Array.transpose([[1], [2], [3]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b ==  (1 :: 2 :: 3 :: Nil) :: Nil
-
-@test
-def transpose11(): Bool & Impure =
-    let a = Array.transpose([[1], [2], [3], [4]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 2 :: 3 :: 4 :: Nil) :: Nil
-
-@test
-def transpose12(): Bool & Impure =
-    let a = Array.transpose([[1, 2], [3, 4]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 3 :: Nil) :: (2 :: 4 :: Nil) :: Nil
-
-@test
-def transpose13(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3], [4, 5, 6]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 4 :: Nil) :: (2 :: 5 :: Nil) :: (3 :: 6 :: Nil) :: Nil
-
-@test
-def transpose14(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3, 4], [5, 6, 7, 8]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 5 :: Nil) :: (2 :: 6 :: Nil) :: (3 :: 7 :: Nil) :: (4 :: 8 :: Nil) :: Nil
-
-@test
-def transpose15(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 6 :: Nil) :: (2 :: 7 :: Nil) :: (3 :: 8 :: Nil) :: (4 :: 9 :: Nil) :: (5 :: 10 :: Nil) :: Nil
-
-@test
-def transpose16(): Bool & Impure =
-    let a = Array.transpose([[1, 2], [3, 4], [5, 6]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 3 :: 5 :: Nil) :: (2 :: 4 :: 6 :: Nil) :: Nil
-
-@test
-def transpose17(): Bool & Impure =
-    let a = Array.transpose([[1, 2], [3, 4], [5, 6], [7,8]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 3 :: 5 :: 7 :: Nil) :: (2 :: 4 :: 6 :: 8 :: Nil) :: Nil
-
-@test
-def transpose18(): Bool & Impure =
-    let a = Array.transpose([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 3 :: 5 :: 7 :: 9 :: Nil) :: (2 :: 4 :: 6 :: 8 :: 10 :: Nil) :: Nil
-
-@test
-def transpose19(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3], [4, 5, 6], [7, 8, 9]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 4 :: 7 :: Nil) :: (2 :: 5 :: 8 :: Nil) :: (3 :: 6 :: 9 :: Nil) :: Nil
-
-@test
-def transpose20(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3], [4, 5], [7, 8, 9]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: Nil) :: (7 :: 8 :: 9 :: Nil) :: Nil
-
-@test
-def transpose21(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3], [], [7, 8, 9]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 2 :: 3 :: Nil) :: Nil :: (7 :: 8 :: 9 :: Nil) :: Nil
-
-@test
-def transpose22(): Bool & Impure =
-    let a = Array.transpose([[1, 2, 3], [4, 5, 6], [7, 8, 9, 10]]);
-    let b = Array.toList(a) |> List.map(Array.toList);
-    b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: (7 :: 8 :: 9 :: 10 :: Nil) :: Nil
-
-/////////////////////////////////////////////////////////////////////////////
-// isPrefixOf                                                              //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def isPrefixOf01(): Bool & Impure = Array.isPrefixOf([]: Array[Int32], []: Array[Int32])
-
-@test
-def isPrefixOf02(): Bool & Impure = Array.isPrefixOf([1], []: Array[Int32]) == false
-
-@test
-def isPrefixOf03(): Bool & Impure = Array.isPrefixOf([]: Array[Int32], [1])
-
-@test
-def isPrefixOf04(): Bool & Impure = Array.isPrefixOf([1], [1])
-
-@test
-def isPrefixOf05(): Bool & Impure = Array.isPrefixOf([2], [1]) == false
-
-@test
-def isPrefixOf06(): Bool & Impure = Array.isPrefixOf([1,2], [1]) == false
-
-@test
-def isPrefixOf07(): Bool & Impure = Array.isPrefixOf([]: Array[Int32], [1,2])
-
-@test
-def isPrefixOf08(): Bool & Impure = Array.isPrefixOf([1], [1,2])
-
-@test
-def isPrefixOf09(): Bool & Impure = Array.isPrefixOf([2], [1,2]) == false
-
-@test
-def isPrefixOf10(): Bool & Impure = Array.isPrefixOf([1,2], [1,2])
-
-@test
-def isPrefixOf11(): Bool & Impure = Array.isPrefixOf([1,3], [1,2]) == false
-
-@test
-def isPrefixOf12(): Bool & Impure = Array.isPrefixOf([1,2,3], [1,2]) == false
-
-@test
-def isPrefixOf13(): Bool & Impure = Array.isPrefixOf([1,2,3], [89,11,1,2,3,4]) == false
-
-/////////////////////////////////////////////////////////////////////////////
-// isInfixOf                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def isInfixOf01(): Bool & Impure = Array.isInfixOf([]: Array[Int32], []: Array[Int32])
-
-@test
-def isInfixOf02(): Bool & Impure = Array.isInfixOf([1], []: Array[Int32]) == false
-
-@test
-def isInfixOf03(): Bool & Impure = Array.isInfixOf([]: Array[Int32], [1])
-
-@test
-def isInfixOf04(): Bool & Impure = Array.isInfixOf([1], [1])
-
-@test
-def isInfixOf05(): Bool & Impure = Array.isInfixOf([2], [1]) == false
-
-@test
-def isInfixOf06(): Bool & Impure = Array.isInfixOf([1,2], [1]) == false
-
-@test
-def isInfixOf07(): Bool & Impure = Array.isInfixOf([]: Array[Int32], [1,2])
-
-@test
-def isInfixOf08(): Bool & Impure = Array.isInfixOf([1], [1,2])
-
-@test
-def isInfixOf09(): Bool & Impure = Array.isInfixOf([2], [1,2])
-
-@test
-def isInfixOf10(): Bool & Impure = Array.isInfixOf([1,2], [1,2])
-
-@test
-def isInfixOf11(): Bool & Impure = Array.isInfixOf([1,3], [1,2]) == false
-
-@test
-def isInfixOf12(): Bool & Impure = Array.isInfixOf([1,2,3], [1,2]) == false
-
-@test
-def isInfixOf13(): Bool & Impure = Array.isInfixOf([1,2,3], [89,11,1,2,3,4])
-
-/////////////////////////////////////////////////////////////////////////////
-// isSuffixOf                                                              //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def isSuffixOf01(): Bool & Impure = Array.isSuffixOf([]: Array[Int32], []: Array[Int32])
-
-@test
-def isSuffixOf02(): Bool & Impure = Array.isSuffixOf([1], []: Array[Int32]) == false
-
-@test
-def isSuffixOf03(): Bool & Impure = Array.isSuffixOf([]: Array[Int32], [1])
-
-@test
-def isSuffixOf04(): Bool & Impure = Array.isSuffixOf([1], [1])
-
-@test
-def isSuffixOf05(): Bool & Impure = Array.isSuffixOf([2], [1]) == false
-
-@test
-def isSuffixOf06(): Bool & Impure = Array.isSuffixOf([1,2], [1]) == false
-
-@test
-def isSuffixOf07(): Bool & Impure = Array.isSuffixOf([]: Array[Int32], [1,2])
-
-@test
-def isSuffixOf08(): Bool & Impure = Array.isSuffixOf([1], [1,2]) == false
-
-@test
-def isSuffixOf09(): Bool & Impure = Array.isSuffixOf([2], [1,2])
-
-@test
-def isSuffixOf10(): Bool & Impure = Array.isSuffixOf([1,2], [1,2])
-
-@test
-def isSuffixOf11(): Bool & Impure = Array.isSuffixOf([1,3], [1,2]) == false
-
-@test
-def isSuffixOf12(): Bool & Impure = Array.isSuffixOf([1,2,3], [1,2]) == false
-
-@test
-def isSuffixOf13(): Bool & Impure = Array.isSuffixOf([1,2,3], [89,11,1,2,3])
+    /////////////////////////////////////////////////////////////////////////////
+    // transpose                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def transpose01(): Bool = region r {
+        let a = Array.transpose([]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b: List[List[Unit]] == Nil
+    }
+
+    @test
+    def transpose02(): Bool = region r {
+        let a: ScopedArray[ScopedArray[Int32, _], _] = Array.transpose([[]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == Nil :: Nil
+    }
+
+    @test
+    def transpose03(): Bool = region r {
+        let a: ScopedArray[ScopedArray[Int32, _], _] = Array.transpose([[], []]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == Nil :: Nil :: Nil
+    }
+
+    @test
+    def transpose04(): Bool = region r {
+        let a: ScopedArray[ScopedArray[Int32, _], _] = Array.transpose([[], [], []]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == Nil :: Nil :: Nil :: Nil
+    }
+
+    @test
+    def transpose05(): Bool = region r {
+        let a = Array.transpose([ [1] ]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: Nil) :: Nil
+    }
+
+    @test
+    def transpose06(): Bool = region r {
+        let a = Array.transpose([[1,2]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: Nil) :: (2 :: Nil) :: Nil
+    }
+
+    @test
+    def transpose07(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: Nil
+    }
+
+    @test
+    def transpose08(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3, 4]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: (4 :: Nil) :: Nil
+    }
+
+    @test
+    def transpose09(): Bool = region r {
+        let a = Array.transpose([[1], [2]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b ==   (1 :: 2 :: Nil) :: Nil
+    }
+
+    @test
+    def transpose10(): Bool = region r {
+        let a = Array.transpose([[1], [2], [3]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b ==  (1 :: 2 :: 3 :: Nil) :: Nil
+    }
+
+    @test
+    def transpose11(): Bool = region r {
+        let a = Array.transpose([[1], [2], [3], [4]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 2 :: 3 :: 4 :: Nil) :: Nil
+    }
+
+    @test
+    def transpose12(): Bool = region r {
+        let a = Array.transpose([[1, 2], [3, 4]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 3 :: Nil) :: (2 :: 4 :: Nil) :: Nil
+    }
+
+    @test
+    def transpose13(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3], [4, 5, 6]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 4 :: Nil) :: (2 :: 5 :: Nil) :: (3 :: 6 :: Nil) :: Nil
+    }
+
+    @test
+    def transpose14(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3, 4], [5, 6, 7, 8]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 5 :: Nil) :: (2 :: 6 :: Nil) :: (3 :: 7 :: Nil) :: (4 :: 8 :: Nil) :: Nil
+    }
+
+    @test
+    def transpose15(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 6 :: Nil) :: (2 :: 7 :: Nil) :: (3 :: 8 :: Nil) :: (4 :: 9 :: Nil) :: (5 :: 10 :: Nil) :: Nil
+    }
+
+    @test
+    def transpose16(): Bool = region r {
+        let a = Array.transpose([[1, 2], [3, 4], [5, 6]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 3 :: 5 :: Nil) :: (2 :: 4 :: 6 :: Nil) :: Nil
+    }
+
+    @test
+    def transpose17(): Bool = region r {
+        let a = Array.transpose([[1, 2], [3, 4], [5, 6], [7,8]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 3 :: 5 :: 7 :: Nil) :: (2 :: 4 :: 6 :: 8 :: Nil) :: Nil
+    }
+
+    @test
+    def transpose18(): Bool = region r {
+        let a = Array.transpose([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 3 :: 5 :: 7 :: 9 :: Nil) :: (2 :: 4 :: 6 :: 8 :: 10 :: Nil) :: Nil
+    }
+
+    @test
+    def transpose19(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3], [4, 5, 6], [7, 8, 9]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 4 :: 7 :: Nil) :: (2 :: 5 :: 8 :: Nil) :: (3 :: 6 :: 9 :: Nil) :: Nil
+    }
+
+    @test
+    def transpose20(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3], [4, 5], [7, 8, 9]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: Nil) :: (7 :: 8 :: 9 :: Nil) :: Nil
+    }
+
+    @test
+    def transpose21(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3], [], [7, 8, 9]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 2 :: 3 :: Nil) :: Nil :: (7 :: 8 :: 9 :: Nil) :: Nil
+    }
+
+    @test
+    def transpose22(): Bool = region r {
+        let a = Array.transpose([[1, 2, 3], [4, 5, 6], [7, 8, 9, 10]]);
+        let b = Array.toList(a) |> List.map(Array.toList);
+        b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: (7 :: 8 :: 9 :: 10 :: Nil) :: Nil
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isPrefixOf                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def isPrefixOf01(): Bool = region r {
+        Array.isPrefixOf([]: ScopedArray[Int32, _], []: ScopedArray[Int32, _])
+    }
+
+    @test
+    def isPrefixOf02(): Bool = region r {
+        Array.isPrefixOf([1], []: ScopedArray[Int32, _]) == false
+    }
+
+    @test
+    def isPrefixOf03(): Bool = region r {
+        Array.isPrefixOf([]: ScopedArray[Int32, _], [1])
+    }
+
+    @test
+    def isPrefixOf04(): Bool = region r {
+        Array.isPrefixOf([1], [1])
+    }
+
+    @test
+    def isPrefixOf05(): Bool = region r {
+        Array.isPrefixOf([2], [1]) == false
+    }
+
+    @test
+    def isPrefixOf06(): Bool = region r {
+        Array.isPrefixOf([1,2], [1]) == false
+    }
+
+    @test
+    def isPrefixOf07(): Bool = region r {
+        Array.isPrefixOf([]: ScopedArray[Int32, _], [1,2])
+    }
+
+    @test
+    def isPrefixOf08(): Bool = region r {
+        Array.isPrefixOf([1], [1,2])
+    }
+
+    @test
+    def isPrefixOf09(): Bool = region r {
+        Array.isPrefixOf([2], [1,2]) == false
+    }
+
+    @test
+    def isPrefixOf10(): Bool = region r {
+        Array.isPrefixOf([1,2], [1,2])
+    }
+
+    @test
+    def isPrefixOf11(): Bool = region r {
+        Array.isPrefixOf([1,3], [1,2]) == false
+    }
+
+    @test
+    def isPrefixOf12(): Bool = region r {
+        Array.isPrefixOf([1,2,3], [1,2]) == false
+    }
+
+    @test
+    def isPrefixOf13(): Bool = region r {
+        Array.isPrefixOf([1,2,3], [89,11,1,2,3,4]) == false
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isInfixOf                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def isInfixOf01(): Bool = region r {
+        Array.isInfixOf([]: ScopedArray[Int32, _], []: ScopedArray[Int32, _])
+    }
+
+    @test
+    def isInfixOf02(): Bool = region r {
+        Array.isInfixOf([1], []: ScopedArray[Int32, _]) == false
+    }
+
+    @test
+    def isInfixOf03(): Bool = region r {
+        Array.isInfixOf([]: ScopedArray[Int32, _], [1])
+    }
+
+    @test
+    def isInfixOf04(): Bool = region r {
+        Array.isInfixOf([1], [1])
+    }
+
+    @test
+    def isInfixOf05(): Bool = region r {
+        Array.isInfixOf([2], [1]) == false
+    }
+
+    @test
+    def isInfixOf06(): Bool = region r {
+        Array.isInfixOf([1,2], [1]) == false
+    }
+
+    @test
+    def isInfixOf07(): Bool = region r {
+        Array.isInfixOf([]: ScopedArray[Int32, _], [1,2])
+    }
+
+    @test
+    def isInfixOf08(): Bool = region r {
+        Array.isInfixOf([1], [1,2])
+    }
+
+    @test
+    def isInfixOf09(): Bool = region r {
+        Array.isInfixOf([2], [1,2])
+    }
+
+    @test
+    def isInfixOf10(): Bool = region r {
+        Array.isInfixOf([1,2], [1,2])
+    }
+
+    @test
+    def isInfixOf11(): Bool = region r {
+        Array.isInfixOf([1,3], [1,2]) == false
+    }
+
+    @test
+    def isInfixOf12(): Bool = region r {
+        Array.isInfixOf([1,2,3], [1,2]) == false
+    }
+
+    @test
+    def isInfixOf13(): Bool = region r {
+        Array.isInfixOf([1,2,3], [89,11,1,2,3,4])
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // isSuffixOf                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def isSuffixOf01(): Bool = region r {
+        Array.isSuffixOf([]: ScopedArray[Int32, _], []: ScopedArray[Int32, _])
+    }
+
+    @test
+    def isSuffixOf02(): Bool = region r {
+        Array.isSuffixOf([1], []: ScopedArray[Int32, _]) == false
+    }
+
+    @test
+    def isSuffixOf03(): Bool = region r {
+        Array.isSuffixOf([]: ScopedArray[Int32, _], [1])
+    }
+
+    @test
+    def isSuffixOf04(): Bool = region r {
+        Array.isSuffixOf([1], [1])
+    }
+
+    @test
+    def isSuffixOf05(): Bool = region r {
+        Array.isSuffixOf([2], [1]) == false
+    }
+
+    @test
+    def isSuffixOf06(): Bool = region r {
+        Array.isSuffixOf([1,2], [1]) == false
+    }
+
+    @test
+    def isSuffixOf07(): Bool = region r {
+        Array.isSuffixOf([]: ScopedArray[Int32, _], [1,2])
+    }
+
+    @test
+    def isSuffixOf08(): Bool = region r {
+        Array.isSuffixOf([1], [1,2]) == false
+    }
+
+    @test
+    def isSuffixOf09(): Bool = region r {
+        Array.isSuffixOf([2], [1,2])
+    }
+
+    @test
+    def isSuffixOf10(): Bool = region r {
+        Array.isSuffixOf([1,2], [1,2])
+    }
+
+    @test
+    def isSuffixOf11(): Bool = region r {
+        Array.isSuffixOf([1,3], [1,2]) == false
+    }
+
+    @test
+    def isSuffixOf12(): Bool = region r {
+        Array.isSuffixOf([1,2,3], [1,2]) == false
+    }
+
+    @test
+    def isSuffixOf13(): Bool = region r {
+        Array.isSuffixOf([1,2,3], [89,11,1,2,3])
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // eq                                                                      //
@@ -2126,132 +2289,198 @@ def isSuffixOf13(): Bool & Impure = Array.isSuffixOf([1,2,3], [89,11,1,2,3])
         ([1,2,3,4] `Array.compare` [1,2,3,4]) == EqualTo
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// fold                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // fold                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def fold01(): Bool & Impure = Array.fold([]: Array[Unit]) == ()
+    @test
+    def fold01(): Bool = region r {
+        Array.fold([]: ScopedArray[Unit, _]) == ()
+    }
 
-@test
-def fold02(): Bool & Impure = Array.fold(["a"]) == "a"
+    @test
+    def fold02(): Bool = region r {
+        Array.fold(["a"]) == "a"
+    }
 
-@test
-def fold03(): Bool & Impure = Array.fold(["a", "b", "c"]) == "abc"
+    @test
+    def fold03(): Bool = region r {
+        Array.fold(["a", "b", "c"]) == "abc"
+    }
 
-@test
-def fold04(): Bool & Impure = Array.fold([("yes", "no"), ("no", "yes")]) == ("yesno", "noyes")
+    @test
+    def fold04(): Bool = region r {
+        Array.fold([("yes", "no"), ("no", "yes")]) == ("yesno", "noyes")
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// foldLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def foldLeft01(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, []) == 100
+    @test
+    def foldLeft01(): Bool = region r {
+        Array.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, []) == 100
+    }
 
-@test
-def foldLeft02(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, [1]) == 198
+    @test
+    def foldLeft02(): Bool = region r {
+        Array.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, [1]) == 198
+    }
 
-@test
-def foldLeft03(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, [1,2]) == 196
+    @test
+    def foldLeft03(): Bool = region r {
+        Array.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, [1,2]) == 196
+    }
 
-@test
-def foldLeft04(): Bool & Impure = Array.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, [1,2,3]) == 386
+    @test
+    def foldLeft04(): Bool = region r {
+        Array.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, [1,2,3]) == 386
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// foldRight                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def foldRight01(): Bool & Impure = Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, []) == 100
+    @test
+    def foldRight01(): Bool = region r {
+        Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, []) == 100
+    }
 
-@test
-def foldRight02(): Bool & Impure = Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, [1]) == 198
+    @test
+    def foldRight02(): Bool = region r {
+        Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, [1]) == 198
+    }
 
-@test
-def foldRight03(): Bool & Impure = Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, [1,2]) == 194
+    @test
+    def foldRight03(): Bool = region r {
+        Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, [1,2]) == 194
+    }
 
-@test
-def foldRight04(): Bool & Impure = Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, [1,2,3]) == 382
+    @test
+    def foldRight04(): Bool = region r {
+        Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, [1,2,3]) == 382
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// foldRightWithCont                                                       //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRightWithCont                                                       //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def foldRightWithCont01(): Bool & Impure = Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, []) == 100
+    @test
+    def foldRightWithCont01(): Bool = region r {
+        Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, []) == 100
+    }
 
-@test
-def foldRightWithCont02(): Bool & Impure = Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, [1]) == 198
+    @test
+    def foldRightWithCont02(): Bool = region r {
+        Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, [1]) == 198
+    }
 
-@test
-def foldRightWithCont03(): Bool & Impure = Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, [1,2]) == 194
+    @test
+    def foldRightWithCont03(): Bool = region r {
+        Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, [1,2]) == 194
+    }
 
-@test
-def foldRightWithCont04(): Bool & Impure = Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, [1,2,3]) == 382
+    @test
+    def foldRightWithCont04(): Bool = region r {
+        Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, [1,2,3]) == 382
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// reduceLeft                                                              //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // reduceLeft                                                              //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def reduceLeft01(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, []: Array[Int32]) == None
+    @test
+    def reduceLeft01(): Bool = region r {
+        Array.reduceLeft((a, b) -> a - b, []: ScopedArray[Int32, _]) == None
+    }
 
-@test
-def reduceLeft02(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, [1]) == Some(1)
+    @test
+    def reduceLeft02(): Bool = region r {
+        Array.reduceLeft((a, b) -> a - b, [1]) == Some(1)
+    }
 
-@test
-def reduceLeft03(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, [1,2]) == Some(-1)
+    @test
+    def reduceLeft03(): Bool = region r {
+        Array.reduceLeft((a, b) -> a - b, [1,2]) == Some(-1)
+    }
 
-@test
-def reduceLeft04(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, [1,2,3]) == Some(-4)
+    @test
+    def reduceLeft04(): Bool = region r {
+        Array.reduceLeft((a, b) -> a - b, [1,2,3]) == Some(-4)
+    }
 
-@test
-def reduceLeft05(): Bool & Impure = Array.reduceLeft((a, b) -> a-b, [1,2,3,4]) == Some(-8)
+    @test
+    def reduceLeft05(): Bool = region r {
+        Array.reduceLeft((a, b) -> a - b, [1,2,3,4]) == Some(-8)
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// reduceRight                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // reduceRight                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def reduceRight01(): Bool & Impure = Array.reduceRight((a, b) -> a-b, []: Array[Int32]) == None
+    @test
+    def reduceRight01(): Bool = region r {
+        Array.reduceRight((a, b) -> a - b, []: ScopedArray[Int32, _]) == None
+    }
 
-@test
-def reduceRight02(): Bool & Impure = Array.reduceRight((a, b) -> a-b, [1]) == Some(1)
+    @test
+    def reduceRight02(): Bool = region r {
+        Array.reduceRight((a, b) -> a - b, [1]) == Some(1)
+    }
 
-@test
-def reduceRight03(): Bool & Impure = Array.reduceRight((a, b) -> a-b, [1,2]) == Some(-1)
+    @test
+    def reduceRight03(): Bool = region r {
+        Array.reduceRight((a, b) -> a - b, [1,2]) == Some(-1)
+    }
 
-@test
-def reduceRight04(): Bool & Impure = Array.reduceRight((a, b) -> a-b, [1,2,3]) == Some(2)
+    @test
+    def reduceRight04(): Bool = region r {
+        Array.reduceRight((a, b) -> a - b, [1,2,3]) == Some(2)
+    }
 
-@test
-def reduceRight05(): Bool & Impure = Array.reduceRight((a, b) -> a-b, [1,2,3,4]) == Some(-2)
+    @test
+    def reduceRight05(): Bool = region r {
+        Array.reduceRight((a, b) -> a - b, [1,2,3,4]) == Some(-2)
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// count                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // count                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def count01(): Bool & Impure = Array.count(i -> i > 3, []) == 0
+    @test
+    def count01(): Bool = region r {
+        Array.count(i -> i > 3, []) == 0
+    }
 
-@test
-def count02(): Bool & Impure = Array.count(i -> i > 3, [1]) == 0
+    @test
+    def count02(): Bool = region r {
+        Array.count(i -> i > 3, [1]) == 0
+    }
 
-@test
-def count03(): Bool & Impure = Array.count(i -> i > 3, [4]) == 1
+    @test
+    def count03(): Bool = region r {
+        Array.count(i -> i > 3, [4]) == 1
+    }
 
-@test
-def count04(): Bool & Impure = Array.count(i -> i > 3, [1,2]) == 0
+    @test
+    def count04(): Bool = region r {
+        Array.count(i -> i > 3, [1,2]) == 0
+    }
 
-@test
-def count05(): Bool & Impure = Array.count(i -> i > 3, [1,8]) == 1
+    @test
+    def count05(): Bool = region r {
+        Array.count(i -> i > 3, [1,8]) == 1
+    }
 
-@test
-def count06(): Bool & Impure = Array.count(i -> i > 3, [8,1]) == 1
+    @test
+    def count06(): Bool = region r {
+        Array.count(i -> i > 3, [8,1]) == 1
+    }
 
-@test
-def count07(): Bool & Impure = Array.count(i -> i > 3, [6,7]) == 2
+    @test
+    def count07(): Bool = region r {
+        Array.count(i -> i > 3, [6,7]) == 2
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2259,28 +2488,34 @@ def count07(): Bool & Impure = Array.count(i -> i > 3, [6,7]) == 2
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def product01(): Bool & Impure =
+    def product01(): Bool = region r {
         Array.product([]) == 0
+    }
 
     @test
-    def product02(): Bool & Impure =
+    def product02(): Bool = region r {
         Array.product([1]) == 1
+    }
 
     @test
-    def product03(): Bool & Impure =
+    def product03(): Bool = region r {
         Array.product([1, 2, 3]) == 6
+    }
 
     @test
-    def product04(): Bool & Impure =
+    def product04(): Bool = region r {
         Array.product([1, 2, 3, -3]) == -18
+    }
 
     @test
-    def product05(): Bool & Impure =
+    def product05(): Bool = region r {
         Array.product([-1, -2, -3, -4]) == 24
+    }
 
     @test
-    def product06(): Bool & Impure =
+    def product06(): Bool = region r {
         Array.product([10, -10]) == -100
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2288,28 +2523,34 @@ def count07(): Bool & Impure = Array.count(i -> i > 3, [6,7]) == 2
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def productWith01(): Bool & Impure =
+    def productWith01(): Bool = region r {
         Array.productWith(x -> x + 1, []) == 0
+    }
 
     @test
-    def productWith02(): Bool & Impure =
+    def productWith02(): Bool = region r {
         Array.productWith(x -> x + 1, [1]) == 2
+    }
 
     @test
-    def productWith03(): Bool & Impure =
+    def productWith03(): Bool = region r {
         Array.productWith(x -> x + 1, [1, 2, 3]) == 24
+    }
 
     @test
-    def productWith04(): Bool & Impure =
+    def productWith04(): Bool = region r {
         Array.productWith(x -> x + 1, [1, 2, 3, -3]) == -48
+    }
 
     @test
-    def productWith05(): Bool & Impure =
+    def productWith05(): Bool = region r {
         Array.productWith(x -> x + 1, [-2, -3, -4, -5]) == 24
+    }
 
     @test
-    def productWith06(): Bool & Impure =
+    def productWith06(): Bool = region r {
         Array.productWith(x -> x + 1, [10, -10]) == -99
+    }
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -3595,80 +3836,122 @@ def toMap03(): Bool & Impure = Array.toMap([(1, true), (2, false)]) == Map#{1 =>
 @test
 def toMap04(): Bool & Impure = Array.toMap([(1, true), (1, false)]) == Map#{1 => true}
 
-/////////////////////////////////////////////////////////////////////////////
-// findIndexOf                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // findIndexOf                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def findIndexOf01(): Bool & Impure = Array.findIndexOf(i -> i > 2, []: Array[Int32]) == None
+    @test
+    def findIndexOf01(): Bool = region r {
+        Array.findIndexOf(i -> i > 2, []: ScopedArray[Int32, _]) == None
+    }
 
-@test
-def findIndexOf02(): Bool & Impure = Array.findIndexOf(i -> i > 2, [1]) == None
+    @test
+    def findIndexOf02(): Bool = region r {
+        Array.findIndexOf(i -> i > 2, [1]) == None
+    }
 
-@test
-def findIndexOf03(): Bool & Impure = Array.findIndexOf(i -> i > 2, [3]) == Some(0)
+    @test
+    def findIndexOf03(): Bool = region r {
+        Array.findIndexOf(i -> i > 2, [3]) == Some(0)
+    }
 
-@test
-def findIndexOf04(): Bool & Impure = Array.findIndexOf(i -> i > 2, [1,2]) == None
+    @test
+    def findIndexOf04(): Bool = region r {
+        Array.findIndexOf(i -> i > 2, [1,2]) == None
+    }
 
-@test
-def findIndexOf05(): Bool & Impure = Array.findIndexOf(i -> i > 2, [6,-6]) == Some(0)
+    @test
+    def findIndexOf05(): Bool = region r {
+        Array.findIndexOf(i -> i > 2, [6,-6]) == Some(0)
+    }
 
-@test
-def findIndexOf06(): Bool & Impure = Array.findIndexOf(i -> i > 2, [-6,6]) == Some(1)
+    @test
+    def findIndexOf06(): Bool = region r {
+        Array.findIndexOf(i -> i > 2, [-6,6]) == Some(1)
+    }
 
-@test
-def findIndexOf07(): Bool & Impure = Array.findIndexOf(i -> i > 2, [6,7]) == Some(0)
+    @test
+    def findIndexOf07(): Bool = region r {
+        Array.findIndexOf(i -> i > 2, [6,7]) == Some(0)
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// findIndexOfLeft                                                         //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // findIndexOfLeft                                                         //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def findIndexOfLeft01(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, []: Array[Int32]) == None
+    @test
+    def findIndexOfLeft01(): Bool = region r {
+        Array.findIndexOfLeft(i -> i > 2, []: ScopedArray[Int32, _]) == None
+    }
 
-@test
-def findIndexOfLeft02(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [1]) == None
+    @test
+    def findIndexOfLeft02(): Bool = region r {
+        Array.findIndexOfLeft(i -> i > 2, [1]) == None
+    }
 
-@test
-def findIndexOfLeft03(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [3]) == Some(0)
+    @test
+    def findIndexOfLeft03(): Bool = region r {
+        Array.findIndexOfLeft(i -> i > 2, [3]) == Some(0)
+    }
 
-@test
-def findIndexOfLeft04(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [1,2]) == None
+    @test
+    def findIndexOfLeft04(): Bool = region r {
+        Array.findIndexOfLeft(i -> i > 2, [1,2]) == None
+    }
 
-@test
-def findIndexOfLeft05(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [6,-6]) == Some(0)
+    @test
+    def findIndexOfLeft05(): Bool = region r {
+        Array.findIndexOfLeft(i -> i > 2, [6,-6]) == Some(0)
+    }
 
-@test
-def findIndexOfLeft06(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [-6,6]) == Some(1)
+    @test
+    def findIndexOfLeft06(): Bool = region r {
+        Array.findIndexOfLeft(i -> i > 2, [-6,6]) == Some(1)
+    }
 
-@test
-def findIndexOfLeft07(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [6,7]) == Some(0)
+    @test
+    def findIndexOfLeft07(): Bool = region r {
+        Array.findIndexOfLeft(i -> i > 2, [6,7]) == Some(0)
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// findIndexOfRight                                                        //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // findIndexOfRight                                                        //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def findIndexOfRight01(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, []: Array[Int32]) == None
+    @test
+    def findIndexOfRight01(): Bool = region r {
+        Array.findIndexOfRight(i -> i > 2, []: ScopedArray[Int32, _]) == None
+    }
 
-@test
-def findIndexOfRight02(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [1]) == None
+    @test
+    def findIndexOfRight02(): Bool = region r {
+        Array.findIndexOfRight(i -> i > 2, [1]) == None
+    }
 
-@test
-def findIndexOfRight03(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [3]) == Some(0)
+    @test
+    def findIndexOfRight03(): Bool = region r {
+        Array.findIndexOfRight(i -> i > 2, [3]) == Some(0)
+    }
 
-@test
-def findIndexOfRight04(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [1,2]) == None
+    @test
+    def findIndexOfRight04(): Bool = region r {
+        Array.findIndexOfRight(i -> i > 2, [1,2]) == None
+    }
 
-@test
-def findIndexOfRight05(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [6,-6]) == Some(0)
+    @test
+    def findIndexOfRight05(): Bool = region r {
+        Array.findIndexOfRight(i -> i > 2, [6,-6]) == Some(0)
+    }
 
-@test
-def findIndexOfRight06(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [-6,6]) == Some(1)
+    @test
+    def findIndexOfRight06(): Bool = region r {
+        Array.findIndexOfRight(i -> i > 2, [-6,6]) == Some(1)
+    }
 
-@test
-def findIndexOfRight07(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [6,7]) == Some(1)
+    @test
+    def findIndexOfRight07(): Bool = region r {
+        Array.findIndexOfRight(i -> i > 2, [6,7]) == Some(1)
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // findIndices                                                             //
@@ -4711,38 +4994,52 @@ def init205(): Bool & Impure =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def minimumBy01(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, []: Array[Int32]) == None
+    def minimumBy01(): Bool = region r {
+        Array.minimumBy((x, y) -> x <=> y, []: ScopedArray[Int32, _]) == None
+    }
 
     @test
-    def minimumBy02(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, Array.range(0, 5, static)) == Some(0)
+    def minimumBy02(): Bool = region r {
+        Array.minimumBy((x, y) -> x <=> y, Array.range(0, 5, r)) == Some(0)
+    }
 
     @test
-    def minimumBy03(): Bool & Impure = Array.minimumBy((x, y) -> x <=> y, Array.range(4, 10, static)) == Some(4)
+    def minimumBy03(): Bool = region r {
+        Array.minimumBy((x, y) -> x <=> y, Array.range(4, 10, r)) == Some(4)
+    }
 
     @test
-    def minimumBy04(): Bool & Impure =
-        let a = Array.range(10, 20, static);
+    def minimumBy04(): Bool = region r {
+        let a = Array.range(10, 20, r);
         a[5] = -22;
         Array.minimumBy((x, y) -> x <=> y, a) == Some(-22)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // maximumBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def maximumBy01(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, []: Array[Int32]) == None
+    def maximumBy01(): Bool = region r {
+        Array.maximumBy((x, y) -> x <=> y, []: ScopedArray[Int32, _]) == None
+    }
 
     @test
-    def maximumBy02(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, Array.range(0, 5, static)) == Some(4)
+    def maximumBy02(): Bool = region r {
+        Array.maximumBy((x, y) -> x <=> y, Array.range(0, 5, r)) == Some(4)
+    }
 
     @test
-    def maximumBy03(): Bool & Impure = Array.maximumBy((x, y) -> x <=> y, Array.range(4, 10, static)) == Some(9)
+    def maximumBy03(): Bool = region r {
+        Array.maximumBy((x, y) -> x <=> y, Array.range(4, 10, r)) == Some(9)
+    }
 
     @test
-    def maximumBy04(): Bool & Impure =
-        let a = Array.range(10, 20, static);
+    def maximumBy04(): Bool = region r {
+        let a = Array.range(10, 20, r);
         a[5] = 42;
         Array.maximumBy((x, y) -> x <=> y, a) == Some(42)
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4750,31 +5047,38 @@ def init205(): Bool & Impure =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sum01(): Bool & Impure =
+    def sum01(): Bool = region r {
         Array.sum([]) == 0
+    }
 
     @test
-    def sum02(): Bool & Impure =
+    def sum02(): Bool = region r {
         Array.sum([1]) == 1
+    }
 
     @test
-    def sum03(): Bool & Impure =
+    def sum03(): Bool = region r {
         Array.sum([1, 2, 3]) == 6
+    }
 
     @test
-    def sum04(): Bool & Impure =
+    def sum04(): Bool = region r {
         Array.sum([1, 2, 3, -3]) == 3
+    }
 
     @test
-    def sum05(): Bool & Impure =
+    def sum05(): Bool = region r {
         Array.sum([-1, -2, -3, -4]) == -10
+    }
     @test
-    def sum06(): Bool & Impure =
+    def sum06(): Bool = region r {
         Array.sum([10, -10]) == 0
+    }
 
     @test
-    def sum07(): Bool & Impure =
-        Array.range(1, 101, static) |> Array.sum == 5050
+    def sum07(): Bool = region r {
+        Array.range(1, 101, r) |> Array.sum == 5050
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4782,28 +5086,34 @@ def init205(): Bool & Impure =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sumWith01(): Bool & Impure =
+    def sumWith01(): Bool = region r {
         Array.sumWith(x -> x + 1, []) == 0
+    }
 
     @test
-    def sumWith02(): Bool & Impure =
+    def sumWith02(): Bool = region r {
         Array.sumWith(x -> x + 1, [1]) == 2
+    }
 
     @test
-    def sumWith03(): Bool & Impure =
+    def sumWith03(): Bool = region r {
         Array.sumWith(x -> x + 1, [1, 2, 3]) == 9
+    }
 
     @test
-    def sumWith04(): Bool & Impure =
+    def sumWith04(): Bool = region r {
         Array.sumWith(x -> x + 1, [1, 2, 3, -3]) == 7
+    }
 
     @test
-    def sumWith05(): Bool & Impure =
+    def sumWith05(): Bool = region r {
         Array.sumWith(x -> x + 1, [-1, -2, -3, -4]) == -6
+    }
 
     @test
-    def sumWith06(): Bool & Impure =
+    def sumWith06(): Bool = region r {
         Array.sumWith(x -> x + 1, [10, -10]) == 2
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
