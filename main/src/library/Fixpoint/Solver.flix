@@ -55,8 +55,7 @@ namespace Fixpoint {
             case Datalog(_) => compiler(d) |> interpret |> toModel
             case Model(_) => d
             case Join(Model(m), cs) =>
-                let ms = Map.map(mm -> MutMap(ref mm), m); // Was `let db = Map.map(Map.toMutMap, m) |> Map.toMutMap;`
-                let db = MutMap(ref ms);
+                let db = static |> (Map.map(mm -> Map.toMutMap(mm, static), m) |> Map.toMutMap);
                 compiler(cs) |> interpretWithDatabase(db) |> toModel
             case _ => bug!("Datalog normalization bug")
         };
@@ -634,7 +633,7 @@ namespace Fixpoint {
                         ()
                 case _ => ()
             }, cs);
-            MutList.toArray(pFacts)
+            MutList.toArray(pFacts, static)
         case Model(db) =>
             use Fixpoint/Ram.toDenotation;
             let pFacts = new MutList(static);
@@ -659,7 +658,7 @@ namespace Fixpoint {
                         MutList.push!(f(vs), pFacts)
                     }, rel)
             }, db);
-            MutList.toArray(pFacts)
+            MutList.toArray(pFacts, static)
         case Join(d1, d2) => Array.append(factsOf(f, p, d1), factsOf(f, p, d2))
     }
 

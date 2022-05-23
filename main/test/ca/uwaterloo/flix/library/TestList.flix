@@ -131,22 +131,22 @@ def memberOf07(): Bool = List.memberOf(3, 1 :: 2 :: Nil) == false
 // indexOf                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def indexOf01(): Bool = List.indexOf(0, Nil) == -1
+def indexOf01(): Bool = List.indexOf(0, Nil) == None
 
 @test
-def indexOf02(): Bool = List.indexOf(0, 1 :: Nil) == -1
+def indexOf02(): Bool = List.indexOf(0, 1 :: Nil) == None
 
 @test
-def indexOf03(): Bool = List.indexOf(1, 1 :: Nil) == 0
+def indexOf03(): Bool = List.indexOf(1, 1 :: Nil) == Some(0)
 
 @test
-def indexOf04(): Bool = List.indexOf(0, 1 :: 2 :: Nil) == -1
+def indexOf04(): Bool = List.indexOf(0, 1 :: 2 :: Nil) == None
 
 @test
-def indexOf05(): Bool = List.indexOf(1, 1 :: 2 :: Nil) == 0
+def indexOf05(): Bool = List.indexOf(1, 1 :: 2 :: Nil) == Some(0)
 
 @test
-def indexOf06(): Bool = List.indexOf(2, 1 :: 2 :: Nil) == 1
+def indexOf06(): Bool = List.indexOf(2, 1 :: 2 :: Nil) == Some(1)
 
 /////////////////////////////////////////////////////////////////////////////
 // find                                                                    //
@@ -1943,30 +1943,36 @@ def foreach02(): Bool & Impure =
     List.foreach(x -> r := x, 1 :: 2 :: 3 :: Nil);
     3 == deref r
 
-/////////////////////////////////////////////////////////////////////////////
-// toArray                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def toArray01(): Bool & Impure =
-    let xs: List[Int32] = Nil;
-    let a: Array[Int32] = List.toArray(xs);
-    Array.sameElements(a, []: Array[Int32])
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def toArray02(): Bool & Impure =
-    let a = List.toArray(1 :: Nil);
-    Array.sameElements(a, [1])
+    @test
+    def toArray01(): Bool = region r {
+        let xs: List[Int32] = Nil;
+        let a = List.toArray(xs, r);
+        Array.sameElements(a, [] @ r)
+    }
 
-@test
-def toArray03(): Bool & Impure =
-    let a = List.toArray(1 :: 2 :: Nil);
-    Array.sameElements(a, [1,2])
+    @test
+    def toArray02(): Bool = region r {
+        let a = List.toArray(1 :: Nil, r);
+        Array.sameElements(a, [1] @ r)
+    }
 
-@test
-def toArray04(): Bool & Impure =
-    let a = List.toArray(1 :: 2 :: 3 :: Nil);
-    Array.sameElements(a, [1,2,3])
+    @test
+    def toArray03(): Bool = region r {
+        let a = List.toArray(1 :: 2 :: Nil, r);
+        Array.sameElements(a, [1, 2] @ r)
+    }
+
+    @test
+    def toArray04(): Bool = region r {
+        let a = List.toArray(1 :: 2 :: 3 :: Nil, r);
+        Array.sameElements(a, [1, 2, 3] @ r)
+    }
+
 
 /////////////////////////////////////////////////////////////////////////////
 // toNel                                                                   //

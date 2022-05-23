@@ -258,16 +258,16 @@ pub class Reducible[t: Type -> Type] {
     ///
     /// Returns `t` as an array.
     ///
-    pub def toArray(t: t[a]): Array[a] & Impure =
-        let v = new MutList(static);
+    pub def toArray(t: t[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
+        let v = new MutList(r);
         Reducible.foldLeft((_, a) -> MutList.push!(a, v), (), t);
-        MutList.toArray(v)
+        MutList.toArray(v, r)
 
     ///
     /// Returns an iterator over `t`.
     ///
     pub def toIterator(t: t[a]): Iterator[a] & Impure =
-        Reducible.toArray(t) |> Array.toIterator
+        Reducible.toArray(t, static) |> Array.toIterator
 
     ///
     /// Returns `t` as a list.

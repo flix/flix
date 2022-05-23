@@ -22,6 +22,7 @@ use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.BodyPredicate.{BodyAtom};
 use Fixpoint/Ast.BodyPredicate.{Guard0, Guard1, Guard2, Guard3, Guard4, Guard5};
 use Fixpoint/Ast.BodyPredicate.{Loop1};
+use Fixpoint/Ast.isRelational;
 use Fixpoint/Shared.PredSym;
 use Fixpoint/Shared.PredSym.PredSym;
 
@@ -43,8 +44,8 @@ namespace Fixpoint {
                     let ruleStratum = Map.getWithDefault(p, 0, strat);
                     Map.insertWith(List.append, ruleStratum, rule :: Nil)
             }, Map#{}, rules) |>
-            Map.foreach(_ -> List.toArray >> compileStratum(stmts));
-            RamStmt.Seq(MutList.toArray(stmts))
+            Map.foreach(_ -> (x -> List.toArray(x, static)) >> compileStratum(stmts));
+            RamStmt.Seq(MutList.toArray(stmts, static))
         case _ => bug!("Datalog normalization bug")
     }
 
@@ -101,7 +102,7 @@ namespace Fixpoint {
                 BoolExp.Empty(RamSym.Delta(predSym, arity, den))
             }, idb) |>
             Map.valuesOf;
-        let untilBody = RamStmt.Seq(MutList.toArray(loopBody));
+        let untilBody = RamStmt.Seq(MutList.toArray(loopBody, static));
         let fixpoint = RamStmt.Until(loopTest, untilBody);
         MutList.push!(fixpoint, stmts)
 
@@ -185,7 +186,7 @@ namespace Fixpoint {
                     Array.foldRight(match (atom, rowVar) -> acc -> match atom {
                         case BodyAtom(bodySym, den, Polarity.Positive, _, terms) =>
                             let arity = Array.length(terms);
-                            let ramSym = if (rowVar == delta) {
+                            let ramSym = if (rowVar == delta and isRelational(den)) {
                                 RamSym.Delta(bodySym, arity, den)
                             } else {
                                 RamSym.Full(bodySym, arity, den)

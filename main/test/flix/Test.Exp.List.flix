@@ -55,28 +55,3 @@ namespace Test/Exp/List {
     def testListAppend06(): List[Int32] = 1 :: Nil ::: 2 :: Nil ::: 3 :: Nil
 
 }
-
-enum Option[t] {
-    case None,
-    case Some(t)
-}
-
-enum List[t] {
-    case Nil,
-    case Cons(t, List[t])
-}
-
-namespace List {
-
-    pub def append(xs: List[a], ys: List[a]): List[a] = {
-        foldRight((x, acc) -> x :: acc, ys, xs)
-    }
-
-    pub def foldRight(f: (a, b) -> b & e, s: b, xs: List[a]): b & e = foldRightHelper(f, s, xs, s1 -> s1 as & e)
-
-    def foldRightHelper(f: (a, b) -> b & e, s: b, xs: List[a], k: b -> b & e): b & e = match xs {
-        case Nil => k(s)
-        case x :: rs => foldRightHelper(f, s, rs, s1 -> k(f(x, s1)))
-    }
-
-}

@@ -1,4 +1,4 @@
-namespace Test/Enum/Kinding {
+namespace Test/Kind/TypeAlias {
     namespace Implicit {
         type alias TStar[a] = a
 

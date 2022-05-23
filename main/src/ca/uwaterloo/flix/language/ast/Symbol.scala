@@ -165,6 +165,20 @@ object Symbol {
   }
 
   /**
+    * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkEffectSym(ns: NName, ident: Ident): EffectSym = {
+    new EffectSym(ns.parts, ident.name, ident.loc)
+  }
+
+  /**
+    * Returns the operation symbol for the given name `ident` in the effect associated with the given effect symbol `effectSym`.
+    */
+  def mkOpSym(effectSym: EffectSym, ident: Name.Ident): OpSym = {
+    new OpSym(effectSym, ident.name, ident.loc)
+  }
+
+  /**
     * Variable Symbol.
     *
     * @param id      the globally unique name of the symbol.
@@ -516,6 +530,57 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = name
+  }
+
+  /**
+    * Effect symbol.
+    */
+  final class EffectSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: EffectSym => this.namespace == that.namespace && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = Objects.hash(namespace, name)
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+
+    /**
+      * Returns the source of `this`.
+      */
+    override def src: Ast.Source = loc.source
+  }
+
+  /**
+    * Effect Operation Symbol.
+    */
+  final class OpSym(val eff: Symbol.EffectSym, val name: String, val loc: SourceLocation) {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: OpSym => this.eff == that.eff && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = Objects.hash(eff, name)
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = eff.toString + "." + name
   }
 
   /**

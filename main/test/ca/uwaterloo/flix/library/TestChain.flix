@@ -258,22 +258,22 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def indexOf01(): Bool = Chain.indexOf(0, Chain.empty()) == -1
+    def indexOf01(): Bool = Chain.indexOf(0, Chain.empty()) == None
 
     @test
-    def indexOf02(): Bool = Chain.indexOf(0, Chain.singleton(1)) == -1
+    def indexOf02(): Bool = Chain.indexOf(0, Chain.singleton(1)) == None
 
     @test
-    def indexOf03(): Bool = Chain.indexOf(1, Chain.singleton(1)) == 0
+    def indexOf03(): Bool = Chain.indexOf(1, Chain.singleton(1)) == Some(0)
 
     @test
-    def indexOf04(): Bool = Chain.indexOf(0, List.toChain(1 :: 2 :: Nil)) == -1
+    def indexOf04(): Bool = Chain.indexOf(0, List.toChain(1 :: 2 :: Nil)) == None
 
     @test
-    def indexOf05(): Bool = Chain.indexOf(1, List.toChain(1 :: 2 :: Nil)) == 0
+    def indexOf05(): Bool = Chain.indexOf(1, List.toChain(1 :: 2 :: Nil)) == Some(0)
 
     @test
-    def indexOf06(): Bool = Chain.indexOf(2, List.toChain(1 :: 2 :: Nil)) == 1
+    def indexOf06(): Bool = Chain.indexOf(2, List.toChain(1 :: 2 :: Nil)) == Some(1)
 
     /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
@@ -1369,20 +1369,24 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMutList01(): Bool & Impure =
-        Chain.toMutList(Chain.empty(): Chain[Int32]) `MutList.sameElements` List.toMutList(Nil): MutList[Int32, Impure]
+    def toMutList01(): Bool = region r {
+        Chain.toMutList(Chain.empty(): Chain[Int32], r) `MutList.sameElements` List.toMutList(Nil, r): MutList[Int32, _]
+    }
 
     @test
-    def toMutList02(): Bool & Impure =
-        Chain.toMutList(Chain.singleton(1)) `MutList.sameElements` List.toMutList(1 :: Nil)
+    def toMutList02(): Bool = region r {
+        Chain.toMutList(Chain.singleton(1), r) `MutList.sameElements` List.toMutList(1 :: Nil, r)
+    }
 
     @test
-    def toMutList03(): Bool & Impure =
-        Chain.toMutList(List.toChain(1 :: 2 :: Nil)) `MutList.sameElements` List.toMutList(1 :: 2 :: Nil)
+    def toMutList03(): Bool = region r {
+        Chain.toMutList(List.toChain(1 :: 2 :: Nil), r) `MutList.sameElements` List.toMutList(1 :: 2 :: Nil, r)
+    }
 
     @test
-    def toMutList04(): Bool & Impure =
-        Chain.toMutList(List.toChain(1 :: 2 :: 3 :: Nil)) `MutList.sameElements` List.toMutList(1 :: 2 :: 3 :: Nil)
+    def toMutList04(): Bool = region r {
+        Chain.toMutList(List.toChain(1 :: 2 :: 3 :: Nil), r) `MutList.sameElements` List.toMutList(1 :: 2 :: 3 :: Nil, r)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
@@ -1429,25 +1433,28 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toArray01(): Bool & Impure =
+    def toArray01(): Bool = region r {
         let c: Chain[Int32] = Chain.empty();
-        let a: Array[Int32] = Chain.toArray(c);
-        Array.sameElements(a, []: Array[Int32])
+        Array.sameElements(Chain.toArray(c, r), [] @ r)
+    }
 
     @test
-    def toArray02(): Bool & Impure =
-        let a = Chain.toArray(Chain.singleton(1));
-        Array.sameElements(a, [1])
+    def toArray02(): Bool = region r {
+        let a = Chain.toArray(Chain.singleton(1), r);
+        Array.sameElements(a, [1] @ r)
+    }
 
     @test
-    def toArray03(): Bool & Impure =
-        let a = Chain.toArray(List.toChain(1 :: 2 :: Nil));
-        Array.sameElements(a, [1,2])
+    def toArray03(): Bool = region r {
+        let a = Chain.toArray(List.toChain(1 :: 2 :: Nil), r);
+        Array.sameElements(a, [1, 2] @ r)
+    }
 
     @test
-    def toArray04(): Bool & Impure =
-        let a = Chain.toArray(List.toChain(1 :: 2 :: 3 :: Nil));
-        Array.sameElements(a, [1,2,3])
+    def toArray04(): Bool = region r {
+        let a = Chain.toArray(List.toChain(1 :: 2 :: 3 :: Nil), r);
+        Array.sameElements(a, [1, 2, 3] @ r)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // sort                                                                    //
@@ -1625,5 +1632,24 @@ namespace TestChain {
     def joinWith04(): Bool =
         ("1" :: "2" :: "3" :: Nil) |> List.toChain |>
             Chain.joinWith(x -> x + x, ",") == "11,22,33"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWithIndex                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithIndex01(): Bool = Chain.zipWithIndex(Chain.empty(): Chain[Int32]) == Chain.empty()
+
+    @test
+    def zipWithIndex02(): Bool = Chain.zipWithIndex(Chain.singleton(2)) == List.toChain((2, 0) :: Nil)
+
+    @test
+    def zipWithIndex03(): Bool = Chain.zipWithIndex(List.toChain(1 :: 8 :: Nil)) == List.toChain((1, 0) :: (8, 1) :: Nil)
+
+    @test
+    def zipWithIndex04(): Bool = Chain.zipWithIndex(List.toChain(8 :: 1 :: Nil)) == List.toChain((8, 0) :: (1, 1) :: Nil)
+
+    @test
+    def zipWithIndex05(): Bool = Chain.zipWithIndex(List.toChain(1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil)) == List.toChain((1, 0) :: (4, 1) :: (11, 2) :: (2, 3) :: (-22, 4) :: (17, 5) :: Nil)
 
 }

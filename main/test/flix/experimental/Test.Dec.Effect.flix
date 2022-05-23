@@ -8,7 +8,7 @@ namespace Test/Dec/Effect {
     }
 
     eff State {
-        pub def set_(x: Int): Unit
+        pub def set_(x: Int32): Unit
     }
 
     eff Threading {

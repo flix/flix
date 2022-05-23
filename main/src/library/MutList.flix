@@ -522,10 +522,11 @@ namespace MutList {
     pub def copy(v: MutList[a, r]): MutList[a, r] \ { Read(r), Write(r) } =
         let MutList(a, l) = v;
         let len = deref l;
+        let r = Scoped.regionOf(v);
         if (len > minCapacity())
-            MutList(ref Array.copyOfRange(0, len, deref a) @ Scoped.regionOf(v), ref len @ Scoped.regionOf(v))
+            MutList(ref Array.copyOfRange(0, len, deref a, r) @ r, ref len @ r)
         else
-            MutList(ref Array.copyOfRange(0, capacity(v), deref a) @ Scoped.regionOf(v), ref len @ Scoped.regionOf(v))
+            MutList(ref Array.copyOfRange(0, capacity(v), deref a, r) @ r, ref len @ r)
 
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
@@ -567,7 +568,7 @@ namespace MutList {
         if (capacity(v) - len == 0)
             reserve!(len, v)
         else ();
-        let sub = Array.copyOfRange(i, len, deref a);
+        let sub = Array.copyOfRange(i, len, deref a, Scoped.regionOf(v));
         Array.updateSequence!(i + 1, sub, deref a);
         (deref a)[i] = x;
         l := len + 1
@@ -659,7 +660,7 @@ namespace MutList {
         if (n < capv and capv != minCap) {
             let len = deref l;
             let newCap = Order.max(n, minCap);
-            a := Array.copyOfRange(0, newCap, deref a);
+            a := Array.copyOfRange(0, newCap, deref a, Scoped.regionOf(v));
             l := Order.min(len, newCap)
         }
         else ()
@@ -699,7 +700,7 @@ namespace MutList {
     ///
     pub def reserve!(n: Int32, v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
         let MutList(a, l) = v;
-        a := Array.copyOfRange(0, (deref l) + n, deref a)
+        a := Array.copyOfRange(0, (deref l) + n, deref a, Scoped.regionOf(v))
 
     ///
     /// Returns `v` as an immutable list.
@@ -710,9 +711,9 @@ namespace MutList {
     ///
     /// Returns `v` as an array.
     ///
-    pub def toArray(v: MutList[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
+    pub def toArray(v: MutList[a, r1], r2: Region[r2]): ScopedArray[a, r2] \ { Read(r1), Write(r2) } =
         let MutList(a, l) = v;
-        Array.copyOfRange(0, deref l, deref a)
+        Array.copyOfRange(0, deref l, deref a, r2)
 
     ///
     /// Returns the mutable list `xs` as a chain.
@@ -741,12 +742,19 @@ namespace MutList {
         if (l1 == l2) loop(0) else false
 
     ///
-    /// Render `v` as a String. Elements are rendered with the
-    /// function `f` and separated with the string `sep`.
+    /// Returns the concatenation of the string representation
+    /// of each element in `v` with `sep` inserted between each element.
     ///
-    pub def formatWith(f: a -> String, sep: String, v: MutList[a, r]): String & Impure =
-        let sb = StringBuilder.new();
-        let step = (x,i) ->
+    pub def join(sep: String, v: MutList[a, r]): String \ Read(r) with ToString[a] =
+        joinWith(ToString.toString, sep, v)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `v` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: a -> String & ef, sep: String, v: MutList[a, r]): String \ { ef, Read(r) } = region r1 {
+        let sb = new StringBuilder(r1);
+        let step = (x, i) ->
             if (i == 0)
                 StringBuilder.appendString!(f(x), sb)
             else {
@@ -755,24 +763,7 @@ namespace MutList {
             };
         foreachWithIndex(step, v);
         StringBuilder.toString(sb)
-
-    ///
-    /// Returns the concatenation of the string representation
-    /// of each element in `v` with `sep` inserted between each element.
-    ///
-    pub def join(sep: String, v: MutList[a, r]): String & Impure with ToString[a] =
-        joinWith(x -> ToString.toString(x), sep, v)
-
-    ///
-    /// Returns the concatenation of the string representation
-    /// of each element in `v` according to `f` with `sep` inserted between each element.
-    ///
-    pub def joinWith(f: a -> String & ef, sep: String, v: MutList[a, r]): String & Impure =
-        use StringBuilder.append!;
-        let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
-        foreach(x -> { append!(f(x), sb); append!(sep, sb) }, v);
-        StringBuilder.toString(sb) |> String.dropRight(lastSep)
+    }
 
     ///
     /// Applies `f` to all the elements in `v`.

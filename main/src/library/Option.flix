@@ -26,10 +26,38 @@ pub enum Option[t] with Eq, Order, ToString {
     case Some(t)
 }
 
+instance LowerBound[Option[t]] {
+    pub def minValue(_: Unit): Option[t] = None
+}
+
+instance PartialOrder[Option[t]] with PartialOrder[t] {
+    pub def lessEqual(x: Option[t], y: Option[t]): Bool = match (x,y) {
+       case (None, _)           => true
+       case (Some(a), Some(b))  => PartialOrder.lessEqual(a,b)
+       case _                   => false
+   }
+}
+
+instance JoinLattice[Option[t]] with JoinLattice[t] {
+    pub def leastUpperBound(x: Option[t], y: Option[t]): Option[t] = match (x,y) {
+       case (None, _)           => y
+       case (_, None)           => x
+       case (Some(a), Some(b))  => Some(JoinLattice.leastUpperBound(a,b))
+   }
+}
+
+instance MeetLattice[Option[t]] with MeetLattice[t] {
+    pub def greatestLowerBound(x: Option[t], y: Option[t]): Option[t] = match (x,y) {
+       case (None, _)           => None
+       case (_, None)           => None
+       case (Some(a), Some(b))  => Some(MeetLattice.greatestLowerBound(a, b))
+   }
+}
+
 instance Hash[Option[a]] with Hash[a] {
     pub def hash(o: Option[a]): Int32 = match o {
+        case None    => 1046527
         case Some(y) => 919 * Hash.hash(y)
-        case None => 1046527
     }
 }
 
@@ -412,7 +440,7 @@ namespace Option {
     /// Returns the Option value `Ok(v)` if `o` is `Some(v)`. Otherwise returns `Err(e)`.
     ///
     @Time(1) @Space(1)
-    pub def toOk(o: Option[t], e: e): Result[t, e] = match o {
+    pub def toOk(e: e, o: Option[t]): Result[t, e] = match o {
         case None    => Err(e)
         case Some(a) => Ok(a)
     }
@@ -421,7 +449,7 @@ namespace Option {
     /// Returns the Option value `Err(e)` if `o` is `Some(e)`. Otherwise returns `Ok(d)`.
     ///
     @Time(1) @Space(1)
-    pub def toErr(o: Option[e], d: t): Result[t, e] = match o {
+    pub def toErr(d: t, o: Option[e]): Result[t, e] = match o {
         case None    => Ok(d)
         case Some(e) => Err(e)
     }
@@ -430,7 +458,7 @@ namespace Option {
     /// Returns the Validation value `Success(v)` if `o` is `Some(v)`. Otherwise lifts `e` into Validation's `Failure`.
     ///
     @Time(1) @Space(1)
-    pub def toSuccess(o: Option[t], e: e): Validation[t, e] = match o {
+    pub def toSuccess(e: e, o: Option[t]): Validation[t, e] = match o {
         case None    => Failure(Nec.singleton(e))
         case Some(a) => Success(a)
     }
@@ -439,7 +467,7 @@ namespace Option {
     /// Returns `e` into Validation's `Failure` if `o` is `Some(e)`. Otherwise returns `Success(d)`.
     ///
     @Time(1) @Space(1)
-    pub def toFailure(o: Option[e], d: t): Validation[t, e] = match o {
+    pub def toFailure(d: t, o: Option[e]): Validation[t, e] = match o {
         case None    => Success(d)
         case Some(e) => Failure(Nec.singleton(e))
     }

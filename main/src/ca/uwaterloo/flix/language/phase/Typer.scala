@@ -62,7 +62,7 @@ object Typer {
         case (classSym, clazz) =>
           val instances = instances0.getOrElse(classSym, Nil)
           val envInsts = instances.map {
-            case KindedAst.Instance(_, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
+            case KindedAst.Instance(_, _, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
           }
           // ignore the super class parameters since they should all be the same as the class param
           val superClasses = clazz.superClasses.map(_.head.sym)
@@ -123,10 +123,11 @@ object Typer {
     * Reassembles a single instance.
     */
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Instance, TypeError] = inst match {
-    case KindedAst.Instance(doc, mod, sym, tpe, tconstrs, defs0, ns, loc) =>
+    case KindedAst.Instance(doc, ann0, mod, sym, tpe, tconstrs, defs0, ns, loc) =>
+      val annVal = visitAnnotations(ann0, root)
       val defsVal = traverse(defs0)(visitDefn(_, tconstrs, root, classEnv))
-      mapN(defsVal) {
-        defs => TypedAst.Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
+      mapN(annVal, defsVal) {
+        case (ann, defs) => TypedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs, ns, loc)
       }
   }
 
@@ -226,11 +227,10 @@ object Typer {
           ///
           val initialSubst = getSubstFromParams(fparams0)
 
-          run(initialSubst) match {
-            case Ok((subst0, (partialTconstrs, partialType))) =>
-              ///
-              /// Propagate type variables *names* in the substitution.
-              ///
+          run(initialSubst, Map.empty) match { // TODO renv
+            case Ok((subst0, renv0, (partialTconstrs, partialType))) =>
+
+              // propogate the type variable names
               val subst = subst0.propagate
 
               ///
@@ -299,11 +299,14 @@ object Typer {
                   }
               }
 
+              // Pivot the substititution to keep the type parameters from being replaced
+              val finalSubst = pivot(subst, tparams0)
+
               ///
               /// Compute the expression, type parameters, and formal parameters with the substitution applied everywhere.
               ///
-              val exp = reassembleExp(exp0, root, subst)
-              val specVal = visitSpec(spec0, root, subst)
+              val exp = reassembleExp(exp0, root, finalSubst)
+              val specVal = visitSpec(spec0, root, finalSubst)
 
               ///
               /// Compute a type scheme that matches the type variables that appear in the expression body.
@@ -312,7 +315,9 @@ object Typer {
               /// However, we require an even stronger property for the implementation to work. The inferred type scheme used in the rest of the
               /// compiler must *use the same type variables* in the scheme as in the body expression. Otherwise monomorphization et al. will break.
               ///
-              val inferredScheme = Scheme(inferredType.typeVars.toList.map(_.sym), inferredConstrs, inferredType)
+              val finalInferredType = finalSubst(partialType)
+              val finalInferredTconstrs = partialTconstrs.map(finalSubst.apply)
+              val inferredScheme = Scheme(finalInferredType.typeVars.toList.map(_.sym), finalInferredTconstrs, finalInferredType)
 
               specVal map {
                 spec => (spec, TypedAst.Impl(exp, inferredScheme))
@@ -321,6 +326,20 @@ object Typer {
             case Err(e) => Validation.Failure(LazyList(e))
           }
       }
+  }
+
+  /**
+    * Computes an equ-most general substitution with the given `tparams` as rigid variables.
+    */
+  private def pivot(subst: Substitution, tparams: List[KindedAst.TypeParam])(implicit flix: Flix): Substitution = {
+    // We only pivot Boolean type variables
+    val boolTparams = tparams.filter(tparam => tparam.sym.kind == Kind.Bool)
+    boolTparams match {
+      // Case 1: exactly one boolean type parameter.
+      case tparam :: Nil => subst.pivot(tparam.sym)
+      // Case 2: multiple or zero boolean type parameters. No action
+      case _ => subst
+    }
   }
 
   /**
@@ -392,8 +411,8 @@ object Typer {
       // Run the type inference monad with an empty substitution.
       //
       val initialSubst = Substitution.empty
-      result.run(initialSubst).toValidation.map {
-        case (subst, _) =>
+      result.run(initialSubst, Map.empty).toValidation.map { // TODO renv
+        case (subst, _, _) =>
           val es = exps.map(reassembleExp(_, root, subst))
           TypedAst.Annotation(name, es, loc)
       }
@@ -1304,7 +1323,7 @@ object Typer {
           resultEff = Type.Impure
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
+      case KindedAst.Expression.PutChannel(exp1, exp2, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc, text = FallbackText("elm"))
         val channelType = Type.mkChannel(elmVar, loc)
 
@@ -1313,7 +1332,7 @@ object Typer {
           (constrs2, tpe2, _) <- visitExp(exp2)
           _ <- expectTypeM(expected = channelType, actual = tpe1, exp1.loc)
           _ <- expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
-          resultTyp <- unifyTypeM(tvar, channelType, loc)
+          resultTyp = Type.mkUnit(loc)
           resultEff = Type.Impure
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
@@ -1855,11 +1874,12 @@ object Typer {
         val eff = Type.Impure
         TypedAst.Expression.GetChannel(e, subst0(tvar), eff, loc)
 
-      case KindedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
+      case KindedAst.Expression.PutChannel(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
+        val tpe = Type.mkUnit(loc)
         val eff = Type.Impure
-        TypedAst.Expression.PutChannel(e1, e2, subst0(tvar), eff, loc)
+        TypedAst.Expression.PutChannel(e1, e2, tpe, eff, loc)
 
       case KindedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
         val rs = rules map {
@@ -2060,27 +2080,27 @@ object Typer {
         } yield Type.mkTuple(elementTypes, loc)
 
       case KindedAst.Pattern.Array(elms, tvar, loc) =>
-        for (
-          elementTypes <- seqM(elms map visit);
-          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc);
+        for {
+          elementTypes <- seqM(elms map visit)
+          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
           resultType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
-        ) yield resultType
+        } yield resultType
 
       case KindedAst.Pattern.ArrayTailSpread(elms, varSym, tvar, loc) =>
-        for (
+        for {
           elementTypes <- seqM(elms map visit);
-          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc);
-          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc);
+          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
+          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
           resultType <- unifyTypeM(varSym.tvar.ascribedWith(Kind.Star), arrayType, loc)
-        ) yield resultType
+        } yield resultType
 
       case KindedAst.Pattern.ArrayHeadSpread(varSym, elms, tvar, loc) =>
-        for (
-          elementTypes <- seqM(elms map visit);
-          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc);
-          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc);
+        for {
+          elementTypes <- seqM(elms map visit)
+          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
+          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
           resultType <- unifyTypeM(varSym.tvar.ascribedWith(Kind.Star), arrayType, loc)
-        ) yield resultType
+        } yield resultType
 
     }
 

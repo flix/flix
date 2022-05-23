@@ -95,7 +95,7 @@ instance Reducible[Nel] {
     override pub def memberOf(a: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(a, l)
     override pub def dropWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.dropWhile(f, l)
     override pub def takeWhile(f: a -> Bool & ef, l: Nel[a]): List[a] & ef = Nel.takeWhile(f, l)
-    override pub def toArray(l: Nel[a]): Array[a] & Impure = Nel.toArray(l)
+    override pub def toArray(l: Nel[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = Nel.toArray(l, r)
     override pub def toIterator(l: Nel[a]): Iterator[a] & Impure = Nel.toIterator(l)
     override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
@@ -525,6 +525,19 @@ namespace Nel {
     }
 
     ///
+    /// Returns a new non-empty list where each element `e` is mapped to `(e, i)`
+    /// where `i` is the index of `e`.
+    ///
+    pub def zipWithIndex(l: Nel[a]): Nel[(a, Int32)] =
+        def loop(ll, k, i) = match ll {
+            case (x :: xs) => loop(xs, ks -> (k((x, i) :: ks)), i + 1)
+            case Nil       => k(Nil)
+        };
+        match l {
+            case Nel(x, xs) => Nel((x, 0), loop(xs, identity, 1))
+        }
+
+    ///
     /// Returns `l` as a normal list.
     ///
     @Time(1) @Space(1)
@@ -535,8 +548,8 @@ namespace Nel {
     ///
     /// Returns `l` as an array.
     ///
-    pub def toArray(l: Nel[a]): Array[a] & Impure =
-        l |> toList |> List.toArray
+    pub def toArray(l: Nel[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
+        (l |> toList |> List.toArray)(r)
 
     ///
     /// Applies `f` to every element of `l`.
@@ -554,12 +567,13 @@ namespace Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(l: Nel[a]): Nel[a] with Order[a] =
-        let list = (l |> toArray |> Array.sort |> Array.toList) as & Pure;
+    pub def sort(l: Nel[a]): Nel[a] with Order[a] = region r {
+        let list = (toArray(l, r) |> Array.sort |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
         }
+    }
 
     ///
     /// Sort the non-empty list `l` so that elements are ordered from low to high according
@@ -569,12 +583,13 @@ namespace Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, l: Nel[a]): Nel[a] with Order[b] =
-        let list = (l |> toArray |> Array.sortBy(f) |> Array.toList) as & Pure;
+    pub def sortBy(f: a -> b, l: Nel[a]): Nel[a] with Order[b] = region r {
+        let list = (toArray(l, r) |> Array.sortBy(f) |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
         }
+    }
 
     ///
     /// Sort the non-empty list `l` so that elements are ordered from low to high according
@@ -584,12 +599,13 @@ namespace Nel {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, l: Nel[a]): Nel[a] =
-        let list = (l |> toArray |> Array.sortWith(cmp) |> Array.toList) as & Pure;
+    pub def sortWith(cmp: (a,a) -> Comparison, l: Nel[a]): Nel[a] = region r {
+        let list = (toArray(l, r) |> Array.sortWith(cmp) |> Array.toList);
         match list {
             case x :: xs => Nel(x, xs)
             case _       => unreachable!()
         }
+    }
 
     ///
     /// Returns an iterator over `l`.

@@ -63,6 +63,11 @@ object Kind {
   case object Bool extends Kind
 
   /**
+    * Represents the kind of effect sets.
+    */
+  case object Effect extends Kind
+
+  /**
     * Represents the kind of record rows.
     */
   case object RecordRow extends Kind

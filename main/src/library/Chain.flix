@@ -68,8 +68,8 @@ instance Traversable[Chain] {
 
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String =
-        let fn = () -> {
-            let sb = StringBuilder.new();
+        let fn = () -> region r {
+            let sb = new StringBuilder(r);
             StringBuilder.appendString!("Chain#{", sb);
             Chain.foldLeft((acc, x) -> {
                 if (acc < 1)
@@ -80,7 +80,7 @@ instance ToString[Chain[a]] with ToString[a] {
             StringBuilder.appendString!("}", sb);
             StringBuilder.toString(sb)
         };
-        fn() as & Pure
+        fn()
 }
 
 
@@ -235,14 +235,12 @@ namespace Chain {
         loop(viewLeft(c))
 
     ///
-    /// Returns the position of `a` in `c`.
+    /// Optionally returns the position of `a` in `c`.
     ///
-    /// Returns `-1` if `a` does not exist in `c`.
-    ///
-    pub def indexOf(a: a, c: Chain[a]): Int32 with Eq[a] =
+    pub def indexOf(a: a, c: Chain[a]): Option[Int32] with Eq[a] =
         def loop(v, acc) = match v {
-            case NoneLeft       => -1
-            case SomeLeft(x, xs) => if (x == a) acc else loop(viewLeft(xs), acc + 1)
+            case NoneLeft       => None
+            case SomeLeft(x, xs) => if (x == a) Some(acc) else loop(viewLeft(xs), acc + 1)
         };
         loop(viewLeft(c), 0)
 
@@ -732,8 +730,9 @@ namespace Chain {
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(c: Chain[a]): MutList[a, Impure] & Impure =
-        toArray(c) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(c: Chain[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(toArray(c, r2), r) // `Array.toMutList` respects the invariant of `MutList`
+    }
 
     ///
     /// Returns the list `c` as a set.
@@ -750,14 +749,13 @@ namespace Chain {
     pub def toMap(c: Chain[(a, b)]): Map[a, b] with Order[a] =
         foldRight((x, acc) -> Map.insert(fst(x), snd(x), acc), Map.empty(), c)
 
-
     ///
     /// Returns the chain `c` as an array.
     ///
-    pub def toArray(c: Chain[a]) : Array[a] & Impure = match head(c) {
-        case None => []
+    pub def toArray(c: Chain[a], r: Region[r]): ScopedArray[a, r] \ Write(r) = match head(c) {
+        case None => [] @ r
         case Some(x) =>
-            let arr = Array.new(x, length(c));
+            let arr = [x; length(c)] @ r;
             let f = (i, b) -> { arr[i] = b; i + 1 };
             foldLeft(f, 0, c);
             arr
@@ -784,8 +782,9 @@ namespace Chain {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(c: Chain[a]): Chain[a] with Order[a] =
-        (c |> toArray |> Array.sort |> Array.toChain) as & Pure
+    pub def sort(c: Chain[a]): Chain[a] with Order[a] = region r {
+        toArray(c, r) |> Array.sort |> Array.toChain
+    }
 
     /// Sort chain `c` so that elements are ordered from low to high according to the `Order` instance
     /// for the values obtained by applying `f` to each element.
@@ -794,8 +793,9 @@ namespace Chain {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, c: Chain[a]): Chain[a] with Order[b] =
-        (c |> toArray |> Array.sortBy(f) |> Array.toChain) as & Pure
+    pub def sortBy(f: a -> b, c: Chain[a]): Chain[a] with Order[b] = region r {
+        toArray(c, r) |> Array.sortBy(f) |> Array.toChain
+    }
 
     ///
     /// Sort chain `c` so that elements are ordered from low to high according to the comparison function `cmp`.
@@ -804,8 +804,9 @@ namespace Chain {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, c: Chain[a]): Chain[a] =
-        (c |> toArray |> Array.sortWith(cmp) |> Array.toChain) as & Pure
+    pub def sortWith(cmp: (a,a) -> Comparison, c: Chain[a]): Chain[a] = region r {
+        toArray(c, r) |> Array.sortWith(cmp) |> Array.toChain
+    }
 
     ///
     /// Helper function for `traverse` and `sequence`.
@@ -850,5 +851,16 @@ namespace Chain {
     ///
     pub def joinWith(f: a -> String & ef, sep: String, c: Chain[a]): String & ef =
         Foldable.joinWith(f, sep, c)
+
+    ///
+    /// Returns a chain where each element `e` is mapped to `(e, i)` where `i`
+    /// is the index of `e`.
+    ///
+    pub def zipWithIndex(c: Chain[a]): Chain[(a, Int32)] =
+        def loop(cc, acc, i) = match viewLeft(cc) {
+            case NoneLeft        => acc
+            case SomeLeft(a, rs) => loop(rs, snoc(acc, (a, i)), i + 1)
+        };
+        loop(c, Empty, 0)
 
 }
