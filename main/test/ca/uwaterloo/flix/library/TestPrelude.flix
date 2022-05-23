@@ -158,18 +158,18 @@ def forwardPipe02(): Bool =
         r == 3
 
 /////////////////////////////////////////////////////////////////////////////
-// !>                                                                      //
+// !> (imperativePipe)                                                     //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def name01(): Bool = region r {
+def imperativePipe01(): Bool = region r {
         let m: MutList[Int32, _] = new MutList(r);
         let f = (x) -> MutList.push!(x, m);
         (4 !> f) == 4 and not MutList.isEmpty(m)
     }
 
 @test
-def name02(): Bool = region r {
+def imperativePipe02(): Bool = region r {
         let m: MutList[Int32, _] = new MutList(r);
         let f = (x) -> MutList.push!(x, m);
 
@@ -180,13 +180,13 @@ def name02(): Bool = region r {
     }
 
 @test
-def name03(): Bool & Impure =
+def imperativePipe03(): Bool & Impure =
     let a = ref 8;
     let f = (x) -> a := x;
     (2 !> f) == 2 and deref a == 2
 
 @test
-def name04(): Bool & Impure =
+def imperativePipe04(): Bool & Impure =
     let a = ref 8;
     let f = (x) -> a := x;
     (2 !> f) == 2 and (4 !> f) == 4 and deref a == 4
