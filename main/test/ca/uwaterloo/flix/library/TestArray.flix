@@ -5039,22 +5039,22 @@ def init205(): Bool & Impure =
 
     @test
     def join01(): Bool = region r {
-        Array.join(",", []: Array[Int32]) == ""
+        Array.join(",", [] @ r: Array[Int32]) == ""
     }
 
     @test
     def join02(): Bool = region r {
-        Array.join(",", [1]) == "1"
+        Array.join(",", [1] @ r) == "1"
     }
 
     @test
     def join03(): Bool = region r {
-        Array.join(",", [1, 2, 3]) == "1,2,3"
+        Array.join(",", [1, 2, 3] @ r) == "1,2,3"
     }
 
     @test
     def join04(): Bool = region r {
-        Array.join(",", ["1", "2", "3"]) == "1,2,3"
+        Array.join(",", ["1", "2", "3"] @ r) == "1,2,3"
     }
 
 
@@ -5064,62 +5064,62 @@ def init205(): Bool & Impure =
 
     @test
     def joinWith01(): Bool = region r {
-        Array.joinWith(x -> "${x + 1}", ",", []) == ""
+        Array.joinWith(x -> "${x + 1}", ",", [] @ r) == ""
     }
 
     @test
     def joinWith02(): Bool = region r {
-        Array.joinWith(x -> "${x + 1}", ",", [1]) == "2"
+        Array.joinWith(x -> "${x + 1}", ",", [1] @ r) == "2"
     }
 
     @test
     def joinWith03(): Bool = region r {
-        Array.joinWith(x -> "${x + 1}", ",", [1, 2, 3]) == "2,3,4"
+        Array.joinWith(x -> "${x + 1}", ",", [1, 2, 3] @ r) == "2,3,4"
     }
 
     @test
     def joinWith04(): Bool = region r {
-        Array.joinWith(x -> x + x, ",", ["1", "2", "3"]) == "11,22,33"
+        Array.joinWith(x -> x + x, ",", ["1", "2", "3"] @ r) == "11,22,33"
     }
 
     @test
     def joinWith05(): Bool = region r {
-        let a: Array[Int32] = [];
+        let a: Array[Int32] = [] @ r;
         let s = Array.joinWith(Int32.toString, ",", a);
         s == ""
     }
 
     @test
     def joinWith06(): Bool = region r {
-        let a = [1];
+        let a = [1] @ r;
         let s = Array.joinWith(Int32.toString, ",", a);
         s == "1"
     }
 
     @test
     def joinWith07(): Bool = region r {
-        let a = [1,2];
+        let a = [1,2] @ r;
         let s = Array.joinWith(Int32.toString, ",", a);
         s == "1,2"
     }
 
     @test
     def joinWith08(): Bool = region r {
-        let a = [1,2,3];
+        let a = [1,2,3] @ r;
         let s = Array.joinWith(Int32.toString, ",", a);
         s == "1,2,3"
     }
 
     @test
     def joinWith09(): Bool = region r {
-        let a = [1,2,3];
+        let a = [1,2,3] @ r;
         let s = Array.joinWith(Int32.toString, "", a);
         s == "123"
     }
 
     @test
     def joinWith10(): Bool = region r {
-        let a = [1,2,3];
+        let a = [1,2,3] @ r;
         let s = Array.joinWith(Int32.toString, "..", a);
         s == "1..2..3"
     }
