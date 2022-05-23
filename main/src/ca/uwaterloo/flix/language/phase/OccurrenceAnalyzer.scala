@@ -241,7 +241,7 @@ object OccurrenceAnalyzer {
       val (e1, o1) = visitExp(sym0, exp1)
       val (e2, o2) = visitExp(sym0, exp2)
       val (e3, o3) = visitExp(sym0, exp3)
-      val o4 = combineAllBranch(o1, combineAllBranch(o2, o3))
+      val o4 = combineAllSeq(o1, combineAllBranch(o2, o3))
       (OccurrenceAst.Expression.IfThenElse(e1, e2, e3, tpe, purity, loc), o4.increaseSizeByOne())
 
     case Expression.Branch(exp, branches, tpe, purity, loc) =>
