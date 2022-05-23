@@ -1032,7 +1032,7 @@ object Typer {
           val caze = decl.cases(tag)
 
           // Instantiate the type scheme of the case.
-          val (_, tagType) = Scheme.instantiate(caze.sc, InstantiateMode.Flexible)
+          val (_, tagType) = Scheme.instantiate(getCaseScheme(caze, decl), InstantiateMode.Flexible)
 
           //
           // The tag type can be thought of as a function from the type of variant to the type of the enum.
@@ -2064,7 +2064,7 @@ object Typer {
         val caze = decl.cases(tag)
 
         // Instantiate the type scheme of the case.
-        val (_, tagType) = Scheme.instantiate(caze.sc, InstantiateMode.Flexible)
+        val (_, tagType) = Scheme.instantiate(getCaseScheme(caze, decl), InstantiateMode.Flexible)
 
         //
         // The tag type can be thought of as a function from the type of variant to the type of the enum.
@@ -2324,8 +2324,9 @@ object Typer {
   /**
     * Returns the type scheme for the given enum case.
     */
-  private def getCaseScheme(caze: KindedAst.Case): Scheme = caze match {
-    case KindedAst.Case(ident, tag, tpeDeprecated) => ???
+  private def getCaseScheme(caze: KindedAst.Case, enum: KindedAst.Enum): Scheme = {
+    val base = Type.mkPureArrow(caze.tpeDeprecated, enum.tpeDeprecated, enum.loc)
+    Scheme(enum.tparams.map(_.sym), Nil, base)
   }
 
   /**
