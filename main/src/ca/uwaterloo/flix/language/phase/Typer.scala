@@ -167,9 +167,9 @@ object Typer {
       val annVal = visitAnnotations(ann0, root)
       val tparams = getTypeParams(tparams0)
       val fparams = getFormalParams(fparams0, subst)
-      val tconstrs = tconstrs0.map(subst.apply)
+      val sc = subst(getSpecScheme(spec))
       Validation.mapN(annVal) {
-        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, loc)
+        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, loc)
       }
   }
 
@@ -366,12 +366,15 @@ object Typer {
       val annVal = visitAnnotations(ann, root)
       val tparams = getTypeParams(tparams0)
       val cases = cases0 map {
-        case (name, KindedAst.Case(_, tagName, tagType)) =>
-          name -> TypedAst.Case(enumSym, tagName, tagType, tagName.loc)
+        case (name, caze@KindedAst.Case(_, tagName, tagType)) =>
+          val sc = getCaseScheme(caze, enum0)
+          name -> TypedAst.Case(enumSym, tagName, tagType, sc, tagName.loc)
       }
 
       Validation.mapN(annVal) {
-        ann => enumSym -> TypedAst.Enum(doc, ann, mod, enumSym, tparams, derives, cases, tpeDeprecated, loc)
+        ann =>
+          val sc = Scheme(tparams.map(_.sym), Nil, tpeDeprecated)
+          enumSym -> TypedAst.Enum(doc, ann, mod, enumSym, tparams, derives, cases, tpeDeprecated, sc, loc)
       }
   }
 
