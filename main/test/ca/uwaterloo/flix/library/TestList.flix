@@ -1868,7 +1868,7 @@ def findMap08(): Bool = List.findMap(i -> if (i rem 2 == 0) Some(i/2) else None,
 @test
 def toMutDeque01(): Bool = region r {
     let l = Nil: List[Unit];
-    let d = List.toMutDeque(r, l);
+    let d = List.toMutDeque(l, r);
 
     l == MutDeque.toList(d)
 }
@@ -1876,7 +1876,7 @@ def toMutDeque01(): Bool = region r {
 @test
 def toMutDeque02(): Bool = region r {
     let l = 1 :: 2 :: Nil;
-    let d = List.toMutDeque(r, l);
+    let d = List.toMutDeque(l, r);
 
     l == MutDeque.toList(d)
 }
@@ -1884,7 +1884,7 @@ def toMutDeque02(): Bool = region r {
 @test
 def toMutDeque03(): Bool = region r {
     let l = 3 :: 1 :: 2 :: Nil;
-    let d = List.toMutDeque(r, l);
+    let d = List.toMutDeque(l, r);
 
     l == MutDeque.toList(d)
 }
@@ -1892,7 +1892,7 @@ def toMutDeque03(): Bool = region r {
 @test
 def toMutDeque04(): Bool = region r {
     let l = 'a' :: 'b' :: 'c' :: Nil;
-    let d = List.toMutDeque(r, l);
+    let d = List.toMutDeque(l, r);
 
     l == MutDeque.toList(d)
 }
