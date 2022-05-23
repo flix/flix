@@ -163,12 +163,13 @@ object Typer {
     * Performs type inference and reassembly on the given Spec `spec`.
     */
   private def visitSpec(spec: KindedAst.Spec, root: KindedAst.Root, subst: Substitution)(implicit flix: Flix): Validation[TypedAst.Spec, TypeError] = spec match {
-    case KindedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc, tpe, eff, loc) =>
+    case KindedAst.Spec(doc, ann0, mod, tparams0, fparams0, tpe, eff, tconstrs0, loc) =>
       val annVal = visitAnnotations(ann0, root)
       val tparams = getTypeParams(tparams0)
       val fparams = getFormalParams(fparams0, subst)
+      val tconstrs = tconstrs0.map(subst.apply)
       Validation.mapN(annVal) {
-        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, loc)
+        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, loc)
       }
   }
 
@@ -200,7 +201,7 @@ object Typer {
     * Infers the type of the given definition `defn0`.
     */
   private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], loc: SourceLocation)(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
-    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, eff, _) =>
+    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe, eff, tconstrs, _) =>
 
       ///
       /// Infer the type of the expression `exp0`.
@@ -211,7 +212,8 @@ object Typer {
 
 
       // Add the assumed constraints to the declared scheme
-      val declaredScheme = sc.copy(constraints = sc.constraints ++ assumedTconstrs)
+      val sc = getSpecScheme(spec0)
+      val declaredScheme = sc.copy(constraints = sc.constraints ::: assumedTconstrs)
 
       ///
       /// Pattern match on the result to determine if type inference was successful.
@@ -360,16 +362,16 @@ object Typer {
     * Performs type resolution on the given enum and its cases.
     */
   private def visitEnum(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): Validation[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum0 match {
-    case KindedAst.Enum(doc, ann, mod, enumSym, tparams0, derives, cases0, tpeDeprecated, sc, loc) =>
+    case KindedAst.Enum(doc, ann, mod, enumSym, tparams0, derives, cases0, tpeDeprecated, loc) =>
       val annVal = visitAnnotations(ann, root)
       val tparams = getTypeParams(tparams0)
       val cases = cases0 map {
-        case (name, KindedAst.Case(_, tagName, tagType, tagScheme)) =>
-          name -> TypedAst.Case(enumSym, tagName, tagType, tagScheme, tagName.loc)
+        case (name, KindedAst.Case(_, tagName, tagType)) =>
+          name -> TypedAst.Case(enumSym, tagName, tagType, tagName.loc)
       }
 
       Validation.mapN(annVal) {
-        ann => enumSym -> TypedAst.Enum(doc, ann, mod, enumSym, tparams, derives, cases, tpeDeprecated, sc, loc)
+        ann => enumSym -> TypedAst.Enum(doc, ann, mod, enumSym, tparams, derives, cases, tpeDeprecated, loc)
       }
   }
 
@@ -438,7 +440,7 @@ object Typer {
 
       case KindedAst.Expression.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
-        val (tconstrs0, defType) = Scheme.instantiate(defn.spec.sc, InstantiateMode.Flexible)
+        val (tconstrs0, defType) = Scheme.instantiate(getSpecScheme(defn.spec), InstantiateMode.Flexible)
         for {
           resultTyp <- unifyTypeM(tvar, defType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
@@ -447,7 +449,7 @@ object Typer {
       case KindedAst.Expression.Sig(sym, tvar, loc) =>
         // find the declared signature corresponding to this symbol
         val sig = root.classes(sym.clazz).sigs(sym)
-        val (tconstrs0, sigType) = Scheme.instantiate(sig.spec.sc, InstantiateMode.Flexible)
+        val (tconstrs0, sigType) = Scheme.instantiate(getSpecScheme(sig.spec), InstantiateMode.Flexible)
         for {
           resultTyp <- unifyTypeM(tvar, sigType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
@@ -2309,6 +2311,22 @@ object Typer {
     * Returns an open schema type.
     */
   private def mkAnySchemaRowType(loc: SourceLocation)(implicit flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc, text = FallbackText("row"))
+
+  /**
+    * Returns the type scheme for the given spec.
+    */
+  private def getSpecScheme(spec: KindedAst.Spec): Scheme = spec match {
+    case KindedAst.Spec(_, _, _, tparams, fparams, tpe, eff, tconstrs, loc) =>
+      val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), eff, tpe, loc.asSynthetic)
+      Scheme(tparams.map(_.sym), tconstrs, base)
+  }
+
+  /**
+    * Returns the type scheme for the given enum case.
+    */
+  private def getCaseScheme(caze: KindedAst.Case): Scheme = caze match {
+    case KindedAst.Case(ident, tag, tpeDeprecated) => ???
+  }
 
   /**
     * Returns the Flix Type of a Java Class
