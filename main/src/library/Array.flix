@@ -189,7 +189,7 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def minimum(a: Array[a]): Option[a] & Impure with Order[a] =
+    pub def minimum(a: ScopedArray[a, r]): Option[a] \ Read(r) with Order[a] =
         reduceLeft(Order.min, a)
 
     ///
@@ -197,7 +197,7 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def minimumBy(cmp: (a, a) -> Comparison, a: Array[a]): Option[a] & Impure =
+    pub def minimumBy(cmp: (a, a) -> Comparison, a: ScopedArray[a, r]): Option[a] \ Read(r) =
         reduceLeft(Order.minBy(cmp), a)
 
     ///
@@ -205,7 +205,7 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def maximum(a: Array[a]): Option[a] & Impure with Order[a] =
+    pub def maximum(a: ScopedArray[a, r]): Option[a] \ Read(r) with Order[a] =
         reduceLeft(Order.max, a)
 
     ///
@@ -213,7 +213,7 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def maximumBy(cmp: (a, a) -> Comparison, a: Array[a]): Option[a] & Impure =
+    pub def maximumBy(cmp: (a, a) -> Comparison, a: ScopedArray[a, r]): Option[a] \ Read(r) =
         reduceLeft(Order.maxBy(cmp), a)
 
     ///
@@ -267,32 +267,27 @@ namespace Array {
     ///
     /// Alias for `findLeft`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def find(f: a -> Bool, arr: Array[a]): Option[a] & Impure = findLeft(f, arr)
+    pub def find(f: a -> Bool & ef, arr: ScopedArray[a, r]): Option[a] \ { ef, Read(r) } =
+        findLeft(f, arr)
 
     ///
     /// Optionally returns the first element of `a` that satisfies the predicate `f` when searching from left to right.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def findLeft(f: a -> Bool, arr: Array[a]): Option[a] & Impure =
-        match findIndexOfLeft(x -> f(x), arr) {
-            case None => None
+    pub def findLeft(f: a -> Bool & ef, arr: ScopedArray[a, r]): Option[a] \ { ef, Read(r) } =
+        match findIndexOfLeft(f, arr) {
+            case None    => None
             case Some(i) => Some(arr[i])
         }
 
     ///
     /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from right to left.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def findRight(f: a -> Bool, arr: Array[a]): Option[a] & Impure =
+    pub def findRight(f: a -> Bool & ef, arr: ScopedArray[a, r]): Option[a] \ { ef, Read(r) } =
         match findIndexOfRight(x -> f(x), arr) {
-            case None => None
+            case None    => None
             case Some(i) => Some(arr[i])
         }
 
@@ -524,14 +519,14 @@ namespace Array {
     /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def replace(from: {from :: a}, to: {to :: a}, a: Array[a]): Array[a] & Impure with Eq[a] =
+    pub def replace(from: {from :: a}, to: {to :: a}, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } with Eq[a] =
         map(e -> if (e == from.from) to.to else e, a)
 
     ///
     /// Replace every occurrence of `from` by `to` in the array `a`, mutating it in place.
     ///
     @Time(length(a)) @Space(1)
-    pub def replace!(from: {from :: a}, to: {to :: a}, a: Array[a]): Unit & Impure with Eq[a] =
+    pub def replace!(from: {from :: a}, to: {to :: a}, a: ScopedArray[a, r]): Unit \ { Read(r), Write(r) } with Eq[a] =
         transform!(e -> if (e == from.from) to.to else e, a)
 
     ///
@@ -592,7 +587,7 @@ namespace Array {
             case None => []
             case Some(x) =>
                 let out = new(x, len, static);
-                let overwrite = { (a,st) ->
+                let overwrite = { (st, a) ->
                     let (pos,i) = st;
                     if (i == 0) {
                         let pos1 = arrayWrites(0, a, out);
@@ -602,7 +597,7 @@ namespace Array {
                         let pos2 = arrayWrites(pos1, a, out);
                         (pos2, i+1)
                     }};
-                foreachAccum(overwrite, (0,0), arrs);
+                foldLeft(overwrite, (0, 0), arrs);
                 out
         }
 
@@ -622,8 +617,8 @@ namespace Array {
     ///
     /// Helper function for `intercalate` and `flatten`.
     ///
-    def sumLengths(arrs: Array[Array[a]]): Int32 & Impure =
-        foldLeft((ac,a) -> ac + length(a), 0, arrs)
+    def sumLengths(arrs: ScopedArray[ScopedArray[a, r1], r2]): Int32 \ Read(r2) =
+        foldLeft((acc, a) -> acc + length(a), 0, arrs)
 
     ///
     /// Find the first non-empty array of an array of arrays (left-to-right).
@@ -839,25 +834,25 @@ namespace Array {
     /// Returns the number of elements in `a` that satisfy the predicate `f`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def count(f: a -> Bool, a: Array[a]): Int32 & Impure =
-        foldLeft((b,x) -> if (f(x)) b + 1 else b, 0, a) as & Impure
+    pub def count(f: a -> Bool & ef, a: ScopedArray[a, r]): Int32 \ { ef, Read(r) } =
+        foldLeft((b, x) -> if (f(x)) b + 1 else b, 0, a)
 
     ///
     /// Returns the sum of all elements in the array `a`.
     ///
-    pub def sum(a: Array[Int32]): Int32 & Impure =
+    pub def sum(a: ScopedArray[Int32, r]): Int32 \ Read(r) =
         foldLeft((acc, x) -> acc + x, 0, a)
 
     ///
     /// Returns the sum of all elements in the array `a` according to the function `f`.
     ///
-    pub def sumWith(f: a -> Int32 & ef, a: Array[a]): Int32 & Impure =
+    pub def sumWith(f: a -> Int32 & ef, a: ScopedArray[a, r]): Int32 \ { ef, Read(r) } =
         foldLeft((acc, x) -> acc + f(x), 0, a)
 
     ///
     /// Returns the product of all elements in the array `a`.
     ///
-    pub def product(a: Array[Int32]): Int32 & Impure =
+    pub def product(a: ScopedArray[Int32, r]): Int32 \ Read(r) =
         if (isEmpty(a))
             0
         else
@@ -866,7 +861,7 @@ namespace Array {
     ///
     /// Returns the product of all elements in the array `a` according to the function `f`.
     ///
-    pub def productWith(f: a -> Int32 & ef, a: Array[a]): Int32 & Impure =
+    pub def productWith(f: a -> Int32 & ef, a: ScopedArray[a, r]): Int32 \ { ef, Read(r) } =
         if (isEmpty(a))
             0
         else
@@ -882,7 +877,7 @@ namespace Array {
             case None => []
             case Some(x) => {
                 let out = new(x, len, static);
-                foreachAccum((a, pos) -> arrayWrites(pos, a, out), 0, arrs);
+                foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
         }
@@ -1301,13 +1296,14 @@ namespace Array {
     /// Alias for `findIndexOfLeft`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def findIndexOf(f: a -> Bool & ef, a: Array[a]): Option[Int32] & Impure = findIndexOfLeft(f,a)
+    pub def findIndexOf(f: a -> Bool & ef, a: ScopedArray[a, r]): Option[Int32] \ { ef, Read(r) } =
+        findIndexOfLeft(f,a)
 
     ///
     /// Optionally returns the position of the first element in `x` satisfying `f`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def findIndexOfLeft(f: a -> Bool & ef, a: Array[a]): Option[Int32] & Impure =
+    pub def findIndexOfLeft(f: a -> Bool & ef, a: ScopedArray[a, r]): Option[Int32] \ { ef, Read(r) } =
         let len = length(a);
         if (len < 1)
             None
@@ -1315,11 +1311,10 @@ namespace Array {
             def loop(i) = {
                 if (i >= len)
                     -1
+                else if (f(a[i]))
+                    i
                 else
-                    if (f(a[i]))
-                        i
-                    else
-                        loop(i + 1)
+                    loop(i + 1)
             };
             let i = loop(0);
             if (i < 0) None else Some(i)
@@ -1330,16 +1325,15 @@ namespace Array {
     /// searching from right to left.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def findIndexOfRight(f: a -> Bool & ef, a: Array[a]): Option[Int32] & Impure =
+    pub def findIndexOfRight(f: a -> Bool & ef, a: ScopedArray[a, r]): Option[Int32] \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i < 0)
                 -1
+            else if (f(a[i]))
+                i
             else
-                if (f(a[i]))
-                    i
-                else
-                    loop(i - 1)
+                loop(i - 1)
         };
         let i = loop(len - 1);
         if (i < 0) None else Some(i)
@@ -1465,21 +1459,6 @@ namespace Array {
             ()
         else
             loop(0)
-
-    ///
-    /// Apply the effectful function `f` to all the elements in the array `a` and the accumulator `s`.
-    /// The function returns the final value of the accumulator `s`.
-    ///
-    @Time(time(f) * length(a)) @Space(space(f))
-    def foreachAccum(f: (a, b) -> b & ef, s: b, a: Array[a]): b & Impure =
-        let len = length(a);
-        def loop(i, acc) = {
-            if (i >= len)
-                acc
-            else
-                loop(i + 1, f(a[i], acc))
-        };
-        loop(0, s)
 
     ///
     /// Returns a copy of `a` with the elements starting at index `i` replaced by `sub`.
