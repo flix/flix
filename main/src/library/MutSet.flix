@@ -36,6 +36,12 @@ namespace MutSet {
         MutSet(ref Set.empty() @ r)
 
     ///
+    /// Returns the singleton set containing `x`.
+    ///
+    pub def singleton(x: a, r: Region[r]): MutSet[a, r] \ Write(r) with Order[a] =
+        MutSet(ref Set.singleton(x) @ r)
+
+    ///
     /// Adds the element `x` to the mutable set `s`.
     ///
     pub def add!(x: a, s: MutSet[a, r]): Unit \ { Read(r), Write(r) } with Order[a] =

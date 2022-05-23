@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Benjamin Dahse
+ * Copyright 2022 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package flix.experimental
 
-namespace Fixpoint {
-    ///
-    /// Helper function to implement `ToString`.
-    ///
-    @Internal
-    pub def commaSeparate(a: ScopedArray[v, r]): String \ Read(r) with ToString[v] =
-        Array.join(", ", a)
+import ca.uwaterloo.flix.util.{FlixSuite, Options}
+
+class ExperimentalSuite extends FlixSuite(incremental = true) {
+  implicit val options: Options = Options.TestWithLibNix.copy(xallowredundancies = true)
+
+  // TODO temporarily allowing redundancies during development
+  mkTest("main/test/flix/experimental/Test.Exp.Effect.flix")
+  mkTest("main/test/flix/experimental/Test.Dec.Effect.flix")
 }

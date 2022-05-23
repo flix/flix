@@ -222,10 +222,9 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns `t` as a mutable list.
     ///
-    pub def toMutList(t: t[a]): MutList[a, Impure] & Impure =
-        let v = new MutList(static);
-        Foldable.foldRight((x, _) -> MutList.push!(x, v), (), t);
-        v
+    pub def toMutList(t: t[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(Foldable.toArray(t, r2), r)
+    }
 
     ///
     /// Returns `t` as a set.
@@ -243,7 +242,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns a map with elements of `s` as keys and `f` applied as values.
     ///
     pub def toMapWith(f: a -> b, s: t[a]): Map[a, b] with Order[a] =
-            Foldable.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
+        Foldable.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
 
     ///
     /// Returns `t` without the longest prefix that satisfies the predicate `f`.
@@ -317,25 +316,20 @@ pub class Foldable[t : Type -> Type] {
     /// Returns the concatenation of the string representation
     /// of each element in `t` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, t: t[a]): String with ToString[a] = {
-        use StringBuilder.append!;
-        let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
-        t |> Foldable.foreach(x -> { append!(ToString.toString(x), sb); append!(sep, sb) });
-        StringBuilder.toString(sb) |> String.dropRight(lastSep)
-    } as & Pure
+    pub def join(sep: String, t: t[a]): String with ToString[a] =
+        Foldable.joinWith(ToString.toString, sep, t)
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `t` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, t: t[a]): String & ef = {
+    pub def joinWith(f: a -> String & ef, sep: String, t: t[a]): String & ef = region r {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(r);
         t |> Foldable.foreach(x -> { append!(f(x), sb); append!(sep, sb) });
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
-    } as & ef
+    }
 
 }
 

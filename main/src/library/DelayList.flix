@@ -1139,6 +1139,21 @@ namespace DelayList {
         map(x -> f(fst(x), snd(x)), zip(l1, l2))
 
     ///
+    /// Returns a `DelayList` where each element `e` is mapped to `(e, i)` where `i`
+    /// is the index of `e`.
+    ///
+    /// Does not force the tail of `l`.
+    ///
+    pub def zipWithIndex(l: DelayList[a]): DelayList[(a, Int32)] =
+        def loop(ll, i) = match ll {
+            case ENil         => ENil
+            case ECons(x, xs) => LCons(((x, i)), lazy loop(      xs, i + 1))
+            case LCons(x, xs) => LCons(((x, i)), lazy loop(force xs, i + 1))
+            case LList(xs)    => LList(          lazy loop(force xs, i))
+        };
+        loop(l, 0)
+
+    ///
     /// Returns `l` as an `Array`.
     ///
     /// Forces the entire list `l`.
@@ -1191,8 +1206,9 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toMutList(l: DelayList[a]): MutList[a, Impure] & Impure =
-        toArray(l, static) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`.
+    pub def toMutList(l: DelayList[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(toArray(l, r2), r) // `Array.toMutList` respects the invariant of `MutList`.
+    }
 
     ///
     /// Returns the association list `l` as a map.

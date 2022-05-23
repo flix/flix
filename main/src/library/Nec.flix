@@ -113,8 +113,8 @@ instance Iterable[Nec] {
 
 instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String =
-        let fn = () -> {
-            let sb = StringBuilder.new();
+        let fn = () -> region r {
+            let sb = new StringBuilder(r);
             StringBuilder.appendString!("Nec#{", sb);
             Nec.foldLeft((acc, x) -> {
                 if (acc < 1)
@@ -125,7 +125,7 @@ instance ToString[Nec[a]] with ToString[a] {
             StringBuilder.appendString!("}", sb);
             StringBuilder.toString(sb)
         };
-        fn() as & Pure
+        fn()
 }
 
 
@@ -298,14 +298,12 @@ namespace Nec {
         reduceLeft(Order.maxBy(cmp), c)
 
     ///
-    /// Returns the position of `a` in `c`.
+    /// Optionally returns the position of `a` in `c`.
     ///
-    /// Returns `-1` if `a` does not exist in `c`.
-    ///
-    pub def indexOf(a: a, c: Nec[a]): Int32 with Eq[a] =
+    pub def indexOf(a: a, c: Nec[a]): Option[Int32] with Eq[a] =
         def loop(acc: Int32, c1: Nec[a]) = match viewLeft(c1) {
-            case OneLeft(x)      => if (x == a) acc else -1
-            case SomeLeft(x, c2) => if (x == a) acc else loop(acc + 1, c2)
+            case OneLeft(x)      => if (x == a) Some(acc) else None
+            case SomeLeft(x, c2) => if (x == a) Some(acc) else loop(acc + 1, c2)
         };
         loop(0, c)
 
@@ -660,6 +658,17 @@ namespace Nec {
         loop(c, (ks, ls) -> (ks, ls))
 
     ///
+    /// Returns a Nec where each element `e` is mapped to `(e, i)` where `i`
+    /// is the index of `e`.
+    ///
+    pub def zipWithIndex(c: Nec[a]): Nec[(a, Int32)] =
+        def loop(c1, k, i) = match viewLeft(c1) {
+            case OneLeft(x)      => k(NecOne(x, i))
+            case SomeLeft(x, rs) => loop(rs, ks -> k(cons((x, i), ks)), i + 1)
+        };
+        loop(c, k -> k, 0)
+
+    ///
     /// `mapAccumLeft` is a stateful version of `map`. The accumulating paramter `s` is updated at each
     /// step in a left-to-right traversal.
     ///
@@ -710,8 +719,9 @@ namespace Nec {
     ///
     /// Returns `c` as a mutable list.
     ///
-    pub def toMutList(c: Nec[a]): MutList[a, Impure] & Impure =
-        toArray(c, static) |> Array.toMutList // `Array.toMutList` respects the invariant of `MutList`
+    pub def toMutList(c: Nec[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
+        Array.toMutList(toArray(c, r2), r) // `Array.toMutList` respects the invariant of `MutList`
+    }
 
     ///
     /// Returns the list `c` as a set.

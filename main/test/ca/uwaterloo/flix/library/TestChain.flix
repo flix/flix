@@ -258,22 +258,22 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def indexOf01(): Bool = Chain.indexOf(0, Chain.empty()) == -1
+    def indexOf01(): Bool = Chain.indexOf(0, Chain.empty()) == None
 
     @test
-    def indexOf02(): Bool = Chain.indexOf(0, Chain.singleton(1)) == -1
+    def indexOf02(): Bool = Chain.indexOf(0, Chain.singleton(1)) == None
 
     @test
-    def indexOf03(): Bool = Chain.indexOf(1, Chain.singleton(1)) == 0
+    def indexOf03(): Bool = Chain.indexOf(1, Chain.singleton(1)) == Some(0)
 
     @test
-    def indexOf04(): Bool = Chain.indexOf(0, List.toChain(1 :: 2 :: Nil)) == -1
+    def indexOf04(): Bool = Chain.indexOf(0, List.toChain(1 :: 2 :: Nil)) == None
 
     @test
-    def indexOf05(): Bool = Chain.indexOf(1, List.toChain(1 :: 2 :: Nil)) == 0
+    def indexOf05(): Bool = Chain.indexOf(1, List.toChain(1 :: 2 :: Nil)) == Some(0)
 
     @test
-    def indexOf06(): Bool = Chain.indexOf(2, List.toChain(1 :: 2 :: Nil)) == 1
+    def indexOf06(): Bool = Chain.indexOf(2, List.toChain(1 :: 2 :: Nil)) == Some(1)
 
     /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
@@ -1369,20 +1369,24 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMutList01(): Bool & Impure =
-        Chain.toMutList(Chain.empty(): Chain[Int32]) `MutList.sameElements` List.toMutList(Nil): MutList[Int32, Impure]
+    def toMutList01(): Bool = region r {
+        Chain.toMutList(Chain.empty(): Chain[Int32], r) `MutList.sameElements` List.toMutList(Nil, r): MutList[Int32, _]
+    }
 
     @test
-    def toMutList02(): Bool & Impure =
-        Chain.toMutList(Chain.singleton(1)) `MutList.sameElements` List.toMutList(1 :: Nil)
+    def toMutList02(): Bool = region r {
+        Chain.toMutList(Chain.singleton(1), r) `MutList.sameElements` List.toMutList(1 :: Nil, r)
+    }
 
     @test
-    def toMutList03(): Bool & Impure =
-        Chain.toMutList(List.toChain(1 :: 2 :: Nil)) `MutList.sameElements` List.toMutList(1 :: 2 :: Nil)
+    def toMutList03(): Bool = region r {
+        Chain.toMutList(List.toChain(1 :: 2 :: Nil), r) `MutList.sameElements` List.toMutList(1 :: 2 :: Nil, r)
+    }
 
     @test
-    def toMutList04(): Bool & Impure =
-        Chain.toMutList(List.toChain(1 :: 2 :: 3 :: Nil)) `MutList.sameElements` List.toMutList(1 :: 2 :: 3 :: Nil)
+    def toMutList04(): Bool = region r {
+        Chain.toMutList(List.toChain(1 :: 2 :: 3 :: Nil), r) `MutList.sameElements` List.toMutList(1 :: 2 :: 3 :: Nil, r)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //

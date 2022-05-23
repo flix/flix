@@ -99,97 +99,97 @@ namespace Test/Exp/Concurrency/Unbuffered {
         42 == <- <- c1
 
     @test
-    def testUnbufferedChannelGetPut01(): Channel[Unit] & Impure =
+    def testUnbufferedChannelGetPut01(): Unit & Impure =
         let c = chan Unit 0;
         spawn <- c;
         c <- ()
 
     @test
-    def testUnbufferedChannelGetPut02(): Channel[Bool] & Impure =
+    def testUnbufferedChannelGetPut02(): Unit & Impure =
         let c = chan Bool 0;
         spawn <- c;
         c <- true
 
     @test
-    def testUnbufferedChannelGetPut03(): Channel[Float32] & Impure =
+    def testUnbufferedChannelGetPut03(): Unit & Impure =
         let c = chan Float32 0;
         spawn <- c;
         c <- 123.456f32
 
     @test
-    def testUnbufferedChannelGetPut04(): Channel[Float64] & Impure =
+    def testUnbufferedChannelGetPut04(): Unit & Impure =
         let c = chan Float64 0;
         spawn <- c;
         c <- 123.456f64
 
     @test
-    def testUnbufferedChannelGetPut05(): Channel[Int8] & Impure =
+    def testUnbufferedChannelGetPut05(): Unit & Impure =
         let c = chan Int8 0;
         spawn <- c;
         c <- 42i8
     @test
 
-    def testUnbufferedChannelGetPut06(): Channel[Int16] & Impure =
+    def testUnbufferedChannelGetPut06(): Unit & Impure =
         let c = chan Int16 0;
         spawn <- c;
         c <- 42i16
 
     @test
-    def testUnbufferedChannelGetPut07(): Channel[Int32] & Impure =
+    def testUnbufferedChannelGetPut07(): Unit & Impure =
         let c = chan Int32 0;
         spawn <- c;
         c <- 42i32
 
     @test
-    def testUnbufferedChannelGetPut08(): Channel[Int64] & Impure =
+    def testUnbufferedChannelGetPut08(): Unit & Impure =
         let c = chan Int64 0;
         spawn <- c;
         c <- 42i64
 
     @test
-    def testUnbufferedChannelGetPut09(): Channel[BigInt] & Impure =
+    def testUnbufferedChannelGetPut09(): Unit & Impure =
         let c = chan BigInt 0;
         spawn <- c;
         c <- 42ii
 
     @test
-    def testUnbufferedChannelGetPut10(): Channel[String] & Impure =
+    def testUnbufferedChannelGetPut10(): Unit & Impure =
         let c = chan String 0;
         spawn <- c;
         c <- "Hello World!"
 
     @test
-    def testUnbufferedChannelGetPut11(): Channel[Option[Int32]] & Impure =
+    def testUnbufferedChannelGetPut11(): Unit & Impure =
         let c = chan Option[Int32] 0;
         spawn <- c;
         c <- None
 
     @test
-    def testUnbufferedChannelGetPut12(): Channel[Option[Int32]] & Impure =
+    def testUnbufferedChannelGetPut12(): Unit & Impure =
         let c = chan Option[Int32] 0;
         spawn <- c;
         c <- Some(123)
 
     @test
-    def testUnbufferedChannelGetPut13(): Channel[Result[Int32, String]] & Impure =
+    def testUnbufferedChannelGetPut13(): Unit & Impure =
         let c = chan Result[Int32, String] 0;
         spawn <- c;
         c <- Ok(123)
 
     @test
-    def testUnbufferedChannelGetPut14(): Channel[Result[Int32, String]] & Impure =
+    def testUnbufferedChannelGetPut14(): Unit & Impure =
         let c = chan Result[Int32, String] 0;
         spawn <- c;
         c <- Err("Goodbye World!")
 
     @test
-    def testUnbufferedChannelGetPut15(): Channel[Array[Int32]] & Impure =
+    def testUnbufferedChannelGetPut15(): Unit & Impure =
         let c = chan Array[Int32] 0;
         spawn <- c;
         c <- [1, 2, 3]
 
     @test
-    def testUnbufferedChannelGetPut16(): Channel[Int32] & Impure =
+    def testUnbufferedChannelGetPut16(): Unit & Impure =
         let c1 = chan Channel[Int32] 0;
         let c2 = chan Int32 0;
         spawn <- <- c1;

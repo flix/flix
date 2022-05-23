@@ -139,7 +139,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given instance `inst0`.
     */
   private def visitInstance(inst0: TypedAst.Instance): Iterator[SemanticToken] = inst0 match {
-    case TypedAst.Instance(_, _, sym, tpe, tconstrs, defs, _, _) =>
+    case TypedAst.Instance(_, _, _, sym, tpe, tconstrs, defs, _, _) =>
       // NB: we use SemanticTokenType.Class because the OOP "Class" most directly corresponds to the FP "Instance"
       val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
       val st1 = Iterator(t)
@@ -608,6 +608,11 @@ object SemanticTokensProvider {
     case TypeConstructor.Not => false
     case TypeConstructor.And => false
     case TypeConstructor.Or => false
+    case TypeConstructor.Complement => false
+    case TypeConstructor.Union => false
+    case TypeConstructor.Intersection => false
+    case TypeConstructor.Difference => false
+    case TypeConstructor.Effect(_) => false
     case TypeConstructor.Region => false
 
     case TypeConstructor.UnkindedEnum(_) => throw InternalCompilerException("Unexpected unkinded type.")
