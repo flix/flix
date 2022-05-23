@@ -480,6 +480,8 @@ object Finalize {
 
             case TypeConstructor.Effect(_) => MonoType.Unit
 
+            case TypeConstructor.Empty => MonoType.Unit
+
             case TypeConstructor.UnkindedEnum(_) =>
               throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
