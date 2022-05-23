@@ -5039,7 +5039,7 @@ def init205(): Bool & Impure =
 
     @test
     def join01(): Bool = region r {
-        Array.join(",", [] @ r: Array[Int32]) == ""
+        Array.join(",", ([] @ r): ScopedArray[Int32, _]) == ""
     }
 
     @test
@@ -5084,7 +5084,7 @@ def init205(): Bool & Impure =
 
     @test
     def joinWith05(): Bool = region r {
-        let a: Array[Int32] = [] @ r;
+        let a: ScopedArray[Int32, _] = [] @ r;
         let s = Array.joinWith(Int32.toString, ",", a);
         s == ""
     }
