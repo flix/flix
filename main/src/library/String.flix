@@ -125,11 +125,11 @@ namespace String {
     ///
     /// Helper function for `init`.
     ///
-    def initHelper(f: Int32 -> Char & ef, len: Int32): String & Impure =
+    def initHelper(f: Int32 -> Char & ef, len: Int32): String = region r {
         if (len <= 0)
             ""
         else {
-            let sb = new StringBuilder(static);
+            let sb = new StringBuilder(r);
             def loop(i) = {
                 if (i >= len)
                     ()
@@ -142,6 +142,7 @@ namespace String {
             loop(0);
             StringBuilder.toString(sb)
         }
+    }
 
     ///
     /// Concatenate a list of strings into a single string.
