@@ -125,7 +125,7 @@ namespace String {
     ///
     /// Helper function for `init`.
     ///
-    def initHelper(f: Int32 -> Char & ef, len: Int32): String = region r {
+    def initHelper(f: Int32 -> Char & ef, len: Int32): String & ef = region r {
         if (len <= 0)
             ""
         else {
