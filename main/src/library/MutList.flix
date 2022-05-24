@@ -722,6 +722,14 @@ namespace MutList {
         foldLeft((ac, x) -> Chain.snoc(ac, x), Chain.empty(), xs)
 
     ///
+    /// Returns `v` as a MutDeque.
+    ///
+    pub def toMutDeque(v: MutList[a, r1], r: Region[r2]): MutDeque[a, r2] \ { Read(r1), Write(r2) }  =
+        let d = new MutDeque(r);
+        MutList.foreach(x -> MutDeque.pushBack(x, d), v);
+        d
+
+    ///
     /// Returns `true` if the mutable lists `v1` and `v2` have the same elements, i.e. are structurally equal.
     ///
     pub def sameElements(v1: MutList[a, r1], v2: MutList[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
