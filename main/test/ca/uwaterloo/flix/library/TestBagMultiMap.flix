@@ -212,25 +212,25 @@ namespace TestBagMultiMap {
             |> toAssocList == (1, 'c' :: 'a' :: Nil) :: (2, 'b' :: Nil) :: (3, 'b' :: Nil) :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
-    // inserts                                                                 //
+    // insertAll                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def inserts01(): Bool =
-        BagMultiMap.inserts(1, Nil: List[Char], empty()) == empty()
+    def insertAll01(): Bool =
+        BagMultiMap.insertAll(1, Nil: List[Char], empty()) == empty()
 
     @test
-    def inserts02(): Bool =
-        empty() |> BagMultiMap.inserts(1, 'a' :: Nil)|> toAssocList == (1, 'a' :: Nil) :: Nil
+    def insertAll02(): Bool =
+        empty() |> BagMultiMap.insertAll(1, 'a' :: Nil)|> toAssocList == (1, 'a' :: Nil) :: Nil
 
     @test
-    def inserts03(): Bool =
-        empty() |> BagMultiMap.inserts(1, 'a' :: 'c' :: Nil) |> BagMultiMap.inserts(2, 'b' :: Nil)
+    def insertAll03(): Bool =
+        empty() |> BagMultiMap.insertAll(1, 'a' :: 'c' :: Nil) |> BagMultiMap.insertAll(2, 'b' :: Nil)
             |> toAssocList == (1, 'a' :: 'c' :: Nil) :: (2, 'b' :: Nil) :: Nil
 
     @test
-    def inserts04(): Bool =
-        empty() |> BagMultiMap.inserts(1, 'a' :: 'c' :: Nil) |> BagMultiMap.inserts(2, 'b' :: Nil) |> BagMultiMap.inserts(3, 'b' :: Nil)
+    def insertAll04(): Bool =
+        empty() |> BagMultiMap.insertAll(1, 'a' :: 'c' :: Nil) |> BagMultiMap.insertAll(2, 'b' :: Nil) |> BagMultiMap.insertAll(3, 'b' :: Nil)
             |> toAssocList == (1, 'a' :: 'c' :: Nil) :: (2, 'b' :: Nil) :: (3, 'b' :: Nil) :: Nil
 
     /////////////////////////////////////////////////////////////////////////////

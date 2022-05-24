@@ -18,8 +18,8 @@
 ///
 /// The SetMultiMap type.
 ///
-/// A SetMultiMap is a Map that allows multiple values for a key. 
-/// Mulitple values are stored in a Set so duplicates are not allowed.
+/// A SetMultiMap is a Map that allows multiple values for a key.
+/// Multiple values are stored in a Set so duplicates are not allowed.
 ///
 /// Value and key types must be implement Order.
 ///
@@ -31,6 +31,7 @@ pub enum SetMultiMap[k, v] {
 instance Boxable[SetMultiMap[k, v]] with Boxable[k], Boxable[v]
 
 instance ToString[SetMultiMap[k, v]] with ToString[k], ToString[v] {
+    // Uses `dropRight` to remove the trailing ", "
     pub def toString(m: SetMultiMap[k, v]): String =
         let SetMultiMap(m1) = m;
         let s = Map.foldRightWithKey((k, v, acc) -> "${k} => ${v}, ${acc}", "", m1);
@@ -47,14 +48,11 @@ instance Hash[SetMultiMap[k, v]] with Hash[k], Hash[v] {
 instance Eq[SetMultiMap[k, v]] with Eq[k], Eq[v] {
     pub def eq(m1: SetMultiMap[k, v], m2: SetMultiMap[k, v]): Bool =
         SetMultiMap.toList(m1) == SetMultiMap.toList(m2)
-
 }
 
 instance Order[SetMultiMap[k, v]] with Order[k], Order[v] {
-
     pub def compare(x: SetMultiMap[k, v], y: SetMultiMap[k, v]): Comparison =
         SetMultiMap.toList(x) <=> SetMultiMap.toList(y)
-
 }
 
 instance Foldable[SetMultiMap[k]] {
@@ -131,7 +129,6 @@ namespace SetMultiMap {
         let SetMultiMap(m1) = m;
         Map.valuesOf(m1) |> List.map(Set.toList) |> List.flatten
 
-
     ///
     /// Updates `m` with `k => v`.
     ///
@@ -139,21 +136,19 @@ namespace SetMultiMap {
         let SetMultiMap(m1) = m;
         SetMultiMap(Map.insertWith((v1, v2) -> Set.union(v1, v2), k, Set.singleton(v), m1))
 
-
     ///
     /// Updates `m` with `k => vs`.
     ///
     /// Where `vs` is any foldable container. If `vs` is empty nothing is inserted.
     ///
-    pub def inserts(k: k, vs: t[v], m: SetMultiMap[k, v]): SetMultiMap[k, v] with Order[k], Order[v], Foldable[t] =
+    pub def insertAll(k: k, vs: t[v], m: SetMultiMap[k, v]): SetMultiMap[k, v] with Order[k], Order[v], Foldable[t] =
         match Foldable.toSet(vs) {
             case s1 if Set.isEmpty(s1) => m
-            case s1                    => { 
+            case s1                    => {
                 let SetMultiMap(m1) = m;
                 SetMultiMap(Map.insertWith((v1, v2) -> Set.union(v1, v2), k, s1, m1))
             }
         }
-
 
     ///
     /// Updates `m` with `k => map(f, vs)` if `k => vs` is in `m`.
@@ -169,7 +164,6 @@ namespace SetMultiMap {
     pub def adjustWithKey(f: (k, v) -> v & ef, k: k, m: SetMultiMap[k, v]): SetMultiMap[k, v] & ef with Order[k], Order[v] =
         updateWithKey((k1, v) -> Some(f(k1, v)), k, m)
 
-
     ///
     /// Updates `m` with `k => v1` if `k => v` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
     ///
@@ -183,7 +177,6 @@ namespace SetMultiMap {
         let SetMultiMap(m1) = m;
         let outer = (k1, s) -> if (k1 == k) Set.map(v1 -> Option.getWithDefault(v1, f(k1, v1)), s) else s;
         SetMultiMap(Map.mapWithKey(outer, m1))
-
 
     ///
     /// Removes the mapping `k` from the SetMultiMap `m`.
@@ -232,7 +225,7 @@ namespace SetMultiMap {
     ///
     /// The function `f` must be pure.
     ///
-    pub def filter(f: v -> Bool, m: SetMultiMap[k, v]): SetMultiMap[k, v] with Order[k], Order[v] = 
+    pub def filter(f: v -> Bool, m: SetMultiMap[k, v]): SetMultiMap[k, v] with Order[k], Order[v] =
         filterWithKey((_, v) -> f(v), m)
 
     ///
@@ -248,7 +241,8 @@ namespace SetMultiMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    pub def map(f: v1 -> v2 & ef, m: SetMultiMap[k, v1]): SetMultiMap[k, v2] & ef with Order[v2] = 
+    @ParallelWhenPure
+    pub def map(f: v1 -> v2 & ef, m: SetMultiMap[k, v1]): SetMultiMap[k, v2] & ef with Order[v2] =
         mapWithKey((_, v) -> f(v), m)
 
     ///
@@ -256,11 +250,11 @@ namespace SetMultiMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
+    @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 & ef, m: SetMultiMap[k, v1]): SetMultiMap[k, v2] & ef with Order[v2] =
         let SetMultiMap(m1) = m;
         let outer = (k, vs) -> Set.map(f(k), vs);
         SetMultiMap(Map.mapWithKey(outer, m1))
-
 
     ///
     /// Alias for `foldLeftWithKey`.
@@ -502,21 +496,19 @@ namespace SetMultiMap {
     pub def toAscList(m: SetMultiMap[k, v]): List[(k, v)] =
         foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
 
-
     ///
     /// Returns the SetMultiMap `m` as a list of singleton key-value pairs in descending order.
     ///
     pub def toDescList(m: SetMultiMap[k, v]): List[(k, v)] =
         foldLeftWithKey((acc, k, v) -> (k, v) :: acc, Nil, m)
 
-
     ///
-    /// Returns the SetMultiMap `m` as a list of key * Set[value] pairs in ascending order.
+    /// Returns the SetMultiMap `m` as a list of `(key, Set[value])` pairs in ascending order.
     ///
-    pub def toAssocList(m: SetMultiMap[k, v]): List[(k, Set[v])] = 
+    pub def toAssocList(m: SetMultiMap[k, v]): List[(k, Set[v])] =
         let SetMultiMap(m1) = m;
         Map.foldRightWithKey((k, vs, acc) -> (k, vs) :: acc, Nil, m1)
 
-    /// No traversable functions due to Order constraint that's outside the `Traversable` class.
+    // No traversable functions due to Order constraint that's outside the `Traversable` class.
 
 }

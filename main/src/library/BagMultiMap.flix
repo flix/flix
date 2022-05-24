@@ -19,7 +19,7 @@
 /// The BagMultiMap type.
 ///
 /// A BagMultiMap is a Map that allows multiple values for a key.
-/// Mulitple values re stored in an ordered Bag so duplicates are allowed.
+/// Multiple values are stored in an ordered Bag so duplicates are allowed.
 ///
 pub enum BagMultiMap[k, v] {
     case BagMultiMap(Map[k, Nec[v]])
@@ -28,6 +28,7 @@ pub enum BagMultiMap[k, v] {
 instance Boxable[BagMultiMap[k, v]] with Boxable[k], Boxable[v]
 
 instance ToString[BagMultiMap[k, v]] with ToString[k], ToString[v] {
+    // Uses `dropRight` to remove the trailing ", "
     pub def toString(m: BagMultiMap[k, v]): String =
         let BagMultiMap(m1) = m;
         let s = Map.foldRightWithKey((k, v, acc) -> "${k} => ${v}, ${acc}", "", m1);
@@ -43,14 +44,11 @@ instance Hash[BagMultiMap[k, v]] with Hash[k], Hash[v] {
 instance Eq[BagMultiMap[k, v]] with Eq[k], Eq[v] {
     pub def eq(m1: BagMultiMap[k, v], m2: BagMultiMap[k, v]): Bool =
         BagMultiMap.toList(m1) == BagMultiMap.toList(m2)
-
 }
 
 instance Order[BagMultiMap[k, v]] with Order[k], Order[v] {
-
     pub def compare(x: BagMultiMap[k, v], y: BagMultiMap[k, v]): Comparison =
         BagMultiMap.toList(x) <=> BagMultiMap.toList(y)
-
 }
 
 instance Functor[BagMultiMap[k]] {
@@ -153,7 +151,7 @@ namespace BagMultiMap {
     ///
     /// Where `vs` is any foldable container. If `vs` is empty then nothing is inserted.
     ///
-    pub def inserts(k: k, vs: t[v], m: BagMultiMap[k, v]): BagMultiMap[k, v] with Order[k], Foldable[t] =
+    pub def insertAll(k: k, vs: t[v], m: BagMultiMap[k, v]): BagMultiMap[k, v] with Order[k], Foldable[t] =
         match Foldable.toList(vs) |> List.toNec {
             case None => m
             case Some(front) => {
@@ -175,7 +173,6 @@ namespace BagMultiMap {
     ///
     pub def adjustWithKey(f: (k, v) -> v & ef, k: k, m: BagMultiMap[k, v]): BagMultiMap[k, v] & ef with Order[k] =
         updateWithKey((k1, v) -> Some(f(k1, v)), k, m)
-
 
     ///
     /// Updates `m` with `k => v1` if `k => v` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
@@ -253,6 +250,7 @@ namespace BagMultiMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
+    @ParallelWhenPure
     pub def map(f: v1 -> v2 & ef, m: BagMultiMap[k, v1]): BagMultiMap[k, v2] & ef = mapWithKey((_, v) -> f(v), m)
 
     ///
@@ -260,11 +258,11 @@ namespace BagMultiMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
+    @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 & ef, m: BagMultiMap[k, v1]): BagMultiMap[k, v2] & ef =
         let BagMultiMap(m1) = m;
         let outer = (k, vs) -> Nec.map(f(k), vs);
         BagMultiMap(Map.mapWithKey(outer, m1))
-
 
     ///
     /// Alias for `foldLeftWithKey`.
@@ -325,8 +323,6 @@ namespace BagMultiMap {
     pub def foldRightWithKeyCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, m: BagMultiMap[k, v]): b & ef =
         let BagMultiMap(m1) = m;
         Map.foldRightWithKeyCont((k, vs, b1) -> Nec.foldRightWithCont((v1, fac) -> f(k, v1, fac), b1(), vs), z, m1)
-
-        /// ??? We call the outer continuation `b1` - is this correct?
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -476,6 +472,10 @@ namespace BagMultiMap {
     ///
     /// Returns the intersection of `m1` and `m2`.
     ///
+    /// When `m1` and `m2` share common keys their intersection is formed
+    /// by the intersection of the respective bags. The order of the results
+    /// is baised to follow the order of the bag from `m1`.
+    ///
     pub def intersection(m1: BagMultiMap[k, v], m2: BagMultiMap[k, v]): BagMultiMap[k, v] with Order[k], Eq[v] =
         let BagMultiMap(mm1) = m1;
         let BagMultiMap(mm2) = m2;
@@ -490,6 +490,8 @@ namespace BagMultiMap {
 
     ///
     /// Helper function for `intersection`.
+    ///
+    /// Ordering is biased to `n1`.
     ///
     def intersectionNec(n1: Nec[v], n2: Nec[v]): Option[Nec[v]] with Eq[v] =
         Nec.foldLeft((acc, v) -> if (Nec.memberOf(v, n2) and not Chain.memberOf(v, acc)) Chain.snoc(acc, v) else acc, Chain.empty(), n1)
@@ -541,8 +543,6 @@ namespace BagMultiMap {
         };
         loop(None, nec)
 
-
-
     ///
     /// Returns the BagMultiMap `m` as a list of singleton key-value pairs.
     ///
@@ -554,16 +554,14 @@ namespace BagMultiMap {
     pub def toAscList(m: BagMultiMap[k, v]): List[(k, v)] =
         foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
 
-
     ///
     /// Returns the BagMultiMap `m` as a list of singleton key-value pairs in descending order.
     ///
     pub def toDescList(m: BagMultiMap[k, v]): List[(k, v)] =
         foldLeftWithKey((acc, k, v) -> (k, v) :: acc, Nil, m)
 
-
     ///
-    /// Returns the BagMultiMap `m` as a list of key * List[value] pairs in ascending order.
+    /// Returns the BagMultiMap `m` as a list of `(key, List[value])` pairs in ascending order.
     ///
     pub def toAssocList(m: BagMultiMap[k, v]): List[(k, List[v])] =
         let BagMultiMap(m1) = m;
