@@ -728,6 +728,14 @@ namespace Chain {
         foldRight((x, acc) -> x :: acc, Nil, c)
 
     ///
+    /// Returns `c` as a MutDeque.
+    ///
+    pub def toMutDeque(c: Chain[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+        let d = new MutDeque(r);
+        Chain.foreach(x -> MutDeque.pushBack(x, d), c);
+        d
+
+    ///
     /// Returns `c` as a mutable list.
     ///
     pub def toMutList(c: Chain[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
