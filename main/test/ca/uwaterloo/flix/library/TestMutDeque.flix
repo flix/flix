@@ -830,7 +830,7 @@ namespace TestMutDeque {
         MutDeque.pushFront("a", d);
         MutDeque.pushFront("b", d);
         MutDeque.pushFront("c", d);
-        MutDeque.foldMap(x -> if(x == "a") "b" else x, d) == "cbb"
+        MutDeque.foldMap(x -> if (x == "a") "b" else x, d) == "bbc"
     }
 
 

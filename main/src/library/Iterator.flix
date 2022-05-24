@@ -471,7 +471,7 @@ namespace Iterator {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b & ef, iter: Iterator[a]): b & ef with Monoid[b] =
+    pub def foldMap(f: a -> b & ef, iter: Iterator[a]): b & Impure with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(f(x), acc), Monoid.empty(), iter)
 
     ///

@@ -908,16 +908,16 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldMap01(): Bool = Iterator.foldMap(x -> 2 * x, List.toIterator(Nil)) == 0
+    def foldMap01(): Bool & Impure = Iterator.foldMap(x -> 2 * x, List.toIterator(Nil)) == 0
 
     @test
-    def foldMap02(): Bool = Iterator.foldMap(x -> 2 * x, List.toIterator(1 :: 2 :: Nil)) == 6
+    def foldMap02(): Bool & Impure = Iterator.foldMap(x -> 2 * x, List.toIterator(1 :: 2 :: Nil)) == 6
 
     @test
-    def foldMap03(): Bool = Iterator.foldMap(x -> if(x == "a") "b" else x, List.toIterator("a" :: Nil)) == "b"
+    def foldMap03(): Bool & Impure = Iterator.foldMap(x -> if(x == "a") "b" else x, List.toIterator("a" :: Nil)) == "b"
 
     @test
-    def foldMap04(): Bool = Iterator.foldMap(x -> if(x == "a") "b" else x, List.toIterator("a" :: "b" :: Nil)) == "bb"
+    def foldMap04(): Bool & Impure = Iterator.foldMap(x -> if(x == "a") "b" else x, List.toIterator("a" :: "b" :: Nil)) == "bb"
 
 
     /////////////////////////////////////////////////////////////////////////////
