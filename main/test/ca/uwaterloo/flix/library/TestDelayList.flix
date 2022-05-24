@@ -691,6 +691,31 @@ namespace TestDelayList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool =
+    	DelayList.foldMap(x -> 2 * x, ENil) == 0
+
+    @test
+    def foldMap02(): Bool =
+    	DelayList.foldMap(x -> 2 * x, LList(lazy ENil)) == 0
+
+    @test
+    def foldMap03(): Bool =
+    	DelayList.foldMap(x -> 2 * x, LCons(1, lazy LList(lazy ENil))) == 2
+
+    @test
+    def foldMap04(): Bool =
+    	DelayList.foldMap(x -> 2 * x, ECons(1, LCons(2, lazy ENil))) == 6
+
+    @test
+    def foldMap05(): Bool =
+    	DelayList.foldMap(x -> 2 * x, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 12
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // foreach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
