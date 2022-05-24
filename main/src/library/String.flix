@@ -656,8 +656,8 @@ namespace String {
     ///
     /// This is a version of `unfold` where `f` generates substrings rather than chars.
     ///
-    pub def unfoldString(f: b -> Option[(String, b)] & ef, x: b) : String & ef =
-        let sb = new StringBuilder(static) as & ef;
+    pub def unfoldString(f: b -> Option[(String, b)] & ef, x: b) : String & ef = region r {
+        let sb = new StringBuilder(r) as & ef;
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -668,7 +668,8 @@ namespace String {
                 }
             }
         };
-        loop(x) as & ef
+        loop(x)
+    }
 
     ///
     /// Build a string by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -678,8 +679,8 @@ namespace String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldStringWithIter(f: Unit -> Option[String] & ef): String & ef =
-        let sb = new StringBuilder(static) as & Pure;
+    pub def unfoldStringWithIter(f: Unit -> Option[String] & ef): String & ef = region r {
+        let sb = new StringBuilder(r) as & Pure;
         def loop() = {
             match f() {
                 case None    => StringBuilder.toString(sb)
@@ -689,7 +690,8 @@ namespace String {
                 }
             }
         };
-        loop() as & ef
+        loop()
+    }
 
     ///
     /// Returns `true` if and only if at least one char in `s` satisfies the predicate `f`.
@@ -850,13 +852,13 @@ namespace String {
         if (n <= 0 or length(s) == 0)
             s
         else
-            indentHelper(n, s) as & Pure
+            indentHelper(n, s)
 
     ///
     /// Helper function for `indent`.
     ///
-    def indentHelper(n: Int32, s: String): String & Impure =
-        let sb = new StringBuilder(static);
+    def indentHelper(n: Int32, s: String): String = region r {
+        let sb = new StringBuilder(r);
         let prefix = repeat(n, " ");
         let step = x -> {
             StringBuilder.appendString!(prefix, sb);
@@ -864,6 +866,7 @@ namespace String {
         };
         List.foreach(step, lines(s));
         StringBuilder.toString(sb)
+    }
 
 
     ///
@@ -881,13 +884,13 @@ namespace String {
         if (n <= 0 or length(s) == 0)
             s
         else
-            stripIndentHelper(n, s) as & Pure
+            stripIndentHelper(n, s)
 
     ///
     /// Helper function for `stripIndent`.
     ///
-    def stripIndentHelper(n: Int32, s: String): String & Impure =
-        let sb = new StringBuilder(static);
+    def stripIndentHelper(n: Int32, s: String): String = region r {
+        let sb = new StringBuilder(r);
         let limit = Int32.min(n, length(s));
         def loop(s1, ix) = {
             if (ix >= limit)
@@ -903,6 +906,7 @@ namespace String {
         };
         List.foreach(step, lines(s));
         StringBuilder.toString(sb)
+    }
 
     ///
     /// Split the string `s` into an array of lines, breaking on newline.
@@ -922,15 +926,16 @@ namespace String {
     /// ending the result string with the system dependent line separator.
     ///
     @Time(List.length(a)) @Space(List.length(a))
-    pub def unlines(a: List[String]): String = unlinesHelper(a) as & Pure
+    pub def unlines(a: List[String]): String = unlinesHelper(a)
 
     ///
     /// Helper function for `unlines`.
     ///
-    def unlinesHelper(a: List[String]): String & Impure =
-        let sb = new StringBuilder(static);
+    def unlinesHelper(a: List[String]): String = region r {
+        let sb = new StringBuilder(r);
         List.foreach(x -> StringBuilder.appendLine!(x, sb), a);
         StringBuilder.toString(sb)
+    }
 
     ///
     /// Split the string `s` into an list of words, dividing on one or more white space characters.
@@ -947,13 +952,13 @@ namespace String {
     /// single space character.
     ///
     @Time(List.length(a)) @Space(List.length(a))
-    pub def unwords(a: List[String]): String = unwordsHelper(a) as & Pure
+    pub def unwords(a: List[String]): String = unwordsHelper(a)
 
     ///
     /// Helper function for `unlines`.
     ///
-    def unwordsHelper(xs: List[String]): String & Impure =
-        let sb = new StringBuilder(static);
+    def unwordsHelper(xs: List[String]): String = region r {
+        let sb = new StringBuilder(r);
         let first = ref true;
         let step = s ->
             if (deref first == true) {
@@ -965,6 +970,7 @@ namespace String {
             };
         List.foreach(step, xs);
         StringBuilder.toString(sb)
+    }
 
     ///
     /// Alias for `indexOfLeft`.
