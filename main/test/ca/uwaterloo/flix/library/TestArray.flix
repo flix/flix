@@ -2191,6 +2191,22 @@ def foldRightWithCont03(): Bool & Impure = Array.foldRightWithCont((e, k) -> (k(
 def foldRightWithCont04(): Bool & Impure = Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, [1,2,3]) == 382
 
 /////////////////////////////////////////////////////////////////////////////
+// foldMap                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def foldMap01(): Bool & Impure = Array.foldMap(x -> 2 * x, []) == 0
+
+@test
+def foldMap02(): Bool & Impure = Array.foldMap(x -> 2 * x, [1, 2]) == 6
+
+@test
+def foldMap03(): Bool & Impure = Array.foldMap(x -> if (x == "a") "b" else x, ["a"]) == "b"
+
+@test
+def foldMap04(): Bool & Impure = Array.foldMap(x -> if (x == "a") "b" else x, ["a", "b"]) == "bb"
+
+/////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
 /////////////////////////////////////////////////////////////////////////////
 
