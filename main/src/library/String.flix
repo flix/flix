@@ -120,7 +120,7 @@ namespace String {
     /// Build a string of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init(f: Int32 -> Char & ef, len: Int32): String & ef = initHelper(f, len) as & ef
+    pub def init(f: Int32 -> Char & ef, len: Int32): String & ef = initHelper(f, len)
 
     ///
     /// Helper function for `init`.
