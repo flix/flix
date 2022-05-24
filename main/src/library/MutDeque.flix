@@ -182,6 +182,12 @@ namespace MutDeque {
         loop(front, back)
 
     ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, d: MutDeque[a, r]): b \ { ef, Read(r) } with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(f(x), acc), Monoid.empty(), d)
+
+    ///
     /// Returns `Some(x)` where `x` is the element at the front. Returns `None` if `d` is empty.
     ///
     pub def popFront(d: MutDeque[a, r]): Option[a] \ { Read(r), Write(r) } =

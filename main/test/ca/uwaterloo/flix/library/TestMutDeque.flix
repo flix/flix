@@ -791,6 +791,48 @@ namespace TestMutDeque {
         MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, d) == 382
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool = region r {
+        MutDeque.foldMap(x -> 2 * x, new MutDeque(r)) == 0
+    }
+
+    @test
+    def foldMap02(): Bool = region r {
+        let d = new MutDeque(r);
+        MutDeque.pushBack(1, d);
+        MutDeque.foldMap(x -> 2 * x, d) == 2
+    }
+
+    @test
+    def foldMap03(): Bool = region r {
+        let d = new MutDeque(r);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.foldMap(x -> 2 * x, d) == 6
+    }
+
+    @test
+    def foldMap04(): Bool = region r {
+        let d = new MutDeque(r);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.foldMap(x -> 2 * x, d) == 12
+    }
+
+    @test
+    def foldMap05(): Bool = region r {
+        let d = new MutDeque(r);
+        MutDeque.pushFront("a", d);
+        MutDeque.pushFront("b", d);
+        MutDeque.pushFront("c", d);
+        MutDeque.foldMap(x -> if(x == "a") "b" else x, d) == "cbb"
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
