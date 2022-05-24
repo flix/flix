@@ -1402,7 +1402,7 @@ namespace TestChain {
 
     @test
     def toMutDeque02(): Bool = region r {
-        let c = Chain.singleton(1), r);
+        let c = Chain.singleton(1);
         let d = List.toMutDeque(c, r);
 
         c == MutDeque.toList(d)
