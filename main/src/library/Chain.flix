@@ -762,7 +762,16 @@ namespace Chain {
         }
 
     ///
-    /// Returns the chain `c` as an Nec.
+    /// Returns the chain `c` as a Nel.
+    ///
+    pub def toNel(c: Chain[a]): Option[Nel[a]] =
+        match viewLeft(c) {
+            case NoneLeft        => None
+            case SomeLeft(x, rs) => Nel(x, Chain.toList(rs)) |> Some
+        }
+
+    ///
+    /// Returns the chain `c` as a Nec.
     ///
     pub def toNec(c: Chain[a]): Option[Nec[a]] =
         match viewLeft(c) {

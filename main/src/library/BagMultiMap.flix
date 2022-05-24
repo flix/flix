@@ -22,7 +22,7 @@
 /// Multiple values are stored in an ordered Bag so duplicates are allowed.
 ///
 pub enum BagMultiMap[k, v] {
-    case BagMultiMap(Map[k, Nec[v]])
+    case BagMultiMap(Map[k, Nel[v]])
 }
 
 instance Boxable[BagMultiMap[k, v]] with Boxable[k], Boxable[v]
@@ -89,12 +89,12 @@ namespace BagMultiMap {
     ///
     /// Returns the singleton BagMultiMap where key `k` is mapped to value `v`.
     ///
-    pub def singleton(k: k, v: v): BagMultiMap[k, v] with Order[k] = BagMultiMap(Map.singleton(k, Nec.singleton(v)))
+    pub def singleton(k: k, v: v): BagMultiMap[k, v] with Order[k] = BagMultiMap(Map.singleton(k, Nel.singleton(v)))
 
     ///
     /// Returns a BagMultiMap where key `k` is mapped to the singleton bag containing `v`.
     ///
-    pub def fromMap(m: Map[k, v]): BagMultiMap[k, v] with Order[k] = BagMultiMap(Map.map(Nec.singleton, m))
+    pub def fromMap(m: Map[k, v]): BagMultiMap[k, v] with Order[k] = BagMultiMap(Map.map(Nel.singleton, m))
 
     ///
     /// Returns `true` if and only if `m` is the empty BagMultiMap.
@@ -110,7 +110,7 @@ namespace BagMultiMap {
     ///
     pub def get(k: k, m: BagMultiMap[k, v]): List[v] with Order[k] =
         let BagMultiMap(t) = m;
-        Map.get(k, t) |> Option.map(Nec.toList) |> Option.getWithDefault(Nil)
+        Map.get(k, t) |> Option.map(Nel.toList) |> Option.getWithDefault(Nil)
 
     ///
     /// Returns `true` if and only if `m` contains the key `k`.
@@ -133,7 +133,7 @@ namespace BagMultiMap {
         let BagMultiMap(m1) = m;
         match Map.valuesOf(m1) {
             case Nil     => Nil
-            case x :: rs => List.foldLeft(Nec.append, x, rs) |> Nec.toList
+            case x :: rs => List.foldLeft(Nel.append, x, rs) |> Nel.toList
         }
 
     ///
@@ -144,7 +144,7 @@ namespace BagMultiMap {
     ///
     pub def insert(k: k, v: v, m: BagMultiMap[k, v]): BagMultiMap[k, v] with Order[k] =
         let BagMultiMap(m1) = m;
-        BagMultiMap(Map.insertWith((_, vs) -> Nec.cons(v, vs), k, Nec.singleton(v), m1))
+        BagMultiMap(Map.insertWith((_, vs) -> Nel.cons(v, vs), k, Nel.singleton(v), m1))
 
     ///
     /// Updates `m` with `k => vs`.
@@ -152,11 +152,11 @@ namespace BagMultiMap {
     /// Where `vs` is any foldable container. If `vs` is empty then nothing is inserted.
     ///
     pub def insertAll(k: k, vs: t[v], m: BagMultiMap[k, v]): BagMultiMap[k, v] with Order[k], Foldable[t] =
-        match Foldable.toList(vs) |> List.toNec {
+        match Foldable.toList(vs) |> List.toNel {
             case None => m
             case Some(front) => {
                 let BagMultiMap(m1) = m;
-                BagMultiMap(Map.insertWith((_, vs) -> Nec.append(front, vs), k, front, m1))
+                BagMultiMap(Map.insertWith((_, vs) -> Nel.append(front, vs), k, front, m1))
             }
         }
 
@@ -185,7 +185,7 @@ namespace BagMultiMap {
     ///
     pub def updateWithKey(f: (k, v) -> Option[v] & ef, k: k, m: BagMultiMap[k, v]): BagMultiMap[k, v] & ef with Order[k] =
         let BagMultiMap(m1) = m;
-        let outer = (k1, vs) -> if (k1 == k) Nec.map(v1 -> Option.getWithDefault(v1, f(k1, v1)), vs) else vs;
+        let outer = (k1, vs) -> if (k1 == k) Nel.map(v1 -> Option.getWithDefault(v1, f(k1, v1)), vs) else vs;
         BagMultiMap(Map.mapWithKey(outer, m1))
 
     ///
@@ -209,8 +209,8 @@ namespace BagMultiMap {
     ///
     pub def findLeft(f: (k, v) -> Bool, m: BagMultiMap[k, v]): Option[(k, v)] =
         let BagMultiMap(m1) = m;
-        let findGroup = (k, vs) -> Nec.exists(f(k), vs);
-        let findItem = (k, vs) -> Nec.findLeft(f(k), vs) |> Option.map(v1 -> (k, v1));
+        let findGroup = (k, vs) -> Nel.exists(f(k), vs);
+        let findItem = (k, vs) -> Nel.findLeft(f(k), vs) |> Option.map(v1 -> (k, v1));
         match Map.findLeft(findGroup, m1) {
             case None          => None
             case Some((k, vs)) => findItem(k, vs)
@@ -223,8 +223,8 @@ namespace BagMultiMap {
     ///
     pub def findRight(f: (k, v) -> Bool, m: BagMultiMap[k, v]): Option[(k, v)] =
         let BagMultiMap(m1) = m;
-        let findGroup = (k, vs: Nec[v]) -> Nec.exists(f(k), vs);
-        let findItem = (k, vs: Nec[v]) -> Nec.findRight(f(k), vs) |> Option.map(v1 -> (k, v1));
+        let findGroup = (k, vs) -> Nel.exists(f(k), vs);
+        let findItem = (k, vs) -> Nel.findRight(f(k), vs) |> Option.map(v1 -> (k, v1));
         match Map.findRight(findGroup, m1) {
             case None          => None
             case Some((k, vs)) => findItem(k, vs)
@@ -261,7 +261,7 @@ namespace BagMultiMap {
     @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 & ef, m: BagMultiMap[k, v1]): BagMultiMap[k, v2] & ef =
         let BagMultiMap(m1) = m;
-        let outer = (k, vs) -> Nec.map(f(k), vs);
+        let outer = (k, vs) -> Nel.map(f(k), vs);
         BagMultiMap(Map.mapWithKey(outer, m1))
 
     ///
@@ -284,7 +284,7 @@ namespace BagMultiMap {
     ///
     pub def foldLeftWithKey(f: (b, k, v) -> b & ef, s: b, m: BagMultiMap[k, v]): b & ef =
         let BagMultiMap(m1) = m;
-        let outer = (acc, k, vs) -> Nec.foldLeft((acc1, v1) -> f(acc1, k, v1), acc, vs);
+        let outer = (acc, k, vs) -> Nel.foldLeft((acc1, v1) -> f(acc1, k, v1), acc, vs);
         Map.foldLeftWithKey(outer, s, m1)
 
     ///
@@ -302,7 +302,7 @@ namespace BagMultiMap {
     ///
     pub def foldRightWithKey(f: (k, v, b) -> b & ef, s: b, m: BagMultiMap[k, v]): b & ef =
         let BagMultiMap(m1) = m;
-        let outer = (k, vs, acc) -> Nec.foldRight((v1, acc1) -> f(k, v1, acc1), acc, vs);
+        let outer = (k, vs, acc) -> Nel.foldRight((v1, acc1) -> f(k, v1, acc1), acc, vs);
         Map.foldRightWithKey(outer, s, m1)
 
     ///
@@ -322,7 +322,7 @@ namespace BagMultiMap {
     ///
     pub def foldRightWithKeyCont(f: (k, v, Unit -> b & ef) -> b & ef, z: b, m: BagMultiMap[k, v]): b & ef =
         let BagMultiMap(m1) = m;
-        Map.foldRightWithKeyCont((k, vs, b1) -> Nec.foldRightWithCont((v1, fac) -> f(k, v1, fac), b1(), vs), z, m1)
+        Map.foldRightWithKeyCont((k, vs, b1) -> Nel.foldRightWithCont((v1, fac) -> f(k, v1, fac), b1(), vs), z, m1)
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -347,7 +347,7 @@ namespace BagMultiMap {
             case None               => Some((k, v))
             case Some((kacc, vacc)) => Some(f(kacc, vacc, k, v))
         };
-        let outer = (acc, k, vs) -> Nec.foldLeft(inner(k), acc, vs);
+        let outer = (acc, k, vs) -> Nel.foldLeft(inner(k), acc, vs);
         Map.foldLeftWithKey(outer, None, m1)
 
     ///
@@ -373,7 +373,7 @@ namespace BagMultiMap {
             case None               => Some((k, v))
             case Some((kacc, vacc)) => Some(f(k, v, kacc, vacc))
         };
-        let outer = (k, vs, acc) -> Nec.foldRight(inner(k), acc, vs);
+        let outer = (k, vs, acc) -> Nel.foldRight(inner(k), acc, vs);
         Map.foldRightWithKey(outer, None, m1)
 
     ///
@@ -407,7 +407,7 @@ namespace BagMultiMap {
     @ParallelWhenPure
     pub def sumWith(f: (k, v) -> Int32 & ef, m: BagMultiMap[k, v]): Int32 & ef =
         let BagMultiMap(m1) = m;
-        let outer = (k, vs) -> Nec.sumWith(v -> f(k, v), vs);
+        let outer = (k, vs) -> Nel.sumWith(v -> f(k, v), vs);
         Map.sumWith(outer, m1)
 
     ///
@@ -430,7 +430,7 @@ namespace BagMultiMap {
     @ParallelWhenPure
     pub def productWith(f: (k, v) -> Int32 & ef, m: BagMultiMap[k, v]): Int32 & ef =
         let BagMultiMap(m1) = m;
-        let outer = (k, vs) -> Nec.productWith(v -> f(k, v), vs);
+        let outer = (k, vs) -> Nel.productWith(v -> f(k, v), vs);
         Map.productWith(outer, m1)
 
     ///
@@ -443,7 +443,7 @@ namespace BagMultiMap {
     @ParallelWhenPure
     pub def exists(f: (k, v) -> Bool & ef, m: BagMultiMap[k, v]): Bool & ef =
         let BagMultiMap(m1) = m;
-        let outer = (k, vs) -> Nec.exists(v -> f(k, v), vs);
+        let outer = (k, vs) -> Nel.exists(v -> f(k, v), vs);
         Map.exists(outer, m1)
 
     ///
@@ -456,7 +456,7 @@ namespace BagMultiMap {
     @ParallelWhenPure
     pub def forall(f: (k, v) -> Bool & ef, m: BagMultiMap[k, v]): Bool & ef =
         let BagMultiMap(m1) = m;
-        let outer = (k, vs) -> Nec.forall(v -> f(k, v), vs);
+        let outer = (k, vs) -> Nel.forall(v -> f(k, v), vs);
         Map.forall(outer, m1)
 
     ///
@@ -467,7 +467,7 @@ namespace BagMultiMap {
     pub def union(m1: BagMultiMap[k, v], m2: BagMultiMap[k, v]): BagMultiMap[k, v] with Order[k] =
         let BagMultiMap(mm1) = m1;
         let BagMultiMap(mm2) = m2;
-        BagMultiMap(Map.unionWith((n1, n2) -> Nec.append(n1, n2), mm1, mm2))
+        BagMultiMap(Map.unionWith((n1, n2) -> Nel.append(n1, n2), mm1, mm2))
 
     ///
     /// Returns the intersection of `m1` and `m2`.
@@ -481,7 +481,7 @@ namespace BagMultiMap {
         let BagMultiMap(mm2) = m2;
         let step = (acc, k, vs) -> match Map.get(k, mm2) {
             case None => acc
-            case Some(vs1) => match intersectionNec(vs, vs1) {
+            case Some(vs1) => match intersectionNel(vs, vs1) {
                 case None      => acc
                 case Some(vs2) => Map.insert(k, vs2, acc)
             }
@@ -493,9 +493,9 @@ namespace BagMultiMap {
     ///
     /// Ordering is biased to `n1`.
     ///
-    def intersectionNec(n1: Nec[v], n2: Nec[v]): Option[Nec[v]] with Eq[v] =
-        Nec.foldLeft((acc, v) -> if (Nec.memberOf(v, n2) and not Chain.memberOf(v, acc)) Chain.snoc(acc, v) else acc, Chain.empty(), n1)
-            |> Chain.toNec
+    def intersectionNel(n1: Nel[v], n2: Nel[v]): Option[Nel[v]] with Eq[v] =
+        Nel.foldLeft((acc, v) -> if (Nel.memberOf(v, n2) and not Chain.memberOf(v, acc)) Chain.snoc(acc, v) else acc, Chain.empty(), n1)
+            |> Chain.toNel
 
     ///
     /// Returns the difference of `m1` and `m2` i.e `m1 - m2` (left biased).
@@ -503,45 +503,43 @@ namespace BagMultiMap {
     pub def difference(m1: BagMultiMap[k, v], m2: BagMultiMap[k, v]): BagMultiMap[k, v] with Order[k], Eq[v] =
         let BagMultiMap(mm1) = m1;
         let BagMultiMap(mm2) = m2;
-        BagMultiMap(Map.differenceWith(differenceNec, mm1, mm2))
+        BagMultiMap(Map.differenceWith(differenceNel, mm1, mm2))
 
     ///
     /// Returns the difference of `n1` and `n2` i.e `n1 - n2` (left biased).
     ///
-    def differenceNec(n1: Nec[v], n2: Nec[v]): Option[Nec[v]] with Eq[v] =
-        necRemoveLefts(Nec.toList(n2), n1)
+    def differenceNel(n1: Nel[v], n2: Nel[v]): Option[Nel[v]] with Eq[v] =
+        nelRemoveLefts(Nel.toList(n2), n1)
 
     ///
-    /// Helper for `differenceNec`.
+    /// Helper for `differenceNel`.
     ///
-    def necRemoveLefts(xs: List[a], nec: Nec[a]): Option[Nec[a]] with Eq[a] =
+    def nelRemoveLefts(xs: List[a], l: Nel[a]): Option[Nel[a]] with Eq[a] =
         def loop(acc, ds) = match (acc, ds) {
             case (None, _)            => None
             case (Some(n1), Nil)      => Some(n1)
-            case (Some(n1), d1 :: rs) => let n2 = necRemoveLeft(d1, n1); loop(n2, rs)
+            case (Some(n1), d1 :: rs) => let n2 = nelRemoveLeft(d1, n1); loop(n2, rs)
         };
-        loop(Some(nec), xs)
+        loop(Some(l), xs)
 
     ///
-    /// Helper for `differenceNec`.
+    /// Helper for `differenceNel`.
     ///
-    def necRemoveLeft(x: a, nec: Nec[a]): Option[Nec[a]] with Eq[a] =
-        use Nec.ViewLeft.{OneLeft, SomeLeft};
-        let snoc1 = (acc, b) -> match acc {
-            case None             => Some(Nec.singleton(b))
-            case Some(acc1)       => Some(Nec.snoc(acc1, b))
+    def nelRemoveLeft(x: a, l: Nel[a]): Option[Nel[a]] with Eq[a] = match l {
+        case Nel(x1, rs) if x1 == x => List.toNel(rs)
+        case Nel(x1, rs)            => Nel(x1, listRemoveLeft(x, rs)) |> Some
+    }
+
+    ///
+    /// Helper for `differenceNel`.
+    ///
+    def listRemoveLeft(x: a, l: List[a]): List[a] with Eq[a] =
+        def loop(l1, k) = match l1 {
+            case Nil                 => k(Nil)
+            case x1 :: rs if x1 == x => k(rs)
+            case x1 :: rs            => loop(rs, ks -> k(x1 :: ks))
         };
-        let append1 = (acc, bs) -> match acc {
-            case None             => Some(bs)
-            case Some(acc1)       => Some(Nec.append(acc1, bs))
-        };
-        def loop(acc, c) = match Nec.viewLeft(c) {
-            case OneLeft(b) if b == x      => acc
-            case OneLeft(b)                => snoc1(acc, b)
-            case SomeLeft(b, rs) if b == x => append1(acc, rs)
-            case SomeLeft(b, rs)           => loop(snoc1(acc, b), rs)
-        };
-        loop(None, nec)
+        loop(l, identity)
 
     ///
     /// Returns the BagMultiMap `m` as a list of singleton key-value pairs.
@@ -565,7 +563,7 @@ namespace BagMultiMap {
     ///
     pub def toAssocList(m: BagMultiMap[k, v]): List[(k, List[v])] =
         let BagMultiMap(m1) = m;
-        Map.foldRightWithKey((k, vs, acc) -> (k, Nec.toList(vs)) :: acc, Nil, m1)
+        Map.foldRightWithKey((k, vs, acc) -> (k, Nel.toList(vs)) :: acc, Nil, m1)
 
     ///
     /// Returns the result of running all the actions in the BagMultiMap `m`.
@@ -588,6 +586,5 @@ namespace BagMultiMap {
     pub def traverseWithKey(f: (k, v1) -> m[v2] & ef, m: BagMultiMap[k, v1]): m[BagMultiMap[k, v2]] & ef with Applicative[m] =
         let BagMultiMap(m1) = m;
         Functor.map(BagMultiMap, Map.traverseWithKey((k, vs) -> Traversable.traverse(f(k), vs), m1))
-
 
 }
