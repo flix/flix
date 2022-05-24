@@ -1389,6 +1389,42 @@ namespace TestChain {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+        let c = Chain.empty(): Chain[Int32];
+        let d = List.toMutDeque(c, r);
+
+        c == MutDeque.toList(d)
+    }
+
+    @test
+    def toMutDeque02(): Bool = region r {
+        let c = Chain.singleton(1), r);
+        let d = List.toMutDeque(c, r);
+
+        c == MutDeque.toList(d)
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+        let c = List.toChain(1 :: 2 :: Nil);
+        let d = List.toMutDeque(c, r);
+
+        c == MutDeque.toList(d)
+    }
+
+    @test
+    def toMutDeque04(): Bool = region r {
+        let c = List.toChain('a' :: 'b' :: 'c' :: Nil, r);
+        let d = List.toMutDeque(c, r);
+
+        c == MutDeque.toList(d)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
