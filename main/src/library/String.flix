@@ -615,7 +615,7 @@ namespace String {
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
     ///
     pub def unfold(f: b -> Option[(Char, b)] & ef, x: b): String & ef = region r {
-        let sb = new StringBuilder(r) as & ef;
+        let sb = new StringBuilder(r);
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -657,7 +657,7 @@ namespace String {
     /// This is a version of `unfold` where `f` generates substrings rather than chars.
     ///
     pub def unfoldString(f: b -> Option[(String, b)] & ef, x: b) : String & ef = region r {
-        let sb = new StringBuilder(r) as & ef;
+        let sb = new StringBuilder(r);
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -680,7 +680,7 @@ namespace String {
     /// `next` should return `None` to signal the end of building the string.
     ///
     pub def unfoldStringWithIter(f: Unit -> Option[String] & ef): String & ef = region r {
-        let sb = new StringBuilder(r) as & Pure;
+        let sb = new StringBuilder(r);
         def loop() = {
             match f() {
                 case None    => StringBuilder.toString(sb)
