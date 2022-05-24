@@ -1122,6 +1122,21 @@ namespace List {
         List.foldLeft(Chain.snoc, Chain.empty(), l)
 
     ///
+    /// Returns `l` as a MutDeque.
+    ///
+    pub def toMutDeque(l: List[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+        let d = new MutDeque(r);
+        def loop(ll) = match ll {
+            case Nil     => ()
+            case x :: xs => {
+                MutDeque.pushBack(x, d);
+                loop(xs)
+            }
+        };
+        loop(l);
+        d
+
+    ///
     /// Returns `l` as a mutable list.
     ///
     pub def toMutList(l: List[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
