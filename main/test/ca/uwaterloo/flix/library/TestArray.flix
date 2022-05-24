@@ -2405,7 +2405,6 @@ def intercalate07(): Bool & Impure =
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-
     @test
     def reduceLeft01(): Bool = region r {
         Array.reduceLeft((a, b) -> a - b, []: ScopedArray[Int32, _]) == None
