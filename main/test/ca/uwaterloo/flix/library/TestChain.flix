@@ -897,6 +897,22 @@ namespace TestChain {
     def foldRightWithCont04(): Bool = Chain.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 382
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool = Chain.foldMap(x -> 2 * x, List.toChain(Nil)) == 0
+
+    @test
+    def foldMap02(): Bool = Chain.foldMap(x -> 2 * x, List.toChain(1 :: 2 :: Nil)) == 6
+
+    @test
+    def foldMap03(): Bool = Chain.foldMap(x -> if(x == "a") "b" else x, List.toChain("a" :: Nil)) == "b"
+
+    @test
+    def foldMap04(): Bool = Chain.foldMap(x -> if(x == "a") "b" else x, List.toChain("a" :: "b" :: Nil)) == "bb"
+
+    /////////////////////////////////////////////////////////////////////////////
     // dropLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
