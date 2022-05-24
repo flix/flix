@@ -614,8 +614,8 @@ namespace String {
     ///
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
     ///
-    pub def unfold(f: b -> Option[(Char, b)] & ef, x: b): String & ef =
-        let sb = new StringBuilder(static) as & ef;
+    pub def unfold(f: b -> Option[(Char, b)] & ef, x: b): String & ef = region r {
+        let sb = new StringBuilder(r) as & ef;
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -626,7 +626,8 @@ namespace String {
                 }
             }
         };
-        loop(x) as & ef
+        loop(x)
+    }
 
     ///
     /// Build a string by applying the function `next` to `()`. `next` is expected to encapsulate
