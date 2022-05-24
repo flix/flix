@@ -286,7 +286,11 @@ object Inliner {
 
     case OccurrenceAst.Expression.Untag(sym, tag, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Untag(sym, tag, e, tpe, purity, loc)
+      // Inline expressions of the form Untag(Tag(e)) => e
+      e match {
+        case LiftedAst.Expression.Tag(_, _, innerExp, _, _, _) => innerExp
+        case _ => LiftedAst.Expression.Untag(sym, tag, e, tpe, purity, loc)
+      }
 
     case OccurrenceAst.Expression.Index(base, offset, tpe, purity, loc) =>
       val b = visitExp(base, subst0)
