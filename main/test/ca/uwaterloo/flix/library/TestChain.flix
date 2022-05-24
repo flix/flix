@@ -1418,7 +1418,7 @@ namespace TestChain {
 
     @test
     def toMutDeque04(): Bool = region r {
-        let c = List.toChain('a' :: 'b' :: 'c' :: Nil, r);
+        let c = List.toChain('a' :: 'b' :: 'c' :: Nil);
         let d = List.toMutDeque(c, r);
 
         c == MutDeque.toList(d)
