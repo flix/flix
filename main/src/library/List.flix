@@ -1126,14 +1126,7 @@ namespace List {
     ///
     pub def toMutDeque(l: List[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
-        def loop(ll) = match ll {
-            case Nil     => ()
-            case x :: xs => {
-                MutDeque.pushBack(x, d);
-                loop(xs)
-            }
-        };
-        loop(l);
+        List.foreach(x -> MutDeque.pushBack(x, d), l);
         d
 
     ///
