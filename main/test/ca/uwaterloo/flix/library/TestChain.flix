@@ -1395,7 +1395,7 @@ namespace TestChain {
     @test
     def toMutDeque01(): Bool = region r {
         let c = Chain.empty(): Chain[Int32];
-        let d = List.toMutDeque(c, r);
+        let d = Chain.toMutDeque(c, r);
 
         c == MutDeque.toList(d)
     }
@@ -1403,7 +1403,7 @@ namespace TestChain {
     @test
     def toMutDeque02(): Bool = region r {
         let c = Chain.singleton(1);
-        let d = List.toMutDeque(c, r);
+        let d = Chain.toMutDeque(c, r);
 
         c == MutDeque.toList(d)
     }
@@ -1411,7 +1411,7 @@ namespace TestChain {
     @test
     def toMutDeque03(): Bool = region r {
         let c = List.toChain(1 :: 2 :: Nil);
-        let d = List.toMutDeque(c, r);
+        let d = Chain.toMutDeque(c, r);
 
         c == MutDeque.toList(d)
     }
@@ -1419,7 +1419,7 @@ namespace TestChain {
     @test
     def toMutDeque04(): Bool = region r {
         let c = List.toChain('a' :: 'b' :: 'c' :: Nil);
-        let d = List.toMutDeque(c, r);
+        let d = Chain.toMutDeque(c, r);
 
         c == MutDeque.toList(d)
     }
