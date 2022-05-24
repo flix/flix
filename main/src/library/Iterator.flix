@@ -469,6 +469,12 @@ namespace Iterator {
         loop()
 
     ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, c: Chain[a]): b & ef with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(f(x), acc), Monoid.empty(), c)
+
+    ///
     /// Applies `f` to all elements in `iter` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
