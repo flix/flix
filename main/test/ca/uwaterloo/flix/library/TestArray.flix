@@ -4039,34 +4039,39 @@ def findIndices07(): Bool & Impure =
         Array.length(a) == 50
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// init2                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // init2                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def init201(): Bool & Impure =
-    let (a,b) = Array.init2(x -> (x,true), 0);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, []: Array[Bool])
+    @test
+    def init201(): Bool = region r {
+        let (a,b) = Array.init2(x -> (x, true), 0, r, r);
+        Array.sameElements(a, []: ScopedArray[Int32, _]) and Array.sameElements(b, []: ScopedArray[Bool, _])
+    }
 
-@test
-def init202(): Bool & Impure =
-    let (a,b) = Array.init2(x -> (x,true), -1);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, []: Array[Bool])
+    @test
+    def init202(): Bool = region r {
+        let (a,b) = Array.init2(x -> (x, true), -1, r, r);
+        Array.sameElements(a, []: ScopedArray[Int32, _]) and Array.sameElements(b, []: ScopedArray[Bool, _])
+    }
 
-@test
-def init203(): Bool & Impure =
-    let (a,b) = Array.init2(x -> (x,true), 1);
-    Array.sameElements(a, [0]) and Array.sameElements(b, [true])
+    @test
+    def init203(): Bool = region r {
+        let (a,b) = Array.init2(x -> (x, true), 1, r, r);
+        Array.sameElements(a, [0]) and Array.sameElements(b, [true])
+    }
 
-@test
-def init204(): Bool & Impure =
-    let (a,b) = Array.init2(x -> (x,true), 2);
-    Array.sameElements(a, [0,1]) and Array.sameElements(b, [true, true])
+    @test
+    def init204(): Bool = region r {
+        let (a,b) = Array.init2(x -> (x, true), 2, r, r);
+        Array.sameElements(a, [0,1]) and Array.sameElements(b, [true, true])
+    }
 
-@test
-def init205(): Bool & Impure =
-    let (a,b) = Array.init2(x -> (x,true), 50);
-    Array.length(a) == 50 and Array.length(b) == 50
+    @test
+    def init205(): Bool = region r {
+        let (a,b) = Array.init2(x -> (x, true), 50, r, r);
+        Array.length(a) == 50 and Array.length(b) == 50
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
