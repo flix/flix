@@ -2656,39 +2656,59 @@ def flatten10(): Bool & Impure =
         Array.exists(i -> i > 3, [1,9,3]) == true
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// forall                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // forall                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def forall01(): Bool & Impure = Array.forall(i -> i > 3, []: Array[Int32]) == true
+    @test
+    def forall01(): Bool = region r {
+        Array.forall(i -> i > 3, []: ScopedArray[Int32, _]) == true
+    }
 
-@test
-def forall02(): Bool & Impure = Array.forall(i -> i > 3, [1]) == false
+    @test
+    def forall02(): Bool = region r {
+        Array.forall(i -> i > 3, [1]) == false
+    }
 
-@test
-def forall03(): Bool & Impure = Array.forall(i -> i > 3, [5]) == true
+    @test
+    def forall03(): Bool = region r {
+        Array.forall(i -> i > 3, [5]) == true
+    }
 
-@test
-def forall04(): Bool & Impure = Array.forall(i -> i > 3, [1,2]) == false
+    @test
+    def forall04(): Bool = region r {
+        Array.forall(i -> i > 3, [1,2]) == false
+    }
 
-@test
-def forall05(): Bool & Impure = Array.forall(i -> i > 3, [1,6]) == false
+    @test
+    def forall05(): Bool = region r {
+        Array.forall(i -> i > 3, [1,6]) == false
+    }
 
-@test
-def forall06(): Bool & Impure = Array.forall(i -> i > 3, [6,1]) == false
+    @test
+    def forall06(): Bool = region r {
+        Array.forall(i -> i > 3, [6,1]) == false
+    }
 
-@test
-def forall07(): Bool & Impure = Array.forall(i -> i > 3, [16,6]) == true
+    @test
+    def forall07(): Bool = region r {
+        Array.forall(i -> i > 3, [16,6]) == true
+    }
 
-@test
-def forall08(): Bool & Impure = Array.forall(i -> i > 3, [1,-9,3]) == false
+    @test
+    def forall08(): Bool = region r {
+        Array.forall(i -> i > 3, [1,-9,3]) == false
+    }
 
-@test
-def forall09(): Bool & Impure = Array.forall(i -> i > 3, [1,9,3]) == false
+    @test
+    def forall09(): Bool = region r {
+        Array.forall(i -> i > 3, [1,9,3]) == false
+    }
 
-@test
-def forall10(): Bool & Impure = Array.forall(i -> i > 3, [11,9,31]) == true
+    @test
+    def forall10(): Bool = region r {
+        Array.forall(i -> i > 3, [11,9,31]) == true
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // filter                                                                  //
