@@ -1255,7 +1255,7 @@ namespace Array {
     /// Returns `None` if every element of `xs` is `None`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def findMap(f: a -> Option[b] & ef, a: Array[a]): Option[b] & Impure =
+    pub def findMap(f: a -> Option[b] & ef, a: ScopedArray[a, r]): Option[b] \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)

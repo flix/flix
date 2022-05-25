@@ -3856,33 +3856,49 @@ def takeWhileRight08(): Bool & Impure =
         Array.sameElements(a, [0,1,2,5])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// findMap                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // findMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def findMap01(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, []: Array[Int32]) == None
+    @test
+    def findMap01(): Bool = region r {
+        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, []: ScopedArray[Int32, _]) == None
+    }
 
-@test
-def findMap02(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1]) == None
+    @test
+    def findMap02(): Bool = region r {
+        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1]) == None
+    }
 
-@test
-def findMap03(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [2]) == Some(1)
+    @test
+    def findMap03(): Bool = region r {
+        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [2]) == Some(1)
+    }
 
-@test
-def findMap04(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,3]) == None
+    @test
+    def findMap04(): Bool = region r {
+        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,3]) == None
+    }
 
-@test
-def findMap05(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,4]) == Some(2)
+    @test
+    def findMap05(): Bool = region r {
+        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,4]) == Some(2)
+    }
 
-@test
-def findMap06(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [6,-1]) == Some(3)
+    @test
+    def findMap06(): Bool = region r {
+        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [6,-1]) == Some(3)
+    }
 
-@test
-def findMap07(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [8,6]) == Some(4)
+    @test
+    def findMap07(): Bool = region r {
+        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [8,6]) == Some(4)
+    }
 
-@test
-def findMap08(): Bool & Impure = Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [0,1,2,3,4,5,10]) == Some(0)
+    @test
+    def findMap08(): Bool = region r {
+        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [0,1,2,3,4,5,10]) == Some(0)
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // toSet                                                                   //
