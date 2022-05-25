@@ -2762,49 +2762,57 @@ def flatten10(): Bool & Impure =
         Array.sameElements(a, [4,11,17])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// partition                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // partition                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def partition01(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, []: Array[Int32])
+    @test
+    def partition01(): Bool = region r {
+        let (a,b) = Array.partition(i -> i > 3, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _]) and Array.sameElements(b, []: ScopedArray[Int32, _])
+    }
 
-@test
-def partition02(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [1]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, [1])
+    @test
+    def partition02(): Bool = region r {
+        let (a,b) = Array.partition(i -> i > 3, [1]);
+        Array.sameElements(a, []: ScopedArray[Int32, _]) and Array.sameElements(b, [1])
+    }
 
-@test
-def partition03(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [4]);
-    Array.sameElements(a, [4]) and Array.sameElements(b, []: Array[Int32])
+    @test
+    def partition03(): Bool = region r {
+        let (a,b) = Array.partition(i -> i > 3, [4]);
+        Array.sameElements(a, [4]) and Array.sameElements(b, []: ScopedArray[Int32, _])
+    }
 
-@test
-def partition04(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [1,2]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, [1,2])
+    @test
+    def partition04(): Bool = region r {
+        let (a,b) = Array.partition(i -> i > 3, [1,2]);
+        Array.sameElements(a, []: ScopedArray[Int32, _]) and Array.sameElements(b, [1,2])
+    }
 
-@test
-def partition05(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [1,5]);
-    Array.sameElements(a, [5]) and Array.sameElements(b, [1])
+    @test
+    def partition05(): Bool = region r {
+        let (a,b) = Array.partition(i -> i > 3, [1,5]);
+        Array.sameElements(a, [5]) and Array.sameElements(b, [1])
+    }
 
-@test
-def partition06(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [5,1]);
-    Array.sameElements(a, [5]) and Array.sameElements(b, [1])
+    @test
+    def partition06(): Bool = region r {
+        let (a,b) = Array.partition(i -> i > 3, [5,1]);
+        Array.sameElements(a, [5]) and Array.sameElements(b, [1])
+    }
 
-@test
-def partition07(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [5,8]);
-    Array.sameElements(a, [5,8]) and Array.sameElements(b, []: Array[Int32])
+    @test
+    def partition07(): Bool = region r {
+        let (a,b) = Array.partition(i -> i > 3, [5,8]);
+        Array.sameElements(a, [5,8]) and Array.sameElements(b, []: ScopedArray[Int32, _])
+    }
 
-@test
-def partition08(): Bool & Impure =
-    let (a,b) = Array.partition(i -> i > 3, [4, -3, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [4, 16, 7, 7]) and Array.sameElements(b, [-3, -5, 1, 2, 1])
+    @test
+    def partition08(): Bool = region r {
+        let (a,b) = Array.partition(i -> i > 3, [4, -3, -5, 1, 2, 16, 7, 1, 7]);
+        Array.sameElements(a, [4, 16, 7, 7]) and Array.sameElements(b, [-3, -5, 1, 2, 1])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // span                                                                    //

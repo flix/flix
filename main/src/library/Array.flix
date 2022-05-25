@@ -954,16 +954,15 @@ namespace Array {
     /// `a1` contains all elements of `a` that satisfy the predicate `f`.
     /// `a2` contains all elements of `a` that do not satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def partition(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) & Impure =
+    pub def partition(f: a -> Bool & ef, a: ScopedArray[a, r]): (ScopedArray[a, r], ScopedArray[a, r]) \ { ef, Read(r), Write(r) } =
         let step = { (x, acc) ->
             let (a1, a2) = acc;
             if (f(x)) (x :: a1, a2) else (a1, x :: a2)
         };
         let (xs, ys) = foldRight(step, (Nil, Nil), a);
-        (List.toArray(xs, static), List.toArray(ys, static))
+        let r = Scoped.regionOf(a);
+        (List.toArray(xs, r), List.toArray(ys, r))
 
     ///
     /// Returns a pair of arrays `(a1, a2)`.
