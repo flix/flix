@@ -3754,35 +3754,55 @@ def takeWhileRight08(): Bool & Impure =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldRight201(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, []: Array[Int32], []: Array[Bool]) == 4
+    def foldRight201(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, []: ScopedArray[Int32, _], []: ScopedArray[Bool, _]) == 4
+    }
 
     @test
-    def foldRight202(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [1], []: Array[Bool]) == 4
+    def foldRight202(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [1], []: ScopedArray[Bool, _]) == 4
+    }
 
     @test
-    def foldRight203(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, []: Array[Int32], [true]) == 4
+    def foldRight203(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, []: ScopedArray[Int32, _], [true]) == 4
+    }
 
     @test
-    def foldRight204(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [2], [true]) == 6
+    def foldRight204(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [2], [true]) == 6
+    }
 
     @test
-    def foldRight205(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [2], [false]) == 8
+    def foldRight205(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [2], [false]) == 8
+    }
 
     @test
-    def foldRight206(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [3,2], [true,true]) == 9
+    def foldRight206(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [3,2], [true,true]) == 9
+    }
 
     @test
-    def foldRight207(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [3,2], [true,false]) == 11
+    def foldRight207(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [3,2], [true,false]) == 11
+    }
 
     @test
-    def foldRight208(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [3,2], [false,true]) == 18
+    def foldRight208(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [3,2], [false,true]) == 18
+    }
 
     @test
-    def foldRight209(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [3,2], [false,false]) == 24
+    def foldRight209(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [3,2], [false,false]) == 24
+    }
 
     @test
-    def foldRight210(): Bool & Impure = Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [6,-4,3,2],
-                             [true,false,false,true]) == -66
+    def foldRight210(): Bool = region r {
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, [6,-4,3,2],
+            [true,false,false,true]) == -66
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // filterMap                                                               //

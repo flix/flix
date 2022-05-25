@@ -1228,7 +1228,7 @@ namespace Array {
     /// starting with the initial value `c` and going from right to left.
     ///
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f))
-    pub def foldRight2(f: (a, b, c) -> c & ef, c: c, a: Array[a], b: Array[b]): c & Impure =
+    pub def foldRight2(f: (a, b, c) -> c & ef, c: c, a: ScopedArray[a, r1], b: ScopedArray[b, r2]): c \ { ef, Read(r1, r2) } =
         def loop(i, j, acc) = {
             if (i < 0 or j < 0)
                 acc
