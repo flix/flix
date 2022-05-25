@@ -923,15 +923,14 @@ namespace Array {
     ///
     /// Returns an array of every element in `arr` that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(arr)) @Space(space(f) * length(arr))
-    pub def filter(f: a -> Bool, arr: Array[a]): Array[a] & Impure =
+    pub def filter(f: a -> Bool & ef, arr: ScopedArray[a, r]): ScopedArray[a, r] \ { ef, Read(r), Write(r) } =
         let len = length(arr);
+        let r = Scoped.regionOf(arr);
         if (len < 1) {
-            []
+            [] @ r
         } else {
-            let out = new(arr[0], len, static);
+            let out = new(arr[0], len, r);
             def loop(i, j) = {
                 if (i >= len)
                     j
@@ -946,7 +945,7 @@ namespace Array {
                 }
             };
             let endPos = loop(0, 0);
-            slice(0, endPos, out)
+            copyOfRange(0, endPos, out, r)
         }
 
     ///

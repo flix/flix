@@ -2710,49 +2710,57 @@ def flatten10(): Bool & Impure =
         Array.forall(i -> i > 3, [11,9,31]) == true
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// filter                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // filter                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def filter01(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def filter01(): Bool = region r {
+        let a = Array.filter(i -> i > 3, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def filter02(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [2]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def filter02(): Bool = region r {
+        let a = Array.filter(i -> i > 3, [2]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def filter03(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [4]);
-    Array.sameElements(a, [4])
+    @test
+    def filter03(): Bool = region r {
+        let a = Array.filter(i -> i > 3, [4]);
+        Array.sameElements(a, [4])
+    }
 
-@test
-def filter04(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [1,3]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def filter04(): Bool = region r {
+        let a = Array.filter(i -> i > 3, [1,3]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def filter05(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [1,8]);
-    Array.sameElements(a, [8])
+    @test
+    def filter05(): Bool = region r {
+        let a = Array.filter(i -> i > 3, [1,8]);
+        Array.sameElements(a, [8])
+    }
 
-@test
-def filter06(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [8,1]);
-    Array.sameElements(a, [8])
+    @test
+    def filter06(): Bool = region r {
+        let a = Array.filter(i -> i > 3, [8,1]);
+        Array.sameElements(a, [8])
+    }
 
-@test
-def filter07(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [8,9]);
-    Array.sameElements(a, [8,9])
+    @test
+    def filter07(): Bool = region r {
+        let a = Array.filter(i -> i > 3, [8,9]);
+        Array.sameElements(a, [8,9])
+    }
 
-@test
-def filter08(): Bool & Impure =
-    let a = Array.filter(i -> i > 3, [1,4,11,2,-22,17]);
-    Array.sameElements(a, [4,11,17])
+    @test
+    def filter08(): Bool = region r {
+        let a = Array.filter(i -> i > 3, [1,4,11,2,-22,17]);
+        Array.sameElements(a, [4,11,17])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // partition                                                               //
