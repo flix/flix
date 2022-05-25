@@ -3611,29 +3611,33 @@ def takeWhileRight08(): Bool & Impure =
         Array.sameElements(arr, [1, 3, 4, 4, 5, 7, 8, 9])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// unzip                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // unzip                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def unzip01(): Bool & Impure =
-    let (a,b) = Array.unzip([]: Array[(Unit, Unit)]);
-    Array.sameElements(a, []) and Array.sameElements(b, [])
+    @test
+    def unzip01(): Bool = region r {
+        let (a,b) = Array.unzip([]: ScopedArray[(Unit, Unit), _]);
+        Array.sameElements(a, []) and Array.sameElements(b, [])
+    }
 
-@test
-def unzip02(): Bool & Impure =
-    let (a,b) = Array.unzip([(1, true)]);
-    Array.sameElements(a, [1]) and Array.sameElements(b, [true])
+    @test
+    def unzip02(): Bool = region r {
+        let (a,b) = Array.unzip([(1, true)]);
+        Array.sameElements(a, [1]) and Array.sameElements(b, [true])
+    }
 
-@test
-def unzip03(): Bool & Impure =
-    let (a,b) = Array.unzip([(1, true), (2, true)]);
-    Array.sameElements(a, [1,2])  and Array.sameElements(b, [true,true])
+    @test
+    def unzip03(): Bool = region r {
+        let (a,b) = Array.unzip([(1, true), (2, true)]);
+        Array.sameElements(a, [1,2])  and Array.sameElements(b, [true,true])
+    }
 
-@test
-def unzip04(): Bool & Impure =
-    let (a,b) = Array.unzip([(1, true), (2, true), (3, false)]);
-    Array.sameElements(a, [1,2,3]) and Array.sameElements(b, [true,true,false])
+    @test
+    def unzip04(): Bool = region r {
+        let (a,b) = Array.unzip([(1, true), (2, true), (3, false)]);
+        Array.sameElements(a, [1,2,3]) and Array.sameElements(b, [true,true,false])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // fold2                                                                   //

@@ -1196,8 +1196,9 @@ namespace Array {
     /// and the second containing all second components in `a`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def unzip(a: Array[(a,b)]): (Array[a], Array[b]) & Impure =
-        init2(i -> a[i], length(a), static, static)
+    pub def unzip(a: ScopedArray[(a, b), r]): (ScopedArray[a, r], ScopedArray[b, r]) \ { Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
+        init2(i -> a[i], length(a), r, r)
 
     ///
     /// Alias for `foldLeft2`.
