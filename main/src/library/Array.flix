@@ -908,31 +908,29 @@ namespace Array {
     /// Returns `true` if `arr` is empty.
     ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def forall(f: a -> Bool, arr: Array[a]): Bool & Impure =
+    pub def forall(f: a -> Bool, arr: ScopedArray[a, r]): Bool \ Read(r) =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
                 true
+            else if (f(arr[i]))
+                loop(i + 1)
             else
-                if (f(arr[i]) == false)
-                    false
-                else
-                    loop(i + 1)
+                false
         };
         loop(0)
 
     ///
     /// Returns an array of every element in `arr` that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(arr)) @Space(space(f) * length(arr))
-    pub def filter(f: a -> Bool, arr: Array[a]): Array[a] & Impure =
+    pub def filter(f: a -> Bool & ef, arr: ScopedArray[a, r]): ScopedArray[a, r] \ { ef, Read(r), Write(r) } =
         let len = length(arr);
+        let r = Scoped.regionOf(arr);
         if (len < 1) {
-            []
+            [] @ r
         } else {
-            let out = new(arr[0], len, static);
+            let out = new(arr[0], len, r);
             def loop(i, j) = {
                 if (i >= len)
                     j
@@ -947,7 +945,7 @@ namespace Array {
                 }
             };
             let endPos = loop(0, 0);
-            slice(0, endPos, out)
+            copyOfRange(0, endPos, out, r)
         }
 
     ///
@@ -956,16 +954,15 @@ namespace Array {
     /// `a1` contains all elements of `a` that satisfy the predicate `f`.
     /// `a2` contains all elements of `a` that do not satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def partition(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) & Impure =
+    pub def partition(f: a -> Bool & ef, a: ScopedArray[a, r]): (ScopedArray[a, r], ScopedArray[a, r]) \ { ef, Read(r), Write(r) } =
         let step = { (x, acc) ->
             let (a1, a2) = acc;
             if (f(x)) (x :: a1, a2) else (a1, x :: a2)
         };
         let (xs, ys) = foldRight(step, (Nil, Nil), a);
-        (List.toArray(xs, static), List.toArray(ys, static))
+        let r = Scoped.regionOf(a);
+        (List.toArray(xs, r), List.toArray(ys, r))
 
     ///
     /// Returns a pair of arrays `(a1, a2)`.
@@ -973,12 +970,11 @@ namespace Array {
     /// `a1` is the longest prefix of `a` that satisfies the predicate `f`.
     /// `a2` is the remainder of `a`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space()
-    pub def span(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) & Impure =
+    pub def span(f: a -> Bool & ef, a: ScopedArray[a, r]): (ScopedArray[a, r], ScopedArray[a, r]) \ { ef, Read(r), Write(r) }=
+        let r = Scoped.regionOf(a);
         match findIndexOfLeft(x -> not (f(x)), a) {
-            case None => (takeLeft(length(a), a), [])
+            case None    => (takeLeft(length(a), a), [] @ r)
             case Some(i) => (takeLeft(i, a), dropLeft(i, a))
         }
 
@@ -986,7 +982,8 @@ namespace Array {
     /// Alias for `dropLeft`.
     ///
     @Time(length(a) - n) @Space(length(a) - n)
-    pub def drop(n: Int32, a: Array[a]) : Array[a] & Impure = dropLeft(n, a)
+    pub def drop(n: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
+        dropLeft(n, a)
 
     ///
     /// Returns a copy of array `a`, dropping the first `n` elements.
@@ -994,13 +991,14 @@ namespace Array {
     /// Returns `[]` if `n > length(a)`.
     ///
     @Time(length(a) - n) @Space(length(a) - n)
-    pub def dropLeft(n: Int32, a: Array[a]) : Array[a] & Impure =
+    pub def dropLeft(n: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
+        let r = Scoped.regionOf(a);
         if (n > len)
-            []
+            [] @ r
         else {
             let start = if (n < 0) 0 else n;
-            slice(start, len, a)
+            copyOfRange(start, len, a, r)
         }
 
     ///
@@ -1009,52 +1007,51 @@ namespace Array {
     /// Returns `[]` if `n > length(a)`.
     ///
     @Time(length(a) - n) @Space(length(a) - n)
-    pub def dropRight(n: Int32, a: Array[a]): Array[a] & Impure =
+    pub def dropRight(n: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         let len = length(a);
         if (n >= len)
-            []
+            [] @ r
         else {
             let end = if (n < 0) len else len - n;
-            slice(0, end, a)
+            copyOfRange(0, end, a, r)
         }
 
     ///
     /// Alias for `dropWhileLeft`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def dropWhile(f: a -> Bool, a: Array[a]): Array[a] & Impure = dropWhileLeft(f, a)
+    pub def dropWhile(f: a -> Bool & ef, a: ScopedArray[a, r]): ScopedArray[a, r] \ { ef, Read(r), Write(r) } =
+        dropWhileLeft(f, a)
 
     ///
     /// Returns copy of array `a` without the longest prefix that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def dropWhileLeft(f: a -> Bool, a: Array[a]): Array[a]  & Impure =
+    pub def dropWhileLeft(f: a -> Bool & ef, a: ScopedArray[a, r]): ScopedArray[a, r] \ { ef, Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         match findIndexOfLeft(x -> not (f(x)), a) {
-            case None => []
+            case None    => [] @ r
             case Some(i) => dropLeft(i, a)
         }
 
     ///
     /// Returns copy of array `a` without the longest suffix that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def dropWhileRight(f: a -> Bool, a: Array[a]): Array[a] & Impure =
+    pub def dropWhileRight(f: a -> Bool & ef, a: ScopedArray[a, r]): ScopedArray[a, r] \ { ef, Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         match findIndexOfRight(x -> not (f(x)), a) {
-            case None => []
-            case Some(i) => slice(0, i + 1, a)
+            case None    => [] @ r
+            case Some(i) => copyOfRange(0, i + 1, a, r)
         }
 
     ///
     /// Alias for `takeLeft`.
     ///
     @Time(n) @Space(n)
-    pub def take(n: Int32, a: Array[a]) : Array[a] & Impure = takeLeft(n, a)
+    pub def take(n: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
+        takeLeft(n, a)
 
     ///
     /// Returns a fresh array taking first `n` elements of `a`.
@@ -1062,13 +1059,14 @@ namespace Array {
     /// Returns `a` if `n > length(xs)`.
     ///
     @Time(n) @Space(n)
-    pub def takeLeft(n: Int32, a: Array[a]) : Array[a] & Impure =
+    pub def takeLeft(n: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         if (n <= 0)
-            []
+            [] @ r
         else {
             let len = length(a);
             let end = if (n > len) len else n;
-            slice(0, end, a)
+            copyOfRange(0, end, a, r)
         }
 
     ///
