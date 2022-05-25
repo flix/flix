@@ -3198,49 +3198,57 @@ def flatten10(): Bool & Impure =
         Array.sameElements(a, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// dropWhileRight                                                          //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // dropWhileRight                                                          //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def dropWhileRight01(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, []);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def dropWhileRight01(): Bool = region r {
+        let a = Array.dropWhileRight(i -> i > 3, []);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def dropWhileRight02(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [1]);
-    Array.sameElements(a, [1])
+    @test
+    def dropWhileRight02(): Bool = region r {
+        let a = Array.dropWhileRight(i -> i > 3, [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def dropWhileRight03(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [4]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def dropWhileRight03(): Bool = region r {
+        let a = Array.dropWhileRight(i -> i > 3, [4]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def dropWhileRight04(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [1,2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def dropWhileRight04(): Bool = region r {
+        let a = Array.dropWhileRight(i -> i > 3, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def dropWhileRight05(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [1,5]);
-    Array.sameElements(a, [1])
+    @test
+    def dropWhileRight05(): Bool = region r {
+        let a = Array.dropWhileRight(i -> i > 3, [1,5]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def dropWhileRight06(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [5,1]);
-    Array.sameElements(a, [5,1])
+    @test
+    def dropWhileRight06(): Bool = region r {
+        let a = Array.dropWhileRight(i -> i > 3, [5,1]);
+        Array.sameElements(a, [5,1])
+    }
 
-@test
-def dropWhileRight07(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [5,8]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def dropWhileRight07(): Bool = region r {
+        let a = Array.dropWhileRight(i -> i > 3, [5,8]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def dropWhileRight08(): Bool & Impure =
-    let a = Array.dropWhileRight(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1])
+    @test
+    def dropWhileRight08(): Bool = region r {
+        let a = Array.dropWhileRight(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
+        Array.sameElements(a, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1])
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // take                                                                    //

@@ -1020,16 +1020,12 @@ namespace Array {
     ///
     /// Alias for `dropWhileLeft`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def dropWhile(f: a -> Bool & ef, a: ScopedArray[a, r]): ScopedArray[a, r] \ { ef, Read(r), Write(r) } =
         dropWhileLeft(f, a)
 
     ///
     /// Returns copy of array `a` without the longest prefix that satisfies the predicate `f`.
-    ///
-    /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def dropWhileLeft(f: a -> Bool & ef, a: ScopedArray[a, r]): ScopedArray[a, r] \ { ef, Read(r), Write(r) } =
@@ -1042,13 +1038,12 @@ namespace Array {
     ///
     /// Returns copy of array `a` without the longest suffix that satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def dropWhileRight(f: a -> Bool, a: Array[a]): Array[a] & Impure =
+    pub def dropWhileRight(f: a -> Bool & ef, a: ScopedArray[a, r]): ScopedArray[a, r] \ { ef, Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         match findIndexOfRight(x -> not (f(x)), a) {
-            case None => []
-            case Some(i) => slice(0, i + 1, a)
+            case None    => [] @ r
+            case Some(i) => copyOfRange(0, i + 1, a, r)
         }
 
     ///
