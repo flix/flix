@@ -901,19 +901,24 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldMap01(): Bool = Chain.foldMap(x -> 2 * x, List.toChain(Nil)) == 0
+    def foldMap01(): Bool =
+        Chain.foldMap(x -> 2 * x, List.toChain(Nil)) == 0
 
     @test
-    def foldMap02(): Bool = Chain.foldMap(x -> 2 * x, List.toChain(1 :: 2 :: Nil)) == 6
+    def foldMap02(): Bool =
+        Chain.foldMap(x -> 2 * x, List.toChain(1 :: 2 :: Nil)) == 6
 
     @test
-    def foldMap03(): Bool = Chain.foldMap(x -> if(x == "a") "b" else x, List.toChain("a" :: Nil)) == "b"
+    def foldMap03(): Bool =
+        Chain.foldMap(x -> if(x == "a") "b" else x, List.toChain("a" :: Nil)) == "b"
 
     @test
-    def foldMap04(): Bool = Chain.foldMap(x -> if(x == "c") "b" else x, List.toChain("a" :: "b" :: "c" :: Nil)) == "abb"
+    def foldMap04(): Bool =
+        Chain.foldMap(x -> if(x == "c") "b" else x, List.toChain("a" :: "b" :: "c" :: Nil)) == "abb"
 
     @test
-    def foldMap05(): Bool = Chain.foldMap(Int32.toString, 1 :: 2 :: 3 :: Nil) == "123"
+    def foldMap05(): Bool =
+        Chain.foldMap(Int32.toString, List.toChain(1 :: 2 :: 3 :: Nil)) == "123"
 
     /////////////////////////////////////////////////////////////////////////////
     // dropLeft                                                                //
