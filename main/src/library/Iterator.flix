@@ -472,7 +472,7 @@ namespace Iterator {
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b & ef, iter: Iterator[a]): b & Impure with Monoid[b] =
-        foldLeft((acc, x) -> Monoid.combine(f(x), acc), Monoid.empty(), iter)
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), iter)
 
     ///
     /// Applies `f` to all elements in `iter` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.

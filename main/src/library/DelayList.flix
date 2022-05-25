@@ -627,7 +627,7 @@ namespace DelayList {
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b & ef, l: DelayList[a]): b & ef with Monoid[b] =
-        foldLeft((acc, x) -> Monoid.combine(f(x), acc), Monoid.empty(), l)
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), l)
 
     ///
     /// Applies `f` to every element of `l`.

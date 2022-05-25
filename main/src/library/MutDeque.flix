@@ -185,7 +185,7 @@ namespace MutDeque {
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b & ef, d: MutDeque[a, r]): b \ { ef, Read(r) } with Monoid[b] =
-        foldLeft((acc, x) -> Monoid.combine(f(x), acc), Monoid.empty(), d)
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), d)
 
     ///
     /// Returns `Some(x)` where `x` is the element at the front. Returns `None` if `d` is empty.

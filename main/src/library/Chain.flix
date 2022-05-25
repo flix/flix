@@ -507,7 +507,7 @@ namespace Chain {
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b & ef, c: Chain[a]): b & ef with Monoid[b] =
-        foldLeft((acc, x) -> Monoid.combine(f(x), acc), Monoid.empty(), c)
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), c)
 
     ///
     /// Returns `c` without the first `n` elements.
