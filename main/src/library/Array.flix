@@ -1176,9 +1176,9 @@ namespace Array {
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
     @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
-    pub def zip(a: Array[a], b: Array[b]): Array[(a,b)] & Impure =
+    pub def zip(a: ScopedArray[a, r1], b: ScopedArray[b, r2]): ScopedArray[(a, b), r2] \ { Read(r1, r2), Write(r2) } =
         let len = Int32.min(length(a), length(b));
-        init(i -> (a[i], b[i]), len, static)
+        init(i -> (a[i], b[i]), len, Scoped.regionOf(b))
 
     ///
     /// Returns an array where the element at index `i` is `f(x, y)` where
@@ -1187,9 +1187,9 @@ namespace Array {
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
-    pub def zipWith(f: (a, b) -> c & ef, a: Array[a], b: Array[b]): Array[c] & Impure =
+    pub def zipWith(f: (a, b) -> c & ef, a: ScopedArray[a, r1], b: ScopedArray[b, r2]): ScopedArray[c, r2] \ { ef, Read(r1, r2), Write(r2) } =
         let len = Int32.min(length(a), length(b));
-        init(i -> f(a[i], b[i]), len, static)
+        init(i -> f(a[i], b[i]), len, Scoped.regionOf(b))
 
     ///
     /// Returns a pair of arrays, the first containing all first components in `a`

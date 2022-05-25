@@ -3516,80 +3516,93 @@ def groupBy07(): Bool & Impure =
     let xs = Array.toList(arr) |> List.map(Array.toList);
     xs == (-5 :: 11 :: -11 :: -1 :: -1 :: Nil) :: (6 :: Nil) :: (8 :: 8 :: Nil) :: (0 :: Nil) :: (4 :: Nil) :: Nil
 
-/////////////////////////////////////////////////////////////////////////////
-// zip                                                                     //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // zip                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def zip01(): Bool & Impure =
-    let a = Array.zip([]: Array[Int32], []: Array[Int32]);
-    Array.sameElements(a, []: Array[(Int32,Int32)])
+    @test
+    def zip01(): Bool = region r {
+        let a = Array.zip([]: ScopedArray[Int32, _], []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[(Int32, Int32), _])
+    }
 
-@test
-def zip02(): Bool & Impure =
-    let a = Array.zip([1], []: Array[Int32]);
-    Array.sameElements(a, []: Array[(Int32,Int32)])
+    @test
+    def zip02(): Bool = region r {
+        let a = Array.zip([1], []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[(Int32, Int32), _])
+    }
 
-@test
-def zip03(): Bool & Impure =
-    let a = Array.zip([]: Array[Int32], [2]);
-    Array.sameElements(a, []: Array[(Int32,Int32)])
+    @test
+    def zip03(): Bool = region r {
+        let a = Array.zip([]: ScopedArray[Int32, _], [2]);
+        Array.sameElements(a, []: ScopedArray[(Int32, Int32), _])
+    }
 
-@test
-def zip04(): Bool & Impure =
-    let a = Array.zip([1], [2]);
-    Array.sameElements(a, [(1, 2)])
+    @test
+    def zip04(): Bool = region r {
+        let a = Array.zip([1], [2]);
+        Array.sameElements(a, [(1, 2)])
+    }
 
-@test
-def zip05(): Bool & Impure =
-    let a = Array.zip([1,3], [2,4]);
-    Array.sameElements(a, [(1, 2), (3, 4)])
+    @test
+    def zip05(): Bool = region r {
+        let a = Array.zip([1,3], [2,4]);
+        Array.sameElements(a, [(1, 2), (3, 4)])
+    }
 
-@test
-def zip06(): Bool & Impure =
-    let a = Array.zip([1,3,5], [2,4,6]);
-    Array.sameElements(a, [(1, 2), (3, 4), (5, 6)])
+    @test
+    def zip06(): Bool = region r {
+        let a = Array.zip([1,3,5], [2,4,6]);
+        Array.sameElements(a, [(1, 2), (3, 4), (5, 6)])
+    }
 
-@test
-def zip07(): Bool & Impure =
-    let a = Array.zip([1,3,5,7], [2,4,6,8]);
-    Array.sameElements(a, [(1, 2), (3, 4), (5, 6), (7, 8)])
+    @test
+    def zip07(): Bool = region r {
+        let a = Array.zip([1,3,5,7], [2,4,6,8]);
+        Array.sameElements(a, [(1, 2), (3, 4), (5, 6), (7, 8)])
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// zipWith                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def zipWith01(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a, []: Array[Int32], []: Array[Bool]);
-    Array.sameElements(arr, []: Array[Int32])
+    @test
+    def zipWith01(): Bool = region r {
+        let arr = Array.zipWith((a, b) -> if (b) a + 1 else a, []: ScopedArray[Int32, _], []: ScopedArray[Bool, _]);
+        Array.sameElements(arr, []: ScopedArray[Int32, _])
+    }
 
-@test
-def zipWith02(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a, [1], []: Array[Bool]);
-    Array.sameElements(arr, []: Array[Int32])
+    @test
+    def zipWith02(): Bool = region r {
+        let arr = Array.zipWith((a, b) -> if (b) a + 1 else a, [1], []: ScopedArray[Bool, _]);
+        Array.sameElements(arr, []: ScopedArray[Int32, _])
+    }
 
-@test
-def zipWith03(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a, []: Array[Int32], [true]);
-    Array.sameElements(arr, []: Array[Int32])
+    @test
+    def zipWith03(): Bool = region r {
+        let arr = Array.zipWith((a, b) -> if (b) a + 1 else a, []: ScopedArray[Int32, _], [true]);
+        Array.sameElements(arr, []: ScopedArray[Int32, _])
+    }
 
-@test
-def zipWith04(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a, [1], [true]);
-    Array.sameElements(arr, [2])
+    @test
+    def zipWith04(): Bool = region r {
+        let arr = Array.zipWith((a, b) -> if (b) a + 1 else a, [1], [true]);
+        Array.sameElements(arr, [2])
+    }
 
-@test
-def zipWith05(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a, [1], [false]);
-    Array.sameElements(arr, [1])
+    @test
+    def zipWith05(): Bool = region r {
+        let arr = Array.zipWith((a, b) -> if (b) a + 1 else a, [1], [false]);
+        Array.sameElements(arr, [1])
+    }
 
-@test
-def zipWith06(): Bool & Impure =
-    let arr = Array.zipWith((a, b) -> if (b) a+1 else a,
-                    [1, 2, 3, 4, 5, 6, 7, 8],
-                    [false, true, true, false, false, true, true, true]);
-    Array.sameElements(arr, [1, 3, 4, 4, 5, 7, 8, 9])
+    @test
+    def zipWith06(): Bool = region r {
+        let arr = Array.zipWith((a, b) -> if (b) a + 1 else a,
+                        [1, 2, 3, 4, 5, 6, 7, 8],
+                        [false, true, true, false, false, true, true, true]);
+        Array.sameElements(arr, [1, 3, 4, 4, 5, 7, 8, 9])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // unzip                                                                   //
