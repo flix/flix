@@ -433,10 +433,7 @@ def foldMap02(): Bool = Set.foldMap(x -> 2 * x, Set#{1, 2}) == 6
 def foldMap03(): Bool = Set.foldMap(x -> if (x == "a") "b" else x, Set#{"a"}) == "b"
 
 @test
-def foldMap04(): Bool = Set.foldMap(x -> if (x == "a") "b" else x, Set#{"a", "b"}) == "bb"
-
-@test
-def foldMap04(): Bool = Set.foldMap(x -> if (x == "a") "b" else x, Set#{"a", "b"}) == "bb"
+def foldMap04(): Bool = Set.foldMap(x -> if (x == "c") "b" else x, Set#{"a", "b", "c"}) == "abb"
 
 @test
 def foldMap05(): Bool = Set.foldMap(Int32.toString, Set#{1, 2, 3}) == "123"

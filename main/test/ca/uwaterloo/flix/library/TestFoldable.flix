@@ -124,7 +124,7 @@ namespace TestFoldable {
 
     @test
     def foldMap04(): Bool =
-        Foldable.foldMap(x -> if (x == "a") "b" else x, "a" :: "b" :: "c":: Nil) == "bbc"
+        Foldable.foldMap(x -> if (x == "c") "b" else x, "a" :: "b" :: "c":: Nil) == "abb"
 
     @test
     def foldMap05(): Bool =

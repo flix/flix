@@ -1824,7 +1824,7 @@ def foldMap03(): Bool =
 
 @test
 def foldMap04(): Bool =
-    List.foldMap(x -> if (x == "a") "b" else x, "a" :: "b" :: Nil) == "bb"
+    List.foldMap(x -> if (x == "c") "b" else x, "a" :: "b" :: "c" :: Nil) == "abb"
 
 @test
 def foldMap05(): Bool =
