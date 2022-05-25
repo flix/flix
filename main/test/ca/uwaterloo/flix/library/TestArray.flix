@@ -3804,49 +3804,57 @@ def takeWhileRight08(): Bool & Impure =
             [true,false,false,true]) == -66
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// filterMap                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // filterMap                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def filterMap01(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def filterMap01(): Bool = region r {
+        let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def filterMap02(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def filterMap02(): Bool = region r {
+        let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def filterMap03(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [2]);
-    Array.sameElements(a, [1])
+    @test
+    def filterMap03(): Bool = region r {
+        let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [2]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def filterMap04(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,3]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def filterMap04(): Bool = region r {
+        let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,3]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def filterMap05(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,4]);
-    Array.sameElements(a, [2])
+    @test
+    def filterMap05(): Bool = region r {
+        let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [1,4]);
+        Array.sameElements(a, [2])
+    }
 
-@test
-def filterMap06(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [6,-1]);
-    Array.sameElements(a, [3])
+    @test
+    def filterMap06(): Bool = region r {
+        let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [6,-1]);
+        Array.sameElements(a, [3])
+    }
 
-@test
-def filterMap07(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [8,6]);
-    Array.sameElements(a, [4,3])
+    @test
+    def filterMap07(): Bool = region r {
+        let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [8,6]);
+        Array.sameElements(a, [4,3])
+    }
 
-@test
-def filterMap08(): Bool & Impure =
-    let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [0,1,2,3,4,5,10]);
-    Array.sameElements(a, [0,1,2,5])
+    @test
+    def filterMap08(): Bool = region r {
+        let a = Array.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, [0,1,2,3,4,5,10]);
+        Array.sameElements(a, [0,1,2,5])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // findMap                                                                 //

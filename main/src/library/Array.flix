@@ -1243,10 +1243,11 @@ namespace Array {
     /// Collects the results of applying the partial function `f` to every element in `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def filterMap(f: a -> Option[b] & ef, a: Array[a]): Array[b] & Impure =
+    pub def filterMap(f: a -> Option[b] & ef, a: ScopedArray[a, r]): ScopedArray[b, r] \ { ef, Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         (foldRight((x, xs) -> match f(x) {
-            case None => xs
-            case Some(b) => b :: xs }, Nil, a) |> List.toArray)(static)
+            case None    => xs
+            case Some(b) => b :: xs }, Nil, a) |> List.toArray)(r)
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `xs`.
