@@ -2814,177 +2814,209 @@ def flatten10(): Bool & Impure =
         Array.sameElements(a, [4, 16, 7, 7]) and Array.sameElements(b, [-3, -5, 1, 2, 1])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// span                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // span                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def span01(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, []: Array[Int32])
+    @test
+    def span01(): Bool = region r {
+        let (a,b) = Array.span(i -> i > 3, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _]) and Array.sameElements(b, []: ScopedArray[Int32, _])
+    }
 
-@test
-def span02(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [1]);
-    Array.sameElements(a,[]: Array[Int32]) and Array.sameElements(b, [1])
+    @test
+    def span02(): Bool = region r {
+        let (a,b) = Array.span(i -> i > 3, [1]);
+        Array.sameElements(a,[]: ScopedArray[Int32, _]) and Array.sameElements(b, [1])
+    }
 
-@test
-def span03(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [4]);
-    Array.sameElements(a, [4]) and Array.sameElements(b, []: Array[Int32])
+    @test
+    def span03(): Bool = region r {
+        let (a,b) = Array.span(i -> i > 3, [4]);
+        Array.sameElements(a, [4]) and Array.sameElements(b, []: ScopedArray[Int32, _])
+    }
 
-@test
-def span04(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [1,2]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, [1,2])
+    @test
+    def span04(): Bool = region r {
+        let (a,b) = Array.span(i -> i > 3, [1,2]);
+        Array.sameElements(a, []: ScopedArray[Int32, _]) and Array.sameElements(b, [1,2])
+    }
 
-@test
-def span05(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [1,5]);
-    Array.sameElements(a, []: Array[Int32]) and Array.sameElements(b, [1,5])
+    @test
+    def span05(): Bool = region r {
+        let (a,b) = Array.span(i -> i > 3, [1,5]);
+        Array.sameElements(a, []: ScopedArray[Int32, _]) and Array.sameElements(b, [1,5])
+    }
 
-@test
-def span06(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [5,1]);
-    Array.sameElements(a, [5]) and Array.sameElements(b, [1])
+    @test
+    def span06(): Bool = region r {
+        let (a,b) = Array.span(i -> i > 3, [5,1]);
+        Array.sameElements(a, [5]) and Array.sameElements(b, [1])
+    }
 
-@test
-def span07(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [5,8]);
-    Array.sameElements(a, [5,8]) and Array.sameElements(b, []: Array[Int32])
+    @test
+    def span07(): Bool = region r {
+        let (a,b) = Array.span(i -> i > 3, [5,8]);
+        Array.sameElements(a, [5,8]) and Array.sameElements(b, []: ScopedArray[Int32, _])
+    }
 
-@test
-def span08(): Bool & Impure =
-    let (a,b) = Array.span(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [4, 6]) and Array.sameElements(b, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
+    @test
+    def span08(): Bool = region r {
+        let (a,b) = Array.span(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
+        Array.sameElements(a, [4, 6]) and Array.sameElements(b, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// drop                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // drop                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def drop01(): Bool & Impure =
-    let a = Array.drop(-1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def drop01(): Bool = region r {
+        let a = Array.drop(-1, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def drop02(): Bool & Impure =
-    let a = Array.drop(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def drop02(): Bool = region r {
+        let a = Array.drop(0, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def drop03(): Bool & Impure =
-    let a = Array.drop(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def drop03(): Bool = region r {
+        let a = Array.drop(1, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def drop04(): Bool & Impure =
-    let a = Array.drop(-1, [1]);
-    Array.sameElements(a, [1])
+    @test
+    def drop04(): Bool = region r {
+        let a = Array.drop(-1, [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def drop05(): Bool & Impure =
-    let a = Array.drop(0, [1]);
-    Array.sameElements(a, [1])
+    @test
+    def drop05(): Bool = region r {
+        let a = Array.drop(0, [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def drop06(): Bool & Impure =
-    let a = Array.drop(1, [1]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def drop06(): Bool = region r {
+        let a = Array.drop(1, [1]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def drop07(): Bool & Impure =
-    let a = Array.drop(2, [1]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def drop07(): Bool = region r {
+        let a = Array.drop(2, [1]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def drop08(): Bool & Impure =
-    let a = Array.drop(0, [1,2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def drop08(): Bool = region r {
+        let a = Array.drop(0, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def drop09(): Bool & Impure =
-    let a = Array.drop(1, [1,2]);
-    Array.sameElements(a, [2])
+    @test
+    def drop09(): Bool = region r {
+        let a = Array.drop(1, [1,2]);
+        Array.sameElements(a, [2])
+    }
 
-@test
-def drop10(): Bool & Impure =
-    let a = Array.drop(2, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def drop10(): Bool = region r {
+        let a = Array.drop(2, [1,2]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def drop11(): Bool & Impure =
-    let a = Array.drop(2, [1,2,3,4,5,6]);
-    Array.sameElements(a, [3,4,5,6])
+    @test
+    def drop11(): Bool = region r {
+        let a = Array.drop(2, [1,2,3,4,5,6]);
+        Array.sameElements(a, [3,4,5,6])
+    }
 
-@test
-def drop12(): Bool & Impure =
-    let a = Array.drop(4, [1,2,3,4,5,6]);
-    Array.sameElements(a, [5,6])
+    @test
+    def drop12(): Bool = region r {
+        let a = Array.drop(4, [1,2,3,4,5,6]);
+        Array.sameElements(a, [5,6])
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// dropLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // dropLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def dropLeft01(): Bool & Impure =
-    let a = Array.dropLeft(-1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def dropLeft01(): Bool = region r {
+        let a = Array.dropLeft(-1, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def dropLeft02(): Bool & Impure =
-    let a = Array.dropLeft(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def dropLeft02(): Bool = region r {
+        let a = Array.dropLeft(0, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def dropLeft03(): Bool & Impure =
-    let a = Array.dropLeft(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def dropLeft03(): Bool = region r {
+        let a = Array.dropLeft(1, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def dropLeft04(): Bool & Impure =
-    let a = Array.dropLeft(-1, [1]);
-    Array.sameElements(a, [1])
+    @test
+    def dropLeft04(): Bool = region r {
+        let a = Array.dropLeft(-1, [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def dropLeft05(): Bool & Impure =
-    let a = Array.dropLeft(0, [1]);
-    Array.sameElements(a, [1])
+    @test
+    def dropLeft05(): Bool = region r {
+        let a = Array.dropLeft(0, [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def dropLeft06(): Bool & Impure =
-    let a = Array.dropLeft(1, [1]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def dropLeft06(): Bool = region r {
+        let a = Array.dropLeft(1, [1]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def dropLeft07(): Bool & Impure =
-    let a = Array.dropLeft(2, [1]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def dropLeft07(): Bool = region r {
+        let a = Array.dropLeft(2, [1]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def dropLeft08(): Bool & Impure =
-    let a = Array.dropLeft(0, [1,2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def dropLeft08(): Bool = region r {
+        let a = Array.dropLeft(0, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def dropLeft09(): Bool & Impure =
-    let a = Array.dropLeft(1, [1,2]);
-    Array.sameElements(a, [2])
+    @test
+    def dropLeft09(): Bool = region r {
+        let a = Array.dropLeft(1, [1,2]);
+        Array.sameElements(a, [2])
+    }
 
-@test
-def dropLeft10(): Bool & Impure =
-    let a = Array.dropLeft(2, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def dropLeft10(): Bool = region r {
+        let a = Array.dropLeft(2, [1,2]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def dropLeft11(): Bool & Impure =
-    let a = Array.dropLeft(2, [1,2,3,4,5,6]);
-    Array.sameElements(a, [3,4,5,6])
+    @test
+    def dropLeft11(): Bool = region r {
+        let a = Array.dropLeft(2, [1,2,3,4,5,6]);
+        Array.sameElements(a, [3,4,5,6])
+    }
 
-@test
-def dropLeft12(): Bool & Impure =
-    let a = Array.dropLeft(4, [1,2,3,4,5,6]);
-    Array.sameElements(a, [5,6])
+    @test
+    def dropLeft12(): Bool = region r {
+        let a = Array.dropLeft(4, [1,2,3,4,5,6]);
+        Array.sameElements(a, [5,6])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // dropRight                                                               //
@@ -3182,133 +3214,157 @@ def dropWhileRight08(): Bool & Impure =
     let a = Array.dropWhileRight(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
     Array.sameElements(a, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1])
 
-/////////////////////////////////////////////////////////////////////////////
-// take                                                                    //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // take                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def take01(): Bool & Impure =
-    let a = Array.take(-1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def take01(): Bool = region r {
+        let a = Array.take(-1, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def take02(): Bool & Impure =
-    let a = Array.take(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def take02(): Bool = region r {
+        let a = Array.take(0, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def take03(): Bool & Impure =
-    let a = Array.take(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def take03(): Bool = region r {
+        let a = Array.take(1, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def take04(): Bool & Impure =
-    let a = Array.take(-1, [1]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def take04(): Bool = region r {
+        let a = Array.take(-1, [1]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def take05(): Bool & Impure =
-    let a = Array.take(0, [1]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def take05(): Bool = region r {
+        let a = Array.take(0, [1]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
 
-@test
-def take06(): Bool & Impure =
-    let a = Array.take(1, [1]);
-    Array.sameElements(a, [1])
+    }
+    @test
+    def take06(): Bool = region r {
+        let a = Array.take(1, [1]);
+        Array.sameElements(a, [1])
 
-@test
-def take07(): Bool & Impure =
-    let a = Array.take(2, [1]);
-    Array.sameElements(a, [1])
+    }
+    @test
+    def take07(): Bool = region r {
+        let a = Array.take(2, [1]);
+        Array.sameElements(a, [1])
 
-@test
-def take08(): Bool & Impure =
-    let a = Array.take(0, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
+    }
+    @test
+    def take08(): Bool = region r {
+        let a = Array.take(0, [1,2]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def take09(): Bool & Impure =
-    let a = Array.take(1, [1,2]);
-    Array.sameElements(a, [1])
+    @test
+    def take09(): Bool = region r {
+        let a = Array.take(1, [1,2]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def take10(): Bool & Impure =
-    let a = Array.take(2, [1,2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def take10(): Bool = region r {
+        let a = Array.take(2, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def take11(): Bool & Impure =
-    let a = Array.take(2, [1,2,3,4,5,6]);
-    Array.sameElements(a, [1,2])
+    @test
+    def take11(): Bool = region r {
+        let a = Array.take(2, [1,2,3,4,5,6]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def take12(): Bool & Impure =
-    let a = Array.take(4, [1,2,3,4,5,6]);
-    Array.sameElements(a, [1,2,3,4])
+    @test
+    def take12(): Bool = region r {
+        let a = Array.take(4, [1,2,3,4,5,6]);
+        Array.sameElements(a, [1,2,3,4])
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// takeLeft                                                                //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // takeLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def takeLeft01(): Bool & Impure =
-    let a = Array.takeLeft(-1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeLeft01(): Bool = region r {
+        let a = Array.takeLeft(-1, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeLeft02(): Bool & Impure =
-    let a = Array.takeLeft(0, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeLeft02(): Bool = region r {
+        let a = Array.takeLeft(0, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeLeft03(): Bool & Impure =
-    let a = Array.takeLeft(1, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeLeft03(): Bool = region r {
+        let a = Array.takeLeft(1, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeLeft04(): Bool & Impure =
-    let a = Array.takeLeft(-1, [1]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeLeft04(): Bool = region r {
+        let a = Array.takeLeft(-1, [1]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeLeft05(): Bool & Impure =
-    let a = Array.takeLeft(0, [1]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeLeft05(): Bool = region r {
+        let a = Array.takeLeft(0, [1]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeLeft06(): Bool & Impure =
-    let a = Array.takeLeft(1, [1]);
-    Array.sameElements(a, [1])
+    @test
+    def takeLeft06(): Bool = region r {
+        let a = Array.takeLeft(1, [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def takeLeft07(): Bool & Impure =
-    let a = Array.takeLeft(2, [1]);
-    Array.sameElements(a, [1])
+    @test
+    def takeLeft07(): Bool = region r {
+        let a = Array.takeLeft(2, [1]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def takeLeft08(): Bool & Impure =
-    let a = Array.takeLeft(0, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeLeft08(): Bool = region r {
+        let a = Array.takeLeft(0, [1,2]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeLeft09(): Bool & Impure =
-    let a = Array.takeLeft(1, [1,2]);
-    Array.sameElements(a, [1])
+    @test
+    def takeLeft09(): Bool = region r {
+        let a = Array.takeLeft(1, [1,2]);
+        Array.sameElements(a, [1])
+    }
 
-@test
-def takeLeft10(): Bool & Impure =
-    let a = Array.takeLeft(2, [1,2]);
-    Array.sameElements(a, [1,2])
+    @test
+    def takeLeft10(): Bool = region r {
+        let a = Array.takeLeft(2, [1,2]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def takeLeft11(): Bool & Impure =
-    let a = Array.takeLeft(2, [1,2,3,4,5,6]);
-    Array.sameElements(a, [1,2])
+    @test
+    def takeLeft11(): Bool = region r {
+        let a = Array.takeLeft(2, [1,2,3,4,5,6]);
+        Array.sameElements(a, [1,2])
+    }
 
-@test
-def takeLeft12(): Bool & Impure =
-    let a = Array.takeLeft(4, [1,2,3,4,5,6]);
-    Array.sameElements(a, [1,2,3,4])
+    @test
+    def takeLeft12(): Bool = region r {
+        let a = Array.takeLeft(4, [1,2,3,4,5,6]);
+        Array.sameElements(a, [1,2,3,4])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // takeRight                                                               //

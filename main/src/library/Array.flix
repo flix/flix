@@ -970,12 +970,11 @@ namespace Array {
     /// `a1` is the longest prefix of `a` that satisfies the predicate `f`.
     /// `a2` is the remainder of `a`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(a)) @Space()
-    pub def span(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) & Impure =
+    pub def span(f: a -> Bool & ef, a: ScopedArray[a, r]): (ScopedArray[a, r], ScopedArray[a, r]) \ { ef, Read(r), Write(r) }=
+        let r = Scoped.regionOf(a);
         match findIndexOfLeft(x -> not (f(x)), a) {
-            case None => (takeLeft(length(a), a), [])
+            case None => (takeLeft(length(a), a), [] @ r)
             case Some(i) => (takeLeft(i, a), dropLeft(i, a))
         }
 
@@ -983,7 +982,8 @@ namespace Array {
     /// Alias for `dropLeft`.
     ///
     @Time(length(a) - n) @Space(length(a) - n)
-    pub def drop(n: Int32, a: Array[a]) : Array[a] & Impure = dropLeft(n, a)
+    pub def drop(n: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
+        dropLeft(n, a)
 
     ///
     /// Returns a copy of array `a`, dropping the first `n` elements.
@@ -991,13 +991,14 @@ namespace Array {
     /// Returns `[]` if `n > length(a)`.
     ///
     @Time(length(a) - n) @Space(length(a) - n)
-    pub def dropLeft(n: Int32, a: Array[a]) : Array[a] & Impure =
+    pub def dropLeft(n: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
         let len = length(a);
+        let r = Scoped.regionOf(a);
         if (n > len)
-            []
+            [] @ r
         else {
             let start = if (n < 0) 0 else n;
-            slice(start, len, a)
+            copyOfRange(start, len, a, r)
         }
 
     ///
@@ -1051,7 +1052,8 @@ namespace Array {
     /// Alias for `takeLeft`.
     ///
     @Time(n) @Space(n)
-    pub def take(n: Int32, a: Array[a]) : Array[a] & Impure = takeLeft(n, a)
+    pub def take(n: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
+        takeLeft(n, a)
 
     ///
     /// Returns a fresh array taking first `n` elements of `a`.
@@ -1059,13 +1061,14 @@ namespace Array {
     /// Returns `a` if `n > length(xs)`.
     ///
     @Time(n) @Space(n)
-    pub def takeLeft(n: Int32, a: Array[a]) : Array[a] & Impure =
+    pub def takeLeft(n: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         if (n <= 0)
-            []
+            [] @ r
         else {
             let len = length(a);
             let end = if (n > len) len else n;
-            slice(0, end, a)
+            copyOfRange(0, end, a, r)
         }
 
     ///
