@@ -158,6 +158,25 @@ def forwardPipe02(): Bool =
         r == 3
 
 /////////////////////////////////////////////////////////////////////////////
+// ||> (curryTuplePipe)                                                    //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def curryTuplePipe01(): Bool = ((1, 2) ||> Add.add) == 3
+
+@test
+def curryTuplePipe02(): Bool = (("a", "b") ||> Add.add) == "ab"
+
+@test
+def curryTuplePipe03(): Bool = (("abc", "def") ||> String.concat) == "abcdef"
+
+@test
+def curryTuplePipe04(): Bool = ((1 :: 2 :: 3 :: Nil, 4 :: 5 :: Nil) ||> List.append) == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+
+@test
+def curryTuplePipe05(): Bool = ((0, 5) ||> List.range) == 0 :: 1 :: 2 :: 3 :: 4 :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
 // !> (imperativePipe)                                                     //
 /////////////////////////////////////////////////////////////////////////////
 
