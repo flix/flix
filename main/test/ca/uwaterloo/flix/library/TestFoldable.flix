@@ -107,6 +107,30 @@ namespace TestFoldable {
         Foldable.findLeft(x -> x mod 2 == 0, 1 :: 2 :: 3 :: 4 :: Nil) == Some(2)
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool =
+        Foldable.foldMap(x -> 2 * x, Nil) == 0
+
+    @test
+    def foldMap02(): Bool =
+        Foldable.foldMap(x -> 2 * x, 1 :: 2 :: Nil) == 6
+
+    @test
+    def foldMap03(): Bool =
+        Foldable.foldMap(x -> if (x == "a") "b" else x, "a" :: Nil) == "b"
+
+    @test
+    def foldMap04(): Bool =
+        Foldable.foldMap(x -> if (x == "a") "b" else x, "a" :: "b" :: "c":: Nil) == "bbc"
+
+    @test
+    def foldMap05(): Bool =
+        Foldable.foldMap(Int32.toString, 1 :: 2 :: 3 :: Nil) == "123"
+
+    /////////////////////////////////////////////////////////////////////////////
     // fold                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
