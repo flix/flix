@@ -1545,7 +1545,7 @@ object Resolver {
     val opOpt = tryLookupName(qname, ns0, root.ops)
 
     opOpt match {
-      case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case None => ResolutionError.UndefinedOp(qname, qname.loc).toFailure
       case Some(op) =>
         if (isOpAccessible(op, ns0)) {
           op.toSuccess
@@ -1562,7 +1562,9 @@ object Resolver {
     val opOpt = eff.ops.find(o => o.sym.name == ident.name)
     opOpt match {
       case None =>
-        ResolutionError.UndefinedOp(eff.sym, ident, ident.loc).toFailure
+        val nname = eff.sym.namespace :+ eff.sym.name
+        val qname = Name.mkQName(nname, ident.name, SourcePosition.Unknown, SourcePosition.Unknown)
+        ResolutionError.UndefinedOp(qname, ident.loc).toFailure
       case Some(op) => op.toSuccess
     }
   }
@@ -2043,7 +2045,7 @@ object Resolver {
     val effOpt = tryLookupName(qname, ns0, root.effects)
 
     effOpt match {
-      case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case None => ResolutionError.UndefinedEffect(qname, ns0, qname.loc).toFailure
       case Some(eff) => getEffectIfAccessible(eff, ns0, qname.loc)
     }
   }
