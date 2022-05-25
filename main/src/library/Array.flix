@@ -1125,34 +1125,34 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a) * length(a)) @Space(space(f) * length(a))
-    pub def groupBy(f: (a, a) -> Bool, a: Array[a]): Array[Array[a]] & Impure =
+    pub def groupBy(f: (a, a) -> Bool, a: ScopedArray[a, r1], r2: Region[r2]): ScopedArray[ScopedArray[a, r2], r1] \ { Read(r1), Write(r1, r2) } =
         let xs = toList(a);
-        (groupByHelper(f, xs, Nil) |> List.toArray)(static)
+        let r1 = Scoped.regionOf(a);
+        (groupByHelper(f, xs, Nil, r2) |> List.toArray)(r1)
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[Array[a]]): List[Array[a]] & Impure = match xs {
-        case Nil => List.reverse(ac)
+    def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[ScopedArray[a, r]], r: Region[r]): List[ScopedArray[a, r]] \ Write(r) = match xs {
+        case Nil     => List.reverse(ac)
         case x :: rs =>
-            let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil);
-            groupByHelper(f, r2, r1 :: ac)
+            let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil, r);
+            groupByHelper(f, r2, r1 :: ac, r)
     }
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Array[a], List[a]) & Impure = match xs {
+    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a], r: Region[r]): (ScopedArray[a, r], List[a]) \ Write(r) = match xs {
         case Nil => {
-            let a = List.toArray(ps, static);
-            reverse!(a);
-            (a, List.reverse(ns))
+            let a = List.reverse(ps);
+            (List.toArray(a, r), List.reverse(ns))
         }
         case x :: rs =>
             if (agreeHelper(f, x, ps))
-                extractHelper(f, rs, x :: ps, ns)
+                extractHelper(f, rs, x :: ps, ns, r)
             else
-                extractHelper(f, rs, ps, x :: ns)
+                extractHelper(f, rs, ps, x :: ns, r)
     }
 
     ///
@@ -1174,9 +1174,9 @@ namespace Array {
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
     @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
-    pub def zip(a: Array[a], b: Array[b]): Array[(a,b)] & Impure =
+    pub def zip(a: ScopedArray[a, r1], b: ScopedArray[b, r2]): ScopedArray[(a, b), r2] \ { Read(r1, r2), Write(r2) } =
         let len = Int32.min(length(a), length(b));
-        init(i -> (a[i], b[i]), len, static)
+        init(i -> (a[i], b[i]), len, Scoped.regionOf(b))
 
     ///
     /// Returns an array where the element at index `i` is `f(x, y)` where
@@ -1185,23 +1185,24 @@ namespace Array {
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f) * Int32.min(length(a), length(b)))
-    pub def zipWith(f: (a, b) -> c & ef, a: Array[a], b: Array[b]): Array[c] & Impure =
+    pub def zipWith(f: (a, b) -> c & ef, a: ScopedArray[a, r1], b: ScopedArray[b, r2]): ScopedArray[c, r2] \ { ef, Read(r1, r2), Write(r2) } =
         let len = Int32.min(length(a), length(b));
-        init(i -> f(a[i], b[i]), len, static)
+        init(i -> f(a[i], b[i]), len, Scoped.regionOf(b))
 
     ///
     /// Returns a pair of arrays, the first containing all first components in `a`
     /// and the second containing all second components in `a`.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def unzip(a: Array[(a,b)]): (Array[a], Array[b]) & Impure =
-        init2(i -> a[i], length(a))
+    pub def unzip(a: ScopedArray[(a, b), r]): (ScopedArray[a, r], ScopedArray[b, r]) \ { Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
+        init2(i -> a[i], length(a), r, r)
 
     ///
     /// Alias for `foldLeft2`.
     ///
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f))
-    pub def fold2(f: (c, a, b) -> c & ef, c: c, a: Array[a], b: Array[b]): c & Impure =
+    pub def fold2(f: (c, a, b) -> c & ef, c: c, a: ScopedArray[a, r1], b: ScopedArray[b, r2]): c \ { ef, Read(r1, r2) } =
         foldLeft2(f, c, a, b)
 
     ///
@@ -1209,7 +1210,7 @@ namespace Array {
     /// starting with the initial value `c` and going from left to right.
     ///
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f))
-    pub def foldLeft2(f: (c, a, b) ->  c & ef, c: c, a: Array[a], b: Array[b]): c & Impure =
+    pub def foldLeft2(f: (c, a, b) ->  c & ef, c: c, a: ScopedArray[a, r1], b: ScopedArray[b, r2]): c \ { ef, Read(r1, r2) } =
         let lena = length(a);
         let lenb = length(b);
         def loop(i, acc) = {
@@ -1225,7 +1226,7 @@ namespace Array {
     /// starting with the initial value `c` and going from right to left.
     ///
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f))
-    pub def foldRight2(f: (a, b, c) -> c & ef, c: c, a: Array[a], b: Array[b]): c & Impure =
+    pub def foldRight2(f: (a, b, c) -> c & ef, c: c, a: ScopedArray[a, r1], b: ScopedArray[b, r2]): c \ { ef, Read(r1, r2) } =
         def loop(i, j, acc) = {
             if (i < 0 or j < 0)
                 acc
@@ -1240,10 +1241,11 @@ namespace Array {
     /// Collects the results of applying the partial function `f` to every element in `a`.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def filterMap(f: a -> Option[b] & ef, a: Array[a]): Array[b] & Impure =
+    pub def filterMap(f: a -> Option[b] & ef, a: ScopedArray[a, r]): ScopedArray[b, r] \ { ef, Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         (foldRight((x, xs) -> match f(x) {
-            case None => xs
-            case Some(b) => b :: xs }, Nil, a) |> List.toArray)(static)
+            case None    => xs
+            case Some(b) => b :: xs }, Nil, a) |> List.toArray)(r)
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `xs`.
@@ -1251,7 +1253,7 @@ namespace Array {
     /// Returns `None` if every element of `xs` is `None`.
     ///
     @Time(time(f) * length(a)) @Space(space(f))
-    pub def findMap(f: a -> Option[b] & ef, a: Array[a]): Option[b] & Impure =
+    pub def findMap(f: a -> Option[b] & ef, a: ScopedArray[a, r]): Option[b] \ { ef, Read(r) } =
         let len = length(a);
         def loop(i) = {
             if (i >= len)
@@ -1269,7 +1271,8 @@ namespace Array {
     /// Returns the array `a` as a set.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toSet(a: Array[a]): Set[a] & Impure with Order[a] = foldRight(Set.insert, Set.empty(), a)
+    pub def toSet(a: ScopedArray[a, r]): Set[a] \ Read(r) with Order[a] =
+        foldRight(Set.insert, Set.empty(), a)
 
     ///
     /// Returns the association list `xs` as a map.
@@ -1278,7 +1281,7 @@ namespace Array {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toMap(a: Array[(a, b)]): Map[a, b] & Impure with Order[a] =
+    pub def toMap(a: ScopedArray[(a, b), r]): Map[a, b] \ Read(r) with Order[a] =
         foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
 
     ///
@@ -1379,13 +1382,13 @@ namespace Array {
     /// Build a pair of arrays of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init2(f: Int32 -> (a, b) & ef, len: Int32): (Array[a], Array[b]) & Impure =
+    pub def init2(f: Int32 -> (a, b) & ef, len: Int32, r1: Region[r1], r2: Region[r2]): (ScopedArray[a, r1], ScopedArray[b, r2]) \ { ef, Write(r1, r2) } =
         if (len <= 0)
-            ([], [])
+            ([] @ r1, [] @ r2)
         else {
             let (x, y) = f(0);
-            let arr = new(x, len, static);
-            let brr = new(y, len, static);
+            let arr = new(x, len, r1);
+            let brr = new(y, len, r2);
             def loop(i) = {
                 if (i < len) {
                     let (a, b) = f(i);
