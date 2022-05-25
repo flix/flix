@@ -1811,16 +1811,24 @@ def foldRight210(): Bool = List.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, 
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def foldMap01(): Bool = List.foldMap(x -> 2 * x, Nil) == 0
+def foldMap01(): Bool =
+    List.foldMap(x -> 2 * x, Nil) == 0
 
 @test
-def foldMap02(): Bool = List.foldMap(x -> 2 * x, 1 :: 2 :: Nil) == 6
+def foldMap02(): Bool =
+    List.foldMap(x -> 2 * x, 1 :: 2 :: Nil) == 6
 
 @test
-def foldMap03(): Bool = List.foldMap(x -> if (x == "a") "b" else x, "a" :: Nil) == "b"
+def foldMap03(): Bool =
+    List.foldMap(x -> if (x == "a") "b" else x, "a" :: Nil) == "b"
 
 @test
-def foldMap04(): Bool = List.foldMap(x -> if (x == "a") "b" else x, "a" :: "b" :: Nil) == "bb"
+def foldMap04(): Bool =
+    List.foldMap(x -> if (x == "a") "b" else x, "a" :: "b" :: Nil) == "bb"
+
+@test
+def foldMap05(): Bool =
+    List.foldMap(Int32.toString, 1 :: 2 :: 3 :: Nil) == "123"
 
 /////////////////////////////////////////////////////////////////////////////
 // filterMap                                                               //
