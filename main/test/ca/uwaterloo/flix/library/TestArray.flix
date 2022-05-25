@@ -3900,33 +3900,49 @@ def takeWhileRight08(): Bool & Impure =
         Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, [0,1,2,3,4,5,10]) == Some(0)
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// toSet                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // toSet                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def toSet01(): Bool & Impure = Array.toSet([]: Array[Int32]) == Set#{}
+    @test
+    def toSet01(): Bool = region r {
+        Array.toSet([]: ScopedArray[Int32, _]) == Set#{}
+    }
 
-@test
-def toSet02(): Bool & Impure = Array.toSet([1]) == Set#{1}
+    @test
+    def toSet02(): Bool = region r {
+        Array.toSet([1]) == Set#{1}
+    }
 
-@test
-def toSet03(): Bool & Impure = Array.toSet([1,2]) == Set#{1, 2}
+    @test
+    def toSet03(): Bool = region r {
+        Array.toSet([1,2]) == Set#{1, 2}
+    }
 
-@test
-def toSet04(): Bool & Impure = Array.toSet([1,1]) == Set#{1}
+    @test
+    def toSet04(): Bool = region r {
+        Array.toSet([1,1]) == Set#{1}
+    }
 
-@test
-def toSet05(): Bool & Impure = Array.toSet([1,2,3]) == Set#{1, 2, 3}
+    @test
+    def toSet05(): Bool = region r {
+        Array.toSet([1,2,3]) == Set#{1, 2, 3}
+    }
 
-@test
-def toSet06(): Bool & Impure = Array.toSet([1,2,1]) == Set#{1, 2}
+    @test
+    def toSet06(): Bool = region r {
+        Array.toSet([1,2,1]) == Set#{1, 2}
+    }
 
-@test
-def toSet07(): Bool & Impure = Array.toSet([1,1,2]) == Set#{1, 2}
+    @test
+    def toSet07(): Bool = region r {
+        Array.toSet([1,1,2]) == Set#{1, 2}
+    }
 
-@test
-def toSet08(): Bool & Impure = Array.toSet([2,1,2,3,4,5,6,3,3]) == Set#{1, 2, 3, 4, 5, 6}
+    @test
+    def toSet08(): Bool = region r {
+        Array.toSet([2,1,2,3,4,5,6,3,3]) == Set#{1, 2, 3, 4, 5, 6}
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // toMap                                                                   //

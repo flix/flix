@@ -1273,7 +1273,8 @@ namespace Array {
     /// Returns the array `a` as a set.
     ///
     @Time(length(a)) @Space(length(a))
-    pub def toSet(a: Array[a]): Set[a] & Impure with Order[a] = foldRight(Set.insert, Set.empty(), a)
+    pub def toSet(a: ScopedArray[a, r]): Set[a] \ Read(r) with Order[a] =
+        foldRight(Set.insert, Set.empty(), a)
 
     ///
     /// Returns the association list `xs` as a map.
