@@ -3944,21 +3944,29 @@ def takeWhileRight08(): Bool & Impure =
         Array.toSet([2,1,2,3,4,5,6,3,3]) == Set#{1, 2, 3, 4, 5, 6}
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// toMap                                                                   //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // toMap                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def toMap01(): Bool & Impure = Array.toMap([]: Array[(Int32, Bool)]) == Map#{}
+    @test
+    def toMap01(): Bool = region r {
+        Array.toMap([]: ScopedArray[(Int32, Bool), _]) == Map#{}
+    }
 
-@test
-def toMap02(): Bool & Impure = Array.toMap([(1, true)]) == Map#{1 => true}
+    @test
+    def toMap02(): Bool = region r {
+        Array.toMap([(1, true)]) == Map#{1 => true}
+    }
 
-@test
-def toMap03(): Bool & Impure = Array.toMap([(1, true), (2, false)]) == Map#{1 => true, 2 => false}
+    @test
+    def toMap03(): Bool = region r {
+        Array.toMap([(1, true), (2, false)]) == Map#{1 => true, 2 => false}
+    }
 
-@test
-def toMap04(): Bool & Impure = Array.toMap([(1, true), (1, false)]) == Map#{1 => true}
+    @test
+    def toMap04(): Bool = region r {
+        Array.toMap([(1, true), (1, false)]) == Map#{1 => true}
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // findIndexOf                                                             //
