@@ -974,7 +974,7 @@ namespace Array {
     pub def span(f: a -> Bool & ef, a: ScopedArray[a, r]): (ScopedArray[a, r], ScopedArray[a, r]) \ { ef, Read(r), Write(r) }=
         let r = Scoped.regionOf(a);
         match findIndexOfLeft(x -> not (f(x)), a) {
-            case None => (takeLeft(length(a), a), [] @ r)
+            case None    => (takeLeft(length(a), a), [] @ r)
             case Some(i) => (takeLeft(i, a), dropLeft(i, a))
         }
 
@@ -1007,13 +1007,14 @@ namespace Array {
     /// Returns `[]` if `n > length(a)`.
     ///
     @Time(length(a) - n) @Space(length(a) - n)
-    pub def dropRight(n: Int32, a: Array[a]): Array[a] & Impure =
+    pub def dropRight(n: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         let len = length(a);
         if (n >= len)
-            []
+            [] @ r
         else {
             let end = if (n < 0) len else len - n;
-            slice(0, end, a)
+            copyOfRange(0, end, a, r)
         }
 
     ///
@@ -1022,7 +1023,8 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def dropWhile(f: a -> Bool, a: Array[a]): Array[a] & Impure = dropWhileLeft(f, a)
+    pub def dropWhile(f: a -> Bool & ef, a: ScopedArray[a, r]): ScopedArray[a, r] \ { ef, Read(r), Write(r) } =
+        dropWhileLeft(f, a)
 
     ///
     /// Returns copy of array `a` without the longest prefix that satisfies the predicate `f`.
@@ -1030,9 +1032,10 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def dropWhileLeft(f: a -> Bool, a: Array[a]): Array[a]  & Impure =
+    pub def dropWhileLeft(f: a -> Bool & ef, a: ScopedArray[a, r]): ScopedArray[a, r] \ { ef, Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         match findIndexOfLeft(x -> not (f(x)), a) {
-            case None => []
+            case None    => [] @ r
             case Some(i) => dropLeft(i, a)
         }
 
