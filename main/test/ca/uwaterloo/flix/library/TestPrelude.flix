@@ -171,7 +171,8 @@ def curryTuplePipe02(): Bool = (("a", "b") ||> Add.add) == "ab"
 def curryTuplePipe03(): Bool = (("abc", "def") ||> String.concat) == "abcdef"
 
 @test
-def curryTuplePipe04(): Bool = ((1 :: 2 :: 3 :: Nil, 4 :: 5 :: Nil) ||> List.append) == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+def curryTuplePipe04(): Bool =
+    ((1 :: 2 :: 3 :: Nil, 4 :: 5 :: Nil) ||> List.append) == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
 
 @test
 def curryTuplePipe05(): Bool = ((0, 5) ||> List.range) == 0 :: 1 :: 2 :: 3 :: 4 :: Nil
