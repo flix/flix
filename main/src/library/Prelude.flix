@@ -110,7 +110,7 @@ pub def |>(x: a, f: a -> b & ef): b & ef = f(x)
 ///
 /// Given a pair `x` and a function `f` returns `f(x)`.
 ///
-pub def ||>(x: (a, b), f: (a -> b) -> c & ef): c & ef = f(x)
+pub def ||>(x: (a, b), f: a -> (b -> c & ef)): c & ef = f(fst(x), snd(x))
 
 ///
 /// Pipes the given value `x` into the function `f`.
