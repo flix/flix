@@ -1204,7 +1204,7 @@ namespace Array {
     /// Alias for `foldLeft2`.
     ///
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f))
-    pub def fold2(f: (c, a, b) -> c & ef, c: c, a: Array[a], b: Array[b]): c & Impure =
+    pub def fold2(f: (c, a, b) -> c & ef, c: c, a: ScopedArray[a, r1], b: ScopedArray[b, r2]): c \ { ef, Read(r1, r2) } =
         foldLeft2(f, c, a, b)
 
     ///
@@ -1212,7 +1212,7 @@ namespace Array {
     /// starting with the initial value `c` and going from left to right.
     ///
     @Time(time(f) * Int32.min(length(a), length(b))) @Space(space(f))
-    pub def foldLeft2(f: (c, a, b) ->  c & ef, c: c, a: Array[a], b: Array[b]): c & Impure =
+    pub def foldLeft2(f: (c, a, b) ->  c & ef, c: c, a: ScopedArray[a, r1], b: ScopedArray[b, r2]): c \ { ef, Read(r1, r2) } =
         let lena = length(a);
         let lenb = length(b);
         def loop(i, acc) = {
