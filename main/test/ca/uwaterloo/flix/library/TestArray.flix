@@ -5367,20 +5367,24 @@ def init205(): Bool & Impure =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def join01(): Bool & Impure =
-        Array.join(",", []: Array[Int32]) == ""
+    def join01(): Bool = region r {
+        Array.join(",", ([] @ r): ScopedArray[Int32, _]) == ""
+    }
 
     @test
-    def join02(): Bool & Impure =
-        Array.join(",", [1]) == "1"
+    def join02(): Bool = region r {
+        Array.join(",", [1] @ r) == "1"
+    }
 
     @test
-    def join03(): Bool & Impure =
-        Array.join(",", [1, 2, 3]) == "1,2,3"
+    def join03(): Bool = region r {
+        Array.join(",", [1, 2, 3] @ r) == "1,2,3"
+    }
 
     @test
-    def join04(): Bool & Impure =
-        Array.join(",", ["1", "2", "3"]) == "1,2,3"
+    def join04(): Bool = region r {
+        Array.join(",", ["1", "2", "3"] @ r) == "1,2,3"
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5388,57 +5392,66 @@ def init205(): Bool & Impure =
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def joinWith01(): Bool & Impure =
-        Array.joinWith(x -> "${x + 1}", ",", []) == ""
+    def joinWith01(): Bool = region r {
+        Array.joinWith(x -> "${x + 1}", ",", [] @ r) == ""
+    }
 
     @test
-    def joinWith02(): Bool & Impure =
-        Array.joinWith(x -> "${x + 1}", ",", [1]) == "2"
+    def joinWith02(): Bool = region r {
+        Array.joinWith(x -> "${x + 1}", ",", [1] @ r) == "2"
+    }
 
     @test
-    def joinWith03(): Bool & Impure =
-        Array.joinWith(x -> "${x + 1}", ",", [1, 2, 3]) == "2,3,4"
+    def joinWith03(): Bool = region r {
+        Array.joinWith(x -> "${x + 1}", ",", [1, 2, 3] @ r) == "2,3,4"
+    }
 
     @test
-    def joinWith04(): Bool & Impure =
-        Array.joinWith(x -> x + x, ",", ["1", "2", "3"]) == "11,22,33"
+    def joinWith04(): Bool = region r {
+        Array.joinWith(x -> x + x, ",", ["1", "2", "3"] @ r) == "11,22,33"
+    }
 
     @test
-    def joinWith05(): Bool & Impure =
-        let a: Array[Int32] = [];
+    def joinWith05(): Bool = region r {
+        let a: ScopedArray[Int32, _] = [] @ r;
         let s = Array.joinWith(Int32.toString, ",", a);
         s == ""
+    }
 
     @test
-    def joinWith06(): Bool & Impure =
-        let a = [1];
+    def joinWith06(): Bool = region r {
+        let a = [1] @ r;
         let s = Array.joinWith(Int32.toString, ",", a);
         s == "1"
+    }
 
     @test
-    def joinWith07(): Bool & Impure =
-        let a = [1,2];
+    def joinWith07(): Bool = region r {
+        let a = [1,2] @ r;
         let s = Array.joinWith(Int32.toString, ",", a);
         s == "1,2"
+    }
 
     @test
-    def joinWith08(): Bool & Impure =
-        let a = [1,2,3];
+    def joinWith08(): Bool = region r {
+        let a = [1,2,3] @ r;
         let s = Array.joinWith(Int32.toString, ",", a);
         s == "1,2,3"
+    }
 
     @test
-    def joinWith09(): Bool & Impure =
-        let a = [1,2,3];
+    def joinWith09(): Bool = region r {
+        let a = [1,2,3] @ r;
         let s = Array.joinWith(Int32.toString, "", a);
         s == "123"
+    }
 
     @test
-    def joinWith10(): Bool & Impure =
-        let a = [1,2,3];
+    def joinWith10(): Bool = region r {
+        let a = [1,2,3] @ r;
         let s = Array.joinWith(Int32.toString, "..", a);
         s == "1..2..3"
-
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

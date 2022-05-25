@@ -416,6 +416,69 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedName](result)
   }
 
+  test("UndefinedEffect.01") {
+    val input =
+      """
+        |def f(): Unit = try () with E {
+        |    def op() = resume()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedEffect](result)
+  }
+
+  // TODO activate after resolving effects in specs
+//  test("UndefinedEffect.02") {
+//    val input =
+//      """
+//        |def f(): Unit \ E = ???
+//        |""".stripMargin
+//    val result = compile(input, Options.TestWithLibNix)
+//    expectError[ResolutionError.UndefinedEffect](result)
+//  }
+//
+//  test("UndefinedEffect.03") {
+//    val input =
+//      """
+//        |def f(x: a -> b \ E): Unit = ???
+//        |""".stripMargin
+//    val result = compile(input, Options.TestWithLibNix)
+//    expectError[ResolutionError.UndefinedOp](result)
+//  }
+
+  test("UndefinedOp.01") {
+    val input =
+      """
+        |def f(): Unit = do E.op()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedOp](result)
+  }
+
+  test("UndefinedOp.02") {
+    val input =
+      """
+        |eff E
+        |
+        |def f(): Unit = do E.op()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedOp](result)
+  }
+
+  test("UndefinedOp.03") {
+    val input =
+      """
+        |eff E
+        |
+        |def f(): Unit = try () with E {
+        |    def op() = resume()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedOp](result)
+  }
+
   test("UndefinedClass.01") {
     val input =
       """
