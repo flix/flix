@@ -1127,34 +1127,34 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a) * length(a)) @Space(space(f) * length(a))
-    pub def groupBy(f: (a, a) -> Bool, a: Array[a]): Array[Array[a]] & Impure =
+    pub def groupBy(f: (a, a) -> Bool, a: ScopedArray[a, r1], r2: Region[r2]): ScopedArray[ScopedArray[a, r2], r1] \ { Read(r1), Write(r1, r2) } =
         let xs = toList(a);
-        (groupByHelper(f, xs, Nil) |> List.toArray)(static)
+        let r1 = Scoped.regionOf(a);
+        (groupByHelper(f, xs, Nil, r2) |> List.toArray)(r1)
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[Array[a]]): List[Array[a]] & Impure = match xs {
-        case Nil => List.reverse(ac)
+    def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[ScopedArray[a, r]], r: Region[r]): List[ScopedArray[a, r]] \ Write(r) = match xs {
+        case Nil     => List.reverse(ac)
         case x :: rs =>
-            let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil);
-            groupByHelper(f, r2, r1 :: ac)
+            let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil, r);
+            groupByHelper(f, r2, r1 :: ac, r)
     }
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Array[a], List[a]) & Impure = match xs {
+    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a], r: Region[r]): (ScopedArray[a, r], List[a]) \ Write(r) = match xs {
         case Nil => {
-            let a = List.toArray(ps, static);
-            reverse!(a);
-            (a, List.reverse(ns))
+            let a = List.reverse(ps);
+            (List.toArray(a, r), List.reverse(ns))
         }
         case x :: rs =>
             if (agreeHelper(f, x, ps))
-                extractHelper(f, rs, x :: ps, ns)
+                extractHelper(f, rs, x :: ps, ns, r)
             else
-                extractHelper(f, rs, ps, x :: ns)
+                extractHelper(f, rs, ps, x :: ns, r)
     }
 
     ///

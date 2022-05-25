@@ -3470,51 +3470,58 @@ def takeWhileRight08(): Bool & Impure =
     let a = Array.takeWhileRight(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
     Array.sameElements(a, [7])
 
-/////////////////////////////////////////////////////////////////////////////
-// groupBy                                                                 //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // groupBy                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def groupBy01(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, []: Array[Int32]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == Nil
+    @test
+    def groupBy01(): Bool = region r {
+        let arr = Array.groupBy((a, b) -> a > 3 or b > 8, []: ScopedArray[Int32, _], r);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        xs == Nil
+    }
 
-@test
-def groupBy02(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (1 :: Nil) :: Nil
+    @test
+    def groupBy02(): Bool = region r {
+        let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1], r);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        xs == (1 :: Nil) :: Nil
+    }
 
-@test
-def groupBy03(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1,4]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (1 :: Nil) :: (4 :: Nil) :: Nil
+    @test
+    def groupBy03(): Bool = region r {
+        let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1,4], r);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        xs == (1 :: Nil) :: (4 :: Nil) :: Nil
+    }
 
-@test
-def groupBy04(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1,9]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (1 :: 9 :: Nil) :: Nil
+    @test
+    def groupBy04(): Bool = region r {
+        let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1,9], r);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        xs == (1 :: 9 :: Nil) :: Nil
+    }
 
-@test
-def groupBy05(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1, 4, 7, 6, 9, 2, 4, 4, 8, 16]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (1 :: 9 :: 16 :: Nil) :: (4 :: 7 :: 6 :: 4 :: 4 :: 8 :: Nil) :: (2 :: Nil) :: Nil
+    @test
+    def groupBy05(): Bool = region r {
+        let arr = Array.groupBy((a, b) -> a > 3 or b > 8, [1, 4, 7, 6, 9, 2, 4, 4, 8, 16], r);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        xs == (1 :: 9 :: 16 :: Nil) :: (4 :: 7 :: 6 :: 4 :: 4 :: 8 :: Nil) :: (2 :: Nil) :: Nil
+    }
 
-@test
-def groupBy06(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a > -6 or a*b >= 0, [-1, -11, 4, -11, 0, 8, 2, 1, -3, -24]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (-1 :: -11 :: -11 :: 0 :: -3 :: -24 :: Nil) :: (4 :: 8 :: 2 :: 1 :: Nil) :: Nil
+    @test
+    def groupBy06(): Bool = region r {
+        let arr = Array.groupBy((a, b) -> a > -6 or a*b >= 0, [-1, -11, 4, -11, 0, 8, 2, 1, -3, -24], r);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        xs == (-1 :: -11 :: -11 :: 0 :: -3 :: -24 :: Nil) :: (4 :: 8 :: 2 :: 1 :: Nil) :: Nil
+    }
 
-@test
-def groupBy07(): Bool & Impure =
-    let arr = Array.groupBy((a, b) -> a < 0 or (a > 10 or (b > 10 or a == b)), [-5, 6, 11, 8, 8, -11, -1, 0, 4, -1]);
-    let xs = Array.toList(arr) |> List.map(Array.toList);
-    xs == (-5 :: 11 :: -11 :: -1 :: -1 :: Nil) :: (6 :: Nil) :: (8 :: 8 :: Nil) :: (0 :: Nil) :: (4 :: Nil) :: Nil
+    @test
+    def groupBy07(): Bool = region r {
+        let arr = Array.groupBy((a, b) -> a < 0 or (a > 10 or (b > 10 or a == b)), [-5, 6, 11, 8, 8, -11, -1, 0, 4, -1], r);
+        let xs = Array.toList(arr) |> List.map(Array.toList);
+        xs == (-5 :: 11 :: -11 :: -1 :: -1 :: Nil) :: (6 :: Nil) :: (8 :: 8 :: Nil) :: (0 :: Nil) :: (4 :: Nil) :: Nil
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // zip                                                                     //
