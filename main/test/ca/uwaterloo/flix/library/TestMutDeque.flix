@@ -830,7 +830,16 @@ namespace TestMutDeque {
         MutDeque.pushFront("a", d);
         MutDeque.pushFront("b", d);
         MutDeque.pushFront("c", d);
-        MutDeque.foldMap(x -> if (x == "a") "b" else x, d) == "bbc"
+        MutDeque.foldMap(x -> if (x == "c") "b" else x, d) == "abb"
+    }
+
+    @test
+    def foldMap06(): Bool = region r {
+        let d = new MutDeque(r);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushFront(2, d);
+        MutDeque.pushFront(3, d);
+        MutDeque.foldMap(Int32.toString, d) == "123"
     }
 
 

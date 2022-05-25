@@ -714,6 +714,9 @@ namespace TestDelayList {
     def foldMap05(): Bool =
     	DelayList.foldMap(x -> 2 * x, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 12
 
+    @test
+    def foldMap06(): Bool =
+    	DelayList.foldMap(Int32.toString, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == "123"
 
     /////////////////////////////////////////////////////////////////////////////
     // foreach                                                                 //

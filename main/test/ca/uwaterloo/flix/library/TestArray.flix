@@ -2399,7 +2399,10 @@ def intercalate07(): Bool & Impure =
     def foldMap03(): Bool & Impure = Array.foldMap(x -> if (x == "a") "b" else x, ["a"]) == "b"
 
     @test
-    def foldMap04(): Bool & Impure = Array.foldMap(x -> if (x == "a") "b" else x, ["a", "b"]) == "bb"
+    def foldMap04(): Bool & Impure = Array.foldMap(x -> if (x == "c") "b" else x, ["a", "b", "c"]) == "abb"
+
+    @test
+    def foldMap05(): Bool & Impure = Array.foldMap(Int32.toString, 1 :: 2 :: 3 :: Nil) == "123"
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //

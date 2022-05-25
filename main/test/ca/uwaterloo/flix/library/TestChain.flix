@@ -910,7 +910,10 @@ namespace TestChain {
     def foldMap03(): Bool = Chain.foldMap(x -> if(x == "a") "b" else x, List.toChain("a" :: Nil)) == "b"
 
     @test
-    def foldMap04(): Bool = Chain.foldMap(x -> if(x == "a") "b" else x, List.toChain("a" :: "b" :: Nil)) == "bb"
+    def foldMap04(): Bool = Chain.foldMap(x -> if(x == "c") "b" else x, List.toChain("a" :: "b" :: "c" :: Nil)) == "abb"
+
+    @test
+    def foldMap05(): Bool = Chain.foldMap(Int32.toString, 1 :: 2 :: 3 :: Nil) == "123"
 
     /////////////////////////////////////////////////////////////////////////////
     // dropLeft                                                                //

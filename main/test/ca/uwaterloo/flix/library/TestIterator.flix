@@ -917,7 +917,11 @@ namespace TestIterator {
     def foldMap03(): Bool & Impure = Iterator.foldMap(x -> if(x == "a") "b" else x, List.toIterator("a" :: Nil)) == "b"
 
     @test
-    def foldMap04(): Bool & Impure = Iterator.foldMap(x -> if(x == "a") "b" else x, List.toIterator("a" :: "b" :: Nil)) == "bb"
+    def foldMap04(): Bool & Impure =
+        Iterator.foldMap(x -> if(x == "c") "b" else x, List.toIterator("a" :: "b" :: "c" :: Nil)) == "abb"
+
+    @test
+    def foldMap05(): Bool & Impure = Iterator.foldMap(Int32.toString, 1 :: 2 :: 3 :: Nil) == "123"
 
 
     /////////////////////////////////////////////////////////////////////////////
