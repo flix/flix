@@ -862,6 +862,31 @@ namespace TestNec {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool =
+        Nec.foldMap(x -> 2 * x, List.toNec(Nil)) == 0
+
+    @test
+    def foldMap02(): Bool =
+        Nec.foldMap(x -> 2 * x, List.toNec(1 :: 2 :: Nil)) == 6
+
+    @test
+    def foldMap03(): Bool =
+        Nec.foldMap(x -> if(x == "a") "b" else x, List.toNec("a" :: Nil)) == "b"
+
+    @test
+    def foldMap04(): Bool =
+        Nec.foldMap(x -> if(x == "c") "b" else x, List.toNec("a" :: "b" :: "c" :: Nil)) == "abb"
+
+    @test
+    def foldMap05(): Bool =
+        Nec.foldMap(Int32.toString, List.toNec(1 :: 2 :: 3 :: Nil)) == "123"
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // filterMap                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
