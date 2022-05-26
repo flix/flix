@@ -951,6 +951,8 @@ def indices07(): Bool & Impure =
 // flatMap                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
+// depends on flatten
+
 @test
 def flatMap01(): Bool & Impure =
     let a = Array.flatMap(i -> Array.repeat(i, i, static), []);
