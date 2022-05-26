@@ -2386,6 +2386,25 @@ def intercalate07(): Bool & Impure =
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool & Impure = Array.foldMap(x -> 2 * x, []) == 0
+
+    @test
+    def foldMap02(): Bool & Impure = Array.foldMap(x -> 2 * x, [1, 2]) == 6
+
+    @test
+    def foldMap03(): Bool & Impure = Array.foldMap(x -> if (x == "a") "b" else x, ["a"]) == "b"
+
+    @test
+    def foldMap04(): Bool & Impure = Array.foldMap(x -> if (x == "c") "b" else x, ["a", "b", "c"]) == "abb"
+
+    @test
+    def foldMap05(): Bool & Impure = Array.foldMap(Int32.toString, [1, 2, 3]) == "123"
+
+    /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
