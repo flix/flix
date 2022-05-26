@@ -1075,13 +1075,14 @@ namespace Array {
     /// Returns `a` if `n > length(xs)`.
     ///
     @Time(n) @Space(n)
-    pub def takeRight(n: Int32, a: Array[a]) : Array[a] & Impure =
+    pub def takeRight(n: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         if (n <= 0)
-            []
+            [] @ r
         else {
             let len = length(a);
             let start = if (n > len) 0 else len - n;
-            slice(start, len, a)
+            copyOfRange(start, len, a, r)
         }
 
     ///
