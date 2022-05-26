@@ -2308,29 +2308,33 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def join01(): Bool & Impure = // Impure due to StringBuilder
-        (new MutList(static): MutList[Int32, _]) |> MutList.join(",") == ""
+    def join01(): Bool = region r {
+        (new MutList(r): MutList[Int32, _]) |> MutList.join(",") == ""
+    }
 
     @test
-    def join02(): Bool & Impure = // Impure due to StringBuilder
-        let l = new MutList(static);
+    def join02(): Bool = region r {
+        let l = new MutList(r);
         let xs = 1 :: Nil;
         List.foreach(x -> MutList.push!(x, l), xs);
         MutList.join(",", l) == "1"
+    }
 
     @test
-    def join03(): Bool & Impure = // Impure due to StringBuilder
-        let l = new MutList(static);
+    def join03(): Bool = region r {
+        let l = new MutList(r);
         let xs = 1 :: 2 :: 3 :: Nil;
         List.foreach(x -> MutList.push!(x, l), xs);
         MutList.join(",", l) == "1,2,3"
+    }
 
     @test
-    def join04(): Bool & Impure = // Impure due to StringBuilder
-        let l = new MutList(static);
+    def join04(): Bool = region r {
+        let l = new MutList(r);
         let xs = "1" :: "2" :: "3" :: Nil;
         List.foreach(x -> MutList.push!(x, l), xs);
         MutList.join(",", l) == "1,2,3"
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2338,28 +2342,32 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def joinWith01(): Bool & Impure = // Impure due to StringBuilder
-        (new MutList(static): MutList[Int32, _]) |> MutList.joinWith(x -> "${x + 1}", ",") == ""
+    def joinWith01(): Bool = region r {
+        (new MutList(r): MutList[Int32, _]) |> MutList.joinWith(x -> "${x + 1}", ",") == ""
+    }
 
     @test
-    def joinWith02(): Bool & Impure = // Impure due to StringBuilder
-        let l = new MutList(static);
+    def joinWith02(): Bool = region r {
+        let l = new MutList(r);
         let xs = 1 :: Nil;
         List.foreach(x -> MutList.push!(x, l), xs);
         MutList.joinWith(x -> "${x + 1}", ",", l) == "2"
+    }
 
     @test
-    def joinWith03(): Bool & Impure = // Impure due to StringBuilder
-        let l = new MutList(static);
+    def joinWith03(): Bool = region r {
+        let l = new MutList(r);
         let xs = 1 :: 2 :: 3 :: Nil;
         List.foreach(x -> MutList.push!(x, l), xs);
         MutList.joinWith(x -> "${x + 1}", ",", l) == "2,3,4"
+    }
 
     @test
-    def joinWith04(): Bool & Impure = // Impure due to StringBuilder
-        let l = new MutList(static);
+    def joinWith04(): Bool = region r {
+        let l = new MutList(r);
         let xs = "1" :: "2" :: "3" :: Nil;
         List.foreach(x -> MutList.push!(x, l), xs);
         MutList.joinWith(x -> x + x, ",", l) == "11,22,33"
+    }
 
 }
