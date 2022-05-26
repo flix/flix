@@ -452,6 +452,12 @@ object Finalize {
             case TypeConstructor.RegionTerm =>
               MonoType.Unit // TODO: Should be erased?
 
+            case TypeConstructor.RegionBool =>
+              MonoType.Unit // TODO: Should be erased?
+
+            case TypeConstructor.Region(_) =>
+              MonoType.Unit // TODO: Should be erased?
+
             case TypeConstructor.Tuple(l) => MonoType.Tuple(args)
 
             case TypeConstructor.Arrow(l) => MonoType.Arrow(args.drop(1).init, args.last)

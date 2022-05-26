@@ -586,7 +586,7 @@ object Symbol {
   /**
     * Region Symbol.
     */
-  final class RegionSym(val id: Int, text: String, loc: SourceLocation) {
+  final class RegionSym(val id: Int, val text: String, val loc: SourceLocation) {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */

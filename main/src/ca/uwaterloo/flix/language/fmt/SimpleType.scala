@@ -77,7 +77,7 @@ object SimpleType {
 
   case object False extends SimpleType
 
-  case object Region extends SimpleType
+  case object RegionTerm extends SimpleType
 
   //////////
   // Records
@@ -243,6 +243,11 @@ object SimpleType {
     * A tuple.
     */
   case class Tuple(fields: List[SimpleType]) extends SimpleType
+
+  /**
+    * A region-to-boolean conversion type.
+    */
+  case object RegionBool extends SimpleType
 
   /////////
   // Fields
@@ -508,7 +513,9 @@ object SimpleType {
         }
 
       case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.RegionTerm => mkApply(Region, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.RegionTerm => mkApply(RegionTerm, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Region(sym) => SimpleType.Name(sym.text)
+      case TypeConstructor.RegionBool => mkApply(RegionBool, t.typeArguments.map(fromWellKindedType))
       case _: TypeConstructor.UnappliedAlias => throw InternalCompilerException("Unexpected unapplied alias.")
     }
   }
