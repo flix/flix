@@ -589,10 +589,10 @@ object SemanticTokensProvider {
     case TypeConstructor.Arrow(_) => false
     case TypeConstructor.RecordRowEmpty => false
     case TypeConstructor.RecordRowExtend(_) => false
-    case TypeConstructor.Record => false
+    case TypeConstructor.RecordToStar => false
     case TypeConstructor.SchemaRowEmpty => false
     case TypeConstructor.SchemaRowExtend(_) => false
-    case TypeConstructor.Schema => false
+    case TypeConstructor.SchemaToStar => false
     case TypeConstructor.Channel => true
     case TypeConstructor.Lazy => true
     case TypeConstructor.Tag(_, _) => false
@@ -613,9 +613,9 @@ object SemanticTokensProvider {
     case TypeConstructor.Intersection => false
     case TypeConstructor.Difference => false
     case TypeConstructor.Effect(_) => false
-    case TypeConstructor.RegionTerm => false
+    case TypeConstructor.RegionToStar => false
     case TypeConstructor.Region(_) => false
-    case TypeConstructor.RegionBool => false
+    case TypeConstructor.RegionToBool => false
 
     case TypeConstructor.UnkindedEnum(_) => throw InternalCompilerException("Unexpected unkinded type.")
     case TypeConstructor.UnappliedAlias(_) => throw InternalCompilerException("Unexpected unkinded type.")

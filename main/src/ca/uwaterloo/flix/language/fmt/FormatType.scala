@@ -118,8 +118,8 @@ object FormatType {
       case SimpleType.Lazy => true
       case SimpleType.True => true
       case SimpleType.False => true
-      case SimpleType.RegionTerm => true
-      case SimpleType.RegionBool => true
+      case SimpleType.RegionToStar => true
+      case SimpleType.RegionToBool => true
       case SimpleType.RecordConstructor(_) => true
       case SimpleType.Record(_) => true
       case SimpleType.RecordExtend(_, _) => true
@@ -182,8 +182,8 @@ object FormatType {
         case Mode.Type => "false"
         case Mode.Effect => "Impure"
       }
-      case SimpleType.RegionTerm => "Region"
-      case SimpleType.RegionBool => "ToBool"
+      case SimpleType.RegionToStar => "Region"
+      case SimpleType.RegionToBool => "ToBool"
       case SimpleType.Record(fields) =>
         val fieldString = fields.map(visitRecordFieldType).mkString(", ")
         s"{ $fieldString }"

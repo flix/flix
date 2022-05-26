@@ -1694,7 +1694,7 @@ object Resolver {
       case "Lazy" => Type.mkLazy(loc).toSuccess
       case "ScopedArray" => Type.Cst(TypeConstructor.ScopedArray, loc).toSuccess
       case "ScopedRef" => Type.Cst(TypeConstructor.ScopedRef, loc).toSuccess
-      case "Region" => Type.Cst(TypeConstructor.RegionTerm, loc).toSuccess
+      case "Region" => Type.Cst(TypeConstructor.RegionToStar, loc).toSuccess
 
       // Disambiguate type.
       case typeName =>
@@ -2458,9 +2458,9 @@ object Resolver {
 
       case TypeConstructor.Native(clazz) => clazz.toSuccess
 
-      case TypeConstructor.Record => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.RecordToStar => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.Schema => Class.forName("java.lang.Object").toSuccess
+      case TypeConstructor.SchemaToStar => Class.forName("java.lang.Object").toSuccess
 
       case _ => ResolutionError.IllegalType(tpe, loc).toFailure
     }

@@ -449,10 +449,10 @@ object Finalize {
 
             case TypeConstructor.ScopedRef => MonoType.Ref(args.head)
 
-            case TypeConstructor.RegionTerm =>
+            case TypeConstructor.RegionToStar =>
               MonoType.Unit // TODO: Should be erased?
 
-            case TypeConstructor.RegionBool =>
+            case TypeConstructor.RegionToBool =>
               MonoType.Unit // TODO: Should be erased?
 
             case TypeConstructor.Region(_) =>
@@ -464,7 +464,7 @@ object Finalize {
 
             case TypeConstructor.RecordRowExtend(field) => MonoType.RecordExtend(field.name, args.head, args(1))
 
-            case TypeConstructor.Record => args.head
+            case TypeConstructor.RecordToStar => args.head
 
             case TypeConstructor.True => MonoType.Unit
 
@@ -504,7 +504,7 @@ object Finalize {
             case TypeConstructor.SchemaRowExtend(pred) =>
               throw InternalCompilerException(s"Unexpected type: '$t0'.")
 
-            case TypeConstructor.Schema =>
+            case TypeConstructor.SchemaToStar =>
               throw InternalCompilerException(s"Unexpected type: '$t0'.")
           }
       }

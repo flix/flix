@@ -741,7 +741,7 @@ object Stratifier {
     }
 
     Type.eraseAliases(tpe) match {
-      case Type.Apply(Type.Cst(TypeConstructor.Schema, _), schemaRow, _) => visitType(schemaRow, Map.empty)
+      case Type.Apply(Type.Cst(TypeConstructor.SchemaToStar, _), schemaRow, _) => visitType(schemaRow, Map.empty)
       case other => throw InternalCompilerException(s"Unexpected non-schema type: '$other'")
     }
   }

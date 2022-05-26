@@ -77,7 +77,7 @@ object SimpleType {
 
   case object False extends SimpleType
 
-  case object RegionTerm extends SimpleType
+  case object RegionToStar extends SimpleType
 
   //////////
   // Records
@@ -247,7 +247,7 @@ object SimpleType {
   /**
     * A region-to-boolean conversion type.
     */
-  case object RegionBool extends SimpleType
+  case object RegionToBool extends SimpleType
 
   /////////
   // Fields
@@ -340,7 +340,7 @@ object SimpleType {
           case _ :: _ :: _ :: _ => throw new OverAppliedType
         }
 
-      case TypeConstructor.Record =>
+      case TypeConstructor.RecordToStar =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
           // Case 1: No args. { ? }
@@ -375,7 +375,7 @@ object SimpleType {
           case _ :: _ :: _ :: _ => throw new OverAppliedType
         }
 
-      case TypeConstructor.Schema =>
+      case TypeConstructor.SchemaToStar =>
         val args = t.typeArguments.map(fromWellKindedType)
         args match {
           // Case 1: No args. { ? }
@@ -513,9 +513,9 @@ object SimpleType {
         }
 
       case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(fromWellKindedType))
-      case TypeConstructor.RegionTerm => mkApply(RegionTerm, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.RegionToStar => mkApply(RegionToStar, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Region(sym) => SimpleType.Name(sym.text)
-      case TypeConstructor.RegionBool => mkApply(RegionBool, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.RegionToBool => mkApply(RegionToBool, t.typeArguments.map(fromWellKindedType))
       case _: TypeConstructor.UnappliedAlias => throw InternalCompilerException("Unexpected unapplied alias.")
     }
   }

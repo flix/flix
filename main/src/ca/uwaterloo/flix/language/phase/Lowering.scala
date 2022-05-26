@@ -735,7 +735,7 @@ object Lowering {
       case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }
 
-    if (tpe0.typeConstructor.contains(TypeConstructor.Schema))
+    if (tpe0.typeConstructor.contains(TypeConstructor.SchemaToStar))
       Types.Datalog
     else
       visit(tpe0)

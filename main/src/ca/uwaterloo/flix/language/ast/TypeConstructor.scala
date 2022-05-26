@@ -124,7 +124,7 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of records.
     */
-  case object Record extends TypeConstructor {
+  case object RecordToStar extends TypeConstructor {
     /**
       * The shape of a record constructor is Record[row]
       */
@@ -151,7 +151,7 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of schemas.
     */
-  case object Schema extends TypeConstructor {
+  case object SchemaToStar extends TypeConstructor {
     /**
       * The shape of a schema constructor is Schema[row]
       */
@@ -337,7 +337,7 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of term-level regions.
     */
-  case object RegionTerm extends TypeConstructor {
+  case object RegionToStar extends TypeConstructor {
     /**
       * The shape of a region term is Region[l].
       */
@@ -354,7 +354,7 @@ object TypeConstructor {
   /**
     * A type constructor converting a region into a type-level boolean.
     */
-  case object RegionBool extends TypeConstructor {
+  case object RegionToBool extends TypeConstructor {
     def kind: Kind = Kind.Region ->: Kind.Bool
   }
 

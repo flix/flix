@@ -736,8 +736,8 @@ object PatternExhaustiveness {
       case Some(TypeConstructor.Lattice) => 0
       case Some(TypeConstructor.RecordRowEmpty) => 0
       case Some(TypeConstructor.SchemaRowEmpty) => 0
-      case Some(TypeConstructor.Record) => 0
-      case Some(TypeConstructor.Schema) => 0
+      case Some(TypeConstructor.RecordToStar) => 0
+      case Some(TypeConstructor.SchemaToStar) => 0
       case Some(TypeConstructor.Arrow(length)) => length
       case Some(TypeConstructor.ScopedArray) => 1
       case Some(TypeConstructor.ScopedRef) => 0

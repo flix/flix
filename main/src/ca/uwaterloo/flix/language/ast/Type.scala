@@ -800,14 +800,14 @@ object Type {
     * Constructs a Record type.
     */
   def mkRecord(tpe: Type, loc: SourceLocation): Type = {
-    Apply(Type.Cst(TypeConstructor.Record, loc), tpe, loc)
+    Apply(Type.Cst(TypeConstructor.RecordToStar, loc), tpe, loc)
   }
 
   /**
     * Constructs a Schema type.
     */
   def mkSchema(tpe: Type, loc: SourceLocation): Type = {
-    Apply(Type.Cst(TypeConstructor.Schema, loc), tpe, loc)
+    Apply(Type.Cst(TypeConstructor.SchemaToStar, loc), tpe, loc)
   }
 
   /**
@@ -913,7 +913,7 @@ object Type {
     * Returns a RegionTerm type for the given region argument `r` with the given source location `loc`.
     */
   def mkRegionTerm(r: Type, loc: SourceLocation): Type =
-    Type.Apply(Type.Cst(TypeConstructor.RegionTerm, loc), r, loc)
+    Type.Apply(Type.Cst(TypeConstructor.RegionToStar, loc), r, loc)
 
   /**
     * Returns the type `tpe1 => tpe2`.
