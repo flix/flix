@@ -2561,7 +2561,7 @@ object Resolver {
           ResolvedAst.Expression.Var(sym, sym.tvar, sym.loc)
         case None =>
           // Case 2.2: Use the global region.
-          val tpe = Type.mkRegion(Type.False, loc)
+          val tpe = Type.mkRegionTerm(Type.False, loc)
           ResolvedAst.Expression.Region(tpe, loc)
       }
   }
