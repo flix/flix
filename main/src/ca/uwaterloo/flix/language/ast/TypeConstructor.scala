@@ -335,9 +335,9 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of regions.
+    * A type constructor that represent the type of term-level regions.
     */
-  case object Region extends TypeConstructor {
+  case object RegionTerm extends TypeConstructor {
     /**
       * The shape of a region is Region[l].
       */

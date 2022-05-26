@@ -1694,7 +1694,7 @@ object Resolver {
       case "Lazy" => Type.mkLazy(loc).toSuccess
       case "ScopedArray" => Type.Cst(TypeConstructor.ScopedArray, loc).toSuccess
       case "ScopedRef" => Type.Cst(TypeConstructor.ScopedRef, loc).toSuccess
-      case "Region" => Type.Cst(TypeConstructor.Region, loc).toSuccess
+      case "Region" => Type.Cst(TypeConstructor.RegionTerm, loc).toSuccess
 
       // Disambiguate type.
       case typeName =>

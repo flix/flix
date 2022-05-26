@@ -913,7 +913,7 @@ object Type {
     * Returns a Region type for the given region argument `r` with the given source location `loc`.
     */
   def mkRegion(r: Type, loc: SourceLocation): Type =
-    Type.Apply(Type.Cst(TypeConstructor.Region, loc), r, loc)
+    Type.Apply(Type.Cst(TypeConstructor.RegionTerm, loc), r, loc)
 
   /**
     * Returns the type `tpe1 => tpe2`.
