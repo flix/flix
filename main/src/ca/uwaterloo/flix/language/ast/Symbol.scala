@@ -584,6 +584,29 @@ object Symbol {
   }
 
   /**
+    * Region Symbol.
+    */
+  final class RegionSym(val id: Int, text: String, loc: SourceLocation) {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: RegionSym => this.id == that.id
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = Objects.hash(id)
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = text + Flix.Delimiter + id
+  }
+
+  /**
     * Optionally returns the namespace part and name of the given fully qualified string `fqn`.
     *
     * Returns `None` if the `fqn` is not qualified.
