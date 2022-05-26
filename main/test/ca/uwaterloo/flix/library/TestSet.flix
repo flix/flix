@@ -420,6 +420,25 @@ def foldRightWithCont03(): Bool = Set.foldRightWithCont((e, k) -> (k() - e) * (e
 def foldRightWithCont04(): Bool = Set.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, Set#{3, 2, 1}) == 382
 
 /////////////////////////////////////////////////////////////////////////////
+// foldMap                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def foldMap01(): Bool = Set.foldMap(x -> 2 * x, Set#{}) == 0
+
+@test
+def foldMap02(): Bool = Set.foldMap(x -> 2 * x, Set#{1, 2}) == 6
+
+@test
+def foldMap03(): Bool = Set.foldMap(x -> if (x == "a") "b" else x, Set#{"a"}) == "b"
+
+@test
+def foldMap04(): Bool = Set.foldMap(x -> if (x == "c") "b" else x, Set#{"a", "b", "c"}) == "abb"
+
+@test
+def foldMap05(): Bool = Set.foldMap(Int32.toString, Set#{1, 2, 3}) == "123"
+
+/////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
