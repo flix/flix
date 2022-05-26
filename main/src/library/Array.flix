@@ -1102,7 +1102,7 @@ namespace Array {
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
     pub def takeWhileLeft(f: a -> Bool & ef, a: ScopedArray[a, r]): ScopedArray[a, r] \ { ef, Read(r), Write(r) } =
         match findIndexOfLeft(x -> not (f(x)), a) {
-            case None => a
+            case None    => a
             case Some(i) => takeLeft(i, a)
         }
 
@@ -1112,10 +1112,11 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def takeWhileRight(f: a -> Bool, a: Array[a]): Array[a] & Impure =
+    pub def takeWhileRight(f: a -> Bool & ef, a: ScopedArray[a, r]): ScopedArray[a, r] \ { ef, Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         match findIndexOfRight(x -> not (f(x)), a) {
-            case None => slice(0, length(a), a)
-            case Some(i) => slice(i + 1, length(a), a)
+            case None    => copyOfRange(0, length(a), a, r)
+            case Some(i) => copyOfRange(i + 1, length(a), a, r)
         }
 
     ///

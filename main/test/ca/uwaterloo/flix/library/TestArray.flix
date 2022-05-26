@@ -3582,49 +3582,57 @@ def flatten10(): Bool & Impure =
         Array.sameElements(a, [4, 6])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// takeWhileRight                                                          //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhileRight                                                          //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def takeWhileRight01(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeWhileRight01(): Bool = region r {
+        let a = Array.takeWhileRight(i -> i > 3, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeWhileRight02(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [1]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeWhileRight02(): Bool = region r {
+        let a = Array.takeWhileRight(i -> i > 3, [1]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeWhileRight03(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [4]);
-    Array.sameElements(a, [4])
+    @test
+    def takeWhileRight03(): Bool = region r {
+        let a = Array.takeWhileRight(i -> i > 3, [4]);
+        Array.sameElements(a, [4])
+    }
 
-@test
-def takeWhileRight04(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeWhileRight04(): Bool = region r {
+        let a = Array.takeWhileRight(i -> i > 3, [1,2]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeWhileRight05(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [1,5]);
-    Array.sameElements(a, [5])
+    @test
+    def takeWhileRight05(): Bool = region r {
+        let a = Array.takeWhileRight(i -> i > 3, [1,5]);
+        Array.sameElements(a, [5])
+    }
 
-@test
-def takeWhileRight06(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [5,1]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeWhileRight06(): Bool = region r {
+        let a = Array.takeWhileRight(i -> i > 3, [5,1]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeWhileRight07(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [5,8]);
-    Array.sameElements(a, [5,8])
+    @test
+    def takeWhileRight07(): Bool = region r {
+        let a = Array.takeWhileRight(i -> i > 3, [5,8]);
+        Array.sameElements(a, [5,8])
+    }
 
-@test
-def takeWhileRight08(): Bool & Impure =
-    let a = Array.takeWhileRight(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [7])
+    @test
+    def takeWhileRight08(): Bool = region r {
+        let a = Array.takeWhileRight(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
+        Array.sameElements(a, [7])
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // groupBy                                                                 //
