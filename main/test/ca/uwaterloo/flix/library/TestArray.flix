@@ -1774,49 +1774,44 @@ def flatMap06(): Bool & Impure =
     }
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // intercalate                                                             //
-    /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// intercalate                                                             //
+/////////////////////////////////////////////////////////////////////////////
 
     @test
     def intercalate01(): Bool & Impure = // crashes with regions
         let a = Array.intercalate([]: Array[Int32], []: Array[Array[Int32]]);
         Array.sameElements(a, []: Array[Int32])
 
-    @test
-    def intercalate02(): Bool = region r {
-        let a = Array.intercalate([]: ScopedArray[Int32, _], [[1]]);
-        Array.sameElements(a, [1])
-    }
+@test
+def intercalate02(): Bool & Impure =
+    let a = Array.intercalate([]: Array[Int32], [[1]]);
+    Array.sameElements(a, [1])
 
     @test
     def intercalate03(): Bool & Impure = // crashes with regions
         let a = Array.intercalate([11,12,13], []: Array[Array[Int32]]);
         Array.sameElements(a, []: Array[Int32])
 
-    @test
-    def intercalate04(): Bool = region r {
-        let a = Array.intercalate([]: ScopedArray[Int32, _], [[1],[2,3]]);
-        Array.sameElements(a, [1,2,3])
-    }
+@test
+def intercalate04(): Bool & Impure =
+    let a = Array.intercalate([]: Array[Int32], [[1],[2,3]]);
+    Array.sameElements(a, [1,2,3])
 
-    @test
-    def intercalate05(): Bool = region r {
-        let a = Array.intercalate([11,12,13], [[1],[2,3]]);
-        Array.sameElements(a, [1,11,12,13,2,3])
-    }
+@test
+def intercalate05(): Bool & Impure =
+    let a = Array.intercalate([11,12,13], [[1],[2,3]]);
+    Array.sameElements(a, [1,11,12,13,2,3])
 
-    @test
-    def intercalate06(): Bool = region r {
-        let a = Array.intercalate([]: ScopedArray[Int32, _], [[1],[2,3],[4]]);
-        Array.sameElements(a, [1,2,3,4])
-    }
+@test
+def intercalate06(): Bool & Impure =
+    let a = Array.intercalate([]: Array[Int32], [[1],[2,3],[4]]);
+    Array.sameElements(a, [1,2,3,4])
 
-    @test
-    def intercalate07(): Bool = region r {
-        let a = Array.intercalate([11,12,13], [[1],[2,3],[4]]);
-        Array.sameElements(a, [1,11,12,13,2,3,11,12,13,4])
-    }
+@test
+def intercalate07(): Bool & Impure =
+    let a = Array.intercalate([11,12,13], [[1],[2,3],[4]]);
+    Array.sameElements(a, [1,11,12,13,2,3,11,12,13,4])
 
     /////////////////////////////////////////////////////////////////////////////
     // transpose                                                               //
