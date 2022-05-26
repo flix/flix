@@ -867,19 +867,19 @@ namespace TestNec {
 
     @test
     def foldMap01(): Bool =
-        Nec.foldMap(x -> 2 * x, List.toNec(1 :: 2 :: Nil)) == 6
+        Nec.foldMap(x -> 2 * x, necOf2(1, 2)) == 6
 
     @test
     def foldMap02(): Bool =
-        Nec.foldMap(x -> if(x == "a") "b" else x, List.toNec("a" :: Nil)) == "b"
+        Nec.foldMap(x -> if(x == "a") "b" else x, singleton("a")) == "b"
 
     @test
     def foldMap03(): Bool =
-        Nec.foldMap(x -> if(x == "c") "b" else x, List.toNec("a" :: "b" :: "c" :: Nil)) == "abb"
+        Nec.foldMap(x -> if(x == "c") "b" else x, necOf3("a", "b", "c")) == "abb"
 
     @test
     def foldMap04(): Bool =
-        Nec.foldMap(Int32.toString, List.toNec(1 :: 2 :: 3 :: Nil)) == "123"
+        Nec.foldMap(Int32.toString, necOf3(1, 2, 3)) == "123"
 
 
     /////////////////////////////////////////////////////////////////////////////
