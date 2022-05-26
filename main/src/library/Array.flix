@@ -578,15 +578,16 @@ namespace Array {
     /// Returns the concatenation of the elements in `arrs` with the elements of `sep` inserted between every two adjacent elements.
     ///
     @Time(length(arrs)) @Space(length(arrs))
-    pub def intercalate(sep: Array[a], arrs: Array[Array[a]]): Array[a] & Impure =
+    pub def intercalate(sep: ScopedArray[a, r1], arrs: ScopedArray[ScopedArray[a, r2], r3]): ScopedArray[a, r3] \ { Read(r1, r2, r3), Write(r3) } =
+        let r3 = Scoped.regionOf(arrs);
         let count = length(arrs);
         let sepLength = length(sep);
         let sepCount = if (count < 2) 0 else count - 1;
         let len = sumLengths(arrs) + (sepCount * sepLength);
         match headArrays(arrs) {
-            case None => []
+            case None    => [] @ r3
             case Some(x) =>
-                let out = new(x, len, static);
+                let out = new(x, len, r3);
                 let overwrite = { (st, a) ->
                     let (pos,i) = st;
                     if (i == 0) {
