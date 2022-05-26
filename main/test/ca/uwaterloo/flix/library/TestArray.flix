@@ -638,43 +638,43 @@ def indices07(): Bool & Impure =
 
     @test
     def scan01(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, []);
+        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, []);
         Array.sameElements(a, [1])
     }
 
     @test
     def scan02(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [false]);
+        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [false]);
         Array.sameElements(a, [1,3])
     }
 
     @test
     def scan03(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [true]);
+        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [true]);
         Array.sameElements(a, [1,2])
     }
 
     @test
     def scan04(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [false,false]);
+        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [false,false]);
         Array.sameElements(a, [1,3,5])
     }
 
     @test
     def scan05(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [false,true]);
+        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [false,true]);
         Array.sameElements(a, [1,3,4])
     }
 
     @test
     def scan06(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [true,false]);
+        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [true,false]);
         Array.sameElements(a, [1,2,4])
     }
 
     @test
     def scan07(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [true,true]);
+        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [true,true]);
         Array.sameElements(a, [1,2,3])
     }
 
@@ -684,43 +684,43 @@ def indices07(): Bool & Impure =
 
     @test
     def scanLeft01(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, []: ScopedArray[Bool, _]);
+        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, []: ScopedArray[Bool, _]);
         Array.sameElements(a, [1])
     }
 
     @test
     def scanLeft02(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [false]);
+        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [false]);
         Array.sameElements(a, [1,3])
     }
 
     @test
     def scanLeft03(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [true]);
+        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [true]);
         Array.sameElements(a, [1,2])
     }
 
     @test
     def scanLeft04(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [false,false]);
+        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [false,false]);
         Array.sameElements(a, [1,3,5])
     }
 
     @test
     def scanLeft05(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [false,true]);
+        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [false,true]);
         Array.sameElements(a, [1,3,4])
     }
 
     @test
     def scanLeft06(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [true,false]);
+        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [true,false]);
         Array.sameElements(a, [1,2,4])
     }
 
     @test
     def scanLeft07(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [true,true]);
+        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [true,true]);
         Array.sameElements(a, [1,2,3])
     }
 
@@ -730,43 +730,43 @@ def indices07(): Bool & Impure =
 
     @test
     def scanRight01(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, []);
+        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, []);
         Array.sameElements(a, [1])
     }
 
     @test
     def scanRight02(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false]);
+        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [false]);
         Array.sameElements(a, [3,1])
     }
 
     @test
     def scanRight03(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true]);
+        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [true]);
         Array.sameElements(a, [2,1])
     }
 
     @test
     def scanRight04(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false,false]);
+        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [false,false]);
         Array.sameElements(a, [5,3,1])
     }
 
     @test
     def scanRight05(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false,true]);
+        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [false,true]);
         Array.sameElements(a, [4,2,1])
     }
 
     @test
     def scanRight06(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true,false]);
+        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [true,false]);
         Array.sameElements(a, [4,3,1])
     }
 
     @test
     def scanRight07(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true,true]);
+        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [true,true]);
         Array.sameElements(a, [3,2,1])
     }
 
