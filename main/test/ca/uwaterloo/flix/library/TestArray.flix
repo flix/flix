@@ -1778,10 +1778,10 @@ def flatMap06(): Bool & Impure =
     // intercalate                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-@test
-def intercalate01(): Bool & Impure =
-    let a = Array.intercalate([]: Array[Int32], []: Array[Array[Int32]]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def intercalate01(): Bool & Impure = // crashes with regions
+        let a = Array.intercalate([]: Array[Int32], []: Array[Array[Int32]]);
+        Array.sameElements(a, []: Array[Int32])
 
     @test
     def intercalate02(): Bool = region r {
@@ -1789,10 +1789,10 @@ def intercalate01(): Bool & Impure =
         Array.sameElements(a, [1])
     }
 
-@test
-def intercalate03(): Bool & Impure =
-    let a = Array.intercalate([11,12,13], []: Array[Array[Int32]]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def intercalate03(): Bool & Impure = // crashes with regions
+        let a = Array.intercalate([11,12,13], []: Array[Array[Int32]]);
+        Array.sameElements(a, []: Array[Int32])
 
     @test
     def intercalate04(): Bool = region r {
