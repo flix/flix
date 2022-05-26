@@ -1091,7 +1091,8 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def takeWhile(f: a -> Bool, a: Array[a]): Array[a] & Impure = takeWhileLeft(f, a)
+    pub def takeWhile(f: a -> Bool & ef, a: ScopedArray[a, r]): ScopedArray[a, r] \ { ef, Read(r), Write(r) } =
+        takeWhileLeft(f, a)
 
     ///
     /// Returns the longest prefix of `a` that satisfies the predicate `f`.
@@ -1099,7 +1100,7 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def takeWhileLeft(f: a -> Bool, a: Array[a]): Array[a] & Impure =
+    pub def takeWhileLeft(f: a -> Bool & ef, a: ScopedArray[a, r]): ScopedArray[a, r] \ { ef, Read(r), Write(r) } =
         match findIndexOfLeft(x -> not (f(x)), a) {
             case None => a
             case Some(i) => takeLeft(i, a)

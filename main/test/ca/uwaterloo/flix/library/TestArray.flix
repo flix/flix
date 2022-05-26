@@ -3478,93 +3478,109 @@ def flatten10(): Bool & Impure =
         Array.sameElements(a, [3,4,5,6])
     }
 
-/////////////////////////////////////////////////////////////////////////////
-// takeWhile                                                               //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhile                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def takeWhile01(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeWhile01(): Bool = region r {
+        let a = Array.takeWhile(i -> i > 3, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeWhile02(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [1]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeWhile02(): Bool = region r {
+        let a = Array.takeWhile(i -> i > 3, [1]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeWhile03(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [4]);
-    Array.sameElements(a, [4])
+    @test
+    def takeWhile03(): Bool = region r {
+        let a = Array.takeWhile(i -> i > 3, [4]);
+        Array.sameElements(a, [4])
+    }
 
-@test
-def takeWhile04(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeWhile04(): Bool = region r {
+        let a = Array.takeWhile(i -> i > 3, [1,2]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeWhile05(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [1,5]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeWhile05(): Bool = region r {
+        let a = Array.takeWhile(i -> i > 3, [1,5]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeWhile06(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [5,1]);
-    Array.sameElements(a, [5])
+    @test
+    def takeWhile06(): Bool = region r {
+        let a = Array.takeWhile(i -> i > 3, [5,1]);
+        Array.sameElements(a, [5])
+    }
 
-@test
-def takeWhile07(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [5,8]);
-    Array.sameElements(a, [5,8])
+    @test
+    def takeWhile07(): Bool = region r {
+        let a = Array.takeWhile(i -> i > 3, [5,8]);
+        Array.sameElements(a, [5,8])
+    }
 
-@test
-def takeWhile08(): Bool & Impure =
-    let a = Array.takeWhile(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [4, 6])
+    @test
+    def takeWhile08(): Bool = region r {
+        let a = Array.takeWhile(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
+        Array.sameElements(a, [4, 6])
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// takeWhileLeft                                                           //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // takeWhileLeft                                                           //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def takeWhileLeft01(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, []: Array[Int32]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeWhileLeft01(): Bool = region r {
+        let a = Array.takeWhileLeft(i -> i > 3, []: ScopedArray[Int32, _]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeWhileLeft02(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [1]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeWhileLeft02(): Bool = region r {
+        let a = Array.takeWhileLeft(i -> i > 3, [1]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeWhileLeft03(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [4]);
-    Array.sameElements(a, [4])
+    @test
+    def takeWhileLeft03(): Bool = region r {
+        let a = Array.takeWhileLeft(i -> i > 3, [4]);
+        Array.sameElements(a, [4])
+    }
 
-@test
-def takeWhileLeft04(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [1,2]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeWhileLeft04(): Bool = region r {
+        let a = Array.takeWhileLeft(i -> i > 3, [1,2]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeWhileLeft05(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [1,5]);
-    Array.sameElements(a, []: Array[Int32])
+    @test
+    def takeWhileLeft05(): Bool = region r {
+        let a = Array.takeWhileLeft(i -> i > 3, [1,5]);
+        Array.sameElements(a, []: ScopedArray[Int32, _])
+    }
 
-@test
-def takeWhileLeft06(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [5,1]);
-    Array.sameElements(a, [5])
+    @test
+    def takeWhileLeft06(): Bool = region r {
+        let a = Array.takeWhileLeft(i -> i > 3, [5,1]);
+        Array.sameElements(a, [5])
+    }
 
-@test
-def takeWhileLeft07(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [5,8]);
-    Array.sameElements(a, [5,8])
+    @test
+    def takeWhileLeft07(): Bool = region r {
+        let a = Array.takeWhileLeft(i -> i > 3, [5,8]);
+        Array.sameElements(a, [5,8])
+    }
 
-@test
-def takeWhileLeft08(): Bool & Impure =
-    let a = Array.takeWhileLeft(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.sameElements(a, [4, 6])
+    @test
+    def takeWhileLeft08(): Bool = region r {
+        let a = Array.takeWhileLeft(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
+        Array.sameElements(a, [4, 6])
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 // takeWhileRight                                                          //
