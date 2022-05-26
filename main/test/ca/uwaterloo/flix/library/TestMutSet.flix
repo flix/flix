@@ -495,7 +495,7 @@ namespace TestMutSet {
 
     @test
     def foldMap01(): Bool = region r {
-        MutList.foldMap(x -> 2 * x, new MutSet(r): MutSet[Int32, _]) == 0
+        MutSet.foldMap(x -> 2 * x, new MutSet(r): MutSet[Int32, _]) == 0
     }
 
     @test
@@ -503,14 +503,14 @@ namespace TestMutSet {
         let s = new MutSet(r);
         MutSet.add!(1, s);
         MutSet.add!(2, s);
-        MutList.foldMap(x -> 2 * x, s) == 6
+        MutSet.foldMap(x -> 2 * x, s) == 6
     }
 
     @test
     def foldMap03(): Bool = region r {
         let s = new MutSet(r);
         MutSet.add!("a", s);
-        MutList.foldMap(x -> if (x == "a") "b" else x, s) == "b"
+        MutSet.foldMap(x -> if (x == "a") "b" else x, s) == "b"
     }
 
     @test
@@ -519,7 +519,7 @@ namespace TestMutSet {
         MutSet.add!("a", s);
         MutSet.add!("b", s);
         MutSet.add!("c", s);
-        MutList.foldMap(x -> if (x == "c") "b" else x, s) == "abb"
+        MutSet.foldMap(x -> if (x == "c") "b" else x, s) == "abb"
     }
 
     @test
@@ -528,7 +528,7 @@ namespace TestMutSet {
         MutSet.add!(1, s);
         MutSet.add!(2, s);
         MutSet.add!(3, s);
-        MutList.foldMap(Int32.toString, List.toMutList(1 :: 2 :: 3 :: Nil, r)) == "123"
+        MutSet.foldMap(Int32.toString, s) == "123"
     }
 
 }
