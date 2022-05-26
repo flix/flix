@@ -68,6 +68,12 @@ object Kind {
   case object Effect extends Kind
 
   /**
+    * Represents the kind of regions.
+    */
+//  case object Region extends Kind
+  val Region: Kind = Bool // Region is temporarily aliased to Bool
+
+  /**
     * Represents the kind of record rows.
     */
   case object RecordRow extends Kind
