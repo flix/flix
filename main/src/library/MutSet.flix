@@ -248,7 +248,7 @@ namespace MutSet {
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b & ef, s: MutSet[a, r]): b \ {ef, Read(r)} with Monoid[b] =
-        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), v)
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), s)
 
     ///
     /// Applies `f` to all elements in the mutable set `s` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
