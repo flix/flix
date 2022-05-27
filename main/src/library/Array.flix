@@ -795,6 +795,12 @@ namespace Array {
         loop(0)
 
     ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, arr: Array[a]): b & Impure with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), arr)
+
+    ///
     /// Applies `f` to all elements in `a` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     ///
     /// Returns `None` if `a` is empty.
