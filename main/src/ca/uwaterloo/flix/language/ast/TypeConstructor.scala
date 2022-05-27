@@ -335,27 +335,27 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represents the type of term-level regions.
-    */
-  case object RegionToStar extends TypeConstructor {
-    /**
-      * The shape of a region term is Region[l].
-      */
-    def kind: Kind = Kind.Region ->: Kind.Star
-  }
-
-  /**
-    * A type constructor that represents the a region.
+    * A type constructor that represents a region.
     */
   case class Region(sym: Symbol.RegionSym) extends TypeConstructor {
     def kind: Kind = Kind.Region
   }
 
   /**
-    * A type constructor converting a region into a type-level boolean.
+    * A type constructor converting Region to Bool.
     */
   case object RegionToBool extends TypeConstructor {
     def kind: Kind = Kind.Region ->: Kind.Bool
+  }
+
+  /**
+    * A type constructor converting Region to Star.
+    */
+  case object RegionToStar extends TypeConstructor {
+    /**
+      * The shape of a region term is Region[l].
+      */
+    def kind: Kind = Kind.Region ->: Kind.Star
   }
 
 }
