@@ -785,6 +785,36 @@ namespace TestMutList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool = region r {
+        MutList.foldMap(x -> 2 * x, List.toMutList(Nil: List[Int32], r)) == 0
+    }
+
+    @test
+    def foldMap02(): Bool = region r {
+        MutList.foldMap(x -> 2 * x, List.toMutList(1 :: 2 :: Nil, r)) == 6
+    }
+
+    @test
+    def foldMap03(): Bool = region r {
+        MutList.foldMap(x -> if (x == "a") "b" else x, List.toMutList("a" :: Nil, r)) == "b"
+    }
+
+    @test
+    def foldMap04(): Bool = region r {
+        MutList.foldMap(x -> if (x == "c") "b" else x, List.toMutList("a" :: "b" :: "c":: Nil, r)) == "abb"
+    }
+
+    @test
+    def foldMap05(): Bool = region r {
+        MutList.foldMap(Int32.toString, List.toMutList(1 :: 2 :: 3 :: Nil, r)) == "123"
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
