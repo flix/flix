@@ -1081,13 +1081,14 @@ namespace Array {
     /// Returns `a` if `n > length(xs)`.
     ///
     @Time(n) @Space(n)
-    pub def takeRight(n: Int32, a: Array[a]) : Array[a] & Impure =
+    pub def takeRight(n: Int32, a: ScopedArray[a, r]): ScopedArray[a, r] \ { Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         if (n <= 0)
-            []
+            [] @ r
         else {
             let len = length(a);
             let start = if (n > len) 0 else len - n;
-            slice(start, len, a)
+            copyOfRange(start, len, a, r)
         }
 
     ///
@@ -1096,7 +1097,8 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def takeWhile(f: a -> Bool, a: Array[a]): Array[a] & Impure = takeWhileLeft(f, a)
+    pub def takeWhile(f: a -> Bool & ef, a: ScopedArray[a, r]): ScopedArray[a, r] \ { ef, Read(r), Write(r) } =
+        takeWhileLeft(f, a)
 
     ///
     /// Returns the longest prefix of `a` that satisfies the predicate `f`.
@@ -1104,9 +1106,9 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def takeWhileLeft(f: a -> Bool, a: Array[a]): Array[a] & Impure =
+    pub def takeWhileLeft(f: a -> Bool & ef, a: ScopedArray[a, r]): ScopedArray[a, r] \ { ef, Read(r), Write(r) } =
         match findIndexOfLeft(x -> not (f(x)), a) {
-            case None => a
+            case None    => a
             case Some(i) => takeLeft(i, a)
         }
 
@@ -1116,10 +1118,11 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def takeWhileRight(f: a -> Bool, a: Array[a]): Array[a] & Impure =
+    pub def takeWhileRight(f: a -> Bool & ef, a: ScopedArray[a, r]): ScopedArray[a, r] \ { ef, Read(r), Write(r) } =
+        let r = Scoped.regionOf(a);
         match findIndexOfRight(x -> not (f(x)), a) {
-            case None => slice(0, length(a), a)
-            case Some(i) => slice(i + 1, length(a), a)
+            case None    => copyOfRange(0, length(a), a, r)
+            case Some(i) => copyOfRange(i + 1, length(a), a, r)
         }
 
     ///
