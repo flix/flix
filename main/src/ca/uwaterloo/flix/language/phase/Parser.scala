@@ -147,6 +147,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SP ~ Names.Tag ~ optional(Types.Tuple) ~ SP ~> ParsedAst.Case
       }
 
+      def CaseList: Rule1[Seq[ParsedAst.Case]] = rule {
+        NonEmptyCaseList | push(Nil)
+      }
+
       def NonEmptyCaseList: Rule1[Seq[ParsedAst.Case]] = rule {
         // Note: We use the case keyword as part of the separator with or without a comma.
         keyword("case") ~ WS ~ oneOrMore(Case).separatedBy(
@@ -159,7 +163,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def NonEmptyBody = namedRule("CaseBody") {
-        optWS ~ "{" ~ optWS ~ optional(NonEmptyCaseList) ~ optWS ~ "}"
+        optional(optWS ~ "{" ~ optWS ~ CaseList ~ optWS ~ "}")
       }
 
       def Body = rule {
