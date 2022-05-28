@@ -657,22 +657,22 @@ namespace Iterator {
         let done1 = () -> match deref cursor {
             case None    => match intercalateForward(doneB, nextB) {
                 case None    => true
-                case Some(i) =>
+                case Some(i1) =>
                     if (doneB())
-                        cursor := Some(i)
+                        cursor := Some(i1)
                     else
-                        mkCursor(i);
+                        mkCursor(i1);
                     false
             }
-            case Some(i) =>
-                let Iterator(d, _) = i;
+            case Some(i1) =>
+                let Iterator(d, _) = i1;
                 if (d()) match intercalateForward(doneB, nextB) {
                     case None    => true
-                    case Some(i) =>
+                    case Some(i1) =>
                         if (doneB())
-                            cursor := Some(i)
+                            cursor := Some(i1)
                         else
-                            mkCursor(i);
+                            mkCursor(i1);
                         false
                 }
                 else
@@ -680,8 +680,8 @@ namespace Iterator {
         };
         let next1 = () -> match deref cursor {
             case None    => bug!("Empty Iterator!")
-            case Some(i) =>
-                let Iterator(_, n) = i;
+            case Some(i1) =>
+                let Iterator(_, n) = i1;
                 n()
         };
         Iterator(done1, next1)
@@ -853,7 +853,7 @@ namespace Iterator {
         let Iterator(done, next) = iter;
         match dropWhileForward(f, done, next) {
             case None       => empty()
-            case Some(iter) => iter
+            case Some(iter1) => iter1
         }
 
 
