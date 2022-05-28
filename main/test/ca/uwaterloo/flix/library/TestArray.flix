@@ -5252,7 +5252,7 @@ def findIndices07(): Bool & Impure =
     }
 
     @test
-    def sortBy10(): Bool = region r {
+    def sortBy10(): Bool = region reg {
         Array.sortBy(r -> let R(x) = r; x.i, [R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})])
         `sameElements` [R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})]
     }
