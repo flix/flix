@@ -371,7 +371,7 @@ object Redundancy {
       val innerUsed = visitExp(exp, env1, rc)
 
       // Check for shadowing.
-      val shadowedVar = shadowing(sym, env1)
+      val shadowedVar = shadowing(sym, env0)
 
       // Check if the let-bound variable symbol is dead in exp.
       if (deadVarSym(sym, innerUsed))
