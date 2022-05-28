@@ -142,7 +142,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ OptTypeConstraintList ~ SP ~> ParsedAst.Declaration.Op
     }
 
-    def Enum: Rule1[ParsedAst.Declaration.Enum] = {
+    def Enum: Rule1[ParsedAst.Declaration] = {
       def Case: Rule1[ParsedAst.Case] = rule {
         SP ~ Names.Tag ~ optional(Types.Tuple) ~ SP ~> ParsedAst.Case
       }
@@ -155,11 +155,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def EmptyBody = namedRule("CaseBody") {
-        push(Nil)
+        push(None)
       }
 
       def NonEmptyBody = namedRule("CaseBody") {
-        optWS ~ "{" ~ optWS ~ optional(NonEmptyCaseList) ~ optWS ~ "}" ~> ((o: Option[Seq[ParsedAst.Case]]) => o.getOrElse(Seq.empty))
+        optWS ~ "{" ~ optWS ~ optional(NonEmptyCaseList) ~ optWS ~ "}"
       }
 
       def Body = rule {
@@ -167,7 +167,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ TypeParams ~ Derivations ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.Enum
+        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ TypeParams ~ optional(Types.Tuple) ~ Derivations ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.Enum
       }
     }
 
