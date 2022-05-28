@@ -368,10 +368,10 @@ object Redundancy {
       val env1 = env0 + sym
 
       // Visit the expression under the extended environment.
-      val innerUsed = visitExp(exp, env0, rc)
+      val innerUsed = visitExp(exp, env1, rc)
 
       // Check for shadowing.
-      val shadowedVar = shadowing(sym, env0)
+      val shadowedVar = shadowing(sym, env1)
 
       // Check if the let-bound variable symbol is dead in exp.
       if (deadVarSym(sym, innerUsed))
