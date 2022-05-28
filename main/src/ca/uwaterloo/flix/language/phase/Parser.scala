@@ -158,16 +158,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         )
       }
 
-      def EmptyBody = namedRule("CaseBody") {
-        push(None)
-      }
-
-      def NonEmptyBody = namedRule("CaseBody") {
+      def Body = namedRule("CaseBody") {
         optional(optWS ~ "{" ~ optWS ~ CaseList ~ optWS ~ "}")
-      }
-
-      def Body = rule {
-        NonEmptyBody | EmptyBody
       }
 
       rule {
