@@ -664,15 +664,15 @@ namespace Iterator {
                         mkCursor(i1);
                     false
             }
-            case Some(i1) =>
-                let Iterator(d, _) = i1;
+            case Some(i2) =>
+                let Iterator(d, _) = i2;
                 if (d()) match intercalateForward(doneB, nextB) {
                     case None    => true
-                    case Some(i1) =>
+                    case Some(i2) =>
                         if (doneB())
-                            cursor := Some(i1)
+                            cursor := Some(i2)
                         else
-                            mkCursor(i1);
+                            mkCursor(i2);
                         false
                 }
                 else
