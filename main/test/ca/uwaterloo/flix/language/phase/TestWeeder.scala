@@ -742,4 +742,24 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.NonUnitOperationType](result)
   }
+
+  test("IllegalEnum.01") {
+    val input =
+      """
+        |enum E(Int32) {
+        |    case C
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEnum](result)
+  }
+
+  test("IllegalEnum.02") {
+    val input =
+      """
+        |enum E(Int32) { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEnum](result)
+  }
 }
