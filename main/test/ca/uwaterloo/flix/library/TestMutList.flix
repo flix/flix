@@ -1159,44 +1159,44 @@ namespace TestMutList {
 
     @test
     def append!01(): Bool = region r {
-        let v1 = MutList.range(0, 4, r);
-        let v2 = MutList.range(4, 8, r);
-        MutList.append!(v2, v1);
-        MutList.sameElements(v1, MutList.range(0, 8, r))
+        let v = MutList.range(0, 4, r);
+        let l = List.range(4, 8);
+        MutList.append!(l, v);
+        MutList.sameElements(v, MutList.range(0, 8, r))
     }
 
     @test
     def append!02(): Bool = region r {
-        let v1 = new MutList(r);
-        let v2 = MutList.range(1, 4, r);
-        MutList.append!(v2, v1);
-        MutList.sameElements(v1, MutList.range(1, 4, r))
+        let v = new MutList(r);
+        let l = List.range(1, 4);
+        MutList.append!(l, v);
+        MutList.sameElements(v, MutList.range(1, 4, r))
     }
 
     @test
     def append!03(): Bool = region r {
-        let v1 = MutList.range(9, 24, r);
-        let v2 = new MutList(r);
-        MutList.append!(v2, v1);
-        MutList.sameElements(v1, MutList.range(9, 24, r))
+        let v = MutList.range(9, 24, r);
+        let l = Nil: List[Int32];
+        MutList.append!(l, v);
+        MutList.sameElements(v, MutList.range(9, 24, r))
     }
 
     @test
     def append!04(): Bool = region r {
-        let v1: MutList[Unit, _] = new MutList(r);
-        let v2: MutList[Unit, _] = new MutList(r);
-        MutList.append!(v2, v1);
-        MutList.sameElements(v1, new MutList(r))
+        let v: MutList[Unit, _] = new MutList(r);
+        let l: List[Unit] = Nil;
+        MutList.append!(l, v);
+        MutList.sameElements(v, new MutList(r))
     }
 
     @test
     def append!05(): Bool = region r {
-        let v1 = MutList.range(1, 3, r);
-        let v2 = MutList.range(3, 5, r);
-        let v3 = MutList.range(5, 99, r);
-        MutList.append!(v2, v1);
-        MutList.append!(v3, v1);
-        MutList.sameElements(v1, MutList.range(1, 99, r))
+        let v = MutList.range(1, 3, r);
+        let l1 = List.range(3, 5);
+        let l2 = List.range(5, 99);
+        MutList.append!(l1, v);
+        MutList.append!(l2, v);
+        MutList.sameElements(v, MutList.range(1, 99, r))
     }
 
 
