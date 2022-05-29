@@ -6,12 +6,12 @@ pub type alias Static = false
 ///
 /// Ref[t] is a type alias for a scoped ref with a global lifetime.
 ///
-pub type alias Ref[t] = ScopedRef[t, static]
+pub type alias Ref[t] = ScopedRef[t, Static]
 
 ///
 /// Array[t] is a type alias for a scoped array with a global lifetime.
 ///
-pub type alias Array[t] = ScopedArray[t, static]
+pub type alias Array[t] = ScopedArray[t, Static]
 
 ///
 /// The Reified Flix Bools.
