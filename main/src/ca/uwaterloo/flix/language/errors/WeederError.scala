@@ -829,4 +829,42 @@ object WeederError {
 
     def explain(formatter: Formatter): Option[String] = None
   }
+
+  /**
+    * An error raised to indicate an enum using both singleton and multiton syntaxes.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEnum(loc: SourceLocation) extends WeederError {
+    def summary: String = "Unexpected enum format."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected enum format.
+         |
+         |${code(loc, "unexpected enum format")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"""This enum uses both the singleton syntax and the case syntax.
+         |
+         |Only one of the enum forms may be used.
+         |If you only need one case for the enum, use the singleton syntax:
+         |
+         |    enum E(Int32)
+         |
+         |If you need multiple cases, use the case syntax:
+         |
+         |    enum E {
+         |        case C1(Int32)
+         |        case C2(Bool)
+         |    }
+         |
+         |""".stripMargin
+    })
+  }
 }
