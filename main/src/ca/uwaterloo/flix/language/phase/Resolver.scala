@@ -1693,7 +1693,7 @@ object Resolver {
       case "Channel" => Type.mkChannel(loc).toSuccess
       case "Lazy" => Type.mkLazy(loc).toSuccess
       case "ScopedArray" => Type.Cst(TypeConstructor.ScopedArray, loc).toSuccess
-      case "ScopedRef" => Type.Cst(TypeConstructor.ScopedRef, loc).toSuccess
+      case "Ref" => Type.Cst(TypeConstructor.ScopedRef, loc).toSuccess
       case "Region" => Type.Cst(TypeConstructor.Region, loc).toSuccess
 
       // Disambiguate type.
