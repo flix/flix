@@ -20,7 +20,7 @@ rel Facts(fact: String)
 rel Id(node: String)
 
 // Rules
-def main(): Unit & Impure =
+def main(): Unit =
     let p = #{
         // intraproc
         PathEdge(d1,m,d3) :-
