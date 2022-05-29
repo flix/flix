@@ -111,6 +111,5 @@ def main(): Unit & Impure =
         // Entrypoint
         PathEdge("zero","smain","zero").
     };
-    let m = solve p;
-    (m |> Fixpoint.unsafePrint) as & Impure;
+    let _m = solve p;
     ()
