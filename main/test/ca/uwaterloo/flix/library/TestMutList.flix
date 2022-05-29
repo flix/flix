@@ -1751,6 +1751,58 @@ namespace TestMutList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+        let l = new MutList(r): MutList[Int32, _];
+        let d = new MutDeque(r): MutDeque[Int32, _];
+
+        MutList.toMutDeque(l, r) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque02(): Bool = region r {
+        let xs = 1 :: Nil;
+
+        let l = new MutList(r);
+        List.foreach(x -> MutList.push!(x, l), xs);
+
+        let d = new MutDeque(r);
+        List.foreach(x -> MutDeque.pushBack(x, d), xs);
+
+        MutList.toMutDeque(l, r) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+        let xs = 1 :: 2 :: Nil;
+
+        let l = new MutList(r);
+        List.foreach(x -> MutList.push!(x, l), xs);
+
+        let d = new MutDeque(r);
+        List.foreach(x -> MutDeque.pushBack(x, d), xs);
+
+        MutList.toMutDeque(l, r) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque04(): Bool = region r {
+        let xs = 1 :: 2 :: 3 :: Nil;
+
+        let l = new MutList(r);
+        List.foreach(x -> MutList.push!(x, l), xs);
+
+        let d = new MutDeque(r);
+        List.foreach(x -> MutDeque.pushBack(x, d), xs);
+
+        MutList.toMutDeque(l, r) `MutDeque.sameElements` d
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // The following tests for sort functions correspond to those in TestArray //
     /////////////////////////////////////////////////////////////////////////////
     // sortWith                                                                //

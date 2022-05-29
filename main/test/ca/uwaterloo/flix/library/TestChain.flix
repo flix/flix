@@ -1412,6 +1412,56 @@ namespace TestChain {
         Chain.toMutList(List.toChain(1 :: 2 :: 3 :: Nil), r) `MutList.sameElements` List.toMutList(1 :: 2 :: 3 :: Nil, r)
     }
 
+   /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+        let c = Chain.empty(): Chain[Int32];
+        let d1 = Chain.toMutDeque(c, r);
+
+        let d2 = new MutDeque(r);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque02(): Bool = region r {
+        let c = Chain.singleton(1);
+        let d1 = Chain.toMutDeque(c, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack(1, d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+        let c = List.toChain(1 :: 2 :: Nil);
+        let d1 = Chain.toMutDeque(c, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushFront(1, d2);
+        MutDeque.pushBack(2, d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque04(): Bool = region r {
+        let c = List.toChain('a' :: 'b' :: 'c' :: Nil);
+        let d1 = Chain.toMutDeque(c, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushFront('b', d2);
+        MutDeque.pushBack('c', d2);
+        MutDeque.pushFront('a', d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
