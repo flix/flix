@@ -206,12 +206,12 @@ namespace MultiMap {
     ///
     /// Alias for `findLeft`.
     ///
-    pub def find(f: (k, v) -> Bool, m: MultiMap[k, v]): Option[(k, v)] = findLeft(f, m)
+    pub def find(f: (k, v) -> Bool & ef, m: MultiMap[k, v]): Option[(k, v)] & ef = findLeft(f, m)
 
     ///
     /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from left to right.
     ///
-    pub def findLeft(f: (k, v) -> Bool, m: MultiMap[k, v]): Option[(k, v)] =
+    pub def findLeft(f: (k, v) -> Bool & ef, m: MultiMap[k, v]): Option[(k, v)] & ef =
         let MultiMap(m1) = m;
         let findGroup = (k, s) -> Set.exists(f(k), s);
         let findItem = (k, s) -> Set.findLeft(f(k), s) |> Option.map(v1 -> (k, v1));
@@ -223,9 +223,7 @@ namespace MultiMap {
     ///
     /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from right to left.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def findRight(f: (k, v) -> Bool, m: MultiMap[k, v]): Option[(k, v)] =
+    pub def findRight(f: (k, v) -> Bool & ef, m: MultiMap[k, v]): Option[(k, v)] & ef =
         let MultiMap(m1) = m;
         let findGroup = (k, s) -> Set.exists(f(k), s);
         let findItem = (k, s) -> Set.findRight(f(k), s) |> Option.map(v1 -> (k, v1));
@@ -237,17 +235,13 @@ namespace MultiMap {
     ///
     /// Returns a MultiMap of all mappings `k => v` in `m` where `v` satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def filter(f: v -> Bool, m: MultiMap[k, v]): MultiMap[k, v] with Order[k], Order[v] =
+    pub def filter(f: v -> Bool & ef, m: MultiMap[k, v]): MultiMap[k, v] & ef with Order[k], Order[v] =
         filterWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a MultiMap of all mappings `k => v` in `m` where `(k, v)` satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def filterWithKey(f: (k, v) -> Bool, m: MultiMap[k, v]): MultiMap[k, v] with Order[k], Order[v] =
+    pub def filterWithKey(f: (k, v) -> Bool & ef, m: MultiMap[k, v]): MultiMap[k, v] & ef with Order[k], Order[v] =
         foldLeftWithKey((acc, k, v) -> if (f(k, v)) insert(k, v, acc) else acc, empty(), m)
 
     ///
