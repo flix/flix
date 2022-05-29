@@ -1064,6 +1064,12 @@ namespace List {
         loop(drop(len1 - len2, l1), drop(len2 - len1, l2), ks -> ks as & ef)
 
     ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, l: List[a]): b & ef with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), l)
+
+    ///
     /// Collects the results of applying the partial function `f` to every element in `l`.
     ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
@@ -1126,14 +1132,7 @@ namespace List {
     ///
     pub def toMutDeque(l: List[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
         let d = new MutDeque(r);
-        def loop(ll) = match ll {
-            case Nil     => ()
-            case x :: xs => {
-                MutDeque.pushBack(x, d);
-                loop(xs)
-            }
-        };
-        loop(l);
+        List.foreach(x -> MutDeque.pushBack(x, d), l);
         d
 
     ///

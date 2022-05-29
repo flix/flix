@@ -504,6 +504,12 @@ namespace Chain {
         loop(c)
 
     ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, c: Chain[a]): b & ef with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), c)
+
+    ///
     /// Returns `c` without the first `n` elements.
     ///
     /// Returns `Nil` if `n > length(c)`.
@@ -726,6 +732,14 @@ namespace Chain {
     ///
     pub def toList(c: Chain[a]): List[a] =
         foldRight((x, acc) -> x :: acc, Nil, c)
+
+    ///
+    /// Returns `c` as a MutDeque.
+    ///
+    pub def toMutDeque(c: Chain[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+        let d = new MutDeque(r);
+        Chain.foreach(x -> MutDeque.pushBack(x, d), c);
+        d
 
     ///
     /// Returns `c` as a mutable list.
