@@ -170,7 +170,7 @@ object FormatType {
       case SimpleType.BigInt => "BigInt"
       case SimpleType.Str => "String"
       case SimpleType.ScopedArray => "ScopedArray"
-      case SimpleType.ScopedRef => "ScopedRef"
+      case SimpleType.ScopedRef => "Ref"
       case SimpleType.Channel => "Channel"
       case SimpleType.Lazy => "Lazy"
       case SimpleType.True => mode match {

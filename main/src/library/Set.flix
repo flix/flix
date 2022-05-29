@@ -253,28 +253,22 @@ namespace Set {
     ///
     /// Alias for `findLeft`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
-    pub def find(f: a -> Bool, s: Set[a]): Option[a] = findLeft(f, s)
+    pub def find(f: a -> Bool & ef, s: Set[a]): Option[a] & ef = findLeft(f, s)
 
     ///
     /// Optionally returns the first element of `s` that satisfies the predicate `f` when searching from left to right.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
-    pub def findLeft(f: a -> Bool, s: Set[a]): Option[a] =
+    pub def findLeft(f: a -> Bool & ef, s: Set[a]): Option[a] & ef =
         let Set(t) = s;
         RedBlackTree.findLeft((x, _) -> f(x), t) |> Option.map(fst)
 
     ///
     /// Optionally returns the first element of `s` that satisfies the predicate `f` when searching from right to left.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
-    pub def findRight(f: a -> Bool, s: Set[a]): Option[a] =
+    pub def findRight(f: a -> Bool & ef, s: Set[a]): Option[a] & ef =
         let Set(t) = s;
         RedBlackTree.findRight((x, _) -> f(x), t) |> Option.map(fst)
 
@@ -413,10 +407,8 @@ namespace Set {
     ///
     /// Returns `false` if `s` is the empty set.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
-    pub def exists(f: a -> Bool, s: Set[a]): Bool =
+    pub def exists(f: a -> Bool & ef, s: Set[a]): Bool & ef =
         let Set(t) = s;
         RedBlackTree.exists((x, _) -> f(x), t)
 
@@ -425,10 +417,8 @@ namespace Set {
     ///
     /// Returns `true` if `s` is the empty set.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(s)) @Space(space(f) * Int32.log2(size(s)))
-    pub def forall(f: a -> Bool, s: Set[a]): Bool =
+    pub def forall(f: a -> Bool & ef, s: Set[a]): Bool & ef =
         let Set(t) = s;
         RedBlackTree.forall((x, _) -> f(x), t)
 
@@ -470,10 +460,8 @@ namespace Set {
     ///
     /// Returns the set of all elements of `s` that satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(s)) @Space(space(f) * size(s))
-    pub def filter(f: a -> Bool, s: Set[a]): Set[a] with Order[a] =
+    pub def filter(f: a -> Bool & ef, s: Set[a]): Set[a] & ef with Order[a] =
         foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), s)
 
     ///
@@ -506,10 +494,8 @@ namespace Set {
     /// `s1` contains all elements of `s` that satisfy the predicate `f`.
     /// `s2` contains all elements of `s` that do not satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(size(s) * Int32.log2(size(s))) @Space(size(s) * Int32.log2(size(s)))
-    pub def partition(f: a -> Bool, s: Set[a]): (Set[a], Set[a]) with Order[a] =
+    pub def partition(f: a -> Bool & ef, s: Set[a]): (Set[a], Set[a]) & ef with Order[a] =
         foldLeft((acc, x) ->
             let (a, b) = acc;
             if (f(x))
