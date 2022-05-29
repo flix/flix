@@ -382,6 +382,26 @@ namespace TestNel {
     def foldRightWithCont03(): Bool = Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool =
+        Nel.foldMap(x -> 2 * x, Nel(1, 2 :: Nil)) == 6
+
+    @test
+    def foldMap02(): Bool =
+        Nel.foldMap(x -> if (x == "a") "b" else x, Nel("a", Nil)) == "b"
+
+    @test
+    def foldMap03(): Bool =
+        Nel.foldMap(x -> if (x == "c") "b" else x, Nel("a", "b" :: "c" :: Nil)) == "abb"
+
+    @test
+    def foldMap04(): Bool =
+        Nel.foldMap(Int32.toString, Nel(1, 2 :: 3 :: Nil)) == "123"
+
+    /////////////////////////////////////////////////////////////////////////////
     // reduce                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 

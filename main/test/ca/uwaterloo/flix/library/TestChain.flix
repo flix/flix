@@ -897,6 +897,30 @@ namespace TestChain {
     def foldRightWithCont04(): Bool = Chain.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 382
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool =
+        Chain.foldMap(x -> 2 * x, List.toChain(Nil)) == 0
+
+    @test
+    def foldMap02(): Bool =
+        Chain.foldMap(x -> 2 * x, List.toChain(1 :: 2 :: Nil)) == 6
+
+    @test
+    def foldMap03(): Bool =
+        Chain.foldMap(x -> if(x == "a") "b" else x, List.toChain("a" :: Nil)) == "b"
+
+    @test
+    def foldMap04(): Bool =
+        Chain.foldMap(x -> if(x == "c") "b" else x, List.toChain("a" :: "b" :: "c" :: Nil)) == "abb"
+
+    @test
+    def foldMap05(): Bool =
+        Chain.foldMap(Int32.toString, List.toChain(1 :: 2 :: 3 :: Nil)) == "123"
+
+    /////////////////////////////////////////////////////////////////////////////
     // dropLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1386,6 +1410,56 @@ namespace TestChain {
     @test
     def toMutList04(): Bool = region r {
         Chain.toMutList(List.toChain(1 :: 2 :: 3 :: Nil), r) `MutList.sameElements` List.toMutList(1 :: 2 :: 3 :: Nil, r)
+    }
+
+   /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+        let c = Chain.empty(): Chain[Int32];
+        let d1 = Chain.toMutDeque(c, r);
+
+        let d2 = new MutDeque(r);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque02(): Bool = region r {
+        let c = Chain.singleton(1);
+        let d1 = Chain.toMutDeque(c, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack(1, d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+        let c = List.toChain(1 :: 2 :: Nil);
+        let d1 = Chain.toMutDeque(c, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushFront(1, d2);
+        MutDeque.pushBack(2, d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque04(): Bool = region r {
+        let c = List.toChain('a' :: 'b' :: 'c' :: Nil);
+        let d1 = Chain.toMutDeque(c, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushFront('b', d2);
+        MutDeque.pushBack('c', d2);
+        MutDeque.pushFront('a', d2);
+
+        d1 `MutDeque.sameElements` d2
     }
 
     /////////////////////////////////////////////////////////////////////////////

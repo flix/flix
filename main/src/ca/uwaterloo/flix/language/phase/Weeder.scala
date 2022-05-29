@@ -300,18 +300,23 @@ object Weeder {
     * Performs weeding on the given enum declaration `d0`.
     */
   private def visitEnum(d0: ParsedAst.Declaration.Enum)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Enum], WeederError] = d0 match {
-    case ParsedAst.Declaration.Enum(doc0, ann0, mods, sp1, ident, tparams0, derives, cases, sp2) =>
+    case ParsedAst.Declaration.Enum(doc0, ann0, mods, sp1, ident, tparams0, tpe0, derives, cases0, sp2) =>
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann0)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
       val tparamsVal = visitTypeParams(tparams0)
 
-      flatMapN(annVal, modVal, tparamsVal) {
-        case (ann, mod, tparams) =>
+      val casesVal = (tpe0, cases0) match {
+        // Case 1: empty enum
+        case (None, None) => Map.empty[Name.Tag, WeededAst.Case].toSuccess
+        // Case 2: singleton enum
+        case (Some(t0), None) => Map(Name.mkTag(ident) -> WeededAst.Case(ident, Name.mkTag(ident), visitType(t0))).toSuccess
+        // Case 3: multiton enum
+        case (None, Some(cs0)) =>
           /*
            * Check for `DuplicateTag`.
            */
-          Validation.fold[ParsedAst.Case, Map[Name.Tag, WeededAst.Case], WeederError](cases, Map.empty) {
+          Validation.fold[ParsedAst.Case, Map[Name.Tag, WeededAst.Case], WeederError](cs0, Map.empty) {
             case (macc, caze: ParsedAst.Case) =>
               val tagName = Name.mkTag(caze.ident)
               macc.get(tagName) match {
@@ -326,9 +331,15 @@ object Weeder {
                     DuplicateTag(enumName, tagName, loc2, loc1)
                   ))
               }
-          } map {
-            case m => List(WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives.toList, m, mkSL(sp1, sp2)))
           }
+        // Case 4: both singleton and multiton syntax used: Error.
+        case (Some(_), Some(_)) => WeederError.IllegalEnum(ident.loc).toFailure
+
+      }
+
+      mapN(annVal, modVal, tparamsVal, casesVal) {
+        case (ann, mod, tparams, cases) =>
+          List(WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives.toList, cases, mkSL(sp1, sp2)))
       }
   }
 

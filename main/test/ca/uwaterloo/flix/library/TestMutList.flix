@@ -785,6 +785,36 @@ namespace TestMutList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool = region r {
+        MutList.foldMap(x -> 2 * x, List.toMutList(Nil: List[Int32], r)) == 0
+    }
+
+    @test
+    def foldMap02(): Bool = region r {
+        MutList.foldMap(x -> 2 * x, List.toMutList(1 :: 2 :: Nil, r)) == 6
+    }
+
+    @test
+    def foldMap03(): Bool = region r {
+        MutList.foldMap(x -> if (x == "a") "b" else x, List.toMutList("a" :: Nil, r)) == "b"
+    }
+
+    @test
+    def foldMap04(): Bool = region r {
+        MutList.foldMap(x -> if (x == "c") "b" else x, List.toMutList("a" :: "b" :: "c":: Nil, r)) == "abb"
+    }
+
+    @test
+    def foldMap05(): Bool = region r {
+        MutList.foldMap(Int32.toString, List.toMutList(1 :: 2 :: 3 :: Nil, r)) == "123"
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1717,6 +1747,58 @@ namespace TestMutList {
         let xs = 1 :: 2 :: 3 :: Nil;
         List.foreach(x -> MutList.push!(x, l), xs);
         MutList.toChain(l) == List.toChain(1 :: 2 :: 3 :: Nil)
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+        let l = new MutList(r): MutList[Int32, _];
+        let d = new MutDeque(r): MutDeque[Int32, _];
+
+        MutList.toMutDeque(l, r) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque02(): Bool = region r {
+        let xs = 1 :: Nil;
+
+        let l = new MutList(r);
+        List.foreach(x -> MutList.push!(x, l), xs);
+
+        let d = new MutDeque(r);
+        List.foreach(x -> MutDeque.pushBack(x, d), xs);
+
+        MutList.toMutDeque(l, r) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+        let xs = 1 :: 2 :: Nil;
+
+        let l = new MutList(r);
+        List.foreach(x -> MutList.push!(x, l), xs);
+
+        let d = new MutDeque(r);
+        List.foreach(x -> MutDeque.pushBack(x, d), xs);
+
+        MutList.toMutDeque(l, r) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque04(): Bool = region r {
+        let xs = 1 :: 2 :: 3 :: Nil;
+
+        let l = new MutList(r);
+        List.foreach(x -> MutList.push!(x, l), xs);
+
+        let d = new MutDeque(r);
+        List.foreach(x -> MutDeque.pushBack(x, d), xs);
+
+        MutList.toMutDeque(l, r) `MutDeque.sameElements` d
     }
 
 

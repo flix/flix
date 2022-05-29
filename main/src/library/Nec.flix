@@ -585,6 +585,12 @@ namespace Nec {
     }
 
     ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, c: Nec[a]): b & ef with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), c)
+
+    ///
     /// Collects the results of applying the partial function `f` to every element in `c`.
     ///
     pub def filterMap(f: a -> Option[b] & ef, c: Nec[a]): List[b] & ef =

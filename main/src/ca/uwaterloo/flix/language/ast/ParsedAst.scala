@@ -141,7 +141,7 @@ object ParsedAst {
       * @param cases   the cases of the enum.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Enum(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, derives: Seq[Name.QName], cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Enum(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: Option[ParsedAst.Type], derives: Seq[Name.QName], cases: Option[Seq[ParsedAst.Case]], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Opaque Type Declaration.
