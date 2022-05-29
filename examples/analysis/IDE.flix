@@ -128,9 +128,7 @@ namespace IDE {
         let f1 = project ide.cfg, ide.callGraph, ide.startNodes, ide.endNodes into CFG, CallGraph, StartNode, EndNode;
         let f2 = project ide.eshIntra, ide.eshCallStart, ide.eshEndReturn into EshIntra, EshCallStart, EshEndReturn;
 
-        let m = solve p, f1, f2;
-
-        (m |> Fixpoint.unsafePrint) as & Impure; // NB: Just for debugging.
+        let _m = solve p, f1, f2;
 
         query p, f1, f2 select (n, d, l) from Results(n, d; l) |> Array.toList
 
