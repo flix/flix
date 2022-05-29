@@ -376,45 +376,36 @@ namespace Map {
     ///
     /// Alias for `findLeft`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
-    pub def find(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] = findLeft(f, m)
+    pub def find(f: (k, v) -> Bool & ef, m: Map[k, v]): Option[(k, v)] & ef = findLeft(f, m)
 
     ///
     /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from left to right.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
-    pub def findLeft(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] =
+    pub def findLeft(f: (k, v) -> Bool & ef, m: Map[k, v]): Option[(k, v)] & ef =
         let Map(t) = m;
         RedBlackTree.findLeft(f, t)
 
     ///
     /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from right to left.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
-    pub def findRight(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] =
+    pub def findRight(f: (k, v) -> Bool & ef, m: Map[k, v]): Option[(k, v)] & ef =
         let Map(t) = m;
         RedBlackTree.findRight(f, t)
+
     ///
     /// Returns a map of all mappings `k => v` in `m` where `v` satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
-    pub def filter(f: v -> Bool, m: Map[k, v]): Map[k, v] with Order[k] = filterWithKey((_, v) -> f(v), m)
+    pub def filter(f: v -> Bool & ef, m: Map[k, v]): Map[k, v] & ef with Order[k] = filterWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a map of all mappings `k => v` in `m` where `(k, v)` satisfies the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(m)) @Space(space(f) * size(m))
-    pub def filterWithKey(f: (k, v) -> Bool, m: Map[k, v]): Map[k, v] with Order[k] =
+    pub def filterWithKey(f: (k, v) -> Bool & ef, m: Map[k, v]): Map[k, v] & ef with Order[k] =
         foldLeftWithKey((acc, k, v) -> if (f(k, v)) insert(k, v, acc) else acc, empty(), m)
 
     ///
