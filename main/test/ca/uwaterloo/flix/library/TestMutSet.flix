@@ -157,18 +157,21 @@ namespace TestMutSet {
     }
 
     @test
-    def addAll06(): Bool = region r {
-        let s1 = new MutSet(r);
-        MutSet.add!("a", s1);
-        MutSet.add!("b", s1);
-        MutSet.add!("c", s1);
+    def addAll06(): Bool =
+        let s = Set#{"a", "b", "c"};
 
-        region r2 {
-            let s2 = new MutSet(r2);
-            MutSet.addAll!(s1, s2);
-            MutSet.isSubsetOf(s1, s2) and MutSet.isSubsetOf(s2, s1)
+        region r {
+            let s1 = new MutSet(r);
+            MutSet.add!("a", s1);
+            MutSet.add!("b", s1);
+            MutSet.add!("c", s1);
+
+            region r2 {
+                let s2 = new MutSet(r2);
+                MutSet.addAll2!(s, s2);
+                MutSet.isSubsetOf(s1, s2) and MutSet.isSubsetOf(s2, s1)
+            }
         }
-    }
 
 
     /////////////////////////////////////////////////////////////////////////////
