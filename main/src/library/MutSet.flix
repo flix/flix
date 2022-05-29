@@ -49,10 +49,10 @@ namespace MutSet {
         ms := Set.insert(x, deref ms)
 
     ///
-    /// Adds all elements in the mutable set `s1` to the mutable set `s2`.
+    /// Adds all elements in the collection `m` to the mutable set `s`.
     ///
     pub def addAll!(m: m[a], s: MutSet[a, r]): Unit \ { Read(r), Write(r) } with Order[a], Foldable[m] =
-        Foldable.foreach(x -> MutSet.add!(x, s), m)
+        Foldable.foreach(x -> add!(x, s), m)
 
     ///
     /// Removes all elements from the mutable set `s`.
