@@ -1,55 +1,55 @@
 namespace Test/Exp/Ref/Ref {
 
     @test
-    def testRef01(): Ref[Unit] & Impure = ref ()
+    def testRef01(): FooRef[Unit] & Impure = ref ()
 
     @test
-    def testRef02(): Ref[Bool] & Impure = ref true
+    def testRef02(): FooRef[Bool] & Impure = ref true
 
     @test
-    def testRef03(): Ref[Bool] & Impure = ref false
+    def testRef03(): FooRef[Bool] & Impure = ref false
 
     @test
-    def testRef04(): Ref[Char] & Impure = ref 'a'
+    def testRef04(): FooRef[Char] & Impure = ref 'a'
 
     @test
-    def testRef05(): Ref[Float32] & Impure = ref 0.0f32
+    def testRef05(): FooRef[Float32] & Impure = ref 0.0f32
 
     @test
-    def testRef06(): Ref[Float64] & Impure = ref 0.0f64
+    def testRef06(): FooRef[Float64] & Impure = ref 0.0f64
 
     @test
-    def testRef07(): Ref[Int8] & Impure = ref 0i8
+    def testRef07(): FooRef[Int8] & Impure = ref 0i8
 
     @test
-    def testRef08(): Ref[Int16] & Impure = ref 0i16
+    def testRef08(): FooRef[Int16] & Impure = ref 0i16
 
     @test
-    def testRef09(): Ref[Int32] & Impure = ref 0i32
+    def testRef09(): FooRef[Int32] & Impure = ref 0i32
 
     @test
-    def testRef10(): Ref[Int64] & Impure = ref 0i64
+    def testRef10(): FooRef[Int64] & Impure = ref 0i64
 
     @test
-    def testRef11(): Ref[BigInt] & Impure = ref 0ii
+    def testRef11(): FooRef[BigInt] & Impure = ref 0ii
 
     @test
-    def testRef12(): Ref[String] & Impure = ref "Hello World!"
+    def testRef12(): FooRef[String] & Impure = ref "Hello World!"
 
     @test
-    def testRef13(): Ref[(Int32, Int32, Int32)] & Impure = ref (1, 2, 3)
+    def testRef13(): FooRef[(Int32, Int32, Int32)] & Impure = ref (1, 2, 3)
 
     @test
-    def testRef14(): Ref[Option[Int32]] & Impure = ref None : Option[Int32]
+    def testRef14(): FooRef[Option[Int32]] & Impure = ref None : Option[Int32]
 
     @test
-    def testRef15(): Ref[Option[Int32]] & Impure = ref Some(42)
+    def testRef15(): FooRef[Option[Int32]] & Impure = ref Some(42)
 
     @test
-    def testRef16(): Ref[Result[Int32, String]] & Impure = ref Ok(42): Result[Int32, String]
+    def testRef16(): FooRef[Result[Int32, String]] & Impure = ref Ok(42): Result[Int32, String]
 
     @test
-    def testRef17(): Ref[Result[Int32, String]] & Impure = ref Err("Goodbye World!"): Result[Int32, String]
+    def testRef17(): FooRef[Result[Int32, String]] & Impure = ref Err("Goodbye World!"): Result[Int32, String]
 
     @test
     def testScopedRef01(): Unit = // Pure
