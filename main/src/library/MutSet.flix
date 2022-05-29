@@ -77,12 +77,12 @@ namespace MutSet {
         ms := Set.difference(deref ms, s2)
 
     ///
-    /// Removes all elements from the mutable set `s2` that are not in the mutable set `s1`.
+    /// Removes all elements from the mutable set `s` that are not in collection `m`.
     ///
-    pub def retainAll!(s1: MutSet[a, r1], s2: MutSet[a, r2]): Unit \ { Read(r1, r2), Write(r2) } with Order[a] =
-        let MutSet(ms1) = s1;
-        let MutSet(ms2) = s2;
-        ms2 := Set.intersection(deref ms1, deref ms2)
+    pub def retainAll!(m: m[a], s: MutSet[a, r]): Unit \ { Read(r), Write(r) } with Order[a], Foldable[m] =
+        let MutSet(ms) = s;
+        let s2 = Foldable.toSet(m);
+        ms := Set.intersection(s2, deref ms)
 
     ///
     /// Removes all elements from the mutable set `s` that do not satisfy the predicate function `f`.
