@@ -31,7 +31,7 @@ namespace Test/Exp/Null {
     def testNullRecord05(): {fstName :: String, lstName :: String} = {fstName = null as String, lstName = null as String}
 
     @test
-    def testNullRef01(): FooRef[String] = null as FooRef[String]
+    def testNullRef01(): Ref[String, Pure] = null as Ref[String, Pure]
 
     @test
     def testNullTuple01(): (String, String) = null as (String, String)

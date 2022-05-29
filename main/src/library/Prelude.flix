@@ -1,9 +1,4 @@
 ///
-/// FooRef[t] is a type alias for a scoped ref with a global lifetime.
-///
-pub type alias FooRef[t] = ScopedRef[t, static]
-
-///
 /// Array[t] is a type alias for a scoped array with a global lifetime.
 ///
 pub type alias Array[t] = ScopedArray[t, false]
