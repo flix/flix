@@ -69,12 +69,12 @@ namespace MutSet {
         ms := Set.remove(x, deref ms)
 
     ///
-    /// Removes all elements in the mutable set `s1` from the mutable set `s2`.
+    /// Removes all elements in the collection `m` from the mutable set `s`.
     ///
-    pub def removeAll!(s1: MutSet[a, r1], s2: MutSet[a, r2]): Unit \ { Read(r1, r2), Write(r2) } with Order[a] =
-        let MutSet(ms1) = s1;
-        let MutSet(ms2) = s2;
-        ms2 := Set.difference(deref ms2, deref ms1)
+    pub def removeAll!(m: m[a], s: MutSet[a, r]): Unit \ { Read(r), Write(r) } with Order[a], Foldable[m] =
+        let MutSet(ms) = s;
+        let s2 = Foldable.toSet(m);
+        ms := Set.difference(deref ms, s2)
 
     ///
     /// Removes all elements from the mutable set `s2` that are not in the mutable set `s1`.
