@@ -1604,7 +1604,7 @@ namespace Array {
     ///
     /// Precondition: `i` and `j` are within bounds.
     ///
-    def swap!(a: ScopedArray[a, r], i: Int32, j: Int32): Unit \ { Read(r), Write(r) } =
+    pub def swap!(i: Int32, j: Int32, a: ScopedArray[a, r]): Unit \ { Read(r), Write(r) } =
         let x = a[i];
         let y = a[j];
         a[i] = y;
@@ -1618,12 +1618,12 @@ namespace Array {
         let pivot = a[hi];
         let i = forWithAccum(lo, hi, lo, (j,ix) ->
             if (cmp(a[j], pivot) == LessThan) {
-                swap!(a, ix, j);
+                swap!(ix, j, a);
                 ix+1
             } else
                 ix
             );
-        swap!(a, i, hi);
+        swap!(i, hi, a);
         i
 
     ///
