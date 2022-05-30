@@ -591,13 +591,11 @@ namespace List {
     /// Returns `true` if and only if `l1` is a prefix of `l2`.
     ///
     @Time(length(l1)) @Space(1)
-    pub def isPrefixOf(l1: List[a], l2: List[a]): Bool with Eq[a] =
-        def loop(ll1, ll2) = match (ll1, ll2) {
-            case (Nil, _)           => true
-            case (_, Nil)           => false
-            case (x :: xs, y :: ys) => if (x == y) loop(xs, ys) else false
-        };
-        loop(l1, l2)
+    pub def isPrefixOf(l1: List[a], l2: List[a]): Bool with Eq[a] = match (l1, l2) {
+        case (Nil, _)           => true
+        case (_, Nil)           => false
+        case (x :: xs, y :: ys) => if (x == y) isPrefixOf(xs, ys) else false
+    }
 
     ///
     /// Returns `true` if and only if `l1` is an infix of `l2`.
