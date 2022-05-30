@@ -708,7 +708,7 @@ namespace List {
     @Time(length(l)) @Space(length(l))
     pub def flatten(l: List[List[a]]): List[a] =
         def loop(ll, k) = match ll {
-            case Nil => k(Nil)
+            case Nil     => k(Nil)
             case x :: xs => loop(xs, ks -> k(x ::: ks))
         };
         loop(l, identity)
@@ -719,12 +719,10 @@ namespace List {
     /// Returns `false` if `l` is empty.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def exists(f: a -> Bool & ef, l: List[a]): Bool & ef =
-        def loop(ll) = match ll {
-            case Nil     => false
-            case x :: xs => if (f(x)) true else loop(xs)
-        };
-        loop(l)
+    pub def exists(f: a -> Bool & ef, l: List[a]): Bool & ef = match l {
+        case Nil     => false
+        case x :: xs => if (f(x)) true else exists(f, xs)
+    }
 
     ///
     /// Returns `true` if and only if all elements in `l` satisfy the predicate `f`.
