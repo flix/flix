@@ -834,12 +834,10 @@ namespace List {
     /// Returns `l` without the longest prefix that satisfies the predicate `f`.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def dropWhile(f: a -> Bool & ef, l: List[a]): List[a] & ef =
-        def loop(ll) = match ll{
-            case Nil     => Nil
-            case x :: xs => if (f(x)) loop(xs) else ll
-        };
-        loop(l)
+    pub def dropWhile(f: a -> Bool & ef, l: List[a]): List[a] & ef = match l {
+        case Nil     => Nil
+        case x :: xs => if (f(x)) dropWhile(f, xs) else l
+    }
 
     ///
     /// Returns the first `n` elements of `l`.
