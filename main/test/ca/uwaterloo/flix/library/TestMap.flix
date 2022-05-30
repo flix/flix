@@ -2132,7 +2132,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(static);
-        Map.minimumKeyBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
+        Map.minimumKeyBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -2226,7 +2226,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(static);
-        Map.maximumKeyBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
+        Map.maximumKeyBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -2268,7 +2268,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(static);
-        Map.maximumValueBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
+        Map.maximumValueBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 

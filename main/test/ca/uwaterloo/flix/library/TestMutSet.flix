@@ -168,7 +168,7 @@ namespace TestMutSet {
 
             region r2 {
                 let s2 = new MutSet(r2);
-                MutSet.addAll2!(s, s2);
+                MutSet.addAll!(s, s2);
                 MutSet.isSubsetOf(s1, s2) and MutSet.isSubsetOf(s2, s1)
             }
         }

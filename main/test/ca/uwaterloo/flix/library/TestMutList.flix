@@ -466,7 +466,7 @@ namespace TestMutList {
     def indexOfRight04(): Bool = region r {
         let v1 = MutList.range(0, 4, r);
         let v2 = MutList.range(0, 4, r);
-        MutList.append!(v2, v1);
+        MutList.append!(MutList.toList(v2), v1);
         MutList.indexOfRight(2, v1) == Some(6)
     }
 
@@ -1382,7 +1382,7 @@ namespace TestMutList {
     def shrink!04(): Bool = region r {
         let v = new MutList(r);
         MutList.push!(4, v);
-        MutList.append!(MutList.range(0, 4, r), v);
+        MutList.append!(MutList.toList(MutList.range(0, 4, r)), v);
         MutList.push!(5, v);
         MutList.shrink!(v);
         MutList.length(v) == 6
