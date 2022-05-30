@@ -952,11 +952,11 @@ namespace List {
     ///
     @Time(length(l)) @Space(length(l))
     pub def zipWithIndex(l: List[a]): List[(a, Int32)] =
-        def loop(ll, i, acc) = match ll {
-            case (x :: xs) => loop(xs, i+1, (x, i) :: acc)
-            case Nil       => acc
+        def loop(ll, i, k) = match ll {
+            case Nil       => k(Nil)
+            case (x :: xs) => loop(xs, i + 1, ks -> k((x, i) :: ks))
         };
-        reverse(loop(l, 0, Nil))
+        loop(l, 0, identity)
 
     ///
     /// Returns a pair of lists, the first containing all first components in `l`
