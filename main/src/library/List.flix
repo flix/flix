@@ -222,12 +222,10 @@ namespace List {
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from left to right.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def findLeft(f: a -> Bool & ef, l: List[a]): Option[a] & ef =
-        def loop(ll) = match ll {
-            case Nil     => None
-            case x :: xs => if (f(x)) Some(x) else loop(xs)
-        };
-        loop(l)
+    pub def findLeft(f: a -> Bool & ef, l: List[a]): Option[a] & ef = match l {
+        case Nil     => None
+        case x :: xs => if (f(x)) Some(x) else findLeft(f, xs)
+    }
 
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
