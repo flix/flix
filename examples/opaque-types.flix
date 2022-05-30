@@ -1,11 +1,11 @@
-/// An opaque type declares a new type that is different from any other
-/// existing type. Opaque types can be used to differentiate types that
+/// An enum declares a new type that is different from any other
+/// existing type. enums can be used to differentiate types that
 /// would otherwise be the same. For example:
 
-/// An opaque type for US dollars.
+/// An enum for US dollars.
 enum USD(Int32)
 
-/// An opaque type for Canadian dollars.
+/// An enum for Canadian dollars.
 enum CAD(Int32)
 
 ///

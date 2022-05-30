@@ -106,32 +106,32 @@ namespace Test/Dec/TypeAlias {
     def testTypeAlias20(): E[Int32] = Err("Hello World")
 
     /**
-     * An opaque type for Int.
+     * An enum for Int.
      */
     enum X(Int32)
 
     /**
-     * An opaque type for Option.
+     * An enum for Option.
      */
     enum Y[a](Option[a])
 
     /**
-     * An opaque type for Result.
+     * An enum for Result.
      */
     enum Z[a, b](Result[a, b])
 
     /**
-     * A type alias for an opaque type.
+     * A type alias for an enum.
      */
     type alias U = X
 
     /**
-     * A type alias for a polymorphic opaque type.
+     * A type alias for a polymorphic enum.
      */
     type alias V[a] = Y[a]
 
     /**
-     * A type alias for a polymorphic opaque type.
+     * A type alias for a polymorphic enum.
      */
     type alias W[a, b] = Z[a, b]
 

@@ -1,47 +1,47 @@
 namespace Test/Dec/OpaqueType {
 
     /**
-     * An opaque type for degrees celsius.
+     * An enum for degrees celsius.
      */
     enum Celsius(Int32)
 
     /**
-     * An opaque type for degrees fahrenheit.
+     * An enum for degrees fahrenheit.
      */
     enum Fahrenheit(Int32)
 
     /**
-     * An opaque type for united states dollars.
+     * An enum for united states dollars.
      */
     enum USD(Float64)
 
     /**
-     * An opaque type for canadian dollars.
+     * An enum for canadian dollars.
      */
     enum CAD(Float64)
 
     /**
-     * An opaque type for an Option.
+     * An enum for an Option.
      */
     enum A(Option[Int32])
 
     /**
-     * An opaque type for a Result.
+     * An enum for a Result.
      */
     enum B(Result[Int32, String])
 
     /**
-     * An opaque type for a polymorphic pair.
+     * An enum for a polymorphic pair.
      */
     enum Pair[a, b](a, b)
 
     /**
-     * An opaque type for a polymorphic Result.
+     * An enum for a polymorphic Result.
      */
     enum C[a](Result[a, Int32])
 
     /**
-     * An opaque type for a polymorphic Result.
+     * An enum for a polymorphic Result.
      */
     enum D[a, b, c](Result[a, Result[b, c]])
 
@@ -158,12 +158,12 @@ namespace Test/Dec/OpaqueType {
     type alias Z[a] = Option[a]
 
     /**
-     * An opaque type for with a type alias.
+     * An enum for with a type alias.
      */
     enum U(Option[X])
 
     /**
-     * An opaque type for with a type alias.
+     * An enum for with a type alias.
      */
     enum V(Result[X, Y])
 
