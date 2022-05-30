@@ -2184,7 +2184,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, List.reverse(range)) |> List.toMap;
         let a = new MutList(static);
-        Map.minimumValueBy((x, y) -> { let b = new MutList(static); MutList.push!(x, b); MutList.append!(b, a); x <=> y }, m);
+        Map.minimumValueBy((x, y) -> { let b = new MutList(static); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.reverse(List.range(1, 2000)) // The first / left most value is ignored
 
 
