@@ -132,7 +132,7 @@ namespace Traversable {
     ///
     /// ContStateRight is exactly the same as ContStateLeft except the evaluation order of `ap` is flipped.
     ///
-    enum ContStateRight[ka, s, a] = (a -> s -> ka & Impure) -> s -> ka & Impure
+    enum ContStateRight[ka, s, a]((a -> s -> ka & Impure) -> s -> ka & Impure)
 
     ///
     /// Helper function for ContStateRight's implementations of `map` and `ap`.
