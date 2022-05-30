@@ -730,12 +730,10 @@ namespace List {
     /// Returns `true` if `l` is empty.
     ///
     @Time(time(f) * length(l)) @Space(space(f))
-    pub def forall(f: a -> Bool & ef, l: List[a]): Bool & ef =
-        def loop(ll) = match ll {
-            case Nil     => true
-            case x :: xs => if (f(x)) loop(xs) else false
-        };
-        loop(l)
+    pub def forall(f: a -> Bool & ef, l: List[a]): Bool & ef = match l {
+        case Nil     => true
+        case x :: xs => if (f(x)) forall(f, xs) else false
+    }
 
     ///
     /// Returns a list of every element in `l` that satisfies the predicate `f`.
