@@ -911,12 +911,10 @@ namespace List {
     ///
     /// Helper function for `groupBy`.
     ///
-    def agreeHelper(f: (a, a) -> Bool, a: a, l: List[a]): Bool =
-        def loop(ll) = match ll {
-            case Nil     => true
-            case x :: xs => if (f(x, a) and f(a, x)) loop(xs) else false
-        };
-        loop(l)
+    def agreeHelper(f: (a, a) -> Bool, a: a, l: List[a]): Bool = match l {
+        case Nil     => true
+        case x :: xs => if (f(x, a) and f(a, x)) agreeHelper(f, a, xs) else false
+    }
 
     ///
     /// Returns a list where the element at index `i` is `(a, b)` where
