@@ -2310,6 +2310,22 @@ def query18(): Bool =
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toMultiMap                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMultiMap01(): Bool =
+        Map.toMultiMap(Map#{}: Map[Int32, Char]) |> MultiMap.toAscList == Nil
+
+    @test
+    def toMultiMap02(): Bool =
+        Map.toMultiMap(Map#{1 => 'a'}) |> MultiMap.toAscList == (1, 'a') :: Nil
+
+    @test
+    def toMultiMap03(): Bool =
+        Map.toMultiMap(Map#{1 => 'a', 2 => 'b'}) |> MultiMap.toAscList == (1, 'a') :: (2, 'b') :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
     // toIterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 

@@ -22,7 +22,7 @@
 ///   - The capacity of the array is always 8 or more.
 ///
 pub enum MutList[a: Type, r: Region] {
-    case MutList(ScopedRef[ScopedArray[a, r], r], ScopedRef[Int32, r])
+    case MutList(Ref[ScopedArray[a, r], r], Ref[Int32, r])
 }
 
 instance Newable[MutList[a]] {
