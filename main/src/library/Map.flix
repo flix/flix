@@ -792,6 +792,12 @@ namespace Map {
         foldLeftWithKey((acc, k, v) -> Chain.snoc(acc, (k,v)), Chain.empty(), m)
 
     ///
+    /// Returns a MultiMap where key `k` is mapped to the singleton set containing `v`.
+    ///
+    pub def toMultiMap(m: Map[k, v]): MultiMap[k, v] with Order[k], Order[v] =
+        MultiMap(Map.map(Set.singleton, m))
+
+    ///
     /// Applies `f` to every element of `xs`.
     ///
     @Time(size(f) * size(m)) @Space(space(f) * Int32.log2(size(m)))
