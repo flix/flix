@@ -1019,12 +1019,10 @@ namespace List {
     /// starting with the initial value `c` and going from left to right.
     ///
     @Time(time(f) * Int32.min(length(l1), length(l2))) @Space(space(f) * Int32.min(length(l1), length(l2)))
-    pub def foldLeft2(f: (c, a, b) -> c & ef, c: c, l1: List[a], l2: List[b]): c & ef =
-        def loop(ll1, ll2, cc) = match (ll1, ll2) {
-            case (x :: xs, y :: ys) => loop(xs, ys, f(cc, x, y))
-            case _                  => cc
-        };
-        loop(l1, l2, c)
+    pub def foldLeft2(f: (c, a, b) -> c & ef, c: c, l1: List[a], l2: List[b]): c & ef = match (l1, l2) {
+        case (x :: xs, y :: ys) => foldLeft2(f, f(c, x, y), xs, ys)
+        case _                  => c
+    }
 
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `l1` and `l2`
