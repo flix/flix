@@ -915,7 +915,7 @@ object ParsedAst {
       * @param purAndEff the optional purity and effect.
       * @param sp2       the position of the last character in the expression.
       */
-    case class Ascribe(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Ascribe(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Cast Expression.
@@ -1413,10 +1413,10 @@ object ParsedAst {
       *
       * @param tpe1      the argument type.
       * @param tpe2      the result type.
-      * @param effAndPur the optional purity.
+      * @param purAndEff the optional purity.
       * @param sp2       the position of the last character in the type.
       */
-    case class UnaryPolymorphicArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, effAndPur: Option[ParsedAst.PurityAndEffect], sp2: SourcePosition) extends ParsedAst.Type
+    case class UnaryPolymorphicArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, purAndEff: Option[ParsedAst.PurityAndEffect], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Effect Polymorphic Arrow Type.
@@ -1424,10 +1424,10 @@ object ParsedAst {
       * @param sp1       the position of the first character in the type.
       * @param tparams   the arguments types.
       * @param tresult   the result type.
-      * @param effAndPur the optional purity.
+      * @param purAndEff the optional purity.
       * @param sp2       the position of the last character in the type.
       */
-    case class PolymorphicArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, effAndPur: Option[ParsedAst.PurityAndEffect], sp2: SourcePosition) extends ParsedAst.Type
+    case class PolymorphicArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, purAndEff: Option[ParsedAst.PurityAndEffect], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Native Type.
@@ -1976,75 +1976,75 @@ object ParsedAst {
     /**
       * Constructor Invocation.
       *
-      * @param fqn   the fully-qualified name of the constructor.
-      * @param sig   the types of the formal parameters.
-      * @param tpe   the return type of the constructor.
-      * @param pur   the purity of the constructor.
-      * @param ident the name given to the imported constructor.
+      * @param fqn       the fully-qualified name of the constructor.
+      * @param sig       the types of the formal parameters.
+      * @param tpe       the return type of the constructor.
+      * @param purAndEff the purity and effect of the constructor.
+      * @param ident     the name given to the imported constructor.
       */
-    case class Constructor(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, pur: Type, ident: Name.Ident) extends JvmOp
+    case class Constructor(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
 
     /**
       * Method Invocation.
       *
-      * @param fqn   the fully-qualified name of the method.
-      * @param sig   the types of the formal parameters.
-      * @param tpe   the return type of the imported method.
-      * @param pur   the purity of the imported method.
-      * @param ident the optional name given to the imported method.
+      * @param fqn       the fully-qualified name of the method.
+      * @param sig       the types of the formal parameters.
+      * @param tpe       the return type of the imported method.
+      * @param purAndEff the purity and effect of the imported method.
+      * @param ident     the optional name given to the imported method.
       */
-    case class Method(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, pur: Type, ident: Option[Name.Ident]) extends JvmOp
+    case class Method(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, purAndEff: PurityAndEffect, ident: Option[Name.Ident]) extends JvmOp
 
     /**
       * Static Method Invocation.
       *
-      * @param fqn   the fully-qualified name of the static method.
-      * @param sig   the declared types of the formal parameters.
-      * @param tpe   the return type of the imported method.
-      * @param pur   the purity of the imported method.
-      * @param ident the optional name given to the imported method.
+      * @param fqn       the fully-qualified name of the static method.
+      * @param sig       the declared types of the formal parameters.
+      * @param tpe       the return type of the imported method.
+      * @param purAndEff the purity and effect of the imported method.
+      * @param ident     the optional name given to the imported method.
       */
-    case class StaticMethod(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, pur: Type, ident: Option[Name.Ident]) extends JvmOp
+    case class StaticMethod(fqn: Seq[String], sig: Seq[ParsedAst.Type], tpe: Type, purAndEff: PurityAndEffect, ident: Option[Name.Ident]) extends JvmOp
 
     /**
       * Get Object Field.
       *
-      * @param fqn   the fully-qualified name of the field.
-      * @param tpe   the return type of the generated function.
-      * @param pur   the purity of the generated function.
-      * @param ident the name given to the imported field.
+      * @param fqn       the fully-qualified name of the field.
+      * @param tpe       the return type of the generated function.
+      * @param purAndEff the purity and effect of the generated function.
+      * @param ident     the name given to the imported field.
       */
-    case class GetField(fqn: Seq[String], tpe: Type, pur: Type, ident: Name.Ident) extends JvmOp
+    case class GetField(fqn: Seq[String], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
 
     /**
       * Put ObjectField.
       *
-      * @param fqn   the fully-qualified name of the field.
-      * @param tpe   the return type of the generated function.
-      * @param pur   the purity of the generated function.
-      * @param ident the name given to the imported field.
+      * @param fqn       the fully-qualified name of the field.
+      * @param tpe       the return type of the generated function.
+      * @param purAndEff the purity and effect of the generated function.
+      * @param ident     the name given to the imported field.
       */
-    case class PutField(fqn: Seq[String], tpe: Type, pur: Type, ident: Name.Ident) extends JvmOp
+    case class PutField(fqn: Seq[String], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
 
     /**
       * Get Static Field.
       *
-      * @param fqn   the fully-qualified name of the field.
-      * @param tpe   the return type of the generated function.
-      * @param pur   the purity of the generated function.
-      * @param ident the name given to the imported field.
+      * @param fqn       the fully-qualified name of the field.
+      * @param tpe       the return type of the generated function.
+      * @param purAndEff the purity and effect of the generated function.
+      * @param ident     the name given to the imported field.
       */
-    case class GetStaticField(fqn: Seq[String], tpe: Type, pur: Type, ident: Name.Ident) extends JvmOp
+    case class GetStaticField(fqn: Seq[String], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
 
     /**
       * Put Static Field.
       *
-      * @param fqn   the fully-qualified name of the field.
-      * @param tpe   the return type of the generated function.
-      * @param pur   the purity of the generated function.
-      * @param ident the name given to the imported field.
+      * @param fqn       the fully-qualified name of the field.
+      * @param tpe       the return type of the generated function.
+      * @param purAndEff the purity and effect of the generated function.
+      * @param ident     the name given to the imported field.
       */
-    case class PutStaticField(fqn: Seq[String], tpe: Type, pur: Type, ident: Name.Ident) extends JvmOp
+    case class PutStaticField(fqn: Seq[String], tpe: Type, purAndEff: PurityAndEffect, ident: Name.Ident) extends JvmOp
 
   }
 
