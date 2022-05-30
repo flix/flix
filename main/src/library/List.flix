@@ -647,12 +647,10 @@ namespace List {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, l: List[a]): b & ef =
-        def loop(ll) = match ll {
-            case Nil        => z
-            case x :: xs    => f(x, _ -> loop(xs))
-        };
-        loop(l)
+    pub def foldRightWithCont(f: (a, Unit -> b & ef) -> b & ef, z: b, l: List[a]): b & ef = match l {
+        case Nil     => z
+        case x :: xs => f(x, _ -> foldRightWithCont(f, z, xs))
+    }
 
     ///
     /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
