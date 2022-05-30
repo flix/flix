@@ -268,21 +268,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     SP ~ Names.Attribute ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Attribute
   }
 
-  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.PurityOrEffect]] = rule {
-    Type ~ optional(optWS ~ PurityOrEffect)
+  def TypeAndEffect: Rule2[ParsedAst.Type, ParsedAst.PurityAndEffect] = rule {
+    Type ~ optWS ~ PurityAndEffect
   }
 
-  def PurityOrEffect: Rule1[ParsedAst.PurityOrEffect] = {
-    def Set: Rule1[ParsedAst.PurityOrEffect] = rule {
-      "\\" ~ optWS ~ Effects.EffectSetOrEmpty ~> ParsedAst.PurityOrEffect.Effect
-    }
-
-    def Bool: Rule1[ParsedAst.PurityOrEffect] = rule {
-      "&" ~ optWS ~ Type ~> ParsedAst.PurityOrEffect.Purity
-    }
-
+  def PurityAndEffect: Rule1[ParsedAst.PurityAndEffect] = {
     rule {
-      Set | Bool
+      optional("&" ~ optWS ~ Type) ~ optional("\\" ~ optWS ~ Effects.EffectSetOrEmpty) ~> ParsedAst.PurityAndEffect
     }
   }
 
@@ -621,30 +613,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       FAppend ~ optional(optWS ~ ":" ~ optWS ~ TypAndPurFragment ~ SP ~> ParsedAst.Expression.Ascribe)
     }
 
-    def TypAndPurFragment: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = {
-      def SomeTyp: Rule1[Option[ParsedAst.Type]] = rule {
-        Type ~> ((tpe: ParsedAst.Type) => Some(tpe))
-      }
-
-      def SomePur: Rule1[Option[ParsedAst.Type]] = rule {
-        Type ~> ((tpe: ParsedAst.Type) => Some(tpe))
-      }
-
-      def TypOnly: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = rule {
-        SomeTyp ~ push(None)
-      }
-
-      def PurOnly: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = rule {
-        push(None) ~ "&" ~ WS ~ SomePur
-      }
-
-      def TypAndPur: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = rule {
-        SomeTyp ~ WS ~ "&" ~ WS ~ SomePur
-      }
-
-      rule {
-        TypAndPur | TypOnly | PurOnly
-      }
+    def TypAndPurFragment: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
+      optional(Type) ~ PurityAndEffect
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {

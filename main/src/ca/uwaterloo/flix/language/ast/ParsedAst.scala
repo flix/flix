@@ -72,12 +72,12 @@ object ParsedAst {
       * @param tparams    the type parameters.
       * @param fparamsOpt the formal parameters.
       * @param tpe        the declared type.
-      * @param pur        the declared purity.
+      * @param purAndEff  the declared purity.
       * @param exp        the expression.
       * @param tconstrs   the type constraints.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, pur: Option[ParsedAst.PurityOrEffect], tconstrs: Seq[ParsedAst.TypeConstraint], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, purAndEff: ParsedAst.PurityAndEffect, tconstrs: Seq[ParsedAst.TypeConstraint], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Signature Declaration.
@@ -90,12 +90,12 @@ object ParsedAst {
       * @param tparams    the type parameters.
       * @param fparamsOpt the formal parameters.
       * @param tpe        the declared type.
-      * @param pur        the declared purity.
+      * @param purAndEff  the declared purity.
       * @param tconstrs   the type constraints.
       * @param exp        the optional expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, pur: Option[ParsedAst.PurityOrEffect], tconstrs: Seq[ParsedAst.TypeConstraint], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration.LawOrSig
+    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, purAndEff: ParsedAst.PurityAndEffect, tconstrs: Seq[ParsedAst.TypeConstraint], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration.LawOrSig
 
     /**
       * Law Declaration.
@@ -126,7 +126,7 @@ object ParsedAst {
       * @param tconstrs   the type constraints.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Op(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, pur: Option[ParsedAst.PurityOrEffect], tconstrs: Seq[ParsedAst.TypeConstraint], sp2: SourcePosition)
+    case class Op(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, purAndEff: ParsedAst.PurityAndEffect, tconstrs: Seq[ParsedAst.TypeConstraint], sp2: SourcePosition)
 
     /**
       * Enum Declaration.
@@ -910,25 +910,26 @@ object ParsedAst {
     /**
       * Ascribe Expression.
       *
-      * @param exp the expression.
-      * @param tpe the optional type.
-      * @param pur the optional purity.
-      * @param sp2 the position of the last character in the expression.
+      * @param exp       the expression.
+      * @param tpe       the optional type.
+      * @param purAndEff the optional purity and effect.
+      * @param sp2       the position of the last character in the expression.
       */
-    case class Ascribe(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], pur: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Ascribe(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Cast Expression.
       *
-      * @param exp the expression.
-      * @param tpe the optional type.
-      * @param pur the optional purity.
-      * @param sp2 the position of the last character in the expression.
+      * @param exp       the expression.
+      * @param tpe       the optional type.
+      * @param purAndEff the optional purity and effect.
+      * @param sp2       the position of the last character in the expression.
       */
-    case class Cast(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], pur: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Cast(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Without Expression.
+      *
       * @param exp the expression.
       * @param eff the effect.
       * @param sp2 the position of the last character in the expression.
@@ -1410,23 +1411,23 @@ object ParsedAst {
     /**
       * Unary Polymorphic Arrow Type.
       *
-      * @param tpe1     the argument type.
-      * @param tpe2     the result type.
-      * @param effOrPur the optional purity.
-      * @param sp2      the position of the last character in the type.
+      * @param tpe1      the argument type.
+      * @param tpe2      the result type.
+      * @param effAndPur the optional purity.
+      * @param sp2       the position of the last character in the type.
       */
-    case class UnaryPolymorphicArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, effOrPur: Option[ParsedAst.PurityOrEffect], sp2: SourcePosition) extends ParsedAst.Type
+    case class UnaryPolymorphicArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, effAndPur: Option[ParsedAst.PurityAndEffect], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Effect Polymorphic Arrow Type.
       *
-      * @param sp1      the position of the first character in the type.
-      * @param tparams  the arguments types.
-      * @param tresult  the result type.
-      * @param effOrPur the optional purity.
-      * @param sp2      the position of the last character in the type.
+      * @param sp1       the position of the first character in the type.
+      * @param tparams   the arguments types.
+      * @param tresult   the result type.
+      * @param effAndPur the optional purity.
+      * @param sp2       the position of the last character in the type.
       */
-    case class PolymorphicArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, effOrPur: Option[ParsedAst.PurityOrEffect], sp2: SourcePosition) extends ParsedAst.Type
+    case class PolymorphicArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, effAndPur: Option[ParsedAst.PurityAndEffect], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Native Type.
@@ -2145,20 +2146,7 @@ object ParsedAst {
   }
 
   /**
-    * Represents an effect represented either as a set or a boolean formula.
+    * Represents an optional purity and optional effect.
     */
-  sealed trait PurityOrEffect
-
-  object PurityOrEffect {
-    /**
-      * Represents an effect implemented as a set.
-      */
-    case class Effect(s: EffectSet) extends PurityOrEffect
-
-    /**
-      * Represents an effect implemented as a boolean formula.
-      */
-    case class Purity(b: Type) extends PurityOrEffect
-  }
-
+  case class PurityAndEffect(pur: Option[Type], eff: Option[EffectSet])
 }
