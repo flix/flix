@@ -79,7 +79,7 @@ namespace Traversable {
     /// We use an Impure continuation so we can internally cast the `ef` of `mapAccumLeft` and not lose
     /// impurity information.
     ///
-    opaque type ContStateLeft[ka, s, a] = (a -> s -> ka & Impure) -> s -> ka & Impure
+    enum ContStateLeft[ka, s, a]((a -> s -> ka & Impure) -> s -> ka & Impure)
 
     ///
     /// Helper function for ContStateLeft's implementations of `map` and `ap`.
@@ -132,7 +132,7 @@ namespace Traversable {
     ///
     /// ContStateRight is exactly the same as ContStateLeft except the evaluation order of `ap` is flipped.
     ///
-    opaque type ContStateRight[ka, s, a] = (a -> s -> ka & Impure) -> s -> ka & Impure
+    enum ContStateRight[ka, s, a] = (a -> s -> ka & Impure) -> s -> ka & Impure
 
     ///
     /// Helper function for ContStateRight's implementations of `map` and `ap`.

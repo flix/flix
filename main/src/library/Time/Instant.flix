@@ -19,7 +19,7 @@ namespace Time {
     ///
     /// A wrapper around a Java instant.
     ///
-    opaque type Instant = ##java.time.Instant
+    enum Instant(##java.time.Instant)
 
     namespace Instant {
 

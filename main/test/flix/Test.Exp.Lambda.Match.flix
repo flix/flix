@@ -1,10 +1,10 @@
 namespace Test/Exp/Lambda/Match {
 
-    opaque type Celsius = Int32
-    opaque type Fahrenheit = Int32
+    enum Celsius(Int32)
+    enum Fahrenheit(Int32)
 
-    opaque type EU = Celsius
-    opaque type US = Fahrenheit
+    enum EU(Celsius)
+    enum US(Fahrenheit)
 
     @test
     def testLambdaMatch01(): Int32 -> Int32 = match x -> x

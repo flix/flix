@@ -17,7 +17,7 @@
 ///
 /// Represents a StringBuilder.
 ///
-opaque type StringBuilder[_: Region] = ##java.lang.StringBuilder
+enum StringBuilder[_: Region](##java.lang.StringBuilder)
 
 instance Newable[StringBuilder] {
     pub def new(r: Region[r]): StringBuilder[r] \ Write(r) = StringBuilder.new(r)

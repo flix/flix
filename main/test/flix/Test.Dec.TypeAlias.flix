@@ -108,17 +108,17 @@ namespace Test/Dec/TypeAlias {
     /**
      * An opaque type for Int.
      */
-    opaque type X = Int32
+    enum X(Int32)
 
     /**
      * An opaque type for Option.
      */
-    opaque type Y[a] = Option[a]
+    enum Y[a](Option[a])
 
     /**
      * An opaque type for Result.
      */
-    opaque type Z[a, b] = Result[a, b]
+    enum Z[a, b](Result[a, b])
 
     /**
      * A type alias for an opaque type.
