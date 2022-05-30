@@ -863,11 +863,7 @@ object Namer {
         case None => (None: Option[NamedAst.Type]).toSuccess
         case Some(t) => mapN(visitType(t, uenv0, tenv0))(x => Some(x))
       }
-
-      val expectedEffVal = expectedEff match {
-        case None => (None: Option[NamedAst.Type]).toSuccess
-        case Some(f) => mapN(visitType(f, uenv0, tenv0))(x => Some(x))
-      }
+      val expectedEffVal = visitPurityAndEffect(expectedEff, uenv0, tenv0)
 
       mapN(expVal, expectedTypVal, expectedEffVal) {
         case (e, t, f) => NamedAst.Expression.Ascribe(e, t, f, loc)
@@ -879,10 +875,7 @@ object Namer {
         case None => (None: Option[NamedAst.Type]).toSuccess
         case Some(t) => mapN(visitType(t, uenv0, tenv0))(x => Some(x))
       }
-      val declaredEffVal = declaredEff match {
-        case None => (None: Option[NamedAst.Type]).toSuccess
-        case Some(f) => mapN(visitType(f, uenv0, tenv0))(x => Some(x))
-      }
+      val declaredEffVal = visitPurityAndEffect(declaredEff, uenv0, tenv0)
 
       mapN(expVal, declaredTypVal, declaredEffVal) {
         case (e, t, f) => NamedAst.Expression.Cast(e, t, f, loc)
@@ -1356,13 +1349,12 @@ object Namer {
     case WeededAst.Type.Native(fqn, loc) =>
       NamedAst.Type.Native(fqn, loc).toSuccess
 
-    case WeededAst.Type.Arrow(tparams0, pur0, eff0, tresult0, loc) =>
+    case WeededAst.Type.Arrow(tparams0, purAndEff0, tresult0, loc) =>
       val tparamsVal = traverse(tparams0)(visitType(_, uenv0, tenv0))
-      val purVal = visitType(pur0, uenv0, tenv0)
-      val effVal = visitType(eff0, uenv0, tenv0)
+      val purAndEffVal = visitPurityAndEffect(purAndEff0, uenv0, tenv0)
       val tresultVal = visitType(tresult0, uenv0, tenv0)
-      mapN(tparamsVal, purVal, effVal, tresultVal) {
-        case (tparams, pur, eff, tresult) => NamedAst.Type.Arrow(tparams, pur, eff, tresult, loc)
+      mapN(tparamsVal, purAndEffVal, tresultVal) {
+        case (tparams, purAndEff, tresult) => NamedAst.Type.Arrow(tparams, purAndEff, tresult, loc)
       }
 
     case WeededAst.Type.Apply(tpe1, tpe2, loc) =>
@@ -1411,9 +1403,15 @@ object Namer {
         case (t1, t2) => NamedAst.Type.Difference(t1, t2, loc)
       }
 
-    case WeededAst.Type.Read(reg, loc) => NamedAst.Type.Read(reg, loc).toSuccess
+    case WeededAst.Type.Read(tpe, loc) =>
+      mapN(visitType(tpe, uenv0, tenv0)) {
+        case t => NamedAst.Type.Read(t, loc)
+      }
 
-    case WeededAst.Type.Write(reg, loc) => NamedAst.Type.Write(reg, loc).toSuccess
+    case WeededAst.Type.Write(tpe, loc) =>
+      mapN(visitType(tpe, uenv0, tenv0)) {
+        case t => NamedAst.Type.Write(t, loc)
+      }
 
     case WeededAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(visitType(tpe, uenv0, tenv0)) {
@@ -1449,8 +1447,8 @@ object Namer {
     */
   private def visitPurityAndEffect(purAndEff: WeededAst.PurityAndEffect, uenv: UseEnv, tenv: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.PurityAndEffect, NameError] = purAndEff match {
     case WeededAst.PurityAndEffect(pur0, eff0) =>
-      val purVal = traverse(pur0)(visitType(_, uenv, tenv))
-      val effVal = traverse(eff0)(effs => traverse(effs)(visitType(_, uenv, tenv)))
+      val purVal = traverse(pur0)(visitType(_, uenv, tenv)).map(_.headOption)
+      val effVal = traverse(eff0)(effs => traverse(effs)(visitType(_, uenv, tenv))).map(_.headOption)
       mapN(purVal, effVal) {
         case (pur, eff) => NamedAst.PurityAndEffect(pur, eff)
       }
@@ -1619,7 +1617,7 @@ object Namer {
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Native(fqm, loc) => Nil
-    case WeededAst.Type.Arrow(tparams, pur, eff, tresult, loc) => tparams.flatMap(freeVars) ::: freeVars(pur) ::: freeVars(tresult)
+    case WeededAst.Type.Arrow(tparams, WeededAst.PurityAndEffect(pur, eff), tresult, loc) => tparams.flatMap(freeVars) ++ pur.flatMap(freeVars) ++ eff.flatMap(_.flatMap(freeVars)) ++ freeVars(tresult)
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.True(loc) => Nil
     case WeededAst.Type.False(loc) => Nil
@@ -1630,8 +1628,8 @@ object Namer {
     case WeededAst.Type.Union(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Intersection(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Difference(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
-    case WeededAst.Type.Read(ident, loc) => ident :: Nil
-    case WeededAst.Type.Write(ident, loc) => ident :: Nil
+    case WeededAst.Type.Read(tpe, loc) => freeVars(tpe)
+    case WeededAst.Type.Write(tpe, loc) => freeVars(tpe)
     case WeededAst.Type.Ascribe(tpe, _, _) => freeVars(tpe)
   }
 
@@ -1655,21 +1653,19 @@ object Namer {
       case WeededAst.Type.Relation(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Native(fqm, loc) => Nil
-      case WeededAst.Type.Arrow(tparams, pur, eff, tresult, loc) => tparams.flatMap(visit) ::: visit(pur) ::: visit(eff) ::: visit(tresult)
+      case WeededAst.Type.Arrow(tparams, WeededAst.PurityAndEffect(pur, eff), tresult, loc) => tparams.flatMap(visit) ++ pur.flatMap(visit) ++ eff.flatMap(_.flatMap(visit)) ++ visit(tresult)
       case WeededAst.Type.Apply(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
       case WeededAst.Type.True(loc) => Nil
       case WeededAst.Type.False(loc) => Nil
       case WeededAst.Type.Not(tpe, loc) => visit(tpe)
       case WeededAst.Type.And(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
       case WeededAst.Type.Or(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
-      case WeededAst.Type.Complement(tpe, loc) => freeVars(tpe)
-      case WeededAst.Type.Union(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
-      case WeededAst.Type.Intersection(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
-      case WeededAst.Type.Difference(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
-      case WeededAst.Type.Read(ident, loc) if tenv.contains(ident.name) => Nil
-      case WeededAst.Type.Read(ident, loc) => Nil
-      case WeededAst.Type.Write(ident, loc) if tenv.contains(ident.name) => Nil
-      case WeededAst.Type.Write(ident, loc) => Nil
+      case WeededAst.Type.Complement(tpe, loc) => visit(tpe)
+      case WeededAst.Type.Union(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
+      case WeededAst.Type.Intersection(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
+      case WeededAst.Type.Difference(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
+      case WeededAst.Type.Read(tpe, loc) => visit(tpe)
+      case WeededAst.Type.Write(tpe, loc) => visit(tpe)
       case WeededAst.Type.Ascribe(tpe, _, _) => visit(tpe)
     }
 

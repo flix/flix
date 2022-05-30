@@ -357,7 +357,7 @@ object NamedAst {
 
     case class Lattice(tpes: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
-    case class Arrow(tparams: List[NamedAst.Type], pur: NamedAst.Type, eff: NamedAst.Type, tresult: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class Arrow(tparams: List[NamedAst.Type], purAndEff: NamedAst.PurityAndEffect, tresult: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Apply(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
@@ -379,9 +379,9 @@ object NamedAst {
 
     case class Difference(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class Read(reg: Name.Ident, loc: SourceLocation) extends NamedAst.Type
+    case class Read(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class Write(reg: Name.Ident, loc: SourceLocation) extends NamedAst.Type
+    case class Write(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Ascribe(tpe: NamedAst.Type, kind: Kind, loc: SourceLocation) extends NamedAst.Type
 
