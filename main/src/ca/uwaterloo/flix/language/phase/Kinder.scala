@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, fold, mapN, traverse}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
@@ -255,16 +255,16 @@ object Kinder {
     * Performs kinding on the given spec under the given kind environment.
     */
   private def visitSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Spec, KindError] = spec0 match {
-    case ResolvedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, tpe0, eff0, loc) =>
+    case ResolvedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, tpe0, purAndEff0, loc) =>
       val annVal = traverse(ann0)(visitAnnotation(_, kenv, taenv, root))
       val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv))
       val fparamsVal = traverse(fparams0)(visitFormalParam(_, kenv, taenv, root))
       val tpeVal = visitType(tpe0, Kind.Star, kenv, taenv, root)
-      val effVal = visitType(eff0, Kind.Bool, kenv, taenv, root)
+      val purAndEffVal = visitPurityAndEffect(purAndEff0, kenv, taenv, root)
       val scVal = visitScheme(sc0, kenv, taenv, root)
 
-      flatMapN(annVal, tparamsVal, fparamsVal, tpeVal, effVal) {
-        case (ann, tparams, fparams, tpe, eff) =>
+      flatMapN(annVal, tparamsVal, fparamsVal, tpeVal, purAndEffVal) {
+        case (ann, tparams, fparams, tpe, (pur, eff)) => // TODO use pur
           mapN(scVal) { // ascribe the scheme separately
             sc => KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, loc)
           }
@@ -922,6 +922,11 @@ object Kinder {
     case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable.")
   }
 
+  // MATT docs
+  private def visitPurityAndEffect(purAndEff0: Ast.PurityAndEffect, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[(Type, Type), KindError] = purAndEff0 match {
+    case _ => ???
+  }
+
   /**
     * Performs kinding on the given type under the given kind environment.
     */
@@ -1114,6 +1119,27 @@ object Kinder {
     case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded var.")
   }
 
+  // MATT docs
+  private def inferPurityAndEffect(purAndEff0: Ast.PurityAndEffect, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = purAndEff0 match {
+    // Case 1: Both missing. No inference to do.
+    case Ast.PurityAndEffect(None, None) => KindEnv.empty.toSuccess
+    // Case 2: Only purity: Infer as both Bool and Eff
+    case Ast.PurityAndEffect(Some(pur), None) => inferType(pur, Kind.Beef, kenv, taenv, root)
+    // Case 3: Only effect: Infer as both Bool and Eff
+    case Ast.PurityAndEffect(None, Some(effs)) =>
+      val kenvsVal = traverse(effs)(inferType(_, Kind.Beef, kenv, taenv, root))
+      flatMapN(kenvsVal) {
+        case kenvs => KindEnv.mergeAll(kenvs)
+      }
+    // Case 4: Purity and Effect. Infer Purity as Bool and Effect as Effect.
+    case Ast.PurityAndEffect(Some(pur), Some(effs)) =>
+      val purKenvVal = inferType(pur, Kind.Bool, kenv, taenv, root)
+      val effKenvsVal = traverse(effs)(inferType(_, Kind.Effect, kenv, taenv, root))
+      flatMapN(purKenvVal, effKenvsVal) {
+        case (purKenv, effKenvs) => KindEnv.mergeAll(purKenv :: effKenvs)
+      }
+  }
+
   /**
     * Gets a kind environment from the type params, defaulting to Star kind if they are unkinded.
     */
@@ -1225,7 +1251,12 @@ object Kinder {
     /**
       * Merges all the given kind environments.
       */
-    def merge(kenvs: KindEnv*): Validation[KindEnv, KindError] = {
+    def merge(kenvs: KindEnv*): Validation[KindEnv, KindError] = mergeAll(kenvs.toList)
+
+    /**
+      * Merges all the given kind environments.
+      */
+    def mergeAll(kenvs: List[KindEnv]): Validation[KindEnv, KindError] = {
       Validation.fold(kenvs, KindEnv.empty) {
         case (acc, kenv) => acc ++ kenv
       }
