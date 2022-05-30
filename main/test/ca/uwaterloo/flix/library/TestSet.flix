@@ -1429,7 +1429,7 @@ def unfoldWithIter06(): Bool & Impure =
     def minimumBy05(): Bool & Impure =
         let s = List.range(0, 2000) |> List.toSet;
         let a = new MutList(static);
-        Set.minimumBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, s);
+        Set.minimumBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, s);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
