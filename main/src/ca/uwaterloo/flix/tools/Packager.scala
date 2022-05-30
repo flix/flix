@@ -172,7 +172,7 @@ object Packager {
     flix.check() match {
       case Validation.Success(_) => ().toOk
       case Validation.Failure(errors) =>
-        errors.foreach(e => println(e.message(flix.getFormatter)))
+        flix.mkMessages(errors).foreach(println _)
         Result.Err(1)
     }
   }
@@ -199,7 +199,7 @@ object Packager {
     flix.compile() match {
       case Validation.Success(r) => Result.Ok(r)
       case Validation.Failure(errors) =>
-        errors.foreach(e => println(e.message(flix.getFormatter)))
+        flix.mkMessages(errors).foreach(println _)
         1.toErr
     }
   }

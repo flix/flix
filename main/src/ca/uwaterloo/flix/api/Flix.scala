@@ -152,6 +152,7 @@ class Flix {
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
     "System.flix" -> LocalResource.get("/src/library/System.flix"),
+    "MultiMap.flix" -> LocalResource.get("/src/library/MultiMap.flix"),
 
     "MutDeque.flix" -> LocalResource.get("/src/library/MutDeque.flix"),
     "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),
