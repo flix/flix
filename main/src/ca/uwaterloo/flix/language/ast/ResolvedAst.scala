@@ -152,9 +152,9 @@ object ResolvedAst {
 
     case class Assign(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Ascribe(exp: ResolvedAst.Expression, expectedType: Option[Type], expectedEff: ResolvedAst.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Ascribe(exp: ResolvedAst.Expression, expectedType: Option[Type], expectedEff: Ast.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Cast(exp: ResolvedAst.Expression, declaredType: Option[Type], declaredEff: ResolvedAst.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Cast(exp: ResolvedAst.Expression, declaredType: Option[Type], declaredEff: Ast.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Without(exp: ResolvedAst.Expression, eff: Symbol.EffectSym, loc: SourceLocation) extends ResolvedAst.Expression
 
