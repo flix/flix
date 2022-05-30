@@ -17,7 +17,7 @@
 ///
 /// The Mutable Map type.
 ///
-enum MutMap[k: Type, v: Type, r: Region](ScopedRef[Map[k, v], r])
+opaque type MutMap[k: Type, v: Type, r: Region] = Ref[Map[k, v], r]
 
 instance Scoped[MutMap[k, v]] {
     pub def regionOf(_: MutMap[k, v, r]): Region[r] = () as Region[r]
