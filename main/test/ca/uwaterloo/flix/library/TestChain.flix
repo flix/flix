@@ -1531,6 +1531,34 @@ namespace TestChain {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // toNel                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNel01(): Bool = Chain.toNel(Chain.empty(): Chain[Int32]) == None
+
+    @test
+    def toNel02(): Bool = Chain.toNel(Chain.singleton(1)) == Some(Nel(1, Nil))
+
+    @test
+    def toNel03(): Bool =
+        Chain.toNel(List.toChain(1 :: 2 :: Nil)) == Some(Nel(1, 2 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toNec                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNec01(): Bool = Chain.toNec(Chain.empty(): Chain[Int32]) == None
+
+    @test
+    def toNec02(): Bool = Chain.toNec(Chain.singleton(1)) == Some(Nec.singleton(1))
+
+    @test
+    def toNec03(): Bool =
+        Chain.toNec(List.toChain(1 :: 2 :: Nil)) == Some(Nec.cons(1, Nec.singleton(2)))
+
+    /////////////////////////////////////////////////////////////////////////////
     // sort                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
