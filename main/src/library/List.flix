@@ -1291,24 +1291,12 @@ namespace List {
         def loop(ll1, ll2, k) = match ll1 {
             case Nil     => k(Nil)
             case x :: xs =>
-                if (memberOfWith(f, x, ll2))
+                if (exists(f(x), ll2))
                     loop(xs, ll2, k)
                 else
                     loop(xs, x :: ll2, ks -> k(x :: ks))
         };
         loop(l, Nil, identity)
-
-    ///
-    /// Helper function for `distinctWith`.
-    ///
-    /// This is a generalization of `memberOf` that uses the function `f` for comparison.
-    ///
-    def memberOfWith(f: (a, a) -> Bool, a: a, l: List[a]): Bool =
-        def loop(ll) = match ll {
-            case Nil     => false
-            case x :: xs => if (f(a, x)) true else loop(xs)
-        };
-        loop(l)
 
     ///
     /// Returns the sum of all elements in the list `l`.
