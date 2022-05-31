@@ -1328,14 +1328,29 @@ object Kinder {
     * Unifies the kinds, returning the most specific kind if possible.
     */
   private def unify(k1: Kind, k2: Kind): Option[Kind] = (k1, k2) match {
+    // Wild ~ k = k
     case (Kind.Wild, k) => Some(k)
     case (k, Kind.Wild) => Some(k)
+
+    // Beef ~ Bool = Bool
+    case (Kind.Beef, Kind.Bool) => Some(Kind.Bool)
+    case (Kind.Bool, Kind.Beef) => Some(Kind.Bool)
+
+    // Beef ~ Effect = Effect
+    case (Kind.Beef, Kind.Effect) => Some(Kind.Effect)
+    case (Kind.Effect, Kind.Beef) => Some(Kind.Effect)
+
+    // (a1 -> b1) ~ (a2 -> b2) = (a1 ~ a2) ~ (b1 -> b2)
     case (Kind.Arrow(k11, k12), Kind.Arrow(k21, k22)) =>
       for {
         kind1 <- unify(k11, k21)
         kind2 <- unify(k12, k22)
       } yield Kind.Arrow(kind1, kind2)
+
+    // k ~ k = k
     case (kind1, kind2) if kind1 == kind2 => Some(kind1)
+
+    // else fail
     case _ => None
   }
 
