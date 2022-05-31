@@ -19,10 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
-import ca.uwaterloo.flix.language.ast.Symbol.UnkindedTypeVarSym
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
-import ca.uwaterloo.flix.util.Validation.{SuccessNil, ToFailure, ToSuccess, flatMapN, fold, foldRight, mapN, traverse}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
@@ -1041,11 +1040,11 @@ object Kinder {
           val purs = byKind.getOrElse(Kind.Bool, Nil)
           val effs = byKind.getOrElse(Kind.Effect, Nil)
 
-          val pur = purs.reduceOption ({
+          val pur = purs.reduceOption({
             case (t1, t2) => Type.mkAnd(t1, t2, t1.loc)
           }: (Type, Type) => Type).getOrElse(Type.Pure)
 
-          val eff = effs.reduceOption ({
+          val eff = effs.reduceOption({
             case (t1, t2) => Type.mkUnion(t1, t2, t1.loc)
           }: (Type, Type) => Type).getOrElse(Type.Pure) // TODO should be effecty pure
 
