@@ -1165,6 +1165,8 @@ object Kinder {
         }
       }
 
+    case Type.UnkindedArrow(purAndEff, _, _) => inferPurityAndEffect(purAndEff, kenv0, taenv, root)
+
     case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded var.")
   }
 
