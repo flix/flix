@@ -1917,12 +1917,12 @@ object Resolver {
   /**
     * Partially resolves the given purity and effect.
     */
-  private def semiResolvePurityAndEffect(purAndEff0: NamedAst.PurityAndEffect, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.PurityAndEffect, ResolutionError] = purAndEff0 match {
+  private def semiResolvePurityAndEffect(purAndEff0: NamedAst.PurityAndEffect, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.PurityAndEffect, ResolutionError] = purAndEff0 match {
     case NamedAst.PurityAndEffect(pur0, eff0) =>
       val purVal = traverse(pur0)(semiResolveType(_, ns0, root)).map(_.headOption)
       val effVal = traverse(eff0)(effs => traverse(effs)(semiResolveType(_, ns0, root))).map(_.headOption)
       mapN(purVal, effVal) {
-        case (pur, eff) => ResolvedAst.PurityAndEffect(pur, eff)
+        case (pur, eff) => Ast.PurityAndEffect(pur, eff)
       }
   }
 

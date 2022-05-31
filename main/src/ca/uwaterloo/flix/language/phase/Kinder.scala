@@ -1042,11 +1042,11 @@ object Kinder {
           val effs = byKind.getOrElse(Kind.Effect, Nil)
 
           val pur = purs.reduceOption {
-            case (t1, t2) => Type.mkAnd(t1, t2, t1.loc)
+            case (t1: Type, t2: Type) => Type.mkAnd(t1, t2, t1.loc)
           }.getOrElse(Type.Pure)
 
           val eff = effs.reduceOption {
-            case (t1, t2) => Type.mkUnion(t1, t2, t1.loc)
+            case (t1: Type, t2: Type) => Type.mkUnion(t1, t2, t1.loc)
           }.getOrElse(Type.Pure) // TODO should be effecty pure
 
           (pur, eff)

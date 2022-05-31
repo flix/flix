@@ -2274,18 +2274,18 @@ object Weeder {
     case ParsedAst.Type.SchemaRow(sp1, predicates, restOpt, sp2) =>
       buildSchemaRow(predicates, restOpt, mkSL(sp1, sp2))
 
-    case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, tpe2, purAndEff, sp2) =>
+    case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, tpe2, purAndEff0, sp2) =>
       val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
       val t1 = visitType(tpe1)
       val t2 = visitType(tpe2)
-      val purAndEff = visitPurityAndEffect(purAndEff)
+      val purAndEff = visitPurityAndEffect(purAndEff0)
       mkArrow(t1, purAndEff, t2, loc)
 
-    case ParsedAst.Type.PolymorphicArrow(sp1, tparams, tresult, purAndEff, sp2) =>
+    case ParsedAst.Type.PolymorphicArrow(sp1, tparams, tresult, purAndEff0, sp2) =>
       val loc = mkSL(sp1, sp2)
       val ts = tparams.map(visitType)
       val tr = visitType(tresult)
-      val purAndEff = visitPurityAndEffect(purAndEff)
+      val purAndEff = visitPurityAndEffect(purAndEff0)
       mkCurriedArrow(ts, purAndEff, tr, loc)
 
     case ParsedAst.Type.Native(sp1, fqn, sp2) =>

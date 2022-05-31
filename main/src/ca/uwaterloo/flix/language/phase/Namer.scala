@@ -1617,7 +1617,7 @@ object Namer {
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Native(fqm, loc) => Nil
-    case WeededAst.Type.Arrow(tparams, WeededAst.PurityAndEffect(pur, eff), tresult, loc) => tparams.flatMap(freeVars) ++ pur.flatMap(freeVars) ++ eff.flatMap(_.flatMap(freeVars)) ++ freeVars(tresult)
+    case WeededAst.Type.Arrow(tparams, WeededAst.PurityAndEffect(pur, eff), tresult, loc) => tparams.flatMap(freeVars) ::: pur.toList.flatMap(freeVars) ::: eff.toList.flatMap(_.flatMap(freeVars)) ::: freeVars(tresult)
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.True(loc) => Nil
     case WeededAst.Type.False(loc) => Nil
@@ -1653,7 +1653,7 @@ object Namer {
       case WeededAst.Type.Relation(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(visit)
       case WeededAst.Type.Native(fqm, loc) => Nil
-      case WeededAst.Type.Arrow(tparams, WeededAst.PurityAndEffect(pur, eff), tresult, loc) => tparams.flatMap(visit) ++ pur.flatMap(visit) ++ eff.flatMap(_.flatMap(visit)) ++ visit(tresult)
+      case WeededAst.Type.Arrow(tparams, WeededAst.PurityAndEffect(pur, eff), tresult, loc) => tparams.flatMap(visit) ::: pur.toList.flatMap(visit) ::: eff.toList.flatMap(_.flatMap(visit)) ::: visit(tresult)
       case WeededAst.Type.Apply(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
       case WeededAst.Type.True(loc) => Nil
       case WeededAst.Type.False(loc) => Nil
