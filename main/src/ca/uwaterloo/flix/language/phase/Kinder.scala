@@ -1069,14 +1069,14 @@ object Kinder {
     * as in the case of a class type parameter used in a sig or law.
     */
   private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
-    case ResolvedAst.Spec(_, _, _, _, fparams, sc, _, eff, _) =>
+    case ResolvedAst.Spec(_, _, _, _, fparams, sc, _, purAndEff, _) =>
       val fparamKenvVal = Validation.fold(fparams, KindEnv.empty) {
         case (acc, fparam) => flatMapN(inferFormalParam(fparam, kenv, taenv, root)) {
           fparamKenv => acc ++ fparamKenv
         }
       }
       val schemeKenvVal = inferScheme(sc, kenv, taenv, root)
-      val effKenvVal = inferType(eff, Kind.Bool, kenv, taenv, root)
+      val effKenvVal = inferPurityAndEffect(purAndEff, kenv, taenv, root)
 
       flatMapN(fparamKenvVal, schemeKenvVal, effKenvVal) {
         case (fparamKenv, schemeKenv, effKenv) => KindEnv.merge(fparamKenv, schemeKenv, effKenv, kenv)
