@@ -1145,12 +1145,10 @@ namespace List {
     /// Applies `f` to every element of `l`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def foreach(f: a -> Unit & ef, l: List[a]): Unit & ef =
-        def loop(ll) = match ll {
-            case Nil     => ()
-            case x :: xs => f(x); loop(xs)
-        };
-        loop(l)
+    pub def foreach(f: a -> Unit & ef, l: List[a]): Unit & ef = match l {
+        case Nil     => ()
+        case x :: xs => f(x); foreach(f, xs)
+    }
 
     ///
     /// Returns the list `l` as an array.
