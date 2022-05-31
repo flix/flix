@@ -834,6 +834,8 @@ namespace Map {
         };
         loop(empty())
 
+    pub def explode(m: Map[k, t[v]]): Set[(k, v)] with Foldable[t] = ???
+
     ///
     /// Extracts a range of key-value pairs from the map `m`.
     ///
