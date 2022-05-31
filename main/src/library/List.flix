@@ -1119,7 +1119,8 @@ namespace List {
     /// Returns the list `l` as a set.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def toSet(l: List[a]): Set[a] with Order[a] = foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), l)
+    pub def toSet(l: List[a]): Set[a] with Order[a] =
+        foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), l)
 
     ///
     /// Returns the association list `l` as a map.
@@ -1128,7 +1129,8 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     @Time(length(l)) @Space(length(l))
-    pub def toMap(l: List[(a, b)]): Map[a, b] with Order[a] = foldRight((x, acc) -> Map.insert(fst(x), snd(x), acc), Map.empty(), l)
+    pub def toMap(l: List[(a, b)]): Map[a, b] with Order[a] =
+        foldRight((x, acc) -> Map.insert(fst(x), snd(x), acc), Map.empty(), l)
 
     ///
     /// Returns a map with elements of `s` as keys and `f` applied as values.
@@ -1137,7 +1139,7 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMapWith(f: a -> b, l: List[a]): Map[a, b] with Order[a] =
-            List.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), l)
+        List.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), l)
 
     ///
     /// Applies `f` to every element of `l`.
