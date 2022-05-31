@@ -910,6 +910,13 @@ object Type {
   }
 
   /**
+    * Returns the type `tpe1 + tpe2`
+    *
+    * Must not be used before kinding.
+    */
+  def mkUnion(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Union, loc), List(tpe1, tpe2), loc)
+
+  /**
     * Returns a Region type for the given region argument `r` with the given source location `loc`.
     */
   def mkRegion(r: Type, loc: SourceLocation): Type =
