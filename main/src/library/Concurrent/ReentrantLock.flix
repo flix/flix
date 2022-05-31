@@ -19,7 +19,7 @@ namespace Concurrent/ReentrantLock {
     ///
     /// A wrapper around a Java ReentrantLock.
     ///
-    pub opaque type ReentrantLock = ##java.util.concurrent.locks.ReentrantLock
+    pub enum ReentrantLock(##java.util.concurrent.locks.ReentrantLock)
 
     ///
     /// Creates an instance of ReentrantLock with the given fairness policy.
