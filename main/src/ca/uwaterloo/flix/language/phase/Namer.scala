@@ -1669,6 +1669,7 @@ object Namer {
       case WeededAst.Type.Difference(tpe1, tpe2, loc) => visit(tpe1) ++ visit(tpe2)
       case WeededAst.Type.Read(tpe, loc) => visit(tpe)
       case WeededAst.Type.Write(tpe, loc) => visit(tpe)
+      case WeededAst.Type.Set(_, _) => ??? // TODO handle
       case WeededAst.Type.Ascribe(tpe, _, _) => visit(tpe)
     }
 
