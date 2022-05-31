@@ -511,6 +511,14 @@ object Type {
   }
 
   /**
+    * An unkinded arrow, holding a yet-unsplit purity and effect.
+    */
+  @EliminatedBy(Kinder.getClass)
+  case class UnkindedArrow(purAndEff: Ast.PurityAndEffect, arity: Int, loc: SourceLocation) extends Type with BaseType {
+    def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type")
+  }
+
+  /**
     * A constructor for a type alias. (Not a valid type by itself).
     */
   case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)

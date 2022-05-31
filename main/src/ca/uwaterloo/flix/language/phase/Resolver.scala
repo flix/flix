@@ -2577,7 +2577,7 @@ object Resolver {
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
     */
   def mkUncurriedArrowWithEffect(as: List[Type], e: Ast.PurityAndEffect, b: Type, loc: SourceLocation): Type = {
-    val arrow = Type.Apply(Type.Cst(TypeConstructor.UnkindedArrow(e, as.length + 1), loc), e, loc)
+    val arrow = Type.UnkindedArrow(e, as.length + 1, loc)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Type.Apply(acc, x, loc)
     }

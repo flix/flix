@@ -105,14 +105,6 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represents the type of unkinded functions.
-    */
-  @EliminatedBy(Kinder.getClass)
-  case class UnkindedArrow(purAndEff: Ast.PurityAndEffect, arity: Int) extends TypeConstructor {
-    def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type constructor")
-  }
-
-  /**
     * A type constructor that represents the type of empty record rows.
     */
   case object RecordRowEmpty extends TypeConstructor {
