@@ -507,7 +507,7 @@ object Kinder {
         case (exp1, exp2) => KindedAst.Expression.Assign(exp1, exp2, Type.freshVar(Kind.Bool, loc.asSynthetic), loc)
       }
 
-    case ResolvedAst.Expression.Ascribe(exp0, expectedType0, expectedEff0, loc) =>
+    case ResolvedAst.Expression.Ascribe(exp0, expectedType0, Ast.PurityAndEffect(expectedPur, expectedEff), loc) =>
       val expVal = visitExp(exp0, kenv, taenv, root)
       val expectedTypeVal = traverse(expectedType0)(visitType(_, Kind.Star, kenv, taenv, root))
       val expectedEffVal = traverse(expectedEff0)(visitType(_, Kind.Bool, kenv, taenv, root))
