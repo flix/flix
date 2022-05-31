@@ -10,7 +10,7 @@ enum E2 {
     case C2
 }
 
-opaque type Ot = Bool
+enum Ot(Bool)
 
 type alias Ta = Bool
 
