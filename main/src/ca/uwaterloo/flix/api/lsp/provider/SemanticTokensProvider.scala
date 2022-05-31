@@ -565,7 +565,10 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
       Iterator(t) ++ args.flatMap(visitType).iterator
 
-    case Type.UnkindedVar(_, _) =>
+    case _: Type.UnkindedVar =>
+      throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+
+    case _: Type.UnkindedArrow =>
       throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
   }
 

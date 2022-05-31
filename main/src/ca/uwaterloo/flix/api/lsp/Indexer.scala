@@ -458,6 +458,7 @@ object Indexer {
     case Type.Alias(_, _, tpe, _) => visitType(tpe) // TODO index TypeAlias
     case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: $tpe0.")
     case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: $tpe0.")
+    case _: Type.UnkindedArrow => throw InternalCompilerException(s"Unexpected type: $tpe0.")
   }
 
   /**

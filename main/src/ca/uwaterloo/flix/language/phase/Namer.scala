@@ -1417,6 +1417,8 @@ object Namer {
       mapN(visitType(tpe, uenv0, tenv0)) {
         t => NamedAst.Type.Ascribe(t, kind, loc)
       }
+
+    case _: WeededAst.Type.Set => ??? // TODO handle
   }
 
   /**
@@ -1630,6 +1632,7 @@ object Namer {
     case WeededAst.Type.Difference(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Read(tpe, loc) => freeVars(tpe)
     case WeededAst.Type.Write(tpe, loc) => freeVars(tpe)
+    case WeededAst.Type.Set(_, _) => ??? // TODO handle
     case WeededAst.Type.Ascribe(tpe, _, _) => freeVars(tpe)
   }
 

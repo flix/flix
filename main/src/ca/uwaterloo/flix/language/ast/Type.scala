@@ -52,6 +52,7 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Ascribe(tpe, _, _) => tpe.typeVars
     case Type.Alias(_, _, tpe, _) => tpe.typeVars
+    case Type.UnkindedArrow(_, _, _) => SortedSet.empty
   }
 
   /**
@@ -81,6 +82,7 @@ sealed trait Type {
     case Type.Apply(t1, _, _) => t1.typeConstructor
     case Type.Ascribe(tpe, _, _) => tpe.typeConstructor
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
+    case Type.UnkindedArrow(_, _, _) => None
   }
 
   /**
@@ -109,6 +111,7 @@ sealed trait Type {
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Ascribe(tpe, _, _) => tpe.typeConstructors
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
+    case Type.UnkindedArrow(_, _, _) => Nil
   }
 
   /**
@@ -140,6 +143,7 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(tpe1.map(f), tpe2.map(f), loc)
     case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(tpe.map(f), kind, loc)
     case Type.Alias(sym, args, tpe, loc) => Type.Alias(sym, args.map(_.map(f)), tpe.map(f), loc)
+    case Type.UnkindedArrow(_, _, _) => this
   }
 
   /**
@@ -182,6 +186,7 @@ sealed trait Type {
     case Type.Ascribe(tpe, _, _) => tpe.size
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
     case Type.Alias(_, _, tpe, _) => tpe.size
+    case Type.UnkindedArrow(_, _, _) => 1
   }
 
   /**
@@ -943,18 +948,6 @@ object Type {
   def mkEquiv(x: Type, y: Type, loc: SourceLocation): Type = mkOr(mkAnd(x, y, loc), mkAnd(Type.mkNot(x, loc), Type.mkNot(y, loc), loc), loc)
 
   /**
-    * Returns the size of the given type `tpe`.
-    */
-  def size(tpe: Type): Int = tpe match {
-    case KindedVar(_, _) => 1
-    case UnkindedVar(_, _) => 1
-    case Ascribe(tpe, _, _) => 1 + size(tpe)
-    case Cst(_, _) => 1
-    case Apply(tpe1, tpe2, _) => size(tpe1) + size(tpe2)
-    case Alias(sym, args, tpe, loc) => size(tpe)
-  }
-
-  /**
     * Replace type aliases with the types they represent.
     * In general, this function should be used in back-end phases
     * to clear all aliases for easier processing.
@@ -965,6 +958,7 @@ object Type {
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
     case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(tpe, kind, loc)
+    case _: Type.UnkindedArrow => t
   }
 
   /**

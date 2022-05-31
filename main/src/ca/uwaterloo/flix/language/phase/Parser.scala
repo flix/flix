@@ -737,8 +737,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
       }
 
-      def Ascription: Rule2[ParsedAst.Type, ParsedAst.Type] = rule {
-        ":" ~ optWS ~ Type ~ optWS ~ "&" ~ optWS ~ Type
+      def Ascription: Rule2[ParsedAst.Type, ParsedAst.PurityAndEffect] = rule {
+        ":" ~ optWS ~ Type ~ optWS ~ PurityAndEffect
       }
 
       def Import: Rule1[ParsedAst.JvmOp] = rule {
