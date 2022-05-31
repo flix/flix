@@ -535,9 +535,7 @@ object TypeError {
       s"""To define equality on '${formatWellKindedType(tpe)}', either:
          |
          |  (a) define an instance of Eq for '${formatWellKindedType(tpe)}', or
-         |  (b) derive an instance of Eq for '${formatWellKindedType(tpe)}'.
-         |
-         |To automatically derive an instance, you can write:
+         |  (b) use 'with' to derive an instance of Eq for '${formatWellKindedType(tpe)}', for example:.
          |
          |  enum Color with Eq {
          |    case Red, Green, Blue
@@ -570,9 +568,7 @@ object TypeError {
       s"""To define an order on '${formatWellKindedType(tpe)}', either:
          |
          |  (a) define an instance of Order for '${formatWellKindedType(tpe)}', or
-         |  (b) derive an instance of Order for '${formatWellKindedType(tpe)}'.
-         |
-         |To automatically derive an instance, you can write:
+         |  (b) use 'with' to derive an instance of Order for '${formatWellKindedType(tpe)}', for example:.
          |
          |  enum Color with Eq, Order {
          |    case Red, Green, Blue
@@ -606,9 +602,7 @@ object TypeError {
       s"""To define a string representation of '${formatWellKindedType(tpe)}', either:
          |
          |  (a) define an instance of ToString for '${formatWellKindedType(tpe)}', or
-         |  (b) derive an instance of ToString for '${formatWellKindedType(tpe)}'.
-         |
-         |To automatically derive an instance, you can write:
+         |  (b) use 'with' to derive an instance of ToString for '${formatWellKindedType(tpe)}', for example:.
          |
          |  enum Color with ToString {
          |    case Red, Green, Blue
