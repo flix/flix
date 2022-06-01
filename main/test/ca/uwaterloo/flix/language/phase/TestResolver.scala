@@ -427,25 +427,6 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedEffect](result)
   }
 
-  // TODO activate after resolving effects in specs
-//  test("UndefinedEffect.02") {
-//    val input =
-//      """
-//        |def f(): Unit \ E = ???
-//        |""".stripMargin
-//    val result = compile(input, Options.TestWithLibNix)
-//    expectError[ResolutionError.UndefinedEffect](result)
-//  }
-//
-//  test("UndefinedEffect.03") {
-//    val input =
-//      """
-//        |def f(x: a -> b \ E): Unit = ???
-//        |""".stripMargin
-//    val result = compile(input, Options.TestWithLibNix)
-//    expectError[ResolutionError.UndefinedOp](result)
-//  }
-
   test("UndefinedOp.01") {
     val input =
       """
@@ -836,6 +817,25 @@ class TestResolver extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
   }
+
+  test("UndefinedType.05") {
+    val input =
+      """
+        |def f(): Unit \ E = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
+  test("UndefinedType.06") {
+    val input =
+      """
+        |def f(x: a -> b \ E): Unit = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
 
   test("CyclicClassHierarchy.01") {
     val input = "class A[a] with A[a]"

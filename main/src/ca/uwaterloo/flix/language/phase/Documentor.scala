@@ -299,6 +299,7 @@ object Documentor {
     */
   def visitKind(kind: Kind): String = kind match {
     case Kind.Wild => ""
+    case Kind.Beef => "Bool or Effect"
     case Kind.Star => "Type"
     case Kind.Bool => "Bool"
     case Kind.Effect => "Effect"

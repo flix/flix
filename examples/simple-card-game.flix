@@ -16,7 +16,7 @@ enum Rank with Eq, Order {
 }
 
 // A Card type deriving an Eq instance
-opaque type Card with Eq = (Rank, Suit)
+enum Card(Rank, Suit) with Eq
 
 // An instance of ToString for Ranks
 instance ToString[Rank] {
