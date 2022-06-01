@@ -922,10 +922,16 @@ object Kinder {
             }
           }
       }
+
     case Type.UnkindedArrow(purAndEff, arity, loc) =>
-      val purAndEffVal = visitPurityAndEffect(purAndEff, kenv, senv, taenv, root)
-      mapN(purAndEffVal) {
-        case (pur, eff) => Type.Apply(Type.Cst(TypeConstructor.Arrow(arity), loc), pur, loc) // TODO use eff
+      val kind = Kind.mkArrow(arity)
+      unify(kind, expectedKind) match {
+        case Some(_) =>
+          val purAndEffVal = visitPurityAndEffect(purAndEff, kenv, senv, taenv, root)
+          mapN(purAndEffVal) {
+            case (pur, eff) => Type.Apply(Type.Cst(TypeConstructor.Arrow(arity), loc), pur, loc) // TODO use eff
+          }
+        case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
       }
 
     case Type.ReadWrite(tpe, _) =>
