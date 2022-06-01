@@ -1793,7 +1793,7 @@ object Resolver {
         }
       }
 
-    case NamedAst.Type.Arrow(tparams0, purAndEff0, tresult0, loc) => // TODO handle eff0
+    case NamedAst.Type.Arrow(tparams0, purAndEff0, tresult0, loc) =>
       val tparamsVal = traverse(tparams0)(semiResolveType(_, ns0, root))
       val tresultVal = semiResolveType(tresult0, ns0, root)
       val purAndEffVal = semiResolvePurityAndEffect(purAndEff0, ns0, root)
