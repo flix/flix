@@ -459,6 +459,7 @@ object Indexer {
     case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: $tpe0.")
     case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: $tpe0.")
     case _: Type.UnkindedArrow => throw InternalCompilerException(s"Unexpected type: $tpe0.")
+    case _: Type.ReadWrite => throw InternalCompilerException(s"Unexpected type: $tpe0.")
   }
 
   /**

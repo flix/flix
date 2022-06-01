@@ -926,6 +926,12 @@ object Kinder {
       mapN(purAndEffVal) {
         case (pur, eff) => Type.Apply(Type.Cst(TypeConstructor.Arrow(arity), loc), pur, loc) // TODO use eff
       }
+
+    case Type.ReadWrite(tpe, _) =>
+      // erase the read/write wrapper
+      visitType(tpe, expectedKind, kenv, senv, taenv, root)
+
+
     case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded type variable.")
   }
 
@@ -1166,6 +1172,8 @@ object Kinder {
       }
 
     case Type.UnkindedArrow(purAndEff, _, _) => inferPurityAndEffect(purAndEff, kenv0, taenv, root)
+
+    case Type.ReadWrite(t, loc) => inferType(t, Kind.Bool, kenv0, taenv, root) // MATT right?
 
     case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded var.")
   }

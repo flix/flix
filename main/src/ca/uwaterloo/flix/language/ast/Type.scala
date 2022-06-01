@@ -53,6 +53,7 @@ sealed trait Type {
     case Type.Ascribe(tpe, _, _) => tpe.typeVars
     case Type.Alias(_, _, tpe, _) => tpe.typeVars
     case Type.UnkindedArrow(_, _, _) => SortedSet.empty
+    case Type.ReadWrite(tpe, _) => tpe.typeVars
   }
 
   /**
@@ -83,6 +84,7 @@ sealed trait Type {
     case Type.Ascribe(tpe, _, _) => tpe.typeConstructor
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
     case Type.UnkindedArrow(_, _, _) => None
+    case Type.ReadWrite(_, _) => None
   }
 
   /**
@@ -112,6 +114,7 @@ sealed trait Type {
     case Type.Ascribe(tpe, _, _) => tpe.typeConstructors
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
     case Type.UnkindedArrow(_, _, _) => Nil
+    case Type.ReadWrite(_, _) => Nil
   }
 
   /**
@@ -144,6 +147,7 @@ sealed trait Type {
     case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(tpe.map(f), kind, loc)
     case Type.Alias(sym, args, tpe, loc) => Type.Alias(sym, args.map(_.map(f)), tpe.map(f), loc)
     case Type.UnkindedArrow(_, _, _) => this
+    case Type.ReadWrite(tpe, loc) => Type.ReadWrite(tpe.map(f), loc)
   }
 
   /**
@@ -187,6 +191,7 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
     case Type.Alias(_, _, tpe, _) => tpe.size
     case Type.UnkindedArrow(_, _, _) => 1
+    case Type.ReadWrite(tpe, _) => tpe.size + 1
   }
 
   /**
@@ -520,6 +525,14 @@ object Type {
     */
   @EliminatedBy(Kinder.getClass)
   case class UnkindedArrow(purAndEff: Ast.PurityAndEffect, arity: Int, loc: SourceLocation) extends Type with BaseType {
+    def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type")
+  }
+
+  /**
+    * A type representing a read or write to a region.
+    */
+  @EliminatedBy(Kinder.getClass)
+  case class ReadWrite(tpe: Type, loc: SourceLocation) extends Type with BaseType {
     def kind: Kind = throw InternalCompilerException("Attempt to access kind of unkinded type")
   }
 

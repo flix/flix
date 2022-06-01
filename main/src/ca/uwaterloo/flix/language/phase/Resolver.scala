@@ -1848,9 +1848,15 @@ object Resolver {
         case (t1, t2) => mkDifference(t1, t2, loc)
       }
 
-    case _: NamedAst.Type.Read | _: NamedAst.Type.Write =>
-      // TODO not handling region effect types yet
-      Type.mkTrue(SourceLocation.Unknown).toSuccess
+    case NamedAst.Type.Read(tpe, loc) =>
+      mapN(semiResolveType(tpe, ns0, root)) {
+        case t => Type.ReadWrite(t, loc)
+      }
+
+    case NamedAst.Type.Write(tpe, loc) =>
+      mapN(semiResolveType(tpe, ns0, root)) {
+        case t => Type.ReadWrite(t, loc)
+      }
 
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(semiResolveType(tpe, ns0, root)) {
