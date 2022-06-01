@@ -972,6 +972,7 @@ object Type {
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
     case Type.Ascribe(tpe, kind, loc) => Type.Ascribe(tpe, kind, loc)
     case _: Type.UnkindedArrow => t
+    case Type.ReadWrite(tpe, loc) => Type.ReadWrite(eraseAliases(tpe), loc)
   }
 
   /**

@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
+import ca.uwaterloo.flix.language.phase.Kinder.KindEnv
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -1171,9 +1172,18 @@ object Kinder {
         }
       }
 
-    case Type.UnkindedArrow(purAndEff, _, _) => inferPurityAndEffect(purAndEff, kenv0, taenv, root)
+    case Type.UnkindedArrow(purAndEff, _, _) =>
+      val purAndEffKenvVal = inferPurityAndEffect(purAndEff, kenv0, taenv, root)
+      val argKenvVal = Validation.fold(tpe.typeArguments, KindEnv.empty) {
+        case (acc, targ) => flatMapN(inferType(targ, Kind.Star, kenv0, taenv, root)) {
+          kenv => acc ++ kenv
+        }
+      }
+      flatMapN(purAndEffKenvVal, argKenvVal) {
+        case (purAndEffKenv, argKenv) => purAndEffKenv ++ argKenv
+      }
 
-    case Type.ReadWrite(t, loc) => inferType(t, Kind.Bool, kenv0, taenv, root) // MATT right?
+  case Type.ReadWrite(t, loc) => inferType(t, Kind.Bool, kenv0, taenv, root) // MATT right?
 
     case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded var.")
   }

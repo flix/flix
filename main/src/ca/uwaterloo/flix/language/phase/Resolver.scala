@@ -159,6 +159,7 @@ object Resolver {
       case Type.Cst(_, _) => Nil
       case Type.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
       case _: Type.UnkindedArrow => Nil
+      case Type.ReadWrite(tpe, loc) => getAliasUses(tpe)
       case _: Type.Alias => throw InternalCompilerException("unexpected applied alias")
     }
 
