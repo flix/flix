@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
-import ca.uwaterloo.flix.language.phase.Kinder.KindEnv
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -41,7 +40,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
   *     This inference uses the following rules:
   *       - If the type variable is the type of a formal parameter, it is ascribed kind Star.
   *       - If the type variable is the return type of the function, it is ascribed kind Star.
-  *       - If the type variable is the effect type of the function, it is ascribed kind Bool.
+  *       - If the type variable is the purity/effect type of the function, it is ascribed kind Beef.
   *       - If the type variable is an argument to a type constraint, it is ascribed the class's parameter kind
   *       - If the type variable is an argument to a type constructor, it is ascribed the type constructor's parameter kind.
   *       - If the type variable is used as an type constructor, it is ascribed the kind Star -> Star ... -> Star -> X,
@@ -49,6 +48,13 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
   *       - If there is an inconsistency among these kinds, an error is raised.
   *
   * In inferring types, variable type constructors are assumed to have kind * -> * -> * -> ???.
+  *
+  * Purity and Effect Handling:
+  * After kind inference, any type variables inferred to have kind Beef are split into two variables:
+  * a Bool-kinded purity and an Effect-kinded effect. Because variables of this kind can only be found
+  * where both a purity and effect are expected, we can distribute the purity and effect variables
+  * appropriately into these AST fields, joining them with the appropriate operator (conjunction or union).
+  *
   */
 object Kinder {
 
@@ -1033,6 +1039,10 @@ object Kinder {
       }
   }
 
+  /**
+    * Performs kinding on the given purity and effect.
+    * Defaults to the respective `Pure` value for each component if absent.
+    */
   private def visitPurityAndEffect(purAndEff: Ast.PurityAndEffect, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[(Type, Type), KindError] = purAndEff match {
     case Ast.PurityAndEffect(pur0, eff0) =>
       // collect all the individual types
@@ -1070,7 +1080,9 @@ object Kinder {
       }
   }
 
-  // MATT docs
+  /**
+    * Performs kinding on the given optional purity and effect.
+    */
   private def visitOptionalPurityAndEffect(purAndEff0: Ast.PurityAndEffect, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[(Option[Type], Option[Type]), KindError] = purAndEff0 match {
     case Ast.PurityAndEffect(None, None) => (None, None).toSuccess
     case purAndEff =>
@@ -1189,12 +1201,16 @@ object Kinder {
         case (purAndEffKenv, argKenv) => purAndEffKenv ++ argKenv
       }
 
-  case Type.ReadWrite(t, loc) => inferType(t, Kind.Bool, kenv0, taenv, root) // MATT right?
+    case Type.ReadWrite(t, loc) => inferType(t, Kind.Bool, kenv0, taenv, root)
 
     case _: Type.KindedVar => throw InternalCompilerException("Unexpected kinded var.")
   }
 
-  // MATT docs
+  /**
+    * Infers the given purity and effect under the kind environment.
+    * If both are specified, then inference is performed assuming the purity is a Bool and the effect is an Effect.
+    * Otherwise infers as [[Kind.Beef]] to be disambiguated later.
+    */
   private def inferPurityAndEffect(purAndEff0: Ast.PurityAndEffect, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = purAndEff0 match {
     // Case 1: Both missing. No inference to do.
     case Ast.PurityAndEffect(None, None) => KindEnv.empty.toSuccess
@@ -1309,7 +1325,36 @@ object Kinder {
     case t => Type.Apply(t, t2, loc)
   }
 
-  // MATT docs
+  /**
+    * Splits the given kind environment according to the [[Kind.Beef]]-kinded type parameters therein.
+    * A type variable with kind [[Kind.Beef]] is split into two type variables:
+    * One with the original symbol and kind [[Kind.Bool]],
+    * and one with a fresh symbol and kind [[Kind.Effect]].
+    *
+    * Other type variables are left unchanged.
+    *
+    * A split environment is also provided, mapping the original symbol to the `Effect` symbol.
+    *
+    * For example,
+    * let kenv = {
+    *   w -> Beef,
+    *   x -> Bool,
+    *   y -> Effect,
+    *   z -> Star
+    * }
+    * Then `split(kenv)` produces:
+    * - a kind environment kenv1 = {
+    *     w -> Bool,
+    *     w' -> Effect,
+    *     x -> Bool,
+    *     y -> Effect,
+    *     z -> Star
+    *   }
+    * - a split environment senv = {
+    *     w -> w'
+    *   }
+    *
+    */
   private def split(kenv0: KindEnv)(implicit flix: Flix): (KindEnv, Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym]) = {
     val (kenv, senv) = kenv0.map.foldLeft((Map.empty[Symbol.UnkindedTypeVarSym, Kind], Map.empty[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym])) {
       case ((kenvAcc, senvAcc), (sym, Kind.Beef)) =>
