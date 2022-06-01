@@ -199,6 +199,7 @@ object CompleteProvider {
 
       case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type variable.")
       case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded arrow.")
+      case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
       case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
     }
 

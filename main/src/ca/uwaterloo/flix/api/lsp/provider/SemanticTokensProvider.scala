@@ -570,6 +570,9 @@ object SemanticTokensProvider {
 
     case _: Type.UnkindedArrow =>
       throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+
+    case _: Type.ReadWrite =>
+      throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
   }
 
   /**
