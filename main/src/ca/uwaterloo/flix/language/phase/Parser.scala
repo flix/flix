@@ -269,12 +269,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def TypeAndEffect: Rule2[ParsedAst.Type, ParsedAst.PurityAndEffect] = rule {
-    Type ~ optWS ~ PurityAndEffect
+    Type ~ PurityAndEffect
   }
 
   def PurityAndEffect: Rule1[ParsedAst.PurityAndEffect] = {
     rule {
-      optional("&" ~ optWS ~ Type) ~ optional("\\" ~ optWS ~ Effects.EffectSetOrEmpty) ~> ParsedAst.PurityAndEffect
+      optional(optWS ~ "&" ~ optWS ~ Type) ~ optional(optWS ~ "\\" ~ optWS ~ Effects.EffectSetOrEmpty) ~> ParsedAst.PurityAndEffect
     }
   }
 
@@ -613,8 +613,24 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       FAppend ~ optional(optWS ~ ":" ~ optWS ~ TypAndPurFragment ~ SP ~> ParsedAst.Expression.Ascribe)
     }
 
-    def TypAndPurFragment: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
-      optional(Type) ~ PurityAndEffect
+    def TypAndPurFragment: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = {
+
+      def PurAndEffOnly: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
+        // lookahead for purity/effect syntax
+        &("&" | "\\") ~ push(None) ~ PurityAndEffect
+      }
+
+      def SomeType: Rule1[Option[ParsedAst.Type]] = rule {
+        Type ~> ((o: ParsedAst.Type) => Some(o))
+      }
+
+      def Both: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
+        SomeType ~ PurityAndEffect
+      }
+
+      rule {
+        PurAndEffOnly | Both
+      }
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
@@ -738,7 +754,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Ascription: Rule2[ParsedAst.Type, ParsedAst.PurityAndEffect] = rule {
-        ":" ~ optWS ~ Type ~ optWS ~ PurityAndEffect
+        ":" ~ optWS ~ Type ~ PurityAndEffect
       }
 
       def Import: Rule1[ParsedAst.JvmOp] = rule {
