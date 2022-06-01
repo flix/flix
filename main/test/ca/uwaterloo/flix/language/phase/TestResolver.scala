@@ -824,7 +824,7 @@ class TestResolver extends FunSuite with TestUtils {
         |def f(): Unit \ E = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedEffect](result)
+    expectError[ResolutionError.UndefinedType](result)
   }
 
   test("UndefinedType.06") {
