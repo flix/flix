@@ -1227,6 +1227,8 @@ object Typer {
           resultEff = declaredEff.getOrElse(actualEff)
         } yield (constrs, resultTyp, resultEff)
 
+      case KindedAst.Expression.Without(exp, eff, loc) => visitExp(exp) // TODO actually infer
+
       case KindedAst.Expression.TryCatch(exp, rules, loc) =>
         val rulesType = rules map {
           case KindedAst.CatchRule(sym, clazz, body) =>
@@ -1240,6 +1242,12 @@ object Typer {
           resultTyp <- unifyTypeM(tpe, ruleType, loc)
           resultEff = Type.mkAnd(eff :: ruleEffects, loc)
         } yield (constrs ++ ruleConstrs.flatten, resultTyp, resultEff)
+
+      case KindedAst.Expression.TryWith(exp, eff, rules, loc) => visitExp(exp) // TODO actually infer
+
+      case KindedAst.Expression.Do(op, args, loc) => seqM(args.map(visitExp)).map(_.unzip3) // TODO actually infer
+
+      case KindedAst.Expression.Resume(args, loc) => seqM(args.map(visitExp)).map(_.unzip3) // TODO actually infer
 
       case KindedAst.Expression.InvokeConstructor(constructor, args, loc) =>
         val classType = getFlixType(constructor.getDeclaringClass)
@@ -1810,6 +1818,8 @@ object Typer {
         val eff = declaredEff.getOrElse(e.eff)
         TypedAst.Expression.Cast(e, dt, de, tpe, eff, loc)
 
+      case KindedAst.Expression.Without(exp, eff, loc) => ??? // MATT hmmmm
+
       case KindedAst.Expression.TryCatch(exp, rules, loc) =>
         val e = visitExp(exp, subst0)
         val rs = rules map {
@@ -2088,7 +2098,7 @@ object Typer {
 
       case KindedAst.Pattern.ArrayTailSpread(elms, varSym, tvar, loc) =>
         for {
-          elementTypes <- seqM(elms map visit);
+          elementTypes <- seqM(elms map visit)
           elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
           arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, loc), loc)
           resultType <- unifyTypeM(varSym.tvar.ascribedWith(Kind.Star), arrayType, loc)
