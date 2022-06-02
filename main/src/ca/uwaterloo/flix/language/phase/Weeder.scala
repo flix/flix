@@ -2659,10 +2659,10 @@ object Weeder {
 
   /**
     * Performs weeding on the given effect `ident`.
-    * Checks whether it is actually the keyword `static`.
+    * Checks whether it is actually the keyword `Static`.
     */
   private def visitEffectIdent(ident: Name.Ident): WeededAst.Type = {
-    if (ident.name == "static")
+    if (ident.name == "Static")
       WeededAst.Type.False(ident.loc)
     else
       WeededAst.Type.Var(ident, ident.loc)
