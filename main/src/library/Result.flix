@@ -83,8 +83,6 @@ namespace Result {
     ///
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
     pub def exists(f: t -> Bool & ef, r: Result[t, e]): Bool & ef = match r {
         case Ok(t)  => f(t)
@@ -94,8 +92,6 @@ namespace Result {
     ///
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true` or if `r` is `Err(w)`.
     /// Otherwise returns `false`.
-    ///
-    /// The function `f` must be pure.
     ///
     @Time(time(f)) @Space(space(f))
     pub def forall(f: t -> Bool & ef, r: Result[t, e]): Bool & ef = match r {

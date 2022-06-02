@@ -522,8 +522,6 @@ namespace MutMap {
     ///
     /// Returns `false` if `m` is the empty map.
     ///
-    /// The function `f` must be pure.
-    ///
     pub def exists(f: (k, v) -> Bool & ef, m: MutMap[k, v, r]): Bool \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.exists(f, deref mm)
@@ -532,8 +530,6 @@ namespace MutMap {
     /// Returns `true` if and only if all mappings in the mutable map `m` satisfy the predicate function `f`.
     ///
     /// Returns `true` if `m` is the empty map.
-    ///
-    /// The function `f` must be pure.
     ///
     pub def forall(f: (k, v) -> Bool & ef, m: MutMap[k, v, r]): Bool \ { ef, Read(r) } =
         let MutMap(mm) = m;
