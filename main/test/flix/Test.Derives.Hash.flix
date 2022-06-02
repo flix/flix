@@ -40,7 +40,7 @@ namespace Test/Derives/Hash {
         case RecursiveCase(MutRecursiveEnum1)
     }
 
-    pub opaque type OpaqueType with Hash = Int32
+    pub enum OpaqueType(Int32) with Hash
 
     @test
     def testHashEq01(): Bool = hash(Enum.EmptyCase) == hash(Enum.EmptyCase)

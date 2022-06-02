@@ -694,7 +694,7 @@ def mapWithKey06(): Bool & Impure =
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap;
     let a = new MutList(static);
-    Map.mapWithKey((k, v) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); v }, m);
+    Map.mapWithKey((k, v) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
     MutList.toList(a) == range
 
 
@@ -892,7 +892,7 @@ def count08(): Bool & Impure =
     let range = List.range(0, 2000);
     let m = List.zip(range, range) |> List.toMap;
     let a = new MutList(static);
-    Map.count((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); true }, m);
+    Map.count((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); true }, m);
     MutList.toList(a) == range
 
 
@@ -1012,7 +1012,7 @@ def count08(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(static);
-        Map.sumWith((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
+        Map.sumWith((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
 
 
@@ -1122,7 +1122,7 @@ def count08(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(static);
-        Map.productWith((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(b, a); 1 }, m);
+        Map.productWith((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
 
 
@@ -2132,7 +2132,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(static);
-        Map.minimumKeyBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
+        Map.minimumKeyBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -2184,7 +2184,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, List.reverse(range)) |> List.toMap;
         let a = new MutList(static);
-        Map.minimumValueBy((x, y) -> { let b = new MutList(static); MutList.push!(x, b); MutList.append!(b, a); x <=> y }, m);
+        Map.minimumValueBy((x, y) -> { let b = new MutList(static); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.reverse(List.range(1, 2000)) // The first / left most value is ignored
 
 
@@ -2226,7 +2226,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(static);
-        Map.maximumKeyBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
+        Map.maximumKeyBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -2268,7 +2268,7 @@ def query18(): Bool =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = new MutList(static);
-        Map.maximumValueBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(b, a); x <=> y }, m);
+        Map.maximumValueBy((x, y) -> { let b = new MutList(static); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, m);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
 
 
@@ -2308,6 +2308,22 @@ def query18(): Bool =
     def toChain04(): Bool =
         Map.toChain(Map#{1 => 1, 2 => 2, 3 => 3}) == List.toChain((1, 1) :: (2, 2) :: (3, 3) :: Nil)
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toMultiMap                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMultiMap01(): Bool =
+        Map.toMultiMap(Map#{}: Map[Int32, Char]) |> MultiMap.toAscList == Nil
+
+    @test
+    def toMultiMap02(): Bool =
+        Map.toMultiMap(Map#{1 => 'a'}) |> MultiMap.toAscList == (1, 'a') :: Nil
+
+    @test
+    def toMultiMap03(): Bool =
+        Map.toMultiMap(Map#{1 => 'a', 2 => 'b'}) |> MultiMap.toAscList == (1, 'a') :: (2, 'b') :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // toIterator                                                              //

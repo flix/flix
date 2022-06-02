@@ -22,7 +22,7 @@
 ///   - The capacity of the array is always 8 or more.
 ///
 pub enum MutList[a: Type, r: Region] {
-    case MutList(ScopedRef[ScopedArray[a, r], r], ScopedRef[Int32, r])
+    case MutList(Ref[ScopedArray[a, r], r], Ref[Int32, r])
 }
 
 instance Newable[MutList[a]] {
@@ -611,10 +611,10 @@ namespace MutList {
             ()
 
     ///
-    /// Appends `v2` to `v1` i.e. inserts all elements from `v2` into the end of `v1`.
+    /// Appends `m` to `v` i.e. inserts all elements from `m` into the end of `v`.
     ///
-    pub def append!(v1: MutList[a, r1], v2: MutList[a, r2]): Unit \ { Read(r1, r2), Write(r2) } =
-        foreach(x -> push!(x, v2), v1)
+    pub def append!(m: m[a], v: MutList[a, r]): Unit \ { Read(r), Write(r) } with Foldable[m] =
+        Foldable.foreach(x -> MutList.push!(x, v), m)
 
     ///
     /// Removes all elements from the given mutable list `v` that do not satisfy the given predicate `f`.

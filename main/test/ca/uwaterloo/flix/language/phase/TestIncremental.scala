@@ -303,7 +303,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileG,
       s"""
-         |pub opaque type G[a] = D[a]
+         |pub enum G[a](D[a])
          |""".stripMargin)
 
     flix.compile().get

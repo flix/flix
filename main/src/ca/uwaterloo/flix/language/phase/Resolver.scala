@@ -158,6 +158,8 @@ object Resolver {
       case Type.Cst(TypeConstructor.UnappliedAlias(sym), _) => sym :: Nil
       case Type.Cst(_, _) => Nil
       case Type.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
+      case _: Type.UnkindedArrow => Nil
+      case Type.ReadWrite(tpe, loc) => getAliasUses(tpe)
       case _: Type.Alias => throw InternalCompilerException("unexpected applied alias")
     }
 
@@ -381,18 +383,18 @@ object Resolver {
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
   def resolveSpec(s0: NamedAst.Spec, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
-    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, retTpe0, pur0, eff0, loc) => // TODO handle eff
+    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc0, retTpe0, purAndEff0, loc) =>
 
       val tparams = resolveTypeParams(tparams0, ns0, root)
       val fparamsVal = resolveFormalParams(fparams0, taenv, ns0, root)
       val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
       val schemeVal = resolveScheme(sc0, taenv, ns0, root)
       val retTpeVal = resolveType(retTpe0, taenv, ns0, root)
-      val purVal = resolveType(pur0, taenv, ns0, root)
+      val purAndEffVal = resolvePurityAndEffect(purAndEff0, taenv, ns0, root)
 
-      mapN(fparamsVal, annVal, schemeVal, retTpeVal, purVal) {
-        case (fparams, ann, scheme, retTpe, pur) =>
-          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, retTpe, pur, loc)
+      mapN(fparamsVal, annVal, schemeVal, retTpeVal, purAndEffVal) {
+        case (fparams, ann, scheme, retTpe, purAndEff) =>
+          ResolvedAst.Spec(doc, ann, mod, tparams, fparams, scheme, retTpe, purAndEff, loc)
       }
   }
 
@@ -929,10 +931,7 @@ object Resolver {
             case None => (None: Option[Type]).toSuccess
             case Some(t) => mapN(resolveType(t, taenv, ns0, root))(x => Some(x))
           }
-          val expectedEffVal = expectedEff match {
-            case None => (None: Option[Type]).toSuccess
-            case Some(f) => mapN(resolveType(f, taenv, ns0, root))(x => Some(x))
-          }
+          val expectedEffVal = resolvePurityAndEffect(expectedEff, taenv, ns0, root)
 
           val eVal = visitExp(exp, region)
           mapN(eVal, expectedTypVal, expectedEffVal) {
@@ -945,10 +944,7 @@ object Resolver {
             case None => (None: Option[Type]).toSuccess
             case Some(t) => mapN(resolveType(t, taenv, ns0, root))(x => Some(x))
           }
-          val declaredEffVal = declaredEff match {
-            case None => (None: Option[Type]).toSuccess
-            case Some(f) => mapN(resolveType(f, taenv, ns0, root))(x => Some(x))
-          }
+          val declaredEffVal = resolvePurityAndEffect(declaredEff, taenv, ns0, root)
 
           val eVal = visitExp(exp, region)
           mapN(eVal, declaredTypVal, declaredEffVal) {
@@ -1693,7 +1689,7 @@ object Resolver {
       case "Channel" => Type.mkChannel(loc).toSuccess
       case "Lazy" => Type.mkLazy(loc).toSuccess
       case "ScopedArray" => Type.Cst(TypeConstructor.ScopedArray, loc).toSuccess
-      case "ScopedRef" => Type.Cst(TypeConstructor.ScopedRef, loc).toSuccess
+      case "Ref" => Type.Cst(TypeConstructor.ScopedRef, loc).toSuccess
       case "Region" => Type.Cst(TypeConstructor.Region, loc).toSuccess
 
       // Disambiguate type.
@@ -1797,12 +1793,12 @@ object Resolver {
         }
       }
 
-    case NamedAst.Type.Arrow(tparams0, pur0, eff0, tresult0, loc) => // TODO handle eff0
+    case NamedAst.Type.Arrow(tparams0, purAndEff0, tresult0, loc) =>
       val tparamsVal = traverse(tparams0)(semiResolveType(_, ns0, root))
       val tresultVal = semiResolveType(tresult0, ns0, root)
-      val purVal = semiResolveType(pur0, ns0, root)
-      mapN(tparamsVal, tresultVal, purVal) {
-        case (tparams, tresult, pur) => Type.mkUncurriedArrowWithEffect(tparams, pur, tresult, loc)
+      val purAndEffVal = semiResolvePurityAndEffect(purAndEff0, ns0, root)
+      mapN(tparamsVal, tresultVal, purAndEffVal) {
+        case (tparams, tresult, purAndEff) => mkUncurriedArrowWithEffect(tparams, purAndEff, tresult, loc)
       }
 
     case NamedAst.Type.Apply(base0, targ0, loc) =>
@@ -1853,9 +1849,15 @@ object Resolver {
         case (t1, t2) => mkDifference(t1, t2, loc)
       }
 
-    case _: NamedAst.Type.Read | _: NamedAst.Type.Write =>
-      // TODO not handling region effect types yet
-      Type.mkTrue(SourceLocation.Unknown).toSuccess
+    case NamedAst.Type.Read(tpe, loc) =>
+      mapN(semiResolveType(tpe, ns0, root)) {
+        case t => Type.ReadWrite(t, loc)
+      }
+
+    case NamedAst.Type.Write(tpe, loc) =>
+      mapN(semiResolveType(tpe, ns0, root)) {
+        case t => Type.ReadWrite(t, loc)
+      }
 
     case NamedAst.Type.Ascribe(tpe, kind, loc) =>
       mapN(semiResolveType(tpe, ns0, root)) {
@@ -1917,6 +1919,39 @@ object Resolver {
     val tVal = semiResolveType(tpe0, ns0, root)
     flatMapN(tVal) {
       t => finishResolveType(t, taenv)
+    }
+  }
+
+  /**
+    * Partially resolves the given purity and effect.
+    */
+  private def semiResolvePurityAndEffect(purAndEff0: NamedAst.PurityAndEffect, ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.PurityAndEffect, ResolutionError] = purAndEff0 match {
+    case NamedAst.PurityAndEffect(pur0, eff0) =>
+      val purVal = traverse(pur0)(semiResolveType(_, ns0, root)).map(_.headOption)
+      val effVal = traverse(eff0)(effs => traverse(effs)(semiResolveType(_, ns0, root))).map(_.headOption)
+      mapN(purVal, effVal) {
+        case (pur, eff) => Ast.PurityAndEffect(pur, eff)
+      }
+  }
+
+  /**
+    * Finishes resolution of the given purity and effect.
+    */
+  private def finishResolvePurityAndEffect(purAndEff0: Ast.PurityAndEffect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias])(implicit flix: Flix): Validation[Ast.PurityAndEffect, ResolutionError] = purAndEff0 match {
+    case Ast.PurityAndEffect(pur0, eff0) =>
+      val purVal = traverse(pur0)(finishResolveType(_, taenv)).map(_.headOption)
+      val effVal = traverse(eff0)(effs => traverse(effs)(finishResolveType(_, taenv))).map(_.headOption)
+      mapN(purVal, effVal) {
+        case (pur, eff) => Ast.PurityAndEffect(pur, eff)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given purity and effect `purAndEff0` in the given namespace `ns0`.
+    */
+  private def resolvePurityAndEffect(purAndEff0: NamedAst.PurityAndEffect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.PurityAndEffect, ResolutionError] = {
+    flatMapN(semiResolvePurityAndEffect(purAndEff0, ns0, root)) {
+      case purAndEff => finishResolvePurityAndEffect(purAndEff, taenv)
     }
   }
 
@@ -2545,6 +2580,17 @@ object Resolver {
     * Returns the type `Difference(tpe1, tpe2)`.
     */
   private def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = Type.mkApply(Type.Cst(TypeConstructor.Difference, loc), List(tpe1, tpe2), loc)
+
+  /**
+    * Constructs the uncurried arrow type (A_1, ..., A_n) -> B & e.
+    */
+  def mkUncurriedArrowWithEffect(as: List[Type], e: Ast.PurityAndEffect, b: Type, loc: SourceLocation): Type = {
+    val arrow = Type.UnkindedArrow(e, as.length + 1, loc)
+    val inner = as.foldLeft(arrow: Type) {
+      case (acc, x) => Type.Apply(acc, x, loc)
+    }
+    Type.Apply(inner, b, loc)
+  }
 
   /**
     * Returns either the explicit region (if present), the current region (if present), or the global region.

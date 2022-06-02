@@ -28,7 +28,7 @@
 /// and the back index always points to the first empty index (going clockwise).
 ///
 pub enum MutDeque[a: Type, r: Region] {
-    case MutDeque(ScopedRef[ScopedArray[a, r], r], ScopedRef[Int32, r], ScopedRef[Int32, r])
+    case MutDeque(Ref[ScopedArray[a, r], r], Ref[Int32, r], Ref[Int32, r])
 }
 
 

@@ -282,6 +282,8 @@ object SimpleType {
     case Type.KindedVar(sym, _) =>
       mkApply(Var(sym.id, sym.kind, sym.rigidity, sym.text), t.typeArguments.map(fromWellKindedType))
     case _: Type.UnkindedVar => throw InternalCompilerException("Unexpected unkinded type.")
+    case _: Type.UnkindedArrow => throw InternalCompilerException("Unexpected unkinded type.")
+    case _: Type.ReadWrite => throw InternalCompilerException("Unexpected unkinded type.")
     case _: Type.Ascribe => throw InternalCompilerException("Unexpected kind ascription.")
     case Type.Alias(cst, args, _, _) =>
       mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(fromWellKindedType))

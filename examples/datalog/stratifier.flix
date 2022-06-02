@@ -3,15 +3,15 @@ namespace Stratifier {
     use List.{map, flatMap, partition};
     use Array.toMap;
 
-    opaque type Program = List[Constraint]
-    opaque type Constraint = (HeadAtom, List[BodyAtom])
-    opaque type Atom = PredicateSymbol
-    opaque type HeadAtom = Atom
+    enum Program(List[Constraint])
+    enum Constraint((HeadAtom, List[BodyAtom]))
+    enum Atom(PredicateSymbol)
+    enum HeadAtom(Atom)
     enum BodyAtom {
         case Positive(Atom)
         case Negative(Atom)
     }
-    opaque type PredicateSymbol with Boxable, ToString, Eq, Order = String
+    enum PredicateSymbol(String) with Boxable, ToString, Eq, Order
 
     // A :- B leads to (A, true, B)
     type alias PrecedenceEdge = (PredicateSymbol, Bool, PredicateSymbol)

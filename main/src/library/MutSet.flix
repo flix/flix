@@ -17,7 +17,7 @@
 ///
 /// The Mutable Set type.
 ///
-opaque type MutSet[t: Type, r: Region] = ScopedRef[Set[t], r]
+enum MutSet[t: Type, r: Region](Ref[Set[t], r])
 
 instance Newable[MutSet[t]] {
     pub def new(r: Region[r]): MutSet[t, r] \ { Write(r) } = MutSet.new(r)
@@ -49,12 +49,10 @@ namespace MutSet {
         ms := Set.insert(x, deref ms)
 
     ///
-    /// Adds all elements in the mutable set `s1` to the mutable set `s2`.
+    /// Adds all elements in the collection `m` to the mutable set `s`.
     ///
-    pub def addAll!(s1: MutSet[a, r1], s2: MutSet[a, r2]): Unit \ { Read(r1, r2), Write(r2) } with Order[a] =
-        let MutSet(ms1) = s1;
-        let MutSet(ms2) = s2;
-        ms2 := Set.union(deref ms1, deref ms2)
+    pub def addAll!(m: m[a], s: MutSet[a, r]): Unit \ { Read(r), Write(r) } with Order[a], Foldable[m] =
+        Foldable.foreach(x -> add!(x, s), m)
 
     ///
     /// Removes all elements from the mutable set `s`.
@@ -71,20 +69,20 @@ namespace MutSet {
         ms := Set.remove(x, deref ms)
 
     ///
-    /// Removes all elements in the mutable set `s1` from the mutable set `s2`.
+    /// Removes all elements in the collection `m` from the mutable set `s`.
     ///
-    pub def removeAll!(s1: MutSet[a, r1], s2: MutSet[a, r2]): Unit \ { Read(r1, r2), Write(r2) } with Order[a] =
-        let MutSet(ms1) = s1;
-        let MutSet(ms2) = s2;
-        ms2 := Set.difference(deref ms2, deref ms1)
+    pub def removeAll!(m: m[a], s: MutSet[a, r]): Unit \ { Read(r), Write(r) } with Order[a], Foldable[m] =
+        let MutSet(ms) = s;
+        let s2 = Foldable.toSet(m);
+        ms := Set.difference(deref ms, s2)
 
     ///
-    /// Removes all elements from the mutable set `s2` that are not in the mutable set `s1`.
+    /// Removes all elements from the mutable set `s` that are not in collection `m`.
     ///
-    pub def retainAll!(s1: MutSet[a, r1], s2: MutSet[a, r2]): Unit \ { Read(r1, r2), Write(r2) } with Order[a] =
-        let MutSet(ms1) = s1;
-        let MutSet(ms2) = s2;
-        ms2 := Set.intersection(deref ms1, deref ms2)
+    pub def retainAll!(m: m[a], s: MutSet[a, r]): Unit \ { Read(r), Write(r) } with Order[a], Foldable[m] =
+        let MutSet(ms) = s;
+        let s2 = Foldable.toSet(m);
+        ms := Set.intersection(s2, deref ms)
 
     ///
     /// Removes all elements from the mutable set `s` that do not satisfy the predicate function `f`.

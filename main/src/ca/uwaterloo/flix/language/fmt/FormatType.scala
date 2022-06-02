@@ -170,7 +170,7 @@ object FormatType {
       case SimpleType.BigInt => "BigInt"
       case SimpleType.Str => "String"
       case SimpleType.ScopedArray => "ScopedArray"
-      case SimpleType.ScopedRef => "ScopedRef"
+      case SimpleType.ScopedRef => "Ref"
       case SimpleType.Channel => "Channel"
       case SimpleType.Lazy => "Lazy"
       case SimpleType.True => mode match {
@@ -259,6 +259,7 @@ object FormatType {
       case SimpleType.Var(id, kind, rigidity, text) =>
         val prefix: String = kind match {
           case Kind.Wild => "_" + id.toString
+          case Kind.Beef => "_b" + id.toString
           case Kind.Star => "t" + id
           case Kind.Bool => "b" + id
           case Kind.Effect => "e" + id
