@@ -699,7 +699,7 @@ namespace String {
     /// Returns `false` if `a` is empty.
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
-    pub def exists(f: Char -> Bool, s: String): Bool = match findIndexOfLeft(f, s) {
+    pub def exists(f: Char -> Bool & ef, s: String): Bool & ef = match findIndexOfLeft(f, s) {
         case None => false
         case Some(_) => true
     }

@@ -163,7 +163,7 @@ namespace MutList {
     ///
     /// Returns `false` if the given mutable list `v` is empty.
     ///
-    pub def exists(f: a -> Bool, v: MutList[a, r]): Bool \ Read(r) =
+    pub def exists(f: a -> Bool & ef, v: MutList[a, r]): Bool \ { ef, Read(r) } =
         let MutList(ra, rl) = v;
         let a = deref ra;
         let l = deref rl;

@@ -103,7 +103,7 @@ namespace Validation {
     /// Returns `false` if `v` is `Failure`.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def exists(f: t -> Bool, v: Validation[t, e]): Bool = match v {
+    pub def exists(f: t -> Bool & ef, v: Validation[t, e]): Bool & ef = match v {
         case Success(t) => f(t)
         case Failure(_) => false
     }

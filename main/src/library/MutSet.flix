@@ -321,7 +321,7 @@ namespace MutSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def exists(f: a -> Bool, s: MutSet[a, r]): Bool \ { Read(r) } =
+    pub def exists(f: a -> Bool & ef, s: MutSet[a, r]): Bool \ { ef, Read(r) } =
         let MutSet(ms) = s;
         Set.exists(f, deref ms)
 

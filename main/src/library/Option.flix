@@ -169,10 +169,8 @@ namespace Option {
     ///
     /// Returns `true` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def exists(f: a -> Bool, o: Option[a]): Bool = match o {
+    pub def exists(f: a -> Bool & ef, o: Option[a]): Bool & ef = match o {
         case None    => false
         case Some(v) => f(v)
     }

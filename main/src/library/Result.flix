@@ -86,7 +86,7 @@ namespace Result {
     /// The function `f` must be pure.
     ///
     @Time(time(f)) @Space(space(f))
-    pub def exists(f: t -> Bool, r: Result[t, e]): Bool = match r {
+    pub def exists(f: t -> Bool & ef, r: Result[t, e]): Bool & ef = match r {
         case Ok(t)  => f(t)
         case Err(_) => false
     }

@@ -524,7 +524,7 @@ namespace MutMap {
     ///
     /// The function `f` must be pure.
     ///
-    pub def exists(f: (k, v) -> Bool, m: MutMap[k, v, r]): Bool \ Read(r) =
+    pub def exists(f: (k, v) -> Bool & ef, m: MutMap[k, v, r]): Bool \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.exists(f, deref mm)
 

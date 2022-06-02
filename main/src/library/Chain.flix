@@ -431,9 +431,7 @@ namespace Chain {
     ///
     /// Returns `false` if `c` is empty.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def exists(f: a -> Bool, c: Chain[a]): Bool =
+    pub def exists(f: a -> Bool & ef, c: Chain[a]): Bool & ef =
         def loop(cc) = match viewLeft(cc) {
             case NoneLeft        => false
             case SomeLeft(a, rs) => if (f(a)) true else loop(rs)
