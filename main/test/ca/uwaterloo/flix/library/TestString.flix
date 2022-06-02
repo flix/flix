@@ -2925,17 +2925,17 @@ def levenshteinDistance07(): Bool =
 @test
 def zip01(): Bool & Impure =
     let a = String.zip("", "");
-    Array.sameElements(a, []: FooArray[(Char,Char)])
+    Array.sameElements(a, []: UnscopedArray[(Char,Char)])
 
 @test
 def zip02(): Bool & Impure =
     let a = String.zip("a", "");
-    Array.sameElements(a, []: FooArray[(Char, Char)])
+    Array.sameElements(a, []: UnscopedArray[(Char, Char)])
 
 @test
 def zip03(): Bool & Impure =
     let a = String.zip("", "1");
-    Array.sameElements(a, []: FooArray[(Char, Char)])
+    Array.sameElements(a, []: UnscopedArray[(Char, Char)])
 
 @test
 def zip04(): Bool & Impure =

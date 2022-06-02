@@ -16,7 +16,7 @@ namespace Test/Def/Generalization {
     def testGen04(): String -> String = x -> x
 
     @test
-    def testGen05(): FooArray[a] -> FooArray[a] = x -> x
+    def testGen05(): UnscopedArray[a] -> UnscopedArray[a] = x -> x
 
     @test
     def testGen06(): Option[a] -> Option[a] = x -> x

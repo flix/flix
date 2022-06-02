@@ -1,73 +1,73 @@
 namespace Test/Exp/Match/Array {
 
     @test
-    def testMatchEmptyUnitArray01(): Bool & Impure = match ([]: FooArray[Unit]) {
+    def testMatchEmptyUnitArray01(): Bool & Impure = match ([]: UnscopedArray[Unit]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyBoolArray01(): Bool & Impure = match ([]: FooArray[Bool]) {
+    def testMatchEmptyBoolArray01(): Bool & Impure = match ([]: UnscopedArray[Bool]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyCharArray01(): Bool & Impure = match ([]: FooArray[Char]) {
+    def testMatchEmptyCharArray01(): Bool & Impure = match ([]: UnscopedArray[Char]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyFloat32Array01(): Bool & Impure = match ([]: FooArray[Float32]) {
+    def testMatchEmptyFloat32Array01(): Bool & Impure = match ([]: UnscopedArray[Float32]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyFloat64Array01(): Bool & Impure = match ([]: FooArray[Float64]) {
+    def testMatchEmptyFloat64Array01(): Bool & Impure = match ([]: UnscopedArray[Float64]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyInt8Array01(): Bool & Impure = match ([]: FooArray[Int8]) {
+    def testMatchEmptyInt8Array01(): Bool & Impure = match ([]: UnscopedArray[Int8]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyInt16Array01(): Bool & Impure = match ([]: FooArray[Int16]) {
+    def testMatchEmptyInt16Array01(): Bool & Impure = match ([]: UnscopedArray[Int16]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyInt64Array01(): Bool & Impure = match ([]: FooArray[Int64]) {
+    def testMatchEmptyInt64Array01(): Bool & Impure = match ([]: UnscopedArray[Int64]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyStringArray01(): Bool & Impure = match ([]: FooArray[String]) {
+    def testMatchEmptyStringArray01(): Bool & Impure = match ([]: UnscopedArray[String]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyBigIntArray01(): Bool & Impure = match ([]: FooArray[BigInt]) {
+    def testMatchEmptyBigIntArray01(): Bool & Impure = match ([]: UnscopedArray[BigInt]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyOptionIntArray01(): Bool & Impure = match ([]: FooArray[Option[Int32]]) {
+    def testMatchEmptyOptionIntArray01(): Bool & Impure = match ([]: UnscopedArray[Option[Int32]]) {
         case [] => true
         case _  => false
     }
 
     @test
-    def testMatchEmptyResultArray01(): Bool & Impure = match ([]: FooArray[Result[Int32,String]]) {
+    def testMatchEmptyResultArray01(): Bool & Impure = match ([]: UnscopedArray[Result[Int32,String]]) {
         case [] => true
         case _  => false
     }

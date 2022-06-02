@@ -12,8 +12,8 @@ namespace Test/Exp/Tag {
         case OfInt64(Int64)
         case OfBigInt(BigInt)
         case OfString(String)
-        case OfArrayOfInt(FooArray[Int32])
-        case OfArrayOfString(FooArray[String])
+        case OfArrayOfInt(UnscopedArray[Int32])
+        case OfArrayOfString(UnscopedArray[String])
         case OfTuple(Bool, Char, String)
     }
 

@@ -21,7 +21,7 @@ use Fixpoint/Shared.PredSym;
 
 namespace Fixpoint/Ast {
     pub enum Constraint[v] {
-        case Constraint(HeadPredicate[v], FooArray[BodyPredicate[v]])
+        case Constraint(HeadPredicate[v], UnscopedArray[BodyPredicate[v]])
     }
 
     instance PredSymsOf[Constraint[v]] {

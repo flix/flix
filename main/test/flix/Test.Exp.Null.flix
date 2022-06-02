@@ -10,7 +10,7 @@ namespace Test/Exp/Null {
     def testNullString01(): String = null as String
 
     @test
-    def testNullArray01(): FooArray[String] = null as FooArray[String]
+    def testNullArray01(): UnscopedArray[String] = null as UnscopedArray[String]
 
     @test
     def testNullChannel01(): Channel[String] = null as Channel[String]

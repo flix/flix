@@ -55,55 +55,55 @@ namespace Test/Exp/ReifyType {
     def reifyInt6402(): Bool = reflect(1i64) == ReifiedInt64
 
     @test
-    def reifyArrayUnit3201(): Bool = reifyType FooArray[Unit] == ReifiedArray(ReifiedUnit)
+    def reifyArrayUnit3201(): Bool = reifyType UnscopedArray[Unit] == ReifiedArray(ReifiedUnit)
 
     @test
     def reifyArrayUnit3202(): Bool & Impure = reflect([()]) == ReifiedArray(ReifiedUnit)
 
     @test
-    def reifyArrayBool3201(): Bool = reifyType FooArray[Bool] == ReifiedArray(ReifiedBool)
+    def reifyArrayBool3201(): Bool = reifyType UnscopedArray[Bool] == ReifiedArray(ReifiedBool)
 
     @test
     def reifyArrayBool3202(): Bool & Impure = reflect([false]) == ReifiedArray(ReifiedBool)
 
     @test
-    def reifyArrayChar3201(): Bool = reifyType FooArray[Char] == ReifiedArray(ReifiedChar)
+    def reifyArrayChar3201(): Bool = reifyType UnscopedArray[Char] == ReifiedArray(ReifiedChar)
 
     @test
     def reifyArrayChar3202(): Bool & Impure = reflect(['b']) == ReifiedArray(ReifiedChar)
 
     @test
-    def reifyArrayFloat3201(): Bool = reifyType FooArray[Float32] == ReifiedArray(ReifiedFloat32)
+    def reifyArrayFloat3201(): Bool = reifyType UnscopedArray[Float32] == ReifiedArray(ReifiedFloat32)
 
     @test
     def reifyArrayFloat3202(): Bool & Impure = reflect([1.0f32]) == ReifiedArray(ReifiedFloat32)
 
     @test
-    def reifyArrayFloat6401(): Bool = reifyType FooArray[Float64] == ReifiedArray(ReifiedFloat64)
+    def reifyArrayFloat6401(): Bool = reifyType UnscopedArray[Float64] == ReifiedArray(ReifiedFloat64)
 
     @test
     def reifyArrayFloat6402(): Bool & Impure = reflect([1.0f64]) == ReifiedArray(ReifiedFloat64)
 
     @test
-    def reifyArrayInt801(): Bool = reifyType FooArray[Int8] == ReifiedArray(ReifiedInt8)
+    def reifyArrayInt801(): Bool = reifyType UnscopedArray[Int8] == ReifiedArray(ReifiedInt8)
 
     @test
     def reifyArrayInt802(): Bool & Impure = reflect([1i8]) == ReifiedArray(ReifiedInt8)
 
     @test
-    def reifyArrayInt1601(): Bool = reifyType FooArray[Int16] == ReifiedArray(ReifiedInt16)
+    def reifyArrayInt1601(): Bool = reifyType UnscopedArray[Int16] == ReifiedArray(ReifiedInt16)
 
     @test
     def reifyArrayInt1602(): Bool & Impure = reflect([1i16]) == ReifiedArray(ReifiedInt16)
 
     @test
-    def reifyArrayInt3201(): Bool = reifyType FooArray[Int32] == ReifiedArray(ReifiedInt32)
+    def reifyArrayInt3201(): Bool = reifyType UnscopedArray[Int32] == ReifiedArray(ReifiedInt32)
 
     @test
     def reifyArrayInt3202(): Bool & Impure = reflect([1]) == ReifiedArray(ReifiedInt32)
 
     @test
-    def reifyArrayInt6401(): Bool = reifyType FooArray[Int64] == ReifiedArray(ReifiedInt64)
+    def reifyArrayInt6401(): Bool = reifyType UnscopedArray[Int64] == ReifiedArray(ReifiedInt64)
 
     @test
     def reifyArrayInt6402(): Bool & Impure = reflect([1i64]) == ReifiedArray(ReifiedInt64)
