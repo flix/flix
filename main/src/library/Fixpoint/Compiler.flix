@@ -37,15 +37,15 @@ namespace Fixpoint {
     ///
     def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] & Impure with ToString[v] = match d {
         case Datalog(facts, rules) =>
-            let stmts = new MutList(static);
+            let stmts = new MutList(Static);
             Array.foreach(compileRule(stmts), facts);
             Array.foldRight(rule -> match rule {
                 case Constraint(HeadAtom(p, _, _), _) =>
                     let ruleStratum = Map.getWithDefault(p, 0, strat);
                     Map.insertWith(List.append, ruleStratum, rule :: Nil)
             }, Map#{}, rules) |>
-            Map.foreach(_ -> (x -> List.toArray(x, static)) >> compileStratum(stmts));
-            RamStmt.Seq(MutList.toArray(stmts, static))
+            Map.foreach(_ -> (x -> List.toArray(x, Static)) >> compileStratum(stmts));
+            RamStmt.Seq(MutList.toArray(stmts, Static))
         case _ => bug!("Datalog normalization bug")
     }
 
@@ -72,7 +72,7 @@ namespace Fixpoint {
             let arity = Array.length(terms);
             Map.insert(pred, (arity, den))
         }, Map#{}, stratum);
-        let loopBody = new MutList(static);
+        let loopBody = new MutList(Static);
         Array.foreach(compileRule(stmts), stratum);
         Map.foreach(predSym -> match (arity, den) -> {
             let full = RamSym.Full(predSym, arity, den);
@@ -102,7 +102,7 @@ namespace Fixpoint {
                 BoolExp.Empty(RamSym.Delta(predSym, arity, den))
             }, idb) |>
             Map.valuesOf;
-        let untilBody = RamStmt.Seq(MutList.toArray(loopBody, static));
+        let untilBody = RamStmt.Seq(MutList.toArray(loopBody, Static));
         let fixpoint = RamStmt.Until(loopTest, untilBody);
         MutList.push!(fixpoint, stmts)
 

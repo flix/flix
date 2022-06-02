@@ -43,7 +43,7 @@ namespace Fixpoint {
     type alias SearchEnv[v] = (Array[Tuple[v]], Array[v])
 
     def interpret(stmt: RamStmt[v]): Database[v] & Impure with Order[v], ToString[v] =
-        interpretWithDatabase(new MutMap(static), stmt)
+        interpretWithDatabase(new MutMap(Static), stmt)
 
     def interpretWithDatabase(db: Database[v], stmt: RamStmt[v]): Database[v] & Impure with Order[v], ToString[v] =
         let _ = notifyPreInterpret(stmt);
@@ -53,15 +53,15 @@ namespace Fixpoint {
     def evalStmt(db: Database[v], stmt: RamStmt[v]): Unit & Impure with Order[v], ToString[v] = match stmt {
         case RamStmt.Insert(relOp) => evalOp(db, allocEnv(0, relOp), relOp)
         case RamStmt.Merge(srcSym, dstSym) =>
-            let dst = MutMap.getOrElsePut!(dstSym, new MutMap(static), db);
+            let dst = MutMap.getOrElsePut!(dstSym, new MutMap(Static), db);
             match toDenotation(srcSym) {
                 case Denotation.Relational =>
-                    MutMap.merge!(MutMap.getWithDefault(srcSym, new MutMap(static), db), dst)
+                    MutMap.merge!(MutMap.getWithDefault(srcSym, new MutMap(Static), db), dst)
                 case Denotation.Latticenal(_, _, lub, _) =>
-                    MutMap.mergeWith!(lub, MutMap.getWithDefault(srcSym, new MutMap(static), db), dst)
+                    MutMap.mergeWith!(lub, MutMap.getWithDefault(srcSym, new MutMap(Static), db), dst)
             }
         case RamStmt.Assign(lhs, rhs) =>
-            MutMap.put!(lhs, MutMap.getWithDefault(rhs, new MutMap(static), db), db)
+            MutMap.put!(lhs, MutMap.getWithDefault(rhs, new MutMap(Static), db), db)
         case RamStmt.Purge(ramSym) => MutMap.remove!(ramSym, db)
         case RamStmt.Seq(stmts) => Array.foreach(evalStmt(db), stmts)
         case RamStmt.Until(test, body) =>
@@ -77,7 +77,7 @@ namespace Fixpoint {
     def allocEnv(depth: Int32, relOp: RelOp[v]): SearchEnv[v] & Impure = match relOp {
         case RelOp.Search(_, _, body) => allocEnv(depth + 1, body)
         case RelOp.Query(_, _, _, body) => allocEnv(depth + 1, body)
-        case RelOp.Project(_) => (Array.new(Tuple([]), depth, static), Array.new($DEFAULT$, depth, static))
+        case RelOp.Project(_) => (Array.new(Tuple([]), depth, Static), Array.new($DEFAULT$, depth, Static))
         case RelOp.If(_, then) => allocEnv(depth, then)
     }
 
@@ -89,7 +89,7 @@ namespace Fixpoint {
                     tupleEnv[i] = t;
                     latEnv[i] = l;
                     evalOp(db, env, body)
-                }, MutMap.getWithDefault(ramSym, new MutMap(static), db))
+                }, MutMap.getWithDefault(ramSym, new MutMap(Static), db))
             case RelOp.Query(RowVar.Index(i), ramSym, query, body) =>
                 let (tupleEnv, latEnv) = env;
                 // TODO: Unsafe effect cast
@@ -97,16 +97,16 @@ namespace Fixpoint {
                     tupleEnv[i] = t;
                     latEnv[i] = l;
                     evalOp(db, env, body)
-                }, MutMap.getWithDefault(ramSym, new MutMap(static), db))
+                }, MutMap.getWithDefault(ramSym, new MutMap(Static), db))
             case RelOp.Project(terms, ramSym) =>
-                let rel = MutMap.getOrElsePut!(ramSym, new MutMap(static), db);
+                let rel = MutMap.getOrElsePut!(ramSym, new MutMap(Static), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
                         let tuple = Tuple(Array.map(evalTerm(env), terms));
                         MutMap.put!(tuple, $DEFAULT$, rel)
                     case Denotation.Latticenal(bot, leq, lub, _) =>
                         let len = Array.length(terms);
-                        let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1, static));
+                        let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1, Static));
                         let lat = evalTerm(env, terms[len - 1]);
                         if (lat `leq` bot)
                             ()
@@ -136,16 +136,16 @@ namespace Fixpoint {
     def evalBoolExp(db: Database[v], env: SearchEnv[v], es: List[BoolExp[v]]): Bool & Impure with Order[v], ToString[v] =
         List.forall(exp -> match exp {
             case BoolExp.Empty(ramSym) =>
-                MutMap.isEmpty(MutMap.getWithDefault(ramSym, new MutMap(static), db))
+                MutMap.isEmpty(MutMap.getWithDefault(ramSym, new MutMap(Static), db))
             case BoolExp.NotMemberOf(terms, ramSym) =>
-                let rel = MutMap.getWithDefault(ramSym, new MutMap(static), db);
+                let rel = MutMap.getWithDefault(ramSym, new MutMap(Static), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
                         let tuple = Tuple(Array.map(evalTerm(env), terms));
                         not MutMap.memberOf(tuple, rel)
                     case Denotation.Latticenal(bot, leq, _, _) =>
                         let len = Array.length(terms);
-                        let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1, static));
+                        let key = Tuple(Array.init(i -> evalTerm(env, terms[i]), len - 1, Static));
                         let lat = evalTerm(env, terms[len - 1]);
                         not (lat `leq` MutMap.getWithDefault(key, bot, rel))
                 }

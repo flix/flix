@@ -46,7 +46,7 @@ object Weeder {
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
     "if", "import", "inline", "instance", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
     "namespace", "null", "opaque", "override", "pub", "ref", "region", "reify",
-    "reifyBool", "reifyEff", "reifyType", "rel", "sealed", "set", "spawn", "static", "true",
+    "reifyBool", "reifyEff", "reifyType", "rel", "sealed", "set", "spawn", "Static", "true",
     "type", "use", "where", "with", "|||", "~~~", "discard"
   )
 

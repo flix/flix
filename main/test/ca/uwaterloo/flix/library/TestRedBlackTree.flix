@@ -251,8 +251,8 @@ namespace TestRedBlackTree {
     def mapWithKey06(): Bool & Impure =
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = new MutList(static);
-        Map.mapWithKey((k, v) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
+        let a = new MutList(Static);
+        Map.mapWithKey((k, v) -> { let b = new MutList(Static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
         MutList.toList(a) == range
 
     @test
