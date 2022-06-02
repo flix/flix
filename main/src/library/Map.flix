@@ -834,10 +834,11 @@ namespace Map {
         };
         loop(empty())
 
-    pub def explode(m: Map[k, t[v]]): Set[(k, v)] with Foldable[t], Order[v] =
-        mapWithKey((k, t) -> Foldable.toList(t) |> List.map(e -> (k, e)) |> List.toSet, m) |>
-                       valuesOf |>
-                       List.foldLeft((s, acc) -> Set.union(acc, s), Set.empty())
+    ///
+    /// Returns the set of tuples `(k, v)` where `v` is a value in `t` where `k => t`.
+    ///
+    pub def explode(m: Map[k, t[v]]): Set[(k, v)] with Foldable[t], Order[k], Order[v] =
+        foldLeftWithKey((acc, k, t) -> Foldable.toSet(t) |> Set.map(e -> (k, e)) |> Set.union(acc), Set.empty(), m)
 
     ///
     /// Extracts a range of key-value pairs from the map `m`.
