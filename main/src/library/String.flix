@@ -113,7 +113,7 @@ namespace String {
     /// Returns the given string `s` as an array of characters.
     ///
     @Time(length(s)) @Space(length(s))
-    pub def toArray(s: String, r: Region[r]): ScopedArray[Char, r] \ Write(r) =
+    pub def toArray(s: String, r: Region[r]): Array[Char, r] \ Write(r) =
         Array.init(i -> charAt(i, s), length(s), r)
 
     ///

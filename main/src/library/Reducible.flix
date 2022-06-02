@@ -258,7 +258,7 @@ pub class Reducible[t: Type -> Type] {
     ///
     /// Returns `t` as an array.
     ///
-    pub def toArray(t: t[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
+    pub def toArray(t: t[a], r: Region[r]): Array[a, r] \ Write(r) =
         let v = new MutList(r);
         Reducible.foldLeft((_, a) -> MutList.push!(a, v), (), t);
         MutList.toArray(v, r)
