@@ -19,7 +19,7 @@ use Fixpoint/Shared.PredSym;
 
 namespace Fixpoint/Ast {
     pub enum HeadPredicate[v] {
-        case HeadAtom(PredSym, Denotation[v], Array[HeadTerm[v]])
+        case HeadAtom(PredSym, Denotation[v], FooArray[HeadTerm[v]])
     }
 
     instance PredSymsOf[HeadPredicate[v]] {

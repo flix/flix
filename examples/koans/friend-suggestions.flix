@@ -1,4 +1,4 @@
-pub def friendSuggestions(friends: List[(person, person)]): Array[(person, person)] with Boxable[person] =
+pub def friendSuggestions(friends: List[(person, person)]): FooArray[(person, person)] with Boxable[person] =
     let f = project friends into Friend;
     let lp = #{
         Suggestion(me, nf) :-

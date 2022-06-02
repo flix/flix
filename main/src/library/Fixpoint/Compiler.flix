@@ -67,7 +67,7 @@ namespace Fixpoint {
     /// Note that Eval-Rule is the code emitted by `compileRule`
     /// and Eval-Rule-Incr is the code emitted by `compileRuleIncr`.
     ///
-    def compileStratum(stmts: MutList[RamStmt[v], Impure], stratum: Array[Constraint[v]]): Unit & Impure with ToString[v] =
+    def compileStratum(stmts: MutList[RamStmt[v], Impure], stratum: FooArray[Constraint[v]]): Unit & Impure with ToString[v] =
         let idb = Array.foldRight(match Constraint(HeadAtom(pred, den, terms), _) -> {
             let arity = Array.length(terms);
             Map.insert(pred, (arity, den))
@@ -251,7 +251,7 @@ namespace Fixpoint {
     ///
     /// Note that row variables not unique across rules.
     ///
-    def augmentBody(body: Array[BodyPredicate[v]]): Array[(BodyPredicate[v], RowVar)] & Impure =
+    def augmentBody(body: FooArray[BodyPredicate[v]]): FooArray[(BodyPredicate[v], RowVar)] & Impure =
         Array.mapWithIndex(atom -> i -> match atom {
             case BodyAtom(predSym, _, Polarity.Positive, _, _) => (atom, RowVar.Named("${predSym}$${i}"))
             case _ => (atom, RowVar.Named("IfYouSeeThisYouFoundABug"))
@@ -266,7 +266,7 @@ namespace Fixpoint {
     /// `x` is mapped to B$1[0] because `x` occurs positively in the second atom.
     /// `s` is mapped to the glb of all its positive occurences because it is latticenal.
     ///
-    def unifyVars(body: Array[(BodyPredicate[v], RowVar)]): Map[VarSym, RamTerm[v]] & Impure =
+    def unifyVars(body: FooArray[(BodyPredicate[v], RowVar)]): Map[VarSym, RamTerm[v]] & Impure =
         Array.foldLeft(acc -> match (atom, rowVar) -> match atom {
             case BodyAtom(_, denotation, Polarity.Positive, _, terms) =>
                 Array.mapWithIndex(term -> i -> (term, i), terms) |>
@@ -302,7 +302,7 @@ namespace Fixpoint {
     /// (2) comes from the negative atom `not A(x)`.
     /// (3) is a function call that computes the expression `x > 0`.
     ///
-    def compileBody(env: Map[VarSym, RamTerm[v]], body: Array[(BodyPredicate[v], RowVar)]): List[BoolExp[v]] & Impure =
+    def compileBody(env: Map[VarSym, RamTerm[v]], body: FooArray[(BodyPredicate[v], RowVar)]): List[BoolExp[v]] & Impure =
         Array.foldRight(match (atom, rowVar) -> acc ->
             let compileBodyTerm = term -> j -> match term {
                 case BodyTerm.Wild      => RamTerm.RowLoad(rowVar, j)

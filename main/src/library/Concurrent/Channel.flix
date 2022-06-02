@@ -176,7 +176,7 @@ namespace Concurrent/Channel {
     /// the index of the channel. Returns None if the default case is chosen.
     ///
     @Internal
-    pub def select(channels: Array[Mpmc], hasDefault: Bool): Option[(Int32, Boxed)] & Impure =
+    pub def select(channels: FooArray[Mpmc], hasDefault: Bool): Option[(Int32, Boxed)] & Impure =
         // Create a new lock and condition for this select. The condition is
         // potentially put into the waiting getters of the channels if a
         // default isn't defined.
@@ -269,7 +269,7 @@ namespace Concurrent/Channel {
     /// has an element in the array along with its index. Returns false if the
     /// default case is chosen (no element was immediately available).
     ///
-    def selectHelper(channels: Array[Mpmc], hasDefault: Bool, sortedChannels: Array[Mpmc], selectLock: Concurrent/ReentrantLock.ReentrantLock, selectCondition: Concurrent/Condition.Condition): Option[(Int32, Boxed)] & Impure =
+    def selectHelper(channels: FooArray[Mpmc], hasDefault: Bool, sortedChannels: FooArray[Mpmc], selectLock: Concurrent/ReentrantLock.ReentrantLock, selectCondition: Concurrent/Condition.Condition): Option[(Int32, Boxed)] & Impure =
         // bug if the thread is interrupted
         if (threadInterrupted()) bug!("thread interrupted") else
 
@@ -337,14 +337,14 @@ namespace Concurrent/Channel {
     ///
     /// Locks the given channels.
     ///
-    def lockChannels(a: Array[Mpmc]): Unit & Impure =
+    def lockChannels(a: FooArray[Mpmc]): Unit & Impure =
         let lockChannel = match Mpmc(_, channelLock, _, _, _, _, _) -> lock(channelLock);
         Array.foreach(lockChannel, a)
 
     ///
     /// Unlocks the given channels.
     ///
-    def unlockChannels(a: Array[Mpmc]): Unit & Impure =
+    def unlockChannels(a: FooArray[Mpmc]): Unit & Impure =
         let unlockChannel = match Mpmc(_, lock, _, _, _, _, _) -> unlock(lock);
         // TODO: Optimization possibility. Golang unlocks their channels in
         // reverse order.
@@ -355,7 +355,7 @@ namespace Concurrent/Channel {
     /// Retrieves the element of the first channel in the array that has one,
     /// if such a channel exists. A runtime error ocurrs if i is out of bounds.
     ///
-    def firstAvailableElement(i: Int32, channels: Array[Mpmc]): Option[(Int32, Boxed)] & Impure =
+    def firstAvailableElement(i: Int32, channels: FooArray[Mpmc]): Option[(Int32, Boxed)] & Impure =
         if (i < 0 or i >= Array.length(channels)) {
             // i is out of bounds
             bug!("Implementation error: out of bounds ${i}, length ${Array.length(channels)}")

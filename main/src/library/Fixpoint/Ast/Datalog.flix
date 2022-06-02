@@ -24,7 +24,7 @@ use Fixpoint/Ram.RamSym;
 
 namespace Fixpoint/Ast {
     pub enum Datalog[v] {
-        case Datalog(Array[Constraint[v]], Array[Constraint[v]])
+        case Datalog(FooArray[Constraint[v]], FooArray[Constraint[v]])
         case Model(Map[RamSym[v], Map[Tuple[v], v]])
         case Join(Datalog[v], Datalog[v])
     }
