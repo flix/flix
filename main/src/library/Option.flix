@@ -235,10 +235,8 @@ namespace Option {
     ///
     /// Returns `1` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def count(f: a -> Bool, o: Option[a]): Int32 = match o {
+    pub def count(f: a -> Bool & ef, o: Option[a]): Int32 & ef = match o {
         case None    => 0
         case Some(v) => if (f(v)) 1 else 0
     }

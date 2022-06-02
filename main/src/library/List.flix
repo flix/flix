@@ -684,10 +684,8 @@ namespace List {
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * length(l)) @Space(space(f) * length(l))
-    pub def count(f: a -> Bool, l: List[a]): Int32 =
+    pub def count(f: a -> Bool & ef, l: List[a]): Int32 & ef =
         foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, l)
 
     ///

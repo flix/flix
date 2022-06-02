@@ -42,7 +42,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns the number of elements in `t` that satisfy the predicate `f`.
     ///
-    pub def count(f: a -> Bool, t: t[a]): Int32 =
+    pub def count(f: a -> Bool & ef, t: t[a]): Int32 & ef =
         Foldable.foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, t)
 
     ///

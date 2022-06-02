@@ -125,7 +125,7 @@ namespace MutList {
     ///
     /// Returns `0` if the given mutable list `v` is empty.
     ///
-    pub def count(f: a -> Bool, v: MutList[a, r]): Int32 \ Read(r) =
+    pub def count(f: a -> Bool & ef, v: MutList[a, r]): Int32 \ { ef, Read(r) } =
         foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, v)
 
     ///
