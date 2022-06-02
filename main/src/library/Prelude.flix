@@ -1,7 +1,7 @@
 ///
-/// FooArray[t] is a type alias for a scoped array with a global lifetime.
+/// UnscopedArray[t] is a type alias for a scoped array with a global lifetime.
 ///
-pub type alias FooArray[t] = Array[t, false]
+pub type alias UnscopedArray[t] = Array[t, false]
 
 ///
 /// The Reified Flix Bools.

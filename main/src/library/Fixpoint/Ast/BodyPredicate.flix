@@ -19,14 +19,14 @@ use Fixpoint/Shared.PredSym;
 
 namespace Fixpoint/Ast {
     pub enum BodyPredicate[v] {
-        case BodyAtom(PredSym, Denotation[v], Polarity, Fixity, FooArray[BodyTerm[v]])
+        case BodyAtom(PredSym, Denotation[v], Polarity, Fixity, UnscopedArray[BodyTerm[v]])
         case Guard0(Unit -> Bool)
         case Guard1(v -> Bool, VarSym)
         case Guard2(v -> v -> Bool, VarSym, VarSym)
         case Guard3(v -> v -> v -> Bool, VarSym, VarSym, VarSym)
         case Guard4(v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym)
         case Guard5(v -> v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym, VarSym)
-        case Loop1(v -> FooArray[v])
+        case Loop1(v -> UnscopedArray[v])
     }
 
     instance PredSymsOf[BodyPredicate[v]] {

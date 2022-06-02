@@ -1,4 +1,4 @@
-pub def halfSiblings(siblings: List[(person, person)]): FooArray[(person, person)] with Boxable[person] =
+pub def halfSiblings(siblings: List[(person, person)]): UnscopedArray[(person, person)] with Boxable[person] =
     let s = project siblings into Sibling;
     let lp: #{ Sibling(person, person), Parent(person, person), HalfSibling(person, person) } = #{
         Sibling(x, y) :- Parent(x, p), Parent(y, p), if x != y.

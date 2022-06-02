@@ -17,7 +17,7 @@
 namespace Fixpoint/Ram {
     pub enum BoolExp[v] {
         case Empty(RamSym[v])
-        case NotMemberOf(FooArray[RamTerm[v]], RamSym[v])
+        case NotMemberOf(UnscopedArray[RamTerm[v]], RamSym[v])
         case Eq(RamTerm[v], RamTerm[v])
         case Leq(v -> v -> Bool, RamTerm[v], RamTerm[v])
         case Guard0(Unit -> Bool)

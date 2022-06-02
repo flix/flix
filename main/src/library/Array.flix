@@ -261,7 +261,7 @@ namespace Array {
     /// Return the positions of the all the occurrences of `a` in `arr`.
     ///
     @Time(length(arr)) @Space(length(arr))
-    pub def indices(a: a, arr: FooArray[a]): FooArray[Int32] & Impure with Eq[a] =
+    pub def indices(a: a, arr: UnscopedArray[a]): UnscopedArray[Int32] & Impure with Eq[a] =
         findIndices(b -> a == b, arr)
 
     ///
@@ -419,7 +419,7 @@ namespace Array {
     /// Returns the result of applying `f` to every element in `a` and concatenating the results.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def flatMap(f: a -> FooArray[b] & ef, a: FooArray[a]): FooArray[b] & Impure =
+    pub def flatMap(f: a -> UnscopedArray[b] & ef, a: UnscopedArray[a]): UnscopedArray[b] & Impure =
         let len = length(a);
         init(i -> f(a[i]), len, static) |> flatten
 
@@ -578,7 +578,7 @@ namespace Array {
     /// Returns the concatenation of the elements in `arrs` with the elements of `sep` inserted between every two adjacent elements.
     ///
     @Time(length(arrs)) @Space(length(arrs))
-    pub def intercalate(sep: FooArray[a], arrs: FooArray[FooArray[a]]): FooArray[a] & Impure =
+    pub def intercalate(sep: UnscopedArray[a], arrs: UnscopedArray[UnscopedArray[a]]): UnscopedArray[a] & Impure =
         let count = length(arrs);
         let sepLength = length(sep);
         let sepCount = if (count < 2) 0 else count - 1;
@@ -797,7 +797,7 @@ namespace Array {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b & ef, arr: FooArray[a]): b & Impure with Monoid[b] =
+    pub def foldMap(f: a -> b & ef, arr: UnscopedArray[a]): b & Impure with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), arr)
 
     ///
@@ -877,7 +877,7 @@ namespace Array {
     /// Returns the concatenation of the arrays of in the array `arrs`.
     ///
     @Time(length(arrs)) @Space(length(arrs))
-    pub def flatten(arrs: FooArray[FooArray[a]]) : FooArray[a] & Impure =
+    pub def flatten(arrs: UnscopedArray[UnscopedArray[a]]) : UnscopedArray[a] & Impure =
         let len = sumLengths(arrs);
         match headArrays(arrs) {
             case None => []
@@ -1352,7 +1352,7 @@ namespace Array {
     /// Returns the positions of the all the elements in `a` satisfying `f`.
     ///
     @Time(time(f) * length(a)) @Space(space(f) * length(a))
-    pub def findIndices(f: a -> Bool & ef, a: FooArray[a]): FooArray[Int32] & Impure =
+    pub def findIndices(f: a -> Bool & ef, a: UnscopedArray[a]): UnscopedArray[Int32] & Impure =
         let len = length(a);
         let l = new MutList(static);
         def loop(i) = {
@@ -1652,48 +1652,48 @@ namespace Array {
     pub def copyOfRange(b: Int32, e: Int32, a: Array[a, r1], _: Region[r2]): Array[a, r2] \ { Read(r1), Write(r2) } =
         match (reifyType a) {
             case ErasedType =>
-                let arr = a as FooArray[##java.lang.Object];
-                import static java.util.Arrays.copyOfRange(FooArray[##java.lang.Object], Int32, Int32): Array[##java.lang.Object, r2] & r1 and r2 as copy;
+                let arr = a as UnscopedArray[##java.lang.Object];
+                import static java.util.Arrays.copyOfRange(UnscopedArray[##java.lang.Object], Int32, Int32): Array[##java.lang.Object, r2] & r1 and r2 as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedUnit =>
-                let arr = a as FooArray[Unit];
-                import static java.util.Arrays.copyOfRange(FooArray[Unit], Int32, Int32): Array[Unit, r2] & r1 and r2 as copy;
+                let arr = a as UnscopedArray[Unit];
+                import static java.util.Arrays.copyOfRange(UnscopedArray[Unit], Int32, Int32): Array[Unit, r2] & r1 and r2 as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedBool =>
-                let arr = a as FooArray[Bool];
-                import static java.util.Arrays.copyOfRange(FooArray[Bool], Int32, Int32): Array[Bool, r2] & r1 and r2 as copy;
+                let arr = a as UnscopedArray[Bool];
+                import static java.util.Arrays.copyOfRange(UnscopedArray[Bool], Int32, Int32): Array[Bool, r2] & r1 and r2 as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedChar =>
-                let arr = a as FooArray[Char];
-                import static java.util.Arrays.copyOfRange(FooArray[Char], Int32, Int32): Array[Char, r2] & r1 and r2 as copy;
+                let arr = a as UnscopedArray[Char];
+                import static java.util.Arrays.copyOfRange(UnscopedArray[Char], Int32, Int32): Array[Char, r2] & r1 and r2 as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedFloat32 =>
-                let arr = a as FooArray[Float32];
-                import static java.util.Arrays.copyOfRange(FooArray[Float32], Int32, Int32): Array[Float32, r2] & r1 and r2 as copy;
+                let arr = a as UnscopedArray[Float32];
+                import static java.util.Arrays.copyOfRange(UnscopedArray[Float32], Int32, Int32): Array[Float32, r2] & r1 and r2 as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedFloat64 =>
-                let arr = a as FooArray[Float64];
-                import static java.util.Arrays.copyOfRange(FooArray[Float64], Int32, Int32): Array[Float64, r2] & r1 and r2 as copy;
+                let arr = a as UnscopedArray[Float64];
+                import static java.util.Arrays.copyOfRange(UnscopedArray[Float64], Int32, Int32): Array[Float64, r2] & r1 and r2 as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedInt8 =>
-                let arr = a as FooArray[Int8];
-                import static java.util.Arrays.copyOfRange(FooArray[Int8], Int32, Int32): Array[Int8, r2] & r1 and r2 as copy;
+                let arr = a as UnscopedArray[Int8];
+                import static java.util.Arrays.copyOfRange(UnscopedArray[Int8], Int32, Int32): Array[Int8, r2] & r1 and r2 as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedInt16 =>
-                let arr = a as FooArray[Int16];
-                import static java.util.Arrays.copyOfRange(FooArray[Int16], Int32, Int32): Array[Int16, r2] & r1 and r2 as copy;
+                let arr = a as UnscopedArray[Int16];
+                import static java.util.Arrays.copyOfRange(UnscopedArray[Int16], Int32, Int32): Array[Int16, r2] & r1 and r2 as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedInt32 =>
-                let arr = a as FooArray[Int32];
-                import static java.util.Arrays.copyOfRange(FooArray[Int32], Int32, Int32): Array[Int32, r2] & r1 and r2 as copy;
+                let arr = a as UnscopedArray[Int32];
+                import static java.util.Arrays.copyOfRange(UnscopedArray[Int32], Int32, Int32): Array[Int32, r2] & r1 and r2 as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedInt64 =>
-                let arr = a as FooArray[Int64];
-                import static java.util.Arrays.copyOfRange(FooArray[Int64], Int32, Int32): Array[Int64, r2] & r1 and r2 as copy;
+                let arr = a as UnscopedArray[Int64];
+                import static java.util.Arrays.copyOfRange(UnscopedArray[Int64], Int32, Int32): Array[Int64, r2] & r1 and r2 as copy;
                 copy(arr, b, e) as Array[a, r2]
             case ReifiedArray(_) =>
-                let arr = a as FooArray[##java.lang.Object];
-                import static java.util.Arrays.copyOfRange(FooArray[##java.lang.Object], Int32, Int32): Array[##java.lang.Object, r2] & r1 and r2 as copy;
+                let arr = a as UnscopedArray[##java.lang.Object];
+                import static java.util.Arrays.copyOfRange(UnscopedArray[##java.lang.Object], Int32, Int32): Array[##java.lang.Object, r2] & r1 and r2 as copy;
                 copy(arr, b, e) as Array[a, r2]
         }
 
