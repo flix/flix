@@ -445,9 +445,7 @@ namespace Chain {
     ///
     /// Returns `true` if `c` is empty.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def forall(f: a -> Bool, c: Chain[a]): Bool =
+    pub def forall(f: a -> Bool & ef, c: Chain[a]): Bool & ef =
         def loop(cc) = match viewLeft(cc) {
             case NoneLeft        => true
             case SomeLeft(a, rs) => if (not f(a)) false else loop(rs)

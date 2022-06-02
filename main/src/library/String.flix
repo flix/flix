@@ -710,7 +710,7 @@ namespace String {
     /// Returns `true` if `s` is empty.
     ///
     @Time(time(f) * length(s)) @Space(space(f) * length(s))
-    pub def forall(f: Char -> Bool, s: String): Bool = match findIndexOfLeft(x -> not (f(x)), s) {
+    pub def forall(f: Char -> Bool & ef, s: String): Bool & ef = match findIndexOfLeft(x -> not (f(x)), s) {
         case None => true
         case Some(_) => false
     }

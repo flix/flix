@@ -182,10 +182,8 @@ namespace Option {
     ///
     /// Otherwise returns `false`.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f)) @Space(space(f))
-    pub def forall(f: a -> Bool, o: Option[a]): Bool = match o {
+    pub def forall(f: a -> Bool & ef, o: Option[a]): Bool & ef = match o {
         case None    => true
         case Some(v) => f(v)
     }

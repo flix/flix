@@ -914,7 +914,7 @@ namespace Array {
     /// Returns `true` if `arr` is empty.
     ///
     @Time(time(f) * length(arr)) @Space(space(f))
-    pub def forall(f: a -> Bool, arr: ScopedArray[a, r]): Bool \ Read(r) =
+    pub def forall(f: a -> Bool & ef, arr: ScopedArray[a, r]): Bool \ { ef, Read(r) } =
         let len = length(arr);
         def loop(i) = {
             if (i >= len)
