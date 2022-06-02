@@ -66,7 +66,7 @@ namespace String {
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
     pub def split(regex: {regex :: String}, s: String): List[String] =
-        import java.lang.String.split(String): Array[String] & Pure;
+        import java.lang.String.split(String): FooArray[String] & Pure;
         Array.toList(split(s, regex.regex)) as & Pure
 
     ///
@@ -1148,7 +1148,7 @@ namespace String {
     ///
     /// Helper function for `levenshteinDistance`.
     ///
-    def arraySwap(a: Array[Int32], b : Array[Int32]): Unit & Impure =
+    def arraySwap(a: FooArray[Int32], b : FooArray[Int32]): Unit & Impure =
         forIndex(0, Array.length(a) - 1, {i ->  a[i] = b[i]})
 
     ///
@@ -1158,7 +1158,7 @@ namespace String {
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
     ///
     @Time(Int32.min(length(a), length(b))) @Space(Int32.min(length(a), length(b)))
-    pub def zip(a: String, b: String): Array[(Char, Char)] & Impure =
+    pub def zip(a: String, b: String): FooArray[(Char, Char)] & Impure =
         let len = Int32.min(length(a), length(b));
         Array.init(i -> (charAt(i, a), charAt(i, b)), len, static)
 

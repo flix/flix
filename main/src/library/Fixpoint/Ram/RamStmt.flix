@@ -22,7 +22,7 @@ namespace Fixpoint/Ram {
         case Merge(RamSym[v], RamSym[v])
         case Assign(RamSym[v], RamSym[v])
         case Purge(RamSym[v])
-        case Seq(Array[RamStmt[v]])
+        case Seq(FooArray[RamStmt[v]])
         case Until(List[BoolExp[v]], RamStmt[v])
         case Comment(String)
     }

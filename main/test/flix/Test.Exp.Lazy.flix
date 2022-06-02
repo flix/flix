@@ -49,12 +49,12 @@ namespace Test/Exp/Lazy {
         lazy "string"
 
     @test
-    def testArrayOfIntLazy01(): Lazy[Array[Int32]] & Impure =
+    def testArrayOfIntLazy01(): Lazy[FooArray[Int32]] & Impure =
         let array = [1, 2];
         lazy array
 
     @test
-    def testArrayOfStringLazy01(): Lazy[Array[String]] & Impure =
+    def testArrayOfStringLazy01(): Lazy[FooArray[String]] & Impure =
         let array = ["str", "str2"];
         lazy array
 

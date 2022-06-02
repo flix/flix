@@ -59,7 +59,7 @@ namespace Benchmark {
     /// Runs all benchmarks in `bs`. Attempts to spend no more than `budget` time.
     ///
     @Experimental
-    pub def runWithBudget(bs: Array[Benchmark], budget: Int64): Int32 & Impure =
+    pub def runWithBudget(bs: FooArray[Benchmark], budget: Int64): Int32 & Impure =
         if (bs.length == 0) {
             println("No benchmarks");
             1
@@ -82,7 +82,7 @@ namespace Benchmark {
     ///
     /// Runs every benchmark in `bs` once and estimates its duration.
     ///
-    def warmupAndEstimate(bs: Array[Benchmark]): Array[(Benchmark, Int64)] & Impure = {
+    def warmupAndEstimate(bs: FooArray[Benchmark]): FooArray[(Benchmark, Int64)] & Impure = {
         print("Warmup: ");
         bs |> Array.map(b -> {
             let time = runBenchmarkOnce(b);
@@ -94,7 +94,7 @@ namespace Benchmark {
     ///
     /// Runs all the given benchmarks with estimates `bs` and the given time `budget`.
     ///
-    def runAll(bs: Array[(Benchmark, Int64)], budget: Int64): Unit & Impure = {
+    def runAll(bs: FooArray[(Benchmark, Int64)], budget: Int64): Unit & Impure = {
         let budgetPerBenchmark = budget / (Int32.toInt64(bs.length));
         bs |> Array.foreach(match (b, cost) ->
             let iters = iterations(cost, budgetPerBenchmark);

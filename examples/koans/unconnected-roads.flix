@@ -1,4 +1,4 @@
-pub def unconnected(roads: List[(city, city)]): Array[(city, city)] with Boxable[city] =
+pub def unconnected(roads: List[(city, city)]): FooArray[(city, city)] with Boxable[city] =
     let r = project roads into Road;
     let lp = #{
         City(x) :- Road(x, _).

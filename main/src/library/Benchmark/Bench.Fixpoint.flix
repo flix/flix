@@ -3,7 +3,7 @@ namespace Bench/Fixpoint {
     use Benchmark.Benchmark;
     use Benchmark.defBenchmark;
 
-    pub def benchmarks(): Array[Benchmark] & Impure = [
+    pub def benchmarks(): FooArray[Benchmark] & Impure = [
         benchmarkProjectInto(),
         benchmarkSelect(),
         benchmarkSolve(),
@@ -13,7 +13,7 @@ namespace Bench/Fixpoint {
         benchmarkCompile()
     ] |> Array.flatten
 
-    pub def benchmarkProjectInto(): Array[Benchmark] & Impure =
+    pub def benchmarkProjectInto(): FooArray[Benchmark] & Impure =
         let mkFacts = n -> List.range(1, n) |> List.map(x -> (x, x));
         let facts04 = mkFacts(2 ** 4);
         let facts08 = mkFacts(2 ** 8);
@@ -28,7 +28,7 @@ namespace Bench/Fixpoint {
             defBenchmark("Project (Int, Int) into A (n = ${2 ** 20})", () -> { project facts20 into A })
         ]
 
-    pub def benchmarkSelect(): Array[Benchmark] & Impure =
+    pub def benchmarkSelect(): FooArray[Benchmark] & Impure =
         let mkFacts = n -> (project (List.range(1, n) |> List.map(x -> (x, x))) into A);
         let facts04 = mkFacts(2 ** 4);
         let facts08 = mkFacts(2 ** 8);
@@ -43,7 +43,7 @@ namespace Bench/Fixpoint {
             defBenchmark("Select (Int, Int) from A (n = ${2 ** 20})", () -> { query facts20 select (x, y) from A(x, y) })
         ]
 
-    pub def benchmarkSolve(): Array[Benchmark] & Impure =
+    pub def benchmarkSolve(): FooArray[Benchmark] & Impure =
         let mkEdges = n -> project (List.range(1, n) |> List.map(x -> (x, x + 1))) into Edge;
         let p = #{
             Path(x, y) :- Edge(x, y).
@@ -70,7 +70,7 @@ namespace Bench/Fixpoint {
             //defBenchmark("Solve (Closure) (n = ${2048 ** 2})", () -> { solve p, edges2048 })
         ]
 
-    pub def benchmarkCrossProduct2(): Array[Benchmark] & Impure =
+    pub def benchmarkCrossProduct2(): FooArray[Benchmark] & Impure =
         let mkA = n -> project (List.range(1, n) |> List.map(x -> (0, x))) into A;
         let mkB = n -> project (List.range(1, n) |> List.map(x -> (0, x))) into B;
         let p = #{
@@ -95,7 +95,7 @@ namespace Bench/Fixpoint {
             //defBenchmark("Solve (Cross Product 2) (n = ${2048 ** 2})", () -> { solve p, facts2048 })
         ]
 
-    pub def benchmarkCrossProduct3(): Array[Benchmark] & Impure =
+    pub def benchmarkCrossProduct3(): FooArray[Benchmark] & Impure =
         let mkA = n -> project (List.range(1, n) |> List.map(x -> (0, x))) into A;
         let mkB = n -> project (List.range(1, n) |> List.map(x -> (0, x))) into B;
         let mkC = n -> project (List.range(1, n) |> List.map(x -> (0, x))) into C;
@@ -113,7 +113,7 @@ namespace Bench/Fixpoint {
            // defBenchmark("Solve (Cross Product 3) (n = ${  128 ** 3})", () -> { solve p,  facts128 })
         ]
 
-    pub def benchmarkSolveIntersect(): Array[Benchmark] & Impure =
+    pub def benchmarkSolveIntersect(): FooArray[Benchmark] & Impure =
         let mkA = n -> project (List.range(1, n) |> List.map(x -> (0, x))) into A;
         let mkB = n -> project (List.range(n / 2, n + n / 2) |> List.map(x -> (0, x))) into B;
         let p = #{
@@ -134,7 +134,7 @@ namespace Bench/Fixpoint {
             //defBenchmark("Solve (Intersect) (n = ${2 ** 21})", () -> { solve p, facts21 })
         ]
 
-    pub def benchmarkCompile(): Array[Benchmark] & Impure =
+    pub def benchmarkCompile(): FooArray[Benchmark] & Impure =
         let mkRules = n -> List.range(1, n) |> List.foldLeft((acc, _) -> acc <+> #{
                 A(x, y, z) :- A(z, y, x).
                 A(x: Int32, y: Int32, z: Int32) :- A(x, y, z), B(x, y, z), C(x, y, z).
