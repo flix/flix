@@ -613,8 +613,14 @@ namespace MutList {
     ///
     /// Appends `m` to `v` i.e. inserts all elements from `m` into the end of `v`.
     ///
-    pub def append!(m: m[a], v: MutList[a, r]): Unit \ { Read(r), Write(r) } with Foldable[m] =
+    pub def pushAll!(m: m[a], v: MutList[a, r]): Unit \ { Read(r), Write(r) } with Foldable[m] =
         Foldable.foreach(x -> MutList.push!(x, v), m)
+
+    ///
+    /// Appends `m` to `v` i.e. inserts all elements from `m` into the end of `v`.
+    ///
+    pub def append!(m: m[a], v: MutList[a, r]): Unit \ { Read(r), Write(r) } with Foldable[m] =
+        pushAll!(m, v)
 
     ///
     /// Removes all elements from the given mutable list `v` that do not satisfy the given predicate `f`.
