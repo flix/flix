@@ -2,109 +2,109 @@ namespace Test/Exp/ArrayLit {
 
     @test
     def testArrayLit01(): Unit = region r {
-        let _ = [];
+        discard [];
         ()
     }
 
     @test
     def testArrayLit02(): Unit = region r {
-        let _ = [1];
+        discard [1];
         ()
     }
 
     @test
     def testArrayLit04(): Unit = region r {
-        let _ = [1, 2, 3, 4];
+        discard [1, 2, 3, 4];
         ()
     }
 
     @test
     def testArrayLit05(): Unit = region r {
-        let _ = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+        discard [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
         ()
     }
 
     @test
     def testArrayLit06(): Unit = region r {
-        let _ = [1, 2];
+        discard [1, 2];
         ()
     }
 
     @test
     def testArrayLit07(): Unit = region r {
-        let _ = [true];
+        discard [true];
         ()
     }
 
     @test
     def testArrayLit08(): Unit = region r {
-        let _ = [false];
+        discard [false];
         ()
     }
 
     @test
     def testArrayLit09(): Unit = region r {
-        let _ = [true, false];
+        discard [true, false];
         ()
     }
 
     @test
     def testArrayLit10(): Unit = region r {
-        let _ = [false, true, false];
+        discard [false, true, false];
         ()
     }
 
     @test
     def testArrayLit11(): Unit = region r {
-        let _ = [false, false, false, false, true];
+        discard [false, false, false, false, true];
         ()
     }
 
     @test
     def testArrayLit12(): Unit = region r {
-        let _ = ['c'];
+        discard ['c'];
         ()
     }
 
     @test
     def testArrayLit13(): Unit = region r {
-        let _ = ['a', 'b'];
+        discard ['a', 'b'];
         ()
     }
 
     @test
     def testArrayLit14(): Unit = region r {
-        let _ = ['a', 'b', 'c'];
+        discard ['a', 'b', 'c'];
         ()
     }
 
     @test
     def testArrayLit15(): Unit = region r {
-        let _ = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'];
+        discard ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'];
         ()
     }
 
     @test
     def testArrayLit16(): Unit = region r {
-        let _ = [1i8];
+        discard [1i8];
         ()
     }
 
     @test
     def testArrayLit17(): Unit = region r {
-        let _ = [1i8, 2i8, 3i8];
+        discard [1i8, 2i8, 3i8];
         ()
     }
 
     @test
     def testArrayLit18(): Unit = region r {
-        let _ = [1i8, 2i8, 3i8, 4i8];
+        discard [1i8, 2i8, 3i8, 4i8];
         ()
     }
 
     @test
     def testArrayLit19(): Unit = region r {
-        let _ = [1i16];
+        discard [1i16];
         ()
     }
 

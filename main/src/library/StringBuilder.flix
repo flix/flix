@@ -50,7 +50,7 @@ namespace StringBuilder {
     pub def appendString!(s: String, sb: StringBuilder[r]): Unit \ Write(r) =
         import java.lang.StringBuilder.append(String): ##java.lang.StringBuilder & r;
         let StringBuilder(msb) = sb;
-        let _ = msb `append` s;
+        msb `append` s;
         ()
 
     ///

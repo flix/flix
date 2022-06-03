@@ -809,7 +809,7 @@ namespace Iterator {
             else if (done())
                 None
             else {
-                let _ = next();
+                discard next();
                 skipPos := pos -1;
                 loop()
             }

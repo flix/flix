@@ -46,7 +46,7 @@ namespace Fixpoint {
         interpretWithDatabase(new MutMap(static), stmt)
 
     def interpretWithDatabase(db: Database[v], stmt: RamStmt[v]): Database[v] & Impure with Order[v], ToString[v] =
-        let _ = notifyPreInterpret(stmt);
+        notifyPreInterpret(stmt);
         evalStmt(db, stmt);
         db
 

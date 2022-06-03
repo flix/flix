@@ -116,12 +116,12 @@ instance ToString[Nec[a]] with ToString[a] {
         let fn = () -> region r {
             let sb = new StringBuilder(r);
             StringBuilder.appendString!("Nec#{", sb);
-            let _ = Nec.foldLeft((acc, x) -> {
-                if (acc < 1)
+            Nec.foreach(match (x, i) -> {
+                if (i < 1)
                     StringBuilder.appendString!("${x}", sb)
                 else
-                    StringBuilder.appendString!(", ${x}", sb);
-                acc + 1}, 0, c);
+                    StringBuilder.appendString!(", ${x}", sb)
+                }, Nec.zipWithIndex(c));
             StringBuilder.appendString!("}", sb);
             StringBuilder.toString(sb)
         };
@@ -757,8 +757,7 @@ namespace Nec {
     pub def toArray(c: Nec[a], r: Region[r]): ScopedArray[a, r] \ Write(r) =
         let x = head(c);
         let arr = [x; length(c)] @ r;
-        let f = (i, b) -> { arr[i] = b; i + 1 };
-        let _ = foldLeft(f, 0, c);
+        foreach(match (b, i) -> arr[i] = b, zipWithIndex(c));
         arr
 
     ///

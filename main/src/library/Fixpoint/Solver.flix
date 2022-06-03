@@ -45,7 +45,7 @@ namespace Fixpoint {
     ///
     @Internal
     def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] & Impure with Order[v], ToString[v] =
-        let _ = notifyPreSolve(d, stf);
+        notifyPreSolve(d, stf);
         let compiler = cs ->
             compile(cs, stf) |>
             simplifyStmt |>
@@ -59,7 +59,7 @@ namespace Fixpoint {
                 compiler(cs) |> interpretWithDatabase(db) |> toModel
             case _ => bug!("Datalog normalization bug")
         };
-        let _ = notifyPostSolve(model);
+        notifyPostSolve(model);
         model
 
     ///

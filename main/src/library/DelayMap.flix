@@ -406,7 +406,7 @@ namespace DelayMap {
         use RedBlackTree.RedBlackTree.Node;
         def seqLoop(tt) = match tt {
             case Node(_, a, _, v, b) =>
-                let _ = seqLoop(a);
+                seqLoop(a);
                 let _ = force v;
                 seqLoop(b)
             case _ => ()
@@ -422,7 +422,7 @@ namespace DelayMap {
                         spawn (chanL <- parLoop((n - 2) / 2, a)); // We divide the rest of the threads as follows:
                         spawn (chanR <- parLoop((n - 2) / 2, b)); // We spawn two new threads leaving us with n - 2
                         let _ = force v;                          // that we distribute over the two spanned threads.
-                        let _ = <- chanL;
+                        <- chanL;
                         <- chanR
                     case _ => ()
                 }

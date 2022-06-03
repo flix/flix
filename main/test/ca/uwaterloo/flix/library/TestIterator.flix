@@ -32,13 +32,13 @@ namespace TestIterator {
     @test
     def next03(): Bool & Impure =
         let iter = List.toIterator(1 :: Nil);
-        let _ = Iterator.next(iter);
+        discard Iterator.next(iter);
         Iterator.next(iter) == None
 
     @test
     def next04(): Bool & Impure =
         let iter = List.toIterator(1 :: 2 :: Nil);
-        let _ = Iterator.next(iter);
+        discard Iterator.next(iter);
         Iterator.next(iter) == Some(2)
 
 
@@ -53,31 +53,31 @@ namespace TestIterator {
     @test
     def isEmpty02(): Bool & Impure = // singleton
         let iter = Iterator.singleton(1);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 1 :: Nil
 
     @test
     def isEmpty03(): Bool & Impure = // range
         let iter = Iterator.range(0, 100);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == List.range(0, 100)
 
     @test
     def isEmpty04(): Bool & Impure = // repeat
         let iter = Iterator.repeat(2, 10);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 10 :: 10 :: Nil
 
     @test
     def isEmpty05(): Bool & Impure = // lazyFilter
         let iter = (1 :: 2 :: 3 :: Nil) |> List.toIterator |> Iterator.filterL(i -> i < 3);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 1 :: 2 :: Nil
 
     @test
     def isEmpty06(): Bool & Impure = // lazyMap
         let iter = (1 :: 2 :: 3 :: Nil) |> List.toIterator |> Iterator.mapL(i -> i + 1);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 2 :: 3 :: 4 :: Nil
 
     @test
@@ -85,7 +85,7 @@ namespace TestIterator {
         let i1 = (1 :: 2 :: 3 :: Nil) |> List.toIterator;
         let i2 = (4 :: 5 :: 6 :: Nil) |> List.toIterator;
         let iter = Iterator.append(i1, i2);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil
 
     @test
@@ -93,7 +93,7 @@ namespace TestIterator {
         let i1 = (1 :: 2 :: 3 :: Nil) |> List.toIterator;
         let i2 = (4 :: 5 :: 6 :: Nil) |> List.toIterator;
         let iter = Iterator.zip(i1, i2);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == (1, 4) :: (2, 5) :: (3, 6) :: Nil
 
     @test
@@ -101,21 +101,21 @@ namespace TestIterator {
         let i1 = (1 :: 2 :: 3 :: Nil) |> List.toIterator;
         let i2 = (4 :: 5 :: 6 :: Nil) |> List.toIterator;
         let iter = Iterator.zipWithL((x, y) -> x + y, i1, i2);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 5 :: 7 :: 9 :: Nil
 
     @test
     def isEmpty10(): Bool & Impure = // flatMap
         let i = (1 :: 2 :: 3 :: Nil) |> List.toIterator;
         let iter = Iterator.flatMap(x -> Iterator.singleton(x + 1), i);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 2 :: 3 :: 4 :: Nil
 
     @test
     def isEmpty11(): Bool & Impure = // intersperse
         let i = (1 :: 2 :: 3 :: Nil) |> List.toIterator;
         let iter = Iterator.intersperse(5, i);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 1 :: 5 :: 2 :: 5 :: 3 :: Nil
 
     @test
@@ -125,25 +125,25 @@ namespace TestIterator {
         let iterB1 = (2 :: 3 :: Nil) |> List.toIterator;
         let iterB  = (iterB0 :: iterB1 :: Nil) |> List.toIterator;
         let iter = Iterator.intercalate(iterA, iterB);
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: Nil
 
     @test
     def isEmpty13(): Bool & Impure = // unfoldWithOk
         let Iterator(d, n) = List.toIterator(1 :: 2 :: 3 :: 4 :: 5 :: Nil);
         let iter = Iterator.unfoldWithOk(() -> if (d()) Err("Done") else Ok(n()));
-        let _ = invokeIsEmpty(100, iter);
+        invokeIsEmpty(100, iter);
         Iterator.toList(iter) == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
 
     ///
     /// Helper function that invokes `Iterator.isEmpty` `n` times.
     ///
-    def invokeIsEmpty(n: Int32, iter: Iterator[a]): Bool & Impure =
+    def invokeIsEmpty(n: Int32, iter: Iterator[a]): Unit & Impure =
         def loop(m) =
             if (m <= 0)
-                true
+                ()
             else {
-                let _ = Iterator.isEmpty(iter);
+                discard Iterator.isEmpty(iter);
                 loop(m - 1)
             };
         loop(n)
@@ -1214,7 +1214,7 @@ namespace TestIterator {
         let Iterator(d, n) = (1 :: 2 :: 3 :: 4 :: 5 :: Nil)   |>
             List.map(x -> if (x == 4) Err("Done") else Ok(x)) |>
             List.toIterator;
-        Iterator.unfoldWithOk(() -> { let _ = d(); n() }) |>
+        Iterator.unfoldWithOk(() -> { discard d(); n() }) |>
             Iterator.toList == 1 :: 2 :: 3 :: Nil
 
 

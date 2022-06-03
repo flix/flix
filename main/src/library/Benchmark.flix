@@ -109,7 +109,7 @@ namespace Benchmark {
         import static java.lang.System.nanoTime(): Int64 & Impure;
         let Benchmark(r) = b;
         let t = nanoTime();
-        let _ = loop(r.f, n);
+        loop(r.f, n);
         let e = nanoTime() - t;
         Success({name = r.name, rounds = n, total = e})
 
@@ -123,7 +123,7 @@ namespace Benchmark {
         let Benchmark(r) = b;
         import static java.lang.System.nanoTime(): Int64 & Impure;
         let t = nanoTime();
-        let _ = (r.f)();
+        (r.f)() as & Impure;
         (nanoTime() - t) / scaleFactor()
 
     ///
@@ -133,7 +133,7 @@ namespace Benchmark {
         if (n == 0)
             ()
         else {
-            let _ = f() as & Impure;
+            discard f() as & Impure;
             loop(f, n - 1)
         }
 

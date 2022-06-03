@@ -310,9 +310,9 @@ namespace File {
 
             let javaFile = newFile(f);
             let stream = newInputStream(javaFile);
-            let _ = skip(stream, opts.offset);
+            discard skip(stream, opts.offset);
             let bytes = [0i8; opts.count];
-            let _ = read(stream, bytes, 0, opts.count);
+            discard read(stream, bytes, 0, opts.count);
             let charSet = forName(opts.charSet);
             let returnString = newString(bytes, charSet);
             Ok(returnString)
@@ -486,7 +486,7 @@ namespace File {
 
             let javaFile = newFile(f);
             let stream = newInputStream(javaFile);
-            let _ = skip(stream, opts.offset);
+            discard skip(stream, opts.offset);
             let bytes = [0i8; opts.count];
             let numberRead = read(stream, bytes, 0, opts.count);
 
@@ -957,7 +957,7 @@ namespace File {
             let srcPath = toPath(srcFile);
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
-            let _ = move(srcPath, dstPath, []);
+            discard move(srcPath, dstPath, []);
             Ok()
         } catch {
             case ex: ##java.io.IOException =>
@@ -1018,7 +1018,7 @@ namespace File {
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
-            let _ = move(srcPath, dstPath, [getOverwrite() as ##java.nio.file.CopyOption]);
+            discard move(srcPath, dstPath, [getOverwrite() as ##java.nio.file.CopyOption]);
 
             Ok()
         } catch {
@@ -1046,7 +1046,7 @@ namespace File {
             let srcPath = toPath(srcFile);
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
-            let _ = copy(srcPath, dstPath, []);
+            discard copy(srcPath, dstPath, []);
             Ok()
         } catch {
             case ex: ##java.io.IOException =>
@@ -1107,7 +1107,7 @@ namespace File {
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
-            let _ = copy(srcPath, dstPath, [getOverwrite() as ##java.nio.file.CopyOption]);
+            discard copy(srcPath, dstPath, [getOverwrite() as ##java.nio.file.CopyOption]);
 
             Ok()
         } catch {

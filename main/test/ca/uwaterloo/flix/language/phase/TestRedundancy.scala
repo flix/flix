@@ -997,7 +997,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       """
         |def fakePrint(_msg: a): Unit & Impure =
-        |    let _ = [2];
+        |    discard [2];
         |    ()
         |
         |def f(g: a -> b & ef, x: a): b & ef = g(x)
@@ -1013,7 +1013,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       """
         |def fakePrint(_msg: a): Unit & Impure =
-        |    let _ = [2];
+        |    discard [2];
         |    ()
         |
         |def f(): Unit & Impure =

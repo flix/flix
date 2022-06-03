@@ -3,77 +3,77 @@ namespace Test/Exp/ArraySliceCopy {
     @test
     def testArraySliceCopy01(): Unit = region r {
         let x = [1, 2, 3] @ r;
-        let _ = x[..];
+        discard x[..];
         ()
     }
 
     @test
     def testArraySliceCopy02(): Unit = region r {
         let x = [1, 2, 3, 4] @ r;
-        let _ = x[..];
+        discard x[..];
         ()
     }
 
     @test
     def testArraySliceCopy03(): Unit = region r {
         let x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] @ r;
-        let _ = x[..];
+        discard x[..];
         ()
     }
 
     @test
     def testArraySliceCopy04(): Unit = region r {
         let x = [1, 2] @ r;
-        let _ = x[..];
+        discard x[..];
         ()
     }
 
     @test
     def testArraySliceCopy05(): Unit = region r {
         let x = [true, false] @ r;
-        let _ = x[..];
+        discard x[..];
         ()
     }
 
     @test
     def testArraySliceCopy06(): Unit = region r {
         let x = [false, true, false] @ r;
-        let _ = x[..];
+        discard x[..];
         ()
     }
 
     @test
     def testArraySliceCopy07(): Unit = region r {
         let x = [false, false, false, false, true] @ r;
-        let _ = x[..];
+        discard x[..];
         ()
     }
 
     @test
     def testArraySliceCopy08(): Unit = region r {
         let x = ['a', 'b'] @ r;
-        let _ = x[..];
+        discard x[..];
         ()
     }
 
     @test
     def testArraySliceCopy09(): Unit = region r {
         let x = ['a', 'b', 'c'] @ r;
-        let _ = x[..];
+        discard x[..];
         ()
     }
 
     @test
     def testArraySliceCopy10(): Unit = region r {
         let x = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'] @ r;
-        let _ = x[..];
+        discard x[..];
         ()
     }
 
     @test
     def testArraySliceCopy11(): Unit = region r {
         let x = [1i8, 2i8, 3i8] @ r;
-        let _ = x[..];
+        discard x[..];
         ()
     }
 

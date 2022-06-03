@@ -5039,7 +5039,7 @@ def findIndices07(): Bool & Impure =
     @test
     def sortWith01!(): Bool = region r {
         let a = []: ScopedArray[Int32, _];
-        Array.sortWith!(cmp, a);
+        Array.sortWith(cmp, a);
         a `sameElements` []: ScopedArray[Int32, _]
     }
 
@@ -5798,10 +5798,10 @@ def findIndices07(): Bool & Impure =
     def toMutList06(): Bool = region r {
         let v = Array.toMutList([1, 2, 3] @ r, r);
         MutList.push!(4, v);
-        let _ = MutList.pop!(v);
-        let _ = MutList.pop!(v);
-        let _ = MutList.pop!(v);
-        let _ = MutList.pop!(v);
+        discard MutList.pop!(v);
+        discard MutList.pop!(v);
+        discard MutList.pop!(v);
+        discard MutList.pop!(v);
         Array.sameElements(MutList.toArray(v, r), [] @ r)
     }
 

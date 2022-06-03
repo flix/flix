@@ -79,13 +79,11 @@ namespace Concurrent/Channel/Timer {
         import static java.lang.Thread.sleep(Int64, Int32): Unit & Impure;
         if (ns < 0i64) {
             sleep(0i64, 0i32);
-            let _ = c <- ();
-            ()
+            c <- ()
         } else {
             let millis = ns  /  1_000_000i64;
             let nanos  = ns mod 1_000_000i64;
             sleep(millis, Int64.clampToInt32(nanos, 0i32, 1_000_000i32));
-            let _ = c <- ();
-            ()
+            c <- ()
         }
 }

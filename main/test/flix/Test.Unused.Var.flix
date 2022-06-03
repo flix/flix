@@ -57,7 +57,7 @@ namespace Test/Unused/Var {
     @test
     def testUnusedVar10(): Int32 & Impure =
         let c = chan Int32 1;
-        let _ = c <- 0;
+        c <- 0;
         select {
             case _foo <- c => 123
         }
@@ -66,8 +66,8 @@ namespace Test/Unused/Var {
     def testUnusedVar11(): Int32 & Impure =
         let c1 = chan Int32 1;
         let c2 = chan Int32 1;
-        let _ = c1 <- 0;
-        let _ = c2 <- 0;
+        c1 <- 0;
+        c2 <- 0;
         select {
             case _foo <- c1 => 123
             case _bar <- c2 => 456

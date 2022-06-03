@@ -49,7 +49,7 @@ namespace Test/Eff/Advanced {
     def pure(): Unit = ()
 
     /// An impure function from Unit -> Unit.
-    def impure(): Unit & Impure = let _ = [1, 2, 3]; ()
+    def impure(): Unit & Impure = discard [1, 2, 3]; ()
 
     /// A function that requires a pure function
     def requiresPure(_f: a -> b): Unit = ()
