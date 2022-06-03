@@ -5039,7 +5039,7 @@ def findIndices07(): Bool & Impure =
     @test
     def sortWith01!(): Bool = region r {
         let a = []: ScopedArray[Int32, _];
-        Array.sortWith(cmp, a);
+        Array.sortWith!(cmp, a);
         a `sameElements` []: ScopedArray[Int32, _]
     }
 
