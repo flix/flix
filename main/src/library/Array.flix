@@ -1357,7 +1357,7 @@ namespace Array {
         let l = new MutList(static);
         def loop(i) = {
             if (i >= len)
-                Nil
+                ()
             else {
                 if (f(a[i])) MutList.push!(i, l) else ();
                 loop(i + 1)
