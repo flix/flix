@@ -32,27 +32,18 @@ object GenFunctionAbstractClasses {
   /**
     * Returns the set of function abstract classes for the given set of types `ts`.
     */
-  def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    //
-    // Generate a function abstract class for each type and collect the results in a map.
-    //
-    ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, tpe: MonoType.Arrow) =>
-        // Case 1: The type constructor is an arrow type.
-        // Construct the functional interface.
-        val clazz = genFunctionalInterface(tpe)
+  def gen(arrows: Iterable[BackendObjType.Arrow])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+    arrows.foldLeft(Map.empty[JvmName, JvmClass]) {
+      case (macc, arrow) =>
+        val clazz = genFunctionalInterface(arrow)
         macc + (clazz.name -> clazz)
-      case (macc, _) =>
-        // Case 2: The type constructor is a non-arrow.
-        // Nothing to be done. Return the map.
-        macc
     }
   }
 
   /**
-    * Returns the function abstract class of the given type `tpe`.
+    * Returns the function abstract class of the given type `arrow`.
     */
-  private def genFunctionalInterface(tpe: MonoType.Arrow)(implicit root: Root, flix: Flix): JvmClass = {
+  private def genFunctionalInterface(arrow: BackendObjType.Arrow)(implicit root: Root, flix: Flix): JvmClass = {
     // (Int, String) -> Bool example:
     // public abstract class Fn2$Int$Obj$Bool extends Cont$Bool implements java.util.function.Function {
     //   public abstract int arg0;
@@ -64,13 +55,10 @@ object GenFunctionAbstractClasses {
 
 
     // `JvmType` of the continuation class for `tpe`
-    val continuationSuperInterface = JvmOps.getContinuationInterfaceType(tpe)
+    val continuationSuperInterface = arrow.continuation
 
     // `JvmType` of the java.util.functions.Function
     val javaFunctionSuperInterface = JvmType.Function
-
-    // `JvmType` of the functional interface for `tpe`
-    val functionType = JvmOps.getFunctionInterfaceType(tpe)
 
     // Class visitor
     val visitor = AsmOps.mkClassWriter()
@@ -79,17 +67,14 @@ object GenFunctionAbstractClasses {
     val superInterfaces = Array(javaFunctionSuperInterface.name.toInternalName)
 
     // Class visitor
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT, functionType.name.toInternalName, null,
-      continuationSuperInterface.name.toInternalName, superInterfaces)
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT, arrow.jvmName.toInternalName, null,
+      continuationSuperInterface.jvmName.toInternalName, superInterfaces)
 
     // Adding fields for each argument of the function
-    for ((arg, index) <- tpe.args.zipWithIndex) {
-      // `JvmType` of `arg`
-      val argType = JvmOps.getErasedJvmType(arg)
-
+    for ((arg, index) <- arrow.args.zipWithIndex) {
       // arg fields
       visitor.visitField(ACC_PUBLIC + ACC_ABSTRACT, s"arg$index",
-        argType.toDescriptor, null, null).visitEnd()
+        arg.toDescriptor, null, null).visitEnd()
     }
 
     genConstructor(visitor, continuationSuperInterface)
@@ -97,14 +82,14 @@ object GenFunctionAbstractClasses {
     visitor.visitEnd()
 
     // `JvmClass` of the interface
-    JvmClass(functionType.name, visitor.toByteArray)
+    JvmClass(arrow.jvmName, visitor.toByteArray)
   }
 
-  private def genConstructor(visitor: ClassWriter, superClass: JvmType.Reference): Unit = {
+  private def genConstructor(visitor: ClassWriter, superClass: BackendObjType): Unit = {
     val m = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
 
     m.visitVarInsn(ALOAD, 0)
-    m.visitMethodInsn(INVOKESPECIAL, superClass.name.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+    m.visitMethodInsn(INVOKESPECIAL, superClass.jvmName.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
     m.visitInsn(RETURN)
 
     m.visitMaxs(999, 999)
