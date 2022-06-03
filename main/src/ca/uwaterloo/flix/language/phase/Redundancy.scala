@@ -392,7 +392,7 @@ object Redundancy {
       // Check for useless pure expressions.
       if (exp1.eff == Type.Pure)
         (us1 ++ us2) + UselessExpression(exp1.loc)
-      else if (exp1.eff == Type.Impure && exp1.tpe != Type.Unit)
+      else if (exp1.eff != Type.Pure && exp1.tpe != Type.Unit)
         (us1 ++ us2) + discardedValue(exp1.loc)
       else
         us1 ++ us2

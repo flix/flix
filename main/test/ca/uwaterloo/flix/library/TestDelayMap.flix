@@ -1886,7 +1886,7 @@ namespace TestDelayMap {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
         let a = new MutList(static);
-        DelayMap.productWith((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        discard DelayMap.productWith((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
 
 

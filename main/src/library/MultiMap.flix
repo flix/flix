@@ -36,7 +36,7 @@ instance ToString[MultiMap[k, v]] with ToString[k], ToString[v] {
             let MultiMap(m1) = m;
             let sb = new StringBuilder(r);
             StringBuilder.appendString!("MultiMap#{", sb);
-            Map.foldLeftWithKey((acc, k, v) -> {
+            discard Map.foldLeftWithKey((acc, k, v) -> {
                 if (acc < 1)
                     StringBuilder.appendString!("${k} => ${v}", sb)
                 else
