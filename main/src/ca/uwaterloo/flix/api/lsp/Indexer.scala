@@ -104,7 +104,7 @@ object Indexer {
     * Returns a reverse index for the given instance `instance0`.
     */
   private def visitInstance(instance0: Instance): Index = instance0 match {
-    case Instance(_, _, sym, tpe, tconstrs, defs, _, _) =>
+    case Instance(_, _, _, sym, tpe, tconstrs, defs, _, _) =>
       val idx1 = Index.useOf(sym.clazz, sym.loc)
       val idx2 = visitType(tpe)
       val idx3 = traverse(tconstrs)(visitTypeConstraint)
@@ -458,6 +458,8 @@ object Indexer {
     case Type.Alias(_, _, tpe, _) => visitType(tpe) // TODO index TypeAlias
     case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: $tpe0.")
     case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: $tpe0.")
+    case _: Type.UnkindedArrow => throw InternalCompilerException(s"Unexpected type: $tpe0.")
+    case _: Type.ReadWrite => throw InternalCompilerException(s"Unexpected type: $tpe0.")
   }
 
   /**

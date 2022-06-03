@@ -26,38 +26,38 @@ class TestWeeder extends FunSuite with TestUtils {
   test("DuplicateAnnotation.01") {
     val input =
       """@test @test
-        |def foo(x: Int): Int = 42
+        |def foo(x: Int32): Int32 = 42
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateAnnotation](result)
   }
 
   test("DuplicateFormal.01") {
-    val input = "def f(x: Int, x: Int): Int = 42"
+    val input = "def f(x: Int32, x: Int32): Int32 = 42"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.02") {
-    val input = "def f(x: Int, y: Int, x: Int): Int = 42"
+    val input = "def f(x: Int32, y: Int32, x: Int32): Int32 = 42"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.03") {
-    val input = "def f(x: Bool, x: Int, x: Str): Int = 42"
+    val input = "def f(x: Bool, x: Int32, x: Str): Int32 = 42"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.04") {
-    val input = "def f(): (Int, Int) -> Int = (x, x) -> x"
+    val input = "def f(): (Int32, Int32) -> Int32 = (x, x) -> x"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.05") {
-    val input = "def f(): (Int, Int, Int) -> Int = (x, y, x) -> x"
+    val input = "def f(): (Int32, Int32, Int32) -> Int32 = (x, y, x) -> x"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateFormalParam](result)
   }
@@ -86,25 +86,25 @@ class TestWeeder extends FunSuite with TestUtils {
   }
 
   test("IllegalFieldName.01") {
-    val input = "def f(): { length :: Int } = { length = 123 }"
+    val input = "def f(): { length :: Int32 } = { length = 123 }"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalFieldName](result)
   }
 
   test("IllegalFieldName.02") {
-    val input = "def f(): { length :: Int } = { +length = 123 | {} }"
+    val input = "def f(): { length :: Int32 } = { +length = 123 | {} }"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalFieldName](result)
   }
 
   test("IllegalFieldName.03") {
-    val input = "def f(): { length :: Int } = { -length | {} }"
+    val input = "def f(): { length :: Int32 } = { -length | {} }"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalFieldName](result)
   }
 
   test("IllegalFieldName.04") {
-    val input = "def f(): { length :: Int } = { length = 123 | {} }"
+    val input = "def f(): { length :: Int32 } = { length = 123 | {} }"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalFieldName](result)
   }
@@ -172,7 +172,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("IllegalNullPattern.01") {
     val input =
       s"""
-         |def f(): Int = match null {
+         |def f(): Int32 = match null {
          |    case null => 123
          |    case _    => 456
          |}
@@ -247,7 +247,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("UndefinedAnnotation.01") {
     val input =
       """@abc
-        |def foo(x: Int): Int = 42
+        |def foo(x: Int32): Int32 = 42
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.UndefinedAnnotation](result)
@@ -256,7 +256,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("UndefinedAnnotation.02") {
     val input =
       """@foobarbaz
-        |def foo(x: Int): Int = 42
+        |def foo(x: Int32): Int32 = 42
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.UndefinedAnnotation](result)
@@ -276,8 +276,8 @@ class TestWeeder extends FunSuite with TestUtils {
   test("IllegalPrivateDeclaration.02") {
     val input =
       """
-        |instance C[Int] {
-        |    def f(): Int = 1
+        |instance C[Int32] {
+        |    def f(): Int32 = 1
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -287,7 +287,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("IllegalTypeConstraintParameter.01") {
     val input =
       """
-        |class C[a] with D[Int]
+        |class C[a] with D[Int32]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalTypeConstraintParameter](result)
@@ -316,7 +316,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("InconsistentTypeParameters.02") {
     val input =
       """
-        |type alias T[a, b: Bool] = Int
+        |type alias T[a, b: Bool] = Int32
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InconsistentTypeParameters](result)
@@ -325,7 +325,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("InconsistentTypeParameters.03") {
     val input =
       """
-        |opaque type T[a, b: Bool] = Int
+        |enum T[a, b: Bool](Int32)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InconsistentTypeParameters](result)
@@ -741,5 +741,25 @@ class TestWeeder extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.NonUnitOperationType](result)
+  }
+
+  test("IllegalEnum.01") {
+    val input =
+      """
+        |enum E(Int32) {
+        |    case C
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEnum](result)
+  }
+
+  test("IllegalEnum.02") {
+    val input =
+      """
+        |enum E(Int32) { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEnum](result)
   }
 }

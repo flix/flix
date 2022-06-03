@@ -22,7 +22,7 @@
 ///   - The capacity of the array is always 8 or more.
 ///
 pub enum MutList[a: Type, r: Region] {
-    case MutList(ScopedRef[ScopedArray[a, r], r], ScopedRef[Int32, r])
+    case MutList(Ref[ScopedArray[a, r], r], Ref[Int32, r])
 }
 
 instance Newable[MutList[a]] {
@@ -487,6 +487,12 @@ namespace MutList {
         loop(0)
 
     ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, v: MutList[a, r]): b \ {ef, Read(r)} with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), v)
+
+    ///
     /// Applies `f` to all elements in `v` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// Returns `None` if `v` is empty.
@@ -605,10 +611,10 @@ namespace MutList {
             ()
 
     ///
-    /// Appends `v2` to `v1` i.e. inserts all elements from `v2` into the end of `v1`.
+    /// Appends `m` to `v` i.e. inserts all elements from `m` into the end of `v`.
     ///
-    pub def append!(v1: MutList[a, r1], v2: MutList[a, r2]): Unit \ { Read(r1, r2), Write(r2) } =
-        foreach(x -> push!(x, v2), v1)
+    pub def append!(m: m[a], v: MutList[a, r]): Unit \ { Read(r), Write(r) } with Foldable[m] =
+        Foldable.foreach(x -> MutList.push!(x, v), m)
 
     ///
     /// Removes all elements from the given mutable list `v` that do not satisfy the given predicate `f`.
@@ -722,6 +728,14 @@ namespace MutList {
         foldLeft((ac, x) -> Chain.snoc(ac, x), Chain.empty(), xs)
 
     ///
+    /// Returns `v` as a MutDeque.
+    ///
+    pub def toMutDeque(v: MutList[a, r1], r: Region[r2]): MutDeque[a, r2] \ { Read(r1), Write(r2) }  =
+        let d = new MutDeque(r);
+        MutList.foreach(x -> MutDeque.pushBack(x, d), v);
+        d
+
+    ///
     /// Returns `true` if the mutable lists `v1` and `v2` have the same elements, i.e. are structurally equal.
     ///
     pub def sameElements(v1: MutList[a, r1], v2: MutList[a, r2]): Bool \ Read(r1, r2) with Eq[a] =
@@ -745,15 +759,15 @@ namespace MutList {
     /// Returns the concatenation of the string representation
     /// of each element in `v` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, v: MutList[a, r]): String & Impure with ToString[a] =
-        joinWith(x -> ToString.toString(x), sep, v)
+    pub def join(sep: String, v: MutList[a, r]): String \ Read(r) with ToString[a] =
+        joinWith(ToString.toString, sep, v)
 
     ///
     /// Returns the concatenation of the string representation
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, v: MutList[a, r]): String & Impure =
-        let sb = StringBuilder.new();
+    pub def joinWith(f: a -> String & ef, sep: String, v: MutList[a, r]): String \ { ef, Read(r) } = region r1 {
+        let sb = new StringBuilder(r1);
         let step = (x, i) ->
             if (i == 0)
                 StringBuilder.appendString!(f(x), sb)
@@ -763,6 +777,7 @@ namespace MutList {
             };
         foreachWithIndex(step, v);
         StringBuilder.toString(sb)
+    }
 
     ///
     /// Applies `f` to all the elements in `v`.

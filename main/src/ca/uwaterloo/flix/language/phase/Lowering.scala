@@ -174,11 +174,11 @@ object Lowering {
     * Lowers the given instance `inst0`.
     */
   private def visitInstance(inst0: Instance)(implicit root: Root, flix: Flix): Instance = inst0 match {
-    case Instance(doc, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
+    case Instance(doc, ann, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
       val tpe = visitType(tpe0)
       val tconstrs = tconstrs0.map(visitTypeConstraint)
       val defs = defs0.map(visitDef)
-      Instance(doc, mod, sym, tpe, tconstrs, defs, ns, loc)
+      Instance(doc, ann, mod, sym, tpe, tconstrs, defs, ns, loc)
   }
 
   /**
@@ -732,6 +732,8 @@ object Lowering {
       case Type.Alias(sym, args, t, loc) => Type.Alias(sym, args.map(visit), visit(t), loc)
 
       case _: Type.UnkindedVar => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case _: Type.ReadWrite => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
+      case _: Type.UnkindedArrow => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
       case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type: '$tpe0'.")
     }
 

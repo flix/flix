@@ -1,4 +1,5 @@
 namespace Test/Derives/Eq {
+
     pub enum Enum with Eq {
       case EmptyCase
       case SingletonCase(Int32)
@@ -38,7 +39,7 @@ namespace Test/Derives/Eq {
         case RecursiveCase(MutRecursiveEnum1)
     }
 
-    pub opaque type OpaqueType with Eq = Int32
+    pub enum OpaqueType(Int32) with Eq
 
     @test
     def testEq01(): Bool = Enum.EmptyCase == Enum.EmptyCase

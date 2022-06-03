@@ -382,6 +382,26 @@ namespace TestNel {
     def foldRightWithCont03(): Bool = Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool =
+        Nel.foldMap(x -> 2 * x, Nel(1, 2 :: Nil)) == 6
+
+    @test
+    def foldMap02(): Bool =
+        Nel.foldMap(x -> if (x == "a") "b" else x, Nel("a", Nil)) == "b"
+
+    @test
+    def foldMap03(): Bool =
+        Nel.foldMap(x -> if (x == "c") "b" else x, Nel("a", "b" :: "c" :: Nil)) == "abb"
+
+    @test
+    def foldMap04(): Bool =
+        Nel.foldMap(Int32.toString, Nel(1, 2 :: 3 :: Nil)) == "123"
+
+    /////////////////////////////////////////////////////////////////////////////
     // reduce                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -657,6 +677,26 @@ namespace TestNel {
 
     @test
     def unzip03(): Bool = Nel.unzip(Nel((1, 1), (2, 2) :: (3, 3) :: Nil)) == (Nel(1, 2 :: 3 :: Nil), Nel(1, 2 :: 3 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWithIndex                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithIndex01(): Bool = Nel.zipWithIndex(Nel(1, Nil)) == Nel((1, 0), Nil)
+
+    @test
+    def zipWithIndex02(): Bool = Nel.zipWithIndex(Nel(1, 2 :: Nil)) == Nel((1, 0), (2, 1) :: Nil)
+
+    @test
+    def zipWithIndex03(): Bool = Nel.zipWithIndex(Nel(2, 1 :: Nil)) == Nel((2, 0), (1, 1) :: Nil)
+
+    @test
+    def zipWithIndex04(): Bool = Nel.zipWithIndex(Nel(1, 2 :: 3 :: Nil)) == Nel((1, 0), (2, 1) :: (3, 2) :: Nil)
+
+    @test
+    def zipWithIndex05(): Bool =
+        Nel.zipWithIndex(Nel(1, 2 :: 3 :: 4 :: 5 :: Nil)) == Nel((1, 0), (2, 1) :: (3, 2) :: (4, 3) :: (5, 4) :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //

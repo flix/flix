@@ -120,16 +120,16 @@ namespace String {
     /// Build a string of length `len` by applying `f` to the successive indices.
     ///
     @Time(time(f) * len) @Space(space(f) * len)
-    pub def init(f: Int32 -> Char & ef, len: Int32): String & ef = initHelper(f, len) as & ef
+    pub def init(f: Int32 -> Char & ef, len: Int32): String & ef = initHelper(f, len)
 
     ///
     /// Helper function for `init`.
     ///
-    def initHelper(f: Int32 -> Char & ef, len: Int32): String & Impure =
+    def initHelper(f: Int32 -> Char & ef, len: Int32): String & ef = region r {
         if (len <= 0)
             ""
         else {
-            let sb = StringBuilder.new();
+            let sb = new StringBuilder(r);
             def loop(i) = {
                 if (i >= len)
                     ()
@@ -142,52 +142,39 @@ namespace String {
             loop(0);
             StringBuilder.toString(sb)
         }
+    }
 
     ///
     /// Concatenate a list of strings into a single string.
     ///
     @Time(List.length(xs)) @Space(List.length(xs))
-    pub def flatten(xs: List[String]): String = flattenHelper(xs) as & Pure
-
-    ///
-    /// Helper function for `flatten`.
-    ///
-    def flattenHelper(xs: List[String]): String & Impure =
-        let sb = StringBuilder.new();
+    pub def flatten(xs: List[String]): String = region r {
+        let sb = new StringBuilder(r);
         List.foreach(x -> StringBuilder.appendString!(x, sb), xs);
         StringBuilder.toString(sb)
+    }
 
     ///
     /// Concatenate a list of strings into a single string, inserting the separator `sep` between
     /// each pair of strings.
     ///
     @Time(length(sep) * List.length(xs)) @Space(length(sep) * List.length(xs))
-    pub def intercalate(sep: String, xs: List[String]): String =
-        intercalateHelper(sep, xs) as & Pure
-
-    ///
-    /// Helper function for `intercalate`.
-    ///
-    def intercalateHelper(sep: String, xs: List[String]): String & Impure =
-        let sb = StringBuilder.new();
-        let arr = List.toArray(xs, static);
+    pub def intercalate(sep: String, xs: List[String]): String = region r {
+        let sb = new StringBuilder(r);
+        let arr = List.toArray(xs, r);
         StringBuilder.intercalate!(sep, arr, sb);
         StringBuilder.toString(sb)
+    }
 
     ///
     /// Concatenate a list of strings into a single string, inserting the separator `sep` between
     /// each pair of strings.
     ///
     @Time(List.length(xs)) @Space(List.length(xs))
-    pub def intercalateChar(sep: Char, xs: List[String]): String = intercalateCharHelper(sep, xs) as & Pure
-
-    ///
-    /// Helper function for `intercalateChar`.
-    ///
-    def intercalateCharHelper(sep: Char, xs: List[String]): String & Impure = match xs {
+    pub def intercalateChar(sep: Char, xs: List[String]): String = match xs {
         case Nil => ""
-        case x :: rs => {
-            let sb = StringBuilder.new();
+        case x :: rs => region r {
+            let sb = new StringBuilder(r);
             StringBuilder.appendString!(x, sb);
             let appendStep = s -> { StringBuilder.append!(sep, sb); StringBuilder.appendString!(s, sb) };
             List.foreach(appendStep, rs);
@@ -627,8 +614,8 @@ namespace String {
     ///
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
     ///
-    pub def unfold(f: b -> Option[(Char, b)] & ef, x: b): String & ef =
-        let sb = StringBuilder.new() as & ef;
+    pub def unfold(f: b -> Option[(Char, b)] & ef, x: b): String & ef = region r {
+        let sb = new StringBuilder(r);
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -639,7 +626,8 @@ namespace String {
                 }
             }
         };
-        loop(x) as & ef
+        loop(x)
+    }
 
     ///
     /// Build a string by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -649,8 +637,8 @@ namespace String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldWithIter(f: Unit -> Option[Char] & ef): String & ef =
-        let sb = StringBuilder.new() as & Pure;
+    pub def unfoldWithIter(f: Unit -> Option[Char] & ef): String & ef = region r {
+        let sb = new StringBuilder(r);
         def loop() = {
             match f() {
                 case None    => StringBuilder.toString(sb)
@@ -660,15 +648,16 @@ namespace String {
                 }
             }
         };
-        loop() as & ef
+        loop()
+    }
 
     ///
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
     ///
     /// This is a version of `unfold` where `f` generates substrings rather than chars.
     ///
-    pub def unfoldString(f: b -> Option[(String, b)] & ef, x: b) : String & ef =
-        let sb = StringBuilder.new() as & ef;
+    pub def unfoldString(f: b -> Option[(String, b)] & ef, x: b) : String & ef = region r {
+        let sb = new StringBuilder(r);
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -679,7 +668,8 @@ namespace String {
                 }
             }
         };
-        loop(x) as & ef
+        loop(x)
+    }
 
     ///
     /// Build a string by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -689,8 +679,8 @@ namespace String {
     ///
     /// `next` should return `None` to signal the end of building the string.
     ///
-    pub def unfoldStringWithIter(f: Unit -> Option[String] & ef): String & ef =
-        let sb = StringBuilder.new() as & Pure;
+    pub def unfoldStringWithIter(f: Unit -> Option[String] & ef): String & ef = region r {
+        let sb = new StringBuilder(r);
         def loop() = {
             match f() {
                 case None    => StringBuilder.toString(sb)
@@ -700,7 +690,8 @@ namespace String {
                 }
             }
         };
-        loop() as & ef
+        loop()
+    }
 
     ///
     /// Returns `true` if and only if at least one char in `s` satisfies the predicate `f`.
@@ -861,13 +852,13 @@ namespace String {
         if (n <= 0 or length(s) == 0)
             s
         else
-            indentHelper(n, s) as & Pure
+            indentHelper(n, s)
 
     ///
     /// Helper function for `indent`.
     ///
-    def indentHelper(n: Int32, s: String): String & Impure =
-        let sb = StringBuilder.new();
+    def indentHelper(n: Int32, s: String): String = region r {
+        let sb = new StringBuilder(r);
         let prefix = repeat(n, " ");
         let step = x -> {
             StringBuilder.appendString!(prefix, sb);
@@ -875,6 +866,7 @@ namespace String {
         };
         List.foreach(step, lines(s));
         StringBuilder.toString(sb)
+    }
 
 
     ///
@@ -892,13 +884,13 @@ namespace String {
         if (n <= 0 or length(s) == 0)
             s
         else
-            stripIndentHelper(n, s) as & Pure
+            stripIndentHelper(n, s)
 
     ///
     /// Helper function for `stripIndent`.
     ///
-    def stripIndentHelper(n: Int32, s: String): String & Impure =
-        let sb = StringBuilder.new();
+    def stripIndentHelper(n: Int32, s: String): String = region r {
+        let sb = new StringBuilder(r);
         let limit = Int32.min(n, length(s));
         def loop(s1, ix) = {
             if (ix >= limit)
@@ -914,6 +906,7 @@ namespace String {
         };
         List.foreach(step, lines(s));
         StringBuilder.toString(sb)
+    }
 
     ///
     /// Split the string `s` into an array of lines, breaking on newline.
@@ -933,15 +926,16 @@ namespace String {
     /// ending the result string with the system dependent line separator.
     ///
     @Time(List.length(a)) @Space(List.length(a))
-    pub def unlines(a: List[String]): String = unlinesHelper(a) as & Pure
+    pub def unlines(a: List[String]): String = unlinesHelper(a)
 
     ///
     /// Helper function for `unlines`.
     ///
-    def unlinesHelper(a: List[String]): String & Impure =
-        let sb = StringBuilder.new();
+    def unlinesHelper(a: List[String]): String = region r {
+        let sb = new StringBuilder(r);
         List.foreach(x -> StringBuilder.appendLine!(x, sb), a);
         StringBuilder.toString(sb)
+    }
 
     ///
     /// Split the string `s` into an list of words, dividing on one or more white space characters.
@@ -958,13 +952,13 @@ namespace String {
     /// single space character.
     ///
     @Time(List.length(a)) @Space(List.length(a))
-    pub def unwords(a: List[String]): String = unwordsHelper(a) as & Pure
+    pub def unwords(a: List[String]): String = unwordsHelper(a)
 
     ///
     /// Helper function for `unlines`.
     ///
-    def unwordsHelper(xs: List[String]): String & Impure =
-        let sb = StringBuilder.new();
+    def unwordsHelper(xs: List[String]): String = region r {
+        let sb = new StringBuilder(r);
         let first = ref true;
         let step = s ->
             if (deref first == true) {
@@ -976,6 +970,7 @@ namespace String {
             };
         List.foreach(step, xs);
         StringBuilder.toString(sb)
+    }
 
     ///
     /// Alias for `indexOfLeft`.
@@ -1126,8 +1121,8 @@ namespace String {
     def levenshteinDistanceHelper(s: String, t: String) : Int32 & Impure =
         let m = length(s);
         let n = length(t);
-        let v0 = Array.new(0, n + 1);
-        let v1 = Array.new(0, n + 1);
+        let v0 = Array.new(0, n + 1, static);
+        let v1 = Array.new(0, n + 1, static);
         forIndex(0, n, i -> v0[i] = i);
         forIndex(0, m - 1, i -> {
             v1[0] = i + 1;

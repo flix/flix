@@ -31,7 +31,7 @@ namespace Test/Exp/Null {
     def testNullRecord05(): {fstName :: String, lstName :: String} = {fstName = null as String, lstName = null as String}
 
     @test
-    def testNullRef01(): Ref[String] = null as Ref[String]
+    def testNullRef01(): Ref[String, static] = null as Ref[String, static]
 
     @test
     def testNullTuple01(): (String, String) = null as (String, String)
@@ -65,20 +65,5 @@ namespace Test/Exp/Null {
 
     @test
     def testNullArrow01(): (String -> String) = (_: String) -> null as String
-
-    pub enum Option[t] {
-        case None,
-        case Some(t)
-    }
-
-    pub enum Result[t, e] {
-        case Ok(t),
-        case Err(e)
-    }
-
-    pub enum List[t] {
-        case Nil,
-        case Cons(t, List[t])
-    }
 
 }

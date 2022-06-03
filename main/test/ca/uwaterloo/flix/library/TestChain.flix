@@ -258,22 +258,22 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def indexOf01(): Bool = Chain.indexOf(0, Chain.empty()) == -1
+    def indexOf01(): Bool = Chain.indexOf(0, Chain.empty()) == None
 
     @test
-    def indexOf02(): Bool = Chain.indexOf(0, Chain.singleton(1)) == -1
+    def indexOf02(): Bool = Chain.indexOf(0, Chain.singleton(1)) == None
 
     @test
-    def indexOf03(): Bool = Chain.indexOf(1, Chain.singleton(1)) == 0
+    def indexOf03(): Bool = Chain.indexOf(1, Chain.singleton(1)) == Some(0)
 
     @test
-    def indexOf04(): Bool = Chain.indexOf(0, List.toChain(1 :: 2 :: Nil)) == -1
+    def indexOf04(): Bool = Chain.indexOf(0, List.toChain(1 :: 2 :: Nil)) == None
 
     @test
-    def indexOf05(): Bool = Chain.indexOf(1, List.toChain(1 :: 2 :: Nil)) == 0
+    def indexOf05(): Bool = Chain.indexOf(1, List.toChain(1 :: 2 :: Nil)) == Some(0)
 
     @test
-    def indexOf06(): Bool = Chain.indexOf(2, List.toChain(1 :: 2 :: Nil)) == 1
+    def indexOf06(): Bool = Chain.indexOf(2, List.toChain(1 :: 2 :: Nil)) == Some(1)
 
     /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
@@ -897,6 +897,30 @@ namespace TestChain {
     def foldRightWithCont04(): Bool = Chain.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 382
 
     /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool =
+        Chain.foldMap(x -> 2 * x, List.toChain(Nil)) == 0
+
+    @test
+    def foldMap02(): Bool =
+        Chain.foldMap(x -> 2 * x, List.toChain(1 :: 2 :: Nil)) == 6
+
+    @test
+    def foldMap03(): Bool =
+        Chain.foldMap(x -> if(x == "a") "b" else x, List.toChain("a" :: Nil)) == "b"
+
+    @test
+    def foldMap04(): Bool =
+        Chain.foldMap(x -> if(x == "c") "b" else x, List.toChain("a" :: "b" :: "c" :: Nil)) == "abb"
+
+    @test
+    def foldMap05(): Bool =
+        Chain.foldMap(Int32.toString, List.toChain(1 :: 2 :: 3 :: Nil)) == "123"
+
+    /////////////////////////////////////////////////////////////////////////////
     // dropLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1388,6 +1412,56 @@ namespace TestChain {
         Chain.toMutList(List.toChain(1 :: 2 :: 3 :: Nil), r) `MutList.sameElements` List.toMutList(1 :: 2 :: 3 :: Nil, r)
     }
 
+   /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+        let c = Chain.empty(): Chain[Int32];
+        let d1 = Chain.toMutDeque(c, r);
+
+        let d2 = new MutDeque(r);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque02(): Bool = region r {
+        let c = Chain.singleton(1);
+        let d1 = Chain.toMutDeque(c, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushBack(1, d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+        let c = List.toChain(1 :: 2 :: Nil);
+        let d1 = Chain.toMutDeque(c, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushFront(1, d2);
+        MutDeque.pushBack(2, d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
+    @test
+    def toMutDeque04(): Bool = region r {
+        let c = List.toChain('a' :: 'b' :: 'c' :: Nil);
+        let d1 = Chain.toMutDeque(c, r);
+
+        let d2 = new MutDeque(r);
+        MutDeque.pushFront('b', d2);
+        MutDeque.pushBack('c', d2);
+        MutDeque.pushFront('a', d2);
+
+        d1 `MutDeque.sameElements` d2
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
@@ -1455,6 +1529,34 @@ namespace TestChain {
         let a = Chain.toArray(List.toChain(1 :: 2 :: 3 :: Nil), r);
         Array.sameElements(a, [1, 2, 3] @ r)
     }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toNel                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNel01(): Bool = Chain.toNel(Chain.empty(): Chain[Int32]) == None
+
+    @test
+    def toNel02(): Bool = Chain.toNel(Chain.singleton(1)) == Some(Nel(1, Nil))
+
+    @test
+    def toNel03(): Bool =
+        Chain.toNel(List.toChain(1 :: 2 :: Nil)) == Some(Nel(1, 2 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toNec                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toNec01(): Bool = Chain.toNec(Chain.empty(): Chain[Int32]) == None
+
+    @test
+    def toNec02(): Bool = Chain.toNec(Chain.singleton(1)) == Some(Nec.singleton(1))
+
+    @test
+    def toNec03(): Bool =
+        Chain.toNec(List.toChain(1 :: 2 :: Nil)) == Some(Nec.cons(1, Nec.singleton(2)))
 
     /////////////////////////////////////////////////////////////////////////////
     // sort                                                                    //

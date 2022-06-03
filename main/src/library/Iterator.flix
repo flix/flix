@@ -469,6 +469,12 @@ namespace Iterator {
         loop()
 
     ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, iter: Iterator[a]): b & Impure with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), iter)
+
+    ///
     /// Applies `f` to all elements in `iter` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
@@ -700,7 +706,7 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def join(sep: String, iter: Iterator[a]): String & Impure with ToString[a] =
-        joinWith(x -> ToString.toString(x), sep, iter)
+        joinWith(ToString.toString, sep, iter)
 
     ///
     /// Returns the concatenation of the string representation
@@ -708,12 +714,13 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def joinWith(f: a -> String & ef, sep: String, iter: Iterator[a]): String & Impure =
+    pub def joinWith(f: a -> String & ef, sep: String, iter: Iterator[a]): String & Impure = region r {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(r);
         foreach(x -> { append!(f(x), sb); append!(sep, sb) }, iter);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
+    }
 
     ///
     /// Returns an iterator with every element of the iterator `iter` that

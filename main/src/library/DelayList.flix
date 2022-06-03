@@ -624,6 +624,12 @@ namespace DelayList {
         loop(l)
 
     ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, l: DelayList[a]): b & ef with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), l)
+
+    ///
     /// Applies `f` to every element of `l`.
     ///
     /// Forces the entire list `l`.
@@ -1137,6 +1143,21 @@ namespace DelayList {
     @Experimental @LazyWhenPure
     pub def zipWith(f: (a, b) -> c & ef, l1: DelayList[a], l2: DelayList[b]): DelayList[c] & ef =
         map(x -> f(fst(x), snd(x)), zip(l1, l2))
+
+    ///
+    /// Returns a `DelayList` where each element `e` is mapped to `(e, i)` where `i`
+    /// is the index of `e`.
+    ///
+    /// Does not force the tail of `l`.
+    ///
+    pub def zipWithIndex(l: DelayList[a]): DelayList[(a, Int32)] =
+        def loop(ll, i) = match ll {
+            case ENil         => ENil
+            case ECons(x, xs) => LCons(((x, i)), lazy loop(      xs, i + 1))
+            case LCons(x, xs) => LCons(((x, i)), lazy loop(force xs, i + 1))
+            case LList(xs)    => LList(          lazy loop(force xs, i))
+        };
+        loop(l, 0)
 
     ///
     /// Returns `l` as an `Array`.

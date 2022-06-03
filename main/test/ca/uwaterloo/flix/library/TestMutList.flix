@@ -466,7 +466,7 @@ namespace TestMutList {
     def indexOfRight04(): Bool = region r {
         let v1 = MutList.range(0, 4, r);
         let v2 = MutList.range(0, 4, r);
-        MutList.append!(v2, v1);
+        MutList.append!(MutList.toList(v2), v1);
         MutList.indexOfRight(2, v1) == Some(6)
     }
 
@@ -781,6 +781,36 @@ namespace TestMutList {
     @test
     def foldRightWithCont05(): Bool = region r {
         MutList.foldRightWithCont((x, k) -> x + k(), 42, new MutList(r)) == 42
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool = region r {
+        MutList.foldMap(x -> 2 * x, List.toMutList(Nil: List[Int32], r)) == 0
+    }
+
+    @test
+    def foldMap02(): Bool = region r {
+        MutList.foldMap(x -> 2 * x, List.toMutList(1 :: 2 :: Nil, r)) == 6
+    }
+
+    @test
+    def foldMap03(): Bool = region r {
+        MutList.foldMap(x -> if (x == "a") "b" else x, List.toMutList("a" :: Nil, r)) == "b"
+    }
+
+    @test
+    def foldMap04(): Bool = region r {
+        MutList.foldMap(x -> if (x == "c") "b" else x, List.toMutList("a" :: "b" :: "c":: Nil, r)) == "abb"
+    }
+
+    @test
+    def foldMap05(): Bool = region r {
+        MutList.foldMap(Int32.toString, List.toMutList(1 :: 2 :: 3 :: Nil, r)) == "123"
     }
 
 
@@ -1129,44 +1159,44 @@ namespace TestMutList {
 
     @test
     def append!01(): Bool = region r {
-        let v1 = MutList.range(0, 4, r);
-        let v2 = MutList.range(4, 8, r);
-        MutList.append!(v2, v1);
-        MutList.sameElements(v1, MutList.range(0, 8, r))
+        let v = MutList.range(0, 4, r);
+        let l = List.range(4, 8);
+        MutList.append!(l, v);
+        MutList.sameElements(v, MutList.range(0, 8, r))
     }
 
     @test
     def append!02(): Bool = region r {
-        let v1 = new MutList(r);
-        let v2 = MutList.range(1, 4, r);
-        MutList.append!(v2, v1);
-        MutList.sameElements(v1, MutList.range(1, 4, r))
+        let v = new MutList(r);
+        let l = List.range(1, 4);
+        MutList.append!(l, v);
+        MutList.sameElements(v, MutList.range(1, 4, r))
     }
 
     @test
     def append!03(): Bool = region r {
-        let v1 = MutList.range(9, 24, r);
-        let v2 = new MutList(r);
-        MutList.append!(v2, v1);
-        MutList.sameElements(v1, MutList.range(9, 24, r))
+        let v = MutList.range(9, 24, r);
+        let l = Nil: List[Int32];
+        MutList.append!(l, v);
+        MutList.sameElements(v, MutList.range(9, 24, r))
     }
 
     @test
     def append!04(): Bool = region r {
-        let v1: MutList[Unit, _] = new MutList(r);
-        let v2: MutList[Unit, _] = new MutList(r);
-        MutList.append!(v2, v1);
-        MutList.sameElements(v1, new MutList(r))
+        let v: MutList[Unit, _] = new MutList(r);
+        let l: List[Unit] = Nil;
+        MutList.append!(l, v);
+        MutList.sameElements(v, new MutList(r))
     }
 
     @test
     def append!05(): Bool = region r {
-        let v1 = MutList.range(1, 3, r);
-        let v2 = MutList.range(3, 5, r);
-        let v3 = MutList.range(5, 99, r);
-        MutList.append!(v2, v1);
-        MutList.append!(v3, v1);
-        MutList.sameElements(v1, MutList.range(1, 99, r))
+        let v = MutList.range(1, 3, r);
+        let l1 = List.range(3, 5);
+        let l2 = List.range(5, 99);
+        MutList.append!(l1, v);
+        MutList.append!(l2, v);
+        MutList.sameElements(v, MutList.range(1, 99, r))
     }
 
 
@@ -1352,7 +1382,7 @@ namespace TestMutList {
     def shrink!04(): Bool = region r {
         let v = new MutList(r);
         MutList.push!(4, v);
-        MutList.append!(MutList.range(0, 4, r), v);
+        MutList.append!(MutList.toList(MutList.range(0, 4, r)), v);
         MutList.push!(5, v);
         MutList.shrink!(v);
         MutList.length(v) == 6
@@ -1458,7 +1488,7 @@ namespace TestMutList {
     @test
     def foreach01(): Bool & Impure =
         let v = new MutList(static);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let f = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == ""
@@ -1466,7 +1496,7 @@ namespace TestMutList {
     @test
     def foreach02(): Bool & Impure =
         let v = MutList.range(0, 5, static);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let f = x -> if (x rem 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == "TFTFT"
@@ -1474,7 +1504,7 @@ namespace TestMutList {
     @test
     def foreach03(): Bool & Impure =
         let v = MutList.range(0, 2, static);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let f = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == "FT"
@@ -1482,7 +1512,7 @@ namespace TestMutList {
     @test
     def foreach04(): Bool & Impure =
         let v = MutList.range(0, 2, static);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let f = x -> if (x < 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreach(f, v);
         StringBuilder.toString(sb) == "FF"
@@ -1506,7 +1536,7 @@ namespace TestMutList {
     @test
     def foreachWithIndex02(): Bool & Impure = // Impure due to StringBuilder
         let v = MutList.range(1, 4, static);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let f = (x, i) -> if (x rem 2 == 1 and i == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFF"
@@ -1514,7 +1544,7 @@ namespace TestMutList {
     @test
     def foreachWithIndex03(): Bool & Impure = // Impure due to StringBuilder
         let v = MutList.range(0, 5, static);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let f = (x, _) -> if (x rem 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.foreachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFTFT"
@@ -1717,6 +1747,58 @@ namespace TestMutList {
         let xs = 1 :: 2 :: 3 :: Nil;
         List.foreach(x -> MutList.push!(x, l), xs);
         MutList.toChain(l) == List.toChain(1 :: 2 :: 3 :: Nil)
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toMutDeque                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toMutDeque01(): Bool = region r {
+        let l = new MutList(r): MutList[Int32, _];
+        let d = new MutDeque(r): MutDeque[Int32, _];
+
+        MutList.toMutDeque(l, r) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque02(): Bool = region r {
+        let xs = 1 :: Nil;
+
+        let l = new MutList(r);
+        List.foreach(x -> MutList.push!(x, l), xs);
+
+        let d = new MutDeque(r);
+        List.foreach(x -> MutDeque.pushBack(x, d), xs);
+
+        MutList.toMutDeque(l, r) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque03(): Bool = region r {
+        let xs = 1 :: 2 :: Nil;
+
+        let l = new MutList(r);
+        List.foreach(x -> MutList.push!(x, l), xs);
+
+        let d = new MutDeque(r);
+        List.foreach(x -> MutDeque.pushBack(x, d), xs);
+
+        MutList.toMutDeque(l, r) `MutDeque.sameElements` d
+    }
+
+    @test
+    def toMutDeque04(): Bool = region r {
+        let xs = 1 :: 2 :: 3 :: Nil;
+
+        let l = new MutList(r);
+        List.foreach(x -> MutList.push!(x, l), xs);
+
+        let d = new MutDeque(r);
+        List.foreach(x -> MutDeque.pushBack(x, d), xs);
+
+        MutList.toMutDeque(l, r) `MutDeque.sameElements` d
     }
 
 
@@ -2256,29 +2338,33 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def join01(): Bool & Impure = // Impure due to StringBuilder
-        (new MutList(static): MutList[Int32, _]) |> MutList.join(",") == ""
+    def join01(): Bool = region r {
+        (new MutList(r): MutList[Int32, _]) |> MutList.join(",") == ""
+    }
 
     @test
-    def join02(): Bool & Impure = // Impure due to StringBuilder
-        let l = new MutList(static);
+    def join02(): Bool = region r {
+        let l = new MutList(r);
         let xs = 1 :: Nil;
         List.foreach(x -> MutList.push!(x, l), xs);
         MutList.join(",", l) == "1"
+    }
 
     @test
-    def join03(): Bool & Impure = // Impure due to StringBuilder
-        let l = new MutList(static);
+    def join03(): Bool = region r {
+        let l = new MutList(r);
         let xs = 1 :: 2 :: 3 :: Nil;
         List.foreach(x -> MutList.push!(x, l), xs);
         MutList.join(",", l) == "1,2,3"
+    }
 
     @test
-    def join04(): Bool & Impure = // Impure due to StringBuilder
-        let l = new MutList(static);
+    def join04(): Bool = region r {
+        let l = new MutList(r);
         let xs = "1" :: "2" :: "3" :: Nil;
         List.foreach(x -> MutList.push!(x, l), xs);
         MutList.join(",", l) == "1,2,3"
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2286,28 +2372,32 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def joinWith01(): Bool & Impure = // Impure due to StringBuilder
-        (new MutList(static): MutList[Int32, _]) |> MutList.joinWith(x -> "${x + 1}", ",") == ""
+    def joinWith01(): Bool = region r {
+        (new MutList(r): MutList[Int32, _]) |> MutList.joinWith(x -> "${x + 1}", ",") == ""
+    }
 
     @test
-    def joinWith02(): Bool & Impure = // Impure due to StringBuilder
-        let l = new MutList(static);
+    def joinWith02(): Bool = region r {
+        let l = new MutList(r);
         let xs = 1 :: Nil;
         List.foreach(x -> MutList.push!(x, l), xs);
         MutList.joinWith(x -> "${x + 1}", ",", l) == "2"
+    }
 
     @test
-    def joinWith03(): Bool & Impure = // Impure due to StringBuilder
-        let l = new MutList(static);
+    def joinWith03(): Bool = region r {
+        let l = new MutList(r);
         let xs = 1 :: 2 :: 3 :: Nil;
         List.foreach(x -> MutList.push!(x, l), xs);
         MutList.joinWith(x -> "${x + 1}", ",", l) == "2,3,4"
+    }
 
     @test
-    def joinWith04(): Bool & Impure = // Impure due to StringBuilder
-        let l = new MutList(static);
+    def joinWith04(): Bool = region r {
+        let l = new MutList(r);
         let xs = "1" :: "2" :: "3" :: Nil;
         List.foreach(x -> MutList.push!(x, l), xs);
         MutList.joinWith(x -> x + x, ",", l) == "11,22,33"
+    }
 
 }

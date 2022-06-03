@@ -791,6 +791,57 @@ namespace TestMutDeque {
         MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, d) == 382
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool = region r {
+        MutDeque.foldMap(x -> 2 * x, new MutDeque(r)) == 0
+    }
+
+    @test
+    def foldMap02(): Bool = region r {
+        let d = new MutDeque(r);
+        MutDeque.pushBack(1, d);
+        MutDeque.foldMap(x -> 2 * x, d) == 2
+    }
+
+    @test
+    def foldMap03(): Bool = region r {
+        let d = new MutDeque(r);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.foldMap(x -> 2 * x, d) == 6
+    }
+
+    @test
+    def foldMap04(): Bool = region r {
+        let d = new MutDeque(r);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.foldMap(x -> 2 * x, d) == 12
+    }
+
+    @test
+    def foldMap05(): Bool = region r {
+        let d = new MutDeque(r);
+        MutDeque.pushFront("c", d);
+        MutDeque.pushFront("b", d);
+        MutDeque.pushFront("a", d);
+        MutDeque.foldMap(x -> if (x == "c") "b" else x, d) == "abb"
+    }
+
+    @test
+    def foldMap06(): Bool = region r {
+        let d = new MutDeque(r);
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.foldMap(Int32.toString, d) == "123"
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
@@ -831,30 +882,34 @@ namespace TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def join01(): Bool & Impure =
-        new MutDeque(static): MutDeque[Int32, _] |> MutDeque.join(",") == ""
+    def join01(): Bool = region r {
+        new MutDeque(r): MutDeque[Int32, _] |> MutDeque.join(",") == ""
+    }
 
     @test
-    def join02(): Bool & Impure =
-        let d = new MutDeque(static);
+    def join02(): Bool = region r {
+        let d = new MutDeque(r);
         MutDeque.pushBack(1, d);
         MutDeque.join(",", d) == "1"
+    }
 
     @test
-    def join03(): Bool & Impure =
-        let d = new MutDeque(static);
+    def join03(): Bool = region r {
+        let d = new MutDeque(r);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.join(",", d) == "1,2,3"
+    }
 
     @test
-    def join04(): Bool & Impure =
-        let d = new MutDeque(static);
+    def join04(): Bool = region r {
+        let d = new MutDeque(r);
         MutDeque.pushBack("1", d);
         MutDeque.pushBack("2", d);
         MutDeque.pushBack("3", d);
         MutDeque.join(",", d) == "1,2,3"
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -862,31 +917,35 @@ namespace TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def joinWith01(): Bool & Impure =
-        let d = new MutDeque(static);
+    def joinWith01(): Bool = region r {
+        let d = new MutDeque(r);
         MutDeque.joinWith(x -> "${x + 1}", ",", d) == ""
+    }
 
     @test
-    def joinWith02(): Bool & Impure =
-        let d = new MutDeque(static);
+    def joinWith02(): Bool = region r {
+        let d = new MutDeque(r);
         MutDeque.pushBack(1, d);
         MutDeque.joinWith(x -> "${x + 1}", ",", d) == "2"
+    }
 
     @test
-    def joinWith03(): Bool & Impure =
-        let d = new MutDeque(static);
+    def joinWith03(): Bool = region r {
+        let d = new MutDeque(r);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.joinWith(x -> "${x + 1}", ",", d) == "2,3,4"
+    }
 
     @test
-    def joinWith04(): Bool & Impure =
-        let d = new MutDeque(static);
+    def joinWith04(): Bool = region r {
+        let d = new MutDeque(r);
         MutDeque.pushBack("1", d);
         MutDeque.pushBack("2", d);
         MutDeque.pushBack("3", d);
         MutDeque.joinWith(x -> x + x, ",", d) == "11,22,33"
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////

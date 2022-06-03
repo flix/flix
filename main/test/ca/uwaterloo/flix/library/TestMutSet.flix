@@ -107,7 +107,7 @@ namespace TestMutSet {
     def addAll01(): Bool = region r {
         let s1 = new MutSet(r): MutSet[Int32, _];
         let s2 = new MutSet(r): MutSet[Int32, _];
-        MutSet.addAll!(s1, s2);
+        MutSet.addAll!(MutSet.toSet(s1), s2);
         MutSet.isEmpty(s2)
     }
 
@@ -117,7 +117,7 @@ namespace TestMutSet {
         let s2 = new MutSet(r);
         MutSet.add!(1, s1);
         MutSet.add!(1, s1);
-        MutSet.addAll!(s1, s2);
+        MutSet.addAll!(MutSet.toSet(s1), s2);
         MutSet.sameElements(s1, s2)
     }
 
@@ -127,7 +127,7 @@ namespace TestMutSet {
         let s2 = new MutSet(r);
         MutSet.add!(1, s1);
         MutSet.add!(2, s1);
-        MutSet.addAll!(s1, s2);
+        MutSet.addAll!(MutSet.toSet(s1), s2);
         MutSet.foldLeft((acc, a) -> acc + a, 0, s2) == 3
     }
 
@@ -138,7 +138,7 @@ namespace TestMutSet {
         MutSet.add!(1, s1);
         MutSet.add!(2, s1);
         MutSet.add!(3, s1);
-        MutSet.addAll!(s1, s2);
+        MutSet.addAll!(MutSet.toSet(s1), s2);
         MutSet.foldLeft((acc, a) -> acc + a, 0, s2) == 6
     }
 
@@ -151,7 +151,7 @@ namespace TestMutSet {
 
         region r2 {
             let s2 = new MutSet(r2);
-            MutSet.addAll!(s1, s2);
+            MutSet.addAll!(MutSet.toSet(s1), s2);
             MutSet.toList(s2) == "c" :: "b" :: "a" :: Nil
         }
     }
@@ -165,10 +165,10 @@ namespace TestMutSet {
 
         region r2 {
             let s2 = new MutSet(r2);
-            MutSet.addAll!(s1, s2);
+            MutSet.addAll!(MutSet.toSet(s1), s2);
             MutSet.isSubsetOf(s1, s2) and MutSet.isSubsetOf(s2, s1)
+            }
         }
-    }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -487,6 +487,48 @@ namespace TestMutSet {
         MutSet.add!(2, s);
         MutSet.add!(1, s);
         MutSet.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, s) == 382
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldMap01(): Bool = region r {
+        MutSet.foldMap(x -> 2 * x, new MutSet(r): MutSet[Int32, _]) == 0
+    }
+
+    @test
+    def foldMap02(): Bool = region r {
+        let s = new MutSet(r);
+        MutSet.add!(1, s);
+        MutSet.add!(2, s);
+        MutSet.foldMap(x -> 2 * x, s) == 6
+    }
+
+    @test
+    def foldMap03(): Bool = region r {
+        let s = new MutSet(r);
+        MutSet.add!("a", s);
+        MutSet.foldMap(x -> if (x == "a") "b" else x, s) == "b"
+    }
+
+    @test
+    def foldMap04(): Bool = region r {
+        let s = new MutSet(r);
+        MutSet.add!("a", s);
+        MutSet.add!("b", s);
+        MutSet.add!("c", s);
+        MutSet.foldMap(x -> if (x == "c") "b" else x, s) == "abb"
+    }
+
+    @test
+    def foldMap05(): Bool = region r {
+        let s = new MutSet(r);
+        MutSet.add!(1, s);
+        MutSet.add!(2, s);
+        MutSet.add!(3, s);
+        MutSet.foldMap(Int32.toString, s) == "123"
     }
 
 }

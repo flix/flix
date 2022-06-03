@@ -125,7 +125,7 @@ class TestStratifier extends FunSuite with TestUtils {
     // ... <- A <- B <-x A <- ...
     val input =
     """
-      |pub opaque type A = Int32
+      |pub enum A(Int32)
       |
       |instance Eq[A] {
       |  pub def eq(_a1: A, _a2: A): Bool =

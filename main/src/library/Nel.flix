@@ -373,6 +373,12 @@ namespace Nel {
     }
 
     ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, l: Nel[a]): b & ef with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), l)
+
+    ///
     /// Left-associative reduction of a structure.
     /// Applies `g` to the initial element of `l` and combines it
     /// with the remainder of `l` using `f` going from left to right.
@@ -523,6 +529,19 @@ namespace Nel {
             let (l1, l2) = List.unzip(xs);
             (Nel(a, l1), Nel(b, l2))
     }
+
+    ///
+    /// Returns a new non-empty list where each element `e` is mapped to `(e, i)`
+    /// where `i` is the index of `e`.
+    ///
+    pub def zipWithIndex(l: Nel[a]): Nel[(a, Int32)] =
+        def loop(ll, k, i) = match ll {
+            case (x :: xs) => loop(xs, ks -> (k((x, i) :: ks)), i + 1)
+            case Nil       => k(Nil)
+        };
+        match l {
+            case Nel(x, xs) => Nel((x, 0), loop(xs, identity, 1))
+        }
 
     ///
     /// Returns `l` as a normal list.

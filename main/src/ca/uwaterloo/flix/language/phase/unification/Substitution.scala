@@ -77,6 +77,8 @@ case class Substitution(m: Map[Symbol.TypeVarSym, Type]) {
           val args = args0.map(visit)
           val tpe = visit(tpe0)
           Type.Alias(sym, args, tpe, loc)
+        case _: Type.UnkindedArrow => t
+        case Type.ReadWrite(tpe, loc) => Type.ReadWrite(apply(tpe), loc)
         case _: Type.Ascribe => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
       }
 

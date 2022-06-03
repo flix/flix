@@ -578,4 +578,6 @@ object Ast {
       */
     case class FallbackText(s: String) extends VarText
   }
+
+  case class PurityAndEffect(pur: Option[Type], eff: Option[List[Type]])
 }

@@ -68,8 +68,8 @@ instance Traversable[Chain] {
 
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String =
-        let fn = () -> {
-            let sb = StringBuilder.new();
+        let fn = () -> region r {
+            let sb = new StringBuilder(r);
             StringBuilder.appendString!("Chain#{", sb);
             let _ = Chain.foldLeft((acc, x) -> {
                 if (acc < 1)
@@ -80,7 +80,7 @@ instance ToString[Chain[a]] with ToString[a] {
             StringBuilder.appendString!("}", sb);
             StringBuilder.toString(sb)
         };
-        fn() as & Pure
+        fn()
 }
 
 
@@ -235,14 +235,12 @@ namespace Chain {
         loop(viewLeft(c))
 
     ///
-    /// Returns the position of `a` in `c`.
+    /// Optionally returns the position of `a` in `c`.
     ///
-    /// Returns `-1` if `a` does not exist in `c`.
-    ///
-    pub def indexOf(a: a, c: Chain[a]): Int32 with Eq[a] =
+    pub def indexOf(a: a, c: Chain[a]): Option[Int32] with Eq[a] =
         def loop(v, acc) = match v {
-            case NoneLeft       => -1
-            case SomeLeft(x, xs) => if (x == a) acc else loop(viewLeft(xs), acc + 1)
+            case NoneLeft       => None
+            case SomeLeft(x, xs) => if (x == a) Some(acc) else loop(viewLeft(xs), acc + 1)
         };
         loop(viewLeft(c), 0)
 
@@ -506,6 +504,12 @@ namespace Chain {
         loop(c)
 
     ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b & ef, c: Chain[a]): b & ef with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), c)
+
+    ///
     /// Returns `c` without the first `n` elements.
     ///
     /// Returns `Nil` if `n > length(c)`.
@@ -730,6 +734,14 @@ namespace Chain {
         foldRight((x, acc) -> x :: acc, Nil, c)
 
     ///
+    /// Returns `c` as a MutDeque.
+    ///
+    pub def toMutDeque(c: Chain[a], r: Region[r]): MutDeque[a, r] \ Write(r) =
+        let d = new MutDeque(r);
+        Chain.foreach(x -> MutDeque.pushBack(x, d), c);
+        d
+
+    ///
     /// Returns `c` as a mutable list.
     ///
     pub def toMutList(c: Chain[a], r: Region[r]): MutList[a, r] \ Write(r) = region r2 {
@@ -761,6 +773,24 @@ namespace Chain {
             let f = (i, b) -> { arr[i] = b; i + 1 };
             let _ = foldLeft(f, 0, c);
             arr
+        }
+
+    ///
+    /// Returns the chain `c` as a Nel.
+    ///
+    pub def toNel(c: Chain[a]): Option[Nel[a]] =
+        match viewLeft(c) {
+            case NoneLeft        => None
+            case SomeLeft(x, rs) => Nel(x, Chain.toList(rs)) |> Some
+        }
+
+    ///
+    /// Returns the chain `c` as a Nec.
+    ///
+    pub def toNec(c: Chain[a]): Option[Nec[a]] =
+        match viewLeft(c) {
+            case NoneLeft        => None
+            case SomeLeft(x, rs) => foldLeft(Nec.snoc, Nec.singleton(x), rs) |> Some
         }
 
     ///

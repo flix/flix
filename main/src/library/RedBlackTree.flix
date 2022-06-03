@@ -245,10 +245,8 @@ namespace RedBlackTree {
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from left to right.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def findLeft(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Option[(k, v)] =
+    pub def findLeft(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
         def loop(tt, sk) = match tt {
             case Node(_, a, k, v, b) => loop(a, kl -> match kl {
                 case None => if (f(k, v)) Some(k, v) else loop(b, kr -> match kr {
@@ -259,15 +257,13 @@ namespace RedBlackTree {
             })
             case _ => sk(None)
         };
-        loop(t, identity)
+        loop(t, k -> k as & ef)
 
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from right to left.
     ///
-    /// The function `f` must be pure.
-    ///
     @Time(time(f) * size(t)) @Space(space(f) * Int32.log2(size(t)))
-    pub def findRight(f: (k, v) -> Bool, t: RedBlackTree[k, v]): Option[(k, v)] =
+    pub def findRight(f: (k, v) -> Bool & ef, t: RedBlackTree[k, v]): Option[(k, v)] & ef =
         def loop(tt, sk) = match tt {
             case Node(_, a, k, v, b) => loop(b, kr -> match kr {
                 case None => if (f(k, v)) Some(k, v) else loop(a, kl -> match kl {
@@ -278,7 +274,7 @@ namespace RedBlackTree {
             })
             case _ => sk(None)
         };
-        loop(t, identity)
+        loop(t, k -> k as & ef)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `t` going from left to right.
@@ -993,12 +989,12 @@ namespace RedBlackTree {
     /// Returns the concatenation of the string representation of each key-value pair
     /// `k => v` in `t` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: (k, v) -> String & ef, sep: String, t: RedBlackTree[k, v]): String & ef = {
+    pub def joinWith(f: (k, v) -> String & ef, sep: String, t: RedBlackTree[k, v]): String & ef = region r {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(r);
         foreach((k, v) -> { append!(f(k, v), sb); append!(sep, sb) }, t);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
-    } as & ef
+    }
 
 }

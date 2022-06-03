@@ -1807,6 +1807,30 @@ def foldRight210(): Bool = List.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, 
                          true :: false :: false :: true :: Nil) == -66
 
 /////////////////////////////////////////////////////////////////////////////
+// foldMap                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def foldMap01(): Bool =
+    List.foldMap(x -> 2 * x, Nil) == 0
+
+@test
+def foldMap02(): Bool =
+    List.foldMap(x -> 2 * x, 1 :: 2 :: Nil) == 6
+
+@test
+def foldMap03(): Bool =
+    List.foldMap(x -> if (x == "a") "b" else x, "a" :: Nil) == "b"
+
+@test
+def foldMap04(): Bool =
+    List.foldMap(x -> if (x == "c") "b" else x, "a" :: "b" :: "c" :: Nil) == "abb"
+
+@test
+def foldMap05(): Bool =
+    List.foldMap(Int32.toString, 1 :: 2 :: 3 :: Nil) == "123"
+
+/////////////////////////////////////////////////////////////////////////////
 // filterMap                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -1860,6 +1884,42 @@ def findMap07(): Bool = List.findMap(i -> if (i rem 2 == 0) Some(i/2) else None,
 
 @test
 def findMap08(): Bool = List.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil) == Some(0)
+
+/////////////////////////////////////////////////////////////////////////////
+// toMutDeque                                                              //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toMutDeque01(): Bool = region r {
+    let l = Nil: List[Unit];
+    let d = List.toMutDeque(l, r);
+
+    l == MutDeque.toList(d)
+}
+
+@test
+def toMutDeque02(): Bool = region r {
+    let l = 1 :: 2 :: Nil;
+    let d = List.toMutDeque(l, r);
+
+    l == MutDeque.toList(d)
+}
+
+@test
+def toMutDeque03(): Bool = region r {
+    let l = 3 :: 1 :: 2 :: Nil;
+    let d = List.toMutDeque(l, r);
+
+    l == MutDeque.toList(d)
+}
+
+@test
+def toMutDeque04(): Bool = region r {
+    let l = 'a' :: 'b' :: 'c' :: Nil;
+    let d = List.toMutDeque(l, r);
+
+    l == MutDeque.toList(d)
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // toSet                                                                   //

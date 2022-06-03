@@ -202,6 +202,32 @@ object ResolutionError {
   }
 
   /**
+    * Inaccessible Op Error.
+    *
+    * @param sym the sig symbol.
+    * @param ns  the namespace where the symbol is not accessible.
+    * @param loc the location where the error occurred.
+    */
+  case class InaccessibleOp(sym: Symbol.OpSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Inaccessible."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Operation '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+         |
+         |${code(loc, "inaccessible operation.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Mark the operation as public."
+    })
+
+  }
+
+  /**
     * Inaccessible Enum Error.
     *
     * @param sym the enum symbol.
@@ -244,6 +270,33 @@ object ResolutionError {
          |>> Type alias '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
          |${code(loc, "inaccessible type alias.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Mark the definition as public."
+    })
+
+  }
+
+  /**
+    * Inaccessible Effect Error.
+    *
+    * @param sym the type alias symbol.
+    * @param ns  the namespace where the symbol is not accessible.
+    * @param loc the location where the error occurred.
+    */
+  case class InaccessibleEffect(sym: Symbol.EffectSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Inaccessible effect alias ${sym.name}"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Effect '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+         |
+         |${code(loc, "inaccessible effect.")}
          |
          |""".stripMargin
     }
@@ -395,6 +448,58 @@ object ResolutionError {
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent class?"
+    })
+
+  }
+
+  /**
+    * Undefined Op Error.
+    *
+    * @param qname the qualified name of the operation.
+    * @param loc   the location where the error occurred.
+    */
+  case class UndefinedOp(qname: Name.QName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Undefined operation."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined operation '${red(qname.toString)}'.'.
+         |
+         |${code(loc, "operation not found")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent operation?"
+    })
+  }
+
+  /**
+    * Undefined Effect Error.
+    *
+    * @param qn  the unresolved effect.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedEffect(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Undefined effect."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined effect '${red(qn.toString)}'.
+         |
+         |${code(loc, "effect not found")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent effect?"
     })
 
   }

@@ -709,7 +709,7 @@ object Monomorph {
       inst =>
         inst.defs.find {
           defn =>
-            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe)
+            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, Map.empty) // TODO renv
         }
     }
 
@@ -961,6 +961,10 @@ object Monomorph {
       Type.Alias(sym, as, t, loc)
 
     case Type.UnkindedVar(_, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
+
+    case Type.UnkindedArrow(_, _, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
+
+    case Type.ReadWrite(_, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
 
     case Type.Ascribe(_, _, loc) => throw InternalCompilerException(s"Unexpected type at: ${loc.format}")
   }
