@@ -101,7 +101,7 @@ namespace Concurrent/Channel/Ticker {
 
     pub def stop(ticker: Ticker): Unit & Impure = {
       match ticker {
-        case Ticker(_tickChannel, stopChannel) => stopChannel <- (); ()
+        case Ticker(_tickChannel, stopChannel) => stopChannel <- ()
       }
     }
 
