@@ -55,7 +55,7 @@ namespace Fixpoint {
             case Datalog(_) => compiler(d) |> interpret |> toModel
             case Model(_) => d
             case Join(Model(m), cs) =>
-                let db = static |> (Map.map(mm -> Map.toMutMap(mm, static), m) |> Map.toMutMap);
+                let db = Static |> (Map.map(mm -> Map.toMutMap(mm, Static), m) |> Map.toMutMap);
                 compiler(cs) |> interpretWithDatabase(db) |> toModel
             case _ => bug!("Datalog normalization bug")
         };
@@ -481,12 +481,12 @@ namespace Fixpoint {
         , p, ts) as & Pure
 
     def projectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> Array[Boxed] & ef, p: PredSym, ts: f[t]): Datalog[Boxed] & Impure with Foldable[f] =
-        let db = new MutMap(static);
+        let db = new MutMap(Static);
         Foldable.foldLeft(() -> t -> {
             let vs = f(t);
             let arity = Array.length(vs);
             let ramSym = RamSym.Full(p, arity, Denotation.Relational);
-            let rel = MutMap.getOrElsePut!(ramSym, new MutMap(static), db);
+            let rel = MutMap.getOrElsePut!(ramSym, new MutMap(Static), db);
             MutMap.put!(Tuple(vs), $DEFAULT$, rel)
         }, (), ts);
         toModel(db)
@@ -623,7 +623,7 @@ namespace Fixpoint {
     ///
     def factsOf(f: Array[v] -> t & ef, p: PredSym, d: Datalog[v]): Array[t] & Impure = match d {
         case Datalog(_, cs) =>
-            let pFacts = new MutList(static);
+            let pFacts = new MutList(Static);
             Array.foreach(c -> match c {
                 case Constraint(HeadAtom(headPred, _, terms), []) =>
                     if (headPred == p)
@@ -633,10 +633,10 @@ namespace Fixpoint {
                         ()
                 case _ => ()
             }, cs);
-            MutList.toArray(pFacts, static)
+            MutList.toArray(pFacts, Static)
         case Model(db) =>
             use Fixpoint/Ram.toDenotation;
-            let pFacts = new MutList(static);
+            let pFacts = new MutList(Static);
             let query = ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
                     case EqualTo => EqualTo
@@ -654,11 +654,11 @@ namespace Fixpoint {
                                 tuple[i]
                             else
                                 lat
-                        }, Array.length(tuple) + 1, static);
+                        }, Array.length(tuple) + 1, Static);
                         MutList.push!(f(vs), pFacts)
                     }, rel)
             }, db);
-            MutList.toArray(pFacts, static)
+            MutList.toArray(pFacts, Static)
         case Join(d1, d2) => Array.append(factsOf(f, p, d1), factsOf(f, p, d2))
     }
 
