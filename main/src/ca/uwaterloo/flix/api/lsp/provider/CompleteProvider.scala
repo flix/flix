@@ -33,13 +33,41 @@ object CompleteProvider {
     * Returns a list of auto-complete suggestions.
     */
   def autoComplete(uri: String, pos: Position, line: Option[String], word: Option[String])(implicit index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    // Ordered by priority.
-    getVarSuggestions(uri, pos, line, word) ++
-      getDefAndSigSuggestions(uri, pos, line, word) ++
-      getInstanceSuggestions(uri, pos, line, word) ++
-      getWithSuggestions(uri, pos, line, word) ++
-      getKeywordCompletionItems(line, word) ++
-      getSnippetCompletionItems(line, word)
+    word match {
+      case None => Nil;
+      case Some(w) => 
+        if (w.startsWith("@")) {
+          getAnnotationCompletionItems(line, word)
+        } else {
+          // Ordered by priority.
+          getVarSuggestions(uri, pos, line, word) ++
+            getDefAndSigSuggestions(uri, pos, line, word) ++
+            getInstanceSuggestions(uri, pos, line, word) ++
+            getWithSuggestions(uri, pos, line, word) ++
+            getKeywordCompletionItems(line, word) ++
+            getSnippetCompletionItems(line, word)
+        }
+    }
+  }
+
+  /**
+    * Returns a list of annotation completion items.
+    */
+  private def getAnnotationCompletionItems(line: Option[String], word: Option[String]): List[CompletionItem] = {
+    List(
+      CompletionItem("benchmark", "benchmark ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("test", "test ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Deprecated", "Deprecated ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Experimental", "Experimental ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Internal", "Internal ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("ParallelWhenPure", "ParallelWhenPure ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Parallel", "Parallel ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("LazyWhenPure", "LazyWhenPure ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Lazy", "Lazy ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Space", "Space ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Time", "Time ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil),
+      CompletionItem("Unsafe", "Unsafe ", None, Some("annotation"), CompletionItemKind.Keyword, InsertTextFormat.PlainText, Nil)
+    )
   }
 
   /**
