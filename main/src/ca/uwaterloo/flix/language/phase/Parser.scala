@@ -102,7 +102,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Def |
       Declarations.Law |
       Declarations.Enum |
-      Declarations.OpaqueType |
       Declarations.TypeAlias |
       Declarations.Relation |
       Declarations.Lattice |
@@ -165,10 +164,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ TypeParams ~ optional(Types.Tuple) ~ Derivations ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.Enum
       }
-    }
-
-    def OpaqueType: Rule1[ParsedAst.Declaration.OpaqueType] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("opaque") ~ WS ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ Derivations ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.OpaqueType
     }
 
     def TypeAlias: Rule1[ParsedAst.Declaration.TypeAlias] = rule {
@@ -712,7 +707,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Static: Rule1[ParsedAst.Expression.Static] = rule {
-      SP ~ keyword("static") ~ SP ~> ParsedAst.Expression.Static
+      SP ~ keyword("Static") ~ SP ~> ParsedAst.Expression.Static
     }
 
     def Scope: Rule1[ParsedAst.Expression.Scope] = rule {

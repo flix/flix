@@ -1,4 +1,4 @@
-namespace Test/Dec/OpaqueType {
+namespace Test/Dec/Enum/Singleton {
 
     /**
      * An enum for degrees celsius.
