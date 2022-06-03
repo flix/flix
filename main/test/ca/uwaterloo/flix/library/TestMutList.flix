@@ -1562,7 +1562,7 @@ namespace TestMutList {
         let i = ref 0;
         let f = _ -> {
             if (deref i < 76) {
-                MutList.pop!(v);
+                discard MutList.pop!(v);
                 i := deref i + 1
             }
             else ()
@@ -1684,8 +1684,8 @@ namespace TestMutList {
     @test
     def toArray03(): Bool = region r {
         let v = Array.toMutList([1, 2, 3] @ r, r);
-        MutList.pop!(v);
-        MutList.pop!(v);
+        discard MutList.pop!(v);
+        discard MutList.pop!(v);
         Array.length(MutList.toArray(v, r)) == 1
     }
 

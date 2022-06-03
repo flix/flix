@@ -92,13 +92,13 @@ namespace TestDelayMap {
     @test
     def insertWithFusion01(): Bool & Impure =
         let l = ref Nil;
-        List.toDelayMap((1, 1) :: Nil) |>
-        DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v }, 1, 1) |>
-        DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v }, 1, 1) |>
-        DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v }, 1, 1) |>
-        DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v }, 1, 1) |>
-        DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v }, 1, 1) |>
-        DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v }, 1, 1);
+        discard List.toDelayMap((1, 1) :: Nil) |>
+            DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v }, 1, 1) |>
+            DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v }, 1, 1) |>
+            DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v }, 1, 1) |>
+            DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v }, 1, 1) |>
+            DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v }, 1, 1) |>
+            DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v }, 1, 1);
         List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
 
     //@test
@@ -159,7 +159,7 @@ namespace TestDelayMap {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
         let a = new MutList(static);
-        DelayMap.count((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); true }, m);
+        discard DelayMap.count((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); true }, m);
         MutList.toList(a) == range
 
 
@@ -265,9 +265,9 @@ namespace TestDelayMap {
     @test
     def mapFusion01(): Bool & Impure =
         let l = ref Nil;
-        ((1, 1) :: (2, 2) :: (3, 3) :: Nil) |> List.toDelayMap |>
-        DelayMap.map(v -> { l := "a" :: deref l; v }) |>
-        DelayMap.map(v -> { l := "b" :: deref l; v });
+        discard ((1, 1) :: (2, 2) :: (3, 3) :: Nil) |> List.toDelayMap |>
+            DelayMap.map(v -> { l := "a" :: deref l; v }) |>
+            DelayMap.map(v -> { l := "b" :: deref l; v });
         List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
 
     //@test
@@ -754,9 +754,9 @@ namespace TestDelayMap {
     @test
     def unionWithKeyFusion01(): Bool & Impure =
         let l = ref Nil;
-        Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toDelayMap |>
-        DelayMap.unionWithKey((_, _, v) -> { l := "a" :: deref l; v }, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3})) |>
-        DelayMap.unionWithKey((_, _, v) -> { l := "b" :: deref l; v }, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}));
+        discard Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toDelayMap |>
+            DelayMap.unionWithKey((_, _, v) -> { l := "a" :: deref l; v }, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3})) |>
+            DelayMap.unionWithKey((_, _, v) -> { l := "b" :: deref l; v }, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}));
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
 
     //@test
@@ -1047,7 +1047,7 @@ namespace TestDelayMap {
     @test
     def updateWithKeyFusion01(): Bool & Impure =
         let l = ref Nil;
-        Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}) |>
+        discard Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}) |>
             DelayMap.updateWithKey((_, v) -> { l := "a" :: deref l; Some(v) }, 1) |>
             DelayMap.updateWithKey((_, v) -> { l := "a" :: deref l; Some(v) }, 2) |>
             DelayMap.updateWithKey((_, v) -> { l := "a" :: deref l; Some(v) }, 3) |>
@@ -1776,7 +1776,7 @@ namespace TestDelayMap {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
         let a = new MutList(static);
-        DelayMap.sumWith((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 0 }, m);
+        discard DelayMap.sumWith((k, _) -> { let b = new MutList(static); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 0 }, m);
         MutList.toList(a) == range
 
 
