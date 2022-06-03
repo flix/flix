@@ -1951,7 +1951,7 @@ namespace TestMutList {
     @test
     def sortWith01!(): Bool = region r {
         let a = Array.toMutList([]: ScopedArray[Int32, _], r);
-        MutList.sortWith(cmp, a);
+        MutList.sortWith!(cmp, a);
         a `sameElements` Array.toMutList([]: ScopedArray[Int32, _], r)
     }
 
