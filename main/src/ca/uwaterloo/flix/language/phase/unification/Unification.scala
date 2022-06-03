@@ -18,8 +18,11 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+
+import scala.collection.mutable
 
 object Unification {
 
@@ -419,12 +422,56 @@ object Unification {
   /**
     * Purifies the given effect `eff` in the type inference monad.
     */
-  def purifyEffM(sym: Symbol.RegionSym, eff: Type): InferMonad[Type] =
+  def purifyEffM(sym: Symbol.RegionSym, eff: Type)(implicit flix: Flix): InferMonad[Type] =
     InferMonad {
       case (s, renv) =>
-        val purifiedEff = purify(sym, s(eff))
-        Ok((s, renv, purifiedEff))
+        val (purifiedSubst, purifiedEff) = purify(sym, s, s(eff))
+        Ok((purifiedSubst, renv, purifiedEff))
     }
+
+  private def purify(reg: Symbol.RegionSym, subst00: Substitution, tpe00: Type)(implicit flix: Flix): (Substitution, Type) = {
+
+    def visit(tpe0: Type, syms0: Map[Symbol.KindedTypeVarSym, Symbol.KindedTypeVarSym], subst0: Map[Symbol.TypeVarSym, Type]): (Type, Map[Symbol.KindedTypeVarSym, Symbol.KindedTypeVarSym], Map[Symbol.TypeVarSym, Type]) = tpe0 match {
+      case Type.KindedVar(sym0, loc) =>
+        syms0.get(sym0) match {
+          // Case 1: We haven't seen this var yet. Add it to the map and mirror all its substitutions.
+          case None =>
+            val sym = Symbol.freshKindedTypeVarSym(sym0.text, sym0.kind, sym0.rigidity, sym0.loc)
+            val syms1 = syms0 + (sym0 -> sym)
+            val replace0 = subst0.getOrElse(sym0, tpe0)
+            val (replace, syms, subst1) = visit(replace0, syms1, subst0)
+            val subst = subst1 + (sym -> replace)
+            val tpe = Type.KindedVar(sym, loc)
+            (tpe, syms, subst)
+
+          // Case 2: We have seen this var. Just return it.
+          case Some(sym) =>
+            val tpe = Type.KindedVar(sym, loc)
+            (tpe, syms0, subst0)
+        }
+      case Type.UnkindedVar(sym, loc) => throw InternalCompilerException("unexpected unkinded type")
+      case Type.Ascribe(tpe, kind, loc) => throw InternalCompilerException("unexpected unkinded type")
+      case Type.Cst(TypeConstructor.Region(sym), loc) if reg == sym => (Type.True, syms0, subst0)
+      case Type.Cst(cst, loc) => (Type.Cst(cst, loc), syms0, subst0)
+      case Type.Apply(tpe10, tpe20, loc) =>
+        val (tpe1, syms1, subst1) = visit(tpe10, syms0, subst0)
+        val (tpe2, syms, subst) = visit(tpe20, syms1, subst1)
+        val tpe = Type.Apply(tpe1, tpe2, loc)
+        (tpe, syms, subst)
+      case Type.Alias(cst, args0, tpe0, loc) =>
+        val (args, symsA, substA) = args0.foldRight((List.empty[Type], syms0, subst0)) {
+          case (arg0, (argAcc, syms1, subst1)) =>
+            val (arg, syms, subst) = visit(arg0, syms1, subst1)
+            (arg :: argAcc, syms, subst)
+        }
+        val (innerTpe, syms, subst) = visit(tpe0, symsA, substA)
+        val tpe = Type.Alias(cst, args, innerTpe, loc)
+        (tpe, syms, subst)
+    }
+
+    val (tpe, _, subst) = visit(tpe00, Map.empty, subst00.m)
+    (Substitution(subst), tpe)
+  }
 
   /**
     * Returns the given Boolean formula `tpe` with the symbol sym replaced by `True`.
