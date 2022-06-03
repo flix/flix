@@ -707,7 +707,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Static: Rule1[ParsedAst.Expression.Static] = rule {
-      SP ~ keyword("static") ~ SP ~> ParsedAst.Expression.Static
+      SP ~ keyword("Static") ~ SP ~> ParsedAst.Expression.Static
     }
 
     def Scope: Rule1[ParsedAst.Expression.Scope] = rule {
