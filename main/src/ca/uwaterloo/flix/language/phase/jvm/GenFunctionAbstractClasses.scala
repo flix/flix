@@ -44,18 +44,14 @@ object GenFunctionAbstractClasses {
     */
   private def genFunctionalInterface(arrow: BackendObjType.Arrow)(implicit root: Root, flix: Flix): Array[Byte] = {
     // (Int, String) -> Bool example:
-    // public abstract class Fn2$Int$Obj$Bool extends Cont$Bool implements java.util.function.Function {
+    // public abstract class Fn2$Int$Obj$Bool extends Cont$Bool {
     //   public abstract int arg0;
     //   public abstract Object arg1;
     //   public Fn2$Int$Obj$Bool() { ... }
     // }
 
-    // TODO: this or subclasses do not implement Function::apply?
-
     val cont = arrow.continuation
-    val cm = ClassMaker.mkAbstractClass(arrow.jvmName,
-      superClass = cont.jvmName,
-      interfaces = List(JvmName.Function))
+    val cm = ClassMaker.mkAbstractClass(arrow.jvmName, superClass = cont.jvmName)
 
     cm.mkConstructor(genConstructor(cont), MethodDescriptor.NothingToVoid, IsPublic)
 
