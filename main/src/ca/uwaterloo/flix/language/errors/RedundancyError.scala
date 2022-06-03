@@ -355,7 +355,8 @@ object RedundancyError {
          |Possible fixes:
          |
          |  (1)  Use the result value.
-         |  (2)  Use an anonymous let-binding.
+         |  (2)  Bind the value using let.
+         |  (3)  Use the discard keyword.
          |
          |""".stripMargin
     })
