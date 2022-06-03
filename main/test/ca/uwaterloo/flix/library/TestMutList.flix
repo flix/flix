@@ -1154,48 +1154,48 @@ namespace TestMutList {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // append!                                                                 //
+    // pushAll!                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def append!01(): Bool = region r {
+    def pushAll!01(): Bool = region r {
         let v = MutList.range(0, 4, r);
         let l = List.range(4, 8);
-        MutList.append!(l, v);
+        MutList.pushAll!(l, v);
         MutList.sameElements(v, MutList.range(0, 8, r))
     }
 
     @test
-    def append!02(): Bool = region r {
+    def pushAll!02(): Bool = region r {
         let v = new MutList(r);
         let l = List.range(1, 4);
-        MutList.append!(l, v);
+        MutList.pushAll!(l, v);
         MutList.sameElements(v, MutList.range(1, 4, r))
     }
 
     @test
-    def append!03(): Bool = region r {
+    def pushAll!03(): Bool = region r {
         let v = MutList.range(9, 24, r);
         let l = Nil: List[Int32];
-        MutList.append!(l, v);
+        MutList.pushAll!(l, v);
         MutList.sameElements(v, MutList.range(9, 24, r))
     }
 
     @test
-    def append!04(): Bool = region r {
+    def pushAll!04(): Bool = region r {
         let v: MutList[Unit, _] = new MutList(r);
         let l: List[Unit] = Nil;
-        MutList.append!(l, v);
+        MutList.pushAll!(l, v);
         MutList.sameElements(v, new MutList(r))
     }
 
     @test
-    def append!05(): Bool = region r {
+    def pushAll!05(): Bool = region r {
         let v = MutList.range(1, 3, r);
         let l1 = List.range(3, 5);
         let l2 = List.range(5, 99);
-        MutList.append!(l1, v);
-        MutList.append!(l2, v);
+        MutList.pushAll!(l1, v);
+        MutList.pushAll!(l2, v);
         MutList.sameElements(v, MutList.range(1, 99, r))
     }
 
