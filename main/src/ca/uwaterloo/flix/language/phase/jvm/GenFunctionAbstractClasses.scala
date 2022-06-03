@@ -19,10 +19,10 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
-import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.NotFinal
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.IsPublic
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
-import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes._
 
 /**
   * Generates bytecode for the function abstract classes.
@@ -35,15 +35,14 @@ object GenFunctionAbstractClasses {
   def gen(arrows: Iterable[BackendObjType.Arrow])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     arrows.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, arrow) =>
-        val clazz = genFunctionalInterface(arrow)
-        macc + (clazz.name -> clazz)
+        macc + (arrow.jvmName -> JvmClass(arrow.jvmName, genFunctionalInterface(arrow)))
     }
   }
 
   /**
     * Returns the function abstract class of the given type `arrow`.
     */
-  private def genFunctionalInterface(arrow: BackendObjType.Arrow)(implicit root: Root, flix: Flix): JvmClass = {
+  private def genFunctionalInterface(arrow: BackendObjType.Arrow)(implicit root: Root, flix: Flix): Array[Byte] = {
     // (Int, String) -> Bool example:
     // public abstract class Fn2$Int$Obj$Bool extends Cont$Bool implements java.util.function.Function {
     //   public abstract int arg0;
@@ -53,47 +52,22 @@ object GenFunctionAbstractClasses {
 
     // TODO: this or subclasses do not implement Function::apply?
 
+    val cont = arrow.continuation
+    val cm = ClassMaker.mkAbstractClass(arrow.jvmName,
+      superClass = cont.jvmName,
+      interfaces = List(JvmName.Function))
 
-    // `JvmType` of the continuation class for `tpe`
-    val continuationSuperInterface = arrow.continuation
+    cm.mkConstructor(genConstructor(cont), MethodDescriptor.NothingToVoid, IsPublic)
 
-    // `JvmType` of the java.util.functions.Function
-    val javaFunctionSuperInterface = JvmType.Function
+    for (argIndex <- arrow.args.indices)
+      arrow.ArgField(argIndex).mkField(cm, IsPublic, NotFinal)
 
-    // Class visitor
-    val visitor = AsmOps.mkClassWriter()
-
-    // The super interface.
-    val superInterfaces = Array(javaFunctionSuperInterface.name.toInternalName)
-
-    // Class visitor
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT, arrow.jvmName.toInternalName, null,
-      continuationSuperInterface.jvmName.toInternalName, superInterfaces)
-
-    // Adding fields for each argument of the function
-    for ((arg, index) <- arrow.args.zipWithIndex) {
-      // arg fields
-      visitor.visitField(ACC_PUBLIC + ACC_ABSTRACT, s"arg$index",
-        arg.toDescriptor, null, null).visitEnd()
-    }
-
-    genConstructor(visitor, continuationSuperInterface)
-
-    visitor.visitEnd()
-
-    // `JvmClass` of the interface
-    JvmClass(arrow.jvmName, visitor.toByteArray)
+    cm.closeClassMaker()
   }
 
-  private def genConstructor(visitor: ClassWriter, superClass: BackendObjType): Unit = {
-    val m = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
-
-    m.visitVarInsn(ALOAD, 0)
-    m.visitMethodInsn(INVOKESPECIAL, superClass.jvmName.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
-    m.visitInsn(RETURN)
-
-    m.visitMaxs(999, 999)
-    m.visitEnd()
-  }
+  private def genConstructor(cont: BackendObjType.Continuation): InstructionSet =
+    thisLoad() ~
+      invokeConstructor(cont.jvmName, MethodDescriptor.NothingToVoid) ~
+      RETURN()
 
 }
