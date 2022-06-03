@@ -207,7 +207,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns an iterator over `t`.
     ///
     pub def toIterator(t: t[a]): Iterator[a] & Impure =
-        let arr = Foldable.toArray(t, static);
+        let arr = Foldable.toArray(t, Static);
         let len = Array.length(arr);
         let i = ref 0;
         let done = () -> (deref i) >= len;
