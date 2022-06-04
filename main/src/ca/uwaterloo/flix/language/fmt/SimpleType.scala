@@ -386,7 +386,7 @@ object SimpleType {
           // Case 3: Too many args. Error.
           case _ :: _ :: _ => throw new OverAppliedType
         }
-      case TypeConstructor.ScopedArray => mkApply(Array, t.typeArguments.map(fromWellKindedType))
+      case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Channel => mkApply(Channel, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(fromWellKindedType))
       case TypeConstructor.Tag(sym, tag) =>

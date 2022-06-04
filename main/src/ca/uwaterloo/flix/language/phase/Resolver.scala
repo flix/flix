@@ -1688,7 +1688,7 @@ object Resolver {
       case "String" => Type.mkString(loc).toSuccess
       case "Channel" => Type.mkChannel(loc).toSuccess
       case "Lazy" => Type.mkLazy(loc).toSuccess
-      case "Array" => Type.Cst(TypeConstructor.ScopedArray, loc).toSuccess
+      case "Array" => Type.Cst(TypeConstructor.Array, loc).toSuccess
       case "Ref" => Type.Cst(TypeConstructor.ScopedRef, loc).toSuccess
       case "Region" => Type.Cst(TypeConstructor.Region, loc).toSuccess
 
@@ -2479,7 +2479,7 @@ object Resolver {
 
       case TypeConstructor.Tuple(_) => Class.forName("java.lang.Object").toSuccess
 
-      case TypeConstructor.ScopedArray =>
+      case TypeConstructor.Array =>
         Type.eraseAliases(tpe).typeArguments match {
           case elmTyp :: region :: Nil =>
             mapN(getJVMType(elmTyp, loc)) {

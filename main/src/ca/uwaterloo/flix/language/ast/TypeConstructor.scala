@@ -223,7 +223,7 @@ object TypeConstructor {
   /**
     * A type constructor that represent the type of scoped arrays.
     */
-  case object ScopedArray extends TypeConstructor {
+  case object Array extends TypeConstructor {
     /**
       * The shape of a reference is `ScopedArray[t, l]`.
       */

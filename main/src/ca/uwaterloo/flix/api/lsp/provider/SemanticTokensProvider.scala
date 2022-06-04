@@ -604,7 +604,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Tag(_, _) => false
     case TypeConstructor.KindedEnum(_, _) => true
     case TypeConstructor.Native(_) => true
-    case TypeConstructor.ScopedArray => true
+    case TypeConstructor.Array => true
     case TypeConstructor.ScopedRef => true
     case TypeConstructor.Tuple(_) => false
     case TypeConstructor.Relation => false

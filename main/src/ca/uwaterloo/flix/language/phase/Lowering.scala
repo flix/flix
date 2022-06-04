@@ -597,7 +597,7 @@ object Lowering {
       // Compute the arity of the predicate symbol.
       // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
       val arity = Type.eraseAliases(tpe) match {
-        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ScopedArray, _), innerType, _), _, _) => innerType.typeConstructor match {
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Array, _), innerType, _), _, _) => innerType.typeConstructor match {
           case Some(TypeConstructor.Tuple(_)) => innerType.typeArguments.length
           case Some(TypeConstructor.Unit) => 0
           case _ => 1
